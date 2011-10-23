@@ -52,25 +52,27 @@ This article explains the new features in Python 3.3, compared to 3.2.
 PEP 393: Flexible String Representation
 =======================================
 
-[Abstract copied from the PEP: The Unicode string type is changed to support
-multiple internal representations, depending on the character with the largest
-Unicode ordinal (1, 2, or 4 bytes).  This allows a space-efficient
-representation in common cases, but gives access to full UCS-4 on all systems.
-For compatibility with existing APIs, several representations may exist in
-parallel; over time, this compatibility should be phased out.]
+The Unicode string type is changed to support multiple internal
+representations, depending on the character with the largest Unicode ordinal
+(1, 2, or 4 bytes) in the represented string.  This allows a space-efficient
+representation in common cases, but gives access to full UCS-4 on all
+systems.  For compatibility with existing APIs, several representations may
+exist in parallel; over time, this compatibility should be phased out.
 
-PEP 393 is fully backward compatible. The legacy API should remain
-available at least five years. Applications using the legacy API will not
-fully benefit of the memory reduction, or worse may use a little bit more
-memory, because Python may have to maintain two versions of each string (in
-the legacy format and in the new efficient storage).
+On the Python side, there should be no downside to this change.
 
-XXX Add list of changes introduced by :pep:`393` here:
+On the C API side, PEP 393 is fully backward compatible.  The legacy API
+should remain available at least five years.  Applications using the legacy
+API will not fully benefit of the memory reduction, or - worse - may use
+a bit more memory, because Python may have to maintain two versions of each
+string (in the legacy format and in the new efficient storage).
+
+Changes introduced by :pep:`393` are the following:
 
 * Python now always supports the full range of Unicode codepoints, including
   non-BMP ones (i.e. from ``U+0000`` to ``U+10FFFF``).  The distinction between
   narrow and wide builds no longer exists and Python now behaves like a wide
-  build.
+  build, even under Windows.
 
 * The storage of Unicode strings now depends on the highest codepoint in the string:
 
@@ -86,7 +88,8 @@ XXX Add list of changes introduced by :pep:`393` here:
    XXX The result should be moved in the PEP and a small summary about
    performances and a link to the PEP should be added here.
 
-* Some of the problems visible on narrow builds have been fixed, for example:
+* With the death of narrow builds, the problems specific to narrow builds have
+  also been fixed, for example:
 
   * :func:`len` now always returns 1 for non-BMP characters,
     so ``len('\U0010FFFF') == 1``;
@@ -94,10 +97,11 @@ XXX Add list of changes introduced by :pep:`393` here:
   * surrogate pairs are not recombined in string literals,
     so ``'\uDBFF\uDFFF' != '\U0010FFFF'``;
 
-  * indexing or slicing a non-BMP characters doesn't return surrogates anymore,
+  * indexing or slicing non-BMP characters returns the expected value,
     so ``'\U0010FFFF'[0]`` now returns ``'\U0010FFFF'`` and not ``'\uDBFF'``;
 
-  * several other functions in the stdlib now handle correctly non-BMP codepoints.
+  * several other functions in the standard library now handle correctly
+    non-BMP codepoints.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
   in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
