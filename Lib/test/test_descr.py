@@ -625,6 +625,174 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # The most derived metaclass of D is A rather than type.
         class D(B, C):
             pass
+        self.assertIs(A, type(D))
+
+        # issue1294232: correct metaclass calculation
+        new_calls = []  # to check the order of __new__ calls
+        class AMeta(type):
+            @staticmethod
+            def __new__(mcls, name, bases, ns):
+                new_calls.append('AMeta')
+                return super().__new__(mcls, name, bases, ns)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                return {}
+
+        class BMeta(AMeta):
+            @staticmethod
+            def __new__(mcls, name, bases, ns):
+                new_calls.append('BMeta')
+                return super().__new__(mcls, name, bases, ns)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                ns = super().__prepare__(name, bases)
+                ns['BMeta_was_here'] = True
+                return ns
+
+        class A(metaclass=AMeta):
+            pass
+        self.assertEqual(['AMeta'], new_calls)
+        new_calls[:] = []
+
+        class B(metaclass=BMeta):
+            pass
+        # BMeta.__new__ calls AMeta.__new__ with super:
+        self.assertEqual(['BMeta', 'AMeta'], new_calls)
+        new_calls[:] = []
+
+        class C(A, B):
+            pass
+        # The most derived metaclass is BMeta:
+        self.assertEqual(['BMeta', 'AMeta'], new_calls)
+        new_calls[:] = []
+        # BMeta.__prepare__ should've been called:
+        self.assertIn('BMeta_was_here', C.__dict__)
+
+        # The order of the bases shouldn't matter:
+        class C2(B, A):
+            pass
+        self.assertEqual(['BMeta', 'AMeta'], new_calls)
+        new_calls[:] = []
+        self.assertIn('BMeta_was_here', C2.__dict__)
+
+        # Check correct metaclass calculation when a metaclass is declared:
+        class D(C, metaclass=type):
+            pass
+        self.assertEqual(['BMeta', 'AMeta'], new_calls)
+        new_calls[:] = []
+        self.assertIn('BMeta_was_here', D.__dict__)
+
+        class E(C, metaclass=AMeta):
+            pass
+        self.assertEqual(['BMeta', 'AMeta'], new_calls)
+        new_calls[:] = []
+        self.assertIn('BMeta_was_here', E.__dict__)
+
+        # Special case: the given metaclass isn't a class,
+        # so there is no metaclass calculation.
+        marker = object()
+        def func(*args, **kwargs):
+            return marker
+        class X(metaclass=func):
+            pass
+        class Y(object, metaclass=func):
+            pass
+        class Z(D, metaclass=func):
+            pass
+        self.assertIs(marker, X)
+        self.assertIs(marker, Y)
+        self.assertIs(marker, Z)
+
+        # The given metaclass is a class,
+        # but not a descendant of type.
+        prepare_calls = []  # to track __prepare__ calls
+        class ANotMeta:
+            def __new__(mcls, *args, **kwargs):
+                new_calls.append('ANotMeta')
+                return super().__new__(mcls)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                prepare_calls.append('ANotMeta')
+                return {}
+        class BNotMeta(ANotMeta):
+            def __new__(mcls, *args, **kwargs):
+                new_calls.append('BNotMeta')
+                return super().__new__(mcls)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                prepare_calls.append('BNotMeta')
+                return super().__prepare__(name, bases)
+
+        class A(metaclass=ANotMeta):
+            pass
+        self.assertIs(ANotMeta, type(A))
+        self.assertEqual(['ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+        self.assertEqual(['ANotMeta'], new_calls)
+        new_calls[:] = []
+
+        class B(metaclass=BNotMeta):
+            pass
+        self.assertIs(BNotMeta, type(B))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+
+        class C(A, B):
+            pass
+        self.assertIs(BNotMeta, type(C))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+
+        class C2(B, A):
+            pass
+        self.assertIs(BNotMeta, type(C2))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+
+        # This is a TypeError, because of a metaclass conflict:
+        # BNotMeta is neither a subclass, nor a superclass of type
+        with self.assertRaises(TypeError):
+            class D(C, metaclass=type):
+                pass
+
+        class E(C, metaclass=ANotMeta):
+            pass
+        self.assertIs(BNotMeta, type(E))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+
+        class F(object(), C):
+            pass
+        self.assertIs(BNotMeta, type(F))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+
+        class F2(C, object()):
+            pass
+        self.assertIs(BNotMeta, type(F2))
+        self.assertEqual(['BNotMeta', 'ANotMeta'], new_calls)
+        new_calls[:] = []
+        self.assertEqual(['BNotMeta', 'ANotMeta'], prepare_calls)
+        prepare_calls[:] = []
+
+        # TypeError: BNotMeta is neither a
+        # subclass, nor a superclass of int
+        with self.assertRaises(TypeError):
+            class X(C, int()):
+                pass
+        with self.assertRaises(TypeError):
+            class X(int(), C):
+                pass
 
     def test_module_subclasses(self):
         # Testing Python subclass of module...
