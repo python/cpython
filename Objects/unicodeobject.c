@@ -14210,21 +14210,21 @@ Py_UNICODE*
 PyUnicode_AsUnicodeCopy(PyObject *unicode)
 {
     Py_UNICODE *u, *copy;
-    Py_ssize_t size;
+    Py_ssize_t len, size;
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    u = PyUnicode_AsUnicode(unicode);
+    u = PyUnicode_AsUnicodeAndSize(unicode, &len);
     if (u == NULL)
         return NULL;
     /* Ensure we won't overflow the size. */
-    if (PyUnicode_GET_SIZE(unicode) > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
+    if (len > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
         PyErr_NoMemory();
         return NULL;
     }
-    size = PyUnicode_GET_SIZE(unicode) + 1; /* copy the nul character */
+    size = len + 1; /* copy the null character */
     size *= sizeof(Py_UNICODE);
     copy = PyMem_Malloc(size);
     if (copy == NULL) {
