@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13201: Define '==' and '!=' to compare range objects based on
+  the sequence of values they define (instead of comparing based on
+  object identity).
+
 - Issue #1294232: In a few cases involving metaclass inheritance, the
   interpreter would sometimes invoke the wrong metaclass when building a new
   class object. These cases now behave correctly. Patch by Daniel Urban.

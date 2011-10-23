@@ -1077,6 +1077,13 @@ are always available.  They are listed here in alphabetical order.
       >>> r[-1]
       18
 
+   Testing range objects for equality with ``==`` and ``!=`` compares
+   them as sequences.  That is, two range objects are considered equal if
+   they represent the same sequence of values.  (Note that two range
+   objects that compare equal might have different :attr:`start`,
+   :attr:`stop` and :attr:`step` attributes, for example ``range(0) ==
+   range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
+
    Ranges containing absolute values larger than :data:`sys.maxsize` are permitted
    but some features (such as :func:`len`) will raise :exc:`OverflowError`.
 
@@ -1085,6 +1092,11 @@ are always available.  They are listed here in alphabetical order.
       Support slicing and negative indices.
       Test integers for membership in constant time instead of iterating
       through all items.
+
+   .. versionchanged:: 3.3
+      Define '==' and '!=' to compare range objects based on the
+      sequence of values they define (instead of comparing based on
+      object identity).
 
 
 .. function:: repr(object)

@@ -609,6 +609,137 @@ range_contains(rangeobject *r, PyObject *ob)
                                        PY_ITERSEARCH_CONTAINS);
 }
 
+/* Compare two range objects.  Return 1 for equal, 0 for not equal
+   and -1 on error.  The algorithm is roughly the C equivalent of
+
+   if r0 is r1:
+       return True
+   if len(r0) != len(r1):
+       return False
+   if not len(r0):
+       return True
+   if r0.start != r1.start:
+       return False
+   if len(r0) == 1:
+       return True
+   return r0.step == r1.step
+*/
+static int
+range_equals(rangeobject *r0, rangeobject *r1)
+{
+    int cmp_result;
+    PyObject *one;
+
+    if (r0 == r1)
+        return 1;
+    cmp_result = PyObject_RichCompareBool(r0->length, r1->length, Py_EQ);
+    /* Return False or error to the caller. */
+    if (cmp_result != 1)
+        return cmp_result;
+    cmp_result = PyObject_Not(r0->length);
+    /* Return True or error to the caller. */
+    if (cmp_result != 0)
+        return cmp_result;
+    cmp_result = PyObject_RichCompareBool(r0->start, r1->start, Py_EQ);
+    /* Return False or error to the caller. */
+    if (cmp_result != 1)
+        return cmp_result;
+    one = PyLong_FromLong(1);
+    if (!one)
+        return -1;
+    cmp_result = PyObject_RichCompareBool(r0->length, one, Py_EQ);
+    Py_DECREF(one);
+    /* Return True or error to the caller. */
+    if (cmp_result != 0)
+        return cmp_result;
+    return PyObject_RichCompareBool(r0->step, r1->step, Py_EQ);
+}
+
+static PyObject *
+range_richcompare(PyObject *self, PyObject *other, int op)
+{
+    int result;
+
+    if (!PyRange_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    switch (op) {
+    case Py_NE:
+    case Py_EQ:
+        result = range_equals((rangeobject*)self, (rangeobject*)other);
+        if (result == -1)
+            return NULL;
+        if (op == Py_NE)
+            result = !result;
+        if (result)
+            Py_RETURN_TRUE;
+        else
+            Py_RETURN_FALSE;
+    case Py_LE:
+    case Py_GE:
+    case Py_LT:
+    case Py_GT:
+        Py_RETURN_NOTIMPLEMENTED;
+    default:
+        PyErr_BadArgument();
+        return NULL;
+    }
+}
+
+/* Hash function for range objects.  Rough C equivalent of
+
+   if not len(r):
+       return hash((len(r), None, None))
+   if len(r) == 1:
+       return hash((len(r), r.start, None))
+   return hash((len(r), r.start, r.step))
+*/
+static Py_hash_t
+range_hash(rangeobject *r)
+{
+    PyObject *t;
+    Py_hash_t result = -1;
+    int cmp_result;
+
+    t = PyTuple_New(3);
+    if (!t)
+        return -1;
+    Py_INCREF(r->length);
+    PyTuple_SET_ITEM(t, 0, r->length);
+    cmp_result = PyObject_Not(r->length);
+    if (cmp_result == -1)
+        goto end;
+    if (cmp_result == 1) {
+        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 1, Py_None);
+        PyTuple_SET_ITEM(t, 2, Py_None);
+    }
+    else {
+        PyObject *one;
+        Py_INCREF(r->start);
+        PyTuple_SET_ITEM(t, 1, r->start);
+        one = PyLong_FromLong(1);
+        if (!one)
+            goto end;
+        cmp_result = PyObject_RichCompareBool(r->length, one, Py_EQ);
+        Py_DECREF(one);
+        if (cmp_result == -1)
+            goto end;
+        if (cmp_result == 1) {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(t, 2, Py_None);
+        }
+        else {
+            Py_INCREF(r->step);
+            PyTuple_SET_ITEM(t, 2, r->step);
+        }
+    }
+    result = PyObject_Hash(t);
+  end:
+    Py_DECREF(t);
+    return result;
+}
+
 static PyObject *
 range_count(rangeobject *r, PyObject *ob)
 {
@@ -763,7 +894,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_as_number */
         &range_as_sequence,     /* tp_as_sequence */
         &range_as_mapping,      /* tp_as_mapping */
-        0,                      /* tp_hash */
+        (hashfunc)range_hash,   /* tp_hash */
         0,                      /* tp_call */
         0,                      /* tp_str */
         PyObject_GenericGetAttr,  /* tp_getattro */
@@ -773,7 +904,7 @@ PyTypeObject PyRange_Type = {
         range_doc,              /* tp_doc */
         0,                      /* tp_traverse */
         0,                      /* tp_clear */
-        0,                      /* tp_richcompare */
+        range_richcompare,      /* tp_richcompare */
         0,                      /* tp_weaklistoffset */
         range_iter,             /* tp_iter */
         0,                      /* tp_iternext */
