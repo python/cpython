@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1294232: In a few cases involving metaclass inheritance, the
+  interpreter would sometimes invoke the wrong metaclass when building a new
+  class object. These cases now behave correctly. Patch by Daniel Urban.
+
 - Issue #12753: Add support for Unicode name aliases and named sequences.
   Both :func:`unicodedata.lookup()` and '\N{...}' now resolve aliases,
   and :func:`unicodedata.lookup()` resolves named sequences too.
