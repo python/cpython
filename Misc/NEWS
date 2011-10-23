@@ -1678,6 +1678,8 @@ C-API
 Documentation
 -------------
 
+- Issue #13141: Demonstrate recommended style for socketserver examples.
+
 - Issue #11818: Fix tempfile examples for Python 3.
 
 
