@@ -906,11 +906,11 @@ rightmost_sep(Py_UCS4 *s)
 
 /* Like rightmost_sep, but operate on unicode objects. */
 static Py_ssize_t
-rightmost_sep_obj(PyObject* o)
+rightmost_sep_obj(PyObject* o, Py_ssize_t start, Py_ssize_t end)
 {
     Py_ssize_t found, i;
     Py_UCS4 c;
-    for (found = -1, i = 0; i < PyUnicode_GET_LENGTH(o); i++) {
+    for (found = -1, i = start; i < end; i++) {
         c = PyUnicode_READ_CHAR(o, i);
         if (c == SEP
 #ifdef ALTSEP
@@ -947,7 +947,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     len = PyUnicode_GET_LENGTH(pathstr);
     /* If there is no separator, this returns -1, so
        lastsep will be 0. */
-    fname = rightmost_sep_obj(pathstr) + 1;
+    fname = rightmost_sep_obj(pathstr, 0, len) + 1;
     ext = fname - 1;
     for(i = fname; i < len; i++)
         if (PyUnicode_READ_CHAR(pathstr, i) == '.')
@@ -992,63 +992,66 @@ make_compiled_pathname(PyObject *pathstr, int debug)
    (...)/__pycache__/foo.<tag>.pyc -> (...)/foo.py */
 
 static PyObject*
-make_source_pathname(PyObject *pathobj)
+make_source_pathname(PyObject *path)
 {
-    Py_UCS4 buf[MAXPATHLEN];
-    Py_UCS4 *pathname;
-    Py_UCS4 *left, *right, *dot0, *dot1, sep;
-    size_t i, j;
+    Py_ssize_t left, right, dot0, dot1, len;
+    Py_ssize_t i, j;
+    PyObject *result;
+    int kind;
+    void *data;
 
-    if (PyUnicode_GET_LENGTH(pathobj) > MAXPATHLEN)
-        return NULL;
-    pathname = PyUnicode_AsUCS4Copy(pathobj);
-    if (!pathname)
+    len = PyUnicode_GET_LENGTH(path);
+    if (len > MAXPATHLEN)
         return NULL;
 
     /* Look back two slashes from the end.  In between these two slashes
        must be the string __pycache__ or this is not a PEP 3147 style
        path.  It's possible for there to be only one slash.
     */
-    right = rightmost_sep(pathname);
-    if (right == NULL)
+    right = rightmost_sep_obj(path, 0, len);
+    if (right == -1)
         return NULL;
-    sep = *right;
-    *right = '\0';
-    left = rightmost_sep(pathname);
-    *right = sep;
-    if (left == NULL)
-        left = pathname;
+    left = rightmost_sep_obj(path, 0, right);
+    if (left == -1)
+        left = 0;
     else
         left++;
-    if (right-left != Py_UCS4_strlen(CACHEDIR_UNICODE) ||
-        Py_UCS4_strncmp(left, CACHEDIR_UNICODE, right-left) != 0)
-        goto error;
+    if (right-left !=  sizeof(CACHEDIR)-1)
+        return NULL;
+    for (i = 0; i < sizeof(CACHEDIR)-1; i++)
+        if (PyUnicode_READ_CHAR(path, left+i) != CACHEDIR[i])
+            return NULL;
 
     /* Now verify that the path component to the right of the last slash
        has two dots in it.
     */
-    if ((dot0 = Py_UCS4_strchr(right + 1, '.')) == NULL)
-       goto error;
-    if ((dot1 = Py_UCS4_strchr(dot0 + 1, '.')) == NULL)
-        goto error;
+    dot0 = PyUnicode_FindChar(path, '.', right+1, len, 1);
+    if (dot0 < 0)
+        return NULL;
+    dot1 = PyUnicode_FindChar(path, '.', dot0+1, len, 1);
+    if (dot1 < 0)
+        return NULL;
     /* Too many dots? */
-    if (Py_UCS4_strchr(dot1 + 1, '.') != NULL)
-        goto error;
+    if (PyUnicode_FindChar(path, '.', dot1+1, len, 1) != -1)
+        return NULL;
 
     /* This is a PEP 3147 path.  Start by copying everything from the
        start of pathname up to and including the leftmost slash.  Then
        copy the file's basename, removing the magic tag and adding a .py
        suffix.
     */
-    Py_UCS4_strncpy(buf, pathname, (i=left-pathname));
-    Py_UCS4_strncpy(buf+i, right+1, (j=dot0-right));
-    buf[i+j] = 'p';
-    buf[i+j+1] = 'y';
-    PyMem_Free(pathname);
-    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, i+j+2);
-  error:
-    PyMem_Free(pathname);
-    return NULL;
+    result = PyUnicode_New(left + (dot0-right) + 2,
+                           PyUnicode_MAX_CHAR_VALUE(path));
+    if (!result)
+        return NULL;
+    kind = PyUnicode_KIND(result);
+    data = PyUnicode_DATA(result);
+    PyUnicode_CopyCharacters(result, 0, path, 0, (i = left));
+    PyUnicode_CopyCharacters(result, left, path, right+1,
+                             (j = dot0-right));
+    PyUnicode_WRITE(kind, data, i+j,   'p');
+    PyUnicode_WRITE(kind, data, i+j+1, 'y');
+    return result;
 }
 
 /* Given a pathname for a Python source file, its time of last
