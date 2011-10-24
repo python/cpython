@@ -535,15 +535,6 @@ class Marshaller:
         write("<value><nil/></value>")
     dispatch[type(None)] = dump_nil
 
-    def dump_int(self, value, write):
-        # in case ints are > 32 bits
-        if value > MAXINT or value < MININT:
-            raise OverflowError("int exceeds XML-RPC limits")
-        write("<value><int>")
-        write(str(value))
-        write("</int></value>\n")
-    #dispatch[int] = dump_int
-
     def dump_bool(self, value, write):
         write("<value><boolean>")
         write(value and "1" or "0")
@@ -557,6 +548,9 @@ class Marshaller:
         write(str(int(value)))
         write("</int></value>\n")
     dispatch[int] = dump_long
+
+    # backward compatible
+    dump_int = dump_long
 
     def dump_double(self, value, write):
         write("<value><double>")

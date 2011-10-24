@@ -1550,7 +1550,7 @@ PyDoc_STRVAR(fromunicode_doc,
 \n\
 Extends this array with data from the unicode string ustr.\n\
 The array must be a unicode type array; otherwise a ValueError\n\
-is raised.  Use array.frombytes(ustr.decode(...)) to\n\
+is raised.  Use array.frombytes(ustr.encode(...)) to\n\
 append Unicode data to an array of some other type.");
 
 
@@ -1572,7 +1572,7 @@ PyDoc_STRVAR(tounicode_doc,
 \n\
 Convert the array to a unicode string.  The array must be\n\
 a unicode type array; otherwise a ValueError is raised.  Use\n\
-array.tostring().decode() to obtain a unicode string from\n\
+array.tobytes().decode() to obtain a unicode string from\n\
 an array of some other type.");
 
 
@@ -2636,7 +2636,7 @@ count() -- return number of occurrences of an object\n\
 extend() -- extend array by appending multiple elements from an iterable\n\
 fromfile() -- read items from a file object\n\
 fromlist() -- append items from the list\n\
-fromstring() -- append items from the string\n\
+frombytes() -- append items from the string\n\
 index() -- return index of first occurrence of an object\n\
 insert() -- insert a new item into the array at a provided position\n\
 pop() -- remove and return item (default last)\n\
@@ -2644,7 +2644,7 @@ remove() -- remove first occurrence of an object\n\
 reverse() -- reverse the order of the items in the array\n\
 tofile() -- write all items to a file object\n\
 tolist() -- return the array converted to an ordinary list\n\
-tostring() -- return the array converted to a string\n\
+tobytes() -- return the array converted to a string\n\
 \n\
 Attributes:\n\
 \n\

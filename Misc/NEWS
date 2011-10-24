@@ -341,6 +341,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
+
+- Issue #13255: wrong docstrings in array module.
+
+- Issue #8540: Remove deprecated Context._clamp attribute in Decimal module.
+
 - Issue #13235: Added PendingDeprecationWarning to warn() method and function.
 
 - Issue #9168: now smtpd is able to bind privileged port.
@@ -1680,6 +1687,8 @@ C-API
 
 Documentation
 -------------
+
+- Issue #13141: Demonstrate recommended style for socketserver examples.
 
 - Issue #11818: Fix tempfile examples for Python 3.
 
