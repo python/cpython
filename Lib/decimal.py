@@ -3903,28 +3903,6 @@ class Context(object):
         return nc
     __copy__ = copy
 
-    # _clamp is provided for backwards compatibility with third-party
-    # code.  May be removed in Python >= 3.3.
-    def _get_clamp(self):
-        "_clamp mirrors the clamp attribute.  Its use is deprecated."
-        import warnings
-        warnings.warn('Use of the _clamp attribute is deprecated. '
-                      'Please use clamp instead.',
-                      DeprecationWarning)
-        return self.clamp
-
-    def _set_clamp(self, clamp):
-        "_clamp mirrors the clamp attribute.  Its use is deprecated."
-        import warnings
-        warnings.warn('Use of the _clamp attribute is deprecated. '
-                      'Please use clamp instead.',
-                      DeprecationWarning)
-        self.clamp = clamp
-
-    # don't bother with _del_clamp;  no sane 3rd party code should
-    # be deleting the _clamp attribute
-    _clamp = property(_get_clamp, _set_clamp)
-
     def _raise_error(self, condition, explanation = None, *args):
         """Handles an error
 
