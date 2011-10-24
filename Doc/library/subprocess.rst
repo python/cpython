@@ -31,7 +31,142 @@ modules and functions can be found in the following sections.
 Using the subprocess Module
 ---------------------------
 
-This module defines one class called :class:`Popen`:
+The recommended interface to this module is to use the following convenience
+functions for all use cases they can handle. For more advanced use cases, the
+underlying :class:`Popen` interface can be used directly.
+
+
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None)
+
+   Run the command described by *args*.  Wait for command to complete, then
+   return the :attr:`returncode` attribute.
+
+   The arguments shown above are merely the most common ones, described below
+   in :ref:`frequently-used-arguments`. The full function signature is the
+   same as that of the :class:`Popen` constructor - the convenience functions
+   pass all supplied arguments directly through to that interface.
+
+   Examples::
+
+      >>> subprocess.call(["ls", "-l"])
+      0
+
+      >>> subprocess.call(["python", "-c", "import sys; sys.exit(1)"])
+      1
+
+   .. warning::
+
+      Like :meth:`Popen.wait`, this will deadlock when using
+      ``stdout=PIPE`` and/or ``stderr=PIPE`` and the child process
+      generates enough output to a pipe such that it blocks waiting
+      for the OS pipe buffer to accept more data.
+
+
+.. function:: check_call(*callargs, **kwargs)
+
+   Run command with arguments.  Wait for command to complete. If the return
+   code was zero then return, otherwise raise :exc:`CalledProcessError`. The
+   :exc:`CalledProcessError` object will have the return code in the
+   :attr:`returncode` attribute.
+
+   The arguments are the same as for :func:`call`.  Examples::
+
+      >>> subprocess.check_call(["ls", "-l"])
+      0
+
+      >>> subprocess.check_call(["python", "-c", "import sys; sys.exit(1)"])
+      Traceback (most recent call last):
+         ...
+      subprocess.CalledProcessError: Command '['python', '-c', 'import sys; sys.exit(1)']' returned non-zero exit status 1
+
+   .. versionadded:: 2.5
+
+   .. warning::
+
+      See the warning for :func:`call`.
+
+
+.. function:: check_output(*callargs, **kwargs)
+
+   Run command with arguments and return its output as a byte string.
+
+   If the return code was non-zero it raises a :exc:`CalledProcessError`. The
+   :exc:`CalledProcessError` object will have the return code in the
+   :attr:`returncode` attribute and any output in the :attr:`output`
+   attribute.
+
+   Examples::
+
+      >>> subprocess.check_output(["ls", "-l", "/dev/null"])
+      'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+
+      >>> subprocess.check_output(["python", "-c", "import sys; sys.exit(1)"])
+      Traceback (most recent call last):
+         ...
+      subprocess.CalledProcessError: Command '['python', '-c', 'import sys; sys.exit(1)']' returned non-zero exit status 1
+
+   The arguments are the same as for :func:`call`, except that *stdout* is
+   not allowed as it is used internally. To also capture standard error in
+   the result, use ``stderr=subprocess.STDOUT``::
+
+      >>> subprocess.check_output(
+      ...     ["/bin/sh", "-c", "ls non_existent_file; exit 0"],
+      ...     stderr=subprocess.STDOUT)
+      'ls: non_existent_file: No such file or directory\n'
+
+   .. versionadded:: 2.7
+
+
+.. data:: PIPE
+
+   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
+   to :class:`Popen` and indicates that a pipe to the standard stream should be
+   opened.
+
+
+.. data:: STDOUT
+
+   Special value that can be used as the *stderr* argument to :class:`Popen` and
+   indicates that standard error should go into the same handle as standard
+   output.
+
+
+.. _frequently-used-arguments:
+
+Frequently Used Arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To support a wide variety of use cases, the :class:`Popen` constructor (and
+the convenience functions) accept a large number of optional arguments. For
+most typical use cases, many of these arguments can be safely left at their
+default values. The arguments that are most commonly needed are:
+
+   *args* should be a string, or a sequence of program arguments. Providing
+   a sequence of arguments is generally preferred, as it allows the module to
+   take care of any required escaping and quoting of arguments (e.g. to permit
+   spaces in file names)
+
+   *stdin*, *stdout* and *stderr* specify the executed program's standard input,
+   standard output and standard error file handles, respectively.  Valid values
+   are :data:`PIPE`, an existing file descriptor (a positive integer), an
+   existing file object, and ``None``.  :data:`PIPE` indicates that a new pipe
+   to the child should be created.  With the default settings of ``None``, no
+   redirection will occur; the child's file handles will be inherited from the
+   parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates that
+   the stderr data from the child process should be captured into the same file
+   handle as for stdout.
+
+These options, along with all of the other options, are described in more
+detail in the :class:`Popen` constructor documentation.
+
+
+Popen Constuctor
+^^^^^^^^^^^^^^^^
+
+The underlying process creation and management in this module is handled by
+the :class:`Popen` class. It offers a lot of flexibility so that developers
+are able to handle the less common cases not covered by the convenience
+functions.
 
 
 .. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0)
@@ -126,14 +261,15 @@ This module defines one class called :class:`Popen`:
    You don't need ``shell=True`` to run a batch file, nor to run a console-based
    executable.
 
-   *stdin*, *stdout* and *stderr* specify the executed programs' standard input,
+   *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, an existing file descriptor (a positive integer), an
    existing file object, and ``None``.  :data:`PIPE` indicates that a new pipe
-   to the child should be created.  With ``None``, no redirection will occur;
-   the child's file handles will be inherited from the parent.  Additionally,
-   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from the
-   applications should be captured into the same file handle as for stdout.
+   to the child should be created.  With the default settings of ``None``, no
+   redirection will occur; the child's file handles will be inherited from the
+   parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates that
+   the stderr data from the child process should be captured into the same file
+   handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed. (Unix only)
@@ -182,87 +318,6 @@ This module defines one class called :class:`Popen`:
    passed to the underlying ``CreateProcess`` function.
    *creationflags*, if given, can be :data:`CREATE_NEW_CONSOLE` or
    :data:`CREATE_NEW_PROCESS_GROUP`. (Windows only)
-
-
-.. data:: PIPE
-
-   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
-   to :class:`Popen` and indicates that a pipe to the standard stream should be
-   opened.
-
-
-.. data:: STDOUT
-
-   Special value that can be used as the *stderr* argument to :class:`Popen` and
-   indicates that standard error should go into the same handle as standard
-   output.
-
-
-Convenience Functions
-^^^^^^^^^^^^^^^^^^^^^
-
-This module also defines the following shortcut functions:
-
-
-.. function:: call(*popenargs, **kwargs)
-
-   Run command with arguments.  Wait for command to complete, then return the
-   :attr:`returncode` attribute.
-
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
-
-      >>> retcode = subprocess.call(["ls", "-l"])
-
-   .. warning::
-
-      Like :meth:`Popen.wait`, this will deadlock when using
-      ``stdout=PIPE`` and/or ``stderr=PIPE`` and the child process
-      generates enough output to a pipe such that it blocks waiting
-      for the OS pipe buffer to accept more data.
-
-
-.. function:: check_call(*popenargs, **kwargs)
-
-   Run command with arguments.  Wait for command to complete. If the exit code was
-   zero then return, otherwise raise :exc:`CalledProcessError`. The
-   :exc:`CalledProcessError` object will have the return code in the
-   :attr:`returncode` attribute.
-
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
-
-      >>> subprocess.check_call(["ls", "-l"])
-      0
-
-   .. versionadded:: 2.5
-
-   .. warning::
-
-      See the warning for :func:`call`.
-
-
-.. function:: check_output(*popenargs, **kwargs)
-
-   Run command with arguments and return its output as a byte string.
-
-   If the exit code was non-zero it raises a :exc:`CalledProcessError`.  The
-   :exc:`CalledProcessError` object will have the return code in the
-   :attr:`returncode`
-   attribute and output in the :attr:`output` attribute.
-
-   The arguments are the same as for the :class:`Popen` constructor.  Example::
-
-      >>> subprocess.check_output(["ls", "-l", "/dev/null"])
-      'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
-
-   The stdout argument is not allowed as it is used internally.
-   To capture standard error in the result, use ``stderr=subprocess.STDOUT``::
-
-      >>> subprocess.check_output(
-      ...     ["/bin/sh", "-c", "ls non_existent_file; exit 0"],
-      ...     stderr=subprocess.STDOUT)
-      'ls: non_existent_file: No such file or directory\n'
-
-   .. versionadded:: 2.7
 
 
 Exceptions
@@ -523,12 +578,15 @@ The :mod:`subprocess` module exposes the following constants.
 Replacing Older Functions with the subprocess Module
 ----------------------------------------------------
 
-In this section, "a ==> b" means that b can be used as a replacement for a.
+In this section, "a becomes b" means that b can be used as a replacement for a.
 
 .. note::
 
    All functions in this section fail (more or less) silently if the executed
-   program cannot be found; this module raises an :exc:`OSError` exception.
+   program cannot be found; this module raises an :exc:`OSError` exception. In
+   addition, the replacements using :func:`check_output` will fail with a
+   :exc:`CalledProcessError` if the requested operation produces a non-zero
+   return code.
 
 In the following examples, we assume that the subprocess module is imported with
 "from subprocess import \*".
@@ -540,8 +598,8 @@ Replacing /bin/sh shell backquote
 ::
 
    output=`mycmd myarg`
-   ==>
-   output = Popen(["mycmd", "myarg"], stdout=PIPE).communicate()[0]
+   # becomes
+   output = check_output(["mycmd", "myarg"])
 
 
 Replacing shell pipeline
@@ -550,7 +608,7 @@ Replacing shell pipeline
 ::
 
    output=`dmesg | grep hda`
-   ==>
+   # becomes
    p1 = Popen(["dmesg"], stdout=PIPE)
    p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
@@ -559,15 +617,22 @@ Replacing shell pipeline
 The p1.stdout.close() call after starting the p2 is important in order for p1
 to receive a SIGPIPE if p2 exits before p1.
 
+Alternatively, for trusted input, the shell's pipeline may still be used
+directly:
+
+   output=`dmesg | grep hda`
+   # becomes
+   output=check_output("dmesg | grep hda", shell=True)
+
+
 Replacing :func:`os.system`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
    sts = os.system("mycmd" + " myarg")
-   ==>
-   p = Popen("mycmd" + " myarg", shell=True)
-   sts = os.waitpid(p.pid, 0)[1]
+   # becomes
+   sts = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
