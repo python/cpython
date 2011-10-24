@@ -69,6 +69,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13232: logging: Improved logging of exceptions in the presence of
+  multiple encodings.
+
 - Issue #10332: multiprocessing: fix a race condition when a Pool is closed
   before all tasks have completed.
 
