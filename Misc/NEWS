@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
+
 - Issue #1548891: The cStringIO.StringIO() constructor now encodes unicode
   arguments with the system default encoding just like the write() method
   does, instead of converting it to a raw buffer.  This also fixes handling of
