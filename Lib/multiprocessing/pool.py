@@ -294,7 +294,11 @@ class Pool(object):
 
     @staticmethod
     def _handle_workers(pool):
-        while pool._worker_handler._state == RUN and pool._state == RUN:
+        thread = threading.current_thread()
+
+        # Keep maintaining workers until the cache gets drained, unless the pool
+        # is terminated.
+        while thread._state == RUN or (pool._cache and thread._state != TERMINATE):
             pool._maintain_pool()
             time.sleep(0.1)
         # send sentinel to stop workers
