@@ -478,8 +478,12 @@ class Formatter(object):
             except UnicodeError:
                 # Sometimes filenames have non-ASCII chars, which can lead
                 # to errors when s is Unicode and record.exc_text is str
-                # See issue 8924
-                s = s + record.exc_text.decode(sys.getfilesystemencoding())
+                # See issue 8924.
+                # We also use replace for when there are multiple
+                # encodings, e.g. UTF-898 for the filesystem and latin-1
+                # for a script. See issue 13232.
+                s = s + record.exc_text.decode(sys.getfilesystemencoding(),
+                                               'replace')
         return s
 
 #
