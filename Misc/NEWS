@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
+
 - Issue #13255: wrong docstrings in array module.
 
 - Issue #9168: now smtpd is able to bind privileged port.
