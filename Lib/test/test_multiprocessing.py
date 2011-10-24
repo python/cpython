@@ -1168,6 +1168,20 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         p.close()
         p.join()
 
+    def test_pool_worker_lifetime_early_close(self):
+        # Issue #10332: closing a pool whose workers have limited lifetimes
+        # before all the tasks completed would make join() hang.
+        p = multiprocessing.Pool(3, maxtasksperchild=1)
+        results = []
+        for i in range(6):
+            results.append(p.apply_async(sqr, (i, 0.3)))
+        p.close()
+        p.join()
+        # check the results
+        for (j, res) in enumerate(results):
+            self.assertEqual(res.get(), sqr(j))
+
+
 #
 # Test that manager has expected number of shared objects left
 #

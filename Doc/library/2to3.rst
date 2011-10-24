@@ -123,7 +123,9 @@ and off individually.  They are described here in more detail.
 .. 2to3fixer:: callable
 
    Converts ``callable(x)`` to ``isinstance(x, collections.Callable)``, adding
-   an import to :mod:`collections` if needed.
+   an import to :mod:`collections` if needed. Note ``callable(x)`` has returned
+   in Python 3.2, so if you do not intend to support Python 3.1, you can disable
+   this fixer.
 
 .. 2to3fixer:: dict
 
