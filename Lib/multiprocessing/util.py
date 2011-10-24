@@ -327,15 +327,12 @@ class ForkAwareLocal(threading.local):
 # Automatic retry after EINTR
 #
 
-def _eintr_retry(func, _errors=(EnvironmentError, select.error)):
+def _eintr_retry(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         while True:
             try:
                 return func(*args, **kwargs)
-            except _errors as e:
-                # select.error has no `errno` attribute
-                if e.args[0] == errno.EINTR:
-                    continue
-                raise
+            except InterruptedError:
+                continue
     return wrapped

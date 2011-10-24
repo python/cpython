@@ -49,28 +49,32 @@
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
+.. _pep-393:
+
 PEP 393: Flexible String Representation
 =======================================
 
-[Abstract copied from the PEP: The Unicode string type is changed to support
-multiple internal representations, depending on the character with the largest
-Unicode ordinal (1, 2, or 4 bytes).  This allows a space-efficient
-representation in common cases, but gives access to full UCS-4 on all systems.
-For compatibility with existing APIs, several representations may exist in
-parallel; over time, this compatibility should be phased out.]
+The Unicode string type is changed to support multiple internal
+representations, depending on the character with the largest Unicode ordinal
+(1, 2, or 4 bytes) in the represented string.  This allows a space-efficient
+representation in common cases, but gives access to full UCS-4 on all
+systems.  For compatibility with existing APIs, several representations may
+exist in parallel; over time, this compatibility should be phased out.
 
-PEP 393 is fully backward compatible. The legacy API should remain
-available at least five years. Applications using the legacy API will not
-fully benefit of the memory reduction, or worse may use a little bit more
-memory, because Python may have to maintain two versions of each string (in
-the legacy format and in the new efficient storage).
+On the Python side, there should be no downside to this change.
 
-XXX Add list of changes introduced by :pep:`393` here:
+On the C API side, PEP 393 is fully backward compatible.  The legacy API
+should remain available at least five years.  Applications using the legacy
+API will not fully benefit of the memory reduction, or - worse - may use
+a bit more memory, because Python may have to maintain two versions of each
+string (in the legacy format and in the new efficient storage).
+
+Changes introduced by :pep:`393` are the following:
 
 * Python now always supports the full range of Unicode codepoints, including
   non-BMP ones (i.e. from ``U+0000`` to ``U+10FFFF``).  The distinction between
   narrow and wide builds no longer exists and Python now behaves like a wide
-  build.
+  build, even under Windows.
 
 * The storage of Unicode strings now depends on the highest codepoint in the string:
 
@@ -86,7 +90,8 @@ XXX Add list of changes introduced by :pep:`393` here:
    XXX The result should be moved in the PEP and a small summary about
    performances and a link to the PEP should be added here.
 
-* Some of the problems visible on narrow builds have been fixed, for example:
+* With the death of narrow builds, the problems specific to narrow builds have
+  also been fixed, for example:
 
   * :func:`len` now always returns 1 for non-BMP characters,
     so ``len('\U0010FFFF') == 1``;
@@ -94,10 +99,11 @@ XXX Add list of changes introduced by :pep:`393` here:
   * surrogate pairs are not recombined in string literals,
     so ``'\uDBFF\uDFFF' != '\U0010FFFF'``;
 
-  * indexing or slicing a non-BMP characters doesn't return surrogates anymore,
+  * indexing or slicing non-BMP characters returns the expected value,
     so ``'\U0010FFFF'[0]`` now returns ``'\U0010FFFF'`` and not ``'\uDBFF'``;
 
-  * several other functions in the stdlib now handle correctly non-BMP codepoints.
+  * several other functions in the standard library now handle correctly
+    non-BMP codepoints.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
   in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
@@ -113,40 +119,44 @@ PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
 
 :pep:`3151` - Reworking the OS and IO exception hierarchy
-PEP written and implemented by Antoine Pitrou.
+ PEP written and implemented by Antoine Pitrou.
 
-New subclasses of :exc:`OSError` exceptions:
+The hierarchy of exceptions raised by operating system errors is now both
+simplified and finer-grained.
 
- * :exc:`BlockingIOError`
- * :exc:`ChildProcessError`
- * :exc:`ConnectionError`
+You don't have to worry anymore about choosing the appropriate exception
+type between :exc:`OSError`, :exc:`IOError`, :exc:`EnvironmentError`,
+:exc:`WindowsError`, :exc:`mmap.error`, :exc:`socket.error` or
+:exc:`select.error`.  All these exception types are now only one:
+:exc:`OSError`.  The other names are kept as aliases for compatibility
+reasons.
 
-   * :exc:`BrokenPipeError`
-   * :exc:`ConnectionAbortedError`
-   * :exc:`ConnectionRefusedError`
-   * :exc:`ConnectionResetError`
+Also, it is now easier to catch a specific error condition.  Instead of
+inspecting the ``errno`` attribute (or ``args[0]``) for a particular
+constant from the :mod:`errno` module, you can catch the adequate
+:exc:`OSError` subclass.  The available subclasses are the following:
 
- * :exc:`FileExistsError`
- * :exc:`FileNotFoundError`
- * :exc:`InterruptedError`
- * :exc:`IsADirectoryError`
- * :exc:`NotADirectoryError`
- * :exc:`PermissionError`
- * :exc:`ProcessLookupError`
- * :exc:`TimeoutError`
+* :exc:`BlockingIOError`
+* :exc:`ChildProcessError`
+* :exc:`ConnectionError`
+* :exc:`FileExistsError`
+* :exc:`FileNotFoundError`
+* :exc:`InterruptedError`
+* :exc:`IsADirectoryError`
+* :exc:`NotADirectoryError`
+* :exc:`PermissionError`
+* :exc:`ProcessLookupError`
+* :exc:`TimeoutError`
 
-The following exceptions have been merged into :exc:`OSError`:
+And the :exc:`ConnectionError` itself has finer-grained subclasses:
 
- * :exc:`EnvironmentError`
- * :exc:`IOError`
- * :exc:`WindowsError`
- * :exc:`VMSError`
- * :exc:`socket.error`
- * :exc:`select.error`
- * :exc:`mmap.error`
+* :exc:`BrokenPipeError`
+* :exc:`ConnectionAbortedError`
+* :exc:`ConnectionRefusedError`
+* :exc:`ConnectionResetError`
 
 Thanks to the new exceptions, common usages of the :mod:`errno` can now be
-avoided. For example, the following code written for Python 3.2: ::
+avoided.  For example, the following code written for Python 3.2::
 
     from errno import ENOENT, EACCES, EPERM
 
@@ -161,7 +171,8 @@ avoided. For example, the following code written for Python 3.2: ::
         else:
             raise
 
-can now be written without the :mod:`errno` import: ::
+can now be written without the :mod:`errno` import and without manual
+inspection of exception attributes::
 
     try:
         with open("document.txt") as f:
@@ -180,7 +191,7 @@ Some smaller changes made to the core Python language are:
 * Stub
 
 Added support for Unicode name aliases and named sequences.
-Both :func:`unicodedata.lookup()` and '\N{...}' now resolve name aliases,
+Both :func:`unicodedata.lookup()` and ``'\N{...}'`` now resolve name aliases,
 and :func:`unicodedata.lookup()` resolves named sequences too.
 
 (Contributed by Ezio Melotti in :issue:`12753`)
@@ -267,7 +278,7 @@ ftplib
 
 The :class:`~ftplib.FTP_TLS` class now provides a new
 :func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
-plaintex.  This can be useful to take advantage of firewalls that know how to
+plaintext.  This can be useful to take advantage of firewalls that know how to
 handle NAT with non-secure FTP without opening fixed ports.
 
 (Contributed by Giampaolo Rodolà in :issue:`12139`)
@@ -531,13 +542,34 @@ Porting to Python 3.3
 =====================
 
 This section lists previously described changes and other bugfixes
-that may require changes to your code:
+that may require changes to your code.
+
+Porting Python code
+-------------------
 
 * Issue #12326: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
   on the Linux version used to build Python. Replace sys.platform == 'linux2'
   with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
   you don't need to support older Python versions.
+
+Porting C code
+--------------
+
+* Due to :ref:`PEP 393 <pep-393>`, the :c:type:`Py_UNICODE` type and all
+  functions using this type are deprecated (but will stay available for
+  at least five years).  If you were using low-level Unicode APIs to
+  construct and access unicode objects and you want to benefit of the
+  memory footprint reduction provided by the PEP 393, you have to convert
+  your code to the new :doc:`Unicode API <../c-api/unicode>`.
+
+  However, if you only have been using high-level functions such as
+  :c:func:`PyUnicode_Concat()`, :c:func:`PyUnicode_Join` or
+  :c:func:`PyUnicode_FromFormat()`, your code will automatically take
+  advantage of the new unicode representations.
+
+Other issues
+------------
 
 .. Issue #11591: When :program:`python` was started with :option:`-S`,
    ``import site`` will not add site-specific paths to the module search
@@ -547,9 +579,4 @@ that may require changes to your code:
 .. Issue #10998: -Q command-line flags are related artifacts have been
    removed.  Code checking sys.flags.division_warning will need updating.
    Contributed by Éric Araujo.
-
-* :pep:`393`: The :c:type:`Py_UNICODE` type and all functions using this type
-  are deprecated. To fully benefit of the memory footprint reduction provided
-  by the PEP 393, you have to convert your code to the new Unicode API. Read
-  the porting guide: XXX.
 
