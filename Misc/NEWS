@@ -345,6 +345,9 @@ Tests
 Documentation
 -------------
 
+- Issue #13237: Reorganise subprocess documentation to emphasise convenience
+  functions and the most commonly needed arguments to Popen.
+
 - Issue #13141: Demonstrate recommended style for SocketServer examples.
 
 
