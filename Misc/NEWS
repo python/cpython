@@ -338,6 +338,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13255: wrong docstrings in array module.
+
 - Issue #8540: Remove deprecated Context._clamp attribute in Decimal module.
 
 - Issue #13235: Added PendingDeprecationWarning to warn() method and function.
