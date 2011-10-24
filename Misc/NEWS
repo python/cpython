@@ -338,6 +338,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
+
 - Issue #13255: wrong docstrings in array module.
 
 - Issue #8540: Remove deprecated Context._clamp attribute in Decimal module.
