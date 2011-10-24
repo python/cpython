@@ -61,6 +61,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
+
+- Issue #13255: wrong docstrings in array module.
+
 - Issue #9168: now smtpd is able to bind privileged port.
 
 - Issue #12529: fix cgi.parse_header issue on strings with double-quotes and
@@ -192,6 +197,12 @@ Extension Modules
 
 - Issue #12950: Fix passing file descriptors in multiprocessing, under
   OpenIndiana/Illumos.
+
+Documentation
+-------------
+
+- Issue #13141: Demonstrate recommended style for socketserver examples.
+
 
 What's New in Python 3.2.2?
 ===========================
