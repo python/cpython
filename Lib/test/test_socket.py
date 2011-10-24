@@ -3584,7 +3584,7 @@ class FileObjectInterruptedTestCase(unittest.TestCase):
 
     @staticmethod
     def _raise_eintr():
-        raise socket.error(errno.EINTR)
+        raise socket.error(errno.EINTR, "interrupted")
 
     def _textiowrap_mock_socket(self, mock, buffering=-1):
         raw = socket.SocketIO(mock, "r")
