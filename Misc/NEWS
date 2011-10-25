@@ -341,7 +341,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #13226: Add RTLD_xxx constants to the os module. These constants can by
+- Issue #13226: Add RTLD_xxx constants to the os module. These constants can be
   used with sys.setdlopenflags().
 
 - Issue #10278: Add clock_getres(), clock_gettime() and CLOCK_xxx constants to
