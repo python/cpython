@@ -787,11 +787,9 @@ methods and attributes from the underlying stream.
 Encodings and Unicode
 ---------------------
 
-Strings are stored internally as sequences of codepoints (to be precise
-as :c:type:`Py_UNICODE` arrays). Depending on the way Python is compiled (either
-via ``--without-wide-unicode`` or ``--with-wide-unicode``, with the
-former being the default) :c:type:`Py_UNICODE` is either a 16-bit or 32-bit data
-type. Once a string object is used outside of CPU and memory, CPU endianness
+Strings are stored internally as sequences of codepoints in range ``0 - 10FFFF``
+(see :pep:`393` for more details about the implementation).
+Once a string object is used outside of CPU and memory, CPU endianness
 and how these arrays are stored as bytes become an issue.  Transforming a
 string object into a sequence of bytes is called encoding and recreating the
 string object from the sequence of bytes is known as decoding.  There are many
