@@ -984,6 +984,13 @@ class PosixTester(unittest.TestCase):
         self.assertIs(b, l)
         self.assertEqual(l.count(), 3)
 
+    def test_rtld_constants(self):
+        # check presence of major RTLD_* constants
+        posix.RTLD_LAZY
+        posix.RTLD_NOW
+        posix.RTLD_GLOBAL
+        posix.RTLD_LOCAL
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):

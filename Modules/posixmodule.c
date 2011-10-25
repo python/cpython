@@ -121,6 +121,10 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 #endif
 
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -11421,6 +11425,28 @@ all_ins(PyObject *d)
     if (ins(d, "XATTR_CREATE", (long)XATTR_CREATE)) return -1;
     if (ins(d, "XATTR_REPLACE", (long)XATTR_REPLACE)) return -1;
     if (ins(d, "XATTR_SIZE_MAX", (long)XATTR_SIZE_MAX)) return -1;
+#endif
+
+#ifdef RTLD_LAZY
+    if (PyModule_AddIntMacro(d, RTLD_LAZY)) return -1;
+#endif
+#ifdef RTLD_NOW
+    if (PyModule_AddIntMacro(d, RTLD_NOW)) return -1;
+#endif
+#ifdef RTLD_GLOBAL
+    if (PyModule_AddIntMacro(d, RTLD_GLOBAL)) return -1;
+#endif
+#ifdef RTLD_LOCAL
+    if (PyModule_AddIntMacro(d, RTLD_LOCAL)) return -1;
+#endif
+#ifdef RTLD_NODELETE
+    if (PyModule_AddIntMacro(d, RTLD_NODELETE)) return -1;
+#endif
+#ifdef RTLD_NOLOAD
+    if (PyModule_AddIntMacro(d, RTLD_NOLOAD)) return -1;
+#endif
+#ifdef RTLD_DEEPBIND
+    if (PyModule_AddIntMacro(d, RTLD_DEEPBIND)) return -1;
 #endif
 
 #if defined(PYOS_OS2)

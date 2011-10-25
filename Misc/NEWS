@@ -341,6 +341,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13226: Add RTLD_xxx constants to the os module. These constants can by
+  used with sys.setdlopenflags().
+
 - Issue #10278: Add clock_getres(), clock_gettime() and CLOCK_xxx constants to
   the time module. time.clock_gettime(time.CLOCK_MONOTONIC) provides a
   monotonic clock
