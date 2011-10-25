@@ -152,10 +152,6 @@ are always available.  They are listed here in alphabetical order.
    1,114,111 (0x10FFFF in base 16).  :exc:`ValueError` will be raised if *i* is
    outside that range.
 
-   Note that on narrow Unicode builds, the result is a string of
-   length two for *i* greater than 65,535 (0xFFFF in hexadecimal).
-
-
 
 .. function:: classmethod(function)
 
@@ -919,14 +915,11 @@ are always available.  They are listed here in alphabetical order.
 .. XXX works for bytes too, but should it?
 .. function:: ord(c)
 
-   Given a string representing one Uncicode character, return an integer
+   Given a string representing one Unicode character, return an integer
    representing the Unicode code
    point of that character.  For example, ``ord('a')`` returns the integer ``97``
    and ``ord('\u2020')`` returns ``8224``.  This is the inverse of :func:`chr`.
 
-   On wide Unicode builds, if the argument length is not one, a
-   :exc:`TypeError` will be raised.  On narrow Unicode builds, strings
-   of length two are accepted when they form a UTF-16 surrogate pair.
 
 .. function:: pow(x, y[, z])
 
