@@ -2593,7 +2593,7 @@ is a single character.  The following type codes are defined:\n\
     Type code   C Type             Minimum size in bytes \n\
     'b'         signed integer     1 \n\
     'B'         unsigned integer   1 \n\
-    'u'         Unicode character  2 (see note) \n\
+    'u'         Unicode character  4 \n\
     'h'         signed integer     2 \n\
     'H'         unsigned integer   2 \n\
     'i'         signed integer     2 \n\
@@ -2604,9 +2604,6 @@ is a single character.  The following type codes are defined:\n\
     'Q'         unsigned integer   8 (see note) \n\
     'f'         floating point     4 \n\
     'd'         floating point     8 \n\
-\n\
-NOTE: The 'u' type code corresponds to Python's unicode character. On \n\
-narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 \n\
 NOTE: The 'q' and 'Q' type codes are only available if the platform \n\
 C compiler used to build Python supports 'long long', or, on Windows, \n\

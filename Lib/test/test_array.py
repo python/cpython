@@ -1015,7 +1015,7 @@ class UnicodeTest(StringTest):
     smallerexample = '\x01\u263a\x00\ufefe'
     biggerexample = '\x01\u263a\x01\ufeff'
     outside = str('\x33')
-    minitemsize = 2
+    minitemsize = 4
 
     def test_unicode(self):
         self.assertRaises(TypeError, array.array, 'b', 'foo')
@@ -1027,6 +1027,7 @@ class UnicodeTest(StringTest):
         a.fromunicode('\x11abc\xff\u1234')
         s = a.tounicode()
         self.assertEqual(s, '\xa0\xc2\u1234 \x11abc\xff\u1234')
+        self.assertEqual(a.itemsize, 4)
 
         s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
         a = array.array('u', s)
