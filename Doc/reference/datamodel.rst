@@ -276,16 +276,16 @@ Sequences
             single: integer
             single: Unicode
 
-         The items of a string object are Unicode code units.  A Unicode code
-         unit is represented by a string object of one item and can hold either
-         a 16-bit or 32-bit value representing a Unicode ordinal (the maximum
-         value for the ordinal is given in ``sys.maxunicode``, and depends on
-         how Python is configured at compile time).  Surrogate pairs may be
-         present in the Unicode object, and will be reported as two separate
-         items.  The built-in functions :func:`chr` and :func:`ord` convert
-         between code units and nonnegative integers representing the Unicode
-         ordinals as defined in the Unicode Standard 3.0. Conversion from and to
-         other encodings are possible through the string method :meth:`encode`.
+         A string is a sequence of values that represent Unicode codepoints.
+         All the codepoints in range ``U+0000 - U+10FFFF`` can be represented
+         in a string.  Python doesn't have a :c:type:`chr` type, and
+         every characters in the string is represented as a string object
+         with length ``1``.  The built-in function :func:`chr` converts a
+         character to its codepoint (as an integer); :func:`ord` converts
+         an integer in range ``0 - 10FFFF`` to the corresponding character.
+         :meth:`str.encode` can be used to convert a :class:`str` to
+         :class:`bytes` using the given encoding, and :meth:`bytes.decode` can
+         be used to achieve the opposite.
 
       Tuples
          .. index::
