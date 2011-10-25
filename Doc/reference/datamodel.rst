@@ -1157,6 +1157,14 @@ Basic customization
    .. XXX what about subclasses of string?
 
 
+.. method:: object.__bytes__(self)
+
+   .. index:: builtin: bytes
+
+   Called by :func:`bytes` to compute a byte-string representation of an
+   object. This should return a ``bytes`` object.
+
+
 .. method:: object.__format__(self, format_spec)
 
    .. index::
