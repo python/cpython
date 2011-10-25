@@ -938,12 +938,19 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     Py_ssize_t pycache_len = sizeof(CACHEDIR) - 1;
     int kind;
     void *data;
+    Py_UCS4 lastsep;
 
     /* Compute the output string size. */
     len = PyUnicode_GET_LENGTH(pathstr);
     /* If there is no separator, this returns -1, so
-       lastsep will be 0. */
+       fname will be 0. */
     fname = rightmost_sep_obj(pathstr, 0, len) + 1;
+    /* Windows: re-use the last separator character (/ or \\) when
+       appending the __pycache__ path. */
+    if (fname > 0)
+        lastsep = PyUnicode_READ_CHAR(pathstr, fname -1);
+    else
+        lastsep = SEP;
     ext = fname - 1;
     for(i = fname; i < len; i++)
         if (PyUnicode_READ_CHAR(pathstr, i) == '.')
@@ -965,7 +972,7 @@ make_compiled_pathname(PyObject *pathstr, int debug)
     pos = fname;
     for (i = 0; i < pycache_len; i++)
         PyUnicode_WRITE(kind, data, pos++, CACHEDIR[i]);
-    PyUnicode_WRITE(kind, data, pos++, SEP);
+    PyUnicode_WRITE(kind, data, pos++, lastsep);
     PyUnicode_CopyCharacters(result, pos, pathstr,
                              fname, ext - fname);
     pos += ext - fname;
