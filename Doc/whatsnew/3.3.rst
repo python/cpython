@@ -272,6 +272,16 @@ New module: :mod:`faulthandler`.
  * :envvar:`PYTHONFAULTHANDLER`
  * :option:`-X` ``faulthandler``
 
+time
+----
+
+* The :mod:`time` module has new :func:`~time.clock_getres` and
+  :func:`~time.clock_gettime` functions and ``CLOCK_xxx`` constants.
+  :func:`~time.clock_gettime` can be used with :data:`time.CLOCK_MONOTONIC` to
+  get a monotonic clock.
+
+  (Contributed by Victor Stinner in :issue:`10278`)
+
 
 ftplib
 ------

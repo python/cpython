@@ -504,11 +504,17 @@ class PyBuildExt(build_ext):
         exts.append( Extension('math',  ['mathmodule.c', '_math.c'],
                                depends=['_math.h'],
                                libraries=math_libs) )
+
+        # time libraries: librt may be needed for clock_gettime()
+        time_libs = []
+        lib = sysconfig.get_config_var('TIMEMODULE_LIB')
+        if lib:
+            time_libs.append(lib)
+
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c', '_time.c'],
-                               libraries=math_libs) )
-        exts.append( Extension('_datetime', ['_datetimemodule.c', '_time.c'],
-                               libraries=math_libs) )
+                               libraries=time_libs) )
+        exts.append( Extension('_datetime', ['_datetimemodule.c', '_time.c']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect

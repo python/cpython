@@ -110,6 +110,12 @@
 /* Define to 1 if you have the `clock' function. */
 #undef HAVE_CLOCK
 
+/* Define to 1 if you have the `clock_getres' function. */
+#undef HAVE_CLOCK_GETRES
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* Define if the C compiler supports computed gotos. */
 #undef HAVE_COMPUTED_GOTOS
 
@@ -1198,6 +1204,9 @@
 
 /* Define if tanh(-0.) is -0., or if platform doesn't have signed zeros */
 #undef TANH_PRESERVES_ZERO_SIGN
+
+/* Library needed by timemodule.c: librt may be needed for clock_gettime() */
+#undef TIMEMODULE_LIB
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME

@@ -20,6 +20,27 @@ class TimeTestCase(unittest.TestCase):
     def test_clock(self):
         time.clock()
 
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    def test_clock_realtime(self):
+        time.clock_gettime(time.CLOCK_REALTIME)
+
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    @unittest.skipUnless(hasattr(time, 'CLOCK_MONOTONIC'),
+                         'need time.CLOCK_MONOTONIC')
+    def test_clock_monotonic(self):
+        a = time.clock_gettime(time.CLOCK_MONOTONIC)
+        b = time.clock_gettime(time.CLOCK_MONOTONIC)
+        self.assertLessEqual(a, b)
+
+    @unittest.skipUnless(hasattr(time, 'clock_getres'),
+                         'need time.clock_getres()')
+    def test_clock_getres(self):
+        res = time.clock_getres(time.CLOCK_REALTIME)
+        self.assertGreater(res, 0.0)
+        self.assertLessEqual(res, 1.0)
+
     def test_conversions(self):
         self.assertEqual(time.ctime(self.t),
                          time.asctime(time.localtime(self.t)))
