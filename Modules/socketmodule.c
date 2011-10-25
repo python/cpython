@@ -5772,6 +5772,9 @@ PyInit__socket(void)
 #ifdef  LOCAL_PEERCRED
     PyModule_AddIntConstant(m, "LOCAL_PEERCRED", LOCAL_PEERCRED);
 #endif
+#ifdef  SO_BINDTODEVICE
+    PyModule_AddIntMacro(m, SO_BINDTODEVICE);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
