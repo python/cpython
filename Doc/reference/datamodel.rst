@@ -279,9 +279,9 @@ Sequences
          A string is a sequence of values that represent Unicode codepoints.
          All the codepoints in range ``U+0000 - U+10FFFF`` can be represented
          in a string.  Python doesn't have a :c:type:`chr` type, and
-         every characters in the string is represented as a string object
-         with length ``1``.  The built-in function :func:`chr` converts a
-         character to its codepoint (as an integer); :func:`ord` converts
+         every character in the string is represented as a string object
+         with length ``1``.  The built-in function :func:`ord` converts a
+         character to its codepoint (as an integer); :func:`chr` converts
          an integer in range ``0 - 10FFFF`` to the corresponding character.
          :meth:`str.encode` can be used to convert a :class:`str` to
          :class:`bytes` using the given encoding, and :meth:`bytes.decode` can
