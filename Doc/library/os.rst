@@ -1393,6 +1393,19 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    the C library.
 
 
+.. data:: RTLD_LAZY
+          RTLD_NOW
+          RTLD_GLOBAL
+          RTLD_LOCAL
+          RTLD_NODELETE
+          RTLD_NOLOAD
+          RTLD_DEEPBIND
+
+   See the Unix manual page :manpage:`dlopen(3)`.
+
+   .. versionadded:: 3.3
+
+
 .. _os-file-dir:
 
 Files and Directories
