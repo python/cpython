@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #13018: Fix reference leaks in error paths in dictobject.c.
+  Patch by Suman Saha.
+
 - Issue #1294232: In a few cases involving metaclass inheritance, the
   interpreter would sometimes invoke the wrong metaclass when building a new
   class object. These cases now behave correctly. Patch by Daniel Urban.
@@ -57,6 +60,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
 
 - Issue #13255: wrong docstrings in array module.
 
