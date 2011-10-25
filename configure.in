@@ -2856,6 +2856,20 @@ AC_CHECK_FUNCS(gettimeofday,
     ])
 )
 
+AC_CHECK_FUNCS(clock_gettime, [], [
+    AC_CHECK_LIB(rt, clock_gettime, [
+        AC_DEFINE(HAVE_CLOCK_GETTIME, 1)
+        AC_DEFINE(TIMEMODULE_LIB, [rt],
+                  [Library needed by timemodule.c: librt may be needed for clock_gettime()])
+    ])
+])
+
+AC_CHECK_FUNCS(clock_getres, [], [
+    AC_CHECK_LIB(rt, clock_getres, [
+        AC_DEFINE(HAVE_CLOCK_GETRES, 1)
+    ])
+])
+
 AC_MSG_CHECKING(for major, minor, and makedev)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)

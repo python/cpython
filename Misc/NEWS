@@ -341,6 +341,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10278: Add clock_getres(), clock_gettime() and CLOCK_xxx constants to
+  the time module. time.clock_gettime(time.CLOCK_MONOTONIC) provides a
+  monotonic clock
+
 - Issue #10332: multiprocessing: fix a race condition when a Pool is closed
   before all tasks have completed.
 

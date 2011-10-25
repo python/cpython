@@ -136,6 +136,54 @@ The module defines the following functions and data items:
    microsecond.
 
 
+.. function:: clock_getres(clk_id)
+
+   Return the resolution (precision) of the specified clock *clk_id*.
+
+   .. versionadded:: 3.3
+
+.. function:: clock_gettime(clk_id)
+
+   Return the time of the specified clock *clk_id*.
+
+   .. versionadded:: 3.3
+
+.. data:: CLOCK_REALTIME
+
+   System-wide real-time clock. Setting this clock requires appropriate
+   privileges.
+
+   .. versionadded:: 3.3
+
+.. data:: CLOCK_MONOTONIC
+
+   Clock that cannot be set and represents monotonic time since some
+   unspecified starting point.
+
+   .. versionadded:: 3.3
+
+.. data:: CLOCK_MONOTONIC_RAW
+
+   Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
+   hardware-based time that is not subject to NTP adjustments.
+
+   Availability: Linux 2.6.28 or later.
+
+   .. versionadded:: 3.3
+
+.. data:: CLOCK_PROCESS_CPUTIME_ID
+
+   High-resolution per-process timer from the CPU.
+
+   .. versionadded:: 3.3
+
+.. data:: CLOCK_THREAD_CPUTIME_ID
+
+   Thread-specific CPU-time clock.
+
+   .. versionadded:: 3.3
+
+
 .. function:: ctime([secs])
 
    Convert a time expressed in seconds since the epoch to a string representing

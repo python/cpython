@@ -135,6 +135,54 @@ the first call to clock().  This has as much precision as the system\n\
 records.");
 #endif
 
+#ifdef HAVE_CLOCK_GETTIME
+static PyObject *
+time_clock_gettime(PyObject *self, PyObject *args)
+{
+    int ret;
+    clockid_t clk_id;
+    struct timespec tp;
+
+    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id))
+        return NULL;
+
+    ret = clock_gettime((clockid_t)clk_id, &tp);
+    if (ret != 0)
+        PyErr_SetFromErrno(PyExc_IOError);
+
+    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+}
+
+PyDoc_STRVAR(clock_gettime_doc,
+"clock_gettime(clk_id) -> floating point number\n\
+\n\
+Return the time of the specified clock clk_id.");
+#endif
+
+#ifdef HAVE_CLOCK_GETRES
+static PyObject *
+time_clock_getres(PyObject *self, PyObject *args)
+{
+    int ret;
+    clockid_t clk_id;
+    struct timespec tp;
+
+    if (!PyArg_ParseTuple(args, "i:clock_getres", &clk_id))
+        return NULL;
+
+    ret = clock_getres((clockid_t)clk_id, &tp);
+    if (ret != 0)
+        PyErr_SetFromErrno(PyExc_IOError);
+
+    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+}
+
+PyDoc_STRVAR(clock_getres_doc,
+"clock_getres(clk_id) -> floating point number\n\
+\n\
+Return the resolution (precision) of the specified clock clk_id.");
+#endif
+
 static PyObject *
 time_sleep(PyObject *self, PyObject *args)
 {
@@ -786,6 +834,24 @@ PyInit_timezone(PyObject *m) {
                        Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_GETRES)
+#ifdef CLOCK_REALTIME
+    PyModule_AddIntMacro(m, CLOCK_REALTIME);
+#endif
+#ifdef CLOCK_MONOTONIC
+    PyModule_AddIntMacro(m, CLOCK_MONOTONIC);
+#endif
+#ifdef CLOCK_MONOTONIC_RAW
+    PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
+#endif
+#ifdef CLOCK_PROCESS_CPUTIME_ID
+    PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
+#endif
+#ifdef CLOCK_THREAD_CPUTIME_ID
+    PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
+#endif
+#endif /* HAVE_CLOCK_GETTIME */
 }
 
 
@@ -793,6 +859,12 @@ static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
 #if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
     {"clock",           time_clock, METH_NOARGS, clock_doc},
+#endif
+#ifdef HAVE_CLOCK_GETTIME
+    {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
+#endif
+#ifdef HAVE_CLOCK_GETRES
+    {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
 #endif
     {"sleep",           time_sleep, METH_VARARGS, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},
