@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13018: Fix reference leaks in error paths in dictobject.c.
+  Patch by Suman Saha.
+
 - Issue #13201: Define '==' and '!=' to compare range objects based on
   the sequence of values they define (instead of comparing based on
   object identity).
@@ -337,6 +340,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #10332: multiprocessing: fix a race condition when a Pool is closed
+  before all tasks have completed.
 
 - Issue #13255: wrong docstrings in array module.
 
