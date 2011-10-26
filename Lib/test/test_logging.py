@@ -196,17 +196,17 @@ class BuiltinLevelsTest(BaseTest):
 
         INF.log(logging.CRITICAL, m())
         INF.error(m())
-        INF.warn(m())
+        INF.warning(m())
         INF.info(m())
 
         DEB.log(logging.CRITICAL, m())
         DEB.error(m())
-        DEB.warn (m())
-        DEB.info (m())
+        DEB.warning(m())
+        DEB.info(m())
         DEB.debug(m())
 
         # These should not log.
-        ERR.warn(m())
+        ERR.warning(m())
         ERR.info(m())
         ERR.debug(m())
 
@@ -240,7 +240,7 @@ class BuiltinLevelsTest(BaseTest):
         INF_ERR.error(m())
 
         # These should not log.
-        INF_ERR.warn(m())
+        INF_ERR.warning(m())
         INF_ERR.info(m())
         INF_ERR.debug(m())
 
@@ -264,14 +264,14 @@ class BuiltinLevelsTest(BaseTest):
         # These should log.
         INF_UNDEF.log(logging.CRITICAL, m())
         INF_UNDEF.error(m())
-        INF_UNDEF.warn(m())
+        INF_UNDEF.warning(m())
         INF_UNDEF.info(m())
         INF_ERR_UNDEF.log(logging.CRITICAL, m())
         INF_ERR_UNDEF.error(m())
 
         # These should not log.
         INF_UNDEF.debug(m())
-        INF_ERR_UNDEF.warn(m())
+        INF_ERR_UNDEF.warning(m())
         INF_ERR_UNDEF.info(m())
         INF_ERR_UNDEF.debug(m())
 
@@ -974,7 +974,7 @@ class MemoryHandlerTest(BaseTest):
         self.mem_logger.info(self.next_message())
         self.assert_log_lines([])
         # This will flush because the level is >= logging.WARNING
-        self.mem_logger.warn(self.next_message())
+        self.mem_logger.warning(self.next_message())
         lines = [
             ('DEBUG', '1'),
             ('INFO', '2'),
