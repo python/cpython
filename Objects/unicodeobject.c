@@ -3318,6 +3318,10 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
             return 0;
         }
     }
+    if (PyUnicode_READY(output) < 0) {
+        Py_DECREF(output);
+        return 0;
+    }
     if (findchar(PyUnicode_DATA(output), PyUnicode_KIND(output),
                  PyUnicode_GET_LENGTH(output), 0, 1) >= 0) {
         PyErr_SetString(PyExc_TypeError, "embedded NUL character");
