@@ -225,6 +225,11 @@ The :mod:`~encodings.mbcs` codec has be rewritten to handle correclty
 :mod:`~encodings.mbcs` codec is now supporting all error handlers, instead of
 only ``replace`` to encode and ``ignore`` to decode.
 
+A new Windows-only codec has been added: ``cp65001`` (:issue:`13247`). It is
+the Windows code page 65001 (Windows UTF-8, ``CP_UTF8``). For example, it is
+used by ``sys.stdout`` if the console output code page is set to cp65001 (e.g.
+using ``chcp 65001`` command).
+
 Multibyte CJK decoders now resynchronize faster. They only ignore the first
 byte of an invalid byte sequence. For example, ``b'\xff\n'.decode('gb2312',
 'replace')`` now returns a ``\n`` after the replacement character.
