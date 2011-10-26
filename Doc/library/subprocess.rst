@@ -31,12 +31,12 @@ modules and functions can be found in the following sections.
 Using the subprocess Module
 ---------------------------
 
-The recommended interface to this module is to use the following convenience
-functions for all use cases they can handle. For more advanced use cases, the
-underlying :class:`Popen` interface can be used directly.
+The recommended approach to invoking subprocesses is to use the following
+convenience functions for all use cases they can handle. For more advanced
+use cases, the underlying :class:`Popen` interface can be used directly.
 
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`returncode` attribute.
@@ -51,15 +51,15 @@ underlying :class:`Popen` interface can be used directly.
       >>> subprocess.call(["ls", "-l"])
       0
 
-      >>> subprocess.call(["python", "-c", "import sys; sys.exit(1)"])
+      >>> subprocess.call("exit 1", shell=True)
       1
 
    .. warning::
 
-      Like :meth:`Popen.wait`, this will deadlock when using
-      ``stdout=PIPE`` and/or ``stderr=PIPE`` and the child process
-      generates enough output to a pipe such that it blocks waiting
-      for the OS pipe buffer to accept more data.
+      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function. As
+      the pipes are not being read in the current process, the child
+      process may block if it generates enough output to a pipe to fill up
+      the OS pipe buffer.
 
 
 .. function:: check_call(*callargs, **kwargs)
@@ -74,10 +74,10 @@ underlying :class:`Popen` interface can be used directly.
       >>> subprocess.check_call(["ls", "-l"])
       0
 
-      >>> subprocess.check_call(["python", "-c", "import sys; sys.exit(1)"])
+      >>> subprocess.check_call("exit 1", shell=True)
       Traceback (most recent call last):
          ...
-      subprocess.CalledProcessError: Command '['python', '-c', 'import sys; sys.exit(1)']' returned non-zero exit status 1
+      subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
 
    .. versionadded:: 2.5
 
@@ -95,26 +95,45 @@ underlying :class:`Popen` interface can be used directly.
    :attr:`returncode` attribute and any output in the :attr:`output`
    attribute.
 
+   The arguments are the same as for :func:`call`, except that *stdout* is
+   not permitted as it is used internally.
+
    Examples::
 
-      >>> subprocess.check_output(["ls", "-l", "/dev/null"])
-      'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+      >>> subprocess.check_output(["echo", "Hello World!"])
+      b'Hello World!\n'
 
-      >>> subprocess.check_output(["python", "-c", "import sys; sys.exit(1)"])
+      >>> subprocess.check_output(["echo", "Hello World!"], universal_newlines=True)
+      'Hello World!\n'
+
+      >>> subprocess.check_output("exit 1", shell=True)
       Traceback (most recent call last):
          ...
-      subprocess.CalledProcessError: Command '['python', '-c', 'import sys; sys.exit(1)']' returned non-zero exit status 1
+      subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
 
-   The arguments are the same as for :func:`call`, except that *stdout* is
-   not allowed as it is used internally. To also capture standard error in
-   the result, use ``stderr=subprocess.STDOUT``::
+   By default, this function will return the data as encoded bytes. The actual
+   encoding of the output data may depend on the command being invoked, so the
+   decoding to text will often need to be handled at the application level.
+
+   This behaviour may be overridden by setting *universal_newlines* to
+   :const:`True` as described below in :ref:`frequently-used-arguments`.
+
+   To also capture standard error in the result, use
+   ``stderr=subprocess.STDOUT``::
 
       >>> subprocess.check_output(
-      ...     ["/bin/sh", "-c", "ls non_existent_file; exit 0"],
-      ...     stderr=subprocess.STDOUT)
+      ...     "ls non_existent_file; exit 0",
+      ...     stderr=subprocess.STDOUT,
+      ...     shell=True)
       'ls: non_existent_file: No such file or directory\n'
 
    .. versionadded:: 2.7
+
+   .. warning::
+
+      Do not use ``stderr=PIPE`` with this function. As the pipe is not being
+      read in the current process, the child process may block if it
+      generates enough output to the pipe to fill up the OS pipe buffer.
 
 
 .. data:: PIPE
@@ -141,10 +160,13 @@ the convenience functions) accept a large number of optional arguments. For
 most typical use cases, many of these arguments can be safely left at their
 default values. The arguments that are most commonly needed are:
 
-   *args* should be a string, or a sequence of program arguments. Providing
-   a sequence of arguments is generally preferred, as it allows the module to
-   take care of any required escaping and quoting of arguments (e.g. to permit
-   spaces in file names)
+   *args* is required for all calls and should be a string, or a sequence of
+   program arguments. Providing a sequence of arguments is generally
+   preferred, as it allows the module to take care of any required escaping
+   and quoting of arguments (e.g. to permit spaces in file names). If passing
+   a single string, either *shell* must be :const:`True` (see below) or else
+   the string must simply name the program to be executed without specifying
+   any arguments.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
@@ -155,6 +177,37 @@ default values. The arguments that are most commonly needed are:
    parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates that
    the stderr data from the child process should be captured into the same file
    handle as for stdout.
+
+   When *stdout* or *stderr* are pipes and *universal_newlines* is
+   :const:`True` then the output data is assumed to be encoded as UTF-8 and
+   will automatically be decoded to text. All line endings will be converted
+   to ``'\n'`` as described for the universal newlines `'U'`` mode argument
+   to :func:`open`.
+
+   If *shell* is :const:`True`, the specified command will be executed through
+   the shell. This can be useful if you are using Python primarily for the
+   enhanced control flow it offers over most system shells and still want
+   access to other shell features such as filename wildcards, shell pipes and
+   environment variable expansion.
+
+   .. warning::
+
+      Executing shell commands that incorporate unsanitized input from an
+      untrusted source makes a program vulnerable to `shell injection
+      <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_,
+      a serious security flaw which can result in arbitrary command execution.
+      For this reason, the use of *shell=True* is **strongly discouraged** in cases
+      where the command string is constructed from external input::
+
+         >>> from subprocess import call
+         >>> filename = input("What file would you like to display?\n")
+         What file would you like to display?
+         non_existent; rm -rf / #
+         >>> call("cat " + filename, shell=True) # Uh-oh. This will end badly...
+
+      ``shell=False`` disables all shell based features, but does not suffer
+      from this vulnerability; see the Note in the :class:`Popen` constructor
+      documentation for helpful hints in getting ``shell=False`` to work.
 
 These options, along with all of the other options, are described in more
 detail in the :class:`Popen` constructor documentation.
@@ -215,24 +268,6 @@ functions.
    itself.  That is to say, *Popen* does the equivalent of::
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
-
-   .. warning::
-
-      Executing shell commands that incorporate unsanitized input from an
-      untrusted source makes a program vulnerable to `shell injection
-      <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_,
-      a serious security flaw which can result in arbitrary command execution.
-      For this reason, the use of *shell=True* is **strongly discouraged** in cases
-      where the command string is constructed from external input::
-
-         >>> from subprocess import call
-         >>> filename = input("What file would you like to display?\n")
-         What file would you like to display?
-         non_existent; rm -rf / #
-         >>> call("cat " + filename, shell=True) # Uh-oh. This will end badly...
-
-      *shell=False* does not suffer from this vulnerability; the above Note may be
-      helpful in getting code using *shell=False* to work.
 
    On Windows: the :class:`Popen` class uses CreateProcess() to execute the child
    child program, which operates on strings.  If *args* is a sequence, it will
@@ -335,16 +370,19 @@ when trying to execute a non-existent file.  Applications should prepare for
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
 
-check_call() will raise :exc:`CalledProcessError`, if the called process returns
-a non-zero return code.
+:func:`check_call` and :func:`check_output` will raise
+:exc:`CalledProcessError` if the called process returns a non-zero return
+code.
 
 
 Security
 ^^^^^^^^
 
-Unlike some other popen functions, this implementation will never call /bin/sh
-implicitly.  This means that all characters, including shell metacharacters, can
-safely be passed to child processes.
+Unlike some other popen functions, this implementation will never call a
+system shell implicitly.  This means that all characters, including shell
+metacharacters, can safely be passed to child processes. Obviously, if the
+shell is invoked explicitly, then it is the application's responsibility to
+all that all whitespace and metacharacters are quoted appropriately.
 
 
 Popen Objects
@@ -582,14 +620,17 @@ In this section, "a becomes b" means that b can be used as a replacement for a.
 
 .. note::
 
-   All functions in this section fail (more or less) silently if the executed
-   program cannot be found; this module raises an :exc:`OSError` exception. In
-   addition, the replacements using :func:`check_output` will fail with a
-   :exc:`CalledProcessError` if the requested operation produces a non-zero
-   return code.
+   All "a" functions in this section fail (more or less) silently if the
+   executed program cannot be found; the "b" replacements raise :exc:`OSError`
+   instead.
 
-In the following examples, we assume that the subprocess module is imported with
-"from subprocess import \*".
+   In addition, the replacements using :func:`check_output` will fail with a
+   :exc:`CalledProcessError` if the requested operation produces a non-zero
+   return code. The output is still available as the ``output`` attribute of
+   the raised exception.
+
+In the following examples, we assume that the relevant functions have already
+been imported from the subprocess module.
 
 
 Replacing /bin/sh shell backquote
@@ -617,8 +658,8 @@ Replacing shell pipeline
 The p1.stdout.close() call after starting the p2 is important in order for p1
 to receive a SIGPIPE if p2 exits before p1.
 
-Alternatively, for trusted input, the shell's pipeline may still be used
-directly:
+Alternatively, for trusted input, the shell's own pipeline support may still
+be used directly:
 
    output=`dmesg | grep hda`
    # becomes
@@ -637,8 +678,6 @@ Replacing :func:`os.system`
 Notes:
 
 * Calling the program through the shell is usually not required.
-
-* It's easier to look at the :attr:`returncode` attribute than the exit status.
 
 A more realistic example would look like this::
 
@@ -783,6 +822,7 @@ shell intervention.  This usage can be replaced as follows::
 
 * popen2 closes all file descriptors by default, but you have to specify
   ``close_fds=True`` with :class:`Popen`.
+
 
 Notes
 -----
