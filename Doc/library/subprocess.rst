@@ -376,7 +376,7 @@ Unlike some other popen functions, this implementation will never call a
 system shell implicitly.  This means that all characters, including shell
 metacharacters, can safely be passed to child processes. Obviously, if the
 shell is invoked explicitly, then it is the application's responsibility to
-all that all whitespace and metacharacters are quoted appropriately.
+ensure that all whitespace and metacharacters are quoted appropriately.
 
 
 Popen Objects
