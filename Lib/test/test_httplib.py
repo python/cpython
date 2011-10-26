@@ -441,6 +441,7 @@ class HTTPSTimeoutTest(TestCase):
             h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
             self.assertEqual(h.timeout, 30)
 
+    @unittest.skipIf(not hasattr(httplib, 'HTTPS'), 'httplib.HTTPS not available')
     def test_host_port(self):
         # Check invalid host_port
 
