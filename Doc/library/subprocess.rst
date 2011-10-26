@@ -101,22 +101,12 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    Examples::
 
       >>> subprocess.check_output(["echo", "Hello World!"])
-      b'Hello World!\n'
-
-      >>> subprocess.check_output(["echo", "Hello World!"], universal_newlines=True)
       'Hello World!\n'
 
       >>> subprocess.check_output("exit 1", shell=True)
       Traceback (most recent call last):
          ...
       subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
-
-   By default, this function will return the data as encoded bytes. The actual
-   encoding of the output data may depend on the command being invoked, so the
-   decoding to text will often need to be handled at the application level.
-
-   This behaviour may be overridden by setting *universal_newlines* to
-   :const:`True` as described below in :ref:`frequently-used-arguments`.
 
    To also capture standard error in the result, use
    ``stderr=subprocess.STDOUT``::
@@ -179,10 +169,8 @@ default values. The arguments that are most commonly needed are:
    handle as for stdout.
 
    When *stdout* or *stderr* are pipes and *universal_newlines* is
-   :const:`True` then the output data is assumed to be encoded as UTF-8 and
-   will automatically be decoded to text. All line endings will be converted
-   to ``'\n'`` as described for the universal newlines `'U'`` mode argument
-   to :func:`open`.
+   :const:`True` then all line endings will be converted to ``'\n'`` as
+   described for the universal newlines `'U'`` mode argument to :func:`open`.
 
    If *shell* is :const:`True`, the specified command will be executed through
    the shell. This can be useful if you are using Python primarily for the
@@ -317,6 +305,12 @@ functions.
 
    If *shell* is :const:`True`, the specified command will be executed through the
    shell.
+
+   .. note::
+
+      Enabling this option can be a security hazard if combined with untrusted
+      input. See the warning under :ref:`frequently-used-arguments`
+      for details.
 
    If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
    before it is executed.  Note that this directory is not considered when
