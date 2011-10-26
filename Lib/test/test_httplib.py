@@ -541,6 +541,8 @@ class HTTPSTest(TestCase):
         self.assertEqual(resp.status, 404)
         del server
 
+    @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
+                     'http.client.HTTPSConnection not available')
     def test_host_port(self):
         # Check invalid host_port
 
