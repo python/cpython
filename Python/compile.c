@@ -2079,11 +2079,9 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, RAISE_VARARGS, 2);
+        ADDOP_I(c, CALL_FUNCTION, 1);
     }
-    else {
-        ADDOP_I(c, RAISE_VARARGS, 1);
-    }
+    ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
     return 1;
 }
