@@ -42,9 +42,10 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    return the :attr:`returncode` attribute.
 
    The arguments shown above are merely the most common ones, described below
-   in :ref:`frequently-used-arguments`. The full function signature is the
-   same as that of the :class:`Popen` constructor - the convenience functions
-   pass all supplied arguments directly through to that interface.
+   in :ref:`frequently-used-arguments` (hence the slightly odd notation in
+   the abbreviated signature). The full function signature is the same as
+   that of the :class:`Popen` constructor - this functions passes all
+   supplied arguments directly through to that interface.
 
    Examples::
 
@@ -56,20 +57,32 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. warning::
 
+      Invoking the system shell with ``shell=True`` can be a security hazard
+      if combined with untrusted input. See the warning under
+      :ref:`frequently-used-arguments` for details.
+
+   .. note::
+
       Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function. As
       the pipes are not being read in the current process, the child
       process may block if it generates enough output to a pipe to fill up
       the OS pipe buffer.
 
 
-.. function:: check_call(*callargs, **kwargs)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`returncode` attribute.
 
-   The arguments are the same as for :func:`call`.  Examples::
+   The arguments shown above are merely the most common ones, described below
+   in :ref:`frequently-used-arguments` (hence the slightly odd notation in
+   the abbreviated signature). The full function signature is the same as
+   that of the :class:`Popen` constructor - this functions passes all
+   supplied arguments directly through to that interface.
+
+   Examples::
 
       >>> subprocess.check_call(["ls", "-l"])
       0
@@ -83,10 +96,19 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. warning::
 
-      See the warning for :func:`call`.
+      Invoking the system shell with ``shell=True`` can be a security hazard
+      if combined with untrusted input. See the warning under
+      :ref:`frequently-used-arguments` for details.
+
+   .. note::
+
+      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function. As
+      the pipes are not being read in the current process, the child
+      process may block if it generates enough output to a pipe to fill up
+      the OS pipe buffer.
 
 
-.. function:: check_output(*callargs, **kwargs)
+.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False)
 
    Run command with arguments and return its output as a byte string.
 
@@ -95,8 +117,12 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    :attr:`returncode` attribute and any output in the :attr:`output`
    attribute.
 
-   The arguments are the same as for :func:`call`, except that *stdout* is
-   not permitted as it is used internally.
+   The arguments shown above are merely the most common ones, described below
+   in :ref:`frequently-used-arguments` (hence the slightly odd notation in
+   the abbreviated signature). The full function signature is largely the
+   same as that of the :class:`Popen` constructor, except that *stdout* is
+   not permitted as it is used internally. All other supplied arguments are
+   passed directly through to the :class:`Popen` constructor.
 
    Examples::
 
@@ -120,6 +146,12 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    .. versionadded:: 2.7
 
    .. warning::
+
+      Invoking the system shell with ``shell=True`` can be a security hazard
+      if combined with untrusted input. See the warning under
+      :ref:`frequently-used-arguments` for details.
+
+   .. note::
 
       Do not use ``stderr=PIPE`` with this function. As the pipe is not being
       read in the current process, the child process may block if it
@@ -306,7 +338,7 @@ functions.
    If *shell* is :const:`True`, the specified command will be executed through the
    shell.
 
-   .. note::
+   .. warning::
 
       Enabling this option can be a security hazard if combined with untrusted
       input. See the warning under :ref:`frequently-used-arguments`
