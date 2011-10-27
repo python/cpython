@@ -54,7 +54,7 @@ def bug1333982(x=[]):
 
 dis_bug1333982 = """\
  %-4d         0 LOAD_CONST               1 (0)
-              3 POP_JUMP_IF_TRUE        38
+              3 POP_JUMP_IF_TRUE        41
               6 LOAD_GLOBAL              0 (AssertionError)
               9 BUILD_LIST               0
              12 LOAD_FAST                0 (x)
@@ -67,10 +67,11 @@ dis_bug1333982 = """\
 
  %-4d   >>   31 LOAD_CONST               2 (1)
              34 BINARY_ADD
-             35 RAISE_VARARGS            2
+             35 CALL_FUNCTION            1
+             38 RAISE_VARARGS            1
 
- %-4d   >>   38 LOAD_CONST               0 (None)
-             41 RETURN_VALUE
+ %-4d   >>   41 LOAD_CONST               0 (None)
+             44 RETURN_VALUE
 """%(bug1333982.func_code.co_firstlineno + 1,
      bug1333982.func_code.co_firstlineno + 2,
      bug1333982.func_code.co_firstlineno + 3)
