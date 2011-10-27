@@ -473,6 +473,12 @@ class ExceptionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             raise MyException
 
+    def test_assert_with_tuple_arg(self):
+        try:
+            assert False, (3,)
+        except AssertionError as e:
+            self.assertEqual(str(e), "(3,)")
+
 
 # Helper class used by TestSameStrAndUnicodeMsg
 class ExcWithOverriddenStr(Exception):
