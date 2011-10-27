@@ -99,6 +99,11 @@ static PySocketModule_APIObject PySocketModule;
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
+static PyObject *PySSLZeroReturnErrorObject;
+static PyObject *PySSLWantReadErrorObject;
+static PyObject *PySSLWantWriteErrorObject;
+static PyObject *PySSLSyscallErrorObject;
+static PyObject *PySSLEOFErrorObject;
 
 #ifdef WITH_THREAD
 
@@ -191,6 +196,7 @@ static PyObject *
 PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
 {
     PyObject *v;
+    PyObject *type = PySSLErrorObject;
     char buf[2048];
     char *errstr;
     int err;
@@ -203,15 +209,18 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
 
         switch (err) {
         case SSL_ERROR_ZERO_RETURN:
-            errstr = "TLS/SSL connection has been closed";
+            errstr = "TLS/SSL connection has been closed (EOF)";
+            type = PySSLZeroReturnErrorObject;
             p = PY_SSL_ERROR_ZERO_RETURN;
             break;
         case SSL_ERROR_WANT_READ:
             errstr = "The operation did not complete (read)";
+            type = PySSLWantReadErrorObject;
             p = PY_SSL_ERROR_WANT_READ;
             break;
         case SSL_ERROR_WANT_WRITE:
             p = PY_SSL_ERROR_WANT_WRITE;
+            type = PySSLWantWriteErrorObject;
             errstr = "The operation did not complete (write)";
             break;
         case SSL_ERROR_WANT_X509_LOOKUP:
@@ -230,6 +239,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
                   = (PySocketSockObject *) PyWeakref_GetObject(obj->Socket);
                 if (ret == 0 || (((PyObject *)s) == Py_None)) {
                     p = PY_SSL_ERROR_EOF;
+                    type = PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
                 } else if (ret == -1) {
                     /* underlying BIO reported an I/O error */
@@ -240,6 +250,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
                     return v;
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
+                    type = PySSLSyscallErrorObject;
                     errstr = "Some I/O error occurred";
                 }
             } else {
@@ -272,7 +283,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
     ERR_clear_error();
     v = Py_BuildValue("(is)", p, buf);
     if (v != NULL) {
-        PyErr_SetObject(PySSLErrorObject, v);
+        PyErr_SetObject(type, v);
         Py_DECREF(v);
     }
     return NULL;
@@ -2300,6 +2311,23 @@ parse_openssl_version(unsigned long libver,
 PyDoc_STRVAR(SSLError_doc,
 "An error occurred in the SSL implementation.");
 
+PyDoc_STRVAR(SSLZeroReturnError_doc,
+"SSL/TLS session closed cleanly.");
+
+PyDoc_STRVAR(SSLWantReadError_doc,
+"Non-blocking SSL socket needs to read more data\n"
+"before the requested operation can be completed.");
+
+PyDoc_STRVAR(SSLWantWriteError_doc,
+"Non-blocking SSL socket needs to write more data\n"
+"before the requested operation can be completed.");
+
+PyDoc_STRVAR(SSLSyscallError_doc,
+"System error when attempting SSL operation.");
+
+PyDoc_STRVAR(SSLEOFError_doc,
+"SSL/TLS connection terminated abruptly.");
+
 
 PyMODINIT_FUNC
 PyInit__ssl(void)
@@ -2343,7 +2371,33 @@ PyInit__ssl(void)
                                                  NULL);
     if (PySSLErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0)
+    PySSLZeroReturnErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLZeroReturnError", SSLZeroReturnError_doc,
+        PySSLErrorObject, NULL);
+    PySSLWantReadErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLWantReadError", SSLWantReadError_doc,
+        PySSLErrorObject, NULL);
+    PySSLWantWriteErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLWantWriteError", SSLWantWriteError_doc,
+        PySSLErrorObject, NULL);
+    PySSLSyscallErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLSyscallError", SSLSyscallError_doc,
+        PySSLErrorObject, NULL);
+    PySSLEOFErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLEOFError", SSLEOFError_doc,
+        PySSLErrorObject, NULL);
+    if (PySSLZeroReturnErrorObject == NULL
+        || PySSLWantReadErrorObject == NULL
+        || PySSLWantWriteErrorObject == NULL
+        || PySSLSyscallErrorObject == NULL
+        || PySSLEOFErrorObject == NULL)
+        return NULL;
+    if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLZeroReturnError", PySSLZeroReturnErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLWantReadError", PySSLWantReadErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLWantWriteError", PySSLWantWriteErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLSyscallError", PySSLSyscallErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLEOFError", PySSLEOFErrorObject) != 0)
         return NULL;
     if (PyDict_SetItemString(d, "_SSLContext",
                              (PyObject *)&PySSLContext_Type) != 0)
