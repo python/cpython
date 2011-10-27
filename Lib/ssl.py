@@ -60,7 +60,11 @@ import re
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, SSLError
+from _ssl import _SSLContext
+from _ssl import (
+    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
+    SSLSyscallError, SSLEOFError,
+    )
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1
 from _ssl import RAND_status, RAND_egd, RAND_add, RAND_bytes, RAND_pseudo_bytes

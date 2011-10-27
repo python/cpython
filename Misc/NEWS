@@ -341,6 +341,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11183: Add finer-grained exceptions to the ssl module, so that
+  you don't have to inspect the exception's attributes in the common case.
+
 - Issue #13216: Add cp65001 codec, the Windows UTF-8 (CP_UTF8).
 
 - Issue #13226: Add RTLD_xxx constants to the os module. These constants can be

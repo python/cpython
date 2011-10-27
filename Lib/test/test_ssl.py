@@ -619,13 +619,10 @@ class NetworkedTests(unittest.TestCase):
                     try:
                         s.do_handshake()
                         break
-                    except ssl.SSLError as err:
-                        if err.args[0] == ssl.SSL_ERROR_WANT_READ:
-                            select.select([s], [], [], 5.0)
-                        elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                            select.select([], [s], [], 5.0)
-                        else:
-                            raise
+                    except ssl.SSLWantReadError:
+                        select.select([s], [], [], 5.0)
+                    except ssl.SSLWantWriteError:
+                        select.select([], [s], [], 5.0)
                 # SSL established
                 self.assertTrue(s.getpeercert())
             finally:
@@ -745,13 +742,10 @@ class NetworkedTests(unittest.TestCase):
                     count += 1
                     s.do_handshake()
                     break
-                except ssl.SSLError as err:
-                    if err.args[0] == ssl.SSL_ERROR_WANT_READ:
-                        select.select([s], [], [])
-                    elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                        select.select([], [s], [])
-                    else:
-                        raise
+                except ssl.SSLWantReadError:
+                    select.select([s], [], [])
+                except ssl.SSLWantWriteError:
+                    select.select([], [s], [])
             s.close()
             if support.verbose:
                 sys.stdout.write("\nNeeded %d calls to do_handshake() to establish session.\n" % count)
@@ -1030,12 +1024,11 @@ else:
                 def _do_ssl_handshake(self):
                     try:
                         self.socket.do_handshake()
-                    except ssl.SSLError as err:
-                        if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
-                                           ssl.SSL_ERROR_WANT_WRITE):
-                            return
-                        elif err.args[0] == ssl.SSL_ERROR_EOF:
-                            return self.handle_close()
+                    except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                        return
+                    except ssl.SSLEOFError:
+                        return self.handle_close()
+                    except ssl.SSLError:
                         raise
                     except socket.error as err:
                         if err.args[0] == errno.ECONNABORTED:
