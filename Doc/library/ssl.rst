@@ -59,6 +59,48 @@ Functions, Constants, and Exceptions
    .. versionchanged:: 3.3
       :exc:`SSLError` used to be a subtype of :exc:`socket.error`.
 
+.. exception:: SSLZeroReturnError
+
+   A subclass of :exc:`SSLError` raised when trying to read or write and
+   the SSL connection has been closed cleanly.  Note that this doesn't
+   mean that the underlying transport (read TCP) has been closed.
+
+   .. versionadded:: 3.3
+
+.. exception:: SSLWantReadError
+
+   A subclass of :exc:`SSLError` raised by a :ref:`non-blocking SSL socket
+   <ssl-nonblocking>` when trying to read or write data, but more data needs
+   to be received on the underlying TCP transport before the request can be
+   fulfilled.
+
+   .. versionadded:: 3.3
+
+.. exception:: SSLWantWriteError
+
+   A subclass of :exc:`SSLError` raised by a :ref:`non-blocking SSL socket
+   <ssl-nonblocking>` when trying to read or write data, but more data needs
+   to be sent on the underlying TCP transport before the request can be
+   fulfilled.
+
+   .. versionadded:: 3.3
+
+.. exception:: SSLSyscallError
+
+   A subclass of :exc:`SSLError` raised when a system error was encountered
+   while trying to fulfill an operation on a SSL socket.  Unfortunately,
+   there is no easy way to inspect the original errno number.
+
+   .. versionadded:: 3.3
+
+.. exception:: SSLEOFError
+
+   A subclass of :exc:`SSLError` raised when the SSL connection has been
+   terminated abrupted.  Generally, you shouldn't try to reuse the underlying
+   transport when this error is encountered.
+
+   .. versionadded:: 3.3
+
 .. exception:: CertificateError
 
    Raised to signal an error with a certificate (such as mismatching
