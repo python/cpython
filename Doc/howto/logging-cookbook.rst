@@ -674,9 +674,10 @@ need to log to a single file from multiple processes, one way of doing this is
 to have all the processes log to a :class:`SocketHandler`, and have a separate
 process which implements a socket server which reads from the socket and logs
 to file. (If you prefer, you can dedicate one thread in one of the existing
-processes to perform this function.) The following section documents this
-approach in more detail and includes a working socket receiver which can be
-used as a starting point for you to adapt in your own applications.
+processes to perform this function.) :ref:`This section <network-logging>`
+documents this approach in more detail and includes a working socket receiver
+which can be used as a starting point for you to adapt in your own
+applications.
 
 If you are using a recent version of Python which includes the
 :mod:`multiprocessing` module, you could write your own handler which uses the
