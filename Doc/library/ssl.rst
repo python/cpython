@@ -96,7 +96,7 @@ Functions, Constants, and Exceptions
 .. exception:: SSLEOFError
 
    A subclass of :exc:`SSLError` raised when the SSL connection has been
-   terminated abrupted.  Generally, you shouldn't try to reuse the underlying
+   terminated abruptly.  Generally, you shouldn't try to reuse the underlying
    transport when this error is encountered.
 
    .. versionadded:: 3.3
