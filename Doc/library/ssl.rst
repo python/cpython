@@ -1044,13 +1044,10 @@ to be aware of:
         try:
             sock.do_handshake()
             break
-        except ssl.SSLError as err:
-            if err.args[0] == ssl.SSL_ERROR_WANT_READ:
-                select.select([sock], [], [])
-            elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                select.select([], [sock], [])
-            else:
-                raise
+        except ssl.SSLWantReadError:
+            select.select([sock], [], [])
+        except ssl.SSLWantWriteError:
+            select.select([], [sock], [])
 
 
 .. _ssl-security:
