@@ -9,6 +9,8 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13218: Fix test_ssl failures on Debian/Ubuntu.
+
 - Issue #13268: Fix the assert statement when a tuple is passed as the message.
 
 - Issue #13018: Fix reference leaks in error paths in dictobject.c.
