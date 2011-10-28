@@ -5,7 +5,6 @@ import textwrap
 import unittest
 import functools
 import contextlib
-import collections.abc
 from test import support
 from nntplib import NNTP, GroupInfo, _have_ssl
 import nntplib
@@ -247,7 +246,7 @@ class NetworkedNNTPTestsMixin:
             if not name.startswith('test_'):
                 continue
             meth = getattr(cls, name)
-            if not isinstance(meth, collections.abc.Callable):
+            if not callable(meth):
                 continue
             # Need to use a closure so that meth remains bound to its current
             # value

@@ -149,7 +149,7 @@ def list_public_methods(obj):
 
     return [member for member in dir(obj)
                 if not member.startswith('_') and
-                    hasattr(getattr(obj, member), '__call__')]
+                    callable(getattr(obj, member))]
 
 class SimpleXMLRPCDispatcher:
     """Mix-in class that dispatches XML-RPC requests.

@@ -708,7 +708,7 @@ class Option:
 
     def _check_callback(self):
         if self.action == "callback":
-            if not hasattr(self.callback, '__call__'):
+            if not callable(self.callback):
                 raise OptionError(
                     "callback not callable: %r" % self.callback, self)
             if (self.callback_args is not None and

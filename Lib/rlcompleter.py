@@ -87,7 +87,7 @@ class Completer:
             return None
 
     def _callable_postfix(self, val, word):
-        if hasattr(val, '__call__'):
+        if callable(val):
             word = word + "("
         return word
 
