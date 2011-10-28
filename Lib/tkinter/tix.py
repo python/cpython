@@ -405,7 +405,7 @@ class TixWidget(tkinter.Widget):
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if hasattr(v, '__call__'):
+            if callable(v):
                 v = self._register(v)
             options = options + ('-'+k, v)
         return master.tk.call(('image', 'create', imgtype,) + options)
