@@ -1500,6 +1500,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #13218: Fix test_ssl failures on Debian/Ubuntu.
+
 - Re-enable lib2to3's test_parser.py tests, though with an expected failure
   (see issue 13125).
 
