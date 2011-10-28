@@ -42,7 +42,6 @@ import sys
 import os
 import shutil
 import stat
-import errno
 import time
 import struct
 import copy
@@ -2281,9 +2280,8 @@ class TarFile(object):
             # Use a safe mode for the directory, the real mode is set
             # later in _extract_member().
             os.mkdir(targetpath, 0o700)
-        except EnvironmentError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
 
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.
