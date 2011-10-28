@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13273: fix a bug that prevented HTMLParser to properly detect some
+  tags when strict=False.
+
 - Issue #10332: multiprocessing: fix a race condition when a Pool is closed
   before all tasks have completed.
 
