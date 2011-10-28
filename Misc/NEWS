@@ -341,6 +341,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13273: fix a bug that prevented HTMLParser to properly detect some
+  tags when strict=False.
+
 - Issue #11183: Add finer-grained exceptions to the ssl module, so that
   you don't have to inspect the exception's attributes in the common case.
 
