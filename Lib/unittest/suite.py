@@ -42,7 +42,7 @@ class BaseTestSuite(object):
 
     def addTest(self, test):
         # sanity checks
-        if not hasattr(test, '__call__'):
+        if not callable(test):
             raise TypeError("{} is not callable".format(repr(test)))
         if isinstance(test, type) and issubclass(test,
                                                  (case.TestCase, TestSuite)):

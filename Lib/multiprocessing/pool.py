@@ -151,7 +151,7 @@ class Pool(object):
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
 
-        if initializer is not None and not hasattr(initializer, '__call__'):
+        if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
 
         self._processes = processes

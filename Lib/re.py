@@ -325,7 +325,7 @@ class Scanner:
             if i == j:
                 break
             action = self.lexicon[m.lastindex-1][1]
-            if hasattr(action, "__call__"):
+            if callable(action):
                 self.match = m
                 action = action(self, m.group())
             if action is not None:
