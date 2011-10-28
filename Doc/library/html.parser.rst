@@ -101,9 +101,9 @@ An exception is defined as well:
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
 
    Similar to :meth:`handle_starttag`, but called when the parser encounters an
-   XHTML-style empty tag (``<a .../>``).  This method may be overridden by
+   XHTML-style empty tag (``<img ... />``).  This method may be overridden by
    subclasses which require this particular lexical information; the default
-   implementation simple calls :meth:`handle_starttag` and :meth:`handle_endtag`.
+   implementation simply calls :meth:`handle_starttag` and :meth:`handle_endtag`.
 
 
 .. method:: HTMLParser.handle_endtag(tag)
@@ -178,27 +178,23 @@ An exception is defined as well:
 Example HTML Parser Application
 -------------------------------
 
-As a basic example, below is a very basic HTML parser that uses the
-:class:`HTMLParser` class to print out tags as they are encountered::
+As a basic example, below is a simple HTML parser that uses the
+:class:`HTMLParser` class to print out start tags, end tags, and data
+as they are encountered::
 
-   >>> from html.parser import HTMLParser
-   >>>
-   >>> class MyHTMLParser(HTMLParser):
-   ...     def handle_starttag(self, tag, attrs):
-   ...         print("Encountered a {} start tag".format(tag))
-   ...     def handle_endtag(self, tag):
-   ...         print("Encountered a {} end tag".format(tag))
-   ...
-   >>> page = """<html><h1>Title</h1><p>I'm a paragraph!</p></html>"""
-   >>>
-   >>> myparser = MyHTMLParser()
-   >>> myparser.feed(page)
-   Encountered a html start tag
-   Encountered a h1 start tag
-   Encountered a h1 end tag
-   Encountered a p start tag
-   Encountered a p end tag
-   Encountered a html end tag
+   from html.parser import HTMLParser
+
+   class MyHTMLParser(HTMLParser):
+       def handle_starttag(self, tag, attrs):
+           print("Encountered a start tag:", tag)
+       def handle_endtag(self, tag):
+           print("Encountered  an end tag:", tag)
+       def handle_data(self, data):
+           print("Encountered   some data:", data)
+
+   parser = MyHTMLParser()
+   parser.feed('<html><head><title>Test</title></head>'
+               '<body><h1>Parse me!</h1></body></html>')
 
 
 .. rubric:: Footnotes
