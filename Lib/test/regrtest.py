@@ -166,7 +166,6 @@ option '-uall,-gui'.
 """
 
 import builtins
-import errno
 import faulthandler
 import getopt
 import io
@@ -1721,9 +1720,8 @@ def _make_temp_dir_for_build(TEMPDIR):
         TEMPDIR = os.path.abspath(TEMPDIR)
         try:
             os.mkdir(TEMPDIR)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
 
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel

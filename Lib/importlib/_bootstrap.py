@@ -7,7 +7,7 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 
-# Injected modules are '_warnings', 'imp', 'sys', 'marshal', 'errno', '_io',
+# Injected modules are '_warnings', 'imp', 'sys', 'marshal', '_io',
 # and '_os' (a.k.a. 'posix', 'nt' or 'os2').
 # Injected attribute is path_sep.
 #
@@ -503,19 +503,13 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
             parent = _path_join(parent, part)
             try:
                 _os.mkdir(parent)
-            except OSError as exc:
+            except FileExistsError:
                 # Probably another Python process already created the dir.
-                if exc.errno == errno.EEXIST:
-                    continue
-                else:
-                    raise
-            except IOError as exc:
+                continue
+            except PermissionError:
                 # If can't get proper access, then just forget about writing
                 # the data.
-                if exc.errno == errno.EACCES:
-                    return
-                else:
-                    raise
+                return
         try:
             _write_atomic(path, data)
         except (PermissionError, FileExistsError):

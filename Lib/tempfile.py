@@ -31,7 +31,6 @@ import warnings as _warnings
 import sys as _sys
 import io as _io
 import os as _os
-import errno as _errno
 from random import Random as _Random
 
 try:
@@ -43,7 +42,7 @@ else:
     def _set_cloexec(fd):
         try:
             flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
-        except IOError:
+        except OSError:
             pass
         else:
             # flags read successfully, modify
@@ -85,19 +84,19 @@ if hasattr(_os, "lstat"):
 elif hasattr(_os, "stat"):
     _stat = _os.stat
 else:
-    # Fallback.  All we need is something that raises os.error if the
+    # Fallback.  All we need is something that raises OSError if the
     # file doesn't exist.
     def _stat(fn):
         try:
             f = open(fn)
-        except IOError:
-            raise _os.error
+        except OSError:
+            raise OSError
         f.close()
 
 def _exists(fn):
     try:
         _stat(fn)
-    except _os.error:
+    except OSError:
         return False
     else:
         return True
@@ -144,7 +143,7 @@ def _candidate_tempdir_list():
     # As a last resort, the current directory.
     try:
         dirlist.append(_os.getcwd())
-    except (AttributeError, _os.error):
+    except (AttributeError, OSError):
         dirlist.append(_os.curdir)
 
     return dirlist
@@ -176,12 +175,11 @@ def _get_default_tempdir():
                 _os.unlink(filename)
                 del fp, fd
                 return dir
-            except (OSError, IOError) as e:
-                if e.args[0] != _errno.EEXIST:
-                    break # no point trying more names in this directory
+            except FileExistsError:
                 pass
-    raise IOError(_errno.ENOENT,
-                  "No usable temporary directory found in %s" % dirlist)
+            except OSError:
+                break   # no point trying more names in this directory
+    raise FileNotFoundError("No usable temporary directory found in %s" % dirlist)
 
 _name_sequence = None
 
@@ -211,12 +209,10 @@ def _mkstemp_inner(dir, pre, suf, flags):
             fd = _os.open(file, flags, 0o600)
             _set_cloexec(fd)
             return (fd, _os.path.abspath(file))
-        except OSError as e:
-            if e.errno == _errno.EEXIST:
-                continue # try again
-            raise
+        except FileExistsError:
+            continue    # try again
 
-    raise IOError(_errno.EEXIST, "No usable temporary file name found")
+    raise FileExistsError("No usable temporary file name found")
 
 
 # User visible interfaces.
@@ -300,12 +296,10 @@ def mkdtemp(suffix="", prefix=template, dir=None):
         try:
             _os.mkdir(file, 0o700)
             return file
-        except OSError as e:
-            if e.errno == _errno.EEXIST:
-                continue # try again
-            raise
+        except FileExistsError:
+            continue    # try again
 
-    raise IOError(_errno.EEXIST, "No usable temporary directory name found")
+    raise FileExistsError("No usable temporary directory name found")
 
 def mktemp(suffix="", prefix=template, dir=None):
     """User-callable function to return a unique temporary file name.  The
@@ -334,7 +328,7 @@ def mktemp(suffix="", prefix=template, dir=None):
         if not _exists(file):
             return file
 
-    raise IOError(_errno.EEXIST, "No usable temporary filename found")
+    raise FileExistsError("No usable temporary filename found")
 
 
 class _TemporaryFileWrapper:
@@ -664,7 +658,7 @@ class TemporaryDirectory(object):
     _islink = staticmethod(_os.path.islink)
     _remove = staticmethod(_os.remove)
     _rmdir = staticmethod(_os.rmdir)
-    _os_error = _os.error
+    _os_error = OSError
     _warn = _warnings.warn
 
     def _rmtree(self, path):
