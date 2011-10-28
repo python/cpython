@@ -471,7 +471,7 @@ class BaseConfigurator(object):
     def configure_custom(self, config):
         """Configure an object with a user-supplied factory."""
         c = config.pop('()')
-        if not hasattr(c, '__call__'):
+        if not callable(c):
             c = self.resolve(c)
         props = config.pop('.', None)
         # Check for valid identifiers
@@ -690,7 +690,7 @@ class DictConfigurator(BaseConfigurator):
         filters = config.pop('filters', None)
         if '()' in config:
             c = config.pop('()')
-            if not hasattr(c, '__call__') and hasattr(types, 'ClassType') and type(c) != types.ClassType:
+            if not callable(c):
                 c = self.resolve(c)
             factory = c
         else:
