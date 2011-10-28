@@ -703,7 +703,7 @@ how the command-line arguments should be handled. The supported actions are:
     >>> parser.add_argument('--str', dest='types', action='append_const', const=str)
     >>> parser.add_argument('--int', dest='types', action='append_const', const=int)
     >>> parser.parse_args('--str --int'.split())
-    Namespace(types=[<type 'str'>, <type 'int'>])
+    Namespace(types=[<class 'str'>, <class 'int'>])
 
 * ``'version'`` - This expects a ``version=`` keyword argument in the
   :meth:`~ArgumentParser.add_argument` call, and prints version information
