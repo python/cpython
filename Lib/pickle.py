@@ -364,7 +364,7 @@ class _Pickler:
             raise PicklingError("args from save_reduce() should be a tuple")
 
         # Assert that func is callable
-        if not hasattr(func, '__call__'):
+        if not callable(func):
             raise PicklingError("func from save_reduce() should be callable")
 
         save = self.save

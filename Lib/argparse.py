@@ -92,10 +92,6 @@ import textwrap as _textwrap
 from gettext import gettext as _, ngettext
 
 
-def _callable(obj):
-    return hasattr(obj, '__call__') or hasattr(obj, '__bases__')
-
-
 SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
@@ -1286,13 +1282,13 @@ class _ActionsContainer(object):
 
         # create the action object, and add it to the parser
         action_class = self._pop_action_class(kwargs)
-        if not _callable(action_class):
+        if not callable(action_class):
             raise ValueError('unknown action "%s"' % (action_class,))
         action = action_class(**kwargs)
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
-        if not _callable(type_func):
+        if not callable(type_func):
             raise ValueError('%r is not callable' % (type_func,))
 
         # raise an error if the metavar does not match the type
@@ -2240,7 +2236,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _get_value(self, action, arg_string):
         type_func = self._registry_get('type', action.type, action.type)
-        if not _callable(type_func):
+        if not callable(type_func):
             msg = _('%r is not callable')
             raise ArgumentError(action, msg % type_func)
 
