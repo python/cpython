@@ -30,7 +30,7 @@ attrfind = re.compile(
     r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[^\s"\'=<>`]*))?')
 attrfind_tolerant = re.compile(
-    r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
+    r',?\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[^>\s]*))?')
 locatestarttagend = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
@@ -277,12 +277,11 @@ class HTMLParser(_markupbase.ParserBase):
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
         self.lasttag = tag = rawdata[i+1:k].lower()
-
         while k < endpos:
             if self.strict:
                 m = attrfind.match(rawdata, k)
             else:
-                m = attrfind_tolerant.search(rawdata, k)
+                m = attrfind_tolerant.match(rawdata, k)
             if not m:
                 break
             attrname, rest, attrvalue = m.group(1, 2, 3)
