@@ -128,6 +128,12 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(TypeError, float, Foo4(42))
         self.assertAlmostEqual(float(FooStr('8')), 9.)
 
+    def test_is_integer(self):
+        self.assertFalse((1.1).is_integer())
+        self.assertTrue((1.).is_integer())
+        self.assertFalse(float("nan").is_integer())
+        self.assertFalse(float("inf").is_integer())
+
     def test_floatasratio(self):
         for f, ratio in [
                 (0.875, (7, 8)),
