@@ -775,7 +775,7 @@ class HTMLDoc(Doc):
                 push(msg)
                 for name, kind, homecls, value in ok:
                     base = self.docother(getattr(object, name), name, mod)
-                    if hasattr(value, '__call__') or inspect.isdatadescriptor(value):
+                    if callable(value) or inspect.isdatadescriptor(value):
                         doc = getattr(value, "__doc__", None)
                     else:
                         doc = None
@@ -1199,7 +1199,7 @@ location listed above.
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    if hasattr(value, '__call__') or inspect.isdatadescriptor(value):
+                    if callable(value) or inspect.isdatadescriptor(value):
                         doc = getdoc(value)
                     else:
                         doc = None
