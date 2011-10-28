@@ -8,8 +8,8 @@
 .. note::
 
    The :mod:`HTMLParser` module has been renamed to :mod:`html.parser` in Python
-   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   3.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to Python 3.
 
 
 .. versionadded:: 2.2
@@ -109,9 +109,9 @@ An exception is defined as well:
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
 
    Similar to :meth:`handle_starttag`, but called when the parser encounters an
-   XHTML-style empty tag (``<a .../>``).  This method may be overridden by
+   XHTML-style empty tag (``<img ... />``).  This method may be overridden by
    subclasses which require this particular lexical information; the default
-   implementation simple calls :meth:`handle_starttag` and :meth:`handle_endtag`.
+   implementation simply calls :meth:`handle_starttag` and :meth:`handle_endtag`.
 
 
 .. method:: HTMLParser.handle_endtag(tag)
