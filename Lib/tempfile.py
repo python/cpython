@@ -87,10 +87,7 @@ else:
     # Fallback.  All we need is something that raises OSError if the
     # file doesn't exist.
     def _stat(fn):
-        try:
-            f = open(fn)
-        except OSError:
-            raise OSError
+        f = open(fn)
         f.close()
 
 def _exists(fn):
