@@ -2785,8 +2785,6 @@ types, where they are relevant.  Some of these are not reported by the
    The name of the class or type.
 
 
-The following attributes are only supported by :term:`new-style class`\ es.
-
 .. attribute:: class.__mro__
 
    This attribute is a tuple of classes that are considered when looking for
@@ -2802,12 +2800,12 @@ The following attributes are only supported by :term:`new-style class`\ es.
 
 .. method:: class.__subclasses__
 
-   Each new-style class keeps a list of weak references to its immediate
-   subclasses.  This method returns a list of all those references still alive.
+   Each class keeps a list of weak references to its immediate subclasses.  This
+   method returns a list of all those references still alive.
    Example::
 
       >>> int.__subclasses__()
-      [<type 'bool'>]
+      [<class 'bool'>]
 
 
 .. rubric:: Footnotes
