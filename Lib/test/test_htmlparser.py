@@ -373,6 +373,39 @@ class HTMLParserTolerantTestCase(TestCaseBase):
                                 [('action', 'bogus|&#()value')])],
                         collector = self.collector)
 
+    def test_issue13273(self):
+        html = ('<div style=""    ><b>The <a href="some_url">rain</a> '
+                '<br /> in <span>Spain</span></b></div>')
+        expected = [
+            ('starttag', 'div', [('style', '')]),
+            ('starttag', 'b', []),
+            ('data', 'The '),
+            ('starttag', 'a', [('href', 'some_url')]),
+            ('data', 'rain'),
+            ('endtag', 'a'),
+            ('data', ' '),
+            ('startendtag', 'br', []),
+            ('data', ' in '),
+            ('starttag', 'span', []),
+            ('data', 'Spain'),
+            ('endtag', 'span'),
+            ('endtag', 'b'),
+            ('endtag', 'div')
+        ]
+        self._run_check(html, expected, collector=self.collector)
+
+    def test_issue13273_2(self):
+        html = '<div style="", foo = "bar" ><b>The <a href="some_url">rain</a>'
+        expected = [
+            ('starttag', 'div', [('style', ''), ('foo', 'bar')]),
+            ('starttag', 'b', []),
+            ('data', 'The '),
+            ('starttag', 'a', [('href', 'some_url')]),
+            ('data', 'rain'),
+            ('endtag', 'a'),
+        ]
+        self._run_check(html, expected, collector=self.collector)
+
     def test_unescape_function(self):
         p = html.parser.HTMLParser()
         self.assertEqual(p.unescape('&#bad;'),'&#bad;')
