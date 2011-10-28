@@ -186,16 +186,21 @@ An exception is defined as well:
 Example HTML Parser Application
 -------------------------------
 
-As a basic example, below is a very basic HTML parser that uses the
-:class:`HTMLParser` class to print out tags as they are encountered::
+As a basic example, below is a simple HTML parser that uses the
+:class:`HTMLParser` class to print out start tags, end tags and data
+as they are encountered::
 
    from HTMLParser import HTMLParser
 
    class MyHTMLParser(HTMLParser):
-
        def handle_starttag(self, tag, attrs):
-           print "Encountered the beginning of a %s tag" % tag
-
+           print "Encountered a start tag:", tag
        def handle_endtag(self, tag):
-           print "Encountered the end of a %s tag" % tag
+           print "Encountered  an end tag:", tag
+       def handle_data(self, data):
+           print "Encountered   some data:", data
 
+
+   parser = MyHTMLParser()
+   parser.feed('<html><head><title>Test</title></head>'
+               '<body><h1>Parse me!</h1></body></html>')
