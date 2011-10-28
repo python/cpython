@@ -1291,8 +1291,8 @@ some point in the future.
 * Currently, only the following protocols are supported: HTTP (versions 0.9 and
   1.0), FTP, and local files.
 
-* The caching feature of :func:`urlretrieve` has been disabled until someone find
-  the time to hack proper processing of Expiration time headers.
+* The caching feature of :func:`urlretrieve` has been disabled until someone
+  finds the time to hack proper processing of Expiration time headers.
 
 * There should be a function to query whether a particular URL is in the cache.
 
