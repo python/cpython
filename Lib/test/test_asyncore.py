@@ -647,6 +647,10 @@ class BaseTestAPI(unittest.TestCase):
                 self.flag = True
                 self.close()
 
+            def handle_expt(self):
+                self.flag = True
+                self.close()
+
         class TestHandler(BaseTestHandler):
 
             def handle_read(self):
