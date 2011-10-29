@@ -1500,6 +1500,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #5661: Add a test for ECONNRESET/EPIPE handling to test_asyncore. Patch
+  by Xavier de Gaye.
+
 - Issue #13218: Fix test_ssl failures on Debian/Ubuntu.
 
 - Re-enable lib2to3's test_parser.py tests, though with an expected failure

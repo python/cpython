@@ -632,6 +632,34 @@ class BaseTestAPI(unittest.TestCase):
         client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
+    def test_handle_close_after_conn_broken(self):
+        # Check that ECONNRESET/EPIPE is correctly handled (issues #5661 and
+        # #11265).
+
+        data = b'\0' * 128
+
+        class TestClient(BaseClient):
+
+            def handle_write(self):
+                self.send(data)
+
+            def handle_close(self):
+                self.flag = True
+                self.close()
+
+        class TestHandler(BaseTestHandler):
+
+            def handle_read(self):
+                self.recv(len(data))
+                self.close()
+
+            def writable(self):
+                return False
+
+        server = BaseServer(self.family, self.addr, TestHandler)
+        client = TestClient(self.family, server.address)
+        self.loop_waiting_for_flag(client)
+
     @unittest.skipIf(sys.platform.startswith("sunos"),
                      "OOB support is broken on Solaris")
     def test_handle_expt(self):
