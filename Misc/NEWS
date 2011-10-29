@@ -71,6 +71,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7334: close source files on ElementTree.parse and iterparse.
+
 - Issue #13232: logging: Improved logging of exceptions in the presence of
   multiple encodings.
 
