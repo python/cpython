@@ -82,7 +82,7 @@ On the other hand, if you are building e.g. an HTTP server, where all
 data is stored externally (e.g. in the file system), a synchronous
 class will essentially render the service "deaf" while one request is
 being handled -- which may be for a very long time if a client is slow
-to reqd all the data it has requested.  Here a threading or forking
+to read all the data it has requested.  Here a threading or forking
 server is appropriate.
 
 In some cases, it may be appropriate to process part of a request
