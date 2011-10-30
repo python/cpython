@@ -1375,10 +1375,10 @@ are always available.  They are listed here in alphabetical order.
         def zip(*iterables):
             # zip('ABCD', 'xy') --> Ax By
             sentinel = object()
-            iterables = [iter(it) for it in iterables]
-            while iterables:
+            iterators = [iter(it) for it in iterables]
+            while iterators:
                 result = []
-                for it in iterables:
+                for it in iterators:
                     elem = next(it, sentinel)
                     if elem is sentinel:
                         return
