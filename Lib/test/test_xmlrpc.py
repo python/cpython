@@ -140,6 +140,9 @@ class XMLRPCTestCase(unittest.TestCase):
                           ('host.tld',
                            [('Authorization', 'Basic dXNlcg==')], {}))
 
+    def test_dump_bytes(self):
+        self.assertRaises(TypeError, xmlrpclib.dumps, (b"my dog has fleas",))
+
     def test_ssl_presence(self):
         try:
             import ssl
@@ -177,7 +180,7 @@ class FaultTestCase(unittest.TestCase):
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, s)
 
     def test_dotted_attribute(self):
-        # this will raise AttirebuteError because code don't want us to use
+        # this will raise AttributeError because code don't want us to use
         # private methods
         self.assertRaises(AttributeError,
                           xmlrpc.server.resolve_dotted_attribute, str, '__add')
