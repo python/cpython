@@ -268,16 +268,6 @@ _PyImportHooks_Init(void)
     Py_DECREF(path_hooks);
 }
 
-void
-_PyImport_Fini(void)
-{
-    Py_XDECREF(extensions);
-    extensions = NULL;
-    PyMem_DEL(_PyImport_Filetab);
-    _PyImport_Filetab = NULL;
-}
-
-
 /* Locking primitives to prevent parallel imports of the same module
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
@@ -388,6 +378,21 @@ imp_release_lock(PyObject *self, PyObject *noargs)
 #endif
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+void
+_PyImport_Fini(void)
+{
+    Py_XDECREF(extensions);
+    extensions = NULL;
+    PyMem_DEL(_PyImport_Filetab);
+    _PyImport_Filetab = NULL;
+#ifdef WITH_THREAD
+    if (import_lock != NULL) {
+        PyThread_free_lock(import_lock);
+        import_lock = NULL;
+    }
+#endif
 }
 
 static void
