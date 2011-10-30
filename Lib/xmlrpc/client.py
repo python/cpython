@@ -85,11 +85,6 @@
 # OF THIS SOFTWARE.
 # --------------------------------------------------------------------
 
-#
-# things to look into some day:
-
-# TODO: sort out True/False/boolean issues for Python 2.3
-
 """
 An XML-RPC client interface for Python.
 
@@ -120,8 +115,7 @@ Exported classes:
 
 Exported constants:
 
-  True
-  False
+  (none)
 
 Exported functions:
 
@@ -133,7 +127,8 @@ Exported functions:
                  name (None if not present).
 """
 
-import re, time, operator
+import base64
+import time
 import http.client
 from xml.parsers import expat
 import socket
@@ -230,7 +225,7 @@ class ResponseError(Error):
 ##
 # Indicates an XML-RPC fault response package.  This exception is
 # raised by the unmarshalling layer, if the XML-RPC response contains
-# a fault string.  This exception can also used as a class, to
+# a fault string.  This exception can also be used as a class, to
 # generate a fault XML-RPC message.
 #
 # @param faultCode The XML-RPC fault code.
@@ -243,10 +238,7 @@ class Fault(Error):
         self.faultCode = faultCode
         self.faultString = faultString
     def __repr__(self):
-        return (
-            "<Fault %s: %s>" %
-            (self.faultCode, repr(self.faultString))
-            )
+        return "<Fault %s: %r>" % (self.faultCode, self.faultString)
 
 # --------------------------------------------------------------------
 # Special values
@@ -302,7 +294,7 @@ class DateTime:
         elif datetime and isinstance(other, datetime.datetime):
             s = self.value
             o = other.strftime("%Y%m%dT%H:%M:%S")
-        elif isinstance(other, (str, unicode)):
+        elif isinstance(other, str):
             s = self.value
             o = other
         elif hasattr(other, "timetuple"):
@@ -352,7 +344,7 @@ class DateTime:
         return self.value
 
     def __repr__(self):
-        return "<DateTime %s at %x>" % (repr(self.value), id(self))
+        return "<DateTime %r at %x>" % (self.value, id(self))
 
     def decode(self, data):
         self.value = str(data).strip()
@@ -377,9 +369,6 @@ def _datetime_type(data):
 # of binary data over XML-RPC, using BASE64 encoding.
 #
 # @param data An 8-bit string containing arbitrary data.
-
-import base64
-import io
 
 class Binary:
     """Wrapper for binary data."""
@@ -514,9 +503,7 @@ class Marshaller:
             f = self.dispatch[type(value)]
         except KeyError:
             # check if this object can be marshalled as a structure
-            try:
-                value.__dict__
-            except:
+            if not hasattr(value, '__dict__'):
                 raise TypeError("cannot marshal %s objects" % type(value))
             # check if this class is a sub-class of a basic type,
             # because we don't know how to marshal these types
@@ -557,12 +544,6 @@ class Marshaller:
         write(repr(value))
         write("</double></value>\n")
     dispatch[float] = dump_double
-
-    def dump_string(self, value, write, escape=escape):
-        write("<value><string>")
-        write(escape(value))
-        write("</string></value>\n")
-    dispatch[bytes] = dump_string
 
     def dump_unicode(self, value, write, escape=escape):
         write("<value><string>")
@@ -1192,7 +1173,6 @@ class Transport:
         auth, host = urllib.parse.splituser(host)
 
         if auth:
-            import base64
             auth = urllib.parse.unquote_to_bytes(auth)
             auth = base64.encodebytes(auth).decode("utf-8")
             auth = "".join(auth.split()) # get rid of whitespace
