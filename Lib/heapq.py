@@ -185,6 +185,8 @@ def nlargest(n, iterable):
 
     Equivalent to:  sorted(iterable, reverse=True)[:n]
     """
+    if n < 0:
+        return []
     it = iter(iterable)
     result = list(islice(it, n))
     if not result:
@@ -201,6 +203,8 @@ def nsmallest(n, iterable):
 
     Equivalent to:  sorted(iterable)[:n]
     """
+    if n < 0:
+        return []
     if hasattr(iterable, '__len__') and n * 10 <= len(iterable):
         # For smaller values of n, the bisect method is faster than a minheap.
         # It is also memory efficient, consuming only n elements of space.
