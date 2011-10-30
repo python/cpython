@@ -1877,7 +1877,7 @@ set_contains(PySetObject *so, PyObject *key)
         tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return -1;
-        rv = set_contains(so, tmpkey);
+        rv = set_contains_key(so, tmpkey);
         Py_DECREF(tmpkey);
     }
     return rv;
@@ -1942,7 +1942,7 @@ set_discard(PySetObject *so, PyObject *key)
         tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        result = set_discard(so, tmpkey);
+        result = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
         return result;
     }
