@@ -1906,7 +1906,7 @@ If the element is not a member, raise a KeyError.");
 static PyObject *
 set_discard(PySetObject *so, PyObject *key)
 {
-    PyObject *tmpkey, *result;
+    PyObject *tmpkey;
     int rv;
 
     rv = set_discard_key(so, key);
