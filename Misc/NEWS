@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10519: Avoid unnecessary recursive function calls in
+  setobject.c.
+
 - Issue #10363: Deallocate global locks in Py_Finalize().
 
 - Issue #13018: Fix reference leaks in error paths in dictobject.c.
