@@ -329,7 +329,6 @@ class SimpleXMLRPCDispatcher:
         if method is None:
             return ""
         else:
-            import pydoc
             return pydoc.getdoc(method)
 
     def system_multicall(self, call_list):
@@ -560,7 +559,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     Simple XML-RPC server that allows functions and a single instance
     to be installed to handle requests. The default implementation
     attempts to dispatch XML-RPC calls to the functions or instance
-    installed in the server. Override the _dispatch method inhereted
+    installed in the server. Override the _dispatch method inherited
     from SimpleXMLRPCDispatcher to change this behavior.
     """
 
