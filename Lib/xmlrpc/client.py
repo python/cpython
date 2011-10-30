@@ -128,6 +128,7 @@ Exported functions:
 """
 
 import base64
+import sys
 import time
 import http.client
 from xml.parsers import expat
@@ -152,7 +153,8 @@ def escape(s):
     s = s.replace("<", "&lt;")
     return s.replace(">", "&gt;",)
 
-__version__ = "1.0.1"
+# used in User-Agent header sent
+__version__ = sys.version[:3]
 
 # xmlrpc integer limits
 MAXINT =  2**31-1
@@ -408,7 +410,6 @@ class Binary:
         out.write("<value><base64>\n")
         encoded = base64.encodebytes(self.data)
         out.write(encoded.decode('ascii'))
-        out.write('\n')
         out.write("</base64></value>\n")
 
 def _binary(data):
@@ -1079,7 +1080,7 @@ class Transport:
     """Handles an HTTP transaction to an XML-RPC server."""
 
     # client identifier (may be overridden)
-    user_agent = "xmlrpclib.py/%s (by www.pythonware.com)" % __version__
+    user_agent = "Python-xmlrpc/%s" % __version__
 
     #if true, we'll request gzip encoding
     accept_gzip_encoding = True

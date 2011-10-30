@@ -956,8 +956,13 @@ class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
 
 
 if __name__ == '__main__':
-    print('Running XML-RPC server on port 8000')
     server = SimpleXMLRPCServer(("localhost", 8000))
     server.register_function(pow)
     server.register_function(lambda x,y: x+y, 'add')
-    server.serve_forever()
+    print('Serving XML-RPC on localhost port 8000')
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received, exiting.")
+        server.server_close()
+        sys.exit(0)
