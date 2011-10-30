@@ -3359,8 +3359,8 @@ PyImport_ReloadModule(PyObject *m)
     PyObject *modules_reloading = interp->modules_reloading;
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *path_list = NULL, *loader = NULL, *existing_m = NULL;
-    PyObject *nameobj, *bufobj, *subnameobj;
-    Py_UCS4 *name = NULL, *subname;
+    PyObject *name, *bufobj, *subname;
+    Py_ssize_t subname_start;
     struct filedescr *fdp;
     FILE *fp = NULL;
     PyObject *newm = NULL;
@@ -3376,45 +3376,39 @@ PyImport_ReloadModule(PyObject *m)
                         "reload() argument must be module");
         return NULL;
     }
-    nameobj = PyModule_GetNameObject(m);
-    if (nameobj == NULL || PyUnicode_READY(nameobj) == -1)
+    name = PyModule_GetNameObject(m);
+    if (name == NULL || PyUnicode_READY(name) == -1)
         return NULL;
-    if (m != PyDict_GetItem(modules, nameobj)) {
+    if (m != PyDict_GetItem(modules, name)) {
         PyErr_Format(PyExc_ImportError,
                      "reload(): module %R not in sys.modules",
-                     nameobj);
-        Py_DECREF(nameobj);
+                     name);
+        Py_DECREF(name);
         return NULL;
     }
-    existing_m = PyDict_GetItem(modules_reloading, nameobj);
+    existing_m = PyDict_GetItem(modules_reloading, name);
     if (existing_m != NULL) {
         /* Due to a recursive reload, this module is already
            being reloaded. */
-        Py_DECREF(nameobj);
+        Py_DECREF(name);
         Py_INCREF(existing_m);
         return existing_m;
     }
-    if (PyDict_SetItem(modules_reloading, nameobj, m) < 0) {
-        Py_DECREF(nameobj);
+    if (PyDict_SetItem(modules_reloading, name, m) < 0) {
+        Py_DECREF(name);
         return NULL;
     }
 
-    name = PyUnicode_AsUCS4Copy(nameobj);
-    if (!name) {
-        Py_DECREF(nameobj);
-        return NULL;
-    }
-    subname = Py_UCS4_strrchr(name, '.');
-    if (subname == NULL) {
-        Py_INCREF(nameobj);
-        subnameobj = nameobj;
+    subname_start = PyUnicode_FindChar(name, '.', 0,
+                                       PyUnicode_GET_LENGTH(name), -1);
+    if (subname_start == -1) {
+        Py_INCREF(name);
+        subname = name;
     }
     else {
         PyObject *parentname, *parent;
         Py_ssize_t len;
-        len = subname - name;
-        parentname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                               name, len);
+        parentname = PyUnicode_Substring(name, 0, subname_start);
         if (parentname == NULL) {
             goto error;
         }
@@ -3430,16 +3424,15 @@ PyImport_ReloadModule(PyObject *m)
         path_list = _PyObject_GetAttrId(parent, &PyId___path__);
         if (path_list == NULL)
             PyErr_Clear();
-        subname++;
-        len = PyUnicode_GET_LENGTH(nameobj) - (len + 1);
-        subnameobj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                               subname, len);
+        subname_start++;
+        len = PyUnicode_GET_LENGTH(name) - (subname_start + 1);
+        subname = PyUnicode_Substring(name, subname_start, len);
     }
-    if (subnameobj == NULL)
+    if (subname == NULL)
         goto error;
-    fdp = find_module(nameobj, subnameobj, path_list,
+    fdp = find_module(name, subname, path_list,
                       &bufobj, &fp, &loader);
-    Py_DECREF(subnameobj);
+    Py_DECREF(subname);
     Py_XDECREF(path_list);
 
     if (fdp == NULL) {
@@ -3447,7 +3440,7 @@ PyImport_ReloadModule(PyObject *m)
         goto error;
     }
 
-    newm = load_module(nameobj, fp, bufobj, fdp->type, loader);
+    newm = load_module(name, fp, bufobj, fdp->type, loader);
     Py_XDECREF(bufobj);
     Py_XDECREF(loader);
 
@@ -3459,13 +3452,12 @@ PyImport_ReloadModule(PyObject *m)
          * going to return NULL in this case regardless of whether
          * replacing name succeeds, so the return value is ignored.
          */
-        PyDict_SetItem(modules, nameobj, m);
+        PyDict_SetItem(modules, name, m);
     }
 
 error:
     imp_modules_reloading_clear();
-    Py_DECREF(nameobj);
-    PyMem_Free(name);
+    Py_DECREF(name);
     return newm;
 }
 
