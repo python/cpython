@@ -302,7 +302,7 @@ class DateTime:
         elif datetime and isinstance(other, datetime.datetime):
             s = self.value
             o = other.strftime("%Y%m%dT%H:%M:%S")
-        elif isinstance(other, (str, unicode)):
+        elif isinstance(other, str):
             s = self.value
             o = other
         elif hasattr(other, "timetuple"):

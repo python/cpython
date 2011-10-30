@@ -602,7 +602,7 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
                                     encoding, bind_and_activate)
         self.dispatchers = {}
         self.allow_none = allow_none
-        self.encoding = encoding
+        self.encoding = encoding or 'utf-8'
 
     def add_dispatcher(self, path, dispatcher):
         self.dispatchers[path] = dispatcher
@@ -620,9 +620,10 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
             # (each dispatcher should have handled their own
             # exceptions)
             exc_type, exc_value = sys.exc_info()[:2]
-            response = xmlrpclib.dumps(
-                xmlrpclib.Fault(1, "%s:%s" % (exc_type, exc_value)),
+            response = dumps(
+                Fault(1, "%s:%s" % (exc_type, exc_value)),
                 encoding=self.encoding, allow_none=self.allow_none)
+            response = response.encode(self.encoding)
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
