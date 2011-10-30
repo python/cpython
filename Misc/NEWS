@@ -347,6 +347,9 @@ Core and Builtins
 Library
 -------
 
+- Fix the xmlrpc.client user agent to return something similar to
+  urllib.request user agent: "Python-xmlrpc/3.3".
+
 - Issue #13293: Better error message when trying to marshal bytes using
   xmlrpc.client.
 
