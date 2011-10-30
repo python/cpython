@@ -2753,8 +2753,7 @@ static PyObject *get_parent(PyObject *globals,
                             int level);
 static PyObject *load_next(PyObject *mod, PyObject *altmod,
                            PyObject *inputname, PyObject **p_outputname,
-                           Py_UCS4 *buf, Py_ssize_t *p_buflen,
-                           Py_ssize_t bufsize);
+                           PyObject **p_prefix);
 static int mark_miss(PyObject *name);
 static int ensure_fromlist(PyObject *mod, PyObject *fromlist,
                            PyObject *buf, int recursive);
@@ -2767,11 +2766,11 @@ static PyObject *
 import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
                     PyObject *fromlist, int level)
 {
-    Py_UCS4 buf[MAXPATHLEN+1];
-    Py_ssize_t buflen;
-    Py_ssize_t bufsize = MAXPATHLEN+1;
-    PyObject *parent, *head, *next, *tail, *inputname, *outputname;
-    PyObject *parent_name, *ensure_name;
+    PyObject *parent, *next, *inputname, *outputname;
+    PyObject *head = NULL;
+    PyObject *tail = NULL;
+    PyObject *prefix = NULL;
+    PyObject *result = NULL;
     Py_ssize_t sep, altsep;
 
     if (PyUnicode_READY(name))
@@ -2794,26 +2793,18 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
         return NULL;
     }
 
-    parent = get_parent(globals, &parent_name, level);
+    parent = get_parent(globals, &prefix, level);
     if (parent == NULL) {
         return NULL;
     }
 
-    if (PyUnicode_READY(parent_name))
+    if (PyUnicode_READY(prefix))
         return NULL;
-    buflen = PyUnicode_GET_LENGTH(parent_name);
-    if (!PyUnicode_AsUCS4(parent_name, buf, Py_ARRAY_LENGTH(buf), 1)) {
-        Py_DECREF(parent_name);
-        PyErr_SetString(PyExc_ValueError,
-                        "Module name too long");
-        return NULL;
-    }
-    Py_DECREF(parent_name);
 
     head = load_next(parent, level < 0 ? Py_None : parent, name, &outputname,
-                     buf, &buflen, bufsize);
+                     &prefix);
     if (head == NULL)
-        return NULL;
+        goto out;
 
     tail = head;
     Py_INCREF(tail);
@@ -2822,13 +2813,11 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
         while (1) {
             inputname = outputname;
             next = load_next(tail, tail, inputname, &outputname,
-                             buf, &buflen, bufsize);
-            Py_DECREF(tail);
-            Py_DECREF(inputname);
-            if (next == NULL) {
-                Py_DECREF(head);
-                return NULL;
-            }
+                             &prefix);
+            Py_CLEAR(tail);
+            Py_CLEAR(inputname);
+            if (next == NULL)
+                goto out;
             tail = next;
 
             if (outputname == NULL) {
@@ -2840,10 +2829,8 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
         /* If tail is Py_None, both get_parent and load_next found
            an empty module name: someone called __import__("") or
            doctored faulty bytecode */
-        Py_DECREF(tail);
-        Py_DECREF(head);
         PyErr_SetString(PyExc_ValueError, "Empty module name");
-        return NULL;
+        goto out;
     }
 
     if (fromlist != NULL) {
@@ -2852,26 +2839,21 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
     }
 
     if (fromlist == NULL) {
-        Py_DECREF(tail);
-        return head;
+        result = head;
+        Py_INCREF(result);
+        goto out;
     }
 
-    Py_DECREF(head);
-
-    ensure_name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                            buf, Py_UCS4_strlen(buf));
-    if (ensure_name == NULL) {
-        Py_DECREF(tail);
-        return NULL;
-    }
-    if (!ensure_fromlist(tail, fromlist, ensure_name, 0)) {
-        Py_DECREF(tail);
-        Py_DECREF(ensure_name);
-        return NULL;
-    }
-    Py_DECREF(ensure_name);
-
-    return tail;
+    if (!ensure_fromlist(tail, fromlist, prefix, 0))
+        goto out;
+    
+    result = tail;
+    Py_INCREF(result);
+  out:
+    Py_XDECREF(head);
+    Py_XDECREF(tail);
+    Py_XDECREF(prefix);
+    return result;
 }
 
 PyObject *
@@ -3083,91 +3065,67 @@ return_none:
 static PyObject *
 load_next(PyObject *mod, PyObject *altmod,
           PyObject *inputname, PyObject **p_outputname,
-          Py_UCS4 *buf, Py_ssize_t *p_buflen, Py_ssize_t bufsize)
+          PyObject **p_prefix)
 {
-    Py_UCS4 *dot;
+    Py_ssize_t dot;
     Py_ssize_t len;
-    Py_UCS4 *p;
-    PyObject *fullname, *name, *result, *mark_name;
-    Py_UCS4 *nameuni;
+    PyObject *fullname, *name = NULL, *result;
 
     *p_outputname = NULL;
 
-    if (PyUnicode_GET_LENGTH(inputname) == 0) {
+    len = PyUnicode_GET_LENGTH(inputname);
+    if (len == 0) {
         /* completely empty module name should only happen in
            'from . import' (or '__import__("")')*/
         Py_INCREF(mod);
         return mod;
     }
 
-    nameuni = PyUnicode_AsUCS4Copy(inputname);
-    if (nameuni == NULL)
-        return NULL;
 
-    dot = Py_UCS4_strchr(nameuni, '.');
-    if (dot != NULL) {
-        len = dot - nameuni;
+    dot = PyUnicode_FindChar(inputname, '.', 0, len, 1);
+    if (dot >= 0) {
+        len = dot;
         if (len == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "Empty module name");
             goto error;
         }
     }
-    else
-        len = PyUnicode_GET_LENGTH(inputname);
 
-    if (*p_buflen+len+1 >= bufsize) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Module name too long");
+    /* name = inputname[:len] */
+    name = PyUnicode_Substring(inputname, 0, len);
+    if (name == NULL)
         goto error;
+
+    if (PyUnicode_GET_LENGTH(*p_prefix)) {
+        /* fullname = prefix + "." + name */
+        fullname = PyUnicode_FromFormat("%U.%U", *p_prefix, name);
+        if (fullname == NULL)
+            goto error;
+    }
+    else {
+        fullname = name;
+        Py_INCREF(fullname);
     }
 
-    p = buf + *p_buflen;
-    if (p != buf) {
-        *p++ = '.';
-        *p_buflen += 1;
-    }
-    Py_UCS4_strncpy(p, nameuni, len);
-    p[len] = '\0';
-    *p_buflen += len;
-
-    fullname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                         buf, *p_buflen);
-    if (fullname == NULL)
-        goto error;
-    name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                     p, len);
-    if (name == NULL) {
-        Py_DECREF(fullname);
-        goto error;
-    }
     result = import_submodule(mod, name, fullname);
-    Py_DECREF(fullname);
+    Py_DECREF(*p_prefix);
+    /* Transfer reference. */
+    *p_prefix = fullname;
     if (result == Py_None && altmod != mod) {
         Py_DECREF(result);
         /* Here, altmod must be None and mod must not be None */
         result = import_submodule(altmod, name, name);
-        Py_DECREF(name);
         if (result != NULL && result != Py_None) {
-            mark_name = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                                  buf, *p_buflen);
-            if (mark_name == NULL) {
+            if (mark_miss(*p_prefix) != 0) {
                 Py_DECREF(result);
                 goto error;
             }
-            if (mark_miss(mark_name) != 0) {
-                Py_DECREF(result);
-                Py_DECREF(mark_name);
-                goto error;
-            }
-            Py_DECREF(mark_name);
-            Py_UCS4_strncpy(buf, nameuni, len);
-            buf[len] = '\0';
-            *p_buflen = len;
+            Py_DECREF(*p_prefix);
+            *p_prefix = name;
+            Py_INCREF(*p_prefix);
         }
     }
-    else
-        Py_DECREF(name);
     if (result == NULL)
         goto error;
 
@@ -3178,20 +3136,20 @@ load_next(PyObject *mod, PyObject *altmod,
         goto error;
     }
 
-    if (dot != NULL) {
-        *p_outputname = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                                  dot+1, Py_UCS4_strlen(dot+1));
+    if (dot >= 0) {
+        *p_outputname = PyUnicode_Substring(inputname, dot+1,
+                                            PyUnicode_GET_LENGTH(inputname));
         if (*p_outputname == NULL) {
             Py_DECREF(result);
             goto error;
         }
     }
 
-    PyMem_Free(nameuni);
+    Py_DECREF(name);
     return result;
 
 error:
-    PyMem_Free(nameuni);
+    Py_XDECREF(name);
     return NULL;
 }
 
