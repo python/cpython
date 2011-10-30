@@ -130,6 +130,7 @@ Exported functions:
 import base64
 import sys
 import time
+from datetime import datetime
 import http.client
 from xml.parsers import expat
 import socket
@@ -142,11 +143,6 @@ except ImportError:
 
 # --------------------------------------------------------------------
 # Internal stuff
-
-try:
-    import datetime
-except ImportError:
-    datetime = None
 
 def escape(s):
     s = s.replace("&", "&amp;")
@@ -264,11 +260,8 @@ boolean = Boolean = bool
 #              tuple, or a integer time value.
 
 def _strftime(value):
-    if datetime:
-        if isinstance(value, datetime.datetime):
-            return "%04d%02d%02dT%02d:%02d:%02d" % (
-                value.year, value.month, value.day,
-                value.hour, value.minute, value.second)
+    if isinstance(value, datetime):
+        return value.strftime("%Y%m%dT%H:%M:%S")
 
     if not isinstance(value, (tuple, time.struct_time)):
         if value == 0:
@@ -293,7 +286,7 @@ class DateTime:
         if isinstance(other, DateTime):
             s = self.value
             o = other.value
-        elif datetime and isinstance(other, datetime.datetime):
+        elif isinstance(other, datetime):
             s = self.value
             o = other.strftime("%Y%m%dT%H:%M:%S")
         elif isinstance(other, str):
@@ -363,8 +356,7 @@ def _datetime(data):
     return value
 
 def _datetime_type(data):
-    t = time.strptime(data, "%Y%m%dT%H:%M:%S")
-    return datetime.datetime(*tuple(t)[:6])
+    return datetime.strptime(data, "%Y%m%dT%H:%M:%S")
 
 ##
 # Wrapper for binary data.  This can be used to transport any kind
@@ -584,12 +576,11 @@ class Marshaller:
         del self.memo[i]
     dispatch[dict] = dump_struct
 
-    if datetime:
-        def dump_datetime(self, value, write):
-            write("<value><dateTime.iso8601>")
-            write(_strftime(value))
-            write("</dateTime.iso8601></value>\n")
-        dispatch[datetime.datetime] = dump_datetime
+    def dump_datetime(self, value, write):
+        write("<value><dateTime.iso8601>")
+        write(_strftime(value))
+        write("</dateTime.iso8601></value>\n")
+    dispatch[datetime] = dump_datetime
 
     def dump_instance(self, value, write):
         # check for special wrappers
@@ -632,8 +623,6 @@ class Unmarshaller:
         self._encoding = "utf-8"
         self.append = self._stack.append
         self._use_datetime = use_datetime
-        if use_datetime and not datetime:
-            raise ValueError("the datetime module is not available")
 
     def close(self):
         # return response tuple and target method
@@ -862,8 +851,6 @@ def getparser(use_datetime=False):
     Create an instance of the fastest available parser, and attach it
     to an unmarshalling object.  Return both objects.
     """
-    if use_datetime and not datetime:
-        raise ValueError("the datetime module is not available")
     if FastParser and FastUnmarshaller:
         if use_datetime:
             mkdatetime = _datetime_type
