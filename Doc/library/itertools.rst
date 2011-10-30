@@ -433,9 +433,9 @@ loops that truncate the stream.
 
       def izip(*iterables):
           # izip('ABCD', 'xy') --> Ax By
-          iterables = map(iter, iterables)
-          while iterables:
-              yield tuple(map(next, iterables))
+          iterators = map(iter, iterables)
+          while iterators:
+              yield tuple(map(next, iterators))
 
    .. versionchanged:: 2.4
       When no iterables are specified, returns a zero length iterator instead of
@@ -456,17 +456,24 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Equivalent to::
 
+      class ZipExhausted(Exception):
+          pass
+
       def izip_longest(*args, **kwds):
           # izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
           fillvalue = kwds.get('fillvalue')
-          def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
-              yield counter()         # yields the fillvalue, or raises IndexError
+          counter = [len(args) - 1]
+          def sentinel():
+              if not counter[0]:
+                  raise ZipExhausted
+              counter[0] -= 1
+              yield fillvalue
           fillers = repeat(fillvalue)
-          iters = [chain(it, sentinel(), fillers) for it in args]
+          iterators = [chain(it, sentinel(), fillers) for it in args]
           try:
-              for tup in izip(*iters):
-                  yield tup
-          except IndexError:
+              while iterators:
+                  yield tuple(map(next, iterators))
+          except ZipExhausted:
               pass
 
    If one of the iterables is potentially infinite, then the
