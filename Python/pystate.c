@@ -150,6 +150,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     *p = interp->next;
     HEAD_UNLOCK();
     free(interp);
+#ifdef WITH_THREAD
+    if (interp_head == NULL && head_mutex != NULL) {
+        PyThread_free_lock(head_mutex);
+        head_mutex = NULL;
+    }
+#endif
 }
 
 
