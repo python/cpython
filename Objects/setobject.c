@@ -1917,9 +1917,10 @@ set_discard(PySetObject *so, PyObject *key)
         tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        result = set_discard_key(so, tmpkey);
+        rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
-        return result;
+        if (rv == -1)
+            return NULL;
     }
     Py_RETURN_NONE;
 }
