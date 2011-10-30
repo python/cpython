@@ -329,7 +329,6 @@ class SimpleXMLRPCDispatcher:
         if method is None:
             return ""
         else:
-            import pydoc
             return pydoc.getdoc(method)
 
     def system_multicall(self, call_list):
@@ -560,7 +559,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     Simple XML-RPC server that allows functions and a single instance
     to be installed to handle requests. The default implementation
     attempts to dispatch XML-RPC calls to the functions or instance
-    installed in the server. Override the _dispatch method inhereted
+    installed in the server. Override the _dispatch method inherited
     from SimpleXMLRPCDispatcher to change this behavior.
     """
 
@@ -602,7 +601,7 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
                                     encoding, bind_and_activate)
         self.dispatchers = {}
         self.allow_none = allow_none
-        self.encoding = encoding
+        self.encoding = encoding or 'utf-8'
 
     def add_dispatcher(self, path, dispatcher):
         self.dispatchers[path] = dispatcher
@@ -620,9 +619,10 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
             # (each dispatcher should have handled their own
             # exceptions)
             exc_type, exc_value = sys.exc_info()[:2]
-            response = xmlrpclib.dumps(
-                xmlrpclib.Fault(1, "%s:%s" % (exc_type, exc_value)),
+            response = dumps(
+                Fault(1, "%s:%s" % (exc_type, exc_value)),
                 encoding=self.encoding, allow_none=self.allow_none)
+            response = response.encode(self.encoding)
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
