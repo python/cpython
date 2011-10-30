@@ -557,16 +557,25 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Equivalent to::
 
-      def zip_longest(*args, fillvalue=None):
+      class ZipExhausted(Exception):
+          pass
+
+      def zip_longest(*args, **kwds):
           # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-          def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
-              yield counter()         # yields the fillvalue, or raises IndexError
+          fillvalue = kwds.get('fillvalue')
+          counter = len(args) - 1
+          def sentinel():
+              nonlocal counter
+              if not counter:
+                  raise ZipExhausted
+              counter -= 1
+              yield fillvalue
           fillers = repeat(fillvalue)
-          iters = [chain(it, sentinel(), fillers) for it in args]
+          iterators = [chain(it, sentinel(), fillers) for it in args]
           try:
-              for tup in zip(*iters):
-                  yield tup
-          except IndexError:
+              while iterators:
+                  yield tuple(map(next, iterators))
+          except ZipExhausted:
               pass
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
