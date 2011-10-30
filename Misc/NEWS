@@ -340,8 +340,14 @@ Core and Builtins
 - Issue #12380: The rjust, ljust and center methods of bytes and bytearray
   now accept a bytearray argument.
 
+
 Library
 -------
+
+- Issue #13293: Better error message when trying to marshal bytes using
+  xmlrpc.client.
+
+- Issue #13291: NameError in xmlrpc package.
 
 - Issue #13258: Use callable() built-in in the standard library.
 
