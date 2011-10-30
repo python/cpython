@@ -63,6 +63,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13291: NameError in xmlrpc package.
+
 - Issue #13258: Use callable() built-in in the standard library.
 
 - Issue #13273: fix a bug that prevented HTMLParser to properly detect some
