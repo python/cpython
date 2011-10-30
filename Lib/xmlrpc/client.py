@@ -503,9 +503,7 @@ class Marshaller:
             f = self.dispatch[type(value)]
         except KeyError:
             # check if this object can be marshalled as a structure
-            try:
-                value.__dict__
-            except:
+            if not hasattr(value, '__dict__'):
                 raise TypeError("cannot marshal %s objects" % type(value))
             # check if this class is a sub-class of a basic type,
             # because we don't know how to marshal these types
@@ -552,12 +550,6 @@ class Marshaller:
         write(repr(value))
         write("</double></value>\n")
     dispatch[float] = dump_double
-
-    def dump_string(self, value, write, escape=escape):
-        write("<value><string>")
-        write(escape(value))
-        write("</string></value>\n")
-    dispatch[bytes] = dump_string
 
     def dump_unicode(self, value, write, escape=escape):
         write("<value><string>")
