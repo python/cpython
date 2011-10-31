@@ -14195,16 +14195,96 @@ unicode_iter(PyObject *seq)
     return (PyObject *)it;
 }
 
-#define UNIOP(x) Py_UNICODE_##x
-#define UNIOP_t Py_UNICODE
-#include "uniops.h"
-#undef UNIOP
-#undef UNIOP_t
-#define UNIOP(x) Py_UCS4_##x
-#define UNIOP_t Py_UCS4
-#include "uniops.h"
-#undef UNIOP
-#undef UNIOP_t
+
+size_t
+Py_UNICODE_strlen(const Py_UNICODE *u)
+{
+    int res = 0;
+    while(*u++)
+        res++;
+    return res;
+}
+
+Py_UNICODE*
+Py_UNICODE_strcpy(Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    Py_UNICODE *u = s1;
+    while ((*u++ = *s2++));
+    return s1;
+}
+
+Py_UNICODE*
+Py_UNICODE_strncpy(Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
+{
+    Py_UNICODE *u = s1;
+    while ((*u++ = *s2++))
+        if (n-- == 0)
+            break;
+    return s1;
+}
+
+Py_UNICODE*
+Py_UNICODE_strcat(Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    Py_UNICODE *u1 = s1;
+    u1 += Py_UNICODE_strlen(u1);
+    Py_UNICODE_strcpy(u1, s2);
+    return s1;
+}
+
+int
+Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    while (*s1 && *s2 && *s1 == *s2)
+        s1++, s2++;
+    if (*s1 && *s2)
+        return (*s1 < *s2) ? -1 : +1;
+    if (*s1)
+        return 1;
+    if (*s2)
+        return -1;
+    return 0;
+}
+
+int
+Py_UNICODE_strncmp(const Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
+{
+    register Py_UNICODE u1, u2;
+    for (; n != 0; n--) {
+        u1 = *s1;
+        u2 = *s2;
+        if (u1 != u2)
+            return (u1 < u2) ? -1 : +1;
+        if (u1 == '\0')
+            return 0;
+        s1++;
+        s2++;
+    }
+    return 0;
+}
+
+Py_UNICODE*
+Py_UNICODE_strchr(const Py_UNICODE *s, Py_UNICODE c)
+{
+    const Py_UNICODE *p;
+    for (p = s; *p; p++)
+        if (*p == c)
+            return (Py_UNICODE*)p;
+    return NULL;
+}
+
+Py_UNICODE*
+Py_UNICODE_strrchr(const Py_UNICODE *s, Py_UNICODE c)
+{
+    const Py_UNICODE *p;
+    p = s + Py_UNICODE_strlen(s);
+    while (p != s) {
+        p--;
+        if (*p == c)
+            return (Py_UNICODE*)p;
+    }
+    return NULL;
+}
 
 Py_UNICODE*
 PyUnicode_AsUnicodeCopy(PyObject *unicode)
