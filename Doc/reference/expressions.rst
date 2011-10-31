@@ -347,7 +347,7 @@ A string conversion is an expression list enclosed in reverse (a.k.a. backward)
 quotes:
 
 .. productionlist::
-   string_conversion: "'" `expression_list` "'"
+   string_conversion: "`" `expression_list` "`"
 
 A string conversion evaluates the contained expression list and converts the
 resulting object into a string according to rules specific to its type.
