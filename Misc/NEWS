@@ -187,6 +187,9 @@ Library
 Tests
 -----
 
+- Issue #13304: Skip test case if user site-packages disabled (-s or
+  PYTHONNOUSERSITE).  (Patch by Carl Meyer)
+
 - Issue #13218: Fix test_ssl failures on Debian/Ubuntu.
 
 - Issue #12821: Fix test_fcntl failures on OpenBSD 5.
