@@ -45,9 +45,9 @@ for detailed information about platforms with precompiled installers.
       "7 Minutes to "Hello World!""
       by Richard Dooling, 2006
 
-   `Installing on Windows <http://diveintopython.org/installing_python/windows.html>`_
+   `Installing on Windows <http://diveintopython.net/installing_python/windows.html>`_
       in "`Dive into Python: Python from novice to pro
-      <http://diveintopython.org/index.html>`_"
+      <http://diveintopython.net/index.html>`_"
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
