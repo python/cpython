@@ -458,7 +458,7 @@ I/O Base Classes
 Raw File I/O
 ^^^^^^^^^^^^
 
-.. class:: FileIO(name, mode='r', closefd=True)
+.. class:: FileIO(name, mode='r', closefd=True, opener=None)
 
    :class:`FileIO` represents an OS-level file containing bytes data.
    It implements the :class:`RawIOBase` interface (and therefore the
@@ -478,6 +478,15 @@ Raw File I/O
 
    The :meth:`read` (when called with a positive argument), :meth:`readinto`
    and :meth:`write` methods on this class will only make one system call.
+
+   A custom opener can be used by passing a callable as *opener*. The underlying
+   file descriptor for the file object is then obtained by calling *opener* with
+   (*name*, *flags*). *opener* must return an open file descriptor (passing
+   :mod:`os.open` as *opener* results in functionality similar to passing
+   ``None``).
+
+   .. versionchanged:: 3.3
+      The *opener* parameter was added.
 
    In addition to the attributes and methods from :class:`IOBase` and
    :class:`RawIOBase`, :class:`FileIO` provides the following data

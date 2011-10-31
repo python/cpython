@@ -776,7 +776,7 @@ are always available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
-.. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True)
+.. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
    Open *file* and return a corresponding stream.  If the file cannot be opened,
    an :exc:`OSError` is raised.
@@ -882,6 +882,15 @@ are always available.  They are listed here in alphabetical order.
    given, the underlying file descriptor will be kept open when the file is
    closed.  If a filename is given *closefd* has no effect and must be ``True``
    (the default).
+
+   A custom opener can be used by passing a callable as *opener*. The underlying
+   file descriptor for the file object is then obtained by calling *opener* with
+   (*file*, *flags*). *opener* must return an open file descriptor (passing
+   :mod:`os.open` as *opener* results in functionality similar to passing
+   ``None``).
+
+   .. versionchanged:: 3.3
+      The *opener* parameter was added.
 
    The type of file object returned by the :func:`open` function depends on the
    mode.  When :func:`open` is used to open a file in a text mode (``'w'``,

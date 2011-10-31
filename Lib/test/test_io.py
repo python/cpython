@@ -621,6 +621,15 @@ class IOTest(unittest.TestCase):
         for obj in test:
             self.assertTrue(hasattr(obj, "__dict__"))
 
+    def test_opener(self):
+        with self.open(support.TESTFN, "w") as f:
+            f.write("egg\n")
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        def opener(path, flags):
+            return fd
+        with self.open("non-existent", "r", opener=opener) as f:
+            self.assertEqual(f.read(), "egg\n")
+
 class CIOTest(IOTest):
 
     def test_IOBase_finalize(self):
