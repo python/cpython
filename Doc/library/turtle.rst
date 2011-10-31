@@ -157,6 +157,7 @@ Using events
    | :func:`onclick`
    | :func:`onrelease`
    | :func:`ondrag`
+   | :func:`mainloop` | :func:`done`
 
 Special Turtle methods
    | :func:`begin_poly`
@@ -1289,6 +1290,15 @@ Using events
 
    Subsequently, clicking and dragging the Turtle will move it across
    the screen thereby producing handdrawings (if pen is down).
+
+
+.. function:: mainloop()
+              done()
+
+   Starts event loop - calling Tkinter's mainloop function. Must be the last
+   statement in a turtle graphics program.
+
+      >>> turtle.mainloop()
 
 
 Special Turtle methods
