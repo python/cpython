@@ -1523,6 +1523,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #13304: Skip test case if user site-packages disabled (-s or
+  PYTHONNOUSERSITE).  (Patch by Carl Meyer)
+
 - Issue #5661: Add a test for ECONNRESET/EPIPE handling to test_asyncore. Patch
   by Xavier de Gaye.
 
