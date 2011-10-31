@@ -24,7 +24,7 @@ if "site" in sys.modules:
 else:
     raise unittest.SkipTest("importation of site.py suppressed")
 
-if not os.path.isdir(site.USER_SITE):
+if site.ENABLE_USER_SITE and not os.path.isdir(site.USER_SITE):
     # need to add user site directory for tests
     os.makedirs(site.USER_SITE)
     site.addsitedir(site.USER_SITE)
@@ -161,6 +161,8 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
+    @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
+                          "user-site (site.ENABLE_USER_SITE)")
     def test_s_option(self):
         usersite = site.USER_SITE
         self.assertIn(usersite, sys.path)
