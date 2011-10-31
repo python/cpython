@@ -340,6 +340,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
+        self.original_compiler_flags = self.compile.compiler.flags
 
     rpcclt = None
     rpcsubproc = None
@@ -447,6 +448,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
+        self.compile.compiler.flags = self.original_compiler_flags
         self.restarting = False
         return self.rpcclt
 
