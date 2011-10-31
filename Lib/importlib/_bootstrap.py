@@ -85,10 +85,11 @@ def _write_atomic(path, data):
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
     if not sys.platform.startswith('win'):
-        # On POSIX-like platforms, renaming is atomic
-        path_tmp = path + '.tmp'
+        # On POSIX-like platforms, renaming is atomic. id() is used to generate
+        # a pseudo-random filename.
+        path_tmp = '{}.{}'.format(path, id(path))
+        fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY)
         try:
-            fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY)
             with _io.FileIO(fd, 'wb') as file:
                 file.write(data)
             _os.rename(path_tmp, path)
