@@ -60,8 +60,7 @@ if you had spelled out its full name on the command line.
 
 When a script file is used, it is sometimes useful to be able to run the script
 and enter interactive mode afterwards.  This can be done by passing :option:`-i`
-before the script.  (This does not work if the script is read from standard
-input, for the same reason as explained in the previous paragraph.)
+before the script.
 
 
 .. _tut-argpassing:
