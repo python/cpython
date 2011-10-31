@@ -1984,43 +1984,6 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
     Py_UNICODE c
     );
 
-PyAPI_FUNC(size_t) Py_UCS4_strlen(
-    const Py_UCS4 *u
-    );
-
-PyAPI_FUNC(Py_UCS4*) Py_UCS4_strcpy(
-    Py_UCS4 *s1,
-    const Py_UCS4 *s2);
-
-PyAPI_FUNC(Py_UCS4*) Py_UCS4_strcat(
-    Py_UCS4 *s1, const Py_UCS4 *s2);
-
-PyAPI_FUNC(Py_UCS4*) Py_UCS4_strncpy(
-    Py_UCS4 *s1,
-    const Py_UCS4 *s2,
-    size_t n);
-
-PyAPI_FUNC(int) Py_UCS4_strcmp(
-    const Py_UCS4 *s1,
-    const Py_UCS4 *s2
-    );
-
-PyAPI_FUNC(int) Py_UCS4_strncmp(
-    const Py_UCS4 *s1,
-    const Py_UCS4 *s2,
-    size_t n
-    );
-
-PyAPI_FUNC(Py_UCS4*) Py_UCS4_strchr(
-    const Py_UCS4 *s,
-    Py_UCS4 c
-    );
-
-PyAPI_FUNC(Py_UCS4*) Py_UCS4_strrchr(
-    const Py_UCS4 *s,
-    Py_UCS4 c
-    );
-
 /* Create a copy of a unicode string ending with a nul character. Return NULL
    and raise a MemoryError exception on memory allocation failure, otherwise
    return a new allocated buffer (use PyMem_Free() to free the buffer). */
