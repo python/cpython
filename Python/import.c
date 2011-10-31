@@ -1183,42 +1183,6 @@ parse_source_module(PyObject *pathname, FILE *fp)
     return co;
 }
 
-/* Helper to open a bytecode file for writing in exclusive mode */
-
-#ifndef MS_WINDOWS
-static FILE *
-open_exclusive(char *filename, mode_t mode)
-{
-#if defined(O_EXCL)&&defined(O_CREAT)&&defined(O_WRONLY)&&defined(O_TRUNC)
-    /* Use O_EXCL to avoid a race condition when another process tries to
-       write the same file.  When that happens, our open() call fails,
-       which is just fine (since it's only a cache).
-       XXX If the file exists and is writable but the directory is not
-       writable, the file will never be written.  Oh well.
-    */
-    int fd;
-    (void) unlink(filename);
-    fd = open(filename, O_EXCL|O_CREAT|O_WRONLY|O_TRUNC
-#ifdef O_BINARY
-                            |O_BINARY   /* necessary for Windows */
-#endif
-#ifdef __VMS
-            , mode, "ctxt=bin", "shr=nil"
-#else
-            , mode
-#endif
-          );
-    if (fd < 0)
-        return NULL;
-    return fdopen(fd, "wb");
-#else
-    /* Best we can do -- on Windows this can't happen anyway */
-    return fopen(filename, "wb");
-#endif
-}
-#endif
-
-
 /* Write a compiled module to a file, placing the time of last
    modification of its source into the header.
    Errors are ignored, if a write error occurs an attempt is made to
@@ -1234,15 +1198,13 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
 #else
-    mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
     mode_t dirmode = (srcstat->st_mode |
                       S_IXUSR | S_IXGRP | S_IXOTH |
                       S_IWUSR | S_IWGRP | S_IWOTH);
     PyObject *dirbytes;
 #endif
-#ifdef MS_WINDOWS
     int fd;
-#else
+#ifndef MS_WINDOWS
     PyObject *cpathbytes, *cpathbytes_tmp;
     Py_ssize_t cpathbytes_len;
 #endif
@@ -1313,7 +1275,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         return;
     }
     cpathbytes_len = PyBytes_GET_SIZE(cpathbytes);
-    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 4);
+    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 6);
     if (cpathbytes_tmp == NULL) {
         Py_DECREF(cpathbytes);
         PyErr_Clear();
@@ -1321,9 +1283,13 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
     memcpy(PyBytes_AS_STRING(cpathbytes_tmp), PyBytes_AS_STRING(cpathbytes),
            cpathbytes_len);
-    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, ".tmp", 4);
+    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, "XXXXXX", 6);
 
-    fp = open_exclusive(PyBytes_AS_STRING(cpathbytes_tmp), mode);
+    fd = mkstemp(PyBytes_AS_STRING(cpathbytes_tmp));
+    if (0 <= fd)
+        fp = fdopen(fd, "wb");
+    else
+        fp = NULL;
 #endif
     if (fp == NULL) {
         if (Py_VerboseFlag)
