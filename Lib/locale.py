@@ -142,8 +142,6 @@ def _group(s, monetary=False):
     grouping = conv[monetary and 'mon_grouping' or 'grouping']
     if not grouping:
         return (s, 0)
-    result = ""
-    seps = 0
     if s[-1] == ' ':
         stripped = s.rstrip()
         right_spaces = s[len(stripped):]
