@@ -775,9 +775,7 @@ interpreter loads extension modules.  Among other things, this will enable\n\
 a lazy resolving of symbols when importing a module, if called as\n\
 sys.setdlopenflags(0).  To share symbols across extension modules, call as\n\
 sys.setdlopenflags(ctypes.RTLD_GLOBAL).  Symbolic names for the flag modules\n\
-can be either found in the ctypes module, or in the DLFCN module. If DLFCN\n\
-is not available, it can be generated from /usr/include/dlfcn.h using the\n\
-h2py script.");
+can be found in the os module (RTLD_xxx constants, e.g. os.RTLD_LAZY).");
 
 static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
