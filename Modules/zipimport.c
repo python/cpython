@@ -87,8 +87,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
     }
 
 #ifdef ALTSEP
-    tmp = PyObject_CallMethodId(path, &PyId_replace, "CC",
-                                ALTSEP, SEP);
+    tmp = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
     if (!tmp)
         goto error;
     Py_DECREF(path);
@@ -450,7 +449,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
         return NULL;
 
 #ifdef ALTSEP
-    path = PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
+    path = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
     if (!path)
         return NULL;
 #else
