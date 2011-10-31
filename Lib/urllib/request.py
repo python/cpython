@@ -1589,9 +1589,9 @@ class URLopener:
                 size = -1
                 read = 0
                 blocknum = 0
+                if "content-length" in headers:
+                    size = int(headers["Content-Length"])
                 if reporthook:
-                    if "content-length" in headers:
-                        size = int(headers["Content-Length"])
                     reporthook(blocknum, bs, size)
                 while 1:
                     block = fp.read(bs)
