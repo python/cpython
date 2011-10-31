@@ -95,7 +95,7 @@ PyDoc_STRVAR(module_doc,
  */
 PyDoc_STRVAR(open_doc,
 "open(file, mode='r', buffering=-1, encoding=None,\n"
-"     errors=None, newline=None, closefd=True) -> file object\n"
+"     errors=None, newline=None, closefd=True, opener=None) -> file object\n"
 "\n"
 "Open file and return a stream.  Raise IOError upon failure.\n"
 "\n"
@@ -190,6 +190,12 @@ PyDoc_STRVAR(open_doc,
 "when the file is closed. This does not work when a file name is given\n"
 "and must be True in that case.\n"
 "\n"
+"A custom opener can be used by passing a callable as *opener*. The\n"
+"underlying file descriptor for the file object is then obtained by\n"
+"calling *opener* with (*file*, *flags*). *opener* must return an open\n"
+"file descriptor (passing os.open as *opener* results in functionality\n"
+"similar to passing None).\n"
+"\n"
 "open() returns a file object whose type depends on the mode, and\n"
 "through which the standard file operations such as reading and writing\n"
 "are performed. When open() is used to open a file in a text mode ('w',\n"
@@ -210,8 +216,8 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"file", "mode", "buffering",
                       "encoding", "errors", "newline",
-                      "closefd", NULL};
-    PyObject *file;
+                      "closefd", "opener", NULL};
+    PyObject *file, *opener = Py_None;
     char *mode = "r";
     int buffering = -1, closefd = 1;
     char *encoding = NULL, *errors = NULL, *newline = NULL;
@@ -228,10 +234,10 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(fileno);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzzi:open", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzziO:open", kwlist,
                                      &file, &mode, &buffering,
                                      &encoding, &errors, &newline,
-                                     &closefd)) {
+                                     &closefd, &opener)) {
         return NULL;
     }
 
@@ -331,7 +337,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Create the Raw file stream */
     raw = PyObject_CallFunction((PyObject *)&PyFileIO_Type,
-				"Osi", file, rawmode, closefd);
+                                "OsiO", file, rawmode, closefd, opener);
     if (raw == NULL)
         return NULL;
 

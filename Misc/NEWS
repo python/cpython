@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12797: Added custom opener parameter to builtin open() and
+  FileIO.open().
+
 - Issue #10519: Avoid unnecessary recursive function calls in
   setobject.c.
 

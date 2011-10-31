@@ -27,7 +27,7 @@ BlockingIOError = BlockingIOError
 
 
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
-         newline=None, closefd=True):
+         newline=None, closefd=True, opener=None):
 
     r"""Open file and return a stream.  Raise IOError upon failure.
 
@@ -122,6 +122,12 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     be kept open when the file is closed. This does not work when a file name is
     given and must be True in that case.
 
+    A custom opener can be used by passing a callable as *opener*. The
+    underlying file descriptor for the file object is then obtained by calling
+    *opener* with (*file*, *flags*). *opener* must return an open file
+    descriptor (passing os.open as *opener* results in functionality similar to
+    passing None).
+
     open() returns a file object whose type depends on the mode, and
     through which the standard file operations such as reading and writing
     are performed. When open() is used to open a file in a text mode ('w',
@@ -176,7 +182,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
                  (writing and "w" or "") +
                  (appending and "a" or "") +
                  (updating and "+" or ""),
-                 closefd)
+                 closefd, opener=opener)
     line_buffering = False
     if buffering == 1 or buffering < 0 and raw.isatty():
         buffering = -1

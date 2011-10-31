@@ -212,9 +212,9 @@ static int
 fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 {
     fileio *self = (fileio *) oself;
-    static char *kwlist[] = {"file", "mode", "closefd", NULL};
+    static char *kwlist[] = {"file", "mode", "closefd", "opener", NULL};
     const char *name = NULL;
-    PyObject *nameobj, *stringobj = NULL;
+    PyObject *nameobj, *stringobj = NULL, *opener = Py_None;
     char *mode = "r";
     char *s;
 #ifdef MS_WINDOWS
@@ -233,8 +233,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             return -1;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:fileio",
-                                     kwlist, &nameobj, &mode, &closefd))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|siO:fileio",
+                                     kwlist, &nameobj, &mode, &closefd,
+                                     &opener))
         return -1;
 
     if (PyFloat_Check(nameobj)) {
@@ -363,15 +364,35 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             goto error;
         }
 
-        Py_BEGIN_ALLOW_THREADS
         errno = 0;
+        if (opener == Py_None) {
+            Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-        if (widename != NULL)
-            self->fd = _wopen(widename, flags, 0666);
-        else
+            if (widename != NULL)
+                self->fd = _wopen(widename, flags, 0666);
+            else
 #endif
-            self->fd = open(name, flags, 0666);
-        Py_END_ALLOW_THREADS
+                self->fd = open(name, flags, 0666);
+            Py_END_ALLOW_THREADS
+        } else {
+            PyObject *fdobj = PyObject_CallFunction(
+                                  opener, "Oi", nameobj, flags);
+            if (fdobj == NULL)
+                goto error;
+            if (!PyLong_Check(fdobj)) {
+                Py_DECREF(fdobj);
+                PyErr_SetString(PyExc_TypeError,
+                        "expected integer from opener");
+                goto error;
+            }
+
+            self->fd = PyLong_AsLong(fdobj);
+            Py_DECREF(fdobj);
+            if (self->fd == -1) {
+                goto error;
+            }
+        }
+
         if (self->fd < 0) {
 #ifdef MS_WINDOWS
             if (widename != NULL)
@@ -1017,13 +1038,17 @@ fileio_getstate(fileio *self)
 
 
 PyDoc_STRVAR(fileio_doc,
-"file(name: str[, mode: str]) -> file IO object\n"
+"file(name: str[, mode: str][, opener: None]) -> file IO object\n"
 "\n"
 "Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n"
 "writing or appending.  The file will be created if it doesn't exist\n"
 "when opened for writing or appending; it will be truncated when\n"
 "opened for writing.  Add a '+' to the mode to allow simultaneous\n"
-"reading and writing.");
+"reading and writing. A custom opener can be used by passing a\n"
+"callable as *opener*. The underlying file descriptor for the file\n"
+"object is then obtained by calling opener with (*name*, *flags*).\n"
+"*opener* must return an open file descriptor (passing os.open as\n"
+"*opener* results in functionality similar to passing None).");
 
 PyDoc_STRVAR(read_doc,
 "read(size: int) -> bytes.  read at most size bytes, returned as bytes.\n"
