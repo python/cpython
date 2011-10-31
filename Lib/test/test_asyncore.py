@@ -792,7 +792,6 @@ class TestAPI_UseUnixSockets(BaseTestAPI):
     if HAS_UNIX_SOCKETS:
         family = socket.AF_UNIX
     addr = support.TESTFN
-    use_poll = False
 
     def tearDown(self):
         unlink(self.addr)
@@ -812,11 +811,19 @@ class TestAPI_UseIPv6Select(TestAPI_UseIPv6Sockets):
 class TestAPI_UseIPv6Poll(TestAPI_UseIPv6Sockets):
     use_poll = True
 
+class TestAPI_UseUnixSocketsSelect(TestAPI_UseUnixSockets):
+    use_poll = False
+
+@unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
+class TestAPI_UseUnixSocketsPoll(TestAPI_UseUnixSockets):
+    use_poll = True
+
 def test_main():
     tests = [HelperFunctionTests, DispatcherTests, DispatcherWithSendTests,
             DispatcherWithSendTests_UsePoll, FileWrapperTest,
             TestAPI_UseIPv4Select, TestAPI_UseIPv4Poll, TestAPI_UseIPv6Select,
-            TestAPI_UseIPv6Poll, TestAPI_UseUnixSockets]
+            TestAPI_UseIPv6Poll, TestAPI_UseUnixSocketsSelect,
+            TestAPI_UseUnixSocketsPoll]
     run_unittest(*tests)
 
 if __name__ == "__main__":
