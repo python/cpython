@@ -347,6 +347,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 10817: Fix urlretrieve function to raise ContentTooShortError even
+  when reporthook is None. Patch by Jyrki Pulliainen.
+
 - Issue 13296: Fix IDLE to clear compile __future__ flags on shell restart.
   (Patch by Roger Serwy)
 
