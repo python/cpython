@@ -63,115 +63,110 @@ static PyObject *get_module_code(ZipImporter *self, PyObject *fullname,
 static int
 zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *pathobj, *files;
-    Py_UCS4 *path, *p, *prefix, buf[MAXPATHLEN+2];
-    Py_ssize_t len;
+    PyObject *path, *files, *tmp;
+    PyObject *filename = NULL;
+    Py_ssize_t len, flen;
+#ifdef ALTSEP
+    _Py_IDENTIFIER(replace);
+#endif
 
     if (!_PyArg_NoKeywords("zipimporter()", kwds))
         return -1;
 
     if (!PyArg_ParseTuple(args, "O&:zipimporter",
-                          PyUnicode_FSDecoder, &pathobj))
+                          PyUnicode_FSDecoder, &path))
         return -1;
 
-    if (PyUnicode_READY(pathobj) == -1)
+    if (PyUnicode_READY(path) == -1)
         return -1;
 
-    /* copy path to buf */
-    len = PyUnicode_GET_LENGTH(pathobj);
+    len = PyUnicode_GET_LENGTH(path);
     if (len == 0) {
         PyErr_SetString(ZipImportError, "archive path is empty");
         goto error;
     }
-    if (len >= MAXPATHLEN) {
-        PyErr_SetString(ZipImportError,
-                        "archive path too long");
-        goto error;
-    }
-    if (!PyUnicode_AsUCS4(pathobj, buf, Py_ARRAY_LENGTH(buf), 1))
-        goto error;
 
 #ifdef ALTSEP
-    for (p = buf; *p; p++) {
-        if (*p == ALTSEP)
-            *p = SEP;
-    }
+    tmp = PyObject_CallMethodId(path, &PyId_replace, "CC",
+                                ALTSEP, SEP);
+    if (!tmp)
+        goto error;
+    Py_DECREF(path);
+    path = tmp;
 #endif
 
-    path = NULL;
-    prefix = NULL;
+    filename = path;
+    Py_INCREF(filename);
+    flen = len;
     for (;;) {
         struct stat statbuf;
         int rv;
 
-        if (pathobj == NULL) {
-            pathobj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                                buf, len);
-            if (pathobj == NULL)
-                goto error;
-        }
-        rv = _Py_stat(pathobj, &statbuf);
+        rv = _Py_stat(filename, &statbuf);
         if (rv == 0) {
             /* it exists */
-            if (S_ISREG(statbuf.st_mode))
-                /* it's a file */
-                path = buf;
+            if (!S_ISREG(statbuf.st_mode))
+                /* it's a not file */
+                Py_CLEAR(filename);
             break;
         }
         else if (PyErr_Occurred())
             goto error;
+        Py_CLEAR(filename);
         /* back up one path element */
-        p = Py_UCS4_strrchr(buf, SEP);
-        if (prefix != NULL)
-            *prefix = SEP;
-        if (p == NULL)
+        flen = PyUnicode_FindChar(path, SEP, 0, flen, -1);
+        if (flen == -1)
             break;
-        *p = '\0';
-        len = p - buf;
-        prefix = p;
-        Py_CLEAR(pathobj);
+        filename = PyUnicode_Substring(path, 0, flen);
     }
-    if (path == NULL) {
+    if (filename == NULL) {
         PyErr_SetString(ZipImportError, "not a Zip file");
         goto error;
     }
 
-    files = PyDict_GetItem(zip_directory_cache, pathobj);
+    if (PyUnicode_READY(filename) < 0)
+        goto error;
+
+    files = PyDict_GetItem(zip_directory_cache, filename);
     if (files == NULL) {
-        files = read_directory(pathobj);
+        files = read_directory(filename);
         if (files == NULL)
             goto error;
-        if (PyDict_SetItem(zip_directory_cache, pathobj, files) != 0)
+        if (PyDict_SetItem(zip_directory_cache, filename, files) != 0)
             goto error;
     }
     else
         Py_INCREF(files);
     self->files = files;
 
-    self->archive = pathobj;
-    pathobj = NULL;
+    /* Transfer reference */
+    self->archive = filename;
+    filename = NULL;
 
-    if (prefix != NULL) {
-        prefix++;
-        len = Py_UCS4_strlen(prefix);
-        if (prefix[len-1] != SEP) {
+    /* Check if there is a prefix directory following the filename. */
+    if (flen != len) {
+        tmp = PyUnicode_Substring(path, flen+1,
+                                  PyUnicode_GET_LENGTH(path));
+        if (tmp == NULL)
+            goto error;
+        self->prefix = tmp;
+        if (PyUnicode_READ_CHAR(path, len-1) != SEP) {
             /* add trailing SEP */
-            prefix[len] = SEP;
-            prefix[len + 1] = '\0';
-            len++;
+            tmp = PyUnicode_FromFormat("%U%c", self->prefix, SEP);
+            if (tmp == NULL)
+                goto error;
+            Py_DECREF(self->prefix);
+            self->prefix = tmp;
         }
     }
     else
-        len = 0;
-    self->prefix = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                               prefix, len);
-    if (self->prefix == NULL)
-        goto error;
-
+        self->prefix = PyUnicode_New(0, 0);
+    Py_DECREF(path);
     return 0;
 
 error:
-    Py_XDECREF(pathobj);
+    Py_DECREF(path);
+    Py_XDECREF(filename);
     return -1;
 }
 
@@ -211,26 +206,16 @@ zipimporter_repr(ZipImporter *self)
 static PyObject *
 get_subname(PyObject *fullname)
 {
-    Py_ssize_t len;
-    Py_UCS4 *subname, *fullname_ucs4;
-    fullname_ucs4 = PyUnicode_AsUCS4Copy(fullname);
-    if (!fullname_ucs4)
+    Py_ssize_t len, dot;
+    if (PyUnicode_READY(fullname) < 0)
         return NULL;
-    subname = Py_UCS4_strrchr(fullname_ucs4, '.');
-    if (subname == NULL) {
-        PyMem_Free(fullname_ucs4);
+    len = PyUnicode_GET_LENGTH(fullname);
+    dot = PyUnicode_FindChar(fullname, '.', 0, len, -1);
+    if (dot == -1) {
         Py_INCREF(fullname);
         return fullname;
-    } else {
-        PyObject *result;
-        subname++;
-        len = PyUnicode_GET_LENGTH(fullname);
-        len -= subname - fullname_ucs4;
-        result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                           subname, len);
-        PyMem_Free(fullname_ucs4);
-        return result;
-    }
+    } else
+        return PyUnicode_Substring(fullname, dot+1, len);
 }
 
 /* Given a (sub)modulename, write the potential file path in the
@@ -453,58 +438,51 @@ static PyObject *
 zipimporter_get_data(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
-    PyObject *pathobj, *key;
-    const Py_UCS4 *path;
+    PyObject *path, *key;
 #ifdef ALTSEP
-    Py_UCS4 *p;
+    PyObject *tmp;
+    _Py_IDENTIFIER(replace);
 #endif
     PyObject *toc_entry;
-    Py_ssize_t path_len, len;
-    Py_UCS4 buf[MAXPATHLEN + 1], archive[MAXPATHLEN + 1];
+    Py_ssize_t path_start, path_len, len;
 
-    if (!PyArg_ParseTuple(args, "U:zipimporter.get_data", &pathobj))
-        return NULL;
-
-    if (PyUnicode_READY(pathobj) == -1)
+    if (!PyArg_ParseTuple(args, "U:zipimporter.get_data", &path))
         return NULL;
 
-    path_len = PyUnicode_GET_LENGTH(pathobj);
-    if (path_len >= MAXPATHLEN) {
-        PyErr_SetString(ZipImportError, "path too long");
-        return NULL;
-    }
-    if (!PyUnicode_AsUCS4(pathobj, buf, Py_ARRAY_LENGTH(buf), 1))
-        return NULL;
-    path = buf;
 #ifdef ALTSEP
-    for (p = buf; *p; p++) {
-        if (*p == ALTSEP)
-            *p = SEP;
-    }
+    path = PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
+    if (!path)
+        return NULL;
+#else
+    Py_INCREF(path);
 #endif
+    if (PyUnicode_READY(path) == -1)
+        goto error;
+
+    path_len = PyUnicode_GET_LENGTH(path);
+
     len = PyUnicode_GET_LENGTH(self->archive);
-    if ((size_t)len < Py_UCS4_strlen(path)) {
-        if (!PyUnicode_AsUCS4(self->archive, archive, Py_ARRAY_LENGTH(archive), 1))
-            return NULL;
-        if (Py_UCS4_strncmp(path, archive, len) == 0 &&
-            path[len] == SEP) {
-            path += len + 1;
-            path_len -= len + 1;
-        }
+    path_start = 0;
+    if (PyUnicode_Tailmatch(path, self->archive, 0, len, -1)
+        && PyUnicode_READ_CHAR(path, len) == SEP) {
+        path_start = len + 1;
     }
 
-    key = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                    path, path_len);
+    key = PyUnicode_Substring(path, path_start, path_len);
     if (key == NULL)
-        return NULL;
+        goto error;
     toc_entry = PyDict_GetItem(self->files, key);
     if (toc_entry == NULL) {
         PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, key);
         Py_DECREF(key);
-        return NULL;
+        goto error;
     }
     Py_DECREF(key);
+    Py_DECREF(path);
     return get_data(self->archive, toc_entry);
+  error:
+    Py_DECREF(path);
+    return NULL;
 }
 
 static PyObject *
@@ -756,23 +734,13 @@ read_directory(PyObject *archive)
     long header_offset, name_size, header_size, header_position;
     long l, count;
     Py_ssize_t i;
-    size_t length;
-    Py_UCS4 path[MAXPATHLEN + 5];
     char name[MAXPATHLEN + 5];
     PyObject *nameobj = NULL;
     char *p, endof_central_dir[22];
     long arc_offset; /* offset from beginning of file to start of zip-archive */
-    PyObject *pathobj;
+    PyObject *path;
     const char *charset;
     int bootstrap;
-
-    if (PyUnicode_GET_LENGTH(archive) > MAXPATHLEN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Zip path name is too long");
-        return NULL;
-    }
-    if (!PyUnicode_AsUCS4(archive, path, Py_ARRAY_LENGTH(path), 1))
-        return NULL;
 
     fp = _Py_fopen(archive, "rb");
     if (fp == NULL) {
@@ -801,9 +769,6 @@ read_directory(PyObject *archive)
     files = PyDict_New();
     if (files == NULL)
         goto error;
-
-    length = Py_UCS4_strlen(path);
-    path[length] = SEP;
 
     /* Start of Central Directory */
     count = 0;
@@ -868,15 +833,10 @@ read_directory(PyObject *archive)
                     PY_MAJOR_VERSION, PY_MINOR_VERSION);
             goto error;
         }
-        for (i = 0; (i < (MAXPATHLEN - (Py_ssize_t)length - 1)) &&
-                 (i < PyUnicode_GET_LENGTH(nameobj)); i++)
-            path[length + 1 + i] = PyUnicode_READ_CHAR(nameobj, i);
-        path[length + 1 + i] = 0;
-        pathobj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                            path, Py_UCS4_strlen(path));
-        if (pathobj == NULL)
+        path = PyUnicode_FromFormat("%U%c%U", archive, SEP, nameobj);
+        if (path == NULL)
             goto error;
-        t = Py_BuildValue("Niiiiiii", pathobj, compress, data_size,
+        t = Py_BuildValue("Niiiiiii", path, compress, data_size,
                           file_size, file_offset, time, date, crc);
         if (t == NULL)
             goto error;
