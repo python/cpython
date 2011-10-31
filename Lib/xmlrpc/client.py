@@ -250,18 +250,33 @@ boolean = Boolean = bool
 # Wrapper for XML-RPC DateTime values.  This converts a time value to
 # the format used by XML-RPC.
 # <p>
-# The value can be given as a string in the format
-# "yyyymmddThh:mm:ss", as a 9-item time tuple (as returned by
+# The value can be given as a datetime object, as a string in the
+# format "yyyymmddThh:mm:ss", as a 9-item time tuple (as returned by
 # time.localtime()), or an integer value (as returned by time.time()).
 # The wrapper uses time.localtime() to convert an integer to a time
 # tuple.
 #
-# @param value The time, given as an ISO 8601 string, a time
-#              tuple, or a integer time value.
+# @param value The time, given as a datetime object, an ISO 8601 string,
+#              a time tuple, or an integer time value.
+
+
+# Issue #13305: different format codes across platforms
+_day0 = datetime(1, 1, 1)
+if _day0.strftime('%Y') == '0001':      # Mac OS X
+    def _iso8601_format(value):
+        return value.strftime("%Y%m%dT%H:%M:%S")
+elif _day0.strftime('%4Y') == '0001':   # Linux
+    def _iso8601_format(value):
+        return value.strftime("%4Y%m%dT%H:%M:%S")
+else:
+    def _iso8601_format(value):
+        return value.strftime("%Y%m%dT%H:%M:%S").zfill(17)
+del _day0
+
 
 def _strftime(value):
     if isinstance(value, datetime):
-        return value.strftime("%Y%m%dT%H:%M:%S")
+        return _iso8601_format(value)
 
     if not isinstance(value, (tuple, time.struct_time)):
         if value == 0:
@@ -288,7 +303,7 @@ class DateTime:
             o = other.value
         elif isinstance(other, datetime):
             s = self.value
-            o = other.strftime("%Y%m%dT%H:%M:%S")
+            o = _iso8601_format(other)
         elif isinstance(other, str):
             s = self.value
             o = other
