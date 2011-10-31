@@ -204,7 +204,7 @@ Using screen events
    | :func:`onkeypress`
    | :func:`onclick` | :func:`onscreenclick`
    | :func:`ontimer`
-   | :func:`mainloop`
+   | :func:`mainloop` | :func:`done`
 
 Settings and special methods
    | :func:`mode`
@@ -1773,6 +1773,7 @@ Using screen events
 
 
 .. function:: mainloop()
+              done()
 
    Starts event loop - calling Tkinter's mainloop function.
    Must be the last statement in a turtle graphics program.
