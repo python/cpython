@@ -981,8 +981,6 @@ else:
         @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv2(self):
             """Connecting to an SSLv2 server with various client options"""
-            if not hasattr(ssl, 'PROTOCOL_SSLv2'):
-                raise unittest.SkipTest('No SSLv2 available')
             if test_support.verbose:
                 sys.stdout.write("\n")
             if not hasattr(ssl, 'PROTOCOL_SSLv2'):
