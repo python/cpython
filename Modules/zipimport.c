@@ -439,7 +439,6 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
     ZipImporter *self = (ZipImporter *)obj;
     PyObject *path, *key;
 #ifdef ALTSEP
-    PyObject *tmp;
     _Py_IDENTIFIER(replace);
 #endif
     PyObject *toc_entry;
