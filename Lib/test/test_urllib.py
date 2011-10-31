@@ -17,6 +17,36 @@ def hexescape(char):
         hex_repr = "0%s" % hex_repr
     return "%" + hex_repr
 
+
+class FakeHTTPMixin(object):
+    def fakehttp(self, fakedata):
+        class FakeSocket(StringIO.StringIO):
+
+            def sendall(self, str):
+                pass
+            def makefile(self, *args, **kwds):
+                return self
+
+            def read(self, amt=None):
+                if self.closed:
+                    return ""
+                return StringIO.StringIO.read(self, amt)
+
+            def readline(self, length=None):
+                if self.closed:
+                    return ""
+                return StringIO.StringIO.readline(self, length)
+
+        class FakeHTTPConnection(httplib.HTTPConnection):
+            def connect(self):
+                self.sock = FakeSocket(fakedata)
+        assert httplib.HTTP._connection_class == httplib.HTTPConnection
+        httplib.HTTP._connection_class = FakeHTTPConnection
+
+    def unfakehttp(self):
+        httplib.HTTP._connection_class = httplib.HTTPConnection
+
+
 class urlopen_FileTests(unittest.TestCase):
     """Test urlopen() opening a temporary file.
 
@@ -119,27 +149,8 @@ class ProxyTests(unittest.TestCase):
         self.assertTrue(urllib.proxy_bypass_environment('anotherdomain.com'))
 
 
-class urlopen_HttpTests(unittest.TestCase):
+class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urlopen() opening a fake http connection."""
-
-    def fakehttp(self, fakedata):
-        class FakeSocket(StringIO.StringIO):
-            def sendall(self, str): pass
-            def makefile(self, mode, name): return self
-            def read(self, amt=None):
-                if self.closed: return ''
-                return StringIO.StringIO.read(self, amt)
-            def readline(self, length=None):
-                if self.closed: return ''
-                return StringIO.StringIO.readline(self, length)
-        class FakeHTTPConnection(httplib.HTTPConnection):
-            def connect(self):
-                self.sock = FakeSocket(fakedata)
-        assert httplib.HTTP._connection_class == httplib.HTTPConnection
-        httplib.HTTP._connection_class = FakeHTTPConnection
-
-    def unfakehttp(self):
-        httplib.HTTP._connection_class = httplib.HTTPConnection
 
     def test_read(self):
         self.fakehttp('Hello!')
@@ -329,6 +340,45 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.assertEqual(len(report), 3)
         self.assertEqual(report[0][1], 8192)
         self.assertEqual(report[0][2], 8193)
+
+
+class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
+    """Test urllib.urlretrieve() using fake http connections"""
+
+    def test_short_content_raises_ContentTooShortError(self):
+        self.fakehttp('''HTTP/1.1 200 OK
+Date: Wed, 02 Jan 2008 03:03:54 GMT
+Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
+Connection: close
+Content-Length: 100
+Content-Type: text/html; charset=iso-8859-1
+
+FF
+''')
+
+        def _reporthook(par1, par2, par3):
+            pass
+
+        try:
+            self.assertRaises(urllib.ContentTooShortError, urllib.urlretrieve,
+                    'http://example.com', reporthook=_reporthook)
+        finally:
+            self.unfakehttp()
+
+    def test_short_content_raises_ContentTooShortError_without_reporthook(self):
+        self.fakehttp('''HTTP/1.1 200 OK
+Date: Wed, 02 Jan 2008 03:03:54 GMT
+Server: Apache/1.3.33 (Debian GNU/Linux) mod_ssl/2.8.22 OpenSSL/0.9.7e
+Connection: close
+Content-Length: 100
+Content-Type: text/html; charset=iso-8859-1
+
+FF
+''')
+        try:
+            self.assertRaises(urllib.ContentTooShortError, urllib.urlretrieve, 'http://example.com/')
+        finally:
+            self.unfakehttp()
 
 class QuotingTests(unittest.TestCase):
     """Tests for urllib.quote() and urllib.quote_plus()
@@ -774,6 +824,7 @@ def test_main():
             urlopen_FileTests,
             urlopen_HttpTests,
             urlretrieve_FileTests,
+            urlretrieve_HttpTests,
             ProxyTests,
             QuotingTests,
             UnquotingTests,
