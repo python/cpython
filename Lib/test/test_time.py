@@ -161,10 +161,6 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
-    # XXX Temporary tests to troubleshoot issue #13309 on buildbots
-    test_maa_strptime = test_strptime
-    test_mzz_strptime = test_strptime
-
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
         self.assertRaises(TypeError, time.strptime, b'2009', "%Y")
@@ -301,7 +297,8 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
-    def test_mktime(self):
+    # XXX run last to work around issue #13309 on Gentoo
+    def test_ZZZ_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
             try:
@@ -310,8 +307,9 @@ class TimeTestCase(unittest.TestCase):
                 pass
             else:
                 self.assertEqual(time.mktime(tt), t)
-            self.assertNotEqual(time.strftime('%Z', time.gmtime(self.t)), 'LMT',
-                                "strftime bug after processing t = %s" % t)
+        tt = time.gmtime(self.t)
+        tzname = time.strftime('%Z', tt)
+        self.assertNotEqual(tzname, 'LMT')
         # It may not be possible to reliably make mktime return error
         # on all platfom.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
@@ -319,6 +317,10 @@ class TimeTestCase(unittest.TestCase):
             time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
         except OverflowError:
             pass
+        msg = "Issue #13309: the '%Z' specifier reports wrong timezone"
+        self.assertEqual(time.strftime('%Z', tt), tzname, msg)
+        tt = time.gmtime(self.t)
+        self.assertEqual(time.strftime('%Z', tt), tzname, msg)
 
 
 class TestLocale(unittest.TestCase):
