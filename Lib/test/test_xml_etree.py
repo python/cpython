@@ -738,8 +738,8 @@ def iterparse():
     ...     print action, elem.tag
     ... except ET.ParseError, v:
     ...   print v
-    junk after document element: line 1, column 12
     end document
+    junk after document element: line 1, column 12
     """
 
 def writefile():
