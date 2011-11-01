@@ -72,9 +72,12 @@ class EventCollectorExtra(EventCollector):
 
 class TestCaseBase(unittest.TestCase):
 
+    def get_collector(self):
+        raise NotImplementedError
+
     def _run_check(self, source, expected_events, collector=None):
         if collector is None:
-            collector = EventCollector()
+            collector = self.get_collector()
         parser = collector
         for s in source:
             parser.feed(s)
@@ -96,7 +99,10 @@ class TestCaseBase(unittest.TestCase):
         self.assertRaises(html.parser.HTMLParseError, parse)
 
 
-class HTMLParserTestCase(TestCaseBase):
+class HTMLParserStrictTestCase(TestCaseBase):
+
+    def get_collector(self):
+        return EventCollector(strict=True)
 
     def test_processing_instruction_only(self):
         self._run_check("<?processing instruction>", [
@@ -353,12 +359,11 @@ DOCTYPE html [
 
 
     def test_entityrefs_in_attributes(self):
-        self._run_check("<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>", [
-                ("starttag", "html", [("foo", "\u20AC&aa&unsupported;")])
-                ])
+        self._run_check("<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>",
+                        [("starttag", "html", [("foo", "\u20AC&aa&unsupported;")])])
 
 
-class HTMLParserTolerantTestCase(TestCaseBase):
+class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
 
     def get_collector(self):
         return EventCollector(strict=False)
@@ -374,8 +379,7 @@ class HTMLParserTolerantTestCase(TestCaseBase):
                              ('endtag', 'a'),
                              ('endtag', 'html'),
                              ('data', '\n<img src="URL><//img></html'),
-                             ('endtag', 'html')],
-                        collector=self.get_collector())
+                             ('endtag', 'html')])
 
     def test_with_unquoted_attributes(self):
         # see #12008
@@ -399,22 +403,19 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('starttag', 'span', [('class', 'en')]), ('data', ' library'),
             ('endtag', 'span'), ('endtag', 'a'), ('endtag', 'table')
         ]
-
-        self._run_check(html, expected, collector=self.get_collector())
+        self._run_check(html, expected)
 
     def test_comma_between_attributes(self):
         self._run_check('<form action="/xxx.php?a=1&amp;b=2&amp", '
                         'method="post">', [
                             ('starttag', 'form',
                                 [('action', '/xxx.php?a=1&b=2&amp'),
-                                 ('method', 'post')])],
-                        collector=self.get_collector())
+                                 ('method', 'post')])])
 
     def test_weird_chars_in_unquoted_attribute_values(self):
         self._run_check('<form action=bogus|&#()value>', [
                             ('starttag', 'form',
-                                [('action', 'bogus|&#()value')])],
-                        collector=self.get_collector())
+                                [('action', 'bogus|&#()value')])])
 
     def test_correct_detection_of_start_tags(self):
         # see #13273
@@ -436,7 +437,7 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('endtag', 'b'),
             ('endtag', 'div')
         ]
-        self._run_check(html, expected, collector=self.get_collector())
+        self._run_check(html, expected)
 
         html = '<div style="", foo = "bar" ><b>The <a href="some_url">rain</a>'
         expected = [
@@ -447,7 +448,7 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('data', 'rain'),
             ('endtag', 'a'),
         ]
-        self._run_check(html, expected, collector=self.get_collector())
+        self._run_check(html, expected)
 
     def test_unescape_function(self):
         p = html.parser.HTMLParser()
@@ -456,8 +457,9 @@ class HTMLParserTolerantTestCase(TestCaseBase):
         # see #12888
         self.assertEqual(p.unescape('&#123; ' * 1050), '{ ' * 1050)
 
+
 def test_main():
-    support.run_unittest(HTMLParserTestCase, HTMLParserTolerantTestCase)
+    support.run_unittest(HTMLParserStrictTestCase, HTMLParserTolerantTestCase)
 
 
 if __name__ == "__main__":
