@@ -6,6 +6,12 @@ import sysconfig
 import sys
 import warnings
 
+# Max year is only limited by the size of C int.
+SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
+TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
+TIME_MINYEAR = -TIME_MAXYEAR - 1
+
+
 class TimeTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -91,7 +97,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, func,
                             (1900, 1, 32, 0, 0, 0, 0, 1, -1))
         # Check hour [0, 23]
-        func((1900, 1, 1, 0, 0, 0, 0, 1, -1))
         func((1900, 1, 1, 23, 0, 0, 0, 1, -1))
         self.assertRaises(ValueError, func,
                             (1900, 1, 1, -1, 0, 0, 0, 1, -1))
@@ -165,11 +170,13 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
 
         # Max year is only limited by the size of C int.
-        sizeof_int = sysconfig.get_config_var('SIZEOF_INT') or 4
-        bigyear = (1 << 8 * sizeof_int - 1) - 1
-        asc = time.asctime((bigyear, 6, 1) + (0,)*6)
-        self.assertEqual(asc[-len(str(bigyear)):], str(bigyear))
-        self.assertRaises(OverflowError, time.asctime, (bigyear + 1,) + (0,)*8)
+        for bigyear in TIME_MAXYEAR, TIME_MINYEAR:
+            asc = time.asctime((bigyear, 6, 1) + (0,) * 6)
+            self.assertEqual(asc[-len(str(bigyear)):], str(bigyear))
+        self.assertRaises(OverflowError, time.asctime,
+                          (TIME_MAXYEAR + 1,) + (0,) * 8)
+        self.assertRaises(OverflowError, time.asctime,
+                          (TIME_MINYEAR - 1,) + (0,) * 8)
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
         self.assertRaises(TypeError, time.asctime, (0,) * 10)
@@ -290,6 +297,24 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
+    def test_mktime(self):
+        # Issue #1726687
+        for t in (-2, -1, 0, 1):
+            try:
+                tt = time.localtime(t)
+            except (OverflowError, ValueError):
+                pass
+            else:
+                self.assertEqual(time.mktime(tt), t)
+        # It may not be possible to reliably make mktime return error
+        # on all platfom.  This will make sure that no other exception
+        # than OverflowError is raised for an extreme value.
+        try:
+            time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
+        except OverflowError:
+            pass
+
+
 class TestLocale(unittest.TestCase):
     def setUp(self):
         self.oldloc = locale.setlocale(locale.LC_ALL)
@@ -346,6 +371,28 @@ class _TestStrftimeYear:
                 return time.strftime('%4Y', (y,) + (0,) * 8)
             self.test_year('%04d', func=year4d)
 
+    def skip_if_not_supported(y):
+        msg = "strftime() is limited to [1; 9999] with Visual Studio"
+        # Check that it doesn't crash for year > 9999
+        try:
+            time.strftime('%Y', (y,) + (0,) * 8)
+        except ValueError:
+            cond = False
+        else:
+            cond = True
+        return unittest.skipUnless(cond, msg)
+
+    @skip_if_not_supported(10000)
+    def test_large_year(self):
+        return super().test_large_year()
+
+    @skip_if_not_supported(0)
+    def test_negative(self):
+        return super().test_negative()
+
+    del skip_if_not_supported
+
+
 class _Test4dYear(_BaseYearTest):
     _format = '%d'
 
@@ -360,43 +407,18 @@ class _Test4dYear(_BaseYearTest):
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        # Check that it doesn't crash for year > 9999
-        try:
-            text = self.yearstr(12345)
-        except ValueError:
-            # strftime() is limited to [1; 9999] with Visual Studio
-            return
-        self.assertEqual(text, '12345')
+        self.assertEqual(self.yearstr(12345), '12345')
         self.assertEqual(self.yearstr(123456789), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
-        try:
-            text = self.yearstr(-1)
-        except ValueError:
-            # strftime() is limited to [1; 9999] with Visual Studio
-            return
-        self.assertEqual(text, self._format % -1)
-
+        self.assertEqual(self.yearstr(-1), self._format % -1)
         self.assertEqual(self.yearstr(-1234), '-1234')
         self.assertEqual(self.yearstr(-123456), '-123456')
+        self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
 
-
-    def test_mktime(self):
-        # Issue #1726687
-        for t in (-2, -1, 0, 1):
-            try:
-                tt = time.localtime(t)
-            except (OverflowError, ValueError):
-                pass
-            else:
-                self.assertEqual(time.mktime(tt), t)
-        # It may not be possible to reliably make mktime return error
-        # on all platfom.  This will make sure that no other exception
-        # than OverflowError is raised for an extreme value.
-        try:
-            time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
-        except OverflowError:
-            pass
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear):
     pass
