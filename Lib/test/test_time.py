@@ -298,7 +298,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
     # XXX run last to work around issue #13309 on Gentoo
-    def test_ZZZ_mktime(self):
+    def test_zzz_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
             try:
@@ -317,9 +317,8 @@ class TimeTestCase(unittest.TestCase):
             time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
         except OverflowError:
             pass
-        msg = "Issue #13309: the '%Z' specifier reports wrong timezone"
-        self.assertEqual(time.strftime('%Z', tt), tzname, msg)
-        tt = time.gmtime(self.t)
+        msg = "Issue #13309: the '%Z' specifier reports erroneous timezone"
+        msg += " after time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))."
         self.assertEqual(time.strftime('%Z', tt), tzname, msg)
 
 
