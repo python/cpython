@@ -115,7 +115,8 @@ An exception is defined as well:
 
 .. method:: HTMLParser.handle_data(data)
 
-   This method is called to process arbitrary data.  It is intended to be
+   This method is called to process arbitrary data (e.g. the content of
+   ``<script>...</script>`` and ``<style>...</style>``).  It is intended to be
    overridden by a derived class; the base class implementation does nothing.
 
 
