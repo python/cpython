@@ -1422,13 +1422,13 @@ methods.  Exactly which methods are needed depends on the uses made of aware
 
    Most implementations of :meth:`dst` will probably look like one of these two::
 
-      def dst(self):
+      def dst(self, dt):
           # a fixed-offset class:  doesn't account for DST
           return timedelta(0)
 
    or ::
 
-      def dst(self):
+      def dst(self, dt):
           # Code to set dston and dstoff to the time zone's DST
           # transition times based on the input dt.year, and expressed
           # in standard local time.  Then
