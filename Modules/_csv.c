@@ -950,7 +950,6 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
     DialectObj *dialect = self->dialect;
     int i;
     Py_ssize_t rec_len;
-    Py_UNICODE *lineterm;
 
 #define ADDCH(c) \
     do {\
@@ -958,10 +957,6 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
             self->rec[rec_len] = c;\
         rec_len++;\
     } while(0)
-
-    lineterm = PyUnicode_AsUnicode(dialect->lineterminator);
-    if (lineterm == NULL)
-        return -1;
 
     rec_len = self->rec_len;
 
@@ -982,7 +977,9 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
         if (c == dialect->delimiter ||
             c == dialect->escapechar ||
             c == dialect->quotechar  ||
-            Py_UNICODE_strchr(lineterm, c)) {
+            PyUnicode_FindChar(
+                dialect->lineterminator, c, 0,
+                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
