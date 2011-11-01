@@ -1210,6 +1210,7 @@ class _IterParseIterator(object):
         self._close_file = close_source
         self._events = []
         self._index = 0
+        self._error = None
         self.root = self._root = None
         self._parser = parser
         # wire up the parser for event reporting
@@ -1255,24 +1256,31 @@ class _IterParseIterator(object):
         while 1:
             try:
                 item = self._events[self._index]
-            except IndexError:
-                if self._parser is None:
-                    self.root = self._root
-                    if self._close_file:
-                        self._file.close()
-                    raise StopIteration
-                # load event buffer
-                del self._events[:]
-                self._index = 0
-                data = self._file.read(16384)
-                if data:
-                    self._parser.feed(data)
-                else:
-                    self._root = self._parser.close()
-                    self._parser = None
-            else:
-                self._index = self._index + 1
+                self._index += 1
                 return item
+            except IndexError:
+                pass
+            if self._error:
+                e = self._error
+                self._error = None
+                raise e
+            if self._parser is None:
+                self.root = self._root
+                if self._close_file:
+                    self._file.close()
+                raise StopIteration
+            # load event buffer
+            del self._events[:]
+            self._index = 0
+            data = self._file.read(16384)
+            if data:
+                try:
+                    self._parser.feed(data)
+                except SyntaxError as exc:
+                    self._error = exc
+            else:
+                self._root = self._parser.close()
+                self._parser = None
 
     def __iter__(self):
         return self
