@@ -360,8 +360,8 @@ DOCTYPE html [
 
 class HTMLParserTolerantTestCase(TestCaseBase):
 
-    def setUp(self):
-        self.collector = EventCollector(strict=False)
+    def get_collector(self):
+        return EventCollector(strict=False)
 
     def test_tolerant_parsing(self):
         self._run_check('<html <html>te>>xt&a<<bc</a></html>\n'
@@ -375,9 +375,10 @@ class HTMLParserTolerantTestCase(TestCaseBase):
                              ('endtag', 'html'),
                              ('data', '\n<img src="URL><//img></html'),
                              ('endtag', 'html')],
-                        collector = self.collector)
+                        collector=self.get_collector())
 
     def test_with_unquoted_attributes(self):
+        # see #12008
         html = ("<html><body bgcolor=d0ca90 text='181008'>"
                 "<table cellspacing=0 cellpadding=1 width=100% ><tr>"
                 "<td align=left><font size=-1>"
@@ -399,7 +400,7 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('endtag', 'span'), ('endtag', 'a'), ('endtag', 'table')
         ]
 
-        self._run_check(html, expected, collector=self.collector)
+        self._run_check(html, expected, collector=self.get_collector())
 
     def test_comma_between_attributes(self):
         self._run_check('<form action="/xxx.php?a=1&amp;b=2&amp", '
@@ -407,15 +408,16 @@ class HTMLParserTolerantTestCase(TestCaseBase):
                             ('starttag', 'form',
                                 [('action', '/xxx.php?a=1&b=2&amp'),
                                  ('method', 'post')])],
-                        collector = self.collector)
+                        collector=self.get_collector())
 
     def test_weird_chars_in_unquoted_attribute_values(self):
         self._run_check('<form action=bogus|&#()value>', [
                             ('starttag', 'form',
                                 [('action', 'bogus|&#()value')])],
-                        collector = self.collector)
+                        collector=self.get_collector())
 
-    def test_issue13273(self):
+    def test_correct_detection_of_start_tags(self):
+        # see #13273
         html = ('<div style=""    ><b>The <a href="some_url">rain</a> '
                 '<br /> in <span>Spain</span></b></div>')
         expected = [
@@ -434,9 +436,8 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('endtag', 'b'),
             ('endtag', 'div')
         ]
-        self._run_check(html, expected, collector=self.collector)
+        self._run_check(html, expected, collector=self.get_collector())
 
-    def test_issue13273_2(self):
         html = '<div style="", foo = "bar" ><b>The <a href="some_url">rain</a>'
         expected = [
             ('starttag', 'div', [('style', ''), ('foo', 'bar')]),
@@ -446,7 +447,7 @@ class HTMLParserTolerantTestCase(TestCaseBase):
             ('data', 'rain'),
             ('endtag', 'a'),
         ]
-        self._run_check(html, expected, collector=self.collector)
+        self._run_check(html, expected, collector=self.get_collector())
 
     def test_unescape_function(self):
         p = html.parser.HTMLParser()
