@@ -1291,8 +1291,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strftime_y2k(self):
         for y in (1, 49, 70, 99, 100, 999, 1000, 1970):
-            self.assertIn(self.theclass(y, 1, 1).strftime("%Y"),
-                          [str(y),'%04d' % y])
+            d = self.theclass(y, 1, 1)
+            # Issue 13305:  For years < 1000, the value is not always
+            # padded to 4 digits across platforms.  The C standard
+            # assumes year >= 1900, so it does not specify the number
+            # of digits.
+            if d.strftime("%Y") != '%04d' % y:
+                # Year 42 returns '42', not padded
+                self.assertEqual(d.strftime("%Y"), '%d' % y)
+                # '0042' is obtained anyway
+                self.assertEqual(d.strftime("%4Y"), '%04d' % y)
 
     def test_replace(self):
         cls = self.theclass
