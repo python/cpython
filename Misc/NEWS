@@ -74,6 +74,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2892: preserve iterparse events in case of SyntaxError.
+
 - Issue #670664: Fix HTMLParser to correctly handle the content of
   ``<script>...</script>`` and ``<style>...</style>``.
 
