@@ -739,6 +739,7 @@ def iterparse():
     ... except ET.ParseError, v:
     ...   print v
     junk after document element: line 1, column 12
+    end document
     """
 
 def writefile():
