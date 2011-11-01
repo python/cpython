@@ -1200,6 +1200,8 @@ if hasattr(http.client, 'HTTPSConnection'):
 
         https_request = AbstractHTTPHandler.do_request_
 
+    __all__.append(HTTPSHandler)
+
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
         import http.cookiejar
