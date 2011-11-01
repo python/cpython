@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13287: urllib.request and urllib.error now contains a __all__ and
+  exposes only relevant Classes, Functions. Patch by Florent Xicluna.
+
 - Issue #670664: Fix HTMLParser to correctly handle the content of
   ``<script>...</script>`` and ``<style>...</style>``.
 

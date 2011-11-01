@@ -19,6 +19,18 @@ import urllib.error
 # parse_keqv_list, parse_http_list, HTTPDigestAuthHandler
 
 class TrivialTests(unittest.TestCase):
+
+    def test___all__(self):
+        # Verify which names are exposed
+        for module in 'request', 'response', 'parse', 'error', 'robotparser':
+            context = {}
+            exec('from urllib.%s import *' % module, context)
+            del context['__builtins__']
+            for k, v in context.items():
+                self.assertEqual(v.__module__, 'urllib.%s' % module,
+                    "%r is exposed in 'urllib.%s' but defined in %r" %
+                    (k, module, v.__module__))
+
     def test_trivial(self):
         # A couple trivial tests
 

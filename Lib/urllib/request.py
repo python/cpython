@@ -89,7 +89,6 @@ import http.client
 import io
 import os
 import posixpath
-import random
 import re
 import socket
 import sys
@@ -110,6 +109,22 @@ except ImportError:
     _have_ssl = False
 else:
     _have_ssl = True
+
+__all__ = [
+    # Classes
+    'Request', 'OpenerDirector', 'BaseHandler', 'HTTPDefaultErrorHandler',
+    'HTTPRedirectHandler', 'HTTPCookieProcessor', 'ProxyHandler',
+    'HTTPPasswordMgr', 'HTTPPasswordMgrWithDefaultRealm',
+    'AbstractBasicAuthHandler', 'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler',
+    'AbstractDigestAuthHandler', 'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler',
+    'HTTPHandler', 'FileHandler', 'FTPHandler', 'CacheFTPHandler',
+    'UnknownHandler', 'HTTPErrorProcessor',
+    # Functions
+    'urlopen', 'install_opener', 'build_opener',
+    'pathname2url', 'url2pathname', 'getproxies',
+    # Legacy interface
+    'urlretrieve', 'urlcleanup', 'URLopener', 'FancyURLopener',
+]
 
 # used in User-Agent header sent
 __version__ = sys.version[:3]
@@ -885,9 +900,9 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         return response
 
 
-def randombytes(n):
-    """Return n random bytes."""
-    return os.urandom(n)
+# Return n random bytes.
+_randombytes = os.urandom
+
 
 class AbstractDigestAuthHandler:
     # Digest authentication is specified in RFC 2617.
@@ -951,7 +966,7 @@ class AbstractDigestAuthHandler:
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
         s = "%s:%s:%s:" % (self.nonce_count, nonce, time.ctime())
-        b = s.encode("ascii") + randombytes(8)
+        b = s.encode("ascii") + _randombytes(8)
         dig = hashlib.sha1(b).hexdigest()
         return dig[:16]
 
@@ -1171,7 +1186,6 @@ class HTTPHandler(AbstractHTTPHandler):
     http_request = AbstractHTTPHandler.do_request_
 
 if hasattr(http.client, 'HTTPSConnection'):
-    import ssl
 
     class HTTPSHandler(AbstractHTTPHandler):
 
@@ -1677,13 +1691,11 @@ class URLopener:
         if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
-            import base64
             proxy_auth = base64.b64encode(proxy_passwd.encode()).decode('ascii')
         else:
             proxy_auth = None
 
         if user_passwd:
-            import base64
             auth = base64.b64encode(user_passwd.encode()).decode('ascii')
         else:
             auth = None
@@ -1773,8 +1785,8 @@ class URLopener:
 
     def open_local_file(self, url):
         """Use local file."""
-        import mimetypes, email.utils
-        from io import StringIO
+        import email.utils
+        import mimetypes
         host, file = splithost(url)
         localname = url2pathname(file)
         try:
@@ -1806,7 +1818,6 @@ class URLopener:
         if not isinstance(url, str):
             raise URLError('ftp error', 'proxy support for ftp protocol currently not implemented')
         import mimetypes
-        from io import StringIO
         host, path = splithost(url)
         if not host: raise URLError('ftp error', 'no host given')
         host, port = splitport(host)
@@ -1888,7 +1899,6 @@ class URLopener:
                                             time.gmtime(time.time())))
         msg.append('Content-type: %s' % type)
         if encoding == 'base64':
-            import base64
             # XXX is this encoding/decoding ok?
             data = base64.decodebytes(data.encode('ascii')).decode('latin-1')
         else:
@@ -1984,7 +1994,6 @@ class FancyURLopener(URLopener):
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         stuff = headers['www-authenticate']
-        import re
         match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
         if not match:
             URLopener.http_error_default(self, url, fp,
@@ -2010,7 +2019,6 @@ class FancyURLopener(URLopener):
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         stuff = headers['proxy-authenticate']
-        import re
         match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
         if not match:
             URLopener.http_error_default(self, url, fp,
@@ -2302,8 +2310,6 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
       'exceptions': ['foo.bar', '*.bar.com', '127.0.0.1', '10.1', '10.0/16']
     }
     """
-    import re
-    import socket
     from fnmatch import fnmatch
 
     hostonly, port = splitport(host)
@@ -2406,7 +2412,6 @@ elif os.name == 'nt':
                     for p in proxyServer.split(';'):
                         protocol, address = p.split('=', 1)
                         # See if address has a type:// prefix
-                        import re
                         if not re.match('^([^/:]+)://', address):
                             address = '%s://%s' % (protocol, address)
                         proxies[protocol] = address
@@ -2438,7 +2443,6 @@ elif os.name == 'nt':
     def proxy_bypass_registry(host):
         try:
             import winreg
-            import re
         except ImportError:
             # Std modules, so should be around - but you never know!
             return 0
