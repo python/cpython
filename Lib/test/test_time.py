@@ -162,8 +162,8 @@ class TimeTestCase(unittest.TestCase):
                           (format, strf_output))
 
     # XXX Temporary tests to troubleshoot issue #13309 on buildbots
-    test_aaa_strptime = test_strptime
-    test_bbb_strptime = test_strptime
+    test_maa_strptime = test_strptime
+    test_mzz_strptime = test_strptime
 
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
@@ -310,6 +310,8 @@ class TimeTestCase(unittest.TestCase):
                 pass
             else:
                 self.assertEqual(time.mktime(tt), t)
+            self.assertNotEqual(time.strftime('%Z', time.gmtime(self.t)), 'LMT',
+                                "strftime bug after processing t = %s" % t)
         # It may not be possible to reliably make mktime return error
         # on all platfom.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
