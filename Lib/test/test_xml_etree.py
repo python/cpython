@@ -754,6 +754,7 @@ def iterparse():
     ...     print(action, elem.tag)
     ... except ET.ParseError as v:
     ...   print(v)
+    end document
     junk after document element: line 1, column 12
     """
 
