@@ -43,6 +43,8 @@ locatestarttagend = re.compile(r"""
   \s*                                # trailing whitespace
 """, re.VERBOSE)
 endendtag = re.compile('>')
+# the HTML 5 spec, section 8.1.2.2, doesn't allow spaces between
+# </ and the tag name, so maybe this should be fixed
 endtagfind = re.compile('</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
 
@@ -96,6 +98,7 @@ class HTMLParser(markupbase.ParserBase):
         self.rawdata = ''
         self.lasttag = '???'
         self.interesting = interesting_normal
+        self.cdata_elem = None
         markupbase.ParserBase.reset(self)
 
     def feed(self, data):
@@ -120,11 +123,13 @@ class HTMLParser(markupbase.ParserBase):
         """Return full source of start tag: '<...>'."""
         return self.__starttag_text
 
-    def set_cdata_mode(self):
+    def set_cdata_mode(self, elem):
         self.interesting = interesting_cdata
+        self.cdata_elem = elem.lower()
 
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
+        self.cdata_elem = None
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
@@ -270,7 +275,7 @@ class HTMLParser(markupbase.ParserBase):
         else:
             self.handle_starttag(tag, attrs)
             if tag in self.CDATA_CONTENT_ELEMENTS:
-                self.set_cdata_mode()
+                self.set_cdata_mode(tag)
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end
@@ -314,9 +319,18 @@ class HTMLParser(markupbase.ParserBase):
         j = match.end()
         match = endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
+            if self.cdata_elem is not None:
+                self.handle_data(rawdata[i:j])
+                return j
             self.error("bad end tag: %r" % (rawdata[i:j],))
-        tag = match.group(1)
-        self.handle_endtag(tag.lower())
+
+        elem = match.group(1).lower() # script or style
+        if self.cdata_elem is not None:
+            if elem != self.cdata_elem:
+                self.handle_data(rawdata[i:j])
+                return j
+
+        self.handle_endtag(elem)
         self.clear_cdata_mode()
         return j
 

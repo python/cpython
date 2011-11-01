@@ -74,10 +74,13 @@ Core and Builtins
 Library
 -------
 
-- Issue 10817: Fix urlretrieve function to raise ContentTooShortError even
+- Issue #670664: Fix HTMLParser to correctly handle the content of
+  ``<script>...</script>`` and ``<style>...</style>``.
+
+- Issue #10817: Fix urlretrieve function to raise ContentTooShortError even
   when reporthook is None. Patch by Jyrki Pulliainen.
 
-- Issue 13296: Fix IDLE to clear compile __future__ flags on shell restart.
+- Issue #13296: Fix IDLE to clear compile __future__ flags on shell restart.
   (Patch by Roger Serwy)
 
 - Issue #7334: close source files on ElementTree.parse and iterparse.

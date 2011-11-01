@@ -312,18 +312,36 @@ DOCTYPE html [
             ("starttag_text", s)])
 
     def test_cdata_content(self):
-        s = """<script> <!-- not a comment --> &not-an-entity-ref; </script>"""
-        self._run_check(s, [
-            ("starttag", "script", []),
-            ("data", " <!-- not a comment --> &not-an-entity-ref; "),
-            ("endtag", "script"),
-            ])
-        s = """<script> <not a='start tag'> </script>"""
-        self._run_check(s, [
-            ("starttag", "script", []),
-            ("data", " <not a='start tag'> "),
-            ("endtag", "script"),
-            ])
+        contents = [
+            '<!-- not a comment --> &not-an-entity-ref;',
+            "<not a='start tag'>",
+            '<a href="" /> <p> <span></span>',
+            'foo = "</scr" + "ipt>";',
+            'foo = "</SCRIPT" + ">";',
+            'foo = <\n/script> ',
+            '<!-- document.write("</scr" + "ipt>"); -->',
+            ('\n//<![CDATA[\n'
+             'document.write(\'<s\'+\'cript type="text/javascript" '
+             'src="http://www.example.org/r=\'+new '
+             'Date().getTime()+\'"><\\/s\'+\'cript>\');\n//]]>'),
+            '\n<!-- //\nvar foo = 3.14;\n// -->\n',
+            'foo = "</sty" + "le>";',
+            u'<!-- \u2603 -->',
+            # these two should be invalid according to the HTML 5 spec,
+            # section 8.1.2.2
+            #'foo = </\nscript>',
+            #'foo = </ script>',
+        ]
+        elements = ['script', 'style', 'SCRIPT', 'STYLE', 'Script', 'Style']
+        for content in contents:
+            for element in elements:
+                element_lower = element.lower()
+                s = u'<{element}>{content}</{element}>'.format(element=element,
+                                                               content=content)
+                self._run_check(s, [("starttag", element_lower, []),
+                                    ("data", content),
+                                    ("endtag", element_lower)])
+
 
     def test_entityrefs_in_attributes(self):
         self._run_check("<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>", [
