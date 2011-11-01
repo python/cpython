@@ -161,6 +161,10 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
+    # XXX Temporary tests to troubleshoot issue #13309 on buildbots
+    test_aaa_strptime = test_strptime
+    test_bbb_strptime = test_strptime
+
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
         self.assertRaises(TypeError, time.strptime, b'2009', "%Y")
