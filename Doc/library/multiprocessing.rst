@@ -1602,7 +1602,7 @@ with the :class:`Pool` class.
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
-   .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
+   .. method:: map_async(func, iterable[, chunksize[, callback]])
 
       A variant of the :meth:`.map` method which returns a result object.
 
