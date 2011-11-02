@@ -1460,7 +1460,7 @@ class TextIOWrapper(TextIOBase):
     enabled.  With this enabled, on input, the lines endings '\n', '\r',
     or '\r\n' are translated to '\n' before being returned to the
     caller. Conversely, on output, '\n' is translated to the system
-    default line seperator, os.linesep. If newline is any other of its
+    default line separator, os.linesep. If newline is any other of its
     legal values, that newline becomes the newline when the file is read
     and it is returned untranslated. On output, '\n' is converted to the
     newline.
