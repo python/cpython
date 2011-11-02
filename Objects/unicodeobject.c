@@ -257,6 +257,12 @@ raise_encode_exception(PyObject **exceptionObject,
                        const Py_UNICODE *unicode, Py_ssize_t size,
                        Py_ssize_t startpos, Py_ssize_t endpos,
                        const char *reason);
+static void
+raise_encode_exception_obj(PyObject **exceptionObject,
+                       const char *encoding,
+                       PyObject *unicode,
+                       Py_ssize_t startpos, Py_ssize_t endpos,
+                       const char *reason);
 
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
@@ -4786,9 +4792,9 @@ _PyUnicode_AsUTF8String(PyObject *obj, const char *errors)
                 for(k=0; k<repsize; k++) {
                     c = prep[k];
                     if (0x80 <= c) {
-                        raise_encode_exception(&exc, "utf-8",
-                                               PyUnicode_AS_UNICODE(unicode),
-                                               size, i-1, i,
+                        raise_encode_exception_obj(&exc, "utf-8",
+                                               (PyObject*)unicode,
+                                               i-1, i,
                                                "surrogates not allowed");
                         goto error;
                     }
@@ -6434,6 +6440,33 @@ make_encode_exception(PyObject **exceptionObject,
     }
 }
 
+/* This is ultimately going t replace above function. */
+static void
+make_encode_exception_obj(PyObject **exceptionObject,
+                      const char *encoding,
+                      PyObject *unicode,
+                      Py_ssize_t startpos, Py_ssize_t endpos,
+                      const char *reason)
+{
+    if (*exceptionObject == NULL) {
+        *exceptionObject = PyObject_CallFunction(
+            PyExc_UnicodeEncodeError, "sUnns",
+            encoding, unicode, startpos, endpos, reason);
+    }
+    else {
+        if (PyUnicodeEncodeError_SetStart(*exceptionObject, startpos))
+            goto onError;
+        if (PyUnicodeEncodeError_SetEnd(*exceptionObject, endpos))
+            goto onError;
+        if (PyUnicodeEncodeError_SetReason(*exceptionObject, reason))
+            goto onError;
+        return;
+      onError:
+        Py_DECREF(*exceptionObject);
+        *exceptionObject = NULL;
+    }
+}
+
 /* raises a UnicodeEncodeError */
 static void
 raise_encode_exception(PyObject **exceptionObject,
@@ -6444,6 +6477,19 @@ raise_encode_exception(PyObject **exceptionObject,
 {
     make_encode_exception(exceptionObject,
                           encoding, unicode, size, startpos, endpos, reason);
+    if (*exceptionObject != NULL)
+        PyCodec_StrictErrors(*exceptionObject);
+}
+/* This is ultimately going to replace above function. */
+static void
+raise_encode_exception_obj(PyObject **exceptionObject,
+                       const char *encoding,
+                       PyObject *unicode,
+                       Py_ssize_t startpos, Py_ssize_t endpos,
+                       const char *reason)
+{
+    make_encode_exception_obj(exceptionObject,
+                          encoding, unicode, startpos, endpos, reason);
     if (*exceptionObject != NULL)
         PyCodec_StrictErrors(*exceptionObject);
 }
