@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10570: curses.tigetstr() is now expecting a byte string, instead of
+  a Unicode string.
+
 - Issue #2892: preserve iterparse events in case of SyntaxError.
 
 - Issue #670664: Fix HTMLParser to correctly handle the content of

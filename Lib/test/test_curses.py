@@ -190,7 +190,7 @@ def module_funcs(stdscr):
     curses.tigetflag('hc')
     curses.tigetnum('co')
     curses.tigetstr('cr')
-    curses.tparm('cr')
+    curses.tparm(b'cr')
     curses.typeahead(sys.__stdin__.fileno())
     curses.unctrl('a')
     curses.ungetch('a')
@@ -264,6 +264,10 @@ def test_issue6243(stdscr):
     curses.ungetch(1025)
     stdscr.getkey()
 
+def test_issue10570():
+    b = curses.tparm(curses.tigetstr("cup"), 5, 3)
+    assert type(b) is bytes
+
 def main(stdscr):
     curses.savetty()
     try:
@@ -272,6 +276,7 @@ def main(stdscr):
         test_userptr_without_set(stdscr)
         test_resize_term(stdscr)
         test_issue6243(stdscr)
+        test_issue10570()
     finally:
         curses.resetty()
 
