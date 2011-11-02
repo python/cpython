@@ -1,9 +1,7 @@
 """Tests for packaging.command.sdist."""
 import os
-import zipfile
 import tarfile
-
-from packaging.tests.support import requires_zlib
+import zipfile
 
 try:
     import grp
@@ -12,16 +10,16 @@ try:
 except ImportError:
     UID_GID_SUPPORT = False
 
-from os.path import join
-from packaging.tests import captured_stdout
-from packaging.command.sdist import sdist
-from packaging.command.sdist import show_formats
-from packaging.dist import Distribution
-from packaging.tests import unittest
-from packaging.errors import PackagingOptionError
-from packaging.util import find_executable
-from packaging.tests import support
 from shutil import get_archive_formats
+from os.path import join
+from packaging.dist import Distribution
+from packaging.util import find_executable
+from packaging.errors import PackagingOptionError
+from packaging.command.sdist import sdist, show_formats
+
+from packaging.tests import support, unittest
+from packaging.tests import captured_stdout
+from packaging.tests.support import requires_zlib
 
 
 MANIFEST = """\
@@ -88,7 +86,6 @@ class SDistTestCase(support.TempdirManager,
 
         # creating VCS directories with some files in them
         os.mkdir(join(self.tmp_dir, 'somecode', '.svn'))
-
         self.write_file((self.tmp_dir, 'somecode', '.svn', 'ok.py'), 'xxx')
 
         os.mkdir(join(self.tmp_dir, 'somecode', '.hg'))
@@ -216,12 +213,14 @@ class SDistTestCase(support.TempdirManager,
         # testing the `check-metadata` option
         dist, cmd = self.get_cmd(metadata={'name': 'xxx', 'version': 'xxx'})
 
-        # this should raise some warnings
-        # with the check subcommand
+        # this should cause the check subcommand to log two warnings:
+        # version is invalid, home-page and author are missing
         cmd.ensure_finalized()
         cmd.run()
         warnings = self.get_logs()
-        self.assertEqual(len(warnings), 4)
+        check_warnings = [msg for msg in warnings if
+                          not msg.startswith('sdist:')]
+        self.assertEqual(len(check_warnings), 2, warnings)
 
         # trying with a complete set of metadata
         self.loghandler.flush()
@@ -244,7 +243,6 @@ class SDistTestCase(support.TempdirManager,
         self.assertEqual(len(output), num_formats)
 
     def test_finalize_options(self):
-
         dist, cmd = self.get_cmd()
         cmd.finalize_options()
 
@@ -262,6 +260,18 @@ class SDistTestCase(support.TempdirManager,
         # formats has to be known
         cmd.formats = 'supazipa'
         self.assertRaises(PackagingOptionError, cmd.finalize_options)
+
+    @requires_zlib
+    def test_template(self):
+        dist, cmd = self.get_cmd()
+        dist.extra_files = ['include yeah']
+        cmd.ensure_finalized()
+        self.write_file((self.tmp_dir, 'yeah'), 'xxx')
+        cmd.run()
+        with open(cmd.manifest) as f:
+            content = f.read()
+
+        self.assertIn('yeah', content)
 
     @requires_zlib
     @unittest.skipUnless(UID_GID_SUPPORT, "requires grp and pwd support")
@@ -366,18 +376,6 @@ class SDistTestCase(support.TempdirManager,
                         if line.strip() != '']
 
         self.assertEqual(manifest, ['README.manual'])
-
-    @requires_zlib
-    def test_template(self):
-        dist, cmd = self.get_cmd()
-        dist.extra_files = ['include yeah']
-        cmd.ensure_finalized()
-        self.write_file((self.tmp_dir, 'yeah'), 'xxx')
-        cmd.run()
-        with open(cmd.manifest) as f:
-            content = f.read()
-
-        self.assertIn('yeah', content)
 
     @requires_zlib
     def test_manifest_builder(self):
