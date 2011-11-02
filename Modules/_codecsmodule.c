@@ -992,11 +992,7 @@ charmap_encode(PyObject *self,
     str = PyUnicode_FromObject(str);
     if (str == NULL)
         return NULL;
-    v = codec_tuple(PyUnicode_EncodeCharmap(
-                               PyUnicode_AS_UNICODE(str),
-                               PyUnicode_GET_SIZE(str),
-                               mapping,
-                               errors),
+    v = codec_tuple(_PyUnicode_EncodeCharmap(str, mapping, errors),
                     PyUnicode_GET_SIZE(str));
     Py_DECREF(str);
     return v;

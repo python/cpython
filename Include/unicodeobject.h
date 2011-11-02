@@ -1425,6 +1425,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCharmap(
                                    (unicode ordinal -> char ordinal) */
     const char *errors          /* error handling */
     );
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
+    PyObject *unicode,          /* Unicode object */
+    PyObject *mapping,          /* character mapping
+                                   (unicode ordinal -> char ordinal) */
+    const char *errors          /* error handling */
+    );
 #endif
 
 /* Translate a Py_UNICODE buffer of the given length by applying a
