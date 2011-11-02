@@ -69,7 +69,7 @@ Common commands: (see '--help-commands' for more)
         ('use-2to3', None,
          "use 2to3 to make source python 3.x compatible"),
         ('convert-2to3-doctests', None,
-         "use 2to3 to convert doctests in seperate text files"),
+         "use 2to3 to convert doctests in separate text files"),
         ]
     display_option_names = [x[0].replace('-', '_') for x in display_options]
 
