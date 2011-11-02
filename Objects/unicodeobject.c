@@ -8213,6 +8213,7 @@ charmap_encoding_error(
     char *reason = "character maps to <undefined>";
     charmapencode_result x;
     Py_UCS4 ch;
+    int val;
 
     if (PyUnicode_READY(unicode) < 0)
         return -1;
@@ -8222,8 +8223,8 @@ charmap_encoding_error(
         PyObject *rep;
         if (Py_TYPE(mapping) == &EncodingMapType) {
             ch = PyUnicode_READ_CHAR(unicode, collendpos);
-            int res = encoding_map_lookup(ch, mapping);
-            if (res != -1)
+            val = encoding_map_lookup(ch, mapping);
+            if (val != -1)
                 break;
             ++collendpos;
             continue;
