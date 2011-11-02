@@ -105,6 +105,7 @@ import copy
 DEFAULT_ERROR_MESSAGE = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
+<html>
     <head>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
         <title>Error response</title>
@@ -734,10 +735,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         list.sort(key=lambda a: a.lower())
         r = []
         displaypath = html.escape(urllib.parse.unquote(self.path))
-        r.append('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        r.append("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
-        r.append("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
-        r.append("<hr>\n<ul>\n")
+        enc = sys.getfilesystemencoding()
+        title = 'Directory listing for %s' % displaypath
+        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                 '"http://www.w3.org/TR/html4/strict.dtd">')
+        r.append('<html>\n<head>')
+        r.append('<meta http-equiv="Content-Type" '
+                 'content="text/html; charset=%s">' % enc)
+        r.append('<title>%s</title>\n</head>' % title)
+        r.append('<body>\n<h1>%s</h1>' % title)
+        r.append('<hr>\n<ul>')
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
@@ -748,11 +755,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
-            r.append('<li><a href="%s">%s</a>\n'
+            r.append('<li><a href="%s">%s</a></li>'
                     % (urllib.parse.quote(linkname), html.escape(displayname)))
-        r.append("</ul>\n<hr>\n</body>\n</html>\n")
-        enc = sys.getfilesystemencoding()
-        encoded = ''.join(r).encode(enc)
+        r.append('</ul>\n<hr>\n</body>\n</html>\n')
+        encoded = '\n'.join(r).encode(enc)
         f = io.BytesIO()
         f.write(encoded)
         f.seek(0)
