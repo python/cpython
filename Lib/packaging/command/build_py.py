@@ -29,7 +29,7 @@ class build_py(Command, Mixin2to3):
         ('use-2to3', None,
          "use 2to3 to make source python 3.x compatible"),
         ('convert-2to3-doctests', None,
-         "use 2to3 to convert doctests in seperate text files"),
+         "use 2to3 to convert doctests in separate text files"),
         ('use-2to3-fixers', None,
          "list additional fixers opted for during 2to3 conversion"),
         ]
