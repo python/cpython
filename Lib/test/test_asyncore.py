@@ -675,6 +675,7 @@ class BaseTestAPI(unittest.TestCase):
 
         class TestClient(BaseClient):
             def handle_expt(self):
+                self.socket.recv(1024, socket.MSG_OOB)
                 self.flag = True
 
         class TestHandler(BaseTestHandler):
