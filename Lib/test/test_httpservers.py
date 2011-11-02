@@ -259,8 +259,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir_name, 'index.html'), 'w') as f:
             response = self.request('/' + self.tempdir_name + '/')
             self.check_status_and_reason(response, 200)
-            if os.name == 'posix':
-                # chmod won't work as expected on Windows platforms
+            # chmod() doesn't work as expected on Windows, and filesystem
+            # permissions are ignored by root on Unix.
+            if os.name == 'posix' and os.geteuid() != 0:
                 os.chmod(self.tempdir, 0)
                 response = self.request(self.tempdir_name + '/')
                 self.check_status_and_reason(response, 404)
@@ -305,6 +306,9 @@ print("%%s, %%s, %%s" %% (form.getfirst("spam"), form.getfirst("eggs"),
                           form.getfirst("bacon")))
 """
 
+
+@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+        "This test can't be run reliably as root (issue #13308).")
 class CGIHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
         pass
