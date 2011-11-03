@@ -8,6 +8,7 @@ class Mixin2to3TestCase(support.TempdirManager,
                         support.LoggingCatcher,
                         unittest.TestCase):
 
+    @support.skip_2to3_optimize
     def test_convert_code_only(self):
         # used to check if code gets converted properly.
         code = "print 'test'"

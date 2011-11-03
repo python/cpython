@@ -1,8 +1,10 @@
 """Tests for distutils.command.bdist_dumb."""
 
-import unittest
-import sys
 import os
+import imp
+import sys
+import zipfile
+import unittest
 from test.support import run_unittest
 
 from distutils.core import Distribution
@@ -72,15 +74,24 @@ class BuildDumbTestCase(support.TempdirManager,
 
         # see what we have
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
-        base = "%s.%s" % (dist.get_fullname(), cmd.plat_name)
+        base = "%s.%s.zip" % (dist.get_fullname(), cmd.plat_name)
         if os.name == 'os2':
             base = base.replace(':', '-')
 
-        wanted = ['%s.zip' % base]
-        self.assertEqual(dist_created, wanted)
+        self.assertEqual(dist_created, [base])
 
         # now let's check what we have in the zip file
-        # XXX to be done
+        fp = zipfile.ZipFile(os.path.join('dist', base))
+        try:
+            contents = fp.namelist()
+        finally:
+            fp.close()
+
+        contents = sorted(os.path.basename(fn) for fn in contents)
+        wanted = ['foo-0.1-py%s.%s.egg-info' % sys.version_info[:2],
+                  'foo.%s.pyc' % imp.get_tag(),
+                  'foo.py']
+        self.assertEqual(contents, sorted(wanted))
 
 def test_suite():
     return unittest.makeSuite(BuildDumbTestCase)

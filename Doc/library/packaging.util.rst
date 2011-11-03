@@ -116,7 +116,6 @@ This module contains various helpers for the other modules.
    values are ``n``, ``no``, ``f``, ``false``, ``off`` and ``0``.  Raises
    :exc:`ValueError` if *val* is anything else.
 
-.. TODO Add :term: markup to bytecode when merging into the stdlib
 
 .. function:: byte_compile(py_files[, optimize=0, force=0, prefix=None, base_dir=None, verbose=1, dry_run=0, direct=None])
 
@@ -134,7 +133,7 @@ This module contains various helpers for the other modules.
 
    If *force* is true, all files are recompiled regardless of timestamps.
 
-   The source filename encoded in each bytecode file defaults to the filenames
+   The source filename encoded in each :term:`bytecode` file defaults to the filenames
    listed in *py_files*; you can modify these with *prefix* and *basedir*.
    *prefix* is a string that will be stripped off of each source filename, and
    *base_dir* is a directory name that will be prepended (after *prefix* is
@@ -150,3 +149,6 @@ This module contains various helpers for the other modules.
    figure out to use direct compilation or not (see the source for details).
    The *direct* flag is used by the script generated in indirect mode; unless
    you know what you're doing, leave it set to ``None``.
+
+   This function is independent from the running Python's :option:`-O` or
+   :option:`-B` options; it is fully controlled by the parameters passed in.
