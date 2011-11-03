@@ -453,7 +453,8 @@ These environment variables influence Python's behavior.
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
    If this is set, Python won't try to write ``.pyc`` or ``.pyo`` files on the
-   import of source modules.
+   import of source modules.  This is equivalent to specifying the :option:`-B`
+   option.
 
 
 .. envvar:: PYTHONIOENCODING
