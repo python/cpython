@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Byte compilation in packaging is now isolated from the calling Python -B or
+  -O options, instead of being disallowed under -B or buggy under -O.
+
 - Issue #2892: preserve iterparse events in case of SyntaxError.
 
 - Issue #13287: urllib.request and urllib.error now contains an __all__
