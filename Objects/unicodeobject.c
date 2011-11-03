@@ -6557,7 +6557,7 @@ unicode_encode_call_errorhandler(const char *errors,
 static PyObject *
 unicode_encode_ucs1(PyObject *unicode,
                     const char *errors,
-                    int limit)
+                    unsigned int limit)
 {
     /* input state */
     Py_ssize_t pos=0, size;
