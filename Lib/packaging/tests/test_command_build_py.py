@@ -62,12 +62,8 @@ class BuildPyTestCase(support.TempdirManager,
         pycache_dir = os.path.join(pkgdest, "__pycache__")
         self.assertIn("__init__.py", files)
         self.assertIn("README.txt", files)
-        if sys.dont_write_bytecode:
-            self.assertFalse(os.path.exists(pycache_dir))
-        else:
-            # XXX even with -O, packaging writes pyc, not pyo; bug?
-            pyc_files = os.listdir(pycache_dir)
-            self.assertIn("__init__.%s.pyc" % imp.get_tag(), pyc_files)
+        pyc_files = os.listdir(pycache_dir)
+        self.assertIn("__init__.%s.pyc" % imp.get_tag(), pyc_files)
 
     def test_empty_package_dir(self):
         # See SF 1668596/1720897.
@@ -102,7 +98,6 @@ class BuildPyTestCase(support.TempdirManager,
             os.chdir(cwd)
             sys.stdout = old_stdout
 
-    @unittest.skipIf(sys.dont_write_bytecode, 'byte-compile disabled')
     def test_byte_compile(self):
         project_dir, dist = self.create_dist(py_modules=['boiledeggs'])
         os.chdir(project_dir)
@@ -118,7 +113,6 @@ class BuildPyTestCase(support.TempdirManager,
         found = os.listdir(os.path.join(cmd.build_lib, '__pycache__'))
         self.assertEqual(found, ['boiledeggs.%s.pyc' % imp.get_tag()])
 
-    @unittest.skipIf(sys.dont_write_bytecode, 'byte-compile disabled')
     def test_byte_compile_optimized(self):
         project_dir, dist = self.create_dist(py_modules=['boiledeggs'])
         os.chdir(project_dir)
@@ -136,21 +130,13 @@ class BuildPyTestCase(support.TempdirManager,
         self.assertEqual(sorted(found), ['boiledeggs.%s.pyc' % imp.get_tag(),
                                          'boiledeggs.%s.pyo' % imp.get_tag()])
 
-    def test_dont_write_bytecode(self):
-        # makes sure byte_compile is not used
-        pkg_dir, dist = self.create_dist()
-        cmd = build_py(dist)
-        cmd.compile = True
-        cmd.optimize = 1
-
-        old_dont_write_bytecode = sys.dont_write_bytecode
+    def test_byte_compile_under_B(self):
+        # make sure byte compilation works under -B (dont_write_bytecode)
+        self.addCleanup(setattr, sys, 'dont_write_bytecode',
+                        sys.dont_write_bytecode)
         sys.dont_write_bytecode = True
-        try:
-            cmd.byte_compile([])
-        finally:
-            sys.dont_write_bytecode = old_dont_write_bytecode
-
-        self.assertIn('byte-compiling is disabled', self.get_logs()[0])
+        self.test_byte_compile()
+        self.test_byte_compile_optimized()
 
 
 def test_suite():

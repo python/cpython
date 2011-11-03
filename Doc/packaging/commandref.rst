@@ -115,7 +115,24 @@ Build C/C++ extension modules.
 -------------------
 
 Build the Python modules (just copy them to the build directory) and
-byte-compile them to .pyc files.
+:term:`byte-compile <bytecode>` them to :file:`.pyc` and/or :file:`.pyo` files.
+
+The byte compilation is controlled by two sets of options:
+
+- ``--compile`` and ``--no-compile`` are used to control the creation of
+  :file:`.pyc` files; the default is ``--no-compile``.
+
+- ``--optimize N`` (or ``-ON``) is used to control the creation of :file:`.pyo`
+  files: ``-O1`` turns on basic optimizations, ``-O2`` also discards docstrings,
+  ``-O0`` does not create :file:`.pyo` files; the default is ``-O0``.
+
+You can mix and match these options: for example, ``--no-compile --optimize 2``
+will create :file:`.pyo` files but no :file:`.pyc` files.
+
+.. XXX these option roles do not work
+
+Calling Python with :option:`-O` or :option:`-B` does not control the creation
+of bytecode files, only the options described above do.
 
 
 :command:`build_scripts`
@@ -341,7 +358,14 @@ Install C/C++ header files.
 :command:`install_lib`
 ----------------------
 
-Install C library files.
+Install all modules (extensions and pure Python).
+
+.. XXX what about C libraries created with build_clib?
+
+Similarly to ``build_py``, there are options to control the compilation of
+Python code to :term:`bytecode` files (see above).  By default, :file:`.pyc`
+files will be created (``--compile``) and :file:`.pyo` files will not
+(``--optimize 0``).
 
 
 :command:`install_scripts`
