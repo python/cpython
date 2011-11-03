@@ -3,7 +3,7 @@
 Implements the Distutils 'build_py' command."""
 
 import sys, os
-import sys
+import imp
 from glob import glob
 
 from distutils.core import Command
@@ -311,9 +311,9 @@ class build_py (Command):
             outputs.append(filename)
             if include_bytecode:
                 if self.compile:
-                    outputs.append(filename + "c")
+                    outputs.append(imp.cache_from_source(filename, True))
                 if self.optimize > 0:
-                    outputs.append(filename + "o")
+                    outputs.append(imp.cache_from_source(filename, False))
 
         outputs += [
             os.path.join(build_dir, filename)
