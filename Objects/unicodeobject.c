@@ -7006,7 +7006,7 @@ decode_code_page_flags(UINT code_page)
  */
 static int
 decode_code_page_strict(UINT code_page,
-                        PyUnicodeObject **v,
+                        PyObject **v,
                         const char *in,
                         int insize)
 {
@@ -7022,7 +7022,7 @@ decode_code_page_strict(UINT code_page,
 
     if (*v == NULL) {
         /* Create unicode object */
-        *v = _PyUnicode_New(outsize);
+        *v = (PyObject*)_PyUnicode_New(outsize);
         if (*v == NULL)
             return -1;
         out = PyUnicode_AS_UNICODE(*v);
@@ -7030,7 +7030,7 @@ decode_code_page_strict(UINT code_page,
     else {
         /* Extend unicode object */
         Py_ssize_t n = PyUnicode_GET_SIZE(*v);
-        if (PyUnicode_Resize((PyObject**)v, n + outsize) < 0)
+        if (PyUnicode_Resize(v, n + outsize) < 0)
             return -1;
         out = PyUnicode_AS_UNICODE(*v) + n;
     }
@@ -7057,9 +7057,8 @@ error:
  */
 static int
 decode_code_page_errors(UINT code_page,
-                        PyUnicodeObject **v,
-                        const char *in,
-                        int size,
+                        PyObject **v,
+                        const char *in, const int size,
                         const char *errors)
 {
     const char *startin = in;
@@ -7103,7 +7102,7 @@ decode_code_page_errors(UINT code_page,
             PyErr_NoMemory();
             goto error;
         }
-        *v = _PyUnicode_New(size * Py_ARRAY_LENGTH(buffer));
+        *v = (PyObject*)_PyUnicode_New(size * Py_ARRAY_LENGTH(buffer));
         if (*v == NULL)
             goto error;
         startout = PyUnicode_AS_UNICODE(*v);
@@ -7115,7 +7114,7 @@ decode_code_page_errors(UINT code_page,
             PyErr_NoMemory();
             goto error;
         }
-        if (PyUnicode_Resize((PyObject**)v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
+        if (PyUnicode_Resize(v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
             goto error;
         startout = PyUnicode_AS_UNICODE(*v) + n;
     }
@@ -7173,9 +7172,9 @@ decode_code_page_errors(UINT code_page,
     /* Extend unicode object */
     outsize = out - startout;
     assert(outsize <= PyUnicode_WSTR_LENGTH(*v));
-    if (PyUnicode_Resize((PyObject**)v, outsize) < 0)
+    if (PyUnicode_Resize(v, outsize) < 0)
         goto error;
-    ret = 0;
+    ret = size;
 
 error:
     Py_XDECREF(encoding_obj);
@@ -7184,50 +7183,13 @@ error:
     return ret;
 }
 
-/*
- * Decode a byte string from a Windows code page into unicode object. If
- * 'final' is set, converts trailing lead-byte too.
- *
- * Returns consumed size if succeed, or raise a WindowsError or
- * UnicodeDecodeError exception and returns -1 on error.
- */
-static int
-decode_code_page(UINT code_page,
-                 PyUnicodeObject **v,
-                 const char *s,  int size,
-                 int final, const char *errors)
-{
-    int done;
-
-    /* Skip trailing lead-byte unless 'final' is set */
-    if (size == 0) {
-        if (*v == NULL) {
-            Py_INCREF(unicode_empty);
-            *v = (PyUnicodeObject*)unicode_empty;
-            if (*v == NULL)
-                return -1;
-        }
-        return 0;
-    }
-
-    if (!final && is_dbcs_lead_byte(code_page, s, size - 1))
-        --size;
-
-    done = decode_code_page_strict(code_page, v, s, size);
-    if (done == -2)
-        done = decode_code_page_errors(code_page, v, s, size, errors);
-    return done;
-}
-
 static PyObject *
 decode_code_page_stateful(int code_page,
-                          const char *s,
-                          Py_ssize_t size,
-                          const char *errors,
-                          Py_ssize_t *consumed)
+                          const char *s, Py_ssize_t size,
+                          const char *errors, Py_ssize_t *consumed)
 {
-    PyUnicodeObject *v = NULL;
-    int done;
+    PyObject *v = NULL;
+    int chunk_size, final, converted, done;
 
     if (code_page < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid code page number");
@@ -7237,29 +7199,53 @@ decode_code_page_stateful(int code_page,
     if (consumed)
         *consumed = 0;
 
+    do
+    {
 #ifdef NEED_RETRY
-  retry:
-    if (size > INT_MAX)
-        done = decode_code_page(code_page, &v, s, INT_MAX, 0, errors);
-    else
+        if (size > INT_MAX) {
+            chunk_size = INT_MAX;
+            final = 0;
+            done = 0;
+        }
+        else
 #endif
-        done = decode_code_page(code_page, &v, s, (int)size, !consumed, errors);
+        {
+            chunk_size = (int)size;
+            final = (consumed == NULL);
+            done = 1;
+        }
 
-    if (done < 0) {
-        Py_XDECREF(v);
-        return NULL;
-    }
+        /* Skip trailing lead-byte unless 'final' is set */
+        if (!final && is_dbcs_lead_byte(code_page, s, chunk_size - 1))
+            --chunk_size;
 
-    if (consumed)
-        *consumed += done;
+        if (chunk_size == 0 && done) {
+            if (v != NULL)
+                break;
+            Py_INCREF(unicode_empty);
+            return unicode_empty;
+        }
 
-#ifdef NEED_RETRY
-    if (size > INT_MAX) {
-        s += done;
-        size -= done;
-        goto retry;
-    }
-#endif
+
+        converted = decode_code_page_strict(code_page, &v,
+                                            s, chunk_size);
+        if (converted == -2)
+            converted = decode_code_page_errors(code_page, &v,
+                                                s, chunk_size,
+                                                errors);
+        assert(converted != 0);
+
+        if (converted < 0) {
+            Py_XDECREF(v);
+            return NULL;
+        }
+
+        if (consumed)
+            *consumed += converted;
+
+        s += converted;
+        size -= converted;
+    } while (!done);
 
 #ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
@@ -7268,7 +7254,7 @@ decode_code_page_stateful(int code_page,
     }
 #endif
     assert(_PyUnicode_CheckConsistency(v, 1));
-    return (PyObject *)v;
+    return v;
 }
 
 PyObject *
@@ -7583,40 +7569,6 @@ error:
     return ret;
 }
 
-/*
- * Encode a Unicode string to a Windows code page into a byte string.
- *
- * Returns consumed characters if succeed, or raise a WindowsError and returns
- * -1 on other error.
- */
-static int
-encode_code_page_chunk(UINT code_page, PyObject **outbytes,
-                       PyObject *unicode, Py_ssize_t unicode_offset,
-                       const Py_UNICODE *p, int size,
-                       const char* errors)
-{
-    int done;
-
-    if (size == 0) {
-        if (*outbytes == NULL) {
-            *outbytes = PyBytes_FromStringAndSize(NULL, 0);
-            if (*outbytes == NULL)
-                return -1;
-        }
-        return 0;
-    }
-
-    done = encode_code_page_strict(code_page, outbytes,
-                                   p, size,
-                                   errors);
-    if (done == -2)
-        done = encode_code_page_errors(code_page, outbytes,
-                                       unicode, unicode_offset,
-                                       p, size,
-                                       errors);
-    return done;
-}
-
 static PyObject *
 encode_code_page(int code_page,
                  PyObject *unicode,
@@ -7626,7 +7578,7 @@ encode_code_page(int code_page,
     Py_ssize_t size;
     PyObject *outbytes = NULL;
     Py_ssize_t offset;
-    int chunk_len, ret;
+    int chunk_len, ret, done;
 
     p = PyUnicode_AsUnicodeAndSize(unicode, &size);
     if (p == NULL)
@@ -7637,20 +7589,32 @@ encode_code_page(int code_page,
         return NULL;
     }
 
+    if (size == 0)
+        return PyBytes_FromStringAndSize(NULL, 0);
+
     offset = 0;
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX)
+        if (size > INT_MAX) {
             chunk_len = INT_MAX;
+            done = 0;
+        }
         else
 #endif
+        {
             chunk_len = (int)size;
-        ret = encode_code_page_chunk(code_page, &outbytes,
-                                     unicode, offset,
-                                     p, chunk_len,
-                                     errors);
+            done = 1;
+        }
 
+        ret = encode_code_page_strict(code_page, &outbytes,
+                                      p, chunk_len,
+                                      errors);
+        if (ret == -2)
+            ret = encode_code_page_errors(code_page, &outbytes,
+                                          unicode, offset,
+                                          p, chunk_len,
+                                          errors);
         if (ret < 0) {
             Py_XDECREF(outbytes);
             return NULL;
@@ -7659,7 +7623,7 @@ encode_code_page(int code_page,
         p += chunk_len;
         offset += chunk_len;
         size -= chunk_len;
-    } while (size != 0);
+    } while (!done);
 
     return outbytes;
 }
