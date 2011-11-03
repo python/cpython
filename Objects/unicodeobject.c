@@ -8397,7 +8397,7 @@ PyUnicode_EncodeCharmap(const Py_UNICODE *p,
         return NULL;
     result = _PyUnicode_EncodeCharmap(unicode, mapping, errors);
     Py_DECREF(unicode);
-    return NULL;
+    return result;
 }
 
 PyObject *
