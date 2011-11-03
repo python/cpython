@@ -142,7 +142,7 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.rmdir, name)
             self._apply_failure(os.remove, name)
             # listdir may append a wildcard to the filename, so dont check
-            self._apply_failure(os.listdir, name, False)
+            self._apply_failure(os.listdir, name, check_filename=False)
 
     # Skip the test on darwin, because darwin uses a normalization different
     # than Python NFD normalization: filenames are different even if we use
