@@ -1980,6 +1980,9 @@ class CodePageTest(unittest.TestCase):
             ))
 
     def test_incremental(self):
+        decoded = codecs.code_page_decode(932, b'\x82', 'strict', False)
+        self.assertEqual(decoded, ('', 0))
+
         decoded = codecs.code_page_decode(932,
                                           b'\xe9\x80\xe9', 'strict',
                                           False)
