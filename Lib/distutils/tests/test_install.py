@@ -1,6 +1,7 @@
 """Tests for distutils.command.install."""
 
 import os
+import imp
 import sys
 import unittest
 import site
@@ -67,10 +68,7 @@ class InstallTestCase(support.TempdirManager,
         check_path(cmd.install_data, destination)
 
     def test_user_site(self):
-        # site.USER_SITE was introduced in 2.6
-        if sys.version < '2.6':
-            return
-
+        # test install with --user
         # preparing the environment for the test
         self.old_user_base = site.USER_BASE
         self.old_user_site = site.USER_SITE
@@ -175,9 +173,11 @@ class InstallTestCase(support.TempdirManager,
 
     def test_record(self):
         install_dir = self.mkdtemp()
-        project_dir, dist = self.create_dist(scripts=['hello'])
+        project_dir, dist = self.create_dist(py_modules=['hello'],
+                                             scripts=['sayhi'])
         os.chdir(project_dir)
-        self.write_file('hello', "print('o hai')")
+        self.write_file('hello.py', "def main(): print('o hai')")
+        self.write_file('sayhi', 'from hello import main; main()')
 
         cmd = install(dist)
         dist.command_obj['install'] = cmd
@@ -193,7 +193,7 @@ class InstallTestCase(support.TempdirManager,
             f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['hello',
+        expected = ['hello.py', 'hello.%s.pyc' % imp.get_tag(), 'sayhi',
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
@@ -237,6 +237,7 @@ class InstallTestCase(support.TempdirManager,
         finally:
             install_module.DEBUG = False
         self.assertTrue(len(self.logs) > old_logs_len)
+
 
 def test_suite():
     return unittest.makeSuite(InstallTestCase)
