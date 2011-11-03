@@ -353,8 +353,8 @@ Library
 - Byte compilation in packaging is now isolated from the calling Python -B or
   -O options, instead of being disallowed under -B or buggy under -O.
 
-- Issue #10570: curses.tigetstr() is now expecting a byte string, instead of
-  a Unicode string.
+- Issue #10570: curses.putp() and curses.tigetstr() are now expecting a byte
+  string, instead of a Unicode string.
 
 - Issue #13295: http.server now produces valid HTML 4.01 strict.
 

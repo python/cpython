@@ -183,7 +183,7 @@ def module_funcs(stdscr):
     win = curses.newwin(5,5)
     win = curses.newwin(5,5, 1,1)
     curses.nl() ; curses.nl(1)
-    curses.putp('abc')
+    curses.putp(b'abc')
     curses.qiflush()
     curses.raw() ; curses.raw(1)
     curses.setsyx(5,5)
@@ -283,6 +283,7 @@ def test_unget_wch(stdscr):
 def test_issue10570():
     b = curses.tparm(curses.tigetstr("cup"), 5, 3)
     assert type(b) is bytes
+    curses.putp(b)
 
 def main(stdscr):
     curses.savetty()
