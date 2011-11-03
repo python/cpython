@@ -4,6 +4,7 @@ Implements the Distutils 'install_lib' command
 (install all Python modules)."""
 
 import os
+import imp
 import sys
 
 from distutils.core import Command
@@ -164,9 +165,9 @@ class install_lib(Command):
             if ext != PYTHON_SOURCE_EXTENSION:
                 continue
             if self.compile:
-                bytecode_files.append(py_file + "c")
+                bytecode_files.append(imp.cache_from_source(py_file, True))
             if self.optimize > 0:
-                bytecode_files.append(py_file + "o")
+                bytecode_files.append(imp.cache_from_source(py_file, False))
 
         return bytecode_files
 
