@@ -2418,7 +2418,8 @@ PyCurses_Putp(PyObject *self, PyObject *args)
 {
     char *str;
 
-    if (!PyArg_ParseTuple(args,"s;str", &str)) return NULL;
+    if (!PyArg_ParseTuple(args,"y;str", &str))
+        return NULL;
     return PyCursesCheckERR(putp(str), "putp");
 }
 
