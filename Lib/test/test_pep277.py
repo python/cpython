@@ -38,8 +38,8 @@ if sys.platform != 'darwin':
         '17_\u2001\u2001\u2001A',
         '18_\u2003\u2003\u2003A',  # == NFC('\u2001\u2001\u2001A')
         '19_\u0020\u0020\u0020A',  # '\u0020' == ' ' == NFKC('\u2000') ==
-                                #  NFKC('\u2001') == NFKC('\u2003')
-])
+                                   #  NFKC('\u2001') == NFKC('\u2003')
+    ])
 
 
 # Is it Unicode-friendly?
@@ -71,7 +71,7 @@ class UnicodeFileTests(unittest.TestCase):
     def setUp(self):
         try:
             os.mkdir(support.TESTFN)
-        except OSError:
+        except FileExistsError:
             pass
         files = set()
         for name in self.files:
@@ -90,15 +90,16 @@ class UnicodeFileTests(unittest.TestCase):
             return normalize(self.normal_form, s)
         return s
 
-    def _apply_failure(self, fn, filename, expected_exception,
-                       check_fn_in_exception = True):
+    def _apply_failure(self, fn, filename,
+                       expected_exception=FileNotFoundError,
+                       check_filename=True):
         with self.assertRaises(expected_exception) as c:
             fn(filename)
         exc_filename = c.exception.filename
         # the "filename" exception attribute may be encoded
         if isinstance(exc_filename, bytes):
             filename = filename.encode(sys.getfilesystemencoding())
-        if check_fn_in_exception:
+        if check_filename:
             self.assertEqual(exc_filename, filename, "Function '%s(%a) failed "
                              "with bad filename in the exception: %a" %
                              (fn.__name__, filename, exc_filename))
@@ -107,13 +108,13 @@ class UnicodeFileTests(unittest.TestCase):
         # Pass non-existing Unicode filenames all over the place.
         for name in self.files:
             name = "not_" + name
-            self._apply_failure(open, name, IOError)
-            self._apply_failure(os.stat, name, OSError)
-            self._apply_failure(os.chdir, name, OSError)
-            self._apply_failure(os.rmdir, name, OSError)
-            self._apply_failure(os.remove, name, OSError)
+            self._apply_failure(open, name)
+            self._apply_failure(os.stat, name)
+            self._apply_failure(os.chdir, name)
+            self._apply_failure(os.rmdir, name)
+            self._apply_failure(os.remove, name)
             # listdir may append a wildcard to the filename, so dont check
-            self._apply_failure(os.listdir, name, OSError, False)
+            self._apply_failure(os.listdir, name, check_filename=False)
 
     def test_open(self):
         for name in self.files:
@@ -121,12 +122,13 @@ class UnicodeFileTests(unittest.TestCase):
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
+            self._apply_failure(os.listdir, name, NotADirectoryError)
 
     # Skip the test on darwin, because darwin does normalize the filename to
     # NFD (a variant of Unicode NFD form). Normalize the filename to NFC, NFKC,
     # NFKD in Python is useless, because darwin will normalize it later and so
     # open(), os.stat(), etc. don't raise any exception.
-    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
+    @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
     def test_normalize(self):
         files = set(self.files)
         others = set()
@@ -134,18 +136,18 @@ class UnicodeFileTests(unittest.TestCase):
             others |= set(normalize(nf, file) for file in files)
         others -= files
         for name in others:
-            self._apply_failure(open, name, IOError)
-            self._apply_failure(os.stat, name, OSError)
-            self._apply_failure(os.chdir, name, OSError)
-            self._apply_failure(os.rmdir, name, OSError)
-            self._apply_failure(os.remove, name, OSError)
+            self._apply_failure(open, name)
+            self._apply_failure(os.stat, name)
+            self._apply_failure(os.chdir, name)
+            self._apply_failure(os.rmdir, name)
+            self._apply_failure(os.remove, name)
             # listdir may append a wildcard to the filename, so dont check
-            self._apply_failure(os.listdir, name, OSError, False)
+            self._apply_failure(os.listdir, name, False)
 
     # Skip the test on darwin, because darwin uses a normalization different
     # than Python NFD normalization: filenames are different even if we use
     # Python NFD normalization.
-    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
+    @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
     def test_listdir(self):
         sf0 = set(self.files)
         f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
