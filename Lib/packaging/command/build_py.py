@@ -2,7 +2,6 @@
 
 import os
 import imp
-import sys
 from glob import glob
 
 from packaging import logger
@@ -14,9 +13,13 @@ from packaging.compat import Mixin2to3
 # marking public APIs
 __all__ = ['build_py']
 
+
 class build_py(Command, Mixin2to3):
 
     description = "build pure Python modules (copy to build directory)"
+
+    # The options for controlling byte compilations are two independent sets;
+    # more info in install_lib or the reST docs
 
     user_options = [
         ('build-lib=', 'd', "directory to build (copy) to"),
@@ -29,13 +32,14 @@ class build_py(Command, Mixin2to3):
         ('use-2to3', None,
          "use 2to3 to make source python 3.x compatible"),
         ('convert-2to3-doctests', None,
-         "use 2to3 to convert doctests in seperate text files"),
+         "use 2to3 to convert doctests in separate text files"),
         ('use-2to3-fixers', None,
          "list additional fixers opted for during 2to3 conversion"),
         ]
 
     boolean_options = ['compile', 'force']
-    negative_opt = {'no-compile' : 'compile'}
+
+    negative_opt = {'no-compile': 'compile'}
 
     def initialize_options(self):
         self.build_lib = None
@@ -116,7 +120,7 @@ class build_py(Command, Mixin2to3):
     def get_data_files(self):
         """Generate list of '(package,src_dir,build_dir,filenames)' tuples.
 
-        Helper function for `finalize_options()`.
+        Helper function for finalize_options.
         """
         data = []
         if not self.packages:
@@ -131,7 +135,7 @@ class build_py(Command, Mixin2to3):
             # Length of path to strip from found files
             plen = 0
             if src_dir:
-                plen = len(src_dir)+1
+                plen = len(src_dir) + 1
 
             # Strip directory from globbed filenames
             filenames = [
@@ -143,7 +147,7 @@ class build_py(Command, Mixin2to3):
     def find_data_files(self, package, src_dir):
         """Return filenames for package's data files in 'src_dir'.
 
-        Helper function for `get_data_files()`.
+        Helper function for get_data_files.
         """
         globs = (self.package_data.get('', [])
                  + self.package_data.get(package, []))
@@ -158,7 +162,7 @@ class build_py(Command, Mixin2to3):
     def build_package_data(self):
         """Copy data files into build directory.
 
-        Helper function for `run()`.
+        Helper function for run.
         """
         # FIXME add tests for this method
         for package, src_dir, build_dir, filenames in self.data_files:
@@ -168,16 +172,17 @@ class build_py(Command, Mixin2to3):
                 self.mkpath(os.path.dirname(target))
                 outf, copied = self.copy_file(srcfile,
                                target, preserve_mode=False)
-                if copied and srcfile in self.distribution.convert_2to3.doctests:
+                doctests = self.distribution.convert_2to3_doctests
+                if copied and srcfile in doctests:
                     self._doctests_2to3.append(outf)
 
     # XXX - this should be moved to the Distribution class as it is not
     # only needed for build_py. It also has no dependencies on this class.
     def get_package_dir(self, package):
         """Return the directory, relative to the top of the source
-           distribution, where package 'package' should be found
-           (at least according to the 'package_dir' option, if any)."""
-
+        distribution, where package 'package' should be found
+        (at least according to the 'package_dir' option, if any).
+        """
         path = package.split('.')
         if self.package_dir is not None:
             path.insert(0, self.package_dir)
@@ -188,8 +193,7 @@ class build_py(Command, Mixin2to3):
         return ''
 
     def check_package(self, package, package_dir):
-        """Helper function for `find_package_modules()` and `find_modules()'.
-        """
+        """Helper function for find_package_modules and find_modules."""
         # Empty dir name means current directory, which we can probably
         # assume exists.  Also, os.path.exists and isdir don't know about
         # my "empty string means current dir" convention, so we have to
@@ -209,8 +213,8 @@ class build_py(Command, Mixin2to3):
             if os.path.isfile(init_py):
                 return init_py
             else:
-                logger.warning(("package init file '%s' not found " +
-                                "(or not a regular file)"), init_py)
+                logger.warning("package init file %r not found "
+                               "(or not a regular file)", init_py)
 
         # Either not in a package at all (__init__.py not expected), or
         # __init__.py doesn't exist -- so don't return the filename.
@@ -218,7 +222,7 @@ class build_py(Command, Mixin2to3):
 
     def check_module(self, module, module_file):
         if not os.path.isfile(module_file):
-            logger.warning("file %s (for module %s) not found",
+            logger.warning("file %r (for module %r) not found",
                            module_file, module)
             return False
         else:
@@ -239,7 +243,7 @@ class build_py(Command, Mixin2to3):
                 module = os.path.splitext(os.path.basename(f))[0]
                 modules.append((package, module, f))
             else:
-                logger.debug("excluding %s", setup_script)
+                logger.debug("excluding %r", setup_script)
         return modules
 
     def find_modules(self):
@@ -331,7 +335,8 @@ class build_py(Command, Mixin2to3):
             outputs.append(filename)
             if include_bytecode:
                 if self.compile:
-                    outputs.append(imp.cache_from_source(filename))
+                    outputs.append(imp.cache_from_source(filename,
+                                                         debug_override=True))
                 if self.optimize > 0:
                     outputs.append(imp.cache_from_source(filename,
                                                          debug_override=False))
@@ -361,7 +366,6 @@ class build_py(Command, Mixin2to3):
     def build_modules(self):
         modules = self.find_modules()
         for package, module, module_file in modules:
-
             # Now "build" the module -- ie. copy the source file to
             # self.build_lib (the build directory for Python source).
             # (Actually, it gets copied to the directory for this package
@@ -370,7 +374,6 @@ class build_py(Command, Mixin2to3):
 
     def build_packages(self):
         for package in self.packages:
-
             # Get list of (package, module, module_file) tuples based on
             # scanning the package directory.  'package' is only included
             # in the tuple so that 'find_modules()' and
@@ -390,11 +393,6 @@ class build_py(Command, Mixin2to3):
                 self.build_module(module, module_file, package)
 
     def byte_compile(self, files):
-        if sys.dont_write_bytecode:
-            logger.warning('%s: byte-compiling is disabled, skipping.',
-                           self.get_command_name())
-            return
-
         from packaging.util import byte_compile  # FIXME use compileall
         prefix = self.build_lib
         if prefix[-1] != os.sep:
@@ -403,7 +401,6 @@ class build_py(Command, Mixin2to3):
         # XXX this code is essentially the same as the 'byte_compile()
         # method of the "install_lib" command, except for the determination
         # of the 'prefix' string.  Hmmm.
-
         if self.compile:
             byte_compile(files, optimize=0,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)

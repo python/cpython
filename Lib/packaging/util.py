@@ -20,8 +20,8 @@ from configparser import RawConfigParser
 
 from packaging import logger
 from packaging.errors import (PackagingPlatformError, PackagingFileError,
-                              PackagingByteCompileError, PackagingExecError,
-                              InstallationException, PackagingInternalError)
+                              PackagingExecError, InstallationException,
+                              PackagingInternalError)
 
 __all__ = [
     # file dependencies
@@ -325,12 +325,10 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
     the source for details).  The 'direct' flag is used by the script
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
-    """
-    # nothing is done if sys.dont_write_bytecode is True
-    # FIXME this should not raise an error
-    if sys.dont_write_bytecode:
-        raise PackagingByteCompileError('byte-compiling is disabled.')
 
+    This function is independent from the running Python's -O or -B options;
+    it is fully controlled by the parameters passed in.
+    """
     # First, if the caller didn't force us into direct or indirect mode,
     # figure out which mode we should be in.  We take a conservative
     # approach: choose direct mode *only* if the current interpreter is
@@ -417,12 +415,10 @@ byte_compile(files, optimize=%r, force=%r,
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            if optimize >= 0:
-                cfile = imp.cache_from_source(file,
-                                              debug_override=not optimize)
-            else:
-                cfile = imp.cache_from_source(file)
+            debug_override = not optimize
+            cfile = imp.cache_from_source(file, debug_override)
             dfile = file
+
             if prefix:
                 if file[:len(prefix)] != prefix:
                     raise ValueError("invalid prefix: filename %r doesn't "

@@ -97,7 +97,7 @@ Core and Builtins
 
 - Issue #12773: Make __doc__ mutable on user-defined classes.
 
-- Issue #12766: Raise an ValueError when creating a class with a class variable
+- Issue #12766: Raise a ValueError when creating a class with a class variable
   that conflicts with a name in __slots__.
 
 - Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
@@ -158,7 +158,7 @@ Core and Builtins
   given, produce a informative error message which includes the name(s) of the
   missing arguments.
 
-- Issue #12370: Fix super with not arguments when __class__ is overriden in the
+- Issue #12370: Fix super with no arguments when __class__ is overriden in the
   class body.
 
 - Issue #12084: os.stat on Windows now works properly with relative symbolic
@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Byte compilation in packaging is now isolated from the calling Python -B or
+  -O options, instead of being disallowed under -B or buggy under -O.
+
 - Issue #10570: curses.tigetstr() is now expecting a byte string, instead of
   a Unicode string.
 
@@ -357,8 +360,9 @@ Library
 
 - Issue #2892: preserve iterparse events in case of SyntaxError.
 
-- Issue #13287: urllib.request and urllib.error now contains a __all__ and
-  exposes only relevant Classes, Functions. Patch by Florent Xicluna.
+- Issue #13287: urllib.request and urllib.error now contains an __all__
+  attribute to expose only relevant classes and functions.  Patch by Florent
+  Xicluna.
 
 - Issue #670664: Fix HTMLParser to correctly handle the content of
   ``<script>...</script>`` and ``<style>...</style>``.

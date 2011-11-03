@@ -72,10 +72,6 @@ class PackagingTemplateError(PackagingError):
     """Syntax error in a file list template."""
 
 
-class PackagingByteCompileError(PackagingError):
-    """Byte compile error."""
-
-
 class PackagingPyPIError(PackagingError):
     """Any problem occuring during using the indexes."""
 
