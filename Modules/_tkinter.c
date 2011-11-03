@@ -990,8 +990,10 @@ AsObj(PyObject *value)
 #if TCL_UTF_MAX == 3
             if (ch >= 0x10000) {
                 /* Tcl doesn't do UTF-16, yet. */
-                PyErr_SetString(PyExc_ValueError,
-                                "unsupported character");
+                PyErr_Format(PyExc_ValueError,
+                             "character U+%x is above the range "
+                             "(U+0000-U+FFFF) allowed by Tcl",
+                             inbuf[i]);
                 ckfree(FREECAST outbuf);
                 return NULL;
 #endif
