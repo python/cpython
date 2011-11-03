@@ -165,9 +165,11 @@ class install_lib(Command):
             if ext != PYTHON_SOURCE_EXTENSION:
                 continue
             if self.compile:
-                bytecode_files.append(imp.cache_from_source(py_file, True))
+                bytecode_files.append(imp.cache_from_source(
+                    py_file, debug_override=True))
             if self.optimize > 0:
-                bytecode_files.append(imp.cache_from_source(py_file, False))
+                bytecode_files.append(imp.cache_from_source(
+                    py_file, debug_override=False))
 
         return bytecode_files
 
