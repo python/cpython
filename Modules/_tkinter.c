@@ -993,8 +993,10 @@ AsObj(PyObject *value)
         for (i = 0; i < size; i++) {
             if (inbuf[i] >= 0x10000) {
                 /* Tcl doesn't do UTF-16, yet. */
-                PyErr_SetString(PyExc_ValueError,
-                                "unsupported character");
+                PyErr_Format(PyExc_ValueError,
+                             "character U+%x is above the range "
+                             "(U+0000-U+FFFF) allowed by Tcl",
+                             inbuf[i]);
                 ckfree(FREECAST outbuf);
                 return NULL;
             }
