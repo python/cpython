@@ -528,7 +528,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyAccu *acc)
     PyObject *result = NULL;
     PyObject *format_spec_object = NULL;
     PyObject *(*formatter)(PyObject *, PyObject *, Py_ssize_t, Py_ssize_t) = NULL;
-    
+
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
     if (PyUnicode_CheckExact(fieldobj))
@@ -654,7 +654,7 @@ typedef struct {
 } MarkupIterator;
 
 static int
-MarkupIterator_init(MarkupIterator *self, PyObject *str, 
+MarkupIterator_init(MarkupIterator *self, PyObject *str,
                     Py_ssize_t start, Py_ssize_t end)
 {
     SubString_init(&self->str, str, start, end);
@@ -713,8 +713,8 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     at_end = self->str.start >= self->str.end;
     len = self->str.start - start;
 
-    if ((c == '}') && (at_end || 
-                       (c != PyUnicode_READ_CHAR(self->str.str, 
+    if ((c == '}') && (at_end ||
+                       (c != PyUnicode_READ_CHAR(self->str.str,
                                                  self->str.start)))) {
         PyErr_SetString(PyExc_ValueError, "Single '}' encountered "
                         "in format string");
@@ -992,9 +992,7 @@ do_string_format_map(PyObject *self, PyObject *obj)
 
 typedef struct {
     PyObject_HEAD
-
-    PyUnicodeObject *str;
-
+    PyObject *str;
     MarkupIterator it_markup;
 } formatteriterobject;
 
@@ -1121,7 +1119,7 @@ static PyTypeObject PyFormatterIter_Type = {
    describing the parsed elements.  It's a wrapper around
    stringlib/string_format.h's MarkupIterator */
 static PyObject *
-formatter_parser(PyObject *ignored, PyUnicodeObject *self)
+formatter_parser(PyObject *ignored, PyObject *self)
 {
     formatteriterobject *it;
 
@@ -1158,9 +1156,7 @@ formatter_parser(PyObject *ignored, PyUnicodeObject *self)
 
 typedef struct {
     PyObject_HEAD
-
-    PyUnicodeObject *str;
-
+    PyObject *str;
     FieldNameIterator it_field;
 } fieldnameiterobject;
 
@@ -1261,7 +1257,7 @@ static PyTypeObject PyFieldNameIter_Type = {
    field_name_split.  The iterator it returns is a
    FieldNameIterator */
 static PyObject *
-formatter_field_name_split(PyObject *ignored, PyUnicodeObject *self)
+formatter_field_name_split(PyObject *ignored, PyObject *self)
 {
     SubString first;
     Py_ssize_t first_idx;
