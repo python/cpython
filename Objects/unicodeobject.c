@@ -7405,6 +7405,7 @@ error:
  */
 static int
 encode_code_page_errors(UINT code_page, PyObject **outbytes,
+                        PyObject *unicode, Py_ssize_t unicode_offset,
                         const Py_UNICODE *in, const int insize,
                         const char* errors)
 {
@@ -7505,14 +7506,14 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
         }
 
         charsize = Py_MAX(charsize - 1, 1);
-        startpos = in - startin;
+        startpos = unicode_offset + in - startin;
         rep = unicode_encode_call_errorhandler(
                   errors, &errorHandler, encoding, reason,
-                  startin, insize, &exc,
+                  unicode, &exc,
                   startpos, startpos + charsize, &newpos);
         if (rep == NULL)
             goto error;
-        in = startin + newpos;
+        in += (newpos - startpos);
 
         if (PyBytes_Check(rep)) {
             outsize = PyBytes_GET_SIZE(rep);
@@ -7590,6 +7591,7 @@ error:
  */
 static int
 encode_code_page_chunk(UINT code_page, PyObject **outbytes,
+                       PyObject *unicode, Py_ssize_t unicode_offset,
                        const Py_UNICODE *p, int size,
                        const char* errors)
 {
@@ -7604,45 +7606,60 @@ encode_code_page_chunk(UINT code_page, PyObject **outbytes,
         return 0;
     }
 
-    done = encode_code_page_strict(code_page, outbytes, p, size, errors);
+    done = encode_code_page_strict(code_page, outbytes,
+                                   p, size,
+                                   errors);
     if (done == -2)
-        done = encode_code_page_errors(code_page, outbytes, p, size, errors);
+        done = encode_code_page_errors(code_page, outbytes,
+                                       unicode, unicode_offset,
+                                       p, size,
+                                       errors);
     return done;
 }
 
 static PyObject *
 encode_code_page(int code_page,
-                 const Py_UNICODE *p, Py_ssize_t size,
+                 PyObject *unicode,
                  const char *errors)
 {
+    const Py_UNICODE *p;
+    Py_ssize_t size;
     PyObject *outbytes = NULL;
-    int ret;
+    Py_ssize_t offset;
+    int chunk_len, ret;
+
+    p = PyUnicode_AsUnicodeAndSize(unicode, &size);
+    if (p == NULL)
+        return NULL;
 
     if (code_page < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid code page number");
         return NULL;
     }
 
+    offset = 0;
+    do
+    {
 #ifdef NEED_RETRY
-  retry:
-    if (size > INT_MAX)
-        ret = encode_code_page_chunk(code_page, &outbytes, p, INT_MAX, errors);
-    else
+        if (size > INT_MAX)
+            chunk_len = INT_MAX;
+        else
 #endif
-        ret = encode_code_page_chunk(code_page, &outbytes, p, (int)size, errors);
+            chunk_len = (int)size;
+        ret = encode_code_page_chunk(code_page, &outbytes,
+                                     unicode, offset,
+                                     p, chunk_len,
+                                     errors);
 
-    if (ret < 0) {
-        Py_XDECREF(outbytes);
-        return NULL;
-    }
+        if (ret < 0) {
+            Py_XDECREF(outbytes);
+            return NULL;
+        }
 
-#ifdef NEED_RETRY
-    if (size > INT_MAX) {
-        p += INT_MAX;
-        size -= INT_MAX;
-        goto retry;
-    }
-#endif
+        p += chunk_len;
+        offset += chunk_len;
+        size -= chunk_len;
+    } while (size != 0);
 
     return outbytes;
 }
@@ -7652,7 +7669,13 @@ PyUnicode_EncodeMBCS(const Py_UNICODE *p,
                      Py_ssize_t size,
                      const char *errors)
 {
-    return encode_code_page(CP_ACP, p, size, errors);
+    PyObject *unicode, *res;
+    unicode = PyUnicode_FromUnicode(p, size);
+    if (unicode == NULL)
+        return NULL;
+    res = encode_code_page(CP_ACP, unicode, errors);
+    Py_DECREF(unicode);
+    return res;
 }
 
 PyObject *
@@ -7660,12 +7683,7 @@ PyUnicode_EncodeCodePage(int code_page,
                          PyObject *unicode,
                          const char *errors)
 {
-    const Py_UNICODE *p;
-    Py_ssize_t size;
-    p = PyUnicode_AsUnicodeAndSize(unicode, &size);
-    if (p == NULL)
-        return NULL;
-    return encode_code_page(code_page, p, size, errors);
+    return encode_code_page(code_page, unicode, errors);
 }
 
 PyObject *
@@ -7675,9 +7693,7 @@ PyUnicode_AsMBCSString(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
-    return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
-                                PyUnicode_GET_SIZE(unicode),
-                                NULL);
+    return PyUnicode_EncodeCodePage(CP_ACP, unicode, NULL);
 }
 
 #undef NEED_RETRY
