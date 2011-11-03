@@ -3908,7 +3908,8 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
 }
 
 PyDoc_STRVAR(doc_cache_from_source,
-"Given the path to a .py file, return the path to its .pyc/.pyo file.\n\
+"cache_from_source(path, [debug_override]) -> path\n\
+Given the path to a .py file, return the path to its .pyc/.pyo file.\n\
 \n\
 The .py file does not need to exist; this simply returns the path to the\n\
 .pyc/.pyo file calculated as if the .py file were imported.  The extension\n\
@@ -3940,7 +3941,8 @@ imp_source_from_cache(PyObject *self, PyObject *args, PyObject *kws)
 }
 
 PyDoc_STRVAR(doc_source_from_cache,
-"Given the path to a .pyc./.pyo file, return the path to its .py file.\n\
+"source_from_cache(path) -> path\n\
+Given the path to a .pyc./.pyo file, return the path to its .py file.\n\
 \n\
 The .pyc/.pyo file does not need to exist; this simply returns the path to\n\
 the .py file calculated to correspond to the .pyc/.pyo file.  If path\n\
