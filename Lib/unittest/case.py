@@ -9,8 +9,7 @@ import warnings
 import collections
 
 from . import result
-from .util import (strclass, safe_repr, sorted_list_difference,
-                   unorderable_list_difference, _count_diff_all_purpose,
+from .util import (strclass, safe_repr, _count_diff_all_purpose,
                    _count_diff_hashable)
 
 __unittest = True
