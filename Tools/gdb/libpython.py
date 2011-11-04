@@ -1130,12 +1130,13 @@ class PyUnicodeObjectPtr(PyObjectPtr):
             ascii = compact['_base']
             state = ascii['state']
             is_compact_ascii = (int(state['ascii']) and int(state['compact']))
-            field_length = long(ascii['length'])
             if not int(state['ready']):
                 # string is not ready
+                field_length = long(compact['wstr_length'])
                 may_have_surrogates = True
                 field_str = ascii['wstr']
             else:
+                field_length = long(ascii['length'])
                 if is_compact_ascii:
                     field_str = ascii.address + 1
                 elif int(state['compact']):
