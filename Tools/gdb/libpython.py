@@ -1123,9 +1123,6 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
-        # From unicodeobject.h:
-        #     Py_ssize_t length;  /* Length of raw Unicode data in buffer */
-        #     Py_UNICODE *str;    /* Raw Unicode buffer */
         if _is_pep393:
             # Python 3.3 and newer
             may_have_surrogates = False
@@ -1138,8 +1135,6 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                 # string is not ready
                 may_have_surrogates = True
                 field_str = ascii['wstr']
-                if not is_compact_ascii:
-                    field_length = compact('wstr_length')
             else:
                 if is_compact_ascii:
                     field_str = ascii.address + 1
