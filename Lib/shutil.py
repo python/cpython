@@ -15,6 +15,7 @@ import tarfile
 
 try:
     import bz2
+    del bz2
     _BZ2_SUPPORTED = True
 except ImportError:
     _BZ2_SUPPORTED = False

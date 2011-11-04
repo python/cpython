@@ -154,7 +154,7 @@ def addpackage(sitedir, name, known_paths):
                 if not dircase in known_paths and os.path.exists(dir):
                     sys.path.append(dir)
                     known_paths.add(dircase)
-            except Exception as err:
+            except Exception:
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
                 for record in traceback.format_exception(*sys.exc_info()):
@@ -241,7 +241,6 @@ def getusersitepackages():
         return USER_SITE
 
     from sysconfig import get_path
-    import os
 
     if sys.platform == 'darwin':
         from sysconfig import get_config_var

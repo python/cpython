@@ -306,7 +306,6 @@ class _Dialog(commondialog.Dialog):
     def _fixresult(self, widget, result):
         if result:
             # keep directory and filename until next time
-            import os
             # convert Tcl path objects to strings
             try:
                 result = result.string
@@ -333,7 +332,6 @@ class Open(_Dialog):
             # multiple results:
             result = tuple([getattr(r, "string", r) for r in result])
             if result:
-                import os
                 path, file = os.path.split(result[0])
                 self.options["initialdir"] = path
                 # don't set initialfile or filename, as we have multiple of these
