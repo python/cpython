@@ -10,7 +10,6 @@ combinations of warnings args and -W flags and check that the output is correct.
 See #10535.
 """
 
-import io
 import sys
 import unittest
 import warnings
