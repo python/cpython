@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13343: Fix a SystemError when a lambda expression uses a global
+  variable in the default value of a keyword-only argument:
+  (lambda *, arg=GLOBAL_NAME: None)
+
 - Issue #12797: Added custom opener parameter to builtin open() and
   FileIO.open().
 
