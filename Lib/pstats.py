@@ -674,7 +674,6 @@ if __name__ == '__main__':
                 return stop
             return None
 
-    import sys
     if len(sys.argv) > 1:
         initprofile = sys.argv[1]
     else:

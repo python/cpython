@@ -1326,7 +1326,7 @@ def _test():
     return doctest.testmod()
 
 if __name__ == "__main__":
-    import sys, argparse
+    import argparse
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
