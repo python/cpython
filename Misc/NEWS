@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3067: locale.setlocale() now raises TypeError if the second
+  argument is an invalid iterable. Initial patch by Jyrki Pulliainen.
+
 - Issue #13140: Fix the daemon_threads attribute of ThreadingMixIn.
 
 - Issue #13339: Fix compile error in posixmodule.c due to missing semicolon.
