@@ -573,7 +573,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
-        Py_ssize_t i, o;
+        Py_ssize_t i;
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
@@ -612,7 +612,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         }
         outp = PyUnicode_1BYTE_DATA(res);
         /* generate replacement */
-        for (i = start, o = 0; i < end; ++i) {
+        for (i = start; i < end; ++i) {
             int digits;
             int base;
             ch = PyUnicode_READ_CHAR(object, i);
