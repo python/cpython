@@ -4001,7 +4001,7 @@ search path to find the file.\n\
 static PyObject *
 posix_spawnvpe(PyObject *self, PyObject *args)
 {
-    PyObject *opath
+    PyObject *opath;
     char *path;
     PyObject *argv, *env;
     char **argvlist;
