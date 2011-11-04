@@ -72,7 +72,7 @@ def unix_getpass(prompt='Password: ', stream=None):
             finally:
                 termios.tcsetattr(fd, tcsetattr_flags, old)
                 stream.flush()  # issue7208
-        except termios.error as e:
+        except termios.error:
             if passwd is not None:
                 # _raw_input succeeded.  The final tcsetattr failed.  Reraise
                 # instead of leaving the terminal in an unknown state.
@@ -144,8 +144,6 @@ def getuser():
     database.  This works on Windows as long as USERNAME is set.
 
     """
-
-    import os
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
         user = os.environ.get(name)

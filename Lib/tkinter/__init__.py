@@ -1159,7 +1159,6 @@ class Misc:
         return (e,)
     def _report_exception(self):
         """Internal function."""
-        import sys
         exc, val, tb = sys.exc_info()
         root = self._root()
         root.report_callback_exception(exc, val, tb)
@@ -1663,7 +1662,7 @@ class Tk(Misc, Wm):
         # ensure that self.tk is always _something_.
         self.tk = None
         if baseName is None:
-            import sys, os
+            import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc', '.pyo'):
@@ -1737,7 +1736,7 @@ class Tk(Misc, Wm):
             exec(open(base_py).read(), dir)
     def report_callback_exception(self, exc, val, tb):
         """Internal function. It reports exception on sys.stderr."""
-        import traceback, sys
+        import traceback
         sys.stderr.write("Exception in Tkinter callback\n")
         sys.last_type = exc
         sys.last_value = val
