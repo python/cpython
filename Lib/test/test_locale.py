@@ -407,6 +407,14 @@ class TestMiscellaneous(unittest.TestCase):
         locale.setlocale(locale.LC_CTYPE, loc)
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
+    def test_invalid_locale_format_in_localetuple(self):
+        with self.assertRaises(TypeError):
+            locale.setlocale(locale.LC_ALL, b'fi_FI')
+
+    def test_invalid_iterable_in_localetuple(self):
+        with self.assertRaises(TypeError):
+            locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
+
 
 def test_main():
     tests = [
