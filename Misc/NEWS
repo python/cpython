@@ -74,6 +74,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13140: Fix the daemon_threads attribute of ThreadingMixIn.
+
 - Issue #2892: preserve iterparse events in case of SyntaxError.
 
 - Issue #670664: Fix HTMLParser to correctly handle the content of
