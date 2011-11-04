@@ -350,6 +350,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13140: Fix the daemon_threads attribute of ThreadingMixIn.
+
 - Issue #13339: Fix compile error in posixmodule.c due to missing semicolon.
   Thanks to Robert Xiao.
 
