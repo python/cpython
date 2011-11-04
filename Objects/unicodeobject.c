@@ -254,12 +254,6 @@ unicode_encode_call_errorhandler(const char *errors,
 static void
 raise_encode_exception(PyObject **exceptionObject,
                        const char *encoding,
-                       const Py_UNICODE *unicode, Py_ssize_t size,
-                       Py_ssize_t startpos, Py_ssize_t endpos,
-                       const char *reason);
-static void
-raise_encode_exception_obj(PyObject **exceptionObject,
-                       const char *encoding,
                        PyObject *unicode,
                        Py_ssize_t startpos, Py_ssize_t endpos,
                        const char *reason);
@@ -3058,8 +3052,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                 if (errmsg == NULL)
                     errmsg = "Py_wchar2char() failed";
                 raise_encode_exception(&exc,
-                    "filesystemencoding",
-                    PyUnicode_AS_UNICODE(unicode), PyUnicode_GET_SIZE(unicode),
+                    "filesystemencoding", unicode,
                     error_pos, error_pos+1,
                     errmsg);
                 Py_XDECREF(exc);
@@ -4783,7 +4776,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
                 for(k=0; k<repsize; k++) {
                     c = prep[k];
                     if (0x80 <= c) {
-                        raise_encode_exception_obj(&exc, "utf-8",
+                        raise_encode_exception(&exc, "utf-8",
                                                unicode,
                                                i-1, i,
                                                "surrogates not allowed");
@@ -6406,32 +6399,6 @@ PyUnicode_DecodeLatin1(const char *s,
 static void
 make_encode_exception(PyObject **exceptionObject,
                       const char *encoding,
-                      const Py_UNICODE *unicode, Py_ssize_t size,
-                      Py_ssize_t startpos, Py_ssize_t endpos,
-                      const char *reason)
-{
-    if (*exceptionObject == NULL) {
-        *exceptionObject = PyUnicodeEncodeError_Create(
-            encoding, unicode, size, startpos, endpos, reason);
-    }
-    else {
-        if (PyUnicodeEncodeError_SetStart(*exceptionObject, startpos))
-            goto onError;
-        if (PyUnicodeEncodeError_SetEnd(*exceptionObject, endpos))
-            goto onError;
-        if (PyUnicodeEncodeError_SetReason(*exceptionObject, reason))
-            goto onError;
-        return;
-      onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
-    }
-}
-
-/* This is ultimately going t replace above function. */
-static void
-make_encode_exception_obj(PyObject **exceptionObject,
-                      const char *encoding,
                       PyObject *unicode,
                       Py_ssize_t startpos, Py_ssize_t endpos,
                       const char *reason)
@@ -6459,24 +6426,11 @@ make_encode_exception_obj(PyObject **exceptionObject,
 static void
 raise_encode_exception(PyObject **exceptionObject,
                        const char *encoding,
-                       const Py_UNICODE *unicode, Py_ssize_t size,
-                       Py_ssize_t startpos, Py_ssize_t endpos,
-                       const char *reason)
-{
-    make_encode_exception(exceptionObject,
-                          encoding, unicode, size, startpos, endpos, reason);
-    if (*exceptionObject != NULL)
-        PyCodec_StrictErrors(*exceptionObject);
-}
-/* This is ultimately going to replace above function. */
-static void
-raise_encode_exception_obj(PyObject **exceptionObject,
-                       const char *encoding,
                        PyObject *unicode,
                        Py_ssize_t startpos, Py_ssize_t endpos,
                        const char *reason)
 {
-    make_encode_exception_obj(exceptionObject,
+    make_encode_exception(exceptionObject,
                           encoding, unicode, startpos, endpos, reason);
     if (*exceptionObject != NULL)
         PyCodec_StrictErrors(*exceptionObject);
@@ -6509,7 +6463,7 @@ unicode_encode_call_errorhandler(const char *errors,
         return NULL;
     len = PyUnicode_GET_LENGTH(unicode);
 
-    make_encode_exception_obj(exceptionObject,
+    make_encode_exception(exceptionObject,
                           encoding, unicode, startpos, endpos, reason);
     if (*exceptionObject == NULL)
         return NULL;
@@ -6617,7 +6571,7 @@ unicode_encode_ucs1(PyObject *unicode,
             }
             switch (known_errorHandler) {
             case 1: /* strict */
-                raise_encode_exception_obj(&exc, encoding, unicode, collstart, collend, reason);
+                raise_encode_exception(&exc, encoding, unicode, collstart, collend, reason);
                 goto onError;
             case 2: /* replace */
                 while (collstart++<collend)
@@ -6712,7 +6666,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 for (i = 0; repsize-->0; ++i, ++str) {
                     c = PyUnicode_READ_CHAR(repunicode, i);
                     if (c >= limit) {
-                        raise_encode_exception_obj(&exc, encoding, unicode,
+                        raise_encode_exception(&exc, encoding, unicode,
                                                pos, pos+1, reason);
                         Py_DECREF(repunicode);
                         goto onError;
@@ -7434,7 +7388,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     if (errors == NULL || strcmp(errors, "strict") == 0) {
         /* The last error was ERROR_NO_UNICODE_TRANSLATION,
            then we raise a UnicodeEncodeError. */
-        make_encode_exception_obj(&exc, encoding, unicode, 0, 0, reason);
+        make_encode_exception(&exc, encoding, unicode, 0, 0, reason);
         if (exc != NULL) {
             PyCodec_StrictErrors(exc);
             Py_DECREF(exc);
@@ -7555,7 +7509,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             for (i=0; i < outsize; i++) {
                 Py_UCS4 ch = PyUnicode_READ(kind, data, i);
                 if (ch > 127) {
-                    raise_encode_exception_obj(&exc,
+                    raise_encode_exception(&exc,
                         encoding, unicode,
                         pos, pos + 1,
                         "unable to encode error handler result to ASCII");
@@ -8250,7 +8204,7 @@ charmap_encoding_error(
     }
     switch (*known_errorHandler) {
     case 1: /* strict */
-        raise_encode_exception_obj(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
+        raise_encode_exception(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
         return -1;
     case 2: /* replace */
         for (collpos = collstartpos; collpos<collendpos; ++collpos) {
@@ -8259,7 +8213,7 @@ charmap_encoding_error(
                 return -1;
             }
             else if (x==enc_FAILED) {
-                raise_encode_exception_obj(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
+                raise_encode_exception(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
                 return -1;
             }
         }
@@ -8278,7 +8232,7 @@ charmap_encoding_error(
                 if (x==enc_EXCEPTION)
                     return -1;
                 else if (x==enc_FAILED) {
-                    raise_encode_exception_obj(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
+                    raise_encode_exception(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
                     return -1;
                 }
             }
@@ -8319,7 +8273,7 @@ charmap_encoding_error(
             }
             else if (x==enc_FAILED) {
                 Py_DECREF(repunicode);
-                raise_encode_exception_obj(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
+                raise_encode_exception(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
                 return -1;
             }
         }
@@ -8990,7 +8944,11 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
         }
         switch (known_errorHandler) {
         case 1: /* strict */
-            raise_encode_exception(&exc, encoding, s, length, collstart-s, collend-s, reason);
+            unicode = PyUnicode_FromUnicode(s, length);
+            if (unicode == NULL)
+                goto onError;
+            raise_encode_exception(&exc, encoding, unicode, collstart-s, collend-s, reason);
+            Py_DECREF(unicode);
             goto onError;
         case 2: /* replace */
             for (p = collstart; p < collend; ++p)
@@ -9035,8 +8993,12 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
                         *output++ = (char)ch;
                     else {
                         Py_DECREF(repunicode);
+                        unicode = PyUnicode_FromUnicode(s, length);
+                        if (unicode == NULL)
+                            goto onError;
                         raise_encode_exception(&exc, encoding,
-                                               s, length, collstart-s, collend-s, reason);
+                                               unicode, collstart-s, collend-s, reason);
+                        Py_DECREF(unicode);
                         goto onError;
                     }
                 }
