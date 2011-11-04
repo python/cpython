@@ -613,9 +613,9 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         outp = PyUnicode_1BYTE_DATA(res);
         /* generate replacement */
         for (i = start, o = 0; i < end; ++i) {
-            ch = PyUnicode_READ_CHAR(object, i);
             int digits;
             int base;
+            ch = PyUnicode_READ_CHAR(object, i);
             *outp++ = '&';
             *outp++ = '#';
             if (ch<10) {
