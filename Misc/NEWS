@@ -350,6 +350,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13339: Fix compile error in posixmodule.c due to missing semicolon.
+  Thanks to Robert Xiao.
+
 - Byte compilation in packaging is now isolated from the calling Python -B or
   -O options, instead of being disallowed under -B or buggy under -O.
 
