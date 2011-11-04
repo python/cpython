@@ -1334,6 +1334,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             return 0;
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
+        if (e->v.Lambda.args->kw_defaults)
+            VISIT_KWONLYDEFAULTS(st,
+                                 e->v.Lambda.args->kw_defaults);
         if (!symtable_enter_block(st, lambda,
                                   FunctionBlock, (void *)e, e->lineno,
                                   e->col_offset))

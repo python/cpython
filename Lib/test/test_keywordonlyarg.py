@@ -162,6 +162,14 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
         self.assertEqual(Example.f(Example(), k1=1, k2=2), (1, 2))
         self.assertRaises(TypeError, Example.f, k1=1, k2=2)
 
+    def test_issue13343(self):
+        # The Python compiler must scan all symbols of a function to
+        # determine their scope: global, local, cell...
+        # This was not done for the default values of keyword
+        # arguments in a lambda definition, and the following line
+        # used to fail with a SystemError.
+        lambda *, k1=unittest: None
+
 def test_main():
     run_unittest(KeywordOnlyArgTestCase)
 
