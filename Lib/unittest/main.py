@@ -2,7 +2,6 @@
 
 import sys
 import os
-import types
 
 from . import loader, runner
 from .signals import installHandler

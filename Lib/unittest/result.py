@@ -1,6 +1,5 @@
 """Test result object"""
 
-import os
 import io
 import sys
 import traceback
