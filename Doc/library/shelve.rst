@@ -44,8 +44,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
 
-   Like file objects, shelve objects should closed explicitly to assure
-   that the peristent data is flushed to disk.
+   Like file objects, shelve objects should be closed explicitly to ensure
+   that the persistent data is flushed to disk.
 
    Since the :mod:`shelve` module stores objects using :mod:`pickle`, the same
    security precautions apply.  Accordingly, you should avoid loading a shelf
