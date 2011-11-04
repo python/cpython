@@ -4680,9 +4680,6 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
     int kind;
     void *data;
     Py_ssize_t size;
-#if SIZEOF_WCHAR_T == 2
-    Py_ssize_t wchar_offset = 0;
-#endif
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
@@ -4738,9 +4735,6 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             PyObject *rep;
             Py_ssize_t repsize, k, startpos;
             startpos = i-1;
-#if SIZEOF_WCHAR_T == 2
-            startpos += wchar_offset;
-#endif
             rep = unicode_encode_call_errorhandler(
                   errors, &errorHandler, "utf-8", "surrogates not allowed",
                   unicode, &exc, startpos, startpos+1, &newpos);
@@ -4809,9 +4803,6 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
-#if SIZEOF_WCHAR_T == 2
-            wchar_offset++;
-#endif
         }
     }
 
@@ -7315,22 +7306,36 @@ encode_code_page_flags(UINT code_page, const char *errors)
  */
 static int
 encode_code_page_strict(UINT code_page, PyObject **outbytes,
-                        const Py_UNICODE *p, const int size,
+                        PyObject *unicode, Py_ssize_t offset, int len,
                         const char* errors)
 {
     BOOL usedDefaultChar = FALSE;
     BOOL *pusedDefaultChar = &usedDefaultChar;
     int outsize;
     PyObject *exc = NULL;
+	Py_UNICODE *p;
+	Py_ssize_t size;
     const DWORD flags = encode_code_page_flags(code_page, NULL);
     char *out;
+	/* Create a substring so that we can get the UTF-16 representation
+	   of just the slice under consideration. */
+	PyObject *substring;
 
-    assert(size > 0);
+    assert(len > 0);
 
     if (code_page != CP_UTF8 && code_page != CP_UTF7)
         pusedDefaultChar = &usedDefaultChar;
     else
         pusedDefaultChar = NULL;
+
+	substring = PyUnicode_Substring(unicode, offset, offset+len);
+	if (substring == NULL)
+		return -1;
+	p = PyUnicode_AsUnicodeAndSize(substring, &size);
+	if (p == NULL) {
+		Py_DECREF(substring);
+		return -1;
+	}
 
     /* First get the size of the result */
     outsize = WideCharToMultiByte(code_page, flags,
@@ -7340,14 +7345,18 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     if (outsize <= 0)
         goto error;
     /* If we used a default char, then we failed! */
-    if (pusedDefaultChar && *pusedDefaultChar)
+	if (pusedDefaultChar && *pusedDefaultChar) {
+		Py_DECREF(substring);
         return -2;
+	}
 
     if (*outbytes == NULL) {
         /* Create string object */
         *outbytes = PyBytes_FromStringAndSize(NULL, outsize);
-        if (*outbytes == NULL)
+		if (*outbytes == NULL) {
+			Py_DECREF(substring);
             return -1;
+		}
         out = PyBytes_AS_STRING(*outbytes);
     }
     else {
@@ -7355,10 +7364,13 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
         const Py_ssize_t n = PyBytes_Size(*outbytes);
         if (outsize > PY_SSIZE_T_MAX - n) {
             PyErr_NoMemory();
+			Py_DECREF(substring);
             return -1;
         }
-        if (_PyBytes_Resize(outbytes, n + outsize) < 0)
+		if (_PyBytes_Resize(outbytes, n + outsize) < 0) {
+			Py_DECREF(substring);
             return -1;
+		}
         out = PyBytes_AS_STRING(*outbytes) + n;
     }
 
@@ -7367,6 +7379,7 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
                                   p, size,
                                   out, outsize,
                                   NULL, pusedDefaultChar);
+	Py_CLEAR(substring);
     if (outsize <= 0)
         goto error;
     if (pusedDefaultChar && *pusedDefaultChar)
@@ -7374,6 +7387,7 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     return 0;
 
 error:
+	Py_XDECREF(substring);
     if (GetLastError() == ERROR_NO_UNICODE_TRANSLATION)
         return -2;
     PyErr_SetFromWindowsErr(0);
@@ -7390,12 +7404,11 @@ error:
 static int
 encode_code_page_errors(UINT code_page, PyObject **outbytes,
                         PyObject *unicode, Py_ssize_t unicode_offset,
-                        const Py_UNICODE *in, const int insize,
-                        const char* errors)
+                        Py_ssize_t insize, const char* errors)
 {
     const DWORD flags = encode_code_page_flags(code_page, errors);
-    const Py_UNICODE *startin = in;
-    const Py_UNICODE *endin = in + insize;
+	Py_ssize_t pos = unicode_offset;
+	Py_ssize_t endin = unicode_offset + insize;
     /* Ideally, we should get reason from FormatMessage. This is the Windows
        2000 English version of the message. */
     const char *reason = "invalid character";
@@ -7404,12 +7417,11 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     BOOL usedDefaultChar = FALSE, *pusedDefaultChar;
     Py_ssize_t outsize;
     char *out;
-    int charsize;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
     char *encoding;
-    Py_ssize_t startpos, newpos, newoutsize;
+    Py_ssize_t newpos, newoutsize;
     PyObject *rep;
     int ret = -1;
 
@@ -7422,7 +7434,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     if (errors == NULL || strcmp(errors, "strict") == 0) {
         /* The last error was ERROR_NO_UNICODE_TRANSLATION,
            then we raise a UnicodeEncodeError. */
-        make_encode_exception(&exc, encoding, in, insize, 0, 0, reason);
+        make_encode_exception_obj(&exc, encoding, unicode, 0, 0, reason);
         if (exc != NULL) {
             PyCodec_StrictErrors(exc);
             Py_DECREF(exc);
@@ -7462,23 +7474,30 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     }
 
     /* Encode the string character per character */
-    while (in < endin)
+    while (pos < endin)
     {
-        if ((in + 2) <= endin
-            && 0xD800 <= in[0] && in[0] <= 0xDBFF
-            && 0xDC00 <= in[1] && in[1] <= 0xDFFF)
-            charsize = 2;
-        else
-            charsize = 1;
-
+		Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, pos);
+		wchar_t chars[2];
+		int charsize;
+		if (ch < 0x10000) {
+			chars[0] = (wchar_t)ch;
+			charsize = 1;
+		}
+		else {
+			ch -= 0x10000;
+			chars[0] = 0xd800 + (ch >> 10);
+			chars[1] = 0xdc00 + (ch & 0x3ff);
+			charsize = 2;
+		}
+		
         outsize = WideCharToMultiByte(code_page, flags,
-                                      in, charsize,
+                                      chars, charsize,
                                       buffer, Py_ARRAY_LENGTH(buffer),
                                       NULL, pusedDefaultChar);
         if (outsize > 0) {
             if (pusedDefaultChar == NULL || !(*pusedDefaultChar))
             {
-                in += charsize;
+                pos++;
                 memcpy(out, buffer, outsize);
                 out += outsize;
                 continue;
@@ -7489,15 +7508,13 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             goto error;
         }
 
-        charsize = Py_MAX(charsize - 1, 1);
-        startpos = unicode_offset + in - startin;
         rep = unicode_encode_call_errorhandler(
                   errors, &errorHandler, encoding, reason,
                   unicode, &exc,
-                  startpos, startpos + charsize, &newpos);
+                  pos, pos + 1, &newpos);
         if (rep == NULL)
             goto error;
-        in += (newpos - startpos);
+        pos = newpos;
 
         if (PyBytes_Check(rep)) {
             outsize = PyBytes_GET_SIZE(rep);
@@ -7538,10 +7555,9 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             for (i=0; i < outsize; i++) {
                 Py_UCS4 ch = PyUnicode_READ(kind, data, i);
                 if (ch > 127) {
-                    raise_encode_exception(&exc,
-                        encoding,
-                        startin, insize,
-                        startpos, startpos + charsize,
+                    raise_encode_exception_obj(&exc,
+                        encoding, unicode,
+                        pos, pos + 1,
                         "unable to encode error handler result to ASCII");
                     Py_DECREF(rep);
                     goto error;
@@ -7572,55 +7588,54 @@ encode_code_page(int code_page,
                  PyObject *unicode,
                  const char *errors)
 {
-    const Py_UNICODE *p;
-    Py_ssize_t size;
+    Py_ssize_t len;
     PyObject *outbytes = NULL;
     Py_ssize_t offset;
     int chunk_len, ret, done;
 
-    p = PyUnicode_AsUnicodeAndSize(unicode, &size);
-    if (p == NULL)
-        return NULL;
+	if (PyUnicode_READY(unicode) < 0)
+		return NULL;
+	len = PyUnicode_GET_LENGTH(unicode);
 
     if (code_page < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid code page number");
         return NULL;
     }
 
-    if (size == 0)
+    if (len == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
     offset = 0;
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX) {
-            chunk_len = INT_MAX;
+		/* UTF-16 encoding may double the size, so use only INT_MAX/2
+           chunks. */
+        if (len > INT_MAX/2) {
+            chunk_len = INT_MAX/2;
             done = 0;
         }
         else
 #endif
         {
-            chunk_len = (int)size;
+            chunk_len = (int)len;
             done = 1;
         }
-
+	
         ret = encode_code_page_strict(code_page, &outbytes,
-                                      p, chunk_len,
+                                      unicode, offset, chunk_len,
                                       errors);
         if (ret == -2)
             ret = encode_code_page_errors(code_page, &outbytes,
                                           unicode, offset,
-                                          p, chunk_len,
-                                          errors);
+                                          chunk_len, errors);
         if (ret < 0) {
             Py_XDECREF(outbytes);
             return NULL;
         }
 
-        p += chunk_len;
         offset += chunk_len;
-        size -= chunk_len;
+        len -= chunk_len;
     } while (!done);
 
     return outbytes;

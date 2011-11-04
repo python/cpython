@@ -577,22 +577,18 @@ class CodecCallbackTest(unittest.TestCase):
                 UnicodeEncodeError("ascii", "\uffff", 0, 1, "ouch")),
             ("\\uffff", 1)
         )
-        if SIZEOF_WCHAR_T == 2:
-            len_wide = 2
-        else:
-            len_wide = 1
         if SIZEOF_WCHAR_T > 0:
             self.assertEqual(
                 codecs.backslashreplace_errors(
                     UnicodeEncodeError("ascii", "\U00010000",
-                                       0, len_wide, "ouch")),
-                ("\\U00010000", len_wide)
+                                       0, 1, "ouch")),
+                ("\\U00010000", 1)
             )
             self.assertEqual(
                 codecs.backslashreplace_errors(
                     UnicodeEncodeError("ascii", "\U0010ffff",
-                                       0, len_wide, "ouch")),
-                ("\\U0010ffff", len_wide)
+                                       0, 1, "ouch")),
+                ("\\U0010ffff", 1)
             )
             # Lone surrogates (regardless of unicode width)
             self.assertEqual(
