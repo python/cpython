@@ -1513,6 +1513,11 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
           return -1;
     }
 
+    if (PyUnicode_READY(err->object) < -1) {
+        err->encoding = NULL;
+        return -1;
+    }
+
     Py_INCREF(err->encoding);
     Py_INCREF(err->object);
     Py_INCREF(err->reason);
