@@ -778,7 +778,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
     }
     else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
         unsigned char *p;
-        Py_UNICODE ch = 0;
+        Py_UCS4 ch = 0;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
             return NULL;
         if (!(object = PyUnicodeDecodeError_GetObject(exc)))
@@ -804,7 +804,10 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
             return NULL;
         }
-        return Py_BuildValue("(u#n)", &ch, 1, start+3);
+        res = PyUnicode_FromOrdinal(ch);
+        if (res == NULL)
+            return NULL;
+        return Py_BuildValue("(Nn)", res, start+3);
     }
     else {
         wrong_exception_type(exc);
@@ -853,8 +856,9 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
         return restuple;
     }
     else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+        PyObject *str;
         unsigned char *p;
-        Py_UNICODE ch[4]; /* decode up to 4 bad bytes. */
+        Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
         int consumed = 0;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
             return NULL;
@@ -879,7 +883,10 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
             PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
             return NULL;
         }
-        return Py_BuildValue("(u#n)", ch, consumed, start+consumed);
+        str = PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, ch, consumed);
+        if (str == NULL)
+            return NULL;
+        return Py_BuildValue("(Nn)", str, start+consumed);
     }
     else {
         wrong_exception_type(exc);
