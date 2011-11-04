@@ -328,18 +328,21 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             assert(ascii->state.ascii == 0);
             assert(ascii->state.ready == 1);
             assert (compact->utf8 != data);
-        } else {
+        }
+        else {
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
             data = unicode->data.any;
             if (kind == PyUnicode_WCHAR_KIND) {
+                assert(ascii->length == 0);
+                assert(ascii->hash == -1);
                 assert(ascii->state.compact == 0);
                 assert(ascii->state.ascii == 0);
                 assert(ascii->state.ready == 0);
+                assert(ascii->state.interned == SSTATE_NOT_INTERNED);
                 assert(ascii->wstr != NULL);
                 assert(data == NULL);
                 assert(compact->utf8 == NULL);
-                assert(ascii->state.interned == SSTATE_NOT_INTERNED);
             }
             else {
                 assert(kind == PyUnicode_1BYTE_KIND

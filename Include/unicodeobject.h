@@ -231,22 +231,24 @@ typedef struct {
          * utf8_length = 0 if utf8 is NULL
          * wstr is shared with data and wstr_length=length
            if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
-           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
+           or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_t)=4
          * wstr_length = 0 if wstr is NULL
          * (data starts just after the structure)
 
        - legacy string, not ready:
 
          * structure = PyUnicodeObject
+         * length = 0 (use wstr_length)
+         * hash = -1
          * kind = PyUnicode_WCHAR_KIND
          * compact = 0
          * ascii = 0
          * ready = 0
+         * interned = SSTATE_NOT_INTERNED
          * wstr is not NULL
          * data.any is NULL
          * utf8 is NULL
          * utf8_length = 0
-         * interned = SSTATE_NOT_INTERNED
 
        - legacy string, ready:
 
@@ -258,7 +260,7 @@ typedef struct {
          * data.any is not NULL
          * utf8 is shared and utf8_length = length with data.any if ascii = 1
          * utf8_length = 0 if utf8 is NULL
-         * wstr is shared and wstr_length = length with data.any
+         * wstr is shared with data.any and wstr_length = length
            if kind=PyUnicode_2BYTE_KIND and sizeof(wchar_t)=2
            or if kind=PyUnicode_4BYTE_KIND and sizeof(wchar_4)=4
          * wstr_length = 0 if wstr is NULL
