@@ -993,7 +993,7 @@ AsObj(PyObject *value)
                 PyErr_Format(PyExc_ValueError,
                              "character U+%x is above the range "
                              "(U+0000-U+FFFF) allowed by Tcl",
-                             inbuf[i]);
+                             ch);
                 ckfree(FREECAST outbuf);
                 return NULL;
 #endif
