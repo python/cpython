@@ -440,13 +440,17 @@ def _build_localename(localetuple):
         No aliasing or normalizing takes place.
 
     """
-    language, encoding = localetuple
-    if language is None:
-        language = 'C'
-    if encoding is None:
-        return language
-    else:
-        return language + '.' + encoding
+    try:
+        language, encoding = localetuple
+
+        if language is None:
+            language = 'C'
+        if encoding is None:
+            return language
+        else:
+            return language + '.' + encoding
+    except (TypeError, ValueError):
+        raise TypeError('Locale must be None, a string, or an iterable of two strings -- language code, encoding.')
 
 def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
