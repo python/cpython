@@ -573,82 +573,72 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
+        Py_ssize_t i, o;
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        Py_UNICODE *p;
-        Py_UNICODE *startp;
-        Py_UNICODE *outp;
+        unsigned char *outp;
         int ressize;
+        Py_UCS4 ch;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        startp = PyUnicode_AS_UNICODE(object);
-        for (p = startp+start, ressize = 0; p < startp+end; ++p) {
-            if (*p<10)
+        for (i = start, ressize = 0; i < end; ++i) {
+            /* object is guaranteed to be "ready" */
+            ch = PyUnicode_READ_CHAR(object, i);
+            if (ch<10)
                 ressize += 2+1+1;
-            else if (*p<100)
+            else if (ch<100)
                 ressize += 2+2+1;
-            else if (*p<1000)
+            else if (ch<1000)
                 ressize += 2+3+1;
-            else if (*p<10000)
+            else if (ch<10000)
                 ressize += 2+4+1;
-#ifndef Py_UNICODE_WIDE
-            else
+            else if (ch<100000)
                 ressize += 2+5+1;
-#else
-            else if (*p<100000)
-                ressize += 2+5+1;
-            else if (*p<1000000)
+            else if (ch<1000000)
                 ressize += 2+6+1;
             else
                 ressize += 2+7+1;
-#endif
         }
         /* allocate replacement */
-        res = PyUnicode_FromUnicode(NULL, ressize);
+        res = PyUnicode_New(ressize, 127);
         if (res == NULL) {
             Py_DECREF(object);
             return NULL;
         }
+        outp = PyUnicode_1BYTE_DATA(res);
         /* generate replacement */
-        for (p = startp+start, outp = PyUnicode_AS_UNICODE(res);
-            p < startp+end; ++p) {
-            Py_UNICODE c = *p;
+        for (i = start, o = 0; i < end; ++i) {
+            ch = PyUnicode_READ_CHAR(object, i);
             int digits;
             int base;
             *outp++ = '&';
             *outp++ = '#';
-            if (*p<10) {
+            if (ch<10) {
                 digits = 1;
                 base = 1;
             }
-            else if (*p<100) {
+            else if (ch<100) {
                 digits = 2;
                 base = 10;
             }
-            else if (*p<1000) {
+            else if (ch<1000) {
                 digits = 3;
                 base = 100;
             }
-            else if (*p<10000) {
+            else if (ch<10000) {
                 digits = 4;
                 base = 1000;
             }
-#ifndef Py_UNICODE_WIDE
-            else {
+            else if (ch<100000) {
                 digits = 5;
                 base = 10000;
             }
-#else
-            else if (*p<100000) {
-                digits = 5;
-                base = 10000;
-            }
-            else if (*p<1000000) {
+            else if (ch<1000000) {
                 digits = 6;
                 base = 100000;
             }
@@ -656,10 +646,9 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
                 digits = 7;
                 base = 1000000;
             }
-#endif
             while (digits-->0) {
-                *outp++ = '0' + c/base;
-                c %= base;
+                *outp++ = '0' + ch/base;
+                ch %= base;
                 base /= 10;
             }
             *outp++ = ';';
@@ -677,58 +666,41 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
-#ifndef Py_UNICODE_WIDE
-#define IS_SURROGATE_PAIR(p, end) \
-    (*p >= 0xD800 && *p <= 0xDBFF && (p + 1) < end && \
-     *(p + 1) >= 0xDC00 && *(p + 1) <= 0xDFFF)
-#else
-#define IS_SURROGATE_PAIR(p, end) 0
-#endif
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
+        Py_ssize_t i;
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        Py_UNICODE *p;
-        Py_UNICODE *startp;
-        Py_UNICODE *outp;
+        unsigned char *outp;
         int ressize;
+        Py_UCS4 c;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        startp = PyUnicode_AS_UNICODE(object);
-        for (p = startp+start, ressize = 0; p < startp+end; ++p) {
-#ifdef Py_UNICODE_WIDE
-            if (*p >= 0x00010000)
+        for (i = start, ressize = 0; i < end; ++i) {
+            /* object is guaranteed to be "ready" */
+            c = PyUnicode_READ_CHAR(object, i);
+            if (c >= 0x10000) {
                 ressize += 1+1+8;
-            else
-#endif
-            if (*p >= 0x100) {
-                if (IS_SURROGATE_PAIR(p, startp+end)) {
-                    ressize += 1+1+8;
-                    ++p;
-                }
-                else
-                    ressize += 1+1+4;
+            }
+            else if (c >= 0x100) {
+                ressize += 1+1+4;
             }
             else
                 ressize += 1+1+2;
         }
-        res = PyUnicode_FromUnicode(NULL, ressize);
+        res = PyUnicode_New(ressize, 127);
         if (res==NULL)
             return NULL;
-        for (p = startp+start, outp = PyUnicode_AS_UNICODE(res);
-            p < startp+end; ++p) {
-            Py_UCS4 c = (Py_UCS4) *p;
+        for (i = start, outp = PyUnicode_1BYTE_DATA(res);
+            i < end; ++i) {
+            c = PyUnicode_READ_CHAR(object, i);
             *outp++ = '\\';
-            if (IS_SURROGATE_PAIR(p, startp+end)) {
-                c = ((*p & 0x3FF) << 10) + (*(p + 1) & 0x3FF) + 0x10000;
-                ++p;
-            }
             if (c >= 0x00010000) {
                 *outp++ = 'U';
                 *outp++ = Py_hexdigits[(c>>28)&0xf];
@@ -758,7 +730,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
-#undef IS_SURROGATE_PAIR
 }
 
 /* This handler is declared static until someone demonstrates
@@ -768,12 +739,11 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
 {
     PyObject *restuple;
     PyObject *object;
+    Py_ssize_t i;
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
-        Py_UNICODE *p;
-        Py_UNICODE *startp;
         char *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -781,15 +751,15 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        startp = PyUnicode_AS_UNICODE(object);
         res = PyBytes_FromStringAndSize(NULL, 3*(end-start));
         if (!res) {
             Py_DECREF(object);
             return NULL;
         }
         outp = PyBytes_AsString(res);
-        for (p = startp+start; p < startp+end; p++) {
-            Py_UNICODE ch = *p;
+        for (i = start; i < end; i++) {
+            /* object is guaranteed to be "ready" */
+            Py_UCS4 ch = PyUnicode_READ_CHAR(object, i);
             if (ch < 0xd800 || ch > 0xdfff) {
                 /* Not a surrogate, fail with original exception */
                 PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
@@ -847,12 +817,11 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
 {
     PyObject *restuple;
     PyObject *object;
+    Py_ssize_t i;
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
-        Py_UNICODE *p;
-        Py_UNICODE *startp;
         char *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -860,15 +829,15 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        startp = PyUnicode_AS_UNICODE(object);
         res = PyBytes_FromStringAndSize(NULL, end-start);
         if (!res) {
             Py_DECREF(object);
             return NULL;
         }
         outp = PyBytes_AsString(res);
-        for (p = startp+start; p < startp+end; p++) {
-            Py_UNICODE ch = *p;
+        for (i = start; i < end; i++) {
+            /* object is guaranteed to be "ready" */
+            Py_UCS4 ch = PyUnicode_READ_CHAR(object, i);
             if (ch < 0xdc80 || ch > 0xdcff) {
                 /* Not a UTF-8b surrogate, fail with original exception */
                 PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
