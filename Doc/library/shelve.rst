@@ -44,17 +44,12 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
 
-   .. note::
+   Like file objects, shelve objects should closed explicitly to assure
+   that the peristent data is flushed to disk.
 
-      Do not rely on the shelf being closed automatically; always call
-      :meth:`close` explicitly when you don't need it any more, or use a
-      :keyword:`with` statement with :func:`contextlib.closing`.
-
-.. warning::
-
-   Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
-   to load a shelf from an untrusted source.  Like with pickle, loading a shelf
-   can execute arbitrary code.
+   Since the :mod:`shelve` module stores objects using :mod:`pickle`, the same
+   security precautions apply.  Accordingly, you should avoid loading a shelf
+   from an untrusted source.
 
 Shelf objects support all methods supported by dictionaries.  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
