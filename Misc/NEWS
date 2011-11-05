@@ -354,6 +354,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13254: Fix Maildir initialization so that maildir contents
+  are read correctly.
+
 - Issue #3067: locale.setlocale() now raises TypeError if the second
   argument is an invalid iterable. Initial patch by Jyrki Pulliainen.
 
