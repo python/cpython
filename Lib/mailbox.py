@@ -247,11 +247,9 @@ class Maildir(Mailbox):
             else:
                 raise NoSuchMailboxError(self._path)
         self._toc = {}
-        self._toc_mtimes = {}
-        for subdir in ('cur', 'new'):
-            self._toc_mtimes[subdir] = os.path.getmtime(self._paths[subdir])
-        self._last_read = time.time()  # Records last time we read cur/new
-        self._skewfactor = 0.1         # Adjust if os/fs clocks are skewing
+        self._toc_mtimes = {'cur': 0, 'new': 0}
+        self._last_read = 0         # Records last time we read cur/new
+        self._skewfactor = 0.1      # Adjust if os/fs clocks are skewing
 
     def add(self, message):
         """Add message and return assigned key."""

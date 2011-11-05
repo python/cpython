@@ -683,6 +683,25 @@ class TestMaildir(TestMailbox):
                                           key1: os.path.join('new', key1),
                                           key2: os.path.join('new', key2)})
 
+    def test_refresh_after_safety_period(self):
+        # Issue #13254: Call _refresh after the "file system safety
+        # period" of 2 seconds has passed; _toc should still be
+        # updated because this is the first call to _refresh.
+        key0 = self._box.add(self._template % 0)
+        key1 = self._box.add(self._template % 1)
+
+        self._box = self._factory(self._path)
+        self.assertEqual(self._box._toc, {})
+
+        # Emulate sleeping. Instead of sleeping for 2 seconds, use the
+        # skew factor to make _refresh think that the filesystem
+        # safety period has passed and re-reading the _toc is only
+        # required if mtimes differ.
+        self._box._skewfactor = -2
+
+        self._box._refresh()
+        self.assertEqual(sorted(self._box._toc.keys()), sorted([key0, key1]))
+
     def test_lookup(self):
         # Look up message subpaths in the TOC
         self.assertRaises(KeyError, lambda: self._box._lookup('foo'))
@@ -758,6 +777,8 @@ class TestMaildir(TestMailbox):
         self.assertFalse((perms & 0111)) # Execute bits should all be off.
 
     def test_reread(self):
+        # Do an initial unconditional refresh
+        self._box._refresh()
 
         # Put the last modified times more than two seconds into the past
         # (because mtime may have only a two second granularity).
