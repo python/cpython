@@ -526,9 +526,10 @@ def getlocale(category=LC_CTYPE):
 def setlocale(category, locale=None):
 
     """ Set the locale for the given category.  The locale can be
-        a string, a locale tuple (language code, encoding), or None.
+        a string, an iterable of two strings (language code and encoding),
+        or None.
 
-        Locale tuples are converted to strings the locale aliasing
+        Iterables are converted to strings using the locale aliasing
         engine.  Locale strings are passed directly to the C lib.
 
         category may be given as one of the LC_* values.
