@@ -74,7 +74,8 @@ Library
   are read correctly.
 
 - Issue #3067: locale.setlocale() now raises TypeError if the second
-  argument is an invalid iterable. Initial patch by Jyrki Pulliainen.
+  argument is an invalid iterable. Its documentation and docstring
+  were also updated. Initial patch by Jyrki Pulliainen.
 
 - Issue #13140: Fix the daemon_threads attribute of ThreadingMixIn.
 
