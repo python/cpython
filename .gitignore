@@ -12,6 +12,7 @@ Doc/tools/jinja2/
 Doc/tools/pygments/
 Doc/tools/sphinx/
 Lib/lib2to3/*.pickle
+Lib/_sysconfigdata.py
 Makefile
 Makefile.pre
 Misc/python.pc
