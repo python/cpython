@@ -1445,6 +1445,8 @@ Library
 Build
 -----
 
+- Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
+
 - PEP 393: the configure option --with-wide-unicode is removed.
 
 - Issue #12852: Set _XOPEN_SOURCE to 700, instead of 600, to get POSIX 2008
