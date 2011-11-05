@@ -6,12 +6,17 @@ import sys
 import warnings
 import collections
 import io
+import os
 import ast
 import types
 import builtins
 import random
 from test.support import TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
+try:
+    import pty
+except ImportError:
+    pty = None
 
 
 class Squares:
@@ -999,6 +1004,71 @@ class BuiltinTest(unittest.TestCase):
             sys.stdout = savestdout
             fp.close()
             unlink(TESTFN)
+
+    @unittest.skipUnless(pty, "the pty module isn't available")
+    def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
+        r, w = os.pipe()
+        try:
+            pid, fd = pty.fork()
+        except (OSError, AttributeError) as e:
+            os.close(r)
+            os.close(w)
+            self.skipTest("pty.fork() raised {}".format(e))
+        if pid == 0:
+            # Child
+            os.close(r)
+            # Check the error handlers are accounted for
+            if stdio_encoding:
+                sys.stdin = io.TextIOWrapper(sys.stdin.detach(),
+                                             encoding=stdio_encoding,
+                                             errors='surrogateescape')
+                sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
+                                              encoding=stdio_encoding,
+                                              errors='replace')
+            with open(w, "w") as wpipe:
+                try:
+                    print("tty =", sys.stdin.isatty() and sys.stdout.isatty(), file=wpipe)
+                    print(ascii(input(prompt)), file=wpipe)
+                finally:
+                    print(";EOF", file=wpipe)
+            # We don't want to return to unittest...
+            os._exit(0)
+        # Parent
+        os.close(w)
+        os.write(fd, terminal_input + b"\r\n")
+        # Get results from the pipe
+        with open(r, "r") as rpipe:
+            lines = []
+            while True:
+                line = rpipe.readline().strip()
+                if line == ";EOF":
+                    break
+                lines.append(line)
+        # Check we did exercise the GNU readline path
+        self.assertIn(lines[0], {'tty = True', 'tty = False'})
+        if lines[0] != 'tty = True':
+            self.skipTest("standard IO in should have been a tty")
+        # Check the result was got and corresponds to the user's terminal input
+        self.assertEqual(len(lines), 2)
+        input_result = eval(lines[1])   # ascii() -> eval() roundtrip
+        if stdio_encoding:
+            expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
+        else:
+            expected = terminal_input.decode(sys.stdin.encoding)  # what else?
+        self.assertEqual(input_result, expected)
+
+    def test_input_tty(self):
+        # Test input() functionality when wired to a tty (the code path
+        # is different and invokes GNU readline if available).
+        self.check_input_tty("prompt", b"quux")
+
+    def test_input_tty_non_ascii(self):
+        # Check stdin/stdout encoding is used when invoking GNU readline
+        self.check_input_tty("prompté", b"quux\xe9", "utf-8")
+
+    def test_input_tty_non_ascii_unicode_errors(self):
+        # Check stdin/stdout error handler is used when invoking GNU readline
+        self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_repr(self):
         self.assertEqual(repr(''), '\'\'')
