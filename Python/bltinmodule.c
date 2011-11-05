@@ -1634,77 +1634,67 @@ builtin_input(PyObject *self, PyObject *args)
 
     /* If we're interactive, use (GNU) readline */
     if (tty) {
-        PyObject *po;
+        PyObject *po = NULL;
         char *prompt;
-        char *s;
-        PyObject *stdin_encoding;
-        char *stdin_encoding_str;
+        char *s = NULL;
+        PyObject *stdin_encoding = NULL, *stdin_errors = NULL;
+        PyObject *stdout_encoding = NULL, *stdout_errors = NULL;
+        char *stdin_encoding_str, *stdin_errors_str;
         PyObject *result;
         size_t len;
         _Py_IDENTIFIER(encoding);
+        _Py_IDENTIFIER(errors);
 
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
-        if (!stdin_encoding)
+        stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
+        if (!stdin_encoding || !stdin_errors)
             /* stdin is a text stream, so it must have an
                encoding. */
-            return NULL;
+            goto _readline_errors;
         stdin_encoding_str = _PyUnicode_AsString(stdin_encoding);
-        if (stdin_encoding_str  == NULL) {
-            Py_DECREF(stdin_encoding);
-            return NULL;
-        }
+        stdin_errors_str = _PyUnicode_AsString(stdin_errors);
+        if (!stdin_encoding_str || !stdin_errors_str)
+            goto _readline_errors;
         tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
         if (tmp == NULL)
             PyErr_Clear();
         else
             Py_DECREF(tmp);
         if (promptarg != NULL) {
+            /* We have a prompt, encode it as stdout would */
+            char *stdout_encoding_str, *stdout_errors_str;
             PyObject *stringpo;
-            PyObject *stdout_encoding;
-            char *stdout_encoding_str;
             stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
-            if (stdout_encoding == NULL) {
-                Py_DECREF(stdin_encoding);
-                return NULL;
-            }
+            stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);
+            if (!stdout_encoding || !stdout_errors)
+                goto _readline_errors;
             stdout_encoding_str = _PyUnicode_AsString(stdout_encoding);
-            if (stdout_encoding_str == NULL) {
-                Py_DECREF(stdin_encoding);
-                Py_DECREF(stdout_encoding);
-                return NULL;
-            }
+            stdout_errors_str = _PyUnicode_AsString(stdout_errors);
+            if (!stdout_encoding_str || !stdout_errors_str)
+                goto _readline_errors;
             stringpo = PyObject_Str(promptarg);
-            if (stringpo == NULL) {
-                Py_DECREF(stdin_encoding);
-                Py_DECREF(stdout_encoding);
-                return NULL;
-            }
+            if (stringpo == NULL)
+                goto _readline_errors;
             po = PyUnicode_AsEncodedString(stringpo,
-                stdout_encoding_str, NULL);
-            Py_DECREF(stdout_encoding);
-            Py_DECREF(stringpo);
-            if (po == NULL) {
-                Py_DECREF(stdin_encoding);
-                return NULL;
-            }
+                stdout_encoding_str, stdout_errors_str);
+            Py_CLEAR(stdout_encoding);
+            Py_CLEAR(stdout_errors);
+            Py_CLEAR(stringpo);
+            if (po == NULL)
+                goto _readline_errors;
             prompt = PyBytes_AsString(po);
-            if (prompt == NULL) {
-                Py_DECREF(stdin_encoding);
-                Py_DECREF(po);
-                return NULL;
-            }
+            if (prompt == NULL)
+                goto _readline_errors;
         }
         else {
             po = NULL;
             prompt = "";
         }
         s = PyOS_Readline(stdin, stdout, prompt);
-        Py_XDECREF(po);
         if (s == NULL) {
             if (!PyErr_Occurred())
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
-            Py_DECREF(stdin_encoding);
-            return NULL;
+            goto _readline_errors;
         }
 
         len = strlen(s);
@@ -1722,12 +1712,22 @@ builtin_input(PyObject *self, PyObject *args)
                 len--;   /* strip trailing '\n' */
                 if (len != 0 && s[len-1] == '\r')
                     len--;   /* strip trailing '\r' */
-                result = PyUnicode_Decode(s, len, stdin_encoding_str, NULL);
+                result = PyUnicode_Decode(s, len, stdin_encoding_str,
+                                                  stdin_errors_str);
             }
         }
         Py_DECREF(stdin_encoding);
+        Py_DECREF(stdin_errors);
+        Py_XDECREF(po);
         PyMem_FREE(s);
         return result;
+    _readline_errors:
+        Py_XDECREF(stdin_encoding);
+        Py_XDECREF(stdout_encoding);
+        Py_XDECREF(stdin_errors);
+        Py_XDECREF(stdout_errors);
+        Py_XDECREF(po);
+        return NULL;
     }
 
     /* Fallback if we're not interactive */
