@@ -99,7 +99,9 @@ class InstallDataTestCase(support.TempdirManager,
         self.write_file('spamd', '# Python script')
         sysconfig._SCHEMES.set(_get_default_scheme(), 'scripts', scripts_dir)
         sys.path.insert(0, install_dir)
+        packaging.database.disable_cache()
         self.addCleanup(sys.path.remove, install_dir)
+        self.addCleanup(packaging.database.enable_cache)
 
         cmd = install_dist(dist)
         cmd.outputs = ['spamd']
