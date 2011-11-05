@@ -361,6 +361,13 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u.index(0, 3), 3)
         self.assertEqual(u.index(0, 3, 4), 3)
         self.assertRaises(ValueError, u.index, 2, 0, -10)
+        self.assertEqual(u.index(1, None), 4)
+        self.assertEqual(u.index(1, None, None), 4)
+        self.assertEqual(u.index(1, 0, None), 4)
+        self.assertEqual(u.index(1, None, 6), 4)
+        self.assertRaises(ValueError, u.index, -1, 3)
+        self.assertRaises(ValueError, u.index, -1, 3, None)
+        self.assertRaises(ValueError, u.index, 1, None, 4)
 
         self.assertRaises(TypeError, u.index)
 
