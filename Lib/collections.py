@@ -583,8 +583,12 @@ class Counter(dict):
     def __repr__(self):
         if not self:
             return '%s()' % self.__class__.__name__
-        items = ', '.join(map('%r: %r'.__mod__, self.most_common()))
-        return '%s({%s})' % (self.__class__.__name__, items)
+        try:
+            items = ', '.join(map('%r: %r'.__mod__, self.most_common()))
+            return '%s({%s})' % (self.__class__.__name__, items)
+        except TypeError:
+            # handle case where values are not orderable
+            return '{0}({1!r})'.format(self.__class__.__name__, dict(self))
 
     # Multiset-style mathematical operations discussed in:
     #       Knuth TAOCP Volume II section 4.6.3 exercise 19
