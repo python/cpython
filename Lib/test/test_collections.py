@@ -974,7 +974,7 @@ class TestCounter(unittest.TestCase):
         r = repr(c)
         self.assertIn("'a': 2", r)
         self.assertIn("'b': None", r)
-    
+
     def test_helper_function(self):
         # two paths, one for real dicts and one for other mappings
         elems = list('abracadabra')
