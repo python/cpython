@@ -893,6 +893,12 @@ class TestCounter(unittest.TestCase):
         c.subtract('aaaabbcce')
         self.assertEqual(c, Counter(a=-1, b=0, c=-1, d=1, e=-1))
 
+    def test_repr_nonsortable(self):
+        c = Counter(a=2, b=None)
+        r = repr(c)
+        self.assertIn("'a': 2", r)
+        self.assertIn("'b': None", r)
+
     def test_helper_function(self):
         # two paths, one for real dicts and one for other mappings
         elems = list('abracadabra')
