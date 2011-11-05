@@ -181,9 +181,6 @@ def poll2(timeout=0.0, map=None):
             if obj.writable() and not obj.accepting:
                 flags |= select.POLLOUT
             if flags:
-                # Only check for exceptions if object was either readable
-                # or writable.
-                flags |= select.POLLERR | select.POLLHUP | select.POLLNVAL
                 pollster.register(fd, flags)
         try:
             r = pollster.poll(timeout)
