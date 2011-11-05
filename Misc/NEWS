@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13340: Accept None as start and stop parameters for
+  list.index() and tuple.index().
+
 - Issue #10519: Avoid unnecessary recursive function calls in
   setobject.c.
 

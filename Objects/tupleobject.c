@@ -510,12 +510,19 @@ static PyObject *
 tupleindex(PyTupleObject *self, PyObject *args)
 {
     Py_ssize_t i, start=0, stop=Py_SIZE(self);
-    PyObject *v;
+    PyObject *v, *start_obj = NULL, *stop_obj = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
-                                _PyEval_SliceIndex, &start,
-                                _PyEval_SliceIndex, &stop))
+    if (!PyArg_ParseTuple(args, "O|OO:index", &v, &start_obj, &stop_obj))
         return NULL;
+
+    if (start_obj != Py_None)
+        if (!_PyEval_SliceIndex(start_obj, &start))
+            return NULL;
+
+    if (stop_obj != Py_None)
+        if (!_PyEval_SliceIndex(stop_obj, &stop))
+            return NULL;
+
     if (start < 0) {
         start += Py_SIZE(self);
         if (start < 0)
