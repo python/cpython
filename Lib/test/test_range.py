@@ -560,6 +560,35 @@ class RangeTest(unittest.TestCase):
             range(0) >= range(0)
 
 
+    def test_attributes(self):
+        # test the start, stop and step attributes of range objects
+        self.assert_attrs(range(0), 0, 0, 1)
+        self.assert_attrs(range(10), 0, 10, 1)
+        self.assert_attrs(range(-10), 0, -10, 1)
+        self.assert_attrs(range(0, 10, 1), 0, 10, 1)
+        self.assert_attrs(range(0, 10, 3), 0, 10, 3)
+        self.assert_attrs(range(10, 0, -1), 10, 0, -1)
+        self.assert_attrs(range(10, 0, -3), 10, 0, -3)
+
+    def assert_attrs(self, rangeobj, start, stop, step):
+        self.assertEqual(rangeobj.start, start)
+        self.assertEqual(rangeobj.stop, stop)
+        self.assertEqual(rangeobj.step, step)
+
+        with self.assertRaises(AttributeError):
+            rangeobj.start = 0
+        with self.assertRaises(AttributeError):
+            rangeobj.stop = 10
+        with self.assertRaises(AttributeError):
+            rangeobj.step = 1
+
+        with self.assertRaises(AttributeError):
+            del rangeobj.start
+        with self.assertRaises(AttributeError):
+            del rangeobj.stop
+        with self.assertRaises(AttributeError):
+            del rangeobj.step
+
 def test_main():
     test.support.run_unittest(RangeTest)
 
