@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9896: Add start, stop, and step attributes to range objects.
+
 - Issue #13343: Fix a SystemError when a lambda expression uses a global
   variable in the default value of a keyword-only argument:
   (lambda *, arg=GLOBAL_NAME: None)
