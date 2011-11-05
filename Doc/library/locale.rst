@@ -22,19 +22,19 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. exception:: Error
 
-   Exception raised when :func:`setlocale` fails.
+   Exception raised when the locale passed to :func:`setlocale` is not
+   recognized.
 
 
 .. function:: setlocale(category, locale=None)
 
-   If *locale* is specified, it may be a string, a tuple of the form ``(language
-   code, encoding)``, or ``None``. If it is a tuple, it is converted to a string
-   using the locale aliasing engine.  If *locale* is given and not ``None``,
-   :func:`setlocale` modifies the locale setting for the *category*.  The available
-   categories are listed in the data description below.  The value is the name of a
-   locale.  An empty string specifies the user's default settings. If the
-   modification of the locale fails, the exception :exc:`Error` is raised.  If
-   successful, the new locale setting is returned.
+   If *locale* is given and not ``None``, :func:`setlocale` modifies the locale
+   setting for the *category*. The available categories are listed in the data
+   description below. *locale* may be a string, or an iterable of two strings
+   (language code and encoding). If it's an iterable, it's converted to a locale
+   name using the locale aliasing engine. An empty string specifies the user's
+   default settings. If the modification of the locale fails, the exception
+   :exc:`Error` is raised. If successful, the new locale setting is returned.
 
    If *locale* is omitted or ``None``, the current setting for *category* is
    returned.
