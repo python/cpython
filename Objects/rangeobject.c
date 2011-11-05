@@ -1,6 +1,7 @@
 /* Range object implementation */
 
 #include "Python.h"
+#include "structmember.h"
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -880,6 +881,13 @@ static PyMethodDef range_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyMemberDef range_members[] = {
+    {"start",   T_OBJECT_EX,    offsetof(rangeobject, start),   READONLY},
+    {"stop",    T_OBJECT_EX,    offsetof(rangeobject, stop),    READONLY},
+    {"step",    T_OBJECT_EX,    offsetof(rangeobject, step),    READONLY},
+    {0}
+};
+
 PyTypeObject PyRange_Type = {
         PyVarObject_HEAD_INIT(&PyType_Type, 0)
         "range",                /* Name of this type */
@@ -909,7 +917,7 @@ PyTypeObject PyRange_Type = {
         range_iter,             /* tp_iter */
         0,                      /* tp_iternext */
         range_methods,          /* tp_methods */
-        0,                      /* tp_members */
+        range_members,          /* tp_members */
         0,                      /* tp_getset */
         0,                      /* tp_base */
         0,                      /* tp_dict */
