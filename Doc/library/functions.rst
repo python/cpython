@@ -123,6 +123,8 @@ available.  They are listed here in alphabetical order.
 
    Without an argument, an array of size 0 is created.
 
+   .. versionadded:: 2.6
+
 
 .. function:: callable(object)
 
