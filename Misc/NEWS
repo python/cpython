@@ -208,6 +208,11 @@ Library
 - Issue #10860: http.client now correctly handles an empty port after port
   delimiter in URLs.
 
+Build
+-----
+
+- Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
+
 Tests
 -----
 
