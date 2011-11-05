@@ -1042,7 +1042,9 @@ are always available.  They are listed here in alphabetical order.
    ...]``.  If *step* is positive, the last element is the largest ``start + i *
    step`` less than *stop*; if *step* is negative, the last element is the
    smallest ``start + i * step`` greater than *stop*.  *step* must not be zero
-   (or else :exc:`ValueError` is raised).  Example:
+   (or else :exc:`ValueError` is raised).  Range objects have read-only data
+   attributes :attr:`start`, :attr:`stop` and :attr:`step` which return the
+   argument values (or their default).  Example:
 
       >>> list(range(10))
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1099,6 +1101,9 @@ are always available.  They are listed here in alphabetical order.
       Define '==' and '!=' to compare range objects based on the
       sequence of values they define (instead of comparing based on
       object identity).
+
+   .. versionadded:: 3.3
+      The :attr:`start`, :attr:`stop` and :attr:`step` attributes.
 
 
 .. function:: repr(object)
