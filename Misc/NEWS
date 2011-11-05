@@ -74,6 +74,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3067: Enhance the documentation and docstring of
+  locale.setlocale().
+
 - Issue #13254: Fix Maildir initialization so that maildir contents
   are read correctly.
 
