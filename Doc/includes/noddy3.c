@@ -147,23 +147,7 @@ static PyGetSetDef Noddy_getseters[] = {
 static PyObject *
 Noddy_name(Noddy* self)
 {
-    static PyObject *format = NULL;
-    PyObject *args, *result;
-
-    if (format == NULL) {
-        format = PyUnicode_FromString("%s %s");
-        if (format == NULL)
-            return NULL;
-    }
-
-    args = Py_BuildValue("OO", self->first, self->last);
-    if (args == NULL)
-        return NULL;
-
-    result = PyUnicode_Format(format, args);
-    Py_DECREF(args);
-
-    return result;
+    return PyUnicode_FromFormat("%S %S", self->first, self->last);
 }
 
 static PyMethodDef Noddy_methods[] = {
