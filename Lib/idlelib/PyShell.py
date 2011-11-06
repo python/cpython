@@ -460,6 +460,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def kill_subprocess(self):
         try:
+            self.rpcclt.listening_sock.close()
+        except AttributeError:  # no socket
+            pass
+        try:
             self.rpcclt.close()
         except AttributeError:  # no socket
             pass
