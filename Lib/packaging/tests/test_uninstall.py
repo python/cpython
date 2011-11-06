@@ -1,6 +1,5 @@
 """Tests for the packaging.uninstall module."""
 import os
-import sys
 import logging
 import packaging.util
 
@@ -31,16 +30,12 @@ class UninstallTestCase(support.TempdirManager,
 
     def setUp(self):
         super(UninstallTestCase, self).setUp()
-        self.addCleanup(setattr, sys, 'stdout', sys.stdout)
-        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
-        self.addCleanup(os.chdir, os.getcwd())
         self.addCleanup(enable_cache)
         self.root_dir = self.mkdtemp()
         self.cwd = os.getcwd()
         disable_cache()
 
     def tearDown(self):
-        os.chdir(self.cwd)
         packaging.util._path_created.clear()
         super(UninstallTestCase, self).tearDown()
 

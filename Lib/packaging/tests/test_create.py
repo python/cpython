@@ -2,15 +2,17 @@
 import os
 import sys
 import sysconfig
-from io import StringIO
 from textwrap import dedent
+from packaging import create
 from packaging.create import MainProgram, ask_yn, ask, main
 
 from packaging.tests import support, unittest
+from packaging.tests.support import Inputs
 
 
 class CreateTestCase(support.TempdirManager,
                      support.EnvironRestorer,
+                     support.LoggingCatcher,
                      unittest.TestCase):
 
     maxDiff = None
@@ -18,11 +20,6 @@ class CreateTestCase(support.TempdirManager,
 
     def setUp(self):
         super(CreateTestCase, self).setUp()
-        self._stdin = sys.stdin  # TODO use Inputs
-        self._stdout = sys.stdout
-        sys.stdin = StringIO()
-        sys.stdout = StringIO()
-        self._cwd = os.getcwd()
         self.wdir = self.mkdtemp()
         os.chdir(self.wdir)
         # patch sysconfig
@@ -32,29 +29,24 @@ class CreateTestCase(support.TempdirManager,
             'doc': sys.prefix + '/share/doc/pyxfoil', }
 
     def tearDown(self):
-        sys.stdin = self._stdin
-        sys.stdout = self._stdout
-        os.chdir(self._cwd)
         sysconfig.get_paths = self._old_get_paths
+        if hasattr(create, 'input'):
+            del create.input
         super(CreateTestCase, self).tearDown()
 
     def test_ask_yn(self):
-        sys.stdin.write('y\n')
-        sys.stdin.seek(0)
+        create.input = Inputs('y')
         self.assertEqual('y', ask_yn('is this a test'))
 
     def test_ask(self):
-        sys.stdin.write('a\n')
-        sys.stdin.write('b\n')
-        sys.stdin.seek(0)
+        create.input = Inputs('a', 'b')
         self.assertEqual('a', ask('is this a test'))
         self.assertEqual('b', ask(str(list(range(0, 70))), default='c',
                                   lengthy=True))
 
     def test_set_multi(self):
         mainprogram = MainProgram()
-        sys.stdin.write('aaaaa\n')
-        sys.stdin.seek(0)
+        create.input = Inputs('aaaaa')
         mainprogram.data['author'] = []
         mainprogram._set_multi('_set_multi test', 'author')
         self.assertEqual(['aaaaa'], mainprogram.data['author'])
@@ -130,8 +122,7 @@ class CreateTestCase(support.TempdirManager,
               scripts=['my_script', 'bin/run'],
               )
         """), encoding='utf-8')
-        sys.stdin.write('y\n')
-        sys.stdin.seek(0)
+        create.input = Inputs('y')
         main()
 
         path = os.path.join(self.wdir, 'setup.cfg')
@@ -206,9 +197,7 @@ My super Death-scription
 barbar is now in the public domain,
 ho, baby!
                         '''))
-        sys.stdin.write('y\n')
-        sys.stdin.seek(0)
-        # FIXME Out of memory error.
+        create.input = Inputs('y')
         main()
 
         path = os.path.join(self.wdir, 'setup.cfg')

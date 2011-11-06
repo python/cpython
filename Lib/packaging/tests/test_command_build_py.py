@@ -67,8 +67,6 @@ class BuildPyTestCase(support.TempdirManager,
 
     def test_empty_package_dir(self):
         # See SF 1668596/1720897.
-        cwd = os.getcwd()
-
         # create the distribution files.
         sources = self.mkdtemp()
         pkg = os.path.join(sources, 'pkg')
@@ -79,24 +77,16 @@ class BuildPyTestCase(support.TempdirManager,
         open(os.path.join(testdir, "testfile"), "wb").close()
 
         os.chdir(sources)
-        old_stdout = sys.stdout
-        #sys.stdout = StringIO.StringIO()
+        dist = Distribution({"packages": ["pkg"],
+                             "package_dir": sources,
+                             "package_data": {"pkg": ["doc/*"]}})
+        dist.script_args = ["build"]
+        dist.parse_command_line()
 
         try:
-            dist = Distribution({"packages": ["pkg"],
-                                 "package_dir": sources,
-                                 "package_data": {"pkg": ["doc/*"]}})
-            dist.script_args = ["build"]
-            dist.parse_command_line()
-
-            try:
-                dist.run_commands()
-            except PackagingFileError:
-                self.fail("failed package_data test when package_dir is ''")
-        finally:
-            # Restore state.
-            os.chdir(cwd)
-            sys.stdout = old_stdout
+            dist.run_commands()
+        except PackagingFileError:
+            self.fail("failed package_data test when package_dir is ''")
 
     def test_byte_compile(self):
         project_dir, dist = self.create_dist(py_modules=['boiledeggs'])

@@ -52,7 +52,7 @@ __all__ = [
     # TestCase mixins
     'LoggingCatcher', 'TempdirManager', 'EnvironRestorer',
     # mocks
-    'DummyCommand', 'TestDistribution',
+    'DummyCommand', 'TestDistribution', 'Inputs',
     # misc. functions and decorators
     'fake_dec', 'create_distribution', 'use_command',
     'copy_xxmodule_c', 'fixup_build_ext',
@@ -272,6 +272,22 @@ class TestDistribution(Distribution):
 
     def find_config_files(self):
         return self._config_files
+
+
+class Inputs:
+    """Fakes user inputs."""
+    # TODO document usage
+    # TODO use context manager or something for auto cleanup
+
+    def __init__(self, *answers):
+        self.answers = answers
+        self.index = 0
+
+    def __call__(self, prompt=''):
+        try:
+            return self.answers[self.index]
+        finally:
+            self.index += 1
 
 
 def create_distribution(configfiles=()):
