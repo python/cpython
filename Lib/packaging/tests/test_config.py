@@ -1,7 +1,6 @@
 """Tests for packaging.config."""
 import os
 import sys
-from io import StringIO
 
 from packaging import command
 from packaging.dist import Distribution
@@ -210,20 +209,10 @@ class ConfigTestCase(support.TempdirManager,
 
     def setUp(self):
         super(ConfigTestCase, self).setUp()
-        self.addCleanup(setattr, sys, 'stdout', sys.stdout)
-        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
-        sys.stdout = StringIO()
-        sys.stderr = StringIO()
-
-        self.addCleanup(os.chdir, os.getcwd())
         tempdir = self.mkdtemp()
         self.working_dir = os.getcwd()
         os.chdir(tempdir)
         self.tempdir = tempdir
-
-    def tearDown(self):
-        os.chdir(self.working_dir)
-        super(ConfigTestCase, self).tearDown()
 
     def write_setup(self, kwargs=None):
         opts = {'description-file': 'README', 'extra-files': '',
@@ -379,7 +368,7 @@ class ConfigTestCase(support.TempdirManager,
         self.assertIn('hooks', sys.modules)
 
     def test_missing_setup_hook_warns(self):
-        self.write_setup({'setup-hooks': 'this.does._not.exist'})
+        self.write_setup({'setup-hooks': 'does._not.exist'})
         self.write_file('README', 'yeah')
         self.get_dist()
         logs = self.get_logs()
