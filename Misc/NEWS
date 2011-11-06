@@ -13,9 +13,6 @@ Core and Builtins
 - Issue #13342: input() used to ignore sys.stdin's and sys.stdout's unicode
   error handler in interactive mode (when calling into PyOS_Readline()).
 
-- Issue #13340: Accept None as start and stop parameters for
-  list.index() and tuple.index().
-
 - Issue #13343: Fix a SystemError when a lambda expression uses a global
   variable in the default value of a keyword-only argument:
   (lambda *, arg=GLOBAL_NAME: None)
