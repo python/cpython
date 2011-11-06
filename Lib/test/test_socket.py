@@ -147,9 +147,8 @@ class ThreadableTest:
         self.server_ready.wait()
         self.clientSetUp()
         self.client_ready.set()
-        with test_support.check_py3k_warnings():
-            if not callable(test_func):
-                raise TypeError("test_func must be a callable function.")
+        if not callable(test_func):
+            raise TypeError("test_func must be a callable function.")
         try:
             test_func()
         except Exception, strerror:
