@@ -996,6 +996,8 @@ class BuiltinTest(unittest.TestCase):
 
     @unittest.skipUnless(pty, "the pty and signal modules must be available")
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            self.skipTest("stdin and stdout must be ttys")
         r, w = os.pipe()
         try:
             pid, fd = pty.fork()
