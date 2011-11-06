@@ -49,7 +49,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         cmd = install_distinfo(dist)
         dist.command_obj['install_distinfo'] = cmd
 
-        cmd.distinfo_dir = install_dir
+        cmd.install_dir = install_dir
         cmd.ensure_finalized()
         cmd.run()
 
@@ -76,7 +76,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         cmd = install_distinfo(dist)
         dist.command_obj['install_distinfo'] = cmd
 
-        cmd.distinfo_dir = install_dir
+        cmd.install_dir = install_dir
         cmd.installer = 'bacon-python'
         cmd.ensure_finalized()
         cmd.run()
@@ -96,7 +96,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         cmd = install_distinfo(dist)
         dist.command_obj['install_distinfo'] = cmd
 
-        cmd.distinfo_dir = install_dir
+        cmd.install_dir = install_dir
         cmd.requested = False
         cmd.ensure_finalized()
         cmd.run()
@@ -116,7 +116,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         cmd = install_distinfo(dist)
         dist.command_obj['install_distinfo'] = cmd
 
-        cmd.distinfo_dir = install_dir
+        cmd.install_dir = install_dir
         cmd.no_record = True
         cmd.ensure_finalized()
         cmd.run()
@@ -214,7 +214,7 @@ class InstallDistinfoTestCase(support.TempdirManager,
         cmd = install_distinfo(dist)
         dist.command_obj['install_distinfo'] = cmd
 
-        cmd.distinfo_dir = install_dir
+        cmd.install_dir = install_dir
         cmd.ensure_finalized()
         cmd.run()
 
