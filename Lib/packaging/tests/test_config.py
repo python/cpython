@@ -183,13 +183,14 @@ class FooBarBazTest:
 
     def __init__(self, dist):
         self.distribution = dist
+        self._record = []
 
     @classmethod
     def get_command_name(cls):
         return 'foo'
 
     def run(self):
-        self.distribution.foo_was_here = True
+        self._record.append('foo has run')
 
     def nothing(self):
         pass
@@ -491,10 +492,12 @@ class ConfigTestCase(support.TempdirManager,
             self.write_file((pkg, '__init__.py'), '#')
 
         # try to run the install command to see if foo is called
+        self.addCleanup(command._COMMANDS.__delitem__, 'foo')
         dist = self.get_dist()
-        self.assertIn('foo', command.get_command_names())
-        self.assertEqual('FooBarBazTest',
-                         dist.get_command_obj('foo').__class__.__name__)
+        dist.run_command('install_dist')
+        cmd = dist.get_command_obj('foo')
+        self.assertEqual(cmd.__class__.__name__, 'FooBarBazTest')
+        self.assertEqual(cmd._record, ['foo has run'])
 
 
 def test_suite():
