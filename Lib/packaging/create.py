@@ -674,7 +674,3 @@ def main():
     # program.write_setup_script()
     # packaging.util.cfg_to_args()
     program()
-
-
-if __name__ == '__main__':
-    main()
