@@ -534,10 +534,6 @@ class RPCClient(SocketIO):
     def get_remote_proxy(self, oid):
         return RPCProxy(self, oid)
 
-    def close(self):
-        self.listening_sock.close()
-        SocketIO.close(self)
-
 class RPCProxy(object):
 
     __methods = None
