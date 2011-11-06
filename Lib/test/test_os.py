@@ -271,7 +271,7 @@ class StatAttributeTests(unittest.TestCase):
         self.assertEqual(st2.st_mtime, int(st.st_mtime-delta))
 
     def test_utime_noargs(self):
-        # (insert issue#) removed the requirement to pass None as the
+        # Issue #13327 removed the requirement to pass None as the
         # second argument. Check that the previous methods of passing
         # a time tuple or None work in addition to no argument.
         st = os.stat(support.TESTFN)
