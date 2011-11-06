@@ -270,6 +270,21 @@ class StatAttributeTests(unittest.TestCase):
         st2 = os.stat(support.TESTFN)
         self.assertEqual(st2.st_mtime, int(st.st_mtime-delta))
 
+    def test_utime_noargs(self):
+        # (insert issue#) removed the requirement to pass None as the
+        # second argument. Check that the previous methods of passing
+        # a time tuple or None work in addition to no argument.
+        st = os.stat(support.TESTFN)
+        # Doesn't set anything new, but sets the time tuple way
+        os.utime(support.TESTFN, (st.st_atime, st.st_mtime))
+        # Set to the current time in the old explicit way.
+        os.utime(support.TESTFN, None)
+        st1 = os.stat(support.TESTFN)
+        # Set to the current time in the new way
+        os.utime(support.TESTFN)
+        st2 = os.stat(support.TESTFN)
+        self.assertAlmostEqual(st1.st_mtime, st2.st_mtime, delta=10)
+
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
     if sys.platform == 'win32':
