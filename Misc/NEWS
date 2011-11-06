@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13327: Remove the need for an explicit None as the second argument
+  to os.utime in order to update to the current time.
+
 - Issue #13350: Simplify some C code by replacing most usages of
   PyUnicode_Format by PyUnicode_FromFormat.
 
