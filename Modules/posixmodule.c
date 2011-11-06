@@ -3543,7 +3543,7 @@ static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    PyObject *arg;
+    PyObject *arg = NULL;
     PyObject *obwpath;
     wchar_t *wpath = NULL;
     PyObject *oapath;
@@ -3554,7 +3554,7 @@ posix_utime(PyObject *self, PyObject *args)
     FILETIME atime, mtime;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "UO|:utime", &obwpath, &arg)) {
+    if (PyArg_ParseTuple(args, "U|O:utime", &obwpath, &arg)) {
         wpath = PyUnicode_AsUnicode(obwpath);
         if (wpath == NULL)
             return NULL;
@@ -3571,7 +3571,7 @@ posix_utime(PyObject *self, PyObject *args)
            are also valid. */
         PyErr_Clear();
 
-        if (!PyArg_ParseTuple(args, "O&O:utime",
+        if (!PyArg_ParseTuple(args, "O&|O:utime",
                         PyUnicode_FSConverter, &oapath, &arg))
             return NULL;
 
@@ -3589,7 +3589,7 @@ posix_utime(PyObject *self, PyObject *args)
         Py_DECREF(oapath);
     }
 
-    if (arg == Py_None) {
+    if (!arg || (arg == Py_None)) {
         SYSTEMTIME now;
         GetSystemTime(&now);
         if (!SystemTimeToFileTime(&now, &mtime) ||
@@ -3633,13 +3633,13 @@ done:
     time_t atime, mtime;
     long ausec, musec;
     int res;
-    PyObject* arg;
+    PyObject* arg = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&O:utime",
+    if (!PyArg_ParseTuple(args, "O&|O:utime",
                           PyUnicode_FSConverter, &opath, &arg))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (arg == Py_None) {
+    if (!arg || (arg == Py_None)) {
         /* optional time values not given */
         Py_BEGIN_ALLOW_THREADS
         res = utime(path, NULL);

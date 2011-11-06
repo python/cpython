@@ -2134,18 +2134,19 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: utime(path, times)
+.. function:: utime(path[, times])
 
    Set the access and modified times of the file specified by *path*. If *times*
-   is ``None``, then the file's access and modified times are set to the current
-   time. (The effect is similar to running the Unix program :program:`touch` on
-   the path.)  Otherwise, *times* must be a 2-tuple of numbers, of the form
-   ``(atime, mtime)`` which is used to set the access and modified times,
-   respectively. Whether a directory can be given for *path* depends on whether
-   the operating system implements directories as files (for example, Windows
-   does not).  Note that the exact times you set here may not be returned by a
-   subsequent :func:`~os.stat` call, depending on the resolution with which your
-   operating system records access and modification times; see :func:`~os.stat`.
+   is ``None`` or not specified, then the file's access and modified times are
+   set to the current time. (The effect is similar to running the Unix program
+   :program:`touch` on the path.)  Otherwise, *times* must be a 2-tuple of
+   numbers, of the form ``(atime, mtime)`` which is used to set the access and
+   modified times, respectively. Whether a directory can be given for *path*
+   depends on whether the operating system implements directories as files
+   (for example, Windows does not).  Note that the exact times you set here may
+   not be returned by a subsequent :func:`~os.stat` call, depending on the
+   resolution with which your operating system records access and modification
+   times; see :func:`~os.stat`.
 
    Availability: Unix, Windows.
 
