@@ -318,8 +318,8 @@ class Command:
         cmd_obj.ensure_finalized()
         return cmd_obj
 
-    def get_reinitialized_command(self, command, reinit_subcommands=False):
-        return self.distribution.get_reinitialized_command(
+    def reinitialize_command(self, command, reinit_subcommands=False):
+        return self.distribution.reinitialize_command(
             command, reinit_subcommands)
 
     def run_command(self, command):
