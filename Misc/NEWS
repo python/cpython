@@ -88,7 +88,7 @@ Library
 - Issue #13339: Fix compile error in posixmodule.c due to missing semicolon.
   Thanks to Robert Xiao.
 
-- Issue #10570: curses.putp() and curses.tigetstr() are now expecting a byte
+- Issue #10570: curses.putp() and curses.tparm() are now expecting a byte
   string, instead of a Unicode string.
 
 - Issue #2892: preserve iterparse events in case of SyntaxError.
