@@ -12,6 +12,7 @@ except ImportError:
     DOCUTILS_SUPPORT = False
 
 from packaging.tests import unittest, support
+from packaging.tests.support import Inputs
 from packaging.command import register as register_module
 from packaging.command.register import register
 from packaging.errors import PackagingSetupError
@@ -36,19 +37,6 @@ index-servers =
 username:tarek
 password:password
 """
-
-
-class Inputs:
-    """Fakes user inputs."""
-    def __init__(self, *answers):
-        self.answers = answers
-        self.index = 0
-
-    def __call__(self, prompt=''):
-        try:
-            return self.answers[self.index]
-        finally:
-            self.index += 1
 
 
 class FakeOpener:
