@@ -143,6 +143,7 @@ class RegisterTestCase(support.TempdirManager,
 
         register_module.input = _no_way
         cmd.show_response = True
+        cmd.finalized = False
         cmd.ensure_finalized()
         cmd.run()
 
