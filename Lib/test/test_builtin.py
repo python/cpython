@@ -11,12 +11,13 @@ import ast
 import types
 import builtins
 import random
+import traceback
 from test.support import TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
 try:
-    import pty
+    import pty, signal
 except ImportError:
-    pty = None
+    pty = signal = None
 
 
 class Squares:
@@ -1005,7 +1006,7 @@ class BuiltinTest(unittest.TestCase):
             fp.close()
             unlink(TESTFN)
 
-    @unittest.skipUnless(pty, "the pty module isn't available")
+    @unittest.skipUnless(pty, "the pty and signal modules must be available")
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
         r, w = os.pipe()
         try:
@@ -1016,23 +1017,26 @@ class BuiltinTest(unittest.TestCase):
             self.skipTest("pty.fork() raised {}".format(e))
         if pid == 0:
             # Child
-            os.close(r)
-            # Check the error handlers are accounted for
-            if stdio_encoding:
-                sys.stdin = io.TextIOWrapper(sys.stdin.detach(),
-                                             encoding=stdio_encoding,
-                                             errors='surrogateescape')
-                sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
-                                              encoding=stdio_encoding,
-                                              errors='replace')
-            with open(w, "w") as wpipe:
-                try:
+            try:
+                # Make sure we don't get stuck if there's a problem
+                signal.alarm(2)
+                os.close(r)
+                # Check the error handlers are accounted for
+                if stdio_encoding:
+                    sys.stdin = io.TextIOWrapper(sys.stdin.detach(),
+                                                 encoding=stdio_encoding,
+                                                 errors='surrogateescape')
+                    sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
+                                                  encoding=stdio_encoding,
+                                                  errors='replace')
+                with open(w, "w") as wpipe:
                     print("tty =", sys.stdin.isatty() and sys.stdout.isatty(), file=wpipe)
                     print(ascii(input(prompt)), file=wpipe)
-                finally:
-                    print(";EOF", file=wpipe)
-            # We don't want to return to unittest...
-            os._exit(0)
+            except:
+                traceback.print_exc()
+            finally:
+                # We don't want to return to unittest...
+                os._exit(0)
         # Parent
         os.close(w)
         os.write(fd, terminal_input + b"\r\n")
@@ -1041,15 +1045,21 @@ class BuiltinTest(unittest.TestCase):
             lines = []
             while True:
                 line = rpipe.readline().strip()
-                if line == ";EOF":
+                if line == "":
+                    # The other end was closed => the child exited
                     break
                 lines.append(line)
+        # Check the result was got and corresponds to the user's terminal input
+        if len(lines) != 2:
+            # Something went wrong, try to get at stderr
+            with open(fd, "r", encoding="ascii", errors="ignore") as child_output:
+                self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
+                          % (len(lines), child_output.read()))
+        os.close(fd)
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
             self.skipTest("standard IO in should have been a tty")
-        # Check the result was got and corresponds to the user's terminal input
-        self.assertEqual(len(lines), 2)
         input_result = eval(lines[1])   # ascii() -> eval() roundtrip
         if stdio_encoding:
             expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
