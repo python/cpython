@@ -262,10 +262,7 @@ timed intervals.
    :meth:`emit`.
 
    .. versionchanged:: 2.6
-      *delay* was added.
-
-   .. versionchanged:: 2.7
-      *utc* was added.
+      *delay* and *utc* were added.
 
 
    .. method:: doRollover()
