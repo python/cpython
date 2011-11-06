@@ -140,7 +140,7 @@ class SDistTestCase(support.TempdirManager,
 
         # now trying a tar then a gztar
         cmd.formats = ['tar', 'gztar']
-
+        cmd.finalized = False
         cmd.ensure_finalized()
         cmd.run()
 
