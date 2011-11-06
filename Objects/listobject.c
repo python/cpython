@@ -2121,9 +2121,8 @@ static PyObject *
 listindex(PyListObject *self, PyObject *args)
 {
     Py_ssize_t i, start=0, stop=Py_SIZE(self);
-    PyObject *v, *format_tuple, *err_string;
+    PyObject *v;
     PyObject *start_obj = NULL, *stop_obj = NULL;
-    static PyObject *err_format = NULL;
 
     if (!PyArg_ParseTuple(args, "O|OO:index", &v, &start_obj, &stop_obj))
         return NULL;
@@ -2153,20 +2152,7 @@ listindex(PyListObject *self, PyObject *args)
         else if (cmp < 0)
             return NULL;
     }
-    if (err_format == NULL) {
-        err_format = PyUnicode_FromString("%r is not in list");
-        if (err_format == NULL)
-            return NULL;
-    }
-    format_tuple = PyTuple_Pack(1, v);
-    if (format_tuple == NULL)
-        return NULL;
-    err_string = PyUnicode_Format(err_format, format_tuple);
-    Py_DECREF(format_tuple);
-    if (err_string == NULL)
-        return NULL;
-    PyErr_SetObject(PyExc_ValueError, err_string);
-    Py_DECREF(err_string);
+    PyErr_Format(PyExc_ValueError, "%R is not in list", v);
     return NULL;
 }
 

@@ -4599,38 +4599,20 @@ static PyNumberMethods Simple_as_number = {
 static PyObject *
 Simple_repr(CDataObject *self)
 {
-    PyObject *val, *name, *args, *result;
-    static PyObject *format;
+    PyObject *val, *result;
 
     if (Py_TYPE(self)->tp_base != &Simple_Type) {
         return PyUnicode_FromFormat("<%s object at %p>",
                                    Py_TYPE(self)->tp_name, self);
     }
 
-    if (format == NULL) {
-        format = PyUnicode_InternFromString("%s(%r)");
-        if (format == NULL)
-            return NULL;
-    }
-
     val = Simple_get_value(self);
     if (val == NULL)
         return NULL;
 
-    name = PyUnicode_FromString(Py_TYPE(self)->tp_name);
-    if (name == NULL) {
-        Py_DECREF(val);
-        return NULL;
-    }
-
-    args = PyTuple_Pack(2, name, val);
-    Py_DECREF(name);
+    result = PyUnicode_FromFormat("%s(%R)",
+                                  Py_TYPE(self)->tp_name, val);
     Py_DECREF(val);
-    if (args == NULL)
-        return NULL;
-
-    result = PyUnicode_Format(format, args);
-    Py_DECREF(args);
     return result;
 }
 
