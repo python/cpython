@@ -548,8 +548,9 @@ class TestChainMap(unittest.TestCase):
                          [dcomb.get(k, 10) for k in klist])      # get()
         self.assertEqual([k in cm for k in klist],
                          [k in dcomb for k in klist])            # __contains__()
-        self.assertEqual([cm.has_key(k) for k in klist],
-                         [dcomb.has_key(k) for k in klist])      # has_key()
+        with test_support.check_py3k_warnings():
+            self.assertEqual([cm.has_key(k) for k in klist],
+                             [dcomb.has_key(k) for k in klist])  # has_key()
 
 class Issue7005TestCase(unittest.TestCase):
     """Test output when None is set() as a value and allow_no_value == False.
