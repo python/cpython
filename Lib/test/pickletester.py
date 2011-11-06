@@ -132,6 +132,8 @@ class pickling_metaclass(type):
     def __reduce__(self):
         return (create_dynamic_class, self.reduce_args)
 
+    __hash__ = None
+
 def create_dynamic_class(name, bases):
     result = pickling_metaclass(name, bases, dict())
     result.reduce_args = (name, bases)
