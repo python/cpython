@@ -1097,7 +1097,7 @@ class Manager(object):
         """
         rv = None
         if not isinstance(name, str):
-            raise ValueError('A logger name must be a string')
+            raise TypeError('A logger name must be a string')
         _acquireLock()
         try:
             if name in self.loggerDict:
