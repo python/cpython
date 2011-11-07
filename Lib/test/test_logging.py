@@ -310,6 +310,8 @@ class BuiltinLevelsTest(BaseTest):
             ('INF.BADPARENT', 'INFO', '4'),
         ])
 
+    def test_invalid_name(self):
+        self.assertRaises(ValueError, logging.getLogger, any)
 
 class BasicFilterTest(BaseTest):
 
