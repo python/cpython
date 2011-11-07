@@ -1008,7 +1008,7 @@ class Manager(object):
         """
         rv = None
         if not isinstance(name, basestring):
-            raise ValueError('A logger name must be string or Unicode')
+            raise TypeError('A logger name must be string or Unicode')
         if isinstance(name, unicode):
             name = name.encode('utf-8')
         _acquireLock()
