@@ -49,6 +49,7 @@ import weakref
 try:
     import threading
     # The following imports are needed only for tests which
+    # require threading
     import asynchat
     import asyncore
     import errno
@@ -95,9 +96,7 @@ class BaseTest(unittest.TestCase):
         finally:
             logging._releaseLock()
 
-        # Set two unused loggers: one non-ASCII and one Unicode.
-        # This is to test correct operation when sorting existing
-        # loggers in the configuration code. See issue 8201.
+        # Set two unused loggers
         self.logger1 = logging.getLogger("\xab\xd7\xbb")
         self.logger2 = logging.getLogger("\u013f\u00d6\u0047")
 
@@ -310,8 +309,6 @@ class BuiltinLevelsTest(BaseTest):
             ('INF.BADPARENT', 'INFO', '4'),
         ])
 
-    def test_invalid_name(self):
-        self.assertRaises(TypeError, logging.getLogger, any)
 
 class BasicFilterTest(BaseTest):
 
@@ -3513,6 +3510,22 @@ class LoggerTest(BaseTest):
         self.logger.manager.disable = 23
         self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
         self.assertFalse(self.logger.isEnabledFor(22))
+
+    def test_root_logger_aliases(self):
+        root = logging.getLogger()
+        self.assertIs(root, logging.root)
+        self.assertIs(root, logging.getLogger(None))
+        self.assertIs(root, logging.getLogger(''))
+        self.assertIs(root, logging.getLogger('foo').root)
+        self.assertIs(root, logging.getLogger('foo.bar').root)
+        self.assertIs(root, logging.getLogger('foo').parent)
+
+        self.assertIsNot(root, logging.getLogger('\0'))
+        self.assertIsNot(root, logging.getLogger('foo.bar').parent)
+
+    def test_invalid_names(self):
+        self.assertRaises(TypeError, logging.getLogger, any)
+        self.assertRaises(TypeError, logging.getLogger, b'foo')
 
 
 class BaseFileTest(BaseTest):

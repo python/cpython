@@ -55,9 +55,7 @@ class install_dist(Command):
         ('install-data=', None,
          "installation directory for data files"),
 
-        # Byte-compilation options -- see install_lib.py for details, as
-        # these are duplicated from there (but only install_lib does
-        # anything with them).
+        # Byte-compilation options -- see install_lib for details
         ('compile', 'c', "compile .py to .pyc [default]"),
         ('no-compile', None, "don't compile .py files"),
         ('optimize=', 'O',
