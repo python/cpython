@@ -9686,8 +9686,7 @@ posix_fstatat(PyObject *self, PyObject *args)
 
 #ifdef HAVE_FUTIMESAT
 PyDoc_STRVAR(posix_futimesat__doc__,
-"futimesat(dirfd, path, (atime, mtime))\n\
-futimesat(dirfd, path, None)\n\n\
+"futimesat(dirfd, path[, (atime, mtime)])\n\
 Like utime() but if path is relative, it is taken as relative to dirfd.\n\
 If path is relative and dirfd is the special value AT_FDCWD, then path\n\
 is interpreted relative to the current working directory.");
@@ -9698,11 +9697,11 @@ posix_futimesat(PyObject *self, PyObject *args)
     PyObject *opath;
     char *path;
     int res, dirfd;
-    PyObject* arg;
+    PyObject* arg = Py_None;
     time_t atime, mtime;
     long ausec, musec;
 
-    if (!PyArg_ParseTuple(args, "iO&O:futimesat",
+    if (!PyArg_ParseTuple(args, "iO&|O:futimesat",
             &dirfd, PyUnicode_FSConverter, &opath, &arg))
         return NULL;
     path = PyBytes_AsString(opath);
