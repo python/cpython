@@ -99,7 +99,7 @@ class UnicodeFileTests(unittest.TestCase):
         # listdir may append a wildcard to the filename
         if fn is os.listdir and sys.platform == 'win32':
             exc_filename, _, wildcard = exc_filename.rpartition(os.sep)
-            self.assertEqual(wildcard, r'*.*')
+            self.assertEqual(wildcard, '*.*')
         if check_filename:
             self.assertEqual(exc_filename, filename, "Function '%s(%a) failed "
                              "with bad filename in the exception: %a" %
@@ -117,7 +117,8 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.listdir, name)
 
     if sys.platform == 'win32':
-        _listdir_failure = FileNotFoundError
+        # Windows is lunatic. Issue #13366.
+        _listdir_failure = NotADirectoryError, FileNotFoundError
     else:
         _listdir_failure = NotADirectoryError
 
@@ -146,7 +147,6 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.chdir, name)
             self._apply_failure(os.rmdir, name)
             self._apply_failure(os.remove, name)
-            # listdir may append a wildcard to the filename, so dont check
             self._apply_failure(os.listdir, name)
 
     # Skip the test on darwin, because darwin uses a normalization different
