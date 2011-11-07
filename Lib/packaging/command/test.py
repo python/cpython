@@ -56,7 +56,7 @@ class test(Command):
         prev_syspath = sys.path[:]
         try:
             # build release
-            build = self.get_reinitialized_command('build')
+            build = self.reinitialize_command('build')
             self.run_command('build')
             sys.path.insert(0, build.build_lib)
 

@@ -25,17 +25,13 @@ To use, simply 'import logging.handlers' and log away!
 """
 
 import logging, socket, os, pickle, struct, time, re
+from codecs import BOM_UTF8
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 try:
     import threading
 except ImportError: #pragma: no cover
     threading = None
-
-try:
-    import codecs
-except ImportError: #pragma: no cover
-    codecs = None
 
 #
 # Some constants...
@@ -60,8 +56,6 @@ class BaseRotatingHandler(logging.FileHandler):
         """
         Use the specified filename for streamed logging
         """
-        if codecs is None: #pragma: no cover
-            encoding = None
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
         self.mode = mode
         self.encoding = encoding
@@ -793,9 +787,7 @@ class SysLogHandler(logging.Handler):
         prio = prio.encode('utf-8')
         # Message is a string. Convert to bytes as required by RFC 5424
         msg = msg.encode('utf-8')
-        if codecs:
-            msg = codecs.BOM_UTF8 + msg
-        msg = prio + msg
+        msg = prio + BOM_UTF8 + msg
         try:
             if self.unixsocket:
                 try:

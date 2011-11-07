@@ -6,30 +6,32 @@ import textwrap
 import packaging.dist
 
 from packaging.dist import Distribution
-from packaging.command import set_command, _COMMANDS
 from packaging.command.cmd import Command
 from packaging.errors import PackagingModuleError, PackagingOptionError
 from packaging.tests import captured_stdout
 from packaging.tests import support, unittest
-from packaging.tests.support import create_distribution
+from packaging.tests.support import create_distribution, use_command
 from test.support import unload
 
 
 class test_dist(Command):
-    """Sample packaging extension command."""
+    """Custom command used for testing."""
 
     user_options = [
-        ("sample-option=", "S", "help text"),
+        ('sample-option=', 'S',
+         "help text"),
         ]
 
     def initialize_options(self):
         self.sample_option = None
+        self._record = []
 
     def finalize_options(self):
-        pass
+        if self.sample_option is None:
+            self.sample_option = 'default value'
 
     def run(self):
-        pass
+        self._record.append('test_dist has run')
 
 
 class DistributionTestCase(support.TempdirManager,
@@ -45,14 +47,10 @@ class DistributionTestCase(support.TempdirManager,
         # (defaulting to sys.argv)
         self.argv = sys.argv, sys.argv[:]
         del sys.argv[1:]
-        self._commands = _COMMANDS.copy()
 
     def tearDown(self):
         sys.argv = self.argv[0]
         sys.argv[:] = self.argv[1]
-        # XXX maybe we need a public API to remove commands
-        _COMMANDS.clear()
-        _COMMANDS.update(self._commands)
         super(DistributionTestCase, self).tearDown()
 
     @unittest.skip('needs to be updated')
@@ -181,7 +179,8 @@ class DistributionTestCase(support.TempdirManager,
         self.write_file((temp_home, "config2.cfg"),
                         '[test_dist]\npre-hook.b = type')
 
-        set_command('packaging.tests.test_dist.test_dist')
+        use_command(self, 'packaging.tests.test_dist.test_dist')
+
         dist = create_distribution(config_files)
         cmd = dist.get_command_obj("test_dist")
         self.assertEqual(cmd.pre_hook, {"a": 'type', "b": 'type'})
@@ -209,7 +208,7 @@ class DistributionTestCase(support.TempdirManager,
                 record.append('post-%s' % cmd.get_command_name())
             '''))
 
-        set_command('packaging.tests.test_dist.test_dist')
+        use_command(self, 'packaging.tests.test_dist.test_dist')
         d = create_distribution([config_file])
         cmd = d.get_command_obj("test_dist")
 
@@ -236,7 +235,7 @@ class DistributionTestCase(support.TempdirManager,
             [test_dist]
             pre-hook.test = nonexistent.dotted.name'''))
 
-        set_command('packaging.tests.test_dist.test_dist')
+        use_command(self, 'packaging.tests.test_dist.test_dist')
         d = create_distribution([config_file])
         cmd = d.get_command_obj("test_dist")
         cmd.ensure_finalized()
@@ -251,7 +250,7 @@ class DistributionTestCase(support.TempdirManager,
             [test_dist]
             pre-hook.test = packaging.tests.test_dist.__doc__'''))
 
-        set_command('packaging.tests.test_dist.test_dist')
+        use_command(self, 'packaging.tests.test_dist.test_dist')
         d = create_distribution([config_file])
         cmd = d.get_command_obj("test_dist")
         cmd.ensure_finalized()
