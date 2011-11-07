@@ -10019,12 +10019,13 @@ posix_unlinkat(PyObject *self, PyObject *args)
 
 #ifdef HAVE_UTIMENSAT
 PyDoc_STRVAR(posix_utimensat__doc__,
-"utimensat(dirfd, path, (atime_sec, atime_nsec),\n\
-    (mtime_sec, mtime_nsec), flags)\n\
+"utimensat(dirfd, path[, atime=(atime_sec, atime_nsec),\n\
+    mtime=(mtime_sec, mtime_nsec), flags=0])\n\
 utimensat(dirfd, path, None, None, flags)\n\n\
 Updates the timestamps of a file with nanosecond precision. If path is\n\
 relative, it is taken as relative to dirfd.\n\
-The second form sets atime and mtime to the current time.\n\
+If atime and mtime are both None, which is the default, set atime and\n\
+mtime to the current time.\n\
 flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
 If path is relative and dirfd is the special value AT_FDCWD, then path\n\
 is interpreted relative to the current working directory.\n\
@@ -10033,16 +10034,19 @@ current time.\n\
 If *_nsec is specified as UTIME_OMIT, the timestamp is not updated.");
 
 static PyObject *
-posix_utimensat(PyObject *self, PyObject *args)
+posix_utimensat(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *opath;
     char *path;
     int res, dirfd, flags = 0;
-    PyObject *atime, *mtime;
+    PyObject *atime = Py_None;
+    PyObject *mtime = Py_None;
+
+    static char *kwlist[] = {"dirfd", "path", "atime", "mtime", "flags", NULL};
 
     struct timespec buf[2];
 
-    if (!PyArg_ParseTuple(args, "iO&OO|i:utimensat",
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO&|OOi:utimensat", kwlist,
             &dirfd, PyUnicode_FSConverter, &opath, &atime, &mtime, &flags))
         return NULL;
     path = PyBytes_AsString(opath);
@@ -10939,7 +10943,8 @@ static PyMethodDef posix_methods[] = {
     {"unlinkat",        posix_unlinkat, METH_VARARGS, posix_unlinkat__doc__},
 #endif
 #ifdef HAVE_UTIMENSAT
-    {"utimensat",       posix_utimensat, METH_VARARGS, posix_utimensat__doc__},
+    {"utimensat",       posix_utimensat, METH_VARARGS | METH_KEYWORDS,
+                        posix_utimensat__doc__},
 #endif
 #ifdef HAVE_MKFIFOAT
     {"mkfifoat",        posix_mkfifoat, METH_VARARGS, posix_mkfifoat__doc__},
