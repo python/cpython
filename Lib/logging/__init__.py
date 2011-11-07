@@ -1007,6 +1007,8 @@ class Manager(object):
         placeholder to now point to the logger.
         """
         rv = None
+        if isinstance(name, unicode):
+            name = name.encode('utf-8')
         _acquireLock()
         try:
             if name in self.loggerDict:
