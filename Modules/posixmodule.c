@@ -3543,7 +3543,7 @@ static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    PyObject *arg = NULL;
+    PyObject *arg = Py_None;
     PyObject *obwpath;
     wchar_t *wpath = NULL;
     PyObject *oapath;
@@ -3589,7 +3589,7 @@ posix_utime(PyObject *self, PyObject *args)
         Py_DECREF(oapath);
     }
 
-    if (!arg || (arg == Py_None)) {
+    if (arg == Py_None) {
         SYSTEMTIME now;
         GetSystemTime(&now);
         if (!SystemTimeToFileTime(&now, &mtime) ||
@@ -3633,13 +3633,13 @@ done:
     time_t atime, mtime;
     long ausec, musec;
     int res;
-    PyObject* arg = NULL;
+    PyObject* arg = Py_None;
 
     if (!PyArg_ParseTuple(args, "O&|O:utime",
                           PyUnicode_FSConverter, &opath, &arg))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (!arg || (arg == Py_None)) {
+    if (arg == Py_None) {
         /* optional time values not given */
         Py_BEGIN_ALLOW_THREADS
         res = utime(path, NULL);
