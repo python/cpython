@@ -166,6 +166,12 @@ class HTTPError(URLError, addinfourl):
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
 
+    # since URLError specifies a .reason attribute, HTTPError should also
+    #  provide this attribute. See issue13211 fo discussion.
+    @property
+    def reason(self):
+        return self.msg
+
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$")
 def request_host(request):

@@ -1318,6 +1318,17 @@ class RequestTests(unittest.TestCase):
         req = Request(url)
         self.assertEqual(req.get_full_url(), url)
 
+def test_HTTPError_interface():
+    """
+    Issue 13211 reveals that HTTPError didn't implement the URLError
+    interface even though HTTPError is a subclass of URLError.
+
+    >>> err = urllib2.HTTPError(msg='something bad happened', url=None, code=None, hdrs=None, fp=None)
+    >>> assert hasattr(err, 'reason')
+    >>> err.reason
+    'something bad happened'
+    """
+
 def test_main(verbose=None):
     from test import test_urllib2
     test_support.run_doctest(test_urllib2, verbose)
