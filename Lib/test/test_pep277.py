@@ -96,9 +96,10 @@ class UnicodeFileTests(unittest.TestCase):
         with self.assertRaises(expected_exception) as c:
             fn(filename)
         exc_filename = c.exception.filename
-        # the "filename" exception attribute may be encoded
-        if isinstance(exc_filename, bytes):
-            filename = filename.encode(sys.getfilesystemencoding())
+        # listdir may append a wildcard to the filename
+        if fn is os.listdir and sys.platform == 'win32':
+            exc_filename, _, wildcard = exc_filename.rpartition(os.sep)
+            self.assertEqual(wildcard, r'*.*')
         if check_filename:
             self.assertEqual(exc_filename, filename, "Function '%s(%a) failed "
                              "with bad filename in the exception: %a" %
@@ -113,8 +114,12 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.chdir, name)
             self._apply_failure(os.rmdir, name)
             self._apply_failure(os.remove, name)
-            # listdir may append a wildcard to the filename, so dont check
-            self._apply_failure(os.listdir, name, check_filename=False)
+            self._apply_failure(os.listdir, name)
+
+    if sys.platform == 'win32':
+        _listdir_failure = FileNotFoundError
+    else:
+        _listdir_failure = NotADirectoryError
 
     def test_open(self):
         for name in self.files:
@@ -122,7 +127,7 @@ class UnicodeFileTests(unittest.TestCase):
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
-            self._apply_failure(os.listdir, name, NotADirectoryError)
+            self._apply_failure(os.listdir, name, self._listdir_failure)
 
     # Skip the test on darwin, because darwin does normalize the filename to
     # NFD (a variant of Unicode NFD form). Normalize the filename to NFC, NFKC,
@@ -142,7 +147,7 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.rmdir, name)
             self._apply_failure(os.remove, name)
             # listdir may append a wildcard to the filename, so dont check
-            self._apply_failure(os.listdir, name, check_filename=False)
+            self._apply_failure(os.listdir, name)
 
     # Skip the test on darwin, because darwin uses a normalization different
     # than Python NFD normalization: filenames are different even if we use
