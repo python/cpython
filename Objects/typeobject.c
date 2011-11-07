@@ -1716,11 +1716,10 @@ get_dict_descriptor(PyTypeObject *type)
     PyObject *dict_str;
     PyObject *descr;
 
-    dict_str = _PyUnicode_FromId(&PyId___dict__);
+    dict_str = _PyUnicode_FromId(&PyId___dict__); /* borrowed */
     if (dict_str == NULL)
         return NULL;
     descr = _PyType_Lookup(type, dict_str);
-    Py_DECREF(dict_str);
     if (descr == NULL || !PyDescr_IsData(descr))
         return NULL;
 
