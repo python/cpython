@@ -52,6 +52,12 @@ class HTTPError(URLError, urllib.response.addinfourl):
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
 
+    # since URLError specifies a .reason attribute, HTTPError should also
+    #  provide this attribute. See issue13211 for discussion.
+    @property
+    def reason(self):
+        return self.msg
+
 # exception raised when downloaded size does not match content-length
 class ContentTooShortError(URLError):
     def __init__(self, message, content):
