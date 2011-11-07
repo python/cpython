@@ -488,8 +488,7 @@ def get_config_vars(*args):
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
         # the init-function.
-        if sys.version >= '2.6':
-            _CONFIG_VARS['userbase'] = _getuserbase()
+        _CONFIG_VARS['userbase'] = _getuserbase()
 
         if 'srcdir' not in _CONFIG_VARS:
             _CONFIG_VARS['srcdir'] = _PROJECT_BASE
