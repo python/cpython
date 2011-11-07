@@ -1285,17 +1285,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: utimensat(dirfd, path, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec), flags)
-              utimensat(dirfd, path, None, None, flags)
+.. function:: utimensat(dirfd, path[, atime=(atime_sec, atime_nsec), mtime=(mtime_sec, mtime_nsec), flags=0])
 
    Updates the timestamps of a file with nanosecond precision.
-   The second form sets *atime* and *mtime* to the current time.
+   The *atime* and *mtime* tuples default to ``None``, which sets those
+   values to the current time.
    If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_NOW`, the corresponding
    timestamp is updated to the current time.
    If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_OMIT`, the corresponding
    timestamp is not updated.
    If *path* is relative, it is taken as relative to *dirfd*.
-   *flags* is optional and may be 0 or :data:`AT_SYMLINK_NOFOLLOW`.
+   *flags* is optional and may be 0 (the default) or :data:`AT_SYMLINK_NOFOLLOW`.
    If *path* is relative and *dirfd* is the special value :data:`AT_FDCWD`, then *path*
    is interpreted relative to the current working directory.
 

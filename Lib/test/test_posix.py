@@ -815,11 +815,16 @@ class PosixTester(unittest.TestCase):
         try:
             now = time.time()
             posix.utimensat(f, support.TESTFN, None, None)
+            posix.utimensat(f, support.TESTFN)
+            posix.utimensat(f, support.TESTFN, flags=os.AT_SYMLINK_NOFOLLOW)
             self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, (None, None), (None, None))
             self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, (now, 0), None)
             self.assertRaises(TypeError, posix.utimensat, f, support.TESTFN, None, (now, 0))
             posix.utimensat(f, support.TESTFN, (int(now), int((now - int(now)) * 1e9)),
                     (int(now), int((now - int(now)) * 1e9)))
+            posix.utimensat(dirfd=f, path=support.TESTFN,
+                            atime=(int(now), int((now - int(now)) * 1e9)),
+                            mtime=(int(now), int((now - int(now)) * 1e9)))
         finally:
             posix.close(f)
 
