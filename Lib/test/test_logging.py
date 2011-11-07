@@ -273,7 +273,7 @@ class BuiltinLevelsTest(BaseTest):
         ])
 
     def test_invalid_name(self):
-        self.assertRaises(ValueError, logging.getLogger, any)
+        self.assertRaises(TypeError, logging.getLogger, any)
 
 class BasicFilterTest(BaseTest):
 
