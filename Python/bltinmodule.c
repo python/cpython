@@ -1121,7 +1121,7 @@ builtin_next(PyObject *self, PyObject *args)
         return NULL;
     if (!PyIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-            "%.200s object is not an iterator",
+            "'%.200s' object is not an iterator",
             it->ob_type->tp_name);
         return NULL;
     }
