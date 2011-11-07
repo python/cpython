@@ -56,16 +56,20 @@ class TestUnicodeFiles(unittest.TestCase):
         # Should be able to rename the file using either name.
         self.assertTrue(os.path.isfile(filename1)) # must exist.
         os.rename(filename1, filename2 + ".new")
-        self.assertTrue(os.path.isfile(filename1+".new"))
+        self.assertFalse(os.path.isfile(filename2))
+        self.assertTrue(os.path.isfile(filename1 + '.new'))
         os.rename(filename1 + ".new", filename2)
+        self.assertFalse(os.path.isfile(filename1 + '.new'))
         self.assertTrue(os.path.isfile(filename2))
 
         shutil.copy(filename1, filename2 + ".new")
         os.unlink(filename1 + ".new") # remove using equiv name.
         # And a couple of moves, one using each name.
         shutil.move(filename1, filename2 + ".new")
-        self.assertTrue(not os.path.exists(filename2))
+        self.assertFalse(os.path.exists(filename2))
+        self.assertTrue(os.path.exists(filename1 + '.new'))
         shutil.move(filename1 + ".new", filename2)
+        self.assertFalse(os.path.exists(filename2 + '.new'))
         self.assertTrue(os.path.exists(filename1))
         # Note - due to the implementation of shutil.move,
         # it tries a rename first.  This only fails on Windows when on
@@ -73,7 +77,9 @@ class TestUnicodeFiles(unittest.TestCase):
         # So we test the shutil.copy2 function, which is the thing most
         # likely to fail.
         shutil.copy2(filename1, filename2 + ".new")
+        self.assertTrue(os.path.isfile(filename1 + '.new'))
         os.unlink(filename1 + ".new")
+        self.assertFalse(os.path.exists(filename2 + '.new'))
 
     def _do_directory(self, make_name, chdir_name):
         cwd = os.getcwdb()
