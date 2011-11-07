@@ -36,11 +36,6 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'getLogRecordFactory', 'setLogRecordFactory', 'lastResort']
 
 try:
-    import codecs
-except ImportError: #pragma: no cover
-    codecs = None
-
-try:
     import threading
 except ImportError: #pragma: no cover
     threading = None
@@ -954,8 +949,6 @@ class FileHandler(StreamHandler):
         """
         #keep the absolute path, otherwise derived classes which use this
         #may come a cropper when the current directory changes
-        if codecs is None:  #pragma: no cover
-            encoding = None
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
@@ -983,11 +976,7 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        if self.encoding is None:
-            stream = open(self.baseFilename, self.mode)
-        else:
-            stream = codecs.open(self.baseFilename, self.mode, self.encoding)
-        return stream
+        return open(self.baseFilename, self.mode, encoding=self.encoding)
 
     def emit(self, record):
         """
