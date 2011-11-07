@@ -1723,7 +1723,6 @@ _PyUnicode_FromId(_Py_Identifier *id)
         id->next = static_strings;
         static_strings = id;
     }
-    Py_INCREF(id->object);
     return id->object;
 }
 
