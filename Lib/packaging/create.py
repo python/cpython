@@ -30,6 +30,7 @@ from textwrap import dedent
 from tokenize import detect_encoding
 from configparser import RawConfigParser
 
+from packaging import logger
 # importing this with an underscore as it should be replaced by the
 # dict form or another structures for all purposes
 from packaging._trove import all_classifiers as _CLASSIFIERS_LIST
@@ -124,7 +125,7 @@ def ask_yn(question, default=None, helptext=None):
         if answer and answer[0].lower() in ('y', 'n'):
             return answer[0].lower()
 
-        print('\nERROR: You must select "Y" or "N".\n')
+        logger.error('You must select "Y" or "N".')
 
 
 # XXX use util.ask
@@ -147,10 +148,7 @@ def ask(question, default=None, helptext=None, required=True,
     helptext = helptext.strip("\n")
 
     while True:
-        sys.stdout.write(prompt)
-        sys.stdout.flush()
-
-        line = sys.stdin.readline().strip()
+        line = input(prompt).strip()
         if line == '?':
             print('=' * 70)
             print(helptext)
@@ -271,9 +269,10 @@ class MainProgram:
     def _write_cfg(self):
         if os.path.exists(_FILENAME):
             if os.path.exists('%s.old' % _FILENAME):
-                print("ERROR: %(name)s.old backup exists, please check that "
-                      "current %(name)s is correct and remove %(name)s.old" %
-                      {'name': _FILENAME})
+                message = ("ERROR: %(name)s.old backup exists, please check "
+                           "that current %(name)s is correct and remove "
+                           "%(name)s.old" % {'name': _FILENAME})
+                logger.error(message)
                 return
             shutil.move(_FILENAME, '%s.old' % _FILENAME)
 
@@ -320,7 +319,7 @@ class MainProgram:
             fp.write('\n')
 
         os.chmod(_FILENAME, 0o644)
-        print('Wrote "%s".' % _FILENAME)
+        logger.info('Wrote "%s".' % _FILENAME)
 
     def convert_py_to_cfg(self):
         """Generate a setup.cfg from an existing setup.py.
@@ -614,8 +613,8 @@ class MainProgram:
                         break
 
             if len(found_list) == 0:
-                print('ERROR: Could not find a matching license for "%s"' %
-                      license)
+                logger.error('Could not find a matching license for "%s"' %
+                             license)
                 continue
 
             question = 'Matching licenses:\n\n'
@@ -636,8 +635,8 @@ class MainProgram:
             try:
                 index = found_list[int(choice) - 1]
             except ValueError:
-                print("ERROR: Invalid selection, type a number from the list "
-                      "above.")
+                logger.error(
+                    "Invalid selection, type a number from the list above.")
 
             classifiers.add(_CLASSIFIERS_LIST[index])
 
@@ -660,8 +659,8 @@ class MainProgram:
                     classifiers.add(key)
                     return
                 except (IndexError, ValueError):
-                    print("ERROR: Invalid selection, type a single digit "
-                          "number.")
+                    logger.error(
+                        "Invalid selection, type a single digit number.")
 
 
 def main():
@@ -675,7 +674,3 @@ def main():
     # program.write_setup_script()
     # packaging.util.cfg_to_args()
     program()
-
-
-if __name__ == '__main__':
-    main()

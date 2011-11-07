@@ -183,13 +183,13 @@ class bdist_msi(Command):
         if not self.skip_build:
             self.run_command('build')
 
-        install = self.get_reinitialized_command('install_dist',
-                                                 reinit_subcommands=True)
+        install = self.reinitialize_command('install_dist',
+                                            reinit_subcommands=True)
         install.prefix = self.bdist_dir
         install.skip_build = self.skip_build
         install.warn_dir = False
 
-        install_lib = self.get_reinitialized_command('install_lib')
+        install_lib = self.reinitialize_command('install_lib')
         # we do not want to include pyc or pyo files
         install_lib.compile = False
         install_lib.optimize = 0

@@ -33,11 +33,9 @@ class RunTestCase(support.TempdirManager,
 
     def setUp(self):
         super(RunTestCase, self).setUp()
-        self.old_stdout = sys.stdout
         self.old_argv = sys.argv, sys.argv[:]
 
     def tearDown(self):
-        sys.stdout = self.old_stdout
         sys.argv = self.old_argv[0]
         sys.argv[:] = self.old_argv[1]
         super(RunTestCase, self).tearDown()

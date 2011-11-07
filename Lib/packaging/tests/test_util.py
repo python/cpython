@@ -170,8 +170,8 @@ class UtilTestCase(support.EnvironRestorer,
     def unmock_popen(self):
         util.find_executable = self.old_find_executable
         subprocess.Popen = self.old_popen
-        sys.old_stdout = self.old_stdout
-        sys.old_stderr = self.old_stderr
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
 
     def test_convert_path(self):
         # linux/mac

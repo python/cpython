@@ -527,12 +527,3 @@ def install(project):
             logger.info('%r conflicts with %s', project, ','.join(projects))
 
     return True
-
-
-def _main(**attrs):
-    if 'script_args' not in attrs:
-        attrs['requirements'] = sys.argv[1]
-    get_infos(**attrs)
-
-if __name__ == '__main__':
-    _main()

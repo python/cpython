@@ -16,8 +16,8 @@ class install_distinfo(Command):
     description = 'create a .dist-info directory for the distribution'
 
     user_options = [
-        ('distinfo-dir=', None,
-         "directory where the the .dist-info directory will be installed"),
+        ('install-dir=', None,
+         "directory where the the .dist-info directory will be created"),
         ('installer=', None,
          "the name of the installer"),
         ('requested', None,
@@ -35,7 +35,7 @@ class install_distinfo(Command):
     negative_opt = {'no-requested': 'requested'}
 
     def initialize_options(self):
-        self.distinfo_dir = None
+        self.install_dir = None
         self.installer = None
         self.requested = None
         self.no_record = None
@@ -46,8 +46,7 @@ class install_distinfo(Command):
         self.set_undefined_options('install_dist',
                                    'installer', 'requested', 'no_record')
 
-        self.set_undefined_options('install_lib',
-                                   ('install_dir', 'distinfo_dir'))
+        self.set_undefined_options('install_lib', 'install_dir')
 
         if self.installer is None:
             # FIXME distutils or packaging?
@@ -64,26 +63,26 @@ class install_distinfo(Command):
 
         basename = metadata.get_fullname(filesafe=True) + ".dist-info"
 
-        self.distinfo_dir = os.path.join(self.distinfo_dir, basename)
+        self.install_dir = os.path.join(self.install_dir, basename)
 
     def run(self):
-        target = self.distinfo_dir
+        target = self.install_dir
 
         if os.path.isdir(target) and not os.path.islink(target):
             if not self.dry_run:
                 rmtree(target)
         elif os.path.exists(target):
-            self.execute(os.unlink, (self.distinfo_dir,),
+            self.execute(os.unlink, (self.install_dir,),
                          "removing " + target)
 
         self.execute(os.makedirs, (target,), "creating " + target)
 
-        metadata_path = os.path.join(self.distinfo_dir, 'METADATA')
+        metadata_path = os.path.join(self.install_dir, 'METADATA')
         self.execute(self.distribution.metadata.write, (metadata_path,),
                      "creating " + metadata_path)
         self.outfiles.append(metadata_path)
 
-        installer_path = os.path.join(self.distinfo_dir, 'INSTALLER')
+        installer_path = os.path.join(self.install_dir, 'INSTALLER')
         logger.info('creating %s', installer_path)
         if not self.dry_run:
             with open(installer_path, 'w') as f:
@@ -91,7 +90,7 @@ class install_distinfo(Command):
         self.outfiles.append(installer_path)
 
         if self.requested:
-            requested_path = os.path.join(self.distinfo_dir, 'REQUESTED')
+            requested_path = os.path.join(self.install_dir, 'REQUESTED')
             logger.info('creating %s', requested_path)
             if not self.dry_run:
                 open(requested_path, 'wb').close()
@@ -100,7 +99,7 @@ class install_distinfo(Command):
         if not self.no_resources:
             install_data = self.get_finalized_command('install_data')
             if install_data.get_resources_out() != []:
-                resources_path = os.path.join(self.distinfo_dir,
+                resources_path = os.path.join(self.install_dir,
                                               'RESOURCES')
                 logger.info('creating %s', resources_path)
                 if not self.dry_run:
@@ -114,7 +113,7 @@ class install_distinfo(Command):
                 self.outfiles.append(resources_path)
 
         if not self.no_record:
-            record_path = os.path.join(self.distinfo_dir, 'RECORD')
+            record_path = os.path.join(self.install_dir, 'RECORD')
             logger.info('creating %s', record_path)
             if not self.dry_run:
                 with open(record_path, 'w', encoding='utf-8') as f:
