@@ -235,6 +235,7 @@ class PosixTester(unittest.TestCase):
         fd = os.open(support.TESTFN, os.O_RDONLY)
         try:
             posix.futimes(fd, None)
+            posix.futimes(fd)
             self.assertRaises(TypeError, posix.futimes, fd, (None, None))
             self.assertRaises(TypeError, posix.futimes, fd, (now, None))
             self.assertRaises(TypeError, posix.futimes, fd, (None, now))
@@ -252,6 +253,7 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.lutimes, support.TESTFN, (None, now))
         posix.lutimes(support.TESTFN, (int(now), int(now)))
         posix.lutimes(support.TESTFN, (now, now))
+        posix.lutimes(support.TESTFN)
 
     @unittest.skipUnless(hasattr(posix, 'futimens'), "test needs posix.futimens()")
     def test_futimens(self):
@@ -263,6 +265,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, posix.futimens, fd, None, (now, 0))
             posix.futimens(fd, (int(now), int((now - int(now)) * 1e9)),
                     (int(now), int((now - int(now)) * 1e9)))
+            posix.futimens(fd)
         finally:
             os.close(fd)
 
@@ -691,6 +694,7 @@ class PosixTester(unittest.TestCase):
         try:
             now = time.time()
             posix.futimesat(f, support.TESTFN, None)
+            posix.futimesat(f, support.TESTFN)
             self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (None, None))
             self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (now, None))
             self.assertRaises(TypeError, posix.futimesat, f, support.TESTFN, (None, now))

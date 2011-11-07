@@ -3534,10 +3534,10 @@ extract_time(PyObject *t, time_t* sec, long* usec)
 }
 
 PyDoc_STRVAR(posix_utime__doc__,
-"utime(path, (atime, mtime))\n\
-utime(path, None)\n\n\
-Set the access and modified time of the file to the given values.  If the\n\
-second form is used, set the access and modified times to the current time.");
+"utime(path[, (atime, mtime)])\n\
+Set the access and modified time of the file to the given values.\n\
+If no second argument is used, set the access and modified times to\n\
+the current time.");
 
 static PyObject *
 posix_utime(PyObject *self, PyObject *args)
@@ -3706,21 +3706,20 @@ done:
 
 #ifdef HAVE_FUTIMES
 PyDoc_STRVAR(posix_futimes__doc__,
-"futimes(fd, (atime, mtime))\n\
-futimes(fd, None)\n\n\
+"futimes(fd[, (atime, mtime)])\n\
 Set the access and modified time of the file specified by the file\n\
-descriptor fd to the given values. If the second form is used, set the\n\
+descriptor fd to the given values. If no second argument is used, set the\n\
 access and modified times to the current time.");
 
 static PyObject *
 posix_futimes(PyObject *self, PyObject *args)
 {
     int res, fd;
-    PyObject* arg;
+    PyObject* arg = Py_None;
     time_t atime, mtime;
     long ausec, musec;
 
-    if (!PyArg_ParseTuple(args, "iO:futimes", &fd, &arg))
+    if (!PyArg_ParseTuple(args, "i|O:futimes", &fd, &arg))
         return NULL;
 
     if (arg == Py_None) {
@@ -3771,20 +3770,20 @@ posix_futimes(PyObject *self, PyObject *args)
 
 #ifdef HAVE_LUTIMES
 PyDoc_STRVAR(posix_lutimes__doc__,
-"lutimes(path, (atime, mtime))\n\
-lutimes(path, None)\n\n\
+"lutimes(path[, (atime, mtime)])\n\
 Like utime(), but if path is a symbolic link, it is not dereferenced.");
 
 static PyObject *
 posix_lutimes(PyObject *self, PyObject *args)
 {
-    PyObject *opath, *arg;
+    PyObject *opath;
+    PyObject *arg = Py_None;
     const char *path;
     int res;
     time_t atime, mtime;
     long ausec, musec;
 
-    if (!PyArg_ParseTuple(args, "O&O:lutimes",
+    if (!PyArg_ParseTuple(args, "O&|O:lutimes",
             PyUnicode_FSConverter, &opath, &arg))
         return NULL;
     path = PyBytes_AsString(opath);
@@ -3840,11 +3839,10 @@ posix_lutimes(PyObject *self, PyObject *args)
 
 #ifdef HAVE_FUTIMENS
 PyDoc_STRVAR(posix_futimens__doc__,
-"futimens(fd, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec))\n\
-futimens(fd, None, None)\n\n\
+"futimens(fd[, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec)])\n\
 Updates the timestamps of a file specified by the file descriptor fd, with\n\
 nanosecond precision.\n\
-The second form sets atime and mtime to the current time.\n\
+If no second argument is given, set atime and mtime to the current time.\n\
 If *_nsec is specified as UTIME_NOW, the timestamp is updated to the\n\
 current time.\n\
 If *_nsec is specified as UTIME_OMIT, the timestamp is not updated.");
@@ -3853,10 +3851,11 @@ static PyObject *
 posix_futimens(PyObject *self, PyObject *args)
 {
     int res, fd;
-    PyObject *atime, *mtime;
+    PyObject *atime = Py_None;
+    PyObject *mtime = Py_None;
     struct timespec buf[2];
 
-    if (!PyArg_ParseTuple(args, "iOO:futimens",
+    if (!PyArg_ParseTuple(args, "i|OO:futimens",
             &fd, &atime, &mtime))
         return NULL;
     if (atime == Py_None && mtime == Py_None) {
