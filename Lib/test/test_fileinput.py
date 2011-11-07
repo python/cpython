@@ -7,8 +7,7 @@ import sys
 import re
 import fileinput
 import collections
-import types
-import codecs
+import builtins
 import unittest
 
 try:
@@ -807,18 +806,8 @@ class Test_hook_compressed(unittest.TestCase):
 
     @staticmethod
     def replace_builtin_open(new_open_func):
-        builtins_type = type(__builtins__)
-        if builtins_type is dict:
-            original_open = __builtins__["open"]
-            __builtins__["open"] = new_open_func
-        elif builtins_type is types.ModuleType:
-            original_open = __builtins__.open
-            __builtins__.open = new_open_func
-        else:
-            raise RuntimeError(
-                "unknown __builtins__ type: %r (unable to replace open)" %
-                builtins_type)
-
+        original_open = builtins.open
+        builtins.open = new_open_func
         return original_open
 
 class Test_hook_encoded(unittest.TestCase):
@@ -829,21 +818,22 @@ class Test_hook_encoded(unittest.TestCase):
         result = fileinput.hook_encoded(encoding)
 
         fake_open = InvocationRecorder()
-        original_open = codecs.open
-        codecs.open = fake_open
+        original_open = builtins.open
+        builtins.open = fake_open
         try:
             filename = object()
             mode = object()
             open_result = result(filename, mode)
         finally:
-            codecs.open = original_open
+            builtins.open = original_open
 
         self.assertEqual(fake_open.invocation_count, 1)
 
-        args = fake_open.last_invocation[0]
+        args, kwargs = fake_open.last_invocation
         self.assertIs(args[0], filename)
         self.assertIs(args[1], mode)
-        self.assertIs(args[2], encoding)
+        self.assertIs(kwargs.pop('encoding'), encoding)
+        self.assertFalse(kwargs)
 
 def test_main():
     run_unittest(
