@@ -11,7 +11,9 @@ Core and Builtins
 -----------------
 
 - Issue #13327: Remove the need for an explicit None as the second argument
-  to os.utime in order to update to the current time.
+  to os.utime, os.lutimes, os.futimes, os.futimens, os.futimesat, in
+  order to update to the current time. Also added keyword argument
+  handling to os.utimensat in order to remove the need for explicit None.
 
 - Issue #13350: Simplify some C code by replacing most usages of
   PyUnicode_Format by PyUnicode_FromFormat.
