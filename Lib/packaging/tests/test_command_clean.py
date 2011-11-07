@@ -36,8 +36,6 @@ class cleanTestCase(support.TempdirManager, support.LoggingCatcher,
                              '%r was not removed' % path)
 
         # let's run the command again (should spit warnings but succeed)
-        cmd.all = True
-        cmd.ensure_finalized()
         cmd.run()
 
 

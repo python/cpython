@@ -636,9 +636,9 @@ Common commands: (see '--help-commands' for more)
             except ValueError as msg:
                 raise PackagingOptionError(msg)
 
-    def get_reinitialized_command(self, command, reinit_subcommands=False):
+    def reinitialize_command(self, command, reinit_subcommands=False):
         """Reinitializes a command to the state it was in when first
-        returned by 'get_command_obj()': ie., initialized but not yet
+        returned by 'get_command_obj()': i.e., initialized but not yet
         finalized.  This provides the opportunity to sneak option
         values in programmatically, overriding or supplementing
         user-supplied values from the config files and command line.
@@ -650,10 +650,11 @@ Common commands: (see '--help-commands' for more)
         'reinit_subcommands' is true, also reinitializes the command's
         sub-commands, as declared by the 'sub_commands' class attribute (if
         it has one).  See the "install_dist" command for an example.  Only
-        reinitializes the sub-commands that actually matter, ie. those
-        whose test predicates return true.
+        reinitializes the sub-commands that actually matter, i.e. those
+        whose test predicate return true.
 
-        Returns the reinitialized command object.
+        Returns the reinitialized command object.  It will be the same
+        object as the one stored in the self.command_obj attribute.
         """
         if not isinstance(command, Command):
             command_name = command
@@ -671,7 +672,7 @@ Common commands: (see '--help-commands' for more)
 
         if reinit_subcommands:
             for sub in command.get_sub_commands():
-                self.get_reinitialized_command(sub, reinit_subcommands)
+                self.reinitialize_command(sub, reinit_subcommands)
 
         return command
 

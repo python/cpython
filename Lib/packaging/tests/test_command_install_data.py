@@ -62,6 +62,7 @@ class InstallDataTestCase(support.TempdirManager,
 
         # let's try with warn_dir one
         cmd.warn_dir = True
+        cmd.finalized = False
         cmd.ensure_finalized()
         cmd.run()
 
@@ -80,6 +81,7 @@ class InstallDataTestCase(support.TempdirManager,
 
         cmd.data_files = {one: '{inst}/one', two: '{inst2}/two',
                           three: '{inst3}/three'}
+        cmd.finalized = False
         cmd.ensure_finalized()
         cmd.run()
 
