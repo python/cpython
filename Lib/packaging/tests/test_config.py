@@ -1,7 +1,6 @@
 """Tests for packaging.config."""
 import os
 import sys
-from io import StringIO
 
 from packaging import command
 from packaging.dist import Distribution
@@ -183,13 +182,14 @@ class FooBarBazTest:
 
     def __init__(self, dist):
         self.distribution = dist
+        self._record = []
 
     @classmethod
     def get_command_name(cls):
         return 'foo'
 
     def run(self):
-        self.distribution.foo_was_here = True
+        self._record.append('foo has run')
 
     def nothing(self):
         pass
@@ -209,20 +209,10 @@ class ConfigTestCase(support.TempdirManager,
 
     def setUp(self):
         super(ConfigTestCase, self).setUp()
-        self.addCleanup(setattr, sys, 'stdout', sys.stdout)
-        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
-        sys.stdout = StringIO()
-        sys.stderr = StringIO()
-
-        self.addCleanup(os.chdir, os.getcwd())
         tempdir = self.mkdtemp()
         self.working_dir = os.getcwd()
         os.chdir(tempdir)
         self.tempdir = tempdir
-
-    def tearDown(self):
-        os.chdir(self.working_dir)
-        super(ConfigTestCase, self).tearDown()
 
     def write_setup(self, kwargs=None):
         opts = {'description-file': 'README', 'extra-files': '',
@@ -378,7 +368,7 @@ class ConfigTestCase(support.TempdirManager,
         self.assertIn('hooks', sys.modules)
 
     def test_missing_setup_hook_warns(self):
-        self.write_setup({'setup-hooks': 'this.does._not.exist'})
+        self.write_setup({'setup-hooks': 'does._not.exist'})
         self.write_file('README', 'yeah')
         self.get_dist()
         logs = self.get_logs()
@@ -491,10 +481,12 @@ class ConfigTestCase(support.TempdirManager,
             self.write_file((pkg, '__init__.py'), '#')
 
         # try to run the install command to see if foo is called
+        self.addCleanup(command._COMMANDS.__delitem__, 'foo')
         dist = self.get_dist()
-        self.assertIn('foo', command.get_command_names())
-        self.assertEqual('FooBarBazTest',
-                         dist.get_command_obj('foo').__class__.__name__)
+        dist.run_command('install_dist')
+        cmd = dist.get_command_obj('foo')
+        self.assertEqual(cmd.__class__.__name__, 'FooBarBazTest')
+        self.assertEqual(cmd._record, ['foo has run'])
 
 
 def test_suite():

@@ -126,7 +126,7 @@ class bdist(Command):
         # Reinitialize and run each command.
         for i in range(len(self.formats)):
             cmd_name = commands[i]
-            sub_cmd = self.get_reinitialized_command(cmd_name)
+            sub_cmd = self.reinitialize_command(cmd_name)
             sub_cmd.format = self.formats[i]
 
             # passing the owner and group names for tar archiving

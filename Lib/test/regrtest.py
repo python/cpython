@@ -172,6 +172,7 @@ import io
 import json
 import logging
 import os
+import packaging.command
 import packaging.database
 import platform
 import random
@@ -967,7 +968,7 @@ class saved_test_environment:
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
-                 'packaging.database_caches',
+                 'packaging.command._COMMANDS', 'packaging.database_caches',
                 )
 
     def get_sys_argv(self):
@@ -1054,6 +1055,22 @@ class saved_test_environment:
     def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass
+
+    def get_packaging_command__COMMANDS(self):
+        # registry mapping command names to full dotted path or to the actual
+        # class (resolved on demand); this check only looks at the names, not
+        # the types of the values (IOW, if a value changes from a string
+        # (dotted path) to a class it's okay but if a key (i.e. command class)
+        # is added we complain)
+        id_ = id(packaging.command._COMMANDS)
+        keys = set(packaging.command._COMMANDS)
+        return id_, keys
+    def restore_packaging_command__COMMANDS(self, saved):
+        # if command._COMMANDS was bound to another dict obhect, we can't
+        # restore the previous object and contents, because the get_ method
+        # above does not return the dict object (to ignore changes in values)
+        for key in packaging.command._COMMANDS.keys() - saved[1]:
+            del packaging.command._COMMANDS[key]
 
     def get_packaging_database_caches(self):
         # caching system used by the PEP 376 implementation
