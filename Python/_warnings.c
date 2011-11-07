@@ -666,10 +666,8 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
         if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
             return NULL;
-        Py_DECREF(tmp);
         if ((tmp = _PyUnicode_FromId(&PyId_splitlines)) == NULL)
             return NULL;
-        Py_DECREF(tmp);
 
         /* Check/get the requisite pieces needed for the loader. */
         loader = PyDict_GetItemString(module_globals, "__loader__");
