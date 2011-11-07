@@ -211,7 +211,7 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
     #avoid disabling child loggers of explicitly
     #named loggers. With a sorted list it is easier
     #to find the child loggers.
-    existing.sort(key=_encoded)
+    existing.sort()
     #We'll keep the list of existing loggers
     #which are children of named loggers here...
     child_loggers = []
@@ -589,13 +589,14 @@ class DictConfigurator(BaseConfigurator):
                 #avoid disabling child loggers of explicitly
                 #named loggers. With a sorted list it is easier
                 #to find the child loggers.
-                existing.sort(key=_encoded)
+                existing.sort()
                 #We'll keep the list of existing loggers
                 #which are children of named loggers here...
                 child_loggers = []
                 #now set up the new ones...
                 loggers = config.get('loggers', EMPTY_DICT)
                 for name in loggers:
+                    name = _encoded(name)
                     if name in existing:
                         i = existing.index(name)
                         prefixed = name + "."
