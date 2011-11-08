@@ -880,41 +880,8 @@ Replacing functions from the :mod:`popen2` module
   all platforms or past Python versions.
 
 
-Notes
------
-
-.. _converting-argument-sequence:
-
-Converting an argument sequence to a string on Windows
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-On Windows, an *args* sequence is converted to a string that can be parsed
-using the following rules (which correspond to the rules used by the MS C
-runtime):
-
-1. Arguments are delimited by white space, which is either a
-   space or a tab.
-
-2. A string surrounded by double quotation marks is
-   interpreted as a single argument, regardless of white space
-   contained within.  A quoted string can be embedded in an
-   argument.
-
-3. A double quotation mark preceded by a backslash is
-   interpreted as a literal double quotation mark.
-
-4. Backslashes are interpreted literally, unless they
-   immediately precede a double quotation mark.
-
-5. If backslashes immediately precede a double quotation mark,
-   every pair of backslashes is interpreted as a literal
-   backslash.  If the number of backslashes is odd, the last
-   backslash escapes the next double quotation mark as
-   described in rule 3.
-
-
 Legacy Shell Invocation Functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 This module also provides the following legacy functions from the 2.x
 ``commands`` module. These operations implicitly invoke the system shell and
@@ -953,3 +920,35 @@ handling consistency are valid for these functions.
 
    Availability: UNIX.
 
+
+Notes
+-----
+
+.. _converting-argument-sequence:
+
+Converting an argument sequence to a string on Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, an *args* sequence is converted to a string that can be parsed
+using the following rules (which correspond to the rules used by the MS C
+runtime):
+
+1. Arguments are delimited by white space, which is either a
+   space or a tab.
+
+2. A string surrounded by double quotation marks is
+   interpreted as a single argument, regardless of white space
+   contained within.  A quoted string can be embedded in an
+   argument.
+
+3. A double quotation mark preceded by a backslash is
+   interpreted as a literal double quotation mark.
+
+4. Backslashes are interpreted literally, unless they
+   immediately precede a double quotation mark.
+
+5. If backslashes immediately precede a double quotation mark,
+   every pair of backslashes is interpreted as a literal
+   backslash.  If the number of backslashes is odd, the last
+   backslash escapes the next double quotation mark as
+   described in rule 3.
