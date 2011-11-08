@@ -33,10 +33,9 @@ def server(evt, serv, dataq=None):
                     data += item
                 written = conn.send(data)
                 data = data[written:]
+        conn.close()
     except socket.timeout:
         pass
-    else:
-        conn.close()
     finally:
         serv.close()
 
@@ -45,9 +44,10 @@ class GeneralTests(TestCase):
     def setUp(self):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(3)
+        self.sock.settimeout(60)  # Safety net. Look issue 11812
         self.port = test_support.bind_port(self.sock)
         self.thread = threading.Thread(target=server, args=(self.evt,self.sock))
+        self.thread.setDaemon(True)
         self.thread.start()
         self.evt.wait()
 
@@ -63,7 +63,7 @@ class GeneralTests(TestCase):
         self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
-            telnet = telnetlib.Telnet("localhost", self.port)
+            telnet = telnetlib.Telnet(HOST, self.port)
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(telnet.sock.gettimeout(), 30)
@@ -81,13 +81,13 @@ class GeneralTests(TestCase):
         telnet.sock.close()
 
     def testTimeoutValue(self):
-        telnet = telnetlib.Telnet("localhost", self.port, timeout=30)
+        telnet = telnetlib.Telnet(HOST, self.port, timeout=30)
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
     def testTimeoutOpen(self):
         telnet = telnetlib.Telnet()
-        telnet.open("localhost", self.port, timeout=30)
+        telnet.open(HOST, self.port, timeout=30)
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
