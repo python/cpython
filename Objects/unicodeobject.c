@@ -7664,6 +7664,7 @@ PyUnicode_DecodeCharmap(const char *s,
         }
     }
     if (PyUnicode_Resize(&v, outpos) < 0)
+        goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     assert(_PyUnicode_CheckConsistency(v, 1));
