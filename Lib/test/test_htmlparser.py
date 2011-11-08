@@ -181,60 +181,6 @@ DOCTYPE html [
             ("data", "this < text > contains < bare>pointy< brackets"),
             ])
 
-    def test_attr_syntax(self):
-        output = [
-          ("starttag", "a", [("b", "v"), ("c", "v"), ("d", "v"), ("e", None)])
-          ]
-        self._run_check("""<a b='v' c="v" d=v e>""", output)
-        self._run_check("""<a  b = 'v' c = "v" d = v e>""", output)
-        self._run_check("""<a\nb\n=\n'v'\nc\n=\n"v"\nd\n=\nv\ne>""", output)
-        self._run_check("""<a\tb\t=\t'v'\tc\t=\t"v"\td\t=\tv\te>""", output)
-
-    def test_attr_values(self):
-        self._run_check("""<a b='xxx\n\txxx' c="yyy\t\nyyy" d='\txyz\n'>""",
-                        [("starttag", "a", [("b", "xxx\n\txxx"),
-                                            ("c", "yyy\t\nyyy"),
-                                            ("d", "\txyz\n")])
-                         ])
-        self._run_check("""<a b='' c="">""", [
-            ("starttag", "a", [("b", ""), ("c", "")]),
-            ])
-        # Regression test for SF patch #669683.
-        self._run_check("<e a=rgb(1,2,3)>", [
-            ("starttag", "e", [("a", "rgb(1,2,3)")]),
-            ])
-        # Regression test for SF bug #921657.
-        self._run_check("<a href=mailto:xyz@example.com>", [
-            ("starttag", "a", [("href", "mailto:xyz@example.com")]),
-            ])
-
-    def test_attr_nonascii(self):
-        # see issue 7311
-        self._run_check(u"<img src=/foo/bar.png alt=\u4e2d\u6587>", [
-            ("starttag", "img", [("src", "/foo/bar.png"),
-                                 ("alt", u"\u4e2d\u6587")]),
-            ])
-        self._run_check(u"<a title='\u30c6\u30b9\u30c8' "
-                        u"href='\u30c6\u30b9\u30c8.html'>", [
-            ("starttag", "a", [("title", u"\u30c6\u30b9\u30c8"),
-                               ("href", u"\u30c6\u30b9\u30c8.html")]),
-            ])
-        self._run_check(u'<a title="\u30c6\u30b9\u30c8" '
-                        u'href="\u30c6\u30b9\u30c8.html">', [
-            ("starttag", "a", [("title", u"\u30c6\u30b9\u30c8"),
-                               ("href", u"\u30c6\u30b9\u30c8.html")]),
-            ])
-
-    def test_attr_entity_replacement(self):
-        self._run_check("""<a b='&amp;&gt;&lt;&quot;&apos;'>""", [
-            ("starttag", "a", [("b", "&><\"'")]),
-            ])
-
-    def test_attr_funky_names(self):
-        self._run_check("""<a a.b='v' c:d=v e-f=v>""", [
-            ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
-            ])
-
     def test_illegal_declarations(self):
         self._parse_error('<!spacer type="block" height="25">')
 
@@ -342,12 +288,6 @@ DOCTYPE html [
                                     ("data", content),
                                     ("endtag", element_lower)])
 
-
-    def test_entityrefs_in_attributes(self):
-        self._run_check("<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>", [
-                ("starttag", "html", [("foo", u"\u20AC&aa&unsupported;")])
-                ])
-
     def test_malformatted_charref(self):
         self._run_check("<p>&#bad;</p>", [
             ("starttag", "p", []),
@@ -361,8 +301,66 @@ DOCTYPE html [
         self.assertEqual(parser.unescape('&#0038;'),'&')
 
 
+
+class AttributesTestCase(TestCaseBase):
+
+    def test_attr_syntax(self):
+        output = [
+          ("starttag", "a", [("b", "v"), ("c", "v"), ("d", "v"), ("e", None)])
+        ]
+        self._run_check("""<a b='v' c="v" d=v e>""", output)
+        self._run_check("""<a  b = 'v' c = "v" d = v e>""", output)
+        self._run_check("""<a\nb\n=\n'v'\nc\n=\n"v"\nd\n=\nv\ne>""", output)
+        self._run_check("""<a\tb\t=\t'v'\tc\t=\t"v"\td\t=\tv\te>""", output)
+
+    def test_attr_values(self):
+        self._run_check("""<a b='xxx\n\txxx' c="yyy\t\nyyy" d='\txyz\n'>""",
+                        [("starttag", "a", [("b", "xxx\n\txxx"),
+                                            ("c", "yyy\t\nyyy"),
+                                            ("d", "\txyz\n")])])
+        self._run_check("""<a b='' c="">""",
+                        [("starttag", "a", [("b", ""), ("c", "")])])
+        # Regression test for SF patch #669683.
+        self._run_check("<e a=rgb(1,2,3)>",
+                        [("starttag", "e", [("a", "rgb(1,2,3)")])])
+        # Regression test for SF bug #921657.
+        self._run_check(
+            "<a href=mailto:xyz@example.com>",
+            [("starttag", "a", [("href", "mailto:xyz@example.com")])])
+
+    def test_attr_nonascii(self):
+        # see issue 7311
+        self._run_check(
+            u"<img src=/foo/bar.png alt=\u4e2d\u6587>",
+            [("starttag", "img", [("src", "/foo/bar.png"),
+                                  ("alt", u"\u4e2d\u6587")])])
+        self._run_check(
+            u"<a title='\u30c6\u30b9\u30c8' href='\u30c6\u30b9\u30c8.html'>",
+            [("starttag", "a", [("title", u"\u30c6\u30b9\u30c8"),
+                                ("href", u"\u30c6\u30b9\u30c8.html")])])
+        self._run_check(
+            u'<a title="\u30c6\u30b9\u30c8" href="\u30c6\u30b9\u30c8.html">',
+            [("starttag", "a", [("title", u"\u30c6\u30b9\u30c8"),
+                                ("href", u"\u30c6\u30b9\u30c8.html")])])
+
+    def test_attr_entity_replacement(self):
+        self._run_check(
+            "<a b='&amp;&gt;&lt;&quot;&apos;'>",
+            [("starttag", "a", [("b", "&><\"'")])])
+
+    def test_attr_funky_names(self):
+        self._run_check(
+            "<a a.b='v' c:d=v e-f=v>",
+            [("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")])])
+
+
+    def test_entityrefs_in_attributes(self):
+        self._run_check(
+            "<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>",
+            [("starttag", "html", [("foo", u"\u20AC&aa&unsupported;")])])
+
 def test_main():
-    test_support.run_unittest(HTMLParserTestCase)
+    test_support.run_unittest(HTMLParserTestCase, AttributesTestCase)
 
 
 if __name__ == "__main__":
