@@ -10943,7 +10943,8 @@ static PyMethodDef posix_methods[] = {
     {"unlinkat",        posix_unlinkat, METH_VARARGS, posix_unlinkat__doc__},
 #endif
 #ifdef HAVE_UTIMENSAT
-    {"utimensat",       posix_utimensat, METH_VARARGS | METH_KEYWORDS,
+    {"utimensat",       (PyCFunction)posix_utimensat,
+                        METH_VARARGS | METH_KEYWORDS,
                         posix_utimensat__doc__},
 #endif
 #ifdef HAVE_MKFIFOAT
