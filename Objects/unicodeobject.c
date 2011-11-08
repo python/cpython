@@ -1556,7 +1556,7 @@ PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length)
 }
 
 static int
-unicode_widen(PyObject **p_unicode, int maxchar)
+unicode_widen(PyObject **p_unicode, unsigned int maxchar)
 {
     PyObject *result;
     assert(PyUnicode_IS_READY(*p_unicode));
