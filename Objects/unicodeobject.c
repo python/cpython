@@ -4338,7 +4338,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     maxchar = utf8_max_char_size_and_has_errors(s, size, &unicode_size,
                                                 consumed, &has_errors);
     if (has_errors)
-        /* maxchar and size computation might be incorrect; 
+        /* maxchar and size computation might be incorrect;
            code below widens and resizes as necessary. */
         unicode = PyUnicode_New(size, 127);
     else
@@ -5321,8 +5321,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             Py_UNICODE ch2 = (q[ihi] << 8) | q[ilo];
             q += 2;
             if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-                if (unicode_putchar(&unicode, &outpos, 
-                                    (((ch & 0x3FF)<<10) | 
+                if (unicode_putchar(&unicode, &outpos,
+                                    (((ch & 0x3FF)<<10) |
                                      (ch2 & 0x3FF)) + 0x10000) < 0)
                     goto onError;
                 continue;
@@ -7653,7 +7653,7 @@ PyUnicode_DecodeCharmap(const char *s,
 
                 if (targetsize == 1) {
                     /* 1-1 mapping */
-                    if (unicode_putchar(&v, &outpos, 
+                    if (unicode_putchar(&v, &outpos,
                                         PyUnicode_READ_CHAR(x, 0)) < 0)
                         goto onError;
                 }
