@@ -3622,13 +3622,17 @@ unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler,
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
-    Py_ssize_t outsize = PyUnicode_GET_LENGTH(*output);
+    Py_ssize_t outsize;
     Py_ssize_t insize;
     Py_ssize_t requiredsize;
     Py_ssize_t newpos;
     PyObject *inputobj = NULL;
-    Py_ssize_t replen;
     int res = -1;
+
+    if (_PyUnicode_KIND(*output) != PyUnicode_WCHAR_KIND)
+        outsize = PyUnicode_GET_LENGTH(*output);
+    else
+        outsize = _PyUnicode_WSTR_LENGTH(*output);
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -3678,24 +3682,46 @@ unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler,
         goto onError;
     }
 
-    /* need more space? (at least enough for what we
-       have+the replacement+the rest of the string (starting
-       at the new input position), so we won't have to check space
-       when there are no errors in the rest of the string) */
-    replen = PyUnicode_GET_LENGTH(repunicode);
-    requiredsize = *outpos + replen + insize-newpos;
-    if (requiredsize > outsize) {
-        if (requiredsize<2*outsize)
-            requiredsize = 2*outsize;
-        if (unicode_resize(output, requiredsize) < 0)
+    if (_PyUnicode_KIND(*output) != PyUnicode_WCHAR_KIND) {
+        /* need more space? (at least enough for what we
+           have+the replacement+the rest of the string (starting
+           at the new input position), so we won't have to check space
+           when there are no errors in the rest of the string) */
+        Py_ssize_t replen = PyUnicode_GET_LENGTH(repunicode);
+        requiredsize = *outpos + replen + insize-newpos;
+        if (requiredsize > outsize) {
+            if (requiredsize<2*outsize)
+                requiredsize = 2*outsize;
+            if (unicode_resize(output, requiredsize) < 0)
+                goto onError;
+        }
+        if (unicode_widen(output, PyUnicode_MAX_CHAR_VALUE(repunicode)) < 0)
             goto onError;
+        copy_characters(*output, *outpos, repunicode, 0, replen);
+        *outpos += replen;
     }
-    if (unicode_widen(output, PyUnicode_MAX_CHAR_VALUE(repunicode)) < 0)
-        goto onError;
+    else {
+        wchar_t *repwstr;
+        Py_ssize_t repwlen;
+        repwstr = PyUnicode_AsUnicodeAndSize(repunicode, &repwlen);
+        if (repwstr == NULL)
+            goto onError;
+        /* need more space? (at least enough for what we
+           have+the replacement+the rest of the string (starting
+           at the new input position), so we won't have to check space
+           when there are no errors in the rest of the string) */
+        requiredsize = *outpos + repwlen + insize-newpos;
+        if (requiredsize > outsize) {
+            if (requiredsize < 2*outsize)
+                requiredsize = 2*outsize;
+            if (unicode_resize(output, requiredsize) < 0)
+                goto onError;
+        }
+        wcsncpy(_PyUnicode_WSTR(*output) + *outpos, repwstr, repwlen);
+        *outpos += repwlen;
+    }
     *endinpos = newpos;
     *inptr = *input + newpos;
-    PyUnicode_CopyCharacters(*output, *outpos, repunicode, 0, replen);
-    *outpos += replen;
 
     /* we made it! */
     res = 0;
@@ -6976,10 +7002,11 @@ decode_code_page_errors(UINT code_page,
                     errors, &errorHandler,
                     encoding, reason,
                     &startin, &endin, &startinpos, &endinpos, &exc, &in,
-                    v, &outpos, &out))
+                    v, &outpos))
             {
                 goto error;
             }
+            out = PyUnicode_AS_UNICODE(*v) + outpos;
         }
         else {
             in += insize;
