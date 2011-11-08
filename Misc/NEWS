@@ -527,6 +527,8 @@ Tests
 - Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
   failure in name resolution.
 
+- Solved a potential deadlock in test_telnetlib.py. Related to issue #11812.
+
 - Avoid failing in test_urllibnet.test_bad_address when some overzealous
   DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
   is now skipped instead.
