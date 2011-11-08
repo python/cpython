@@ -21,7 +21,6 @@ def server(evt, serv):
         conn.close()
     finally:
         serv.close()
-        evt.set()
 
 class GeneralTests(TestCase):
 
@@ -33,11 +32,8 @@ class GeneralTests(TestCase):
         self.thread = threading.Thread(target=server, args=(self.evt,self.sock))
         self.thread.start()
         self.evt.wait()
-        self.evt.clear()
-        time.sleep(.1)
 
     def tearDown(self):
-        self.evt.wait()
         self.thread.join()
 
     def testBasic(self):
