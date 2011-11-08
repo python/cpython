@@ -112,10 +112,9 @@ class ImportTests(unittest.TestCase):
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
                               "either a .pyc or .pyo file")
-                    s = os.stat(fn)
-                    self.assertEqual(
-                        stat.S_IMODE(s.st_mode),
-                        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+                s = os.stat(fn)
+                self.assertEqual(stat.S_IMODE(s.st_mode),
+                                 stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
             finally:
                 del sys.path[0]
                 remove_files(TESTFN)
