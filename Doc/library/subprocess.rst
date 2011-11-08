@@ -437,20 +437,6 @@ functions.
       Added context manager support.
 
 
-.. data:: PIPE
-
-   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
-   to :class:`Popen` and indicates that a pipe to the standard stream should be
-   opened.
-
-
-.. data:: STDOUT
-
-   Special value that can be used as the *stderr* argument to :class:`Popen` and
-   indicates that standard error should go into the same handle as standard
-   output.
-
-
 Exceptions
 ^^^^^^^^^^
 
