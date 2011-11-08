@@ -1616,6 +1616,9 @@ Tests
 - Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
   failure in name resolution.
 
+- Issue #11812: Solve transient socket failure to connect to 'localhost'
+  in test_telnetlib.py.
+
 - Solved a potential deadlock in test_telnetlib.py. Related to issue #11812.
 
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
