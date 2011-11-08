@@ -872,7 +872,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimesat(dirfd, path, (atime, mtime)=None)
+.. function:: futimesat(dirfd, path[, (atime, mtime)])
 
    Like :func:`utime` but if *path* is relative, it is taken as relative to *dirfd*.
    If *path* is relative and *dirfd* is the special value :data:`AT_FDCWD`, then *path*
@@ -883,7 +883,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimens(fd, (atime_sec, atime_nsec)=None, (mtime_sec, mtime_nsec)=None)
+.. function:: futimens(fd[, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec)])
 
    Updates the timestamps of a file specified by the file descriptor *fd*, with
    nanosecond precision.
@@ -909,7 +909,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimes(fd, (atime, mtime)=None)
+.. function:: futimes(fd[, (atime, mtime)])
 
    Set the access and modified time of the file specified by the file
    descriptor *fd* to the given values. If no second argument is used, set the
@@ -1285,7 +1285,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: utimensat(dirfd, path, atime=(atime_sec, atime_nsec), mtime=(mtime_sec, mtime_nsec), flags=0)
+.. function:: utimensat(dirfd, path[, atime=(atime_sec, atime_nsec), mtime=(mtime_sec, mtime_nsec), flags=0])
 
    Updates the timestamps of a file with nanosecond precision.
    The *atime* and *mtime* tuples default to ``None``, which sets those
@@ -1699,7 +1699,7 @@ Files and Directories
       Added support for Windows 6.0 (Vista) symbolic links.
 
 
-.. function:: lutimes(path, (atime, mtime)=None)
+.. function:: lutimes(path[, (atime, mtime)])
 
    Like :func:`utime`, but if *path* is a symbolic link, it is not
    dereferenced.
@@ -2130,7 +2130,7 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: utime(path, times=None)
+.. function:: utime(path[, times])
 
    Set the access and modified times of the file specified by *path*. If *times*
    is ``None`` or not specified, then the file's access and modified times are
