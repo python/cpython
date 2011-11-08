@@ -15,7 +15,6 @@ def server(evt, serv, dataq=None):
         1) set evt to true to let the parent know we are ready
         2) [optional] if is not False, write the list of data from dataq.get()
            to the socket.
-        3) set evt to true to let the parent know we're done
     """
     serv.listen(5)
     evt.set()
@@ -40,7 +39,6 @@ def server(evt, serv, dataq=None):
         conn.close()
     finally:
         serv.close()
-        evt.set()
 
 class GeneralTests(TestCase):
 
@@ -52,11 +50,8 @@ class GeneralTests(TestCase):
         self.thread = threading.Thread(target=server, args=(self.evt,self.sock))
         self.thread.start()
         self.evt.wait()
-        self.evt.clear()
-        time.sleep(.1)
 
     def tearDown(self):
-        self.evt.wait()
         self.thread.join()
 
     def testBasic(self):
@@ -105,11 +100,8 @@ def _read_setUp(self):
     self.thread = threading.Thread(target=server, args=(self.evt,self.sock, self.dataq))
     self.thread.start()
     self.evt.wait()
-    self.evt.clear()
-    time.sleep(.1)
 
 def _read_tearDown(self):
-    self.evt.wait()
     self.thread.join()
 
 class ReadTests(TestCase):
