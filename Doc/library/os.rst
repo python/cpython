@@ -872,22 +872,26 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimesat(dirfd, path[, (atime, mtime)])
+.. function:: futimesat(dirfd, path[, times])
 
    Like :func:`utime` but if *path* is relative, it is taken as relative to *dirfd*.
    If *path* is relative and *dirfd* is the special value :data:`AT_FDCWD`, then *path*
-   is interpreted relative to the current working directory.
+   is interpreted relative to the current working directory.  *times* must be a
+   2-tuple of numbers, of the form ``(atime, mtime)``, or None.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
 
 
-.. function:: futimens(fd[, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec)])
+.. function:: futimens(fd[, atimes, mtimes])
 
    Updates the timestamps of a file specified by the file descriptor *fd*, with
    nanosecond precision.
    If no second argument is given, set *atime* and *mtime* to the current time.
+   *atimes* and *mtimes* must be 2-tuples of numbers, of the form
+   ``(atime_sec, atime_nsec)`` and ``(mtime_sec, mtime_nsec)`` respectively,
+   or ``None``.
    If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_NOW`, the corresponding
    timestamp is updated to the current time.
    If *atime_nsec* or *mtime_nsec* is specified as :data:`UTIME_OMIT`, the corresponding
@@ -909,11 +913,12 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimes(fd[, (atime, mtime)])
+.. function:: futimes(fd[, times])
 
    Set the access and modified time of the file specified by the file
-   descriptor *fd* to the given values. If no second argument is used, set the
-   access and modified times to the current time.
+   descriptor *fd* to the given values.  *atimes* must be a 2-tuple of numbers,
+   of the form ``(atime, mtime)``, or None.  If no second argument is used,
+   set the access and modified times to the current time.
 
    Availability: Unix.
 
@@ -1699,10 +1704,12 @@ Files and Directories
       Added support for Windows 6.0 (Vista) symbolic links.
 
 
-.. function:: lutimes(path[, (atime, mtime)])
+.. function:: lutimes(path[, times])
 
    Like :func:`utime`, but if *path* is a symbolic link, it is not
-   dereferenced.
+   dereferenced.  *times* must be a 2-tuple of numbers, of the form
+   ``(atime, mtime)``, or None.
+
 
    Availability: Unix.
 
