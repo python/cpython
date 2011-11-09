@@ -82,7 +82,7 @@ class TestUnicodeFiles(unittest.TestCase):
         self.assertFalse(os.path.exists(filename2 + '.new'))
 
     def _do_directory(self, make_name, chdir_name):
-        cwd = os.getcwdb()
+        cwd = os.getcwd()
         if os.path.isdir(make_name):
             rmtree(make_name)
         os.mkdir(make_name)
