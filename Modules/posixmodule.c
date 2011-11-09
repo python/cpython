@@ -8163,13 +8163,13 @@ win32__getdiskusage(PyObject *self, PyObject *args)
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
-    LPCTSTR path;
+    const wchar_t *path;
 
-    if (! PyArg_ParseTuple(args, "s", &path))
+    if (! PyArg_ParseTuple(args, "u", &path))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    retval = GetDiskFreeSpaceEx(path, &_, &total, &free);
+    retval = GetDiskFreeSpaceExW(path, &_, &total, &free);
     Py_END_ALLOW_THREADS
     if (retval == 0)
         return PyErr_SetFromWindowsErr(0);
