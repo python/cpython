@@ -129,7 +129,11 @@ class Queue(object):
             if not self._rlock.acquire(block, timeout):
                 raise Empty
             try:
-                if not self._poll(block and (deadline-time.time()) or 0.0):
+                if block:
+                    timeout = deadline - time.time()
+                    if timeout < 0 or not self._poll(timeout):
+                        raise Empty
+                elif not self._poll():
                     raise Empty
                 res = self._recv()
                 self._sem.release()

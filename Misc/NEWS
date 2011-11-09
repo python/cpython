@@ -365,6 +365,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
+  when called with a timeout.  Patch by Arnaud Ysmal.
+
 - Issue #13254: Fix Maildir initialization so that maildir contents
   are read correctly.
 
