@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
+  when called with a timeout.  Patch by Arnaud Ysmal.
+
 - Issue #3067: Enhance the documentation and docstring of
   locale.setlocale().
 
