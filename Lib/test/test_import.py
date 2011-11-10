@@ -97,25 +97,22 @@ class ImportTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
-    def test_execute_bit_not_copied(self):
-        # Issue 6070: under posix .pyc files got their execute bit set if
-        # the .py file had the execute bit set, but they aren't executable.
-        with temp_umask(0o022):
+    def test_creation_mode(self):
+        mask = 0o022
+        with temp_umask(mask):
             sys.path.insert(0, os.curdir)
             try:
                 fname = TESTFN + os.extsep + "py"
                 create_empty_file(fname)
-                os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-                                 stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
                 __import__(TESTFN)
                 fn = imp.cache_from_source(fname)
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
                               "either a .pyc or .pyo file")
-                    s = os.stat(fn)
-                    self.assertEqual(
-                        stat.S_IMODE(s.st_mode),
-                        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+                s = os.stat(fn)
+                # Check that the umask is respected, and the executable bits
+                # aren't set.
+                self.assertEqual(stat.S_IMODE(s.st_mode), 0o666 & ~mask)
             finally:
                 del sys.path[0]
                 remove_files(TESTFN)
