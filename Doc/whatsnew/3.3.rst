@@ -495,6 +495,9 @@ socket
 
   (Contributed by Matthias Fuchs, updated by Tiago Gonçalves in :issue:`10141`)
 
+* The :class:`~socket.socket` class now supports the PF_RDS protocol family
+  (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
+  http://oss.oracle.com/projects/rds/).
 
 ssl
 ---

@@ -1516,6 +1516,8 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #7777: socket: Add Reliable Datagram Sockets (PF_RDS) support.
+
 - Issue #13159: FileIO and BZ2Compressor/BZ2Decompressor now use a linear-time
   buffer growth strategy instead of a quadratic-time one.
 
