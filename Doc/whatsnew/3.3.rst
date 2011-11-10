@@ -250,6 +250,8 @@ versions.
 
 (:issue:`12100`)
 
+The ``unicode_internal`` codec has been deprecated.
+
 crypt
 -----
 
