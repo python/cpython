@@ -153,6 +153,20 @@ class Codec(codecs.Codec):
         if not input:
             return b'', 0
 
+        try:
+            result = input.encode('ascii')
+        except UnicodeEncodeError:
+            pass
+        else:
+            # ASCII name: fast path
+            labels = result.split(b'.')
+            for label in labels[:-1]:
+                if not (0 < len(label) < 64):
+                    raise UnicodeError("label empty or too long")
+            if len(labels[-1]) >= 64:
+                raise UnicodeError("label too long")
+            return result, len(input)
+
         result = bytearray()
         labels = dots.split(input)
         if labels and not labels[-1]:
@@ -179,6 +193,14 @@ class Codec(codecs.Codec):
         if not isinstance(input, bytes):
             # XXX obviously wrong, see #3232
             input = bytes(input)
+
+        if ace_prefix not in input:
+            # Fast path
+            try:
+                return input.decode('ascii'), len(input)
+            except UnicodeDecodeError:
+                pass
+
         labels = input.split(b".")
 
         if labels and len(labels[-1]) == 0:
