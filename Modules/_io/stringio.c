@@ -7,12 +7,24 @@
    than the enclosed string, for proper functioning of _PyIO_find_line_ending.
 */
 
+#define STATE_REALIZED 1
+#define STATE_ACCUMULATING 2
+
 typedef struct {
     PyObject_HEAD
     Py_UCS4 *buf;
     Py_ssize_t pos;
     Py_ssize_t string_size;
     size_t buf_size;
+
+    /* The stringio object can be in two states: accumulating or realized.
+       In accumulating state, the internal buffer contains nothing and
+       the contents are given by the embedded _PyAccu structure.
+       In realized state, the internal buffer is meaningful and the
+       _PyAccu is destroyed.
+    */
+    int state;
+    _PyAccu accu;
 
     char ok; /* initialized? */
     char closed;
@@ -37,6 +49,11 @@ typedef struct {
     if (self->closed) { \
         PyErr_SetString(PyExc_ValueError, \
             "I/O operation on closed file"); \
+        return NULL; \
+    }
+
+#define ENSURE_REALIZED(self) \
+    if (realize(self) < 0) { \
         return NULL; \
     }
 
@@ -102,6 +119,54 @@ resize_buffer(stringio *self, size_t size)
     return -1;
 }
 
+static PyObject *
+make_intermediate(stringio *self)
+{
+    PyObject *intermediate = _PyAccu_Finish(&self->accu);
+    self->state = STATE_REALIZED;
+    if (intermediate == NULL)
+        return NULL;
+    if (_PyAccu_Init(&self->accu) ||
+        _PyAccu_Accumulate(&self->accu, intermediate)) {
+        Py_DECREF(intermediate);
+        return NULL;
+    }
+    self->state = STATE_ACCUMULATING;
+    return intermediate;
+}
+
+static int
+realize(stringio *self)
+{
+    Py_ssize_t len;
+    PyObject *intermediate;
+
+    if (self->state == STATE_REALIZED)
+        return 0;
+    assert(self->state == STATE_ACCUMULATING);
+    self->state = STATE_REALIZED;
+
+    intermediate = _PyAccu_Finish(&self->accu);
+    if (intermediate == NULL)
+        return -1;
+
+    /* Append the intermediate string to the internal buffer.
+       The length should be equal to the current cursor position.
+     */
+    len = PyUnicode_GET_LENGTH(intermediate);
+    if (resize_buffer(self, len) < 0) {
+        Py_DECREF(intermediate);
+        return -1;
+    }
+    if (!PyUnicode_AsUCS4(intermediate, self->buf, len, 0)) {
+        Py_DECREF(intermediate);
+        return -1;
+    }
+
+    Py_DECREF(intermediate);
+    return 0;
+}
+
 /* Internal routine for writing a whole PyUnicode object to the buffer of a
    StringIO object. Returns 0 on success, or -1 on error. */
 static Py_ssize_t
@@ -136,7 +201,6 @@ write_str(stringio *self, PyObject *obj)
         return -1;
     }
     len = PyUnicode_GET_LENGTH(decoded);
-
     assert(len >= 0);
 
     /* This overflow check is not strictly necessary. However, it avoids us to
@@ -147,6 +211,17 @@ write_str(stringio *self, PyObject *obj)
                         "new position too large");
         goto fail;
     }
+
+    if (self->state == STATE_ACCUMULATING) {
+        if (self->string_size == self->pos) {
+            if (_PyAccu_Accumulate(&self->accu, decoded))
+                goto fail;
+            goto success;
+        }
+        if (realize(self))
+            goto fail;
+    }
+
     if (self->pos + len > self->string_size) {
         if (resize_buffer(self, self->pos + len) < 0)
             goto fail;
@@ -174,6 +249,7 @@ write_str(stringio *self, PyObject *obj)
                           0))
         goto fail;
 
+success:
     /* Set the new length of the internal string if it has changed. */
     self->pos += len;
     if (self->string_size < self->pos)
@@ -195,6 +271,8 @@ stringio_getvalue(stringio *self)
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
+    if (self->state == STATE_ACCUMULATING)
+        return make_intermediate(self);
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, self->buf,
                                      self->string_size);
 }
@@ -251,6 +329,14 @@ stringio_read(stringio *self, PyObject *args)
             size = 0;
     }
 
+    /* Optimization for seek(0); read() */
+    if (self->state == STATE_ACCUMULATING && self->pos == 0 && size == n) {
+        PyObject *result = make_intermediate(self);
+        self->pos = self->string_size;
+        return result;
+    }
+
+    ENSURE_REALIZED(self);
     output = self->buf + self->pos;
     self->pos += size;
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, output, size);
@@ -301,6 +387,7 @@ stringio_readline(stringio *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:readline", &arg))
         return NULL;
     CHECK_CLOSED(self);
+    ENSURE_REALIZED(self);
 
     if (PyNumber_Check(arg)) {
         limit = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
@@ -322,6 +409,7 @@ stringio_iternext(stringio *self)
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
+    ENSURE_REALIZED(self);
 
     if (Py_TYPE(self) == &PyStringIO_Type) {
         /* Skip method call overhead for speed */
@@ -392,6 +480,7 @@ stringio_truncate(stringio *self, PyObject *args)
     }
 
     if (size < self->string_size) {
+        ENSURE_REALIZED(self);
         if (resize_buffer(self, size) < 0)
             return NULL;
         self->string_size = size;
@@ -492,6 +581,7 @@ stringio_close(stringio *self)
     /* Free up some memory */
     if (resize_buffer(self, 0) < 0)
         return NULL;
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -521,6 +611,7 @@ stringio_dealloc(stringio *self)
         PyMem_Free(self->buf);
         self->buf = NULL;
     }
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -559,6 +650,7 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
     PyObject *value = NULL;
     PyObject *newline_obj = NULL;
     char *newline = "\n";
+    Py_ssize_t value_len;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:__init__", kwlist,
                                      &value, &newline_obj))
@@ -600,6 +692,7 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
 
     self->ok = 0;
 
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -636,19 +729,27 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
     /* Now everything is set up, resize buffer to size of initial value,
        and copy it */
     self->string_size = 0;
-    if (value && value != Py_None) {
-        Py_ssize_t len = PyUnicode_GetSize(value);
+    if (value && value != Py_None)
+        value_len = PyUnicode_GetSize(value);
+    else
+        value_len = 0;
+    if (value_len > 0) {
         /* This is a heuristic, for newline translation might change
            the string length. */
-        if (resize_buffer(self, len) < 0)
+        if (resize_buffer(self, 0) < 0)
             return -1;
+        self->state = STATE_REALIZED;
         self->pos = 0;
         if (write_str(self, value) < 0)
             return -1;
     }
     else {
+        /* Empty stringio object, we can start by accumulating */
         if (resize_buffer(self, 0) < 0)
             return -1;
+        if (_PyAccu_Init(&self->accu))
+            return -1;
+        self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;
 
