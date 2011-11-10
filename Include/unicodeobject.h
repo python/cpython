@@ -1088,6 +1088,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
     int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors          /* error handling */
     );
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF7(
+    PyObject *unicode,          /* Unicode object */
+    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
+    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
+    const char *errors          /* error handling */
+    );
 #endif
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
@@ -1195,6 +1201,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(
     const char *errors,         /* error handling */
     int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
     );
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
+    PyObject *object,           /* Unicode object */
+    const char *errors,         /* error handling */
+    int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
+    );
 #endif
 
 /* --- UTF-16 Codecs ------------------------------------------------------ */
@@ -1272,6 +1283,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF16String(
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF16(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
+    const char *errors,         /* error handling */
+    int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
+    );
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
+    PyObject* unicode,          /* Unicode object */
     const char *errors,         /* error handling */
     int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
     );
