@@ -2055,7 +2055,7 @@ Py_UCS4*
 PyUnicode_AsUCS4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
                  int copy_null)
 {
-    if (target == NULL || targetsize < 1) {
+    if (target == NULL || targetsize < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
