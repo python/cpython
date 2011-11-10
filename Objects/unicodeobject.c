@@ -7558,8 +7558,6 @@ PyUnicode_DecodeCharmap(const char *s,
     Py_ssize_t extrachars = 0;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    Py_UNICODE *mapstring = NULL;
-    Py_ssize_t maplen = 0;
 
     /* Default to Latin-1 */
     if (mapping == NULL)
@@ -7573,16 +7571,27 @@ PyUnicode_DecodeCharmap(const char *s,
     outpos = 0;
     e = s + size;
     if (PyUnicode_CheckExact(mapping)) {
-        mapstring = PyUnicode_AS_UNICODE(mapping);
-        maplen = PyUnicode_GET_SIZE(mapping);
+        Py_ssize_t maplen;
+        enum PyUnicode_Kind kind;
+        void *data;
+        Py_UCS4 x;
+
+        if (PyUnicode_READY(mapping) < 0)
+            return NULL;
+
+        maplen = PyUnicode_GET_LENGTH(mapping);
+        data = PyUnicode_DATA(mapping);
+        kind = PyUnicode_KIND(mapping);
         while (s < e) {
             unsigned char ch = *s;
-            Py_UNICODE x = 0xfffe; /* illegal value */
 
             if (ch < maplen)
-                x = mapstring[ch];
+                x = PyUnicode_READ(kind, data, ch);
+            else
+                x = 0xfffe; /* invalid value */
 
-            if (x == 0xfffe) {
+            if (x == 0xfffe)
+            {
                 /* undefined mapping */
                 startinpos = s-starts;
                 endinpos = startinpos+1;
@@ -7595,6 +7604,7 @@ PyUnicode_DecodeCharmap(const char *s,
                 }
                 continue;
             }
+
             if (unicode_putchar(&v, &outpos, x) < 0)
                 goto onError;
             ++s;
