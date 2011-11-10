@@ -305,7 +305,6 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
     def __init__(self, methodName='runTest'):
         SocketRDSTest.__init__(self, methodName=methodName)
         ThreadableTest.__init__(self)
-        self.evt = threading.Event()
 
     def clientSetUp(self):
         self.cli = socket.socket(socket.PF_RDS, socket.SOCK_SEQPACKET, 0)
@@ -1315,6 +1314,10 @@ class RDSTest(ThreadedRDSSocketTest):
 
     def __init__(self, methodName='runTest'):
         ThreadedRDSSocketTest.__init__(self, methodName=methodName)
+
+    def setUp(self):
+        super().setUp()
+        self.evt = threading.Event()
 
     def testSendAndRecv(self):
         data, addr = self.serv.recvfrom(self.bufsize)
