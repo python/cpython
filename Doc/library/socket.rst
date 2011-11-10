@@ -236,6 +236,19 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionadded:: 3.3
 
 
+.. data:: AF_RDS
+          PF_RDS
+          SOL_RDS
+          RDS_*
+
+   Many constants of these forms, documented in the Linux documentation, are
+   also defined in the socket module.
+
+   Availability: Linux >= 2.6.30.
+
+   .. versionadded:: 3.3
+
+
 .. data:: SIO_*
           RCVALL_*
 
@@ -407,14 +420,15 @@ The module :mod:`socket` exports the following constants and functions:
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX` or :const:`AF_CAN`. The socket type
-   should be :const:`SOCK_STREAM` (the default), :const:`SOCK_DGRAM`,
-   :const:`SOCK_RAW` or perhaps one of the other ``SOCK_`` constants. The
-   protocol number is usually zero and may be omitted in that case or
-   :const:`CAN_RAW` in case the address family is :const:`AF_CAN`.
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
+   socket type should be :const:`SOCK_STREAM` (the default),
+   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
+   constants. The protocol number is usually zero and may be omitted in that
+   case or :const:`CAN_RAW` in case the address family is :const:`AF_CAN`.
 
    .. versionchanged:: 3.3
       The AF_CAN family was added.
+      The AF_RDS family was added.
 
 
 .. function:: socketpair([family[, type[, proto]]])
