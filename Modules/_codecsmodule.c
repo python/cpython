@@ -38,6 +38,10 @@ Copyright (c) Corporation for National Research Initiatives.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
+
 /* --- Registry ----------------------------------------------------------- */
 
 PyDoc_STRVAR(register__doc__,
