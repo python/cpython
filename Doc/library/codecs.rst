@@ -1173,6 +1173,8 @@ particular, the following variants typically exist:
 | unicode_internal   |         | Return the internal       |
 |                    |         | representation of the     |
 |                    |         | operand                   |
+|                    |         |                           |
+|                    |         | .. deprecated:: 3.3       |
 +--------------------+---------+---------------------------+
 
 The following codecs provide bytes-to-bytes mappings.

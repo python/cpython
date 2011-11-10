@@ -6237,6 +6237,11 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "unicode_internal codecs has been deprecated",
+                     1))
+        return NULL;
+
     /* XXX overflow detection missing */
     v = PyUnicode_New((size+Py_UNICODE_SIZE-1)/ Py_UNICODE_SIZE, 127);
     if (v == NULL)
@@ -6270,15 +6275,26 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
                     errors, &errorHandler,
                     "unicode_internal", reason,
                     &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &v, &outpos)) {
+                    &v, &outpos))
                 goto onError;
+            continue;
+        }
+
+        s += Py_UNICODE_SIZE;
+#ifndef Py_UNICODE_WIDE
+        if (ch >= 0xD800 && ch <= 0xDBFF && s < end)
+        {
+            Py_UCS4 ch2 = *(Py_UNICODE*)s;
+            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF)
+            {
+                ch = (((ch & 0x3FF)<<10) | (ch2 & 0x3FF)) + 0x10000;
+                s += Py_UNICODE_SIZE;
             }
         }
-        else {
-            if (unicode_putchar(&v, &outpos, ch) < 0)
-                goto onError;
-            s += Py_UNICODE_SIZE;
-        }
+#endif
+
+        if (unicode_putchar(&v, &outpos, ch) < 0)
+            goto onError;
     }
 
     if (PyUnicode_Resize(&v, outpos) < 0)
