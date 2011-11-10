@@ -675,18 +675,30 @@ unicode_internal_encode(PyObject *self,
     PyObject *obj;
     const char *errors = NULL;
     const char *data;
-    Py_ssize_t size;
+    Py_ssize_t len, size;
 
     if (!PyArg_ParseTuple(args, "O|z:unicode_internal_encode",
                           &obj, &errors))
         return NULL;
 
     if (PyUnicode_Check(obj)) {
+        Py_UNICODE *u;
+
         if (PyUnicode_READY(obj) < 0)
             return NULL;
-        data = PyUnicode_AS_DATA(obj);
-        size = PyUnicode_GET_DATA_SIZE(obj);
-        return codec_tuple(PyBytes_FromStringAndSize(data, size),
+
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "unicode_internal codecs has been deprecated",
+                         1))
+            return NULL;
+
+        u = PyUnicode_AsUnicodeAndSize(obj, &len);
+        if (u == NULL)
+            return NULL;
+        if (len > PY_SSIZE_T_MAX / sizeof(Py_UNICODE))
+            return PyErr_NoMemory();
+        size = len * sizeof(Py_UNICODE);
+        return codec_tuple(PyBytes_FromStringAndSize((const char*)u, size),
                            PyUnicode_GET_LENGTH(obj));
     }
     else {
