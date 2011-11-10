@@ -3844,7 +3844,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
     Py_ssize_t shiftOutStart;
     unsigned int base64bits = 0;
     unsigned long base64buffer = 0;
-    Py_UNICODE surrogate = 0;
+    Py_UCS4 surrogate = 0;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
@@ -3873,8 +3873,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 s++;
                 if (base64bits >= 16) {
                     /* we have enough bits for a UTF-16 value */
-                    Py_UNICODE outCh = (Py_UNICODE)
-                                       (base64buffer >> (base64bits-16));
+                    Py_UCS4 outCh = (Py_UCS4)(base64buffer >> (base64bits-16));
                     base64bits -= 16;
                     base64buffer &= (1 << base64bits) - 1; /* clear high bits */
                     if (surrogate) {
@@ -5232,7 +5231,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0) {
         if (size >= 2) {
-            const Py_UNICODE bom = (q[ihi] << 8) | q[ilo];
+            const Py_UCS4 bom = (q[ihi] << 8) | q[ilo];
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
             if (bom == 0xFEFF) {
                 q += 2;
@@ -5273,7 +5272,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 
     aligned_end = (const unsigned char *) ((size_t) e & ~LONG_PTR_MASK);
     while (q < e) {
-        Py_UNICODE ch;
+        Py_UCS4 ch;
         /* First check for possible aligned read of a C 'long'. Unaligned
            reads are more expensive, better to defer to another iteration. */
         if (!((size_t) q & LONG_PTR_MASK)) {
@@ -5663,7 +5662,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
 
     while (s < end) {
         unsigned char c;
-        Py_UNICODE x;
+        Py_UCS4 x;
         int digits;
 
         /* The only case in which i == ascii_length is a backslash
@@ -6863,7 +6862,7 @@ decode_code_page_strict(UINT code_page,
                         int insize)
 {
     const DWORD flags = decode_code_page_flags(code_page);
-    Py_UNICODE *out;
+    wchar_t *out;
     DWORD outsize;
 
     /* First get the size of the result */
@@ -7177,7 +7176,7 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     BOOL *pusedDefaultChar = &usedDefaultChar;
     int outsize;
     PyObject *exc = NULL;
-    Py_UNICODE *p;
+    wchar_t *p;
     Py_ssize_t size;
     const DWORD flags = encode_code_page_flags(code_page, NULL);
     char *out;
