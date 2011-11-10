@@ -1328,6 +1328,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
+#ifdef AF_RDS
+    case AF_RDS:
+        /* RDS sockets use sockaddr_in: fall-through */
+#endif
+
     case AF_INET:
     {
         struct sockaddr_in* addr;
@@ -1684,6 +1689,11 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
            *len_ret = sizeof (struct sockaddr_nl);
            return 1;
        }
+#endif
+
+#ifdef AF_RDS
+    case AF_RDS:
+        /* RDS sockets use sockaddr_in: fall-through */
 #endif
 
     case AF_INET:
@@ -5614,6 +5624,14 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "PF_CAN", PF_CAN);
 #endif
 
+/* Reliable Datagram Sockets */
+#ifdef AF_RDS
+    PyModule_AddIntConstant(m, "AF_RDS", AF_RDS);
+#endif
+#ifdef PF_RDS
+    PyModule_AddIntConstant(m, "PF_RDS", PF_RDS);
+#endif
+
 #ifdef AF_PACKET
     PyModule_AddIntMacro(m, AF_PACKET);
 #endif
@@ -5908,6 +5926,27 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_RAW_ERR_FILTER", CAN_RAW_ERR_FILTER);
     PyModule_AddIntConstant(m, "CAN_RAW_LOOPBACK", CAN_RAW_LOOPBACK);
     PyModule_AddIntConstant(m, "CAN_RAW_RECV_OWN_MSGS", CAN_RAW_RECV_OWN_MSGS);
+#endif
+#ifdef SOL_RDS
+    PyModule_AddIntConstant(m, "SOL_RDS", SOL_RDS);
+#endif
+#ifdef RDS_CANCEL_SENT_TO
+    PyModule_AddIntConstant(m, "RDS_CANCEL_SENT_TO", RDS_CANCEL_SENT_TO);
+#endif
+#ifdef RDS_GET_MR
+    PyModule_AddIntConstant(m, "RDS_GET_MR", RDS_GET_MR);
+#endif
+#ifdef RDS_FREE_MR
+    PyModule_AddIntConstant(m, "RDS_FREE_MR", RDS_FREE_MR);
+#endif
+#ifdef RDS_RECVERR
+    PyModule_AddIntConstant(m, "RDS_RECVERR", RDS_RECVERR);
+#endif
+#ifdef RDS_CONG_MONITOR
+    PyModule_AddIntConstant(m, "RDS_CONG_MONITOR", RDS_CONG_MONITOR);
+#endif
+#ifdef RDS_GET_MR_FOR_DEST
+    PyModule_AddIntConstant(m, "RDS_GET_MR_FOR_DEST", RDS_GET_MR_FOR_DEST);
 #endif
 #ifdef  IPPROTO_IP
     PyModule_AddIntConstant(m, "IPPROTO_IP", IPPROTO_IP);
@@ -6259,6 +6298,44 @@ PyInit__socket(void)
     /* IPX options */
 #ifdef  IPX_TYPE
     PyModule_AddIntConstant(m, "IPX_TYPE", IPX_TYPE);
+#endif
+
+/* Reliable Datagram Sockets */
+#ifdef RDS_CMSG_RDMA_ARGS
+    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_ARGS", RDS_CMSG_RDMA_ARGS);
+#endif
+#ifdef RDS_CMSG_RDMA_DEST
+    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_DEST", RDS_CMSG_RDMA_DEST);
+#endif
+#ifdef RDS_CMSG_RDMA_MAP
+    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_MAP", RDS_CMSG_RDMA_MAP);
+#endif
+#ifdef RDS_CMSG_RDMA_STATUS
+    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_STATUS", RDS_CMSG_RDMA_STATUS);
+#endif
+#ifdef RDS_CMSG_RDMA_UPDATE
+    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_UPDATE", RDS_CMSG_RDMA_UPDATE);
+#endif
+#ifdef RDS_RDMA_READWRITE
+    PyModule_AddIntConstant(m, "RDS_RDMA_READWRITE", RDS_RDMA_READWRITE);
+#endif
+#ifdef RDS_RDMA_FENCE
+    PyModule_AddIntConstant(m, "RDS_RDMA_FENCE", RDS_RDMA_FENCE);
+#endif
+#ifdef RDS_RDMA_INVALIDATE
+    PyModule_AddIntConstant(m, "RDS_RDMA_INVALIDATE", RDS_RDMA_INVALIDATE);
+#endif
+#ifdef RDS_RDMA_USE_ONCE
+    PyModule_AddIntConstant(m, "RDS_RDMA_USE_ONCE", RDS_RDMA_USE_ONCE);
+#endif
+#ifdef RDS_RDMA_DONTWAIT
+    PyModule_AddIntConstant(m, "RDS_RDMA_DONTWAIT", RDS_RDMA_DONTWAIT);
+#endif
+#ifdef RDS_RDMA_NOTIFY_ME
+    PyModule_AddIntConstant(m, "RDS_RDMA_NOTIFY_ME", RDS_RDMA_NOTIFY_ME);
+#endif
+#ifdef RDS_RDMA_SILENT
+    PyModule_AddIntConstant(m, "RDS_RDMA_SILENT", RDS_RDMA_SILENT);
 #endif
 
     /* get{addr,name}info parameters */
