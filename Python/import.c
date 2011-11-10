@@ -1202,12 +1202,10 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
                       S_IXUSR | S_IXGRP | S_IXOTH |
                       S_IWUSR | S_IWGRP | S_IWOTH);
     PyObject *dirbytes;
-#endif
-    int fd;
-#ifndef MS_WINDOWS
     PyObject *cpathbytes, *cpathbytes_tmp;
     Py_ssize_t cpathbytes_len;
 #endif
+    int fd;
     PyObject *dirname;
     Py_UCS4 *dirsep;
     int res, ok;
@@ -1275,7 +1273,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         return;
     }
     cpathbytes_len = PyBytes_GET_SIZE(cpathbytes);
-    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 6);
+    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 4);
     if (cpathbytes_tmp == NULL) {
         Py_DECREF(cpathbytes);
         PyErr_Clear();
@@ -1283,9 +1281,10 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
     memcpy(PyBytes_AS_STRING(cpathbytes_tmp), PyBytes_AS_STRING(cpathbytes),
            cpathbytes_len);
-    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, "XXXXXX", 6);
+    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, ".tmp", 4);
 
-    fd = mkstemp(PyBytes_AS_STRING(cpathbytes_tmp));
+    fd = open(PyBytes_AS_STRING(cpathbytes_tmp),
+              O_CREAT | O_EXCL | O_WRONLY, 0666);
     if (0 <= fd)
         fp = fdopen(fd, "wb");
     else

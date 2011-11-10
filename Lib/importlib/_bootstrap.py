@@ -88,7 +88,7 @@ def _write_atomic(path, data):
         # On POSIX-like platforms, renaming is atomic. id() is used to generate
         # a pseudo-random filename.
         path_tmp = '{}.{}'.format(path, id(path))
-        fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY)
+        fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, 0o666)
         try:
             with _io.FileIO(fd, 'wb') as file:
                 file.write(data)
