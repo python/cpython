@@ -5938,7 +5938,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
     p = PyBytes_AS_STRING(repr);
 
     for (i = 0; i < len; i++) {
-        Py_UNICODE ch = PyUnicode_READ(kind, data, i);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         /* Escape backslashes */
         if (ch == '\\') {
