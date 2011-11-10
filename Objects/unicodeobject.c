@@ -4820,11 +4820,18 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
                 for(k = repsize; k > 0; k--)
                     *p++ = *prep++;
             } else /* rep is unicode */ {
-                const Py_UNICODE *prep = PyUnicode_AS_UNICODE(rep);
-                Py_UNICODE c;
+                enum PyUnicode_Kind repkind;
+                void *repdata;
+
+                if (PyUnicode_READY(rep) < 0) {
+                    Py_DECREF(rep);
+                    goto error;
+                }
+                repkind = PyUnicode_KIND(rep);
+                repdata = PyUnicode_DATA(rep);
 
                 for(k=0; k<repsize; k++) {
-                    c = prep[k];
+                    Py_UCS4 c = PyUnicode_READ(repkind, repdata, k);
                     if (0x80 <= c) {
                         raise_encode_exception(&exc, "utf-8",
                                                unicode,
@@ -4832,7 +4839,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
                                                "surrogates not allowed");
                         goto error;
                     }
-                    *p++ = (char)prep[k];
+                    *p++ = (char)c;
                 }
             }
             Py_DECREF(rep);
