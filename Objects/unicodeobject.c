@@ -4061,7 +4061,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
 
     start = out = PyBytes_AS_STRING(v);
     for (i = 0; i < len; ++i) {
-        Py_UNICODE ch = PyUnicode_READ(kind, data, i);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         if (inShift) {
             if (ENCODE_DIRECT(ch, !base64SetO, !base64WhiteSpace)) {
@@ -4099,7 +4099,6 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         }
         continue;
 encode_char:
-#ifdef Py_UNICODE_WIDE
         if (ch >= 0x10000) {
             /* code first surrogate */
             base64bits += 16;
@@ -4111,7 +4110,6 @@ encode_char:
             /* prepare second surrogate */
             ch =  0xDC00 | ((ch-0x10000) & 0x3FF);
         }
-#endif
         base64bits += 16;
         base64buffer = (base64buffer << 16) | ch;
         while (base64bits >= 6) {
@@ -4138,7 +4136,7 @@ PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     PyObject *tmp = PyUnicode_FromUnicode(s, size);
     if (tmp == NULL)
         return NULL;
-    result = _PyUnicode_EncodeUTF7(tmp, base64SetO, 
+    result = _PyUnicode_EncodeUTF7(tmp, base64SetO,
                                    base64WhiteSpace, errors);
     Py_DECREF(tmp);
     return result;
@@ -5462,7 +5460,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
     kind = PyUnicode_KIND(str);
     data = PyUnicode_DATA(str);
     len = PyUnicode_GET_LENGTH(str);
-    
+
     pairs = 0;
     if (kind == PyUnicode_4BYTE_KIND)
         for (i = 0; i < len; i++)
@@ -6157,7 +6155,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
     case PyUnicode_2BYTE_KIND: expandsize = 6; break;
     case PyUnicode_4BYTE_KIND: expandsize = 10; break;
     }
-        
+
     if (len > PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
 
