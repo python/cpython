@@ -1033,7 +1033,7 @@ functions based on regular expressions.
 
 .. method:: str.expandtabs([tabsize])
 
-   Return a copy of the string where all tab characters are replaced by one or
+   Return a copy of the string where all tab characters are replaced by zero or
    more spaces, depending on the current column and the given tab size.  The
    column number is reset to zero after each newline occurring in the string.
    If *tabsize* is not given, a tab size of ``8`` characters is assumed.  This
