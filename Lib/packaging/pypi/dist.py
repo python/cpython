@@ -427,7 +427,7 @@ class ReleasesList(IndexReference):
         """Sort the results with the given properties.
 
         The `prefer_final` argument can be used to specify if final
-        distributions (eg. not dev, bet or alpha) would be prefered or not.
+        distributions (eg. not dev, beta or alpha) would be preferred or not.
 
         Results can be inverted by using `reverse`.
 

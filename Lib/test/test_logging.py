@@ -3222,7 +3222,7 @@ class BasicConfigTest(unittest.TestCase):
         # style defaults to %
         self.assertIsInstance(formatter._style, logging.PercentStyle)
 
-        # level is not explicitely set
+        # level is not explicitly set
         self.assertEqual(logging.root.level, self.original_logging_level)
 
     def test_filename(self):

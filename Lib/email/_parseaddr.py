@@ -203,7 +203,7 @@ class AddrlistClass:
     front of you.
 
     Note: this class interface is deprecated and may be removed in the future.
-    Use rfc822.AddressList instead.
+    Use email.utils.AddressList instead.
     """
 
     def __init__(self, field):
