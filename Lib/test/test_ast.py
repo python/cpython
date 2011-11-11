@@ -295,7 +295,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitely allowed
+        # Zero arguments constructor explicitly allowed
         x = ast.BinOp()
         self.assertEqual(x._fields, ('left', 'op', 'right'))
 

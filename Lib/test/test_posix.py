@@ -190,7 +190,7 @@ class PosixTester(unittest.TestCase):
             os.write(fd, b'test')
             os.lseek(fd, 0, os.SEEK_SET)
             self.assertEqual(b'es', posix.pread(fd, 2, 1))
-            # the first pread() shoudn't disturb the file offset
+            # the first pread() shouldn't disturb the file offset
             self.assertEqual(b'te', posix.read(fd, 2))
         finally:
             os.close(fd)

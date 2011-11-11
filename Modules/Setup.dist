@@ -294,7 +294,7 @@ _symtable symtablemodule.c
 #syslog syslogmodule.c		# syslog daemon interface
 
 
-# Curses support, requring the System V version of curses, often
+# Curses support, requiring the System V version of curses, often
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 #
