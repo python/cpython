@@ -1410,7 +1410,7 @@ class UnicodeTest(string_tests.CommonTest,
         # UTF-8 must be roundtrip safe for all code points
         # (except surrogates, which are forbidden).
         u = ''.join(map(chr, list(range(0, 0xd800)) +
-                             list(range(0xe000, 0x10ffff))))
+                             list(range(0xe000, 0x110000))))
         for encoding in ('utf-8',):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
