@@ -365,6 +365,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13384: Remove unnecessary __future__ import in Lib/random.py
+
 - Issue #13149: Speed up append-only StringIO objects.
 
 - Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
