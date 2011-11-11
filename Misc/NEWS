@@ -73,6 +73,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13384: Remove unnecessary __future__ import in Lib/random.py
+
 - Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
   when called with a timeout.  Patch by Arnaud Ysmal.
 
