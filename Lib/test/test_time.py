@@ -4,7 +4,6 @@ import unittest
 import locale
 import sysconfig
 import sys
-import warnings
 import platform
 
 # Max year is only limited by the size of C int.
@@ -200,8 +199,8 @@ class TimeTestCase(unittest.TestCase):
             else:
                 self.assertEqual(time.ctime(testval)[20:], str(year))
 
-    @unittest.skipIf(not hasattr(time, "tzset"),
-        "time module has no attribute tzset")
+    @unittest.skipUnless(hasattr(time, "tzset"),
+                         "time module has no attribute tzset")
     def test_tzset(self):
 
         from os import environ
@@ -298,8 +297,7 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
-    # XXX run last to work around issue #13309 on Gentoo
-    def test_zzz_mktime(self):
+    def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
             try:
@@ -308,20 +306,23 @@ class TimeTestCase(unittest.TestCase):
                 pass
             else:
                 self.assertEqual(time.mktime(tt), t)
-        tt = time.gmtime(self.t)
-        tzname = time.strftime('%Z', tt)
-        self.assertNotEqual(tzname, 'LMT')
+
+    # Issue #13309: passing extreme values to mktime() or localtime()
+    # borks the glibc's internal timezone data.
+    @unittest.skipUnless(platform.libc_ver()[0] != 'glibc',
+                         "disabled because of a bug in glibc. Issue #13309")
+    def test_mktime_error(self):
         # It may not be possible to reliably make mktime return error
         # on all platfom.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
-        if platform.libc_ver()[0] == 'glibc':
-            # Issue #13309: passing extreme values to mktime() or localtime()
-            # borks the glibc's internal timezone data.
-            return
+        tt = time.gmtime(self.t)
+        tzname = time.strftime('%Z', tt)
+        self.assertNotEqual(tzname, 'LMT')
         try:
             time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
         except OverflowError:
             pass
+        self.assertEqual(time.strftime('%Z', tt), tzname)
 
 
 class TestLocale(unittest.TestCase):
