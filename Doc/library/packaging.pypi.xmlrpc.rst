@@ -94,7 +94,7 @@ The specific fields you can search are:
 Getting metadata information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-XML-RPC is a prefered way to retrieve metadata information from indexes.
+XML-RPC is a preferred way to retrieve metadata information from indexes.
 It's really simple to do so::
 
    >>> client = xmlrpc.Client()
