@@ -35,7 +35,6 @@
 import os
 import sys
 import signal
-import select
 
 from multiprocessing import util, process
 
@@ -101,7 +100,6 @@ else:
 #
 
 if sys.platform != 'win32':
-    import time
     import select
 
     exit = os._exit
@@ -170,7 +168,7 @@ if sys.platform != 'win32':
             if self.returncode is None:
                 try:
                     os.kill(self.pid, signal.SIGTERM)
-                except OSError as e:
+                except OSError:
                     if self.wait(timeout=0.1) is None:
                         raise
 
@@ -186,11 +184,9 @@ else:
     import _thread
     import msvcrt
     import _subprocess
-    import time
 
-    from pickle import dump, load, HIGHEST_PROTOCOL
+    from pickle import load, HIGHEST_PROTOCOL
     from _multiprocessing import win32
-    from .util import Finalize
 
     def dump(obj, file, protocol=None):
         ForkingPickler(file, protocol).dump(obj)

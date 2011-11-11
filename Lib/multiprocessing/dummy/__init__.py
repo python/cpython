@@ -46,9 +46,7 @@ import threading
 import sys
 import weakref
 import array
-import itertools
 
-from multiprocessing import TimeoutError, cpu_count
 from multiprocessing.dummy.connection import Pipe
 from threading import Lock, RLock, Semaphore, BoundedSemaphore
 from threading import Event, Condition

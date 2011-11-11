@@ -39,19 +39,15 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 # Imports
 #
 
-import os
 import sys
-import weakref
 import threading
 import array
 import queue
 
 from traceback import format_exc
-from pickle import PicklingError
 from multiprocessing import Process, current_process, active_children, Pool, util, connection
 from multiprocessing.process import AuthenticationString
-from multiprocessing.forking import exit, Popen, assert_spawning, ForkingPickler
-from multiprocessing.util import Finalize, info
+from multiprocessing.forking import exit, Popen, ForkingPickler
 
 #
 # Register some things for pickling

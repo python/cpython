@@ -39,7 +39,6 @@ import os
 import threading
 import collections
 import time
-import atexit
 import weakref
 import errno
 

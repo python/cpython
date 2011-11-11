@@ -34,7 +34,6 @@
 
 import bisect
 import mmap
-import tempfile
 import os
 import sys
 import threading

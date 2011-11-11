@@ -74,7 +74,7 @@ def _worker(executor_reference, work_queue):
                 work_queue.put(None)
                 return
             del executor
-    except BaseException as e:
+    except BaseException:
         _base.LOGGER.critical('Exception in worker', exc_info=True)
 
 class ThreadPoolExecutor(_base.Executor):

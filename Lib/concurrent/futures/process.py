@@ -221,7 +221,7 @@ def _queue_management_worker(executor_reference,
         assert sentinels
         try:
             result_item = result_queue.get(sentinels=sentinels)
-        except SentinelReady as e:
+        except SentinelReady:
             # Mark the process pool broken so that submits fail right now.
             executor = executor_reference()
             if executor is not None:
@@ -291,7 +291,6 @@ def _check_system_limits():
             raise NotImplementedError(_system_limited)
     _system_limits_checked = True
     try:
-        import os
         nsems_max = os.sysconf("SC_SEM_NSEMS_MAX")
     except (AttributeError, ValueError):
         # sysconf not available or setting not available
