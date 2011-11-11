@@ -1407,12 +1407,10 @@ class UnicodeTest(string_tests.CommonTest,
                          'unicode_escape', 'unicode_internal'):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
-        # UTF-8 must be roundtrip safe for all UCS-2 code points
-        # This excludes surrogates: in the full range, there would be
-        # a surrogate pair (\udbff\udc00), which gets converted back
-        # to a non-BMP character (\U0010fc00)
-        u = ''.join(map(chr, list(range(0,0xd800)) +
-                             list(range(0xe000,0x10000))))
+        # UTF-8 must be roundtrip safe for all code points
+        # (except surrogates, which are forbidden).
+        u = ''.join(map(chr, list(range(0, 0xd800)) +
+                             list(range(0xe000, 0x10ffff))))
         for encoding in ('utf-8',):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
