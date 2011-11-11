@@ -36,7 +36,6 @@ import functools
 import itertools
 import weakref
 import atexit
-import select
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
 
@@ -86,7 +85,7 @@ def get_logger():
     Returns logger used by multiprocessing
     '''
     global _logger
-    import logging, atexit
+    import logging
 
     logging._acquireLock()
     try:

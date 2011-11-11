@@ -32,7 +32,6 @@
 # SUCH DAMAGE.
 #
 
-import sys
 import ctypes
 import weakref
 
