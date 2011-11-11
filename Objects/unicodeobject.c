@@ -6252,15 +6252,18 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
     end = s + size;
 
     while (s < end) {
+        Py_UNICODE uch;
         Py_UCS4 ch;
         /* We copy the raw representation one byte at a time because the
            pointer may be unaligned (see test_codeccallbacks). */
-        ((char *) &ch)[0] = s[0];
-        ((char *) &ch)[1] = s[1];
+        ((char *) &uch)[0] = s[0];
+        ((char *) &uch)[1] = s[1];
 #ifdef Py_UNICODE_WIDE
-        ((char *) &ch)[2] = s[2];
-        ((char *) &ch)[3] = s[3];
+        ((char *) &uch)[2] = s[2];
+        ((char *) &uch)[3] = s[3];
 #endif
+        ch = uch;
+
         /* We have to sanity check the raw data, otherwise doom looms for
            some malformed UCS-4 data. */
         if (
@@ -6292,10 +6295,12 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
 #ifndef Py_UNICODE_WIDE
         if (ch >= 0xD800 && ch <= 0xDBFF && s < end)
         {
-            Py_UCS4 ch2 = *(Py_UNICODE*)s;
-            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF)
+            Py_UNICODE uch2;
+            ((char *) &uch2)[0] = s[0];
+            ((char *) &uch2)[1] = s[1];
+            if (uch2 >= 0xDC00 && uch2 <= 0xDFFF)
             {
-                ch = (((ch & 0x3FF)<<10) | (ch2 & 0x3FF)) + 0x10000;
+                ch = (((uch & 0x3FF)<<10) | (uch2 & 0x3FF)) + 0x10000;
                 s += Py_UNICODE_SIZE;
             }
         }
