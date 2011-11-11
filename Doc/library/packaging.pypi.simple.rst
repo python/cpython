@@ -30,7 +30,7 @@ API
 
       The first two parameters control the query results.  *prefer_final*
       indicates whether a final version (not alpha, beta or candidate) is to be
-      prefered over a newer but non-final version (for example, whether to pick
+      preferred over a newer but non-final version (for example, whether to pick
       up 1.0 over 2.0a3).  It is used only for queries that don't give a version
       argument.  Likewise, *prefer_source* tells whether to prefer a source
       distribution over a binary one, if no distribution argument was prodived.
