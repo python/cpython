@@ -39,11 +39,12 @@ process one or many requests.
 
 When inheriting from :class:`ThreadingMixIn` for threaded connection behavior,
 you should explicitly declare how you want your threads to behave on an abrupt
-shutdown. The :class:`ThreadingMixIn` class defines an attribute
+shutdown.  The :class:`ThreadingMixIn` class defines an attribute
 *daemon_threads*, which indicates whether or not the server should wait for
-thread termination. You should set the flag explicitly if you would like threads
-to behave autonomously; the default is :const:`False`, meaning that Python will
-not exit until all threads created by :class:`ThreadingMixIn` have exited.
+thread termination.  You should set the flag explicitly if you would like
+threads to behave autonomously; the default is :const:`False`, meaning that
+Python will not exit until all threads created by :class:`ThreadingMixIn` have
+exited.
 
 Server classes have the same external methods and attributes, no matter what
 network protocol they use.
@@ -115,8 +116,8 @@ or inappropriate for the service) is to maintain an explicit table of partially
 finished requests and to use :func:`select` to decide which request to work on
 next (or whether to handle a new incoming request).  This is particularly
 important for stream services where each client can potentially be connected for
-a long time (if threads or subprocesses cannot be used). See :mod:`asyncore` for
-another way to manage this.
+a long time (if threads or subprocesses cannot be used).  See :mod:`asyncore`
+for another way to manage this.
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?
@@ -192,7 +193,7 @@ The server classes support the following class variables:
 
 .. attribute:: BaseServer.allow_reuse_address
 
-   Whether the server will allow the reuse of an address. This defaults to
+   Whether the server will allow the reuse of an address.  This defaults to
    :const:`False`, and can be set in subclasses to change the policy.
 
 
@@ -269,7 +270,7 @@ users of the server object.
 .. method:: BaseServer.server_activate()
 
    Called by the server's constructor to activate the server.  The default behavior
-   just :meth:`listen`\ s to the server's socket. May be overridden.
+   just :meth:`listen`\ s to the server's socket.  May be overridden.
 
 
 .. method:: BaseServer.server_bind()
@@ -280,10 +281,10 @@ users of the server object.
 
 .. method:: BaseServer.verify_request(request, client_address)
 
-   Must return a Boolean value; if the value is :const:`True`, the request will be
-   processed, and if it's :const:`False`, the request will be denied. This function
-   can be overridden to implement access controls for a server. The default
-   implementation always returns :const:`True`.
+   Must return a Boolean value; if the value is :const:`True`, the request will
+   be processed, and if it's :const:`False`, the request will be denied.  This
+   function can be overridden to implement access controls for a server. The
+   default implementation always returns :const:`True`.
 
 
 RequestHandler Objects
