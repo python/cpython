@@ -1060,7 +1060,7 @@ to each expected argument.  By default, ArgumentParser objects use the dest_
 value as the "name" of each object.  By default, for positional argument
 actions, the dest_ value is used directly, and for optional argument actions,
 the dest_ value is uppercased.  So, a single positional argument with
-``dest='bar'`` will that argument will be referred to as ``bar``. A single
+``dest='bar'`` will be referred to as ``bar``. A single
 optional argument ``--foo`` that should be followed by a single command-line argument
 will be referred to as ``FOO``.  An example::
 
