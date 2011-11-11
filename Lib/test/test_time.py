@@ -5,6 +5,7 @@ import locale
 import sysconfig
 import sys
 import warnings
+import platform
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -313,13 +314,14 @@ class TimeTestCase(unittest.TestCase):
         # It may not be possible to reliably make mktime return error
         # on all platfom.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
+        if platform.libc_ver()[0] == 'glibc':
+            # Issue #13309: passing extreme values to mktime() or localtime()
+            # borks the glibc's internal timezone data.
+            return
         try:
             time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))
         except OverflowError:
             pass
-        msg = "Issue #13309: the '%Z' specifier reports erroneous timezone"
-        msg += " after time.mktime((-1, 1, 1, 0, 0, 0, -1, -1, -1))."
-        self.assertEqual(time.strftime('%Z', tt), tzname, msg)
 
 
 class TestLocale(unittest.TestCase):
