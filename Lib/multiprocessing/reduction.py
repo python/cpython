@@ -41,7 +41,6 @@ import socket
 import threading
 import struct
 
-import _multiprocessing
 from multiprocessing import current_process
 from multiprocessing.forking import Popen, duplicate, close, ForkingPickler
 from multiprocessing.util import register_after_fork, debug, sub_debug
@@ -61,7 +60,6 @@ if not(sys.platform == 'win32' or (hasattr(socket, 'CMSG_LEN') and
 #
 
 if sys.platform == 'win32':
-    import _subprocess
     from _multiprocessing import win32
 
     def send_handle(conn, handle, destination_pid):

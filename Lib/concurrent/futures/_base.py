@@ -4,7 +4,6 @@
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 import collections
-import functools
 import logging
 import threading
 import time
