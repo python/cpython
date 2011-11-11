@@ -269,7 +269,7 @@ class Crawler(BaseClient):
     def _register_release(self, release=None, release_info={}):
         """Register a new release.
 
-        Both a release or a dict of release_info can be provided, the prefered
+        Both a release or a dict of release_info can be provided, the preferred
         way (eg. the quicker) is the dict one.
 
         Return the list of existing releases for the given project.
