@@ -1403,7 +1403,7 @@ class UnicodeTest(string_tests.CommonTest,
         # Roundtrip safety for non-BMP (just a few chars)
         u = '\U00010001\U00020002\U00030003\U00040004\U00050005'
         for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
-                         #'raw_unicode_escape',
+                         'raw_unicode_escape',
                          'unicode_escape', 'unicode_internal'):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
