@@ -455,6 +455,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
             }
             Py_DECREF(output);
             output = PyUnicode_FromKindAndData(kind, translated, out);
+            PyMem_Free(translated);
             if (!output)
                 goto error;
         }
