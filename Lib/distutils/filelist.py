@@ -313,7 +313,10 @@ def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
         # ditch end of pattern character
         empty_pattern = glob_to_re('')
         prefix_re = (glob_to_re(prefix))[:-len(empty_pattern)]
-        pattern_re = "^" + os.path.join(prefix_re, ".*" + pattern_re)
+        # match both path separators, as in Postel's principle
+        sep_pat = "[" + re.escape(os.path.sep + os.path.altsep
+                                  if os.path.altsep else os.path.sep) + "]"
+        pattern_re = "^" + sep_pat.join([prefix_re, ".*" + pattern_re])
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
