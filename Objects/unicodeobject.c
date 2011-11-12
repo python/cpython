@@ -4722,6 +4722,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
     int kind;
     void *data;
     Py_ssize_t size;
+    PyObject *rep = NULL;
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
@@ -4774,7 +4775,6 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             *p++ = (char)(0x80 | (ch & 0x3f));
         } else if (0xD800 <= ch && ch <= 0xDFFF) {
             Py_ssize_t newpos;
-            PyObject *rep;
             Py_ssize_t repsize, k, startpos;
             startpos = i-1;
             rep = unicode_encode_call_errorhandler(
@@ -4822,10 +4822,8 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
                 enum PyUnicode_Kind repkind;
                 void *repdata;
 
-                if (PyUnicode_READY(rep) < 0) {
-                    Py_DECREF(rep);
+                if (PyUnicode_READY(rep) < 0)
                     goto error;
-                }
                 repkind = PyUnicode_KIND(rep);
                 repdata = PyUnicode_DATA(rep);
 
@@ -4841,7 +4839,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
                     *p++ = (char)c;
                 }
             }
-            Py_DECREF(rep);
+            Py_CLEAR(rep);
         } else if (ch < 0x10000) {
             *p++ = (char)(0xe0 | (ch >> 12));
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
@@ -4872,6 +4870,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
     Py_XDECREF(exc);
     return result;
  error:
+    Py_XDECREF(rep);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     Py_XDECREF(result);
