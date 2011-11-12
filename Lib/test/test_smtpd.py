@@ -52,6 +52,7 @@ class SMTPDServerTest(TestCase):
 class SMTPDChannelTest(TestCase):
     def setUp(self):
         smtpd.socket = asyncore.socket = mock_socket
+        self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
         self.server = DummyServer('a', 'b')
         conn, addr = self.server.accept()
@@ -60,6 +61,7 @@ class SMTPDChannelTest(TestCase):
     def tearDown(self):
         asyncore.close_all()
         asyncore.socket = smtpd.socket = socket
+        smtpd.DEBUGSTREAM = self.old_debugstream
 
     def write_line(self, line):
         self.channel.socket.queue_recv(line)
