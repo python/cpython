@@ -815,7 +815,7 @@ class TestMaildir(TestMailbox):
         # skew factor to make _refresh think that the filesystem
         # safety period has passed and re-reading the _toc is only
         # required if mtimes differ.
-        self._box._skewfactor = -2
+        self._box._skewfactor = -3
 
         self._box._refresh()
         self.assertEqual(sorted(self._box._toc.keys()), sorted([key0, key1]))
@@ -908,7 +908,12 @@ class TestMaildir(TestMailbox):
         # refresh is done unconditionally if called for within
         # two-second-plus-a-bit of the last one, just in case the mbox has
         # changed; so now we have to wait for that interval to expire.
-        time.sleep(2.01 + self._box._skewfactor)
+        #
+        # Because this is a test, emulate sleeping. Instead of
+        # sleeping for 2 seconds, use the skew factor to make _refresh
+        # think that 2 seconds have passed and re-reading the _toc is
+        # only required if mtimes differ.
+        self._box._skewfactor = -3
 
         # Re-reading causes the ._toc attribute to be assigned a new dictionary
         # object, so we'll check that the ._toc attribute isn't a different
@@ -921,7 +926,8 @@ class TestMaildir(TestMailbox):
         self.assertFalse(refreshed())
 
         # Now, write something into cur and remove it.  This changes
-        # the mtime and should cause a re-read.
+        # the mtime and should cause a re-read. Note that "sleep
+        # emulation" is still in effect, as skewfactor is -3.
         filename = os.path.join(self._path, 'cur', 'stray-file')
         f = open(filename, 'w')
         f.close()
