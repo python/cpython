@@ -573,20 +573,21 @@ needs to wake up one consumer thread.
       interface is then used to restore the recursion level when the lock is
       reacquired.
 
-   .. method:: notify()
+   .. method:: notify(n=1)
 
-      Wake up a thread waiting on this condition, if any.  If the calling thread
-      has not acquired the lock when this method is called, a
+      By default, wake up one thread waiting on this condition, if any.  If the
+      calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
-      This method wakes up one of the threads waiting for the condition
-      variable, if any are waiting; it is a no-op if no threads are waiting.
+      This method wakes up at most *n* of the threads waiting for the condition
+      variable; it is a no-op if no threads are waiting.
 
-      The current implementation wakes up exactly one thread, if any are
-      waiting.  However, it's not safe to rely on this behavior.  A future,
-      optimized implementation may occasionally wake up more than one thread.
+      The current implementation wakes up exactly *n* threads, if at least *n*
+      threads are waiting.  However, it's not safe to rely on this behavior.
+      A future, optimized implementation may occasionally wake up more than
+      *n* threads.
 
-      Note: the awakened thread does not actually return from its :meth:`wait`
+      Note: an awakened thread does not actually return from its :meth:`wait`
       call until it can reacquire the lock.  Since :meth:`notify` does not
       release the lock, its caller should.
 
