@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13193: Fix distutils.filelist.FileList under Windows.  The
+  "recursive-include" directive now recognizes both legal path separators.
+
 - Issue #13384: Remove unnecessary __future__ import in Lib/random.py
 
 - Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
