@@ -640,14 +640,22 @@ BYTESTR_DEPS = \
 		$(srcdir)/Objects/stringlib/stringdefs.h \
 		$(srcdir)/Objects/stringlib/transmogrify.h \
 		$(srcdir)/Objects/stringlib/unicodedefs.h \
-		$(srcdir)/Objects/stringlib/localeutil.h
+		$(srcdir)/Objects/stringlib/localeutil.h \
+		$(srcdir)/Objects/stringlib/undef.h
+
+UNICODE_DEPS = $(BYTESTR_DEPS) \
+		$(srcdir)/Objects/stringlib/asciilib.h \
+		$(srcdir)/Objects/stringlib/ucs1lib.h \
+		$(srcdir)/Objects/stringlib/ucs2lib.h \
+		$(srcdir)/Objects/stringlib/ucs4lib.h \
+		$(srcdir)/Objects/stringlib/unicode_format.h \
+		$(srcdir)/Objects/stringlib/unicodedefs.h
 
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
-Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
-				$(BYTESTR_DEPS) $(srcdir)/Objects/stringlib/unicode_format.h
+Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
