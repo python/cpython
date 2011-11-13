@@ -88,6 +88,8 @@ or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
+# <> isn't actually a valid comparison operator in Python. It's here for the
+# sake of a __future__ import described in PEP 401
 comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
 star_expr: '*' expr
 expr: xor_expr ('|' xor_expr)*
