@@ -431,7 +431,7 @@ regular expressions.  Most non-trivial applications always use the compiled
 form.
 
 
-.. function:: compile(pattern[, flags=0])
+.. function:: compile(pattern, flags=0)
 
    Compile a regular expression pattern into a regular expression object, which
    can be used for matching using its :func:`match` and :func:`search` methods,
@@ -521,7 +521,7 @@ form.
       b = re.compile(r"\d+\.\d*")
 
 
-.. function:: search(pattern, string[, flags=0])
+.. function:: search(pattern, string, flags=0)
 
    Scan through *string* looking for a location where the regular expression
    *pattern* produces a match, and return a corresponding :class:`MatchObject`
@@ -530,7 +530,7 @@ form.
    string.
 
 
-.. function:: match(pattern, string[, flags=0])
+.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`MatchObject` instance.
@@ -543,7 +543,7 @@ form.
       instead.
 
 
-.. function:: split(pattern, string[, maxsplit=0, flags=0])
+.. function:: split(pattern, string, maxsplit=0, flags=0)
 
    Split *string* by the occurrences of *pattern*.  If capturing parentheses are
    used in *pattern*, then the text of all groups in the pattern are also returned
@@ -584,7 +584,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: findall(pattern, string[, flags=0])
+.. function:: findall(pattern, string, flags=0)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
    strings.  The *string* is scanned left-to-right, and matches are returned in
@@ -599,7 +599,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: finditer(pattern, string[, flags=0])
+.. function:: finditer(pattern, string, flags=0)
 
    Return an :term:`iterator` yielding :class:`MatchObject` instances over all
    non-overlapping matches for the RE *pattern* in *string*.  The *string* is
@@ -613,7 +613,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: sub(pattern, repl, string[, count, flags=0])
+.. function:: sub(pattern, repl, string, count=0, flags=0)
 
    Return the string obtained by replacing the leftmost non-overlapping occurrences
    of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
@@ -662,7 +662,7 @@ form.
       Added the optional flags argument.
 
 
-.. function:: subn(pattern, repl, string[, count, flags=0])
+.. function:: subn(pattern, repl, string, count=0, flags=0)
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
@@ -747,7 +747,7 @@ Regular Expression Objects
       <_sre.SRE_Match object at ...>
 
 
-   .. method:: RegexObject.split(string[, maxsplit=0])
+   .. method:: RegexObject.split(string, maxsplit=0)
 
       Identical to the :func:`split` function, using the compiled pattern.
 
@@ -766,12 +766,12 @@ Regular Expression Objects
       region like for :meth:`match`.
 
 
-   .. method:: RegexObject.sub(repl, string[, count=0])
+   .. method:: RegexObject.sub(repl, string, count=0)
 
       Identical to the :func:`sub` function, using the compiled pattern.
 
 
-   .. method:: RegexObject.subn(repl, string[, count=0])
+   .. method:: RegexObject.subn(repl, string, count=0)
 
       Identical to the :func:`subn` function, using the compiled pattern.
 
