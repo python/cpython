@@ -365,19 +365,23 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
             */
             if (seennl == 0 &&
                 memchr(in_str, '\n', kind * len) != NULL) {
-                Py_ssize_t i = 0;
-                for (;;) {
-                    Py_UCS4 c;
-                    /* Fast loop for non-control characters */
-                    while (PyUnicode_READ(kind, in_str, i) > '\n')
-                        i++;
-                    c = PyUnicode_READ(kind, in_str, i++);
-                    if (c == '\n') {
-                        seennl |= SEEN_LF;
-                        break;
+                if (kind == PyUnicode_1BYTE_KIND)
+                    seennl |= SEEN_LF;
+                else {
+                    Py_ssize_t i = 0;
+                    for (;;) {
+                        Py_UCS4 c;
+                        /* Fast loop for non-control characters */
+                        while (PyUnicode_READ(kind, in_str, i) > '\n')
+                            i++;
+                        c = PyUnicode_READ(kind, in_str, i++);
+                        if (c == '\n') {
+                            seennl |= SEEN_LF;
+                            break;
+                        }
+                        if (i >= len)
+                            break;
                     }
-                    if (i >= len)
-                        break;
                 }
             }
             /* Finished: we have scanned for newlines, and none of them
@@ -1597,6 +1601,10 @@ textiowrapper_read(textio *self, PyObject *args)
 static char *
 find_control_char(int kind, char *s, char *end, Py_UCS4 ch)
 {
+    if (kind == PyUnicode_1BYTE_KIND) {
+        assert(ch < 256);
+        return (char *) memchr((void *) s, (char) ch, end - s);
+    }
     for (;;) {
         while (PyUnicode_READ(kind, s, 0) > ch)
             s += kind;
