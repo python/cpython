@@ -725,17 +725,15 @@ ascii_encode(textio *self, PyObject *text)
 static PyObject *
 utf16be_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), 1);
+    return _PyUnicode_EncodeUTF16(text,
+                                  PyBytes_AS_STRING(self->errors), 1);
 }
 
 static PyObject *
 utf16le_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), -1);
+    return _PyUnicode_EncodeUTF16(text,
+                                  PyBytes_AS_STRING(self->errors), -1);
 }
 
 static PyObject *
@@ -749,25 +747,22 @@ utf16_encode(textio *self, PyObject *text)
         return utf16le_encode(self, text);
 #endif
     }
-    return PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), 0);
+    return _PyUnicode_EncodeUTF16(text,
+                                  PyBytes_AS_STRING(self->errors), 0);
 }
 
 static PyObject *
 utf32be_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), 1);
+    return _PyUnicode_EncodeUTF32(text,
+                                  PyBytes_AS_STRING(self->errors), 1);
 }
 
 static PyObject *
 utf32le_encode(textio *self, PyObject *text)
 {
-    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), -1);
+    return _PyUnicode_EncodeUTF32(text,
+                                  PyBytes_AS_STRING(self->errors), -1);
 }
 
 static PyObject *
@@ -781,9 +776,8 @@ utf32_encode(textio *self, PyObject *text)
         return utf32le_encode(self, text);
 #endif
     }
-    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(text),
-                                 PyUnicode_GET_SIZE(text),
-                                 PyBytes_AS_STRING(self->errors), 0);
+    return _PyUnicode_EncodeUTF32(text,
+                                  PyBytes_AS_STRING(self->errors), 0);
 }
 
 static PyObject *
