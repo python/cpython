@@ -269,7 +269,8 @@ class ImportTests(unittest.TestCase):
         source = TESTFN + '.py'
         os.mkdir(source)
         try:
-            self.assertRaises(IOError, imp.find_module, TESTFN, ["."])
+            self.assertRaises((ImportError, IOError),
+                              imp.find_module, TESTFN, ["."])
         finally:
             os.rmdir(source)
 
