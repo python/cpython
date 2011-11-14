@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13389: Full garbage collection passes now clear the freelists for
+  list and dict objects.  They already cleared other freelists in the
+  interpreter.
+
 - Issue #13327: Remove the need for an explicit None as the second argument
   to os.utime, os.lutimes, os.futimes, os.futimens, os.futimesat, in
   order to update to the current time. Also added keyword argument

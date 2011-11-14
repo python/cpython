@@ -62,6 +62,8 @@ PyAPI_FUNC(int) PyList_Reverse(PyObject *);
 PyAPI_FUNC(PyObject *) PyList_AsTuple(PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
+
+PyAPI_FUNC(int) PyList_ClearFreeList(void);
 #endif
 
 /* Macro, trading safety for speed */

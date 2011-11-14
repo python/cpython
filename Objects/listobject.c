@@ -97,16 +97,23 @@ show_alloc(void)
 static PyListObject *free_list[PyList_MAXFREELIST];
 static int numfree = 0;
 
-void
-PyList_Fini(void)
+int
+PyList_ClearFreeList(void)
 {
     PyListObject *op;
-
+    int ret = numfree;
     while (numfree) {
         op = free_list[--numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
+    return ret;
+}
+
+void
+PyList_Fini(void)
+{
+    PyList_ClearFreeList();
 }
 
 PyObject *
