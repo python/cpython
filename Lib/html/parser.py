@@ -30,8 +30,8 @@ attrfind = re.compile(
     r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[^\s"\'=<>`]*))?')
 attrfind_tolerant = re.compile(
-    r',?\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
-    r'(\'[^\']*\'|"[^"]*"|[^>\s]*))?')
+    r'\s*((?<=[\'"\s])[^\s/>][^\s/=>]*)(\s*=+\s*'
+    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?')
 locatestarttagend = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
   (?:\s+                             # whitespace before attribute name
@@ -49,16 +49,16 @@ locatestarttagend = re.compile(r"""
 locatestarttagend_tolerant = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
   (?:\s*                             # optional whitespace before attribute name
-    (?:[a-zA-Z_][-.:a-zA-Z0-9_]*     # attribute name
-      (?:\s*=\s*                     # value indicator
+    (?:(?<=['"\s])[^\s/>][^\s/=>]*   # attribute name
+      (?:\s*=+\s*                    # value indicator
         (?:'[^']*'                   # LITA-enclosed value
-          |\"[^\"]*\"                # LIT-enclosed value
-          |[^'\">\s]+                # bare value
+          |"[^"]*"                   # LIT-enclosed value
+          |(?!['"])[^>\s]*           # bare value
          )
          (?:\s*,)*                   # possibly followed by a comma
-       )?
-     )
-   )*
+       )?\s*
+     )*
+   )?
   \s*                                # trailing whitespace
 """, re.VERBOSE)
 endendtag = re.compile('>')
@@ -295,6 +295,7 @@ class HTMLParser(_markupbase.ParserBase):
             elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
+            if attrvalue:
                 attrvalue = self.unescape(attrvalue)
             attrs.append((attrname.lower(), attrvalue))
             k = m.end()
