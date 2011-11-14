@@ -129,6 +129,8 @@ PyAPI_FUNC(int) _PyDict_Contains(PyObject *mp, PyObject *key, Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
+
+PyAPI_FUNC(int) PyDict_ClearFreeList(void);
 #endif
 
 /* PyDict_Update(mp, other) is equivalent to PyDict_Merge(mp, other, 1). */
