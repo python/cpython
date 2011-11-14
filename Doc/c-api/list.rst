@@ -142,3 +142,10 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
+
+
+.. c:function:: int PyList_ClearFreeList()
+
+   Clear the free list. Return the total number of freed items.
+
+   .. versionadded:: 3.3

@@ -217,16 +217,23 @@ show_track(void)
 static PyDictObject *free_list[PyDict_MAXFREELIST];
 static int numfree = 0;
 
-void
-PyDict_Fini(void)
+int
+PyDict_ClearFreeList(void)
 {
     PyDictObject *op;
-
+    int ret = numfree;
     while (numfree) {
         op = free_list[--numfree];
         assert(PyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
+    return ret;
+}
+
+void
+PyDict_Fini(void)
+{
+    PyDict_ClearFreeList();
 }
 
 PyObject *
