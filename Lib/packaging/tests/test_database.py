@@ -10,6 +10,7 @@ from textwrap import dedent
 from packaging.tests.test_util import GlobTestCaseBase
 from packaging.tests.support import requires_zlib
 
+import packaging.database
 from packaging.config import get_resources_dests
 from packaging.errors import PackagingError
 from packaging.metadata import Metadata
@@ -278,6 +279,12 @@ class TestDatabase(support.LoggingCatcher,
         super(TestDatabase, self).setUp()
         sys.path.insert(0, self.fake_dists_path)
         self.addCleanup(sys.path.remove, self.fake_dists_path)
+
+    def test_caches(self):
+        # sanity check for internal caches
+        for name in ('_cache_name', '_cache_name_egg',
+                     '_cache_path', '_cache_path_egg'):
+            self.assertEqual(getattr(packaging.database, name), {})
 
     def test_distinfo_dirname(self):
         # Given a name and a version, we expect the distinfo_dirname function
