@@ -27,14 +27,6 @@ class ManifestTestCase(support.TempdirManager,
                        support.LoggingCatcher,
                        unittest.TestCase):
 
-    def setUp(self):
-        super(ManifestTestCase, self).setUp()
-        self.cwd = os.getcwd()
-
-    def tearDown(self):
-        os.chdir(self.cwd)
-        super(ManifestTestCase, self).tearDown()
-
     def assertNoWarnings(self):
         self.assertEqual(self.get_logs(), [])
 
