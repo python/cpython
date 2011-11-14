@@ -226,13 +226,11 @@ DOCTYPE html [
         self._parse_error("<a<a>")
         self._parse_error("</a<a>")
         self._parse_error("<!")
-        self._parse_error("<a $>")
         self._parse_error("<a")
         self._parse_error("<a foo='bar'")
         self._parse_error("<a foo='bar")
         self._parse_error("<a foo='>'")
         self._parse_error("<a foo='>")
-        self._parse_error("<a foo=>")
 
     def test_declaration_junk_chars(self):
         self._parse_error("<!DOCTYPE foo $ >")
@@ -352,12 +350,84 @@ class AttributesTestCase(TestCaseBase):
         self._run_check(
             "<a a.b='v' c:d=v e-f=v>",
             [("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")])])
-
+        self._run_check(
+            "<a $><b $=%><c \=/>",
+            [("starttag", "a", [("$", None)]),
+             ("starttag", "b", [("$", "%")]),
+             ("starttag", "c", [("\\", "/")])])
 
     def test_entityrefs_in_attributes(self):
         self._run_check(
             "<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>",
             [("starttag", "html", [("foo", u"\u20AC&aa&unsupported;")])])
+
+    def test_entities_in_attribute_value(self):
+        # see #1200313
+        for entity in ['&', '&amp;', '&#38;', '&#x26;']:
+            self._run_check('<a href="%s">' % entity,
+                            [("starttag", "a", [("href", "&")])])
+            self._run_check("<a href='%s'>" % entity,
+                            [("starttag", "a", [("href", "&")])])
+            self._run_check("<a href=%s>" % entity,
+                            [("starttag", "a", [("href", "&")])])
+
+    def test_malformed_attributes(self):
+        # see #13357
+        html = (
+            "<a href=test'style='color:red;bad1'>test - bad1</a>"
+            "<a href=test'+style='color:red;ba2'>test - bad2</a>"
+            "<a href=test'&nbsp;style='color:red;bad3'>test - bad3</a>"
+            "<a href = test'&nbsp;style='color:red;bad4'  >test - bad4</a>"
+        )
+        expected = [
+            ('starttag', 'a', [('href', "test'style='color:red;bad1'")]),
+            ('data', 'test - bad1'), ('endtag', 'a'),
+            ('starttag', 'a', [('href', "test'+style='color:red;ba2'")]),
+            ('data', 'test - bad2'), ('endtag', 'a'),
+            ('starttag', 'a', [('href', u"test'\xa0style='color:red;bad3'")]),
+            ('data', 'test - bad3'), ('endtag', 'a'),
+            ('starttag', 'a', [('href', u"test'\xa0style='color:red;bad4'")]),
+            ('data', 'test - bad4'), ('endtag', 'a')
+        ]
+        self._run_check(html, expected)
+
+    def test_malformed_adjacent_attributes(self):
+        # see #12629
+        self._run_check('<x><y z=""o"" /></x>',
+                        [('starttag', 'x', []),
+                            ('startendtag', 'y', [('z', ''), ('o""', None)]),
+                            ('endtag', 'x')])
+        self._run_check('<x><y z="""" /></x>',
+                        [('starttag', 'x', []),
+                            ('startendtag', 'y', [('z', ''), ('""', None)]),
+                            ('endtag', 'x')])
+
+    # see #755670 for the following 3 tests
+    def test_adjacent_attributes(self):
+        self._run_check('<a width="100%"cellspacing=0>',
+                        [("starttag", "a",
+                          [("width", "100%"), ("cellspacing","0")])])
+
+        self._run_check('<a id="foo"class="bar">',
+                        [("starttag", "a",
+                          [("id", "foo"), ("class","bar")])])
+
+    def test_missing_attribute_value(self):
+        self._run_check('<a v=>',
+                        [("starttag", "a", [("v", "")])])
+
+    def test_javascript_attribute_value(self):
+        self._run_check("<a href=javascript:popup('/popup/help.html')>",
+                        [("starttag", "a",
+                          [("href", "javascript:popup('/popup/help.html')")])])
+
+    def test_end_tag_in_attribute_value(self):
+        # see #1745761
+        self._run_check("<a href='http://www.example.org/\">;'>spam</a>",
+                        [("starttag", "a",
+                          [("href", "http://www.example.org/\">;")]),
+                         ("data", "spam"), ("endtag", "a")])
+
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase, AttributesTestCase)
