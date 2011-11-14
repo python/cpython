@@ -6,7 +6,8 @@
 
 
 This module provides access to the :c:func:`select` and :c:func:`poll` functions
-available in most operating systems, :c:func:`epoll` available on Linux 2.5+ and
+available in most operating systems, :c:func:`devpoll` available on
+Solaris and derivatives, :c:func:`epoll` available on Linux 2.5+ and
 :c:func:`kqueue` available on most BSD.
 Note that on Windows, it only works for sockets; on other operating systems,
 it also works for other file types (in particular, on Unix, it works on pipes).
@@ -23,6 +24,19 @@ The module defines the following:
    .. versionchanged:: 3.3
       Following :pep:`3151`, this class was made an alias of :exc:`OSError`.
 
+
+.. function:: devpoll()
+   (Only supported on Solaris and derivatives.)  Returns a ``/dev/poll``
+   polling object; see section :ref:`devpoll-objects` below for the
+   methods supported by devpoll objects.
+
+   :c:func:`devpoll` objects are linked to the number of file
+   descriptors allowed at the time of instantiation. If your program
+   reduces this value, :c:func:`devpoll` will fail. If your program
+   increases this value, c:func:`devpoll` may return an
+   incomplete list of active file descriptors.
+
+   .. versionadded:: 3.3
 
 .. function:: epoll(sizehint=-1)
 
@@ -105,6 +119,74 @@ The module defines the following:
    This value is guaranteed by POSIX to be at least 512.  Availability: Unix.
 
    .. versionadded:: 3.2
+
+
+.. _devpoll-objects:
+
+``/dev/poll`` Polling Objects
+----------------------------------------------
+
+   http://developers.sun.com/solaris/articles/using_devpoll.html
+   http://developers.sun.com/solaris/articles/polling_efficient.html
+
+Solaris and derivatives have ``/dev/poll``. While :c:func:`select` is
+O(highest file descriptor) and :c:func:`poll` is O(number of file
+descriptors), ``/dev/poll`` is O(active file descriptors).
+
+``/dev/poll`` behaviour is very close to the standard :c:func:`poll`
+object.
+
+
+.. method:: devpoll.register(fd[, eventmask])
+
+   Register a file descriptor with the polling object.  Future calls to the
+   :meth:`poll` method will then check whether the file descriptor has any pending
+   I/O events.  *fd* can be either an integer, or an object with a :meth:`fileno`
+   method that returns an integer.  File objects implement :meth:`fileno`, so they
+   can also be used as the argument.
+
+   *eventmask* is an optional bitmask describing the type of events you want to
+   check for. The constants are the same that with :c:func:`poll`
+   object. The default value is a combination of the constants :const:`POLLIN`,
+   :const:`POLLPRI`, and :const:`POLLOUT`.
+
+   .. warning::
+
+      Registering a file descriptor that's already registered is not an
+      error, but the result is undefined. The appropiate action is to
+      unregister or modify it first. This is an important difference
+      compared with :c:func:`poll`.
+
+
+.. method:: devpoll.modify(fd[, eventmask])
+
+   This method does an :meth:`unregister` followed by a
+   :meth:`register`. It is (a bit) more efficient that doing the same
+   explicitly.
+
+
+.. method:: devpoll.unregister(fd)
+
+   Remove a file descriptor being tracked by a polling object.  Just like the
+   :meth:`register` method, *fd* can be an integer or an object with a
+   :meth:`fileno` method that returns an integer.
+
+   Attempting to remove a file descriptor that was never registered is
+   safely ignored.
+
+
+.. method:: devpoll.poll([timeout])
+
+   Polls the set of registered file descriptors, and returns a possibly-empty list
+   containing ``(fd, event)`` 2-tuples for the descriptors that have events or
+   errors to report. *fd* is the file descriptor, and *event* is a bitmask with
+   bits set for the reported events for that descriptor --- :const:`POLLIN` for
+   waiting input, :const:`POLLOUT` to indicate that the descriptor can be written
+   to, and so forth. An empty list indicates that the call timed out and no file
+   descriptors had any events to report. If *timeout* is given, it specifies the
+   length of time in milliseconds which the system will wait for events before
+   returning. If *timeout* is omitted, -1, or :const:`None`, the call will
+   block until there is an event for this poll object.
 
 
 .. _epoll-objects:
