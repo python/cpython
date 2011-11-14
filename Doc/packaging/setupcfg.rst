@@ -779,7 +779,7 @@ needs to have its options defined in a dedicated section.  Here's an example::
    extra_compile_args =
        -fPIC -O2
        -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
-       /DGECODE_VERSION='win32' -- sys.platform == 'win32'
+       /DGECODE_VERSION=win32 -- sys.platform == 'win32'
 
 The section name must start with ``extension:``; the right-hand part is used as
 the full name (including a parent package, if any) of the extension.  Whitespace
