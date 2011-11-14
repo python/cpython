@@ -90,7 +90,7 @@ This module contains various helpers for the other modules.
    Search the path for a given executable name.
 
 
-.. function:: execute(func, args[, msg=None, verbose=0, dry_run=0])
+.. function:: execute(func, args, msg=None, verbose=0, dry_run=0)
 
    Perform some action that affects the outside world (for instance, writing to
    the filesystem).  Such actions are special because they are disabled by the
@@ -117,7 +117,8 @@ This module contains various helpers for the other modules.
    :exc:`ValueError` if *val* is anything else.
 
 
-.. function:: byte_compile(py_files[, optimize=0, force=0, prefix=None, base_dir=None, verbose=1, dry_run=0, direct=None])
+.. function:: byte_compile(py_files, optimize=0, force=0, prefix=None, \
+                           base_dir=None, dry_run=0, direct=None)
 
    Byte-compile a collection of Python source files to either :file:`.pyc` or
    :file:`.pyo` files in a :file:`__pycache__` subdirectory (see :pep:`3147`),
@@ -130,6 +131,9 @@ This module contains various helpers for the other modules.
    * ``0`` - don't optimize (generate :file:`.pyc`)
    * ``1`` - normal optimization (like ``python -O``)
    * ``2`` - extra optimization (like ``python -OO``)
+
+   This function is independent from the running Python's :option:`-O` or
+   :option:`-B` options; it is fully controlled by the parameters passed in.
 
    If *force* is true, all files are recompiled regardless of timestamps.
 
@@ -149,6 +153,3 @@ This module contains various helpers for the other modules.
    figure out to use direct compilation or not (see the source for details).
    The *direct* flag is used by the script generated in indirect mode; unless
    you know what you're doing, leave it set to ``None``.
-
-   This function is independent from the running Python's :option:`-O` or
-   :option:`-B` options; it is fully controlled by the parameters passed in.
