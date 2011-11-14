@@ -1066,7 +1066,7 @@ class saved_test_environment:
         keys = set(packaging.command._COMMANDS)
         return id_, keys
     def restore_packaging_command__COMMANDS(self, saved):
-        # if command._COMMANDS was bound to another dict obhect, we can't
+        # if command._COMMANDS was bound to another dict object, we can't
         # restore the previous object and contents, because the get_ method
         # above does not return the dict object (to ignore changes in values)
         for key in packaging.command._COMMANDS.keys() - saved[1]:

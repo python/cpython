@@ -149,7 +149,7 @@ Getting a list of all pysetup actions and global options::
        list: List installed projects
        graph: Display a graph
        create: Create a project
-       generate-setup: Generate a backward-comptatible setup.py
+       generate-setup: Generate a backward-compatible setup.py
 
    To get more help on an action, use:
 
