@@ -10,7 +10,7 @@ from packaging.errors import PackagingOptionError
 
 class Command:
     """Abstract base class for defining command classes, the "worker bees"
-    of the Packaging.  A useful analogy for command classes is to think of
+    of Packaging.  A useful analogy for command classes is to think of
     them as subroutines with local variables called "options".  The options
     are "declared" in 'initialize_options()' and "defined" (given their
     final values, aka "finalized") in 'finalize_options()', both of which
@@ -386,7 +386,6 @@ class Command:
         if self.dry_run:
             return  # see if we want to display something
 
-
         return util.copy_tree(infile, outfile, preserve_mode, preserve_times,
             preserve_symlinks, not self.force, dry_run=self.dry_run)
 
@@ -439,3 +438,20 @@ class Command:
         # Otherwise, print the "skip" message
         else:
             logger.debug(skip_msg)
+
+    def byte_compile(self, files, prefix=None):
+        """Byte-compile files to pyc and/or pyo files.
+
+        This method requires that the calling class define compile and
+        optimize options, like build_py and install_lib.  It also
+        automatically respects the force and dry-run options.
+
+        prefix, if given, is a string that will be stripped off the
+        filenames encoded in bytecode files.
+        """
+        if self.compile:
+            util.byte_compile(files, optimize=False, prefix=prefix,
+                              force=self.force, dry_run=self.dry_run)
+        if self.optimize:
+            util.byte_compile(files, optimize=self.optimize, prefix=prefix,
+                              force=self.force, dry_run=self.dry_run)
