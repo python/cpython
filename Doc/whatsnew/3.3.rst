@@ -596,7 +596,7 @@ Other issues
    paths.  In previous versions, it did.  See changeset for doc changes in
    various files.  Contributed by Carl Meyer with editions by Éric Araujo.
 
-.. Issue #10998: -Q command-line flags are related artifacts have been
+.. Issue #10998: the -Q command-line flag and related artifacts have been
    removed.  Code checking sys.flags.division_warning will need updating.
    Contributed by Éric Araujo.
 
