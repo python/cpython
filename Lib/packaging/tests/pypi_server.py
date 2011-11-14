@@ -33,7 +33,6 @@ import os
 import queue
 import select
 import threading
-import socketserver
 from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from xmlrpc.server import SimpleXMLRPCServer
@@ -270,7 +269,7 @@ class PyPIRequestHandler(SimpleHTTPRequestHandler):
 class PyPIXMLRPCServer(SimpleXMLRPCServer):
     def server_bind(self):
         """Override server_bind to store the server name."""
-        socketserver.TCPServer.server_bind(self)
+        super(PyPIXMLRPCServer, self).server_bind()
         host, port = self.socket.getsockname()[:2]
         self.server_port = port
 
@@ -371,12 +370,13 @@ class MockDist:
             'requires_python': self.requires_python,
             'classifiers': [],
             'name': self.name,
-            'licence': self.licence,
+            'licence': self.licence,  # XXX licence or license?
             'summary': self.summary,
             'home_page': self.homepage,
             'stable_version': self.stable_version,
-            'provides_dist': self.provides_dist or "%s (%s)" % (self.name,
-                                                              self.version),
+            # FIXME doesn't that reproduce the bug from 6527d3106e9f?
+            'provides_dist': (self.provides_dist or
+                             "%s (%s)" % (self.name, self.version)),
             'requires': self.requires,
             'cheesecake_installability_id': self.cheesecake_installability_id,
         }

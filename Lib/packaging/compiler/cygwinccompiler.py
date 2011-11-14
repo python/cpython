@@ -233,12 +233,11 @@ class CygwinCCompiler(UnixCCompiler):
         if not debug:
             extra_preargs.append("-s")
 
-        UnixCCompiler.link(self, target_desc, objects, output_filename,
-                           output_dir, libraries, library_dirs,
-                           runtime_library_dirs,
-                           None, # export_symbols, we do this in our def-file
-                           debug, extra_preargs, extra_postargs, build_temp,
-                           target_lang)
+        super(CygwinCCompiler, self).link(
+            target_desc, objects, output_filename, output_dir, libraries,
+            library_dirs, runtime_library_dirs,
+            None, # export_symbols, we do this in our def-file
+            debug, extra_preargs, extra_postargs, build_temp, target_lang)
 
     # -- Miscellaneous methods -----------------------------------------
 
