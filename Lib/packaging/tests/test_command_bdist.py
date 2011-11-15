@@ -1,7 +1,8 @@
 """Tests for distutils.command.bdist."""
 import os
+from test.support import captured_stdout
 from packaging.command.bdist import bdist, show_formats
-from packaging.tests import unittest, support, captured_stdout
+from packaging.tests import unittest, support
 
 
 class BuildTestCase(support.TempdirManager,
@@ -42,7 +43,9 @@ class BuildTestCase(support.TempdirManager,
                             '%s should take --skip-build from bdist' % name)
 
     def test_show_formats(self):
-        __, stdout = captured_stdout(show_formats)
+        with captured_stdout() as stdout:
+            show_formats()
+        stdout = stdout.getvalue()
 
         # the output should be a header line + one line per format
         num_formats = len(bdist.format_commands)
