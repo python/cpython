@@ -26,6 +26,7 @@ The module defines the following:
 
 
 .. function:: devpoll()
+
    (Only supported on Solaris and derivatives.)  Returns a ``/dev/poll``
    polling object; see section :ref:`devpoll-objects` below for the
    methods supported by devpoll objects.
@@ -33,7 +34,7 @@ The module defines the following:
    :c:func:`devpoll` objects are linked to the number of file
    descriptors allowed at the time of instantiation. If your program
    reduces this value, :c:func:`devpoll` will fail. If your program
-   increases this value, c:func:`devpoll` may return an
+   increases this value, :c:func:`devpoll` may return an
    incomplete list of active file descriptors.
 
    .. versionadded:: 3.3
