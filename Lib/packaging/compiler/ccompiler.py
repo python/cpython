@@ -79,10 +79,9 @@ class CCompiler:
                    }
     language_order = ["c++", "objc", "c"]
 
-    def __init__(self, verbose=0, dry_run=False, force=False):
+    def __init__(self, dry_run=False, force=False):
         self.dry_run = dry_run
         self.force = force
-        self.verbose = verbose
 
         # 'output_dir': a common output directory for object, library,
         # shared object, and shared library files

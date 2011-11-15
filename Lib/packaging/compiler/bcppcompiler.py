@@ -47,8 +47,8 @@ class BCPPCompiler(CCompiler) :
     exe_extension = '.exe'
 
 
-    def __init__(self, verbose=0, dry_run=False, force=False):
-        super(BCPPCompiler, self).__init__(verbose, dry_run, force)
+    def __init__(self, dry_run=False, force=False):
+        super(BCPPCompiler, self).__init__(dry_run, force)
 
         # These executables are assumed to all be in the path.
         # Borland doesn't seem to use any special registry settings to

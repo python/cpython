@@ -15,7 +15,7 @@ function.  Compiler types provided by Packaging are listed in
 Public functions
 ----------------
 
-.. function:: new_compiler(plat=None, compiler=None, verbose=0, dry_run=0, force=0)
+.. function:: new_compiler(plat=None, compiler=None, dry_run=False, force=False)
 
    Factory function to generate an instance of some
    :class:`~.ccompiler.CCompiler` subclass for the requested platform or
@@ -165,7 +165,7 @@ link steps needed to build a single project. Methods are provided to set
 options for the compiler --- macro definitions, include directories, link path,
 libraries and the like.
 
-.. class:: CCompiler([verbose=0, dry_run=0, force=0])
+.. class:: CCompiler(dry_run=False, force=False)
 
    The abstract base class :class:`CCompiler` defines the interface that must be
    implemented by real compiler classes.  The class also has some utility
@@ -180,11 +180,11 @@ libraries and the like.
    per-compilation or per-link basis.
 
    The constructor for each subclass creates an instance of the Compiler object.
-   Flags are *verbose* (show verbose output), *dry_run* (don't actually execute
+   Flags are *dry_run* (don't actually execute
    the steps) and *force* (rebuild everything, regardless of dependencies).  All
-   of these flags default to ``0`` (off). Note that you probably don't want to
+   of these flags default to ``False`` (off). Note that you probably don't want to
    instantiate :class:`CCompiler` or one of its subclasses directly - use the
-   :func:`packaging.CCompiler.new_compiler` factory function instead.
+   :func:`new_compiler` factory function instead.
 
    The following methods allow you to manually alter compiler options for the
    instance of the Compiler class.
