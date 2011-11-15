@@ -1,5 +1,10 @@
-import test.support, unittest
-import sys, codecs, html.entities, unicodedata
+import codecs
+import html.entities
+import sys
+import test.support
+import unicodedata
+import unittest
+import warnings
 
 try:
     import ctypes
@@ -621,12 +626,15 @@ class CodecCallbackTest(unittest.TestCase):
                 ("utf-7", b"+x-"),
                 ("unicode-internal", b"\x00"),
             ):
-                self.assertRaises(
-                    TypeError,
-                    bytes.decode,
-                    enc,
-                    "test.badhandler"
-                )
+                with warnings.catch_warnings():
+                    # unicode-internal has been deprecated
+                    warnings.simplefilter("ignore", DeprecationWarning)
+                    self.assertRaises(
+                        TypeError,
+                        bytes.decode,
+                        enc,
+                        "test.badhandler"
+                    )
 
     def test_lookup(self):
         self.assertEqual(codecs.strict_errors, codecs.lookup_error("strict"))
@@ -842,8 +850,11 @@ class CodecCallbackTest(unittest.TestCase):
             else:
                 raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error("test.replacing", replacing)
-        for (encoding, data) in baddata:
-            self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
+        with warnings.catch_warnings():
+            # unicode-internal has been deprecated
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for (encoding, data) in baddata:
+                self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
 
         def mutating(exc):
             if isinstance(exc, UnicodeDecodeError):

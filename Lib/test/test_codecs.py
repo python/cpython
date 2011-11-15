@@ -1,8 +1,12 @@
-from test import support
-import unittest
+import _testcapi
 import codecs
+import io
 import locale
-import sys, _testcapi, io
+import sys
+import unittest
+import warnings
+
+from test import support
 
 if sys.platform == 'win32':
     VISTA_OR_LATER = (sys.getwindowsversion().major >= 6)
@@ -1051,12 +1055,16 @@ class UnicodeInternalTest(unittest.TestCase):
         self.assertEqual(("ab", 12), ignored)
 
     def test_encode_length(self):
-        # Issue 3739
-        encoder = codecs.getencoder("unicode_internal")
-        self.assertEqual(encoder("a")[1], 1)
-        self.assertEqual(encoder("\xe9\u0142")[1], 2)
+        with warnings.catch_warnings():
+            # unicode-internal has been deprecated
+            warnings.simplefilter("ignore", DeprecationWarning)
 
-        self.assertEqual(codecs.escape_encode(br'\x00')[1], 4)
+            # Issue 3739
+            encoder = codecs.getencoder("unicode_internal")
+            self.assertEqual(encoder("a")[1], 1)
+            self.assertEqual(encoder("\xe9\u0142")[1], 2)
+
+            self.assertEqual(codecs.escape_encode(br'\x00')[1], 4)
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
@@ -1512,10 +1520,15 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
             elif encoding == "latin_1":
                 name = "latin_1"
             self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
-            (b, size) = codecs.getencoder(encoding)(s)
-            self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
-            (chars, size) = codecs.getdecoder(encoding)(b)
-            self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
+
+            with warnings.catch_warnings():
+                # unicode-internal has been deprecated
+                warnings.simplefilter("ignore", DeprecationWarning)
+
+                (b, size) = codecs.getencoder(encoding)(s)
+                self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
+                (chars, size) = codecs.getdecoder(encoding)(b)
+                self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
 
             if encoding not in broken_unicode_with_streams:
                 # check stream reader/writer
