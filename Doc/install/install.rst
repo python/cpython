@@ -842,6 +842,8 @@ Additionally, there's a ``global`` section for options that affect every command
 Sections consist of one or more lines containing a single option specified as
 ``option = value``.
 
+.. XXX use dry-run in the next example or use a pysetup option as example
+
 For example, here's a complete configuration file that forces all commands to
 run quietly by default::
 

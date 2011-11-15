@@ -153,8 +153,7 @@ def show_compilers():
     pretty_printer.print_help("List of available compilers:")
 
 
-def new_compiler(plat=None, compiler=None, verbose=0, dry_run=False,
-                 force=False):
+def new_compiler(plat=None, compiler=None, dry_run=False, force=False):
     """Generate an instance of some CCompiler subclass for the supplied
     platform/compiler combination.  'plat' defaults to 'os.name'
     (eg. 'posix', 'nt'), and 'compiler' defaults to the default compiler
@@ -183,11 +182,7 @@ def new_compiler(plat=None, compiler=None, verbose=0, dry_run=False,
         cls = resolve_name(cls)
         _COMPILERS[compiler] = cls
 
-
-    # XXX The None is necessary to preserve backwards compatibility
-    # with classes that expect verbose to be the first positional
-    # argument.
-    return cls(None, dry_run, force)
+    return cls(dry_run, force)
 
 
 def gen_preprocess_options(macros, include_dirs):
