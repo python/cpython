@@ -84,24 +84,29 @@ def _write_atomic(path, data):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
-    if not sys.platform.startswith('win'):
-        # On POSIX-like platforms, renaming is atomic. id() is used to generate
-        # a pseudo-random filename.
-        path_tmp = '{}.{}'.format(path, id(path))
-        fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, 0o666)
-        try:
-            with _io.FileIO(fd, 'wb') as file:
-                file.write(data)
-            _os.rename(path_tmp, path)
-        except OSError:
-            try:
-                _os.unlink(path_tmp)
-            except OSError:
-                pass
-            raise
-    else:
-        with _io.FileIO(path, 'wb') as file:
+    # Renaming should be atomic on most platforms (including Windows).
+    # Under Windows, the limitation is that we can't rename() to an existing
+    # path, while POSIX will overwrite it. But here we don't really care
+    # if there is a glimpse of time during which the final pyc file doesn't
+    # exist.
+    # id() is used to generate a pseudo-random filename.
+    path_tmp = '{}.{}'.format(path, id(path))
+    fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, 0o666)
+    try:
+        with _io.FileIO(fd, 'wb') as file:
             file.write(data)
+        try:
+            _os.rename(path_tmp, path)
+        except FileExistsError:
+            # Windows (if we had access to MoveFileEx, we could overwrite)
+            _os.unlink(path)
+            _os.rename(path_tmp, path)
+    except OSError:
+        try:
+            _os.unlink(path_tmp)
+        except OSError:
+            pass
+        raise
 
 
 def _wrap(new, old):
