@@ -368,7 +368,7 @@ actions = [
     ('list', 'List installed projects', _list),
     ('graph', 'Display a graph', _graph),
     ('create', 'Create a project', _create),
-    ('generate-setup', 'Generate a backward-comptatible setup.py', _generate),
+    ('generate-setup', 'Generate a backward-compatible setup.py', _generate),
 ]
 
 

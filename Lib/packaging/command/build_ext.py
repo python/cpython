@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import site
-import logging
 import sysconfig
 
 from packaging.util import get_platform
@@ -288,14 +287,9 @@ class build_ext(Command):
             self.libraries.extend(build_clib.get_library_names() or [])
             self.library_dirs.append(build_clib.build_clib)
 
-        # Temporary kludge until we remove the verbose arguments and use
-        # logging everywhere
-        verbose = logger.getEffectiveLevel() >= logging.DEBUG
-
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
         self.compiler_obj = new_compiler(compiler=self.compiler,
-                                         verbose=verbose,
                                          dry_run=self.dry_run,
                                          force=self.force)
 

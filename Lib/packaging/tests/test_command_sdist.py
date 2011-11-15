@@ -17,8 +17,8 @@ from packaging.util import find_executable
 from packaging.errors import PackagingOptionError
 from packaging.command.sdist import sdist, show_formats
 
+from test.support import captured_stdout
 from packaging.tests import support, unittest
-from packaging.tests import captured_stdout
 from packaging.tests.support import requires_zlib
 
 
@@ -234,7 +234,9 @@ class SDistTestCase(support.TempdirManager,
         self.assertIn("'setup.cfg' file not found", warnings[1])
 
     def test_show_formats(self):
-        __, stdout = captured_stdout(show_formats)
+        with captured_stdout() as stdout:
+            show_formats()
+        stdout = stdout.getvalue()
 
         # the output should be a header line + one line per format
         num_formats = len(get_archive_formats())

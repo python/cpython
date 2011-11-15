@@ -18,7 +18,7 @@ class build_py(Command, Mixin2to3):
 
     description = "build pure Python modules (copy to build directory)"
 
-    # The options for controlling byte compilations are two independent sets;
+    # The options for controlling byte compilation are two independent sets;
     # more info in install_lib or the reST docs
 
     user_options = [
@@ -113,7 +113,8 @@ class build_py(Command, Mixin2to3):
             self.run_2to3(self._updated_files, self._doctests_2to3,
                                             self.use_2to3_fixers)
 
-        self.byte_compile(self.get_outputs(include_bytecode=False))
+        self.byte_compile(self.get_outputs(include_bytecode=False),
+                          prefix=self.build_lib)
 
     # -- Top-level worker functions ------------------------------------
 
@@ -335,11 +336,9 @@ class build_py(Command, Mixin2to3):
             outputs.append(filename)
             if include_bytecode:
                 if self.compile:
-                    outputs.append(imp.cache_from_source(filename,
-                                                         debug_override=True))
-                if self.optimize > 0:
-                    outputs.append(imp.cache_from_source(filename,
-                                                         debug_override=False))
+                    outputs.append(imp.cache_from_source(filename, True))
+                if self.optimize:
+                    outputs.append(imp.cache_from_source(filename, False))
 
         outputs += [
             os.path.join(build_dir, filename)
@@ -391,19 +390,3 @@ class build_py(Command, Mixin2to3):
             for package_, module, module_file in modules:
                 assert package == package_
                 self.build_module(module, module_file, package)
-
-    def byte_compile(self, files):
-        from packaging.util import byte_compile  # FIXME use compileall
-        prefix = self.build_lib
-        if prefix[-1] != os.sep:
-            prefix = prefix + os.sep
-
-        # XXX this code is essentially the same as the 'byte_compile()
-        # method of the "install_lib" command, except for the determination
-        # of the 'prefix' string.  Hmmm.
-        if self.compile:
-            byte_compile(files, optimize=0,
-                         force=self.force, prefix=prefix, dry_run=self.dry_run)
-        if self.optimize > 0:
-            byte_compile(files, optimize=self.optimize,
-                         force=self.force, prefix=prefix, dry_run=self.dry_run)

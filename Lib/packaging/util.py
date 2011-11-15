@@ -259,7 +259,7 @@ def split_multiline(value):
             if element]
 
 
-def execute(func, args, msg=None, verbose=0, dry_run=False):
+def execute(func, args, msg=None, dry_run=False):
     """Perform some action that affects the outside world.
 
     Some actions (e.g. writing to the filesystem) are special because
@@ -296,7 +296,7 @@ def strtobool(val):
 
 
 def byte_compile(py_files, optimize=0, force=False, prefix=None,
-                 base_dir=None, verbose=0, dry_run=False, direct=None):
+                 base_dir=None, dry_run=False, direct=None):
     """Byte-compile a collection of Python source files to either .pyc
     or .pyo files in a __pycache__ subdirectory.
 
@@ -305,6 +305,9 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
+    This function is independent from the running Python's -O or -B options;
+    it is fully controlled by the parameters passed in.
+
     If 'force' is true, all files are recompiled regardless of
     timestamps.
 
@@ -325,10 +328,9 @@ def byte_compile(py_files, optimize=0, force=False, prefix=None,
     the source for details).  The 'direct' flag is used by the script
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
-
-    This function is independent from the running Python's -O or -B options;
-    it is fully controlled by the parameters passed in.
     """
+    # FIXME use compileall + remove direct/indirect shenanigans
+
     # First, if the caller didn't force us into direct or indirect mode,
     # figure out which mode we should be in.  We take a conservative
     # approach: choose direct mode *only* if the current interpreter is
@@ -381,15 +383,11 @@ files = [
                 script.write("""
 byte_compile(files, optimize=%r, force=%r,
              prefix=%r, base_dir=%r,
-             verbose=%r, dry_run=False,
+             dry_run=False,
              direct=True)
-""" % (optimize, force, prefix, base_dir, verbose))
+""" % (optimize, force, prefix, base_dir))
 
         cmd = [sys.executable, script_name]
-        if optimize == 1:
-            cmd.insert(1, "-O")
-        elif optimize == 2:
-            cmd.insert(1, "-OO")
 
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.pathsep.join(sys.path)
@@ -415,8 +413,10 @@ byte_compile(files, optimize=%r, force=%r,
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            debug_override = not optimize
-            cfile = imp.cache_from_source(file, debug_override)
+            # The second argument to cache_from_source forces the extension to
+            # be .pyc (if true) or .pyo (if false); without it, the extension
+            # would depend on the calling Python's -O option
+            cfile = imp.cache_from_source(file, not optimize)
             dfile = file
 
             if prefix:
@@ -681,7 +681,7 @@ if sys.platform == 'darwin':
     _cfg_target_split = None
 
 
-def spawn(cmd, search_path=True, verbose=0, dry_run=False, env=None):
+def spawn(cmd, search_path=True, dry_run=False, env=None):
     """Run another program specified as a command list 'cmd' in a new process.
 
     'cmd' is just the argument list for the new process, ie.
@@ -1331,10 +1331,9 @@ def get_install_method(path):
 
 # XXX to be replaced by shutil.copytree
 def copy_tree(src, dst, preserve_mode=True, preserve_times=True,
-              preserve_symlinks=False, update=False, verbose=True,
-              dry_run=False):
+              preserve_symlinks=False, update=False, dry_run=False):
     # FIXME use of this function is why we get spurious logging message on
-    # stdout when tests run; kill and replace by shuil!
+    # stdout when tests run; kill and replace by shutil!
     from distutils.file_util import copy_file
 
     if not dry_run and not os.path.isdir(src):
@@ -1351,7 +1350,7 @@ def copy_tree(src, dst, preserve_mode=True, preserve_times=True,
                   "error listing files in '%s': %s" % (src, errstr))
 
     if not dry_run:
-        _mkpath(dst, verbose=verbose)
+        _mkpath(dst)
 
     outputs = []
 
@@ -1361,8 +1360,7 @@ def copy_tree(src, dst, preserve_mode=True, preserve_times=True,
 
         if preserve_symlinks and os.path.islink(src_name):
             link_dest = os.readlink(src_name)
-            if verbose >= 1:
-                logger.info("linking %s -> %s", dst_name, link_dest)
+            logger.info("linking %s -> %s", dst_name, link_dest)
             if not dry_run:
                 os.symlink(link_dest, dst_name)
             outputs.append(dst_name)
@@ -1371,11 +1369,10 @@ def copy_tree(src, dst, preserve_mode=True, preserve_times=True,
             outputs.extend(
                 copy_tree(src_name, dst_name, preserve_mode,
                           preserve_times, preserve_symlinks, update,
-                          verbose=verbose, dry_run=dry_run))
+                          dry_run=dry_run))
         else:
             copy_file(src_name, dst_name, preserve_mode,
-                      preserve_times, update, verbose=verbose,
-                      dry_run=dry_run)
+                      preserve_times, update, dry_run=dry_run)
             outputs.append(dst_name)
 
     return outputs
@@ -1388,7 +1385,7 @@ _path_created = set()
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
-def _mkpath(name, mode=0o777, verbose=True, dry_run=False):
+def _mkpath(name, mode=0o777, dry_run=False):
     # Detect a common bug -- name is None
     if not isinstance(name, str):
         raise PackagingInternalError(
@@ -1423,9 +1420,7 @@ def _mkpath(name, mode=0o777, verbose=True, dry_run=False):
         if abs_head in _path_created:
             continue
 
-        if verbose >= 1:
-            logger.info("creating %s", head)
-
+        logger.info("creating %s", head)
         if not dry_run:
             try:
                 os.mkdir(head, mode)
@@ -1448,8 +1443,7 @@ def encode_multipart(fields, files, boundary=None):
 
     Returns (content_type: bytes, body: bytes) ready for http.client.HTTP.
     """
-    # Taken from
-    # http://code.activestate.com/recipes/146306-http-client-to-post-using-multipartform-data/
+    # Taken from http://code.activestate.com/recipes/146306
 
     if boundary is None:
         boundary = b'--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
