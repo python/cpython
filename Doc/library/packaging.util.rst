@@ -90,7 +90,7 @@ This module contains various helpers for the other modules.
    Search the path for a given executable name.
 
 
-.. function:: execute(func, args, msg=None, verbose=0, dry_run=0)
+.. function:: execute(func, args, msg=None, dry_run=False)
 
    Perform some action that affects the outside world (for instance, writing to
    the filesystem).  Such actions are special because they are disabled by the
