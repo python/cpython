@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
+  already accepts them).
+
 - Issue #13389: Full garbage collection passes now clear the freelists for
   list and dict objects.  They already cleared other freelists in the
   interpreter.
