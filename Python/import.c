@@ -1197,6 +1197,8 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     time_t mtime = srcstat->st_mtime;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
+    PyObject *cpathname_tmp;
+    Py_ssize_t cpathname_len;
 #else
     mode_t dirmode = (srcstat->st_mode |
                       S_IXUSR | S_IXGRP | S_IXOTH |
@@ -1255,18 +1257,29 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
     Py_DECREF(dirname);
 
+    /* We first write to a tmp file and then take advantage
+       of atomic renaming (which *should* be true even under Windows). */
 #ifdef MS_WINDOWS
-    (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
-    fd = _wopen(PyUnicode_AS_UNICODE(cpathname),
-                 O_EXCL | O_CREAT | O_WRONLY | O_TRUNC | O_BINARY,
-                 mode);
+    cpathname_len = PyUnicode_GET_LENGTH(cpathname);
+    cpathname_tmp = PyUnicode_New(cpathname_len + 4,
+                                  PyUnicode_MAX_CHAR_VALUE(cpathname));
+    if (cpathname_tmp == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 0, '.');
+    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 1, 't');
+    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 2, 'm');
+    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 3, 'p');
+    (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
+    fd = _wopen(PyUnicode_AS_UNICODE(cpathname_tmp),
+                O_EXCL | O_CREAT | O_WRONLY | O_BINARY,
+                mode);
     if (0 <= fd)
         fp = fdopen(fd, "wb");
     else
         fp = NULL;
 #else
-    /* Under POSIX, we first write to a tmp file and then take advantage
-       of atomic renaming. */
     cpathbytes = PyUnicode_EncodeFSDefault(cpathname);
     if (cpathbytes == NULL) {
         PyErr_Clear();
@@ -1294,7 +1307,9 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         if (Py_VerboseFlag)
             PySys_FormatStderr(
                 "# can't create %R\n", cpathname);
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+        Py_DECREF(cpathname_tmp);
+#else
         Py_DECREF(cpathbytes);
         Py_DECREF(cpathbytes_tmp);
 #endif
@@ -1315,7 +1330,8 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         /* Don't keep partial file */
         fclose(fp);
 #ifdef MS_WINDOWS
-        (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname));
+        (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
+        Py_DECREF(cpathname_tmp);
 #else
         (void) unlink(PyBytes_AS_STRING(cpathbytes_tmp));
         Py_DECREF(cpathbytes);
@@ -1324,8 +1340,20 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         return;
     }
     fclose(fp);
-    /* Under POSIX, do an atomic rename */
-#ifndef MS_WINDOWS
+    /* Do a (hopefully) atomic rename */
+#ifdef MS_WINDOWS
+    if (!MoveFileExW(PyUnicode_AS_UNICODE(cpathname_tmp),
+                     PyUnicode_AS_UNICODE(cpathname),
+                     MOVEFILE_REPLACE_EXISTING)) {
+        if (Py_VerboseFlag)
+            PySys_FormatStderr("# can't write %R\n", cpathname);
+        /* Don't keep tmp file */
+        (void) DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
+        Py_DECREF(cpathname_tmp);
+        return;
+    }
+    Py_DECREF(cpathname_tmp);
+#else
     if (rename(PyBytes_AS_STRING(cpathbytes_tmp),
                PyBytes_AS_STRING(cpathbytes))) {
         if (Py_VerboseFlag)
