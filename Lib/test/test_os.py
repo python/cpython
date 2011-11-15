@@ -1647,11 +1647,18 @@ class Win32DeprecatedBytesAPI(unittest.TestCase):
                 (os.rmdir, filename),
                 (os.startfile, filename),
                 (os.stat, filename),
-                (os.symlink, filename, filename),
                 (os.unlink, filename),
                 (os.utime, filename),
             ):
                 self.assertRaises(DeprecationWarning, func, *args)
+
+    @support.skip_unless_symlink
+    def test_symlink(self):
+        filename = os.fsencode(support.TESTFN)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning,
+                              os.symlink, filename, filename)
 
 
 @support.reap_threads
