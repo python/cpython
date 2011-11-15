@@ -374,6 +374,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13374: The Windows bytes API has been deprecated in the os module. Use
+  Unicode filenames instead of bytes filenames to not depend on the ANSI code
+  page anymore and to support any filename.
+
 - Issue #13297: Use bytes type to send and receive binary data through XMLRPC.
 
 - Issue #6397: Support "/dev/poll" polling objects in select module,

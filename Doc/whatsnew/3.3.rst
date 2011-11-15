@@ -573,6 +573,10 @@ Porting Python code
   with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
   you don't need to support older Python versions.
 
+* Issue #13374: The Windows bytes API has been deprecated in the :mod:`os`
+  module. Use Unicode filenames instead of bytes filenames to not depend on the
+  ANSI code page anymore and to support any filename.
+
 Porting C code
 --------------
 

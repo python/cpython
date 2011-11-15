@@ -1,6 +1,9 @@
 # Test the Unicode versions of normal file functions
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
-import sys, os, unittest
+import os
+import sys
+import unittest
+import warnings
 from unicodedata import normalize
 from test import support
 
@@ -155,7 +158,9 @@ class UnicodeFileTests(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
     def test_listdir(self):
         sf0 = set(self.files)
-        f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
         f2 = os.listdir(support.TESTFN)
         sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
         self.assertEqual(sf0, sf2, "%a != %a" % (sf0, sf2))
