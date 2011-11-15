@@ -889,51 +889,34 @@ buffered_read1(buffered *self, PyObject *args)
     if (n == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
-    if (!ENTER_BUFFERED(self))
-        return NULL;
-
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */
 
-    /* XXX: this mimicks the io.py implementation but is probably wrong.
-       If we need to read from the raw stream, then we could actually read
-       all `n` bytes asked by the caller (and possibly more, so as to fill
-       our buffer for the next reads). */
-
     have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (have > 0) {
-        if (n > have)
-            n = have;
-        res = PyBytes_FromStringAndSize(self->buffer + self->pos, n);
-        if (res == NULL)
-            goto end;
-        self->pos += n;
-        goto end;
+        n = Py_MIN(have, n);
+        res = _bufferedreader_read_fast(self, n);
+        assert(res != Py_None);
+        return res;
     }
-
-    if (self->writable) {
-        res = buffered_flush_and_rewind_unlocked(self);
-        if (res == NULL)
-            goto end;
+    res = PyBytes_FromStringAndSize(NULL, n);
+    if (res == NULL)
+        return NULL;
+    if (!ENTER_BUFFERED(self)) {
         Py_DECREF(res);
+        return NULL;
     }
-
-    /* Fill the buffer from the raw stream, and copy it to the result. */
     _bufferedreader_reset_buf(self);
-    r = _bufferedreader_fill_buffer(self);
-    if (r == -1)
-        goto end;
+    r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
+    LEAVE_BUFFERED(self)
+    if (r == -1) {
+        Py_DECREF(res);
+        return NULL;
+    }
     if (r == -2)
         r = 0;
     if (n > r)
-        n = r;
-    res = PyBytes_FromStringAndSize(self->buffer, n);
-    if (res == NULL)
-        goto end;
-    self->pos = n;
-
-end:
-    LEAVE_BUFFERED(self)
+        _PyBytes_Resize(&res, r);
     return res;
 }
 
