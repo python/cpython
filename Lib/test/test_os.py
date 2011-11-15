@@ -213,7 +213,9 @@ class StatAttributeTests(unittest.TestCase):
             fname = self.fname.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             self.skipTest("cannot encode %a for the filesystem" % self.fname)
-        self.check_stat_attributes(fname)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.check_stat_attributes(fname)
 
     def test_statvfs_attributes(self):
         if not hasattr(os, "statvfs"):
@@ -838,7 +840,9 @@ class LinkTests(unittest.TestCase):
         with open(file1, "w") as f1:
             f1.write("test")
 
-        os.link(file1, file2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            os.link(file1, file2)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
@@ -1160,8 +1164,10 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertNotEqual(os.lstat(link), os.stat(link))
 
         bytes_link = os.fsencode(link)
-        self.assertEqual(os.stat(bytes_link), os.stat(target))
-        self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.assertEqual(os.stat(bytes_link), os.stat(target))
+            self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
 
     def test_12084(self):
         level1 = os.path.abspath(support.TESTFN)
@@ -1619,6 +1625,35 @@ class ExtendedAttributeTests(unittest.TestCase):
         self._check_xattrs(getxattr, setxattr, removexattr, listxattr)
 
 
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32DeprecatedBytesAPI(unittest.TestCase):
+    def test_deprecated(self):
+        import nt
+        filename = os.fsencode(support.TESTFN)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            for func, *args in (
+                (nt._getfullpathname, filename),
+                (nt._isdir, filename),
+                (os.access, filename, os.R_OK),
+                (os.chdir, filename),
+                (os.chmod, filename, 0o777),
+                (os.link, filename, filename),
+                (os.listdir, filename),
+                (os.lstat, filename),
+                (os.mkdir, filename),
+                (os.open, filename, os.O_RDONLY),
+                (os.rename, filename, filename),
+                (os.rmdir, filename),
+                (os.startfile, filename),
+                (os.stat, filename),
+                (os.symlink, filename, filename),
+                (os.unlink, filename),
+                (os.utime, filename),
+            ):
+                self.assertRaises(DeprecationWarning, func, *args)
+
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -1643,6 +1678,7 @@ def test_main():
         TestSendfile,
         ProgramPriorityTests,
         ExtendedAttributeTests,
+        Win32DeprecatedBytesAPI,
     )
 
 if __name__ == "__main__":
