@@ -5,13 +5,13 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
+import _string
 import codecs
 import struct
 import sys
 import unittest
 import warnings
 from test import support, string_tests
-import _string
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -1394,7 +1394,11 @@ class UnicodeTest(string_tests.CommonTest,
             for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le',
                              'utf-16-be', 'raw_unicode_escape',
                              'unicode_escape', 'unicode_internal'):
-                self.assertEqual(str(u.encode(encoding),encoding), u)
+                with warnings.catch_warnings():
+                    # unicode-internal has been deprecated
+                    warnings.simplefilter("ignore", DeprecationWarning)
+
+                    self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 256 chars)
         for c in range(256):
@@ -1409,11 +1413,15 @@ class UnicodeTest(string_tests.CommonTest,
                 self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for non-BMP (just a few chars)
-        u = '\U00010001\U00020002\U00030003\U00040004\U00050005'
-        for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
-                         'raw_unicode_escape',
-                         'unicode_escape', 'unicode_internal'):
-            self.assertEqual(str(u.encode(encoding),encoding), u)
+        with warnings.catch_warnings():
+            # unicode-internal has been deprecated
+            warnings.simplefilter("ignore", DeprecationWarning)
+
+            u = '\U00010001\U00020002\U00030003\U00040004\U00050005'
+            for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
+                             'raw_unicode_escape',
+                             'unicode_escape', 'unicode_internal'):
+                self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # UTF-8 must be roundtrip safe for all code points
         # (except surrogates, which are forbidden).
