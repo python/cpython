@@ -1,10 +1,11 @@
 import ntpath
 import os
 import sys
+import unittest
+import warnings
 from test.support import TestFailed
 from test import support, test_genericpath
 from tempfile import TemporaryFile
-import unittest
 
 
 def tester(fn, wantResult):
@@ -21,7 +22,9 @@ def tester(fn, wantResult):
     fn = fn.replace('["', '[b"')
     fn = fn.replace(", '", ", b'")
     fn = fn.replace(', "', ', b"')
-    gotResult = eval(fn)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        gotResult = eval(fn)
     if isinstance(wantResult, str):
         wantResult = wantResult.encode('ascii')
     elif isinstance(wantResult, tuple):
