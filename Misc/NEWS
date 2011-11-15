@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
+  already accepts them).
+
 - Remove Py3k warning for callable.
 
 - Issue #10519: Avoid unnecessary recursive function calls in
