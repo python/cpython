@@ -8,7 +8,6 @@ import packaging.dist
 from packaging.dist import Distribution
 from packaging.command.cmd import Command
 from packaging.errors import PackagingModuleError, PackagingOptionError
-from packaging.tests import captured_stdout
 from packaging.tests import support, unittest
 from packaging.tests.support import create_distribution, use_command
 from test.support import unload

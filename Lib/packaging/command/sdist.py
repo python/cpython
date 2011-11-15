@@ -337,12 +337,11 @@ class sdist(Command):
         """
         return self.archive_files
 
-    def create_tree(self, base_dir, files, mode=0o777, verbose=1,
-                    dry_run=False):
+    def create_tree(self, base_dir, files, mode=0o777, dry_run=False):
         need_dir = set()
         for file in files:
             need_dir.add(os.path.join(base_dir, os.path.dirname(file)))
 
         # Now create them
         for dir in sorted(need_dir):
-            self.mkpath(dir, mode, verbose=verbose, dry_run=dry_run)
+            self.mkpath(dir, mode, dry_run=dry_run)

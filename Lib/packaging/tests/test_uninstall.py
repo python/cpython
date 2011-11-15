@@ -31,13 +31,8 @@ class UninstallTestCase(support.TempdirManager,
     def setUp(self):
         super(UninstallTestCase, self).setUp()
         self.addCleanup(enable_cache)
-        self.root_dir = self.mkdtemp()
-        self.cwd = os.getcwd()
+        self.addCleanup(packaging.util._path_created.clear)
         disable_cache()
-
-    def tearDown(self):
-        packaging.util._path_created.clear()
-        super(UninstallTestCase, self).tearDown()
 
     def get_path(self, dist, name):
         # the dist argument must contain an install_dist command correctly
@@ -79,7 +74,7 @@ class UninstallTestCase(support.TempdirManager,
         dist.parse_config_files()
         dist.finalize_options()
         dist.run_command('install_dist',
-                         {'prefix': ('command line', self.root_dir)})
+                         {'prefix': ('command line', self.mkdtemp())})
 
         site_packages = self.get_path(dist, 'purelib')
         return dist, site_packages

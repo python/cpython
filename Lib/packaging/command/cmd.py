@@ -10,7 +10,7 @@ from packaging.errors import PackagingOptionError
 
 class Command:
     """Abstract base class for defining command classes, the "worker bees"
-    of the Packaging.  A useful analogy for command classes is to think of
+    of Packaging.  A useful analogy for command classes is to think of
     them as subroutines with local variables called "options".  The options
     are "declared" in 'initialize_options()' and "defined" (given their
     final values, aka "finalized") in 'finalize_options()', both of which
@@ -351,7 +351,7 @@ class Command:
     def execute(self, func, args, msg=None, level=1):
         util.execute(func, args, msg, dry_run=self.dry_run)
 
-    def mkpath(self, name, mode=0o777, dry_run=None, verbose=0):
+    def mkpath(self, name, mode=0o777, dry_run=None):
         if dry_run is None:
             dry_run = self.dry_run
         name = os.path.normpath(name)
@@ -367,9 +367,11 @@ class Command:
 
     def copy_file(self, infile, outfile,
                   preserve_mode=True, preserve_times=True, link=None, level=1):
-        """Copy a file respecting verbose, dry-run and force flags.  (The
-        former two default to whatever is in the Distribution object, and
-        the latter defaults to false for commands that don't define it.)"""
+        """Copy a file respecting dry-run and force flags.
+
+        (dry-run defaults to whatever is in the Distribution object, and
+        force to false for commands that don't define it.)
+        """
         if self.dry_run:
             # XXX add a comment
             return
@@ -380,12 +382,13 @@ class Command:
 
     def copy_tree(self, infile, outfile, preserve_mode=True,
                   preserve_times=True, preserve_symlinks=False, level=1):
-        """Copy an entire directory tree respecting verbose, dry-run,
+        """Copy an entire directory tree respecting dry-run
         and force flags.
         """
         if self.dry_run:
-            return  # see if we want to display something
-
+            # XXX should not return but let copy_tree log and decide to execute
+            # or not based on its dry_run argument
+            return
 
         return util.copy_tree(infile, outfile, preserve_mode, preserve_times,
             preserve_symlinks, not self.force, dry_run=self.dry_run)
@@ -393,7 +396,7 @@ class Command:
     def move_file(self, src, dst, level=1):
         """Move a file respecting the dry-run flag."""
         if self.dry_run:
-            return  # XXX log ?
+            return  # XXX same thing
         return move(src, dst)
 
     def spawn(self, cmd, search_path=True, level=1):
@@ -439,3 +442,20 @@ class Command:
         # Otherwise, print the "skip" message
         else:
             logger.debug(skip_msg)
+
+    def byte_compile(self, files, prefix=None):
+        """Byte-compile files to pyc and/or pyo files.
+
+        This method requires that the calling class define compile and
+        optimize options, like build_py and install_lib.  It also
+        automatically respects the force and dry-run options.
+
+        prefix, if given, is a string that will be stripped off the
+        filenames encoded in bytecode files.
+        """
+        if self.compile:
+            util.byte_compile(files, optimize=False, prefix=prefix,
+                              force=self.force, dry_run=self.dry_run)
+        if self.optimize:
+            util.byte_compile(files, optimize=self.optimize, prefix=prefix,
+                              force=self.force, dry_run=self.dry_run)
