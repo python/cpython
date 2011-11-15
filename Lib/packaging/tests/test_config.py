@@ -119,7 +119,7 @@ include_dirs = /usr/include/gecode
     /usr/include/blitz
 extra_compile_args = -fPIC -O2
     -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
-    /DGECODE_VERSION='win32' -- sys.platform == 'win32'
+    /DGECODE_VERSION=win32 -- sys.platform == 'win32'
 language = cxx
 
 # corner case: if the parent package of an extension is declared but

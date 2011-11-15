@@ -2,7 +2,6 @@
 
 import os
 import imp
-import logging
 
 from packaging import logger
 from packaging.command.cmd import Command
@@ -21,7 +20,7 @@ class install_lib(Command):
 
     description = "install all modules (extensions and pure Python)"
 
-    # The options for controlling byte compilations are two independent sets:
+    # The options for controlling byte compilation are two independent sets:
     # 'compile' is strictly boolean, and only decides whether to
     # generate .pyc files.  'optimize' is three-way (0, 1, or 2), and
     # decides both whether to generate .pyo files and what level of
@@ -84,9 +83,14 @@ class install_lib(Command):
         # having a build directory!)
         outfiles = self.install()
 
-        # (Optionally) compile .py to .pyc
+        # (Optionally) compile .py to .pyc and/or .pyo
         if outfiles is not None and self.distribution.has_pure_modules():
-            self.byte_compile(outfiles)
+            # XXX comment from distutils: "This [prefix stripping] is far from
+            # complete, but it should at least generate usable bytecode in RPM
+            # distributions." -> need to find exact requirements for
+            # byte-compiled files and fix it
+            install_root = self.get_finalized_command('install_dist').root
+            self.byte_compile(outfiles, prefix=install_root)
 
     # -- Top-level worker functions ------------------------------------
     # (called from 'run()')
@@ -107,28 +111,6 @@ class install_lib(Command):
                 self.get_command_name(), self.build_dir)
             return
         return outfiles
-
-    def byte_compile(self, files):
-        from packaging.util import byte_compile  # FIXME use compileall
-
-        # Get the "--root" directory supplied to the "install_dist" command,
-        # and use it as a prefix to strip off the purported filename
-        # encoded in bytecode files.  This is far from complete, but it
-        # should at least generate usable bytecode in RPM distributions.
-        install_root = self.get_finalized_command('install_dist').root
-
-        # Temporary kludge until we remove the verbose arguments and use
-        # logging everywhere
-        verbose = logger.getEffectiveLevel() >= logging.DEBUG
-
-        if self.compile:
-            byte_compile(files, optimize=0,
-                         force=self.force, prefix=install_root,
-                         verbose=verbose, dry_run=self.dry_run)
-        if self.optimize > 0:
-            byte_compile(files, optimize=self.optimize,
-                         force=self.force, prefix=install_root,
-                         verbose=verbose, dry_run=self.dry_run)
 
     # -- Utility methods -----------------------------------------------
 
@@ -157,11 +139,9 @@ class install_lib(Command):
             if ext != PYTHON_SOURCE_EXTENSION:
                 continue
             if self.compile:
-                bytecode_files.append(imp.cache_from_source(
-                    py_file, debug_override=True))
-            if self.optimize > 0:
-                bytecode_files.append(imp.cache_from_source(
-                    py_file, debug_override=False))
+                bytecode_files.append(imp.cache_from_source(py_file, True))
+            if self.optimize:
+                bytecode_files.append(imp.cache_from_source(py_file, False))
 
         return bytecode_files
 

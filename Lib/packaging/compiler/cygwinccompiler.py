@@ -92,8 +92,8 @@ class CygwinCCompiler(UnixCCompiler):
     shared_lib_format = "%s%s"
     exe_extension = ".exe"
 
-    def __init__(self, verbose=0, dry_run=False, force=False):
-        super(CygwinCCompiler, self).__init__(verbose, dry_run, force)
+    def __init__(self, dry_run=False, force=False):
+        super(CygwinCCompiler, self).__init__(dry_run, force)
 
         status, details = check_config_h()
         logger.debug("Python's GCC status: %s (details: %s)", status, details)
@@ -233,12 +233,11 @@ class CygwinCCompiler(UnixCCompiler):
         if not debug:
             extra_preargs.append("-s")
 
-        UnixCCompiler.link(self, target_desc, objects, output_filename,
-                           output_dir, libraries, library_dirs,
-                           runtime_library_dirs,
-                           None, # export_symbols, we do this in our def-file
-                           debug, extra_preargs, extra_postargs, build_temp,
-                           target_lang)
+        super(CygwinCCompiler, self).link(
+            target_desc, objects, output_filename, output_dir, libraries,
+            library_dirs, runtime_library_dirs,
+            None, # export_symbols, we do this in our def-file
+            debug, extra_preargs, extra_postargs, build_temp, target_lang)
 
     # -- Miscellaneous methods -----------------------------------------
 
@@ -271,8 +270,8 @@ class Mingw32CCompiler(CygwinCCompiler):
     name = 'mingw32'
     description = 'MinGW32 compiler'
 
-    def __init__(self, verbose=0, dry_run=False, force=False):
-        super(Mingw32CCompiler, self).__init__(verbose, dry_run, force)
+    def __init__(self, dry_run=False, force=False):
+        super(Mingw32CCompiler, self).__init__(dry_run, force)
 
         # ld_version >= "2.13" support -shared so use it instead of
         # -mdll -static

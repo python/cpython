@@ -60,8 +60,7 @@ class test(Command):
             self.run_command('build')
             sys.path.insert(0, build.build_lib)
 
-            # Temporary kludge until we remove the verbose arguments and use
-            # logging everywhere
+            # XXX maybe we could pass the verbose argument of pysetup here
             logger = logging.getLogger('packaging')
             verbose = logger.getEffectiveLevel() >= logging.DEBUG
             verbosity = verbose + 1
