@@ -546,6 +546,34 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 
     return TRUE;
 }
+
+static int
+win32_warn_bytes_api()
+{
+    return PyErr_WarnEx(PyExc_DeprecationWarning,
+        "The Windows bytes API has been deprecated, "
+        "use Unicode filenames instead",
+        1);
+}
+
+static PyObject*
+win32_decode_filename(PyObject *obj)
+{
+    PyObject *unicode;
+    if (PyUnicode_Check(obj)) {
+        if (PyUnicode_READY(obj))
+            return NULL;
+        Py_INCREF(obj);
+        return obj;
+    }
+    if (!PyUnicode_FSDecoder(obj, &unicode))
+        return NULL;
+    if (win32_warn_bytes_api()) {
+        Py_DECREF(unicode);
+        return NULL;
+    }
+    return unicode;
+}
 #endif /* MS_WINDOWS */
 
 /* Return a dictionary corresponding to the POSIX environment table */
@@ -725,22 +753,6 @@ win32_error_object(char* function, PyObject* filename)
         return PyErr_SetFromWindowsErr(errno);
 }
 
-static int
-convert_to_unicode(PyObject **param)
-{
-    if (PyUnicode_CheckExact(*param))
-        Py_INCREF(*param);
-    else if (PyUnicode_Check(*param))
-        /* For a Unicode subtype that's not a Unicode object,
-           return a true Unicode object with the same data. */
-        *param = PyUnicode_Copy(*param);
-    else
-        *param = PyUnicode_FromEncodedObject(*param,
-                                             Py_FileSystemDefaultEncoding,
-                                             "strict");
-    return (*param) != NULL;
-}
-
 #endif /* MS_WINDOWS */
 
 #if defined(PYOS_OS2)
@@ -895,7 +907,7 @@ win32_1str(PyObject* args, char* func,
            char* wformat, BOOL (__stdcall *funcW)(LPWSTR))
 {
     PyObject *uni;
-    char *ansi;
+    const char *ansi;
     BOOL result;
 
     if (PyArg_ParseTuple(args, wformat, &uni))
@@ -914,6 +926,8 @@ win32_1str(PyObject* args, char* func,
     PyErr_Clear();
 
     if (!PyArg_ParseTuple(args, format, &ansi))
+        return NULL;
+    if (win32_warn_bytes_api())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
     result = funcA(ansi);
@@ -1129,14 +1143,15 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *
 
 /* Grab GetFinalPathNameByHandle dynamically from kernel32 */
 static int has_GetFinalPathNameByHandle = 0;
-static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
-                                                      DWORD);
 static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
                                                       DWORD);
 static int
 check_GetFinalPathNameByHandle()
 {
     HINSTANCE hKernel32;
+    DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
+                                                   DWORD);
+
     /* only recheck */
     if (!has_GetFinalPathNameByHandle)
     {
@@ -1853,6 +1868,12 @@ posix_do_stat(PyObject *self, PyObject *args,
     if (!PyArg_ParseTuple(args, format,
                           PyUnicode_FSConverter, &opath))
         return NULL;
+#ifdef MS_WINDOWS
+    if (win32_warn_bytes_api()) {
+        Py_DECREF(opath);
+        return NULL;
+    }
+#endif
     path = PyBytes_AsString(opath);
     Py_BEGIN_ALLOW_THREADS
     res = (*statfunc)(path, &st);
@@ -1885,8 +1906,7 @@ existence, or the inclusive-OR of R_OK, W_OK, and X_OK.");
 static PyObject *
 posix_access(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
-    char *path;
+    const char *path;
     int mode;
 
 #ifdef MS_WINDOWS
@@ -1904,14 +1924,13 @@ posix_access(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-    if (!PyArg_ParseTuple(args, "O&i:access",
-                          PyUnicode_FSConverter, &opath, &mode))
+    if (!PyArg_ParseTuple(args, "yi:access", &path, &mode))
         return NULL;
-    path = PyBytes_AsString(opath);
+    if (win32_warn_bytes_api())
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
     attr = GetFileAttributesA(path);
     Py_END_ALLOW_THREADS
-    Py_DECREF(opath);
 finish:
     if (attr == 0xFFFFFFFF)
         /* File does not exist, or cannot read attributes */
@@ -1923,6 +1942,7 @@ finish:
                            || !(attr & FILE_ATTRIBUTE_READONLY)
                            || (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
+    PyObject *opath;
     int res;
     if (!PyArg_ParseTuple(args, "O&i:access",
                           PyUnicode_FSConverter, &opath, &mode))
@@ -2042,7 +2062,7 @@ static PyObject *
 posix_chmod(PyObject *self, PyObject *args)
 {
     PyObject *opath = NULL;
-    char *path = NULL;
+    const char *path = NULL;
     int i;
     int res;
 #ifdef MS_WINDOWS
@@ -2073,10 +2093,10 @@ posix_chmod(PyObject *self, PyObject *args)
        are also valid. */
     PyErr_Clear();
 
-    if (!PyArg_ParseTuple(args, "O&i:chmod", PyUnicode_FSConverter,
-                          &opath, &i))
+    if (!PyArg_ParseTuple(args, "yi:chmod", &path, &i))
         return NULL;
-    path = PyBytes_AsString(opath);
+    if (win32_warn_bytes_api())
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
     attr = GetFileAttributesA(path);
     if (attr != 0xFFFFFFFF) {
@@ -2091,10 +2111,8 @@ posix_chmod(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     if (!res) {
         win32_error("chmod", path);
-        Py_DECREF(opath);
         return NULL;
     }
-    Py_DECREF(opath);
     Py_INCREF(Py_None);
     return Py_None;
 #else /* MS_WINDOWS */
@@ -2450,51 +2468,56 @@ Create a hard link to a file.");
 static PyObject *
 win32_link(PyObject *self, PyObject *args)
 {
-    PyObject *osrc, *odst;
-    char *src, *dst;
-    BOOL rslt;
-    PyObject *usrc, *udst;
+    PyObject *src, *dst;
+    BOOL ok;
 
-    if (PyArg_ParseTuple(args, "UU:link", &usrc, &udst))
+    if (PyArg_ParseTuple(args, "UU:link", &src, &dst))
     {
         wchar_t *wsrc, *wdst;
-        wsrc = PyUnicode_AsUnicode(usrc);
+
+        wsrc = PyUnicode_AsUnicode(src);
         if (wsrc == NULL)
-            return NULL;
-        wdst = PyUnicode_AsUnicode(udst);
+            goto error;
+        wdst = PyUnicode_AsUnicode(dst);
         if (wdst == NULL)
-            return NULL;
+            goto error;
 
         Py_BEGIN_ALLOW_THREADS
-        rslt = CreateHardLinkW(wdst, wsrc, NULL);
+        ok = CreateHardLinkW(wdst, wsrc, NULL);
         Py_END_ALLOW_THREADS
 
-        if (rslt == 0)
+        if (!ok)
             return win32_error("link", NULL);
-
         Py_RETURN_NONE;
     }
+    else {
+        PyErr_Clear();
+        if (!PyArg_ParseTuple(args, "O&O&:link",
+                              PyUnicode_FSConverter, &src,
+                              PyUnicode_FSConverter, &dst))
+            return NULL;
 
-    /* Narrow strings also valid. */
-    PyErr_Clear();
+        if (win32_warn_bytes_api())
+            goto error;
 
-    if (!PyArg_ParseTuple(args, "O&O&:link", PyUnicode_FSConverter, &osrc,
-                          PyUnicode_FSConverter, &odst))
+        Py_BEGIN_ALLOW_THREADS
+        ok = CreateHardLinkA(PyBytes_AS_STRING(dst),
+                             PyBytes_AS_STRING(src),
+                             NULL);
+        Py_END_ALLOW_THREADS
+
+        Py_XDECREF(src);
+        Py_XDECREF(dst);
+
+        if (!ok)
+            return win32_error("link", NULL);
+        Py_RETURN_NONE;
+
+    error:
+        Py_XDECREF(src);
+        Py_XDECREF(dst);
         return NULL;
-
-    src = PyBytes_AsString(osrc);
-    dst = PyBytes_AsString(odst);
-
-    Py_BEGIN_ALLOW_THREADS
-    rslt = CreateHardLinkA(dst, src, NULL);
-    Py_END_ALLOW_THREADS
-
-    Py_DECREF(osrc);
-    Py_DECREF(odst);
-    if (rslt == 0)
-        return win32_error("link", NULL);
-
-    Py_RETURN_NONE;
+    }
 }
 #endif /* MS_WINDOWS */
 
@@ -2519,7 +2542,8 @@ posix_listdir(PyObject *self, PyObject *args)
     HANDLE hFindFile;
     BOOL result;
     WIN32_FIND_DATA FileData;
-    PyObject *opath;
+    const char *path;
+    Py_ssize_t pathlen;
     char namebuf[MAX_PATH+5]; /* Overallocate for \\*.*\0 */
     char *bufptr = namebuf;
     Py_ssize_t len = sizeof(namebuf)-5; /* only claim to have space for MAX_PATH */
@@ -2613,17 +2637,16 @@ posix_listdir(PyObject *self, PyObject *args)
        are also valid. */
     PyErr_Clear();
 
-    if (!PyArg_ParseTuple(args, "O&:listdir",
-                          PyUnicode_FSConverter, &opath))
+    if (!PyArg_ParseTuple(args, "y#:listdir", &path, &pathlen))
         return NULL;
-    if (PyBytes_GET_SIZE(opath)+1 > MAX_PATH) {
+    if (win32_warn_bytes_api())
+        return NULL;
+    if (pathlen+1 > MAX_PATH) {
         PyErr_SetString(PyExc_ValueError, "path too long");
-        Py_DECREF(opath);
         return NULL;
     }
-    strcpy(namebuf, PyBytes_AsString(opath));
-    len = PyObject_Size(opath);
-    Py_DECREF(opath);
+    strcpy(namebuf, path);
+    len = pathlen;
     if (len > 0) {
         char ch = namebuf[len-1];
         if (ch != SEP && ch != ALTSEP && ch != ':')
@@ -2915,11 +2938,9 @@ posix_fdlistdir(PyObject *self, PyObject *args)
 static PyObject *
 posix__getfullpathname(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
-    char *path;
+    const char *path;
     char outbuf[MAX_PATH*2];
     char *temp;
-#ifdef MS_WINDOWS
     PyObject *po;
 
     if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po))
@@ -2953,19 +2974,17 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-#endif
 
-    if (!PyArg_ParseTuple (args, "O&:_getfullpathname",
-                           PyUnicode_FSConverter, &opath))
+    if (!PyArg_ParseTuple (args, "y:_getfullpathname",
+                           &path))
         return NULL;
-    path = PyBytes_AsString(opath);
+    if (win32_warn_bytes_api())
+        return NULL;
     if (!GetFullPathName(path, Py_ARRAY_LENGTH(outbuf),
                          outbuf, &temp)) {
         win32_error("GetFullPathName", path);
-        Py_DECREF(opath);
         return NULL;
     }
-    Py_DECREF(opath);
     if (PyUnicode_Check(PyTuple_GetItem(args, 0))) {
         return PyUnicode_Decode(outbuf, strlen(outbuf),
                                 Py_FileSystemDefaultEncoding, NULL);
@@ -3069,8 +3088,7 @@ PyDoc_STRVAR(posix__isdir__doc__,
 static PyObject *
 posix__isdir(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
-    char *path;
+    const char *path;
     PyObject *po;
     DWORD attributes;
 
@@ -3088,11 +3106,10 @@ posix__isdir(PyObject *self, PyObject *args)
        are also valid. */
     PyErr_Clear();
 
-    if (!PyArg_ParseTuple(args, "O&:_isdir",
-                          PyUnicode_FSConverter, &opath))
+    if (!PyArg_ParseTuple(args, "y:_isdir", &path))
         return NULL;
-
-    path = PyBytes_AsString(opath);
+    if (win32_warn_bytes_api())
+        return NULL;
     attributes = GetFileAttributesA(path);
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
@@ -3113,8 +3130,7 @@ static PyObject *
 posix_mkdir(PyObject *self, PyObject *args)
 {
     int res;
-    PyObject *opath;
-    char *path;
+    const char *path;
     int mode = 0777;
 
 #ifdef MS_WINDOWS
@@ -3136,22 +3152,21 @@ posix_mkdir(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-    if (!PyArg_ParseTuple(args, "O&|i:mkdir",
-                          PyUnicode_FSConverter, &opath, &mode))
+    if (!PyArg_ParseTuple(args, "y|i:mkdir", &path, &mode))
         return NULL;
-    path = PyBytes_AsString(opath);
+    if (win32_warn_bytes_api())
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
     res = CreateDirectoryA(path, NULL);
     Py_END_ALLOW_THREADS
     if (!res) {
         win32_error("mkdir", path);
-        Py_DECREF(opath);
         return NULL;
     }
-    Py_DECREF(opath);
     Py_INCREF(Py_None);
     return Py_None;
 #else
+    PyObject *opath;
 
     if (!PyArg_ParseTuple(args, "O&|i:mkdir",
                           PyUnicode_FSConverter, &opath, &mode))
@@ -3265,44 +3280,54 @@ static PyObject *
 posix_rename(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    PyObject *o1, *o2;
-    wchar_t *w1, *w2;
-    char *p1, *p2;
+    PyObject *src, *dst;
     BOOL result;
-    if (!PyArg_ParseTuple(args, "OO:rename", &o1, &o2))
-        goto error;
-    if (!convert_to_unicode(&o1))
-        goto error;
-    if (!convert_to_unicode(&o2)) {
-        Py_DECREF(o1);
-        goto error;
+    if (PyArg_ParseTuple(args, "UU:rename", &src, &dst))
+    {
+        wchar_t *wsrc, *wdst;
+
+        wsrc = PyUnicode_AsUnicode(src);
+        if (wsrc == NULL)
+            return NULL;
+        wdst = PyUnicode_AsUnicode(dst);
+        if (wdst == NULL)
+            return NULL;
+        Py_BEGIN_ALLOW_THREADS
+        result = MoveFileW(wsrc, wdst);
+        Py_END_ALLOW_THREADS
+        if (!result)
+            return win32_error("rename", NULL);
+        Py_INCREF(Py_None);
+        return Py_None;
     }
-    w1 = PyUnicode_AsUnicode(o1);
-    if (w1 == NULL)
-        goto error;
-    w2 = PyUnicode_AsUnicode(o2);
-    if (w2 == NULL)
-        goto error;
-    Py_BEGIN_ALLOW_THREADS
-    result = MoveFileW(w1, w2);
-    Py_END_ALLOW_THREADS
-    Py_DECREF(o1);
-    Py_DECREF(o2);
-    if (!result)
-        return win32_error("rename", NULL);
-    Py_INCREF(Py_None);
-    return Py_None;
+    else {
+        PyErr_Clear();
+        if (!PyArg_ParseTuple(args, "O&O&:rename",
+                              PyUnicode_FSConverter, &src,
+                              PyUnicode_FSConverter, &dst))
+            return NULL;
+
+        if (win32_warn_bytes_api())
+            goto error;
+
+        Py_BEGIN_ALLOW_THREADS
+        result = MoveFileA(PyBytes_AS_STRING(src),
+                           PyBytes_AS_STRING(dst));
+        Py_END_ALLOW_THREADS
+
+        Py_XDECREF(src);
+        Py_XDECREF(dst);
+
+        if (!result)
+            return win32_error("rename", NULL);
+        Py_INCREF(Py_None);
+        return Py_None;
+
 error:
-    PyErr_Clear();
-    if (!PyArg_ParseTuple(args, "ss:rename", &p1, &p2))
+        Py_XDECREF(src);
+        Py_XDECREF(dst);
         return NULL;
-    Py_BEGIN_ALLOW_THREADS
-    result = MoveFileA(p1, p2);
-    Py_END_ALLOW_THREADS
-    if (!result)
-        return win32_error("rename", NULL);
-    Py_INCREF(Py_None);
-    return Py_None;
+    }
 #else
     return posix_2str(args, "O&O&:rename", rename);
 #endif
@@ -3546,8 +3571,7 @@ posix_utime(PyObject *self, PyObject *args)
     PyObject *arg = Py_None;
     PyObject *obwpath;
     wchar_t *wpath = NULL;
-    PyObject *oapath;
-    char *apath;
+    const char *apath;
     HANDLE hFile;
     time_t atimesec, mtimesec;
     long ausec, musec;
@@ -3571,11 +3595,11 @@ posix_utime(PyObject *self, PyObject *args)
            are also valid. */
         PyErr_Clear();
 
-        if (!PyArg_ParseTuple(args, "O&|O:utime",
-                        PyUnicode_FSConverter, &oapath, &arg))
+        if (!PyArg_ParseTuple(args, "y|O:utime", &apath, &arg))
+            return NULL;
+        if (win32_warn_bytes_api())
             return NULL;
 
-        apath = PyBytes_AsString(oapath);
         Py_BEGIN_ALLOW_THREADS
         hFile = CreateFileA(apath, FILE_WRITE_ATTRIBUTES, 0,
                             NULL, OPEN_EXISTING,
@@ -3583,10 +3607,8 @@ posix_utime(PyObject *self, PyObject *args)
         Py_END_ALLOW_THREADS
         if (hFile == INVALID_HANDLE_VALUE) {
             win32_error("utime", apath);
-            Py_DECREF(oapath);
             return NULL;
         }
-        Py_DECREF(oapath);
     }
 
     if (arg == Py_None) {
@@ -6516,7 +6538,8 @@ static PyObject *
 win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"src", "dest", "target_is_directory", NULL};
-    PyObject *src, *dest;
+    PyObject *osrc, *odest;
+    PyObject *usrc = NULL, *udest = NULL;
     wchar_t *wsrc, *wdest;
     int target_is_directory = 0;
     DWORD res;
@@ -6528,24 +6551,25 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
         return PyErr_Format(PyExc_NotImplementedError,
             "CreateSymbolicLinkW not found");
     }
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|i:symlink",
-        kwlist, &src, &dest, &target_is_directory))
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, "OO|i:symlink", kwlist,
+            &osrc, &odest, &target_is_directory))
         return NULL;
+
+    usrc = win32_decode_filename(osrc);
+    if (!usrc)
+        return NULL;
+    udest = win32_decode_filename(odest);
+    if (!udest)
+        goto error;
 
     if (win32_can_symlink == 0)
         return PyErr_Format(PyExc_OSError, "symbolic link privilege not held");
 
-    if (!convert_to_unicode(&src))
-        return NULL;
-    if (!convert_to_unicode(&dest)) {
-        Py_DECREF(src);
-        return NULL;
-    }
-
-    wsrc = PyUnicode_AsUnicode(src);
+    wsrc = PyUnicode_AsUnicode(usrc);
     if (wsrc == NULL)
         goto error;
-    wdest = PyUnicode_AsUnicode(dest);
+    wdest = PyUnicode_AsUnicode(udest);
     if (wsrc == NULL)
         goto error;
 
@@ -6563,17 +6587,17 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     res = Py_CreateSymbolicLinkW(wdest, wsrc, target_is_directory);
     Py_END_ALLOW_THREADS
 
-    Py_DECREF(src);
-    Py_DECREF(dest);
+    Py_DECREF(usrc);
+    Py_DECREF(udest);
     if (!res)
-        return win32_error_object("symlink", src);
+        return win32_error_object("symlink", osrc);
 
     Py_INCREF(Py_None);
     return Py_None;
 
 error:
-    Py_DECREF(src);
-    Py_DECREF(dest);
+    Py_XDECREF(usrc);
+    Py_XDECREF(udest);
     return NULL;
 }
 #endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
@@ -6791,6 +6815,12 @@ posix_open(PyObject *self, PyObject *args)
                           PyUnicode_FSConverter, &ofile,
                           &flag, &mode))
         return NULL;
+#ifdef MS_WINDOWS
+    if (win32_warn_bytes_api()) {
+        Py_DECREF(ofile);
+        return NULL;
+    }
+#endif
     file = PyBytes_AsString(ofile);
     Py_BEGIN_ALLOW_THREADS
     fd = open(file, flag, mode);
@@ -9290,6 +9320,10 @@ normal:
                           PyUnicode_FSConverter, &ofilepath,
                           &operation))
         return NULL;
+    if (win32_warn_bytes_api()) {
+        Py_DECREF(ofilepath);
+        return NULL;
+    }
     filepath = PyBytes_AsString(ofilepath);
     Py_BEGIN_ALLOW_THREADS
     rc = ShellExecute((HWND)0, operation, filepath,
