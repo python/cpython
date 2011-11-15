@@ -1267,6 +1267,11 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         PyErr_Clear();
         return;
     }
+    if (PyUnicode_CopyCharacters(cpathname_tmp, 0,
+                                 cpathname, 0, cpathname_len) < 0) {
+        PyErr_Clear();
+        return;
+    }
     PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 0, '.');
     PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 1, 't');
     PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 2, 'm');
