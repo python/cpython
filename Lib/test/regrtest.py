@@ -1462,6 +1462,7 @@ _expectations = (
         test_crypt
         test_curses
         test_dbm
+        test_devpoll
         test_fcntl
         test_fork1
         test_epoll
@@ -1488,6 +1489,7 @@ _expectations = (
     ('linux',
         """
         test_curses
+        test_devpoll
         test_largefile
         test_kqueue
         test_ossaudiodev
@@ -1538,6 +1540,7 @@ _expectations = (
         """
         test__locale
         test_curses
+        test_devpoll
         test_epoll
         test_dbm_gnu
         test_gdb
@@ -1579,6 +1582,7 @@ _expectations = (
         """
         test_curses
         test_dbm
+        test_devpoll
         test_epoll
         test_ioctl
         test_kqueue
@@ -1603,6 +1607,7 @@ _expectations = (
         """),
     ('freebsd',
         """
+        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1636,6 +1641,7 @@ _expectations = (
     ('openbsd',
         """
         test_ctypes
+        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1652,6 +1658,7 @@ _expectations = (
         """
         test_ctypes
         test_curses
+        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
