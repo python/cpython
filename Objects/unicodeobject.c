@@ -1628,20 +1628,16 @@ PyObject *PyUnicode_DecodeUTF7Stateful(const char *s,
                             *p++ = outCh;
 #endif
                             surrogate = 0;
+                            continue;
                         }
                         else {
+                            *p++ = surrogate;
                             surrogate = 0;
-                            errmsg = "second surrogate missing";
-                            goto utf7Error;
                         }
                     }
-                    else if (outCh >= 0xD800 && outCh <= 0xDBFF) {
+                    if (outCh >= 0xD800 && outCh <= 0xDBFF) {
                         /* first surrogate */
                         surrogate = outCh;
-                    }
-                    else if (outCh >= 0xDC00 && outCh <= 0xDFFF) {
-                        errmsg = "unexpected second surrogate";
-                        goto utf7Error;
                     }
                     else {
                         *p++ = outCh;
@@ -1652,8 +1648,8 @@ PyObject *PyUnicode_DecodeUTF7Stateful(const char *s,
                 inShift = 0;
                 s++;
                 if (surrogate) {
-                    errmsg = "second surrogate missing at end of shift sequence";
-                    goto utf7Error;
+                    *p++ = surrogate;
+                    surrogate = 0;
                 }
                 if (base64bits > 0) { /* left-over bits */
                     if (base64bits >= 6) {

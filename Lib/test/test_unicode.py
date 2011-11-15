@@ -771,10 +771,18 @@ class UnicodeTest(
         for (x, y) in utfTests:
             self.assertEqual(x.encode('utf-7'), y)
 
-        # Unpaired surrogates not supported
-        self.assertRaises(UnicodeError, unicode, '+3ADYAA-', 'utf-7')
+        # Unpaired surrogates are passed through
+        self.assertEqual(u'\uD801'.encode('utf-7'), '+2AE-')
+        self.assertEqual(u'\uD801x'.encode('utf-7'), '+2AE-x')
+        self.assertEqual(u'\uDC01'.encode('utf-7'), '+3AE-')
+        self.assertEqual(u'\uDC01x'.encode('utf-7'), '+3AE-x')
+        self.assertEqual('+2AE-'.decode('utf-7'), u'\uD801')
+        self.assertEqual('+2AE-x'.decode('utf-7'), u'\uD801x')
+        self.assertEqual('+3AE-'.decode('utf-7'), u'\uDC01')
+        self.assertEqual('+3AE-x'.decode('utf-7'), u'\uDC01x')
 
-        self.assertEqual(unicode('+3ADYAA-', 'utf-7', 'replace'), u'\ufffd\ufffd')
+        self.assertEqual(u'\uD801\U000abcde'.encode('utf-7'), '+2AHab9ze-')
+        self.assertEqual('+2AHab9ze-'.decode('utf-7'), u'\uD801\U000abcde')
 
         # Direct encoded characters
         set_d = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'(),-./:?"
