@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13393: BufferedReader.read1() now asks the full requested size to
+  the raw stream instead of limiting itself to the buffer size.
+
 - Issue #13392: Writing a pyc file should now be atomic under Windows as well.
 
 - Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
