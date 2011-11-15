@@ -1195,17 +1195,15 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     Py_UCS4 *cpathname_ucs4;
     FILE *fp;
     time_t mtime = srcstat->st_mtime;
+    PyObject *cpathname_tmp;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
-    PyObject *cpathname_tmp;
-    Py_ssize_t cpathname_len;
 #else
     mode_t dirmode = (srcstat->st_mode |
                       S_IXUSR | S_IXGRP | S_IXOTH |
                       S_IWUSR | S_IWGRP | S_IWOTH);
     PyObject *dirbytes;
     PyObject *cpathbytes, *cpathbytes_tmp;
-    Py_ssize_t cpathbytes_len;
 #endif
     int fd;
     PyObject *dirname;
@@ -1258,24 +1256,18 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     Py_DECREF(dirname);
 
     /* We first write to a tmp file and then take advantage
-       of atomic renaming (which *should* be true even under Windows). */
-#ifdef MS_WINDOWS
-    cpathname_len = PyUnicode_GET_LENGTH(cpathname);
-    cpathname_tmp = PyUnicode_New(cpathname_len + 4,
-                                  PyUnicode_MAX_CHAR_VALUE(cpathname));
+       of atomic renaming (which *should* be true even under Windows).
+       As in importlib, we use id(something) to generate a pseudo-random
+       filename.  mkstemp() can't be used since it doesn't allow specifying
+       the file access permissions.
+    */
+    cpathname_tmp = PyUnicode_FromFormat("%U.%zd",
+                                         cpathname, (Py_ssize_t) co);
     if (cpathname_tmp == NULL) {
         PyErr_Clear();
         return;
     }
-    if (PyUnicode_CopyCharacters(cpathname_tmp, 0,
-                                 cpathname, 0, cpathname_len) < 0) {
-        PyErr_Clear();
-        return;
-    }
-    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 0, '.');
-    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 1, 't');
-    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 2, 'm');
-    PyUnicode_WriteChar(cpathname_tmp, cpathname_len + 3, 'p');
+#ifdef MS_WINDOWS
     (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
     fd = _wopen(PyUnicode_AS_UNICODE(cpathname_tmp),
                 O_EXCL | O_CREAT | O_WRONLY | O_BINARY,
@@ -1285,22 +1277,17 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     else
         fp = NULL;
 #else
+    cpathbytes_tmp = PyUnicode_EncodeFSDefault(cpathname_tmp);
+    Py_DECREF(cpathname_tmp);
+    if (cpathbytes_tmp == NULL) {
+        PyErr_Clear();
+        return;
+    }
     cpathbytes = PyUnicode_EncodeFSDefault(cpathname);
     if (cpathbytes == NULL) {
         PyErr_Clear();
         return;
     }
-    cpathbytes_len = PyBytes_GET_SIZE(cpathbytes);
-    cpathbytes_tmp = PyBytes_FromStringAndSize(NULL, cpathbytes_len + 4);
-    if (cpathbytes_tmp == NULL) {
-        Py_DECREF(cpathbytes);
-        PyErr_Clear();
-        return;
-    }
-    memcpy(PyBytes_AS_STRING(cpathbytes_tmp), PyBytes_AS_STRING(cpathbytes),
-           cpathbytes_len);
-    memcpy(PyBytes_AS_STRING(cpathbytes_tmp) + cpathbytes_len, ".tmp", 4);
-
     fd = open(PyBytes_AS_STRING(cpathbytes_tmp),
               O_CREAT | O_EXCL | O_WRONLY, 0666);
     if (0 <= fd)
