@@ -1108,10 +1108,18 @@ class UnicodeTest(string_tests.CommonTest,
         for (x, y) in utfTests:
             self.assertEqual(x.encode('utf-7'), y)
 
-        # Unpaired surrogates not supported
-        self.assertRaises(UnicodeError, str, b'+3ADYAA-', 'utf-7')
+        # Unpaired surrogates are passed through
+        self.assertEqual('\uD801'.encode('utf-7'), b'+2AE-')
+        self.assertEqual('\uD801x'.encode('utf-7'), b'+2AE-x')
+        self.assertEqual('\uDC01'.encode('utf-7'), b'+3AE-')
+        self.assertEqual('\uDC01x'.encode('utf-7'), b'+3AE-x')
+        self.assertEqual(b'+2AE-'.decode('utf-7'), '\uD801')
+        self.assertEqual(b'+2AE-x'.decode('utf-7'), '\uD801x')
+        self.assertEqual(b'+3AE-'.decode('utf-7'), '\uDC01')
+        self.assertEqual(b'+3AE-x'.decode('utf-7'), '\uDC01x')
 
-        self.assertEqual(str(b'+3ADYAA-', 'utf-7', 'replace'), '\ufffd\ufffd')
+        self.assertEqual('\uD801\U000abcde'.encode('utf-7'), b'+2AHab9ze-')
+        self.assertEqual(b'+2AHab9ze-'.decode('utf-7'), '\uD801\U000abcde')
 
         # Issue #2242: crash on some Windows/MSVC versions
         self.assertEqual(b'+\xc1'.decode('utf-7'), '\xc1')
