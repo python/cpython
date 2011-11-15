@@ -558,6 +558,22 @@ Windows 2000 and Windows platforms which set ``COMSPEC`` to ``command.com``
 are no longer supported due to maintenance burden.
 
 
+Deprecated modules, functions and methods
+=========================================
+
+* The :mod:`packaging` module replaces the :mod:`distutils` module
+* The ``unicode_internal`` codec has been deprecated because of the
+  :pep:`393`, use UTF-8, UTF-16 (``utf-16-le`` or ``utf-16-le``), or UTF-32
+  (``utf-32-le`` or ``utf-32-le``) instead.
+* :meth:`ftplib.FTP.nlst` and :meth:`ftplib.FTP.dir`: use
+  :meth:`ftplib.FTP.mlsd` instead.
+* :func:`platform.popen`: use the :mod:`subprocess` module. Check especially
+  the :ref:`subprocess-replacements` section.
+* :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
+  module. Use Unicode filenames instead of bytes filenames to not depend on
+  the ANSI code page anymore and to support any filename.
+
+
 Porting to Python 3.3
 =====================
 
@@ -567,15 +583,11 @@ that may require changes to your code.
 Porting Python code
 -------------------
 
-* Issue #12326: On Linux, sys.platform doesn't contain the major version
+* :issue:`12326`: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
   on the Linux version used to build Python. Replace sys.platform == 'linux2'
   with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
   you don't need to support older Python versions.
-
-* Issue #13374: The Windows bytes API has been deprecated in the :mod:`os`
-  module. Use Unicode filenames instead of bytes filenames to not depend on the
-  ANSI code page anymore and to support any filename.
 
 Porting C code
 --------------
