@@ -374,6 +374,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13297: Use bytes type to send and receive binary data through XMLRPC.
+
 - Issue #6397: Support "/dev/poll" polling objects in select module,
   under Solaris & derivatives.
 
