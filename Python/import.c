@@ -1198,6 +1198,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     PyObject *cpathname_tmp;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
+    wchar_t *wdirname, *wpathname, *wpathname_tmp;
 #else
     mode_t dirmode = (srcstat->st_mode |
                       S_IXUSR | S_IXGRP | S_IXOTH |
@@ -1230,7 +1231,12 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     }
 
 #ifdef MS_WINDOWS
-    res = CreateDirectoryW(PyUnicode_AS_UNICODE(dirname), NULL);
+    wdirname = PyUnicode_AsUnicode(dirname);
+    if (wdirname == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    res = CreateDirectoryW(wdirname, NULL);
     ok = (res != 0);
     if (!ok && GetLastError() == ERROR_ALREADY_EXISTS)
         ok = 1;
@@ -1268,8 +1274,19 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         return;
     }
 #ifdef MS_WINDOWS
-    (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
-    fd = _wopen(PyUnicode_AS_UNICODE(cpathname_tmp),
+    wpathname = PyUnicode_AsUnicode(cpathname);
+    if (wpathname == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    wpathname_tmp = PyUnicode_AsUnicode(cpathname_tmp);
+    if (wpathname_tmp == NULL) {
+        PyErr_Clear();
+        return;
+    }
+
+    (void)DeleteFileW(wpathname_tmp);
+    fd = _wopen(wpathname_tmp,
                 O_EXCL | O_CREAT | O_WRONLY | O_BINARY,
                 mode);
     if (0 <= fd)
@@ -1322,7 +1339,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         /* Don't keep partial file */
         fclose(fp);
 #ifdef MS_WINDOWS
-        (void)DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
+        (void)DeleteFileW(wpathname_tmp);
         Py_DECREF(cpathname_tmp);
 #else
         (void) unlink(PyBytes_AS_STRING(cpathbytes_tmp));
@@ -1334,13 +1351,11 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     fclose(fp);
     /* Do a (hopefully) atomic rename */
 #ifdef MS_WINDOWS
-    if (!MoveFileExW(PyUnicode_AS_UNICODE(cpathname_tmp),
-                     PyUnicode_AS_UNICODE(cpathname),
-                     MOVEFILE_REPLACE_EXISTING)) {
+    if (!MoveFileExW(wpathname_tmp, wpathname, MOVEFILE_REPLACE_EXISTING)) {
         if (Py_VerboseFlag)
             PySys_FormatStderr("# can't write %R\n", cpathname);
         /* Don't keep tmp file */
-        (void) DeleteFileW(PyUnicode_AS_UNICODE(cpathname_tmp));
+        (void) DeleteFileW(wpathname_tmp);
         Py_DECREF(cpathname_tmp);
         return;
     }
@@ -1819,10 +1834,10 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     PyUnicode_CopyCharacters(filename, 0, path_unicode, 0, len);
     pos = len;
     if (addsep)
-        PyUnicode_WRITE(PyUnicode_KIND(filename), 
+        PyUnicode_WRITE(PyUnicode_KIND(filename),
                         PyUnicode_DATA(filename),
                         pos++, SEP);
-    PyUnicode_CopyCharacters(filename, pos, name, 0, 
+    PyUnicode_CopyCharacters(filename, pos, name, 0,
                              PyUnicode_GET_LENGTH(name));
 
     /* Check for package import (buf holds a directory name,
@@ -2268,18 +2283,22 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
     WIN32_FIND_DATAW data;
     HANDLE h;
     int cmp;
-    wchar_t *wname;
+    wchar_t *wfilename, *wname;
     Py_ssize_t wname_len;
 
     if (Py_GETENV("PYTHONCASEOK") != NULL)
         return 1;
 
-    h = FindFirstFileW(PyUnicode_AS_UNICODE(filename), &data);
+    wfilename = PyUnicode_AsUnicode(filename);
+    if (wfilename == NULL)
+        return -1;
+
+    h = FindFirstFileW(wfilename, &data);
     if (h == INVALID_HANDLE_VALUE) {
         PyErr_Format(PyExc_NameError,
           "Can't find file for module %R\n(filename %R)",
           name, filename);
-        return 0;
+        return -1;
     }
     FindClose(h);
 
@@ -2831,7 +2850,7 @@ import_module_level(PyObject *name, PyObject *globals, PyObject *locals,
 
     if (!ensure_fromlist(tail, fromlist, prefix, 0))
         goto out;
-    
+
     result = tail;
     Py_INCREF(result);
   out:
