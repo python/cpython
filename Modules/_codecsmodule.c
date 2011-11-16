@@ -688,7 +688,7 @@ unicode_internal_encode(PyObject *self,
             return NULL;
 
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "unicode_internal codecs has been deprecated",
+                         "unicode_internal codec has been deprecated",
                          1))
             return NULL;
 
