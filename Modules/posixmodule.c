@@ -2410,6 +2410,9 @@ posix_getcwd(int use_bytes)
         if (wbuf2 != wbuf) free(wbuf2);
         return resobj;
     }
+
+    if (win32_warn_bytes_api())
+        return NULL;
 #endif
 
     Py_BEGIN_ALLOW_THREADS

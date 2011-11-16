@@ -1638,6 +1638,7 @@ class Win32DeprecatedBytesAPI(unittest.TestCase):
                 (os.access, filename, os.R_OK),
                 (os.chdir, filename),
                 (os.chmod, filename, 0o777),
+                (os.getcwdb,),
                 (os.link, filename, filename),
                 (os.listdir, filename),
                 (os.lstat, filename),
