@@ -240,13 +240,6 @@ would print:
    This is a rather long string containing\n\
    several lines of text much as you would do in C.
 
-The interpreter prints the result of string operations in the same way as they
-are typed for input: inside quotes, and with quotes and other funny characters
-escaped by backslashes, to show the precise value.  The string is enclosed in
-double quotes if the string contains a single quote and no double quotes, else
-it's enclosed in single quotes.  (The :keyword:`print` statement, described
-later, can be used to write strings without quotes or escapes.)
-
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
 
