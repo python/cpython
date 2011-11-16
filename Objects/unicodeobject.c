@@ -6235,7 +6235,7 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
     PyObject *exc = NULL;
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "unicode_internal codecs has been deprecated",
+                     "unicode_internal codec has been deprecated",
                      1))
         return NULL;
 
