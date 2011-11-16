@@ -3051,9 +3051,13 @@ PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
 #ifdef HAVE_MBCS
-    return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
-                                PyUnicode_GET_SIZE(unicode),
-                                NULL);
+    const Py_UNICODE *wstr;
+    Py_ssize_t wlen;
+
+    wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
+    if (wstr == NULL)
+        return NULL;
+    return PyUnicode_EncodeMBCS(wstr, wlen, NULL);
 #elif defined(__APPLE__)
     return _PyUnicode_AsUTF8String(unicode, "surrogateescape");
 #else
@@ -3137,10 +3141,15 @@ PyUnicode_AsEncodedString(PyObject *unicode,
                  (strcmp(lower, "iso-8859-1") == 0))
             return _PyUnicode_AsLatin1String(unicode, errors);
 #ifdef HAVE_MBCS
-        else if (strcmp(lower, "mbcs") == 0)
-            return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
-                                        PyUnicode_GET_SIZE(unicode),
-                                        errors);
+        else if (strcmp(lower, "mbcs") == 0) {
+            const Py_UNICODE *wstr;
+            Py_ssize_t wlen;
+
+            wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
+            if (wstr == NULL)
+                return NULL;
+            return PyUnicode_EncodeMBCS(wstr, wlen, errors);
+        }
 #endif
         else if (strcmp(lower, "ascii") == 0)
             return _PyUnicode_AsASCIIString(unicode, errors);
@@ -5148,10 +5157,12 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
 PyObject *
 PyUnicode_AsUTF32String(PyObject *unicode)
 {
-    return PyUnicode_EncodeUTF32(PyUnicode_AS_UNICODE(unicode),
-                                 PyUnicode_GET_SIZE(unicode),
-                                 NULL,
-                                 0);
+    const Py_UNICODE *wstr;
+    Py_ssize_t wlen;
+    wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
+    if (wstr == NULL)
+        return NULL;
+    return PyUnicode_EncodeUTF32(wstr, wlen, NULL, 0);
 }
 
 /* --- UTF-16 Codec ------------------------------------------------------- */
