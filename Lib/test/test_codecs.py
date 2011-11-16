@@ -1030,7 +1030,7 @@ class UnicodeInternalTest(unittest.TestCase):
         for internal in not_ok:
             if sys.byteorder == "little":
                 internal = bytes(reversed(internal))
-            with support.check_warnings(('unicode_internal codecs has been '
+            with support.check_warnings(('unicode_internal codec has been '
                                          'deprecated', DeprecationWarning)):
                 self.assertRaises(UnicodeDecodeError, internal.decode,
                                   "unicode_internal")
@@ -1038,7 +1038,7 @@ class UnicodeInternalTest(unittest.TestCase):
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_error_attributes(self):
         try:
-            with support.check_warnings(('unicode_internal codecs has been '
+            with support.check_warnings(('unicode_internal codec has been '
                                          'deprecated', DeprecationWarning)):
                 b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
         except UnicodeDecodeError as ex:
@@ -1053,7 +1053,7 @@ class UnicodeInternalTest(unittest.TestCase):
     def test_decode_callback(self):
         codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
         decoder = codecs.getdecoder("unicode_internal")
-        with support.check_warnings(('unicode_internal codecs has been '
+        with support.check_warnings(('unicode_internal codec has been '
                                      'deprecated', DeprecationWarning)):
             ab = "ab".encode("unicode_internal").decode()
             ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
