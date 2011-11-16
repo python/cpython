@@ -1025,17 +1025,22 @@ class UnicodeInternalTest(unittest.TestCase):
         for internal, uni in ok:
             if sys.byteorder == "little":
                 internal = bytes(reversed(internal))
-            self.assertEqual(uni, internal.decode("unicode_internal"))
+            with support.check_warnings():
+                self.assertEqual(uni, internal.decode("unicode_internal"))
         for internal in not_ok:
             if sys.byteorder == "little":
                 internal = bytes(reversed(internal))
-            self.assertRaises(UnicodeDecodeError, internal.decode,
-                "unicode_internal")
+            with support.check_warnings(('unicode_internal codecs has been '
+                                         'deprecated', DeprecationWarning)):
+                self.assertRaises(UnicodeDecodeError, internal.decode,
+                                  "unicode_internal")
 
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_error_attributes(self):
         try:
-            b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
+            with support.check_warnings(('unicode_internal codecs has been '
+                                         'deprecated', DeprecationWarning)):
+                b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
         except UnicodeDecodeError as ex:
             self.assertEqual("unicode_internal", ex.encoding)
             self.assertEqual(b"\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
@@ -1048,10 +1053,12 @@ class UnicodeInternalTest(unittest.TestCase):
     def test_decode_callback(self):
         codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
         decoder = codecs.getdecoder("unicode_internal")
-        ab = "ab".encode("unicode_internal").decode()
-        ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
-                                "ascii"),
-                          "UnicodeInternalTest")
+        with support.check_warnings(('unicode_internal codecs has been '
+                                     'deprecated', DeprecationWarning)):
+            ab = "ab".encode("unicode_internal").decode()
+            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
+                                    "ascii"),
+                              "UnicodeInternalTest")
         self.assertEqual(("ab", 12), ignored)
 
     def test_encode_length(self):
