@@ -79,6 +79,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8793: Prevent IDLE crash when given strings with invalid hex escape
+  sequences.
+
 - Issues #1745761, #755670, #13357, #12629, #1200313: HTMLParser now correctly
   handles non-valid attributes, including adjacent and unquoted attributes.
 

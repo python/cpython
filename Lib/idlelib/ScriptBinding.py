@@ -101,7 +101,7 @@ class ScriptBinding:
             try:
                 # If successful, return the compiled code
                 return compile(source, filename, "exec")
-            except (SyntaxError, OverflowError), err:
+            except (SyntaxError, OverflowError, ValueError), err:
                 try:
                     msg, (errorfilename, lineno, offset, line) = err
                     if not errorfilename:
