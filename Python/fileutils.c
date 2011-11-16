@@ -244,8 +244,12 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
+    wchar_t *wpath;
 
-    err = _wstat(PyUnicode_AS_UNICODE(path), &wstatbuf);
+    wpath = PyUnicode_AsUnicode(path);
+    if (wpath == NULL)
+        return -1;
+    err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
@@ -297,14 +301,19 @@ FILE*
 _Py_fopen(PyObject *path, const char *mode)
 {
 #ifdef MS_WINDOWS
+    wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
+
+    wpath = PyUnicode_AsUnicode(path);
+    if (wpath == NULL)
+        return NULL;
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
     if (usize == 0)
         return NULL;
 
-    return _wfopen(PyUnicode_AS_UNICODE(path), wmode);
+    return _wfopen(wpath, wmode);
 #else
     FILE *f;
     PyObject *bytes = PyUnicode_EncodeFSDefault(path);
