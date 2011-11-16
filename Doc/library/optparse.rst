@@ -610,8 +610,8 @@ This would result in the following help output:
 
        -g                  Group option.
 
-A bit more complete example might invole using more than one group: still
-extendind the previous example::
+A bit more complete example might involve using more than one group: still
+extending the previous example::
 
     group = OptionGroup(parser, "Dangerous Options",
                         "Caution: use these options at your own risk.  "
