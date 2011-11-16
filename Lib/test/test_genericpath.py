@@ -264,8 +264,10 @@ class CommonTest(GenericTest):
             self.assertIn(b"foo", self.pathmodule.abspath(b"foo"))
 
         # Abspath returns bytes when the arg is bytes
-        for path in (b'', b'foo', b'f\xf2\xf2', b'/foo', b'C:\\'):
-            self.assertIsInstance(self.pathmodule.abspath(path), bytes)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for path in (b'', b'foo', b'f\xf2\xf2', b'/foo', b'C:\\'):
+                self.assertIsInstance(self.pathmodule.abspath(path), bytes)
 
     def test_realpath(self):
         self.assertIn("foo", self.pathmodule.realpath("foo"))
