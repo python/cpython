@@ -403,7 +403,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
-/* Values for PyUnicodeObject.state: */
+/* Values for PyASCIIObject.state: */
 
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
@@ -1564,7 +1564,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     );
 #endif
 
-/* Similar to PyUnicode_TransformDecimalToASCII(), but takes a PyUnicodeObject
+/* Similar to PyUnicode_TransformDecimalToASCII(), but takes a PyObject
    as argument instead of a raw buffer and length.  This function additionally
    transforms spaces to ASCII because this is what the callers in longobject,
    floatobject, and complexobject did anyways. */
