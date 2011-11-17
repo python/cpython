@@ -307,6 +307,15 @@ handle NAT with non-secure FTP without opening fixed ports.
 (Contributed by Giampaolo Rodolà in :issue:`12139`)
 
 
+imaplib
+-------
+
+The :class:`~imaplib.IMAP4_SSL` constructor now accepts an SSLContext
+parameter to control parameters of the secure channel.
+
+(Contributed by Sijin Joseph in :issue:`8808`)
+
+
 math
 ----
 
@@ -534,8 +543,6 @@ ssl
 
   (Contributed by Jacek Konieczny in :issue:`12551`)
 
-
-
 shutil
 ------
 
@@ -546,6 +553,15 @@ shutil
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
     ids. (Contributed by Sandro Tosi in :issue:`12191`)
+
+smtplib
+-------
+
+The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
+method now accept an SSLContext parameter to control parameters of the secure
+channel.
+
+(Contributed by Kasun Herath in :issue:`8809`)
 
 urllib
 ------
