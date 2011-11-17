@@ -3896,24 +3896,34 @@ socket_gethostname(PyObject *self, PyObject *unused)
        Otherwise, gethostname apparently also returns the DNS name. */
     wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = Py_ARRAY_LENGTH(buf);
+    wchar_t *name;
     PyObject *result;
-    if (!GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size)) {
-        if (GetLastError() == ERROR_MORE_DATA) {
-            /* MSDN says this may occur "because DNS allows longer names */
-            if (size == 0) /* XXX: I'm not sure how to handle this */
-                return PyUnicode_FromUnicode(NULL, 0);
-            result = PyUnicode_FromUnicode(NULL, size - 1);
-            if (!result)
-                return NULL;
-            if (GetComputerNameExW(ComputerNamePhysicalDnsHostname,
-                                   PyUnicode_AS_UNICODE(result),
-                                   &size))
-                return result;
-            Py_DECREF(result);
-        }
-        return PyErr_SetExcFromWindowsErr(PyExc_WindowsError, GetLastError());
+
+    if (GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size))
+        return PyUnicode_FromUnicode(buf, size);
+
+    if (GetLastError() != ERROR_MORE_DATA)
+        return PyErr_SetFromWindowsErr(0);
+
+    if (size == 0)
+        return PyUnicode_New(0, 0);
+
+    /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
+       names */
+    name = PyMem_Malloc(size * sizeof(wchar_t));
+    if (!name)
+        return NULL;
+    if (!GetComputerNameExW(ComputerNamePhysicalDnsHostname,
+                           name,
+                           &size))
+    {
+        PyMem_Free(name);
+        return PyErr_SetFromWindowsErr(0);
     }
-    return PyUnicode_FromUnicode(buf, size);
+
+    result = PyUnicode_FromWideChar(name, size);
+    PyMem_Free(name);
+    return result;
 #else
     char buf[1024];
     int res;
