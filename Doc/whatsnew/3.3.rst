@@ -102,7 +102,7 @@ Changes introduced by :pep:`393` are the following:
   * indexing or slicing non-BMP characters returns the expected value,
     so ``'\U0010FFFF'[0]`` now returns ``'\U0010FFFF'`` and not ``'\uDBFF'``;
 
-  * several other functions in the standard library now handle correctly
+  * all other functions in the standard library now correctly handle
     non-BMP codepoints.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
