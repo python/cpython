@@ -3,6 +3,9 @@
 
 import imp
 import sys
+import os
+import unittest
+import subprocess
 
 from test import test_support
 # This little helper class is essential for testing pdb under doctest.
@@ -277,6 +280,29 @@ def test_pdb_continue_in_bottomframe():
     4
     """
 
+class Tester7750(unittest.TestCase):
+    # if the filename has something that resolves to a python
+    #  escape character (such as \t), it will fail
+    test_fn = '.\\test7750.py'
+
+    msg = "issue7750 only applies when os.sep is a backslash"
+    @unittest.skipUnless(os.path.sep == '\\', msg)
+    def test_issue7750(self):
+        with open(self.test_fn, 'w') as f:
+            f.write('print("hello world")')
+        cmd = [sys.executable, '-m', 'pdb', self.test_fn,]
+        proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            )
+        stdout, stderr = proc.communicate('quit\n')
+        self.assertNotIn('IOError', stdout, "pdb munged the filename")
+
+    def tearDown(self):
+        if os.path.isfile(self.test_fn):
+            os.remove(self.test_fn)
+
 
 def test_main():
     from test import test_pdb
@@ -285,3 +311,4 @@ def test_main():
 
 if __name__ == '__main__':
     test_main()
+    unittest.main()
