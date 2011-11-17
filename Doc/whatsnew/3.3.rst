@@ -84,11 +84,19 @@ Changes introduced by :pep:`393` are the following:
 
   * non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per codepoint.
 
-.. The memory usage of Python 3.3 is two to three times smaller than Python 3.2,
-   and a little bit better than Python 2.7, on a `Django benchmark
-   <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
-   XXX The result should be moved in the PEP and a small summary about
-   performances and a link to the PEP should be added here.
+  The net effect is that for most applications, memory usage of string storage
+  should decrease significantly - especially compared to former wide unicode
+  builds - as, in many cases, strings will be pure ASCII even in international
+  contexts (because many strings store non-human language data, such as XML
+  fragments, HTTP headers, JSON-encoded data, etc.).  We also hope that it
+  will, for the same reasons, increase CPU cache efficiency on non-trivial
+  applications.
+
+   .. The memory usage of Python 3.3 is two to three times smaller than Python 3.2,
+      and a little bit better than Python 2.7, on a `Django benchmark
+      <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
+      XXX The result should be moved in the PEP and a link to the PEP should
+      be added here.
 
 * With the death of narrow builds, the problems specific to narrow builds have
   also been fixed, for example:
