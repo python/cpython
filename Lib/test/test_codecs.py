@@ -1062,10 +1062,8 @@ class UnicodeInternalTest(unittest.TestCase):
         self.assertEqual(("ab", 12), ignored)
 
     def test_encode_length(self):
-        with warnings.catch_warnings():
-            # unicode-internal has been deprecated
-            warnings.simplefilter("ignore", DeprecationWarning)
-
+        with support.check_warnings(('unicode_internal codec has been '
+                                     'deprecated', DeprecationWarning)):
             # Issue 3739
             encoder = codecs.getencoder("unicode_internal")
             self.assertEqual(encoder("a")[1], 1)
@@ -1528,10 +1526,8 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name = "latin_1"
             self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
 
-            with warnings.catch_warnings():
+            with support.check_warnings():
                 # unicode-internal has been deprecated
-                warnings.simplefilter("ignore", DeprecationWarning)
-
                 (b, size) = codecs.getencoder(encoding)(s)
                 self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
                 (chars, size) = codecs.getdecoder(encoding)(b)
@@ -1639,7 +1635,9 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_bad_encode_args(self):
         for encoding in all_unicode_encodings:
             encoder = codecs.getencoder(encoding)
-            self.assertRaises(TypeError, encoder)
+            with support.check_warnings():
+                # unicode-internal has been deprecated
+                self.assertRaises(TypeError, encoder)
 
     def test_encoding_map_type_initialized(self):
         from encodings import cp1140
