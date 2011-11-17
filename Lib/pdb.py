@@ -1229,7 +1229,7 @@ see no sign that the breakpoint was reached.
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = 0
-        statement = 'execfile( "%s")' % filename
+        statement = 'execfile(%r)' % filename
         self.run(statement)
 
 # Simplified interface
