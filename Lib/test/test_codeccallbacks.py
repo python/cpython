@@ -205,33 +205,37 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.charmap_encode, sin, "replace", charmap)
 
     def test_decodeunicodeinternal(self):
-        self.assertRaises(
-            UnicodeDecodeError,
-            b"\x00\x00\x00\x00\x00".decode,
-            "unicode-internal",
-        )
+        with test.support.check_warnings(('unicode_internal codec has been '
+                                          'deprecated', DeprecationWarning)):
+            self.assertRaises(
+                UnicodeDecodeError,
+                b"\x00\x00\x00\x00\x00".decode,
+                "unicode-internal",
+            )
         if SIZEOF_WCHAR_T == 4:
             def handler_unicodeinternal(exc):
                 if not isinstance(exc, UnicodeDecodeError):
                     raise TypeError("don't know how to handle %r" % exc)
                 return ("\x01", 1)
 
-            self.assertEqual(
-                b"\x00\x00\x00\x00\x00".decode("unicode-internal", "ignore"),
-                "\u0000"
-            )
+            with test.support.check_warnings(('unicode_internal codec has been '
+                                              'deprecated', DeprecationWarning)):
+                self.assertEqual(
+                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "ignore"),
+                    "\u0000"
+                )
 
-            self.assertEqual(
-                b"\x00\x00\x00\x00\x00".decode("unicode-internal", "replace"),
-                "\u0000\ufffd"
-            )
+                self.assertEqual(
+                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "replace"),
+                    "\u0000\ufffd"
+                )
 
-            codecs.register_error("test.hui", handler_unicodeinternal)
+                codecs.register_error("test.hui", handler_unicodeinternal)
 
-            self.assertEqual(
-                b"\x00\x00\x00\x00\x00".decode("unicode-internal", "test.hui"),
-                "\u0000\u0001\u0000"
-            )
+                self.assertEqual(
+                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "test.hui"),
+                    "\u0000\u0001\u0000"
+                )
 
     def test_callbacks(self):
         def handler1(exc):
@@ -626,9 +630,8 @@ class CodecCallbackTest(unittest.TestCase):
                 ("utf-7", b"+x-"),
                 ("unicode-internal", b"\x00"),
             ):
-                with warnings.catch_warnings():
+                with test.support.check_warnings():
                     # unicode-internal has been deprecated
-                    warnings.simplefilter("ignore", DeprecationWarning)
                     self.assertRaises(
                         TypeError,
                         bytes.decode,
@@ -850,11 +853,12 @@ class CodecCallbackTest(unittest.TestCase):
             else:
                 raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error("test.replacing", replacing)
-        with warnings.catch_warnings():
+
+        with test.support.check_warnings():
             # unicode-internal has been deprecated
-            warnings.simplefilter("ignore", DeprecationWarning)
             for (encoding, data) in baddata:
-                self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
+                with self.assertRaises(TypeError):
+                    data.decode(encoding, "test.replacing")
 
         def mutating(exc):
             if isinstance(exc, UnicodeDecodeError):
@@ -865,8 +869,11 @@ class CodecCallbackTest(unittest.TestCase):
         codecs.register_error("test.mutating", mutating)
         # If the decoder doesn't pick up the modified input the following
         # will lead to an endless loop
-        for (encoding, data) in baddata:
-            self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
+        with test.support.check_warnings():
+            # unicode-internal has been deprecated
+            for (encoding, data) in baddata:
+                with self.assertRaises(TypeError):
+                    data.decode(encoding, "test.replacing")
 
 def test_main():
     test.support.run_unittest(CodecCallbackTest)
