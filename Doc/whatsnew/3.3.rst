@@ -120,8 +120,6 @@ Changes introduced by :pep:`393` are the following:
 
 * The :file:`./configure` flag ``--with-wide-unicode`` has been removed.
 
-XXX mention new and deprecated functions and macros
-
 
 PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
