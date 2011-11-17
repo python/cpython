@@ -510,11 +510,30 @@ socket
 ssl
 ---
 
-The :mod:`ssl` module has new functions:
+* The :mod:`ssl` module has two new random generation functions:
 
   * :func:`~ssl.RAND_bytes`: generate cryptographically strong
     pseudo-random bytes.
   * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
+
+  (Contributed by Victor Stinner in :issue:`12049`)
+
+* The :mod:`ssl` module now exposes a finer-grained exception hierarchy
+  in order to make it easier to inspect the various kinds of errors.
+
+  (Contributed by Antoine Pitrou in :issue:`11183`)
+
+* :meth:`~ssl.SSLContext.load_cert_chain` now accepts a *password* argument
+  to be used if the private key is encrypted.
+
+  (Contributed by Adam Simpkins in :issue:`12803`)
+
+* SSL sockets have a new :meth:`~ssl.SSLSocket.get_channel_binding` method
+  allowing the implementation of certain authentication mechanisms such as
+  SCRAM-SHA-1-PLUS.
+
+  (Contributed by Jacek Konieczny in :issue:`12551`)
+
 
 
 shutil
