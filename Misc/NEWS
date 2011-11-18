@@ -79,6 +79,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4147: minidom's toprettyxml no longer adds whitespace around a text
+  node when it is the only child of an element.  Initial patch by Dan
+  Kenigsberg.
+
 - Issue #8793: Prevent IDLE crash when given strings with invalid hex escape
   sequences.
 
