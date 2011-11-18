@@ -76,6 +76,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4147: minidom's toprettyxml no longer adds whitespace around a text
+  node when it is the only child of an element.  Initial patch by Dan
+  Kenigsberg.
+
 - Issues #1745761, #755670, #13357, #12629, #1200313: HTMLParser now correctly
   handles non-valid attributes, including adjacent and unquoted attributes.
 
