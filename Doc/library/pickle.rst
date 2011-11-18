@@ -364,7 +364,7 @@ raised in this case. You can carefully raise this limit with
 
 Note that functions (built-in and user-defined) are pickled by "fully qualified"
 name reference, not by value.  This means that only the function name is
-pickled, along with the name of module the function is defined in.  Neither the
+pickled, along with the name of the module the function is defined in.  Neither the
 function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
