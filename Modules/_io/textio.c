@@ -1388,7 +1388,7 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
 /* Read and decode the next chunk of data from the BufferedReader.
  */
 static int
-textiowrapper_read_chunk(textio *self)
+textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
 {
     PyObject *dec_buffer = NULL;
     PyObject *dec_flags = NULL;
@@ -1430,7 +1430,10 @@ textiowrapper_read_chunk(textio *self)
     }
 
     /* Read a chunk, decode it, and put the result in self._decoded_chars. */
-    chunk_size = PyLong_FromSsize_t(self->chunk_size);
+    if (size_hint > 0) {
+        size_hint = Py_MAX(self->b2cratio, 1.0) * size_hint;
+    }
+    chunk_size = PyLong_FromSsize_t(Py_MAX(self->chunk_size, size_hint));
     if (chunk_size == NULL)
         goto fail;
     input_chunk = PyObject_CallMethodObjArgs(self->buffer,
@@ -1553,7 +1556,7 @@ textiowrapper_read(textio *self, PyObject *args)
 
         /* Keep reading chunks until we have n characters to return */
         while (remaining > 0) {
-            res = textiowrapper_read_chunk(self);
+            res = textiowrapper_read_chunk(self, remaining);
             if (res < 0)
                 goto fail;
             if (res == 0)  /* EOF */
@@ -1563,7 +1566,8 @@ textiowrapper_read(textio *self, PyObject *args)
                 if (chunks == NULL)
                     goto fail;
             }
-            if (PyList_Append(chunks, result) < 0)
+            if (PyUnicode_GET_LENGTH(result) > 0 &&
+                PyList_Append(chunks, result) < 0)
                 goto fail;
             Py_DECREF(result);
             result = textiowrapper_get_decoded_chars(self, remaining);
@@ -1720,7 +1724,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         res = 1;
         while (!self->decoded_chars ||
                !PyUnicode_GET_LENGTH(self->decoded_chars)) {
-            res = textiowrapper_read_chunk(self);
+            res = textiowrapper_read_chunk(self, 0);
             if (res < 0)
                 goto error;
             if (res == 0)
