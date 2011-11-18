@@ -439,12 +439,39 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.confirm(domstr == str.replace("\n", "\r\n"))
 
+    def test_toprettyxml_with_text_nodes(self):
+        # see issue #4147, text nodes are not indented
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(parseString('<B>A</B>').toprettyxml(),
+                         decl + '<B>A</B>\n')
+        self.assertEqual(parseString('<C>A<B>A</B></C>').toprettyxml(),
+                         decl + '<C>\n\tA\n\t<B>A</B>\n</C>\n')
+        self.assertEqual(parseString('<C><B>A</B>A</C>').toprettyxml(),
+                         decl + '<C>\n\t<B>A</B>\n\tA\n</C>\n')
+        self.assertEqual(parseString('<C><B>A</B><B>A</B></C>').toprettyxml(),
+                         decl + '<C>\n\t<B>A</B>\n\t<B>A</B>\n</C>\n')
+        self.assertEqual(parseString('<C><B>A</B>A<B>A</B></C>').toprettyxml(),
+                         decl + '<C>\n\t<B>A</B>\n\tA\n\t<B>A</B>\n</C>\n')
+
+    def test_toprettyxml_with_adjacent_text_nodes(self):
+        # see issue #4147, adjacent text nodes are indented normally
+        dom = Document()
+        elem = dom.createElement(u'elem')
+        elem.appendChild(dom.createTextNode(u'TEXT'))
+        elem.appendChild(dom.createTextNode(u'TEXT'))
+        dom.appendChild(elem)
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(dom.toprettyxml(),
+                         decl + '<elem>\n\tTEXT\n\tTEXT\n</elem>\n')
+
     def test_toprettyxml_preserves_content_of_text_node(self):
-        str = '<A>B</A>'
-        dom = parseString(str)
-        dom2 = parseString(dom.toprettyxml())
-        self.assertEqual(dom.childNodes[0].childNodes[0].toxml(),
-                         dom2.childNodes[0].childNodes[0].toxml())
+        # see issue #4147
+        for str in ('<B>A</B>', '<A><B>C</B></A>'):
+            dom = parseString(str)
+            dom2 = parseString(dom.toprettyxml())
+            self.assertEqual(
+                dom.getElementsByTagName('B')[0].childNodes[0].toxml(),
+                dom2.getElementsByTagName('B')[0].childNodes[0].toxml())
 
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')

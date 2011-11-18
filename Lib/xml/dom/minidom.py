@@ -807,11 +807,15 @@ class Element(Node):
             writer.write("\"")
         if self.childNodes:
             writer.write(">")
-            if self.childNodes[0].nodeType != Node.TEXT_NODE:
+            if (len(self.childNodes) == 1 and
+                self.childNodes[0].nodeType == Node.TEXT_NODE):
+                self.childNodes[0].writexml(writer, '', '', '')
+            else:
                 writer.write(newl)
-            for node in self.childNodes:
-                node.writexml(writer,indent+addindent,addindent,newl)
-            writer.write("%s</%s>%s" % (indent,self.tagName,newl))
+                for node in self.childNodes:
+                    node.writexml(writer, indent+addindent, addindent, newl)
+                writer.write(indent)
+            writer.write("</%s>%s" % (self.tagName, newl))
         else:
             writer.write("/>%s"%(newl))
 
@@ -1033,7 +1037,7 @@ class Text(CharacterData):
         return newText
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        _write_data(writer, self.data)
+        _write_data(writer, "%s%s%s" % (indent, self.data, newl))
 
     # DOM Level 3 (WD 9 April 2002)
 
