@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10227: Add an allocation cache for a single slice object.  Patch by
+  Stefan Behnel.
+
 - Issue #13393: BufferedReader.read1() now asks the full requested size to
   the raw stream instead of limiting itself to the buffer size.
 

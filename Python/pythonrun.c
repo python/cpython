@@ -531,6 +531,7 @@ Py_Finalize(void)
     PyLong_Fini();
     PyFloat_Fini();
     PyDict_Fini();
+    PySlice_Fini();
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
