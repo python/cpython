@@ -80,19 +80,38 @@ PyObject _Py_EllipsisObject = {
 };
 
 
-/* Slice object implementation
+/* Slice object implementation */
 
-   start, stop, and step are python objects with None indicating no
+/* Using a cache is very effective since typically only a single slice is
+ * created and then deleted again
+ */
+static PySliceObject *slice_cache = NULL;
+void PySlice_Fini(void)
+{
+    PySliceObject *obj = slice_cache;
+    if (obj != NULL) {
+        slice_cache = NULL;
+        PyObject_Del(obj);
+    }
+}
+
+/* start, stop, and step are python objects with None indicating no
    index is present.
 */
 
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
-    PySliceObject *obj = PyObject_New(PySliceObject, &PySlice_Type);
-
-    if (obj == NULL)
-        return NULL;
+    PySliceObject *obj;
+    if (slice_cache != NULL) {
+        obj = slice_cache;
+        slice_cache = NULL;
+        _Py_NewReference((PyObject *)obj);
+    } else {
+        obj = PyObject_New(PySliceObject, &PySlice_Type);
+        if (obj == NULL)
+            return NULL;
+    }
 
     if (step == NULL) step = Py_None;
     Py_INCREF(step);
@@ -260,7 +279,10 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    PyObject_Del(r);
+    if (slice_cache == NULL)
+        slice_cache = r;
+    else
+        PyObject_Del(r);
 }
 
 static PyObject *
