@@ -14,7 +14,6 @@ import re
 # Regular expressions used for parsing
 
 interesting_normal = re.compile('[&<]')
-interesting_cdata = re.compile(r'<(/|\Z)')
 incomplete = re.compile('&[a-zA-Z#]')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
@@ -125,8 +124,8 @@ class HTMLParser(markupbase.ParserBase):
         return self.__starttag_text
 
     def set_cdata_mode(self, elem):
-        self.interesting = interesting_cdata
         self.cdata_elem = elem.lower()
+        self.interesting = re.compile(r'</\s*%s\s*>' % self.cdata_elem, re.I)
 
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
@@ -144,6 +143,8 @@ class HTMLParser(markupbase.ParserBase):
             if match:
                 j = match.start()
             else:
+                if self.cdata_elem:
+                    break
                 j = n
             if i < j: self.handle_data(rawdata[i:j])
             i = self.updatepos(i, j)
@@ -212,7 +213,7 @@ class HTMLParser(markupbase.ParserBase):
             else:
                 assert 0, "interesting.search() lied"
         # end while
-        if end and i < n:
+        if end and i < n and not self.cdata_elem:
             self.handle_data(rawdata[i:n])
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
