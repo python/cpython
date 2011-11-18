@@ -4184,7 +4184,7 @@ class TCPTimeoutTest(SocketTCPTest):
             # no alarm can be pending.  Safe to restore old handler.
             signal.signal(signal.SIGALRM, old_alarm)
 
-class UDPTimeoutTest(SocketTCPTest):
+class UDPTimeoutTest(SocketUDPTest):
 
     def testUDPTimeout(self):
         def raise_timeout(*args, **kwargs):
