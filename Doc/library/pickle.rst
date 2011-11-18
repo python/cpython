@@ -237,7 +237,7 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: UnpicklingError
 
-   Error raised when there a problem unpickling an object, such as a data
+   Error raised when there is a problem unpickling an object, such as a data
    corruption or a security violation.  It inherits :exc:`PickleError`.
 
    Note that other exceptions may also be raised during unpickling, including
@@ -324,11 +324,11 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    .. method:: persistent_load(pid)
 
-      Raise an :exc:`UnpickingError` by default.
+      Raise an :exc:`UnpicklingError` by default.
 
       If defined, :meth:`persistent_load` should return the object specified by
       the persistent ID *pid*.  If an invalid persistent ID is encountered, an
-      :exc:`UnpickingError` should be raised.
+      :exc:`UnpicklingError` should be raised.
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
@@ -377,7 +377,7 @@ raised in this case.  You can carefully raise this limit with
 
 Note that functions (built-in and user-defined) are pickled by "fully qualified"
 name reference, not by value.  This means that only the function name is
-pickled, along with the name of module the function is defined in.  Neither the
+pickled, along with the name of the module the function is defined in.  Neither the
 function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
@@ -668,7 +668,7 @@ inoffensive, it is not difficult to imagine one that could damage your system.
 For this reason, you may want to control what gets unpickled by customizing
 :meth:`Unpickler.find_class`.  Unlike its name suggests, :meth:`find_class` is
 called whenever a global (i.e., a class or a function) is requested.  Thus it is
-possible to either forbid completely globals or restrict them to a safe subset.
+possible to either completely forbid globals or restrict them to a safe subset.
 
 Here is an example of an unpickler allowing only few safe classes from the
 :mod:`builtins` module to be loaded::
