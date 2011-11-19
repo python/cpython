@@ -328,8 +328,12 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | constant representing rounding mode              |
-   |                     |                | used for arithmetic operations                   |
+   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
+   |                     |                | used for arithmetic operations.  This reflects   |
+   |                     |                | the value of the system FLT_ROUNDS macro at      |
+   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
+   |                     |                | of the C99 standard for an explanation of the    |
+   |                     |                | possible values and their meanings.              |
    +---------------------+----------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
