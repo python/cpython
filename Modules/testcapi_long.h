@@ -33,8 +33,7 @@ TESTNAME(PyObject *error(const char*))
             unsigned TYPENAME uin, uout;
 
             /* For 0, 1, 2 use base; for 3, 4, 5 use -base */
-            uin = j < 3 ? base
-                        : (unsigned TYPENAME)(-(TYPENAME)base);
+            uin = j < 3 ? base : 0U - base;
 
             /* For 0 & 3, subtract 1.
              * For 1 & 4, leave alone.
