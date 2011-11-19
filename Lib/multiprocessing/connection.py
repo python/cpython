@@ -608,21 +608,7 @@ def SocketClient(address):
     '''
     family = address_type(address)
     with socket.socket( getattr(socket, family) ) as s:
-        t = _init_timeout()
-
-        while 1:
-            try:
-                s.connect(address)
-            except socket.error as e:
-                if e.args[0] != errno.ECONNREFUSED or _check_timeout(t):
-                    debug('failed to connect to address %s', address)
-                    raise
-                time.sleep(0.01)
-            else:
-                break
-        else:
-            raise
-
+        s.connect(address)
         fd = duplicate(s.fileno())
     conn = Connection(fd)
     return conn
