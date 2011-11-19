@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13338: Handle all enumerations in _Py_ANNOTATE_MEMORY_ORDER
+  to allow compiling extension modules with -Wswitch-enum on gcc.
+  Initial patch by Floris Bruynooghe.
+
 - Issue #10227: Add an allocation cache for a single slice object.  Patch by
   Stefan Behnel.
 
