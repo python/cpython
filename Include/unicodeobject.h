@@ -303,19 +303,22 @@ typedef struct {
            - PyUnicode_1BYTE_KIND (1):
 
              * character type = Py_UCS1 (8 bits, unsigned)
-             * if ascii is set, all characters must be in range
-               U+0000-U+007F, otherwise at least one character must be in range
+             * all characters are in the range U+0000-U+00FF (latin1)
+             * if ascii is set, all characters are in the range U+0000-U+007F
+               (ASCII), otherwise at least one character is in the range
                U+0080-U+00FF
 
            - PyUnicode_2BYTE_KIND (2):
 
              * character type = Py_UCS2 (16 bits, unsigned)
-             * at least one character must be in range U+0100-U+FFFF
+             * all characters are in the range U+0000-U+FFFF (BMP)
+             * at least one character is in the range U+0100-U+FFFF
 
            - PyUnicode_4BYTE_KIND (4):
 
              * character type = Py_UCS4 (32 bits, unsigned)
-             * at least one character must be in range U+10000-U+10FFFF
+             * all characters are in the range U+0000-U+10FFFF
+             * at least one character is in the range U+10000-U+10FFFF
          */
         unsigned int kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
@@ -323,7 +326,7 @@ typedef struct {
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
         unsigned int compact:1;
-        /* The string only contains characters in range U+0000-U+007F (ASCII)
+        /* The string only contains characters in the range U+0000-U+007F (ASCII)
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
         unsigned int ascii:1;

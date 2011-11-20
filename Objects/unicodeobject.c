@@ -392,15 +392,21 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 maxchar = ch;
         }
         if (kind == PyUnicode_1BYTE_KIND) {
-            if (ascii->state.ascii == 0)
+            if (ascii->state.ascii == 0) {
                 assert(maxchar >= 128);
+                assert(maxchar <= 255);
+            }
             else
                 assert(maxchar < 128);
         }
-        else if (kind == PyUnicode_2BYTE_KIND)
+        else if (kind == PyUnicode_2BYTE_KIND) {
             assert(maxchar >= 0x100);
-        else
+            assert(maxchar <= 0xFFFF);
+        }
+        else {
             assert(maxchar >= 0x10000);
+            assert(maxchar <= 0x10FFFF);
+        }
     }
     if (check_content && !unicode_is_singleton(op))
         assert(ascii->hash == -1);
