@@ -1641,7 +1641,7 @@ print_exception(PyObject *f, PyObject *value)
         if (s == NULL)
             err = -1;
         else if (!PyUnicode_Check(s) ||
-            PyUnicode_GetSize(s) != 0)
+            PyUnicode_GetLength(s) != 0)
             err = PyFile_WriteString(": ", f);
         if (err == 0)
           err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
