@@ -5339,13 +5339,12 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             endinpos = ((const char *)e) + 1 - starts;
             goto utf16Error;
         }
-        if (0xD800 <= ch && ch <= 0xDBFF) {
-            Py_UNICODE ch2 = (q[ihi] << 8) | q[ilo];
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
+            Py_UCS4 ch2 = (q[ihi] << 8) | q[ilo];
             q += 2;
-            if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
+            if (Py_UNICODE_IS_LOW_SURROGATE(ch2)) {
                 if (unicode_putchar(&unicode, &outpos,
-                                    (((ch & 0x3FF)<<10) |
-                                     (ch2 & 0x3FF)) + 0x10000) < 0)
+                                    Py_UNICODE_JOIN_SURROGATES(ch, ch2)) < 0)
                     goto onError;
                 continue;
             }
