@@ -117,15 +117,20 @@ typedef wchar_t Py_UNICODE;
 
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
-#if SIZEOF_INT >= 4
+#if SIZEOF_INT == 4
 typedef unsigned int Py_UCS4;
-#elif SIZEOF_LONG >= 4
+#elif SIZEOF_LONG == 4
 typedef unsigned long Py_UCS4;
 #else
 #error "Could not find a proper typedef for Py_UCS4"
 #endif
 
+#if SIZEOF_SHORT == 2
 typedef unsigned short Py_UCS2;
+#else
+#error "Could not find a proper typedef for Py_UCS2"
+#endif
+
 typedef unsigned char Py_UCS1;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
