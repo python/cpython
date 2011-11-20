@@ -729,15 +729,17 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo'.split())
     Namespace(foo=42)
 
-* ``'store_true'`` and ``'store_false'`` - These store the values ``True`` and
-  ``False`` respectively.  These are special cases of ``'store_const'``.  For
-  example::
+* ``'store_true'`` and ``'store_false'`` - These are special cases of
+  ``'store_const'`` used for storing the values ``True`` and ``False``
+  respectively.  In addition, they create default values of ``False`` and
+  ``True`` respectively.  For example::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
     >>> parser.add_argument('--bar', action='store_false')
+    >>> parser.add_argument('--baz', action='store_false')
     >>> parser.parse_args('--foo --bar'.split())
-    Namespace(bar=False, foo=True)
+    Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list.  This is useful to allow an option to be specified multiple times.
