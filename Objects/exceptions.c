@@ -1542,8 +1542,8 @@ UnicodeEncodeError_str(PyObject *self)
     if (encoding_str == NULL)
         goto done;
 
-    if (uself->start < PyUnicode_GET_SIZE(uself->object) && uself->end == uself->start+1) {
-        int badchar = (int)PyUnicode_AS_UNICODE(uself->object)[uself->start];
+    if (uself->start < PyUnicode_GET_LENGTH(uself->object) && uself->end == uself->start+1) {
+        Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
         const char *fmt;
         if (badchar <= 0xff)
             fmt = "'%U' codec can't encode character '\\x%02x' in position %zd: %U";
@@ -1554,7 +1554,7 @@ UnicodeEncodeError_str(PyObject *self)
         result = PyUnicode_FromFormat(
             fmt,
             encoding_str,
-            badchar,
+            (int)badchar,
             uself->start,
             reason_str);
     }
