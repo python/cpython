@@ -408,8 +408,6 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             assert(maxchar <= 0x10FFFF);
         }
     }
-    if (check_content && !unicode_is_singleton(op))
-        assert(ascii->hash == -1);
     return 1;
 }
 #endif
