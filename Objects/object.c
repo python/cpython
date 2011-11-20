@@ -403,6 +403,8 @@ PyObject_Str(PyObject *v)
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
+        if (PyUnicode_READY(v) < 0)
+            return NULL;
         Py_INCREF(v);
         return v;
     }
@@ -424,6 +426,9 @@ PyObject_Str(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
+    if (PyUnicode_READY(res) < 0)
+        return NULL;
+    assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
 
