@@ -20,7 +20,6 @@
 #define STRINGLIB_TODECIMAL      Py_UNICODE_TODECIMAL
 #define STRINGLIB_TOUPPER        Py_UNICODE_TOUPPER
 #define STRINGLIB_TOLOWER        Py_UNICODE_TOLOWER
-#define STRINGLIB_FILL           Py_UNICODE_FILL
 #define STRINGLIB_STR            PyUnicode_AS_UNICODE
 #define STRINGLIB_LEN            PyUnicode_GET_SIZE
 #define STRINGLIB_NEW            PyUnicode_FromUnicode
