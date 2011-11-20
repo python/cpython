@@ -756,8 +756,7 @@ PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
    PyUnicode_FromUnicode). Unicode objects allocated by the new API (e.g.
    PyUnicode_New) cannot be resized by this function.
 
-   The length is a number of Py_UNICODE characters (and not the number of code
-   points).
+   The length is a number of characters (and not the number of Py_UNICODE characters).
 
    *unicode is modified to point to the new (resized) object and 0
    returned on success.
