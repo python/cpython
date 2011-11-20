@@ -5150,12 +5150,7 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
 PyObject *
 PyUnicode_AsUTF32String(PyObject *unicode)
 {
-    const Py_UNICODE *wstr;
-    Py_ssize_t wlen;
-    wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
-    if (wstr == NULL)
-        return NULL;
-    return PyUnicode_EncodeUTF32(wstr, wlen, NULL, 0);
+    return _PyUnicode_EncodeUTF32(unicode, NULL, 0);
 }
 
 /* --- UTF-16 Codec ------------------------------------------------------- */
