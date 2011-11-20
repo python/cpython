@@ -7934,7 +7934,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
 }
 
 static int
-encoding_map_lookup(Py_UNICODE c, PyObject *mapping)
+encoding_map_lookup(Py_UCS4 c, PyObject *mapping)
 {
     struct encoding_map *map = (struct encoding_map*)mapping;
     int l1 = c>>11;
@@ -7942,11 +7942,8 @@ encoding_map_lookup(Py_UNICODE c, PyObject *mapping)
     int l3 = c & 0x7F;
     int i;
 
-#ifdef Py_UNICODE_WIDE
-    if (c > 0xFFFF) {
+    if (c > 0xFFFF)
         return -1;
-    }
-#endif
     if (c == 0)
         return 0;
     /* level 1*/
@@ -7971,7 +7968,7 @@ encoding_map_lookup(Py_UNICODE c, PyObject *mapping)
    can't be found, Py_None is returned (or NULL, if another
    error occurred). */
 static PyObject *
-charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
+charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
 {
     PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
@@ -8036,7 +8033,7 @@ typedef enum charmapencode_result {
    (in which case no character was written) or NULL, if a
    reallocation error occurred. The caller must decref the result */
 static charmapencode_result
-charmapencode_output(Py_UNICODE c, PyObject *mapping,
+charmapencode_output(Py_UCS4 c, PyObject *mapping,
                      PyObject **outobj, Py_ssize_t *outpos)
 {
     PyObject *rep;
