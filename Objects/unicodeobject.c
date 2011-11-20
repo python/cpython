@@ -8087,7 +8087,9 @@ charmap_encoding_error(
     PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
     Py_ssize_t size, repsize;
     Py_ssize_t newpos;
-    Py_UNICODE *uni2;
+    enum PyUnicode_Kind kind;
+    void *data;
+    Py_ssize_t index;
     /* startpos for collecting unencodable chars */
     Py_ssize_t collstartpos = *inpos;
     Py_ssize_t collendpos = *inpos+1;
@@ -8201,10 +8203,18 @@ charmap_encoding_error(
             break;
         }
         /* generate replacement  */
+        if (PyUnicode_READY(repunicode) < 0) {
+            Py_DECREF(repunicode);
+            return -1;
+        }
         repsize = PyUnicode_GET_SIZE(repunicode);
-        for (uni2 = PyUnicode_AS_UNICODE(repunicode); repsize-->0; ++uni2) {
-            x = charmapencode_output(*uni2, mapping, res, respos);
+        data = PyUnicode_DATA(repunicode);
+        kind = PyUnicode_KIND(repunicode);
+        for (index = 0; index < repsize; index++) {
+            Py_UCS4 repch = PyUnicode_READ(kind, data, index);
+            x = charmapencode_output(repch, mapping, res, respos);
             if (x==enc_EXCEPTION) {
+                Py_DECREF(repunicode);
                 return -1;
             }
             else if (x==enc_FAILED) {
