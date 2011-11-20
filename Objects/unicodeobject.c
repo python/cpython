@@ -3051,13 +3051,7 @@ PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
 #ifdef HAVE_MBCS
-    const Py_UNICODE *wstr;
-    Py_ssize_t wlen;
-
-    wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
-    if (wstr == NULL)
-        return NULL;
-    return PyUnicode_EncodeMBCS(wstr, wlen, NULL);
+    return PyUnicode_EncodeCodePage(CP_ACP, unicode, NULL);
 #elif defined(__APPLE__)
     return _PyUnicode_AsUTF8String(unicode, "surrogateescape");
 #else
@@ -3141,15 +3135,8 @@ PyUnicode_AsEncodedString(PyObject *unicode,
                  (strcmp(lower, "iso-8859-1") == 0))
             return _PyUnicode_AsLatin1String(unicode, errors);
 #ifdef HAVE_MBCS
-        else if (strcmp(lower, "mbcs") == 0) {
-            const Py_UNICODE *wstr;
-            Py_ssize_t wlen;
-
-            wstr = PyUnicode_AsUnicodeAndSize(unicode, &wlen);
-            if (wstr == NULL)
-                return NULL;
-            return PyUnicode_EncodeMBCS(wstr, wlen, errors);
-        }
+        else if (strcmp(lower, "mbcs") == 0)
+            return PyUnicode_EncodeCodePage(CP_ACP, unicode, errors);
 #endif
         else if (strcmp(lower, "ascii") == 0)
             return _PyUnicode_AsASCIIString(unicode, errors);
