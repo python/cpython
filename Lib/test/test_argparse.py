@@ -1502,6 +1502,8 @@ class WFile(object):
         return self.name == other.name
 
 
+@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                 "non-root user required")
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
