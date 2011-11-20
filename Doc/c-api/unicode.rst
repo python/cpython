@@ -129,7 +129,8 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:macro:: PyUnicode_1BYTE_KIND
+.. c:macro:: PyUnicode_WCHAR_KIND
+             PyUnicode_1BYTE_KIND
              PyUnicode_2BYTE_KIND
              PyUnicode_4BYTE_KIND
 
