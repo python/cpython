@@ -5589,21 +5589,6 @@ length_of_escaped_ascii_string(const char *s, Py_ssize_t size)
     return length;
 }
 
-/* Similar to PyUnicode_WRITE but either write into wstr field
-   or treat string as ASCII. */
-#define WRITE_ASCII_OR_WSTR(kind, buf, index, value) \
-    do { \
-        if ((kind) != PyUnicode_WCHAR_KIND) \
-            ((unsigned char *)(buf))[(index)] = (unsigned char)(value); \
-        else \
-            ((Py_UNICODE *)(buf))[(index)] = (Py_UNICODE)(value); \
-    } while (0)
-
-#define WRITE_WSTR(buf, index, value) \
-    assert(kind == PyUnicode_WCHAR_KIND), \
-    ((Py_UNICODE *)(buf))[(index)] = (Py_UNICODE)(value)
-
-
 static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
 
 PyObject *
@@ -5872,9 +5857,6 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     Py_XDECREF(exc);
     return NULL;
 }
-
-#undef WRITE_ASCII_OR_WSTR
-#undef WRITE_WSTR
 
 /* Return a Unicode-Escape string version of the Unicode object.
 
