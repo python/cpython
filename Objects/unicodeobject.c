@@ -4784,7 +4784,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             if (PyBytes_Check(rep))
                 repsize = PyBytes_GET_SIZE(rep);
             else
-                repsize = PyUnicode_GET_SIZE(rep);
+                repsize = PyUnicode_GET_LENGTH(rep);
 
             if (repsize > 4) {
                 Py_ssize_t offset;
@@ -8187,7 +8187,7 @@ charmap_encoding_error(
             Py_DECREF(repunicode);
             return -1;
         }
-        repsize = PyUnicode_GET_SIZE(repunicode);
+        repsize = PyUnicode_GET_LENGTH(repunicode);
         data = PyUnicode_DATA(repunicode);
         kind = PyUnicode_KIND(repunicode);
         for (index = 0; index < repsize; index++) {

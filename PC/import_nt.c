@@ -86,12 +86,11 @@ _PyWin_FindRegisteredModule(PyObject *moduleName,
         suffix = PyUnicode_FromString(fdp->suffix);
         if (suffix == NULL)
             return NULL;
-        wsuffix = PyUnicode_AsUnicode(suffix);
+        wsuffix = PyUnicode_AsUnicodeAndSize(suffix, &extLen);
         if (wsuffix == NULL) {
             Py_DECREF(suffix);
             return NULL;
         }
-        extLen = PyUnicode_GET_SIZE(suffix);
         if ((Py_ssize_t)modNameSize > extLen &&
             _wcsnicmp(pathBuf + ((Py_ssize_t)modNameSize-extLen-1),
                       wsuffix,

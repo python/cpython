@@ -33,7 +33,7 @@ static int
 convert_to_OSType(PyObject *v, OSType *pr)
 {
     uint32_t tmp;
-    if (!PyUnicode_Check(v) || PyUnicode_GetSize(v) != 4) {
+    if (!PyUnicode_Check(v) || PyUnicode_GetLength(v) != 4) {
     PyErr_SetString(PyExc_TypeError,
                     "OSType arg must be string of 4 chars");
     return 0;

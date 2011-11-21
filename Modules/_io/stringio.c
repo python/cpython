@@ -730,7 +730,7 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
        and copy it */
     self->string_size = 0;
     if (value && value != Py_None)
-        value_len = PyUnicode_GetSize(value);
+        value_len = PyUnicode_GetLength(value);
     else
         value_len = 0;
     if (value_len > 0) {
