@@ -100,7 +100,6 @@ PyObject *mp_SetError(PyObject *Type, int num);
 extern PyObject *BufferTooShort;
 extern PyTypeObject SemLockType;
 extern PyTypeObject PipeConnectionType;
-extern HANDLE sigint_event;
 
 /*
  * Miscellaneous
