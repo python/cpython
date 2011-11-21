@@ -69,6 +69,7 @@ PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
 typedef struct {
     PyObject_HEAD
     Py_buffer view;
+    Py_hash_t hash;
 } PyMemoryViewObject;
 #endif
 
