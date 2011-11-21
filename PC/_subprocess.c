@@ -463,7 +463,7 @@ sp_CreateProcess(PyObject* self, PyObject* args)
     }
 
     if (environment) {
-        wenvironment = PyUnicode_AsUnicode(environment)
+        wenvironment = PyUnicode_AsUnicode(environment);
         if (wenvironment == NULL)
         {
             Py_XDECREF(environment);
