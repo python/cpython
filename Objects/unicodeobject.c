@@ -391,6 +391,19 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             if (ch > maxchar)
                 maxchar = ch;
         }
+        if (maxchar > 0x10FFFF) {
+            printf("Invalid Unicode string! {");
+            for (i=0; i < ascii->length; i++)
+            {
+                Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+                if (i)
+                    printf(", U+%04x", ch);
+                else
+                    printf("U+%04x", ch);
+            }
+            printf("} (len=%u)\n", ascii->length);
+            abort();
+        }
         if (kind == PyUnicode_1BYTE_KIND) {
             if (ascii->state.ascii == 0) {
                 assert(maxchar >= 128);
