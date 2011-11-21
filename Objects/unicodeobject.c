@@ -8779,32 +8779,41 @@ PyObject *
 PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
                                   Py_ssize_t length)
 {
-    PyObject *result;
-    Py_UNICODE *p; /* write pointer into result */
+    PyObject *decimal;
     Py_ssize_t i;
-    /* Copy to a new string */
-    result = (PyObject *)_PyUnicode_New(length);
-    Py_UNICODE_COPY(PyUnicode_AS_UNICODE(result), s, length);
-    if (result == NULL)
-        return result;
-    p = PyUnicode_AS_UNICODE(result);
-    /* Iterate over code points */
+    Py_UCS4 maxchar;
+    enum PyUnicode_Kind kind;
+    void *data;
+
+    maxchar = 0;
     for (i = 0; i < length; i++) {
-        Py_UNICODE ch =s[i];
+        Py_UNICODE ch = s[i];
         if (ch > 127) {
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal >= 0)
-                p[i] = '0' + decimal;
+                ch = '0' + decimal;
         }
+        maxchar = Py_MAX(maxchar, ch);
     }
-#ifndef DONT_MAKE_RESULT_READY
-    if (_PyUnicode_READY_REPLACE(&result)) {
-        Py_DECREF(result);
-        return NULL;
+
+    /* Copy to a new string */
+    decimal = PyUnicode_New(length, maxchar);
+    if (decimal == NULL)
+        return decimal;
+    kind = PyUnicode_KIND(decimal);
+    data = PyUnicode_DATA(decimal);
+    /* Iterate over code points */
+    for (i = 0; i < length; i++) {
+        Py_UNICODE ch = s[i];
+        if (ch > 127) {
+            int decimal = Py_UNICODE_TODECIMAL(ch);
+            if (decimal >= 0)
+                ch = '0' + decimal;
+        }
+        PyUnicode_WRITE(kind, data, i, ch);
     }
-#endif
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
+    assert(_PyUnicode_CheckConsistency(decimal, 1));
+    return decimal;
 }
 /* --- Decimal Encoder ---------------------------------------------------- */
 
