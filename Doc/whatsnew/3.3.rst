@@ -580,8 +580,9 @@ Major performance enhancements have been added:
 * Thanks to the :pep:`393`, some operations on Unicode strings has been optimized:
 
   * the memory footprint is divided by 2 to 4 depending on the text
+  * encode an ASCII string to UTF-8 doesn't need to encode characters anymore,
+    the UTF-8 representation is shared with the ASCII representation
   * getting a substring of a latin1 strings is 4 times faster
-  * TODO
 
 
 Build and C API Changes
@@ -591,25 +592,30 @@ Changes to Python's build process and to the C API include:
 
 * The :pep:`393` added new Unicode types, macros and functions:
 
-  * Py_UCS1, Py_UCS2, Py_UCS4 types
-  * PyASCIIObject and PyCompactUnicodeObject structures
-  * :c:func:`PyUnicode_New`
-  * :c:macro:`PyUnicode_READY`
-  * :c:func:`PyUnicode_FromKindAndData`
-  * :c:func:`PyUnicode_GetLength`, :c:macro:`PyUnicode_GET_LENGTH`
-  * :c:func:`PyUnicode_CopyCharacters`
-  * :c:func:`PyUnicode_ReadChar`, :c:func:`PyUnicode_WriteChar`
-  * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
-  * :c:func:`PyUnicode_FindChar`
-  * :c:func:`PyUnicode_Substring`
-  * :c:macro:`PyUnicode_1BYTE_DATA`, :c:macro:`PyUnicode_2BYTE_DATA`,
-    :c:macro:`PyUnicode_4BYTE_DATA`
-  * :c:macro:`PyUnicode_KIND` with :c:type:`PyUnicode_Kind` enum:
-    :c:data:`PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
-    :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
-  * :c:macro:`PyUnicode_DATA`
-  * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
-  * :c:macro:`PyUnicode_MAX_CHAR_VALUE`
+  * High-level API:
+
+    * :c:func:`PyUnicode_CopyCharacters`
+    * :c:func:`PyUnicode_FindChar`
+    * :c:func:`PyUnicode_GetLength`, :c:macro:`PyUnicode_GET_LENGTH`
+    * :c:func:`PyUnicode_New`
+    * :c:func:`PyUnicode_Substring`
+    * :c:func:`PyUnicode_ReadChar`, :c:func:`PyUnicode_WriteChar`
+
+  * Low-level API:
+
+    * :c:type:`Py_UCS1`, :c:type:`Py_UCS2`, :c:type:`Py_UCS4` types
+    * :c:type:`PyASCIIObject` and :c:type:`PyCompactUnicodeObject` structures
+    * :c:macro:`PyUnicode_READY`
+    * :c:func:`PyUnicode_FromKindAndData`
+    * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
+    * :c:macro:`PyUnicode_DATA`, :c:macro:`PyUnicode_1BYTE_DATA`,
+      :c:macro:`PyUnicode_2BYTE_DATA`, :c:macro:`PyUnicode_4BYTE_DATA`
+    * :c:macro:`PyUnicode_KIND` with :c:type:`PyUnicode_Kind` enum:
+      :c:data:`PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
+      :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
+    * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
+    * :c:macro:`PyUnicode_MAX_CHAR_VALUE`
+
 
 
 Unsupported Operating Systems
@@ -643,21 +649,6 @@ Deprecated functions and types of the C API
 The :c:type:`Py_UNICODE` has been deprecated by the :pep:`393` and will be
 removed in Python 4. All functions using this type are deprecated:
 
-Functions and macros manipulating Py_UNICODE* strings:
-
- * :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
-   :c:macro:`PyUnicode_GET_LENGTH`
- * :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_FromFormat`
- * :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-   :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_Substring`
- * :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
- * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
- * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
-   :c:func:`PyUnicode_FindChar`
- * :c:macro:`Py_UNICODE_FILL`
-
 Unicode functions and methods using :c:type:`Py_UNICODE` and
 :c:type:`Py_UNICODE*` types:
 
@@ -675,11 +666,27 @@ Unicode functions and methods using :c:type:`Py_UNICODE` and
  * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy`,
    :c:func:`PyUnicode_AsWideCharString` or :c:func:`PyUnicode_Copy`
 
+Functions and macros manipulating Py_UNICODE* strings:
+
+ * :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+   :c:macro:`PyUnicode_GET_LENGTH`
+ * :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+   :c:func:`PyUnicode_FromFormat`
+ * :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
+   :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
+   :c:func:`PyUnicode_Substring`
+ * :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
+ * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
+ * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+   :c:func:`PyUnicode_FindChar`
+ * :c:macro:`Py_UNICODE_FILL`
+
 Encoders:
 
  * :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
  * :c:func:`PyUnicode_EncodeUTF7`
- * :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8String`
+ * :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
+   :c:func:`PyUnicode_AsUTF8String`
  * :c:func:`PyUnicode_EncodeUTF32`
  * :c:func:`PyUnicode_EncodeUTF16`
  * :c:func:`PyUnicode_EncodeUnicodeEscape:` use
