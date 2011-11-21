@@ -1923,7 +1923,6 @@ PyUnicode_Copy(PyObject *unicode)
 {
     Py_ssize_t length;
     PyObject *copy;
-    void *data;
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadInternalCall();
@@ -1938,7 +1937,6 @@ PyUnicode_Copy(PyObject *unicode)
         return NULL;
     assert(PyUnicode_KIND(copy) == PyUnicode_KIND(unicode));
 
-    data = PyUnicode_DATA(unicode);
     Py_MEMCPY(PyUnicode_DATA(copy), PyUnicode_DATA(unicode),
               length * PyUnicode_KIND(unicode));
     assert(_PyUnicode_CheckConsistency(copy, 1));
