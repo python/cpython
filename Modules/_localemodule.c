@@ -79,6 +79,23 @@ str2uni(const char* s)
     return res2;
 }
 
+#ifdef Py_DEBUG
+void
+dump_str(const char *name, const char *value)
+{
+    size_t i, len = strlen(value);
+    printf("Decode localeconv() %s: {", name);
+    for (i=0; i<len; i++) {
+        unsigned char ch = value[i];
+        if (i)
+            printf(" 0x%02x", ch);
+        else
+            printf("0x%02x", ch);
+    }
+    printf("} (len=%u)\n", len);
+}
+#endif
+
 /* support functions for formatting floating point numbers */
 
 PyDoc_STRVAR(setlocale__doc__,
@@ -184,11 +201,20 @@ PyLocale_localeconv(PyObject* self)
     /* hopefully, the localeconv result survives the C library calls
        involved herein */
 
+#ifdef Py_DEBUG
+#define RESULT_STRING(s)\
+    dump_str(#s, l->s); \
+    x = str2uni(l->s);   \
+    if (!x) goto failed;\
+    PyDict_SetItemString(result, #s, x);\
+    Py_XDECREF(x)
+#else
 #define RESULT_STRING(s)\
     x = str2uni(l->s);   \
     if (!x) goto failed;\
     PyDict_SetItemString(result, #s, x);\
     Py_XDECREF(x)
+#endif
 
 #define RESULT_INT(i)\
     x = PyLong_FromLong(l->i);\
