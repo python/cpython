@@ -760,26 +760,27 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
         case REG_SZ:
         case REG_EXPAND_SZ:
             {
-            if (value == Py_None)
-                *retDataSize = 1;
-            else {
-                if (!PyUnicode_Check(value))
-                    return FALSE;
-                *retDataSize = Py_SAFE_DOWNCAST(
-                                   2 + PyUnicode_GET_DATA_SIZE(value),
-                                   size_t, DWORD);
-            }
-            *retDataBuf = (BYTE *)PyMem_NEW(DWORD, *retDataSize);
-            if (*retDataBuf==NULL){
-                PyErr_NoMemory();
-                return FALSE;
-            }
-            if (value == Py_None)
-                wcscpy((wchar_t *)*retDataBuf, L"");
-            else
-                wcscpy((wchar_t *)*retDataBuf,
-                       PyUnicode_AS_UNICODE(value));
-            break;
+                if (value != Py_None) {
+                    Py_ssize_t len;
+                    if (!PyUnicode_Check(value))
+                        return FALSE;
+                    *retDataBuf = (BYTE*)PyUnicode_AsWideCharString(value, &len);
+                    if (*retDataBuf == NULL)
+                        return FALSE;
+                    *retDataSize = Py_SAFE_DOWNCAST(
+                        (len + 1) * sizeof(wchar_t),
+                        Py_ssize_t, DWORD);
+                }
+                else {
+                    *retDataBuf = (BYTE *)PyMem_NEW(wchar_t, 1);
+                    if (*retDataBuf == NULL) {
+                        PyErr_NoMemory();
+                        return FALSE;
+                    }
+                    ((wchar_t *)*retDataBuf)[0] = L'\0';
+                    *retDataSize = 1 * sizeof(wchar_t);
+                }
+                break;
             }
         case REG_MULTI_SZ:
             {
@@ -796,10 +797,16 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 for (j = 0; j < i; j++)
                 {
                     PyObject *t;
+                    wchar_t *wstr;
+                    Py_ssize_t len;
+
                     t = PyList_GET_ITEM(value, j);
                     if (!PyUnicode_Check(t))
                         return FALSE;
-                    size += Py_SAFE_DOWNCAST(2 + PyUnicode_GET_DATA_SIZE(t),
+                    wstr = PyUnicode_AsUnicodeAndSize(t, &len);
+                    if (wstr == NULL)
+                        return FALSE;
+                    size += Py_SAFE_DOWNCAST((len + 1) * sizeof(wchar_t),
                                              size_t, DWORD);
                 }
 
@@ -815,10 +822,15 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 for (j = 0; j < i; j++)
                 {
                     PyObject *t;
+                    wchar_t *wstr;
+                    Py_ssize_t len;
+
                     t = PyList_GET_ITEM(value, j);
-                    wcscpy(P, PyUnicode_AS_UNICODE(t));
-                    P += 1 + wcslen(
-                        PyUnicode_AS_UNICODE(t));
+                    wstr = PyUnicode_AsUnicodeAndSize(t, &len);
+                    if (wstr == NULL)
+                        return FALSE;
+                    wcscpy(P, wstr);
+                    P += (len + 1);
                 }
                 /* And doubly-terminate the list... */
                 *P = '\0';
