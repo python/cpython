@@ -35,6 +35,7 @@ _PyWin_FindRegisteredModule(PyObject *moduleName,
     wchar_t pathBuf[MAXPATHLEN+1];
     int pathLen = MAXPATHLEN+1;
     PyObject *path, *moduleKey, *suffix;
+    wchar_t *wmoduleKey, *wsuffix;
     struct filedescr *fdp;
     HKEY keyBase;
     int modNameSize;
@@ -52,17 +53,22 @@ _PyWin_FindRegisteredModule(PyObject *moduleName,
         PyWin_DLLVersionString, moduleName);
     if (moduleKey == NULL)
         return NULL;
+    wmoduleKey = PyUnicode_AsUnicode(moduleKey);
+    if (wmoduleKey == NULL) {
+        Py_DECREF(moduleKey);
+        return NULL;
+    }
 
     keyBase = HKEY_CURRENT_USER;
     modNameSize = pathLen;
-    regStat = RegQueryValueW(keyBase, PyUnicode_AS_UNICODE(moduleKey),
+    regStat = RegQueryValueW(keyBase, wmoduleKey,
                              pathBuf, &modNameSize);
     if (regStat != ERROR_SUCCESS) {
         /* No user setting - lookup in machine settings */
         keyBase = HKEY_LOCAL_MACHINE;
         /* be anal - failure may have reset size param */
         modNameSize = pathLen;
-        regStat = RegQueryValueW(keyBase, PyUnicode_AS_UNICODE(moduleKey),
+        regStat = RegQueryValueW(keyBase, wmoduleKey,
                                  pathBuf, &modNameSize);
         if (regStat != ERROR_SUCCESS) {
             Py_DECREF(moduleKey);
@@ -80,10 +86,15 @@ _PyWin_FindRegisteredModule(PyObject *moduleName,
         suffix = PyUnicode_FromString(fdp->suffix);
         if (suffix == NULL)
             return NULL;
+        wsuffix = PyUnicode_AsUnicode(suffix);
+        if (wsuffix == NULL) {
+            Py_DECREF(suffix);
+            return NULL;
+        }
         extLen = PyUnicode_GET_SIZE(suffix);
         if ((Py_ssize_t)modNameSize > extLen &&
             _wcsnicmp(pathBuf + ((Py_ssize_t)modNameSize-extLen-1),
-                      PyUnicode_AS_UNICODE(suffix),
+                      wsuffix,
                       extLen) == 0)
         {
             Py_DECREF(suffix);
