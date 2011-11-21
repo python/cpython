@@ -523,6 +523,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/undef.h"
 
 /* --- Unicode Object ----------------------------------------------------- */
 
@@ -4190,6 +4191,18 @@ PyUnicode_DecodeUTF8(const char *s,
     return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
 }
 
+#include "stringlib/ucs1lib.h"
+#include "stringlib/codecs.h"
+#include "stringlib/undef.h"
+
+#include "stringlib/ucs2lib.h"
+#include "stringlib/codecs.h"
+#include "stringlib/undef.h"
+
+#include "stringlib/ucs4lib.h"
+#include "stringlib/codecs.h"
+#include "stringlib/undef.h"
+
 /* Mask to check or force alignment of a pointer to C 'long' boundaries */
 #define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
 
@@ -4203,33 +4216,41 @@ PyUnicode_DecodeUTF8(const char *s,
 # error C 'long' size should be either 4 or 8!
 #endif
 
-/* Scans a UTF-8 string and returns the maximum character to be expected,
-   the size of the decoded unicode string and if any major errors were
-   encountered.
+/* Scans a UTF-8 string and returns the maximum character to be expected
+   and the size of the decoded unicode string.
 
-   This function does check basic UTF-8 sanity, it does however NOT CHECK
-   if the string contains surrogates, and if all continuation bytes are
-   within the correct ranges, these checks are performed in
+   This function doesn't check for errors, these checks are performed in
    PyUnicode_DecodeUTF8Stateful.
-
-   If it sets has_errors to 1, it means the value of unicode_size and max_char
-   will be bogus and you should not rely on useful information in them.
    */
 static Py_UCS4
-utf8_max_char_size_and_has_errors(const char *s, Py_ssize_t string_size,
-                                  Py_ssize_t *unicode_size, Py_ssize_t* consumed,
-                                  int *has_errors)
+utf8_max_char_size_and_char_count(const char *s, Py_ssize_t string_size,
+                                  Py_ssize_t *unicode_size)
 {
-    Py_ssize_t n;
     Py_ssize_t char_count = 0;
-    Py_UCS4 max_char = 127, new_max;
-    Py_UCS4 upper_bound;
     const unsigned char *p = (const unsigned char *)s;
     const unsigned char *end = p + string_size;
     const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
-    int err = 0;
 
-    for (; p < end && !err; ++p, ++char_count) {
+    assert(unicode_size != NULL);
+
+    /* By having a cascade of independent loops which fallback onto each
+       other, we minimize the amount of work done in the average loop
+       iteration, and we also maximize the CPU's ability to predict
+       branches correctly (because a given condition will have always the
+       same boolean outcome except perhaps in the last iteration of the
+       corresponding loop).
+       In the general case this brings us rather close to decoding
+       performance pre-PEP 393, despite the two-pass decoding.
+
+       Note that the pure ASCII loop is not duplicated once a non-ASCII
+       character has been encountered. It is actually a pessimization (by
+       a significant factor) to use this loop on text with many non-ASCII
+       characters, and it is important to avoid bad performance on valid
+       utf-8 data (invalid utf-8 being a different can of worms).
+    */
+
+    /* ASCII */
+    for (; p < end; ++p) {
         /* Only check value if it's not a ASCII char... */
         if (*p < 0x80) {
             /* Fast path, see below in PyUnicode_DecodeUTF8Stateful for
@@ -4249,76 +4270,59 @@ utf8_max_char_size_and_has_errors(const char *s, Py_ssize_t string_size,
                     break;
             }
         }
-        if (*p >= 0x80) {
-            n = utf8_code_length[*p];
-            new_max = max_char;
-            switch (n) {
-            /* invalid start byte */
-            case 0:
-                err = 1;
-                break;
-            case 2:
-                /* Code points between 0x00FF and 0x07FF inclusive.
-                   Approximate the upper bound of the code point,
-                   if this flips over 255 we can be sure it will be more
-                   than 255 and the string will need 2 bytes per code coint,
-                   if it stays under or equal to 255, we can be sure 1 byte
-                   is enough.
-                   ((*p & 0b00011111) << 6) | 0b00111111 */
-                upper_bound = ((*p & 0x1F) << 6) | 0x3F;
-                if (max_char < upper_bound)
-                    new_max = upper_bound;
-                /* Ensure we track at least that we left ASCII space. */
-                if (new_max < 128)
-                    new_max = 128;
-                break;
-            case 3:
-                /* Between 0x0FFF and 0xFFFF inclusive, so values are
-                   always > 255 and <= 65535 and will always need 2 bytes. */
-                if (max_char < 65535)
-                    new_max = 65535;
-                break;
-            case 4:
-                /* Code point will be above 0xFFFF for sure in this case. */
-                new_max = 65537;
-                break;
-            /* Internal error, this should be caught by the first if */
-            case 1:
-            default:
-                assert(0 && "Impossible case in utf8_max_char_and_size");
-                err = 1;
-            }
-            /* Instead of number of overall bytes for this code point,
-               n contains the number of following bytes: */
-            --n;
-            /* Check if the follow up chars are all valid continuation bytes */
-            if (n >= 1) {
-                const unsigned char *cont;
-                if ((p + n) >= end) {
-                    if (consumed == 0)
-                        /* incomplete data, non-incremental decoding */
-                        err = 1;
-                    break;
-                }
-                for (cont = p + 1; cont <= (p + n); ++cont) {
-                    if ((*cont & 0xc0) != 0x80) {
-                        err = 1;
-                        break;
-                    }
-                }
-                p += n;
-            }
-            else
-                err = 1;
-            max_char = new_max;
-        }
+        if (*p < 0x80)
+            ++char_count;
+        else
+            goto _ucs1loop;
     }
+    *unicode_size = char_count;
+    return 127;
 
-    if (unicode_size)
-        *unicode_size = char_count;
-    if (has_errors)
-        *has_errors = err;
-    return max_char;
+_ucs1loop:
+    for (; p < end; ++p) {
+        if (*p < 0xc4)
+            char_count += ((*p & 0xc0) != 0x80);
+        else
+            goto _ucs2loop;
+    }
+    *unicode_size = char_count;
+    return 255;
+
+_ucs2loop:
+    for (; p < end; ++p) {
+        if (*p < 0xf0)
+            char_count += ((*p & 0xc0) != 0x80);
+        else
+            goto _ucs4loop;
+    }
+    *unicode_size = char_count;
+    return 65535;
+
+_ucs4loop:
+    for (; p < end; ++p) {
+        char_count += ((*p & 0xc0) != 0x80);
+    }
+    *unicode_size = char_count;
+    return 65537;
+}
+
+/* Called when we encountered some error that wasn't detected in the original
+   scan, e.g. an encoded surrogate character. The original maxchar computation
+   may have been incorrect, so redo it. */
+static int
+refit_partial_string(PyObject **unicode, int kind, void *data, Py_ssize_t n)
+{
+    PyObject *tmp;
+    Py_ssize_t k, maxchar;
+    for (k = 0, maxchar = 0; k < n; k++)
+        maxchar = Py_MAX(maxchar, PyUnicode_READ(kind, data, k));
+    tmp = PyUnicode_New(PyUnicode_GET_LENGTH(*unicode), maxchar);
+    if (tmp == NULL)
+        return -1;
+    PyUnicode_CopyCharacters(tmp, 0, *unicode, 0, n);
+    Py_DECREF(*unicode);
+    *unicode = tmp;
+    return 0;
 }
 
 /* Similar to PyUnicode_WRITE but may attempt to widen and resize the string
@@ -4361,35 +4365,56 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     Py_ssize_t i;
     int kind;
     void *data;
-    int has_errors;
+    int has_errors = 0;
 
     if (size == 0) {
         if (consumed)
             *consumed = 0;
         return (PyObject *)PyUnicode_New(0, 0);
     }
-    maxchar = utf8_max_char_size_and_has_errors(s, size, &unicode_size,
-                                                consumed, &has_errors);
-    if (has_errors)
-        /* maxchar and size computation might be incorrect;
-           code below widens and resizes as necessary. */
-        unicode = PyUnicode_New(size, 127);
-    else
-        unicode = PyUnicode_New(unicode_size, maxchar);
+    maxchar = utf8_max_char_size_and_char_count(s, size, &unicode_size);
+    /* In case of errors, maxchar and size computation might be incorrect;
+       code below refits and resizes as necessary. */
+    unicode = PyUnicode_New(unicode_size, maxchar);
     if (!unicode)
         return NULL;
     /* When the string is ASCII only, just use memcpy and return.
        unicode_size may be != size if there is an incomplete UTF-8
        sequence at the end of the ASCII block.  */
-    if (!has_errors && maxchar < 128 && size == unicode_size) {
+    if (maxchar < 128 && size == unicode_size) {
         Py_MEMCPY(PyUnicode_1BYTE_DATA(unicode), s, unicode_size);
         return unicode;
     }
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
+
     /* Unpack UTF-8 encoded data */
     i = 0;
     e = s + size;
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+        has_errors = ucs1lib_utf8_try_decode(s, e, (Py_UCS1 *) data, &s, &i);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        has_errors = ucs2lib_utf8_try_decode(s, e, (Py_UCS2 *) data, &s, &i);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        has_errors = ucs4lib_utf8_try_decode(s, e, (Py_UCS4 *) data, &s, &i);
+        break;
+    }
+    if (!has_errors) {
+        /* Ensure the unicode size calculation was correct */
+        assert(i == unicode_size);
+        assert(s == e);
+        if (consumed)
+            *consumed = s-starts;
+        return unicode;
+    }
+    /* Fall through to the generic decoding loop for the rest of
+       the string */
+    if (refit_partial_string(&unicode, kind, data, i) < 0)
+        goto onError;
+
     aligned_end = (const char *) ((size_t) e & ~LONG_PTR_MASK);
 
     while (s < e) {
@@ -4541,19 +4566,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 
       utf8Error:
         if (!has_errors) {
-            PyObject *tmp;
-            Py_ssize_t k;
-            /* We encountered some error that wasn't detected in the original scan,
-               e.g. an encoded surrogate character. The original maxchar computation may
-               have been incorrect, so redo it now. */
-            for (k = 0, maxchar = 0; k < i; k++)
-                maxchar = Py_MAX(maxchar, PyUnicode_READ(kind, data, k));
-            tmp = PyUnicode_New(PyUnicode_GET_LENGTH(unicode), maxchar);
-            if (tmp == NULL)
+            if (refit_partial_string(&unicode, kind, data, i) < 0)
                 goto onError;
-            PyUnicode_CopyCharacters(tmp, 0, unicode, 0, i);
-            Py_DECREF(unicode);
-            unicode = tmp;
             has_errors = 1;
         }
         if (unicode_decode_call_errorhandler(
