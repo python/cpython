@@ -73,42 +73,11 @@ str2uni(const char* s)
 #else
     assert(res1 == needed);
 #endif
-#ifdef Py_DEBUG
-    {
-        size_t i;
-        printf("Decode wchar_t {");
-        for (i=0; i<res1; i++) {
-            wchar_t ch = dest[i];
-            if (i)
-                printf(" U+%04x", ch);
-            else
-                printf("U+%04x", ch);
-        }
-        printf("} (len=%u)\n", res1);
-    }
-#endif
     res2 = PyUnicode_FromWideChar(dest, res1);
     if (dest != smallbuf)
         PyMem_Free(dest);
     return res2;
 }
-
-#ifdef Py_DEBUG
-void
-dump_str(const char *name, const char *value)
-{
-    size_t i, len = strlen(value);
-    printf("Decode localeconv() %s: {", name);
-    for (i=0; i<len; i++) {
-        unsigned char ch = value[i];
-        if (i)
-            printf(" 0x%02x", ch);
-        else
-            printf("0x%02x", ch);
-    }
-    printf("} (len=%u)\n", len);
-}
-#endif
 
 /* support functions for formatting floating point numbers */
 
@@ -174,18 +143,12 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 
     if (locale) {
         /* set locale */
-#ifdef Py_DEBUG
-        printf("SET LOCALE \"%s\"\n", locale);
-#endif
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
             PyErr_SetString(Error, "unsupported locale setting");
             return NULL;
         }
-#ifdef Py_DEBUG
-        printf("SET LOCALE -> %s\n", result);
-#endif
         result_object = str2uni(result);
         if (!result_object)
             return NULL;
@@ -221,20 +184,11 @@ PyLocale_localeconv(PyObject* self)
     /* hopefully, the localeconv result survives the C library calls
        involved herein */
 
-#ifdef Py_DEBUG
-#define RESULT_STRING(s)\
-    dump_str(#s, l->s); \
-    x = str2uni(l->s);   \
-    if (!x) goto failed;\
-    PyDict_SetItemString(result, #s, x);\
-    Py_XDECREF(x)
-#else
 #define RESULT_STRING(s)\
     x = str2uni(l->s);   \
     if (!x) goto failed;\
     PyDict_SetItemString(result, #s, x);\
     Py_XDECREF(x)
-#endif
 
 #define RESULT_INT(i)\
     x = PyLong_FromLong(l->i);\
