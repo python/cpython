@@ -384,6 +384,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #13322: Fix BufferedWriter.write() to ensure that BlockingIOError is
+  raised when the wrapped raw file is non-blocking and the write would block.
+  Previous code assumed that the raw write() would raise BlockingIOError, but
+  RawIOBase.write() is defined to returned None when the call would block.
+  Patch by sbt.
+
 - Issue #13358: HTMLParser now calls handle_data only once for each CDATA.
 
 - Issue #4147: minidom's toprettyxml no longer adds whitespace around a text
