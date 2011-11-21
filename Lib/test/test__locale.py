@@ -113,6 +113,8 @@ class _LocaleTests(unittest.TestCase):
                                                 nl_radixchar, li_radixchar,
                                                 loc, set_locale))
 
+    @unittest.skipIf(sys.platform == 'sunos5',
+                     "http://bugs.python.org/issue13441")
     def test_float_parsing(self):
         # Bug #1391872: Test whether float parsing is okay on European
         # locales.
