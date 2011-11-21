@@ -679,6 +679,7 @@ win32_WaitForMultipleObjects(PyObject* self, PyObject* args)
     DWORD result;
     PyObject *handle_seq;
     HANDLE handles[MAXIMUM_WAIT_OBJECTS];
+    HANDLE sigint_event = NULL;
     Py_ssize_t nhandles, i;
     int wait_flag;
     int milliseconds = INFINITE;
@@ -696,10 +697,10 @@ win32_WaitForMultipleObjects(PyObject* self, PyObject* args)
     nhandles = PySequence_Length(handle_seq);
     if (nhandles == -1)
         return NULL;
-    if (nhandles < 0 || nhandles >= MAXIMUM_WAIT_OBJECTS) {
+    if (nhandles < 0 || nhandles >= MAXIMUM_WAIT_OBJECTS - 1) {
         PyErr_Format(PyExc_ValueError,
                      "need at most %zd handles, got a sequence of length %zd",
-                     MAXIMUM_WAIT_OBJECTS, nhandles);
+                     MAXIMUM_WAIT_OBJECTS - 1, nhandles);
         return NULL;
     }
     for (i = 0; i < nhandles; i++) {
@@ -711,14 +712,27 @@ win32_WaitForMultipleObjects(PyObject* self, PyObject* args)
             return NULL;
         handles[i] = h;
     }
+    /* If this is the main thread then make the wait interruptible
+       by Ctrl-C unless we are waiting for *all* handles */
+    if (!wait_flag && _PyOS_IsMainThread()) {
+        sigint_event = _PyOS_SigintEvent();
+        assert(sigint_event != NULL);
+        handles[nhandles++] = sigint_event;
+    }
 
     Py_BEGIN_ALLOW_THREADS
+    if (sigint_event != NULL)
+        ResetEvent(sigint_event);
     result = WaitForMultipleObjects((DWORD) nhandles, handles,
                                     (BOOL) wait_flag, (DWORD) milliseconds);
     Py_END_ALLOW_THREADS
 
     if (result == WAIT_FAILED)
         return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+    else if (sigint_event != NULL && result == WAIT_OBJECT_0 + nhandles - 1) {
+        errno = EINTR;
+        return PyErr_SetFromErrno(PyExc_IOError);
+    }
 
     return PyLong_FromLong((int) result);
 }

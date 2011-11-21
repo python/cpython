@@ -109,6 +109,10 @@ static PyObject *IntHandler;
 
 static PyOS_sighandler_t old_siginthandler = SIG_DFL;
 
+#ifdef MS_WINDOWS
+static HANDLE sigint_event = NULL;
+#endif
+
 #ifdef HAVE_GETITIMER
 static PyObject *ItimerError;
 
@@ -229,6 +233,11 @@ signal_handler(int sig_num)
     /* Issue #10311: asynchronously executing signal handlers should not
        mutate errno under the feet of unsuspecting C code. */
     errno = save_errno;
+
+#ifdef MS_WINDOWS
+    if (sig_num == SIGINT)
+        SetEvent(sigint_event);
+#endif
 }
 
 
@@ -1253,6 +1262,11 @@ PyInit_signal(void)
     Py_DECREF(x);
 #endif
 
+#ifdef MS_WINDOWS
+    /* Create manual-reset event, initially unset */
+    sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
+#endif
+
     if (PyErr_Occurred()) {
         Py_DECREF(m);
         m = NULL;
@@ -1397,3 +1411,25 @@ PyOS_AfterFork(void)
     PyThread_ReInitTLS();
 #endif
 }
+
+int
+_PyOS_IsMainThread(void)
+{
+#ifdef WITH_THREAD
+    return PyThread_get_thread_ident() == main_thread;
+#else
+    return 1;
+#endif
+}
+
+#ifdef MS_WINDOWS
+void *_PyOS_SigintEvent(void)
+{
+    /* Returns a manual-reset event which gets tripped whenever
+       SIGINT is received.
+
+       Python.h does not include windows.h so we do cannot use HANDLE
+       as the return type of this function.  We use void* instead. */
+    return sigint_event;
+}
+#endif
