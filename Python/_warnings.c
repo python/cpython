@@ -203,13 +203,13 @@ normalize_module(PyObject *filename)
 
     mod_str = _PyUnicode_AsString(filename);
     if (mod_str == NULL)
-            return NULL;
-    len = PyUnicode_GetSize(filename);
+        return NULL;
+    len = PyUnicode_GetLength(filename);
     if (len < 0)
         return NULL;
     if (len >= 3 &&
         strncmp(mod_str + (len - 3), ".py", 3) == 0) {
-        module = PyUnicode_FromStringAndSize(mod_str, len-3);
+        module = PyUnicode_Substring(filename, 0, len-3);
     }
     else {
         module = filename;
@@ -506,7 +506,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         if (PyUnicode_READY(*filename))
             goto handle_error;
 
-        len = PyUnicode_GetSize(*filename);
+        len = PyUnicode_GetLength(*filename);
         kind = PyUnicode_KIND(*filename);
         data = PyUnicode_DATA(*filename);
 
@@ -690,7 +690,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source, 
+        source_list = PyObject_CallMethodObjArgs(source,
                                                  PyId_splitlines.object,
                                                  NULL);
         Py_DECREF(source);
