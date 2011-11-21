@@ -8829,7 +8829,6 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
                         char *output,
                         const char *errors)
 {
-    Py_UNICODE *p, *end;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *unicode;
@@ -8838,47 +8837,50 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
     /* the following variable is used for caching string comparisons
      * -1=not initialized, 0=unknown, 1=strict, 2=replace, 3=ignore, 4=xmlcharrefreplace */
     int known_errorHandler = -1;
+    Py_ssize_t i, j;
+    enum PyUnicode_Kind kind;
+    void *data;
 
     if (output == NULL) {
         PyErr_BadArgument();
         return -1;
     }
 
-    p = s;
-    end = s + length;
-    while (p < end) {
-        register Py_UNICODE ch = *p;
+    unicode = PyUnicode_FromUnicode(s, length);
+    if (unicode == NULL)
+        return -1;
+
+    if (PyUnicode_READY(unicode) < 0)
+        goto onError;
+    kind = PyUnicode_KIND(unicode);
+    data = PyUnicode_DATA(unicode);
+
+    for (i=0; i < length; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         int decimal;
-        PyObject *repunicode;
-        Py_ssize_t repsize;
-        Py_ssize_t newpos;
-        Py_UNICODE *uni2;
-        Py_UNICODE *collstart;
-        Py_UNICODE *collend;
+        Py_ssize_t startpos, endpos;
 
         if (Py_UNICODE_ISSPACE(ch)) {
             *output++ = ' ';
-            ++p;
             continue;
         }
         decimal = Py_UNICODE_TODECIMAL(ch);
         if (decimal >= 0) {
             *output++ = '0' + decimal;
-            ++p;
             continue;
         }
         if (0 < ch && ch < 256) {
             *output++ = (char)ch;
-            ++p;
             continue;
         }
         /* All other characters are considered unencodable */
-        collstart = p;
-        collend = p+1;
-        while (collend < end) {
-            if ((0 < *collend && *collend < 256) ||
-                !Py_UNICODE_ISSPACE(*collend) ||
-                Py_UNICODE_TODECIMAL(*collend))
+        startpos = i;
+        endpos = i+1;
+        for (; endpos < length; endpos++) {
+            ch = PyUnicode_READ(kind, data, endpos);
+            if ((0 < ch && ch < 256) ||
+                !Py_UNICODE_ISSPACE(ch) ||
+                Py_UNICODE_TODECIMAL(ch))
                 break;
         }
         /* cache callback name lookup
@@ -8897,33 +8899,33 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
         }
         switch (known_errorHandler) {
         case 1: /* strict */
-            unicode = PyUnicode_FromUnicode(s, length);
-            if (unicode == NULL)
-                goto onError;
-            raise_encode_exception(&exc, encoding, unicode, collstart-s, collend-s, reason);
-            Py_DECREF(unicode);
+            raise_encode_exception(&exc, encoding, unicode, startpos, endpos, reason);
             goto onError;
         case 2: /* replace */
-            for (p = collstart; p < collend; ++p)
+            for (j=startpos; j < endpos; j++)
                 *output++ = '?';
             /* fall through */
         case 3: /* ignore */
-            p = collend;
+            i = endpos;
             break;
         case 4: /* xmlcharrefreplace */
-            /* generate replacement (temporarily (mis)uses p) */
-            for (p = collstart; p < collend; ++p)
-                output += sprintf(output, "&#%d;", (int)*p);
-            p = collend;
+            /* generate replacement */
+            for (j=startpos; j < endpos; j++) {
+                ch = PyUnicode_READ(kind, data, i);
+                output += sprintf(output, "&#%d;", (int)ch);
+                i++;
+            }
             break;
         default:
-            unicode = PyUnicode_FromUnicode(s, length);
-            if (unicode == NULL)
-                goto onError;
+        {
+            PyObject *repunicode;
+            Py_ssize_t repsize, newpos, k;
+            enum PyUnicode_Kind repkind;
+            void *repdata;
+
             repunicode = unicode_encode_call_errorhandler(errors, &errorHandler,
                                                           encoding, reason, unicode, &exc,
-                                                          collstart-s, collend-s, &newpos);
-            Py_DECREF(unicode);
+                                                          startpos, endpos, &newpos);
             if (repunicode == NULL)
                 goto onError;
             if (!PyUnicode_Check(repunicode)) {
@@ -8932,10 +8934,17 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
                 Py_DECREF(repunicode);
                 goto onError;
             }
+            if (PyUnicode_READY(repunicode) < 0) {
+                Py_DECREF(repunicode);
+                goto onError;
+            }
+            repkind = PyUnicode_KIND(repunicode);
+            repdata = PyUnicode_DATA(repunicode);
+
             /* generate replacement  */
             repsize = PyUnicode_GET_SIZE(repunicode);
-            for (uni2 = PyUnicode_AS_UNICODE(repunicode); repsize-->0; ++uni2) {
-                Py_UNICODE ch = *uni2;
+            for (k=0; k<repsize; k++) {
+                ch = PyUnicode_READ(repkind, repdata, k);
                 if (Py_UNICODE_ISSPACE(ch))
                     *output++ = ' ';
                 else {
@@ -8946,29 +8955,29 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
                         *output++ = (char)ch;
                     else {
                         Py_DECREF(repunicode);
-                        unicode = PyUnicode_FromUnicode(s, length);
-                        if (unicode == NULL)
-                            goto onError;
                         raise_encode_exception(&exc, encoding,
-                                               unicode, collstart-s, collend-s, reason);
-                        Py_DECREF(unicode);
+                                               unicode, startpos, endpos,
+                                               reason);
                         goto onError;
                     }
                 }
             }
-            p = s + newpos;
+            i = newpos;
             Py_DECREF(repunicode);
+        }
         }
     }
     /* 0-terminate the output string */
     *output++ = '\0';
     Py_XDECREF(exc);
     Py_XDECREF(errorHandler);
+    Py_DECREF(unicode);
     return 0;
 
   onError:
     Py_XDECREF(exc);
     Py_XDECREF(errorHandler);
+    Py_DECREF(unicode);
     return -1;
 }
 
