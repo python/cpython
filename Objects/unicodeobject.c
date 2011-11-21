@@ -1921,7 +1921,7 @@ unicode_adjust_maxchar(PyObject **p_unicode)
 PyObject*
 PyUnicode_Copy(PyObject *unicode)
 {
-    Py_ssize_t size;
+    Py_ssize_t length;
     PyObject *copy;
     void *data;
 
@@ -1932,28 +1932,15 @@ PyUnicode_Copy(PyObject *unicode)
     if (PyUnicode_READY(unicode))
         return NULL;
 
-    size = PyUnicode_GET_LENGTH(unicode);
-    copy = PyUnicode_New(size, PyUnicode_MAX_CHAR_VALUE(unicode));
+    length = PyUnicode_GET_LENGTH(unicode);
+    copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
     if (!copy)
         return NULL;
     assert(PyUnicode_KIND(copy) == PyUnicode_KIND(unicode));
 
     data = PyUnicode_DATA(unicode);
-    switch (PyUnicode_KIND(unicode))
-    {
-    case PyUnicode_1BYTE_KIND:
-        memcpy(PyUnicode_1BYTE_DATA(copy), data, size);
-        break;
-    case PyUnicode_2BYTE_KIND:
-        memcpy(PyUnicode_2BYTE_DATA(copy), data, sizeof(Py_UCS2) * size);
-        break;
-    case PyUnicode_4BYTE_KIND:
-        memcpy(PyUnicode_4BYTE_DATA(copy), data, sizeof(Py_UCS4) * size);
-        break;
-    default:
-        assert(0);
-        break;
-    }
+    Py_MEMCPY(PyUnicode_DATA(copy), PyUnicode_DATA(unicode),
+              length * PyUnicode_KIND(unicode));
     assert(_PyUnicode_CheckConsistency(copy, 1));
     return copy;
 }
@@ -9344,16 +9331,10 @@ fixup(PyObject *self,
     PyObject *u;
     Py_UCS4 maxchar_old, maxchar_new = 0;
 
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
-    maxchar_old = PyUnicode_MAX_CHAR_VALUE(self);
-    u = PyUnicode_New(PyUnicode_GET_LENGTH(self),
-                      maxchar_old);
+    u = PyUnicode_Copy(self);
     if (u == NULL)
         return NULL;
-
-    Py_MEMCPY(PyUnicode_1BYTE_DATA(u), PyUnicode_1BYTE_DATA(self),
-              PyUnicode_GET_LENGTH(u) * PyUnicode_KIND(u));
+    maxchar_old = PyUnicode_MAX_CHAR_VALUE(u);
 
     /* fix functions return the new maximum character in a string,
        if the kind of the resulting unicode object does not change,
