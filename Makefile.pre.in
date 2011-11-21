@@ -645,6 +645,7 @@ BYTESTR_DEPS = \
 
 UNICODE_DEPS = $(BYTESTR_DEPS) \
 		$(srcdir)/Objects/stringlib/asciilib.h \
+		$(srcdir)/Objects/stringlib/codecs.h \
 		$(srcdir)/Objects/stringlib/ucs1lib.h \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
 		$(srcdir)/Objects/stringlib/ucs4lib.h \
