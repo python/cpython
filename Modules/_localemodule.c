@@ -73,6 +73,20 @@ str2uni(const char* s)
 #else
     assert(res1 == needed);
 #endif
+#ifdef Py_DEBUG
+    {
+        size_t i;
+        printf("Decode wchar_t {");
+        for (i=0; i<res1; i++) {
+            wchar_t ch = dest[i];
+            if (i)
+                printf(" U+%04x", ch);
+            else
+                printf("U+%04x", ch);
+        }
+        printf("} (len=%u)\n", res1);
+    }
+#endif
     res2 = PyUnicode_FromWideChar(dest, res1);
     if (dest != smallbuf)
         PyMem_Free(dest);
@@ -160,12 +174,18 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 
     if (locale) {
         /* set locale */
+#ifdef Py_DEBUG
+        printf("SET LOCALE \"%s\"\n", locale);
+#endif
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
             PyErr_SetString(Error, "unsupported locale setting");
             return NULL;
         }
+#ifdef Py_DEBUG
+        printf("SET LOCALE -> %s\n", result);
+#endif
         result_object = str2uni(result);
         if (!result_object)
             return NULL;
