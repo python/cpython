@@ -574,8 +574,11 @@ MultibyteCodec_Encode(MultibyteCodecObject *self,
         }
     }
 
-    data = PyUnicode_AS_UNICODE(arg);
-    datalen = PyUnicode_GET_SIZE(arg);
+    data = PyUnicode_AsUnicodeAndSize(arg, &datalen);
+    if (data == NULL) {
+        Py_XDECREF(ucvt);
+        return NULL;
+    }
 
     errorcb = internal_error_callback(errors);
     if (errorcb == NULL) {
