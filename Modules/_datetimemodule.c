@@ -1080,7 +1080,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
     PyObject *tzinfo = get_tzinfo_member(object);
     PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
     _Py_IDENTIFIER(replace);
-	
+
     if (Zreplacement == NULL)
         return NULL;
     if (tzinfo == Py_None || tzinfo == NULL)
@@ -2673,7 +2673,7 @@ date_format(PyDateTime_Date *self, PyObject *args)
         return NULL;
 
     /* if the format is zero length, return str(self) */
-    if (PyUnicode_GetSize(format) == 0)
+    if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
     return _PyObject_CallMethodId((PyObject *)self, &PyId_strftime, "O", format);

@@ -1273,7 +1273,7 @@ PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
     if (!obj)
         return -1;
     *start = ((PyUnicodeErrorObject *)exc)->start;
-    size = PyUnicode_GET_SIZE(obj);
+    size = PyUnicode_GET_LENGTH(obj);
     if (*start<0)
         *start = 0; /*XXX check for values <0*/
     if (*start>=size)
@@ -1341,7 +1341,7 @@ PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
     if (!obj)
         return -1;
     *end = ((PyUnicodeErrorObject *)exc)->end;
-    size = PyUnicode_GET_SIZE(obj);
+    size = PyUnicode_GET_LENGTH(obj);
     if (*end<1)
         *end = 1;
     if (*end>size)

@@ -2144,7 +2144,7 @@ textiowrapper_seek(textio *self, PyObject *args)
         textiowrapper_set_decoded_chars(self, decoded);
 
         /* Skip chars_to_skip of the decoded characters. */
-        if (PyUnicode_GetSize(self->decoded_chars) < cookie.chars_to_skip) {
+        if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
             PyErr_SetString(PyExc_IOError, "can't restore logical file position");
             goto fail;
         }
@@ -2208,7 +2208,7 @@ textiowrapper_tell(textio *self, PyObject *args)
         goto fail;
 
     if (self->decoder == NULL || self->snapshot == NULL) {
-        assert (self->decoded_chars == NULL || PyUnicode_GetSize(self->decoded_chars) == 0);
+        assert (self->decoded_chars == NULL || PyUnicode_GetLength(self->decoded_chars) == 0);
         return posobj;
     }
 
