@@ -343,6 +343,8 @@ class TestCollation(unittest.TestCase):
         self.assertEqual(locale.strcoll('a', 'a'), 0)
         self.assertGreater(locale.strcoll('b', 'a'), 0)
 
+    @unittest.skipIf(sys.platform == 'sunos5',
+                     "http://bugs.python.org/issue13441")
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
 
@@ -364,6 +366,8 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
+    @unittest.skipIf(sys.platform == 'sunos5',
+                     "http://bugs.python.org/issue13441")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
