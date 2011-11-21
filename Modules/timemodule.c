@@ -21,19 +21,6 @@
 #include <windows.h>
 #include "pythread.h"
 
-/* helper to allow us to interrupt sleep() on Windows*/
-static HANDLE hInterruptEvent = NULL;
-static BOOL WINAPI PyCtrlHandler(DWORD dwCtrlType)
-{
-    SetEvent(hInterruptEvent);
-    /* allow other default handlers to be called.
-       Default Python handler will setup the
-       KeyboardInterrupt exception.
-    */
-    return FALSE;
-}
-static long main_thread;
-
 #if defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
 #define timezone _timezone
@@ -955,15 +942,6 @@ PyInit_time(void)
     /* Set, or reset, module variables like time.timezone */
     PyInit_timezone(m);
 
-#ifdef MS_WINDOWS
-    /* Helper to allow interrupts for Windows.
-       If Ctrl+C event delivered while not sleeping
-       it will be ignored.
-    */
-    main_thread = PyThread_get_thread_ident();
-    hInterruptEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
-#endif /* MS_WINDOWS */
     if (!initialized) {
         PyStructSequence_InitType(&StructTimeType,
                                   &struct_time_type_desc);
@@ -1036,18 +1014,14 @@ floatsleep(double secs)
          * by Guido, only the main thread can be interrupted.
          */
         ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 ||
-            main_thread != PyThread_get_thread_ident())
+        if (ul_millis == 0 || !_PyOS_IsMainThread())
             Sleep(ul_millis);
         else {
             DWORD rc;
+            HANDLE hInterruptEvent = _PyOS_SigintEvent();
             ResetEvent(hInterruptEvent);
             rc = WaitForSingleObject(hInterruptEvent, ul_millis);
             if (rc == WAIT_OBJECT_0) {
-                /* Yield to make sure real Python signal
-                 * handler called.
-                 */
-                Sleep(1);
                 Py_BLOCK_THREADS
                 errno = EINTR;
                 PyErr_SetFromErrno(PyExc_IOError);

@@ -387,6 +387,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12328: Under Windows, refactor handling of Ctrl-C events and
+  make _multiprocessing.win32.WaitForMultipleObjects interruptible when
+  the wait_flag parameter is false.  Patch by sbt.
+
 - Issue #13322: Fix BufferedWriter.write() to ensure that BlockingIOError is
   raised when the wrapped raw file is non-blocking and the write would block.
   Previous code assumed that the raw write() would raise BlockingIOError, but

@@ -53,30 +53,6 @@ mp_SetError(PyObject *Type, int num)
 }
 
 
-/*
- * Windows only
- */
-
-#ifdef MS_WINDOWS
-
-/* On Windows we set an event to signal Ctrl-C; compare with timemodule.c */
-
-HANDLE sigint_event = NULL;
-
-static BOOL WINAPI
-ProcessingCtrlHandler(DWORD dwCtrlType)
-{
-    SetEvent(sigint_event);
-    return FALSE;
-}
-
-#endif /* MS_WINDOWS */
-
-
-/*
- * All platforms
- */
-
 static PyObject*
 multiprocessing_address_of_buffer(PyObject *self, PyObject *obj)
 {
@@ -165,17 +141,6 @@ PyInit__multiprocessing(void)
     if (!temp)
         return NULL;
     PyModule_AddObject(module, "win32", temp);
-
-    /* Initialize the event handle used to signal Ctrl-C */
-    sigint_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (!sigint_event) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-    if (!SetConsoleCtrlHandler(ProcessingCtrlHandler, TRUE)) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
 #endif
 
     /* Add configuration macros */
