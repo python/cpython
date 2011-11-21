@@ -84,6 +84,7 @@ PyMemoryView_FromBuffer(Py_buffer *info)
         PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
     if (mview == NULL)
         return NULL;
+    mview->hash = -1;
     dup_buffer(&mview->view, info);
     /* NOTE: mview->view.obj should already have been incref'ed as
        part of PyBuffer_FillInfo(). */
@@ -512,6 +513,37 @@ memory_repr(PyMemoryViewObject *self)
         return PyUnicode_FromFormat("<memory at %p>", self);
 }
 
+static Py_hash_t
+memory_hash(PyMemoryViewObject *self)
+{
+    if (self->hash == -1) {
+        Py_buffer *view = &self->view;
+        CHECK_RELEASED_INT(self);
+        if (view->ndim > 1) {
+            PyErr_SetString(PyExc_NotImplementedError,
+                            "can't hash multi-dimensional memoryview object");
+            return -1;
+        }
+        if (view->strides && view->strides[0] != view->itemsize) {
+            PyErr_SetString(PyExc_NotImplementedError,
+                            "can't hash strided memoryview object");
+            return -1;
+        }
+        if (!view->readonly) {
+            PyErr_SetString(PyExc_ValueError,
+                            "can't hash writable memoryview object");
+            return -1;
+        }
+        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
+            /* Keep the original error message */
+            return -1;
+        }
+        /* Can't fail */
+        self->hash = _Py_HashBytes((unsigned char *) view->buf, view->len);
+    }
+    return self->hash;
+}
+
 /* Sequence methods */
 static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
@@ -829,7 +861,7 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
-    0,                                        /* tp_hash */
+    (hashfunc)memory_hash,                    /* tp_hash */
     0,                                        /* tp_call */
     0,                                        /* tp_str */
     PyObject_GenericGetAttr,                  /* tp_getattro */

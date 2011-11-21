@@ -860,22 +860,11 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 static Py_hash_t
 bytes_hash(PyBytesObject *a)
 {
-    register Py_ssize_t len;
-    register unsigned char *p;
-    register Py_uhash_t x;
-
-    if (a->ob_shash != -1)
-        return a->ob_shash;
-    len = Py_SIZE(a);
-    p = (unsigned char *) a->ob_sval;
-    x = (Py_uhash_t)*p << 7;
-    while (--len >= 0)
-        x = (1000003U*x) ^ (Py_uhash_t)*p++;
-    x ^= (Py_uhash_t)Py_SIZE(a);
-    if (x == -1)
-        x = -2;
-    a->ob_shash = x;
-    return x;
+    if (a->ob_shash == -1) {
+        /* Can't fail */
+        a->ob_shash = _Py_HashBytes((unsigned char *) a->ob_sval, Py_SIZE(a));
+    }
+    return a->ob_shash;
 }
 
 static PyObject*

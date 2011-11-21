@@ -283,6 +283,33 @@ class AbstractMemoryTests:
         i = io.BytesIO(b'ZZZZ')
         self.assertRaises(TypeError, i.readinto, m)
 
+    def test_hash(self):
+        # Memoryviews of readonly (hashable) types are hashable, and they
+        # hash as the corresponding object.
+        tp = self.ro_type
+        if tp is None:
+            self.skipTest("no read-only type to test")
+        b = tp(self._source)
+        m = self._view(b)
+        self.assertEqual(hash(m), hash(b"abcdef"))
+        # Releasing the memoryview keeps the stored hash value (as with weakrefs)
+        m.release()
+        self.assertEqual(hash(m), hash(b"abcdef"))
+        # Hashing a memoryview for the first time after it is released
+        # results in an error (as with weakrefs).
+        m = self._view(b)
+        m.release()
+        self.assertRaises(ValueError, hash, m)
+
+    def test_hash_writable(self):
+        # Memoryviews of writable types are unhashable
+        tp = self.rw_type
+        if tp is None:
+            self.skipTest("no writable type to test")
+        b = tp(self._source)
+        m = self._view(b)
+        self.assertRaises(ValueError, hash, m)
+
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
 # NOTE: support for multi-dimensional objects is unimplemented.

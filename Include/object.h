@@ -519,6 +519,7 @@ PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
+PyAPI_FUNC(Py_hash_t) _Py_HashBytes(unsigned char*, Py_ssize_t);
 #endif
 
 /* Helper for passing objects to printf and the like */

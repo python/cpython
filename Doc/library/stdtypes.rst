@@ -2401,6 +2401,19 @@ copying.  Memory is generally interpreted as simple bytes.
 
    Notice how the size of the memoryview object cannot be changed.
 
+   Memoryviews of hashable (read-only) types are also hashable and their
+   hash value matches the corresponding bytes object::
+
+      >>> v = memoryview(b'abcefg')
+      >>> hash(v) == hash(b'abcefg')
+      True
+      >>> hash(v[2:4]) == hash(b'ce')
+      True
+
+   .. versionchanged:: 3.3
+      Memoryview objects are now hashable.
+
+
    :class:`memoryview` has several methods:
 
    .. method:: tobytes()

@@ -744,6 +744,21 @@ _Py_HashPointer(void *p)
 }
 
 Py_hash_t
+_Py_HashBytes(unsigned char *p, Py_ssize_t len)
+{
+    Py_uhash_t x;
+    Py_ssize_t i;
+
+    x = (Py_uhash_t) *p << 7;
+    for (i = 0; i < len; i++)
+        x = (1000003U * x) ^ (Py_uhash_t) *p++;
+    x ^= (Py_uhash_t) len;
+    if (x == -1)
+        x = -2;
+    return x;
+}
+
+Py_hash_t
 PyObject_HashNotImplemented(PyObject *v)
 {
     PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
