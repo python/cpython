@@ -1806,6 +1806,36 @@ class UnicodeTest(string_tests.CommonTest,
         s += "4"
         self.assertEqual(s, "3")
 
+    def test_encode_decimal(self):
+        from _testcapi import unicode_encodedecimal
+        self.assertEqual(unicode_encodedecimal('123'),
+                         b'123')
+        self.assertEqual(unicode_encodedecimal('\u0663.\u0661\u0664'),
+                         b'3.14')
+        self.assertEqual(unicode_encodedecimal("\N{EM SPACE}3.14\N{EN SPACE}"),
+                         b' 3.14 ')
+        self.assertRaises(UnicodeEncodeError,
+                          unicode_encodedecimal, "123\u20ac", "strict")
+        self.assertEqual(unicode_encodedecimal("123\u20ac", "replace"),
+                         b'123?')
+        self.assertEqual(unicode_encodedecimal("123\u20ac", "ignore"),
+                         b'123')
+        self.assertEqual(unicode_encodedecimal("123\u20ac", "xmlcharrefreplace"),
+                         b'123&#8364;')
+        self.assertEqual(unicode_encodedecimal("123\u20ac", "backslashreplace"),
+                         b'123\\u20ac')
+
+    def test_transform_decimal(self):
+        from _testcapi import unicode_transformdecimaltoascii as transform_decimal
+        self.assertEqual(transform_decimal('123'),
+                         '123')
+        self.assertEqual(transform_decimal('\u0663.\u0661\u0664'),
+                         '3.14')
+        self.assertEqual(transform_decimal("\N{EM SPACE}3.14\N{EN SPACE}"),
+                         "\N{EM SPACE}3.14\N{EN SPACE}")
+        self.assertEqual(transform_decimal('123\u20ac'),
+                         '123\u20ac')
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):
