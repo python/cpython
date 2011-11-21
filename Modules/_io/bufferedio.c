@@ -581,7 +581,7 @@ buffered_getstate(buffered *self, PyObject *args)
 
 /* Forward decls */
 static PyObject *
-_bufferedwriter_flush_unlocked(buffered *, int);
+_bufferedwriter_flush_unlocked(buffered *);
 static Py_ssize_t
 _bufferedreader_fill_buffer(buffered *self);
 static void
@@ -601,6 +601,18 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t);
 /*
  * Helpers
  */
+
+/* Sets the current error to BlockingIOError */
+static void
+_set_BlockingIOError(char *msg, Py_ssize_t written)
+{
+    PyObject *err;
+    err = PyObject_CallFunction(PyExc_BlockingIOError, "isn",
+                                errno, msg, written);
+    if (err)
+        PyErr_SetObject(PyExc_BlockingIOError, err);
+    Py_XDECREF(err);
+}
 
 /* Returns the address of the `written` member if a BlockingIOError was
    raised, NULL otherwise. The error is always re-raised. */
@@ -756,7 +768,7 @@ buffered_flush_and_rewind_unlocked(buffered *self)
 {
     PyObject *res;
 
-    res = _bufferedwriter_flush_unlocked(self, 0);
+    res = _bufferedwriter_flush_unlocked(self);
     if (res == NULL)
         return NULL;
     Py_DECREF(res);
@@ -1121,7 +1133,7 @@ buffered_seek(buffered *self, PyObject *args)
 
     /* Fallback: invoke raw seek() method and clear buffer */
     if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self, 0);
+        res = _bufferedwriter_flush_unlocked(self);
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
@@ -1714,6 +1726,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     Py_buffer buf;
     PyObject *memobj, *res;
     Py_ssize_t n;
+    int errnum;
     /* NOTE: the buffer needn't be released as its object is NULL. */
     if (PyBuffer_FillInfo(&buf, NULL, start, len, 1, PyBUF_CONTIG_RO) == -1)
         return -1;
@@ -1726,11 +1739,21 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
        raised (see issue #10956).
     */
     do {
+        errno = 0;
         res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_write, memobj, NULL);
+        errnum = errno;
     } while (res == NULL && _trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
+    if (res == Py_None) {
+        /* Non-blocking stream would have blocked. Special return code!
+           Being paranoid we reset errno in case it is changed by code
+           triggered by a decref.  errno is used by _set_BlockingIOError(). */
+        Py_DECREF(res);
+        errno = errnum;
+        return -2;
+    }
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
@@ -1747,7 +1770,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
 /* `restore_pos` is 1 if we need to restore the raw stream position at
    the end, 0 otherwise. */
 static PyObject *
-_bufferedwriter_flush_unlocked(buffered *self, int restore_pos)
+_bufferedwriter_flush_unlocked(buffered *self)
 {
     Py_ssize_t written = 0;
     Py_off_t n, rewind;
@@ -1769,14 +1792,11 @@ _bufferedwriter_flush_unlocked(buffered *self, int restore_pos)
             Py_SAFE_DOWNCAST(self->write_end - self->write_pos,
                              Py_off_t, Py_ssize_t));
         if (n == -1) {
-            Py_ssize_t *w = _buffered_check_blocking_error();
-            if (w == NULL)
-                goto error;
-            self->write_pos += *w;
-            self->raw_pos = self->write_pos;
-            written += *w;
-            *w = written;
-            /* Already re-raised */
+            goto error;
+        }
+        else if (n == -2) {
+            _set_BlockingIOError("write could not complete without blocking",
+                                 0);
             goto error;
         }
         self->write_pos += n;
@@ -1789,16 +1809,6 @@ _bufferedwriter_flush_unlocked(buffered *self, int restore_pos)
             goto error;
     }
 
-    if (restore_pos) {
-        Py_off_t forward = rewind - written;
-        if (forward != 0) {
-            n = _buffered_raw_seek(self, forward, 1);
-            if (n < 0) {
-                goto error;
-            }
-            self->raw_pos += forward;
-        }
-    }
     _bufferedwriter_reset_buf(self);
 
 end:
@@ -1851,7 +1861,7 @@ bufferedwriter_write(buffered *self, PyObject *args)
     }
 
     /* First write the current buffer */
-    res = _bufferedwriter_flush_unlocked(self, 0);
+    res = _bufferedwriter_flush_unlocked(self);
     if (res == NULL) {
         Py_ssize_t *w = _buffered_check_blocking_error();
         if (w == NULL)
@@ -1874,14 +1884,19 @@ bufferedwriter_write(buffered *self, PyObject *args)
             PyErr_Clear();
             memcpy(self->buffer + self->write_end, buf.buf, buf.len);
             self->write_end += buf.len;
+            self->pos += buf.len;
             written = buf.len;
             goto end;
         }
         /* Buffer as much as possible. */
         memcpy(self->buffer + self->write_end, buf.buf, avail);
         self->write_end += avail;
-        /* Already re-raised */
-        *w = avail;
+        self->pos += avail;
+        /* XXX Modifying the existing exception e using the pointer w
+           will change e.characters_written but not e.args[2].
+           Therefore we just replace with a new error. */
+        _set_BlockingIOError("write could not complete without blocking",
+                             avail);
         goto error;
     }
     Py_CLEAR(res);
@@ -1906,11 +1921,9 @@ bufferedwriter_write(buffered *self, PyObject *args)
         Py_ssize_t n = _bufferedwriter_raw_write(
             self, (char *) buf.buf + written, buf.len - written);
         if (n == -1) {
-            Py_ssize_t *w = _buffered_check_blocking_error();
-            if (w == NULL)
-                goto error;
-            written += *w;
-            remaining -= *w;
+            goto error;
+        } else if (n == -2) {
+            /* Write failed because raw file is non-blocking */
             if (remaining > self->buffer_size) {
                 /* Can't buffer everything, still buffer as much as possible */
                 memcpy(self->buffer,
@@ -1918,8 +1931,9 @@ bufferedwriter_write(buffered *self, PyObject *args)
                 self->raw_pos = 0;
                 ADJUST_POSITION(self, self->buffer_size);
                 self->write_end = self->buffer_size;
-                *w = written + self->buffer_size;
-                /* Already re-raised */
+                written += self->buffer_size;
+                _set_BlockingIOError("write could not complete without "
+                                     "blocking", written);
                 goto error;
             }
             PyErr_Clear();
