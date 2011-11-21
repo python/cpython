@@ -401,7 +401,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 else
                     printf("U+%04x", ch);
             }
-            printf("} (len=%u)\n", ascii->length);
+            printf("} (len=%lu)\n", ascii->length);
             abort();
         }
         if (kind == PyUnicode_1BYTE_KIND) {
