@@ -417,6 +417,7 @@ sp_CreateProcess(PyObject* self, PyObject* args)
     PROCESS_INFORMATION pi;
     STARTUPINFOW si;
     PyObject* environment;
+    wchar_t *wenvironment;
 
     Py_UNICODE* application_name;
     Py_UNICODE* command_line;
@@ -461,6 +462,17 @@ sp_CreateProcess(PyObject* self, PyObject* args)
             return NULL;
     }
 
+    if (environment) {
+        wenvironment = PyUnicode_AsUnicode(environment)
+        if (wenvironment == NULL)
+        {
+            Py_XDECREF(environment);
+            return NULL;
+        }
+    }
+    else
+        wenvironment = NULL;
+
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,
                            command_line,
@@ -468,7 +480,7 @@ sp_CreateProcess(PyObject* self, PyObject* args)
                            NULL,
                            inherit_handles,
                            creation_flags | CREATE_UNICODE_ENVIRONMENT,
-                           environment ? PyUnicode_AS_UNICODE(environment) : NULL,
+                           wenvironment,
                            current_directory,
                            &si,
                            &pi);

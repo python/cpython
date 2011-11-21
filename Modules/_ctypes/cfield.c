@@ -1472,12 +1472,15 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     /* create a BSTR from value */
     if (value) {
         Py_ssize_t size = PyUnicode_GET_SIZE(value);
+        wchar_t* wvalue;
         if ((unsigned) size != size) {
             PyErr_SetString(PyExc_ValueError, "String too long for BSTR");
             return NULL;
         }
-        bstr = SysAllocStringLen(PyUnicode_AS_UNICODE(value),
-                                 (unsigned)size);
+        wvalue = PyUnicode_AsUnicode(value);
+        if (wvalue == NULL)
+            return NULL;
+        bstr = SysAllocStringLen(wvalue, (unsigned)size);
         Py_DECREF(value);
     } else
         bstr = NULL;
