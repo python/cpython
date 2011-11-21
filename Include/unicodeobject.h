@@ -385,12 +385,13 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
    If the Py_UNICODE representation is not available, it will be computed
    on request.  Use PyUnicode_GET_LENGTH() for the length in code points. */
 
-#define PyUnicode_GET_SIZE(op) \
-    (assert(PyUnicode_Check(op)), \
-     (((PyASCIIObject *)(op))->wstr) ? \
-        PyUnicode_WSTR_LENGTH(op) :                   \
-        ((void)PyUnicode_AsUnicode((PyObject *)(op)), \
-         PyUnicode_WSTR_LENGTH(op)))
+#define PyUnicode_GET_SIZE(op)                       \
+    (assert(PyUnicode_Check(op)),                    \
+     (((PyASCIIObject *)(op))->wstr) ?               \
+      PyUnicode_WSTR_LENGTH(op) :                    \
+      ((void)PyUnicode_AsUnicode((PyObject *)(op)),  \
+       assert(((PyASCIIObject *)(op))->wstr),        \
+       PyUnicode_WSTR_LENGTH(op)))
 
 #define PyUnicode_GET_DATA_SIZE(op) \
     (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
