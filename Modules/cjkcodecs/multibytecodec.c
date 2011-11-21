@@ -443,10 +443,12 @@ multibytecodec_decerror(MultibyteCodec *codec,
         goto errorexit;
     }
 
+    if (PyUnicode_AsUnicode(retuni) == NULL)
+        goto errorexit;
     retunisize = PyUnicode_GET_SIZE(retuni);
     if (retunisize > 0) {
         REQUIRE_DECODEBUFFER(buf, retunisize);
-        memcpy((char *)buf->outbuf, PyUnicode_AS_DATA(retuni),
+        memcpy((char *)buf->outbuf, PyUnicode_AS_UNICODE(retuni),
                         retunisize * Py_UNICODE_SIZE);
         buf->outbuf += retunisize;
     }
@@ -746,6 +748,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *ucvt, *r = NULL;
     Py_UNICODE *inbuf, *inbuf_end, *inbuf_tmp = NULL;
     Py_ssize_t datalen, origpending;
+    wchar_t *data;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -761,7 +764,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         }
     }
 
-    datalen = PyUnicode_GET_SIZE(unistr);
+    data = PyUnicode_AsUnicodeAndSize(unistr, &datalen);
+    if (data == NULL)
+        goto errorexit;
     origpending = ctx->pendingsize;
 
     if (origpending > 0) {
@@ -852,7 +857,9 @@ decoder_prepare_buffer(MultibyteDecodeBuffer *buf, const char *data,
         buf->outobj = PyUnicode_FromUnicode(NULL, size);
         if (buf->outobj == NULL)
             return -1;
-        buf->outbuf = PyUnicode_AS_UNICODE(buf->outobj);
+        buf->outbuf = PyUnicode_AsUnicode(buf->outobj);
+        if (buf->outbuf == NULL)
+            return -1;
         buf->outbuf_end = buf->outbuf +
                           PyUnicode_GET_SIZE(buf->outobj);
     }
