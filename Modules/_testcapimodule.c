@@ -1425,7 +1425,7 @@ test_widechar(PyObject *self)
         return NULL;
     }
 
-    if (PyUnicode_GET_SIZE(wide) != PyUnicode_GET_SIZE(utf8)) {
+    if (PyUnicode_GET_LENGTH(wide) != PyUnicode_GET_LENGTH(utf8)) {
         Py_DECREF(wide);
         Py_DECREF(utf8);
         return raiseTestError("test_widechar",
