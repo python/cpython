@@ -622,11 +622,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 {
     int i;
     if (!PyLong_Check(obj)) {
-        PyObject *s = PyObject_Repr(obj);
-        if (s == NULL) return 1;
-        PyErr_Format(PyExc_ValueError, "invalid integer value: %.400s",
-                     PyBytes_AS_STRING(s));
-        Py_DECREF(s);
+        PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
         return 1;
     }
 
