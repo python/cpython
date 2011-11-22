@@ -1906,6 +1906,10 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 PyObject*
 PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 {
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be positive");
+        return NULL;
+    }
     switch(kind) {
     case PyUnicode_1BYTE_KIND:
         return _PyUnicode_FromUCS1(buffer, size);
@@ -1914,7 +1918,6 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     case PyUnicode_4BYTE_KIND:
         return _PyUnicode_FromUCS4(buffer, size);
     default:
-        assert(0 && "invalid kind");
         PyErr_SetString(PyExc_SystemError, "invalid kind");
         return NULL;
     }
