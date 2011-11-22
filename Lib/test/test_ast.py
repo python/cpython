@@ -486,6 +486,17 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('10 + 2j'), 10 + 2j)
         self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
 
+    def test_bad_integer(self):
+        # issue13436: Bad error message with invalid numeric values
+        body = [ast.ImportFrom(module='time',
+                               names=[ast.alias(name='sleep')],
+                               level=None,
+                               lineno=None, col_offset=None)]
+        mod = ast.Module(body)
+        with self.assertRaises(ValueError) as cm:
+            compile(mod, 'test', 'exec')
+        self.assertIn("invalid integer value: None", str(cm.exception))
+
 
 def test_main():
     support.run_unittest(AST_Tests, ASTHelpers_Test)
