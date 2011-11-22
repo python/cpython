@@ -1606,6 +1606,31 @@ class UnicodeTest(
         self.assertEqual("%s" % u, u'__unicode__ overridden')
         self.assertEqual("{}".format(u), '__unicode__ overridden')
 
+    def test_encode_decimal(self):
+        from _testcapi import unicode_encodedecimal
+        self.assertEqual(unicode_encodedecimal(u'123'),
+                         b'123')
+        self.assertEqual(unicode_encodedecimal(u'\u0663.\u0661\u0664'),
+                         b'3.14')
+        self.assertEqual(unicode_encodedecimal(u"\N{EM SPACE}3.14\N{EN SPACE}"),
+                         b' 3.14 ')
+        self.assertRaises(UnicodeEncodeError,
+                          unicode_encodedecimal, u"123\u20ac", "strict")
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac", "replace"),
+                         b'123?')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac", "ignore"),
+                         b'123')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac", "xmlcharrefreplace"),
+                         b'123&#8364;')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac", "backslashreplace"),
+                         b'123\\u20ac')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac\N{EM SPACE}", "replace"),
+                         b'123? ')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac\u20ac", "replace"),
+                         b'123??')
+        self.assertEqual(unicode_encodedecimal(u"123\u20ac\u0660", "replace"),
+                         b'123?0')
+
 
 def test_main():
     test_support.run_unittest(__name__)
