@@ -115,6 +115,22 @@ except ImportError:
     Structure = object
     c_int = c_double = None
 
+
+def check_enough_semaphores():
+    """Check that the system supports enough semaphores to run the test."""
+    # minimum number of semaphores available according to POSIX
+    nsems_min = 256
+    try:
+        nsems = os.sysconf("SC_SEM_NSEMS_MAX")
+    except (AttributeError, ValueError):
+        # sysconf not available or setting not available
+        return
+    if nsems == -1 or nsems >= nsems_min:
+        return
+    raise unittest.SkipTest("The OS doesn't support enough semaphores "
+                            "to run the test (required: %d)." % nsems_min)
+
+
 #
 # Creates a wrapper for a function which records the time it takes to finish
 #
@@ -2348,6 +2364,8 @@ def test_main(run=None):
             lock = multiprocessing.RLock()
         except OSError:
             raise unittest.SkipTest("OSError raises on RLock creation, see issue 3111!")
+
+    check_enough_semaphores()
 
     if run is None:
         from test.support import run_unittest as run
