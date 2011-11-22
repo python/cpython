@@ -4391,6 +4391,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
        unicode_size may be != size if there is an incomplete UTF-8
        sequence at the end of the ASCII block.  */
     if (maxchar < 128 && size == unicode_size) {
+        if (consumed)
+            *consumed = size;
+
         if (size == 1)
             return get_latin1_char((unsigned char)s[0]);
 
