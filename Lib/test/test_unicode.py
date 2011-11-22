@@ -1824,6 +1824,12 @@ class UnicodeTest(string_tests.CommonTest,
                          b'123&#8364;')
         self.assertEqual(unicode_encodedecimal("123\u20ac", "backslashreplace"),
                          b'123\\u20ac')
+        self.assertEqual(unicode_encodedecimal("123\u20ac\N{EM SPACE}", "replace"),
+                         b'123? ')
+        self.assertEqual(unicode_encodedecimal("123\u20ac\u20ac", "replace"),
+                         b'123??')
+        self.assertEqual(unicode_encodedecimal("123\u20ac\u0660", "replace"),
+                         b'123?0')
 
     def test_transform_decimal(self):
         from _testcapi import unicode_transformdecimaltoascii as transform_decimal

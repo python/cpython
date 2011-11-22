@@ -8875,22 +8875,25 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
 
-    for (i=0; i < length; i++) {
+    for (i=0; i < length; ) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         int decimal;
         Py_ssize_t startpos, endpos;
 
         if (Py_UNICODE_ISSPACE(ch)) {
             *output++ = ' ';
+            i++;
             continue;
         }
         decimal = Py_UNICODE_TODECIMAL(ch);
         if (decimal >= 0) {
             *output++ = '0' + decimal;
+            i++;
             continue;
         }
         if (0 < ch && ch < 256) {
             *output++ = (char)ch;
+            i++;
             continue;
         }
         /* All other characters are considered unencodable */
@@ -8899,8 +8902,8 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
         for (; endpos < length; endpos++) {
             ch = PyUnicode_READ(kind, data, endpos);
             if ((0 < ch && ch < 256) ||
-                !Py_UNICODE_ISSPACE(ch) ||
-                Py_UNICODE_TODECIMAL(ch))
+                Py_UNICODE_ISSPACE(ch) ||
+                0 <= Py_UNICODE_TODECIMAL(ch))
                 break;
         }
         /* cache callback name lookup
@@ -8924,7 +8927,8 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
         case 2: /* replace */
             for (j=startpos; j < endpos; j++)
                 *output++ = '?';
-            /* fall through */
+            i = endpos;
+            break;
         case 3: /* ignore */
             i = endpos;
             break;
