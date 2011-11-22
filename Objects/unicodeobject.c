@@ -379,19 +379,6 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             if (ch > maxchar)
                 maxchar = ch;
         }
-        if (maxchar > 0x10FFFF) {
-            printf("Invalid Unicode string! {");
-            for (i=0; i < ascii->length; i++)
-            {
-                Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-                if (i)
-                    printf(", U+%04x", ch);
-                else
-                    printf("U+%04x", ch);
-            }
-            printf("} (len=%lu)\n", ascii->length);
-            abort();
-        }
         if (kind == PyUnicode_1BYTE_KIND) {
             if (ascii->state.ascii == 0) {
                 assert(maxchar >= 128);
@@ -406,7 +393,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         else {
             assert(maxchar >= 0x10000);
-            assert(maxchar <= 0x10FFFF);
+            /* FIXME: Issue #13441: on Solaris, localeconv() and strxfrm()
+               return characters outside the range U+0000-U+10FFFF. */
+            /* assert(maxchar <= 0x10FFFF); */
         }
     }
     return 1;
@@ -3482,6 +3471,7 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
             four_bytes = PyUnicode_4BYTE_DATA(unicode);
             for (; four_bytes < ucs4_end; ++four_bytes, ++w) {
                 if (*four_bytes > 0xFFFF) {
+                    assert(*four_bytes <= 0x10FFFF);
                     /* encode surrogate pair in this case */
                     *w++ = 0xD800 | ((*four_bytes - 0x10000) >> 10);
                     *w   = 0xDC00 | ((*four_bytes - 0x10000) & 0x3FF);
@@ -4128,6 +4118,8 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         continue;
 encode_char:
         if (ch >= 0x10000) {
+            assert(ch <= 0x10FFFF);
+
             /* code first surrogate */
             base64bits += 16;
             base64buffer = (base64buffer << 16) | 0xd800 | ((ch-0x10000) >> 10);
@@ -4899,6 +4891,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
         } else /* ch >= 0x10000 */ {
+            assert(ch <= 0x10FFFF);
             /* Encode UCS4 Unicode ordinals */
             *p++ = (char)(0xf0 | (ch >> 18));
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
@@ -5971,6 +5964,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
+            assert(ch <= 0x10FFFF);
             *p++ = '\\';
             *p++ = 'U';
             *p++ = Py_hexdigits[(ch >> 28) & 0x0000000F];
@@ -6191,6 +6185,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
+            assert(ch <= 0x10FFFF);
             *p++ = '\\';
             *p++ = 'U';
             *p++ = Py_hexdigits[(ch >> 28) & 0xf];
@@ -6546,17 +6541,14 @@ unicode_encode_ucs1(PyObject *unicode,
                         repsize += 2+3+1;
                     else if (ch < 10000)
                         repsize += 2+4+1;
-#ifndef Py_UNICODE_WIDE
-                    else
-                        repsize += 2+5+1;
-#else
                     else if (ch < 100000)
                         repsize += 2+5+1;
                     else if (ch < 1000000)
                         repsize += 2+6+1;
-                    else
+                    else {
+                        assert(ch <= 0x10FFFF);
                         repsize += 2+7+1;
-#endif
+                    }
                 }
                 requiredsize = respos+repsize+(size-collend);
                 if (requiredsize > ressize) {
