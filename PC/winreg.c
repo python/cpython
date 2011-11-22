@@ -1227,8 +1227,8 @@ PyEnumValue(PyObject *self, PyObject *args)
 static PyObject *
 PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
 {
-    Py_UNICODE *retValue = NULL;
-    Py_UNICODE *src;
+    wchar_t *retValue = NULL;
+    wchar_t *src;
     DWORD retValueSize;
     DWORD rc;
     PyObject *o;
@@ -1241,7 +1241,7 @@ PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
     }
-    retValue = (Py_UNICODE *)PyMem_Malloc(retValueSize * sizeof(Py_UNICODE));
+    retValue = (wchar_t *)PyMem_Malloc(retValueSize * sizeof(wchar_t));
     if (retValue == NULL) {
         return PyErr_NoMemory();
     }
@@ -1252,7 +1252,7 @@ PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
     }
-    o = PyUnicode_FromUnicode(retValue, wcslen(retValue));
+    o = PyUnicode_FromWideChar(retValue, wcslen(retValue));
     PyMem_Free(retValue);
     return o;
 }
@@ -1537,7 +1537,7 @@ PySetValueEx(PyObject *self, PyObject *args)
 {
     HKEY hKey;
     PyObject *obKey;
-    Py_UNICODE *valueName;
+    wchar_t *valueName;
     PyObject *obRes;
     PyObject *value;
     BYTE *data;

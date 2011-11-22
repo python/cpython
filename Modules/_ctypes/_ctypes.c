@@ -4255,7 +4255,7 @@ Array_subscript(PyObject *_self, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_FromUnicode(NULL, 0);
+                return PyUnicode_New(0, 0);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -4930,7 +4930,7 @@ Pointer_subscript(PyObject *_self, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_FromUnicode(NULL, 0);
+                return PyUnicode_New(0, 0);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);

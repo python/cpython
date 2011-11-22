@@ -211,7 +211,7 @@ cannot be read with this function.");
 static PyObject *
 msvcrt_getwch(PyObject *self, PyObject *args)
 {
-    Py_UNICODE ch;
+    wchar_t ch;
 
     if (!PyArg_ParseTuple(args, ":getwch"))
         return NULL;
@@ -254,7 +254,7 @@ a printable character.");
 static PyObject *
 msvcrt_getwche(PyObject *self, PyObject *args)
 {
-    Py_UNICODE ch;
+    wchar_t ch;
 
     if (!PyArg_ParseTuple(args, ":getwche"))
         return NULL;
