@@ -6106,6 +6106,12 @@ posix_putenv(PyObject *self, PyObject *args)
        PyBytes_FromStringAndSize does not count that */
 #ifdef MS_WINDOWS
     len = wcslen(s1) + wcslen(s2) + 2;
+    if (_MAX_ENV < (len - 1)) {
+        PyErr_Format(PyExc_ValueError,
+                     "the environment variable is longer than %u characters",
+                     _MAX_ENV);
+        goto error;
+    }
     newstr = PyUnicode_FromUnicode(NULL, (int)len - 1);
 #else
     len = PyBytes_GET_SIZE(os1) + PyBytes_GET_SIZE(os2) + 2;
@@ -6177,42 +6183,30 @@ Delete an environment variable.");
 static PyObject *
 posix_unsetenv(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
-    char *s1;
-
-    if (!PyArg_ParseTuple(args, "s:unsetenv", &s1))
-        return NULL;
-#else
     PyObject *os1;
     char *s1;
+    int err;
 
     if (!PyArg_ParseTuple(args, "O&:unsetenv",
                           PyUnicode_FSConverter, &os1))
         return NULL;
     s1 = PyBytes_AsString(os1);
-#endif
 
-    unsetenv(s1);
+    err = unsetenv(s1);
+    if (err)
+        return posix_error();
 
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to
      * happen after the real unsetenv() call because the
      * old value was still accessible until then.
      */
-    if (PyDict_DelItem(posix_putenv_garbage,
-#ifdef MS_WINDOWS
-                       PyTuple_GET_ITEM(args, 0)
-#else
-                       os1
-#endif
-                       )) {
+    if (PyDict_DelItem(posix_putenv_garbage, os1)) {
         /* really not much we can do; just leak */
         PyErr_Clear();
     }
 
-#ifndef MS_WINDOWS
     Py_DECREF(os1);
-#endif
     Py_RETURN_NONE;
 }
 #endif /* unsetenv */
