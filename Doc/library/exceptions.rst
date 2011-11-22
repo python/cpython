@@ -40,9 +40,9 @@ The following exceptions are used mostly as base classes for other exceptions.
 
    The base class for all built-in exceptions.  It is not meant to be directly
    inherited by user-defined classes (for that, use :exc:`Exception`).  If
-   :func:`bytes` or :func:`str` is called on an instance of this class, the
-   representation of the argument(s) to the instance are returned, or the empty
-   string when there were no arguments.
+   :func:`str` is called on an instance of this class, the representation of
+   the argument(s) to the instance are returned, or the empty string when
+   there were no arguments.
 
    .. attribute:: args
 
