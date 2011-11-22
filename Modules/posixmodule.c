@@ -6994,6 +6994,14 @@ posix_putenv(PyObject *self, PyObject *args)
 
     /* XXX This can leak memory -- not easy to fix :-( */
     len = strlen(s1) + strlen(s2) + 2;
+#ifdef MS_WINDOWS
+    if (_MAX_ENV < (len - 1)) {
+        PyErr_Format(PyExc_ValueError,
+                     "the environment variable is longer than %u bytes",
+                     _MAX_ENV);
+        return NULL;
+    }
+#endif
     /* len includes space for a trailing \0; the size arg to
        PyString_FromStringAndSize does not count that */
     newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
@@ -7036,11 +7044,14 @@ static PyObject *
 posix_unsetenv(PyObject *self, PyObject *args)
 {
     char *s1;
+    int err;
 
     if (!PyArg_ParseTuple(args, "s:unsetenv", &s1))
         return NULL;
 
-    unsetenv(s1);
+    err = unsetenv(s1);
+    if (err)
+        return posix_error();
 
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to

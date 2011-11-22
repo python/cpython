@@ -361,6 +361,15 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
                 value = popen.read().strip()
                 self.assertEqual(value, "World")
 
+    def test_unset_error(self):
+        if sys.platform == "win32":
+            # an environment variable is limited to 32,767 characters
+            key = 'x' * 50000
+        else:
+            # "=" is not allowed in a variable name
+            key = 'key='
+        self.assertRaises(OSError, os.environ.__delitem__, key)
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 
