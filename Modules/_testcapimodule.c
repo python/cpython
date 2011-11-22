@@ -1106,6 +1106,41 @@ test_widechar(PyObject *self)
 }
 
 static PyObject *
+unicode_encodedecimal(PyObject *self, PyObject *args)
+{
+    Py_UNICODE *unicode;
+    Py_ssize_t length;
+    char *errors = NULL;
+    PyObject *decimal;
+    Py_ssize_t decimal_length, new_length;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length, &errors))
+        return NULL;
+
+    decimal_length = length * 7; /* len('&#8364;') */
+    decimal = PyBytes_FromStringAndSize(NULL, decimal_length);
+    if (decimal == NULL)
+        return NULL;
+
+    res = PyUnicode_EncodeDecimal(unicode, length,
+                                  PyBytes_AS_STRING(decimal),
+                                  errors);
+    if (res < 0) {
+        Py_DECREF(decimal);
+        return NULL;
+    }
+
+    new_length = strlen(PyBytes_AS_STRING(decimal));
+    assert(new_length <= decimal_length);
+    res = _PyBytes_Resize(&decimal, new_length);
+    if (res < 0)
+        return NULL;
+
+    return decimal;
+}
+
+static PyObject *
 test_empty_argparse(PyObject *self)
 {
     /* Test that formats can begin with '|'. See issue #4720. */
@@ -1698,6 +1733,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef Py_USING_UNICODE
     {"test_u_code",             (PyCFunction)test_u_code,        METH_NOARGS},
     {"test_widechar",           (PyCFunction)test_widechar,      METH_NOARGS},
+    {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
 #endif
 #ifdef WITH_THREAD
     {"_test_thread_state",  test_thread_state,                   METH_VARARGS},
