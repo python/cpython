@@ -4330,7 +4330,8 @@ static int
 refit_partial_string(PyObject **unicode, int kind, void *data, Py_ssize_t n)
 {
     PyObject *tmp;
-    Py_ssize_t k, maxchar;
+    Py_ssize_t k;
+    Py_UCS4 maxchar;
     for (k = 0, maxchar = 0; k < n; k++)
         maxchar = Py_MAX(maxchar, PyUnicode_READ(kind, data, k));
     tmp = PyUnicode_New(PyUnicode_GET_LENGTH(*unicode), maxchar);
