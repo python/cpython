@@ -6323,11 +6323,10 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
         }
         /* All other characters are considered unencodable */
         collstart = p;
-        collend = p+1;
-        while (collend < end) {
+        for (collend = p+1; collend < end; collend++) {
             if ((0 < *collend && *collend < 256) ||
-                !Py_UNICODE_ISSPACE(*collend) ||
-                Py_UNICODE_TODECIMAL(*collend))
+                Py_UNICODE_ISSPACE(*collend) ||
+                0 <= Py_UNICODE_TODECIMAL(*collend))
                 break;
         }
         /* cache callback name lookup
@@ -7004,7 +7003,7 @@ PyObject *replace(PyUnicodeObject *self,
         }
     } else {
 
-        Py_ssize_t n, i, j, e;
+        Py_ssize_t n, i, j;
         Py_ssize_t product, new_size, delta;
         Py_UNICODE *p;
 
@@ -7036,7 +7035,6 @@ PyObject *replace(PyUnicodeObject *self,
             return NULL;
         i = 0;
         p = u->str;
-        e = self->length - str1->length;
         if (str1->length > 0) {
             while (n-- > 0) {
                 /* look for next match */
