@@ -419,14 +419,14 @@ sp_CreateProcess(PyObject* self, PyObject* args)
     PyObject* environment;
     wchar_t *wenvironment;
 
-    Py_UNICODE* application_name;
-    Py_UNICODE* command_line;
+    wchar_t* application_name;
+    wchar_t* command_line;
     PyObject* process_attributes; /* ignored */
     PyObject* thread_attributes; /* ignored */
     int inherit_handles;
     int creation_flags;
     PyObject* env_mapping;
-    Py_UNICODE* current_directory;
+    wchar_t* current_directory;
     PyObject* startup_info;
 
     if (! PyArg_ParseTuple(args, "ZZOOiiOZO:CreateProcess",
@@ -454,15 +454,10 @@ sp_CreateProcess(PyObject* self, PyObject* args)
     if (PyErr_Occurred())
         return NULL;
 
-    if (env_mapping == Py_None)
-        environment = NULL;
-    else {
+    if (env_mapping != Py_None) {
         environment = getenvironment(env_mapping);
         if (! environment)
             return NULL;
-    }
-
-    if (environment) {
         wenvironment = PyUnicode_AsUnicode(environment);
         if (wenvironment == NULL)
         {
@@ -470,8 +465,10 @@ sp_CreateProcess(PyObject* self, PyObject* args)
             return NULL;
         }
     }
-    else
+    else {
+        environment = NULL;
         wenvironment = NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     result = CreateProcessW(application_name,

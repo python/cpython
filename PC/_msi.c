@@ -18,7 +18,7 @@ static PyObject*
 uuidcreate(PyObject* obj, PyObject*args)
 {
     UUID result;
-    unsigned short *cresult;
+    wchar_t *cresult;
     PyObject *oresult;
 
     /* May return ok, local only, and no address.
@@ -35,7 +35,7 @@ uuidcreate(PyObject* obj, PyObject*args)
         return NULL;
     }
 
-    oresult = PyUnicode_FromUnicode(cresult, wcslen(cresult));
+    oresult = PyUnicode_FromWideChar(cresult, wcslen(cresult));
     RpcStringFreeW(&cresult);
     return oresult;
 
@@ -379,7 +379,7 @@ record_getstring(msiobj* record, PyObject* args)
     }
     if (status != ERROR_SUCCESS)
         return msierror((int) status);
-    string = PyUnicode_FromUnicode(res, size);
+    string = PyUnicode_FromWideChar(res, size);
     if (buf != res)
         free(res);
     return string;
@@ -401,7 +401,7 @@ record_setstring(msiobj* record, PyObject *args)
 {
     int status;
     int field;
-    Py_UNICODE *data;
+    wchar_t *data;
 
     if (!PyArg_ParseTuple(args, "iu:SetString", &field, &data))
         return NULL;
@@ -418,7 +418,7 @@ record_setstream(msiobj* record, PyObject *args)
 {
     int status;
     int field;
-    Py_UNICODE *data;
+    wchar_t *data;
 
     if (!PyArg_ParseTuple(args, "iu:SetStream", &field, &data))
         return NULL;

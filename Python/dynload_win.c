@@ -249,7 +249,7 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
                     "DLL load failed: ");
 
                 PyUnicode_AppendAndDel(&message,
-                    PyUnicode_FromUnicode(
+                    PyUnicode_FromWideChar(
                         theInfo,
                         theLength));
             }

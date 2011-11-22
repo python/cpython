@@ -2599,7 +2599,7 @@ posix_listdir(PyObject *self, PyObject *args)
             /* Skip over . and .. */
             if (wcscmp(wFileData.cFileName, L".") != 0 &&
                 wcscmp(wFileData.cFileName, L"..") != 0) {
-                v = PyUnicode_FromUnicode(wFileData.cFileName, wcslen(wFileData.cFileName));
+                v = PyUnicode_FromWideChar(wFileData.cFileName, wcslen(wFileData.cFileName));
                 if (v == NULL) {
                     Py_DECREF(d);
                     d = NULL;
@@ -2967,7 +2967,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
             result = GetFullPathNameW(wpath, result, woutbufp, &wtemp);
         }
         if (result)
-            v = PyUnicode_FromUnicode(woutbufp, wcslen(woutbufp));
+            v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
         else
             v = win32_error_object("GetFullPathNameW", po);
         if (woutbufp != woutbuf)
@@ -3054,7 +3054,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
         return win32_error_object("CloseHandle", po);
 
     target_path[result_length] = 0;
-    result = PyUnicode_FromUnicode(target_path, result_length);
+    result = PyUnicode_FromWideChar(target_path, result_length);
     free(target_path);
     return result;
 
@@ -7750,7 +7750,7 @@ static PyObject *
 posix_putenv(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    wchar_t *s1, *s2;
+    PyObject *s1, *s2;
     wchar_t *newenv;
 #else
     PyObject *os1, *os2;
@@ -7762,7 +7762,7 @@ posix_putenv(PyObject *self, PyObject *args)
 
 #ifdef MS_WINDOWS
     if (!PyArg_ParseTuple(args,
-                          "uu:putenv",
+                          "UU:putenv",
                           &s1, &s2))
         return NULL;
 #else
@@ -7799,26 +7799,26 @@ posix_putenv(PyObject *self, PyObject *args)
     /* len includes space for a trailing \0; the size arg to
        PyBytes_FromStringAndSize does not count that */
 #ifdef MS_WINDOWS
-    len = wcslen(s1) + wcslen(s2) + 2;
-    newstr = PyUnicode_FromUnicode(NULL, (int)len - 1);
-#else
-    len = PyBytes_GET_SIZE(os1) + PyBytes_GET_SIZE(os2) + 2;
-    newstr = PyBytes_FromStringAndSize(NULL, (int)len - 1);
-#endif
+    newstr = PyUnicode_FromFormat("%U=%U", s1, s2);
     if (newstr == NULL) {
         PyErr_NoMemory();
         goto error;
     }
-#ifdef MS_WINDOWS
     newenv = PyUnicode_AsUnicode(newstr);
     if (newenv == NULL)
         goto error;
-    _snwprintf(newenv, len, L"%s=%s", s1, s2);
     if (_wputenv(newenv)) {
         posix_error();
         goto error;
     }
 #else
+    len = PyBytes_GET_SIZE(os1) + PyBytes_GET_SIZE(os2) + 2;
+    newstr = PyBytes_FromStringAndSize(NULL, (int)len - 1);
+    if (newstr == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
     newenv = PyBytes_AS_STRING(newstr);
     PyOS_snprintf(newenv, len, "%s=%s", s1, s2);
     if (putenv(newenv)) {
