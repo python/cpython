@@ -577,16 +577,16 @@ sched
 
 * *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
   constructor are now optional and defaults to :func:`time.time` and
-  :func:`time.sleep` respectively.  (Contributed by Matt Mulsow in
-  :issue:`8809`)
+  :func:`time.sleep` respectively.  (Contributed by Chris Clark in
+  :issue:`13245`)
 
 * :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
-  *argument* parameter is now optional.  (Contributed by Matt Mulsow in
-  :issue:`8809`)
+  *argument* parameter is now optional.  (Contributed by Chris Clark in
+  :issue:`13245`)
 
 * :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
-  now accept a *kwargs* parameter.  (Contributed by Matt Mulsow in
-  :issue:`8809`)
+  now accept a *kwargs* parameter.  (Contributed by Chris Clark in
+  :issue:`13245`)
 
 Optimizations
 =============
