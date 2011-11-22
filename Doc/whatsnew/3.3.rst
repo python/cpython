@@ -572,6 +572,22 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 
 (:issue:`1673007`)
 
+sched
+-----
+
+* *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
+  constructor are now optional and defaults to :func:`time.time` and
+  :func:`time.sleep` respectively.  (Contributed by Matt Mulsow in
+  :issue:`8809`)
+
+* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
+  *argument* parameter is now optional.  (Contributed by Matt Mulsow in
+  :issue:`8809`)
+
+* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
+  now accept a *kwargs* parameter.  (Contributed by Matt Mulsow in
+  :issue:`8809`)
+
 Optimizations
 =============
 
@@ -744,4 +760,3 @@ Other issues
 .. Issue #10998: the -Q command-line flag and related artifacts have been
    removed.  Code checking sys.flags.division_warning will need updating.
    Contributed by Éric Araujo.
-

@@ -28,12 +28,13 @@ has another way to reference private data (besides global variables).
 # XXX instead of having to define a module or class just to hold
 # XXX the global state of your particular time and delay functions.
 
+import time
 import heapq
 from collections import namedtuple
 
 __all__ = ["scheduler"]
 
-class Event(namedtuple('Event', 'time, priority, action, argument')):
+class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
     def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
     def __ne__(s, o): return (s.time, s.priority) != (o.time, o.priority)
     def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
@@ -42,32 +43,33 @@ class Event(namedtuple('Event', 'time, priority, action, argument')):
     def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
 
 class scheduler:
-    def __init__(self, timefunc, delayfunc):
+
+    def __init__(self, timefunc=time.time, delayfunc=time.sleep):
         """Initialize a new instance, passing the time and delay
         functions"""
         self._queue = []
         self.timefunc = timefunc
         self.delayfunc = delayfunc
 
-    def enterabs(self, time, priority, action, argument):
+    def enterabs(self, time, priority, action, argument=[], kwargs={}):
         """Enter a new event in the queue at an absolute time.
 
         Returns an ID for the event which can be used to remove it,
         if necessary.
 
         """
-        event = Event(time, priority, action, argument)
+        event = Event(time, priority, action, argument, kwargs)
         heapq.heappush(self._queue, event)
         return event # The ID
 
-    def enter(self, delay, priority, action, argument):
+    def enter(self, delay, priority, action, argument=[], kwargs={}):
         """A variant that specifies the time as a relative time.
 
         This is actually the more commonly used interface.
 
         """
         time = self.timefunc() + delay
-        return self.enterabs(time, priority, action, argument)
+        return self.enterabs(time, priority, action, argument, kwargs)
 
     def cancel(self, event):
         """Remove an event from the queue.
@@ -111,7 +113,7 @@ class scheduler:
         timefunc = self.timefunc
         pop = heapq.heappop
         while q:
-            time, priority, action, argument = checked_event = q[0]
+            time, priority, action, argument, kwargs = checked_event = q[0]
             now = timefunc()
             if now < time:
                 delayfunc(time - now)
@@ -120,7 +122,7 @@ class scheduler:
                 # Verify that the event was not removed or altered
                 # by another thread after we last looked at q[0].
                 if event is checked_event:
-                    action(*argument)
+                    action(*argument, **kwargs)
                     delayfunc(0)   # Let other threads run
                 else:
                     heapq.heappush(q, event)

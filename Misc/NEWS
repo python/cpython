@@ -387,6 +387,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #13245: sched.scheduler class constructor's timefunc and
+  delayfunct parameters are now optional.
+  scheduler.enter and scheduler.enterabs methods gained a new kwargs parameter.
+  Patch contributed by Matt Mulsow.
+
 - Issue #12328: Under Windows, refactor handling of Ctrl-C events and
   make _multiprocessing.win32.WaitForMultipleObjects interruptible when
   the wait_flag parameter is false.  Patch by sbt.

@@ -72,6 +72,18 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(scheduler._queue, [])
 
+    def test_args_kwargs(self):
+        flag = []
+
+        def fun(*a, **b):
+            flag.append(None)
+            self.assertEqual(a, (1,2,3))
+            self.assertEqual(b, {"foo":1})
+
+        scheduler = sched.scheduler(time.time, time.sleep)
+        z = scheduler.enterabs(0.01, 1, fun, argument=(1,2,3), kwargs={"foo":1})
+        scheduler.run()
+        self.assertEqual(flag, [None])
 
 def test_main():
     support.run_unittest(TestCase)
