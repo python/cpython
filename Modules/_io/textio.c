@@ -1431,7 +1431,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
 
     /* Read a chunk, decode it, and put the result in self._decoded_chars. */
     if (size_hint > 0) {
-        size_hint = Py_MAX(self->b2cratio, 1.0) * size_hint;
+        size_hint = (Py_ssize_t)(Py_MAX(self->b2cratio, 1.0) * size_hint);
     }
     chunk_size = PyLong_FromSsize_t(Py_MAX(self->chunk_size, size_hint));
     if (chunk_size == NULL)

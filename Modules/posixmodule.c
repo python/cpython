@@ -7756,9 +7756,9 @@ posix_putenv(PyObject *self, PyObject *args)
     PyObject *os1, *os2;
     char *s1, *s2;
     char *newenv;
+    size_t len;
 #endif
     PyObject *newstr = NULL;
-    size_t len;
 
 #ifdef MS_WINDOWS
     if (!PyArg_ParseTuple(args,
