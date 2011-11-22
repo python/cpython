@@ -500,7 +500,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
     case SRE_OP_IN:
         /* repeated set */
         TRACE(("|%p|%p|COUNT IN\n", pattern, ptr));
-        while (ptr < end && 
+        while (ptr < end &&
                SRE_CHARSET(pattern + 2, SRE_CHARGET(state, ptr, 0)))
             ptr += state->charsize;
         break;
@@ -1030,7 +1030,7 @@ entrance:
                 ctx->u.chr = ctx->pattern[ctx->pattern[0]+1];
                 for (;;) {
                     while (ctx->count >= (Py_ssize_t) ctx->pattern[1] &&
-                           (ctx->ptr >= end || 
+                           (ctx->ptr >= end ||
                             SRE_CHARGET(state, ctx->ptr, 0) != ctx->u.chr)) {
                         ctx->ptr -= state->charsize;
                         ctx->count--;
@@ -1302,7 +1302,7 @@ entrance:
                     if (!p || !e || e < p)
                         RETURN_FAILURE;
                     while (p < e) {
-                        if (ctx->ptr >= end || 
+                        if (ctx->ptr >= end ||
                             SRE_CHARGET(state, ctx->ptr, 0) != SRE_CHARGET(state, p, 0))
                             RETURN_FAILURE;
                         p += state->charsize;
@@ -2664,7 +2664,7 @@ _compile(PyObject* self_, PyObject* args)
     if (pattern == Py_None) {
         self->logical_charsize = -1;
         self->charsize = -1;
-    } 
+    }
     else {
         Py_ssize_t p_length;
         if (!getstring(pattern, &p_length, &self->logical_charsize,
@@ -3021,10 +3021,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-#ifdef Py_UNICODE_WIDE
                 if (max > 65535)
                     FAIL;
-#endif
                 if (!_validate_inner(code, code+skip-4, groups))
                     FAIL;
                 code += skip-4;
@@ -3042,10 +3040,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-#ifdef Py_UNICODE_WIDE
                 if (max > 65535)
                     FAIL;
-#endif
                 if (!_validate_inner(code, code+skip-3, groups))
                     FAIL;
                 code += skip-3;
