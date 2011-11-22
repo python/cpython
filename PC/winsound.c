@@ -72,7 +72,7 @@ PyDoc_STRVAR(sound_module_doc,
 static PyObject *
 sound_playsound(PyObject *s, PyObject *args)
 {
-    Py_UNICODE *wsound;
+    wchar_t *wsound;
     int flags;
     int ok;
 

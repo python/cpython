@@ -3900,7 +3900,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
     PyObject *result;
 
     if (GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size))
-        return PyUnicode_FromUnicode(buf, size);
+        return PyUnicode_FromWideChar(buf, size);
 
     if (GetLastError() != ERROR_MORE_DATA)
         return PyErr_SetFromWindowsErr(0);
