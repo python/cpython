@@ -1308,12 +1308,12 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 #endif
         }
 #if SIZEOF_WCHAR_T == 2
-        if (*iter >= 0xD800 && *iter <= 0xDBFF
-            && (iter+1) < end && iter[1] >= 0xDC00 && iter[1] <= 0xDFFF)
+        if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
+            && (iter+1) < end
+            && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
         {
             Py_UCS4 surrogate_val;
-            surrogate_val = (((iter[0] & 0x3FF)<<10)
-                             | (iter[1] & 0x3FF)) + 0x10000;
+            surrogate_val = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
             ++(*num_surrogates);
             if (surrogate_val > *maxchar)
                 *maxchar = surrogate_val;
