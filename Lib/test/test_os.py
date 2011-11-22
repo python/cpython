@@ -365,10 +365,11 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if sys.platform == "win32":
             # an environment variable is limited to 32,767 characters
             key = 'x' * 50000
+            self.assertRaises(ValueError, os.environ.__delitem__, key)
         else:
             # "=" is not allowed in a variable name
             key = 'key='
-        self.assertRaises(OSError, os.environ.__delitem__, key)
+            self.assertRaises(OSError, os.environ.__delitem__, key)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
