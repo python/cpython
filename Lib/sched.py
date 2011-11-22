@@ -35,9 +35,6 @@ from collections import namedtuple
 __all__ = ["scheduler"]
 
 class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
-    def __init__(self, *args, **kwargs):
-        super(Event, self).__init__(*args, **kwargs)
-        self._scheduled = False
     def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
     def __ne__(s, o): return (s.time, s.priority) != (o.time, o.priority)
     def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
@@ -62,7 +59,6 @@ class scheduler:
 
         """
         event = Event(time, priority, action, argument, kwargs)
-        event._scheduled = True
         heapq.heappush(self._queue, event)
         return event # The ID
 
@@ -84,9 +80,6 @@ class scheduler:
         """
         self._queue.remove(event)
         heapq.heapify(self._queue)
-
-    def is_scheduled(self, event):
-        return event._scheduled
 
     def empty(self):
         """Check whether the queue is empty."""
@@ -129,7 +122,6 @@ class scheduler:
                 # Verify that the event was not removed or altered
                 # by another thread after we last looked at q[0].
                 if event is checked_event:
-                    event._scheduled = False
                     action(*argument, **kwargs)
                     delayfunc(0)   # Let other threads run
                 else:
