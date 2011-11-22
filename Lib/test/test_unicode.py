@@ -1836,6 +1836,13 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(transform_decimal('123\u20ac'),
                          '123\u20ac')
 
+    def test_getnewargs(self):
+        text = 'abc'
+        args = text.__getnewargs__()
+        self.assertIsNot(args[0], text)
+        self.assertEqual(args[0], text)
+        self.assertEqual(len(args), 1)
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):
