@@ -14,7 +14,7 @@
 The :mod:`sched` module defines a class which implements a general purpose event
 scheduler:
 
-.. class:: scheduler(timefunc, delayfunc)
+.. class:: scheduler(timefunc=time.time, delayfunc=time.sleep)
 
    The :class:`scheduler` class defines a generic interface to scheduling events.
    It needs two functions to actually deal with the "outside world" --- *timefunc*
@@ -24,6 +24,9 @@ scheduler:
    time units. *delayfunc* will also be called with the argument ``0`` after each
    event is run to allow other threads an opportunity to run in multi-threaded
    applications.
+
+   .. versionchanged:: 3.3
+      *timefunc* and *delayfunc* parameters are optional.
 
 Example::
 
@@ -79,26 +82,38 @@ Scheduler Objects
 :class:`scheduler` instances have the following methods and attributes:
 
 
-.. method:: scheduler.enterabs(time, priority, action, argument)
+.. method:: scheduler.enterabs(time, priority, action, argument=[], kwargs={})
 
    Schedule a new event. The *time* argument should be a numeric type compatible
    with the return value of the *timefunc* function passed  to the constructor.
    Events scheduled for the same *time* will be executed in the order of their
    *priority*.
 
-   Executing the event means executing ``action(*argument)``.  *argument* must be a
-   sequence holding the parameters for *action*.
+   Executing the event means executing ``action(*argument, **kwargs)``.
+   *argument* must be a sequence holding the parameters for *action*.
+   *kwargs* must be a dictionary holding the keyword parameters for *action*.
 
    Return value is an event which may be used for later cancellation of the event
    (see :meth:`cancel`).
 
+   .. versionchanged:: 3.3
+      *argument* parameter is optional.
 
-.. method:: scheduler.enter(delay, priority, action, argument)
+   .. versionadded:: 3.3
+      *kwargs* parameter was added.
+
+
+.. method:: scheduler.enter(delay, priority, action, argument=[], kwargs={})
 
    Schedule an event for *delay* more time units. Other than the relative time, the
    other arguments, the effect and the return value are the same as those for
    :meth:`enterabs`.
 
+   .. versionchanged:: 3.3
+      *argument* parameter is optional.
+
+   .. versionadded:: 3.3
+      *kwargs* parameter was added.
 
 .. method:: scheduler.cancel(event)
 
