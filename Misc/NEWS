@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #13436: Fix a bogus error message when an AST object was passed
+  an invalid integer value.
+
 - Issue #13338: Handle all enumerations in _Py_ANNOTATE_MEMORY_ORDER
   to allow compiling extension modules with -Wswitch-enum on gcc.
   Initial patch by Floris Bruynooghe.
