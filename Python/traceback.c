@@ -526,23 +526,17 @@ dump_ascii(int fd, PyObject *text)
             char c = (char)ch;
             write(fd, &c, 1);
         }
-        else if (ch < 256) {
+        else if (ch < 0xff) {
             PUTS(fd, "\\x");
             dump_hexadecimal(2, ch, fd);
         }
-        else
-#ifdef Py_UNICODE_WIDE
-        if (ch < 65536)
-#endif
-        {
+        else if (ch < 0xffff) {
             PUTS(fd, "\\u");
             dump_hexadecimal(4, ch, fd);
-#ifdef Py_UNICODE_WIDE
         }
         else {
             PUTS(fd, "\\U");
             dump_hexadecimal(8, ch, fd);
-#endif
         }
     }
     if (truncated)

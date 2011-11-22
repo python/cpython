@@ -518,17 +518,10 @@ builtin_chr(PyObject *self, PyObject *args)
     return PyUnicode_FromOrdinal(x);
 }
 
-PyDoc_VAR(chr_doc) = PyDoc_STR(
+PyDoc_STRVAR(chr_doc,
 "chr(i) -> Unicode character\n\
 \n\
-Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff."
-)
-#ifndef Py_UNICODE_WIDE
-PyDoc_STR(
-"\nIf 0x10000 <= i, a surrogate pair is returned."
-)
-#endif
-;
+Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
 
 
 static char *
