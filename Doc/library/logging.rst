@@ -57,9 +57,15 @@ instantiated directly, but always through the module-level function
 
 .. attribute:: Logger.propagate
 
-   If this evaluates to false, logging messages are not passed by this logger or by
-   its child loggers to the handlers of higher level (ancestor) loggers. The
-   constructor sets this attribute to 1.
+   If this evaluates to true, logging messages are passed by this logger and by
+   its child loggers to the handlers of higher level (ancestor) loggers.
+   Messages are passed directly to the ancestor loggers' handlers - neither the
+   level nor filters of the ancestor loggers in question are considered.
+
+   If this evaluates to false, logging messages are not passed to the handlers
+   of ancestor loggers.
+
+   The constructor sets this attribute to 1.
 
 
 .. method:: Logger.setLevel(lvl)
