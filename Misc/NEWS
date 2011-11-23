@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13458: Fix a memory leak in the ssl module when decoding a
+  certificate with a subjectAltName.  Patch by Robert Xiao.
+
 - Issue #13415: os.unsetenv() doesn't ignore errors anymore.
 
 - Issue #13322: Fix BufferedWriter.write() to ensure that BlockingIOError is
