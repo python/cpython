@@ -6194,7 +6194,7 @@ posix_unsetenv(PyObject *self, PyObject *args)
 
     err = unsetenv(s1);
     if (err) {
-        Py_DECREF(s1);
+        Py_DECREF(os1);
         return posix_error();
     }
 
