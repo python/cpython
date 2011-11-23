@@ -7050,10 +7050,8 @@ posix_unsetenv(PyObject *self, PyObject *args)
         return NULL;
 
     err = unsetenv(s1);
-    if (err) {
-        Py_DECREF(s1);
+    if (err)
         return posix_error();
-    }
 
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to
