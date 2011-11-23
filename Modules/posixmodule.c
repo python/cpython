@@ -7844,12 +7844,16 @@ posix_unsetenv(PyObject *self, PyObject *args)
     int err;
 
     if (!PyArg_ParseTuple(args, "O&:unsetenv",
+
                           PyUnicode_FSConverter, &name))
         return NULL;
 
+
     err = unsetenv(PyBytes_AS_STRING(name));
-    if (err)
+    if (err) {
+        Py_DECREF(name);
         return posix_error();
+    }
 
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to
