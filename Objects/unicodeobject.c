@@ -6164,21 +6164,9 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
     len = PyUnicode_GET_LENGTH(unicode);
-    expandsize = 0;
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND:
-        expandsize = 4;
-        break;
-    case PyUnicode_2BYTE_KIND:
-        expandsize = 6;
-        break;
-    case PyUnicode_4BYTE_KIND:
-        expandsize = 10;
-        break;
-    default:
-        assert(0);
-        break;
-    }
+    /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
+       bytes, and 1 byte characters 4. */
+    expandsize = kind * 2 + 2;
 
     if (len > PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
