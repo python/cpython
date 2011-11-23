@@ -683,3 +683,65 @@ and each time it reaches the size limit it is renamed with the suffix
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
 
+An example dictionary-based configuration
+-----------------------------------------
+
+Below is an example of a logging configuration dictionary - it's taken from
+the `documentation on the Django project <https://docs.djangoproject.com/en/1.3/topics/logging/#configuring-logging>`_.
+This dictionary is passed to :func:`~logging.config.dictConfig` to put the configuration into effect::
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'verbose': {
+                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            },
+            'simple': {
+                'format': '%(levelname)s %(message)s'
+            },
+        },
+        'filters': {
+            'special': {
+                '()': 'project.logging.SpecialFilter',
+                'foo': 'bar',
+            }
+        },
+        'handlers': {
+            'null': {
+                'level':'DEBUG',
+                'class':'django.utils.log.NullHandler',
+            },
+            'console':{
+                'level':'DEBUG',
+                'class':'logging.StreamHandler',
+                'formatter': 'simple'
+            },
+            'mail_admins': {
+                'level': 'ERROR',
+                'class': 'django.utils.log.AdminEmailHandler',
+                'filters': ['special']
+            }
+        },
+        'loggers': {
+            'django': {
+                'handlers':['null'],
+                'propagate': True,
+                'level':'INFO',
+            },
+            'django.request': {
+                'handlers': ['mail_admins'],
+                'level': 'ERROR',
+                'propagate': False,
+            },
+            'myproject.custom': {
+                'handlers': ['console', 'mail_admins'],
+                'level': 'INFO',
+                'filters': ['special']
+            }
+        }
+    }
+
+For more information about this configuration, you can see the `relevant
+section <https://docs.djangoproject.com/en/1.3/topics/logging/#configuring-logging>`_
+of the Django documentation.
