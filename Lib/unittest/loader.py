@@ -139,8 +139,7 @@ class TestLoader(object):
                          prefix=self.testMethodPrefix):
             return attrname.startswith(prefix) and \
                 callable(getattr(testCaseClass, attrname))
-        testFnNames = testFnNames = list(filter(isTestMethod,
-                                                dir(testCaseClass)))
+        testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
