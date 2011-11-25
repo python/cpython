@@ -4492,9 +4492,14 @@ class DictProxyTests(unittest.TestCase):
         self.assertEqual(type(C.__dict__), type(B.__dict__))
 
     def test_repr(self):
-        # Testing dict_proxy.__repr__
-        dict_ = {k: v for k, v in self.C.__dict__.items()}
-        self.assertEqual(repr(self.C.__dict__), 'dict_proxy({!r})'.format(dict_))
+        # Testing dict_proxy.__repr__.
+        # We can't blindly compare with the repr of another dict as ordering
+        # of keys and values is arbitrary and may differ.
+        r = repr(self.C.__dict__)
+        self.assertTrue(r.startswith('dict_proxy('), r)
+        self.assertTrue(r.endswith(')'), r)
+        for k, v in self.C.__dict__.items():
+            self.assertIn('{!r}: {!r}'.format(k, v), r)
 
 
 class PTypesLongInitTest(unittest.TestCase):

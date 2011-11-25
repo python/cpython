@@ -38,6 +38,16 @@ There are a few functions specific to Python functions.
    object, the argument defaults and closure are set to *NULL*.
 
 
+.. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
+
+   As :c:func:`PyFunction_New`, but also allows to set the function object's
+   ``__qualname__`` attribute.  *qualname* should be a unicode object or NULL;
+   if NULL, the ``__qualname__`` attribute is set to the same value as its
+   ``__name__`` attribute.
+
+   .. versionadded:: 3.3
+
+
 .. c:function:: PyObject* PyFunction_GetCode(PyObject *op)
 
    Return the code object associated with the function object *op*.

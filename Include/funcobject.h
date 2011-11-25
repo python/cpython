@@ -31,6 +31,7 @@ typedef struct {
     PyObject *func_weakreflist;	/* List of weak references */
     PyObject *func_module;	/* The __module__ attribute, can be anything */
     PyObject *func_annotations;	/* Annotations, a dict or NULL */
+    PyObject *func_qualname;    /* The qualified name */
 
     /* Invariant:
      *     func_closure contains the bindings for func_code->co_freevars, so
@@ -44,6 +45,7 @@ PyAPI_DATA(PyTypeObject) PyFunction_Type;
 #define PyFunction_Check(op) (Py_TYPE(op) == &PyFunction_Type)
 
 PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);

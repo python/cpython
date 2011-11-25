@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- PEP 3155 / issue #13448: Qualified name for classes and functions.
+
 - Issue #13436: Fix a bogus error message when an AST object was passed
   an invalid integer value.
 
