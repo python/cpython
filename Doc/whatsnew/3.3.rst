@@ -189,6 +189,65 @@ inspection of exception attributes::
         print("You are not allowed to read document.txt")
 
 
+PEP 3155: Qualified name for classes and functions
+==================================================
+
+:pep:`3155` - Qualified name for classes and functions
+ PEP written and implemented by Antoine Pitrou.
+
+Functions and class objects have a new ``__qualname__`` attribute representing
+the "path" from the module top-level to their definition.  For global functions
+and classes, this is the same as ``__name__``.  For other functions and classes,
+it provides better information about where they were actually defined, and
+how they might be accessible from the global scope.
+
+Example with (non-bound) methods::
+
+   >>> class C:
+   ...     def meth(self):
+   ...         pass
+   >>> C.meth.__name__
+   'meth'
+   >>> C.meth.__qualname__
+   'C.meth'
+
+Example with nested classes::
+
+   >>> class C:
+   ...     class D:
+   ...         def meth(self):
+   ...             pass
+   ...
+   >>> C.D.__name__
+   'D'
+   >>> C.D.__qualname__
+   'C.D'
+   >>> C.D.meth.__name__
+   'meth'
+   >>> C.D.meth.__qualname__
+   'C.D.meth'
+
+Example with nested functions::
+
+   >>> def outer():
+   ...     def inner():
+   ...         pass
+   ...     return inner
+   ...
+   >>> outer().__name__
+   'inner'
+   >>> outer().__qualname__
+   'outer.<locals>.inner'
+
+The string representation of those objects is also changed to included the
+new, more precise information::
+
+   >>> str(C.D)
+   "<class '__main__.C.D'>"
+   >>> str(C.D.meth)
+   '<function C.D.meth at 0x7f46b9fe31e0>'
+
+
 Other Language Changes
 ======================
 
