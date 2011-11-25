@@ -846,6 +846,27 @@ class test_SpooledTemporaryFile(TC):
                 pass
         self.assertRaises(ValueError, use_closed)
 
+    def test_truncate_with_size_parameter(self):
+        # A SpooledTemporaryFile can be truncated to zero size
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'abcdefg\n')
+        f.seek(0)
+        f.truncate()
+        self.assertFalse(f._rolled)
+        self.assertEqual(f._file.getvalue(), b'')
+        # A SpooledTemporaryFile can be truncated to a specific size
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'abcdefg\n')
+        f.truncate(4)
+        self.assertFalse(f._rolled)
+        self.assertEqual(f._file.getvalue(), b'abcd')
+        # A SpooledTemporaryFile rolls over if truncated to large size
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'abcdefg\n')
+        f.truncate(20)
+        self.assertTrue(f._rolled)
+        if has_stat:
+            self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
 test_classes.append(test_SpooledTemporaryFile)
 

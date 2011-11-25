@@ -386,9 +386,11 @@ Core and Builtins
 - Issue #12380: The rjust, ljust and center methods of bytes and bytearray
   now accept a bytearray argument.
 
-
 Library
 -------
+
+- Issue #9957: SpooledTemporaryFile.truncate() now accepts an optional size
+  parameter, as other file-like objects.  Patch by Ryan Kelly.
 
 - Issue #13458: Fix a memory leak in the ssl module when decoding a
   certificate with a subjectAltName.  Patch by Robert Xiao.
