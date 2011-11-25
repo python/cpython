@@ -79,6 +79,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12856: Ensure child processes do not inherit the parent's random
+  seed for filename generation in the tempfile module.  Patch by Brian
+  Harring.
+
 - Issue #13458: Fix a memory leak in the ssl module when decoding a
   certificate with a subjectAltName.  Patch by Robert Xiao.
 
