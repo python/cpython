@@ -239,7 +239,7 @@ Example with nested functions::
    >>> outer().__qualname__
    'outer.<locals>.inner'
 
-The string representation of those objects is also changed to included the
+The string representation of those objects is also changed to include the
 new, more precise information::
 
    >>> str(C.D)
