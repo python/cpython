@@ -964,15 +964,18 @@ Notes:
    If *k* is ``None``, it is treated like ``1``.
 
 (6)
-   .. impl-detail::
+   Concatenating immutable strings always results in a new object.  This means
+   that building up a string by repeated concatenation will have a quadratic
+   runtime cost in the total string length.  To get a linear runtime cost,
+   you must switch to one of the alternatives below:
 
-      If *s* and *t* are both strings, some Python implementations such as
-      CPython can usually perform an in-place optimization for assignments of
-      the form ``s = s + t`` or ``s += t``.  When applicable, this optimization
-      makes quadratic run-time much less likely.  This optimization is both
-      version and implementation dependent.  For performance sensitive code, it
-      is preferable to use the :meth:`str.join` method which assures consistent
-      linear concatenation performance across versions and implementations.
+   * if concatenating :class:`str` objects, you can build a list and use
+     :meth:`str.join` at the end;
+
+   * if concatenating :class:`bytes` objects, you can similarly use
+     :meth:`bytes.join`, or you can do in-place concatenation with a
+     :class:`bytearray` object.  :class:`bytearray` objects are mutable and
+     have an efficient overallocation mechanism.
 
 
 .. _string-methods:
