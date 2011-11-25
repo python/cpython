@@ -1,6 +1,7 @@
 # tempfile.py unit tests.
 import tempfile
 import os
+import signal
 import sys
 import re
 import warnings
@@ -134,6 +135,37 @@ class test__RandomNameSequence(TC):
                     break
         except:
             self.failOnException("iteration")
+
+    @unittest.skipUnless(hasattr(os, 'fork'),
+        "os.fork is required for this test")
+    def test_process_awareness(self):
+        # ensure that the random source differs between
+        # child and parent.
+        read_fd, write_fd = os.pipe()
+        pid = None
+        try:
+            pid = os.fork()
+            if not pid:
+                os.close(read_fd)
+                os.write(write_fd, next(self.r).encode("ascii"))
+                os.close(write_fd)
+                # bypass the normal exit handlers- leave those to
+                # the parent.
+                os._exit(0)
+            parent_value = next(self.r)
+            child_value = os.read(read_fd, len(parent_value)).decode("ascii")
+        finally:
+            if pid:
+                # best effort to ensure the process can't bleed out
+                # via any bugs above
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except EnvironmentError:
+                    pass
+            os.close(read_fd)
+            os.close(write_fd)
+        self.assertNotEqual(child_value, parent_value)
+
 
 test_classes.append(test__RandomNameSequence)
 
