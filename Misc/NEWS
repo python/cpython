@@ -395,6 +395,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12856: Ensure child processes do not inherit the parent's random
+  seed for filename generation in the tempfile module.  Patch by Brian
+  Harring.
+
 - Issue #9957: SpooledTemporaryFile.truncate() now accepts an optional size
   parameter, as other file-like objects.  Patch by Ryan Kelly.
 
