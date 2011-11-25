@@ -267,23 +267,41 @@ def test_issue6243(stdscr):
 def test_unget_wch(stdscr):
     if not hasattr(curses, 'unget_wch'):
         return
-    ch = 'a'
-    curses.unget_wch(ch)
-    read = stdscr.get_wch()
-    read = chr(read)
-    if read != ch:
-        raise AssertionError("%r != %r" % (read, ch))
+    for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
+        curses.unget_wch(ch)
+        read = stdscr.get_wch()
+        read = chr(read)
+        if read != ch:
+            raise AssertionError("%r != %r" % (read, ch))
 
-    ch = ord('a')
-    curses.unget_wch(ch)
-    read = stdscr.get_wch()
-    if read != ch:
-        raise AssertionError("%r != %r" % (read, ch))
+        code = ord(ch)
+        curses.unget_wch(code)
+        read = stdscr.get_wch()
+        if read != code:
+            raise AssertionError("%r != %r" % (read, code))
 
 def test_issue10570():
     b = curses.tparm(curses.tigetstr("cup"), 5, 3)
     assert type(b) is bytes
     curses.putp(b)
+
+def test_encoding(stdscr):
+    import codecs
+    encoding = stdscr.encoding
+    codecs.lookup(encoding)
+    try:
+        stdscr.encoding = 10
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("TypeError not raised")
+    stdscr.encoding = encoding
+    try:
+        del stdscr.encoding
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("TypeError not raised")
 
 def main(stdscr):
     curses.savetty()
@@ -295,6 +313,7 @@ def main(stdscr):
         test_issue6243(stdscr)
         test_unget_wch(stdscr)
         test_issue10570()
+        test_encoding(stdscr)
     finally:
         curses.resetty()
 
