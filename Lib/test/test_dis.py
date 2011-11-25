@@ -339,6 +339,7 @@ Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
    1: <code object f at (.*), file "(.*)", line (.*)>
+   2: 'tricky.<locals>.f'
 Variable names:
    0: x
    1: y

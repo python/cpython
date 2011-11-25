@@ -2824,6 +2824,13 @@ types, where they are relevant.  Some of these are not reported by the
    The name of the class or type.
 
 
+.. attribute:: class.__qualname__
+
+   The :term:`qualified name` of the class or type.
+
+   .. versionadded:: 3.3
+
+
 .. attribute:: class.__mro__
 
    This attribute is a tuple of classes that are considered when looking for

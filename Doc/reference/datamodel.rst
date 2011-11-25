@@ -448,6 +448,11 @@ Callable types
       +-------------------------+-------------------------------+-----------+
       | :attr:`__name__`        | The function's name           | Writable  |
       +-------------------------+-------------------------------+-----------+
+      | :attr:`__qualname__`    | The function's                | Writable  |
+      |                         | :term:`qualified name`        |           |
+      |                         |                               |           |
+      |                         | .. versionadded:: 3.3         |           |
+      +-------------------------+-------------------------------+-----------+
       | :attr:`__module__`      | The name of the module the    | Writable  |
       |                         | function was defined in, or   |           |
       |                         | ``None`` if unavailable.      |           |
