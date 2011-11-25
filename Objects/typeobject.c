@@ -242,6 +242,19 @@ type_name(PyTypeObject *type, void *context)
     }
 }
 
+static PyObject *
+type_qualname(PyTypeObject *type, void *context)
+{
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+        Py_INCREF(et->ht_qualname);
+        return et->ht_qualname;
+    }
+    else {
+        return type_name(type, context);
+    }
+}
+
 static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -283,6 +296,25 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 
     type->tp_name = tp_name;
 
+    return 0;
+}
+
+static int
+type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
+{
+    PyHeapTypeObject* et;
+
+    if (!PyUnicode_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "can only assign string to %s.__qualname__, not '%s'",
+                     type->tp_name, Py_TYPE(value)->tp_name);
+        return -1;
+    }
+
+    et = (PyHeapTypeObject*)type;
+    Py_INCREF(value);
+    Py_DECREF(et->ht_qualname);
+    et->ht_qualname = value;
     return 0;
 }
 
@@ -631,6 +663,7 @@ type___subclasscheck__(PyObject *type, PyObject *inst)
 
 static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
+    {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
@@ -652,7 +685,7 @@ type_repr(PyTypeObject *type)
         Py_DECREF(mod);
         mod = NULL;
     }
-    name = type_name(type, NULL);
+    name = type_qualname(type, NULL);
     if (name == NULL)
         return NULL;
 
@@ -1955,7 +1988,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
     PyObject *name, *bases, *dict;
     static char *kwlist[] = {"name", "bases", "dict", 0};
-    PyObject *slots, *tmp, *newslots;
+    PyObject *qualname, *slots, *tmp, *newslots;
     PyTypeObject *type, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
     PyMemberDef *mp;
@@ -2030,6 +2063,18 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                      base->tp_name);
         Py_DECREF(bases);
         return NULL;
+    }
+
+    /* Check for a __qualname__ variable in dict */
+    qualname = PyDict_GetItemString(dict, "__qualname__");
+    if (qualname == NULL) {
+        qualname = name;
+    }
+    else {
+        if (PyDict_DelItemString(dict, "__qualname__") < 0) {
+            Py_DECREF(bases);
+            return NULL;
+        }
     }
 
     /* Check for a __slots__ sequence variable in dict, and count it */
@@ -2185,7 +2230,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     /* Keep name and slots alive in the extended type object */
     et = (PyHeapTypeObject *)type;
     Py_INCREF(name);
+    Py_INCREF(qualname);
     et->ht_name = name;
+    et->ht_qualname = qualname;
     et->ht_slots = slots;
 
     /* Initialize tp_flags */
@@ -2369,6 +2416,8 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
     res->ht_name = PyUnicode_FromString(spec->name);
     if (!res->ht_name)
         goto fail;
+    res->ht_qualname = res->ht_name;
+    Py_INCREF(res->ht_qualname);
     res->ht_type.tp_name = _PyUnicode_AsString(res->ht_name);
     if (!res->ht_type.tp_name)
         goto fail;
@@ -2568,6 +2617,7 @@ type_dealloc(PyTypeObject *type)
      */
     PyObject_Free((char *)type->tp_doc);
     Py_XDECREF(et->ht_name);
+    Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
@@ -2983,7 +3033,7 @@ object_repr(PyObject *self)
         Py_DECREF(mod);
         mod = NULL;
     }
-    name = type_name(type, NULL);
+    name = type_qualname(type, NULL);
     if (name == NULL)
         return NULL;
     if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))

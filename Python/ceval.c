@@ -2687,9 +2687,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             int kwdefaults = (oparg>>8) & 0xff;
             int num_annotations = (oparg >> 16) & 0x7fff;
 
+            w = POP(); /* qualname */
             v = POP(); /* code object */
-            x = PyFunction_New(v, f->f_globals);
+            x = PyFunction_NewWithQualName(v, f->f_globals, w);
             Py_DECREF(v);
+            Py_DECREF(w);
 
             if (x != NULL && opcode == MAKE_CLOSURE) {
                 v = POP();

@@ -159,6 +159,7 @@ Use a __prepare__ method that returns an instrumented dict.
     ...     bar = 123
     ...
     d['__module__'] = 'test.test_metaclass'
+    d['__qualname__'] = 'C'
     d['foo'] = 4
     d['foo'] = 42
     d['bar'] = 123
@@ -177,12 +178,12 @@ Use a metaclass that doesn't derive from type.
     ...     b = 24
     ...
     meta: C ()
-    ns: [('__module__', 'test.test_metaclass'), ('a', 42), ('b', 24)]
+    ns: [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 42), ('b', 24)]
     kw: []
     >>> type(C) is dict
     True
     >>> print(sorted(C.items()))
-    [('__module__', 'test.test_metaclass'), ('a', 42), ('b', 24)]
+    [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 42), ('b', 24)]
     >>>
 
 And again, with a __prepare__ attribute.
@@ -199,11 +200,12 @@ And again, with a __prepare__ attribute.
     ...
     prepare: C () [('other', 'booh')]
     d['__module__'] = 'test.test_metaclass'
+    d['__qualname__'] = 'C'
     d['a'] = 1
     d['a'] = 2
     d['b'] = 3
     meta: C ()
-    ns: [('__module__', 'test.test_metaclass'), ('a', 2), ('b', 3)]
+    ns: [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 2), ('b', 3)]
     kw: [('other', 'booh')]
     >>>
 
