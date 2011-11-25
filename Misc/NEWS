@@ -395,6 +395,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12567: The curses module uses Unicode functions for Unicode arguments
+  when it is linked to the ncurses library. It encodes also Unicode strings to
+  the locale encoding instead of UTF-8.
+
 - Issue #12856: Ensure child processes do not inherit the parent's random
   seed for filename generation in the tempfile module.  Patch by Brian
   Harring.

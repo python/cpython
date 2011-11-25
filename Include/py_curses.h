@@ -76,6 +76,7 @@ extern "C" {
 typedef struct {
 	PyObject_HEAD
 	WINDOW *win;
+	char *encoding;
 } PyCursesWindowObject;
 
 #define PyCursesWindow_Check(v)	 (Py_TYPE(v) == &PyCursesWindow_Type)
