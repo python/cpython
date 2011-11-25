@@ -108,8 +108,13 @@ class _RandomNameSequence:
 
     characters = "abcdefghijklmnopqrstuvwxyz0123456789_"
 
-    def __init__(self):
-        self.rng = _Random()
+    @property
+    def rng(self):
+        cur_pid = _os.getpid()
+        if cur_pid != getattr(self, '_rng_pid', None):
+            self._rng = _Random()
+            self._rng_pid = cur_pid
+        return self._rng
 
     def __iter__(self):
         return self
