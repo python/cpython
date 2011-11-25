@@ -10,7 +10,7 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #13093: PyUnicode_EncodeDecimal() doesn't support error handlers
+- Issue #13452: PyUnicode_EncodeDecimal() doesn't support error handlers
   different than "strict" anymore. The caller was unable to compute the
   size of the output buffer: it depends on the error handler.
 
