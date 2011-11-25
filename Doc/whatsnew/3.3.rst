@@ -333,6 +333,11 @@ function to the :mod:`crypt` module.
 curses
 ------
 
+ * If the :mod:`curses` module is linked to the ncursesw library, use Unicode
+   functions when Unicode strings or characters are passed (e.g.
+   :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
+ * Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
+ * :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
  * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
    method to get a wide character
  * The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to

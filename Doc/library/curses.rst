@@ -653,7 +653,7 @@ Window Objects
 --------------
 
 Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
-the following methods:
+the following methods and attributes:
 
 
 .. method:: window.addch([y, x,] ch[, attr])
@@ -832,6 +832,16 @@ the following methods:
    enclosed by the given window, returning ``True`` or ``False``.  It is useful for
    determining what subset of the screen windows enclose the location of a mouse
    event.
+
+
+.. attribute:: window.encoding
+
+   Encoding used to encode method arguments (Unicode strings and characters).
+   The encoding attribute is inherited from by parent window when a subwindow
+   is created, for example with :meth:`window.subwin`. By default, the locale
+   encoding is used (see :func:`locale.getpreferredencoding`).
+
+   .. versionadded:: 3.3
 
 
 .. method:: window.erase()
