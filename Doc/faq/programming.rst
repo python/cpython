@@ -989,6 +989,32 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 See the :ref:`unicode-howto`.
 
 
+What is the most efficient way to concatenate many strings together?
+--------------------------------------------------------------------
+
+:class:`str` and :class:`bytes` objects are immutable, therefore concatenating
+many strings together is inefficient as each concatenation creates a new
+object.  In the general case, the total runtime cost is quadratic in the
+total string length.
+
+To accumulate many :class:`str` objects, the recommended idiom is to place
+them into a list and call :meth:`str.join` at the end::
+
+   chunks = []
+   for s in my_strings:
+       chunks.append(s)
+   result = ''.join(chunks)
+
+(another reasonably efficient idiom is to use :class:`io.StringIO`)
+
+To accumulate many :class:`bytes` objects, the recommended idiom is to extend
+a :class:`bytearray` object using in-place concatenation (the ``+=`` operator)::
+
+   result = bytearray()
+   for b in my_bytes_objects:
+       result += b
+
+
 Sequences (Tuples/Lists)
 ========================
 
