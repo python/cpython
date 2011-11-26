@@ -730,7 +730,7 @@ class SizeofTest(unittest.TestCase):
         check(x, size(vh + '12P3i' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        check(func, size(h + '11P'))
+        check(func, size(h + '12P'))
         class c():
             @staticmethod
             def foo():
@@ -828,7 +828,7 @@ class SizeofTest(unittest.TestCase):
         # type
         # (PyTypeObject + PyNumberMethods + PyMappingMethods +
         #  PySequenceMethods + PyBufferProcs)
-        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('16Pi17P 3P 10P 2P 2P')
+        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('16Pi17P 3P 10P 2P 3P')
         check(int, s)
         # class
         class newstyleclass(object): pass

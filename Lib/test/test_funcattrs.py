@@ -2,6 +2,15 @@ from test import support
 import types
 import unittest
 
+
+def global_function():
+    def inner_function():
+        class LocalClass:
+            pass
+        return LocalClass
+    return lambda: inner_function
+
+
 class FuncAttrsTest(unittest.TestCase):
     def setUp(self):
         class F:
@@ -95,6 +104,24 @@ class FunctionPropertiesTest(FuncAttrsTest):
         # Test on methods, too
         self.assertEqual(self.fi.a.__name__, 'a')
         self.cannot_set_attr(self.fi.a, "__name__", 'a', AttributeError)
+
+    def test___qualname__(self):
+        # PEP 3155
+        self.assertEqual(self.b.__qualname__, 'FuncAttrsTest.setUp.<locals>.b')
+        self.assertEqual(FuncAttrsTest.setUp.__qualname__, 'FuncAttrsTest.setUp')
+        self.assertEqual(global_function.__qualname__, 'global_function')
+        self.assertEqual(global_function().__qualname__,
+                         'global_function.<locals>.<lambda>')
+        self.assertEqual(global_function()().__qualname__,
+                         'global_function.<locals>.inner_function')
+        self.assertEqual(global_function()()().__qualname__,
+                         'global_function.<locals>.inner_function.<locals>.LocalClass')
+        self.b.__qualname__ = 'c'
+        self.assertEqual(self.b.__qualname__, 'c')
+        self.b.__qualname__ = 'd'
+        self.assertEqual(self.b.__qualname__, 'd')
+        # __qualname__ must be a string
+        self.cannot_set_attr(self.b, '__qualname__', 7, TypeError)
 
     def test___code__(self):
         num_one, num_two = 7, 8

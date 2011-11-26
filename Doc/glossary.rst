@@ -544,6 +544,24 @@ Glossary
          for piece in food:
              print(piece)
 
+   qualified name
+      A dotted name showing the "path" from a module's global scope to a
+      class, function or method defined in that module, as defined in
+      :pep:`3155`.  For top-level functions and classes, the qualified name
+      is the same as the object's name::
+
+         >>> class C:
+         ...     class D:
+         ...         def meth(self):
+         ...             pass
+         ...
+         >>> C.__qualname__
+         'C'
+         >>> C.D.__qualname__
+         'C.D'
+         >>> C.D.meth.__qualname__
+         'C.D.meth'
+
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Reference counting is

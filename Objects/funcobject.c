@@ -6,7 +6,7 @@
 #include "structmember.h"
 
 PyObject *
-PyFunction_New(PyObject *code, PyObject *globals)
+PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject,
                                         &PyFunction_Type);
@@ -54,11 +54,22 @@ PyFunction_New(PyObject *code, PyObject *globals)
             Py_INCREF(module);
             op->func_module = module;
         }
+        if (qualname)
+            op->func_qualname = qualname;
+        else
+            op->func_qualname = op->func_name;
+        Py_INCREF(op->func_qualname);
     }
     else
         return NULL;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
+}
+
+PyObject *
+PyFunction_New(PyObject *code, PyObject *globals)
+{
+    return PyFunction_NewWithQualName(code, globals, NULL);
 }
 
 PyObject *
@@ -334,6 +345,32 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 }
 
 static PyObject *
+func_get_qualname(PyFunctionObject *op)
+{
+    Py_INCREF(op->func_qualname);
+    return op->func_qualname;
+}
+
+static int
+func_set_qualname(PyFunctionObject *op, PyObject *value)
+{
+    PyObject *tmp;
+
+    /* Not legal to del f.__qualname__ or to set it to anything
+     * other than a string object. */
+    if (value == NULL || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__qualname__ must be set to a string object");
+        return -1;
+    }
+    tmp = op->func_qualname;
+    Py_INCREF(value);
+    op->func_qualname = value;
+    Py_DECREF(tmp);
+    return 0;
+}
+
+static PyObject *
 func_get_defaults(PyFunctionObject *op)
 {
     if (op->func_defaults == NULL) {
@@ -441,6 +478,7 @@ static PyGetSetDef func_getsetlist[] = {
      (setter)func_set_annotations},
     {"__dict__", (getter)func_get_dict, (setter)func_set_dict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
+    {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
     {NULL} /* Sentinel */
 };
 
@@ -561,6 +599,7 @@ func_dealloc(PyFunctionObject *op)
     Py_XDECREF(op->func_dict);
     Py_XDECREF(op->func_closure);
     Py_XDECREF(op->func_annotations);
+    Py_XDECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
@@ -568,7 +607,7 @@ static PyObject*
 func_repr(PyFunctionObject *op)
 {
     return PyUnicode_FromFormat("<function %U at %p>",
-                               op->func_name, op);
+                               op->func_qualname, op);
 }
 
 static int
@@ -584,6 +623,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_dict);
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
+    Py_VISIT(f->func_qualname);
     return 0;
 }
 
