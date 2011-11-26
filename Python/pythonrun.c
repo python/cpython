@@ -332,6 +332,22 @@ extern void dump_counts(FILE*);
 
 /* Flush stdout and stderr */
 
+static int
+file_is_closed(PyObject *fobj)
+{
+    int r;
+    PyObject *tmp = PyObject_GetAttrString(fobj, "closed");
+    if (tmp == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    r = PyObject_IsTrue(tmp);
+    Py_DECREF(tmp);
+    if (r < 0)
+        PyErr_Clear();
+    return r > 0;
+}
+
 static void
 flush_std_files(void)
 {
@@ -339,7 +355,7 @@ flush_std_files(void)
     PyObject *ferr = PySys_GetObject("stderr");
     PyObject *tmp;
 
-    if (fout != NULL && fout != Py_None) {
+    if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
         tmp = PyObject_CallMethod(fout, "flush", "");
         if (tmp == NULL)
             PyErr_WriteUnraisable(fout);
@@ -347,7 +363,7 @@ flush_std_files(void)
             Py_DECREF(tmp);
     }
 
-    if (ferr != NULL && ferr != Py_None) {
+    if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
         tmp = PyObject_CallMethod(ferr, "flush", "");
         if (tmp == NULL)
             PyErr_Clear();
