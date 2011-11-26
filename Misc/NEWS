@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11849: Ensure that free()d memory arenas are really released
+  on POSIX systems supporting anonymous memory mappings.  Patch by
+  Charles-François Natali.
+
 - Issue #13436: Fix a bogus error message when an AST object was passed
   an invalid integer value.
 
@@ -259,10 +263,6 @@ Core and Builtins
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when
   they try to take the GIL.
-
-- Issue #11849: Make it more likely for the system allocator to release
-  free()d memory arenas on glibc-based systems.  Patch by Charles-François
-  Natali.
 
 - Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
   the check of the object type doesn't read the __class__ attribute anymore.

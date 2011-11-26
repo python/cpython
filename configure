@@ -9401,8 +9401,8 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes memrchr \
- mbrtowc mkdirat mkfifo \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
@@ -9774,34 +9774,6 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_GETPAGESIZE 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mallopt can set malloc mmap threshold" >&5
-$as_echo_n "checking whether mallopt can set malloc mmap threshold... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <malloc.h>
-
-int
-main ()
-{
-mallopt(M_MMAP_THRESHOLD, 256 * 1024)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_MALLOPT_MMAP_THRESHOLD 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -14591,8 +14563,8 @@ esac
 
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
-config_files="$ac_config_files"
-config_headers="$ac_config_headers"
+config_files="`echo $ac_config_files`"
+config_headers="`echo $ac_config_headers`"
 
 _ACEOF
 
