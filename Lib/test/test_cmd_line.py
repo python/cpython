@@ -272,6 +272,25 @@ class CmdLineTest(unittest.TestCase):
         self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
         self.assertEqual(b'', out)
 
+    def test_stdout_flush_at_shutdown(self):
+        # Issue #5319: if stdout.flush() fails at shutdown, an error should
+        # be printed out.
+        code = """if 1:
+            import os, sys
+            sys.stdout.write('x')
+            os.close(sys.stdout.fileno())"""
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(b'', out)
+        self.assertRegex(err.decode('ascii', 'ignore'),
+                         'Exception IOError: .* ignored')
+
+    def test_closed_stdout(self):
+        # Issue #13444: if stdout has been explicitly closed, we should
+        # not attempt to flush it at shutdown.
+        code = "import sys; sys.stdout.close()"
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(b'', err)
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
