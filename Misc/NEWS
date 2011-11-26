@@ -395,6 +395,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13444: When stdout has been closed explicitly, we should not attempt
+  to flush it at shutdown and print an error.
+
 - Issue #12567: The curses module uses Unicode functions for Unicode arguments
   when it is linked to the ncurses library. It encodes also Unicode strings to
   the locale encoding instead of UTF-8.
