@@ -1401,6 +1401,13 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     filecmp._cache.clear()
     struct._clearcache()
     doctest.master = None
+    try:
+        import ctypes
+    except ImportError:
+        # Don't worry about resetting the cache if ctypes is not supported
+        pass
+    else:
+        ctypes._reset_cache()
 
     # Collect cyclic trash.
     gc.collect()
