@@ -2,8 +2,11 @@
 
 #ifdef WITH_PYMALLOC
 
-#ifdef HAVE_MALLOPT_MMAP_THRESHOLD
-  #include <malloc.h>
+#ifdef HAVE_MMAP
+ #include <sys/mman.h>
+ #ifdef MAP_ANONYMOUS
+  #define ARENAS_USE_MMAP
+ #endif
 #endif
 
 #ifdef WITH_VALGRIND
@@ -183,15 +186,15 @@ static int running_on_valgrind = -1;
 /*
  * The allocator sub-allocates <Big> blocks of memory (called arenas) aligned
  * on a page boundary. This is a reserved virtual address space for the
- * current process (obtained through a malloc call). In no way this means
- * that the memory arenas will be used entirely. A malloc(<Big>) is usually
- * an address range reservation for <Big> bytes, unless all pages within this
- * space are referenced subsequently. So malloc'ing big blocks and not using
- * them does not mean "wasting memory". It's an addressable range wastage...
+ * current process (obtained through a malloc()/mmap() call). In no way this
+ * means that the memory arenas will be used entirely. A malloc(<Big>) is
+ * usually an address range reservation for <Big> bytes, unless all pages within
+ * this space are referenced subsequently. So malloc'ing big blocks and not
+ * using them does not mean "wasting memory". It's an addressable range
+ * wastage...
  *
- * Therefore, allocating arenas with malloc is not optimal, because there is
- * some address space wastage, but this is the most portable way to request
- * memory from the system across various platforms.
+ * Arenas are allocated with mmap() on systems supporting anonymous memory
+ * mappings to reduce heap fragmentation.
  */
 #define ARENA_SIZE              (256 << 10)     /* 256KB */
 
@@ -557,11 +560,6 @@ new_arena(void)
         if (numarenas > PY_SIZE_MAX / sizeof(*arenas))
             return NULL;                /* overflow */
 #endif
-#ifdef HAVE_MALLOPT_MMAP_THRESHOLD
-        /* Ensure arenas are allocated by mmap to avoid heap fragmentation. */
-        if (numarenas == INITIAL_ARENA_OBJECTS)
-            mallopt(M_MMAP_THRESHOLD, ARENA_SIZE);
-#endif
         nbytes = numarenas * sizeof(*arenas);
         arenaobj = (struct arena_object *)realloc(arenas, nbytes);
         if (arenaobj == NULL)
@@ -594,7 +592,12 @@ new_arena(void)
     arenaobj = unused_arena_objects;
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
+#ifdef ARENAS_USE_MMAP
+    arenaobj->address = (uptr)mmap(NULL, ARENA_SIZE, PROT_READ|PROT_WRITE,
+                                   MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+#else
     arenaobj->address = (uptr)malloc(ARENA_SIZE);
+#endif
     if (arenaobj->address == 0) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1071,7 +1074,11 @@ PyObject_Free(void *p)
                 unused_arena_objects = ao;
 
                 /* Free the entire arena. */
+#ifdef ARENAS_USE_MMAP
+                munmap((void *)ao->address, ARENA_SIZE);
+#else
                 free((void *)ao->address);
+#endif
                 ao->address = 0;                        /* mark unassociated */
                 --narenas_currently_allocated;
 
