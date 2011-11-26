@@ -14,11 +14,21 @@ class PyCompileTests(unittest.TestCase):
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
         self.cache_path = imp.cache_from_source(self.source_path)
+        self.cwd_drive = os.path.splitdrive(os.getcwd())[0]
+        # In these tests we compute relative paths.  When using Windows, the
+        # current working directory path and the 'self.source_path' might be
+        # on different drives.  Therefore we need to switch to the drive where
+        # the temporary source file lives.
+        drive = os.path.splitdrive(self.source_path)[0]
+        if drive:
+            os.chdir(drive)
         with open(self.source_path, 'w') as file:
             file.write('x = 123\n')
 
     def tearDown(self):
         shutil.rmtree(self.directory)
+        if self.cwd_drive:
+            os.chdir(self.cwd_drive)
 
     def test_absolute_path(self):
         py_compile.compile(self.source_path, self.pyc_path)
