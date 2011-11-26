@@ -17,7 +17,7 @@ any other object.
 
    Create a memoryview object from an object that provides the buffer interface.
    If *obj* supports writable buffer exports, the memoryview object will be
-   readable and writable, other it will be read-only.
+   readable and writable, otherwise it will be read-only.
 
 
 .. c:function:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
@@ -33,7 +33,7 @@ any other object.
    Create a memoryview object to a contiguous chunk of memory (in either
    'C' or 'F'ortran *order*) from an object that defines the buffer
    interface. If memory is contiguous, the memoryview object points to the
-   original memory. Otherwise copy is made and the memoryview points to a
+   original memory. Otherwise, a copy is made and the memoryview points to a
    new bytes object.
 
 

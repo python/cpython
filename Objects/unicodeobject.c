@@ -8839,15 +8839,8 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
                         char *output,
                         const char *errors)
 {
-    PyObject *errorHandler = NULL;
-    PyObject *exc = NULL;
     PyObject *unicode;
-    const char *encoding = "decimal";
-    const char *reason = "invalid decimal Unicode string";
-    /* the following variable is used for caching string comparisons
-     * -1=not initialized, 0=unknown, 1=strict, 2=replace, 3=ignore, 4=xmlcharrefreplace */
-    int known_errorHandler = -1;
-    Py_ssize_t i, j;
+    Py_ssize_t i;
     enum PyUnicode_Kind kind;
     void *data;
 
@@ -8860,15 +8853,20 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
     if (unicode == NULL)
         return -1;
 
-    if (PyUnicode_READY(unicode) < 0)
-        goto onError;
+    if (PyUnicode_READY(unicode) < 0) {
+        Py_DECREF(unicode);
+        return -1;
+    }
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
 
     for (i=0; i < length; ) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        PyObject *exc;
+        Py_UCS4 ch;
         int decimal;
-        Py_ssize_t startpos, endpos;
+        Py_ssize_t startpos;
+
+        ch = PyUnicode_READ(kind, data, i);
 
         if (Py_UNICODE_ISSPACE(ch)) {
             *output++ = ' ';
@@ -8886,113 +8884,20 @@ PyUnicode_EncodeDecimal(Py_UNICODE *s,
             i++;
             continue;
         }
-        /* All other characters are considered unencodable */
+
         startpos = i;
-        endpos = i+1;
-        for (; endpos < length; endpos++) {
-            ch = PyUnicode_READ(kind, data, endpos);
-            if ((0 < ch && ch < 256) ||
-                Py_UNICODE_ISSPACE(ch) ||
-                0 <= Py_UNICODE_TODECIMAL(ch))
-                break;
-        }
-        /* cache callback name lookup
-         * (if not done yet, i.e. it's the first error) */
-        if (known_errorHandler==-1) {
-            if ((errors==NULL) || (!strcmp(errors, "strict")))
-                known_errorHandler = 1;
-            else if (!strcmp(errors, "replace"))
-                known_errorHandler = 2;
-            else if (!strcmp(errors, "ignore"))
-                known_errorHandler = 3;
-            else if (!strcmp(errors, "xmlcharrefreplace"))
-                known_errorHandler = 4;
-            else
-                known_errorHandler = 0;
-        }
-        switch (known_errorHandler) {
-        case 1: /* strict */
-            raise_encode_exception(&exc, encoding, unicode, startpos, endpos, reason);
-            goto onError;
-        case 2: /* replace */
-            for (j=startpos; j < endpos; j++)
-                *output++ = '?';
-            i = endpos;
-            break;
-        case 3: /* ignore */
-            i = endpos;
-            break;
-        case 4: /* xmlcharrefreplace */
-            /* generate replacement */
-            for (j=startpos; j < endpos; j++) {
-                ch = PyUnicode_READ(kind, data, i);
-                output += sprintf(output, "&#%d;", (int)ch);
-                i++;
-            }
-            break;
-        default:
-        {
-            PyObject *repunicode;
-            Py_ssize_t repsize, newpos, k;
-            enum PyUnicode_Kind repkind;
-            void *repdata;
-
-            repunicode = unicode_encode_call_errorhandler(errors, &errorHandler,
-                                                          encoding, reason, unicode, &exc,
-                                                          startpos, endpos, &newpos);
-            if (repunicode == NULL)
-                goto onError;
-            if (!PyUnicode_Check(repunicode)) {
-                /* Byte results not supported, since they have no decimal property. */
-                PyErr_SetString(PyExc_TypeError, "error handler should return unicode");
-                Py_DECREF(repunicode);
-                goto onError;
-            }
-            if (PyUnicode_READY(repunicode) < 0) {
-                Py_DECREF(repunicode);
-                goto onError;
-            }
-            repkind = PyUnicode_KIND(repunicode);
-            repdata = PyUnicode_DATA(repunicode);
-
-            /* generate replacement  */
-            repsize = PyUnicode_GET_SIZE(repunicode);
-            for (k=0; k<repsize; k++) {
-                ch = PyUnicode_READ(repkind, repdata, k);
-                if (Py_UNICODE_ISSPACE(ch))
-                    *output++ = ' ';
-                else {
-                    decimal = Py_UNICODE_TODECIMAL(ch);
-                    if (decimal >= 0)
-                        *output++ = '0' + decimal;
-                    else if (0 < ch && ch < 256)
-                        *output++ = (char)ch;
-                    else {
-                        Py_DECREF(repunicode);
-                        raise_encode_exception(&exc, encoding,
-                                               unicode, startpos, endpos,
-                                               reason);
-                        goto onError;
-                    }
-                }
-            }
-            i = newpos;
-            Py_DECREF(repunicode);
-        }
-        }
+        exc = NULL;
+        raise_encode_exception(&exc, "decimal", unicode,
+                               startpos, startpos+1,
+                               "invalid decimal Unicode string");
+        Py_XDECREF(exc);
+        Py_DECREF(unicode);
+        return -1;
     }
     /* 0-terminate the output string */
     *output++ = '\0';
-    Py_XDECREF(exc);
-    Py_XDECREF(errorHandler);
     Py_DECREF(unicode);
     return 0;
-
-  onError:
-    Py_XDECREF(exc);
-    Py_XDECREF(errorHandler);
-    Py_DECREF(unicode);
-    return -1;
 }
 
 /* --- Helpers ------------------------------------------------------------ */

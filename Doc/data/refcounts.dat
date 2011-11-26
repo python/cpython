@@ -465,6 +465,11 @@ PyFunction_New:PyObject*::+1:
 PyFunction_New:PyObject*:code:+1:
 PyFunction_New:PyObject*:globals:+1:
 
+PyFunction_NewWithQualName:PyObject*::+1:
+PyFunction_NewWithQualName:PyObject*:code:+1:
+PyFunction_NewWithQualName:PyObject*:globals:+1:
+PyFunction_NewWithQualName:PyObject*:qualname:+1:
+
 PyFunction_SetClosure:int:::
 PyFunction_SetClosure:PyObject*:op:0:
 PyFunction_SetClosure:PyObject*:closure:+1:

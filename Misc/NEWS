@@ -14,6 +14,12 @@ Core and Builtins
   on POSIX systems supporting anonymous memory mappings.  Patch by
   Charles-François Natali.
 
+- Issue #13452: PyUnicode_EncodeDecimal() doesn't support error handlers
+  different than "strict" anymore. The caller was unable to compute the
+  size of the output buffer: it depends on the error handler.
+
+- PEP 3155 / issue #13448: Qualified name for classes and functions.
+
 - Issue #13436: Fix a bogus error message when an AST object was passed
   an invalid integer value.
 
@@ -386,9 +392,19 @@ Core and Builtins
 - Issue #12380: The rjust, ljust and center methods of bytes and bytearray
   now accept a bytearray argument.
 
-
 Library
 -------
+
+- Issue #12567: The curses module uses Unicode functions for Unicode arguments
+  when it is linked to the ncurses library. It encodes also Unicode strings to
+  the locale encoding instead of UTF-8.
+
+- Issue #12856: Ensure child processes do not inherit the parent's random
+  seed for filename generation in the tempfile module.  Patch by Brian
+  Harring.
+
+- Issue #9957: SpooledTemporaryFile.truncate() now accepts an optional size
+  parameter, as other file-like objects.  Patch by Ryan Kelly.
 
 - Issue #13458: Fix a memory leak in the ssl module when decoding a
   certificate with a subjectAltName.  Patch by Robert Xiao.
