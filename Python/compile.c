@@ -90,6 +90,13 @@ struct fblockinfo {
     basicblock *fb_block;
 };
 
+enum {
+    COMPILER_SCOPE_MODULE,
+    COMPILER_SCOPE_CLASS,
+    COMPILER_SCOPE_FUNCTION,
+    COMPILER_SCOPE_COMPREHENSION,
+};
+
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
 */
@@ -97,6 +104,9 @@ struct compiler_unit {
     PySTEntryObject *u_ste;
 
     PyObject *u_name;
+    PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
+    int u_scope_type;
+
     /* The following fields are dicts that map objects to
        the index of them in co_XXX.      The index is used as
        the argument for opcodes that refer to those collections.
@@ -149,7 +159,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-static int compiler_enter_scope(struct compiler *, identifier, void *, int);
+static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
 static int compiler_next_instr(struct compiler *, basicblock *);
@@ -457,6 +467,7 @@ compiler_unit_free(struct compiler_unit *u)
     }
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
+    Py_CLEAR(u->u_qualname);
     Py_CLEAR(u->u_consts);
     Py_CLEAR(u->u_names);
     Py_CLEAR(u->u_varnames);
@@ -467,8 +478,8 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_enter_scope(struct compiler *c, identifier name, void *key,
-                     int lineno)
+compiler_enter_scope(struct compiler *c, identifier name,
+                     int scope_type, void *key, int lineno)
 {
     struct compiler_unit *u;
 
@@ -479,6 +490,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
         return 0;
     }
     memset(u, 0, sizeof(struct compiler_unit));
+    u->u_scope_type = scope_type;
     u->u_argcount = 0;
     u->u_kwonlyargcount = 0;
     u->u_ste = PySymtable_Lookup(c->c_st, key);
@@ -564,6 +576,59 @@ compiler_exit_scope(struct compiler *c)
     else
         c->u = NULL;
 
+}
+
+static PyObject *
+compiler_scope_qualname(struct compiler *c)
+{
+    Py_ssize_t stack_size, i;
+    _Py_static_string(dot, ".");
+    _Py_static_string(locals, "<locals>");
+    struct compiler_unit *u;
+    PyObject *capsule, *name, *seq, *dot_str, *locals_str;
+
+    u = c->u;
+    if (u->u_qualname != NULL) {
+        Py_INCREF(u->u_qualname);
+        return u->u_qualname;
+    }
+
+    seq = PyList_New(0);
+    if (seq == NULL)
+        return NULL;
+
+    stack_size = PyList_GET_SIZE(c->c_stack);
+    for (i = 0; i < stack_size; i++) {
+        capsule = PyList_GET_ITEM(c->c_stack, i);
+        u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, COMPILER_CAPSULE_NAME_COMPILER_UNIT);
+        assert(u);
+        if (u->u_scope_type == COMPILER_SCOPE_MODULE)
+            continue;
+        if (PyList_Append(seq, u->u_name))
+            goto _error;
+        if (u->u_scope_type == COMPILER_SCOPE_FUNCTION) {
+            locals_str = _PyUnicode_FromId(&locals);
+            if (locals_str == NULL)
+                goto _error;
+            if (PyList_Append(seq, locals_str))
+                goto _error;
+        }
+    }
+    u = c->u;
+    if (PyList_Append(seq, u->u_name))
+        goto _error;
+    dot_str = _PyUnicode_FromId(&dot);
+    if (dot_str == NULL)
+        goto _error;
+    name = PyUnicode_Join(dot_str, seq);
+    Py_DECREF(seq);
+    u->u_qualname = name;
+    Py_XINCREF(name);
+    return name;
+
+_error:
+    Py_XDECREF(seq);
+    return NULL;
 }
 
 /* Allocate a new block and return a pointer to it.
@@ -862,9 +927,9 @@ opcode_stack_effect(int opcode, int oparg)
         case CALL_FUNCTION_VAR_KW:
             return -NARGS(oparg)-2;
         case MAKE_FUNCTION:
-            return -NARGS(oparg) - ((oparg >> 16) & 0xffff);
+            return -1 -NARGS(oparg) - ((oparg >> 16) & 0xffff);
         case MAKE_CLOSURE:
-            return -1 - NARGS(oparg) - ((oparg >> 16) & 0xffff);
+            return -2 - NARGS(oparg) - ((oparg >> 16) & 0xffff);
 #undef NARGS
         case BUILD_SLICE:
             if (oparg == 3)
@@ -1194,7 +1259,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
             return NULL;
     }
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, mod, 0))
+    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
     switch (mod->kind) {
     case Module_kind:
@@ -1270,11 +1335,15 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
-compiler_make_closure(struct compiler *c, PyCodeObject *co, int args)
+compiler_make_closure(struct compiler *c, PyCodeObject *co, int args, PyObject *qualname)
 {
     int i, free = PyCode_GetNumFree(co);
+    if (qualname == NULL)
+        qualname = co->co_name;
+
     if (free == 0) {
         ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
+        ADDOP_O(c, LOAD_CONST, qualname, consts);
         ADDOP_I(c, MAKE_FUNCTION, args);
         return 1;
     }
@@ -1311,6 +1380,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, int args)
     }
     ADDOP_I(c, BUILD_TUPLE, free);
     ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
+    ADDOP_O(c, LOAD_CONST, qualname, consts);
     ADDOP_I(c, MAKE_CLOSURE, args);
     return 1;
 }
@@ -1452,7 +1522,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
-    PyObject *first_const = Py_None;
+    PyObject *qualname, *first_const = Py_None;
     arguments_ty args = s->v.FunctionDef.args;
     expr_ty returns = s->v.FunctionDef.returns;
     asdl_seq* decos = s->v.FunctionDef.decorator_list;
@@ -1478,7 +1548,8 @@ compiler_function(struct compiler *c, stmt_ty s)
         return 0;
     assert((num_annotations & 0xFFFF) == num_annotations);
 
-    if (!compiler_enter_scope(c, s->v.FunctionDef.name, (void *)s,
+    if (!compiler_enter_scope(c, s->v.FunctionDef.name,
+                              COMPILER_SCOPE_FUNCTION, (void *)s,
                               s->lineno))
         return 0;
 
@@ -1500,14 +1571,19 @@ compiler_function(struct compiler *c, stmt_ty s)
         VISIT_IN_SCOPE(c, stmt, st);
     }
     co = assemble(c, 1);
+    qualname = compiler_scope_qualname(c);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (qualname == NULL || co == NULL) {
+        Py_XDECREF(qualname);
+        Py_XDECREF(co);
         return 0;
+    }
 
     arglength = asdl_seq_LEN(args->defaults);
     arglength |= kw_default_count << 8;
     arglength |= num_annotations << 16;
-    compiler_make_closure(c, co, arglength);
+    compiler_make_closure(c, co, arglength, qualname);
+    Py_DECREF(qualname);
     Py_DECREF(co);
 
     /* decorators */
@@ -1542,7 +1618,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     */
 
     /* 1. compile the class body into a code object */
-    if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s, s->lineno))
+    if (!compiler_enter_scope(c, s->v.ClassDef.name,
+                              COMPILER_SCOPE_CLASS, (void *)s, s->lineno))
         return 0;
     /* this block represents what we do in the new scope */
     {
@@ -1566,6 +1643,21 @@ compiler_class(struct compiler *c, stmt_ty s)
         Py_DECREF(str);
         /* ... and store it as __module__ */
         str = PyUnicode_InternFromString("__module__");
+        if (!str || !compiler_nameop(c, str, Store)) {
+            Py_XDECREF(str);
+            compiler_exit_scope(c);
+            return 0;
+        }
+        Py_DECREF(str);
+        /* store the __qualname__ */
+        str = compiler_scope_qualname(c);
+        if (!str) {
+            compiler_exit_scope(c);
+            return 0;
+        }
+        ADDOP_O(c, LOAD_CONST, str, consts);
+        Py_DECREF(str);
+        str = PyUnicode_InternFromString("__qualname__");
         if (!str || !compiler_nameop(c, str, Store)) {
             Py_XDECREF(str);
             compiler_exit_scope(c);
@@ -1608,7 +1700,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    compiler_make_closure(c, co, 0);
+    compiler_make_closure(c, co, 0, NULL);
     Py_DECREF(co);
 
     /* 4. load class name */
@@ -1659,6 +1751,7 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
+    PyObject *qualname;
     static identifier name;
     int kw_default_count = 0, arglength;
     arguments_ty args = e->v.Lambda.args;
@@ -1678,7 +1771,8 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
     if (args->defaults)
         VISIT_SEQ(c, expr, args->defaults);
-    if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
+    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_FUNCTION,
+                              (void *)e, e->lineno))
         return 0;
 
     /* Make None the first constant, so the lambda can't have a
@@ -1696,13 +1790,15 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
     }
     co = assemble(c, 1);
+    qualname = compiler_scope_qualname(c);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (qualname == NULL || co == NULL)
         return 0;
 
     arglength = asdl_seq_LEN(args->defaults);
     arglength |= kw_default_count << 8;
-    compiler_make_closure(c, co, arglength);
+    compiler_make_closure(c, co, arglength, qualname);
+    Py_DECREF(qualname);
     Py_DECREF(co);
 
     return 1;
@@ -2916,11 +3012,13 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 {
     PyCodeObject *co = NULL;
     expr_ty outermost_iter;
+    PyObject *qualname = NULL;
 
     outermost_iter = ((comprehension_ty)
                       asdl_seq_GET(generators, 0))->iter;
 
-    if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
+    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
+                              (void *)e, e->lineno))
         goto error;
 
     if (type != COMP_GENEXP) {
@@ -2953,12 +3051,14 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
     }
 
     co = assemble(c, 1);
+    qualname = compiler_scope_qualname(c);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (qualname == NULL || co == NULL)
         goto error;
 
-    if (!compiler_make_closure(c, co, 0))
+    if (!compiler_make_closure(c, co, 0, qualname))
         goto error;
+    Py_DECREF(qualname);
     Py_DECREF(co);
 
     VISIT(c, expr, outermost_iter);
@@ -2968,6 +3068,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
 error_in_scope:
     compiler_exit_scope(c);
 error:
+    Py_XDECREF(qualname);
     Py_XDECREF(co);
     return 0;
 }
