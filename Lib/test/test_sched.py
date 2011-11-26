@@ -62,15 +62,16 @@ class TestCase(unittest.TestCase):
 
     def test_queue(self):
         l = []
-        events = []
         fun = lambda x: l.append(x)
         scheduler = sched.scheduler(time.time, time.sleep)
-        self.assertEqual(scheduler._queue, [])
-        for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
-            events.append(scheduler.enterabs(x, 1, fun, (x,)))
-        self.assertEqual(scheduler._queue.sort(), events.sort())
-        scheduler.run()
-        self.assertEqual(scheduler._queue, [])
+        e5 = scheduler.enter(0.05, 1, fun)
+        e1 = scheduler.enter(0.01, 1, fun)
+        e2 = scheduler.enter(0.02, 1, fun)
+        e4 = scheduler.enter(0.04, 1, fun)
+        e3 = scheduler.enter(0.03, 1, fun)
+        # queue property is supposed to return an order list of
+        # upcoming events
+        self.assertEqual(list(scheduler.queue), [e1, e2, e3, e4, e5])
 
     def test_args_kwargs(self):
         flag = []
