@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13444: When stdout has been closed explicitly, we should not attempt
+  to flush it at shutdown and print an error.
+
 - Issue #12856: Ensure child processes do not inherit the parent's random
   seed for filename generation in the tempfile module.  Patch by Brian
   Harring.
