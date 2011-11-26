@@ -268,7 +268,10 @@ def test_unget_wch(stdscr):
     if not hasattr(curses, 'unget_wch'):
         return
     for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
-        curses.unget_wch(ch)
+        try:
+            curses.unget_wch(ch)
+        except Exception as err:
+            raise Exception("unget_wch(%a) failed: %s" % (ch, err))
         read = stdscr.get_wch()
         read = chr(read)
         if read != ch:
