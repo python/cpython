@@ -2831,6 +2831,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(for broken unsetenv)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+]], [[int res = unsetenv("DUMMY")]])],
+  [AC_MSG_RESULT(no)],
+  [AC_DEFINE(HAVE_BROKEN_UNSETENV, 1, Define if `unsetenv` does not return an int.)
+   AC_MSG_RESULT(yes)
+])
+
 dnl check for true
 AC_CHECK_PROGS(TRUE, true, /bin/true)
 
