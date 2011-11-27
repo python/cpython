@@ -98,6 +98,9 @@
 /* define to 1 if your sem_getvalue is broken. */
 #undef HAVE_BROKEN_SEM_GETVALUE
 
+/* Define if `unsetenv` does not return an int. */
+#undef HAVE_BROKEN_UNSETENV
+
 /* Define this if you have the type _Bool. */
 #undef HAVE_C99_BOOL
 
