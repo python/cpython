@@ -7044,14 +7044,20 @@ static PyObject *
 posix_unsetenv(PyObject *self, PyObject *args)
 {
     char *s1;
+#ifndef HAVE_BROKEN_UNSETENV
     int err;
+#endif
 
     if (!PyArg_ParseTuple(args, "s:unsetenv", &s1))
         return NULL;
 
+#ifdef HAVE_BROKEN_UNSETENV
+    unsetenv(s1);
+#else
     err = unsetenv(s1);
     if (err)
         return posix_error();
+#endif
 
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to
