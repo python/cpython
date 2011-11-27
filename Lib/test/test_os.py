@@ -361,6 +361,10 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
                 value = popen.read().strip()
                 self.assertEqual(value, "World")
 
+    # On FreeBSD < 7 and OS X < 10.6, unsetenv() doesn't return a value (issue
+    # #13415).
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'darwin')),
+                     "due to known OS bug: see issue #13415")
     def test_unset_error(self):
         if sys.platform == "win32":
             # an environment variable is limited to 32,767 characters
