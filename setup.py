@@ -1166,20 +1166,19 @@ class PyBuildExt(build_ext):
         else:
             missing.extend(['nis', 'resource', 'termios'])
 
-        curses_defines = []
-        if curses_library == 'ncursesw':
-            curses_defines.append(('HAVE_NCURSESW', '1'))
-
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
-        panel_library = 'panel'
+        curses_defines = []
         curses_includes = []
+        panel_library = 'panel'
+        if curses_library == 'ncursesw':
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+            curses_includes.append('/usr/include/ncursesw')
+            # Bug 1464056: If _curses.so links with ncursesw,
+            # _curses_panel.so must link with panelw.
+            panel_library = 'panelw'
+
         if curses_library.startswith('ncurses'):
-            if curses_library == 'ncursesw':
-                # Bug 1464056: If _curses.so links with ncursesw,
-                # _curses_panel.so must link with panelw.
-                panel_library = 'panelw'
-                curses_includes = ['/usr/include/ncursesw']
             curses_libs = [curses_library]
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    include_dirs=curses_includes,
