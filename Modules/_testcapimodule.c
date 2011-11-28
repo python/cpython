@@ -1109,7 +1109,7 @@ static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
     Py_UNICODE *unicode;
-    Py_ssize_t length;
+    int length;
     char *errors = NULL;
     PyObject *decimal;
     Py_ssize_t decimal_length, new_length;
