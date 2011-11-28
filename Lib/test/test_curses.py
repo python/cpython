@@ -267,11 +267,18 @@ def test_issue6243(stdscr):
 def test_unget_wch(stdscr):
     if not hasattr(curses, 'unget_wch'):
         return
+    import locale
+    encoding = locale.getpreferredencoding()
     for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
+        try:
+            ch.encode(encoding)
+        except UnicodeEncodeError:
+            continue
         try:
             curses.unget_wch(ch)
         except Exception as err:
-            raise Exception("unget_wch(%a) failed: %s" % (ch, err))
+            raise Exception("unget_wch(%a) failed with locale encoding %s: %s"
+                            % (ch, encoding, err))
         read = stdscr.get_wch()
         read = chr(read)
         if read != ch:
