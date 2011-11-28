@@ -912,6 +912,19 @@ error:
     return NULL;
 }
 
+static int
+is_valid_fd(int fd)
+{
+    int dummy_fd;
+    if (fd < 0 || !_PyVerify_fd(fd))
+        return 0;
+    dummy_fd = dup(fd);
+    if (dummy_fd < 0)
+        return 0;
+    close(dummy_fd);
+    return 1;
+}
+
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static int
 initstdio(void)
@@ -971,13 +984,9 @@ initstdio(void)
      * and fileno() may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
      */
-    if (fd < 0) {
-#ifdef MS_WINDOWS
+    if (!is_valid_fd(fd)) {
         std = Py_None;
         Py_INCREF(std);
-#else
-        goto error;
-#endif
     }
     else {
         std = create_stdio(iomod, fd, 0, "<stdin>", encoding, errors);
@@ -990,13 +999,9 @@ initstdio(void)
 
     /* Set sys.stdout */
     fd = fileno(stdout);
-    if (fd < 0) {
-#ifdef MS_WINDOWS
+    if (!is_valid_fd(fd)) {
         std = Py_None;
         Py_INCREF(std);
-#else
-        goto error;
-#endif
     }
     else {
         std = create_stdio(iomod, fd, 1, "<stdout>", encoding, errors);
@@ -1010,13 +1015,9 @@ initstdio(void)
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
-    if (fd < 0) {
-#ifdef MS_WINDOWS
+    if (!is_valid_fd(fd)) {
         std = Py_None;
         Py_INCREF(std);
-#else
-        goto error;
-#endif
     }
     else {
         std = create_stdio(iomod, fd, 1, "<stderr>", encoding, "backslashreplace");
