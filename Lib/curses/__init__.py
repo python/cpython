@@ -54,4 +54,4 @@ def start_color():
 try:
     has_key
 except NameError:
-    from has_key import has_key
+    from .has_key import has_key
