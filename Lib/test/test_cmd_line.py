@@ -285,6 +285,45 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(b'', err)
 
+    # Issue #7111: Python should work without standard streams
+
+    @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
+    def _test_no_stdio(self, streams):
+        code = """if 1:
+            import os, sys
+            for i, s in enumerate({streams}):
+                if getattr(sys, s) is not None:
+                    os._exit(i + 1)
+            os._exit(42)""".format(streams=streams)
+        def preexec():
+            if 'stdin' in streams:
+                os.close(0)
+            if 'stdout' in streams:
+                os.close(1)
+            if 'stderr' in streams:
+                os.close(2)
+        p = subprocess.Popen(
+            [sys.executable, "-E", "-c", code],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=preexec)
+        out, err = p.communicate()
+        self.assertEqual(test.support.strip_python_stderr(err), b'')
+        self.assertEqual(p.returncode, 42)
+
+    def test_no_stdin(self):
+        self._test_no_stdio(['stdin'])
+
+    def test_no_stdout(self):
+        self._test_no_stdio(['stdout'])
+
+    def test_no_stderr(self):
+        self._test_no_stdio(['stderr'])
+
+    def test_no_std_streams(self):
+        self._test_no_stdio(['stdin', 'stdout', 'stderr'])
+
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
