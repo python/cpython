@@ -45,6 +45,7 @@ class CurrentTimeTest(unittest.TestCase):
         except socket.error as e:
             self.skipTest("network error: %s" % e)
             return
+        self.addCleanup(lambda: server('close')())
 
         # Perform a minimal sanity check on the result, just to be sure
         # the request means what we think it means.
