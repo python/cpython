@@ -53,7 +53,7 @@ def start_color():
 try:
     has_key
 except NameError:
-    from has_key import has_key
+    from .has_key import has_key
 
 # Wrapper for the entire curses-based application.  Runs a function which
 # should be the rest of your curses-based application.  If the application
