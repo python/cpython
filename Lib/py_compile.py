@@ -130,7 +130,9 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
         else:
             cfile = imp.cache_from_source(file)
     try:
-        os.makedirs(os.path.dirname(cfile))
+        dirname = os.path.dirname(cfile)
+        if dirname:
+            os.makedirs(dirname)
     except OSError as error:
         if error.errno != errno.EEXIST:
             raise
