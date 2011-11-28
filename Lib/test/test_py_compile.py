@@ -39,6 +39,15 @@ class PyCompileTests(unittest.TestCase):
         py_compile.compile(self.source_path)
         self.assertTrue(os.path.exists(self.cache_path))
 
+    def test_cwd(self):
+        cwd = os.getcwd()
+        os.chdir(self.directory)
+        py_compile.compile(os.path.basename(self.source_path),
+                           os.path.basename(self.pyc_path))
+        os.chdir(cwd)
+        self.assertTrue(os.path.exists(self.pyc_path))
+        self.assertFalse(os.path.exists(self.cache_path))
+
     def test_relative_path(self):
         py_compile.compile(os.path.relpath(self.source_path),
                            os.path.relpath(self.pyc_path))
