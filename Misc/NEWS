@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12618: Fix a bug that prevented py_compile from creating byte
+  compiled files in the current directory.  Initial patch by Sjoerd de Vries.
+
 - Issue #13444: When stdout has been closed explicitly, we should not attempt
   to flush it at shutdown and print an error.
 
