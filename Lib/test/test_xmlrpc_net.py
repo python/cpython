@@ -14,6 +14,7 @@ class CurrentTimeTest(unittest.TestCase):
     def test_current_time(self):
         # Get the current time from xmlrpc.com.  This code exercises
         # the minimal HTTP functionality in xmlrpclib.
+        self.skipTest("time.xmlrpc.com is unreliable")
         server = xmlrpclib.ServerProxy("http://time.xmlrpc.com/RPC2")
         try:
             t0 = server.currentTime.getCurrentTime()
@@ -38,13 +39,13 @@ class CurrentTimeTest(unittest.TestCase):
     def test_python_builders(self):
         # Get the list of builders from the XMLRPC buildbot interface at
         # python.org.
-        self.skipTest("XMLRPC interface removed in Buildbot 0.8.2")
         server = xmlrpclib.ServerProxy("http://www.python.org/dev/buildbot/all/xmlrpc/")
         try:
             builders = server.getAllBuilders()
         except socket.error as e:
             self.skipTest("network error: %s" % e)
             return
+        self.addCleanup(lambda: server('close')())
 
         # Perform a minimal sanity check on the result, just to be sure
         # the request means what we think it means.
