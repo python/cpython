@@ -7,7 +7,7 @@ __all__ = ['tok_name', 'ISTERMINAL', 'ISNONTERMINAL', 'ISEOF']
 #  To update the symbols in this file, 'cd' to the top directory of
 #  the python source tree after building the interpreter and run:
 #
-#    python Lib/token.py
+#    ./python Lib/token.py
 
 #--start constants--
 ENDMARKER = 0
