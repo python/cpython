@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13487: Make inspect.getmodule robust against changes done to
+  sys.modules while it is iterating over it.
+
 - Issue #12618: Fix a bug that prevented py_compile from creating byte
   compiled files in the current directory.  Initial patch by Sjoerd de Vries.
 
