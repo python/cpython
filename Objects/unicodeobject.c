@@ -1077,10 +1077,11 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
     for (iter = begin; iter < end; ) {
         assert(ucs4_out < (PyUnicode_4BYTE_DATA(unicode) +
                            _PyUnicode_GET_LENGTH(unicode)));
-        if (*iter >= 0xD800 && *iter <= 0xDBFF
-            && (iter+1) < end && iter[1] >= 0xDC00 && iter[1] <= 0xDFFF)
+        if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
+            && (iter+1) < end
+            && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
         {
-            *ucs4_out++ = (((iter[0] & 0x3FF)<<10) | (iter[1] & 0x3FF)) + 0x10000;
+            *ucs4_out++ = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
             iter += 2;
         }
         else {
@@ -3473,8 +3474,8 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
                 if (*four_bytes > 0xFFFF) {
                     assert(*four_bytes <= 0x10FFFF);
                     /* encode surrogate pair in this case */
-                    *w++ = 0xD800 | ((*four_bytes - 0x10000) >> 10);
-                    *w   = 0xDC00 | ((*four_bytes - 0x10000) & 0x3FF);
+                    *w++ = Py_UNICODE_HIGH_SURROGATE(*four_bytes);
+                    *w   = Py_UNICODE_LOW_SURROGATE(*four_bytes);
                 }
                 else
                     *w = *four_bytes;
@@ -3906,9 +3907,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                     base64buffer &= (1 << base64bits) - 1; /* clear high bits */
                     if (surrogate) {
                         /* expecting a second surrogate */
-                        if (outCh >= 0xDC00 && outCh <= 0xDFFF) {
-                            Py_UCS4 ch2 = (((surrogate & 0x3FF)<<10)
-                                           | (outCh & 0x3FF)) + 0x10000;
+                        if (Py_UNICODE_IS_LOW_SURROGATE(outCh)) {
+                            Py_UCS4 ch2 = Py_UNICODE_JOIN_SURROGATES(surrogate, outCh);
                             if (unicode_putchar(&unicode, &outpos, ch2) < 0)
                                 goto onError;
                             surrogate = 0;
@@ -3920,7 +3920,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                             surrogate = 0;
                         }
                     }
-                    if (outCh >= 0xD800 && outCh <= 0xDBFF) {
+                    if (Py_UNICODE_IS_HIGH_SURROGATE(outCh)) {
                         /* first surrogate */
                         surrogate = outCh;
                     }
@@ -4128,7 +4128,7 @@ encode_char:
                 base64bits -= 6;
             }
             /* prepare second surrogate */
-            ch =  0xDC00 | ((ch-0x10000) & 0x3FF);
+            ch = Py_UNICODE_LOW_SURROGATE(ch);
         }
         base64bits += 16;
         base64buffer = (base64buffer << 16) | ch;
@@ -4720,15 +4720,8 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
             *p++ = (wchar_t)ch;
 #else
             /*  compute and append the two surrogates: */
-
-            /*  translate from 10000..10FFFF to 0..FFFF */
-            ch -= 0x10000;
-
-            /*  high surrogate = top 10 bits added to D800 */
-            *p++ = (wchar_t)(0xD800 + (ch >> 10));
-
-            /*  low surrogate = bottom 10 bits added to DC00 */
-            *p++ = (wchar_t)(0xDC00 + (ch & 0x03FF));
+            *p++ = (wchar_t)Py_UNICODE_HIGH_SURROGATE(ch);
+            *p++ = (wchar_t)Py_UNICODE_LOW_SURROGATE(ch);
 #endif
             break;
         }
@@ -4819,7 +4812,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             /* Encode Latin-1 */
             *p++ = (char)(0xc0 | (ch >> 6));
             *p++ = (char)(0x80 | (ch & 0x3f));
-        } else if (0xD800 <= ch && ch <= 0xDFFF) {
+        } else if (Py_UNICODE_IS_SURROGATE(ch)) {
             Py_ssize_t newpos;
             Py_ssize_t repsize, k, startpos;
             startpos = i-1;
@@ -5367,7 +5360,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 
         q += 2;
 
-        if (ch < 0xD800 || ch > 0xDFFF) {
+        if (!Py_UNICODE_IS_SURROGATE(ch)) {
             if (unicode_putchar(&unicode, &outpos, ch) < 0)
                 goto onError;
             continue;
@@ -5538,8 +5531,8 @@ _PyUnicode_EncodeUTF16(PyObject *str,
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         Py_UCS4 ch2 = 0;
         if (ch >= 0x10000) {
-            ch2 = 0xDC00 | ((ch-0x10000) & 0x3FF);
-            ch  = 0xD800 | ((ch-0x10000) >> 10);
+            ch2 = Py_UNICODE_LOW_SURROGATE(ch);
+            ch  = Py_UNICODE_HIGH_SURROGATE(ch);
         }
         STORECHAR(ch);
         if (ch2)
@@ -6300,14 +6293,14 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
 
         s += Py_UNICODE_SIZE;
 #ifndef Py_UNICODE_WIDE
-        if (ch >= 0xD800 && ch <= 0xDBFF && s < end)
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch) && s < end)
         {
             Py_UNICODE uch2;
             ((char *) &uch2)[0] = s[0];
             ((char *) &uch2)[1] = s[1];
-            if (uch2 >= 0xDC00 && uch2 <= 0xDFFF)
+            if (Py_UNICODE_IS_LOW_SURROGATE(uch2))
             {
-                ch = (((uch & 0x3FF)<<10) | (uch2 & 0x3FF)) + 0x10000;
+                ch = Py_UNICODE_JOIN_SURROGATES(uch, uch2);
                 s += Py_UNICODE_SIZE;
             }
         }
