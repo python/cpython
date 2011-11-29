@@ -1279,6 +1279,13 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_bz2')
 
+        # LZMA compression support.
+        if self.compiler.find_library_file(lib_dirs, 'lzma'):
+            exts.append( Extension('_lzma', ['_lzmamodule.c'],
+                                   libraries = ['lzma']) )
+        else:
+            missing.append('_lzma')
+
         # Interface to the Expat XML parser
         #
         # Expat was written by James Clark and is now maintained by a group of
