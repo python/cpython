@@ -1598,8 +1598,7 @@ locale_alias = {
 # to include every locale up to Windows Vista.
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
-# submit a bug report to Python bug manager, which you can find via:
-#     http://www.python.org/dev/
+# submit a bug report to the Python bug tracker at http://bugs.python.org/
 # Make sure you include the missing language identifier and the suggested
 # locale code.
 #
