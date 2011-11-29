@@ -64,20 +64,20 @@ Socket addresses are represented as follows:
   tuple, and the fields depend on the address type. The general tuple form is
   ``(addr_type, v1, v2, v3 [, scope])``, where:
 
-  - *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
-    TIPC_ADDR_ID.
-  - *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
-    TIPC_NODE_SCOPE.
-  - If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
+  - *addr_type* is one of :const:`TIPC_ADDR_NAMESEQ`, :const:`TIPC_ADDR_NAME`,
+    or :const:`TIPC_ADDR_ID`.
+  - *scope* is one of :const:`TIPC_ZONE_SCOPE`, :const:`TIPC_CLUSTER_SCOPE`, and
+    :const:`TIPC_NODE_SCOPE`.
+  - If *addr_type* is :const:`TIPC_ADDR_NAME`, then *v1* is the server type, *v2* is
     the port identifier, and *v3* should be 0.
 
-    If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
+    If *addr_type* is :const:`TIPC_ADDR_NAMESEQ`, then *v1* is the server type, *v2*
     is the lower port number, and *v3* is the upper port number.
 
-    If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+    If *addr_type* is :const:`TIPC_ADDR_ID`, then *v1* is the node, *v2* is the
     reference, and *v3* should be set to 0.
 
-    If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+    If *addr_type* is :const:`TIPC_ADDR_ID`, then *v1* is the node, *v2* is the
     reference, and *v3* should be set to 0.
 
 - A tuple ``(interface, )`` is used for the :const:`AF_CAN` address family,
