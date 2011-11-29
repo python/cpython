@@ -69,34 +69,15 @@ API will not fully benefit of the memory reduction, or - worse - may use
 a bit more memory, because Python may have to maintain two versions of each
 string (in the legacy format and in the new efficient storage).
 
+Functionality
+-------------
+
 Changes introduced by :pep:`393` are the following:
 
 * Python now always supports the full range of Unicode codepoints, including
   non-BMP ones (i.e. from ``U+0000`` to ``U+10FFFF``).  The distinction between
   narrow and wide builds no longer exists and Python now behaves like a wide
   build, even under Windows.
-
-* The storage of Unicode strings now depends on the highest codepoint in the string:
-
-  * pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per codepoint;
-
-  * BMP strings (``U+0000-U+FFFF``) use 2 bytes per codepoint;
-
-  * non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per codepoint.
-
-  The net effect is that for most applications, memory usage of string storage
-  should decrease significantly - especially compared to former wide unicode
-  builds - as, in many cases, strings will be pure ASCII even in international
-  contexts (because many strings store non-human language data, such as XML
-  fragments, HTTP headers, JSON-encoded data, etc.).  We also hope that it
-  will, for the same reasons, increase CPU cache efficiency on non-trivial
-  applications.
-
-   .. The memory usage of Python 3.3 is two to three times smaller than Python 3.2,
-      and a little bit better than Python 2.7, on a `Django benchmark
-      <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
-      XXX The result should be moved in the PEP and a link to the PEP should
-      be added here.
 
 * With the death of narrow builds, the problems specific to narrow builds have
   also been fixed, for example:
@@ -119,6 +100,31 @@ Changes introduced by :pep:`393` are the following:
   not be used with the new Unicode API (see :issue:`13054`).
 
 * The :file:`./configure` flag ``--with-wide-unicode`` has been removed.
+
+Performance and resource usage
+------------------------------
+
+The storage of Unicode strings now depends on the highest codepoint in the string:
+
+* pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per codepoint;
+
+* BMP strings (``U+0000-U+FFFF``) use 2 bytes per codepoint;
+
+* non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per codepoint.
+
+The net effect is that for most applications, memory usage of string storage
+should decrease significantly - especially compared to former wide unicode
+builds - as, in many cases, strings will be pure ASCII even in international
+contexts (because many strings store non-human language data, such as XML
+fragments, HTTP headers, JSON-encoded data, etc.).  We also hope that it
+will, for the same reasons, increase CPU cache efficiency on non-trivial
+applications.
+
+.. The memory usage of Python 3.3 is two to three times smaller than Python 3.2,
+   and a little bit better than Python 2.7, on a `Django benchmark
+   <http://mail.python.org/pipermail/python-dev/2011-September/113714.html>`_.
+   XXX The result should be moved in the PEP and a link to the PEP should
+   be added here.
 
 
 PEP 3151: Reworking the OS and IO exception hierarchy
