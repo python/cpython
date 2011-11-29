@@ -23,7 +23,7 @@ decryption of encrypted files in ZIP archives, but it currently cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
 
-For other archive formats, see the :mod:`bz2`, :mod:`gzip`, and
+For related file formats, see the :mod:`bz2`, :mod:`gzip`, :mod:`lzma`, and
 :mod:`tarfile` modules.
 
 The module defines the following items:

@@ -12,7 +12,7 @@
 This module provides a comprehensive interface for compressing and
 decompressing data using the bzip2 compression algorithm.
 
-For related file formats, see the :mod:`gzip`, :mod:`zipfile`, and
+For related file formats, see the :mod:`gzip`, :mod:`lzma`, :mod:`zipfile`, and
 :mod:`tarfile` modules.
 
 The :mod:`bz2` module contains:
