@@ -165,6 +165,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import sys
 import sysconfig
 import tempfile
@@ -887,6 +888,7 @@ class saved_test_environment:
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList',
+                 'shutil.archive_formats', 'shutil.unpack_formats',
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling')
 
@@ -955,6 +957,23 @@ class saved_test_environment:
         if asyncore is not None:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
+
+    def get_shutil_archive_formats(self):
+        # we could call get_archives_formats() but that only returns the
+        # registry keys; we want to check the values too (the functions that
+        # are registered)
+        return shutil._ARCHIVE_FORMATS, shutil._ARCHIVE_FORMATS.copy()
+    def restore_shutil_archive_formats(self, saved):
+        shutil._ARCHIVE_FORMATS = saved[0]
+        shutil._ARCHIVE_FORMATS.clear()
+        shutil._ARCHIVE_FORMATS.update(saved[1])
+
+    def get_shutil_unpack_formats(self):
+        return shutil._UNPACK_FORMATS, shutil._UNPACK_FORMATS.copy()
+    def restore_shutil_unpack_formats(self, saved):
+        shutil._UNPACK_FORMATS = saved[0]
+        shutil._UNPACK_FORMATS.clear()
+        shutil._UNPACK_FORMATS.update(saved[1])
 
     def get_logging__handlers(self):
         # _handlers is a WeakValueDictionary
