@@ -133,6 +133,12 @@ _bz2
 
     All of this managed to build libbz2.lib in 
     bzip2-1.0.5\$platform-$configuration\, which the Python project links in.
+_lzma
+    Python wrapper for the liblzma compression library.
+
+    Download the pre-built Windows binaries from http://tukaani.org/xz/, and
+    extract to ..\xz-5.0.3. If you are using a more recent version of liblzma,
+    it will be necessary to rename the directory from xz-<VERSION> to xz-5.0.3.
 
 _ssl
     Python wrapper for the secure sockets library.

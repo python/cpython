@@ -41,3 +41,8 @@ if not exist sqlite-3.7.4 (
   rd /s/q sqlite-source-3.6.21
   svn export http://svn.python.org/projects/external/sqlite-3.7.4
 )
+
+@rem lzma
+if not exist xz-5.0.3 (
+  svn export http://svn.python.org/projects/external/xz-5.0.3
+)
