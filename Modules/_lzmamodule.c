@@ -1,4 +1,9 @@
-/* _lzma - Low-level Python interface to liblzma. */
+/* _lzma - Low-level Python interface to liblzma.
+
+   Initial implementation by Per Øyvind Karlsen.
+   Rewritten by Nadeem Vawda.
+
+*/
 
 #define PY_SSIZE_T_CLEAN
 
