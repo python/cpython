@@ -125,6 +125,7 @@ class BZ2File(io.BufferedIOBase):
 
     def fileno(self):
         """Return the file descriptor for the underlying file."""
+        self._check_not_closed()
         return self._fp.fileno()
 
     def seekable(self):
@@ -133,10 +134,12 @@ class BZ2File(io.BufferedIOBase):
 
     def readable(self):
         """Return whether the file was opened for reading."""
+        self._check_not_closed()
         return self._mode in (_MODE_READ, _MODE_READ_EOF)
 
     def writable(self):
         """Return whether the file was opened for writing."""
+        self._check_not_closed()
         return self._mode == _MODE_WRITE
 
     # Mode-checking helper functions.
@@ -147,17 +150,14 @@ class BZ2File(io.BufferedIOBase):
 
     def _check_can_read(self):
         if not self.readable():
-            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for reading")
 
     def _check_can_write(self):
         if not self.writable():
-            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for writing")
 
     def _check_can_seek(self):
         if not self.seekable():
-            self._check_not_closed()
             raise io.UnsupportedOperation("Seeking is only supported "
                                           "on files open for reading")
 

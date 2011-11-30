@@ -348,8 +348,63 @@ class BZ2FileTest(BaseTest):
     def testFileno(self):
         self.createTempFile()
         with open(self.filename, 'rb') as rawf:
-            with BZ2File(fileobj=rawf) as bz2f:
+            bz2f = BZ2File(fileobj=rawf)
+            try:
                 self.assertEqual(bz2f.fileno(), rawf.fileno())
+            finally:
+                bz2f.close()
+        self.assertRaises(ValueError, bz2f.fileno)
+
+    def testSeekable(self):
+        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        try:
+            self.assertTrue(bz2f.seekable())
+            bz2f.read()
+            self.assertTrue(bz2f.seekable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.seekable)
+
+        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        try:
+            self.assertFalse(bz2f.seekable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.seekable)
+
+    def testReadable(self):
+        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        try:
+            self.assertTrue(bz2f.readable())
+            bz2f.read()
+            self.assertTrue(bz2f.readable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.readable)
+
+        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        try:
+            self.assertFalse(bz2f.readable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.readable)
+
+    def testWritable(self):
+        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        try:
+            self.assertFalse(bz2f.writable())
+            bz2f.read()
+            self.assertFalse(bz2f.writable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.writable)
+
+        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        try:
+            self.assertTrue(bz2f.writable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.writable)
 
     def testOpenDel(self):
         self.createTempFile()
