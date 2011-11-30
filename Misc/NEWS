@@ -400,6 +400,7 @@ Library
 -------
 
 - Issue #6715: Add a module 'lzma' for compression using the LZMA algorithm.
+  Thanks to Per Øyvind Karlsen for the initial implementation.
 
 - Issue #13487: Make inspect.getmodule robust against changes done to
   sys.modules while it is iterating over it.
