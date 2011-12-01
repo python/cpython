@@ -510,8 +510,7 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
-    /* ouch: passing NULL, 0, pos gives None instead of u'' */
-    return Py_BuildValue("(u#n)", &end, 0, end);
+    return Py_BuildValue("(Nn)", PyUnicode_New(0, 0), end);
 }
 
 
