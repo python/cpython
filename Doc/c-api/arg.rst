@@ -146,7 +146,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
    Like ``u#``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to *NULL*.
 
-``U`` (:class:`str`) [PyUnicodeObject \*]
+``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
    object.  The C variable may also be declared as :c:type:`PyObject\*`.
