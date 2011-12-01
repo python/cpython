@@ -378,7 +378,9 @@ PyObject_Repr(PyObject *v)
         return PyUnicode_FromFormat("<%s object at %p>",
                                     v->ob_type->tp_name, v);
     res = (*v->ob_type->tp_repr)(v);
-    if (res != NULL && !PyUnicode_Check(res)) {
+    if (res == NULL)
+        return NULL;
+    if (!PyUnicode_Check(res)) {
         PyErr_Format(PyExc_TypeError,
                      "__repr__ returned non-string (type %.200s)",
                      res->ob_type->tp_name);
