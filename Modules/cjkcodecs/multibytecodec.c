@@ -633,7 +633,7 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
     if (datalen == 0) {
         PyBuffer_Release(&pdata);
         ERROR_DECREF(errorcb);
-        return make_tuple(PyUnicode_FromUnicode(NULL, 0), 0);
+        return make_tuple(PyUnicode_New(0, 0), 0);
     }
 
     buf.excobj = NULL;
@@ -1265,7 +1265,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
     Py_ssize_t rsize, finalsize = 0;
 
     if (sizehint == 0)
-        return PyUnicode_FromUnicode(NULL, 0);
+        return PyUnicode_New(0, 0);
 
     buf.outobj = buf.excobj = NULL;
     cres = NULL;

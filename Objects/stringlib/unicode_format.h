@@ -79,7 +79,7 @@ Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
     if (str->str == NULL) {
-        return PyUnicode_FromUnicode(NULL, 0);
+        return PyUnicode_New(0, 0);
     }
     return SubString_new_object(str);
 }
