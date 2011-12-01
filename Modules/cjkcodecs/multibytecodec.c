@@ -643,6 +643,8 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
     if (buf.outobj == NULL)
         goto errorexit;
     buf.outbuf = PyUnicode_AS_UNICODE(buf.outobj);
+    if (buf.outbuf == NULL)
+        goto errorexit;
     buf.outbuf_end = buf.outbuf + PyUnicode_GET_SIZE(buf.outobj);
 
     if (self->codec->decinit != NULL &&
