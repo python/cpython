@@ -51,7 +51,7 @@ static int
 get_integer(PyObject *str, Py_ssize_t *pos, Py_ssize_t end,
                   Py_ssize_t *result)
 {
-    Py_ssize_t accumulator, digitval, oldaccumulator;
+    Py_ssize_t accumulator, digitval;
     int numdigits;
     accumulator = numdigits = 0;
     for (;;(*pos)++, numdigits++) {
@@ -61,19 +61,17 @@ get_integer(PyObject *str, Py_ssize_t *pos, Py_ssize_t end,
         if (digitval < 0)
             break;
         /*
-           This trick was copied from old Unicode format code.  It's cute,
-           but would really suck on an old machine with a slow divide
-           implementation.  Fortunately, in the normal case we do not
-           expect too many digits.
+           Detect possible overflow before it happens:
+
+              accumulator * 10 + digitval > PY_SSIZE_T_MAX if and only if
+              accumulator > (PY_SSIZE_T_MAX - digitval) / 10.
         */
-        oldaccumulator = accumulator;
-        accumulator *= 10;
-        if ((accumulator+10)/10 != oldaccumulator+1) {
+        if (accumulator > (PY_SSIZE_T_MAX - digitval) / 10) {
             PyErr_Format(PyExc_ValueError,
                          "Too many decimal digits in format string");
             return -1;
         }
-        accumulator += digitval;
+        accumulator = accumulator * 10 + digitval;
     }
     *result = accumulator;
     return numdigits;
