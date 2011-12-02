@@ -551,13 +551,35 @@ hello world
         assert 1, 1
         assert lambda x:x
         assert 1, lambda x:x+1
+
+        try:
+            assert True
+        except AssertionError as e:
+            self.fail("'assert True' should not have raised an AssertionError")
+
+        try:
+            assert True, 'this should always pass'
+        except AssertionError as e:
+            self.fail("'assert True, msg' should not have "
+                      "raised an AssertionError")
+
+    # these tests fail if python is run with -O, so check __debug__
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def testAssert2(self):
         try:
             assert 0, "msg"
         except AssertionError, e:
             self.assertEqual(e.args[0], "msg")
         else:
-            if __debug__:
-                self.fail("AssertionError not raised by assert 0")
+            self.fail("AssertionError not raised by assert 0")
+
+        try:
+            assert False
+        except AssertionError as e:
+            self.assertEqual(len(e.args), 0)
+        else:
+            self.fail("AssertionError not raised by 'assert False'")
+
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
     # Tested below
