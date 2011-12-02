@@ -904,7 +904,7 @@ class Shape(object):
         >>> poly = ((0,0),(10,-5),(0,10),(-10,-5))
         >>> s = Shape("compound")
         >>> s.addcomponent(poly, "red", "blue")
-        ### .. add more components and then use register_shape()
+        >>> # .. add more components and then use register_shape()
         """
         if self._type != "compound":
             raise TurtleGraphicsError("Cannot add component to %s Shape"
@@ -1002,7 +1002,7 @@ class TurtleScreen(TurtleScreenBase):
         no backgroundimage, no eventbindings and tracing on.
 
         Example (for a TurtleScreen instance named screen):
-        screen.clear()
+        >>> screen.clear()
 
         Note: this method is not available as function.
         """
@@ -1076,8 +1076,8 @@ class TurtleScreen(TurtleScreenBase):
         Example (for a TurtleScreen instance named screen):
         >>> screen.setworldcoordinates(-10,-0.5,50,1.5)
         >>> for _ in range(36):
-                left(10)
-                forward(0.5)
+        ...     left(10)
+        ...     forward(0.5)
         """
         if self.mode() != "world":
             self.mode("world")
@@ -1181,7 +1181,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.colormode()
         1.0
         >>> screen.colormode(255)
-        >>> turtle.pencolor(240,160,80)
+        >>> pencolor(240,160,80)
         """
         if cmode is None:
             return self._colormode
@@ -1249,9 +1249,9 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.tracer(8, 25)
         >>> dist = 2
         >>> for i in range(200):
-                fd(dist)
-                rt(90)
-                dist += 2
+        ...     fd(dist)
+        ...     rt(90)
+        ...     dist += 2
         """
         if n is None:
             return self._tracing
@@ -1278,7 +1278,7 @@ class TurtleScreen(TurtleScreenBase):
         self._delayvalue = int(delay)
 
     def _incrementudc(self):
-        "Increment upadate counter."""
+        """Increment upadate counter."""
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNNING = True
             raise Terminator
@@ -1346,16 +1346,12 @@ class TurtleScreen(TurtleScreenBase):
                clicked point on the canvas.
         num -- the number of the mouse-button, defaults to 1
 
-        Example (for a TurtleScreen instance named screen
-        and a Turtle instance named turtle):
+        Example (for a TurtleScreen instance named screen)
 
-        >>> screen.onclick(turtle.goto)
-
-        ### Subsequently clicking into the TurtleScreen will
-        ### make the turtle move to the clicked point.
+        >>> screen.onclick(goto)
+        >>> # Subsequently clicking into the TurtleScreen will
+        >>> # make the turtle move to the clicked point.
         >>> screen.onclick(None)
-
-        ### event-binding will be removed
         """
         self._onscreenclick(fun, btn, add)
 
@@ -1369,20 +1365,18 @@ class TurtleScreen(TurtleScreenBase):
         In order to be able to register key-events, TurtleScreen
         must have focus. (See method listen.)
 
-        Example (for a TurtleScreen instance named screen
-        and a Turtle instance named turtle):
+        Example (for a TurtleScreen instance named screen):
 
         >>> def f():
-                fd(50)
-                lt(60)
-
-
+        ...     fd(50)
+        ...     lt(60)
+        ...
         >>> screen.onkey(f, "Up")
         >>> screen.listen()
 
-        ### Subsequently the turtle can be moved by
-        ### repeatedly pressing the up-arrow key,
-        ### consequently drawing a hexagon
+        Subsequently the turtle can be moved by repeatedly pressing
+        the up-arrow key, consequently drawing a hexagon
+
         """
         if fun is None:
             if key in self._keys:
@@ -1406,16 +1400,15 @@ class TurtleScreen(TurtleScreenBase):
         and a Turtle instance named turtle):
 
         >>> def f():
-                fd(50)
-
-
-        >>> screen.onkey(f, "Up")
+        ...     fd(50)
+        ...     lt(60)
+        ...
+        >>> screen.onkeypress(f, "Up")
         >>> screen.listen()
 
-        ### Subsequently the turtle can be moved by
-        ### repeatedly pressing the up-arrow key,
-        ### or by keeping pressed the up-arrow key.
-        ### consequently drawing a hexagon.
+        Subsequently the turtle can be moved by repeatedly pressing
+        the up-arrow key, or by keeping pressed the up-arrow key.
+        consequently drawing a hexagon.
         """
         if fun is None:
             if key in self._keys:
@@ -1447,12 +1440,12 @@ class TurtleScreen(TurtleScreenBase):
 
         >>> running = True
         >>> def f():
-                if running:
-                        fd(50)
-                        lt(60)
-                        screen.ontimer(f, 250)
-
-        >>> f()   ### makes the turtle marching around
+        ...     if running:
+        ...             fd(50)
+        ...             lt(60)
+        ...             screen.ontimer(f, 250)
+        ...
+        >>> f()   # makes the turtle marching around
         >>> running = False
         """
         self._ontimer(fun, t)
@@ -1496,7 +1489,7 @@ class TurtleScreen(TurtleScreenBase):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.screensize(2000,1500)
-            ### e. g. to search for an erroneously escaped turtle ;-)
+        >>> # e.g. to search for an erroneously escaped turtle ;-)
         """
         return self._resize(canvwidth, canvheight, bg)
 
@@ -2084,7 +2077,7 @@ class TPen(object):
         Example (for a Turtle instance named turtle):
         >>> turtle.pensize()
         1
-        turtle.pensize(10)   # from here on lines of width 10 are drawn
+        >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
         """
         if width is None:
             return self._pensize
@@ -2559,7 +2552,7 @@ class RawTurtle(TPen, TNavigator):
         """Delete the turtle's drawings and restore its default values.
 
         No argument.
-,
+
         Delete the turtle's drawings from the screen, re-center the turtle
         and set variables to the default values.
 
@@ -2606,7 +2599,7 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a Turtle instance named turtle):
         >>> while undobufferentries():
-                undo()
+        ...     undo()
         """
         if self.undobuffer is None:
             return 0
@@ -2682,9 +2675,9 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.tracer(8, 25)
         >>> dist = 2
         >>> for i in range(200):
-                turtle.fd(dist)
-                turtle.rt(90)
-                dist += 2
+        ...     turtle.fd(dist)
+        ...     turtle.rt(90)
+        ...     dist += 2
         """
         return self.screen.tracer(flag, delay)
 
@@ -2882,7 +2875,6 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.shapesize(5,2)
         >>> turtle.tilt(45)
         >>> turtle.tiltangle()
-        >>>
         """
         if angle is None:
             tilt = -self._tilt * (180.0/math.pi) * self._angleOrient
@@ -2927,7 +2919,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.shapesize(4,2)
         >>> turtle.shearfactor(-0.5)
         >>> turtle.shapetransform()
-        >>> (4.0, -1.0, -0.0, 2.0)
+        (4.0, -1.0, -0.0, 2.0)
         """
         if t11 is t12 is t21 is t22 is None:
             return self._shapetrafo
@@ -3125,7 +3117,7 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a Turtle instance named turtle):
         >>> for i in range(8):
-                turtle.stamp(); turtle.fd(30)
+        ...     turtle.stamp(); turtle.fd(30)
         ...
         >>> turtle.clearstamps(2)
         >>> turtle.clearstamps(-2)
@@ -3301,9 +3293,9 @@ class RawTurtle(TPen, TNavigator):
         Example (for a Turtle instance named turtle):
         >>> turtle.begin_fill()
         >>> if turtle.filling():
-                turtle.pensize(5)
-        else:
-                turtle.pensize(3)
+        ...     turtle.pensize(5)
+        ... else:
+        ...     turtle.pensize(3)
         """
         return isinstance(self._fillpath, list)
 
@@ -3533,9 +3525,9 @@ class RawTurtle(TPen, TNavigator):
         Example for the anonymous turtle, i. e. the procedural way:
 
         >>> def turn(x, y):
-                left(360)
-
-        >>> onclick(turn) # Now clicking into the turtle will turn it.
+        ...     left(360)
+        ...
+        >>> onclick(turn)  # Now clicking into the turtle will turn it.
         >>> onclick(None)  # event-binding will be removed
         """
         self.screen._onclick(self.turtle._item, fun, btn, add)
@@ -3551,16 +3543,17 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a MyTurtle instance named joe):
         >>> class MyTurtle(Turtle):
-                def glow(self,x,y):
-                        self.fillcolor("red")
-                def unglow(self,x,y):
-                        self.fillcolor("")
-
+        ...     def glow(self,x,y):
+        ...             self.fillcolor("red")
+        ...     def unglow(self,x,y):
+        ...             self.fillcolor("")
+        ...
         >>> joe = MyTurtle()
         >>> joe.onclick(joe.glow)
         >>> joe.onrelease(joe.unglow)
-        ### clicking on joe turns fillcolor red,
-        ### unclicking turns it to transparent.
+
+        Clicking on joe turns fillcolor red, unclicking turns it to
+        transparent.
         """
         self.screen._onrelease(self.turtle._item, fun, btn, add)
         self._update()
@@ -3579,9 +3572,9 @@ class RawTurtle(TPen, TNavigator):
         Example (for a Turtle instance named turtle):
         >>> turtle.ondrag(turtle.goto)
 
-        ### Subsequently clicking and dragging a Turtle will
-        ### move it across the screen thereby producing handdrawings
-        ### (if pen is down).
+        Subsequently clicking and dragging a Turtle will move it
+        across the screen thereby producing handdrawings (if pen is
+        down).
         """
         self.screen._ondrag(self.turtle._item, fun, btn, add)
 
@@ -3629,10 +3622,11 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a Turtle instance named turtle):
         >>> for i in range(4):
-                turtle.fd(50); turtle.lt(80)
-
+        ...     turtle.fd(50); turtle.lt(80)
+        ...
         >>> for i in range(8):
-                turtle.undo()
+        ...     turtle.undo()
+        ...
         """
         if self.undobuffer is None:
             return
