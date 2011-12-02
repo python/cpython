@@ -79,6 +79,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13439: Fix many errors in turtle docstrings.
+
 - Issue #12856: Ensure child processes do not inherit the parent's random
   seed for filename generation in the tempfile module.  Patch by Brian
   Harring.
