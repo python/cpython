@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13439: Fix many errors in turtle docstrings.
+
 - Issue #13487: Make inspect.getmodule robust against changes done to
   sys.modules while it is iterating over it.
 
