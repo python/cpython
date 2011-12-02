@@ -399,6 +399,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13439: Fix many errors in turtle docstrings.
+
 - Issue #6715: Add a module 'lzma' for compression using the LZMA algorithm.
   Thanks to Per Øyvind Karlsen for the initial implementation.
 
