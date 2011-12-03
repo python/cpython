@@ -37,13 +37,7 @@ Writing C is hard; are there any alternatives?
 There are a number of alternatives to writing your own C extensions, depending
 on what you're trying to do.
 
-.. XXX make sure these all work; mention Cython
-
-If you need more speed, `Psyco <http://psyco.sourceforge.net/>`_ generates x86
-assembly code from Python bytecode.  You can use Psyco to compile the most
-time-critical functions in your code, and gain a significant improvement with
-very little effort, as long as you're running on a machine with an
-x86-compatible processor.
+.. XXX make sure these all work
 
 `Cython <http://cython.org>`_ and its relative `Pyrex
 <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_ are compilers
