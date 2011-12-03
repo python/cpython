@@ -34,11 +34,17 @@ also available for Python:
 
 .. seealso::
 
-   `PyGTK <http://www.pygtk.org/>`_
-      is a set of bindings for the `GTK <http://www.gtk.org/>`_ widget set. It
-      provides an object oriented interface that is slightly higher level than
-      the C one. It comes with many more widgets than Tkinter provides, and has
-      good Python-specific reference documentation. There are also bindings to
+   `PyGObject <https://live.gnome.org/PyGObject>`_
+      provides introspection bindings for C libraries using
+      `GObject <http://developer.gnome.org/gobject/stable/>`_.  One of
+      these libraries is the `GTK+ 3 <http://www.gtk.org/>`_ widget set.
+      GTK+ comes with many more widgets than Tkinter provides.  An online
+      `Python GTK+ 3 Tutorial <http://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_
+      is available.
+
+      `PyGTK <http://www.pygtk.org/>`_ provides bindings for an older version
+      of the library, GTK+ 2.  It provides an object oriented interface that
+      is slightly higher level than the C one.  There are also bindings to
       `GNOME <http://www.gnome.org>`_.  One well known PyGTK application is
       `PythonCAD <http://www.pythoncad.org/>`_. An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
