@@ -68,8 +68,12 @@ are available from `Nokia <http://qt.nokia.com/>`_.
 Gtk+
 ----
 
-PyGtk bindings for the `Gtk+ toolkit <http://www.gtk.org>`_ have been
-implemented by James Henstridge; see <http://www.pygtk.org>.
+The `GObject introspection bindings <https://live.gnome.org/PyGObject>`_
+for Python allow you to write GTK+ 3 applications.  There is also a
+`Python GTK+ 3 Tutorial <http://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_.
+
+The older PyGtk bindings for the `Gtk+ 2 toolkit <http://www.gtk.org>`_ have
+been implemented by James Henstridge; see <http://www.pygtk.org>.
 
 FLTK
 ----
