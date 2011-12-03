@@ -505,6 +505,18 @@ Otherwise it might very well be worth your time and effort to port your tests
 to :mod:`unittest`.
 
 
+Update `map` for imbalanced input sequences
+'''''''''''''''''''''''''''''''''''''''''''
+
+With Python 2, `map` would pad input sequences of unequal length with
+`None` values, returning a sequence as long as the longest input sequence.
+
+With Python 3, if the input sequences to `map` are of unequal length, `map`
+will stop at the termination of the shortest of the sequences. For full
+compatibility with `map` from Python 2.x, also wrap the sequences in
+:func:`itertools.zip_longest`, e.g. ``map(func, *sequences)`` becomes
+``list(map(func, itertools.zip_longest(*sequences)))``.
+
 Eliminate ``-3`` Warnings
 -------------------------
 
