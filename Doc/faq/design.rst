@@ -380,11 +380,24 @@ is exactly the same type of object that a lambda form yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-Not easily.  Python's high level data types, dynamic typing of objects and
+Practical answer:
+
+`Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
+compile a modified version of Python with optional annotations into C
+extensions.  `Weave <http://www.scipy.org/Weave>`_ makes it easy to
+intermingle Python and C code in various ways to increase performance.
+`Nuitka <http://www.nuitka.net/>`_ is an up-and-coming compiler of Python
+into C++ code, aiming to support the full Python language.
+
+Theoretical answer:
+
+   .. XXX not sure what to make of this
+
+Not trivially.  Python's high level data types, dynamic typing of objects and
 run-time invocation of the interpreter (using :func:`eval` or :func:`exec`)
-together mean that a "compiled" Python program would probably consist mostly of
-calls into the Python run-time system, even for seemingly simple operations like
-``x+1``.
+together mean that a naïvely "compiled" Python program would probably consist
+mostly of calls into the Python run-time system, even for seemingly simple
+operations like ``x+1``.
 
 Several projects described in the Python newsgroup or at past `Python
 conferences <http://python.org/community/workshops/>`_ have shown that this
@@ -394,34 +407,6 @@ Hugunin has demonstrated that in combination with whole-program analysis,
 speedups of 1000x are feasible for small demo programs.  See the proceedings
 from the `1997 Python conference
 <http://python.org/workshops/1997-10/proceedings/>`_ for more information.)
-
-Internally, Python source code is always translated into a bytecode
-representation, and this bytecode is then executed by the Python virtual
-machine.  In order to avoid the overhead of repeatedly parsing and translating
-modules that rarely change, this byte code is written into a file whose name
-ends in ".pyc" whenever a module is parsed.  When the corresponding .py file is
-changed, it is parsed and translated again and the .pyc file is rewritten.
-
-There is no performance difference once the .pyc file has been loaded, as the
-bytecode read from the .pyc file is exactly the same as the bytecode created by
-direct translation.  The only difference is that loading code from a .pyc file
-is faster than parsing and translating a .py file, so the presence of
-precompiled .pyc files improves the start-up time of Python scripts.  If
-desired, the Lib/compileall.py module can be used to create valid .pyc files for
-a given set of modules.
-
-Note that the main script executed by Python, even if its filename ends in .py,
-is not compiled to a .pyc file.  It is compiled to bytecode, but the bytecode is
-not saved to a file.  Usually main scripts are quite short, so this doesn't cost
-much speed.
-
-.. XXX check which of these projects are still alive
-
-There are also several programs which make it easier to intermingle Python and C
-code in various ways to increase performance.  See, for example, `Cython
-<http://cython.org/>`_, `Pyrex
-<http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_ and `Weave
-<http://www.scipy.org/Weave>`_.
 
 
 How does Python manage memory?
