@@ -679,61 +679,21 @@ are not truly operators but syntactic delimiters in assignment statements.
 Is there an equivalent of C's "?:" ternary operator?
 ----------------------------------------------------
 
-Yes, this feature was added in Python 2.5. The syntax would be as follows::
+Yes, there is. The syntax is as follows::
 
    [on_true] if [expression] else [on_false]
 
    x, y = 50, 25
-
    small = x if x < y else y
 
-For versions previous to 2.5 the answer would be 'No'.
+Before this syntax was introduced in Python 2.5, a common idiom was to use
+logical operators::
 
-.. XXX remove rest?
+   [expression] and [on_true] or [on_false]
 
-In many cases you can mimic ``a ? b : c`` with ``a and b or c``, but there's a
-flaw: if *b* is zero (or empty, or ``None`` -- anything that tests false) then
-*c* will be selected instead.  In many cases you can prove by looking at the
-code that this can't happen (e.g. because *b* is a constant or has a type that
-can never be false), but in general this can be a problem.
-
-Tim Peters (who wishes it was Steve Majewski) suggested the following solution:
-``(a and [b] or [c])[0]``.  Because ``[b]`` is a singleton list it is never
-false, so the wrong path is never taken; then applying ``[0]`` to the whole
-thing gets the *b* or *c* that you really wanted.  Ugly, but it gets you there
-in the rare cases where it is really inconvenient to rewrite your code using
-'if'.
-
-The best course is usually to write a simple ``if...else`` statement.  Another
-solution is to implement the ``?:`` operator as a function::
-
-   def q(cond, on_true, on_false):
-       if cond:
-           if not isfunction(on_true):
-               return on_true
-           else:
-               return on_true()
-       else:
-           if not isfunction(on_false):
-               return on_false
-           else:
-               return on_false()
-
-In most cases you'll pass b and c directly: ``q(a, b, c)``.  To avoid evaluating
-b or c when they shouldn't be, encapsulate them within a lambda function, e.g.:
-``q(a, lambda: b, lambda: c)``.
-
-It has been asked *why* Python has no if-then-else expression.  There are
-several answers: many languages do just fine without one; it can easily lead to
-less readable code; no sufficiently "Pythonic" syntax has been discovered; a
-search of the standard library found remarkably few places where using an
-if-then-else expression would make the code more understandable.
-
-In 2002, :pep:`308` was written proposing several possible syntaxes and the
-community was asked to vote on the issue.  The vote was inconclusive.  Most
-people liked one of the syntaxes, but also hated other syntaxes; many votes
-implied that people preferred no ternary operator rather than having a syntax
-they hated.
+However, this idiom is unsafe, as it can give wrong results when *on_true*
+has a false boolean value.  Therefore, it is always better to use
+the ``... if ... else ...`` form.
 
 
 Is it possible to write obfuscated one-liners in Python?
@@ -852,15 +812,21 @@ the :ref:`string-formatting` section, e.g. ``"{:04d}".format(144)`` yields
 How do I modify a string in place?
 ----------------------------------
 
-You can't, because strings are immutable.  If you need an object with this
-ability, try converting the string to a list or use the array module::
+You can't, because strings are immutable.  In most situations, you should
+simply construct a new string from the various parts you want to assemble
+it from.  However, if you need an object with the ability to modify in-place
+unicode data, try using a :class:`io.StringIO` object or the :mod:`array`
+module::
 
    >>> s = "Hello, world"
-   >>> a = list(s)
-   >>> print(a)
-   ['H', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd']
-   >>> a[7:] = list("there!")
-   >>> ''.join(a)
+   >>> sio = io.StringIO(s)
+   >>> sio.getvalue()
+   'Hello, world'
+   >>> sio.seek(7)
+   7
+   >>> sio.write("there!")
+   6
+   >>> sio.getvalue()
    'Hello, there!'
 
    >>> import array
