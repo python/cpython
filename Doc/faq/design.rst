@@ -413,66 +413,59 @@ How does Python manage memory?
 ------------------------------
 
 The details of Python memory management depend on the implementation.  The
-standard C implementation of Python uses reference counting to detect
-inaccessible objects, and another mechanism to collect reference cycles,
+standard implementation of Python, :term:`CPython`, uses reference counting to
+detect inaccessible objects, and another mechanism to collect reference cycles,
 periodically executing a cycle detection algorithm which looks for inaccessible
 cycles and deletes the objects involved. The :mod:`gc` module provides functions
 to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
-Jython relies on the Java runtime so the JVM's garbage collector is used.  This
-difference can cause some subtle porting problems if your Python code depends on
-the behavior of the reference counting implementation.
+Other implementations (such as `Jython <http://www.jython.org>`_ or
+`PyPy <http://www.pypy.org>`_), however, can rely on a different mechanism
+such as a full-blown garbage collector.  This difference can cause some
+subtle porting problems if your Python code depends on the behavior of the
+reference counting implementation.
 
-.. XXX relevant for Python 3?
-
-   Sometimes objects get stuck in traceback temporarily and hence are not
-   deallocated when you might expect.  Clear the traceback with::
-
-     import sys
-     sys.last_traceback = None
-
-   Tracebacks are used for reporting errors, implementing debuggers and related
-   things.  They contain a portion of the program state extracted during the
-   handling of an exception (usually the most recent exception).
-
-In the absence of circularities, Python programs do not need to manage memory
-explicitly.
-
-Why doesn't Python use a more traditional garbage collection scheme?  For one
-thing, this is not a C standard feature and hence it's not portable.  (Yes, we
-know about the Boehm GC library.  It has bits of assembler code for *most*
-common platforms, not for all of them, and although it is mostly transparent, it
-isn't completely transparent; patches are required to get Python to work with
-it.)
-
-Traditional GC also becomes a problem when Python is embedded into other
-applications.  While in a standalone Python it's fine to replace the standard
-malloc() and free() with versions provided by the GC library, an application
-embedding Python may want to have its *own* substitute for malloc() and free(),
-and may not want Python's.  Right now, Python works with anything that
-implements malloc() and free() properly.
-
-In Jython, the following code (which is fine in CPython) will probably run out
-of file descriptors long before it runs out of memory::
+In some Python implementations, the following code (which is fine in CPython)
+will probably run out of file descriptors::
 
    for file in very_long_list_of_files:
        f = open(file)
        c = f.read(1)
 
-Using the current reference counting and destructor scheme, each new assignment
-to f closes the previous file.  Using GC, this is not guaranteed.  If you want
-to write code that will work with any Python implementation, you should
-explicitly close the file or use the :keyword:`with` statement; this will work
-regardless of GC::
+Indeed, using CPython's reference counting and destructor scheme, each new
+assignment to *f* closes the previous file.  With a traditional GC, however,
+those file objects will only get collected (and closed) at varying and possibly
+long intervals.
+
+If you want to write code that will work with any Python implementation,
+you should explicitly close the file or use the :keyword:`with` statement;
+this will work regardless of memory management scheme::
 
    for file in very_long_list_of_files:
        with open(file) as f:
            c = f.read(1)
 
 
-Why isn't all memory freed when Python exits?
----------------------------------------------
+Why doesn't CPython use a more traditional garbage collection scheme?
+---------------------------------------------------------------------
+
+For one thing, this is not a C standard feature and hence it's not portable.
+(Yes, we know about the Boehm GC library.  It has bits of assembler code for
+*most* common platforms, not for all of them, and although it is mostly
+transparent, it isn't completely transparent; patches are required to get
+Python to work with it.)
+
+Traditional GC also becomes a problem when Python is embedded into other
+applications.  While in a standalone Python it's fine to replace the standard
+malloc() and free() with versions provided by the GC library, an application
+embedding Python may want to have its *own* substitute for malloc() and free(),
+and may not want Python's.  Right now, CPython works with anything that
+implements malloc() and free() properly.
+
+
+Why isn't all memory freed when CPython exits?
+----------------------------------------------
 
 Objects referenced from the global namespaces of Python modules are not always
 deallocated when Python exits.  This may happen if there are circular
