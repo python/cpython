@@ -61,6 +61,11 @@ also available for Python:
       with Python and Qt <http://www.qtrac.eu/pyqtbook.html>`_, by Mark
       Summerfield.
 
+   `PySide <http://www.pyside.org/>`_
+      is a newer binding to the Qt toolkit, provided by Nokia.
+      Compared to PyQt, its licensing scheme is friendlier to non-open source
+      applications.
+
    `wxPython <http://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <http://www.wxwidgets.org/>`_ (formerly wxWindows)
