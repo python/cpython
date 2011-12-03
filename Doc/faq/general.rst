@@ -19,7 +19,7 @@ It has interfaces to many system calls and libraries, as well as to various
 window systems, and is extensible in C or C++.  It is also usable as an
 extension language for applications that need a programmable interface.
 Finally, Python is portable: it runs on many Unix variants, on the Mac, and on
-PCs under MS-DOS, Windows, Windows NT, and OS/2.
+Windows 2000 and later.
 
 To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
 Python <http://wiki.python.org/moin/BeginnersGuide>`_ links to other
