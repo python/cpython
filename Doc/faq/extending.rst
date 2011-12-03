@@ -142,21 +142,30 @@ this object to :data:`sys.stdout` and :data:`sys.stderr`.  Call print_error, or
 just allow the standard traceback mechanism to work. Then, the output will go
 wherever your ``write()`` method sends it.
 
-The easiest way to do this is to use the StringIO class in the standard library.
+The easiest way to do this is to use the :class:`io.StringIO` class::
 
-Sample code and use for catching stdout:
+   >>> import io, sys
+   >>> sys.stdout = io.StringIO()
+   >>> print('foo')
+   >>> print('hello world!')
+   >>> sys.stderr.write(sys.stdout.getvalue())
+   foo
+   hello world!
 
-   >>> class StdoutCatcher:
+A custom object to do the same would look like this::
+
+   >>> import io, sys
+   >>> class StdoutCatcher(io.TextIOBase):
    ...     def __init__(self):
-   ...         self.data = ''
+   ...         self.data = []
    ...     def write(self, stuff):
-   ...         self.data = self.data + stuff
+   ...         self.data.append(stuff)
    ...
    >>> import sys
    >>> sys.stdout = StdoutCatcher()
    >>> print('foo')
    >>> print('hello world!')
-   >>> sys.stderr.write(sys.stdout.data)
+   >>> sys.stderr.write(''.join(sys.stdout.data))
    foo
    hello world!
 
