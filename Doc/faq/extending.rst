@@ -99,12 +99,7 @@ many other useful protocols.
 How do I use Py_BuildValue() to create a tuple of arbitrary length?
 -------------------------------------------------------------------
 
-You can't.  Use ``t = PyTuple_New(n)`` instead, and fill it with objects using
-``PyTuple_SetItem(t, i, o)`` -- note that this "eats" a reference count of
-``o``, so you have to :c:func:`Py_INCREF` it.  Lists have similar functions
-``PyList_New(n)`` and ``PyList_SetItem(l, i, o)``.  Note that you *must* set all
-the tuple items to some value before you pass the tuple to Python code --
-``PyTuple_New(n)`` initializes them to NULL, which isn't a valid Python value.
+You can't.  Use :c:func:`PyTuple_Pack` instead.
 
 
 How do I call an object's method from C?
