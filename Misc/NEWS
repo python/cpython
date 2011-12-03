@@ -316,6 +316,9 @@ Extension Modules
 Documentation
 -------------
 
+- Issue #13513: Fix io.IOBase documentation to correctly link to the
+  io.IOBase.readline method instead of the readline module.
+
 - Issue #13237: Reorganise subprocess documentation to emphasise convenience
   functions and the most commonly needed arguments to Popen.
 
