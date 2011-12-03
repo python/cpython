@@ -213,7 +213,7 @@ I/O Base Classes
    :class:`IOBase` object can be iterated over yielding the lines in a stream.
    Lines are defined slightly differently depending on whether the stream is
    a binary stream (yielding bytes), or a text stream (yielding character
-   strings).  See :meth:`readline` below.
+   strings).  See :meth:`~IOBase.readline` below.
 
    IOBase is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
