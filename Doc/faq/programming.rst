@@ -901,11 +901,11 @@ There are various techniques.
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
 
-Starting with Python 2.2, you can use ``S.rstrip("\r\n")`` to remove all
-occurrences of any line terminator from the end of the string ``S`` without
-removing other trailing whitespace.  If the string ``S`` represents more than
-one line, with several empty lines at the end, the line terminators for all the
-blank lines will be removed::
+You can use ``S.rstrip("\r\n")`` to remove all occurrences of any line
+terminator from the end of the string ``S`` without removing other trailing
+whitespace.  If the string ``S`` represents more than one line, with several
+empty lines at the end, the line terminators for all the blank lines will
+be removed::
 
    >>> lines = ("line 1 \r\n"
    ...          "\r\n"
@@ -915,15 +915,6 @@ blank lines will be removed::
 
 Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
-
-For older versions of Python, there are two partial substitutes:
-
-- If you want to remove all trailing whitespace, use the ``rstrip()`` method of
-  string objects.  This removes all trailing whitespace, not just a single
-  newline.
-
-- Otherwise, if there is only one line in the string ``S``, use
-  ``S.splitlines()[0]``.
 
 
 Is there a scanf() or sscanf() equivalent?
@@ -1042,15 +1033,8 @@ list, deleting duplicates as you go::
            else:
                last = mylist[i]
 
-If all elements of the list may be used as dictionary keys (i.e. they are all
-hashable) this is often faster ::
-
-   d = {}
-   for x in mylist:
-       d[x] = 1
-   mylist = list(d.keys())
-
-In Python 2.5 and later, the following is possible instead::
+If all elements of the list may be used as set keys (i.e. they are all
+:term:`hashable`) this is often faster ::
 
    mylist = list(set(mylist))
 
@@ -1420,15 +1404,7 @@ not::
 
    C.count = 314
 
-Static methods are possible since Python 2.2::
-
-   class C:
-       def static(arg1, arg2, arg3):
-           # No 'self' parameter!
-           ...
-       static = staticmethod(static)
-
-With Python 2.4's decorators, this can also be written as ::
+Static methods are possible::
 
    class C:
        @staticmethod
