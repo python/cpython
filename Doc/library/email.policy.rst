@@ -48,16 +48,18 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system::
    >>> import email.policy
    >>> from subprocess import Popen, PIPE
    >>> with open('mymsg.txt', 'b') as f:
-   ...     Msg = msg_from_binary_file(f, policy=email.policy.mbox)
+   ...     msg = msg_from_binary_file(f, policy=email.policy.mbox)
    >>> p = Popen(['sendmail', msg['To'][0].address], stdin=PIPE)
    >>> g = BytesGenerator(p.stdin, policy=email.policy.SMTP)
    >>> g.flatten(msg)
    >>> p.stdin.close()
    >>> rc = p.wait()
 
+.. XXX email.policy.mbox/MBOX does not exist yet
+
 Some email package methods accept a *policy* keyword argument, allowing the
 policy to be overridden for that method.  For example, the following code uses
-the :meth:`email.message.Message.as_string` method of the *msg* object from the
+the :meth:`~email.message.Message.as_string` method of the *msg* object from the
 previous example and re-write it to a file using the native line separators for
 the platform on which it is running::
 
