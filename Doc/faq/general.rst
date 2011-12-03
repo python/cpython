@@ -469,38 +469,3 @@ http://www.python.org/editors/ for a full list of Python editing environments.
 If you want to discuss Python's use in education, you may be interested in
 joining `the edu-sig mailing list
 <http://python.org/community/sigs/current/edu-sig>`_.
-
-
-Upgrading Python
-================
-
-What is this bsddb185 module my application keeps complaining about?
---------------------------------------------------------------------
-
-.. XXX remove this question?
-
-Starting with Python2.3, the distribution includes the `PyBSDDB package
-<http://pybsddb.sf.net/>` as a replacement for the old bsddb module.  It
-includes functions which provide backward compatibility at the API level, but
-requires a newer version of the underlying `Berkeley DB
-<http://www.sleepycat.com>`_ library.  Files created with the older bsddb module
-can't be opened directly using the new module.
-
-Using your old version of Python and a pair of scripts which are part of Python
-2.3 (db2pickle.py and pickle2db.py, in the Tools/scripts directory) you can
-convert your old database files to the new format.  Using your old Python
-version, run the db2pickle.py script to convert it to a pickle, e.g.::
-
-   python2.2 <pathto>/db2pickley.py database.db database.pck
-
-Rename your database file::
-
-   mv database.db olddatabase.db
-
-Now convert the pickle file to a new format database::
-
-   python <pathto>/pickle2db.py database.db database.pck
-
-The precise commands you use will vary depending on the particulars of your
-installation.  For full details about operation of these two scripts check the
-doc string at the start of each one.
