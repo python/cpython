@@ -121,19 +121,11 @@ My program is too slow. How do I speed it up?
 That's a tough one, in general.  There are many tricks to speed up Python code;
 consider rewriting parts in C as a last resort.
 
-In some cases it's possible to automatically translate Python to C or x86
-assembly language, meaning that you don't have to modify your code to gain
-increased speed.
-
-.. XXX seems to have overlap with other questions!
-
 `Cython <http://cython.org>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
 can compile a slightly modified version of Python code into a C extension, and
-can be used on many different platforms.
-
-`Psyco <http://psyco.sourceforge.net>`_ is a just-in-time compiler that
-translates Python code into x86 assembly language.  If you can use it, Psyco can
-provide dramatic speedups for critical functions.
+can be used on many different platforms.  Depending on your code, Cython
+may be able to make it significantly faster than when run by the Python
+interpreter.
 
 The rest of this answer will discuss various tricks for squeezing a bit more
 speed out of Python code.  *Never* apply any optimization tricks unless you know
