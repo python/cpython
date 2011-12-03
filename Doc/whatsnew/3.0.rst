@@ -154,13 +154,21 @@ Some well-known APIs no longer return lists:
   :meth:`dict.itervalues` methods are no longer supported.
 
 * :func:`map` and :func:`filter` return iterators.  If you really need
-  a list, a quick fix is e.g.  ``list(map(...))``, but a better fix is
+  a list and the input sequences are all of equal length, a quick
+  fix is to wrap :func:`map` in :func:`list`, e.g. ``list(map(...))``,
+  but a better fix is
   often to use a list comprehension (especially when the original code
   uses :keyword:`lambda`), or rewriting the code so it doesn't need a
   list at all.  Particularly tricky is :func:`map` invoked for the
   side effects of the function; the correct transformation is to use a
   regular :keyword:`for` loop (since creating a list would just be
   wasteful).
+
+  If the input sequences are not of equal length, :func:`map` will
+  stop at the termination of the shortest of the sequences. For full
+  compatibility with `map` from Python 2.x, also wrap the sequences in
+  :func:`itertools.zip_longest`, e.g. ``map(func, *sequences)`` becomes
+  ``list(map(func, itertools.zip_longest(*sequences)))``.
 
 * :func:`range` now behaves like :func:`xrange` used to behave, except
   it works with values of arbitrary size.  The latter no longer
