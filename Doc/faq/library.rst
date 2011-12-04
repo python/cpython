@@ -814,52 +814,6 @@ than a third of a second.  This often beats doing something more complex and
 general such as using gdbm with pickle/shelve.
 
 
-If my program crashes with a bsddb (or anydbm) database open, it gets corrupted. How come?
-------------------------------------------------------------------------------------------
-
-.. XXX move this FAQ entry elsewhere?
-
-.. note::
-
-   The bsddb module is now available as a standalone package `pybsddb
-   <http://www.jcea.es/programacion/pybsddb.htm>`_.
-
-Databases opened for write access with the bsddb module (and often by the anydbm
-module, since it will preferentially use bsddb) must explicitly be closed using
-the ``.close()`` method of the database.  The underlying library caches database
-contents which need to be converted to on-disk form and written.
-
-If you have initialized a new bsddb database but not written anything to it
-before the program crashes, you will often wind up with a zero-length file and
-encounter an exception the next time the file is opened.
-
-
-I tried to open Berkeley DB file, but bsddb produces bsddb.error: (22, 'Invalid argument'). Help! How can I restore my data?
-----------------------------------------------------------------------------------------------------------------------------
-
-.. XXX move this FAQ entry elsewhere?
-
-.. note::
-
-   The bsddb module is now available as a standalone package `pybsddb
-   <http://www.jcea.es/programacion/pybsddb.htm>`_.
-
-Don't panic! Your data is probably intact. The most frequent cause for the error
-is that you tried to open an earlier Berkeley DB file with a later version of
-the Berkeley DB library.
-
-Many Linux systems now have all three versions of Berkeley DB available.  If you
-are migrating from version 1 to a newer version use db_dump185 to dump a plain
-text version of the database.  If you are migrating from version 2 to version 3
-use db2_dump to create a plain text version of the database.  In either case,
-use db_load to create a new native database for the latest version installed on
-your computer.  If you have version 3 of Berkeley DB installed, you should be
-able to use db2_load to create a native version 2 database.
-
-You should move away from Berkeley DB version 1 files because the hash file code
-contains known bugs that can corrupt your data.
-
-
 Mathematics and Numerics
 ========================
 
