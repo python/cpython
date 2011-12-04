@@ -1456,7 +1456,7 @@ def test_HTTPError_interface():
 
     >>> msg = 'something bad happened'
     >>> url = code = hdrs = fp = None
-    >>> err = urllib.error.HTTPError(msg, url, code, hdrs, fp)
+    >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
     >>> assert hasattr(err, 'reason')
     >>> err.reason
     'something bad happened'
