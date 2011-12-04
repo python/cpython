@@ -1454,7 +1454,9 @@ def test_HTTPError_interface():
     Issue 13211 reveals that HTTPError didn't implement the URLError
     interface even though HTTPError is a subclass of URLError.
 
-    >>> err = urllib.error.HTTPError(msg='something bad happened', url=None, code=None, hdrs=None, fp=None)
+    >>> msg = 'something bad happened'
+    >>> url = code = hdrs = fp = None
+    >>> err = urllib.error.HTTPError(msg, url, code, hdrs, fp)
     >>> assert hasattr(err, 'reason')
     >>> err.reason
     'something bad happened'
