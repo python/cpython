@@ -298,7 +298,7 @@ When Sockets Die
 
 Probably the worst thing about using blocking sockets is what happens when the
 other side comes down hard (without doing a ``close``). Your socket is likely to
-hang. SOCKSTREAM is a reliable protocol, and it will wait a long, long time
+hang. TCP is a reliable protocol, and it will wait a long, long time
 before giving up on a connection. If you're using threads, the entire thread is
 essentially dead. There's not much you can do about it. As long as you aren't
 doing something dumb, like holding a lock while doing a blocking read, the
