@@ -552,7 +552,6 @@ should only be used on systems where undecodable file names can be present,
 i.e. Unix systems.
 
 
-
 Tips for Writing Unicode-aware Programs
 ---------------------------------------
 
@@ -572,28 +571,12 @@ you do e.g. ``str + bytes``, a :exc:`TypeError` is raised for this expression.
 When using data coming from a web browser or some other untrusted source, a
 common technique is to check for illegal characters in a string before using the
 string in a generated command line or storing it in a database.  If you're doing
-this, be careful to check the string once it's in the form that will be used or
-stored; it's possible for encodings to be used to disguise characters.  This is
-especially true if the input data also specifies the encoding; many encodings
-leave the commonly checked-for characters alone, but Python includes some
-encodings such as ``'base64'`` that modify every single character.
+this, be careful to check the decoded string, not the encoded bytes data;
+some encodings may have interesting properties, such as not being bijective
+or not being fully ASCII-compatible.  This is especially true if the input
+data also specifies the encoding, since the attacker can then choose a
+clever way to hide malicious text in the encoded bytestream.
 
-For example, let's say you have a content management system that takes a Unicode
-filename, and you want to disallow paths with a '/' character.  You might write
-this code::
-
-    def read_file(filename, encoding):
-        if '/' in filename:
-            raise ValueError("'/' not allowed in filenames")
-        unicode_name = filename.decode(encoding)
-        with open(unicode_name, 'r') as f:
-            # ... return contents of file ...
-
-However, if an attacker could specify the ``'base64'`` encoding, they could pass
-``'L2V0Yy9wYXNzd2Q='``, which is the base-64 encoded form of the string
-``'/etc/passwd'``, to read a system file.  The above code looks for ``'/'``
-characters in the encoded form and misses the dangerous character in the
-resulting decoded form.
 
 References
 ----------
