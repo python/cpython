@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #11147: Fix an unused argument in _Py_ANNOTATE_MEMORY_ORDER.  (Fix
+  given by Campbell Barton).
+
 - Issue #7111: Python can now be run without a stdin, stdout or stderr
   stream.  It was already the case with Python 2.  However, the corresponding
   sys module entries are now set to None (instead of an unusable file object).
