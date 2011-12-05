@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11147: Fix an unused argument in _Py_ANNOTATE_MEMORY_ORDER.  (Fix
+  given by Campbell Barton).
+
 - Issue #13503: Use a more efficient reduction format for bytearrays with
   pickle protocol >= 3.  The old reduction format is kept with older protocols
   in order to allow unpickling under Python 2.  Patch by Irmen de Jong.
