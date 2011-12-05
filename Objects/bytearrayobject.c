@@ -2725,19 +2725,12 @@ bytearray_fromhex(PyObject *cls, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-bytearray_reduce(PyByteArrayObject *self)
+_common_reduce(PyByteArrayObject *self, int proto)
 {
-    PyObject *latin1, *dict;
+    PyObject *dict;
     _Py_IDENTIFIER(__dict__);
-
-    if (self->ob_bytes)
-        latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
-                                        Py_SIZE(self), NULL);
-    else
-        latin1 = PyUnicode_FromString("");
 
     dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
     if (dict == NULL) {
@@ -2746,7 +2739,45 @@ bytearray_reduce(PyByteArrayObject *self)
         Py_INCREF(dict);
     }
 
-    return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
+    if (proto < 3) {
+        /* use str based reduction for backwards compatibility with Python 2.x */
+        PyObject *latin1;
+        if (self->ob_bytes)
+            latin1 = PyUnicode_DecodeLatin1(self->ob_bytes, Py_SIZE(self), NULL);
+        else
+            latin1 = PyUnicode_FromString("");
+        return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
+    }
+    else {
+        /* use more efficient byte based reduction */
+        if (self->ob_bytes) {
+            return Py_BuildValue("(O(y#)N)", Py_TYPE(self), self->ob_bytes, Py_SIZE(self), dict);
+        }
+        else {
+            return Py_BuildValue("(O()N)", Py_TYPE(self), dict);
+        }
+    }
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+bytearray_reduce(PyByteArrayObject *self)
+{
+    return _common_reduce(self, 2);
+}
+
+PyDoc_STRVAR(reduce_ex_doc, "Return state information for pickling.");
+
+static PyObject *
+bytearray_reduce_ex(PyByteArrayObject *self, PyObject *args)
+{
+    int proto = 0;
+
+    if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
+        return NULL;
+
+    return _common_reduce(self, proto);
 }
 
 PyDoc_STRVAR(sizeof_doc,
@@ -2790,6 +2821,7 @@ static PyMethodDef
 bytearray_methods[] = {
     {"__alloc__", (PyCFunction)bytearray_alloc, METH_NOARGS, alloc_doc},
     {"__reduce__", (PyCFunction)bytearray_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce_ex__", (PyCFunction)bytearray_reduce_ex, METH_VARARGS, reduce_ex_doc},
     {"__sizeof__", (PyCFunction)bytearray_sizeof, METH_NOARGS, sizeof_doc},
     {"append", (PyCFunction)bytearray_append, METH_O, append__doc__},
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,

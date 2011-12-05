@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13503: Use a more efficient reduction format for bytearrays with
+  pickle protocol >= 3.  The old reduction format is kept with older protocols
+  in order to allow unpickling under Python 2.  Patch by Irmen de Jong.
+
 - Issue #7111: Python can now be run without a stdin, stdout or stderr
   stream.  It was already the case with Python 2.  However, the corresponding
   sys module entries are now set to None (instead of an unusable file object).
