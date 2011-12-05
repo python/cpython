@@ -395,19 +395,13 @@ Performance
 
 There's no question that the fastest sockets code uses non-blocking sockets and
 select to multiplex them. You can put together something that will saturate a
-LAN connection without putting any strain on the CPU. The trouble is that an app
-written this way can't do much of anything else - it needs to be ready to
-shuffle bytes around at all times.
+LAN connection without putting any strain on the CPU.
 
-Assuming that your app is actually supposed to do something more than that,
-threading is the optimal solution, (and using non-blocking sockets will be
-faster than using blocking sockets). Unfortunately, threading support in Unixes
-varies both in API and quality. So the normal Unix solution is to fork a
-subprocess to deal with each connection. The overhead for this is significant
-(and don't do this on Windows - the overhead of process creation is enormous
-there). It also means that unless each subprocess is completely independent,
-you'll need to use another form of IPC, say a pipe, or shared memory and
-semaphores, to communicate between the parent and child processes.
+The trouble is that an app written this way can't do much of anything else -
+it needs to be ready to shuffle bytes around at all times. Assuming that your
+app is actually supposed to do something more than that, threading is the
+optimal solution, (and using non-blocking sockets will be faster than using
+blocking sockets).
 
 Finally, remember that even though blocking sockets are somewhat slower than
 non-blocking, in many cases they are the "right" solution. After all, if your
