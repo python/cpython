@@ -60,11 +60,10 @@ Creating a Socket
 Roughly speaking, when you clicked on the link that brought you to this page,
 your browser did something like the following::
 
-   #create an INET, STREAMing socket
+   # create an INET, STREAMing socket
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   #now connect to the web server on port 80
-   # - the normal http port
-   s.connect(("www.mcmillan-inc.com", 80))
+   # now connect to the web server on port 80 - the normal http port
+   s.connect(("www.python.org", 80))
 
 When the ``connect`` completes, the socket ``s`` can be used to send
 in a request for the text of the page. The same socket will read the
@@ -75,13 +74,11 @@ exchanges).
 What happens in the web server is a bit more complex. First, the web server
 creates a "server socket"::
 
-   #create an INET, STREAMing socket
-   serversocket = socket.socket(
-       socket.AF_INET, socket.SOCK_STREAM)
-   #bind the socket to a public host,
-   # and a well-known port
+   # create an INET, STREAMing socket
+   serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   # bind the socket to a public host, and a well-known port
    serversocket.bind((socket.gethostname(), 80))
-   #become a server socket
+   # become a server socket
    serversocket.listen(5)
 
 A couple things to notice: we used ``socket.gethostname()`` so that the socket
@@ -101,10 +98,10 @@ Now that we have a "server" socket, listening on port 80, we can enter the
 mainloop of the web server::
 
    while True:
-       #accept connections from outside
+       # accept connections from outside
        (clientsocket, address) = serversocket.accept()
-       #now do something with the clientsocket
-       #in this case, we'll pretend this is a threaded server
+       # now do something with the clientsocket
+       # in this case, we'll pretend this is a threaded server
        ct = client_thread(clientsocket)
        ct.run()
 
