@@ -123,12 +123,13 @@ IPC
 ---
 
 If you need fast IPC between two processes on one machine, you should look into
-whatever form of shared memory the platform offers. A simple protocol based
-around shared memory and locks or semaphores is by far the fastest technique.
+pipes or shared memory.  If you do decide to use AF_INET sockets, bind the
+"server" socket to ``'localhost'``. On most platforms, this will take a
+shortcut around a couple of layers of network code and be quite a bit faster.
 
-If you do decide to use sockets, bind the "server" socket to ``'localhost'``. On
-most platforms, this will take a shortcut around a couple of layers of network
-code and be quite a bit faster.
+.. seealso::
+   The :mod:`multiprocessing` integrates cross-platform IPC into a higher-level
+   API.
 
 
 Using a Socket
