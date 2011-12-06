@@ -502,6 +502,12 @@ statement.
 
    Reads and returns the response body, or up to the next *amt* bytes.
 
+.. method:: HTTPResponse.readinto(b)
+
+   Reads up to the next len(b) bytes of the response body into the buffer *b*.
+   Returns the number of bytes read.
+
+   .. versionadded:: 3.3
 
 .. method:: HTTPResponse.getheader(name, default=None)
 
