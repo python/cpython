@@ -632,66 +632,6 @@ class _StreamProxy(object):
         self.fileobj.close()
 # class StreamProxy
 
-class _BZ2Proxy(object):
-    """Small proxy class that enables external file object
-       support for "r:bz2" and "w:bz2" modes. This is actually
-       a workaround for a limitation in bz2 module's BZ2File
-       class which (unlike gzip.GzipFile) has no support for
-       a file object argument.
-    """
-
-    blocksize = 16 * 1024
-
-    def __init__(self, fileobj, mode):
-        self.fileobj = fileobj
-        self.mode = mode
-        self.name = getattr(self.fileobj, "name", None)
-        self.init()
-
-    def init(self):
-        import bz2
-        self.pos = 0
-        if self.mode == "r":
-            self.bz2obj = bz2.BZ2Decompressor()
-            self.fileobj.seek(0)
-            self.buf = b""
-        else:
-            self.bz2obj = bz2.BZ2Compressor()
-
-    def read(self, size):
-        x = len(self.buf)
-        while x < size:
-            raw = self.fileobj.read(self.blocksize)
-            if not raw:
-                break
-            data = self.bz2obj.decompress(raw)
-            self.buf += data
-            x += len(data)
-
-        buf = self.buf[:size]
-        self.buf = self.buf[size:]
-        self.pos += len(buf)
-        return buf
-
-    def seek(self, pos):
-        if pos < self.pos:
-            self.init()
-        self.read(pos - self.pos)
-
-    def tell(self):
-        return self.pos
-
-    def write(self, data):
-        self.pos += len(data)
-        raw = self.bz2obj.compress(data)
-        self.fileobj.write(raw)
-
-    def close(self):
-        if self.mode == "w":
-            raw = self.bz2obj.flush()
-            self.fileobj.write(raw)
-# class _BZ2Proxy
-
 #------------------------
 # Extraction file object
 #------------------------
@@ -1829,10 +1769,8 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        if fileobj is not None:
-            fileobj = _BZ2Proxy(fileobj, mode)
-        else:
-            fileobj = bz2.BZ2File(name, mode, compresslevel=compresslevel)
+        fileobj = bz2.BZ2File(filename=name if fileobj is None else None,
+                mode=mode, fileobj=fileobj, compresslevel=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
