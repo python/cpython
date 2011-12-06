@@ -624,7 +624,7 @@ class _StreamProxy(object):
     def getcomptype(self):
         if self.buf.startswith(b"\037\213\010"):
             return "gz"
-        if self.buf.startswith(b"BZh91"):
+        if self.buf[0:3] == b"BZh" and self.buf[4:10] == b"1AY&SY":
             return "bz2"
         return "tar"
 
