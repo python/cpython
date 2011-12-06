@@ -222,6 +222,9 @@ class CommonReadTest(ReadTest):
 class MiscReadTest(CommonReadTest):
 
     def test_no_name_argument(self):
+        if self.mode.endswith("bz2"):
+            # BZ2File has no name attribute.
+            return
         with open(self.tarname, "rb") as fobj:
             tar = tarfile.open(fileobj=fobj, mode=self.mode)
             self.assertEqual(tar.name, os.path.abspath(fobj.name))
