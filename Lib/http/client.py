@@ -485,11 +485,17 @@ class HTTPResponse(io.RawIOBase):
             self.close()
             return b""
 
-        if self.chunked:
-            return self._read_chunked(amt)
+        if amt is not None:
+            # Amount is given, so call base class version
+            # (which is implemented in terms of self.readinto)
+            return super(HTTPResponse, self).read(amt)
+        else:
+            # Amount is not given (unbounded read) so we must check self.length
+            # and self.chunked
 
-        if amt is None:
-            # unbounded read
+            if self.chunked:
+                return self._readall_chunked()
+
             if self.length is None:
                 s = self.fp.read()
             else:
@@ -498,61 +504,49 @@ class HTTPResponse(io.RawIOBase):
             self.close()        # we read everything
             return s
 
+    def readinto(self, b):
+        if self.fp is None:
+            return 0
+
+        if self._method == "HEAD":
+            self.close()
+            return 0
+
+        if self.chunked:
+            return self._readinto_chunked(b)
+
         if self.length is not None:
-            if amt > self.length:
+            if len(b) > self.length:
                 # clip the read to the "end of response"
-                amt = self.length
+                b = memoryview(b)[0:self.length]
 
         # we do not use _safe_read() here because this may be a .will_close
         # connection, and the user is reading more bytes than will be provided
         # (for example, reading in 1k chunks)
-        s = self.fp.read(amt)
+        n = self.fp.readinto(b)
         if self.length is not None:
-            self.length -= len(s)
+            self.length -= n
             if not self.length:
                 self.close()
-        return s
+        return n
 
-    def _read_chunked(self, amt):
-        assert self.chunked != _UNKNOWN
-        chunk_left = self.chunk_left
-        value = []
-        while True:
-            if chunk_left is None:
-                line = self.fp.readline(_MAXLINE + 1)
-                if len(line) > _MAXLINE:
-                    raise LineTooLong("chunk size")
-                i = line.find(b";")
-                if i >= 0:
-                    line = line[:i] # strip chunk-extensions
-                try:
-                    chunk_left = int(line, 16)
-                except ValueError:
-                    # close the connection as protocol synchronisation is
-                    # probably lost
-                    self.close()
-                    raise IncompleteRead(b''.join(value))
-                if chunk_left == 0:
-                    break
-            if amt is None:
-                value.append(self._safe_read(chunk_left))
-            elif amt < chunk_left:
-                value.append(self._safe_read(amt))
-                self.chunk_left = chunk_left - amt
-                return b''.join(value)
-            elif amt == chunk_left:
-                value.append(self._safe_read(amt))
-                self._safe_read(2)  # toss the CRLF at the end of the chunk
-                self.chunk_left = None
-                return b''.join(value)
-            else:
-                value.append(self._safe_read(chunk_left))
-                amt -= chunk_left
+    def _read_next_chunk_size(self):
+        # Read the next chunk size from the file
+        line = self.fp.readline(_MAXLINE + 1)
+        if len(line) > _MAXLINE:
+            raise LineTooLong("chunk size")
+        i = line.find(b";")
+        if i >= 0:
+            line = line[:i] # strip chunk-extensions
+        try:
+            return int(line, 16)
+        except ValueError:
+            # close the connection as protocol synchronisation is
+            # probably lost
+            self.close()
+            raise
 
-            # we read the whole chunk, get another
-            self._safe_read(2)      # toss the CRLF at the end of the chunk
-            chunk_left = None
-
+    def _read_and_discard_trailer(self):
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
         while True:
@@ -566,10 +560,71 @@ class HTTPResponse(io.RawIOBase):
             if line == b"\r\n":
                 break
 
+    def _readall_chunked(self):
+        assert self.chunked != _UNKNOWN
+        chunk_left = self.chunk_left
+        value = []
+        while True:
+            if chunk_left is None:
+                try:
+                    chunk_left = self._read_next_chunk_size()
+                    if chunk_left == 0:
+                        break
+                except ValueError:
+                    raise IncompleteRead(b''.join(value))
+            value.append(self._safe_read(chunk_left))
+
+            # we read the whole chunk, get another
+            self._safe_read(2)      # toss the CRLF at the end of the chunk
+            chunk_left = None
+
+        self._read_and_discard_trailer()
+
         # we read everything; close the "file"
         self.close()
 
         return b''.join(value)
+
+    def _readinto_chunked(self, b):
+        assert self.chunked != _UNKNOWN
+        chunk_left = self.chunk_left
+
+        total_bytes = 0
+        mvb = memoryview(b)
+        while True:
+            if chunk_left is None:
+                try:
+                    chunk_left = self._read_next_chunk_size()
+                    if chunk_left == 0:
+                        break
+                except ValueError:
+                    raise IncompleteRead(bytes(b[0:total_bytes]))
+                    
+            if len(mvb) < chunk_left:
+                n = self._safe_readinto(mvb)
+                self.chunk_left = chunk_left - n
+                return n
+            elif len(mvb) == chunk_left:
+                n = self._safe_readinto(mvb)
+                self._safe_read(2)  # toss the CRLF at the end of the chunk
+                self.chunk_left = None
+                return n
+            else:
+                temp_mvb = mvb[0:chunk_left]
+                n = self._safe_readinto(temp_mvb)
+                mvb = mvb[n:]
+                total_bytes += n
+
+            # we read the whole chunk, get another
+            self._safe_read(2)      # toss the CRLF at the end of the chunk
+            chunk_left = None
+
+        self._read_and_discard_trailer()
+
+        # we read everything; close the "file"
+        self.close()
+
+        return total_bytes
 
     def _safe_read(self, amt):
         """Read the number of bytes requested, compensating for partial reads.
@@ -593,6 +648,22 @@ class HTTPResponse(io.RawIOBase):
             s.append(chunk)
             amt -= len(chunk)
         return b"".join(s)
+
+    def _safe_readinto(self, b):
+        """Same as _safe_read, but for reading into a buffer."""
+        total_bytes = 0
+        mvb = memoryview(b)
+        while total_bytes < len(b):
+            if MAXAMOUNT < len(mvb):
+                temp_mvb = mvb[0:MAXAMOUNT]
+                n = self.fp.readinto(temp_mvb)
+            else:
+                n = self.fp.readinto(mvb)
+            if not n:
+                raise IncompleteRead(bytes(mvb[0:total_bytes]), len(b))
+            mvb = mvb[n:]
+            total_bytes += n
+        return total_bytes
 
     def fileno(self):
         return self.fp.fileno()
