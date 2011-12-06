@@ -406,6 +406,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13464: Add a readinto() method to http.client.HTTPResponse.  Patch
+  by Jon Kuhn.
+
 - tarfile.py: Correctly detect bzip2 compressed streams with blocksizes
   other than 900k.
 
