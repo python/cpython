@@ -529,6 +529,23 @@ class DetectReadTest(unittest.TestCase):
     def test_detect_fileobj(self):
         self._test_modes(self._testfunc_fileobj)
 
+    def test_detect_stream_bz2(self):
+        # Originally, tarfile's stream detection looked for the string
+        # "BZh91" at the start of the file. This is incorrect because
+        # the '9' represents the blocksize (900kB). If the file was
+        # compressed using another blocksize autodetection fails.
+        if not bz2:
+            return
+
+        with open(tarname, "rb") as fobj:
+            data = fobj.read()
+
+        # Compress with blocksize 100kB, the file starts with "BZh11".
+        with bz2.BZ2File(tmpname, "wb", compresslevel=1) as fobj:
+            fobj.write(data)
+
+        self._testfunc_file(tmpname, "r|*")
+
 
 class MemberReadTest(ReadTest):
 
@@ -1818,11 +1835,8 @@ def test_main():
     if bz2:
         # Create testtar.tar.bz2 and add bz2-specific tests.
         support.unlink(bz2name)
-        tar = bz2.BZ2File(bz2name, "wb")
-        try:
+        with bz2.BZ2File(bz2name, "wb") as tar:
             tar.write(data)
-        finally:
-            tar.close()
 
         tests += [
             Bz2MiscReadTest,
