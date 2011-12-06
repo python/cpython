@@ -599,7 +599,7 @@ class HTTPResponse(io.RawIOBase):
                         break
                 except ValueError:
                     raise IncompleteRead(bytes(b[0:total_bytes]))
-                    
+
             if len(mvb) < chunk_left:
                 n = self._safe_readinto(mvb)
                 self.chunk_left = chunk_left - n
