@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13546: Fixed an overflow issue that could crash the intepreter when
+  calling sys.setrecursionlimit((1<<31)-1).
+
 - Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
   already accepts them).
 

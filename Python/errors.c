@@ -111,9 +111,11 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         PyErr_Fetch(&exception, &value, &tb);
         /* Temporarily bump the recursion limit, so that in the most
            common case PyObject_IsSubclass will not raise a recursion
-           error we have to ignore anyway. */
+           error we have to ignore anyway.  Don't do it when the limit
+           is already insanely high, to avoid overflow */
         reclimit = Py_GetRecursionLimit();
-        Py_SetRecursionLimit(reclimit + 5);
+        if (reclimit < (1 << 30))
+            Py_SetRecursionLimit(reclimit + 5);
         res = PyObject_IsSubclass(err, exc);
         Py_SetRecursionLimit(reclimit);
         /* This function must not fail, so print the error here */

@@ -224,6 +224,18 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.getrecursionlimit(), 10000)
         sys.setrecursionlimit(oldlimit)
 
+        self.assertRaises(OverflowError, sys.setrecursionlimit, 1 << 31)
+        try:
+            sys.setrecursionlimit((1 << 31) - 5)
+            try:
+                # issue13546: isinstance(e, ValueError) used to fail
+                # when the recursion limit is close to 1<<31
+                raise ValueError()
+            except ValueError, e:
+                pass
+        finally:
+            sys.setrecursionlimit(oldlimit)
+
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
         test.test_support.get_attribute(sys, "getwindowsversion")
