@@ -171,6 +171,8 @@ class TestDefaultDict(unittest.TestCase):
         finally:
             os.remove(tfn)
 
+    def test_callable_arg(self):
+        self.assertRaises(TypeError, defaultdict, {})
 
 def test_main():
     test_support.run_unittest(TestDefaultDict)
