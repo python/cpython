@@ -172,6 +172,9 @@ class TestDefaultDict(unittest.TestCase):
         finally:
             os.remove(tfn)
 
+    def test_callable_arg(self):
+        self.assertRaises(TypeError, defaultdict, {})
+
     def test_pickleing(self):
         d = defaultdict(int)
         d[1]
