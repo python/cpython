@@ -20,10 +20,10 @@ def make_pat():
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    sqstring = r"(\b[rRuU])?'[^'\\\n]*(\\.[^'\\\n]*)*'?"
-    dqstring = r'(\b[rRuU])?"[^"\\\n]*(\\.[^"\\\n]*)*"?'
-    sq3string = r"(\b[rRuU])?'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
-    dq3string = r'(\b[rRuU])?"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
+    sqstring = r"(\b[rRbB])?'[^'\\\n]*(\\.[^'\\\n]*)*'?"
+    dqstring = r'(\b[rRbB])?"[^"\\\n]*(\\.[^"\\\n]*)*"?'
+    sq3string = r"(\b[rRbB])?'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
+    dq3string = r'(\b[rRbB])?"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     return kw + "|" + builtin + "|" + comment + "|" + string +\
            "|" + any("SYNC", [r"\n"])
