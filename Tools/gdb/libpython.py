@@ -53,7 +53,8 @@ _type_size_t = gdb.lookup_type('size_t')
 _type_unsigned_short_ptr = gdb.lookup_type('unsigned short').pointer()
 _type_unsigned_int_ptr = gdb.lookup_type('unsigned int').pointer()
 
-_is_pep393 = 'data' in [f.name for f in gdb.lookup_type('PyUnicodeObject').target().fields()]
+# value computed later, see PyUnicodeObjectPtr.proxy()
+_is_pep393 = None
 
 SIZEOF_VOID_P = _type_void_ptr.sizeof
 
@@ -1123,6 +1124,10 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
+        global _is_pep393
+        if _is_pep393 is None:
+            fields = gdb.lookup_type('PyUnicodeObject').target().fields()
+            _is_pep393 = 'data' in [f.name for f in fields]
         if _is_pep393:
             # Python 3.3 and newer
             may_have_surrogates = False
