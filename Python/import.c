@@ -1946,6 +1946,7 @@ find_module_path_list(PyObject *fullname, PyObject *name,
 
             if (_Py_stat(filename, &statbuf) != 0 || S_ISDIR(statbuf.st_mode))
             {
+                /* it doesn't exist, or it's a directory */
                 Py_DECREF(filename);
                 continue;
             }
