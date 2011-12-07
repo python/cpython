@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8641: Update IDLE 3 syntax coloring to recognize b".." and not u"..".
+  Patch by Tal Einat.
+
 - tarfile.py: Correctly detect bzip2 compressed streams with blocksizes
   other than 900k.
 
