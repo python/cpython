@@ -406,6 +406,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8641: Update IDLE 3 syntax coloring to recognize b".." and not u"..".
+  Patch by Tal Einat.
+
 - Issue #13464: Add a readinto() method to http.client.HTTPResponse.  Patch
   by Jon Kuhn.
 
