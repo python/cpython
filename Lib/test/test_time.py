@@ -250,7 +250,12 @@ class TimeTestCase(unittest.TestCase):
             environ['TZ'] = victoria
             time.tzset()
             self.assertNotEqual(time.gmtime(xmas2002), time.localtime(xmas2002))
-            self.assertTrue(time.tzname[0] == 'AEST', str(time.tzname[0]))
+
+            # Issue #11886: Australian Eastern Standard Time (UTC+10) is called
+            # "EST" (as Eastern Standard Time, UTC-5) instead of "AEST" on some
+            # operating systems (e.g. FreeBSD), which is wrong. See for example
+            # this bug: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=93810
+            self.assertIn(time.tzname[0], ('AEST' 'EST'), time.tzname[0])
             self.assertTrue(time.tzname[1] == 'AEDT', str(time.tzname[1]))
             self.assertEqual(len(time.tzname), 2)
             self.assertEqual(time.daylight, 1)
