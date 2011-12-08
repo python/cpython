@@ -1315,6 +1315,8 @@ clean: pycremoval
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find build -name 'fficonfig.py' -exec rm -f {} ';' || true
 	-rm -f Lib/lib2to3/*Grammar*.pickle
+	-rm -f Lib/_sysconfigdata.py
+	-rm -f Modules/_testembed
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
