@@ -386,6 +386,13 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyUnicode_Copy(PyObject *unicode)
+
+   Get a new copy of a Unicode object.
+
+   .. versionadded:: 3.3
+
+
 .. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
 
@@ -1379,6 +1386,15 @@ the user settings on the machine running the codec.
    raised by the codec.
 
 
+.. c:function:: PyObject* PyUnicode_EncodeCodePage(int code_page, PyObject *unicode, const char *errors)
+
+   Encode the Unicode object using the specified code page and return a Python
+   bytes object.  Return *NULL* if an exception was raised by the codec. Use
+   :c:data:`CP_ACP` code page to get the MBCS encoder.
+
+   .. versionadded:: 3.3
+
+
 .. c:function:: PyObject* PyUnicode_EncodeMBCS(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using MBCS and return
@@ -1387,7 +1403,7 @@ the user settings on the machine running the codec.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsMBCSString`.
+      :c:func:`PyUnicode_AsMBCSString` or :c:func:`PyUnicode_EncodeCodePage`.
 
 
 Methods & Slots
