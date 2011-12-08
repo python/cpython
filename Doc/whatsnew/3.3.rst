@@ -391,6 +391,16 @@ parameter to control parameters of the secure channel.
 (Contributed by Sijin Joseph in :issue:`8808`)
 
 
+lzma
+----
+
+The newly-added :mod:`lzma` module provides data compression and decompression
+using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
+file formats.
+
+(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
+
+
 math
 ----
 
