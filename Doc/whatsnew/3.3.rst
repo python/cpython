@@ -711,8 +711,11 @@ Changes to Python's build process and to the C API include:
 
 
 
+Deprecated
+==========
+
 Unsupported Operating Systems
-=============================
+-----------------------------
 
 OS/2 and VMS are no longer supported due to the lack of a maintainer.
 
@@ -721,7 +724,7 @@ are no longer supported due to maintenance burden.
 
 
 Deprecated Python modules, functions and methods
-================================================
+------------------------------------------------
 
 * The :mod:`packaging` module replaces the :mod:`distutils` module
 * The ``unicode_internal`` codec has been deprecated because of the
@@ -737,7 +740,7 @@ Deprecated Python modules, functions and methods
 
 
 Deprecated functions and types of the C API
-===========================================
+-------------------------------------------
 
 The :c:type:`Py_UNICODE` has been deprecated by the :pep:`393` and will be
 removed in Python 4. All functions using this type are deprecated:
