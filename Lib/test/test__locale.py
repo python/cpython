@@ -86,9 +86,13 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_CTYPE, loc)
             except Error:
                 continue
+            try:
+                formatting = localeconv()
+            except Exception as err:
+                self.fail("localeconv() failed with %s locale: %s" % (loc, err))
             for lc in ("decimal_point",
                         "thousands_sep"):
-                self.numeric_tester('localeconv', localeconv()[lc], lc, loc)
+                self.numeric_tester('localeconv', formatting[lc], lc, loc)
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     def test_lc_numeric_basic(self):
