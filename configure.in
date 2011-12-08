@@ -907,9 +907,10 @@ then
         fi
 
         # Clang also needs -fwrapv
-        if test "$CC" = "clang" ; then
-            WRAP="-fwrapv"
-        fi
+        case $CC in
+            *clang*) WRAP="-fwrapv"
+            ;;
+        esac
 
 	case $ac_cv_prog_cc_g in
 	yes)
