@@ -16,7 +16,9 @@ servers written in Python.  Servers can either be free standing, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
-.. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler, logRequests=True, allow_none=False, encoding=None, bind_and_activate=True)
+.. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler,\
+               logRequests=True, allow_none=False, encoding=None,\
+               bind_and_activate=True, use_builtin_types=False)
 
    Create a new server instance.  This class provides methods for registration of
    functions that can be called by the XML-RPC protocol.  The *requestHandler*
@@ -25,18 +27,31 @@ servers written in Python.  Servers can either be free standing, using
    are passed to the :class:`socketserver.TCPServer` constructor.  If *logRequests*
    is true (the default), requests will be logged; setting this parameter to false
    will turn off logging.   The *allow_none* and *encoding* parameters are passed
-   on to  :mod:`xmlrpc.client` and control the XML-RPC responses that will be returned
+   on to :mod:`xmlrpc.client` and control the XML-RPC responses that will be returned
    from the server. The *bind_and_activate* parameter controls whether
    :meth:`server_bind` and :meth:`server_activate` are called immediately by the
    constructor; it defaults to true. Setting it to false allows code to manipulate
    the *allow_reuse_address* class variable before the address is bound.
+   The *use_builtin_types* parameter is passed to the
+   :func:`~xmlrpc.client.loads` function and controls which types are processed
+   when date/times values or binary data are received; it defaults to false.
+
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
 
 
-.. class:: CGIXMLRPCRequestHandler(allow_none=False, encoding=None)
+.. class:: CGIXMLRPCRequestHandler(allow_none=False, encoding=None,\
+               use_builtin_types=False)
 
    Create a new instance to handle XML-RPC requests in a CGI environment.  The
    *allow_none* and *encoding* parameters are passed on to :mod:`xmlrpc.client`
    and control the XML-RPC responses that will be returned from the server.
+   The *use_builtin_types* parameter is passed to the
+   :func:`~xmlrpc.client.loads` function and controls which types are processed
+   when date/times values or binary data are received; it defaults to false.
+
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
 
 
 .. class:: SimpleXMLRPCRequestHandler()
@@ -233,11 +248,16 @@ to HTTP GET requests.  Servers can either be free standing, using
 :class:`DocCGIXMLRPCRequestHandler`.
 
 
-.. class:: DocXMLRPCServer(addr, requestHandler=DocXMLRPCRequestHandler, logRequests=True, allow_none=False, encoding=None, bind_and_activate=True)
+.. class:: DocXMLRPCServer(addr, requestHandler=DocXMLRPCRequestHandler,\
+               logRequests=True, allow_none=False, encoding=None,\
+               bind_and_activate=True, use_builtin_types=True)
 
    Create a new server instance. All parameters have the same meaning as for
    :class:`SimpleXMLRPCServer`; *requestHandler* defaults to
    :class:`DocXMLRPCRequestHandler`.
+
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
 
 
 .. class:: DocCGIXMLRPCRequestHandler()

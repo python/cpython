@@ -1023,10 +1023,44 @@ class CGIHandlerTestCase(unittest.TestCase):
             len(content))
 
 
+class UseBuiltinTypesTestCase(unittest.TestCase):
+
+    def test_use_builtin_types(self):
+        # SimpleXMLRPCDispatcher.__init__ accepts use_builtin_types, which
+        # makes all dispatch of binary data as bytes instances, and all
+        # dispatch of datetime argument as datetime.datetime instances.
+        self.log = []
+        expected_bytes = b"my dog has fleas"
+        expected_date = datetime.datetime(2008, 5, 26, 18, 25, 12)
+        marshaled = xmlrpclib.dumps((expected_bytes, expected_date), 'foobar')
+        def foobar(*args):
+            self.log.extend(args)
+        handler = xmlrpc.server.SimpleXMLRPCDispatcher(
+            allow_none=True, encoding=None, use_builtin_types=True)
+        handler.register_function(foobar)
+        handler._marshaled_dispatch(marshaled)
+        self.assertEqual(len(self.log), 2)
+        mybytes, mydate = self.log
+        self.assertEqual(self.log, [expected_bytes, expected_date])
+        self.assertIs(type(mydate), datetime.datetime)
+        self.assertIs(type(mybytes), bytes)
+
+    def test_cgihandler_has_use_builtin_types_flag(self):
+        handler = xmlrpc.server.CGIXMLRPCRequestHandler(use_builtin_types=True)
+        self.assertTrue(handler.use_builtin_types)
+
+    def test_xmlrpcserver_has_use_builtin_types_flag(self):
+        server = xmlrpc.server.SimpleXMLRPCServer(("localhost", 0),
+            use_builtin_types=True)
+        server.server_close()
+        self.assertTrue(server.use_builtin_types)
+
+
 @support.reap_threads
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase]
+    xmlrpc_tests.append(UseBuiltinTypesTestCase)
     xmlrpc_tests.append(SimpleServerTestCase)
     xmlrpc_tests.append(KeepaliveServerTestCase1)
     xmlrpc_tests.append(KeepaliveServerTestCase2)
