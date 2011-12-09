@@ -2050,7 +2050,7 @@ PyDoc_STRVAR(arraytype_doc,
 \n\
 Return a new array whose items are restricted by typecode, and\n\
 initialized from the optional initializer value, which must be a list,\n\
-string. or iterable over elements of the appropriate type.\n\
+string or iterable over elements of the appropriate type.\n\
 \n\
 Arrays represent basic values and behave very much like lists, except\n\
 the type of objects stored in them is constrained.\n\
