@@ -160,11 +160,13 @@ class SimpleXMLRPCDispatcher:
     can be instanced when used by the MultiPathXMLRPCServer
     """
 
-    def __init__(self, allow_none=False, encoding=None):
+    def __init__(self, allow_none=False, encoding=None,
+                 use_builtin_types=False):
         self.funcs = {}
         self.instance = None
         self.allow_none = allow_none
         self.encoding = encoding or 'utf-8'
+        self.use_builtin_types = use_builtin_types
 
     def register_instance(self, instance, allow_dotted_names=False):
         """Registers an instance to respond to XML-RPC requests.
@@ -245,7 +247,7 @@ class SimpleXMLRPCDispatcher:
         """
 
         try:
-            params, method = loads(data)
+            params, method = loads(data, use_builtin_types=self.use_builtin_types)
 
             # generate response
             if dispatch_method is not None:
@@ -572,10 +574,11 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     _send_traceback_header = False
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False, encoding=None, bind_and_activate=True):
+                 logRequests=True, allow_none=False, encoding=None,
+                 bind_and_activate=True, use_builtin_types=False):
         self.logRequests = logRequests
 
-        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding, use_builtin_types)
         socketserver.TCPServer.__init__(self, addr, requestHandler, bind_and_activate)
 
         # [Bug #1222790] If possible, set close-on-exec flag; if a
@@ -595,10 +598,11 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
     Make sure that the requestHandler accepts the paths in question.
     """
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False, encoding=None, bind_and_activate=True):
+                 logRequests=True, allow_none=False, encoding=None,
+                 bind_and_activate=True, use_builtin_types=False):
 
         SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests, allow_none,
-                                    encoding, bind_and_activate)
+                                    encoding, bind_and_activate, use_builtin_types)
         self.dispatchers = {}
         self.allow_none = allow_none
         self.encoding = encoding or 'utf-8'
@@ -628,8 +632,8 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
 
-    def __init__(self, allow_none=False, encoding=None):
-        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+    def __init__(self, allow_none=False, encoding=None, use_builtin_types=False):
+        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding, use_builtin_types)
 
     def handle_xmlrpc(self, request_text):
         """Handle a single XML-RPC request"""
@@ -924,9 +928,10 @@ class DocXMLRPCServer(  SimpleXMLRPCServer,
 
     def __init__(self, addr, requestHandler=DocXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
-                 bind_and_activate=True):
+                 bind_and_activate=True, use_builtin_types=False):
         SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests,
-                                    allow_none, encoding, bind_and_activate)
+                                    allow_none, encoding, bind_and_activate,
+                                    use_builtin_types)
         XMLRPCDocGenerator.__init__(self)
 
 class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
