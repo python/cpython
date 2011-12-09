@@ -1,13 +1,15 @@
-from test.support import run_unittest
 from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, localeconv, Error)
 try:
     from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
 except ImportError:
     nl_langinfo = None
 
-import unittest
+import codecs
+import locale
 import sys
+import unittest
 from platform import uname
+from test.support import run_unittest
 
 if uname()[0] == "Darwin":
     maj, min, mic = [int(part) for part in uname()[2].split(".")]
@@ -17,7 +19,7 @@ if uname()[0] == "Darwin":
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'et_EE', 'es_PY', 'no_NO', 'nl_NL', 'lv_LV', 'el_GR', 'be_BY', 'fr_BE',
     'ro_RO', 'ru_UA', 'ru_RU', 'es_VE', 'ca_ES', 'se_NO', 'es_EC', 'id_ID',
-    'ka_GE', 'es_CL', 'wa_BE', 'lt_LT', 'sl_SI', 'hr_HR', 'es_AR',
+    'ka_GE', 'es_CL', 'wa_BE', 'hu_HU', 'lt_LT', 'sl_SI', 'hr_HR', 'es_AR',
     'es_ES', 'oc_FR', 'gl_ES', 'bg_BG', 'is_IS', 'mk_MK', 'de_AT', 'pt_BR',
     'da_DK', 'nn_NO', 'cs_CZ', 'de_LU', 'es_BO', 'sq_AL', 'sk_SK', 'fr_CH',
     'de_DE', 'sr_YU', 'br_FR', 'nl_BE', 'sv_FI', 'pl_PL', 'fr_CA', 'fo_FO',
@@ -25,12 +27,30 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'en_US',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
 
-# Issue #13441: Don't test the hu_HU locale on Solaris to workaround a
-# mbstowcs() bug. On Solaris, if the locale is hu_HU (and if the locale
-# encoding is not UTF-8), the thousauds separator is b'\xA0' which is decoded
-# as U+30000020 instead of U+0020 by mbstowcs().
-if sys.platform != 'sunos5':
-    candidate_locales.append('hu_HU')
+# Issue #13441: Skip some locales (e.g. cs_CZ and hu_HU) on Solaris to
+# workaround a mbstowcs() bug. For example, on Solaris, the hu_HU locale uses
+# the locale encoding ISO-8859-2, the thousauds separator is b'\xA0' and it is
+# decoded as U+30000020 (an invalid character) by mbstowcs().
+if sys.platform == 'sunos5':
+    old_locale = locale.setlocale(locale.LC_ALL)
+    try:
+        locales = []
+        for loc in candidate_locales:
+            try:
+                locale.setlocale(locale.LC_ALL, loc)
+            except Error:
+                continue
+            encoding = locale.getpreferredencoding(False)
+            try:
+                localeconv()
+            except Exception as err:
+                print("WARNING: Skip locale %s (encoding %s): [%s] %s"
+                      % (loc, encoding, type(err), err))
+            else:
+                locales.append(loc)
+        #candidate_locales = locales
+    finally:
+        locale.setlocale(locale.LC_ALL, old_locale)
 
 # Workaround for MSVC6(debug) crash bug
 if "MSC v.1200" in sys.version:
@@ -93,10 +113,7 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_CTYPE, loc)
             except Error:
                 continue
-            try:
-                formatting = localeconv()
-            except Exception as err:
-                self.fail("localeconv() failed with %s locale: %s" % (loc, err))
+            formatting = localeconv()
             for lc in ("decimal_point",
                         "thousands_sep"):
                 self.numeric_tester('localeconv', formatting[lc], lc, loc)
