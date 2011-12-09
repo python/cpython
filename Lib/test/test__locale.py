@@ -17,13 +17,20 @@ if uname()[0] == "Darwin":
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'et_EE', 'es_PY', 'no_NO', 'nl_NL', 'lv_LV', 'el_GR', 'be_BY', 'fr_BE',
     'ro_RO', 'ru_UA', 'ru_RU', 'es_VE', 'ca_ES', 'se_NO', 'es_EC', 'id_ID',
-    'ka_GE', 'es_CL', 'hu_HU', 'wa_BE', 'lt_LT', 'sl_SI', 'hr_HR', 'es_AR',
+    'ka_GE', 'es_CL', 'wa_BE', 'lt_LT', 'sl_SI', 'hr_HR', 'es_AR',
     'es_ES', 'oc_FR', 'gl_ES', 'bg_BG', 'is_IS', 'mk_MK', 'de_AT', 'pt_BR',
     'da_DK', 'nn_NO', 'cs_CZ', 'de_LU', 'es_BO', 'sq_AL', 'sk_SK', 'fr_CH',
     'de_DE', 'sr_YU', 'br_FR', 'nl_BE', 'sv_FI', 'pl_PL', 'fr_CA', 'fo_FO',
     'bs_BA', 'fr_LU', 'kl_GL', 'fa_IR', 'de_BE', 'sv_SE', 'it_CH', 'uk_UA',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'en_US',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
+
+# Issue #13441: Don't test the hu_HU locale on Solaris to workaround a
+# mbstowcs() bug. On Solaris, if the locale is hu_HU (and if the locale
+# encoding is not UTF-8), the thousauds separator is b'\xA0' which is decoded
+# as U+30000020 instead of U+0020 by mbstowcs().
+if sys.platform != 'sunos5':
+    candidate_locales.append('hu_HU')
 
 # Workaround for MSVC6(debug) crash bug
 if "MSC v.1200" in sys.version:
