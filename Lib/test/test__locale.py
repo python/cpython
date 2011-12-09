@@ -48,7 +48,7 @@ if sys.platform == 'sunos5':
                       % (loc, encoding, type(err), err))
             else:
                 locales.append(loc)
-        #candidate_locales = locales
+        candidate_locales = locales
     finally:
         locale.setlocale(locale.LC_ALL, old_locale)
 
