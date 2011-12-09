@@ -115,159 +115,6 @@ Yes.  The coding style required for standard library modules is documented as
 :pep:`8`.
 
 
-My program is too slow. How do I speed it up?
----------------------------------------------
-
-That's a tough one, in general.  There are many tricks to speed up Python code;
-consider rewriting parts in C as a last resort.
-
-`Cython <http://cython.org>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
-can compile a slightly modified version of Python code into a C extension, and
-can be used on many different platforms.  Depending on your code, Cython
-may be able to make it significantly faster than when run by the Python
-interpreter.
-
-The rest of this answer will discuss various tricks for squeezing a bit more
-speed out of Python code.  *Never* apply any optimization tricks unless you know
-you need them, after profiling has indicated that a particular function is the
-heavily executed hot spot in the code.  Optimizations almost always make the
-code less clear, and you shouldn't pay the costs of reduced clarity (increased
-development time, greater likelihood of bugs) unless the resulting performance
-benefit is worth it.
-
-There is a page on the wiki devoted to `performance tips
-<http://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
-
-Guido van Rossum has written up an anecdote related to optimization at
-http://www.python.org/doc/essays/list2str.html.
-
-One thing to notice is that function and (especially) method calls are rather
-expensive; if you have designed a purely OO interface with lots of tiny
-functions that don't do much more than get or set an instance variable or call
-another method, you might consider using a more direct way such as directly
-accessing instance variables.  Also see the standard module :mod:`profile` which
-makes it possible to find out where your program is spending most of its time
-(if you have some patience -- the profiling itself can slow your program down by
-an order of magnitude).
-
-Remember that many standard optimization heuristics you may know from other
-programming experience may well apply to Python.  For example it may be faster
-to send output to output devices using larger writes rather than smaller ones in
-order to reduce the overhead of kernel system calls.  Thus CGI scripts that
-write all output in "one shot" may be faster than those that write lots of small
-pieces of output.
-
-Also, be sure to use Python's core features where appropriate.  For example,
-slicing allows programs to chop up lists and other sequence objects in a single
-tick of the interpreter's mainloop using highly optimized C implementations.
-Thus to get the same effect as::
-
-   L2 = []
-   for i in range(3):
-       L2.append(L1[i])
-
-it is much shorter and far faster to use ::
-
-   L2 = list(L1[:3])  # "list" is redundant if L1 is a list.
-
-Note that the functionally-oriented built-in functions such as :func:`map`,
-:func:`zip`, and friends can be a convenient accelerator for loops that
-perform a single task.  For example to pair the elements of two lists
-together::
-
-   >>> list(zip([1, 2, 3], [4, 5, 6]))
-   [(1, 4), (2, 5), (3, 6)]
-
-or to compute a number of sines::
-
-   >>> list(map(math.sin, (1, 2, 3, 4)))
-   [0.841470984808, 0.909297426826, 0.14112000806, -0.756802495308]
-
-The operation completes very quickly in such cases.
-
-Other examples include the ``join()`` and ``split()`` :ref:`methods
-of string objects <string-methods>`.
-
-For example if s1..s7 are large (10K+) strings then
-``"".join([s1,s2,s3,s4,s5,s6,s7])`` may be far faster than the more obvious
-``s1+s2+s3+s4+s5+s6+s7``, since the "summation" will compute many
-subexpressions, whereas ``join()`` does all the copying in one pass.  For
-manipulating strings, use the ``replace()`` and the ``format()`` :ref:`methods
-on string objects <string-methods>`.  Use regular expressions only when you're
-not dealing with constant string patterns.
-
-Be sure to use the :meth:`list.sort` built-in method to do sorting, and see the
-`sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
-of moderately advanced usage.  :meth:`list.sort` beats other techniques for
-sorting in all but the most extreme circumstances.
-
-Another common trick is to "push loops into functions or methods."  For example
-suppose you have a program that runs slowly and you use the profiler to
-determine that a Python function ``ff()`` is being called lots of times.  If you
-notice that ``ff()``::
-
-   def ff(x):
-       ... # do something with x computing result...
-       return result
-
-tends to be called in loops like::
-
-   list = map(ff, oldlist)
-
-or::
-
-   for x in sequence:
-       value = ff(x)
-       ... # do something with value...
-
-then you can often eliminate function call overhead by rewriting ``ff()`` to::
-
-   def ffseq(seq):
-       resultseq = []
-       for x in seq:
-           ... # do something with x computing result...
-           resultseq.append(result)
-       return resultseq
-
-and rewrite the two examples to ``list = ffseq(oldlist)`` and to::
-
-   for value in ffseq(sequence):
-       ... # do something with value...
-
-Single calls to ``ff(x)`` translate to ``ffseq([x])[0]`` with little penalty.
-Of course this technique is not always appropriate and there are other variants
-which you can figure out.
-
-You can gain some performance by explicitly storing the results of a function or
-method lookup into a local variable.  A loop like::
-
-   for key in token:
-       dict[key] = dict.get(key, 0) + 1
-
-resolves ``dict.get`` every iteration.  If the method isn't going to change, a
-slightly faster implementation is::
-
-   dict_get = dict.get  # look up the method once
-   for key in token:
-       dict[key] = dict_get(key, 0) + 1
-
-Default arguments can be used to determine values once, at compile time instead
-of at run time.  This can only be done for functions or objects which will not
-be changed during program execution, such as replacing ::
-
-   def degree_sin(deg):
-       return math.sin(deg * math.pi / 180.0)
-
-with ::
-
-   def degree_sin(deg, factor=math.pi/180.0, sin=math.sin):
-       return sin(deg * factor)
-
-Because this trick uses default arguments for terms which should not be changed,
-it should only be used when you are not concerned with presenting a possibly
-confusing API to your users.
-
-
 Core Language
 =============
 
@@ -937,6 +784,68 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 
 See the :ref:`unicode-howto`.
 
+
+Performance
+===========
+
+My program is too slow. How do I speed it up?
+---------------------------------------------
+
+That's a tough one, in general.  First, here are a list of things to
+remember before diving further:
+
+* Performance characteristics vary accross Python implementations.  This FAQ
+  focusses on :term:`CPython`.
+* Behaviour can vary accross operating systems, especially when talking about
+  I/O or multi-threading.
+* You should always find the hot spots in your program *before* attempting to
+  optimize any code (see the :mod:`profile` module).
+* Writing benchmark scripts will allow you to iterate quickly when searching
+  for improvements (see the :mod:`timeit` module).
+* It is highly recommended to have good code coverage (through unit testing
+  or any other technique) before potentially introducing regressions hidden
+  in sophisticated optimizations.
+
+That being said, there are many tricks to speed up Python code.  Here are
+some general principles which go a long way towards reaching acceptable
+performance levels:
+
+* Making your algorithms faster (or changing to faster ones) can yield
+  much larger benefits than trying to sprinkle micro-optimization tricks
+  all over your code.
+
+* Use the right data structures.  Study documentation for the :ref:`bltin-types`
+  and the :mod:`collections` module.
+
+* When the standard library provides a primitive for doing something, it is
+  likely (although not guaranteed) to be faster than any alternative you
+  may come up with.  This is doubly true for primitives written in C, such
+  as builtins and some extension types.  For example, be sure to use
+  either the :meth:`list.sort` built-in method or the related :func:`sorted`
+  function to do sorting (and see the
+  `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
+  of moderately advanced usage).
+
+* Abstractions tend to create indirections and force the interpreter to work
+  more.  If the levels of indirection outweigh the amount of useful work
+  done, your program will be slower.  You should avoid excessive abstraction,
+  especially under the form of tiny functions or methods (which are also often
+  detrimental to readability).
+
+If you have reached the limit of what pure Python can allow, there are tools
+to take you further away.  For example, `Cython <http://cython.org>`_ can
+compile a slightly modified version of Python code into a C extension, and
+can be used on many different platforms.  Cython can take advantage of
+compilation (and optional type annotations) to make your code significantly
+faster than when interpreted.  If you are confident in your C programming
+skills, you can also :ref:`write a C extension module <extending-index>`
+yourself.
+
+.. seealso::
+   The wiki page devoted to `performance tips
+   <http://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
+
+.. _efficient_string_concatenation:
 
 What is the most efficient way to concatenate many strings together?
 --------------------------------------------------------------------
