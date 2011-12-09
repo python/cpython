@@ -1409,6 +1409,7 @@ test_widechar(PyObject *self)
 #if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
     const wchar_t wtext[2] = {(wchar_t)0x10ABCDu};
     size_t wtextlen = 1;
+    const wchar_t invalid[1] = {(wchar_t)0x110000u};
 #else
     const wchar_t wtext[3] = {(wchar_t)0xDBEAu, (wchar_t)0xDFCDu};
     size_t wtextlen = 2;
@@ -1444,6 +1445,23 @@ test_widechar(PyObject *self)
 
     Py_DECREF(wide);
     Py_DECREF(utf8);
+
+#if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
+    wide = PyUnicode_FromWideChar(invalid, 1);
+    if (wide == NULL)
+        PyErr_Clear();
+    else
+        return raiseTestError("test_widechar",
+                              "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
+
+    wide = PyUnicode_FromUnicode(invalid, 1);
+    if (wide == NULL)
+        PyErr_Clear();
+    else
+        return raiseTestError("test_widechar",
+                              "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
+#endif
+
     Py_RETURN_NONE;
 }
 
