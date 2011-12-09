@@ -1034,6 +1034,16 @@ class UnicodeInternalTest(unittest.TestCase):
                                          'deprecated', DeprecationWarning)):
                 self.assertRaises(UnicodeDecodeError, internal.decode,
                                   "unicode_internal")
+        if sys.byteorder == "little":
+            invalid = b"\x00\x00\x11\x00"
+        else:
+            invalid = b"\x00\x11\x00\x00"
+        with support.check_warnings():
+            self.assertRaises(UnicodeDecodeError,
+                              invalid.decode, "unicode_internal")
+        with support.check_warnings():
+            self.assertEqual(invalid.decode("unicode_internal", "replace"),
+                             '\ufffd')
 
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_error_attributes(self):
@@ -1728,6 +1738,12 @@ class TypesTest(unittest.TestCase):
         self.assertEqual(codecs.unicode_escape_decode(br"\u1234"), ("\u1234", 6))
         self.assertEqual(codecs.raw_unicode_escape_decode(r"\u1234"), ("\u1234", 6))
         self.assertEqual(codecs.raw_unicode_escape_decode(br"\u1234"), ("\u1234", 6))
+
+        self.assertRaises(UnicodeDecodeError, codecs.unicode_escape_decode, br"\U00110000")
+        self.assertEqual(codecs.unicode_escape_decode(r"\U00110000", "replace"), ("\ufffd", 10))
+
+        self.assertRaises(UnicodeDecodeError, codecs.raw_unicode_escape_decode, br"\U00110000")
+        self.assertEqual(codecs.raw_unicode_escape_decode(r"\U00110000", "replace"), ("\ufffd", 10))
 
 class SurrogateEscapeTest(unittest.TestCase):
 
