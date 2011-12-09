@@ -895,7 +895,6 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
-    /* Don't silence DeprecationWarning if -3 was used. */
     PyObject *filters = PyList_New(5);
     unsigned int pos = 0;  /* Post-incremented in each use. */
     unsigned int x;
