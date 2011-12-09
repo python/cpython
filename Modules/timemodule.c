@@ -3,8 +3,6 @@
 #include "Python.h"
 #include "_time.h"
 
-#define TZNAME_ENCODING "utf-8"
-
 #include <ctype.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -48,8 +46,6 @@ static long main_thread;
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement; we have our own version below. */
 #undef HAVE_CLOCK
-#undef TZNAME_ENCODING
-#define TZNAME_ENCODING "mbcs"
 #endif /* MS_WINDOWS && !defined(__BORLANDC__) */
 
 #if defined(PYOS_OS2)
@@ -502,7 +498,7 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
-    format = PyUnicode_AsEncodedString(format_arg, TZNAME_ENCODING, NULL);
+    format = PyUnicode_EncodeFSDefault(format_arg);
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
@@ -546,8 +542,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_Decode(outbuf, buflen,
-                                   TZNAME_ENCODING, NULL);
+            ret = PyUnicode_DecodeFSDefaultAndSize(outbuf, buflen);
 #endif
             PyMem_Free(outbuf);
             break;
@@ -789,8 +784,8 @@ PyInit_timezone(PyObject *m) {
 #endif /* PYOS_OS2 */
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_Decode(tzname[0], strlen(tzname[0]), TZNAME_ENCODING, NULL);
-    otz1 = PyUnicode_Decode(tzname[1], strlen(tzname[1]), TZNAME_ENCODING, NULL);
+    otz0 = PyUnicode_DecodeFSDefaultAndSize(tzname[0], strlen(tzname[0]));
+    otz1 = PyUnicode_DecodeFSDefaultAndSize(tzname[1], strlen(tzname[1]));
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_STRUCT_TM_TM_ZONE
