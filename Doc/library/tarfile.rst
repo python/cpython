@@ -13,12 +13,12 @@
 --------------
 
 The :mod:`tarfile` module makes it possible to read and write tar
-archives, including those using gzip or bz2 compression.
+archives, including those using gzip, bz2 and lzma compression.
 (:file:`.zip` files can be read and written using the :mod:`zipfile` module.)
 
 Some facts and figures:
 
-* reads and writes :mod:`gzip` and :mod:`bz2` compressed archives.
+* reads and writes :mod:`gzip`, :mod:`bz2` and :mod:`lzma` compressed archives.
 
 * read/write support for the POSIX.1-1988 (ustar) format.
 
@@ -55,6 +55,8 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'r:bz2'``      | Open for reading with bzip2 compression.    |
    +------------------+---------------------------------------------+
+   | ``'r:xz'``       | Open for reading with lzma compression.     |
+   +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
    |                  | file is created if it does not exist.       |
    +------------------+---------------------------------------------+
@@ -64,11 +66,13 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'w:bz2'``      | Open for bzip2 compressed writing.          |
    +------------------+---------------------------------------------+
+   | ``'w:xz'``       | Open for lzma compressed writing.           |
+   +------------------+---------------------------------------------+
 
-   Note that ``'a:gz'`` or ``'a:bz2'`` is not possible. If *mode* is not suitable
-   to open a certain (compressed) file for reading, :exc:`ReadError` is raised. Use
-   *mode* ``'r'`` to avoid this.  If a compression method is not supported,
-   :exc:`CompressionError` is raised.
+   Note that ``'a:gz'``, ``'a:bz2'`` or ``'a:xz'`` is not possible. If *mode*
+   is not suitable to open a certain (compressed) file for reading,
+   :exc:`ReadError` is raised. Use *mode* ``'r'`` to avoid this.  If a
+   compression method is not supported, :exc:`CompressionError` is raised.
 
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
@@ -99,12 +103,18 @@ Some facts and figures:
    | ``'r|bz2'`` | Open a bzip2 compressed *stream* for       |
    |             | reading.                                   |
    +-------------+--------------------------------------------+
+   | ``'r|xz'``  | Open a lzma compressed *stream* for        |
+   |             | reading.                                   |
+   +-------------+--------------------------------------------+
    | ``'w|'``    | Open an uncompressed *stream* for writing. |
    +-------------+--------------------------------------------+
    | ``'w|gz'``  | Open a gzip compressed *stream* for        |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
    | ``'w|bz2'`` | Open a bzip2 compressed *stream* for       |
+   |             | writing.                                   |
+   +-------------+--------------------------------------------+
+   | ``'w|xz'``  | Open an lzma compressed *stream* for       |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
 
