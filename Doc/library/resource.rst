@@ -14,13 +14,15 @@ resources utilized by a program.
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
 
-A single exception is defined for errors:
+An :exc:`OSError` is raised on syscall failure.
 
 
 .. exception:: error
 
-   The functions described below may raise this error if the underlying system call
-   failures unexpectedly.
+   A deprecated alias of :exc:`OSError`.
+
+   .. versionchanged:: 3.3
+      Following :pep:`3151`, this class was made an alias of :exc:`OSError`.
 
 
 Resource Limits
