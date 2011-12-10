@@ -359,8 +359,7 @@ class FTP:
                 conn.close()
                 raise
         else:
-            sock = self.makeport()
-            try:
+            with self.makeport() as sock:
                 if rest is not None:
                     self.sendcmd("REST %s" % rest)
                 resp = self.sendcmd(cmd)
@@ -372,8 +371,6 @@ class FTP:
                 conn, sockaddr = sock.accept()
                 if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
                     conn.settimeout(self.timeout)
-            finally:
-                sock.close()
         if resp[:3] == '150':
             # this is conditional in case we received a 125
             size = parse150(resp)
@@ -753,8 +750,7 @@ else:
 
         def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
             self.voidcmd('TYPE I')
-            conn = self.transfercmd(cmd, rest)
-            try:
+            with self.transfercmd(cmd, rest) as conn:
                 while 1:
                     data = conn.recv(blocksize)
                     if not data:
@@ -763,8 +759,6 @@ else:
                 # shutdown ssl layer
                 if isinstance(conn, ssl.SSLSocket):
                     conn.unwrap()
-            finally:
-                conn.close()
             return self.voidresp()
 
         def retrlines(self, cmd, callback = None):
@@ -772,7 +766,7 @@ else:
             resp = self.sendcmd('TYPE A')
             conn = self.transfercmd(cmd)
             fp = conn.makefile('r', encoding=self.encoding)
-            try:
+            with fp, conn:
                 while 1:
                     line = fp.readline()
                     if self.debugging > 2: print('*retr*', repr(line))
@@ -786,15 +780,11 @@ else:
                 # shutdown ssl layer
                 if isinstance(conn, ssl.SSLSocket):
                     conn.unwrap()
-            finally:
-                fp.close()
-                conn.close()
             return self.voidresp()
 
         def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
             self.voidcmd('TYPE I')
-            conn = self.transfercmd(cmd, rest)
-            try:
+            with self.transfercmd(cmd, rest) as conn:
                 while 1:
                     buf = fp.read(blocksize)
                     if not buf: break
@@ -803,14 +793,11 @@ else:
                 # shutdown ssl layer
                 if isinstance(conn, ssl.SSLSocket):
                     conn.unwrap()
-            finally:
-                conn.close()
             return self.voidresp()
 
         def storlines(self, cmd, fp, callback=None):
             self.voidcmd('TYPE A')
-            conn = self.transfercmd(cmd)
-            try:
+            with self.transfercmd(cmd) as conn:
                 while 1:
                     buf = fp.readline()
                     if not buf: break
@@ -822,8 +809,6 @@ else:
                 # shutdown ssl layer
                 if isinstance(conn, ssl.SSLSocket):
                     conn.unwrap()
-            finally:
-                conn.close()
             return self.voidresp()
 
         def abort(self):
