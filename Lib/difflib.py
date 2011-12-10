@@ -204,7 +204,7 @@ class SequenceMatcher:
         #      returning true iff the element is "junk" -- this has
         #      subtle but helpful effects on the algorithm, which I'll
         #      get around to writing up someday <0.9 wink>.
-        #      DON'T USE!  Only __chain_b uses this.  Use isbjunk.
+        #      DON'T USE!  Only __chain_b uses this.  Use "in self.bjunk".
         # bjunk
         #      the items in b for which isjunk is True.
         # bpopular
@@ -287,7 +287,6 @@ class SequenceMatcher:
     # when self.isjunk is defined, junk elements don't show up in this
     # map at all, which stops the central find_longest_match method
     # from starting any matching block at a junk element ...
-    # also creates the fast isbjunk function ...
     # b2j also does not contain entries for "popular" elements, meaning
     # elements that account for more than 1 + 1% of the total elements, and
     # when the sequence is reasonably large (>= 200 elements); this can
