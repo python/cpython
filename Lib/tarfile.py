@@ -420,10 +420,11 @@ class _Stream:
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
                     self._init_read_gz()
+                    self.exception = zlib.error
                 else:
                     self._init_write_gz()
 
-            if comptype == "bz2":
+            elif comptype == "bz2":
                 try:
                     import bz2
                 except ImportError:
@@ -431,8 +432,25 @@ class _Stream:
                 if mode == "r":
                     self.dbuf = b""
                     self.cmp = bz2.BZ2Decompressor()
+                    self.exception = IOError
                 else:
                     self.cmp = bz2.BZ2Compressor()
+
+            elif comptype == "xz":
+                try:
+                    import lzma
+                except ImportError:
+                    raise CompressionError("lzma module is not available")
+                if mode == "r":
+                    self.dbuf = b""
+                    self.cmp = lzma.LZMADecompressor()
+                    self.exception = lzma.LZMAError
+                else:
+                    self.cmp = lzma.LZMACompressor()
+
+            elif comptype != "tar":
+                raise CompressionError("unknown compression type %r" % comptype)
+
         except:
             if not self._extfileobj:
                 self.fileobj.close()
@@ -584,7 +602,7 @@ class _Stream:
                 break
             try:
                 buf = self.cmp.decompress(buf)
-            except IOError:
+            except self.exception:
                 raise ReadError("invalid compressed data")
             self.dbuf += buf
             c += len(buf)
@@ -622,11 +640,14 @@ class _StreamProxy(object):
         return self.buf
 
     def getcomptype(self):
-        if self.buf.startswith(b"\037\213\010"):
+        if self.buf.startswith(b"\x1f\x8b\x08"):
             return "gz"
-        if self.buf[0:3] == b"BZh" and self.buf[4:10] == b"1AY&SY":
+        elif self.buf[0:3] == b"BZh" and self.buf[4:10] == b"1AY&SY":
             return "bz2"
-        return "tar"
+        elif self.buf.startswith((b"\x5d\x00\x00\x80", b"\xfd7zXZ")):
+            return "xz"
+        else:
+            return "tar"
 
     def close(self):
         self.fileobj.close()
@@ -1651,18 +1672,22 @@ class TarFile(object):
            'r:'         open for reading exclusively uncompressed
            'r:gz'       open for reading with gzip compression
            'r:bz2'      open for reading with bzip2 compression
+           'r:xz'       open for reading with lzma compression
            'a' or 'a:'  open for appending, creating the file if necessary
            'w' or 'w:'  open for writing without compression
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression
+           'w:xz'       open for writing with lzma compression
 
            'r|*'        open a stream of tar blocks with transparent compression
            'r|'         open an uncompressed stream of tar blocks for reading
            'r|gz'       open a gzip compressed stream of tar blocks
            'r|bz2'      open a bzip2 compressed stream of tar blocks
+           'r|xz'       open an lzma compressed stream of tar blocks
            'w|'         open an uncompressed stream for writing
            'w|gz'       open a gzip compressed stream for writing
            'w|bz2'      open a bzip2 compressed stream for writing
+           'w|xz'       open an lzma compressed stream for writing
         """
 
         if not name and not fileobj:
@@ -1780,11 +1805,40 @@ class TarFile(object):
         t._extfileobj = False
         return t
 
+    @classmethod
+    def xzopen(cls, name, mode="r", fileobj=None, preset=9, **kwargs):
+        """Open lzma compressed tar archive name for reading or writing.
+           Appending is not allowed.
+        """
+        if mode not in ("r", "w"):
+            raise ValueError("mode must be 'r' or 'w'")
+
+        try:
+            import lzma
+        except ImportError:
+            raise CompressionError("lzma module is not available")
+
+        if mode == "r":
+            # LZMAFile complains about a preset argument in read mode.
+            preset = None
+
+        fileobj = lzma.LZMAFile(filename=name if fileobj is None else None,
+                mode=mode, fileobj=fileobj, preset=preset)
+
+        try:
+            t = cls.taropen(name, mode, fileobj, **kwargs)
+        except (lzma.LZMAError, EOFError):
+            fileobj.close()
+            raise ReadError("not an lzma file")
+        t._extfileobj = False
+        return t
+
     # All *open() methods are registered here.
     OPEN_METH = {
         "tar": "taropen",   # uncompressed tar
         "gz":  "gzopen",    # gzip compressed tar
-        "bz2": "bz2open"    # bzip2 compressed tar
+        "bz2": "bz2open",   # bzip2 compressed tar
+        "xz":  "xzopen"     # lzma compressed tar
     }
 
     #--------------------------------------------------------------------------
