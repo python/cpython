@@ -406,6 +406,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #13248: Turn 3.2's PendingDeprecationWarning into 3.3's
+  DeprecationWarning.  It covers 'cgi.escape', 'importlib.abc.PyLoader',
+  'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',
+  and private attributes of 'smtpd.SMTPChannel'.
+
 - Issue #5905: time.strftime() is now using the locale encoding, instead of
   UTF-8, if the wcsftime() function is not available.
 

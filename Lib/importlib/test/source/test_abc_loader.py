@@ -102,7 +102,7 @@ class PyLoaderMock(abc.PyLoader):
             warnings.simplefilter("always")
             path = super().get_filename(name)
             assert len(w) == 1
-            assert issubclass(w[0].category, PendingDeprecationWarning)
+            assert issubclass(w[0].category, DeprecationWarning)
             return path
 
 
@@ -198,7 +198,7 @@ class PyPycLoaderMock(abc.PyPycLoader, PyLoaderMock):
             warnings.simplefilter("always")
             code_object = super().get_code(name)
             assert len(w) == 1
-            assert issubclass(w[0].category, PendingDeprecationWarning)
+            assert issubclass(w[0].category, DeprecationWarning)
             return code_object
 
 class PyLoaderTests(testing_abc.LoaderTests):

@@ -195,7 +195,7 @@ class PyLoader(SourceLoader):
                             "use SourceLoader instead. "
                             "See the importlib documentation on how to be "
                             "compatible with Python 3.1 onwards.",
-                        PendingDeprecationWarning)
+                        DeprecationWarning)
         path = self.source_path(fullname)
         if path is None:
             raise ImportError
@@ -234,7 +234,7 @@ class PyPycLoader(PyLoader):
                             "removal in Python 3.4; use SourceLoader instead. "
                             "If Python 3.1 compatibility is required, see the "
                             "latest documentation for PyLoader.",
-                        PendingDeprecationWarning)
+                        DeprecationWarning)
         source_timestamp = self.source_mtime(fullname)
         # Try to use bytecode if it is available.
         bytecode_path = self.bytecode_path(fullname)
