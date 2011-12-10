@@ -828,7 +828,7 @@ class _NNTPBase:
         - list: list of (name,title) strings"""
         warnings.warn("The XGTITLE extension is not actively used, "
                       "use descriptions() instead",
-                      PendingDeprecationWarning, 2)
+                      DeprecationWarning, 2)
         line_pat = re.compile('^([^ \t]+)[ \t]+(.*)$')
         resp, raw_lines = self._longcmdstring('XGTITLE ' + group, file)
         lines = []
@@ -846,7 +846,7 @@ class _NNTPBase:
         path: directory path to article
         """
         warnings.warn("The XPATH extension is not actively used",
-                      PendingDeprecationWarning, 2)
+                      DeprecationWarning, 2)
 
         resp = self._shortcmd('XPATH {0}'.format(id))
         if not resp.startswith('223'):

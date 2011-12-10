@@ -1012,7 +1012,7 @@ environment as well.  Here are some common variable names:
 def escape(s, quote=None):
     """Deprecated API."""
     warn("cgi.escape is deprecated, use html.escape instead",
-         PendingDeprecationWarning, stacklevel=2)
+         DeprecationWarning, stacklevel=2)
     s = s.replace("&", "&amp;") # Must be done first!
     s = s.replace("<", "&lt;")
     s = s.replace(">", "&gt;")
