@@ -517,6 +517,9 @@ them have been superseded by newer commands in :rfc:`3977`.
    article with message ID *id*.  Most of the time, this extension is not
    enabled by NNTP server administrators.
 
+   .. deprecated:: 3.3
+      The XPATH extension is not actively used.
+
 
 .. XXX deprecated:
 
