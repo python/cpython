@@ -13,11 +13,7 @@ import sysconfig
 import warnings
 import select
 import shutil
-try:
-    import gc
-except ImportError:
-    gc = None
-
+import gc
 
 try:
     import resource
@@ -859,7 +855,6 @@ class POSIXProcessTestCase(BaseTestCase):
             self.fail("Exception raised by preexec_fn did not make it "
                       "to the parent process.")
 
-    @unittest.skipUnless(gc, "Requires a gc module.")
     def test_preexec_gc_module_failure(self):
         # This tests the code that disables garbage collection if the child
         # process will execute any Python.
