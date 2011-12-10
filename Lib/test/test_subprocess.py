@@ -10,6 +10,11 @@ import time
 import re
 import sysconfig
 
+try:
+    import resource
+except ImportError:
+    resource = None
+
 mswindows = (sys.platform == "win32")
 
 #
@@ -633,12 +638,12 @@ class _SuppressCoreFiles(object):
 
     def __enter__(self):
         """Try to save previous ulimit, then set it to (0, 0)."""
-        try:
-            import resource
-            self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
-            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        except (ImportError, ValueError, resource.error):
-            pass
+        if resource is not None:
+            try:
+                self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
+                resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+            except (ValueError, resource.error):
+                pass
 
         if sys.platform == 'darwin':
             # Check if the 'Crash Reporter' on OSX was configured
@@ -658,11 +663,11 @@ class _SuppressCoreFiles(object):
         """Return core file behavior to default."""
         if self.old_limit is None:
             return
-        try:
-            import resource
-            resource.setrlimit(resource.RLIMIT_CORE, self.old_limit)
-        except (ImportError, ValueError, resource.error):
-            pass
+        if resource is not None:
+            try:
+                resource.setrlimit(resource.RLIMIT_CORE, self.old_limit)
+            except (ValueError, resource.error):
+                pass
 
     @unittest.skipUnless(hasattr(signal, 'SIGALRM'),
                          "Requires signal.SIGALRM")
