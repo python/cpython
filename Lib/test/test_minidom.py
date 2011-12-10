@@ -47,7 +47,7 @@ class MinidomTest(unittest.TestCase):
 
     def checkWholeText(self, node, s):
         t = node.wholeText
-        self.confirm(t == s, "looking for %s, found %s" % (repr(s), repr(t)))
+        self.confirm(t == s, "looking for %r, found %r" % (s, t))
 
     def testParseFromFile(self):
         with open(tstfile) as file:
