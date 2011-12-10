@@ -406,6 +406,8 @@ Core and Builtins
 Library
 -------
 
+- Alias resource.error to OSError ala PEP 3151.
+
 - Issue #13248: Turn 3.2's PendingDeprecationWarning into 3.3's
   DeprecationWarning.  It covers 'cgi.escape', 'importlib.abc.PyLoader',
   'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',

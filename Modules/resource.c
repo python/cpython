@@ -18,8 +18,6 @@
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 
-static PyObject *ResourceError;
-
 PyDoc_STRVAR(struct_rusage__doc__,
 "struct_rusage: Result from getrusage.\n\n"
 "This object may be accessed either as a tuple of\n"
@@ -73,7 +71,7 @@ resource_getrusage(PyObject *self, PyObject *args)
                             "invalid who parameter");
             return NULL;
         }
-        PyErr_SetFromErrno(ResourceError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -125,7 +123,7 @@ resource_getrlimit(PyObject *self, PyObject *args)
     }
 
     if (getrlimit(resource, &rl) == -1) {
-        PyErr_SetFromErrno(ResourceError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -183,7 +181,7 @@ resource_setrlimit(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError,
                             "not allowed to raise maximum limit");
         else
-            PyErr_SetFromErrno(ResourceError);
+            PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_INCREF(Py_None);
@@ -246,12 +244,8 @@ PyInit_resource(void)
         return NULL;
 
     /* Add some symbolic constants to the module */
-    if (ResourceError == NULL) {
-        ResourceError = PyErr_NewException("resource.error",
-                                           NULL, NULL);
-    }
-    Py_INCREF(ResourceError);
-    PyModule_AddObject(m, "error", ResourceError);
+    Py_INCREF(PyExc_OSError);
+    PyModule_AddObject(m, "error", PyExc_OSError);
     if (!initialized)
         PyStructSequence_InitType(&StructRUsageType,
                                   &struct_rusage_desc);
