@@ -764,6 +764,7 @@ def transient_internet(resource_name, timeout=30.0, errnos=()):
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
+        ('EAI_FAIL', -4),
         ('EAI_NONAME', -2),
         ('EAI_NODATA', -5),
     ]
