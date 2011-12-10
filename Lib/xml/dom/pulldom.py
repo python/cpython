@@ -1,6 +1,5 @@
 import xml.sax
 import xml.sax.handler
-import types
 
 START_ELEMENT = "START_ELEMENT"
 END_ELEMENT = "END_ELEMENT"
@@ -334,10 +333,7 @@ def parse(stream_or_string, parser=None, bufsize=None):
     return DOMEventStream(stream, parser, bufsize)
 
 def parseString(string, parser=None):
-    try:
-        from io import StringIO
-    except ImportError:
-        from io import StringIO
+    from io import StringIO
 
     bufsize = len(string)
     buf = StringIO(string)
