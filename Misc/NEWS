@@ -406,6 +406,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5689: Add support for lzma compression to the tarfile module.
+
 - Issue #13248: Turn 3.2's PendingDeprecationWarning into 3.3's
   DeprecationWarning.  It covers 'cgi.escape', 'importlib.abc.PyLoader',
   'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',
