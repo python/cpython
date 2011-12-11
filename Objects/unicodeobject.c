@@ -1768,15 +1768,12 @@ static PyObject*
 unicode_fromascii(const unsigned char* s, Py_ssize_t size)
 {
     PyObject *unicode;
+    if (size == 1) {
 #ifdef Py_DEBUG
-    const unsigned char *p;
-    const unsigned char *end = s + size;
-    for (p=s; p < end; p++) {
-        assert(*p < 128);
-    }
+        assert(s[0] < 128);
 #endif
-    if (size == 1)
         return get_latin1_char(s[0]);
+    }
     unicode = PyUnicode_New(size, 127);
     if (!unicode)
         return NULL;
