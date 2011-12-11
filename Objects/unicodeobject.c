@@ -1717,28 +1717,10 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
                         "Negative size passed to PyUnicode_FromStringAndSize");
         return NULL;
     }
-
-    /* If the Unicode data is known at construction time, we can apply
-       some optimizations which share commonly used objects.
-       Also, this means the input must be UTF-8, so fall back to the
-       UTF-8 decoder at the end. */
-    if (u != NULL) {
-
-        /* Optimization for empty strings */
-        if (size == 0 && unicode_empty != NULL) {
-            Py_INCREF(unicode_empty);
-            return unicode_empty;
-        }
-
-        /* Single characters are shared when using this constructor.
-           Restrict to ASCII, since the input must be UTF-8. */
-        if (size == 1 && (unsigned char)*u < 128)
-            return get_latin1_char((unsigned char)*u);
-
-        return PyUnicode_DecodeUTF8(u, size, NULL);
-    }
-
-    return (PyObject *)_PyUnicode_New(size);
+    if (u != NULL)
+        return PyUnicode_DecodeUTF8Stateful(u, size, NULL, NULL);
+    else
+        return (PyObject *)_PyUnicode_New(size);
 }
 
 PyObject *
@@ -1749,15 +1731,16 @@ PyUnicode_FromString(const char *u)
         PyErr_SetString(PyExc_OverflowError, "input too long");
         return NULL;
     }
-
-    return PyUnicode_FromStringAndSize(u, size);
+    return PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)size, NULL, NULL);
 }
 
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
     if (!id->object) {
-        id->object = PyUnicode_FromString(id->string);
+        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
+                                                  strlen(id->string),
+                                                  NULL, NULL);
         if (!id->object)
             return NULL;
         PyUnicode_InternInPlace(&id->object);
@@ -2443,7 +2426,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             {
                 /* UTF-8 */
                 const char *s = va_arg(count, const char*);
-                PyObject *str = PyUnicode_DecodeUTF8(s, strlen(s), "replace");
+                PyObject *str = PyUnicode_DecodeUTF8Stateful(s, strlen(s), "replace", NULL);
                 if (!str)
                     goto fail;
                 /* since PyUnicode_DecodeUTF8 returns already flexible
@@ -2482,7 +2465,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     *callresult++ = NULL;
                 }
                 else {
-                    str_obj = PyUnicode_DecodeUTF8(str, strlen(str), "replace");
+                    str_obj = PyUnicode_DecodeUTF8Stateful(str, strlen(str), "replace", NULL);
                     if (!str_obj)
                         goto fail;
                     if (PyUnicode_READY(str_obj)) {
@@ -2947,7 +2930,7 @@ PyUnicode_Decode(const char *s,
     if (normalize_encoding(encoding, lower, sizeof(lower))) {
         if ((strcmp(lower, "utf-8") == 0) ||
             (strcmp(lower, "utf8") == 0))
-            return PyUnicode_DecodeUTF8(s, size, errors);
+            return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
         else if ((strcmp(lower, "latin-1") == 0) ||
                  (strcmp(lower, "latin1") == 0) ||
                  (strcmp(lower, "iso-8859-1") == 0))
@@ -3260,7 +3243,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 #ifdef HAVE_MBCS
     return PyUnicode_DecodeMBCS(s, size, NULL);
 #elif defined(__APPLE__)
-    return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
+    return PyUnicode_DecodeUTF8Stateful(s, size, "surrogateescape", NULL);
 #else
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
@@ -4240,11 +4223,9 @@ PyUnicode_DecodeUTF8(const char *s,
    PyUnicode_DecodeUTF8Stateful.
    */
 static Py_UCS4
-utf8_max_char_size_and_char_count(const char *s, Py_ssize_t string_size,
-                                  Py_ssize_t *unicode_size)
+utf8_scanner(const unsigned char *p, Py_ssize_t string_size, Py_ssize_t *unicode_size)
 {
     Py_ssize_t char_count = 0;
-    const unsigned char *p = (const unsigned char *)s;
     const unsigned char *end = p + string_size;
     const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
 
@@ -4563,7 +4544,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
         return unicode_empty;
     }
 
-    maxchar = utf8_max_char_size_and_char_count(s, size, &unicode_size);
+    maxchar = utf8_scanner((const unsigned char *)s, size, &unicode_size);
 
     /* When the string is ASCII only, just use memcpy and return.
        unicode_size may be != size if there is an incomplete UTF-8
