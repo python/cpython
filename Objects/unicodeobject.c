@@ -630,6 +630,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     Py_ssize_t struct_size;
     Py_ssize_t new_size;
     int share_wstr;
+    PyObject *new_unicode;
 
     assert(PyUnicode_IS_READY(unicode));
     char_size = PyUnicode_KIND(unicode);
@@ -639,22 +640,25 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         struct_size = sizeof(PyCompactUnicodeObject);
     share_wstr = _PyUnicode_SHARE_WSTR(unicode);
 
-    _Py_DEC_REFTOTAL;
-    _Py_ForgetReference(unicode);
-
     if (length > ((PY_SSIZE_T_MAX - struct_size) / char_size - 1)) {
+        Py_DECREF(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     new_size = (struct_size + (length + 1) * char_size);
 
-    unicode = (PyObject *)PyObject_REALLOC((char *)unicode, new_size);
-    if (unicode == NULL) {
+    _Py_DEC_REFTOTAL;
+    _Py_ForgetReference(unicode);
+
+    new_unicode = (PyObject *)PyObject_REALLOC((char *)unicode, new_size);
+    if (new_unicode == NULL) {
         PyObject_Del(unicode);
         PyErr_NoMemory();
         return NULL;
     }
+    unicode = new_unicode;
     _Py_NewReference(unicode);
+
     _PyUnicode_LENGTH(unicode) = length;
     if (share_wstr) {
         _PyUnicode_WSTR(unicode) = PyUnicode_DATA(unicode);
