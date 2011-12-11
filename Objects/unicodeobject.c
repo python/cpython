@@ -9211,6 +9211,7 @@ fixup(PyObject *self,
 {
     PyObject *u;
     Py_UCS4 maxchar_old, maxchar_new = 0;
+    PyObject *v;
 
     u = PyUnicode_Copy(self);
     if (u == NULL)
@@ -9222,9 +9223,19 @@ fixup(PyObject *self,
        everything is fine.  Otherwise we need to change the string kind
        and re-run the fix function. */
     maxchar_new = fixfct(u);
-    if (maxchar_new == 0)
-        /* do nothing, keep maxchar_new at 0 which means no changes. */;
-    else if (maxchar_new <= 127)
+
+    if (maxchar_new == 0) {
+        /* no changes */;
+        if (PyUnicode_CheckExact(self)) {
+            Py_DECREF(u);
+            Py_INCREF(self);
+            return self;
+        }
+        else
+            return u;
+    }
+
+    if (maxchar_new <= 127)
         maxchar_new = 127;
     else if (maxchar_new <= 255)
         maxchar_new = 255;
@@ -9233,41 +9244,30 @@ fixup(PyObject *self,
     else
         maxchar_new = MAX_UNICODE;
 
-    if (!maxchar_new && PyUnicode_CheckExact(self)) {
-        /* fixfct should return TRUE if it modified the buffer. If
-           FALSE, return a reference to the original buffer instead
-           (to save space, not time) */
-        Py_INCREF(self);
-        Py_DECREF(u);
-        return self;
-    }
-    else if (maxchar_new == maxchar_old) {
+    if (maxchar_new == maxchar_old)
         return u;
+
+    /* In case the maximum character changed, we need to
+       convert the string to the new category. */
+    v = PyUnicode_New(PyUnicode_GET_LENGTH(self), maxchar_new);
+    if (v == NULL) {
+        Py_DECREF(u);
+        return NULL;
+    }
+    if (maxchar_new > maxchar_old) {
+        /* If the maxchar increased so that the kind changed, not all
+           characters are representable anymore and we need to fix the
+           string again. This only happens in very few cases. */
+        copy_characters(v, 0, self, 0, PyUnicode_GET_LENGTH(self));
+        maxchar_old = fixfct(v);
+        assert(maxchar_old > 0 && maxchar_old <= maxchar_new);
     }
     else {
-        /* In case the maximum character changed, we need to
-           convert the string to the new category. */
-        PyObject *v = PyUnicode_New(PyUnicode_GET_LENGTH(self), maxchar_new);
-        if (v == NULL) {
-            Py_DECREF(u);
-            return NULL;
-        }
-        if (maxchar_new > maxchar_old) {
-            /* If the maxchar increased so that the kind changed, not all
-               characters are representable anymore and we need to fix the
-               string again. This only happens in very few cases. */
-            copy_characters(v, 0, self, 0, PyUnicode_GET_LENGTH(self));
-            maxchar_old = fixfct(v);
-            assert(maxchar_old > 0 && maxchar_old <= maxchar_new);
-        }
-        else {
-            copy_characters(v, 0, u, 0, PyUnicode_GET_LENGTH(self));
-        }
-
-        Py_DECREF(u);
-        assert(_PyUnicode_CheckConsistency(v, 1));
-        return v;
+        copy_characters(v, 0, u, 0, PyUnicode_GET_LENGTH(self));
     }
+    Py_DECREF(u);
+    assert(_PyUnicode_CheckConsistency(v, 1));
+    return v;
 }
 
 static Py_UCS4
