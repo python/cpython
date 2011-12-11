@@ -688,32 +688,32 @@ static int
 resize_inplace(PyObject *unicode, Py_ssize_t length)
 {
     wchar_t *wstr;
+    Py_ssize_t new_size;
     assert(!PyUnicode_IS_COMPACT(unicode));
     assert(Py_REFCNT(unicode) == 1);
 
     if (PyUnicode_IS_READY(unicode)) {
         Py_ssize_t char_size;
-        Py_ssize_t new_size;
         int share_wstr, share_utf8;
         void *data;
 
         data = _PyUnicode_DATA_ANY(unicode);
-        assert(data != NULL);
         char_size = PyUnicode_KIND(unicode);
         share_wstr = _PyUnicode_SHARE_WSTR(unicode);
         share_utf8 = _PyUnicode_SHARE_UTF8(unicode);
-        if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
-        {
-            PyObject_DEL(_PyUnicode_UTF8(unicode));
-            _PyUnicode_UTF8(unicode) = NULL;
-            _PyUnicode_UTF8_LENGTH(unicode) = 0;
-        }
 
         if (length > (PY_SSIZE_T_MAX / char_size - 1)) {
             PyErr_NoMemory();
             return -1;
         }
         new_size = (length + 1) * char_size;
+
+        if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
+        {
+            PyObject_DEL(_PyUnicode_UTF8(unicode));
+            _PyUnicode_UTF8(unicode) = NULL;
+            _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        }
 
         data = (PyObject *)PyObject_REALLOC(data, new_size);
         if (data == NULL) {
@@ -743,8 +743,9 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
         PyErr_NoMemory();
         return -1;
     }
+    new_size = sizeof(wchar_t) * (length + 1);
     wstr =  _PyUnicode_WSTR(unicode);
-    wstr = PyObject_REALLOC(wstr, sizeof(wchar_t) * (length + 1));
+    wstr = PyObject_REALLOC(wstr, new_size);
     if (!wstr) {
         PyErr_NoMemory();
         return -1;
@@ -760,9 +761,11 @@ static PyObject*
 resize_copy(PyObject *unicode, Py_ssize_t length)
 {
     Py_ssize_t copy_length;
-    if (PyUnicode_IS_COMPACT(unicode)) {
+    if (_PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND) {
         PyObject *copy;
-        assert(PyUnicode_IS_READY(unicode));
+
+        if (PyUnicode_READY(unicode) < 0)
+            return NULL;
 
         copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
         if (copy == NULL)
@@ -774,8 +777,7 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
     }
     else {
         PyObject *w;
-        assert(_PyUnicode_WSTR(unicode) != NULL);
-        assert(_PyUnicode_DATA_ANY(unicode) == NULL);
+
         w = (PyObject*)_PyUnicode_New(length);
         if (w == NULL)
             return NULL;

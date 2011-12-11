@@ -220,6 +220,7 @@ typedef struct {
        - compact ascii:
 
          * structure = PyASCIIObject
+         * test: PyUnicode_IS_COMPACT_ASCII(op)
          * kind = PyUnicode_1BYTE_KIND
          * compact = 1
          * ascii = 1
@@ -231,6 +232,7 @@ typedef struct {
        - compact:
 
          * structure = PyCompactUnicodeObject
+         * test: PyUnicode_IS_ASCII(op) && !PyUnicode_IS_COMPACT(op)
          * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
            PyUnicode_4BYTE_KIND
          * compact = 1
@@ -247,6 +249,7 @@ typedef struct {
        - legacy string, not ready:
 
          * structure = PyUnicodeObject
+         * test: kind == PyUnicode_WCHAR_KIND
          * length = 0 (use wstr_length)
          * hash = -1
          * kind = PyUnicode_WCHAR_KIND
@@ -262,6 +265,7 @@ typedef struct {
        - legacy string, ready:
 
          * structure = PyUnicodeObject structure
+         * test: !PyUnicode_IS_COMPACT(op) && kind != PyUnicode_WCHAR_KIND
          * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
            PyUnicode_4BYTE_KIND
          * compact = 0
