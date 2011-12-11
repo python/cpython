@@ -2122,8 +2122,10 @@ PyObject *
 PyUnicode_FromWideChar(register const wchar_t *w, Py_ssize_t size)
 {
     if (w == NULL) {
-        if (size == 0)
-            return PyUnicode_New(0, 0);
+        if (size == 0) {
+            Py_INCREF(unicode_empty);
+            return unicode_empty;
+        }
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -4557,7 +4559,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     if (size == 0) {
         if (consumed)
             *consumed = 0;
-        return (PyObject *)PyUnicode_New(0, 0);
+        Py_INCREF(unicode_empty);
+        return unicode_empty;
     }
 
     maxchar = utf8_max_char_size_and_char_count(s, size, &unicode_size);
@@ -12906,7 +12909,8 @@ unicode_subscript(PyObject* self, PyObject* item)
         }
 
         if (slicelength <= 0) {
-            return PyUnicode_New(0, 0);
+            Py_INCREF(unicode_empty);
+            return unicode_empty;
         } else if (start == 0 && step == 1 &&
                    slicelength == PyUnicode_GET_LENGTH(self) &&
                    PyUnicode_CheckExact(self)) {
@@ -13582,8 +13586,10 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:str",
                                      kwlist, &x, &encoding, &errors))
         return NULL;
-    if (x == NULL)
-        return PyUnicode_New(0, 0);
+    if (x == NULL) {
+        Py_INCREF(unicode_empty);
+        return unicode_empty;
+    }
     if (encoding == NULL && errors == NULL)
         return PyObject_Str(x);
     else
