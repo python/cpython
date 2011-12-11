@@ -165,9 +165,6 @@ extern "C" {
             *_to++ = (to_type) *_iter++;                \
     } while (0)
 
-/* The Unicode string has been modified: reset the hash */
-#define _PyUnicode_DIRTY(op) do { _PyUnicode_HASH(op) = -1; } while (0)
-
 /* This dictionary holds all interned unicode strings.  Note that references
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
    When the interned string reaches a refcnt of 0 the string deallocation
@@ -226,6 +223,8 @@ static void copy_characters(
     PyObject *to, Py_ssize_t to_start,
     PyObject *from, Py_ssize_t from_start,
     Py_ssize_t how_many);
+static int unicode_modifiable(PyObject *unicode);
+
 
 static PyObject *
 unicode_fromascii(const unsigned char *s, Py_ssize_t size);
@@ -645,10 +644,11 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     Py_ssize_t new_size;
     int share_wstr;
     PyObject *new_unicode;
-
     assert(PyUnicode_IS_READY(unicode));
+    assert(PyUnicode_IS_COMPACT(unicode));
+
     char_size = PyUnicode_KIND(unicode);
-    if (PyUnicode_IS_COMPACT_ASCII(unicode))
+    if (PyUnicode_IS_ASCII(unicode))
         struct_size = sizeof(PyASCIIObject);
     else
         struct_size = sizeof(PyCompactUnicodeObject);
@@ -676,7 +676,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     _PyUnicode_LENGTH(unicode) = length;
     if (share_wstr) {
         _PyUnicode_WSTR(unicode) = PyUnicode_DATA(unicode);
-        if (!PyUnicode_IS_COMPACT_ASCII(unicode))
+        if (!PyUnicode_IS_ASCII(unicode))
             _PyUnicode_WSTR_LENGTH(unicode) = length;
     }
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
@@ -690,8 +690,6 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
     wchar_t *wstr;
     assert(!PyUnicode_IS_COMPACT(unicode));
     assert(Py_REFCNT(unicode) == 1);
-
-    _PyUnicode_DIRTY(unicode);
 
     if (PyUnicode_IS_READY(unicode)) {
         Py_ssize_t char_size;
@@ -1115,15 +1113,13 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 #endif
 
 static int
-_PyUnicode_Dirty(PyObject *unicode)
+unicode_check_modifiable(PyObject *unicode)
 {
-    assert(_PyUnicode_CHECK(unicode));
-    if (Py_REFCNT(unicode) != 1) {
+    if (!unicode_modifiable(unicode)) {
         PyErr_SetString(PyExc_SystemError,
-                        "Cannot modify a string having more than 1 reference");
+                        "Cannot modify a string currently used");
         return -1;
     }
-    _PyUnicode_DIRTY(unicode);
     return 0;
 }
 
@@ -1289,7 +1285,7 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     if (how_many == 0)
         return 0;
 
-    if (_PyUnicode_Dirty(to))
+    if (unicode_check_modifiable(to))
         return -1;
 
     err = _copy_characters(to, to_start, from, from_start, how_many, 1);
@@ -1537,11 +1533,16 @@ unicode_is_singleton(PyObject *unicode)
 #endif
 
 static int
-unicode_resizable(PyObject *unicode)
+unicode_modifiable(PyObject *unicode)
 {
+    assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1)
         return 0;
+    if (_PyUnicode_HASH(unicode) != -1)
+        return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
+        return 0;
+    if (!PyUnicode_CheckExact(unicode))
         return 0;
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
@@ -1577,7 +1578,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         return 0;
     }
 
-    if (!unicode_resizable(unicode)) {
+    if (!unicode_modifiable(unicode)) {
         PyObject *copy = resize_copy(unicode, length);
         if (copy == NULL)
             return -1;
@@ -3591,11 +3592,12 @@ PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
         PyErr_BadArgument();
         return -1;
     }
+    assert(PyUnicode_IS_READY(unicode));
     if (index < 0 || index >= PyUnicode_GET_LENGTH(unicode)) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return -1;
     }
-    if (_PyUnicode_Dirty(unicode))
+    if (unicode_check_modifiable(unicode))
         return -1;
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     index, ch);
@@ -10566,6 +10568,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
 {
     PyObject *u = NULL, *v = NULL, *w;
     Py_UCS4 maxchar, maxchar2;
+    Py_ssize_t u_len, v_len, new_len;
 
     /* Coerce the two arguments */
     u = PyUnicode_FromObject(left);
@@ -10585,18 +10588,25 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return v;
     }
 
+    u_len = PyUnicode_GET_LENGTH(u);
+    v_len = PyUnicode_GET_LENGTH(v);
+    if (u_len > PY_SSIZE_T_MAX - v_len) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        goto onError;
+    }
+    new_len = u_len + v_len;
+
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
     maxchar2 = PyUnicode_MAX_CHAR_VALUE(v);
     maxchar = Py_MAX(maxchar, maxchar2);
 
     /* Concat the two Unicode strings */
-    w = PyUnicode_New(
-        PyUnicode_GET_LENGTH(u) + PyUnicode_GET_LENGTH(v),
-        maxchar);
+    w = PyUnicode_New(new_len, maxchar);
     if (w == NULL)
         goto onError;
-    copy_characters(w, 0, u, 0, PyUnicode_GET_LENGTH(u));
-    copy_characters(w, PyUnicode_GET_LENGTH(u), v, 0, PyUnicode_GET_LENGTH(v));
+    copy_characters(w, 0, u, 0, u_len);
+    copy_characters(w, u_len, v, 0, v_len);
     Py_DECREF(u);
     Py_DECREF(v);
     assert(_PyUnicode_CheckConsistency(w, 1));
@@ -10608,49 +10618,12 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     return NULL;
 }
 
-static void
-unicode_append_inplace(PyObject **p_left, PyObject *right)
-{
-    Py_ssize_t left_len, right_len, new_len;
-
-    assert(PyUnicode_IS_READY(*p_left));
-    assert(PyUnicode_IS_READY(right));
-
-    left_len = PyUnicode_GET_LENGTH(*p_left);
-    right_len = PyUnicode_GET_LENGTH(right);
-    if (left_len > PY_SSIZE_T_MAX - right_len) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "strings are too large to concat");
-        goto error;
-    }
-    new_len = left_len + right_len;
-
-    /* Now we own the last reference to 'left', so we can resize it
-     * in-place.
-     */
-    if (unicode_resize(p_left, new_len) != 0) {
-        /* XXX if _PyUnicode_Resize() fails, 'left' has been
-         * deallocated so it cannot be put back into
-         * 'variable'.  The MemoryError is raised when there
-         * is no value in 'variable', which might (very
-         * remotely) be a cause of incompatibilities.
-         */
-        goto error;
-    }
-    /* copy 'right' into the newly allocated area of 'left' */
-    copy_characters(*p_left, left_len, right, 0, right_len);
-    _PyUnicode_DIRTY(*p_left);
-    return;
-
-error:
-    Py_DECREF(*p_left);
-    *p_left = NULL;
-}
-
 void
 PyUnicode_Append(PyObject **p_left, PyObject *right)
 {
     PyObject *left, *res;
+    Py_UCS4 maxchar, maxchar2;
+    Py_ssize_t left_len, right_len, new_len;
 
     if (p_left == NULL) {
         if (!PyErr_Occurred())
@@ -10669,34 +10642,66 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     if (PyUnicode_READY(right))
         goto error;
 
-    if (PyUnicode_CheckExact(left) && left != unicode_empty
-        && PyUnicode_CheckExact(right) && right != unicode_empty
-        && unicode_resizable(left)
-        && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
-            || _PyUnicode_WSTR(left) != NULL))
-    {
+    /* Shortcuts */
+    if (left == unicode_empty) {
+        Py_DECREF(left);
+        Py_INCREF(right);
+        *p_left = right;
+        return;
+    }
+    if (right == unicode_empty)
+        return;
+
+    left_len = PyUnicode_GET_LENGTH(left);
+    right_len = PyUnicode_GET_LENGTH(right);
+    if (left_len > PY_SSIZE_T_MAX - right_len) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        goto error;
+    }
+    new_len = left_len + right_len;
+
+    if (unicode_modifiable(left)
+        && PyUnicode_CheckExact(right)
+        && PyUnicode_KIND(right) <= PyUnicode_KIND(left)
         /* Don't resize for ascii += latin1. Convert ascii to latin1 requires
            to change the structure size, but characters are stored just after
            the structure, and so it requires to move all characters which is
            not so different than duplicating the string. */
-        if (!(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
-        {
-            unicode_append_inplace(p_left, right);
-            assert(p_left == NULL || _PyUnicode_CheckConsistency(*p_left, 1));
-            return;
+        && !(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
+    {
+        /* append inplace */
+        if (unicode_resize(p_left, new_len) != 0) {
+            /* XXX if _PyUnicode_Resize() fails, 'left' has been
+             * deallocated so it cannot be put back into
+             * 'variable'.  The MemoryError is raised when there
+             * is no value in 'variable', which might (very
+             * remotely) be a cause of incompatibilities.
+             */
+            goto error;
         }
+        /* copy 'right' into the newly allocated area of 'left' */
+        copy_characters(*p_left, left_len, right, 0, right_len);
     }
+    else {
+        maxchar = PyUnicode_MAX_CHAR_VALUE(left);
+        maxchar2 = PyUnicode_MAX_CHAR_VALUE(right);
+        maxchar = Py_MAX(maxchar, maxchar2);
 
-    res = PyUnicode_Concat(left, right);
-    if (res == NULL)
-        goto error;
-    Py_DECREF(left);
-    *p_left = res;
+        /* Concat the two Unicode strings */
+        res = PyUnicode_New(new_len, maxchar);
+        if (res == NULL)
+            goto error;
+        copy_characters(res, 0, left, 0, left_len);
+        copy_characters(res, left_len, right, 0, right_len);
+        Py_DECREF(left);
+        *p_left = res;
+    }
+    assert(_PyUnicode_CheckConsistency(*p_left, 1));
     return;
 
 error:
-    Py_DECREF(*p_left);
-    *p_left = NULL;
+    Py_CLEAR(*p_left);
 }
 
 void
