@@ -226,6 +226,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.check_wrapper(wrapper, f)
         self.assertIs(wrapper.__wrapped__, f)
         self.assertEqual(wrapper.__name__, 'f')
+        self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
         self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
         self.assertNotIn('b', wrapper.__annotations__)
@@ -246,6 +247,7 @@ class TestUpdateWrapper(unittest.TestCase):
         functools.update_wrapper(wrapper, f, (), ())
         self.check_wrapper(wrapper, f, (), ())
         self.assertEqual(wrapper.__name__, 'wrapper')
+        self.assertNotEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.__doc__, None)
         self.assertEqual(wrapper.__annotations__, {})
         self.assertFalse(hasattr(wrapper, 'attr'))
@@ -263,6 +265,7 @@ class TestUpdateWrapper(unittest.TestCase):
         functools.update_wrapper(wrapper, f, assign, update)
         self.check_wrapper(wrapper, f, assign, update)
         self.assertEqual(wrapper.__name__, 'wrapper')
+        self.assertNotEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.__doc__, None)
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
@@ -309,17 +312,18 @@ class TestWraps(TestUpdateWrapper):
         def wrapper():
             pass
         self.check_wrapper(wrapper, f)
-        return wrapper
+        return wrapper, f
 
     def test_default_update(self):
-        wrapper = self._default_update()
+        wrapper, f = self._default_update()
         self.assertEqual(wrapper.__name__, 'f')
+        self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
 
     @unittest.skipIf(not sys.flags.optimize <= 1,
                      "Docstrings are omitted with -O2 and above")
     def test_default_update_doc(self):
-        wrapper = self._default_update()
+        wrapper, _ = self._default_update()
         self.assertEqual(wrapper.__doc__, 'This is a test')
 
     def test_no_update(self):
@@ -332,6 +336,7 @@ class TestWraps(TestUpdateWrapper):
             pass
         self.check_wrapper(wrapper, f, (), ())
         self.assertEqual(wrapper.__name__, 'wrapper')
+        self.assertNotEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.__doc__, None)
         self.assertFalse(hasattr(wrapper, 'attr'))
 
@@ -351,6 +356,7 @@ class TestWraps(TestUpdateWrapper):
             pass
         self.check_wrapper(wrapper, f, assign, update)
         self.assertEqual(wrapper.__name__, 'wrapper')
+        self.assertNotEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.__doc__, None)
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
