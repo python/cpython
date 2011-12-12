@@ -100,15 +100,13 @@ PyType_Modified(PyTypeObject *type)
 static void
 type_mro_modified(PyTypeObject *type, PyObject *bases) {
     /*
-       Check that all base classes or elements of the mro of type are
+       Check that all base classes or elements of the MRO of type are
        able to be cached.  This function is called after the base
        classes or mro of the type are altered.
 
        Unset HAVE_VERSION_TAG and VALID_VERSION_TAG if the type
-       inherits from an old-style class, either directly or if it
-       appears in the MRO of a new-style class.  No support either for
-       custom MROs that include types that are not officially super
-       types.
+       has a custom MRO that includes a type which is not officially
+       super type.
 
        Called from mro_internal, which will subsequently be called on
        each subclass when their mro is recursively updated.
@@ -124,11 +122,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls;
 
-        if (!PyType_Check(b) ) {
-            clear = 1;
-            break;
-        }
-
+        assert(PyType_Check(b));
         cls = (PyTypeObject *)b;
 
         if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
@@ -488,7 +482,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
         if (!PyType_Check(ob)) {
             PyErr_Format(
                 PyExc_TypeError,
-    "%s.__bases__ must be tuple of old- or new-style classes, not '%s'",
+    "%s.__bases__ must be tuple of classes, not '%s'",
                             type->tp_name, Py_TYPE(ob)->tp_name);
                     return -1;
         }
@@ -1619,7 +1613,7 @@ mro_internal(PyTypeObject *type)
     type->tp_mro = tuple;
 
     type_mro_modified(type, type->tp_mro);
-    /* corner case: the old-style super class might have been hidden
+    /* corner case: the super class might have been hidden
        from the custom MRO */
     type_mro_modified(type, type->tp_bases);
 
@@ -1676,9 +1670,8 @@ best_base(PyObject *bases)
             return NULL;
         }
     }
-    if (base == NULL)
-        PyErr_SetString(PyExc_TypeError,
-            "a new-style class can't have only classic bases");
+    assert (base != NULL);
+
     return base;
 }
 
@@ -3196,7 +3189,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     }
     if (!PyType_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-          "__class__ must be set to new-style class, not '%s' object",
+          "__class__ must be set to a class, not '%s' object",
           Py_TYPE(value)->tp_name);
         return -1;
     }
@@ -3811,8 +3804,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
            that the extension type's own factory function ensures).
            Heap types, of course, are under our control, so they do
            inherit tp_new; static extension types that specify some
-           other built-in type as the default are considered
-           new-style-aware so they also inherit object.__new__. */
+           other built-in type as the default also
+           inherit object.__new__. */
         if (base != &PyBaseObject_Type ||
             (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
             if (type->tp_new == NULL)
@@ -6352,7 +6345,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
 {
     /* Check that a super() call makes sense.  Return a type object.
 
-       obj can be a new-style class, or an instance of one:
+       obj can be a class, or an instance of one:
 
        - If it is a class, it must be a subclass of 'type'.      This case is
          used for class methods; the return value is obj.

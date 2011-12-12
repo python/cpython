@@ -375,7 +375,7 @@ class _Pickler:
             # allowing protocol 0 and 1 to work normally.  For this to
             # work, the function returned by __reduce__ should be
             # called __newobj__, and its first argument should be a
-            # new-style class.  The implementation for __newobj__
+            # class.  The implementation for __newobj__
             # should be as follows, although pickle has no way to
             # verify this:
             #
