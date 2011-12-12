@@ -85,6 +85,9 @@ Library
 - tarfile.py: Correctly detect bzip2 compressed streams with blocksizes
   other than 900k.
 
+- Issue #13573: The csv.writer now uses the repr() for floats rather than str().
+  This allows floats to round-trip without loss of precision.
+
 - Issue #13439: Fix many errors in turtle docstrings.
 
 - Issue #12856: Ensure child processes do not inherit the parent's random
