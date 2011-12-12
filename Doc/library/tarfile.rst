@@ -32,6 +32,9 @@ Some facts and figures:
   character devices and block devices and is able to acquire and restore file
   information like timestamp, access permissions and owner.
 
+.. versionchanged:: 3.3
+   Added support for :mod:`lzma` compression.
+
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
 
