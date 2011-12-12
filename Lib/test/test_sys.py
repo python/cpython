@@ -670,17 +670,17 @@ class SizeofTest(unittest.TestCase):
         # complex
         check(complex(0,1), size(h + '2d'))
         # method_descriptor (descriptor object)
-        check(str.lower, size(h + '2PP'))
+        check(str.lower, size(h + '3PP'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)
         import datetime
-        check(datetime.timedelta.days, size(h + '2PP'))
+        check(datetime.timedelta.days, size(h + '3PP'))
         # getset_descriptor (descriptor object)
         import collections
-        check(collections.defaultdict.default_factory, size(h + '2PP'))
+        check(collections.defaultdict.default_factory, size(h + '3PP'))
         # wrapper_descriptor (descriptor object)
-        check(int.__add__, size(h + '2P2P'))
+        check(int.__add__, size(h + '3P2P'))
         # method-wrapper (descriptor object)
         check({}.__iter__, size(h + '2P'))
         # dict
