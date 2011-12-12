@@ -497,7 +497,7 @@ unicode_result_unchanged(PyObject *unicode)
     }
     else
         /* Subtype -- return genuine unicode string with the same value. */
-        return PyUnicode_Copy(unicode);
+        return _PyUnicode_Copy(unicode);
 }
 
 #ifdef HAVE_MBCS
@@ -1961,7 +1961,7 @@ unicode_adjust_maxchar(PyObject **p_unicode)
 }
 
 PyObject*
-PyUnicode_Copy(PyObject *unicode)
+_PyUnicode_Copy(PyObject *unicode)
 {
     Py_ssize_t length;
     PyObject *copy;
@@ -2832,7 +2832,7 @@ PyUnicode_FromObject(register PyObject *obj)
     if (PyUnicode_Check(obj)) {
         /* For a Unicode subtype that's not a Unicode object,
            return a true Unicode object with the same data. */
-        return PyUnicode_Copy(obj);
+        return _PyUnicode_Copy(obj);
     }
     PyErr_Format(PyExc_TypeError,
                  "Can't convert '%.100s' object to str implicitly",
@@ -4333,7 +4333,7 @@ _ucs4loop:
             goto onError;                                           \
     } while (0)
 
-PyObject *
+static PyObject *
 decode_utf8_errors(const char *starts,
                    Py_ssize_t size,
                    const char *errors,
@@ -9231,7 +9231,7 @@ fixup(PyObject *self,
     Py_UCS4 maxchar_old, maxchar_new = 0;
     PyObject *v;
 
-    u = PyUnicode_Copy(self);
+    u = _PyUnicode_Copy(self);
     if (u == NULL)
         return NULL;
     maxchar_old = PyUnicode_MAX_CHAR_VALUE(u);
@@ -12753,7 +12753,7 @@ PyDoc_STRVAR(sizeof__doc__,
 static PyObject *
 unicode_getnewargs(PyObject *v)
 {
-    PyObject *copy = PyUnicode_Copy(v);
+    PyObject *copy = _PyUnicode_Copy(v);
     if (!copy)
         return NULL;
     return Py_BuildValue("(N)", copy);
