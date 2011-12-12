@@ -768,18 +768,15 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
 PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
 #endif
 
-/* Resize an Unicode object allocated by the legacy API (e.g.
-   PyUnicode_FromUnicode). Unicode objects allocated by the new API (e.g.
-   PyUnicode_New) cannot be resized by this function.
-
-   The length is a number of characters (and not the number of Py_UNICODE characters).
+/* Resize an Unicode object. The length is the number of characters, except
+   if the kind of the string is PyUnicode_WCHAR_KIND: in this case, the length
+   is the number of Py_UNICODE characters.
 
    *unicode is modified to point to the new (resized) object and 0
    returned on success.
 
-   If the refcount on the object is 1, the function resizes the string in
-   place, which is usually faster than allocating a new string (and copy
-   characters).
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copy characters), or create a new string.
 
    Error handling is implemented as follows: an exception is set, -1
    is returned and *unicode left untouched. */
