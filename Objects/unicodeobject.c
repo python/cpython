@@ -655,7 +655,6 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     share_wstr = _PyUnicode_SHARE_WSTR(unicode);
 
     if (length > ((PY_SSIZE_T_MAX - struct_size) / char_size - 1)) {
-        Py_DECREF(unicode);
         PyErr_NoMemory();
         return NULL;
     }
@@ -666,7 +665,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
 
     new_unicode = (PyObject *)PyObject_REALLOC((char *)unicode, new_size);
     if (new_unicode == NULL) {
-        PyObject_Del(unicode);
+        _Py_NewReference(unicode);
         PyErr_NoMemory();
         return NULL;
     }
@@ -834,8 +833,9 @@ _PyUnicode_New(Py_ssize_t length)
     new_size = sizeof(Py_UNICODE) * ((size_t)length + 1);
     _PyUnicode_WSTR(unicode) = (Py_UNICODE*) PyObject_MALLOC(new_size);
     if (!_PyUnicode_WSTR(unicode)) {
+        Py_DECREF(unicode);
         PyErr_NoMemory();
-        goto onError;
+        return NULL;
     }
 
     /* Initialize the first element to guard against cases where
@@ -860,13 +860,6 @@ _PyUnicode_New(Py_ssize_t length)
     _PyUnicode_UTF8_LENGTH(unicode) = 0;
     assert(_PyUnicode_CheckConsistency((PyObject *)unicode, 0));
     return unicode;
-
-  onError:
-    /* XXX UNREF/NEWREF interface should be more symmetrical */
-    _Py_DEC_REFTOTAL;
-    _Py_ForgetReference((PyObject *)unicode);
-    PyObject_Del(unicode);
-    return NULL;
 }
 
 static const char*
@@ -1506,15 +1499,10 @@ unicode_dealloc(register PyObject *unicode)
         PyObject_DEL(_PyUnicode_WSTR(unicode));
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
         PyObject_DEL(_PyUnicode_UTF8(unicode));
+    if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode))
+        PyObject_DEL(_PyUnicode_DATA_ANY(unicode));
 
-    if (PyUnicode_IS_COMPACT(unicode)) {
-        Py_TYPE(unicode)->tp_free(unicode);
-    }
-    else {
-        if (_PyUnicode_DATA_ANY(unicode))
-            PyObject_DEL(_PyUnicode_DATA_ANY(unicode));
-        Py_TYPE(unicode)->tp_free(unicode);
-    }
+    Py_TYPE(unicode)->tp_free(unicode);
 }
 
 #ifdef Py_DEBUG
@@ -1590,9 +1578,10 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
     }
 
     if (PyUnicode_IS_COMPACT(unicode)) {
-        *p_unicode = resize_compact(unicode, length);
-        if (*p_unicode == NULL)
+        PyObject *new_unicode = resize_compact(unicode, length);
+        if (new_unicode == NULL)
             return -1;
+        *p_unicode = new_unicode;
         assert(_PyUnicode_CheckConsistency(*p_unicode, 0));
         return 0;
     }
