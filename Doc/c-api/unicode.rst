@@ -386,13 +386,6 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_Copy(PyObject *unicode)
-
-   Get a new copy of a Unicode object.
-
-   .. versionadded:: 3.3
-
-
 .. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
 

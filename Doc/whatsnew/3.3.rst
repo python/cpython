@@ -769,8 +769,8 @@ Unicode functions and methods using :c:type:`Py_UNICODE` and
  * :c:macro:`PyUnicode_GET_DATA_SIZE`: use
    ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
    strings)
- * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy`,
-   :c:func:`PyUnicode_AsWideCharString` or :c:func:`PyUnicode_Copy`
+ * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
+   :c:func:`PyUnicode_AsWideCharString`
 
 Functions and macros manipulating Py_UNICODE* strings:
 
