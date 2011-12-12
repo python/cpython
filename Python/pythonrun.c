@@ -474,7 +474,7 @@ Py_Finalize(void)
     flush_std_files();
 
     /* Collect final garbage.  This disposes of cycles created by
-     * new-style class definitions, for example.
+     * class definitions, for example.
      * XXX This is disabled because it caused too many problems.  If
      * XXX a __del__ or weakref callback triggers here, Python code has
      * XXX a hard time running, because even the sys module has been
@@ -1347,11 +1347,6 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
     _Py_IDENTIFIER(lineno);
     _Py_IDENTIFIER(offset);
     _Py_IDENTIFIER(text);
-
-    /* old style errors */
-    if (PyTuple_Check(err))
-        return PyArg_ParseTuple(err, "O(ziiz)", message, filename,
-                                lineno, offset, text);
 
     /* new style errors.  `err' is an instance */
 

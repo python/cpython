@@ -1639,6 +1639,8 @@ opcodes = [
       is pushed on the stack.
 
       NOTE:  checks for __safe_for_unpickling__ went away in Python 2.3.
+      NOTE:  the distinction between old-style and new-style classes does
+             not make sense in Python 3.
       """),
 
     I(name='OBJ',

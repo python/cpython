@@ -15,8 +15,8 @@ have been called before resurrection).  At best (and this has been an
 historically common bug), tp_clear empties an instance's __dict__, and
 "impossible" AttributeErrors result.  At worst, tp_clear leaves behind an
 insane object at the C level, and segfaults result (historically, most
-often by setting a new-style class's mro pointer to NULL, after which
-attribute lookups performed by the class can segfault).
+often by setting a class's mro pointer to NULL, after which attribute
+lookups performed by the class can segfault).
 
 OTOH, it's OK to run Python-level code that can't access unreachable
 objects, and sometimes that's necessary.  The chief example is the callback
@@ -119,7 +119,7 @@ isn't easy to stumble into by accident while Python is running, and, indeed,
 it took quite a while to dream up failing test cases.  Zope3 saw segfaults
 during shutdown, during the second call of gc in Py_Finalize, after most
 modules had been torn down.  That creates many trash cycles (esp. those
-involving new-style classes), making the problem much more likely.  Once you
+involving classes), making the problem much more likely.  Once you
 know what's required to provoke the problem, though, it's easy to create
 tests that segfault before shutdown.
 

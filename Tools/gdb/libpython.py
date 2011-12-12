@@ -402,7 +402,7 @@ class ProxyAlreadyVisited(object):
 
 
 def _write_instance_repr(out, visited, name, pyop_attrdict, address):
-    '''Shared code for use by old-style and new-style classes:
+    '''Shared code for use by all classes:
     write a representation to file-like object "out"'''
     out.write('<')
     out.write(name)
@@ -481,7 +481,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Support for new-style classes.
+        Support for classes.
 
         Currently we just locate the dictionary using a transliteration to
         python of _PyObject_GetDictPtr, ignoring descriptors
@@ -498,7 +498,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
             attr_dict = {}
         tp_name = self.safe_tp_name()
 
-        # New-style class:
+        # Class:
         return InstanceProxy(tp_name, attr_dict, long(self._gdbval))
 
     def write_repr(self, out, visited):
@@ -669,44 +669,6 @@ class PyDictObjectPtr(PyObjectPtr):
             out.write(': ')
             pyop_value.write_repr(out, visited)
         out.write('}')
-
-class PyInstanceObjectPtr(PyObjectPtr):
-    _typename = 'PyInstanceObject'
-
-    def proxyval(self, visited):
-        # Guard against infinite loops:
-        if self.as_address() in visited:
-            return ProxyAlreadyVisited('<...>')
-        visited.add(self.as_address())
-
-        # Get name of class:
-        in_class = self.pyop_field('in_class')
-        cl_name = in_class.pyop_field('cl_name').proxyval(visited)
-
-        # Get dictionary of instance attributes:
-        in_dict = self.pyop_field('in_dict').proxyval(visited)
-
-        # Old-style class:
-        return InstanceProxy(cl_name, in_dict, long(self._gdbval))
-
-    def write_repr(self, out, visited):
-        # Guard against infinite loops:
-        if self.as_address() in visited:
-            out.write('<...>')
-            return
-        visited.add(self.as_address())
-
-        # Old-style class:
-
-        # Get name of class:
-        in_class = self.pyop_field('in_class')
-        cl_name = in_class.pyop_field('cl_name').proxyval(visited)
-
-        # Get dictionary of instance attributes:
-        pyop_in_dict = self.pyop_field('in_dict')
-
-        _write_instance_repr(out, visited,
-                             cl_name, pyop_in_dict, self.as_address())
 
 class PyListObjectPtr(PyObjectPtr):
     _typename = 'PyListObject'
