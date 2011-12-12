@@ -9,6 +9,7 @@ descr_dealloc(PyDescrObject *descr)
     _PyObject_GC_UNTRACK(descr);
     Py_XDECREF(descr->d_type);
     Py_XDECREF(descr->d_name);
+    Py_XDECREF(descr->d_qualname);
     PyObject_GC_Del(descr);
 }
 
@@ -321,6 +322,44 @@ method_get_doc(PyMethodDescrObject *descr, void *closure)
     return PyUnicode_FromString(descr->d_method->ml_doc);
 }
 
+static PyObject *
+calculate_qualname(PyDescrObject *descr)
+{
+    PyObject *type_qualname, *res;
+    _Py_IDENTIFIER(__qualname__);
+
+    if (descr->d_name == NULL || !PyUnicode_Check(descr->d_name)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "<descriptor>.__name__ is not a unicode object");
+        return NULL;
+    }
+
+    type_qualname = _PyObject_GetAttrId((PyObject *)descr->d_type,
+                                        &PyId___qualname__);
+    if (type_qualname == NULL)
+        return NULL;
+
+    if (!PyUnicode_Check(type_qualname)) {
+        PyErr_SetString(PyExc_TypeError, "<descriptor>.__objclass__."
+                        "__qualname__ is not a unicode object");
+        Py_XDECREF(type_qualname);
+        return NULL;
+    }
+
+    res = PyUnicode_FromFormat("%S.%S", type_qualname, descr->d_name);
+    Py_DECREF(type_qualname);
+    return res;
+}
+
+static PyObject *
+descr_get_qualname(PyDescrObject *descr)
+{
+    if (descr->d_qualname == NULL)
+        descr->d_qualname = calculate_qualname(descr);
+    Py_XINCREF(descr->d_qualname);
+    return descr->d_qualname;
+}
+
 static PyMemberDef descr_members[] = {
     {"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
     {"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
@@ -329,6 +368,7 @@ static PyMemberDef descr_members[] = {
 
 static PyGetSetDef method_getset[] = {
     {"__doc__", (getter)method_get_doc},
+    {"__qualname__", (getter)descr_get_qualname},
     {0}
 };
 
@@ -344,6 +384,7 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 
 static PyGetSetDef member_getset[] = {
     {"__doc__", (getter)member_get_doc},
+    {"__qualname__", (getter)descr_get_qualname},
     {0}
 };
 
@@ -359,6 +400,7 @@ getset_get_doc(PyGetSetDescrObject *descr, void *closure)
 
 static PyGetSetDef getset_getset[] = {
     {"__doc__", (getter)getset_get_doc},
+    {"__qualname__", (getter)descr_get_qualname},
     {0}
 };
 
@@ -374,6 +416,7 @@ wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 
 static PyGetSetDef wrapperdescr_getset[] = {
     {"__doc__", (getter)wrapperdescr_get_doc},
+    {"__qualname__", (getter)descr_get_qualname},
     {0}
 };
 
@@ -585,6 +628,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
             Py_DECREF(descr);
             descr = NULL;
         }
+        descr->d_qualname = NULL;
     }
     return descr;
 }
@@ -987,9 +1031,16 @@ wrapper_doc(wrapperobject *wp)
     }
 }
 
+static PyObject *
+wrapper_qualname(wrapperobject *wp)
+{
+    return descr_get_qualname((PyDescrObject *)wp->descr);
+}
+
 static PyGetSetDef wrapper_getsets[] = {
     {"__objclass__", (getter)wrapper_objclass},
     {"__name__", (getter)wrapper_name},
+    {"__qualname__", (getter)wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
     {0}
 };
