@@ -779,7 +779,10 @@ PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
    a new string and copy characters), or create a new string.
 
    Error handling is implemented as follows: an exception is set, -1
-   is returned and *unicode left untouched. */
+   is returned and *unicode left untouched.
+
+   WARNING: The function doesn't check string content, the result may not be a
+            string in canonical representation. */
 
 PyAPI_FUNC(int) PyUnicode_Resize(
     PyObject **unicode,         /* Pointer to the Unicode object */
