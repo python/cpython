@@ -665,7 +665,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
         if (bases == NULL)
             goto failure;
     }
-    /* Create a real new-style class. */
+    /* Create a real class. */
     result = PyObject_CallFunction((PyObject *)&PyType_Type, "sOO",
                                    dot+1, bases, dict);
   failure:

@@ -36,9 +36,7 @@ continuing through the base classes of ``type(a)`` excluding metaclasses. If the
 looked-up value is an object defining one of the descriptor methods, then Python
 may override the default behavior and invoke the descriptor method instead.
 Where this occurs in the precedence chain depends on which descriptor methods
-were defined.  Note that descriptors are only invoked for new style objects or
-classes (a class is new style if it inherits from :class:`object` or
-:class:`type`).
+were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
 behind properties, methods, static methods, class methods, and :func:`super()`.
@@ -89,8 +87,6 @@ of ``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)`
 is invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object or a class.
-Either way, descriptors only work for new style objects and classes.  A class is
-new style if it is a subclass of :class:`object`.
 
 For objects, the machinery is in :meth:`object.__getattribute__` which
 transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.  The
@@ -115,7 +111,6 @@ The important points to remember are:
 
 * descriptors are invoked by the :meth:`__getattribute__` method
 * overriding :meth:`__getattribute__` prevents automatic descriptor calls
-* :meth:`__getattribute__` is only available with new style classes and objects
 * :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
   different calls to :meth:`__get__`.
 * data descriptors always override instance dictionaries.
@@ -128,10 +123,7 @@ and then returns ``A.__dict__['m'].__get__(obj, A)``.  If not a descriptor,
 ``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a
 search using :meth:`object.__getattribute__`.
 
-Note, in Python 2.2, ``super(B, obj).m()`` would only invoke :meth:`__get__` if
-``m`` was a data descriptor.  In Python 2.3, non-data descriptors also get
-invoked unless an old-style class is involved.  The implementation details are
-in :c:func:`super_getattro()` in
+The implementation details are in :c:func:`super_getattro()` in
 `Objects/typeobject.c <http://svn.python.org/view/python/trunk/Objects/typeobject.c?view=markup>`_
 and a pure Python equivalent can be found in `Guido's Tutorial`_.
 
