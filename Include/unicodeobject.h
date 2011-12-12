@@ -424,10 +424,12 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define SSTATE_INTERNED_IMMORTAL 2
 
 /* Return true if the string contains only ASCII characters, or 0 if not. The
-   string may be compact (PyUnicode_IS_COMPACT_ASCII) or not. No type checks
-   or Ready calls are performed. */
-#define PyUnicode_IS_ASCII(op)                 \
-    (((PyASCIIObject*)op)->state.ascii)
+   string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
+   ready. */
+#define PyUnicode_IS_ASCII(op)                   \
+    (assert(PyUnicode_Check(op)),                \
+     assert(PyUnicode_IS_READY(op)),             \
+     ((PyASCIIObject*)op)->state.ascii)
 
 /* Return true if the string is compact or 0 if not.
    No type checks or Ready calls are performed. */
@@ -437,7 +439,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 /* Return true if the string is a compact ASCII string (use PyASCIIObject
    structure), or 0 if not.  No type checks or Ready calls are performed. */
 #define PyUnicode_IS_COMPACT_ASCII(op)                 \
-    (PyUnicode_IS_ASCII(op) && PyUnicode_IS_COMPACT(op))
+    (((PyASCIIObject*)op)->state.ascii && PyUnicode_IS_COMPACT(op))
 
 enum PyUnicode_Kind {
 /* String contains only wstr byte characters.  This is only possible
