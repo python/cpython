@@ -5040,7 +5040,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         *consumed = (const char *)q-starts;
 
     /* Adjust length */
-    if (PyUnicode_Resize(&unicode, outpos) < 0)
+    if (unicode_resize(&unicode, outpos) < 0)
         goto onError;
 
     Py_XDECREF(errorHandler);
@@ -5404,7 +5404,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
         *consumed = (const char *)q-starts;
 
     /* Adjust length */
-    if (PyUnicode_Resize(&unicode, outpos) < 0)
+    if (unicode_resize(&unicode, outpos) < 0)
         goto onError;
 
     Py_XDECREF(errorHandler);
@@ -5824,7 +5824,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     }
 #undef WRITECHAR
 
-    if (PyUnicode_Resize(&v, i) < 0)
+    if (unicode_resize(&v, i) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -6086,7 +6086,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
       nextByte:
         ;
     }
-    if (PyUnicode_Resize(&v, outpos) < 0)
+    if (unicode_resize(&v, outpos) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -6273,7 +6273,7 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
             goto onError;
     }
 
-    if (PyUnicode_Resize(&v, outpos) < 0)
+    if (unicode_resize(&v, outpos) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -6727,7 +6727,7 @@ PyUnicode_DecodeASCII(const char *s,
             data = PyUnicode_DATA(v);
         }
     }
-    if (PyUnicode_Resize(&v, outpos) < 0)
+    if (unicode_resize(&v, outpos) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -6874,7 +6874,7 @@ decode_code_page_strict(UINT code_page,
     else {
         /* Extend unicode object */
         Py_ssize_t n = PyUnicode_GET_SIZE(*v);
-        if (PyUnicode_Resize(v, n + outsize) < 0)
+        if (unicode_resize(v, n + outsize) < 0)
             return -1;
         out = PyUnicode_AS_UNICODE(*v) + n;
     }
@@ -6958,7 +6958,7 @@ decode_code_page_errors(UINT code_page,
             PyErr_NoMemory();
             goto error;
         }
-        if (PyUnicode_Resize(v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
+        if (unicode_resize(v, n + size * Py_ARRAY_LENGTH(buffer)) < 0)
             goto error;
         startout = PyUnicode_AS_UNICODE(*v) + n;
     }
@@ -7017,7 +7017,7 @@ decode_code_page_errors(UINT code_page,
     /* Extend unicode object */
     outsize = out - startout;
     assert(outsize <= PyUnicode_WSTR_LENGTH(*v));
-    if (PyUnicode_Resize(v, outsize) < 0)
+    if (unicode_resize(v, outsize) < 0)
         goto error;
     ret = size;
 
@@ -7664,8 +7664,9 @@ PyUnicode_DecodeCharmap(const char *s,
                             (targetsize << 2);
                         extrachars += needed;
                         /* XXX overflow detection missing */
-                        if (PyUnicode_Resize(&v,
-                                             PyUnicode_GET_LENGTH(v) + needed) < 0) {
+                        if (unicode_resize(&v,
+                                           PyUnicode_GET_LENGTH(v) + needed) < 0)
+                        {
                             Py_DECREF(x);
                             goto onError;
                         }
@@ -7689,7 +7690,7 @@ PyUnicode_DecodeCharmap(const char *s,
             ++s;
         }
     }
-    if (PyUnicode_Resize(&v, outpos) < 0)
+    if (unicode_resize(&v, outpos) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
