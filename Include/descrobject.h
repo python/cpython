@@ -42,6 +42,7 @@ typedef struct {
     PyObject_HEAD
     PyTypeObject *d_type;
     PyObject *d_name;
+    PyObject *d_qualname;
 } PyDescrObject;
 
 #define PyDescr_COMMON PyDescrObject d_common
