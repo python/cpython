@@ -637,9 +637,15 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_bytes(self):
         for proto in protocols:
-            for u in b'', b'xyz', b'xyz'*100:
-                p = self.dumps(u)
-                self.assertEqual(self.loads(p), u)
+            for s in b'', b'xyz', b'xyz'*100:
+                p = self.dumps(s)
+                self.assertEqual(self.loads(p), s)
+            for s in [bytes([i]) for i in range(256)]:
+                p = self.dumps(s)
+                self.assertEqual(self.loads(p), s)
+            for s in [bytes([i, i]) for i in range(256)]:
+                p = self.dumps(s)
+                self.assertEqual(self.loads(p), s)
 
     def test_ints(self):
         import sys
