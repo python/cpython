@@ -369,7 +369,7 @@ typedef struct UnpicklerObject {
     char *errors;               /* Name of errors handling scheme to used when
                                    decoding strings. The default value is
                                    "strict". */
-    Py_ssize_t *marks;                 /* Mark stack, used for unpickling container
+    Py_ssize_t *marks;          /* Mark stack, used for unpickling container
                                    objects. */
     Py_ssize_t num_marks;       /* Number of marks in the mark stack. */
     Py_ssize_t marks_size;      /* Current allocated size of the mark stack. */
@@ -1708,26 +1708,58 @@ save_bytes(PicklerObject *self, PyObject *obj)
     if (self->proto < 3) {
         /* Older pickle protocols do not have an opcode for pickling bytes
            objects. Therefore, we need to fake the copy protocol (i.e.,
-           the __reduce__ method) to permit bytes object unpickling. */
+           the __reduce__ method) to permit bytes object unpickling.
+
+           Here we use a hack to be compatible with Python 2. Since in Python
+           2 'bytes' is just an alias for 'str' (which has different
+           parameters than the actual bytes object), we use codecs.encode
+           to create the appropriate 'str' object when unpickled using
+           Python 2 *and* the appropriate 'bytes' object when unpickled
+           using Python 3. Again this is a hack and we don't need to do this
+           with newer protocols. */
+        static PyObject *codecs_encode = NULL;
         PyObject *reduce_value = NULL;
-        PyObject *bytelist = NULL;
         int status;
 
-        bytelist = PySequence_List(obj);
-        if (bytelist == NULL)
-            return -1;
-
-        reduce_value = Py_BuildValue("(O(O))", (PyObject *)&PyBytes_Type,
-                                     bytelist);
-        if (reduce_value == NULL) {
-            Py_DECREF(bytelist);
-            return -1;
+        if (codecs_encode == NULL) {
+            PyObject *codecs_module = PyImport_ImportModule("codecs");
+            if (codecs_module == NULL) {
+                return -1;
+            }
+            codecs_encode = PyObject_GetAttrString(codecs_module, "encode");
+            Py_DECREF(codecs_module);
+            if (codecs_encode == NULL) {
+                return -1;
+            }
         }
+
+        if (PyBytes_GET_SIZE(obj) == 0) {
+            reduce_value = Py_BuildValue("(O())", (PyObject*)&PyBytes_Type);
+        }
+        else {
+            static PyObject *latin1 = NULL;
+            PyObject *unicode_str =
+                PyUnicode_DecodeLatin1(PyBytes_AS_STRING(obj),
+                                       PyBytes_GET_SIZE(obj),
+                                       "strict");
+            if (unicode_str == NULL)
+                return -1;
+            if (latin1 == NULL) {
+                latin1 = PyUnicode_InternFromString("latin1");
+                if (latin1 == NULL)
+                    return -1;
+            }
+            reduce_value = Py_BuildValue("(O(OO))",
+                                         codecs_encode, unicode_str, latin1);
+            Py_DECREF(unicode_str);
+        }
+
+        if (reduce_value == NULL)
+            return -1;
 
         /* save_reduce() will memoize the object automatically. */
         status = save_reduce(self, reduce_value, obj);
         Py_DECREF(reduce_value);
-        Py_DECREF(bytelist);
         return status;
     }
     else {
@@ -1735,7 +1767,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         char header[5];
         Py_ssize_t len;
 
-        size = PyBytes_Size(obj);
+        size = PyBytes_GET_SIZE(obj);
         if (size < 0)
             return -1;
 

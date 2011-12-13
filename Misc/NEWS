@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13505: Pickle bytes objects in a way that is compatible with
+  Python 2 when using protocols <= 2.
+
 - Issue #11147: Fix an unused argument in _Py_ANNOTATE_MEMORY_ORDER.  (Fix
   given by Campbell Barton).
 
