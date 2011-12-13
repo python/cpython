@@ -487,7 +487,11 @@ class _Pickler:
 
     def save_bytes(self, obj, pack=struct.pack):
         if self.proto < 3:
-            self.save_reduce(bytes, (list(obj),), obj=obj)
+            if len(obj) == 0:
+                self.save_reduce(bytes, (), obj=obj)
+            else:
+                self.save_reduce(codecs.encode,
+                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
             return
         n = len(obj)
         if n < 256:

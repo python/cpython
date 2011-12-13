@@ -2083,27 +2083,22 @@ _dis_test = r"""
    29: (    MARK
    30: d        DICT       (MARK at 29)
    31: p    PUT        2
-   34: c    GLOBAL     '__builtin__ bytes'
-   53: p    PUT        3
-   56: (    MARK
-   57: (        MARK
-   58: l            LIST       (MARK at 57)
+   34: c    GLOBAL     '_codecs encode'
+   50: p    PUT        3
+   53: (    MARK
+   54: V        UNICODE    'abc'
    59: p        PUT        4
-   62: L        LONG       97
-   67: a        APPEND
-   68: L        LONG       98
-   73: a        APPEND
-   74: L        LONG       99
-   79: a        APPEND
-   80: t        TUPLE      (MARK at 56)
-   81: p    PUT        5
-   84: R    REDUCE
-   85: p    PUT        6
-   88: V    UNICODE    'def'
-   93: p    PUT        7
-   96: s    SETITEM
-   97: a    APPEND
-   98: .    STOP
+   62: V        UNICODE    'latin1'
+   70: p        PUT        5
+   73: t        TUPLE      (MARK at 53)
+   74: p    PUT        6
+   77: R    REDUCE
+   78: p    PUT        7
+   81: V    UNICODE    'def'
+   86: p    PUT        8
+   89: s    SETITEM
+   90: a    APPEND
+   91: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2122,25 +2117,22 @@ Try again with a "binary" pickle.
    14: q        BINPUT     1
    16: }        EMPTY_DICT
    17: q        BINPUT     2
-   19: c        GLOBAL     '__builtin__ bytes'
-   38: q        BINPUT     3
-   40: (        MARK
-   41: ]            EMPTY_LIST
-   42: q            BINPUT     4
-   44: (            MARK
-   45: K                BININT1    97
-   47: K                BININT1    98
-   49: K                BININT1    99
-   51: e                APPENDS    (MARK at 44)
-   52: t            TUPLE      (MARK at 40)
-   53: q        BINPUT     5
-   55: R        REDUCE
-   56: q        BINPUT     6
-   58: X        BINUNICODE 'def'
-   66: q        BINPUT     7
-   68: s        SETITEM
-   69: e        APPENDS    (MARK at 3)
-   70: .    STOP
+   19: c        GLOBAL     '_codecs encode'
+   35: q        BINPUT     3
+   37: (        MARK
+   38: X            BINUNICODE 'abc'
+   46: q            BINPUT     4
+   48: X            BINUNICODE 'latin1'
+   59: q            BINPUT     5
+   61: t            TUPLE      (MARK at 37)
+   62: q        BINPUT     6
+   64: R        REDUCE
+   65: q        BINPUT     7
+   67: X        BINUNICODE 'def'
+   75: q        BINPUT     8
+   77: s        SETITEM
+   78: e        APPENDS    (MARK at 3)
+   79: .    STOP
 highest protocol among opcodes = 1
 
 Exercise the INST/OBJ/BUILD family.
