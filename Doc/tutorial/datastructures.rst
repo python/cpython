@@ -168,107 +168,137 @@ have fast appends and pops from both ends.  For example::
 List Comprehensions
 -------------------
 
-List comprehensions provide a concise way to create lists from sequences.
-Common applications are to make lists where each element is the result of
-some operations applied to each member of the sequence, or to create a
-subsequence of those elements that satisfy a certain condition.
+List comprehensions provide a concise way to create lists.
+Common applications are to make new lists where each element is the result of
+some operations applied to each member of another sequence or iterable, or to
+create a subsequence of those elements that satisfy a certain condition.
+
+For example, assume we want to create a list of squares, like::
+
+   >>> squares = []
+   >>> for x in range(10):
+   ...     squares.append(x**2)
+   ...
+   >>> squares
+   [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+We can obtain the same result with::
+
+   squares = [x**2 for x in range(10)]
+
+This is also equivalent to ``squares = map(lambda x: x**2, range(10))``,
+but it's more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
 by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
-clauses.  The result will be a list resulting from evaluating the expression in
-the context of the :keyword:`for` and :keyword:`if` clauses which follow it.  If
-the expression would evaluate to a tuple, it must be parenthesized.
+clauses.  The result will be a new list resulting from evaluating the expression
+in the context of the :keyword:`for` and :keyword:`if` clauses which follow it.
+For example, this listcomp combines the elements of two lists if they are not
+equal::
 
-Here we take a list of numbers and return a list of three times each number::
+   >>> [(x, y) for x in [1,2,3] for y in [3,1,4] if x != y]
+   [(1, 3), (1, 4), (2, 3), (2, 1), (2, 4), (3, 1), (3, 4)]
 
-   >>> vec = [2, 4, 6]
-   >>> [3*x for x in vec]
-   [6, 12, 18]
+and it's equivalent to::
 
-Now we get a little fancier::
+   >>> combs = []
+   >>> for x in [1,2,3]:
+   ...     for y in [3,1,4]:
+   ...         if x != y:
+   ...             combs.append((x, y))
+   ...
+   >>> combs
+   [(1, 3), (1, 4), (2, 3), (2, 1), (2, 4), (3, 1), (3, 4)]
 
-   >>> [[x, x**2] for x in vec]
-   [[2, 4], [4, 16], [6, 36]]
+Note how the order of the :keyword:`for` and :keyword:`if` statements is the
+same in both these snippets.
 
-Here we apply a method call to each item in a sequence::
+If the expression is a tuple (e.g. the ``(x, y)`` in the previous example),
+it must be parenthesized. ::
 
+   >>> vec = [-4, -2, 0, 2, 4]
+   >>> # create a new list with the values doubled
+   >>> [x*2 for x in vec]
+   [-8, -4, 0, 4, 8]
+   >>> # filter the list to exclude negative numbers
+   >>> [x for x in vec if x >= 0]
+   [0, 2, 4]
+   >>> # apply a function to all the elements
+   >>> [abs(x) for x in vec]
+   [4, 2, 0, 2, 4]
+   >>> # call a method on each element
    >>> freshfruit = ['  banana', '  loganberry ', 'passion fruit  ']
    >>> [weapon.strip() for weapon in freshfruit]
    ['banana', 'loganberry', 'passion fruit']
-
-Using the :keyword:`if` clause we can filter the stream::
-
-   >>> [3*x for x in vec if x > 3]
-   [12, 18]
-   >>> [3*x for x in vec if x < 2]
-   []
-
-Tuples can often be created without their parentheses, but not here::
-
-   >>> [x, x**2 for x in vec]  # error - parens required for tuples
+   >>> # create a list of 2-tuples like (number, square)
+   >>> [(x, x**2) for x in range(6)]
+   [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
+   >>> # the tuple must be parenthesized, otherwise an error is raised
+   >>> [x, x**2 for x in range(6)]
      File "<stdin>", line 1, in ?
-       [x, x**2 for x in vec]
+       [x, x**2 for x in range(6)]
                   ^
    SyntaxError: invalid syntax
-   >>> [(x, x**2) for x in vec]
-   [(2, 4), (4, 16), (6, 36)]
+   >>> # flatten a list using a listcomp with two 'for'
+   >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
+   >>> [num for elem in vec for num in elem]
+   [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-Here are some nested for loops and other fancy behavior::
+List comprehensions can contain complex expressions and nested functions::
 
-   >>> vec1 = [2, 4, 6]
-   >>> vec2 = [4, 3, -9]
-   >>> [x*y for x in vec1 for y in vec2]
-   [8, 6, -18, 16, 12, -36, 24, 18, -54]
-   >>> [x+y for x in vec1 for y in vec2]
-   [6, 5, -7, 8, 7, -5, 10, 9, -3]
-   >>> [vec1[i]*vec2[i] for i in range(len(vec1))]
-   [8, 12, -54]
-
-List comprehensions can be applied to complex expressions and nested functions::
-
-   >>> [str(round(355/113, i)) for i in range(1, 6)]
+   >>> from math import pi
+   >>> [str(round(pi, i)) for i in range(1, 6)]
    ['3.1', '3.14', '3.142', '3.1416', '3.14159']
-
 
 Nested List Comprehensions
 --------------------------
 
-If you've got the stomach for it, list comprehensions can be nested. They are a
-powerful tool but -- like all powerful tools -- they need to be used carefully,
-if at all.
+The initial expression in a list comprehension can be any arbitrary expression,
+including another list comprehension.
 
-Consider the following example of a 3x3 matrix held as a list containing three
-lists, one list per row::
+Consider the following example of a 3x4 matrix implemented as a list of
+3 lists of length 4::
 
-    >>> mat = [
-    ...        [1, 2, 3],
-    ...        [4, 5, 6],
-    ...        [7, 8, 9],
-    ...       ]
+   >>> matrix = [
+   ...     [1, 2, 3, 4],
+   ...     [5, 6, 7, 8],
+   ...     [9, 10, 11, 12],
+   ... ]
 
-Now, if you wanted to swap rows and columns, you could use a list
-comprehension::
+The following list comprehension will transpose rows and columns::
 
-    >>> print([[row[i] for row in mat] for i in [0, 1, 2]])
-    [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+   >>> [[row[i] for row in matrix] for i in range(4)]
+   [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-Special care has to be taken for the *nested* list comprehension:
+As we saw in the previous section, the nested listcomp is evaluated in
+the context of the :keyword:`for` that follows it, so this example is
+equivalent to::
 
-    To avoid apprehension when nesting list comprehensions, read from right to
-    left.
+   >>> transposed = []
+   >>> for i in range(4):
+   ...     transposed.append([row[i] for row in matrix])
+   ...
+   >>> transposed
+   [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-A more verbose version of this snippet shows the flow explicitly::
+which, in turn, is the same as::
 
-    for i in [0, 1, 2]:
-        for row in mat:
-            print(row[i], end="")
-        print()
+   >>> transposed = []
+   >>> for i in range(4):
+   ...     # the following 3 lines implement the nested listcomp
+   ...     transposed_row = []
+   ...     for row in matrix:
+   ...         transposed_row.append(row[i])
+   ...     transposed.append(transposed_row)
+   ...
+   >>> transposed
+   [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-In real world, you should prefer built-in functions to complex flow statements.
+In the real world, you should prefer built-in functions to complex flow statements.
 The :func:`zip` function would do a great job for this use case::
 
-    >>> list(zip(*mat))
-    [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
+   >>> zip(*matrix)
+   [(1, 5, 9), (2, 6, 10), (3, 7, 11), (4, 8, 12)]
 
 See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
