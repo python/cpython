@@ -662,6 +662,12 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 sched
 -----
 
+* :meth:`~sched.scheduler.run` now accepts a *blocking* parameter which when
+  set to False makes the method execute the scheduled events due to expire
+  soonest (if any) and then return immediately.
+  This is useful in case you want to use the :class:`~sched.scheduler` in
+  non-blocking applications.  (Contributed by Giampaolo Rodolà in :issue:`13449`)
+
 * :class:`~sched.scheduler` class can now be safely used in multi-threaded
   environments.  (Contributed by Josiah Carlson and Giampaolo Rodolà in
   :issue:`8684`)
