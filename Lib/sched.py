@@ -91,8 +91,10 @@ class scheduler:
         with self._lock:
             return not self._queue
 
-    def run(self):
+    def run(self, blocking=True):
         """Execute events until the queue is empty.
+        If blocking is False executes the scheduled events due to
+        expire soonest (if any) and then return.
 
         When there is a positive delay until the first event, the
         delay function is called and the event is left in the queue;
@@ -123,6 +125,8 @@ class scheduler:
                 time, priority, action, argument, kwargs = checked_event = q[0]
                 now = timefunc()
                 if now < time:
+                    if not blocking:
+                        return
                     delayfunc(time - now)
                 else:
                     event = pop(q)
