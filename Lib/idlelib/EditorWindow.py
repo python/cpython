@@ -799,12 +799,17 @@ class EditorWindow(object):
         rf_list = [path for path in rf_list if path not in bad_paths]
         ulchars = "1234567890ABCDEFGHIJK"
         rf_list = rf_list[0:len(ulchars)]
-        rf_file = open(self.recent_files_path, 'w',
-                        encoding='utf_8', errors='replace')
         try:
-            rf_file.writelines(rf_list)
-        finally:
-            rf_file.close()
+            with open(self.recent_files_path, 'w',
+                        encoding='utf_8', errors='replace') as rf_file:
+                rf_file.writelines(rf_list)
+        except IOError as err:
+            if not getattr(self.root, "recentfilelist_error_displayed", False):
+                self.root.recentfilelist_error_displayed = True
+                tkMessageBox.showerror(title='IDLE Error',
+                    message='Unable to update Recent Files list:\n%s'
+                        % str(err),
+                    parent=self.text)
         # for each edit window instance, construct the recent files menu
         for instance in self.top.instance_dict:
             menu = instance.recent_files_menu
