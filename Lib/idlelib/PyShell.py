@@ -206,14 +206,22 @@ class PyShellEditorWindow(EditorWindow):
                 lines = fp.readlines()
         except IOError:
             lines = []
-        with open(self.breakpointPath, "w") as new_file:
-            for line in lines:
-                if not line.startswith(filename + '='):
-                    new_file.write(line)
-            self.update_breakpoints()
-            breaks = self.breakpoints
-            if breaks:
-                new_file.write(filename + '=' + str(breaks) + '\n')
+        try:
+            with open(self.breakpointPath, "w") as new_file:
+                for line in lines:
+                    if not line.startswith(filename + '='):
+                        new_file.write(line)
+                self.update_breakpoints()
+                breaks = self.breakpoints
+                if breaks:
+                    new_file.write(filename + '=' + str(breaks) + '\n')
+        except IOError as err:
+            if not getattr(self.root, "breakpoint_error_displayed", False):
+                self.root.breakpoint_error_displayed = True
+                tkMessageBox.showerror(title='IDLE Error',
+                    message='Unable to update breakpoint list:\n%s'
+                        % str(err),
+                    parent=self.text)
 
     def restore_file_breaks(self):
         self.text.update()   # this enables setting "BREAK" tags to be visible
