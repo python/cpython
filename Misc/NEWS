@@ -82,6 +82,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4625: If IDLE cannot write to its recent file or breakpoint
+  files, display a message popup and continue rather than crash.
+  (original patch by Roger Serwy)
+
 - tarfile.py: Correctly detect bzip2 compressed streams with blocksizes
   other than 900k.
 
