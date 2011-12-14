@@ -409,6 +409,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8684 sched.scheduler class can be safely used in multi-threaded
+  environments.
+
 - Alias resource.error to OSError ala PEP 3151.
 
 - Issue #5689: Add support for lzma compression to the tarfile module.

@@ -662,6 +662,10 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 sched
 -----
 
+* :class:`~sched.scheduler` class can now be safely used in multi-threaded
+  environments.  (Contributed by Josiah Carlson and Giampaolo Rodolà in
+  :issue:`8684`)
+
 * *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
   constructor are now optional and defaults to :func:`time.time` and
   :func:`time.sleep` respectively.  (Contributed by Chris Clark in
