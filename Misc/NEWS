@@ -93,6 +93,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4625: If IDLE cannot write to its recent file or breakpoint
+  files, display a message popup and continue rather than crash.
+  (original patch by Roger Serwy)
+
 - Issue #5905: time.strftime() is now using the locale encoding, instead of
   UTF-8, if the wcsftime() function is not available.
 
