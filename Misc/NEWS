@@ -409,8 +409,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #13449 sched.scheduler.run() method has a new "blocking" parameter which
+  when set to False makes run() execute the scheduled events due to expire
+  soonest (if any) and then return.  Patch by Giampaolo Rodolà.
+
 - Issue #8684 sched.scheduler class can be safely used in multi-threaded
-  environments.
+  environments.  Patch by Josiah Carlson and Giampaolo Rodolà.
 
 - Alias resource.error to OSError ala PEP 3151.
 

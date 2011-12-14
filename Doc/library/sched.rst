@@ -102,11 +102,14 @@ Scheduler Objects
    Return true if the event queue is empty.
 
 
-.. method:: scheduler.run()
+.. method:: scheduler.run(blocking=True)
 
-   Run all scheduled events. This function will wait  (using the :func:`delayfunc`
+   Run all scheduled events. This method will wait  (using the :func:`delayfunc`
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
+
+   If *blocking* is False executes the scheduled events due to expire soonest
+   (if any) and then return.
 
    Either *action* or *delayfunc* can raise an exception.  In either case, the
    scheduler will maintain a consistent state and propagate the exception.  If an
@@ -117,6 +120,9 @@ Scheduler Objects
    next event, the scheduler will simply fall behind.  No events will be dropped;
    the calling code is responsible for canceling  events which are no longer
    pertinent.
+
+   .. versionadded:: 3.3
+      *blocking* parameter was added.
 
 .. attribute:: scheduler.queue
 

@@ -86,6 +86,16 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(flag, [None])
 
+    def test_run_non_blocking(self):
+        l = []
+        fun = lambda x: l.append(x)
+        scheduler = sched.scheduler(time.time, time.sleep)
+        for x in [10, 9, 8, 7, 6]:
+            scheduler.enter(x, 1, fun, (x,))
+        scheduler.run(blocking=False)
+        self.assertEqual(l, [])
+
+
 def test_main():
     support.run_unittest(TestCase)
 
