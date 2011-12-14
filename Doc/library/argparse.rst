@@ -650,7 +650,7 @@ action
 actions can do just about anything with the command-line arguments associated with
 them, though most actions simply add an attribute to the object returned by
 :meth:`~ArgumentParser.parse_args`.  The ``action`` keyword argument specifies
-how the command-line arguments should be handled. The supported actions are:
+how the command-line arguments should be handled. The supplied actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
   action. For example::
@@ -713,24 +713,9 @@ how the command-line arguments should be handled. The supported actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-You can also specify an arbitrary action by passing an object that implements
-the Action API.  The easiest way to do this is to extend
-:class:`argparse.Action`, supplying an appropriate ``__call__`` method.  The
-``__call__`` method should accept four parameters:
-
-* ``parser`` - The ArgumentParser object which contains this action.
-
-* ``namespace`` - The :class:`Namespace` object that will be returned by
-  :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
-  object.
-
-* ``values`` - The associated command-line arguments, with any type conversions
-  applied.  (Type conversions are specified with the type_ keyword argument to
-  :meth:`~ArgumentParser.add_argument`.
-
-* ``option_string`` - The option string that was used to invoke this action.
-  The ``option_string`` argument is optional, and will be absent if the action
-  is associated with a positional argument.
+You may also specify an arbitrary action by passing an Action class or other
+class that implements the same interface.  The recommended way to do this is
+to extend :class:`argparse.Action`, overriding the ``__call__`` method.
 
 An example of a custom action::
 
@@ -748,6 +733,9 @@ An example of a custom action::
    >>> args
    Namespace(bar='1', foo='2')
 
+Many actions also override the ``__init__`` method, validating the parameters
+to the argument definition and raising a ValueError or other Exception on
+failure.
 
 nargs
 ^^^^^
@@ -1152,6 +1140,75 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+Action classes
+^^^^^^^^^^^^^^
+
+.. class:: Action(option_strings, dest, nargs=None, const=None, default=None,
+                  type=None, choices=None, required=False, help=None,
+                  metavar=None)
+
+Action objects are used by an ArgumentParser to represent the information
+needed to parse a single argument from one or more strings from the
+command line. The keyword arguments to the Action constructor are made
+available as attributes of Action instances.
+
+* ``option_strings`` - A list of command-line option strings which
+  should be associated with this action.
+
+* ``dest`` - The name of the attribute to hold the created object(s)
+
+* ``nargs`` - The number of command-line arguments that should be
+  consumed. By default, one argument will be consumed and a single
+  value will be produced.  Other values include:
+     - N (an integer) consumes N arguments (and produces a list)
+     - '?' consumes zero or one arguments
+     - '*' consumes zero or more arguments (and produces a list)
+     - '+' consumes one or more arguments (and produces a list)
+  Note that the difference between the default and nargs=1 is that
+  with the default, a single value will be produced, while with
+  nargs=1, a list containing a single value will be produced.
+
+* ``const`` - The value to be produced if the option is specified and the
+  option uses an action that takes no values.
+
+* ``default`` - The value to be produced if the option is not specified.
+
+* ``type`` - The type which the command-line arguments should be converted
+  to, should be one of 'string', 'int', 'float', 'complex' or a
+  callable object that accepts a single string argument. If None,
+  'string' is assumed.
+
+* ``choices`` - A container of values that should be allowed. If not None,
+  after a command-line argument has been converted to the appropriate
+  type, an exception will be raised if it is not a member of this
+  collection.
+
+* ``required`` - True if the action must always be specified at the
+  command line. This is only meaningful for optional command-line
+  arguments.
+
+* ``help`` - The help string describing the argument.
+
+* ``metavar`` - The name to be used for the option's argument with the
+  help string. If None, the 'dest' value will be used as the name.
+
+Action classes must also override the ``__call__`` method, which should accept
+four parameters:
+
+* ``parser`` - The ArgumentParser object which contains this action.
+
+* ``namespace`` - The :class:`Namespace` object that will be returned by
+  :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
+  object using :func:`setattr`.
+
+* ``values`` - The associated command-line arguments, with any type conversions
+  applied.  Type conversions are specified with the type_ keyword argument to
+  :meth:`~ArgumentParser.add_argument`.
+
+* ``option_string`` - The option string that was used to invoke this action.
+  The ``option_string`` argument is optional, and will be absent if the action
+  is associated with a positional argument.
 
 
 The parse_args() method
