@@ -8,7 +8,7 @@
 
 #include "multiprocessing.h"
 
-#ifdef SCM_RIGHTS
+#if (defined(CMSG_LEN) && defined(SCM_RIGHTS))
     #define HAVE_FD_TRANSFER 1
 #else
     #define HAVE_FD_TRANSFER 0
