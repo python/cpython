@@ -58,7 +58,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
-    Py_DECREF(self->args);
+    Py_XDECREF(self->args);
     self->args = args;
     Py_INCREF(self->args);
 
@@ -587,37 +587,34 @@ SimpleExtendsException(PyExc_Exception, ImportError,
  * when it was supplied.
  */
 
-static PyObject *
-OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyOSErrorObject *self = NULL;
-    Py_ssize_t nargs;
-
-    PyObject *myerrno = NULL, *strerror = NULL, *filename = NULL;
-    PyObject *subslice = NULL;
+/* This function doesn't cleanup on error, the caller should */
+static int
+oserror_parse_args(PyObject **p_args,
+                   PyObject **myerrno, PyObject **strerror,
+                   PyObject **filename
 #ifdef MS_WINDOWS
-    PyObject *winerror = NULL;
-    long winerrcode = 0;
+                   , PyObject **winerror
 #endif
+                  )
+{
+    Py_ssize_t nargs;
+    PyObject *args = *p_args;
 
-    if (!_PyArg_NoKeywords(type->tp_name, kwds))
-        return NULL;
-    Py_INCREF(args);
     nargs = PyTuple_GET_SIZE(args);
 
 #ifdef MS_WINDOWS
     if (nargs >= 2 && nargs <= 4) {
         if (!PyArg_UnpackTuple(args, "OSError", 2, 4,
-                               &myerrno, &strerror, &filename, &winerror))
-            goto error;
-        if (winerror && PyLong_Check(winerror)) {
-            long errcode;
+                               myerrno, strerror, filename, winerror))
+            return -1;
+        if (*winerror && PyLong_Check(*winerror)) {
+            long errcode, winerrcode;
             PyObject *newargs;
             Py_ssize_t i;
 
-            winerrcode = PyLong_AsLong(winerror);
+            winerrcode = PyLong_AsLong(*winerror);
             if (winerrcode == -1 && PyErr_Occurred())
-                goto error;
+                return -1;
             /* Set errno to the corresponding POSIX errno (overriding
                first argument).  Windows Socket error codes (>= 10000)
                have the same value as their POSIX counterparts.
@@ -626,59 +623,55 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 errcode = winerror_to_errno(winerrcode);
             else
                 errcode = winerrcode;
-            myerrno = PyLong_FromLong(errcode);
-            if (!myerrno)
-                goto error;
+            *myerrno = PyLong_FromLong(errcode);
+            if (!*myerrno)
+                return -1;
             newargs = PyTuple_New(nargs);
             if (!newargs)
-                goto error;
-            PyTuple_SET_ITEM(newargs, 0, myerrno);
+                return -1;
+            PyTuple_SET_ITEM(newargs, 0, *myerrno);
             for (i = 1; i < nargs; i++) {
                 PyObject *val = PyTuple_GET_ITEM(args, i);
                 Py_INCREF(val);
                 PyTuple_SET_ITEM(newargs, i, val);
             }
             Py_DECREF(args);
-            args = newargs;
+            args = *p_args = newargs;
         }
     }
 #else
     if (nargs >= 2 && nargs <= 3) {
         if (!PyArg_UnpackTuple(args, "OSError", 2, 3,
-                               &myerrno, &strerror, &filename))
-            goto error;
+                               myerrno, strerror, filename))
+            return -1;
     }
 #endif
-    if (myerrno && PyLong_Check(myerrno) &&
-        errnomap && (PyObject *) type == PyExc_OSError) {
-        PyObject *newtype;
-        newtype = PyDict_GetItem(errnomap, myerrno);
-        if (newtype) {
-            assert(PyType_Check(newtype));
-            type = (PyTypeObject *) newtype;
-        }
-        else if (PyErr_Occurred())
-            goto error;
-    }
 
-    self = (PyOSErrorObject *) type->tp_alloc(type, 0);
-    if (!self)
-        goto error;
+    return 0;
+}
 
-    self->dict = NULL;
-    self->traceback = self->cause = self->context = NULL;
-    self->written = -1;
+static int
+oserror_init(PyOSErrorObject *self, PyObject **p_args,
+             PyObject *myerrno, PyObject *strerror,
+             PyObject *filename
+#ifdef MS_WINDOWS
+             , PyObject *winerror
+#endif
+             )
+{
+    PyObject *args = *p_args;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
 
     /* self->filename will remain Py_None otherwise */
     if (filename && filename != Py_None) {
-        if ((PyObject *) type == PyExc_BlockingIOError &&
+        if (Py_TYPE(self) == (PyTypeObject *) PyExc_BlockingIOError &&
             PyNumber_Check(filename)) {
             /* BlockingIOError's 3rd argument can be the number of
              * characters written.
              */
             self->written = PyNumber_AsSsize_t(filename, PyExc_ValueError);
             if (self->written == -1 && PyErr_Occurred())
-                goto error;
+                return -1;
         }
         else {
             Py_INCREF(filename);
@@ -687,20 +680,15 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (nargs >= 2 && nargs <= 3) {
                 /* filename is removed from the args tuple (for compatibility
                    purposes, see test_exceptions.py) */
-                subslice = PyTuple_GetSlice(args, 0, 2);
+                PyObject *subslice = PyTuple_GetSlice(args, 0, 2);
                 if (!subslice)
-                    goto error;
+                    return -1;
 
                 Py_DECREF(args);  /* replacing args */
-                args = subslice;
+                *p_args = args = subslice;
             }
         }
     }
-
-    /* Steals the reference to args */
-    self->args = args;
-    args = NULL;
-
     Py_XINCREF(myerrno);
     self->myerrno = myerrno;
 
@@ -712,6 +700,90 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->winerror = winerror;
 #endif
 
+    /* Steals the reference to args */
+    self->args = args;
+    args = NULL;
+
+    return 0;
+}
+
+static PyObject *
+OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static int
+OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds);
+
+static int
+oserror_use_init(PyTypeObject *type)
+{
+    /* When __init__ is defined in a OSError subclass, we want any
+       extraneous argument to __new__ to be ignored.  The only reasonable
+       solution, given __new__ takes a variable number of arguments,
+       is to defer arg parsing and initialization to __init__.
+
+       But when __new__ is overriden as well, it should call our __new__
+       with the right arguments.
+
+       (see http://bugs.python.org/issue12555#msg148829 )
+    */
+    if (type->tp_init != (initproc) OSError_init &&
+        type->tp_new == (newfunc) OSError_new) {
+        assert((PyObject *) type != PyExc_OSError);
+        return 1;
+    }
+    return 0;
+}
+
+static PyObject *
+OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyOSErrorObject *self = NULL;
+    PyObject *myerrno = NULL, *strerror = NULL, *filename = NULL;
+#ifdef MS_WINDOWS
+    PyObject *winerror = NULL;
+#endif
+
+    if (!oserror_use_init(type)) {
+        if (!_PyArg_NoKeywords(type->tp_name, kwds))
+            return NULL;
+
+        Py_INCREF(args);
+        if (oserror_parse_args(&args, &myerrno, &strerror, &filename
+#ifdef MS_WINDOWS
+                               , &winerror
+#endif
+            ))
+            goto error;
+
+        if (myerrno && PyLong_Check(myerrno) &&
+            errnomap && (PyObject *) type == PyExc_OSError) {
+            PyObject *newtype;
+            newtype = PyDict_GetItem(errnomap, myerrno);
+            if (newtype) {
+                assert(PyType_Check(newtype));
+                type = (PyTypeObject *) newtype;
+            }
+            else if (PyErr_Occurred())
+                goto error;
+        }
+    }
+
+    self = (PyOSErrorObject *) type->tp_alloc(type, 0);
+    if (!self)
+        goto error;
+
+    self->dict = NULL;
+    self->traceback = self->cause = self->context = NULL;
+    self->written = -1;
+
+    if (!oserror_use_init(type)) {
+        if (oserror_init(self, &args, myerrno, strerror, filename
+#ifdef MS_WINDOWS
+                         , winerror
+#endif
+            ))
+            goto error;
+    }
+
     return (PyObject *) self;
 
 error:
@@ -721,10 +793,40 @@ error:
 }
 
 static int
-OSError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
+OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    /* Everything already done in OSError_new */
+    PyObject *myerrno = NULL, *strerror = NULL, *filename = NULL;
+#ifdef MS_WINDOWS
+    PyObject *winerror = NULL;
+#endif
+
+    if (!oserror_use_init(Py_TYPE(self)))
+        /* Everything already done in OSError_new */
+        return 0;
+
+    if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
+        return -1;
+
+    Py_INCREF(args);
+    if (oserror_parse_args(&args, &myerrno, &strerror, &filename
+#ifdef MS_WINDOWS
+                           , &winerror
+#endif
+        ))
+        goto error;
+
+    if (oserror_init(self, &args, myerrno, strerror, filename
+#ifdef MS_WINDOWS
+                     , winerror
+#endif
+        ))
+        goto error;
+
     return 0;
+
+error:
+    Py_XDECREF(args);
+    return -1;
 }
 
 static int
