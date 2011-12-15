@@ -9,6 +9,10 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Fix the fix for issue #12149: it was incorrect, although it had the side
+  effect of appearing to resolve the issue.  Thanks to Mark Shannon for
+  noticing.
+
 - Issue #13546: Fixed an overflow issue that could crash the intepreter when
   calling sys.setrecursionlimit((1<<31)-1).
 
