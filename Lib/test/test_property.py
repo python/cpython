@@ -128,6 +128,29 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(newgetter.spam, 8)
         self.assertEqual(newgetter.__class__.spam.__doc__, "new docstring")
 
+    def test_property___isabstractmethod__descriptor(self):
+        for val in (True, False, [], [1], '', '1'):
+            class C(object):
+                def foo(self):
+                    pass
+                foo.__isabstractmethod__ = val
+                foo = property(foo)
+            self.assertIs(C.foo.__isabstractmethod__, bool(val))
+
+        # check that the property's __isabstractmethod__ descriptor does the
+        # right thing when presented with a value that fails truth testing:
+        class NotBool(object):
+            def __nonzero__(self):
+                raise ValueError()
+            __len__ = __nonzero__
+        with self.assertRaises(ValueError):
+            class C(object):
+                def foo(self):
+                    pass
+                foo.__isabstractmethod__ = NotBool()
+                foo = property(foo)
+            C.foo.__isabstractmethod__
+
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):

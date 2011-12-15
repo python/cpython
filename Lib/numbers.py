@@ -5,7 +5,7 @@
 
 TODO: Fill out more detailed documentation on the operators."""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 __all__ = ["Number", "Complex", "Real", "Rational", "Integral"]
 
@@ -50,7 +50,8 @@ class Complex(Number):
         """True if self != 0. Called for bool(self)."""
         return self != 0
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def real(self):
         """Retrieve the real component of this number.
 
@@ -58,7 +59,8 @@ class Complex(Number):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def imag(self):
         """Retrieve the imaginary component of this number.
 
@@ -272,11 +274,13 @@ class Rational(Real):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def numerator(self):
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def denominator(self):
         raise NotImplementedError
 

@@ -840,6 +840,29 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
     return res;
 }
 
+int
+_PyObject_IsAbstract(PyObject *obj)
+{
+    int res;
+    PyObject* isabstract;
+    _Py_IDENTIFIER(__isabstractmethod__);
+
+    if (obj == NULL)
+        return 0;
+
+    isabstract = _PyObject_GetAttrId(obj, &PyId___isabstractmethod__);
+    if (isabstract == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return 0;
+        }
+        return -1;
+    }
+    res = PyObject_IsTrue(isabstract);
+    Py_DECREF(isabstract);
+    return res;
+}
+
 PyObject *
 _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 {
