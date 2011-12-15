@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Fix OSError.__init__ and OSError.__new__ so that each of them can be
+  overriden and take additional arguments (followup to issue #12555).
+
 - Fix the fix for issue #12149: it was incorrect, although it had the side
   effect of appearing to resolve the issue.  Thanks to Mark Shannon for
   noticing.

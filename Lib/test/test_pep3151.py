@@ -12,6 +12,23 @@ from test import support
 class SubOSError(OSError):
     pass
 
+class SubOSErrorWithInit(OSError):
+    def __init__(self, message, bar):
+        self.bar = bar
+        super().__init__(message)
+
+class SubOSErrorWithNew(OSError):
+    def __new__(cls, message, baz):
+        self = super().__new__(cls, message)
+        self.baz = baz
+        return self
+
+class SubOSErrorCombinedInitFirst(SubOSErrorWithInit, SubOSErrorWithNew):
+    pass
+
+class SubOSErrorCombinedNewFirst(SubOSErrorWithNew, SubOSErrorWithInit):
+    pass
+
 
 class HierarchyTest(unittest.TestCase):
 
@@ -73,11 +90,6 @@ class HierarchyTest(unittest.TestCase):
         for errcode in othercodes:
             e = OSError(errcode, "Some message")
             self.assertIs(type(e), OSError)
-
-    def test_OSError_subclass_mapping(self):
-        # When constructing an OSError subclass, errno mapping isn't done
-        e = SubOSError(EEXIST, "Bad file descriptor")
-        self.assertIs(type(e), SubOSError)
 
     def test_try_except(self):
         filename = "some_hopefully_non_existing_file"
@@ -142,6 +154,44 @@ class AttributesTest(unittest.TestCase):
         self.assertEqual(e.characters_written, 5)
 
     # XXX VMSError not tested
+
+
+class ExplicitSubclassingTest(unittest.TestCase):
+
+    def test_errno_mapping(self):
+        # When constructing an OSError subclass, errno mapping isn't done
+        e = SubOSError(EEXIST, "Bad file descriptor")
+        self.assertIs(type(e), SubOSError)
+
+    def test_init_overriden(self):
+        e = SubOSErrorWithInit("some message", "baz")
+        self.assertEqual(e.bar, "baz")
+        self.assertEqual(e.args, ("some message",))
+
+    def test_init_kwdargs(self):
+        e = SubOSErrorWithInit("some message", bar="baz")
+        self.assertEqual(e.bar, "baz")
+        self.assertEqual(e.args, ("some message",))
+
+    def test_new_overriden(self):
+        e = SubOSErrorWithNew("some message", "baz")
+        self.assertEqual(e.baz, "baz")
+        self.assertEqual(e.args, ("some message",))
+
+    def test_new_kwdargs(self):
+        e = SubOSErrorWithNew("some message", baz="baz")
+        self.assertEqual(e.baz, "baz")
+        self.assertEqual(e.args, ("some message",))
+
+    def test_init_new_overriden(self):
+        e = SubOSErrorCombinedInitFirst("some message", "baz")
+        self.assertEqual(e.bar, "baz")
+        self.assertEqual(e.baz, "baz")
+        self.assertEqual(e.args, ("some message",))
+        e = SubOSErrorCombinedNewFirst("some message", "baz")
+        self.assertEqual(e.bar, "baz")
+        self.assertEqual(e.baz, "baz")
+        self.assertEqual(e.args, ("some message",))
 
 
 def test_main():
