@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Fix the fix for issue #12149: it was incorrect, although it had the side
+  effect of appearing to resolve the issue.  Thanks to Mark Shannon for
+  noticing.
+
 - Issue #13505: Pickle bytes objects in a way that is compatible with
   Python 2 when using protocols <= 2.
 
