@@ -59,6 +59,11 @@ class ModuleForLoaderTests(unittest.TestCase):
             self.raise_exception(name)
             self.assertIs(module, sys.modules[name])
 
+    def test_decorator_attrs(self):
+        def fxn(self, module): pass
+        wrapped = util.module_for_loader(fxn)
+        self.assertEqual(wrapped.__name__, fxn.__name__)
+        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
 class SetPackageTests(unittest.TestCase):
 
@@ -108,6 +113,11 @@ class SetPackageTests(unittest.TestCase):
             module.__package__ = value
             self.verify(module, value)
 
+    def test_decorator_attrs(self):
+        def fxn(module): pass
+        wrapped = util.set_package(fxn)
+        self.assertEqual(wrapped.__name__, fxn.__name__)
+        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
 def test_main():
     from test import support
