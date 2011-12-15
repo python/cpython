@@ -416,6 +416,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11610: Introduce a more general way to declare abstract properties.
+
 - Issue #13591: A bug in importlib has been fixed that caused import_module
   to load a module twice.
 

@@ -352,6 +352,23 @@ curses
 
 (Contributed by Iñigo Serna in :issue:`6755`)
 
+abc
+---
+
+Improved support for abstract base classes containing descriptors composed with
+abstract methods. The recommended approach to declaring abstract descriptors is
+now to provide :attr:`__isabstractmethod__` as a dynamically updated
+property. The built-in descriptors have been updated accordingly.
+
+  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+    with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractclassmethod` has been deprecated, use
+    :class:`classmethod` with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractstaticmethod` has been deprecated, use
+    :class:`property` with :func:`abc.abstractmethod` instead.
+
+(Contributed by Darren Dale in :issue:`11610`)
+
 faulthandler
 ------------
 

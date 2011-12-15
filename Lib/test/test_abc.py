@@ -10,14 +10,7 @@ import abc
 from inspect import isabstract
 
 
-class TestABC(unittest.TestCase):
-
-    def test_abstractmethod_basics(self):
-        @abc.abstractmethod
-        def foo(self): pass
-        self.assertTrue(foo.__isabstractmethod__)
-        def bar(self): pass
-        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+class TestLegacyAPI(unittest.TestCase):
 
     def test_abstractproperty_basics(self):
         @abc.abstractproperty
@@ -29,10 +22,12 @@ class TestABC(unittest.TestCase):
         class C(metaclass=abc.ABCMeta):
             @abc.abstractproperty
             def foo(self): return 3
+        self.assertRaises(TypeError, C)
         class D(C):
             @property
             def foo(self): return super().foo
         self.assertEqual(D().foo, 3)
+        self.assertFalse(getattr(D.foo, "__isabstractmethod__", False))
 
     def test_abstractclassmethod_basics(self):
         @abc.abstractclassmethod
@@ -40,7 +35,7 @@ class TestABC(unittest.TestCase):
         self.assertTrue(foo.__isabstractmethod__)
         @classmethod
         def bar(cls): pass
-        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+        self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
         class C(metaclass=abc.ABCMeta):
             @abc.abstractclassmethod
@@ -58,7 +53,7 @@ class TestABC(unittest.TestCase):
         self.assertTrue(foo.__isabstractmethod__)
         @staticmethod
         def bar(): pass
-        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+        self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
         class C(metaclass=abc.ABCMeta):
             @abc.abstractstaticmethod
@@ -97,6 +92,163 @@ class TestABC(unittest.TestCase):
             self.assertEqual(F.__abstractmethods__, {"bar"})
             self.assertRaises(TypeError, F)  # because bar is abstract now
             self.assertTrue(isabstract(F))
+
+
+class TestABC(unittest.TestCase):
+
+    def test_abstractmethod_basics(self):
+        @abc.abstractmethod
+        def foo(self): pass
+        self.assertTrue(foo.__isabstractmethod__)
+        def bar(self): pass
+        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+
+    def test_abstractproperty_basics(self):
+        @property
+        @abc.abstractmethod
+        def foo(self): pass
+        self.assertTrue(foo.__isabstractmethod__)
+        def bar(self): pass
+        self.assertFalse(getattr(bar, "__isabstractmethod__", False))
+
+        class C(metaclass=abc.ABCMeta):
+            @property
+            @abc.abstractmethod
+            def foo(self): return 3
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @C.foo.getter
+            def foo(self): return super().foo
+        self.assertEqual(D().foo, 3)
+
+    def test_abstractclassmethod_basics(self):
+        @classmethod
+        @abc.abstractmethod
+        def foo(cls): pass
+        self.assertTrue(foo.__isabstractmethod__)
+        @classmethod
+        def bar(cls): pass
+        self.assertFalse(getattr(bar, "__isabstractmethod__", False))
+
+        class C(metaclass=abc.ABCMeta):
+            @classmethod
+            @abc.abstractmethod
+            def foo(cls): return cls.__name__
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @classmethod
+            def foo(cls): return super().foo()
+        self.assertEqual(D.foo(), 'D')
+        self.assertEqual(D().foo(), 'D')
+
+    def test_abstractstaticmethod_basics(self):
+        @staticmethod
+        @abc.abstractmethod
+        def foo(): pass
+        self.assertTrue(foo.__isabstractmethod__)
+        @staticmethod
+        def bar(): pass
+        self.assertFalse(getattr(bar, "__isabstractmethod__", False))
+
+        class C(metaclass=abc.ABCMeta):
+            @staticmethod
+            @abc.abstractmethod
+            def foo(): return 3
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @staticmethod
+            def foo(): return 4
+        self.assertEqual(D.foo(), 4)
+        self.assertEqual(D().foo(), 4)
+
+    def test_abstractmethod_integration(self):
+        for abstractthing in [abc.abstractmethod, abc.abstractproperty,
+                              abc.abstractclassmethod,
+                              abc.abstractstaticmethod]:
+            class C(metaclass=abc.ABCMeta):
+                @abstractthing
+                def foo(self): pass  # abstract
+                def bar(self): pass  # concrete
+            self.assertEqual(C.__abstractmethods__, {"foo"})
+            self.assertRaises(TypeError, C)  # because foo is abstract
+            self.assertTrue(isabstract(C))
+            class D(C):
+                def bar(self): pass  # concrete override of concrete
+            self.assertEqual(D.__abstractmethods__, {"foo"})
+            self.assertRaises(TypeError, D)  # because foo is still abstract
+            self.assertTrue(isabstract(D))
+            class E(D):
+                def foo(self): pass
+            self.assertEqual(E.__abstractmethods__, set())
+            E()  # now foo is concrete, too
+            self.assertFalse(isabstract(E))
+            class F(E):
+                @abstractthing
+                def bar(self): pass  # abstract override of concrete
+            self.assertEqual(F.__abstractmethods__, {"bar"})
+            self.assertRaises(TypeError, F)  # because bar is abstract now
+            self.assertTrue(isabstract(F))
+
+    def test_descriptors_with_abstractmethod(self):
+        class C(metaclass=abc.ABCMeta):
+            @property
+            @abc.abstractmethod
+            def foo(self): return 3
+            @foo.setter
+            @abc.abstractmethod
+            def foo(self, val): pass
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @C.foo.getter
+            def foo(self): return super().foo
+        self.assertRaises(TypeError, D)
+        class E(D):
+            @D.foo.setter
+            def foo(self, val): pass
+        self.assertEqual(E().foo, 3)
+        # check that the property's __isabstractmethod__ descriptor does the
+        # right thing when presented with a value that fails truth testing:
+        class NotBool(object):
+            def __nonzero__(self):
+                raise ValueError()
+            __len__ = __nonzero__
+        with self.assertRaises(ValueError):
+            class F(C):
+                def bar(self):
+                    pass
+                bar.__isabstractmethod__ = NotBool()
+                foo = property(bar)
+
+
+    def test_customdescriptors_with_abstractmethod(self):
+        class Descriptor:
+            def __init__(self, fget, fset=None):
+                self._fget = fget
+                self._fset = fset
+            def getter(self, callable):
+                return Descriptor(callable, self._fget)
+            def setter(self, callable):
+                return Descriptor(self._fget, callable)
+            @property
+            def __isabstractmethod__(self):
+                return (getattr(self._fget, '__isabstractmethod__', False)
+                        or getattr(self._fset, '__isabstractmethod__', False))
+        class C(metaclass=abc.ABCMeta):
+            @Descriptor
+            @abc.abstractmethod
+            def foo(self): return 3
+            @foo.setter
+            @abc.abstractmethod
+            def foo(self, val): pass
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @C.foo.getter
+            def foo(self): return super().foo
+        self.assertRaises(TypeError, D)
+        class E(D):
+            @D.foo.setter
+            def foo(self, val): pass
+        self.assertFalse(E.foo.__isabstractmethod__)
 
     def test_metaclass_abc(self):
         # Metaclasses can be ABCs, too.
