@@ -26,7 +26,8 @@ def abstractmethod(funcobj):
 
 
 class abstractclassmethod(classmethod):
-    """A decorator indicating abstract classmethods.
+    """
+    A decorator indicating abstract classmethods.
 
     Similar to abstractmethod.
 
@@ -36,6 +37,9 @@ class abstractclassmethod(classmethod):
             @abstractclassmethod
             def my_abstract_classmethod(cls, ...):
                 ...
+
+    'abstractclassmethod' is deprecated. Use 'classmethod' with
+    'abstractmethod' instead.
     """
 
     __isabstractmethod__ = True
@@ -46,7 +50,8 @@ class abstractclassmethod(classmethod):
 
 
 class abstractstaticmethod(staticmethod):
-    """A decorator indicating abstract staticmethods.
+    """
+    A decorator indicating abstract staticmethods.
 
     Similar to abstractmethod.
 
@@ -56,6 +61,9 @@ class abstractstaticmethod(staticmethod):
             @abstractstaticmethod
             def my_abstract_staticmethod(...):
                 ...
+
+    'abstractstaticmethod' is deprecated. Use 'staticmethod' with
+    'abstractmethod' instead.
     """
 
     __isabstractmethod__ = True
@@ -66,7 +74,8 @@ class abstractstaticmethod(staticmethod):
 
 
 class abstractproperty(property):
-    """A decorator indicating abstract properties.
+    """
+    A decorator indicating abstract properties.
 
     Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
@@ -88,7 +97,11 @@ class abstractproperty(property):
             def getx(self): ...
             def setx(self, value): ...
             x = abstractproperty(getx, setx)
+
+    'abstractproperty' is deprecated. Use 'property' with 'abstractmethod'
+    instead.
     """
+
     __isabstractmethod__ = True
 
 

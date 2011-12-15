@@ -473,6 +473,7 @@ PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
 PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);

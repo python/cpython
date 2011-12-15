@@ -814,6 +814,27 @@ static PyMemberDef cm_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
+static PyObject *
+cm_get___isabstractmethod__(classmethod *cm, void *closure)
+{
+    int res = _PyObject_IsAbstract(cm->cm_callable);
+    if (res == -1) {
+        return NULL;
+    }
+    else if (res) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyGetSetDef cm_getsetlist[] = {
+    {"__isabstractmethod__",
+     (getter)cm_get___isabstractmethod__, NULL,
+     NULL,
+     NULL},
+    {NULL} /* Sentinel */
+};
+
 PyDoc_STRVAR(classmethod_doc,
 "classmethod(function) -> method\n\
 \n\
@@ -865,7 +886,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     cm_memberlist,              /* tp_members */
-    0,                                          /* tp_getset */
+    cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     cm_descr_get,                               /* tp_descr_get */
@@ -969,6 +990,27 @@ static PyMemberDef sm_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
+static PyObject *
+sm_get___isabstractmethod__(staticmethod *sm, void *closure)
+{
+    int res = _PyObject_IsAbstract(sm->sm_callable);
+    if (res == -1) {
+        return NULL;
+    }
+    else if (res) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyGetSetDef sm_getsetlist[] = {
+    {"__isabstractmethod__",
+     (getter)sm_get___isabstractmethod__, NULL,
+     NULL,
+     NULL},
+    {NULL} /* Sentinel */
+};
+
 PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function) -> method\n\
 \n\
@@ -1017,7 +1059,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     sm_memberlist,              /* tp_members */
-    0,                                          /* tp_getset */
+    sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     sm_descr_get,                               /* tp_descr_get */

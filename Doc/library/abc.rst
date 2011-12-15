@@ -127,19 +127,18 @@ This module provides the following class:
    available as a method of ``Foo``, so it is provided separately.
 
 
-It also provides the following decorators:
+The :mod:`abc` module also provides the following decorators:
 
 .. decorator:: abstractmethod(function)
 
    A decorator indicating abstract methods.
 
-   Using this decorator requires that the class's metaclass is :class:`ABCMeta` or
-   is derived from it.
-   A class that has a metaclass derived from :class:`ABCMeta`
-   cannot be instantiated unless all of its abstract methods and
-   properties are overridden.
-   The abstract methods can be called using any of the normal 'super' call
-   mechanisms.
+   Using this decorator requires that the class's metaclass is :class:`ABCMeta`
+   or is derived from it.  A class that has a metaclass derived from
+   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
+   and properties are overridden.  The abstract methods can be called using any
+   of the normal 'super' call mechanisms.  :func:`abstractmethod` may be used
+   to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
    abstraction status of a method or class once it is created, are not
@@ -147,12 +146,52 @@ It also provides the following decorators:
    regular inheritance; "virtual subclasses" registered with the ABC's
    :meth:`register` method are not affected.
 
-   Usage::
+   When :func:`abstractmethod` is applied in combination with other method
+   descriptors, it should be applied as the innermost decorator, as shown in
+   the following usage examples::
 
       class C(metaclass=ABCMeta):
           @abstractmethod
           def my_abstract_method(self, ...):
               ...
+          @classmethod
+          @abstractmethod
+          def my_abstract_classmethod(cls, ...):
+              ...
+          @staticmethod
+          @abstractmethod
+          def my_abstract_staticmethod(...):
+              ...
+
+          @property
+          @abstractmethod
+          def my_abstract_property(self):
+              ...
+          @my_abstract_property.setter
+          @abstractmethod
+          def my_abstract_property(self, val):
+              ...
+
+          @abstractmethod
+          def _get_x(self):
+              ...
+          @abstractmethod
+          def _set_x(self, val):
+              ...
+          x = property(_get_x, _set_x)
+
+   In order to correctly interoperate with the abstract base class machinery,
+   the descriptor must identify itself as abstract using
+   :attr:`__isabstractmethod__`. In general, this attribute should be ``True``
+   if any of the methods used to compose the descriptor are abstract. For
+   example, Python's built-in property does the equivalent of::
+
+      class Descriptor:
+          ...
+          @property
+          def __isabstractmethod__(self):
+              return any(getattr(f, '__isabstractmethod__', False) for
+                         f in (self._fget, self._fset, self._fdel))
 
    .. note::
 
@@ -177,6 +216,8 @@ It also provides the following decorators:
               ...
 
    .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       Use :class:`classmethod` with :func:`abstractmethod` instead
 
 
 .. decorator:: abstractstaticmethod(function)
@@ -192,18 +233,19 @@ It also provides the following decorators:
               ...
 
    .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       Use :class:`staticmethod` with :func:`abstractmethod` instead
 
 
 .. decorator:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
 
    A subclass of the built-in :func:`property`, indicating an abstract property.
 
-   Using this function requires that the class's metaclass is :class:`ABCMeta` or
-   is derived from it.
-   A class that has a metaclass derived from :class:`ABCMeta` cannot be
-   instantiated unless all of its abstract methods and properties are overridden.
-   The abstract properties can be called using any of the normal
-   'super' call mechanisms.
+   Using this function requires that the class's metaclass is :class:`ABCMeta`
+   or is derived from it. A class that has a metaclass derived from
+   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
+   and properties are overridden. The abstract properties can be called using
+   any of the normal 'super' call mechanisms.
 
    Usage::
 
@@ -219,6 +261,9 @@ It also provides the following decorators:
           def getx(self): ...
           def setx(self, value): ...
           x = abstractproperty(getx, setx)
+
+   .. deprecated:: 3.3
+       Use :class:`property` with :func:`abstractmethod` instead
 
 
 .. rubric:: Footnotes
