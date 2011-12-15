@@ -70,9 +70,11 @@ class ModuleTests(unittest.TestCase):
         m = ModuleType("foo")
         m.destroyed = destroyed
         s = """class A:
+    def __init__(self, l):
+        self.l = l
     def __del__(self):
-        destroyed.append(1)
-a = A()"""
+        self.l.append(1)
+a = A(destroyed)"""
         exec(s, m.__dict__)
         del m
         gc_collect()
