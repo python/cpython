@@ -816,7 +816,9 @@ def _gcd_import(name, package=None, level=0):
         for finder in meta_path:
             loader = finder.find_module(name, path)
             if loader is not None:
-                loader.load_module(name)
+                # The parent import may have already imported this module.
+                if name not in sys.modules:
+                    loader.load_module(name)
                 break
         else:
             raise ImportError(_ERR_MSG.format(name))
