@@ -93,6 +93,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13591: A bug in importlib has been fixed that caused import_module
+  to load a module twice.
+
 - Issue #4625: If IDLE cannot write to its recent file or breakpoint
   files, display a message popup and continue rather than crash.
   (original patch by Roger Serwy)
@@ -1867,9 +1870,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #13591: A bug in importlib has been fixed that caused import_module
-  to load a module twice.
 
 - logging: added "handler of last resort". See http://bit.ly/last-resort-handler
 
