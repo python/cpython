@@ -941,31 +941,42 @@ always available.
           stdout
           stderr
 
-   :term:`File objects <file object>` corresponding to the interpreter's standard
-   input, output and error streams.  ``stdin`` is used for all interpreter input
-   except for scripts but including calls to :func:`input`.  ``stdout`` is used
-   for the output of :func:`print` and :term:`expression` statements and for the
-   prompts of :func:`input`. The interpreter's own prompts
-   and (almost all of) its error messages go to ``stderr``.  ``stdout`` and
-   ``stderr`` needn't be built-in file objects: any object is acceptable as long
-   as it has a :meth:`write` method that takes a string argument.  (Changing these
-   objects doesn't affect the standard I/O streams of processes executed by
-   :func:`os.popen`, :func:`os.system` or the :func:`exec\*` family of functions in
-   the :mod:`os` module.)
+   :term:`File objects <file object>` used by the interpreter for standard
+   input, output and errors:
 
-   The standard streams are in text mode by default.  To write or read binary
-   data to these, use the underlying binary buffer.  For example, to write bytes
-   to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.  Using
-   :meth:`io.TextIOBase.detach` streams can be made binary by default.  This
+   * ``stdin`` is used for all interactive input (including calls to
+     :func:`input`);
+   * ``stdout`` is used for the output of :func:`print` and :term:`expression`
+     statements and for the prompts of :func:`input`;
+   * The interpreter's own prompts and its error messages go to ``stderr``.
+
+   By default, these streams are regular text streams as returned by the
+   :func:`open` function.  Their parameters are chosen as follows:
+
+   * The character encoding is platform-dependent.  Under Windows, if the stream
+     is interactive (that is, if its :meth:`isatty` method returns True), the
+     console codepage is used, otherwise the ANSI code page.  Under other
+     platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
+
+     Under all platforms though, you can override this value by setting the
+     :envvar:`PYTHONIOENCODING` environment variable.
+
+   * When interactive, standard streams are line-buffered.  Otherwise, they
+     are block-buffered like regular text files.  You can override this
+     value with the :option:`-u` command-line option.
+
+   To write or read binary data from/to the standard streams, use the
+   underlying binary :data:`~io.TextIOBase.buffer`.  For example, to write
+   bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.  Using
+   :meth:`io.TextIOBase.detach`, streams can be made binary by default.  This
    function sets :data:`stdin` and :data:`stdout` to binary::
 
       def make_streams_binary():
           sys.stdin = sys.stdin.detach()
           sys.stdout = sys.stdout.detach()
 
-   Note that the streams can be replaced with objects (like
-   :class:`io.StringIO`) that do not support the
-   :attr:`~io.BufferedIOBase.buffer` attribute or the
+   Note that the streams may be replaced with objects (like :class:`io.StringIO`)
+   that do not support the :attr:`~io.BufferedIOBase.buffer` attribute or the
    :meth:`~io.BufferedIOBase.detach` method and can raise :exc:`AttributeError`
    or :exc:`io.UnsupportedOperation`.
 
