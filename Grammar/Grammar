@@ -13,7 +13,7 @@
 # Start symbols for the grammar:
 #       single_input is a single interactive statement;
 #       file_input is a module or sequence of commands read from an input file;
-#       eval_input is the input for the eval() and input() functions.
+#       eval_input is the input for the eval() functions.
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
