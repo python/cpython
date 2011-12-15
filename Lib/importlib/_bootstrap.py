@@ -111,7 +111,7 @@ def _write_atomic(path, data):
 
 def _wrap(new, old):
     """Simple substitute for functools.wraps."""
-    for replace in ['__module__', '__name__', '__doc__']:
+    for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
         setattr(new, replace, getattr(old, replace))
     new.__dict__.update(old.__dict__)
 
