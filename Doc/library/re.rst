@@ -1018,16 +1018,16 @@ objects a little more gracefully:
 
 Suppose you are writing a poker program where a player's hand is represented as
 a 5-character string with each character representing a card, "a" for ace, "k"
-for king, "q" for queen, j for jack, "0" for 10, and "1" through "9"
+for king, "q" for queen, "j" for jack, "t" for 10, and "2" through "9"
 representing the card with that value.
 
 To see if a given string is a valid hand, one could do the following:
 
-   >>> valid = re.compile(r"[0-9akqj]{5}$")
-   >>> displaymatch(valid.match("ak05q"))  # Valid.
-   "<Match: 'ak05q', groups=()>"
-   >>> displaymatch(valid.match("ak05e"))  # Invalid.
-   >>> displaymatch(valid.match("ak0"))    # Invalid.
+   >>> valid = re.compile(r"^[a2-9tjqk]{5}$")
+   >>> displaymatch(valid.match("akt5q"))  # Valid.
+   "<Match: 'akt5q', groups=()>"
+   >>> displaymatch(valid.match("akt5e"))  # Invalid.
+   >>> displaymatch(valid.match("akt"))    # Invalid.
    >>> displaymatch(valid.match("727ak"))  # Valid.
    "<Match: '727ak', groups=()>"
 
