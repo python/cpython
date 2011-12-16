@@ -1538,7 +1538,6 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFromNegative(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
-
 # Tests for the sendmsg()/recvmsg() interface.  Where possible, the
 # same test code is used with different families and types of socket
 # (e.g. stream, datagram), and tests using recvmsg() are repeated
@@ -4241,6 +4240,66 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
             self.assertRaises(socket.error, s.bind, address)
 
+    def testStrName(self):
+        # Check that an abstract name can be passed as a string.
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            s.bind("\x00python\x00test\x00")
+            self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
+        finally:
+            s.close()
+
+class TestUnixDomain(unittest.TestCase):
+
+    def setUp(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    def tearDown(self):
+        self.sock.close()
+
+    def encoded(self, path):
+        # Return the given path encoded in the file system encoding,
+        # or skip the test if this is not possible.
+        try:
+            return os.fsencode(path)
+        except UnicodeEncodeError:
+            self.skipTest(
+                "Pathname {0!a} cannot be represented in file "
+                "system encoding {1!r}".format(
+                    path, sys.getfilesystemencoding()))
+
+    def testStrAddr(self):
+        # Test binding to and retrieving a normal string pathname.
+        path = os.path.abspath(support.TESTFN)
+        self.sock.bind(path)
+        self.addCleanup(support.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
+    def testBytesAddr(self):
+        # Test binding to a bytes pathname.
+        path = os.path.abspath(support.TESTFN)
+        self.sock.bind(self.encoded(path))
+        self.addCleanup(support.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
+    def testSurrogateescapeBind(self):
+        # Test binding to a valid non-ASCII pathname, with the
+        # non-ASCII bytes supplied using surrogateescape encoding.
+        path = os.path.abspath(support.TESTFN_UNICODE)
+        b = self.encoded(path)
+        self.sock.bind(b.decode("ascii", "surrogateescape"))
+        self.addCleanup(support.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
+    def testUnencodableAddr(self):
+        # Test binding to a pathname that cannot be encoded in the
+        # file system encoding.
+        if support.TESTFN_UNENCODABLE is None:
+            self.skipTest("No unencodable filename available")
+        path = os.path.abspath(support.TESTFN_UNENCODABLE)
+        self.sock.bind(path)
+        self.addCleanup(support.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BufferIOTest(SocketConnectedTest):
@@ -4517,6 +4576,8 @@ def test_main():
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
+    if hasattr(socket, "AF_UNIX"):
+        tests.append(TestUnixDomain)
     if sys.platform == 'linux':
         tests.append(TestLinuxAbstractNamespace)
     if isTipcAvailable():
