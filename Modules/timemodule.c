@@ -515,12 +515,14 @@ time_strftime(PyObject *self, PyObject *args)
      * will be ahead of time...
      */
     for (i = 1024; ; i += i) {
+        int err;
         outbuf = (time_char *)PyMem_Malloc(i*sizeof(time_char));
         if (outbuf == NULL) {
             PyErr_NoMemory();
             break;
         }
         buflen = format_time(outbuf, i, fmt, &buf);
+        err = errno;
         if (buflen > 0 || i >= 256 * fmtlen) {
             /* If the buffer is 256 times as long as the format,
                it's probably not failing for lack of room!
@@ -538,7 +540,7 @@ time_strftime(PyObject *self, PyObject *args)
         PyMem_Free(outbuf);
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         /* VisualStudio .NET 2005 does this properly */
-        if (buflen == 0 && errno == EINVAL) {
+        if (buflen == 0 && err == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             break;
         }

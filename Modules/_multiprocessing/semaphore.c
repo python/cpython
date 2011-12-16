@@ -255,7 +255,7 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
 static PyObject *
 semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
 {
-    int blocking = 1, res;
+    int blocking = 1, res, err = 0;
     double timeout;
     PyObject *timeout_obj = Py_None;
     struct timespec deadline = {0};
@@ -301,11 +301,13 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         else
             res = sem_timedwait(self->handle, &deadline);
         Py_END_ALLOW_THREADS
+        err = errno;
         if (res == MP_EXCEPTION_HAS_BEEN_SET)
             break;
     } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
 
     if (res < 0) {
+        errno = err;
         if (errno == EAGAIN || errno == ETIMEDOUT)
             Py_RETURN_FALSE;
         else if (errno == EINTR)
