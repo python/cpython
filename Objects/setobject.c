@@ -1068,9 +1068,10 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return emptyfrozenset;
 }
 
-void
-PySet_Fini(void)
+int
+PySet_ClearFreeList(void)
 {
+    int freelist_size = numfree;
     PySetObject *so;
 
     while (numfree) {
@@ -1078,6 +1079,13 @@ PySet_Fini(void)
         so = free_list[numfree];
         PyObject_GC_Del(so);
     }
+    return freelist_size;
+}
+
+void
+PySet_Fini(void)
+{
+    PySet_ClearFreeList();
     Py_CLEAR(dummy);
     Py_CLEAR(emptyfrozenset);
 }

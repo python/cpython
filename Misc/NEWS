@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6695: Full garbage collection runs now clear the freelist of set
+  objects.  Initial patch by Matthias Troffaes.
+
 - Fix OSError.__init__ and OSError.__new__ so that each of them can be
   overriden and take additional arguments (followup to issue #12555).
 

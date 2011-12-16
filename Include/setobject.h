@@ -99,6 +99,8 @@ PyAPI_FUNC(int) _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key,
 PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
+
+PyAPI_FUNC(int) PySet_ClearFreeList(void);
 #endif
 
 #ifdef __cplusplus
