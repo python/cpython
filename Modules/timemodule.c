@@ -532,7 +532,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeFSDefaultAndSize(outbuf, buflen);
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, 1);
 #endif
             PyMem_Free(outbuf);
             break;
@@ -764,8 +764,8 @@ PyInit_timezone(PyObject *m) {
 #endif /* PYOS_OS2 */
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeFSDefaultAndSize(tzname[0], strlen(tzname[0]));
-    otz1 = PyUnicode_DecodeFSDefaultAndSize(tzname[1], strlen(tzname[1]));
+    otz0 = PyUnicode_DecodeLocale(tzname[0], 1);
+    otz1 = PyUnicode_DecodeLocale(tzname[1], 1);
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_STRUCT_TM_TM_ZONE

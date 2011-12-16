@@ -16,7 +16,9 @@
    Return a pointer to a newly allocated wide character string (use
    PyMem_Free() to free the memory) and write the number of written wide
    characters excluding the null character into *size if size is not NULL, or
-   NULL on error (conversion or memory allocation error).
+   NULL on error (decoding or memory allocation error). If size is not NULL,
+   *size is set to (size_t)-1 on memory error and (size_t)-2 on decoding
+   error.
 
    Conversion errors should never happen, unless there is a bug in the C
    library. */
@@ -82,8 +84,9 @@ _Py_char2wchar(const char* arg, size_t *size)
                since we provide everything that we have -
                unless there is a bug in the C library, or I
                misunderstood how mbrtowc works. */
-            fprintf(stderr, "unexpected mbrtowc result -2\n");
             PyMem_Free(res);
+            if (size != NULL)
+                *size = (size_t)-2;
             return NULL;
         }
         if (converted == (size_t)-1) {
@@ -112,7 +115,8 @@ _Py_char2wchar(const char* arg, size_t *size)
        is ASCII (i.e. escape all bytes > 128. This will still roundtrip
        correctly in the locale's charset, which must be an ASCII superset. */
     res = PyMem_Malloc((strlen(arg)+1)*sizeof(wchar_t));
-    if (!res) goto oom;
+    if (!res)
+        goto oom;
     in = (unsigned char*)arg;
     out = res;
     while(*in)
@@ -126,7 +130,8 @@ _Py_char2wchar(const char* arg, size_t *size)
         *size = out - res;
     return res;
 oom:
-    fprintf(stderr, "out of memory\n");
+    if (size != NULL)
+        *size = (size_t)-1;
     return NULL;
 }
 
@@ -137,10 +142,10 @@ oom:
    This function is the reverse of _Py_char2wchar().
 
    Return a pointer to a newly allocated byte string (use PyMem_Free() to free
-   the memory), or NULL on conversion or memory allocation error.
+   the memory), or NULL on encoding or memory allocation error.
 
    If error_pos is not NULL: *error_pos is the index of the invalid character
-   on conversion error, or (size_t)-1 otherwise. */
+   on encoding error, or (size_t)-1 otherwise. */
 char*
 _Py_wchar2char(const wchar_t *text, size_t *error_pos)
 {
@@ -328,7 +333,7 @@ _Py_fopen(PyObject *path, const char *mode)
 #ifdef HAVE_READLINK
 
 /* Read value of symbolic link. Encode the path to the locale encoding, decode
-   the result from the locale encoding. */
+   the result from the locale encoding. Return -1 on error. */
 
 int
 _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
@@ -372,7 +377,8 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 #ifdef HAVE_REALPATH
 
 /* Return the canonicalized absolute pathname. Encode path to the locale
-   encoding, decode the result from the locale encoding. */
+   encoding, decode the result from the locale encoding.
+   Return NULL on error. */
 
 wchar_t*
 _Py_wrealpath(const wchar_t *path,
@@ -410,7 +416,8 @@ _Py_wrealpath(const wchar_t *path,
 #endif
 
 /* Get the current directory. size is the buffer size in wide characters
-   including the null character. Decode the path from the locale encoding. */
+   including the null character. Decode the path from the locale encoding.
+   Return NULL on error. */
 
 wchar_t*
 _Py_wgetcwd(wchar_t *buf, size_t size)

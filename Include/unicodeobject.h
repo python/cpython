@@ -1595,6 +1595,28 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
     );
 #endif
 
+/* --- Locale encoding --------------------------------------------------- */
+
+/* Decode a string from the current locale encoding. The decoder is strict if
+   *surrogateescape* is equal to zero, otherwise it uses the 'surrogateescape'
+   error handler (PEP 383) to escape undecodable bytes. If a byte sequence can
+   be decoded as a surrogate character and *surrogateescape* is not equal to
+   zero, the byte sequence is escaped using the 'surrogateescape' error handler
+   instead of being decoded. *str* must end with a null character but cannot
+   contain embedded null character. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocaleAndSize(
+    const char *str,
+    Py_ssize_t len,
+    int surrogateescape);
+
+/* Similar to PyUnicode_DecodeLocaleAndSize(), but compute the string
+   length using strlen(). */
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocale(
+    const char *str,
+    int surrogateescape);
+
 /* --- File system encoding ---------------------------------------------- */
 
 /* ParseTuple converter: encode str objects to bytes using
