@@ -36,6 +36,7 @@ static int
 my_fgets(char *buf, int len, FILE *fp)
 {
     char *p;
+    int err;
     while (1) {
         if (PyOS_InputHook != NULL)
             (void)(PyOS_InputHook)();
@@ -44,6 +45,7 @@ my_fgets(char *buf, int len, FILE *fp)
         p = fgets(buf, len, fp);
         if (p != NULL)
             return 0; /* No error */
+        err = errno;
 #ifdef MS_WINDOWS
         /* In the case of a Ctrl+C or some other external event
            interrupting the operation:
@@ -78,7 +80,7 @@ my_fgets(char *buf, int len, FILE *fp)
             return -1; /* EOF */
         }
 #ifdef EINTR
-        if (errno == EINTR) {
+        if (err == EINTR) {
             int s;
 #ifdef WITH_THREAD
             PyEval_RestoreThread(_PyOS_ReadlineTState);

@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10350: Read and save errno before calling a function which might
+  overwrite it.  Original patch by Hallvard B Furuseth.
+
 - Issue #13591: A bug in importlib has been fixed that caused import_module
   to load a module twice.
 
