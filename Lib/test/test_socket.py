@@ -4268,17 +4268,29 @@ class TestUnixDomain(unittest.TestCase):
                 "system encoding {1!r}".format(
                     path, sys.getfilesystemencoding()))
 
+    def bind(self, sock, path):
+        # Bind the socket
+        try:
+            sock.bind(path)
+        except OSError as e:
+            if str(e) == "AF_UNIX path too long":
+                self.skipTest(
+                    "Pathname {0!a} is too long to serve as a AF_UNIX path"
+                    .format(path))
+            else:
+                raise
+
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
         path = os.path.abspath(support.TESTFN)
-        self.sock.bind(path)
+        self.bind(self.sock, path)
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
     def testBytesAddr(self):
         # Test binding to a bytes pathname.
         path = os.path.abspath(support.TESTFN)
-        self.sock.bind(self.encoded(path))
+        self.bind(self.sock, self.encoded(path))
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
@@ -4287,7 +4299,7 @@ class TestUnixDomain(unittest.TestCase):
         # non-ASCII bytes supplied using surrogateescape encoding.
         path = os.path.abspath(support.TESTFN_UNICODE)
         b = self.encoded(path)
-        self.sock.bind(b.decode("ascii", "surrogateescape"))
+        self.bind(self.sock, b.decode("ascii", "surrogateescape"))
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
@@ -4297,7 +4309,7 @@ class TestUnixDomain(unittest.TestCase):
         if support.TESTFN_UNENCODABLE is None:
             self.skipTest("No unencodable filename available")
         path = os.path.abspath(support.TESTFN_UNENCODABLE)
-        self.sock.bind(path)
+        self.bind(self.sock, path)
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
