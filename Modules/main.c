@@ -655,13 +655,14 @@ Py_Main(int argc, wchar_t **argv)
             if (fp == NULL) {
                 char *cfilename_buffer;
                 const char *cfilename;
+                int err = errno;
                 cfilename_buffer = _Py_wchar2char(filename, NULL);
                 if (cfilename_buffer != NULL)
                     cfilename = cfilename_buffer;
                 else
                     cfilename = "<unprintable file name>";
                 fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
-                    argv[0], cfilename, errno, strerror(errno));
+                    argv[0], cfilename, err, strerror(err));
                 if (cfilename_buffer)
                     PyMem_Free(cfilename_buffer);
                 return 2;
