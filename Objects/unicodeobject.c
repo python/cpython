@@ -3235,6 +3235,83 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
 }
 
 PyObject*
+PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
+                              int surrogateescape)
+{
+    wchar_t smallbuf[256];
+    size_t smallbuf_len = Py_ARRAY_LENGTH(smallbuf);
+    wchar_t *wstr;
+    size_t wlen, wlen2;
+    PyObject *unicode;
+
+    if (str[len] != '\0' || len != strlen(str)) {
+        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        return NULL;
+    }
+
+    if (surrogateescape)
+    {
+        wstr = _Py_char2wchar(str, &wlen);
+        if (wstr == NULL) {
+            if (wlen == (size_t)-1)
+                PyErr_NoMemory();
+            else
+                PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+
+        unicode = PyUnicode_FromWideChar(wstr, wlen);
+        PyMem_Free(wstr);
+    }
+    else {
+#ifndef HAVE_BROKEN_MBSTOWCS
+        wlen = mbstowcs(NULL, str, 0);
+#else
+        wlen = len;
+#endif
+        if (wlen == (size_t)-1) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        if (wlen+1 <= smallbuf_len) {
+            wstr = smallbuf;
+        }
+        else {
+            if (wlen > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1)
+                return PyErr_NoMemory();
+
+            wstr = PyMem_Malloc((wlen+1) * sizeof(wchar_t));
+            if (!wstr)
+                return PyErr_NoMemory();
+        }
+
+        /* This shouldn't fail now */
+        wlen2 = mbstowcs(wstr, str, wlen+1);
+        if (wlen2 == (size_t)-1) {
+            if (wstr != smallbuf)
+                PyMem_Free(wstr);
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+#ifdef HAVE_BROKEN_MBSTOWCS
+        assert(wlen2 == wlen);
+#endif
+        unicode = PyUnicode_FromWideChar(wstr, wlen2);
+        if (wstr != smallbuf)
+            PyMem_Free(wstr);
+    }
+    return unicode;
+}
+
+PyObject*
+PyUnicode_DecodeLocale(const char *str, int surrogateescape)
+{
+    Py_ssize_t size = (Py_ssize_t)strlen(str);
+    return PyUnicode_DecodeLocaleAndSize(str, size, surrogateescape);
+}
+
+
+PyObject*
 PyUnicode_DecodeFSDefault(const char *s) {
     Py_ssize_t size = (Py_ssize_t)strlen(s);
     return PyUnicode_DecodeFSDefaultAndSize(s, size);
@@ -3264,23 +3341,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 "surrogateescape");
     }
     else {
-        /* locale encoding with surrogateescape */
-        wchar_t *wchar;
-        PyObject *unicode;
-        size_t len;
-
-        if (s[size] != '\0' || size != strlen(s)) {
-            PyErr_SetString(PyExc_TypeError, "embedded NUL character");
-            return NULL;
-        }
-
-        wchar = _Py_char2wchar(s, &len);
-        if (wchar == NULL)
-            return PyErr_NoMemory();
-
-        unicode = PyUnicode_FromWideChar(wchar, len);
-        PyMem_Free(wchar);
-        return unicode;
+        return PyUnicode_DecodeLocaleAndSize(s, size, 1);
     }
 #endif
 }
