@@ -495,16 +495,13 @@ Py_Main(int argc, wchar_t **argv)
             /* Use utf-8 on Mac OS X */
             unicode = PyUnicode_FromString(p);
 #else
-            wchar_t *wchar;
-            size_t len;
-            wchar = _Py_char2wchar(p, &len);
-            if (wchar == NULL)
-                continue;
-            unicode = PyUnicode_FromWideChar(wchar, len);
-            PyMem_Free(wchar);
+            unicode = PyUnicode_DecodeLocale(p, 1);
 #endif
-            if (unicode == NULL)
+            if (unicode == NULL) {
+                /* ignore errors */
+                PyErr_Clear();
                 continue;
+            }
             PySys_AddWarnOptionUnicode(unicode);
             Py_DECREF(unicode);
         }
