@@ -365,7 +365,7 @@ property. The built-in descriptors have been updated accordingly.
   * :class:`abc.abstractclassmethod` has been deprecated, use
     :class:`classmethod` with :func:`abc.abstractmethod` instead.
   * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`property` with :func:`abc.abstractmethod` instead.
+    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`)
 
