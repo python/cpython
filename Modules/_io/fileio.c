@@ -506,6 +506,7 @@ fileio_readinto(fileio *self, PyObject *args)
 {
     Py_buffer pbuf;
     Py_ssize_t n, len;
+    int err;
 
     if (self->fd < 0)
         return err_closed();
@@ -529,10 +530,12 @@ fileio_readinto(fileio *self, PyObject *args)
         Py_END_ALLOW_THREADS
     } else
         n = -1;
+    err = errno;
     PyBuffer_Release(&pbuf);
     if (n < 0) {
-        if (errno == EAGAIN)
+        if (err == EAGAIN)
             Py_RETURN_NONE;
+        errno = err;
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -675,9 +678,11 @@ fileio_read(fileio *self, PyObject *args)
         n = -1;
 
     if (n < 0) {
+        int err = errno;
         Py_DECREF(bytes);
-        if (errno == EAGAIN)
+        if (err == EAGAIN)
             Py_RETURN_NONE;
+        errno = err;
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -697,6 +702,7 @@ fileio_write(fileio *self, PyObject *args)
 {
     Py_buffer pbuf;
     Py_ssize_t n, len;
+    int err;
 
     if (self->fd < 0)
         return err_closed();
@@ -727,12 +733,14 @@ fileio_write(fileio *self, PyObject *args)
         Py_END_ALLOW_THREADS
     } else
         n = -1;
+    err = errno;
 
     PyBuffer_Release(&pbuf);
 
     if (n < 0) {
-        if (errno == EAGAIN)
+        if (err == EAGAIN)
             Py_RETURN_NONE;
+        errno = err;
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
