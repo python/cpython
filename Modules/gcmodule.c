@@ -764,6 +764,7 @@ clear_freelists(void)
     (void)PyFloat_ClearFreeList();
     (void)PyList_ClearFreeList();
     (void)PyDict_ClearFreeList();
+    (void)PySet_ClearFreeList();
 }
 
 static double
