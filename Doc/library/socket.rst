@@ -40,9 +40,23 @@ Socket families
 Depending on the system and the build options, various socket families
 are supported by this module.
 
-Socket addresses are represented as follows:
+The address format required by a particular socket object is automatically
+selected based on the address family specified when the socket object was
+created.  Socket addresses are represented as follows:
 
-- A single string is used for the :const:`AF_UNIX` address family.
+- The address of an :const:`AF_UNIX` socket bound to a file system node
+  is represented as a string, using the file system encoding and the
+  ``'surrogateescape'`` error handler (see :pep:`383`).  An address in
+  Linux's abstract namespace is returned as a :class:`bytes` object with
+  an initial null byte; note that sockets in this namespace can
+  communicate with normal file system sockets, so programs intended to
+  run on Linux may need to deal with both types of address.  A string or
+  :class:`bytes` object can be used for either type of address when
+  passing it as an argument.
+
+   .. versionchanged:: 3.3
+      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+      encoding.
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
   where *host* is a string representing either a hostname in Internet domain

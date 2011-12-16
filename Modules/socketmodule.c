@@ -1073,7 +1073,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #endif /* linux */
         {
             /* regular NULL-terminated string */
-            return PyUnicode_FromString(a->sun_path);
+            return PyUnicode_DecodeFSDefault(a->sun_path);
         }
     }
 #endif /* AF_UNIX */
@@ -1269,8 +1269,18 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         struct sockaddr_un* addr;
         char *path;
         int len;
-        if (!PyArg_Parse(args, "s#", &path, &len))
-            return 0;
+        int retval = 0;
+
+        /* PEP 383.  Not using PyUnicode_FSConverter since we need to
+           allow embedded nulls on Linux. */
+        if (PyUnicode_Check(args)) {
+            if ((args = PyUnicode_EncodeFSDefault(args)) == NULL)
+                return 0;
+        }
+        else
+            Py_INCREF(args);
+        if (!PyArg_Parse(args, "y#", &path, &len))
+            goto unix_out;
 
         addr = (struct sockaddr_un*)addr_ret;
 #ifdef linux
@@ -1279,7 +1289,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             if (len > sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
-                return 0;
+                goto unix_out;
             }
         }
         else
@@ -1289,7 +1299,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             if (len >= sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
-                return 0;
+                goto unix_out;
             }
             addr->sun_path[len] = 0;
         }
@@ -1300,7 +1310,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #else
         *len_ret = len + offsetof(struct sockaddr_un, sun_path);
 #endif
-        return 1;
+        retval = 1;
+    unix_out:
+        Py_DECREF(args);
+        return retval;
     }
 #endif /* AF_UNIX */
 

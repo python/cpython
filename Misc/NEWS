@@ -419,6 +419,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8373: The filesystem path of AF_UNIX sockets now uses the filesystem
+  encoding and the surrogateescape error handler, rather than UTF-8.  Patch
+  by David Watson.
+
 - Issue #10350: Read and save errno before calling a function which might
   overwrite it.  Original patch by Hallvard B Furuseth.
 
