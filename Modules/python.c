@@ -50,8 +50,12 @@ main(int argc, char **argv)
 #else
         argv_copy[i] = _Py_char2wchar(argv[i], NULL);
 #endif
-        if (!argv_copy[i])
+        if (!argv_copy[i]) {
+            fprintf(stderr, "Fatal Python error: "
+                            "unable to decode the command line argument #%i\n",
+                            i + 1);
             return 1;
+        }
         argv_copy2[i] = argv_copy[i];
     }
     setlocale(LC_ALL, oldloc);
