@@ -419,6 +419,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13560: Add PyUnicode_DecodeLocale(), PyUnicode_DecodeLocaleAndSize()
+  and PyUnicode_EncodeLocale() functions to the C API to decode/encode from/to
+  the current locale encoding.
+
 - Issue #8373: The filesystem path of AF_UNIX sockets now uses the filesystem
   encoding and the surrogateescape error handler, rather than UTF-8.  Patch
   by David Watson.
@@ -451,8 +455,8 @@ Library
   'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',
   and private attributes of 'smtpd.SMTPChannel'.
 
-- Issue #5905: time.strftime() is now using the locale encoding, instead of
-  UTF-8, if the wcsftime() function is not available.
+- Issue #5905, #13560: time.strftime() is now using the current locale
+  encoding, instead of UTF-8, if the wcsftime() function is not available.
 
 - Issue #8641: Update IDLE 3 syntax coloring to recognize b".." and not u"..".
   Patch by Tal Einat.

@@ -1603,7 +1603,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
    be decoded as a surrogate character and *surrogateescape* is not equal to
    zero, the byte sequence is escaped using the 'surrogateescape' error handler
    instead of being decoded. *str* must end with a null character but cannot
-   contain embedded null character. */
+   contain embedded null characters. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocaleAndSize(
     const char *str,
@@ -1616,6 +1616,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocaleAndSize(
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocale(
     const char *str,
     int surrogateescape);
+
+/* Encode a Unicode object to the current locale encoding. The encoder is
+   strict is *surrogateescape* is equal to zero, otherwise the
+   "surrogateescape" error handler is used. Return a bytes object. The string
+   cannot contain embedded null characters.. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
+    PyObject *unicode,
+    int surrogateescape
+    );
 
 /* --- File system encoding ---------------------------------------------- */
 

@@ -3073,6 +3073,140 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
     return NULL;
 }
 
+static size_t
+wcstombs_errorpos(const wchar_t *wstr)
+{
+    size_t len;
+#if SIZEOF_WCHAR_T == 2
+    wchar_t buf[3];
+#else
+    wchar_t buf[2];
+#endif
+    char outbuf[MB_LEN_MAX];
+    const wchar_t *start, *previous;
+    int save_errno;
+
+    save_errno = errno;
+#if SIZEOF_WCHAR_T == 2
+    buf[2] = 0;
+#else
+    buf[1] = 0;
+#endif
+    start = wstr;
+    while (*wstr != L'\0')
+    {
+        previous = wstr;
+#if SIZEOF_WCHAR_T == 2
+        if (Py_UNICODE_IS_HIGH_SURROGATE(wstr[0])
+            && Py_UNICODE_IS_LOW_SURROGATE(wstr[1]))
+        {
+            buf[0] = wstr[0];
+            buf[1] = wstr[1];
+            wstr += 2;
+        }
+        else {
+            buf[0] = *wstr;
+            buf[1] = 0;
+            wstr++;
+        }
+#else
+        buf[0] = *wstr;
+        wstr++;
+#endif
+        len = wcstombs(outbuf, buf, sizeof(outbuf));
+        if (len == (size_t)-1) {
+            errno = save_errno;
+            return previous - start;
+        }
+    }
+
+    /* failed to find the unencodable character */
+    errno = save_errno;
+    return 0;
+}
+
+PyObject *
+PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
+{
+    Py_ssize_t wlen, wlen2;
+    wchar_t *wstr;
+    PyObject *bytes = NULL;
+    char *errmsg;
+    PyObject *exc;
+    size_t error_pos;
+
+    wstr = PyUnicode_AsWideCharString(unicode, &wlen);
+    if (wstr == NULL)
+        return NULL;
+
+    wlen2 = wcslen(wstr);
+    if (wlen2 != wlen) {
+        PyMem_Free(wstr);
+        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        return NULL;
+    }
+
+    if (surrogateescape) {
+        /* locale encoding with surrogateescape */
+        char *str;
+
+        str = _Py_wchar2char(wstr, &error_pos);
+        if (str == NULL) {
+            if (error_pos == (size_t)-1) {
+                PyErr_NoMemory();
+                PyMem_Free(wstr);
+                return NULL;
+            }
+            else {
+                goto encode_error;
+            }
+        }
+        PyMem_Free(wstr);
+
+        bytes = PyBytes_FromString(str);
+        PyMem_Free(str);
+    }
+    else {
+        size_t len, len2;
+
+        len = wcstombs(NULL, wstr, 0);
+        if (len == (size_t)-1) {
+            error_pos = wcstombs_errorpos(wstr);
+            goto encode_error;
+        }
+
+        bytes = PyBytes_FromStringAndSize(NULL, len);
+        if (bytes == NULL) {
+            PyMem_Free(wstr);
+            return NULL;
+        }
+
+        len2 = wcstombs(PyBytes_AS_STRING(bytes), wstr, len+1);
+        if (len2 == (size_t)-1 || len2 > len) {
+            error_pos = wcstombs_errorpos(wstr);
+            goto encode_error;
+        }
+        PyMem_Free(wstr);
+    }
+    return bytes;
+
+encode_error:
+    errmsg = strerror(errno);
+    assert(errmsg != NULL);
+    if (errmsg == NULL)
+        errmsg = "wcstombs() encountered an unencodable wide character";
+    PyMem_Free(wstr);
+    Py_XDECREF(bytes);
+
+    exc = NULL;
+    raise_encode_exception(&exc,
+        "locale", unicode,
+        error_pos, error_pos+1,
+        errmsg);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
 PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
@@ -3097,38 +3231,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          "surrogateescape");
     }
     else {
-        /* locale encoding with surrogateescape */
-        wchar_t *wchar;
-        char *bytes;
-        PyObject *bytes_obj;
-        size_t error_pos;
-
-        wchar = PyUnicode_AsWideCharString(unicode, NULL);
-        if (wchar == NULL)
-            return NULL;
-        bytes = _Py_wchar2char(wchar, &error_pos);
-        if (bytes == NULL) {
-            if (error_pos != (size_t)-1) {
-                char *errmsg = strerror(errno);
-                PyObject *exc = NULL;
-                if (errmsg == NULL)
-                    errmsg = "Py_wchar2char() failed";
-                raise_encode_exception(&exc,
-                    "filesystemencoding", unicode,
-                    error_pos, error_pos+1,
-                    errmsg);
-                Py_XDECREF(exc);
-            }
-            else
-                PyErr_NoMemory();
-            PyMem_Free(wchar);
-            return NULL;
-        }
-        PyMem_Free(wchar);
-
-        bytes_obj = PyBytes_FromString(bytes);
-        PyMem_Free(bytes);
-        return bytes_obj;
+        return PyUnicode_EncodeLocale(unicode, 1);
     }
 #endif
 }

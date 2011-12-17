@@ -486,7 +486,7 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
-    format = PyUnicode_EncodeFSDefault(format_arg);
+    format = PyUnicode_EncodeLocale(format_arg, 1);
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
