@@ -3132,6 +3132,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
     wchar_t *wstr;
     PyObject *bytes = NULL;
     char *errmsg;
+    PyObject *reason;
     PyObject *exc;
     size_t error_pos;
 
@@ -3193,17 +3194,28 @@ PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
 encode_error:
     errmsg = strerror(errno);
     assert(errmsg != NULL);
-    if (errmsg == NULL)
-        errmsg = "wcstombs() encountered an unencodable wide character";
     PyMem_Free(wstr);
     Py_XDECREF(bytes);
 
-    exc = NULL;
-    raise_encode_exception(&exc,
-        "locale", unicode,
-        error_pos, error_pos+1,
-        errmsg);
-    Py_XDECREF(exc);
+    if (errmsg != NULL)
+        reason = PyUnicode_DecodeLocale(errmsg, 1);
+    else
+        reason = PyUnicode_FromString(
+            "wcstombs() encountered an unencodable "
+            "wide character");
+    if (reason == NULL)
+        return NULL;
+
+    exc = PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnnO",
+                                "locale", unicode,
+                                (Py_ssize_t)error_pos,
+                                (Py_ssize_t)(error_pos+1),
+                                reason);
+    Py_DECREF(reason);
+    if (exc != NULL) {
+        PyCodec_StrictErrors(exc);
+        Py_XDECREF(exc);
+    }
     return NULL;
 }
 
