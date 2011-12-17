@@ -3084,9 +3084,7 @@ wcstombs_errorpos(const wchar_t *wstr)
 #endif
     char outbuf[MB_LEN_MAX];
     const wchar_t *start, *previous;
-    int save_errno;
 
-    save_errno = errno;
 #if SIZEOF_WCHAR_T == 2
     buf[2] = 0;
 #else
@@ -3114,14 +3112,11 @@ wcstombs_errorpos(const wchar_t *wstr)
         wstr++;
 #endif
         len = wcstombs(outbuf, buf, sizeof(outbuf));
-        if (len == (size_t)-1) {
-            errno = save_errno;
+        if (len == (size_t)-1)
             return previous - start;
-        }
     }
 
     /* failed to find the unencodable character */
-    errno = save_errno;
     return 0;
 }
 
@@ -3199,7 +3194,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
         len = wcstombs(NULL, wstr, 0);
         if (len == (size_t)-1) {
-            error_pos = wcstombs_errorpos(wstr);
+            error_pos = (size_t)-1;
             goto encode_error;
         }
 
@@ -3211,7 +3206,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
         len2 = wcstombs(PyBytes_AS_STRING(bytes), wstr, len+1);
         if (len2 == (size_t)-1 || len2 > len) {
-            error_pos = wcstombs_errorpos(wstr);
+            error_pos = (size_t)-1;
             goto encode_error;
         }
         PyMem_Free(wstr);
@@ -3221,12 +3216,23 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 encode_error:
     errmsg = strerror(errno);
     assert(errmsg != NULL);
+
+    if (error_pos == (size_t)-1)
+        error_pos = wcstombs_errorpos(wstr);
+
     PyMem_Free(wstr);
     Py_XDECREF(bytes);
 
-    if (errmsg != NULL)
-        reason = PyUnicode_DecodeLocale(errmsg, "surrogateescape");
-    else
+    if (errmsg != NULL) {
+        size_t errlen;
+        wstr = _Py_char2wchar(errmsg, &errlen);
+        if (wstr != NULL) {
+            reason = PyUnicode_FromWideChar(wstr, errlen);
+            PyMem_Free(wstr);
+        } else
+            errmsg = NULL;
+    }
+    if (errmsg == NULL)
         reason = PyUnicode_FromString(
             "wcstombs() encountered an unencodable "
             "wide character");
@@ -3376,6 +3382,37 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
     return NULL;
 }
 
+static size_t
+mbstowcs_errorpos(const char *str, size_t len)
+{
+#ifdef HAVE_MBRTOWC
+    const char *start = str;
+    mbstate_t mbs;
+    size_t converted;
+    wchar_t ch;
+
+    memset(&mbs, 0, sizeof mbs);
+    while (len)
+    {
+        converted = mbrtowc(&ch, (char*)str, len, &mbs);
+        if (converted == 0)
+            /* Reached end of string */
+            break;
+        if (converted == (size_t)-1 || converted == (size_t)-2) {
+            /* Conversion error or incomplete character */
+            return str - start;
+        }
+        else {
+            str += converted;
+            len -= converted;
+        }
+    }
+    /* failed to find the undecodable byte sequence */
+    return 0;
+#endif
+    return 0;
+}
+
 PyObject*
 PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
                               const char *errors)
@@ -3386,6 +3423,9 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     size_t wlen, wlen2;
     PyObject *unicode;
     int surrogateescape;
+    size_t error_pos;
+    char *errmsg;
+    PyObject *reason, *exc;
 
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
@@ -3415,10 +3455,8 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
 #else
         wlen = len;
 #endif
-        if (wlen == (size_t)-1) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            return NULL;
-        }
+        if (wlen == (size_t)-1)
+            goto decode_error;
         if (wlen+1 <= smallbuf_len) {
             wstr = smallbuf;
         }
@@ -3436,8 +3474,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
         if (wlen2 == (size_t)-1) {
             if (wstr != smallbuf)
                 PyMem_Free(wstr);
-            PyErr_SetFromErrno(PyExc_OSError);
-            return NULL;
+            goto decode_error;
         }
 #ifdef HAVE_BROKEN_MBSTOWCS
         assert(wlen2 == wlen);
@@ -3447,6 +3484,38 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
             PyMem_Free(wstr);
     }
     return unicode;
+
+decode_error:
+    errmsg = strerror(errno);
+    assert(errmsg != NULL);
+
+    error_pos = mbstowcs_errorpos(str, len);
+    if (errmsg != NULL) {
+        size_t errlen;
+        wstr = _Py_char2wchar(errmsg, &errlen);
+        if (wstr != NULL) {
+            reason = PyUnicode_FromWideChar(wstr, errlen);
+            PyMem_Free(wstr);
+        } else
+            errmsg = NULL;
+    }
+    if (errmsg == NULL)
+        reason = PyUnicode_FromString(
+            "mbstowcs() encountered an invalid multibyte sequence");
+    if (reason == NULL)
+        return NULL;
+
+    exc = PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nnO",
+                                "locale", str, len,
+                                (Py_ssize_t)error_pos,
+                                (Py_ssize_t)(error_pos+1),
+                                reason);
+    Py_DECREF(reason);
+    if (exc != NULL) {
+        PyCodec_StrictErrors(exc);
+        Py_XDECREF(exc);
+    }
+    return NULL;
 }
 
 PyObject*
