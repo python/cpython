@@ -419,6 +419,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13560: os.strerror() now uses the current locale encoding instead of
+  UTF-8.
+
 - Issue #13560: Add PyUnicode_DecodeLocale(), PyUnicode_DecodeLocaleAndSize()
   and PyUnicode_EncodeLocale() functions to the C API to decode/encode from/to
   the current locale encoding.

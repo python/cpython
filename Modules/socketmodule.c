@@ -4032,9 +4032,8 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 
     if (h->h_addrtype != af) {
         /* Let's get real error message to return */
-        PyErr_SetString(PyExc_OSError,
-                        (char *)strerror(EAFNOSUPPORT));
-
+        errno = EAFNOSUPPORT;
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
