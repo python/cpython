@@ -7042,6 +7042,7 @@ decode_code_page_strict(UINT code_page,
 
     if (*v == NULL) {
         /* Create unicode object */
+        /* FIXME: don't use _PyUnicode_New(), but allocate a wchar_t* buffer */
         *v = (PyObject*)_PyUnicode_New(outsize);
         if (*v == NULL)
             return -1;
@@ -7122,6 +7123,7 @@ decode_code_page_errors(UINT code_page,
             PyErr_NoMemory();
             goto error;
         }
+        /* FIXME: don't use _PyUnicode_New(), but allocate a wchar_t* buffer */
         *v = (PyObject*)_PyUnicode_New(size * Py_ARRAY_LENGTH(buffer));
         if (*v == NULL)
             goto error;

@@ -798,6 +798,8 @@ Unicode functions and methods using :c:type:`Py_UNICODE` and
    strings)
  * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
    :c:func:`PyUnicode_AsWideCharString`
+ * :c:func:`PyUnicode_GetMax`
+
 
 Functions and macros manipulating Py_UNICODE* strings:
 
@@ -813,6 +815,7 @@ Functions and macros manipulating Py_UNICODE* strings:
  * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
    :c:func:`PyUnicode_FindChar`
  * :c:macro:`Py_UNICODE_FILL`
+ * :c:macro:`Py_UNICODE_MATCH`
 
 Encoders:
 
