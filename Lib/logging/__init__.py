@@ -789,7 +789,7 @@ class Handler(Filterer):
 
     def setLevel(self, level):
         """
-        Set the logging level of this handler.
+        Set the logging level of this handler.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
 
@@ -1194,7 +1194,7 @@ class Logger(Filterer):
 
     def setLevel(self, level):
         """
-        Set the logging level of this logger.
+        Set the logging level of this logger.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
 
