@@ -6946,7 +6946,8 @@ posix_lockf(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(posix_lseek__doc__,
 "lseek(fd, pos, how) -> newpos\n\n\
-Set the current position of a file descriptor.");
+Set the current position of a file descriptor.\n\
+Return the new cursor position in bytes, starting from the beginning.");
 
 static PyObject *
 posix_lseek(PyObject *self, PyObject *args)
