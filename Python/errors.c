@@ -343,9 +343,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
     PyObject *message;
     PyObject *v, *args;
     int i = errno;
-#ifndef MS_WINDOWS
-    char *s;
-#else
+#ifdef MS_WINDOWS
     WCHAR *s_buf = NULL;
 #endif /* Unix/Windows */
 
@@ -355,11 +353,14 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 #endif
 
 #ifndef MS_WINDOWS
-    if (i == 0)
-        s = "Error"; /* Sometimes errno didn't get set */
-    else
-        s = strerror(i);
-    message = PyUnicode_DecodeUTF8(s, strlen(s), "ignore");
+    if (i != 0) {
+        char *s = strerror(i);
+        message = PyUnicode_DecodeLocale(s, 1);
+    }
+    else {
+        /* Sometimes errno didn't get set */
+        message = PyUnicode_FromString("Error");
+    }
 #else
     if (i == 0)
         message = PyUnicode_FromString("Error"); /* Sometimes errno didn't get set */
