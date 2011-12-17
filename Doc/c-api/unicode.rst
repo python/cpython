@@ -713,7 +713,7 @@ system.
    bytes. If a byte sequence can be decoded as a surrogate character and
    *surrogateescape* is not equal to zero, the byte sequence is escaped using
    the ``'surrogateescape'`` error handler instead of being decoded.  *str*
-   must end with a null character but cannot contain embedded null character.
+   must end with a null character but cannot contain embedded null characters.
 
    .. seealso::
 
@@ -728,6 +728,22 @@ system.
 
    Similar to :c:func:`PyUnicode_DecodeLocaleAndSize`, but compute the string
    length using :c:func:`strlen`.
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
+
+   Encode a Unicode object to the current locale encoding. The encoder is
+   strict if *surrogateescape* is equal to zero, otherwise it uses the
+   ``'surrogateescape'`` error handler (:pep:`383`). Return a :class:`bytes`
+   object. *str* cannot contain embedded null characters.
+
+   .. seealso::
+
+      Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to
+      :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
+      Python startup).
 
    .. versionadded:: 3.3
 
@@ -805,6 +821,13 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
+
+   .. seealso::
+
+      :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
+      locale encoding and cannot be modified later. If you need to encode a
+      string to the current locale encoding, use
+      :c:func:`PyUnicode_EncodeLocale`.
 
    .. versionadded:: 3.2
 
