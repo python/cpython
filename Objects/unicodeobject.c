@@ -4832,7 +4832,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     if (maxchar < 128 && size == unicode_size) {
         if (consumed)
             *consumed = size;
-        return unicode_fromascii(s, size);
+        return unicode_fromascii((const unsigned char *)s, size);
     }
 
     unicode = PyUnicode_New(unicode_size, maxchar);
