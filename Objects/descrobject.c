@@ -628,7 +628,9 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
             Py_DECREF(descr);
             descr = NULL;
         }
-        descr->d_qualname = NULL;
+        else {
+            descr->d_qualname = NULL;
+        }
     }
     return descr;
 }
