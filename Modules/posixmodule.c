@@ -7891,7 +7891,7 @@ posix_strerror(PyObject *self, PyObject *args)
                         "strerror() argument out of range");
         return NULL;
     }
-    return PyUnicode_DecodeLocale(message, 1);
+    return PyUnicode_DecodeLocale(message, "surrogateescape");
 }
 
 

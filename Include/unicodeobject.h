@@ -1608,14 +1608,14 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocaleAndSize(
     const char *str,
     Py_ssize_t len,
-    int surrogateescape);
+    const char *errors);
 
 /* Similar to PyUnicode_DecodeLocaleAndSize(), but compute the string
    length using strlen(). */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocale(
     const char *str,
-    int surrogateescape);
+    const char *errors);
 
 /* Encode a Unicode object to the current locale encoding. The encoder is
    strict is *surrogateescape* is equal to zero, otherwise the
@@ -1624,7 +1624,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocale(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
     PyObject *unicode,
-    int surrogateescape
+    const char *errors
     );
 
 /* --- File system encoding ---------------------------------------------- */

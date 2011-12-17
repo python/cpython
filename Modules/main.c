@@ -495,7 +495,7 @@ Py_Main(int argc, wchar_t **argv)
             /* Use utf-8 on Mac OS X */
             unicode = PyUnicode_FromString(p);
 #else
-            unicode = PyUnicode_DecodeLocale(p, 1);
+            unicode = PyUnicode_DecodeLocale(p, "surrogateescape");
 #endif
             if (unicode == NULL) {
                 /* ignore errors */
