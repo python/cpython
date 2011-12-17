@@ -99,7 +99,7 @@ static struct PyModuleDef multiprocessing_module = {
 PyMODINIT_FUNC
 PyInit__multiprocessing(void)
 {
-    PyObject *module, *temp, *value;
+    PyObject *module, *temp, *value = NULL;
 
     /* Initialize module */
     module = PyModule_Create(&multiprocessing_module);
