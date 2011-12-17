@@ -3125,8 +3125,31 @@ wcstombs_errorpos(const wchar_t *wstr)
     return 0;
 }
 
+static int
+locale_error_handler(const char *errors, int *surrogateescape)
+{
+    if (errors == NULL) {
+        *surrogateescape = 0;
+        return 0;
+    }
+
+    if (strcmp(errors, "strict") == 0) {
+        *surrogateescape = 0;
+        return 0;
+    }
+    if (strcmp(errors, "surrogateescape") == 0) {
+        *surrogateescape = 1;
+        return 0;
+    }
+    PyErr_Format(PyExc_ValueError,
+                 "only 'strict' and 'surrogateescape' error handlers "
+                 "are supported, not '%s'",
+                 errors);
+    return -1;
+}
+
 PyObject *
-PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
+PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 {
     Py_ssize_t wlen, wlen2;
     wchar_t *wstr;
@@ -3135,6 +3158,10 @@ PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
     PyObject *reason;
     PyObject *exc;
     size_t error_pos;
+    int surrogateescape;
+
+    if (locale_error_handler(errors, &surrogateescape) < 0)
+        return NULL;
 
     wstr = PyUnicode_AsWideCharString(unicode, &wlen);
     if (wstr == NULL)
@@ -3198,7 +3225,7 @@ encode_error:
     Py_XDECREF(bytes);
 
     if (errmsg != NULL)
-        reason = PyUnicode_DecodeLocale(errmsg, 1);
+        reason = PyUnicode_DecodeLocale(errmsg, "surrogateescape");
     else
         reason = PyUnicode_FromString(
             "wcstombs() encountered an unencodable "
@@ -3243,7 +3270,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          "surrogateescape");
     }
     else {
-        return PyUnicode_EncodeLocale(unicode, 1);
+        return PyUnicode_EncodeLocale(unicode, "surrogateescape");
     }
 #endif
 }
@@ -3351,13 +3378,17 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
 
 PyObject*
 PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
-                              int surrogateescape)
+                              const char *errors)
 {
     wchar_t smallbuf[256];
     size_t smallbuf_len = Py_ARRAY_LENGTH(smallbuf);
     wchar_t *wstr;
     size_t wlen, wlen2;
     PyObject *unicode;
+    int surrogateescape;
+
+    if (locale_error_handler(errors, &surrogateescape) < 0)
+        return NULL;
 
     if (str[len] != '\0' || len != strlen(str)) {
         PyErr_SetString(PyExc_TypeError, "embedded null character");
@@ -3419,10 +3450,10 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
 }
 
 PyObject*
-PyUnicode_DecodeLocale(const char *str, int surrogateescape)
+PyUnicode_DecodeLocale(const char *str, const char *errors)
 {
     Py_ssize_t size = (Py_ssize_t)strlen(str);
-    return PyUnicode_DecodeLocaleAndSize(str, size, surrogateescape);
+    return PyUnicode_DecodeLocaleAndSize(str, size, errors);
 }
 
 
@@ -3456,7 +3487,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 "surrogateescape");
     }
     else {
-        return PyUnicode_DecodeLocaleAndSize(s, size, 1);
+        return PyUnicode_DecodeLocaleAndSize(s, size, "surrogateescape");
     }
 #endif
 }

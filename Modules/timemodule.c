@@ -486,7 +486,7 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
-    format = PyUnicode_EncodeLocale(format_arg, 1);
+    format = PyUnicode_EncodeLocale(format_arg, "surrogateescape");
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
@@ -532,7 +532,8 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, 1);
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
+                                                "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -764,8 +765,8 @@ PyInit_timezone(PyObject *m) {
 #endif /* PYOS_OS2 */
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeLocale(tzname[0], 1);
-    otz1 = PyUnicode_DecodeLocale(tzname[1], 1);
+    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_STRUCT_TM_TM_ZONE
