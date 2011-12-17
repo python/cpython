@@ -6192,6 +6192,9 @@ PyInit__socket(void)
 #ifdef  IP_MAX_MEMBERSHIPS
     PyModule_AddIntConstant(m, "IP_MAX_MEMBERSHIPS", IP_MAX_MEMBERSHIPS);
 #endif
+#ifdef  IP_TRANSPARENT
+    PyModule_AddIntConstant(m, "IP_TRANSPARENT", IP_TRANSPARENT);
+#endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
