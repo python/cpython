@@ -259,6 +259,21 @@ unless it's `None`:
     >>> e = doctest.Example('raise X()', '', exc_msg)
     >>> e.exc_msg
     '\n'
+
+Compare `Example`:
+    >>> example = doctest.Example('print 1', '1\n')
+    >>> same_example = doctest.Example('print 1', '1\n')
+    >>> other_example = doctest.Example('print 42', '42\n')
+    >>> example == same_example
+    True
+    >>> example != same_example
+    False
+    >>> hash(example) == hash(same_example)
+    True
+    >>> example == other_example
+    False
+    >>> example != other_example
+    True
 """
 
 def test_DocTest(): r"""
@@ -362,6 +377,8 @@ Compare `DocTest`:
     True
     >>> test != same_test
     False
+    >>> hash(test) == hash(same_test)
+    True
     >>> docstring = '''
     ...     >>> print 42
     ...     42
@@ -383,6 +400,8 @@ Compare `DocTestCase`:
     True
     >>> test_case != same_test_case
     False
+    >>> hash(test_case) == hash(same_test_case)
+    True
     >>> test == other_test_case
     False
     >>> test != other_test_case
