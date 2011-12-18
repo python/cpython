@@ -465,6 +465,10 @@ class Example:
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        return hash((self.source, self.want, self.lineno, self.indent,
+                     self.exc_msg))
+
 
 class DocTest:
     """
@@ -527,6 +531,9 @@ class DocTest:
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash((self.docstring, self.name, self.filename, self.lineno))
 
     # This lets us sort tests by name:
     def __cmp__(self, other):
@@ -2292,6 +2299,10 @@ class DocTestCase(unittest.TestCase):
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash((self._dt_optionflags, self._dt_setUp, self._dt_tearDown,
+                     self._dt_checker))
 
     def __repr__(self):
         name = self._dt_test.name.split('.')
