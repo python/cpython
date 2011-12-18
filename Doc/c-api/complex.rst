@@ -63,11 +63,17 @@ pointers.  This is consistent throughout the API.
    Return the quotient of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
+   If *divisor* is null, this method returns zero and sets
+   :c:data:`errno` to :c:data:`EDOM`.
+
 
 .. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
 
    Return the exponentiation of *num* by *exp*, using the C :c:type:`Py_complex`
    representation.
+
+   If :attr:`exp.imag` is not null, or :attr:`exp.real` is negative,
+   this method returns zero and sets :c:data:`errno` to :c:data:`EDOM`.
 
 
 Complex Numbers as Python Objects
@@ -123,4 +129,4 @@ Complex Numbers as Python Objects
 
    If *op* is not a Python complex number object but has a :meth:`__complex__`
    method, this method will first be called to convert *op* to a Python complex
-   number object.
+   number object. Upon failure, this method returns ``-1.0`` as a real value.
