@@ -10285,7 +10285,6 @@ replace(PyObject *self, PyObject *str1,
     maxchar = Py_MAX(maxchar, maxchar_str2);
 
     if (len1 == len2) {
-        Py_ssize_t i;
         /* same length */
         if (len1 == 0)
             goto nothing;
@@ -10293,9 +10292,12 @@ replace(PyObject *self, PyObject *str1,
             /* replace characters */
             Py_UCS4 u1, u2;
             int rkind;
+            Py_ssize_t index, pos;
+            char *src;
+
             u1 = PyUnicode_READ_CHAR(str1, 0);
-            if (findchar(sbuf, PyUnicode_KIND(self),
-                         slen, u1, 1) < 0)
+            pos = findchar(sbuf, PyUnicode_KIND(self), slen, u1, 1);
+            if (pos < 0)
                 goto nothing;
             u2 = PyUnicode_READ_CHAR(str2, 0);
             u = PyUnicode_New(slen, maxchar);
@@ -10303,16 +10305,26 @@ replace(PyObject *self, PyObject *str1,
                 goto error;
             copy_characters(u, 0, self, 0, slen);
             rkind = PyUnicode_KIND(u);
-            for (i = 0; i < PyUnicode_GET_LENGTH(u); i++)
-                if (PyUnicode_READ(rkind, PyUnicode_DATA(u), i) == u1) {
-                    if (--maxcount < 0)
-                        break;
-                    PyUnicode_WRITE(rkind, PyUnicode_DATA(u), i, u2);
-                }
+
+            PyUnicode_WRITE(rkind, PyUnicode_DATA(u), pos, u2);
+            index = 0;
+            src = sbuf;
+            while (--maxcount)
+            {
+                pos++;
+                src += pos * PyUnicode_KIND(self);
+                slen -= pos;
+                index += pos;
+                pos = findchar(src, PyUnicode_KIND(self), slen, u1, 1);
+                if (pos < 0)
+                    break;
+                PyUnicode_WRITE(rkind, PyUnicode_DATA(u), index + pos, u2);
+            }
         }
         else {
             int rkind = skind;
             char *res;
+            Py_ssize_t i;
 
             if (kind1 < rkind) {
                 /* widen substring */
