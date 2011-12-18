@@ -878,22 +878,19 @@ def _after_fork():
     current = current_thread()
     with _active_limbo_lock:
         for thread in _active.itervalues():
+            # Any lock/condition variable may be currently locked or in an
+            # invalid state, so we reinitialize them.
+            if hasattr(thread, '_reset_internal_locks'):
+                thread._reset_internal_locks()
             if thread is current:
                 # There is only one active thread. We reset the ident to
                 # its new value since it can have changed.
                 ident = _get_ident()
                 thread._Thread__ident = ident
-                # Any condition variables hanging off of the active thread may
-                # be in an invalid state, so we reinitialize them.
-                if hasattr(thread, '_reset_internal_locks'):
-                    thread._reset_internal_locks()
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
-                # We don't call _Thread__stop() because it tries to acquire
-                # thread._Thread__block which could also have been held while
-                # we forked.
-                thread._Thread__stopped = True
+                thread._Thread__stop()
 
         _limbo.clear()
         _active.clear()
