@@ -1084,7 +1084,7 @@ def _check_instance(obj, attr):
 
 def _check_class(klass, attr):
     for entry in _static_getmro(klass):
-        if not _shadowed_dict(type(entry)):
+        if _shadowed_dict(type(entry)) is _sentinel:
             try:
                 return entry.__dict__[attr]
             except KeyError:
@@ -1109,8 +1109,8 @@ def _shadowed_dict(klass):
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
-                return True
-    return False
+                return class_dict
+    return _sentinel
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -1126,7 +1126,9 @@ def getattr_static(obj, attr, default=_sentinel):
     instance_result = _sentinel
     if not _is_type(obj):
         klass = type(obj)
-        if not _shadowed_dict(klass):
+        dict_attr = _shadowed_dict(klass)
+        if (dict_attr is _sentinel or
+            type(dict_attr) is types.MemberDescriptorType):
             instance_result = _check_instance(obj, attr)
     else:
         klass = obj
