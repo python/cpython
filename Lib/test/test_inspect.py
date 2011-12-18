@@ -1004,6 +1004,11 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(instance, "spam"), 42)
         self.assertFalse(Thing.executed)
 
+    def test_module(self):
+        sentinel = object()
+        self.assertIsNot(inspect.getattr_static(sys, "version", sentinel),
+                         sentinel)
+
 class TestGetGeneratorState(unittest.TestCase):
 
     def setUp(self):
