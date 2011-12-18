@@ -374,7 +374,6 @@ class URLopener:
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         """Default error handler: close the connection and raise IOError."""
-        void = fp.read()
         fp.close()
         raise IOError, ('http error', errcode, errmsg, headers)
 
@@ -640,7 +639,6 @@ class FancyURLopener(URLopener):
             newurl = headers['uri']
         else:
             return
-        void = fp.read()
         fp.close()
         # In case the server sent a relative URL, join with original:
         newurl = basejoin(self.type + ":" + url, newurl)
