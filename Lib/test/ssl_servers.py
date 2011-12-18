@@ -94,7 +94,11 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
         """Serve a GET request."""
         sock = self.rfile.raw._sock
         context = sock.context
-        body = pprint.pformat(context.session_stats())
+        stats = {
+            'session_cache': context.session_stats(),
+            'cipher': sock.cipher(),
+            }
+        body = pprint.pformat(stats)
         body = body.encode('utf-8')
         self.send_response(200)
         self.send_header("Content-type", "text/plain; charset=utf-8")
