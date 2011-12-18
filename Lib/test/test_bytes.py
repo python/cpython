@@ -362,6 +362,11 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(b.find(i, 1, 3), 1)
         self.assertEqual(b.find(w, 1, 3), -1)
 
+        for index in (-1, 256, sys.maxsize + 1):
+            self.assertRaisesRegex(
+                ValueError, r'byte must be in range\(0, 256\)',
+                b.find, index)
+
     def test_rfind(self):
         b = self.type2test(b'mississippi')
         i = 105
