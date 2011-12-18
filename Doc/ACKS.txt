@@ -33,6 +33,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Keith Briggs
    * Ian Bruntlett
    * Lee Busby
+   * Arnaud Calmettes
    * Lorenzo M. Catucci
    * Carl Cerecke
    * Mauro Cicognini
