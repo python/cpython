@@ -3760,26 +3760,38 @@ get_file(PyObject *pathname, PyObject *fob, char *mode)
         mode = "r" PY_STDIOTEXTMODE;
     if (fob == NULL) {
         fp = _Py_fopen(pathname, mode);
+        if (!fp) {
+            if (!PyErr_Occurred())
+                PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+        return fp;
     }
     else {
         int fd = PyObject_AsFileDescriptor(fob);
         if (fd == -1)
             return NULL;
-        if (!_PyVerify_fd(fd))
-            goto error;
+        if (!_PyVerify_fd(fd)) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+
         /* the FILE struct gets a new fd, so that it can be closed
          * independently of the file descriptor given
          */
         fd = dup(fd);
-        if (fd == -1)
-            goto error;
+        if (fd == -1) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+
         fp = fdopen(fd, mode);
-    }
-    if (fp)
+        if (!fp) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
         return fp;
-error:
-    PyErr_SetFromErrno(PyExc_IOError);
-    return NULL;
+    }
 }
 
 static PyObject *
