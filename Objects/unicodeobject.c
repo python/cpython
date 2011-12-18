@@ -12028,12 +12028,19 @@ unicode_repeat(PyObject *str, Py_ssize_t len)
     if (PyUnicode_GET_LENGTH(str) == 1) {
         const int kind = PyUnicode_KIND(str);
         const Py_UCS4 fill_char = PyUnicode_READ(kind, PyUnicode_DATA(str), 0);
-        void *to = PyUnicode_DATA(u);
-        if (kind == PyUnicode_1BYTE_KIND)
+        if (kind == PyUnicode_1BYTE_KIND) {
+            void *to = PyUnicode_DATA(u);
             memset(to, (unsigned char)fill_char, len);
-        else {
+        }
+        else if (kind == PyUnicode_2BYTE_KIND) {
+            Py_UCS2 *ucs2 = PyUnicode_2BYTE_DATA(u);
             for (n = 0; n < len; ++n)
-                PyUnicode_WRITE(kind, to, n, fill_char);
+                ucs2[n] = fill_char;
+        } else {
+            Py_UCS4 *ucs4 = PyUnicode_4BYTE_DATA(u);
+            assert(kind == PyUnicode_4BYTE_KIND);
+            for (n = 0; n < len; ++n)
+                ucs4[n] = fill_char;
         }
     }
     else {
