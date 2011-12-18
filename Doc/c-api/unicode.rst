@@ -338,16 +338,21 @@ APIs:
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
 
-   Return a read-only pointer to the Unicode object's internal :c:type:`Py_UNICODE`
-   buffer, *NULL* if *unicode* is not a Unicode object.
+   Return a read-only pointer to the Unicode object's internal
+   :c:type:`Py_UNICODE` buffer, *NULL* if *unicode* is not a Unicode object.
+   Note that the resulting :c:type:`Py_UNICODE*` string may contain embedded
+   null characters, which would cause the string to be truncated when used in
+   most C functions.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
 
    Create a copy of a Unicode string ending with a nul character. Return *NULL*
    and raise a :exc:`MemoryError` exception on memory allocation failure,
-   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free the
-   buffer).
+   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
+   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may contain
+   embedded null characters, which would cause the string to be truncated when
+   used in most C functions.
 
    .. versionadded:: 3.2
 
@@ -447,7 +452,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
    Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
    ``'surrogateescape'`` error handler, or ``'strict'`` on Windows, and return
-   :class:`bytes`.
+   :class:`bytes`. Note that the resulting :class:`bytes` object may contain
+   null bytes.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -476,7 +482,9 @@ wchar_t Support
    copied or -1 in case of an error.  Note that the resulting :c:type:`wchar_t`
    string may or may not be 0-terminated.  It is the responsibility of the caller
    to make sure that the :c:type:`wchar_t` string is 0-terminated in case this is
-   required by the application.
+   required by the application. Also, note that the :c:type:`wchar_t*` string
+   might contain null characters, which would cause the string to be truncated
+   when used with most C functions.
 
 
 .. c:function:: wchar_t* PyUnicode_AsWideCharString(PyObject *unicode, Py_ssize_t *size)
@@ -486,9 +494,11 @@ wchar_t Support
    of wide characters (excluding the trailing 0-termination character) into
    *\*size*.
 
-   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use :c:func:`PyMem_Free`
-   to free it) on success. On error, returns *NULL*, *\*size* is undefined and
-   raises a :exc:`MemoryError`.
+   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
+   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*,
+   *\*size* is undefined and raises a :exc:`MemoryError`. Note that the
+   resulting :c:type:`wchar_t*` string might contain null characters, which
+   would cause the string to be truncated when used with most C functions.
 
    .. versionadded:: 3.2
 
