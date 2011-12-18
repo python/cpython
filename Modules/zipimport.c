@@ -102,6 +102,8 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         int rv;
 
         rv = _Py_stat(filename, &statbuf);
+        if (rv == -2)
+            goto error;
         if (rv == 0) {
             /* it exists */
             if (!S_ISREG(statbuf.st_mode))
@@ -109,8 +111,6 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
                 Py_CLEAR(filename);
             break;
         }
-        else if (PyErr_Occurred())
-            goto error;
         Py_CLEAR(filename);
         /* back up one path element */
         flen = PyUnicode_FindChar(path, SEP, 0, flen, -1);

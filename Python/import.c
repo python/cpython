@@ -1527,6 +1527,7 @@ get_sourcefile(PyObject *filename)
     Py_UCS4 *fileuni;
     PyObject *py;
     struct stat statbuf;
+    int err;
 
     len = PyUnicode_GET_LENGTH(filename);
     if (len == 0)
@@ -1554,7 +1555,10 @@ get_sourcefile(PyObject *filename)
     if (py == NULL)
         goto error;
 
-    if (_Py_stat(py, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+    err = _Py_stat(py, &statbuf);
+    if (err == -2)
+        goto error;
+    if (err == 0 && S_ISREG(statbuf.st_mode)) {
         PyMem_Free(fileuni);
         return py;
     }
@@ -1760,7 +1764,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     Py_ssize_t len, pos;
     struct stat statbuf;
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
-    int result, addsep;
+    int err, result, addsep;
 
     if (PyUnicode_Check(path)) {
         Py_INCREF(path);
@@ -1844,7 +1848,12 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
     /* Check for package import (buf holds a directory name,
        and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
-    if (_Py_stat(filename, &statbuf) == 0 &&         /* it exists */
+    err = _Py_stat(filename, &statbuf);
+    if (err == -2) {
+        result = -1;
+        goto out;
+    }
+    if (err == 0 &&         /* it exists */
         S_ISDIR(statbuf.st_mode))           /* it's a directory */
     {
         int match;
@@ -1905,6 +1914,7 @@ find_module_path_list(PyObject *fullname, PyObject *name,
     FILE *fp = NULL;
     PyObject *prefix, *filename;
     int match;
+    int err;
 
     npath = PyList_Size(search_path_list);
     for (i = 0; i < npath; i++) {
@@ -1944,8 +1954,13 @@ find_module_path_list(PyObject *fullname, PyObject *name,
             if (Py_VerboseFlag > 1)
                 PySys_FormatStderr("# trying %R\n", filename);
 
-            if (_Py_stat(filename, &statbuf) != 0 || S_ISDIR(statbuf.st_mode))
-            {
+            err = _Py_stat(filename, &statbuf);
+            if (err == -2) {
+                Py_DECREF(prefix);
+                Py_DECREF(filename);
+                return NULL;
+            }
+            if (err != 0 || S_ISDIR(statbuf.st_mode)) {
                 /* it doesn't exist, or it's a directory */
                 Py_DECREF(filename);
                 continue;
@@ -2345,11 +2360,15 @@ find_init_module(PyObject *directory)
     struct stat statbuf;
     PyObject *filename;
     int match;
+    int err;
 
     filename = PyUnicode_FromFormat("%U%c__init__.py", directory, SEP);
     if (filename == NULL)
         return -1;
-    if (_Py_stat(filename, &statbuf) == 0) {
+    err = _Py_stat(filename, &statbuf);
+    if (err == -2)
+        return -1;
+    if (err == 0) {
         /* 3=len(".py") */
         match = case_ok(filename, -3, initstr);
         if (match < 0) {
@@ -2367,7 +2386,12 @@ find_init_module(PyObject *directory)
         directory, SEP, Py_OptimizeFlag ? 'o' : 'c');
     if (filename == NULL)
         return -1;
-    if (_Py_stat(filename, &statbuf) == 0) {
+    err = _Py_stat(filename, &statbuf);
+    if (err == -2) {
+        Py_DECREF(filename);
+        return -1;
+    }
+    if (err == 0) {
         /* 4=len(".pyc") */
         match = case_ok(filename, -4, initstr);
         if (match < 0) {
