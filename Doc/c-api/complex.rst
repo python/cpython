@@ -72,7 +72,7 @@ pointers.  This is consistent throughout the API.
    Return the exponentiation of *num* by *exp*, using the C :c:type:`Py_complex`
    representation.
 
-   If :attr:`exp.imag` is not null, or :attr:`exp.real` is negative,
+   If *num* is null and *exp* is not a positive real number,
    this method returns zero and sets :c:data:`errno` to :c:data:`EDOM`.
 
 
