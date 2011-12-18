@@ -240,8 +240,8 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
-   Return 0 on success, -1 on _wstat() / stat() error or (if PyErr_Occurred())
-   unicode error. */
+   Return 0 on success, -1 on _wstat() / stat() error, -2 if an exception was
+   raised. */
 
 int
 _Py_stat(PyObject *path, struct stat *statbuf)
@@ -253,7 +253,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 
     wpath = PyUnicode_AsUnicode(path);
     if (wpath == NULL)
-        return -1;
+        return -2;
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
@@ -262,7 +262,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     int ret;
     PyObject *bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
-        return -1;
+        return -2;
     ret = stat(PyBytes_AS_STRING(bytes), statbuf);
     Py_DECREF(bytes);
     return ret;
