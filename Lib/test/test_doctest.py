@@ -347,6 +347,46 @@ will raise a ValueError:
     Traceback (most recent call last):
     ValueError: line 2 of the docstring for some_test lacks blank after ...: '...print(1)'
 
+Compare `DocTest`:
+
+    >>> docstring = '''
+    ...     >>> print 12
+    ...     12
+    ... '''
+    >>> test = parser.get_doctest(docstring, globs, 'some_test',
+    ...                           'some_test', 20)
+    >>> same_test = parser.get_doctest(docstring, globs, 'some_test',
+    ...                                'some_test', 20)
+    >>> test == same_test
+    True
+    >>> test != same_test
+    False
+    >>> docstring = '''
+    ...     >>> print 42
+    ...     42
+    ... '''
+    >>> other_test = parser.get_doctest(docstring, globs, 'other_test',
+    ...                                 'other_file', 10)
+    >>> test == other_test
+    False
+    >>> test != other_test
+    True
+
+Compare `DocTestCase`:
+
+    >>> DocTestCase = doctest.DocTestCase
+    >>> test_case = DocTestCase(test)
+    >>> same_test_case = DocTestCase(same_test)
+    >>> other_test_case = DocTestCase(other_test)
+    >>> test_case == same_test_case
+    True
+    >>> test_case != same_test_case
+    False
+    >>> test == other_test_case
+    False
+    >>> test != other_test_case
+    True
+
 """
 
 def test_DocTestFinder(): r"""
