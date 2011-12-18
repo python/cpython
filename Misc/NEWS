@@ -86,6 +86,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8035: urllib: Fix a bug where the client could remain stuck after a
+  redirection or an error.
+
 - Issue #4625: If IDLE cannot write to its recent file or breakpoint
   files, display a message popup and continue rather than crash.
   (original patch by Roger Serwy)
