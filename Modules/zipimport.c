@@ -742,7 +742,8 @@ read_directory(PyObject *archive)
 
     fp = _Py_fopen(archive, "rb");
     if (fp == NULL) {
-        PyErr_Format(ZipImportError, "can't open Zip file: %R", archive);
+        if (!PyErr_Occurred())
+            PyErr_Format(ZipImportError, "can't open Zip file: %R", archive);
         return NULL;
     }
     fseek(fp, -22, SEEK_END);
@@ -913,8 +914,9 @@ get_data(PyObject *archive, PyObject *toc_entry)
 
     fp = _Py_fopen(archive, "rb");
     if (!fp) {
-        PyErr_Format(PyExc_IOError,
-           "zipimport: can not open file %U", archive);
+        if (!PyErr_Occurred())
+            PyErr_Format(PyExc_IOError,
+               "zipimport: can not open file %U", archive);
         return NULL;
     }
 
