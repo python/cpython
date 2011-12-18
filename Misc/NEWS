@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11870: threading: Properly reinitialize threads internal locks and
+  condition variables to avoid deadlocks in child processes.
+
 - Issue #8035: urllib: Fix a bug where the client could remain stuck after a
   redirection or an error.
 
