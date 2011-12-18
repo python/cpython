@@ -451,6 +451,21 @@ class Example:
         self.options = options
         self.exc_msg = exc_msg
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+
+        return self.source == other.source and \
+               self.want == other.want and \
+               self.lineno == other.lineno and \
+               self.indent == other.indent and \
+               self.options == other.options and \
+               self.exc_msg == other.exc_msg
+
+    def __ne__(self, other):
+        return not self == other
+
+
 class DocTest:
     """
     A collection of doctest examples that should be run in a single
@@ -499,6 +514,19 @@ class DocTest:
         return ('<DocTest %s from %s:%s (%s)>' %
                 (self.name, self.filename, self.lineno, examples))
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+
+        return self.examples == other.examples and \
+               self.docstring == other.docstring and \
+               self.globs == other.globs and \
+               self.name == other.name and \
+               self.filename == other.filename and \
+               self.lineno == other.lineno
+
+    def __ne__(self, other):
+        return not self == other
 
     # This lets us sort tests by name:
     def __cmp__(self, other):
@@ -2251,6 +2279,19 @@ class DocTestCase(unittest.TestCase):
 
     def id(self):
         return self._dt_test.name
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+
+        return self._dt_test == other._dt_test and \
+               self._dt_optionflags == other._dt_optionflags and \
+               self._dt_setUp == other._dt_setUp and \
+               self._dt_tearDown == other._dt_tearDown and \
+               self._dt_checker == other._dt_checker
+
+    def __ne__(self, other):
+        return not self == other
 
     def __repr__(self):
         name = self._dt_test.name.split('.')
