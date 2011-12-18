@@ -186,27 +186,34 @@ STRINGLIB(parse_args_finds_byte)(const char *function_name, PyObject *args,
 {
     PyObject *tmp_subobj;
     Py_ssize_t ival;
+    PyObject *err;
 
     if(!STRINGLIB(parse_args_finds)(function_name, args, &tmp_subobj,
                                     start, end))
         return 0;
 
-    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_ValueError);
-    if (ival == -1 && PyErr_Occurred()) {
-        PyErr_Clear();
+    if (!PyNumber_Check(tmp_subobj)) {
         *subobj = tmp_subobj;
+        return 1;
     }
-    else {
-        /* The first argument was an integer */
-        if(ival < 0 || ival > 255) {
-            PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-            return 0;
+
+    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_OverflowError);
+    if (ival == -1) {
+        err = PyErr_Occurred();
+        if (err && !PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
+            PyErr_Clear();
+            *subobj = tmp_subobj;
+            return 1;
         }
-
-        *subobj = NULL;
-        *byte = (char)ival;
     }
 
+    if (ival < 0 || ival > 255) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return 0;
+    }
+
+    *subobj = NULL;
+    *byte = (char)ival;
     return 1;
 }
 
