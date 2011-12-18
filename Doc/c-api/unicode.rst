@@ -649,9 +649,11 @@ Extension modules can continue using them, as they will not be removed in Python
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
 
    Return a read-only pointer to the Unicode object's internal
-   :c:type:`Py_UNICODE` buffer, *NULL* if *unicode* is not a Unicode object.
-   This will create the :c:type:`Py_UNICODE` representation of the object if it
-   is not yet available.
+   :c:type:`Py_UNICODE` buffer, or *NULL* on error. This will create the
+   :c:type:`Py_UNICODE*` representation of the object if it is not yet
+   available. Note that the resulting :c:type:`Py_UNICODE` string may contain
+   embedded null characters, which would cause the string to be truncated when
+   used in most C functions.
 
    Please migrate to using :c:func:`PyUnicode_AsUCS4`,
    :c:func:`PyUnicode_Substring`, :c:func:`PyUnicode_ReadChar` or similar new
@@ -668,7 +670,9 @@ Extension modules can continue using them, as they will not be removed in Python
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 
    Like :c:func:`PyUnicode_AsUnicode`, but also saves the :c:func:`Py_UNICODE`
-   array length in *size*.
+   array length in *size*. Note that the resulting :c:type:`Py_UNICODE*` string
+   may contain embedded null characters, which would cause the string to be
+   truncated when used in most C functions.
 
    .. versionadded:: 3.3
 
@@ -677,8 +681,10 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Create a copy of a Unicode string ending with a nul character. Return *NULL*
    and raise a :exc:`MemoryError` exception on memory allocation failure,
-   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free the
-   buffer).
+   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
+   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
+   contain embedded null characters, which would cause the string to be
+   truncated when used in most C functions.
 
    .. versionadded:: 3.2
 
@@ -817,7 +823,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
    Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
    ``'surrogateescape'`` error handler, or ``'strict'`` on Windows, and return
-   :class:`bytes`.
+   :class:`bytes`. Note that the resulting :class:`bytes` object may contain
+   null bytes.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -850,10 +857,12 @@ wchar_t Support
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    0-termination character).  Return the number of :c:type:`wchar_t` characters
-   copied or -1 in case of an error.  Note that the resulting :c:type:`wchar_t`
+   copied or -1 in case of an error.  Note that the resulting :c:type:`wchar_t*`
    string may or may not be 0-terminated.  It is the responsibility of the caller
-   to make sure that the :c:type:`wchar_t` string is 0-terminated in case this is
-   required by the application.
+   to make sure that the :c:type:`wchar_t*` string is 0-terminated in case this is
+   required by the application. Also, note that the :c:type:`wchar_t*` string
+   might contain null characters, which would cause the string to be truncated
+   when used with most C functions.
 
 
 .. c:function:: wchar_t* PyUnicode_AsWideCharString(PyObject *unicode, Py_ssize_t *size)
@@ -863,9 +872,11 @@ wchar_t Support
    of wide characters (excluding the trailing 0-termination character) into
    *\*size*.
 
-   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use :c:func:`PyMem_Free`
-   to free it) on success. On error, returns *NULL*, *\*size* is undefined and
-   raises a :exc:`MemoryError`.
+   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
+   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*,
+   *\*size* is undefined and raises a :exc:`MemoryError`. Note that the
+   resulting :c:type:`wchar_t` string might contain null characters, which
+   would cause the string to be truncated when used with most C functions.
 
    .. versionadded:: 3.2
 
