@@ -712,7 +712,9 @@ Major performance enhancements have been added:
   * the memory footprint is divided by 2 to 4 depending on the text
   * encode an ASCII string to UTF-8 doesn't need to encode characters anymore,
     the UTF-8 representation is shared with the ASCII representation
-  * getting a substring of a latin1 strings is 4 times faster
+  * the UTF-8 encoder has been optimized
+  * repeating a single ASCII letter and getting a substring of a ASCII strings
+    is 4 times faster
 
 
 Build and C API Changes

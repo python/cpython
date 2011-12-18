@@ -153,4 +153,201 @@ _ok:
 #undef LONG_PTR_MASK
 #undef ASCII_CHAR_MASK
 
+
+/* UTF-8 encoder specialized for a Unicode kind to avoid the slow
+   PyUnicode_READ() macro. Delete some parts of the code depending on the kind:
+   UCS-1 strings don't need to handle surrogates for example. */
+Py_LOCAL_INLINE(PyObject *)
+STRINGLIB(utf8_encoder)(PyObject *unicode,
+                        STRINGLIB_CHAR *data,
+                        Py_ssize_t size,
+                        const char *errors)
+{
+#define MAX_SHORT_UNICHARS 300  /* largest size we'll do on the stack */
+
+    Py_ssize_t i;                /* index into s of next input byte */
+    PyObject *result;            /* result string object */
+    char *p;                     /* next free byte in output buffer */
+    Py_ssize_t nallocated;      /* number of result bytes allocated */
+    Py_ssize_t nneeded;            /* number of result bytes needed */
+#if STRINGLIB_SIZEOF_CHAR > 1
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+    PyObject *rep = NULL;
+#endif
+#if STRINGLIB_SIZEOF_CHAR == 1
+    const Py_ssize_t max_char_size = 2;
+    char stackbuf[MAX_SHORT_UNICHARS * 2];
+#elif STRINGLIB_SIZEOF_CHAR == 2
+    const Py_ssize_t max_char_size = 3;
+    char stackbuf[MAX_SHORT_UNICHARS * 3];
+#else /*  STRINGLIB_SIZEOF_CHAR == 4 */
+    const Py_ssize_t max_char_size = 4;
+    char stackbuf[MAX_SHORT_UNICHARS * 4];
+#endif
+
+    assert(size >= 0);
+
+    if (size <= MAX_SHORT_UNICHARS) {
+        /* Write into the stack buffer; nallocated can't overflow.
+         * At the end, we'll allocate exactly as much heap space as it
+         * turns out we need.
+         */
+        nallocated = Py_SAFE_DOWNCAST(sizeof(stackbuf), size_t, int);
+        result = NULL;   /* will allocate after we're done */
+        p = stackbuf;
+    }
+    else {
+        if (size > PY_SSIZE_T_MAX / max_char_size) {
+            /* integer overflow */
+            return PyErr_NoMemory();
+        }
+        /* Overallocate on the heap, and give the excess back at the end. */
+        nallocated = size * max_char_size;
+        result = PyBytes_FromStringAndSize(NULL, nallocated);
+        if (result == NULL)
+            return NULL;
+        p = PyBytes_AS_STRING(result);
+    }
+
+    for (i = 0; i < size;) {
+        Py_UCS4 ch = data[i++];
+
+        if (ch < 0x80) {
+            /* Encode ASCII */
+            *p++ = (char) ch;
+
+        }
+        else
+#if STRINGLIB_SIZEOF_CHAR > 1
+        if (ch < 0x0800)
+#endif
+        {
+            /* Encode Latin-1 */
+            *p++ = (char)(0xc0 | (ch >> 6));
+            *p++ = (char)(0x80 | (ch & 0x3f));
+        }
+#if STRINGLIB_SIZEOF_CHAR > 1
+        else if (Py_UNICODE_IS_SURROGATE(ch)) {
+            Py_ssize_t newpos;
+            Py_ssize_t repsize, k, startpos;
+            startpos = i-1;
+            rep = unicode_encode_call_errorhandler(
+                  errors, &errorHandler, "utf-8", "surrogates not allowed",
+                  unicode, &exc, startpos, startpos+1, &newpos);
+            if (!rep)
+                goto error;
+
+            if (PyBytes_Check(rep))
+                repsize = PyBytes_GET_SIZE(rep);
+            else
+                repsize = PyUnicode_GET_LENGTH(rep);
+
+            if (repsize > max_char_size) {
+                Py_ssize_t offset;
+
+                if (result == NULL)
+                    offset = p - stackbuf;
+                else
+                    offset = p - PyBytes_AS_STRING(result);
+
+                if (nallocated > PY_SSIZE_T_MAX - repsize + max_char_size) {
+                    /* integer overflow */
+                    PyErr_NoMemory();
+                    goto error;
+                }
+                nallocated += repsize - max_char_size;
+                if (result != NULL) {
+                    if (_PyBytes_Resize(&result, nallocated) < 0)
+                        goto error;
+                } else {
+                    result = PyBytes_FromStringAndSize(NULL, nallocated);
+                    if (result == NULL)
+                        goto error;
+                    Py_MEMCPY(PyBytes_AS_STRING(result), stackbuf, offset);
+                }
+                p = PyBytes_AS_STRING(result) + offset;
+            }
+
+            if (PyBytes_Check(rep)) {
+                char *prep = PyBytes_AS_STRING(rep);
+                for(k = repsize; k > 0; k--)
+                    *p++ = *prep++;
+            } else /* rep is unicode */ {
+                enum PyUnicode_Kind repkind;
+                void *repdata;
+
+                if (PyUnicode_READY(rep) < 0)
+                    goto error;
+                repkind = PyUnicode_KIND(rep);
+                repdata = PyUnicode_DATA(rep);
+
+                for(k=0; k<repsize; k++) {
+                    Py_UCS4 c = PyUnicode_READ(repkind, repdata, k);
+                    if (0x80 <= c) {
+                        raise_encode_exception(&exc, "utf-8",
+                                               unicode,
+                                               i-1, i,
+                                               "surrogates not allowed");
+                        goto error;
+                    }
+                    *p++ = (char)c;
+                }
+            }
+            Py_CLEAR(rep);
+        }
+        else
+#if STRINGLIB_SIZEOF_CHAR > 2
+        if (ch < 0x10000)
+#endif
+        {
+            *p++ = (char)(0xe0 | (ch >> 12));
+            *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *p++ = (char)(0x80 | (ch & 0x3f));
+        }
+#if STRINGLIB_SIZEOF_CHAR > 2
+        else /* ch >= 0x10000 */
+        {
+            assert(ch <= MAX_UNICODE);
+            /* Encode UCS4 Unicode ordinals */
+            *p++ = (char)(0xf0 | (ch >> 18));
+            *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+            *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *p++ = (char)(0x80 | (ch & 0x3f));
+        }
+#endif /* STRINGLIB_SIZEOF_CHAR > 2 */
+#endif /* STRINGLIB_SIZEOF_CHAR > 1 */
+    }
+
+    if (result == NULL) {
+        /* This was stack allocated. */
+        nneeded = p - stackbuf;
+        assert(nneeded <= nallocated);
+        result = PyBytes_FromStringAndSize(stackbuf, nneeded);
+    }
+    else {
+        /* Cut back to size actually needed. */
+        nneeded = p - PyBytes_AS_STRING(result);
+        assert(nneeded <= nallocated);
+        _PyBytes_Resize(&result, nneeded);
+    }
+
+#if STRINGLIB_SIZEOF_CHAR > 1
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+#endif
+    return result;
+
+#if STRINGLIB_SIZEOF_CHAR > 1
+ error:
+    Py_XDECREF(rep);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    Py_XDECREF(result);
+    return NULL;
+#endif
+
+#undef MAX_SHORT_UNICHARS
+}
+
 #endif /* STRINGLIB_IS_UNICODE */
