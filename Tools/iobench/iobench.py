@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # This file should be kept compatible with both Python 2.6 and Python >= 3.0.
 
-import time
+import functools
+import hashlib
+import itertools
 import os
+import platform
 import re
 import sys
-import hashlib
-import functools
-import itertools
+import time
 from optparse import OptionParser
 
 out = sys.stdout
@@ -307,6 +308,16 @@ def run_all_tests(options):
         "large": 2,
     }
 
+    print("Python %s" % sys.version)
+    if sys.version_info < (3, 3):
+        if sys.maxunicode > 0xffff:
+            text = "UCS-4 (wide build)"
+        else:
+            text = "UTF-16 (narrow build)"
+    else:
+        text = "PEP 393"
+    print("Unicode: %s" % text)
+    print(platform.platform())
     binary_files = list(get_binary_files())
     text_files = list(get_text_files())
     if "b" in options:
