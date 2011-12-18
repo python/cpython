@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas 
+  Stührk.
+
 - Issue #7502: Fix equality comparison for DocTestCase instances.  Patch by
   Cédric Krier.
 
