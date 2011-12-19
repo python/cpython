@@ -933,8 +933,7 @@ Test cases
 
       Test that *obj* is (or is not) an instance of *cls* (which can be a
       class or a tuple of classes, as supported by :func:`isinstance`).
-      To check for a specific type (without including superclasses) use
-      :func:`assertIs(type(obj), cls) <assertIs>`.
+      To check for the exact type, use :func:`assertIs(type(obj), cls) <assertIs>`.
 
       .. versionadded:: 3.2
 
