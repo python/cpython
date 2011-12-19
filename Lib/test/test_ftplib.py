@@ -767,7 +767,7 @@ class TestTimeouts(TestCase):
     def setUp(self):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(3)
+        self.sock.settimeout(10)
         self.port = support.bind_port(self.sock)
         threading.Thread(target=self.server, args=(self.evt,self.sock)).start()
         # Wait for the server to be ready.
