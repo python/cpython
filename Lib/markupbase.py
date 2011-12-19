@@ -108,6 +108,10 @@ class ParserBase:
                 if decltype == "doctype":
                     self.handle_decl(data)
                 else:
+                    # According to the HTML5 specs sections "8.2.4.44 Bogus
+                    # comment state" and "8.2.4.45 Markup declaration open
+                    # state", a comment token should be emitted.
+                    # Calling unknown_decl provides more flexibility though.
                     self.unknown_decl(data)
                 return j + 1
             if c in "\"'":

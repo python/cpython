@@ -449,6 +449,48 @@ class AttributesTestCase(TestCaseBase):
                           [("href", "http://www.example.org/\">;")]),
                          ("data", "spam"), ("endtag", "a")])
 
+    def test_condcoms(self):
+        html = ('<!--[if IE & !(lte IE 8)]>aren\'t<![endif]-->'
+                '<!--[if IE 8]>condcoms<![endif]-->'
+                '<!--[if lte IE 7]>pretty?<![endif]-->')
+        expected = [('comment', "[if IE & !(lte IE 8)]>aren't<![endif]"),
+                    ('comment', '[if IE 8]>condcoms<![endif]'),
+                    ('comment', '[if lte IE 7]>pretty?<![endif]')]
+        self._run_check(html, expected)
+
+    def test_broken_condcoms(self):
+        # these condcoms are missing the '--' after '<!' and before the '>'
+        html = ('<![if !(IE)]>broken condcom<![endif]>'
+                '<![if ! IE]><link href="favicon.tiff"/><![endif]>'
+                '<![if !IE 6]><img src="firefox.png" /><![endif]>'
+                '<![if !ie 6]><b>foo</b><![endif]>'
+                '<![if (!IE)|(lt IE 9)]><img src="mammoth.bmp" /><![endif]>')
+        # According to the HTML5 specs sections "8.2.4.44 Bogus comment state"
+        # and "8.2.4.45 Markup declaration open state", comment tokens should
+        # be emitted instead of 'unknown decl', but calling unknown_decl
+        # provides more flexibility.
+        # See also Lib/_markupbase.py:parse_declaration
+        expected = [
+            ('unknown decl', 'if !(IE)'),
+            ('data', 'broken condcom'),
+            ('unknown decl', 'endif'),
+            ('unknown decl', 'if ! IE'),
+            ('startendtag', 'link', [('href', 'favicon.tiff')]),
+            ('unknown decl', 'endif'),
+            ('unknown decl', 'if !IE 6'),
+            ('startendtag', 'img', [('src', 'firefox.png')]),
+            ('unknown decl', 'endif'),
+            ('unknown decl', 'if !ie 6'),
+            ('starttag', 'b', []),
+            ('data', 'foo'),
+            ('endtag', 'b'),
+            ('unknown decl', 'endif'),
+            ('unknown decl', 'if (!IE)|(lt IE 9)'),
+            ('startendtag', 'img', [('src', 'mammoth.bmp')]),
+            ('unknown decl', 'endif')
+        ]
+        self._run_check(html, expected)
+
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase, AttributesTestCase)
