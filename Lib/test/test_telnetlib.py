@@ -95,7 +95,7 @@ def _read_setUp(self):
     self.evt = threading.Event()
     self.dataq = Queue.Queue()
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.sock.settimeout(3)
+    self.sock.settimeout(10)
     self.port = test_support.bind_port(self.sock)
     self.thread = threading.Thread(target=server, args=(self.evt,self.sock, self.dataq))
     self.thread.start()
