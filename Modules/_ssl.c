@@ -1986,6 +1986,33 @@ set_default_verify_paths(PySSLContext *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+set_ecdh_curve(PySSLContext *self, PyObject *name)
+{
+    PyObject *name_bytes;
+    int nid;
+    EC_KEY *key;
+
+    if (!PyUnicode_FSConverter(name, &name_bytes))
+        return NULL;
+    assert(PyBytes_Check(name_bytes));
+    nid = OBJ_sn2nid(PyBytes_AS_STRING(name_bytes));
+    Py_DECREF(name_bytes);
+    if (nid == 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "unknown elliptic curve name %R", name);
+        return NULL;
+    }
+    key = EC_KEY_new_by_curve_name(nid);
+    if (key == NULL) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    SSL_CTX_set_tmp_ecdh(self->ctx, key);
+    EC_KEY_free(key);
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
@@ -2007,6 +2034,8 @@ static struct PyMethodDef context_methods[] = {
                       METH_NOARGS, NULL},
     {"set_default_verify_paths", (PyCFunction) set_default_verify_paths,
                                  METH_NOARGS, NULL},
+    {"set_ecdh_curve", (PyCFunction) set_ecdh_curve,
+                       METH_O, NULL},
     {NULL, NULL}        /* sentinel */
 };
 
@@ -2452,6 +2481,7 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
+    PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
 
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
     r = Py_True;

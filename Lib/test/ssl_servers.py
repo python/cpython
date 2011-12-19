@@ -176,6 +176,9 @@ if __name__ == "__main__":
                         action='store_false', help='be less verbose')
     parser.add_argument('-s', '--stats', dest='use_stats_handler', default=False,
                         action='store_true', help='always return stats page')
+    parser.add_argument('--curve-name', dest='curve_name', type=str,
+                        action='store',
+                        help='curve name for EC-based Diffie-Hellman')
     args = parser.parse_args()
 
     support.verbose = args.verbose
@@ -186,6 +189,8 @@ if __name__ == "__main__":
         handler_class.root = os.getcwd()
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
     context.load_cert_chain(CERTFILE)
+    if args.curve_name:
+        context.set_ecdh_curve(args.curve_name)
 
     server = HTTPSServer(("", args.port), handler_class, context)
     if args.verbose:
