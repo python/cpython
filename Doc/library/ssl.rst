@@ -428,6 +428,14 @@ Constants
 
    .. versionadded:: 3.3
 
+.. data:: OP_SINGLE_ECDH_USE
+
+   Prevents re-use of the same ECDH key for several SSL sessions.  This
+   improves forward secrecy but requires more computational resources.
+   This option only applies to server sockets.
+
+   .. versionadded:: 3.3
+
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
@@ -671,6 +679,24 @@ to speed up repeated connections from the same clients.
    .. note::
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
+
+.. method:: SSLContext.set_ecdh_curve(curve_name)
+
+   Set the curve name for Elliptic Curve-based Diffie-Hellman (abbreviated
+   ECDH) key exchange.  Using Diffie-Hellman key exchange improves forward
+   secrecy at the expense of computational resources (both on the server and
+   on the client).  The *curve_name* parameter should be a string describing
+   a well-known elliptic curve, for example ``prime256v1`` for a widely
+   supported curve.
+
+   This setting doesn't apply to client sockets.  You can also use the
+   :data:`OP_SINGLE_ECDH_USE` option to further improve security.
+
+   .. versionadded:: 3.3
+
+   .. seealso::
+      `SSL/TLS & Perfect Forward Secrecy <http://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy.html>`_
+         Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
       do_handshake_on_connect=True, suppress_ragged_eofs=True, \
