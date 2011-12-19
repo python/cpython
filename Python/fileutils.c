@@ -321,8 +321,8 @@ _Py_fopen(PyObject *path, const char *mode)
     return _wfopen(wpath, wmode);
 #else
     FILE *f;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
-    if (bytes == NULL)
+    PyObject *bytes;
+    if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
     f = fopen(PyBytes_AS_STRING(bytes), mode);
     Py_DECREF(bytes);
