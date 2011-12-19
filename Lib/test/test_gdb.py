@@ -529,6 +529,8 @@ id(foo.__code__)''',
                                  re.DOTALL),
                         'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))
 
+@unittest.skipIf(python_is_optimized(),
+                 "Python was compiled with optimizations")
 class PyListTests(DebuggerTests):
     def assertListing(self, expected, actual):
         self.assertEndsWith(actual, expected)
@@ -571,6 +573,8 @@ class PyListTests(DebuggerTests):
 
 class StackNavigationTests(DebuggerTests):
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -598,6 +602,8 @@ $''')
                             'Unable to find an older python frame\n')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -611,6 +617,8 @@ $''')
 $''')
 
 class PyBtTests(DebuggerTests):
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_bt(self):
         'Verify that the "py-bt" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -628,6 +636,8 @@ Traceback \(most recent call first\):
     foo\(1, 2, 3\)
 ''')
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_bt_full(self):
         'Verify that the "py-bt-full" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -639,10 +649,12 @@ Traceback \(most recent call first\):
 #[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
     bar\(a, b, c\)
 #[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
-foo\(1, 2, 3\)
+    foo\(1, 2, 3\)
 ''')
 
 class PyPrintTests(DebuggerTests):
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_basic_command(self):
         'Verify that the "py-print" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -657,12 +669,16 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_printing_global(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_printing_builtin(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print len'])
@@ -670,6 +686,8 @@ class PyPrintTests(DebuggerTests):
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x[0-9a-f]+>\n.*")
 
 class PyLocalsTests(DebuggerTests):
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_basic_command(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-locals'])
@@ -684,8 +702,6 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
-    if python_is_optimized():
-        raise unittest.SkipTest("Python was compiled with optimizations")
     run_unittest(PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,

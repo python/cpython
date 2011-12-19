@@ -97,7 +97,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas 
+- Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas
   Stührk.
 
 - Issue #7502: Fix equality comparison for DocTestCase instances.  Patch by
@@ -313,6 +313,12 @@ Build
 -----
 
 - Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
+
+Tools/Demos
+-----------
+
+- Issue #13628: python-gdb.py is now able to retrieve more frames in the Python
+  traceback if Python is optimized.
 
 Tests
 -----
