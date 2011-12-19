@@ -421,6 +421,13 @@ Constants
 
    .. versionadded:: 3.2
 
+.. data:: OP_CIPHER_SERVER_PREFERENCE
+
+   Use the server's cipher ordering preference, rather than the client's.
+   This option has no effect on client sockets and SSLv2 server sockets.
+
+   .. versionadded:: 3.3
+
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
