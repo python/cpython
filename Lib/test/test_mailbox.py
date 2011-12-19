@@ -15,6 +15,10 @@ try:
     import fcntl
 except ImportError:
     pass
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 
 # Silence Py3k warning
 rfc822 = test_support.import_module('rfc822', deprecated=True)
@@ -865,26 +869,36 @@ class _TestMboxMMDF(TestMailbox):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
+    @unittest.skipUnless(hasattr(os, 'fork'), "Test needs fork().")
+    @unittest.skipUnless(multiprocessing, "Test needs multiprocessing.")
     def test_lock_conflict(self):
-        # Fork off a subprocess that will lock the file for 2 seconds,
-        # unlock it, and then exit.
-        if not hasattr(os, 'fork'):
-            return
+        # Fork off a child process that will lock the mailbox temporarily,
+        # unlock it and exit.
+        ready = multiprocessing.Event()
+        done = multiprocessing.Event()
+
         pid = os.fork()
         if pid == 0:
-            # In the child, lock the mailbox.
-            self._box.lock()
-            time.sleep(2)
-            self._box.unlock()
-            os._exit(0)
+            # child
+            try:
+                # lock the mailbox, and signal the parent it can proceed
+                self._box.lock()
+                ready.set()
 
-        # In the parent, sleep a bit to give the child time to acquire
-        # the lock.
-        time.sleep(0.5)
+                # wait until the parent is done, and unlock the mailbox
+                done.wait(5)
+                self._box.unlock()
+            finally:
+                os._exit(0)
+
+        # In the parent, wait until the child signals it locked the mailbox.
+        ready.wait(5)
         try:
             self.assertRaises(mailbox.ExternalClashError,
                               self._box.lock)
         finally:
+            # Signal the child it can now release the lock and exit.
+            done.set()
             # Wait for child to exit.  Locking should now succeed.
             exited_pid, status = os.waitpid(pid, 0)
 
