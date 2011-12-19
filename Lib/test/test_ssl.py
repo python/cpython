@@ -98,6 +98,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_NONE
         ssl.CERT_OPTIONAL
         ssl.CERT_REQUIRED
+        ssl.OP_CIPHER_SERVER_PREFERENCE
         self.assertIn(ssl.HAS_SNI, {True, False})
 
     def test_random(self):
