@@ -445,13 +445,12 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define PyUnicode_IS_COMPACT_ASCII(op)                 \
     (((PyASCIIObject*)op)->state.ascii && PyUnicode_IS_COMPACT(op))
 
+enum PyUnicode_Kind {
 /* String contains only wstr byte characters.  This is only possible
    when the string was created with a legacy API and _PyUnicode_Ready()
    has not been called yet.  */
-#define PyUnicode_WCHAR_KIND 0
-
-/* Return values of the PyUnicode_KIND() macro */
-enum PyUnicode_Kind {
+    PyUnicode_WCHAR_KIND = 0,
+/* Return values of the PyUnicode_KIND() macro: */
     PyUnicode_1BYTE_KIND = 1,
     PyUnicode_2BYTE_KIND = 2,
     PyUnicode_4BYTE_KIND = 4
