@@ -64,7 +64,8 @@ An exception is defined as well:
 
    Feed some text to the parser.  It is processed insofar as it consists of
    complete elements; incomplete data is buffered until more data is fed or
-   :meth:`close` is called.
+   :meth:`close` is called.  *data* can be either :class:`unicode` or
+   :class:`str`, but passing :class:`unicode` is advised.
 
 
 .. method:: HTMLParser.close()
