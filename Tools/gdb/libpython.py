@@ -49,7 +49,6 @@ import sys
 _type_char_ptr = gdb.lookup_type('char').pointer() # char*
 _type_unsigned_char_ptr = gdb.lookup_type('unsigned char').pointer() # unsigned char*
 _type_void_ptr = gdb.lookup_type('void').pointer() # void*
-_type_size_t = gdb.lookup_type('size_t')
 _type_unsigned_short_ptr = gdb.lookup_type('unsigned short').pointer()
 _type_unsigned_int_ptr = gdb.lookup_type('unsigned int').pointer()
 
@@ -439,11 +438,15 @@ class InstanceProxy(object):
                                             self.address)
 
 def _PyObject_VAR_SIZE(typeobj, nitems):
+    if _PyObject_VAR_SIZE._type_size_t is None:
+        _PyObject_VAR_SIZE._type_size_t = gdb.lookup_type('size_t')
+
     return ( ( typeobj.field('tp_basicsize') +
                nitems * typeobj.field('tp_itemsize') +
                (SIZEOF_VOID_P - 1)
              ) & ~(SIZEOF_VOID_P - 1)
-           ).cast(_type_size_t)
+           ).cast(_PyObject_VAR_SIZE._type_size_t)
+_PyObject_VAR_SIZE._type_size_t = None
 
 class HeapTypeObjectPtr(PyObjectPtr):
     _typename = 'PyObject'
@@ -772,7 +775,7 @@ class PyNoneStructPtr(PyObjectPtr):
 class PyFrameObjectPtr(PyObjectPtr):
     _typename = 'PyFrameObject'
 
-    def __init__(self, gdbval, cast_to):
+    def __init__(self, gdbval, cast_to=None):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
@@ -806,7 +809,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         the global variables of this frame
         '''
         if self.is_optimized_out():
-            return
+            return ()
 
         pyop_globals = self.pyop_field('f_globals')
         return pyop_globals.iteritems()
@@ -817,7 +820,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         the builtin variables
         '''
         if self.is_optimized_out():
-            return
+            return ()
 
         pyop_builtins = self.pyop_field('f_builtins')
         return pyop_builtins.iteritems()
@@ -904,6 +907,7 @@ class PyFrameObjectPtr(PyObjectPtr):
     def print_traceback(self):
         if self.is_optimized_out():
             sys.stdout.write('  (frame information optimized out)\n')
+            return
         visited = set()
         sys.stdout.write('  File "%s", line %i, in %s\n'
                   % (self.co_filename.proxyval(visited),
@@ -1400,7 +1404,20 @@ class Frame(object):
     def get_pyop(self):
         try:
             f = self._gdbframe.read_var('f')
-            return PyFrameObjectPtr.from_pyobject_ptr(f)
+            frame = PyFrameObjectPtr.from_pyobject_ptr(f)
+            if not frame.is_optimized_out():
+                return frame
+            # gdb is unable to get the "f" argument of PyEval_EvalFrameEx()
+            # because it was "optimized out". Try to get "f" from the frame
+            # of the caller, PyEval_EvalCodeEx().
+            orig_frame = frame
+            caller = self._gdbframe.older()
+            if caller:
+                f = caller.read_var('f')
+                frame = PyFrameObjectPtr.from_pyobject_ptr(f)
+                if not frame.is_optimized_out():
+                    return frame
+            return orig_frame
         except ValueError:
             return None
 
@@ -1431,9 +1448,10 @@ class Frame(object):
             if pyop:
                 line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
                 write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
-                line = pyop.current_line()
-                if line is not None:
-                    sys.stdout.write(line)
+                if not pyop.is_optimized_out():
+                    line = pyop.current_line()
+                    if line is not None:
+                        sys.stdout.write('    %s\n' % line.strip())
             else:
                 sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
         else:
@@ -1444,9 +1462,10 @@ class Frame(object):
             pyop = self.get_pyop()
             if pyop:
                 pyop.print_traceback()
-                line = pyop.current_line()
-                if line is not None:
-                    sys.stdout.write('    %s\n' % line.strip())
+                if not pyop.is_optimized_out():
+                    line = pyop.current_line()
+                    if line is not None:
+                        sys.stdout.write('    %s\n' % line.strip())
             else:
                 sys.stdout.write('  (unable to read python frame information)\n')
         else:
@@ -1492,7 +1511,7 @@ class PyList(gdb.Command):
             return
 
         pyop = frame.get_pyop()
-        if not pyop:
+        if not pyop or pyop.is_optimized_out():
             print 'Unable to read information on python frame'
             return
 

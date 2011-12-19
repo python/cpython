@@ -423,7 +423,7 @@ Library
   choose the cipher based on their own preferences, rather than on the
   client's.
 
-- Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas 
+- Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas
   Stührk.
 
 - Issue #7502: Fix equality comparison for DocTestCase instances.  Patch by
@@ -1691,6 +1691,9 @@ IDLE
 
 Tools/Demos
 -----------
+
+- Issue #13628: python-gdb.py is now able to retrieve more frames in the Python
+  traceback if Python is optimized.
 
 - Issue #11996: libpython (gdb), replace "py-bt" command by "py-bt-full" and
   add a smarter "py-bt" command printing a classic Python traceback.
