@@ -68,7 +68,7 @@ from _ssl import (
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import (
     OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1,
-    OP_CIPHER_SERVER_PREFERENCE,
+    OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_ECDH_USE,
     )
 from _ssl import RAND_status, RAND_egd, RAND_add, RAND_bytes, RAND_pseudo_bytes
 from _ssl import (

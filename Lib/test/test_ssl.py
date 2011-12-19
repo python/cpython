@@ -99,6 +99,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_OPTIONAL
         ssl.CERT_REQUIRED
         ssl.OP_CIPHER_SERVER_PREFERENCE
+        ssl.OP_SINGLE_ECDH_USE
         self.assertIn(ssl.HAS_SNI, {True, False})
 
     def test_random(self):
@@ -557,6 +558,15 @@ class ContextTests(unittest.TestCase):
         # so just check it doesn't crash or raise an exception.
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.set_default_verify_paths()
+
+    def test_set_ecdh_curve(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.set_ecdh_curve("prime256v1")
+        ctx.set_ecdh_curve(b"prime256v1")
+        self.assertRaises(TypeError, ctx.set_ecdh_curve)
+        self.assertRaises(TypeError, ctx.set_ecdh_curve, None)
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo")
 
 
 class NetworkedTests(unittest.TestCase):
