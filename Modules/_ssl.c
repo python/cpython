@@ -2450,6 +2450,8 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_SSLv2", SSL_OP_NO_SSLv2);
     PyModule_AddIntConstant(m, "OP_NO_SSLv3", SSL_OP_NO_SSLv3);
     PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
+    PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
+                            SSL_OP_CIPHER_SERVER_PREFERENCE);
 
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
     r = Py_True;

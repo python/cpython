@@ -419,6 +419,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13635: Add ssl.OP_CIPHER_SERVER_PREFERENCE, so that SSL servers
+  choose the cipher based on their own preferences, rather than on the
+  client's.
+
 - Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas 
   Stührk.
 
