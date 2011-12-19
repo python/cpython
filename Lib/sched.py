@@ -30,8 +30,11 @@ has another way to reference private data (besides global variables).
 
 import time
 import heapq
-import threading
 from collections import namedtuple
+try:
+    import threading
+except ImportError:
+    import dummy_threading as threading
 
 __all__ = ["scheduler"]
 
