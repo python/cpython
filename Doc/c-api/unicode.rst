@@ -328,8 +328,8 @@ APIs:
 .. cfunction:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
 
    Return a read-only pointer to the Unicode object's internal
-   :c:type:`Py_UNICODE` buffer, *NULL* if *unicode* is not a Unicode object.
-   Note that the resulting :c:type:`Py_UNICODE*` string may contain embedded
+   :ctype:`Py_UNICODE` buffer, *NULL* if *unicode* is not a Unicode object.
+   Note that the resulting :ctype:`Py_UNICODE*` string may contain embedded
    null characters, which would cause the string to be truncated when used in
    most C functions.
 
@@ -394,7 +394,7 @@ wchar_t Support
    copied or -1 in case of an error.  Note that the resulting :ctype:`wchar_t`
    string may or may not be 0-terminated.  It is the responsibility of the caller
    to make sure that the :ctype:`wchar_t` string is 0-terminated in case this is
-   required by the application. Also, note that the :c:type:`wchar_t*` string
+   required by the application. Also, note that the :ctype:`wchar_t*` string
    might contain null characters, which would cause the string to be truncated
    when used with most C functions.
 
