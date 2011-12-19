@@ -404,6 +404,12 @@ Tools/Demos
 - Issue #10639: reindent.py no longer converts newlines and will raise
   an error if attempting to convert a file with mixed newlines.
 
+Tools/Demos
+-----------
+
+- Issue #13628: python-gdb.py is now able to retrieve more frames in the Python
+  traceback if Python is optimized.
+
 Tests
 -----
 
