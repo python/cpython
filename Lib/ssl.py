@@ -70,6 +70,10 @@ from _ssl import (
     OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1,
     OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_ECDH_USE,
     )
+try:
+    from _ssl import OP_NO_COMPRESSION
+except ImportError:
+    pass
 from _ssl import RAND_status, RAND_egd, RAND_add, RAND_bytes, RAND_pseudo_bytes
 from _ssl import (
     SSL_ERROR_ZERO_RETURN,
@@ -329,6 +333,13 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.cipher()
+
+    def compression(self):
+        self._checkClosed()
+        if not self._sslobj:
+            return None
+        else:
+            return self._sslobj.compression()
 
     def send(self, data, flags=0):
         self._checkClosed()
