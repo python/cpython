@@ -12,8 +12,8 @@
    from operator import itemgetter
 
 
-The :mod:`operator` module exports a set of functions corresponding to the
-intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
+The :mod:`operator` module exports a set of efficient functions corresponding to
+the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
 equivalent to the expression ``x+y``.  The function names are those used for
 special class methods; variants without leading and trailing ``__`` are also
 provided for convenience.
