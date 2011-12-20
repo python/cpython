@@ -100,6 +100,8 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_REQUIRED
         ssl.OP_CIPHER_SERVER_PREFERENCE
         ssl.OP_SINGLE_ECDH_USE
+        if ssl.OPENSSL_VERSION_INFO >= (1, 0):
+            ssl.OP_NO_COMPRESSION
         self.assertIn(ssl.HAS_SNI, {True, False})
 
     def test_random(self):
@@ -1185,7 +1187,12 @@ else:
             if connectionchatty:
                 if support.verbose:
                     sys.stdout.write(" client:  closing connection.\n")
+            stats = {
+                'compression': s.compression(),
+                'cipher': s.cipher(),
+            }
             s.close()
+            return stats
         finally:
             server.stop()
             server.join()
@@ -1813,6 +1820,25 @@ else:
             finally:
                 server.stop()
                 server.join()
+
+        def test_compression(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.load_cert_chain(CERTFILE)
+            stats = server_params_test(context, context,
+                                       chatty=True, connectionchatty=True)
+            if support.verbose:
+                sys.stdout.write(" got compression: {!r}\n".format(stats['compression']))
+            self.assertIn(stats['compression'], { None, 'ZLIB', 'RLE' })
+
+        @unittest.skipUnless(hasattr(ssl, 'OP_NO_COMPRESSION'),
+                             "ssl.OP_NO_COMPRESSION needed for this test")
+        def test_compression_disabled(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.load_cert_chain(CERTFILE)
+            stats = server_params_test(context, context,
+                                       chatty=True, connectionchatty=True)
+            self.assertIs(stats['compression'], None)
+
 
 def test_main(verbose=False):
     if support.verbose:

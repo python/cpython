@@ -419,6 +419,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13634: Add support for querying and disabling SSL compression.
+
 - Issue #13627: Add support for SSL Elliptic Curve-based Diffie-Hellman
   key exchange, through the SSLContext.set_ecdh_curve() method and the
   ssl.OP_SINGLE_ECDH_USE option.

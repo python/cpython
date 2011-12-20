@@ -999,6 +999,25 @@ static PyObject *PySSL_cipher (PySSLSocket *self) {
     return NULL;
 }
 
+static PyObject *PySSL_compression(PySSLSocket *self) {
+#ifdef OPENSSL_NO_COMP
+    Py_RETURN_NONE;
+#else
+    const COMP_METHOD *comp_method;
+    const char *short_name;
+
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+    comp_method = SSL_get_current_compression(self->ssl);
+    if (comp_method == NULL || comp_method->type == NID_undef)
+        Py_RETURN_NONE;
+    short_name = OBJ_nid2sn(comp_method->type);
+    if (short_name == NULL)
+        Py_RETURN_NONE;
+    return PyUnicode_DecodeFSDefault(short_name);
+#endif
+}
+
 static void PySSL_dealloc(PySSLSocket *self)
 {
     if (self->peer_cert)        /* Possible not to have one? */
@@ -1452,6 +1471,7 @@ static PyMethodDef PySSLMethods[] = {
     {"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
      PySSL_peercert_doc},
     {"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
+    {"compression", (PyCFunction)PySSL_compression, METH_NOARGS},
     {"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
      PySSL_SSLshutdown_doc},
 #if HAVE_OPENSSL_FINISHED
@@ -2482,6 +2502,10 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
     PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
+#ifdef SSL_OP_NO_COMPRESSION
+    PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
+                            SSL_OP_NO_COMPRESSION);
+#endif
 
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
     r = Py_True;

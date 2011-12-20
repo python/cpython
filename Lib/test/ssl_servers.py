@@ -97,6 +97,7 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
         stats = {
             'session_cache': context.session_stats(),
             'cipher': sock.cipher(),
+            'compression': sock.compression(),
             }
         body = pprint.pformat(stats)
         body = body.encode('utf-8')

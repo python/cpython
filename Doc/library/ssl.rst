@@ -436,6 +436,15 @@ Constants
 
    .. versionadded:: 3.3
 
+.. data:: OP_NO_COMPRESSION
+
+   Disable compression on the SSL channel.  This is useful if the application
+   protocol supports its own compression scheme.
+
+   This option is only available with OpenSSL 1.0.0 and later.
+
+   .. versionadded:: 3.3
+
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
@@ -560,6 +569,16 @@ SSL sockets also have the following additional methods and attributes:
    Returns a three-value tuple containing the name of the cipher being used, the
    version of the SSL protocol that defines its use, and the number of secret
    bits being used.  If no connection has been established, returns ``None``.
+
+.. method:: SSLSocket.compression()
+
+   Return the compression algorithm being used as a string, or ``None``
+   if the connection isn't compressed.
+
+   If the higher-level protocol supports its own compression mechanism,
+   you can use :data:`OP_NO_COMPRESSION` to disable SSL-level compression.
+
+   .. versionadded:: 3.3
 
 .. method:: SSLSocket.get_channel_binding(cb_type="tls-unique")
 
