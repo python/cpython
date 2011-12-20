@@ -1835,6 +1835,7 @@ else:
         def test_compression_disabled(self):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.load_cert_chain(CERTFILE)
+            context.options |= ssl.OP_NO_COMPRESSION
             stats = server_params_test(context, context,
                                        chatty=True, connectionchatty=True)
             self.assertIs(stats['compression'], None)
