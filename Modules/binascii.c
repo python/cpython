@@ -183,6 +183,44 @@ static unsigned short crctab_hqx[256] = {
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
 };
 
+static int
+ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
+{
+    if (arg == NULL) {
+        PyBuffer_Release(buf);
+        return 1;
+    }
+    if (PyUnicode_Check(arg)) {
+        if (PyUnicode_READY(arg) < 0)
+            return 0;
+        if (!PyUnicode_IS_ASCII(arg)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "string argument should contain only ASCII characters");
+            return 0;
+        }
+        assert(PyUnicode_KIND(arg) == PyUnicode_1BYTE_KIND);
+        buf->buf = (void *) PyUnicode_1BYTE_DATA(arg);
+        buf->len = PyUnicode_GET_LENGTH(arg);
+        buf->obj = NULL;
+        return 1;
+    }
+    if (PyObject_GetBuffer(arg, buf, PyBUF_SIMPLE) != 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be bytes, buffer or ASCII string, "
+                     "not %R", Py_TYPE(arg));
+        return 0;
+    }
+    if (!PyBuffer_IsContiguous(buf, 'C')) {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be a contiguous buffer, "
+                     "not %R", Py_TYPE(arg));
+        PyBuffer_Release(buf);
+        return 0;
+    }
+    return Py_CLEANUP_SUPPORTED;
+}
+
+
 PyDoc_STRVAR(doc_a2b_uu, "(ascii) -> bin. Decode a line of uuencoded data");
 
 static PyObject *
@@ -196,7 +234,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
 
-    if ( !PyArg_ParseTuple(args, "y*:a2b_uu", &pascii) )
+    if ( !PyArg_ParseTuple(args, "O&:a2b_uu", ascii_buffer_converter, &pascii) )
         return NULL;
     ascii_data = pascii.buf;
     ascii_len = pascii.len;
@@ -370,7 +408,7 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
     Py_ssize_t ascii_len, bin_len;
     int quad_pos = 0;
 
-    if ( !PyArg_ParseTuple(args, "y*:a2b_base64", &pascii) )
+    if ( !PyArg_ParseTuple(args, "O&:a2b_base64", ascii_buffer_converter, &pascii) )
         return NULL;
     ascii_data = pascii.buf;
     ascii_len = pascii.len;
@@ -546,7 +584,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
     Py_ssize_t len;
     int done = 0;
 
-    if ( !PyArg_ParseTuple(args, "y*:a2b_hqx", &pascii) )
+    if ( !PyArg_ParseTuple(args, "O&:a2b_hqx", ascii_buffer_converter, &pascii) )
         return NULL;
     ascii_data = pascii.buf;
     len = pascii.len;
@@ -1119,7 +1157,7 @@ binascii_unhexlify(PyObject *self, PyObject *args)
     char* retbuf;
     Py_ssize_t i, j;
 
-    if (!PyArg_ParseTuple(args, "y*:a2b_hex", &parg))
+    if (!PyArg_ParseTuple(args, "O&:a2b_hex", ascii_buffer_converter, &parg))
         return NULL;
     argbuf = parg.buf;
     arglen = parg.len;
@@ -1197,8 +1235,8 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *kwlist[] = {"data", "header", NULL};
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i", kwlist, &pdata,
-          &header))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i:a2b_qp", kwlist,
+                                     ascii_buffer_converter, &pdata, &header))
         return NULL;
     data = pdata.buf;
     datalen = pdata.len;

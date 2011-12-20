@@ -20,8 +20,13 @@ higher-level modules.
 
 .. note::
 
-   Encoding and decoding functions do not accept Unicode strings.  Only bytestring
-   and bytearray objects can be processed.
+   ``a2b_*`` functions accept Unicode strings containing only ASCII characters.
+   Other functions only accept bytes and bytes-compatible objects (such as
+   bytearray objects and other objects implementing the buffer API).
+
+   .. versionchanged:: 3.3
+      ASCII-only unicode strings are now accepted by the ``a2b_*`` functions.
+
 
 The :mod:`binascii` module defines the following functions:
 
