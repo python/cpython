@@ -419,6 +419,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13637: "a2b" functions in the binascii module now accept ASCII-only
+  unicode strings.
+
 - Issue #13634: Add support for querying and disabling SSL compression.
 
 - Issue #13627: Add support for SSL Elliptic Curve-based Diffie-Hellman
