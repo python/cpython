@@ -8888,9 +8888,13 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
         /* create entries for translating chars in x to those in y */
         for (i = 0; i < PyUnicode_GET_SIZE(x); i++) {
             key = PyLong_FromLong(PyUnicode_AS_UNICODE(x)[i]);
-            value = PyLong_FromLong(PyUnicode_AS_UNICODE(y)[i]);
-            if (!key || !value)
+            if (!key)
                 goto err;
+            value = PyLong_FromLong(PyUnicode_AS_UNICODE(y)[i]);
+            if (!value) {
+                Py_DECREF(key);
+                goto err;
+            }
             res = PyDict_SetItem(new, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
