@@ -10095,19 +10095,19 @@ static Py_ssize_t
 anylib_count(int kind, PyObject *sstr, void* sbuf, Py_ssize_t slen,
              PyObject *str1, void *buf1, Py_ssize_t len1, Py_ssize_t maxcount)
 {
-        switch (kind) {
-        case PyUnicode_1BYTE_KIND:
-            if (PyUnicode_IS_ASCII(sstr) && PyUnicode_IS_ASCII(str1))
-                return asciilib_count(sbuf, slen, buf1, len1, maxcount);
-            else
-                return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
-        case PyUnicode_2BYTE_KIND:
-            return ucs2lib_count(sbuf, slen, buf1, len1, maxcount);
-        case PyUnicode_4BYTE_KIND:
-            return ucs4lib_count(sbuf, slen, buf1, len1, maxcount);
-        }
-        assert(0);
-        return 0;
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+        if (PyUnicode_IS_ASCII(sstr) && PyUnicode_IS_ASCII(str1))
+            return asciilib_count(sbuf, slen, buf1, len1, maxcount);
+        else
+            return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
+    case PyUnicode_2BYTE_KIND:
+        return ucs2lib_count(sbuf, slen, buf1, len1, maxcount);
+    case PyUnicode_4BYTE_KIND:
+        return ucs4lib_count(sbuf, slen, buf1, len1, maxcount);
+    }
+    assert(0);
+    return 0;
 }
 
 static PyObject *
