@@ -12591,9 +12591,13 @@ unicode_maketrans(PyObject *null, PyObject *args)
         y_data = PyUnicode_DATA(y);
         for (i = 0; i < PyUnicode_GET_LENGTH(x); i++) {
             key = PyLong_FromLong(PyUnicode_READ(x_kind, x_data, i));
-            value = PyLong_FromLong(PyUnicode_READ(y_kind, y_data, i));
-            if (!key || !value)
+            if (!key)
                 goto err;
+            value = PyLong_FromLong(PyUnicode_READ(y_kind, y_data, i));
+            if (!value) {
+                Py_DECREF(key);
+                goto err;
+            }
             res = PyDict_SetItem(new, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
