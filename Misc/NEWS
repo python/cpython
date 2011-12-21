@@ -86,6 +86,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13639: Accept unicode filenames in tarfile.open(mode="w|gz").
+
 - Issue #1785: Fix inspect and pydoc with misbehaving descriptors.
 
 - Issue #7502: Fix equality comparison for DocTestCase instances.  Patch by
