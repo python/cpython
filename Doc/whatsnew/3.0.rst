@@ -301,6 +301,12 @@ changed.
   There is no longer any need for using the encoding-aware streams
   in the :mod:`codecs` module.
 
+* The initial values of :data:`sys.stdin`, :data:`sys.stdout` and
+  :data:`sys.stderr` are now unicode-only text files (i.e., they are
+  instances of :class:`io.TextIOBase`).  To read and write bytes data
+  with these streams, you need to use their :data:`io.TextIOBase.buffer`
+  attribute.
+
 * Filenames are passed to and returned from APIs as (Unicode) strings.
   This can present platform-specific problems because on some
   platforms filenames are arbitrary byte strings.  (On the other hand,
@@ -511,9 +517,7 @@ consulted for longer descriptions.
   produces a literal of type :class:`bytes`.
 
 * :ref:`pep-3116`.  The :mod:`io` module is now the standard way of
-  doing file I/O, and the initial values of :data:`sys.stdin`,
-  :data:`sys.stdout` and :data:`sys.stderr` are now instances of
-  :class:`io.TextIOBase`.  The built-in :func:`open` function is now an
+  doing file I/O.  The built-in :func:`open` function is now an
   alias for :func:`io.open` and has additional keyword arguments
   *encoding*, *errors*, *newline* and *closefd*.  Also note that an
   invalid *mode* argument now raises :exc:`ValueError`, not

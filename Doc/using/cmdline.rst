@@ -249,7 +249,8 @@ Miscellaneous options
 
    Force the binary layer of the stdin, stdout and stderr streams (which is
    available as their ``buffer`` attribute) to be unbuffered.  The text I/O
-   layer will still be line-buffered.
+   layer will still be line-buffered if writing to the console, or
+   block-buffered if redirected to a non-interactive file.
 
    See also :envvar:`PYTHONUNBUFFERED`.
 

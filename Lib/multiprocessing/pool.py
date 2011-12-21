@@ -64,6 +64,9 @@ job_counter = itertools.count()
 def mapstar(args):
     return list(map(*args))
 
+def starmapstar(args):
+    return list(itertools.starmap(args[0], args[1]))
+
 #
 # Code run by worker processes
 #
@@ -248,7 +251,25 @@ class Pool(object):
         in a list that is returned.
         '''
         assert self._state == RUN
-        return self.map_async(func, iterable, chunksize).get()
+        return self._map_async(func, iterable, mapstar, chunksize).get()
+
+    def starmap(self, func, iterable, chunksize=None):
+        '''
+        Like `map()` method but the elements of the `iterable` are expected to
+        be iterables as well and will be unpacked as arguments. Hence
+        `func` and (a, b) becomes func(a, b).
+        '''
+        assert self._state == RUN
+        return self._map_async(func, iterable, starmapstar, chunksize).get()
+
+    def starmap_async(self, func, iterable, chunksize=None, callback=None,
+            error_callback=None):
+        '''
+        Asynchronous version of `starmap()` method.
+        '''
+        assert self._state == RUN
+        return self._map_async(func, iterable, starmapstar, chunksize,
+                               callback, error_callback)
 
     def imap(self, func, iterable, chunksize=1):
         '''
@@ -302,6 +323,13 @@ class Pool(object):
         Asynchronous version of `map()` method.
         '''
         assert self._state == RUN
+        return self._map_async(func, iterable, mapstar, chunksize)
+
+    def _map_async(self, func, iterable, mapper, chunksize=None, callback=None,
+            error_callback=None):
+        '''
+        Helper function to implement map, starmap and their async counterparts.
+        '''
         if not hasattr(iterable, '__len__'):
             iterable = list(iterable)
 
@@ -315,7 +343,7 @@ class Pool(object):
         task_batches = Pool._get_tasks(func, iterable, chunksize)
         result = MapResult(self._cache, chunksize, len(iterable), callback,
                            error_callback=error_callback)
-        self._taskqueue.put((((result._job, i, mapstar, (x,), {})
+        self._taskqueue.put((((result._job, i, mapper, (x,), {})
                               for i, x in enumerate(task_batches)), None))
         return result
 
