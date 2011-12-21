@@ -1669,6 +1669,24 @@ with the :class:`Pool` class.
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
 
+   .. method:: starmap(func, iterable[, chunksize])
+
+      Like :meth:`map` except that the elements of the `iterable` are expected
+      to be iterables that are unpacked as arguments.
+
+      Hence an `iterable` of `[(1,2), (3, 4)]` results in `[func(1,2),
+      func(3,4)]`.
+
+      .. versionadded:: 3.3
+
+   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_back]]])
+
+      A combination of :meth:`starmap` and :meth:`map_async` that iterates over
+      `iterable` of iterables and calls `func` with the iterables unpacked.
+      Returns a result object.
+
+      .. versionadded:: 3.3
+
    .. method:: close()
 
       Prevents any more tasks from being submitted to the pool.  Once all the
