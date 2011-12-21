@@ -104,8 +104,9 @@ class ImportTests(unittest.TestCase):
             try:
                 fname = TESTFN + os.extsep + "py"
                 create_empty_file(fname)
-                __import__(TESTFN)
                 fn = imp.cache_from_source(fname)
+                unlink(fn)
+                __import__(TESTFN)
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
                               "either a .pyc or .pyo file")

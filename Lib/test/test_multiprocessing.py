@@ -8,6 +8,7 @@ import unittest
 import queue as pyqueue
 import time
 import io
+import itertools
 import sys
 import os
 import gc
@@ -1125,6 +1126,9 @@ def sqr(x, wait=0.0):
     time.sleep(wait)
     return x*x
 
+def mul(x, y):
+    return x*y
+
 class _TestPool(BaseTestCase):
 
     def test_apply(self):
@@ -1137,6 +1141,20 @@ class _TestPool(BaseTestCase):
         self.assertEqual(pmap(sqr, list(range(10))), list(map(sqr, list(range(10)))))
         self.assertEqual(pmap(sqr, list(range(100)), chunksize=20),
                          list(map(sqr, list(range(100)))))
+
+    def test_starmap(self):
+        psmap = self.pool.starmap
+        tuples = list(zip(range(10), range(9,-1, -1)))
+        self.assertEqual(psmap(mul, tuples),
+                         list(itertools.starmap(mul, tuples)))
+        tuples = list(zip(range(100), range(99,-1, -1)))
+        self.assertEqual(psmap(mul, tuples, chunksize=20),
+                         list(itertools.starmap(mul, tuples)))
+
+    def test_starmap_async(self):
+        tuples = list(zip(range(100), range(99,-1, -1)))
+        self.assertEqual(self.pool.starmap_async(mul, tuples).get(),
+                         list(itertools.starmap(mul, tuples)))
 
     def test_map_chunksize(self):
         try:
