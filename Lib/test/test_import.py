@@ -107,8 +107,9 @@ class ImportTests(unittest.TestCase):
                 open(fname, 'w').close()
                 os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
                                  stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
-                __import__(TESTFN)
                 fn = imp.cache_from_source(fname)
+                unlink(fn)
+                __import__(TESTFN)
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
                               "either a .pyc or .pyo file")
