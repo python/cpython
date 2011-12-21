@@ -86,7 +86,7 @@ from _ssl import (
     SSL_ERROR_EOF,
     SSL_ERROR_INVALID_ERROR_CODE,
     )
-from _ssl import HAS_SNI
+from _ssl import HAS_SNI, HAS_ECDH
 from _ssl import (PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
 from _ssl import _OPENSSL_API_VERSION

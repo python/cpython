@@ -2006,6 +2006,7 @@ set_default_verify_paths(PySSLContext *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+#ifndef OPENSSL_NO_ECDH
 static PyObject *
 set_ecdh_curve(PySSLContext *self, PyObject *name)
 {
@@ -2032,6 +2033,7 @@ set_ecdh_curve(PySSLContext *self, PyObject *name)
     EC_KEY_free(key);
     Py_RETURN_NONE;
 }
+#endif
 
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
@@ -2054,8 +2056,10 @@ static struct PyMethodDef context_methods[] = {
                       METH_NOARGS, NULL},
     {"set_default_verify_paths", (PyCFunction) set_default_verify_paths,
                                  METH_NOARGS, NULL},
+#ifndef OPENSSL_NO_ECDH
     {"set_ecdh_curve", (PyCFunction) set_ecdh_curve,
                        METH_O, NULL},
+#endif
     {NULL, NULL}        /* sentinel */
 };
 
@@ -2522,6 +2526,14 @@ PyInit__ssl(void)
 #endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_TLS_UNIQUE", r);
+
+#ifdef OPENSSL_NO_ECDH
+    r = Py_False;
+#else
+    r = Py_True;
+#endif
+    Py_INCREF(r);
+    PyModule_AddObject(m, "HAS_ECDH", r);
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,

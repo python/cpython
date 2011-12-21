@@ -1066,11 +1066,12 @@ ArrayProxy = MakeProxyType('ArrayProxy', (
 
 PoolProxy = MakeProxyType('PoolProxy', (
     'apply', 'apply_async', 'close', 'imap', 'imap_unordered', 'join',
-    'map', 'map_async', 'terminate'
+    'map', 'map_async', 'starmap', 'starmap_async', 'terminate'
     ))
 PoolProxy._method_to_typeid_ = {
     'apply_async': 'AsyncResult',
     'map_async': 'AsyncResult',
+    'starmap_async': 'AsyncResult',
     'imap': 'Iterator',
     'imap_unordered': 'Iterator'
     }
