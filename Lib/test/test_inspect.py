@@ -404,9 +404,36 @@ class TestBuggyCases(GetSourceBase):
         self.assertEqual(inspect.findsource(co), (lines,0))
         self.assertEqual(inspect.getsource(co), lines[0])
 
+
+class _BrokenDataDescriptor(object):
+    """
+    A broken data descriptor. See bug #1785.
+    """
+    def __get__(*args):
+        raise AssertionError("should not __get__ data descriptors")
+
+    def __set__(*args):
+        raise RuntimeError
+
+    def __getattr__(*args):
+        raise AssertionError("should not __getattr__ data descriptors")
+
+
+class _BrokenMethodDescriptor(object):
+    """
+    A broken method descriptor. See bug #1785.
+    """
+    def __get__(*args):
+        raise AssertionError("should not __get__ method descriptors")
+
+    def __getattr__(*args):
+        raise AssertionError("should not __getattr__ method descriptors")
+
+
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
+
 
 class TestClassesAndFunctions(unittest.TestCase):
     def test_classic_mro(self):
@@ -494,6 +521,9 @@ class TestClassesAndFunctions(unittest.TestCase):
 
             datablob = '1'
 
+            dd = _BrokenDataDescriptor()
+            md = _BrokenMethodDescriptor()
+
         attrs = attrs_wo_objs(A)
         self.assertIn(('s', 'static method', A), attrs, 'missing static method')
         self.assertIn(('c', 'class method', A), attrs, 'missing class method')
@@ -501,6 +531,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('m', 'method', A), attrs, 'missing plain method')
         self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        self.assertIn(('md', 'method', A), attrs, 'missing method descriptor')
+        self.assertIn(('dd', 'data', A), attrs, 'missing data descriptor')
 
         class B(A):
             def m(self): pass
@@ -512,6 +544,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('m', 'method', B), attrs, 'missing plain method')
         self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        self.assertIn(('md', 'method', A), attrs, 'missing method descriptor')
+        self.assertIn(('dd', 'data', A), attrs, 'missing data descriptor')
 
 
         class C(A):
@@ -525,6 +559,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('m', 'method', C), attrs, 'missing plain method')
         self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        self.assertIn(('md', 'method', A), attrs, 'missing method descriptor')
+        self.assertIn(('dd', 'data', A), attrs, 'missing data descriptor')
 
         class D(B, C):
             def m1(self): pass
@@ -539,6 +575,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('m', 'method', B), attrs, 'missing plain method')
         self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        self.assertIn(('md', 'method', A), attrs, 'missing method descriptor')
+        self.assertIn(('dd', 'data', A), attrs, 'missing data descriptor')
 
 
     def test_classify_oldstyle(self):
@@ -554,6 +592,64 @@ class TestClassesAndFunctions(unittest.TestCase):
         """
         self._classify_test(True)
 
+    def test_classify_builtin_types(self):
+        # Simple sanity check that all built-in types can have their
+        # attributes classified.
+        for name in dir(__builtin__):
+            builtin = getattr(__builtin__, name)
+            if isinstance(builtin, type):
+                inspect.classify_class_attrs(builtin)
+
+    def test_getmembers_descriptors(self):
+        # Old-style classes
+        class A:
+            dd = _BrokenDataDescriptor()
+            md = _BrokenMethodDescriptor()
+
+        self.assertEqual(inspect.getmembers(A, inspect.ismethoddescriptor),
+            [('md', A.__dict__['md'])])
+        self.assertEqual(inspect.getmembers(A, inspect.isdatadescriptor),
+            [('dd', A.__dict__['dd'])])
+
+        class B(A):
+            pass
+
+        self.assertEqual(inspect.getmembers(B, inspect.ismethoddescriptor),
+            [('md', A.__dict__['md'])])
+        self.assertEqual(inspect.getmembers(B, inspect.isdatadescriptor),
+            [('dd', A.__dict__['dd'])])
+
+        # New-style classes
+        class A(object):
+            dd = _BrokenDataDescriptor()
+            md = _BrokenMethodDescriptor()
+
+        def pred_wrapper(pred):
+            # A quick'n'dirty way to discard standard attributes of new-style
+            # classes.
+            class Empty(object):
+                pass
+            def wrapped(x):
+                if hasattr(x, '__name__') and hasattr(Empty, x.__name__):
+                    return False
+                return pred(x)
+            return wrapped
+
+        ismethoddescriptor = pred_wrapper(inspect.ismethoddescriptor)
+        isdatadescriptor = pred_wrapper(inspect.isdatadescriptor)
+
+        self.assertEqual(inspect.getmembers(A, ismethoddescriptor),
+            [('md', A.__dict__['md'])])
+        self.assertEqual(inspect.getmembers(A, isdatadescriptor),
+            [('dd', A.__dict__['dd'])])
+
+        class B(A):
+            pass
+
+        self.assertEqual(inspect.getmembers(B, ismethoddescriptor),
+            [('md', A.__dict__['md'])])
+        self.assertEqual(inspect.getmembers(B, isdatadescriptor),
+            [('dd', A.__dict__['dd'])])
 
 
 class TestGetcallargsFunctions(unittest.TestCase):

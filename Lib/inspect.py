@@ -247,12 +247,23 @@ def isabstract(object):
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
     Optionally, only return members that satisfy a given predicate."""
+    if isclass(object):
+        mro = (object,) + getmro(object)
+    else:
+        mro = ()
     results = []
     for key in dir(object):
-        try:
-            value = getattr(object, key)
-        except AttributeError:
-            continue
+        # First try to get the value via __dict__. Some descriptors don't
+        # like calling their __get__ (see bug #1785).
+        for base in mro:
+            if key in base.__dict__:
+                value = base.__dict__[key]
+                break
+        else:
+            try:
+                value = getattr(object, key)
+            except AttributeError:
+                continue
         if not predicate or predicate(value):
             results.append((key, value))
     results.sort()
@@ -288,30 +299,21 @@ def classify_class_attrs(cls):
     names = dir(cls)
     result = []
     for name in names:
-        # Get the object associated with the name.
+        # Get the object associated with the name, and where it was defined.
         # Getting an obj from the __dict__ sometimes reveals more than
         # using getattr.  Static and class methods are dramatic examples.
-        if name in cls.__dict__:
-            obj = cls.__dict__[name]
+        # Furthermore, some objects may raise an Exception when fetched with
+        # getattr(). This is the case with some descriptors (bug #1785).
+        # Thus, we only use getattr() as a last resort.
+        homecls = None
+        for base in (cls,) + mro:
+            if name in base.__dict__:
+                obj = base.__dict__[name]
+                homecls = base
+                break
         else:
             obj = getattr(cls, name)
-
-        # Figure out where it was defined.
-        homecls = getattr(obj, "__objclass__", None)
-        if homecls is None:
-            # search the dicts.
-            for base in mro:
-                if name in base.__dict__:
-                    homecls = base
-                    break
-
-        # Get the object again, in order to get it from the defining
-        # __dict__ instead of via getattr (if possible).
-        if homecls is not None and name in homecls.__dict__:
-            obj = homecls.__dict__[name]
-
-        # Also get the object via getattr.
-        obj_via_getattr = getattr(cls, name)
+            homecls = getattr(obj, "__objclass__", homecls)
 
         # Classify the object.
         if isinstance(obj, staticmethod):
@@ -320,11 +322,18 @@ def classify_class_attrs(cls):
             kind = "class method"
         elif isinstance(obj, property):
             kind = "property"
-        elif (ismethod(obj_via_getattr) or
-              ismethoddescriptor(obj_via_getattr)):
+        elif ismethoddescriptor(obj):
             kind = "method"
-        else:
+        elif isdatadescriptor(obj):
             kind = "data"
+        else:
+            obj_via_getattr = getattr(cls, name)
+            if (ismethod(obj_via_getattr) or
+                ismethoddescriptor(obj_via_getattr)):
+                kind = "method"
+            else:
+                kind = "data"
+            obj = obj_via_getattr
 
         result.append(Attribute(name, kind, homecls, obj))
 
