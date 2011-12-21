@@ -97,6 +97,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1785: Fix inspect and pydoc with misbehaving descriptors.
+
 - Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas
   Stührk.
 
