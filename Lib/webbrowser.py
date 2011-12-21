@@ -299,6 +299,18 @@ class Galeon(UnixBrowser):
     background = True
 
 
+class Chrome(UnixBrowser):
+    "Launcher class for Google Chrome browser."
+
+    remote_args = ['%action', '%s']
+    remote_action = ""
+    remote_action_newwin = "--new-window"
+    remote_action_newtab = ""
+    background = True
+
+Chromium = Chrome
+
+
 class Opera(UnixBrowser):
     "Launcher class for Opera browser."
 
@@ -465,6 +477,11 @@ def register_X_browsers():
     # Skipstone, another Gtk/Mozilla based browser
     if _iscommand("skipstone"):
         register("skipstone", None, BackgroundBrowser("skipstone"))
+
+    # Google Chrome/Chromium browsers
+    for browser in ("google-chrome", "chrome", "chromium", "chromium-browser"):
+        if _iscommand(browser):
+            register(browser, None, Chrome(browser))
 
     # Opera, quite popular
     if _iscommand("opera"):
