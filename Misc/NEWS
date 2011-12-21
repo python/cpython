@@ -86,6 +86,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1785: Fix inspect and pydoc with misbehaving descriptors.
+
 - Issue #7502: Fix equality comparison for DocTestCase instances.  Patch by
   Cédric Krier.
 
