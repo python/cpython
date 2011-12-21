@@ -994,6 +994,13 @@ class StreamWriteTest(WriteTestBase):
         finally:
             os.umask(original_umask)
 
+    def test_issue13639(self):
+        try:
+            with tarfile.open(unicode(tmpname, sys.getfilesystemencoding()), self.mode):
+                pass
+        except UnicodeDecodeError:
+            self.fail("_Stream failed to write unicode filename")
+
 
 class GNUWriteTest(unittest.TestCase):
     # This testcase checks for correct creation of GNU Longname
