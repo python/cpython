@@ -419,6 +419,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12708: Add starmap() and starmap_async() methods (similar to
+  itertools.starmap()) to multiprocessing.Pool.  Patch by Hynek Schlawack.
+
 - Issue #1785: Fix inspect and pydoc with misbehaving descriptors.
 
 - Issue #13637: "a2b" functions in the binascii module now accept ASCII-only
