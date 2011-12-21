@@ -748,8 +748,15 @@ class HTMLDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self.document(getattr(object, name), name, mod,
-                                       funcs, classes, mdict, object))
+                    try:
+                        value = getattr(object, name)
+                    except Exception:
+                        # Some descriptors may meet a failure in their __get__.
+                        # (bug #1785)
+                        push(self._docdescriptor(name, value, mod))
+                    else:
+                        push(self.document(value, name, mod,
+                                        funcs, classes, mdict, object))
                     push('\n')
             return attrs
 
@@ -790,7 +797,12 @@ class HTMLDoc(Doc):
         mdict = {}
         for key, kind, homecls, value in attrs:
             mdict[key] = anchor = '#' + name + '-' + key
-            value = getattr(object, key)
+            try:
+                value = getattr(object, name)
+            except Exception:
+                # Some descriptors may meet a failure in their __get__.
+                # (bug #1785)
+                pass
             try:
                 # The value may not be hashable (e.g., a data attr with
                 # a dict or list value).
@@ -1177,8 +1189,15 @@ location listed above.
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self.document(getattr(object, name),
-                                       name, mod, object))
+                    try:
+                        value = getattr(object, name)
+                    except Exception:
+                        # Some descriptors may meet a failure in their __get__.
+                        # (bug #1785)
+                        push(self._docdescriptor(name, value, mod))
+                    else:
+                        push(self.document(value,
+                                        name, mod, object))
             return attrs
 
         def spilldescriptors(msg, attrs, predicate):
