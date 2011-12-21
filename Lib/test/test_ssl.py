@@ -103,6 +103,7 @@ class BasicSocketTests(unittest.TestCase):
         if ssl.OPENSSL_VERSION_INFO >= (1, 0):
             ssl.OP_NO_COMPRESSION
         self.assertIn(ssl.HAS_SNI, {True, False})
+        self.assertIn(ssl.HAS_ECDH, {True, False})
 
     def test_random(self):
         v = ssl.RAND_status()
@@ -561,6 +562,7 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.set_default_verify_paths()
 
+    @unittest.skipUnless(ssl.HAS_ECDH, "ECDH disabled on this OpenSSL build")
     def test_set_ecdh_curve(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.set_ecdh_curve("prime256v1")
