@@ -263,7 +263,10 @@ class ImportTests(unittest.TestCase):
                   import imp
             sys.argv.insert(0, C())
             """))
-        script_helper.assert_python_ok(testfn)
+        try:
+            script_helper.assert_python_ok(testfn)
+        finally:
+            unlink(testfn)
 
     def test_bug7732(self):
         source = TESTFN + '.py'
