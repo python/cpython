@@ -422,6 +422,9 @@ Library
 - Issue #13620: Support for Chrome browser in webbrowser.py Patch contributed
   by Arnaud Calmettes.
 
+- Issue #11829: Fix code execution holes in inspect.getattr_static for
+  metaclasses with metaclasses. Patch by Andreas Stührk.
+
 - Issue #12708: Add starmap() and starmap_async() methods (similar to
   itertools.starmap()) to multiprocessing.Pool.  Patch by Hynek Schlawack.
 
