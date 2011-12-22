@@ -419,6 +419,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
+
 - Issue #13620: Support for Chrome browser in webbrowser.py Patch contributed
   by Arnaud Calmettes.
 
