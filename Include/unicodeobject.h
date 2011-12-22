@@ -232,7 +232,7 @@ typedef struct {
        - compact:
 
          * structure = PyCompactUnicodeObject
-         * test: PyUnicode_IS_ASCII(op) && !PyUnicode_IS_COMPACT(op)
+         * test: PyUnicode_IS_COMPACT(op) && !PyUnicode_IS_ASCII(op)
          * kind = PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND or
            PyUnicode_4BYTE_KIND
          * compact = 1
