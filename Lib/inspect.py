@@ -1161,10 +1161,11 @@ def getattr_static(obj, attr, default=_sentinel):
     if obj is klass:
         # for types we check the metaclass too
         for entry in _static_getmro(type(klass)):
-            try:
-                return entry.__dict__[attr]
-            except KeyError:
-                pass
+            if _shadowed_dict(type(entry)) is _sentinel:
+                try:
+                    return entry.__dict__[attr]
+                except KeyError:
+                    pass
     if default is not _sentinel:
         return default
     raise AttributeError(attr)

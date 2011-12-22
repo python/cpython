@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11829: Fix code execution holes in inspect.getattr_static for
+  metaclasses with metaclasses. Patch by Andreas Stührk.
+
 - Issue #1785: Fix inspect and pydoc with misbehaving descriptors.
 
 - Issue #11813: Fix inspect.getattr_static for modules. Patch by Andreas
