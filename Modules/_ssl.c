@@ -1922,6 +1922,38 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+load_dh_params(PySSLContext *self, PyObject *filepath)
+{
+    FILE *f;
+    DH *dh;
+
+    f = _Py_fopen(filepath, "rb");
+    if (f == NULL) {
+        if (!PyErr_Occurred())
+            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);
+        return NULL;
+    }
+    errno = 0;
+    PySSL_BEGIN_ALLOW_THREADS
+    dh = PEM_read_DHparams(f, NULL, NULL, NULL);
+    PySSL_END_ALLOW_THREADS
+    if (dh == NULL) {
+        if (errno != 0) {
+            ERR_clear_error();
+            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);
+        }
+        else {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
+        return NULL;
+    }
+    if (SSL_CTX_set_tmp_dh(self->ctx, dh) == 0)
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+    DH_free(dh);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"sock", "server_side", "server_hostname", NULL};
@@ -2050,6 +2082,8 @@ static struct PyMethodDef context_methods[] = {
                     METH_VARARGS, NULL},
     {"load_cert_chain", (PyCFunction) load_cert_chain,
                         METH_VARARGS | METH_KEYWORDS, NULL},
+    {"load_dh_params", (PyCFunction) load_dh_params,
+                       METH_O, NULL},
     {"load_verify_locations", (PyCFunction) load_verify_locations,
                               METH_VARARGS | METH_KEYWORDS, NULL},
     {"session_stats", (PyCFunction) session_stats,
@@ -2505,6 +2539,7 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
+    PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
     PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
 #ifdef SSL_OP_NO_COMPRESSION
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",

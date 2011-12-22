@@ -68,7 +68,7 @@ from _ssl import (
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import (
     OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1,
-    OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_ECDH_USE,
+    OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE, OP_SINGLE_ECDH_USE,
     )
 try:
     from _ssl import OP_NO_COMPRESSION

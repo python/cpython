@@ -428,9 +428,17 @@ Constants
 
    .. versionadded:: 3.3
 
+.. data:: OP_SINGLE_DH_USE
+
+   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   improves forward secrecy but requires more computational resources.
+   This option only applies to server sockets.
+
+   .. versionadded:: 3.3
+
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for several SSL sessions.  This
+   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -707,12 +715,24 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
+.. method:: SSLContext.load_dh_params(dhfile)
+
+   Load the key generation parameters for Diffie-Helman (DH) key exchange.
+   Using DH key exchange improves forward secrecy at the expense of
+   computational resources (both on the server and on the client).
+   The *dhfile* parameter should be the path to a file containing DH
+   parameters in PEM format.
+
+   This setting doesn't apply to client sockets.  You can also use the
+   :data:`OP_SINGLE_DH_USE` option to further improve security.
+
+   .. versionadded:: 3.3
+
 .. method:: SSLContext.set_ecdh_curve(curve_name)
 
-   Set the curve name for Elliptic Curve-based Diffie-Hellman (abbreviated
-   ECDH) key exchange.  Using Diffie-Hellman key exchange improves forward
-   secrecy at the expense of computational resources (both on the server and
-   on the client).  The *curve_name* parameter should be a string describing
+   Set the curve name for Elliptic Curve-based Diffie-Hellman (ECDH) key
+   exchange.  ECDH is significantly faster than regular DH while arguably
+   as secure.  The *curve_name* parameter should be a string describing
    a well-known elliptic curve, for example ``prime256v1`` for a widely
    supported curve.
 
