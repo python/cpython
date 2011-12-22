@@ -442,12 +442,6 @@ subprocess_cloexec_pipe(PyObject *self, PyObject *noargs)
     Py_END_ALLOW_THREADS
     if (res != 0 && errno == ENOSYS)
     {
-        if (PyErr_WarnEx(
-                PyExc_RuntimeWarning,
-                "pipe2 set errno ENOSYS; falling "
-                "back to non-atomic pipe+fcntl.", 1) != 0) {
-            return NULL;
-        }
         {
 #endif
         /* We hold the GIL which offers some protection from other code calling
