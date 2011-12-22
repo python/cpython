@@ -1,7 +1,7 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 #include "Python.h"
-#ifdef HAVE_PIPE2
-#define _GNU_SOURCE
+#if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE
 #endif
 #include <unistd.h>
 #include <fcntl.h>
