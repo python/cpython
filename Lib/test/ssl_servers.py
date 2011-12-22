@@ -180,6 +180,8 @@ if __name__ == "__main__":
     parser.add_argument('--curve-name', dest='curve_name', type=str,
                         action='store',
                         help='curve name for EC-based Diffie-Hellman')
+    parser.add_argument('--dh', dest='dh_file', type=str, action='store',
+                        help='PEM file containing DH parameters')
     args = parser.parse_args()
 
     support.verbose = args.verbose
@@ -192,6 +194,8 @@ if __name__ == "__main__":
     context.load_cert_chain(CERTFILE)
     if args.curve_name:
         context.set_ecdh_curve(args.curve_name)
+    if args.dh_file:
+        context.load_dh_params(args.dh_file)
 
     server = HTTPSServer(("", args.port), handler_class, context)
     if args.verbose:
