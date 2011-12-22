@@ -310,6 +310,12 @@ _Py_fopen(PyObject *path, const char *mode)
     wchar_t wmode[10];
     int usize;
 
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError,
+                     "str file path expected under Windows, got %R",
+                     Py_TYPE(path));
+        return NULL;
+    }
     wpath = PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return NULL;

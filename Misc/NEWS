@@ -419,6 +419,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13626: Add support for SSL Diffie-Hellman key exchange, through the
+  SSLContext.load_dh_params() method and the ssl.OP_SINGLE_DH_USE option.
+
 - Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
 
 - Issue #13620: Support for Chrome browser in webbrowser.py Patch contributed

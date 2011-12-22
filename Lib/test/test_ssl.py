@@ -56,6 +56,8 @@ WRONGCERT = data_file("XXXnonexisting.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 
+DHFILE = data_file("dh512.pem")
+BYTES_DHFILE = os.fsencode(DHFILE)
 
 def handle_error(prefix):
     exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
@@ -99,6 +101,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_OPTIONAL
         ssl.CERT_REQUIRED
         ssl.OP_CIPHER_SERVER_PREFERENCE
+        ssl.OP_SINGLE_DH_USE
         ssl.OP_SINGLE_ECDH_USE
         if ssl.OPENSSL_VERSION_INFO >= (1, 0):
             ssl.OP_NO_COMPRESSION
@@ -537,6 +540,19 @@ class ContextTests(unittest.TestCase):
 
         # Issue #10989: crash if the second argument type is invalid
         self.assertRaises(TypeError, ctx.load_verify_locations, None, True)
+
+    def test_load_dh_params(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_dh_params(DHFILE)
+        if os.name != 'nt':
+            ctx.load_dh_params(BYTES_DHFILE)
+        self.assertRaises(TypeError, ctx.load_dh_params)
+        self.assertRaises(TypeError, ctx.load_dh_params, None)
+        with self.assertRaises(FileNotFoundError) as cm:
+            ctx.load_dh_params(WRONGCERT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        with self.assertRaisesRegex(ssl.SSLError, "PEM routines"):
+            ctx.load_dh_params(CERTFILE)
 
     @skip_if_broken_ubuntu_ssl
     def test_session_stats(self):
@@ -1801,6 +1817,19 @@ else:
             stats = server_params_test(context, context,
                                        chatty=True, connectionchatty=True)
             self.assertIs(stats['compression'], None)
+
+        def test_dh_params(self):
+            # Check we can get a connection with ephemeral Diffie-Hellman
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.load_cert_chain(CERTFILE)
+            context.load_dh_params(DHFILE)
+            context.set_ciphers("kEDH")
+            stats = server_params_test(context, context,
+                                       chatty=True, connectionchatty=True)
+            cipher = stats["cipher"][0]
+            parts = cipher.split("-")
+            if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
+                self.fail("Non-DH cipher: " + cipher[0])
 
 
 def test_main(verbose=False):
