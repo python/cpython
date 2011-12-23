@@ -30,7 +30,8 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #define PyCFunction_GET_FUNCTION(func) \
         (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
 #define PyCFunction_GET_SELF(func) \
-	(((PyCFunctionObject *)func) -> m_self)
+        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
+         NULL : ((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
 	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
 #endif

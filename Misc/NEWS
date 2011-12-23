@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13577: Built-in methods and functions now have a __qualname__.
+  Patch by sbt.
+
 - Issue #6695: Full garbage collection runs now clear the freelist of set
   objects.  Initial patch by Matthias Troffaes.
 
