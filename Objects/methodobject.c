@@ -44,7 +44,7 @@ PyCFunction_GetFunction(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyCFunctionObject *)op) -> m_ml -> ml_meth;
+    return PyCFunction_GET_FUNCTION(op);
 }
 
 PyObject *
@@ -54,7 +54,7 @@ PyCFunction_GetSelf(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyCFunctionObject *)op) -> m_self;
+    return PyCFunction_GET_SELF(op);
 }
 
 int
@@ -64,7 +64,7 @@ PyCFunction_GetFlags(PyObject *op)
         PyErr_BadInternalCall();
         return -1;
     }
-    return ((PyCFunctionObject *)op) -> m_ml -> ml_flags;
+    return PyCFunction_GET_FLAGS(op);
 }
 
 PyObject *
@@ -151,6 +151,41 @@ meth_get__name__(PyCFunctionObject *m, void *closure)
     return PyUnicode_FromString(m->m_ml->ml_name);
 }
 
+static PyObject *
+meth_get__qualname__(PyCFunctionObject *m, void *closure)
+{
+    /* If __self__ is a module or NULL, return m.__name__
+       (e.g. len.__qualname__ == 'len')
+
+       If __self__ is a type, return m.__self__.__qualname__ + '.' + m.__name__
+       (e.g. dict.fromkeys.__qualname__ == 'dict.fromkeys')
+
+       Otherwise return type(m.__self__).__qualname__ + '.' + m.__name__
+       (e.g. [].append.__qualname__ == 'list.append') */
+    PyObject *type, *type_qualname, *res;
+    _Py_IDENTIFIER(__qualname__);
+
+    if (m->m_self == NULL || PyModule_Check(m->m_self))
+        return PyUnicode_FromString(m->m_ml->ml_name);
+
+    type = PyType_Check(m->m_self) ? m->m_self : (PyObject*)Py_TYPE(m->m_self);
+
+    type_qualname = _PyObject_GetAttrId(type, &PyId___qualname__);
+    if (type_qualname == NULL)
+        return NULL;
+
+    if (!PyUnicode_Check(type_qualname)) {
+        PyErr_SetString(PyExc_TypeError, "<method>.__class__."
+                        "__qualname__ is not a unicode object");
+        Py_XDECREF(type_qualname);
+        return NULL;
+    }
+
+    res = PyUnicode_FromFormat("%S.%s", type_qualname, m->m_ml->ml_name);
+    Py_DECREF(type_qualname);
+    return res;
+}
+
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
@@ -164,7 +199,7 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
 {
     PyObject *self;
 
-    self = m->m_self;
+    self = PyCFunction_GET_SELF(m);
     if (self == NULL)
         self = Py_None;
     Py_INCREF(self);
@@ -174,6 +209,7 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
 static PyGetSetDef meth_getsets [] = {
     {"__doc__",  (getter)meth_get__doc__,  NULL, NULL},
     {"__name__", (getter)meth_get__name__, NULL, NULL},
+    {"__qualname__", (getter)meth_get__qualname__, NULL, NULL},
     {"__self__", (getter)meth_get__self__, NULL, NULL},
     {0}
 };

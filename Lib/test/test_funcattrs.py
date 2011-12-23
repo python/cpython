@@ -342,11 +342,37 @@ class StaticMethodAttrsTest(unittest.TestCase):
         self.assertTrue(s.__func__ is f)
 
 
+class BuiltinFunctionPropertiesTest(unittest.TestCase):
+    # XXX Not sure where this should really go since I can't find a
+    # test module specifically for builtin_function_or_method.
+
+    def test_builtin__qualname__(self):
+        import time
+
+        # builtin function:
+        self.assertEqual(len.__qualname__, 'len')
+        self.assertEqual(time.time.__qualname__, 'time')
+
+        # builtin classmethod:
+        self.assertEqual(dict.fromkeys.__qualname__, 'dict.fromkeys')
+        self.assertEqual(float.__getformat__.__qualname__,
+                         'float.__getformat__')
+
+        # builtin staticmethod:
+        self.assertEqual(str.maketrans.__qualname__, 'str.maketrans')
+        self.assertEqual(bytes.maketrans.__qualname__, 'bytes.maketrans')
+
+        # builtin bound instance method:
+        self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
+        self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
+
+
 def test_main():
     support.run_unittest(FunctionPropertiesTest, InstancemethodAttrTest,
                               ArbitraryFunctionAttrTest, FunctionDictsTest,
                               FunctionDocstringTest, CellTest,
-                              StaticMethodAttrsTest)
+                              StaticMethodAttrsTest,
+                              BuiltinFunctionPropertiesTest)
 
 if __name__ == "__main__":
     test_main()
