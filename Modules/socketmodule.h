@@ -115,6 +115,7 @@ typedef int SOCKET_T;
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
+    struct sockaddr sa;
 #ifdef AF_UNIX
     struct sockaddr_un un;
 #endif

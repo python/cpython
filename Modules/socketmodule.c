@@ -436,7 +436,8 @@ dup_socket(SOCKET handle)
 #define SEGMENT_SIZE (32 * 1024 -1)
 #endif
 
-#define SAS2SA(x)       ((struct sockaddr *)(x))
+/* Convert "sock_addr_t *" to "struct sockaddr *". */
+#define SAS2SA(x)       (&((x)->sa))
 
 /*
  * Constants for getnameinfo()
@@ -4148,11 +4149,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 {
     char *name;
     struct hostent *h;
-#ifdef ENABLE_IPV6
-    struct sockaddr_storage addr;
-#else
-    struct sockaddr_in addr;
-#endif
+    sock_addr_t addr;
     struct sockaddr *sa;
     PyObject *ret = NULL;
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -4171,7 +4168,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:gethostbyname_ex", "idna", &name))
         return NULL;
-    if (setipaddr(name, (struct sockaddr *)&addr, sizeof(addr), AF_INET) < 0)
+    if (setipaddr(name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
         goto finally;
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -4196,8 +4193,8 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
        addr.ss_family.
        Therefore, we cast the sockaddr_storage into sockaddr to
        access sa_family. */
-    sa = (struct sockaddr*)&addr;
-    ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr),
+    sa = SAS2SA(&addr);
+    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
@@ -4220,12 +4217,8 @@ for a host.  The host argument is a string giving a host name or IP number.");
 static PyObject *
 socket_gethostbyaddr(PyObject *self, PyObject *args)
 {
-#ifdef ENABLE_IPV6
-    struct sockaddr_storage addr;
-#else
-    struct sockaddr_in addr;
-#endif
-    struct sockaddr *sa = (struct sockaddr *)&addr;
+    sock_addr_t addr;
+    struct sockaddr *sa = SAS2SA(&addr);
     char *ip_num;
     struct hostent *h;
     PyObject *ret = NULL;
@@ -4294,7 +4287,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
-    ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), af);
+    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
