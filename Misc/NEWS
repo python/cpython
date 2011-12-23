@@ -97,6 +97,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12798: Updated the mimetypes documentation.
+
 - Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
 
 - Issue #11829: Fix code execution holes in inspect.getattr_static for
