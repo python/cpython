@@ -159,7 +159,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=5)
+        self.listener = Listener(address=address, backlog=16)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
