@@ -3726,7 +3726,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
             descr = PyDescr_NewClassMethod(type, meth);
         }
         else if (meth->ml_flags & METH_STATIC) {
-            PyObject *cfunc = PyCFunction_New(meth, NULL);
+            PyObject *cfunc = PyCFunction_New(meth, (PyObject*)type);
             if (cfunc == NULL)
                 return -1;
             descr = PyStaticMethod_New(cfunc);
