@@ -639,11 +639,23 @@ ssl
 
   (Contributed by Adam Simpkins in :issue:`12803`)
 
+* Diffie-Hellman key exchange, both regular and Elliptic Curve-based, is
+  now supported through the :meth:`~ssl.SSLContext.load_dh_params` and
+  :meth:`~ssl.SSLContext.set_ecdh_curve` methods.
+
+  (Contributed by Antoine Pitrou in :issue:`13626` and :issue:`13627`)
+
 * SSL sockets have a new :meth:`~ssl.SSLSocket.get_channel_binding` method
   allowing the implementation of certain authentication mechanisms such as
   SCRAM-SHA-1-PLUS.
 
   (Contributed by Jacek Konieczny in :issue:`12551`)
+
+* You can query the SSL compression algorithm used by an SSL socket, thanks
+  to its new :meth:`~ssl.SSLSocket.compression` method.
+
+  (Contributed by Antoine Pitrou in :issue:`13634`)
+
 
 shutil
 ------
