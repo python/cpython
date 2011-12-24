@@ -554,7 +554,7 @@ A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist::
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
-   inheritance: "(" [`argument_list` [","] | `comprehension`] ")"
+   inheritance: "(" [`parameter_list`] ")"
    classname: `identifier`
 
 A class definition is an executable statement.  The inheritance list usually
