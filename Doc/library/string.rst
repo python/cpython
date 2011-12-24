@@ -602,7 +602,7 @@ Expressing a percentage::
 
    >>> points = 19.5
    >>> total = 22
-   >>> 'Correct answers: {:.2%}.'.format(points/total)
+   >>> 'Correct answers: {:.2%}'.format(points/total)
    'Correct answers: 88.64%'
 
 Using type-specific formatting::
