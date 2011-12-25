@@ -1291,7 +1291,7 @@ option. If you don't know the class name of a widget, use the method
 
        * sticky=spec
           Specifies how the image is placed within the final parcel. spec
-          contains zero or more characters “n”, “s”, “w”, or “e”.
+          contains zero or more characters "n", "s", "w", or "e".
 
        * width=width
           Specifies a minimum width for the element. If less than zero, the
