@@ -457,7 +457,7 @@ loops that truncate the stream.
             if r > n:
                 return
             indices = list(range(n))
-            cycles = range(n, n-r, -1)
+            cycles = list(range(n, n-r, -1))
             yield tuple(pool[i] for i in indices[:r])
             while n:
                 for i in reversed(range(r)):
