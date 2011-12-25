@@ -240,7 +240,7 @@ detail in the :class:`Popen` constructor documentation.
 
 
 Popen Constructor
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 The underlying process creation and management in this module is handled by
 the :class:`Popen` class. It offers a lot of flexibility so that developers
