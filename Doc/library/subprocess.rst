@@ -233,7 +233,7 @@ These options, along with all of the other options, are described in more
 detail in the :class:`Popen` constructor documentation.
 
 
-Popen Constuctor
+Popen Constructor
 ^^^^^^^^^^^^^^^^
 
 The underlying process creation and management in this module is handled by
