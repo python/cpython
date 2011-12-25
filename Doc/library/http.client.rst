@@ -435,7 +435,7 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. Normally used when it
    is required to a HTTPS Connection through a proxy server.
 
-   The headers argument should be a mapping of extra HTTP headers to sent
+   The headers argument should be a mapping of extra HTTP headers to send
    with the CONNECT request.
 
    .. versionadded:: 3.2
