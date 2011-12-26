@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Tests for distutils.archive_util."""
 import unittest
 import os
@@ -32,6 +33,24 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     def test_make_tarball(self):
+        self._make_tarball('archive')
+
+    @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
+    def test_make_tarball_latin1(self):
+        """
+        Mirror test_make_tarball, except filename contains latin characters.
+        """
+        self._make_tarball('årchiv') # note this isn't a real word
+
+    @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
+    def test_make_tarball_extended(self):
+        """
+        Mirror test_make_tarball, except filename contains extended
+        characters outside the latin charset.
+        """
+        self._make_tarball('のアーカイブ') # japanese for archive
+
+    def _make_tarball(self, target_name):
         # creating something to tar
         tmpdir = self.mkdtemp()
         self.write_file([tmpdir, 'file1'], 'xxx')
@@ -43,7 +62,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         unittest.skipUnless(splitdrive(tmpdir)[0] == splitdrive(tmpdir2)[0],
                             "Source and target should be on same drive")
 
-        base_name = os.path.join(tmpdir2, 'archive')
+        base_name = os.path.join(tmpdir2, target_name)
 
         # working with relative paths to avoid tar warnings
         old_dir = os.getcwd()
@@ -58,7 +77,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assertTrue(os.path.exists(tarball))
 
         # trying an uncompressed one
-        base_name = os.path.join(tmpdir2, 'archive')
+        base_name = os.path.join(tmpdir2, target_name)
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
