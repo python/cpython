@@ -166,6 +166,28 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEqual(result, ['fake-1.0.tar', 'fake-1.0.tar.gz'])
 
     @unittest.skipUnless(zlib, "requires zlib")
+    def test_unicode_metadata_tgz(self):
+        """
+        Unicode name or version should not break building to tar.gz format.
+        Reference issue #11638.
+        """
+
+        # create the sdist command with unicode parameters
+        dist, cmd = self.get_cmd({'name': u'fake', 'version': u'1.0'})
+
+        # create the sdist as gztar and run the command
+        cmd.formats = ['gztar']
+        cmd.ensure_finalized()
+        cmd.run()
+
+        # The command should have created the .tar.gz file
+        dist_folder = join(self.tmp_dir, 'dist')
+        result = os.listdir(dist_folder)
+        self.assertEqual(result, ['fake-1.0.tar.gz'])
+
+        os.remove(join(dist_folder, 'fake-1.0.tar.gz'))
+
+    @unittest.skipUnless(zlib, "requires zlib")
     def test_add_defaults(self):
 
         # http://bugs.python.org/issue2279
