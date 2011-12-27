@@ -36,6 +36,7 @@ try:
 except IOError, e:
     if e.errno == errno.ENOSYS:
         raise unittest.SkipTest("kernel doesn't support epoll()")
+    raise
 
 class TestEPoll(unittest.TestCase):
 
