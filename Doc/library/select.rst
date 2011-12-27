@@ -39,12 +39,19 @@ The module defines the following:
 
    .. versionadded:: 3.3
 
-.. function:: epoll(sizehint=-1)
+.. function:: epoll(sizehint=-1, flags=0)
 
-   (Only supported on Linux 2.5.44 and newer.)  Returns an edge polling object,
-   which can be used as Edge or Level Triggered interface for I/O events; see
-   section :ref:`epoll-objects` below for the methods supported by epolling
-   objects.
+   (Only supported on Linux 2.5.44 and newer.) Return an edge polling object,
+   which can be used as Edge or Level Triggered interface for I/O
+   events. *sizehint* is deprecated and completely ignored. *flags* can be set
+   to :const:`EPOLL_CLOEXEC`, which causes the epoll descriptor to be closed
+   automatically when :func:`os.execve` is called. See section
+   :ref:`epoll-objects` below for the methods supported by epolling objects.
+
+
+   .. versionchanged:: 3.3
+
+      Added the *flags* parameter.
 
 
 .. function:: poll()

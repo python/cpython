@@ -422,6 +422,8 @@ Core and Builtins
 Library
 -------
 
+- Add a flags parameter to select.epoll.
+
 - Issue #12798: Updated the mimetypes documentation.
 
 - Issue #13626: Add support for SSL Diffie-Hellman key exchange, through the

@@ -1087,19 +1087,9 @@ pyepoll_internal_close(pyEpoll_Object *self)
 }
 
 static PyObject *
-newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
+newPyEpoll_Object(PyTypeObject *type, int flags, SOCKET fd)
 {
     pyEpoll_Object *self;
-
-    if (sizehint == -1) {
-        sizehint = FD_SETSIZE-1;
-    }
-    else if (sizehint < 1) {
-        PyErr_Format(PyExc_ValueError,
-                     "sizehint must be greater zero, got %d",
-                     sizehint);
-        return NULL;
-    }
 
     assert(type != NULL && type->tp_alloc != NULL);
     self = (pyEpoll_Object *) type->tp_alloc(type, 0);
@@ -1108,7 +1098,7 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 
     if (fd == -1) {
         Py_BEGIN_ALLOW_THREADS
-        self->epfd = epoll_create(sizehint);
+        self->epfd = epoll_create1(flags);
         Py_END_ALLOW_THREADS
     }
     else {
@@ -1126,14 +1116,18 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 static PyObject *
 pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    int sizehint = -1;
-    static char *kwlist[] = {"sizehint", NULL};
+    int flags = 0, sizehint = 0;
+    static char *kwlist[] = {"sizehint", "flags", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:epoll", kwlist,
-                                     &sizehint))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:epoll", kwlist,
+                                     &sizehint, &flags))
         return NULL;
+    if (sizehint < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative sizehint");
+        return NULL;
+    }
 
-    return newPyEpoll_Object(type, sizehint, -1);
+    return newPyEpoll_Object(type, flags, -1);
 }
 
 
@@ -1191,7 +1185,7 @@ pyepoll_fromfd(PyObject *cls, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:fromfd", &fd))
         return NULL;
 
-    return newPyEpoll_Object((PyTypeObject*)cls, -1, fd);
+    return newPyEpoll_Object((PyTypeObject*)cls, 0, fd);
 }
 
 PyDoc_STRVAR(pyepoll_fromfd_doc,
@@ -1420,7 +1414,7 @@ static PyGetSetDef pyepoll_getsetlist[] = {
 };
 
 PyDoc_STRVAR(pyepoll_doc,
-"select.epoll([sizehint=-1])\n\
+"select.epoll(sizehint=-1, flags=0)\n\
 \n\
 Returns an epolling object\n\
 \n\
@@ -2218,6 +2212,8 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "EPOLLWRNORM", EPOLLWRNORM);
     PyModule_AddIntConstant(m, "EPOLLWRBAND", EPOLLWRBAND);
     PyModule_AddIntConstant(m, "EPOLLMSG", EPOLLMSG);
+
+    PyModule_AddIntConstant(m, "EPOLL_CLOEXEC", EPOLL_CLOEXEC);
 #endif /* HAVE_EPOLL */
 
 #ifdef HAVE_KQUEUE
