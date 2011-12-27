@@ -196,6 +196,9 @@
 /* Define if you have the 'epoll' functions. */
 #undef HAVE_EPOLL
 
+/* Define if you have the 'epoll_create1' function. */
+#undef HAVE_EPOLL_CREATE1
+
 /* Define to 1 if you have the `erf' function. */
 #undef HAVE_ERF
 
