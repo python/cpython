@@ -1087,7 +1087,7 @@ pyepoll_internal_close(pyEpoll_Object *self)
 }
 
 static PyObject *
-newPyEpoll_Object(PyTypeObject *type, int flags, SOCKET fd)
+newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
 {
     pyEpoll_Object *self;
 
@@ -1098,7 +1098,11 @@ newPyEpoll_Object(PyTypeObject *type, int flags, SOCKET fd)
 
     if (fd == -1) {
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_EPOLL_CREATE1
         self->epfd = epoll_create1(flags);
+#else
+        self->epfd = epoll_create(sizehint);
+#endif
         Py_END_ALLOW_THREADS
     }
     else {
@@ -1127,7 +1131,7 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    return newPyEpoll_Object(type, flags, -1);
+    return newPyEpoll_Object(type, sizehint, flags, -1);
 }
 
 
@@ -1185,7 +1189,7 @@ pyepoll_fromfd(PyObject *cls, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:fromfd", &fd))
         return NULL;
 
-    return newPyEpoll_Object((PyTypeObject*)cls, 0, fd);
+    return newPyEpoll_Object((PyTypeObject*)cls, FD_SETSIZE - 1, 0, fd);
 }
 
 PyDoc_STRVAR(pyepoll_fromfd_doc,
@@ -2213,7 +2217,9 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "EPOLLWRBAND", EPOLLWRBAND);
     PyModule_AddIntConstant(m, "EPOLLMSG", EPOLLMSG);
 
+#ifdef EPOLL_CLOEXEC
     PyModule_AddIntConstant(m, "EPOLL_CLOEXEC", EPOLL_CLOEXEC);
+#endif
 #endif /* HAVE_EPOLL */
 
 #ifdef HAVE_KQUEUE
