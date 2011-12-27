@@ -1099,10 +1099,11 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
     if (fd == -1) {
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_EPOLL_CREATE1
-        self->epfd = epoll_create1(flags);
-#else
-        self->epfd = epoll_create(sizehint);
+        if (flags)
+            self->epfd = epoll_create1(flags);
+        else
 #endif
+        self->epfd = epoll_create(sizehint);
         Py_END_ALLOW_THREADS
     }
     else {
@@ -1120,7 +1121,7 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
 static PyObject *
 pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    int flags = 0, sizehint = 0;
+    int flags = 0, sizehint = FD_SETSIZE - 1;
     static char *kwlist[] = {"sizehint", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:epoll", kwlist,
