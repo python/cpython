@@ -74,6 +74,8 @@ class TestEPoll(unittest.TestCase):
         ep.close()
         self.assertTrue(ep.closed)
         self.assertRaises(ValueError, ep.fileno)
+        select.epoll(select.EPOLL_CLOEXEC).close()
+        self.assertRaises(OSError, select.epoll, flags=12356)
 
     def test_badcreate(self):
         self.assertRaises(TypeError, select.epoll, 1, 2, 3)
