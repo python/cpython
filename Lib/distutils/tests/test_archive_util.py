@@ -2,6 +2,7 @@
 """Tests for distutils.archive_util."""
 import unittest
 import os
+import sys
 import tarfile
 from os.path import splitdrive
 import warnings
@@ -26,6 +27,18 @@ try:
 except ImportError:
     ZLIB_SUPPORT = False
 
+def can_fs_encode(filename):
+    """
+    Return True if the filename can be saved in the file system.
+    """
+    if os.path.supports_unicode_filenames:
+        return True
+    try:
+        filename.encode(sys.getfilesystemencoding())
+    except UnicodeEncodeError:
+        return False
+    return True
+
 
 class ArchiveUtilTestCase(support.TempdirManager,
                           support.LoggingSilencer,
@@ -36,6 +49,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self._make_tarball('archive')
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
+    @unittest.skipUnless(can_fs_encode('årchiv'),
+        'File system cannot handle this filename')
     def test_make_tarball_latin1(self):
         """
         Mirror test_make_tarball, except filename contains latin characters.
@@ -43,6 +58,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self._make_tarball('årchiv') # note this isn't a real word
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
+    @unittest.skipUnless(can_fs_encode('のアーカイブ'),
+        'File system cannot handle this filename')
     def test_make_tarball_extended(self):
         """
         Mirror test_make_tarball, except filename contains extended
