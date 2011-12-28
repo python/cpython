@@ -1984,7 +1984,7 @@ PySequence_Index(PyObject *s, PyObject *o)
 int
 PyMapping_Check(PyObject *o)
 {
-    return      o && o->ob_type->tp_as_mapping &&
+    return o && o->ob_type->tp_as_mapping &&
         o->ob_type->tp_as_mapping->mp_subscript;
 }
 
