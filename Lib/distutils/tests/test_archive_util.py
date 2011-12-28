@@ -4,6 +4,7 @@ __revision__ = "$Id$"
 
 import unittest
 import os
+import sys
 import tarfile
 from os.path import splitdrive
 import warnings
@@ -33,6 +34,18 @@ try:
     import zlib
 except ImportError:
     zlib = None
+
+def can_fs_encode(filename):
+    """
+    Return True if the filename can be saved in the file system.
+    """
+    if os.path.supports_unicode_filenames:
+        return True
+    try:
+        filename.encode(sys.getfilesystemencoding())
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 class ArchiveUtilTestCase(support.TempdirManager,
@@ -289,6 +302,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self._make_tarball(u'archive')
 
     @unittest.skipUnless(zlib, "requires zlib")
+    @unittest.skipUnless(can_fs_encode(u'årchiv'),
+        'File system cannot handle this filename')
     def test_make_tarball_unicode_latin1(self):
         """
         Mirror test_make_tarball, except filename is unicode and contains
@@ -297,6 +312,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self._make_tarball(u'årchiv') # note this isn't a real word
 
     @unittest.skipUnless(zlib, "requires zlib")
+    @unittest.skipUnless(can_fs_encode(u'のアーカイブ'),
+        'File system cannot handle this filename')
     def test_make_tarball_unicode_extended(self):
         """
         Mirror test_make_tarball, except filename is unicode and contains
