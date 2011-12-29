@@ -82,8 +82,13 @@ def _samefile(src, dst):
     return (os.path.normcase(os.path.abspath(src)) ==
             os.path.normcase(os.path.abspath(dst)))
 
-def copyfile(src, dst):
-    """Copy data from src to dst"""
+def copyfile(src, dst, symlinks=False):
+    """Copy data from src to dst.
+
+    If optional flag `symlinks` is set and `src` is a symbolic link, a new
+    symlink will be created instead of copying the file it points to.
+
+    """
     if _samefile(src, dst):
         raise Error("`%s` and `%s` are the same file" % (src, dst))
 
@@ -98,54 +103,94 @@ def copyfile(src, dst):
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
 
-    with open(src, 'rb') as fsrc:
-        with open(dst, 'wb') as fdst:
-            copyfileobj(fsrc, fdst)
+    if symlinks and os.path.islink(src):
+        os.symlink(os.readlink(src), dst)
+    else:
+        with open(src, 'rb') as fsrc:
+            with open(dst, 'wb') as fdst:
+                copyfileobj(fsrc, fdst)
 
-def copymode(src, dst):
-    """Copy mode bits from src to dst"""
-    if hasattr(os, 'chmod'):
-        st = os.stat(src)
-        mode = stat.S_IMODE(st.st_mode)
-        os.chmod(dst, mode)
+def copymode(src, dst, symlinks=False):
+    """Copy mode bits from src to dst.
 
-def copystat(src, dst):
-    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst"""
-    st = os.stat(src)
+    If the optional flag `symlinks` is set, symlinks aren't followed if and
+    only if both `src` and `dst` are symlinks. If `lchmod` isn't available (eg.
+    Linux), in these cases, this method does nothing.
+
+    """
+    if symlinks and os.path.islink(src) and os.path.islink(dst):
+        if hasattr(os, 'lchmod'):
+            stat_func, chmod_func = os.lstat, os.lchmod
+        else:
+            return
+    elif hasattr(os, 'chmod'):
+        stat_func, chmod_func = os.stat, os.chmod
+    else:
+        return
+
+    st = stat_func(src)
+    chmod_func(dst, stat.S_IMODE(st.st_mode))
+
+def copystat(src, dst, symlinks=False):
+    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst.
+
+    If the optional flag `symlinks` is set, symlinks aren't followed if and
+    only if both `src` and `dst` are symlinks.
+
+    """
+    def _nop(*args):
+        pass
+
+    if symlinks and os.path.islink(src) and os.path.islink(dst):
+        stat_func = os.lstat
+        utime_func = os.lutimes if hasattr(os, 'lutimes') else _nop
+        chmod_func = os.lchmod if hasattr(os, 'lchmod') else _nop
+        chflags_func = os.lchflags if hasattr(os, 'lchflags') else _nop
+    else:
+        stat_func = os.stat
+        utime_func = os.utime if hasattr(os, 'utime') else _nop
+        chmod_func = os.chmod if hasattr(os, 'chmod') else _nop
+        chflags_func = os.chflags if hasattr(os, 'chflags') else _nop
+
+    st = stat_func(src)
     mode = stat.S_IMODE(st.st_mode)
-    if hasattr(os, 'utime'):
-        os.utime(dst, (st.st_atime, st.st_mtime))
-    if hasattr(os, 'chmod'):
-        os.chmod(dst, mode)
-    if hasattr(os, 'chflags') and hasattr(st, 'st_flags'):
+    utime_func(dst, (st.st_atime, st.st_mtime))
+    chmod_func(dst, mode)
+    if hasattr(st, 'st_flags'):
         try:
-            os.chflags(dst, st.st_flags)
+            chflags_func(dst, st.st_flags)
         except OSError as why:
             if (not hasattr(errno, 'EOPNOTSUPP') or
                 why.errno != errno.EOPNOTSUPP):
                 raise
 
-def copy(src, dst):
+def copy(src, dst, symlinks=False):
     """Copy data and mode bits ("cp src dst").
 
     The destination may be a directory.
 
+    If the optional flag `symlinks` is set, symlinks won't be followed. This
+    resembles GNU's "cp -P src dst".
+
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst)
-    copymode(src, dst)
+    copyfile(src, dst, symlinks=symlinks)
+    copymode(src, dst, symlinks=symlinks)
 
-def copy2(src, dst):
+def copy2(src, dst, symlinks=False):
     """Copy data and all stat info ("cp -p src dst").
 
     The destination may be a directory.
 
+    If the optional flag `symlinks` is set, symlinks won't be followed. This
+    resembles GNU's "cp -P src dst".
+
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst)
-    copystat(src, dst)
+    copyfile(src, dst, symlinks=symlinks)
+    copystat(src, dst, symlinks=symlinks)
 
 def ignore_patterns(*patterns):
     """Function that can be used as copytree() ignore parameter.
@@ -212,7 +257,11 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
             if os.path.islink(srcname):
                 linkto = os.readlink(srcname)
                 if symlinks:
+                    # We can't just leave it to `copy_function` because legacy
+                    # code with a custom `copy_function` may rely on copytree
+                    # doing the right thing.
                     os.symlink(linkto, dstname)
+                    copystat(srcname, dstname, symlinks=symlinks)
                 else:
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:

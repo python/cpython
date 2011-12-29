@@ -422,6 +422,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #12715: Add an optional symlinks argument to shutil functions
+  (copyfile, copymode, copystat, copy, copy2).  When that parameter is
+  true, symlinks aren't dereferenced and the operation instead acts on the
+  symlink itself (or creates one, if relevant).  Patch by Hynek Schlawack.
+
 - Add a flags parameter to select.epoll.
 
 - Issue #12798: Updated the mimetypes documentation.
