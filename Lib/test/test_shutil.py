@@ -164,6 +164,197 @@ class TestShutil(unittest.TestCase):
             self.assertTrue(issubclass(exc[0], OSError))
             self.errorState = 2
 
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
+    @support.skip_unless_symlink
+    def test_copymode_follow_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        dst_link = os.path.join(tmp_dir, 'quux')
+        write_file(src, 'foo')
+        write_file(dst, 'foo')
+        os.symlink(src, src_link)
+        os.symlink(dst, dst_link)
+        os.chmod(src, stat.S_IRWXU|stat.S_IRWXG)
+        # file to file
+        os.chmod(dst, stat.S_IRWXO)
+        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        shutil.copymode(src, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow src link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow dst link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow both links
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+
+    @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
+    @support.skip_unless_symlink
+    def test_copymode_symlink_to_symlink(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        dst_link = os.path.join(tmp_dir, 'quux')
+        write_file(src, 'foo')
+        write_file(dst, 'foo')
+        os.symlink(src, src_link)
+        os.symlink(dst, dst_link)
+        os.chmod(src, stat.S_IRWXU|stat.S_IRWXG)
+        os.chmod(dst, stat.S_IRWXU)
+        os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
+        # link to link
+        os.lchmod(dst_link, stat.S_IRWXO)
+        shutil.copymode(src_link, dst_link, symlinks=True)
+        self.assertEqual(os.lstat(src_link).st_mode,
+                         os.lstat(dst_link).st_mode)
+        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # src link - use chmod
+        os.lchmod(dst_link, stat.S_IRWXO)
+        shutil.copymode(src_link, dst, symlinks=True)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # dst link - use chmod
+        os.lchmod(dst_link, stat.S_IRWXO)
+        shutil.copymode(src, dst_link, symlinks=True)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+
+    @unittest.skipIf(hasattr(os, 'lchmod'), 'requires os.lchmod to be missing')
+    @support.skip_unless_symlink
+    def test_copymode_symlink_to_symlink_wo_lchmod(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        dst_link = os.path.join(tmp_dir, 'quux')
+        write_file(src, 'foo')
+        write_file(dst, 'foo')
+        os.symlink(src, src_link)
+        os.symlink(dst, dst_link)
+        shutil.copymode(src_link, dst_link, symlinks=True)  # silent fail
+
+    @support.skip_unless_symlink
+    def test_copystat_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        dst_link = os.path.join(tmp_dir, 'qux')
+        write_file(src, 'foo')
+        src_stat = os.stat(src)
+        os.utime(src, (src_stat.st_atime,
+                       src_stat.st_mtime - 42.0))  # ensure different mtimes
+        write_file(dst, 'bar')
+        self.assertNotEqual(os.stat(src).st_mtime, os.stat(dst).st_mtime)
+        os.symlink(src, src_link)
+        os.symlink(dst, dst_link)
+        if hasattr(os, 'lchmod'):
+            os.lchmod(src_link, stat.S_IRWXO)
+        if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
+            os.lchflags(src_link, stat.UF_NODUMP)
+        src_link_stat = os.lstat(src_link)
+        # follow
+        if hasattr(os, 'lchmod'):
+            shutil.copystat(src_link, dst_link, symlinks=False)
+            self.assertNotEqual(src_link_stat.st_mode, os.stat(dst).st_mode)
+        # don't follow
+        shutil.copystat(src_link, dst_link, symlinks=True)
+        dst_link_stat = os.lstat(dst_link)
+        if hasattr(os, 'lutimes'):
+            for attr in 'st_atime', 'st_mtime':
+                # The modification times may be truncated in the new file.
+                self.assertLessEqual(getattr(src_link_stat, attr),
+                                     getattr(dst_link_stat, attr) + 1)
+        if hasattr(os, 'lchmod'):
+            self.assertEqual(src_link_stat.st_mode, dst_link_stat.st_mode)
+        if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
+            self.assertEqual(src_link_stat.st_flags, dst_link_stat.st_flags)
+        # tell to follow but dst is not a link
+        shutil.copystat(src_link, dst, symlinks=True)
+        self.assertTrue(abs(os.stat(src).st_mtime - os.stat(dst).st_mtime) <
+                        00000.1)
+
+    @support.skip_unless_symlink
+    def test_copy_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        write_file(src, 'foo')
+        os.symlink(src, src_link)
+        if hasattr(os, 'lchmod'):
+            os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
+        # don't follow
+        shutil.copy(src_link, dst, symlinks=False)
+        self.assertFalse(os.path.islink(dst))
+        self.assertEqual(read_file(src), read_file(dst))
+        os.remove(dst)
+        # follow
+        shutil.copy(src_link, dst, symlinks=True)
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), os.readlink(src_link))
+        if hasattr(os, 'lchmod'):
+            self.assertEqual(os.lstat(src_link).st_mode,
+                             os.lstat(dst).st_mode)
+
+    @support.skip_unless_symlink
+    def test_copy2_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        write_file(src, 'foo')
+        os.symlink(src, src_link)
+        if hasattr(os, 'lchmod'):
+            os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
+            os.lchflags(src_link, stat.UF_NODUMP)
+        src_stat = os.stat(src)
+        src_link_stat = os.lstat(src_link)
+        # follow
+        shutil.copy2(src_link, dst, symlinks=False)
+        self.assertFalse(os.path.islink(dst))
+        self.assertEqual(read_file(src), read_file(dst))
+        os.remove(dst)
+        # don't follow
+        shutil.copy2(src_link, dst, symlinks=True)
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), os.readlink(src_link))
+        dst_stat = os.lstat(dst)
+        if hasattr(os, 'lutimes'):
+            for attr in 'st_atime', 'st_mtime':
+                # The modification times may be truncated in the new file.
+                self.assertLessEqual(getattr(src_link_stat, attr),
+                                     getattr(dst_stat, attr) + 1)
+        if hasattr(os, 'lchmod'):
+            self.assertEqual(src_link_stat.st_mode, dst_stat.st_mode)
+            self.assertNotEqual(src_stat.st_mode, dst_stat.st_mode)
+        if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
+            self.assertEqual(src_link_stat.st_flags, dst_stat.st_flags)
+
+    @support.skip_unless_symlink
+    def test_copyfile_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'src')
+        dst = os.path.join(tmp_dir, 'dst')
+        dst_link = os.path.join(tmp_dir, 'dst_link')
+        link = os.path.join(tmp_dir, 'link')
+        write_file(src, 'foo')
+        os.symlink(src, link)
+        # don't follow
+        shutil.copyfile(link, dst_link, symlinks=True)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertEqual(os.readlink(link), os.readlink(dst_link))
+        # follow
+        shutil.copyfile(link, dst)
+        self.assertFalse(os.path.islink(dst))
+
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
         handle, path = tempfile.mkstemp()
@@ -189,6 +380,34 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(actual, '123')
         actual = read_file((dst_dir, 'test_dir', 'test.txt'))
         self.assertEqual(actual, '456')
+
+    @support.skip_unless_symlink
+    def test_copytree_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'src')
+        dst_dir = os.path.join(tmp_dir, 'dst')
+        sub_dir = os.path.join(src_dir, 'sub')
+        os.mkdir(src_dir)
+        os.mkdir(sub_dir)
+        write_file((src_dir, 'file.txt'), 'foo')
+        src_link = os.path.join(sub_dir, 'link')
+        dst_link = os.path.join(dst_dir, 'sub/link')
+        os.symlink(os.path.join(src_dir, 'file.txt'),
+                   src_link)
+        if hasattr(os, 'lchmod'):
+            os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
+            os.lchflags(src_link, stat.UF_NODUMP)
+        src_stat = os.lstat(src_link)
+        shutil.copytree(src_dir, dst_dir, symlinks=True)
+        self.assertTrue(os.path.islink(os.path.join(dst_dir, 'sub', 'link')))
+        self.assertEqual(os.readlink(os.path.join(dst_dir, 'sub', 'link')),
+                         os.path.join(src_dir, 'file.txt'))
+        dst_stat = os.lstat(dst_link)
+        if hasattr(os, 'lchmod'):
+            self.assertEqual(dst_stat.st_mode, src_stat.st_mode)
+        if hasattr(os, 'lchflags'):
+            self.assertEqual(dst_stat.st_flags, src_stat.st_flags)
 
     def test_copytree_with_exclude(self):
         # creating data
