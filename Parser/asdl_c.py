@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
 # TO DO
