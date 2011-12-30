@@ -256,6 +256,8 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
             with open(bytecode_path, 'rb') as file:
                 self.assertGreater(len(file.read()), 8)
 
+        self._test_magic_only(test)
+
     @source_util.writes_bytecode_files
     def test_bad_magic(self):
         # When the magic number is different, the bytecode should be
@@ -275,6 +277,8 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
             self.import_(mapping[name], name)
             with open(bc_path, 'rb') as file:
                 self.assertGreater(len(file.read()), 8)
+
+        self._test_partial_timestamp(test)
 
     @source_util.writes_bytecode_files
     def test_no_marshal(self):
