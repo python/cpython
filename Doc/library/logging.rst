@@ -65,7 +65,7 @@ instantiated directly, but always through the module-level function
    If this evaluates to false, logging messages are not passed to the handlers
    of ancestor loggers.
 
-   The constructor sets this attribute to 1.
+   The constructor sets this attribute to ``True``.
 
 
 .. method:: Logger.setLevel(lvl)
