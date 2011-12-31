@@ -1151,9 +1151,9 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <http://www-128.ibm.com/developerworks/library/l-prog.html>`__,
-`part 2 <http://www-128.ibm.com/developerworks/library/l-prog2.html>`__, and
-`part 3 <http://www-128.ibm.com/developerworks/linux/library/l-prog3.html>`__,
+`part 1 <http://www.ibm.com/developerworks/linux/library/l-prog/index.html>`__,
+`part 2 <http://www.ibm.com/developerworks/linux/library/l-prog2/index.html>`__, and
+`part 3 <http://www.ibm.com/developerworks/linux/library/l-prog3/index.html>`__,
 
 
 Python documentation

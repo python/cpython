@@ -274,7 +274,7 @@ Setting up FastCGI
 Each web server requires a specific module.
 
 * Apache has both `mod_fastcgi <http://www.fastcgi.com/drupal/>`_ and `mod_fcgid
-  <http://fastcgi.coremail.cn/>`_.  ``mod_fastcgi`` is the original one, but it
+  <http://httpd.apache.org/mod_fcgid/>`_.  ``mod_fastcgi`` is the original one, but it
   has some licensing issues, which is why it is sometimes considered non-free.
   ``mod_fcgid`` is a smaller, compatible alternative.  One of these modules needs
   to be loaded by Apache.
@@ -365,7 +365,7 @@ testing.
 
 A really great WSGI feature is middleware.  Middleware is a layer around your
 program which can add various functionality to it.  There is quite a bit of
-`middleware <http://wsgi.org/wsgi/Middleware_and_Utilities>`_ already
+`middleware <http://www.wsgi.org/en/latest/libraries.html>`_ already
 available.  For example, instead of writing your own session management (HTTP
 is a stateless protocol, so to associate multiple HTTP requests with a single
 user your application must create and manage such state via a session), you can
@@ -396,9 +396,9 @@ compared with other web technologies.
 
 .. seealso::
 
-   A good overview of WSGI-related code can be found in the `WSGI wiki
-   <http://wsgi.org/wsgi>`_, which contains an extensive list of `WSGI servers
-   <http://wsgi.org/wsgi/Servers>`_ which can be used by *any* application
+   A good overview of WSGI-related code can be found in the `WSGI homepage
+   <http://www.wsgi.org/en/latest/index.html>`_, which contains an extensive list of `WSGI servers
+   <http://www.wsgi.org/en/latest/servers.html>`_ which can be used by *any* application
    supporting WSGI.
 
    You might be interested in some WSGI-supporting modules already contained in
