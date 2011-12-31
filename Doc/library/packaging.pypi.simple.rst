@@ -89,7 +89,7 @@ API
 
 
 
-Usage Exemples
+Usage Examples
 ---------------
 
 To help you understand how using the `Crawler` class, here are some basic
