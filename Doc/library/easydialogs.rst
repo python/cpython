@@ -143,7 +143,7 @@ The :mod:`EasyDialogs` module defines the following functions:
 
 .. seealso::
 
-   `Navigation Services Reference <http://developer.apple.com/documentation/Carbon/Reference/Navigation_Services_Ref/>`_
+   `Navigation Services Reference <http://developer.apple.com/legacy/mac/library/#documentation/Carbon/Conceptual/NavServicesIntro/ns_intro_carb/ns_into_carb.html>`_
       Programmer's reference documentation for the Navigation Services, a part of the
       Carbon framework.
 

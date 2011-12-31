@@ -26,11 +26,11 @@ following links:
 
 .. seealso::
 
-   http://www.linux.com/articles/60383
+   http://www.debian.org/doc/manuals/maint-guide/first.en.html
       for Debian users
    http://linuxmafia.com/pub/linux/suse-linux-internals/chapter35.html
       for OpenSuse users
-   http://docs.fedoraproject.org/drafts/rpm-guide-en/ch-creating-rpms.html
+   http://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
       for Fedora users
    http://www.slackbook.org/html/package-management-making-packages.html
       for Slackware users
