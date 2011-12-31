@@ -491,7 +491,7 @@ into Python 2.5's :class:`queue.Queue` class.
 
 If you use :class:`JoinableQueue` then you **must** call
 :meth:`JoinableQueue.task_done` for each task removed from the queue or else the
-semaphore used to count the number of unfinished tasks may eventually overflow
+semaphore used to count the number of unfinished tasks may eventually overflow,
 raising an exception.
 
 Note that one can also create a shared queue by using a manager object -- see
@@ -509,7 +509,7 @@ Note that one can also create a shared queue by using a manager object -- see
 
    If a process is killed using :meth:`Process.terminate` or :func:`os.kill`
    while it is trying to use a :class:`Queue`, then the data in the queue is
-   likely to become corrupted.  This may cause any other processes to get an
+   likely to become corrupted.  This may cause any other process to get an
    exception when it tries to use the queue later on.
 
 .. warning::
@@ -711,7 +711,7 @@ Miscellaneous
    (By default :data:`sys.executable` is used).  Embedders will probably need to
    do some thing like ::
 
-      setExecutable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
+      set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
    before they can create child processes.  (Windows only)
 
@@ -730,7 +730,7 @@ Connection Objects
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
 
-Connection objects usually created using :func:`Pipe` -- see also
+Connection objects are usually created using :func:`Pipe` -- see also
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
@@ -751,7 +751,7 @@ Connection objects usually created using :func:`Pipe` -- see also
 
    .. method:: fileno()
 
-      Returns the file descriptor or handle used by the connection.
+      Return the file descriptor or handle used by the connection.
 
    .. method:: close()
 
@@ -775,7 +775,7 @@ Connection objects usually created using :func:`Pipe` -- see also
       If *offset* is given then data is read from that position in *buffer*.  If
       *size* is given then that many bytes will be read from buffer.  Very large
       buffers (approximately 32 MB+, though it depends on the OS) may raise a
-      ValueError exception
+      :exc:`ValueError` exception
 
    .. method:: recv_bytes([maxlength])
 
@@ -1353,7 +1353,7 @@ Customized managers
 >>>>>>>>>>>>>>>>>>>
 
 To create one's own manager, one creates a subclass of :class:`BaseManager` and
-use the :meth:`~BaseManager.register` classmethod to register new types or
+uses the :meth:`~BaseManager.register` classmethod to register new types or
 callables with the manager class.  For example::
 
    from multiprocessing.managers import BaseManager
@@ -1604,9 +1604,9 @@ with the :class:`Pool` class.
    .. method:: apply(func[, args[, kwds]])
 
       Call *func* with arguments *args* and keyword arguments *kwds*.  It blocks
-      till the result is ready. Given this blocks, :meth:`apply_async` is better
-      suited for performing work in parallel. Additionally, the passed in
-      function is only executed in one of the workers of the pool.
+      until the result is ready. Given this blocks, :meth:`apply_async` is
+      better suited for performing work in parallel. Additionally, *func*
+      is only executed in one of the workers of the pool.
 
    .. method:: apply_async(func[, args[, kwds[, callback[, error_callback]]]])
 
@@ -1627,7 +1627,7 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks till the result is ready.
+      one *iterable* argument though).  It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -2102,7 +2102,7 @@ Better to inherit than pickle/unpickle
     On Windows many types from :mod:`multiprocessing` need to be picklable so
     that child processes can use them.  However, one should generally avoid
     sending shared objects to other processes using pipes or queues.  Instead
-    you should arrange the program so that a process which need access to a
+    you should arrange the program so that a process which needs access to a
     shared resource created elsewhere can inherit it from an ancestor process.
 
 Avoid terminating processes
@@ -2181,7 +2181,7 @@ Explicitly pass resources to child processes
            for i in range(10):
                 Process(target=f, args=(lock,)).start()
 
-Beware replacing sys.stdin with a "file like object"
+Beware of replacing :data:`sys.stdin` with a "file like object"
 
     :mod:`multiprocessing` originally unconditionally called::
 
@@ -2299,7 +2299,7 @@ Synchronization types like locks, conditions and queues:
 
 
 An example showing how to use queues to feed tasks to a collection of worker
-process and collect the results:
+processes and collect the results:
 
 .. literalinclude:: ../includes/mp_workers.py
 
