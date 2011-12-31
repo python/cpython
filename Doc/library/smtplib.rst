@@ -323,10 +323,10 @@ An :class:`SMTP` instance has the following methods:
       envelope used by the transport agents.  ``sendmail`` does not modify the
       message headers in any way.
 
-   msg may be a string containing characters in the ASCII range, or a byte
+   *msg* may be a string containing characters in the ASCII range, or a byte
    string.  A string is encoded to bytes using the ascii codec, and lone ``\r``
-   and ``\n`` characters are converted to ``\r\n`` characters.  A byte string
-   is not modified.
+   and ``\n`` characters are converted to ``\r\n`` characters.  A byte string is
+   not modified.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session, this
    method tries ESMTP ``EHLO`` first. If the server does ESMTP, message size and
