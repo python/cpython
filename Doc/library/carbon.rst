@@ -14,7 +14,7 @@ module.  Not all operations possible in C will also be possible in Python
 in Python (input and output buffers, especially).  All methods and functions
 have a :attr:`__doc__` string describing their arguments and return values, and
 for additional description you are referred to `Inside Macintosh
-<http://developer.apple.com/documentation/macos8/mac8.html>`_ or similar works.
+<http://developer.apple.com/legacy/mac/library/#documentation/macos8/mac8.html>`_ or similar works.
 
 These modules all live in a package called :mod:`Carbon`. Despite that name they
 are not all part of the Carbon framework: CF is really in the CoreFoundation
@@ -515,7 +515,7 @@ Manager.  It contains the following functions:
 
 .. seealso::
 
-   `Scrap Manager <http://developer.apple.com/documentation/mac/MoreToolbox/MoreToolbox-109.html>`_
+   `Scrap Manager <http://developer.apple.com/legacy/mac/library/documentation/mac/MoreToolbox/MoreToolbox-109.html>`_
       Apple's documentation for the Scrap Manager gives a lot of useful information
       about using the Scrap Manager in applications.
 
