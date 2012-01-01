@@ -120,6 +120,29 @@ class AIFCTest(unittest.TestCase):
             self.assertEqual(fout.getsampwidth(), 2)
             fout.initfp(None)
 
+    def test_write_markers_values(self):
+        fout = self.fout = aifc.open(io.BytesIO(), 'wb')
+        self.assertEqual(fout.getmarkers(), None)
+        fout.setmark(1, 0, b'foo1')
+        fout.setmark(1, 1, b'foo2')
+        self.assertEqual(fout.getmark(1), (1, 1, b'foo2'))
+        self.assertEqual(fout.getmarkers(), [(1, 1, b'foo2')])
+        fout.initfp(None)
+
+    def test_read_markers(self):
+        fout = self.fout = aifc.open(TESTFN, 'wb')
+        fout.aiff()
+        fout.setparams((1, 1, 1, 1, b'NONE', b''))
+        fout.setmark(1, 0, b'odd')
+        fout.setmark(2, 0, b'even')
+        fout.writeframes(b'\x00')
+        fout.close()
+        f = self.f = aifc.open(TESTFN, 'rb')
+        self.assertEqual(f.getmarkers(), [(1, 0, b'odd'), (2, 0, b'even')])
+        self.assertEqual(f.getmark(1), (1, 0, b'odd'))
+        self.assertEqual(f.getmark(2), (2, 0, b'even'))
+        self.assertRaises(aifc.Error, f.getmark, 3)
+
 
 def test_main():
     run_unittest(AIFCTest)
