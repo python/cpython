@@ -433,6 +433,8 @@ def _default_mime_types():
         '.ksh'    : 'text/plain',
         '.latex'  : 'application/x-latex',
         '.m1v'    : 'video/mpeg',
+        '.m3u'    : 'application/vnd.apple.mpegurl',
+        '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.man'    : 'application/x-troff-man',
         '.me'     : 'application/x-troff-me',
         '.mht'    : 'message/rfc822',
