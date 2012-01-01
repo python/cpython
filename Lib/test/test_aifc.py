@@ -1,6 +1,7 @@
 from test.support import findfile, run_unittest, TESTFN
 import unittest
 import os
+import io
 
 import aifc
 
@@ -108,6 +109,16 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(testfile.closed, False)
         f.close()
         self.assertEqual(testfile.closed, True)
+
+    def test_write_header_comptype_sampwidth(self):
+        for comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
+            fout = self.fout = aifc.open(io.BytesIO(), 'wb')
+            fout.setnchannels(1)
+            fout.setframerate(1)
+            fout.setcomptype(comptype, b'')
+            fout.close()
+            self.assertEqual(fout.getsampwidth(), 2)
+            fout.initfp(None)
 
 
 def test_main():
