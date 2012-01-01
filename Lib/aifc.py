@@ -539,8 +539,7 @@ class Aifc_write:
         self._aifc = 1      # AIFF-C is default
 
     def __del__(self):
-        if self._file:
-            self.close()
+        self.close()
 
     #
     # User visible methods.
@@ -643,8 +642,8 @@ class Aifc_write:
             raise Error('marker ID must be > 0')
         if pos < 0:
             raise Error('marker position must be >= 0')
-        if not isinstance(name, str):
-            raise Error('marker name must be a string')
+        if not isinstance(name, bytes):
+            raise Error('marker name must be bytes')
         for i in range(len(self._markers)):
             if id == self._markers[i][0]:
                 self._markers[i] = id, pos, name
@@ -681,19 +680,21 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        self._ensure_header_written(0)
-        if self._datawritten & 1:
-            # quick pad to even size
-            self._file.write(b'\x00')
-            self._datawritten = self._datawritten + 1
-        self._writemarkers()
-        if self._nframeswritten != self._nframes or \
-              self._datalength != self._datawritten or \
-              self._marklength:
-            self._patchheader()
-        # Prevent ref cycles
-        self._convert = None
-        self._file.close()
+        if self._file:
+            self._ensure_header_written(0)
+            if self._datawritten & 1:
+                # quick pad to even size
+                self._file.write(b'\x00')
+                self._datawritten = self._datawritten + 1
+            self._writemarkers()
+            if self._nframeswritten != self._nframes or \
+                  self._datalength != self._datawritten or \
+                  self._marklength:
+                self._patchheader()
+            # Prevent ref cycles
+            self._convert = None
+            self._file.close()
+            self._file = None
 
     #
     # Internal methods.
