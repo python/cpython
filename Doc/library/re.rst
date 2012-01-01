@@ -462,6 +462,11 @@ form.
       about compiling regular expressions.
 
 
+.. data:: DEBUG
+
+   Display debug information about compiled expression.
+
+
 .. data:: I
           IGNORECASE
 
