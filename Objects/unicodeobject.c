@@ -8770,7 +8770,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
                                                                  collstart, collend, &newpos);
                 if (repunicode == NULL)
                     goto onError;
-                if (PyUnicode_READY(repunicode) < 0) {
+                if (PyUnicode_READY(repunicode) == -1) {
                     Py_DECREF(repunicode);
                     goto onError;
                 }
