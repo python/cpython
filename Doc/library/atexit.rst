@@ -6,9 +6,6 @@
 .. moduleauthor:: Skip Montanaro <skip@pobox.com>
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
-**Source code:** :source:`Lib/atexit.py`
-
---------------
 
 The :mod:`atexit` module defines functions to register and unregister cleanup
 functions.  Functions thus registered are automatically executed upon normal
