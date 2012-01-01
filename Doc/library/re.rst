@@ -498,6 +498,11 @@ form.
    isn't allowed for bytes).
 
 
+.. data:: DEBUG
+
+   Display debug information about compiled expression.
+
+
 .. data:: I
           IGNORECASE
 
