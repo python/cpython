@@ -716,18 +716,12 @@ class Aifc_write:
 
     def _ensure_header_written(self, datasize):
         if not self._nframeswritten:
-            if self._comptype in (b'ULAW', b'ALAW'):
+            if self._comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
                 if not self._sampwidth:
                     self._sampwidth = 2
                 if self._sampwidth != 2:
                     raise Error('sample width must be 2 when compressing '
-                                'with ulaw/ULAW or alaw/ALAW')
-            if self._comptype == b'G722':
-                if not self._sampwidth:
-                    self._sampwidth = 2
-                if self._sampwidth != 2:
-                    raise Error('sample width must be 2 when compressing '
-                                'with G7.22 (ADPCM)')
+                                'with ulaw/ULAW, alaw/ALAW or G7.22 (ADPCM)')
             if not self._nchannels:
                 raise Error('# channels not specified')
             if not self._sampwidth:
@@ -743,8 +737,6 @@ class Aifc_write:
             self._convert = self._lin2ulaw
         elif self._comptype in (b'alaw', b'ALAW'):
             self._convert = self._lin2alaw
-        else:
-            raise Error('unsupported compression type')
 
     def _write_header(self, initlength):
         if self._aifc and self._comptype != b'NONE':
