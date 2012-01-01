@@ -9799,10 +9799,11 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
             break; \
         } \
-        default: { \
+        case PyUnicode_4BYTE_KIND: { \
             Py_UCS4 * to_ = (Py_UCS4 *)((data)) + (start); \
             for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
             break; \
+        default: assert(0); \
         } \
         } \
     } while (0)
