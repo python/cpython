@@ -368,6 +368,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
+  Vilmos Nebehaj.
+
 - Issue #13159: FileIO, BZ2File, and the built-in file class now use a
   linear-time buffer growth strategy instead of a quadratic one.
 
