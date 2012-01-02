@@ -1095,10 +1095,10 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         PyObject *ret = NULL;
         if (addrobj) {
             a = (struct sockaddr_in6 *)addr;
-            ret = Py_BuildValue("Oiii",
+            ret = Py_BuildValue("OiII",
                                 addrobj,
                                 ntohs(a->sin6_port),
-                                a->sin6_flowinfo,
+                                ntohl(a->sin6_flowinfo),
                                 a->sin6_scope_id);
             Py_DECREF(addrobj);
         }
@@ -1386,7 +1386,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     {
         struct sockaddr_in6* addr;
         char *host;
-        int port, flowinfo, scope_id, result;
+        int port, result;
+        unsigned int flowinfo, scope_id;
         flowinfo = scope_id = 0;
         if (!PyTuple_Check(args)) {
             PyErr_Format(
@@ -1396,7 +1397,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "eti|ii",
+        if (!PyArg_ParseTuple(args, "eti|II",
                               "idna", &host, &port, &flowinfo,
                               &scope_id)) {
             return 0;
@@ -1413,9 +1414,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 "getsockaddrarg: port must be 0-65535.");
             return 0;
         }
+        if (flowinfo < 0 || flowinfo > 0xfffff) {
+            PyErr_SetString(
+                PyExc_OverflowError,
+                "getsockaddrarg: flowinfo must be 0-1048575.");
+            return 0;
+        }
         addr->sin6_family = s->sock_family;
         addr->sin6_port = htons((short)port);
-        addr->sin6_flowinfo = flowinfo;
+        addr->sin6_flowinfo = htonl(flowinfo);
         addr->sin6_scope_id = scope_id;
         *len_ret = sizeof *addr;
         return 1;
@@ -4939,7 +4946,8 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     PyObject *sa = (PyObject *)NULL;
     int flags;
     char *hostp;
-    int port, flowinfo, scope_id;
+    int port;
+    unsigned int flowinfo, scope_id;
     char hbuf[NI_MAXHOST], pbuf[NI_MAXSERV];
     struct addrinfo hints, *res = NULL;
     int error;
@@ -4953,9 +4961,14 @@ socket_getnameinfo(PyObject *self, PyObject *args)
                         "getnameinfo() argument 1 must be a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(sa, "si|ii",
+    if (!PyArg_ParseTuple(sa, "si|II",
                           &hostp, &port, &flowinfo, &scope_id))
         return NULL;
+    if (flowinfo < 0 || flowinfo > 0xfffff) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "getsockaddrarg: flowinfo must be 0-1048575.");
+        return NULL;
+    }
     PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -4990,7 +5003,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         {
         struct sockaddr_in6 *sin6;
         sin6 = (struct sockaddr_in6 *)res->ai_addr;
-        sin6->sin6_flowinfo = flowinfo;
+        sin6->sin6_flowinfo = htonl(flowinfo);
         sin6->sin6_scope_id = scope_id;
         break;
         }

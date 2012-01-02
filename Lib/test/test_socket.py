@@ -1248,6 +1248,13 @@ class GeneralModuleTests(unittest.TestCase):
         srv.listen(0)
         srv.close()
 
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    def test_flowinfo(self):
+        self.assertRaises(OverflowError, socket.getnameinfo,
+                          ('::1',0, 0xffffffff), 0)
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            self.assertRaises(OverflowError, s.bind, ('::1', 0, -10))
+
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
 class BasicCANTest(unittest.TestCase):
