@@ -9139,7 +9139,7 @@ PyUnicode_Count(PyObject *str,
         Py_DECREF(str_obj);
         return -1;
     }
-    if (PyUnicode_READY(substr) == -1 || PyUnicode_READY(str_obj) == -1) {
+    if (PyUnicode_READY(sub_obj) == -1 || PyUnicode_READY(str_obj) == -1) {
         Py_DECREF(substr);
         Py_DECREF(str_obj);
         return -1;
