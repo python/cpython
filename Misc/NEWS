@@ -345,6 +345,9 @@ Tests
 Extension Modules
 -----------------
 
+- Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
+  Vilmos Nebehaj.
+
 - Issue #13159: FileIO and BZ2File now use a linear-time buffer growth
   strategy instead of a quadratic-time one.
 
