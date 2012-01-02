@@ -7,6 +7,7 @@ import sys
 import stat
 import os
 import os.path
+import errno
 import functools
 from test import support
 from test.support import TESTFN
@@ -46,7 +47,7 @@ except ImportError:
 
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
-    raise OSError()
+    raise OSError(getattr(errno, 'EXDEV', 18), "Invalid cross-device link")
 
 def mock_rename(func):
     @functools.wraps(func)
