@@ -120,8 +120,16 @@ Compressing and decompressing data in memory
    ``9`` (inclusive), optionally OR-ed with the constant
    :const:`PRESET_EXTREME`. If neither *preset* nor *filters* are given, the
    default behavior is to use :const:`PRESET_DEFAULT` (preset level ``6``).
-   Higher presets produce smaller output, but make compression more CPU- and
-   memory-intensive, and also increase the memory required for decompression.
+   Higher presets produce smaller output, but make the compression process
+   slower.
+
+   .. note::
+
+      In addition to being more CPU-intensive, compression with higher presets
+      also requires much more memory (and produces output that needs more memory
+      to decompress). With preset ``9`` for example, the overhead for an
+      :class:`LZMACompressor` object can be as high as 800MiB. For this reason,
+      it is generally best to stick with the default preset.
 
    The *filters* argument (if provided) should be a filter chain specifier.
    See :ref:`filter-chain-specs` for details.
