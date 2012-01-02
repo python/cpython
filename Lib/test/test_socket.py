@@ -846,6 +846,13 @@ class GeneralModuleTests(unittest.TestCase):
         srv.listen(0)
         srv.close()
 
+    @unittest.skipUnless(SUPPORTS_IPV6, 'IPv6 required for this test.')
+    def test_flowinfo(self):
+        self.assertRaises(OverflowError, socket.getnameinfo,
+                          ('::1',0, 0xffffffff), 0)
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            self.assertRaises(OverflowError, s.bind, ('::1', 0, -10))
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
