@@ -1744,6 +1744,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
+  Vilmos Nebehaj.
+
 - Issue #7777: socket: Add Reliable Datagram Sockets (PF_RDS) support.
 
 - Issue #13159: FileIO and BZ2Compressor/BZ2Decompressor now use a linear-time
