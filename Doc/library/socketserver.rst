@@ -158,13 +158,14 @@ Server Objects
 
 .. method:: BaseServer.serve_forever(poll_interval=0.5)
 
-   Handle requests until an explicit :meth:`shutdown` request.  Polls for
-   shutdown every *poll_interval* seconds.
+   Handle requests until an explicit :meth:`shutdown` request.
+   Poll for shutdown every *poll_interval* seconds. Ignores :attr:`self.timeout`.
+   If you need to do periodic tasks, do them in another thread.
 
 
 .. method:: BaseServer.shutdown()
 
-   Tells the :meth:`serve_forever` loop to stop and waits until it does.
+   Tell the :meth:`serve_forever` loop to stop and wait until it does.
 
    .. versionadded:: 2.6
 
