@@ -422,6 +422,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13636: Weak ciphers are now disabled by default in the ssl module
+  (except when SSLv2 is explicitly asked for).
+
 - Issue #12715: Add an optional symlinks argument to shutil functions
   (copyfile, copymode, copystat, copy, copy2).  When that parameter is
   true, symlinks aren't dereferenced and the operation instead acts on the

@@ -98,8 +98,9 @@ _PROTOCOL_NAMES = {
 }
 try:
     from _ssl import PROTOCOL_SSLv2
+    _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
 except ImportError:
-    pass
+    _SSLv2_IF_EXISTS = None
 else:
     _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
 
@@ -114,6 +115,11 @@ if _ssl.HAS_TLS_UNIQUE:
     CHANNEL_BINDING_TYPES = ['tls-unique']
 else:
     CHANNEL_BINDING_TYPES = []
+
+# Disable weak or insecure ciphers by default
+# (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
+_DEFAULT_CIPHERS = 'DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2'
+
 
 class CertificateError(ValueError):
     pass
@@ -181,7 +187,10 @@ class SSLContext(_SSLContext):
     __slots__ = ('protocol',)
 
     def __new__(cls, protocol, *args, **kwargs):
-        return _SSLContext.__new__(cls, protocol)
+        self = _SSLContext.__new__(cls, protocol)
+        if protocol != _SSLv2_IF_EXISTS:
+            self.set_ciphers(_DEFAULT_CIPHERS)
+        return self
 
     def __init__(self, protocol):
         self.protocol = protocol

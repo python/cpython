@@ -878,10 +878,11 @@ else:
                 try:
                     self.sslconn = self.server.context.wrap_socket(
                         self.sock, server_side=True)
-                except ssl.SSLError:
+                except ssl.SSLError as e:
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
                     # or a low-level bug. This should be made more discriminating.
+                    self.server.conn_errors.append(e)
                     if self.server.chatty:
                         handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
                     self.running = False
@@ -999,12 +1000,14 @@ else:
             self.port = support.bind_port(self.sock)
             self.flag = None
             self.active = False
+            self.conn_errors = []
             threading.Thread.__init__(self)
             self.daemon = True
 
         def __enter__(self):
             self.start(threading.Event())
             self.flag.wait()
+            return self
 
         def __exit__(self, *args):
             self.stop()
@@ -1124,6 +1127,7 @@ else:
         def __enter__(self):
             self.start(threading.Event())
             self.flag.wait()
+            return self
 
         def __exit__(self, *args):
             if support.verbose:
@@ -1738,6 +1742,22 @@ else:
                 finish = True
                 t.join()
                 server.close()
+
+        def test_default_ciphers(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            try:
+                # Force a set of weak ciphers on our client context
+                context.set_ciphers("DES")
+            except ssl.SSLError:
+                self.skipTest("no DES cipher available")
+            with ThreadedEchoServer(CERTFILE,
+                                    ssl_version=ssl.PROTOCOL_SSLv23,
+                                    chatty=False) as server:
+                with socket.socket() as sock:
+                    s = context.wrap_socket(sock)
+                    with self.assertRaises((OSError, ssl.SSLError)):
+                        s.connect((HOST, server.port))
+            self.assertIn("no shared cipher", str(server.conn_errors[0]))
 
         @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
                              "'tls-unique' channel binding not available")
