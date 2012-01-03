@@ -564,6 +564,21 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
+                        Py_ssize_t length, Py_UCS4 fill_char)
+
+   Fill a string with a character: write *fill_char* into
+   ``unicode[start:start+length]``.
+
+   Fail if *fill_char* is bigger than the string maximum character, or if the
+   string has more than 1 reference.
+
+   Return the number of written character, or return ``-1`` and raise an
+   exception on error.
+
+   .. versionadded:: 3.3
+
+
 .. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
                                         Py_UCS4 character)
 

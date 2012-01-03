@@ -9818,6 +9818,41 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         } \
     } while (0)
 
+Py_ssize_t
+PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
+               Py_UCS4 fill_char)
+{
+    Py_ssize_t maxlen;
+    enum PyUnicode_Kind kind;
+    void *data;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (PyUnicode_READY(unicode) == -1)
+        return -1;
+    if (unicode_check_modifiable(unicode))
+        return -1;
+
+    if (fill_char > PyUnicode_MAX_CHAR_VALUE(unicode)) {
+        PyErr_SetString(PyExc_ValueError,
+                         "fill character is bigger than "
+                         "the string maximum character");
+        return -1;
+    }
+
+    maxlen = PyUnicode_GET_LENGTH(unicode) - start;
+    length = Py_MIN(maxlen, length);
+    if (length <= 0)
+        return 0;
+
+    kind = PyUnicode_KIND(unicode);
+    data = PyUnicode_DATA(unicode);
+    FILL(kind, data, fill_char, start, length);
+    return length;
+}
+
 static PyObject *
 pad(PyObject *self,
     Py_ssize_t left,
