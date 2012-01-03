@@ -81,8 +81,9 @@ _PROTOCOL_NAMES = {
 }
 try:
     from _ssl import PROTOCOL_SSLv2
+    _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
 except ImportError:
-    pass
+    _SSLv2_IF_EXISTS = None
 else:
     _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
 
@@ -90,6 +91,11 @@ from socket import socket, _fileobject, _delegate_methods, error as socket_error
 from socket import getnameinfo as _getnameinfo
 import base64        # for DER-to-PEM translation
 import errno
+
+# Disable weak or insecure ciphers by default
+# (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
+_DEFAULT_CIPHERS = 'DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2'
+
 
 class SSLSocket(socket):
 
@@ -111,6 +117,9 @@ class SSLSocket(socket):
                 delattr(self, attr)
             except AttributeError:
                 pass
+
+        if ciphers is None and ssl_version != _SSLv2_IF_EXISTS:
+            ciphers = _DEFAULT_CIPHERS
 
         if certfile and not keyfile:
             keyfile = certfile
