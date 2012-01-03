@@ -310,8 +310,9 @@ not handled, the exception is temporarily saved. The :keyword:`finally` clause
 is executed.  If there is a saved exception, it is re-raised at the end of the
 :keyword:`finally` clause. If the :keyword:`finally` clause raises another
 exception or executes a :keyword:`return` or :keyword:`break` statement, the
-saved exception is lost.  The exception information is not available to the
-program during execution of the :keyword:`finally` clause.
+saved exception is set as the context of the new exception.  The exception
+information is not available to the program during execution of the
+:keyword:`finally` clause.
 
 .. index::
    statement: return
