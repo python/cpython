@@ -623,11 +623,11 @@ PyAPI_FUNC(PyObject*) _PyUnicode_Copy(
 #endif
 
 /* Copy character from one unicode object into another, this function performs
-   character conversion when necessary and falls back to memcpy if possible.
+   character conversion when necessary and falls back to memcpy() if possible.
 
-   Fail if to is too small (smaller than how_many or smaller than
+   Fail if to is too small (smaller than *how_many* or smaller than
    len(from)-from_start), or if kind(from[from_start:from_start+how_many]) >
-   kind(to), or if to has more than 1 reference.
+   kind(to), or if *to* has more than 1 reference.
 
    Return the number of written character, or return -1 and raise an exception
    on error.
@@ -647,6 +647,23 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_CopyCharacters(
     PyObject *from,
     Py_ssize_t from_start,
     Py_ssize_t how_many
+    );
+#endif
+
+/* Fill a string with a character: write fill_char into
+   unicode[start:start+length].
+
+   Fail if fill_char is bigger than the string maximum character, or if the
+   string has more than 1 reference.
+
+   Return the number of written character, or return -1 and raise an exception
+   on error. */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(Py_ssize_t) PyUnicode_Fill(
+    PyObject *unicode,
+    Py_ssize_t start,
+    Py_ssize_t length,
+    Py_UCS4 fill_char
     );
 #endif
 

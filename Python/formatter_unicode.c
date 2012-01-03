@@ -317,15 +317,6 @@ calc_padding(Py_ssize_t nchars, Py_ssize_t width, Py_UCS4 align,
     *n_rpadding = *n_total - nchars - *n_lpadding;
 }
 
-static void
-unicode_fill(PyObject *str, Py_ssize_t start, Py_ssize_t end, Py_UCS4 ch)
-{
-    int kind = PyUnicode_KIND(str);
-    void *data = PyUnicode_DATA(str);
-    while (start < end)
-        PyUnicode_WRITE(kind, data, start++, ch);
-}
-
 /* Do the padding, and return a pointer to where the caller-supplied
    content goes. */
 static Py_ssize_t
@@ -335,12 +326,12 @@ fill_padding(PyObject *s, Py_ssize_t start, Py_ssize_t nchars,
 {
     /* Pad on left. */
     if (n_lpadding)
-        unicode_fill(s, start, start + n_lpadding, fill_char);
+        PyUnicode_Fill(s, start, start + n_lpadding, fill_char);
 
     /* Pad on right. */
     if (n_rpadding)
-        unicode_fill(s, start + nchars + n_lpadding,
-                     start + nchars + n_lpadding + n_rpadding, fill_char);
+        PyUnicode_Fill(s, start + nchars + n_lpadding,
+                       start + nchars + n_lpadding + n_rpadding, fill_char);
 
     /* Pointer to the user content. */
     return start + n_lpadding;
@@ -557,7 +548,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
 #endif
 
     if (spec->n_lpadding) {
-        unicode_fill(out, pos, pos + spec->n_lpadding, fill_char);
+        PyUnicode_Fill(out, pos, pos + spec->n_lpadding, fill_char);
         pos += spec->n_lpadding;
     }
     if (spec->n_sign == 1) {
@@ -581,7 +572,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         pos += spec->n_prefix;
     }
     if (spec->n_spadding) {
-        unicode_fill(out, pos, pos + spec->n_spadding, fill_char);
+        PyUnicode_Fill(out, pos, pos + spec->n_spadding, fill_char);
         pos += spec->n_spadding;
     }
 
@@ -640,7 +631,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     }
 
     if (spec->n_rpadding) {
-        unicode_fill(out, pos, pos + spec->n_rpadding, fill_char);
+        PyUnicode_Fill(out, pos, pos + spec->n_rpadding, fill_char);
         pos += spec->n_rpadding;
     }
     return 0;
