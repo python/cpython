@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13636: Weak ciphers are now disabled by default in the ssl module
+  (except when SSLv2 is explicitly asked for).
+
 - Issue #12798: Updated the mimetypes documentation.
 
 - Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
