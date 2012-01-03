@@ -496,7 +496,7 @@ builtin_format(PyObject *self, PyObject *args)
     PyObject *format_spec = NULL;
 
     if (!PyArg_ParseTuple(args, "O|U:format", &value, &format_spec))
-    return NULL;
+        return NULL;
 
     return PyObject_Format(value, format_spec);
 }
