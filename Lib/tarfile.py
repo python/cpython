@@ -40,6 +40,7 @@ __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 #---------
 import sys
 import os
+import io
 import shutil
 import stat
 import time
@@ -833,20 +834,20 @@ class ExFileObject(object):
 
         return self.position
 
-    def seek(self, pos, whence=os.SEEK_SET):
+    def seek(self, pos, whence=io.SEEK_SET):
         """Seek to a position in the file.
         """
         if self.closed:
             raise ValueError("I/O operation on closed file")
 
-        if whence == os.SEEK_SET:
+        if whence == io.SEEK_SET:
             self.position = min(max(pos, 0), self.size)
-        elif whence == os.SEEK_CUR:
+        elif whence == io.SEEK_CUR:
             if pos < 0:
                 self.position = max(self.position + pos, 0)
             else:
                 self.position = min(self.position + pos, self.size)
-        elif whence == os.SEEK_END:
+        elif whence == io.SEEK_END:
             self.position = max(min(self.size + pos, self.size), 0)
         else:
             raise ValueError("Invalid argument")

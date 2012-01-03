@@ -2,6 +2,7 @@
 
 import sys
 import os
+import io
 import errno
 import unittest
 from array import array
@@ -334,10 +335,10 @@ class OtherFileTests(unittest.TestCase):
         self.assertEqual(f.tell(), 10)
         f.truncate(5)
         self.assertEqual(f.tell(), 10)
-        self.assertEqual(f.seek(0, os.SEEK_END), 5)
+        self.assertEqual(f.seek(0, io.SEEK_END), 5)
         f.truncate(15)
         self.assertEqual(f.tell(), 5)
-        self.assertEqual(f.seek(0, os.SEEK_END), 15)
+        self.assertEqual(f.seek(0, io.SEEK_END), 15)
         f.close()
 
     def testTruncateOnWindows(self):
