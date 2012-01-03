@@ -172,7 +172,7 @@ Server Objects
 
 .. method:: BaseServer.shutdown()
 
-   Tell the :meth:`serve_forever` loop to stop and waits until it does.
+   Tell the :meth:`serve_forever` loop to stop and wait until it does.
 
 
 .. attribute:: BaseServer.address_family
