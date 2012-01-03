@@ -417,10 +417,11 @@ else:
                                                    ca_certs=self.server.cacerts,
                                                    cert_reqs=self.server.certreqs,
                                                    ciphers=self.server.ciphers)
-                except ssl.SSLError:
+                except ssl.SSLError as e:
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
                     # or a low-level bug. This should be made more discriminating.
+                    self.server.conn_errors.append(e)
                     if self.server.chatty:
                         handle_error("\n server:  bad connection attempt from " +
                                      str(self.sock.getpeername()) + ":\n")
@@ -529,12 +530,14 @@ else:
                     sys.stdout.write(' server:  wrapped server socket as %s\n' % str(self.sock))
             self.port = test_support.bind_port(self.sock)
             self.active = False
+            self.conn_errors = []
             threading.Thread.__init__(self)
             self.daemon = True
 
         def __enter__(self):
             self.start(threading.Event())
             self.flag.wait()
+            return self
 
         def __exit__(self, *args):
             self.stop()
@@ -649,6 +652,7 @@ else:
         def __enter__(self):
             self.start(threading.Event())
             self.flag.wait()
+            return self
 
         def __exit__(self, *args):
             if test_support.verbose:
@@ -1309,6 +1313,25 @@ else:
                 finish = True
                 t.join()
                 server.close()
+
+        def test_default_ciphers(self):
+            with ThreadedEchoServer(CERTFILE,
+                                    ssl_version=ssl.PROTOCOL_SSLv23,
+                                    chatty=False) as server:
+                sock = socket.socket()
+                try:
+                    # Force a set of weak ciphers on our client socket
+                    try:
+                        s = ssl.wrap_socket(sock,
+                                            ssl_version=ssl.PROTOCOL_SSLv23,
+                                            ciphers="DES")
+                    except ssl.SSLError:
+                        self.skipTest("no DES cipher available")
+                    with self.assertRaises((OSError, ssl.SSLError)):
+                        s.connect((HOST, server.port))
+                finally:
+                    sock.close()
+            self.assertIn("no shared cipher", str(server.conn_errors[0]))
 
 
 def test_main(verbose=False):
