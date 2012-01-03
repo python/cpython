@@ -1070,6 +1070,17 @@ specifiers include the program name, ``%(prog)s`` and most keyword arguments to
    optional arguments:
     -h, --help  show this help message and exit
 
+:mod:`argparse` supports silencing the help entry for certain options, by
+setting the ``help`` value to ``argparse.SUPPRESS``::
+
+   >>> parser = argparse.ArgumentParser(prog='frobble')
+   >>> parser.add_argument('--foo', help=argparse.SUPPRESS)
+   >>> parser.print_help()
+   usage: frobble [-h]
+
+   optional arguments:
+     -h, --help  show this help message and exit
+
 
 metavar
 ^^^^^^^
