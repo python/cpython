@@ -153,8 +153,8 @@ Server Objects
 
 .. method:: BaseServer.serve_forever(poll_interval=0.5)
 
-   Handle requests until an explicit :meth:`shutdown` request.  Polls for
-   shutdown every *poll_interval* seconds.  It also calls
+   Handle requests until an explicit :meth:`shutdown` request.
+   Poll for shutdown every *poll_interval* seconds. Ignores :attr:`self.timeout`.  It also calls
    :meth:`service_actions` which may be used by a subclass or Mixin to provide
    various cleanup actions.  For e.g. ForkingMixin class uses
    :meth:`service_actions` to cleanup the zombie child processes.
@@ -172,7 +172,7 @@ Server Objects
 
 .. method:: BaseServer.shutdown()
 
-   Tells the :meth:`serve_forever` loop to stop and waits until it does.
+   Tell the :meth:`serve_forever` loop to stop and waits until it does.
 
 
 .. attribute:: BaseServer.address_family
