@@ -1059,6 +1059,19 @@ class HandlerTests(unittest.TestCase):
                 MockHeaders({"location": valid_url}))
             self.assertEqual(o.req.get_full_url(), valid_url)
 
+    def test_relative_redirect(self):
+        from_url = "http://example.com/a.html"
+        relative_url = "/b.html"
+        h = urllib.request.HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+        req = Request(from_url)
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+
+        valid_url = urllib.parse.urljoin(from_url,relative_url)
+        h.http_error_302(req, MockFile(), 302, "That's fine",
+            MockHeaders({"location": valid_url}))
+        self.assertEqual(o.req.get_full_url(), valid_url)
+
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
         from http.cookiejar import CookieJar
