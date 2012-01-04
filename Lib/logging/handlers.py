@@ -52,13 +52,15 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
-    def __init__(self, filename, mode, encoding=None, delay=0):
+    def __init__(self, filename, mode, encoding=None, delay=False):
         """
         Use the specified filename for streamed logging
         """
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
         self.mode = mode
         self.encoding = encoding
+        self.namer = None
+        self.rotator = None
 
     def emit(self, record):
         """
@@ -76,12 +78,50 @@ class BaseRotatingHandler(logging.FileHandler):
         except:
             self.handleError(record)
 
+    def rotation_filename(self, default_name):
+        """
+        Modify the filename of a log file when rotating.
+
+        This is provided so that a custom filename can be provided.
+
+        The default implementation calls the 'namer' attribute of the
+        handler, if it's callable, passing the default name to
+        it. If the attribute isn't callable (the default is None), the name
+        is returned unchanged.
+
+        :param default_name: The default name for the log file.
+        """
+        if not callable(self.namer):
+            result = default_name
+        else:
+            result = self.namer(default_name)
+        return result
+
+    def rotate(self, source, dest):
+        """
+        When rotating, rotate the current log.
+
+        The default implementation calls the 'rotator' attribute of the
+        handler, if it's callable, passing the source and dest arguments to
+        it. If the attribute isn't callable (the default is None), the source
+        is simply renamed to the destination.
+
+        :param source: The source filename. This is normally the base
+                       filename, e.g. 'test.log'
+        :param dest:   The destination filename. This is normally
+                       what the source is rotated to, e.g. 'test.log.1'.
+        """
+        if not callable(self.rotator):
+            os.rename(source, dest)
+        else:
+            self.rotator(source, dest)
+
 class RotatingFileHandler(BaseRotatingHandler):
     """
     Handler for logging to a set of files, which switches from one file
     to the next when the current file reaches a certain size.
     """
-    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=0):
+    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
         """
         Open the specified file and use it as the stream for logging.
 
@@ -122,16 +162,17 @@ class RotatingFileHandler(BaseRotatingHandler):
             self.stream = None
         if self.backupCount > 0:
             for i in range(self.backupCount - 1, 0, -1):
-                sfn = "%s.%d" % (self.baseFilename, i)
-                dfn = "%s.%d" % (self.baseFilename, i + 1)
+                sfn = self.rotation_filename("%s.%d" % (self.baseFilename, i))
+                dfn = self.rotation_filename("%s.%d" % (self.baseFilename,
+                                                        i + 1))
                 if os.path.exists(sfn):
                     if os.path.exists(dfn):
                         os.remove(dfn)
                     os.rename(sfn, dfn)
-            dfn = self.baseFilename + ".1"
+            dfn = self.rotation_filename(self.baseFilename + ".1")
             if os.path.exists(dfn):
                 os.remove(dfn)
-            os.rename(self.baseFilename, dfn)
+            self.rotate(self.baseFilename, dfn)
         self.mode = 'w'
         self.stream = self._open()
 
@@ -179,19 +220,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         if self.when == 'S':
             self.interval = 1 # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.\w+)?$"
         elif self.when == 'M':
             self.interval = 60 # one minute
             self.suffix = "%Y-%m-%d_%H-%M"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}$"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}(\.\w+)?$"
         elif self.when == 'H':
             self.interval = 60 * 60 # one hour
             self.suffix = "%Y-%m-%d_%H"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}$"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}(\.\w+)?$"
         elif self.when == 'D' or self.when == 'MIDNIGHT':
             self.interval = 60 * 60 * 24 # one day
             self.suffix = "%Y-%m-%d"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}(\.\w+)?$"
         elif self.when.startswith('W'):
             self.interval = 60 * 60 * 24 * 7 # one week
             if len(self.when) != 2:
@@ -200,7 +241,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 raise ValueError("Invalid day specified for weekly rollover: %s" % self.when)
             self.dayOfWeek = int(self.when[1])
             self.suffix = "%Y-%m-%d"
-            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}(\.\w+)?$"
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
@@ -323,10 +364,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
-        dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
+        dfn = self.rotation_filename(self.baseFilename + "." +
+                                     time.strftime(self.suffix, timeTuple))
         if os.path.exists(dfn):
             os.remove(dfn)
-        os.rename(self.baseFilename, dfn)
+        self.rotate(self.baseFilename, dfn)
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
@@ -367,7 +409,7 @@ class WatchedFileHandler(logging.FileHandler):
     This handler is based on a suggestion and patch by Chad J.
     Schroeder.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=0):
+    def __init__(self, filename, mode='a', encoding=None, delay=False):
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
         if not os.path.exists(self.baseFilename):
             self.dev, self.ino = -1, -1
