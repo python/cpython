@@ -164,6 +164,87 @@ this value.
       changed.  If it has, the existing stream is flushed and closed and the
       file opened again, before outputting the record to the file.
 
+.. _base-rotating-handler:
+
+BaseRotatingHandler
+^^^^^^^^^^^^^^^^^^^
+
+The :class:`BaseRotatingHandler` class, located in the :mod:`logging.handlers`
+module, is the base class for the rotating file handlers,
+:class:`RotatingFileHandler` and :class:`TimedRotatingFileHandler`. You should
+not need to instantiate this class, but it has attributes and methods you may
+need to override.
+
+.. class:: BaseRotatingHandler(filename, mode, encoding=None, delay=False)
+
+   The parameters are as for :class:`FileHandler`. The attributes are:
+
+   .. attribute:: namer
+
+      If this attribute is set to a callable, the :meth:`rotation_filename`
+      method delegates to this callable. The parameters passed to the callable
+      are those passed to :meth:`rotation_filename`.
+
+      .. note:: The namer function is called quite a few times during rollover,
+         so it should be as simple and as fast as possible. It should also
+         return the same output every time for a given input, otherwise the
+         rollover behaviour may not work as expected.
+
+      .. versionadded:: 3.3
+
+
+   .. attribute:: BaseRotatingHandler.rotator
+
+      If this attribute is set to a callable, the :meth:`rotate` method
+      delegates to this callable.  The parameters passed to the callable are
+      those passed to :meth:`rotate`.
+
+      .. versionadded:: 3.3
+
+   .. method:: BaseRotatingHandler.rotation_filename(default_name)
+
+      Modify the filename of a log file when rotating.
+
+      This is provided so that a custom filename can be provided.
+
+      The default implementation calls the 'namer' attribute of the handler,
+      if it's callable, passing the default name to it. If the attribute isn't
+      callable (the default is `None`), the name is returned unchanged.
+
+      :param default_name: The default name for the log file.
+
+      .. versionadded:: 3.3
+
+
+   .. method:: BaseRotatingHandler.rotate(source, dest)
+
+      When rotating, rotate the current log.
+
+      The default implementation calls the 'rotator' attribute of the handler,
+      if it's callable, passing the source and dest arguments to it. If the
+      attribute isn't callable (the default is `None`), the source is simply
+      renamed to the destination.
+
+      :param source: The source filename. This is normally the base
+                     filename, e.g. 'test.log'
+      :param dest:   The destination filename. This is normally
+                     what the source is rotated to, e.g. 'test.log.1'.
+
+      .. versionadded:: 3.3
+
+The reason the attributes exist is to save you having to subclass - you can use
+the same callables for instances of :class:`RotatingFileHandler` and
+:class:`TimedRotatingFileHandler`. If either the namer or rotator callable
+raises an exception, this will be handled in the same way as any other
+exception during an :meth:`emit` call, i.e. via the :meth:`handleError` method
+of the handler.
+
+If you need to make more significant changes to rotation processing, you can
+override the methods.
+
+For an example, see :ref:`cookbook-rotator-namer`.
+
+
 .. _rotating-file-handler:
 
 RotatingFileHandler

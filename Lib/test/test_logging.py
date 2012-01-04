@@ -46,6 +46,7 @@ import time
 import unittest
 import warnings
 import weakref
+import zlib
 try:
     import threading
     # The following imports are needed only for tests which
@@ -3587,15 +3588,61 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
     def test_rollover_filenames(self):
+        def namer(name):
+            return name + ".test"
         rh = logging.handlers.RotatingFileHandler(
             self.fn, backupCount=2, maxBytes=1)
+        rh.namer = namer
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.emit(self.next_rec())
-        self.assertLogFile(self.fn + ".1")
+        self.assertLogFile(namer(self.fn + ".1"))
         rh.emit(self.next_rec())
-        self.assertLogFile(self.fn + ".2")
-        self.assertFalse(os.path.exists(self.fn + ".3"))
+        self.assertLogFile(namer(self.fn + ".2"))
+        self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.close()
+
+    def test_rotator(self):
+        def namer(name):
+            return name + ".gz"
+
+        def rotator(source, dest):
+            with open(source, "rb") as sf:
+                data = sf.read()
+                compressed = zlib.compress(data, 9)
+                with open(dest, "wb") as df:
+                    df.write(compressed)
+            os.remove(source)
+
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, backupCount=2, maxBytes=1)
+        rh.rotator = rotator
+        rh.namer = namer
+        m1 = self.next_rec()
+        rh.emit(m1)
+        self.assertLogFile(self.fn)
+        m2 = self.next_rec()
+        rh.emit(m2)
+        fn = namer(self.fn + ".1")
+        self.assertLogFile(fn)
+        with open(fn, "rb") as f:
+            compressed = f.read()
+            data = zlib.decompress(compressed)
+            self.assertEqual(data.decode("ascii"), m1.msg + "\n")
+        rh.emit(self.next_rec())
+        fn = namer(self.fn + ".2")
+        self.assertLogFile(fn)
+        with open(fn, "rb") as f:
+            compressed = f.read()
+            data = zlib.decompress(compressed)
+            self.assertEqual(data.decode("ascii"), m1.msg + "\n")
+        rh.emit(self.next_rec())
+        fn = namer(self.fn + ".2")
+        with open(fn, "rb") as f:
+            compressed = f.read()
+            data = zlib.decompress(compressed)
+            self.assertEqual(data.decode("ascii"), m2.msg + "\n")
+        self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
 class TimedRotatingFileHandlerTest(BaseFileTest):
