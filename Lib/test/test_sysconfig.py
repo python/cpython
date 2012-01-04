@@ -36,7 +36,8 @@ class TestSysConfig(unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
-        self._config_vars = copy(sysconfig._CONFIG_VARS)
+        self._config_vars = sysconfig._CONFIG_VARS
+        sysconfig._CONFIG_VARS = copy(sysconfig._CONFIG_VARS)
         self._added_envvars = []
         self._changed_envvars = []
         for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
@@ -59,7 +60,7 @@ class TestSysConfig(unittest.TestCase):
         os.path.join = self.join
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
-        sysconfig._CONFIG_VARS = copy(self._config_vars)
+        sysconfig._CONFIG_VARS = self._config_vars
         for var, value in self._changed_envvars:
             os.environ[var] = value
         for var in self._added_envvars:
