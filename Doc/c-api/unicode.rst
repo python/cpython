@@ -564,7 +564,7 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
+.. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
                         Py_ssize_t length, Py_UCS4 fill_char)
 
    Fill a string with a character: write *fill_char* into

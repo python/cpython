@@ -828,7 +828,7 @@ Functions and macros manipulating Py_UNICODE* strings:
  * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
  * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
    :c:func:`PyUnicode_FindChar`
- * :c:macro:`Py_UNICODE_FILL`
+ * :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
  * :c:macro:`Py_UNICODE_MATCH`
 
 Encoders:
