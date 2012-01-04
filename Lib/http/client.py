@@ -603,12 +603,12 @@ class HTTPResponse(io.RawIOBase):
             if len(mvb) < chunk_left:
                 n = self._safe_readinto(mvb)
                 self.chunk_left = chunk_left - n
-                return n
+                return total_bytes + n
             elif len(mvb) == chunk_left:
                 n = self._safe_readinto(mvb)
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
                 self.chunk_left = None
-                return n
+                return total_bytes + n
             else:
                 temp_mvb = mvb[0:chunk_left]
                 n = self._safe_readinto(temp_mvb)
