@@ -572,7 +572,7 @@ class HTTPRedirectHandler(BaseHandler):
         # For security reasons we don't allow redirection to anything other
         # than http, https or ftp.
 
-        if urlparts.scheme not in ('http', 'https', 'ftp'):
+        if urlparts.scheme not in ('http', 'https', 'ftp', ''):
             raise HTTPError(
                 newurl, code,
                 "%s - Redirection to url '%s' is not allowed" % (msg, newurl),
@@ -1963,7 +1963,7 @@ class FancyURLopener(URLopener):
         # We are using newer HTTPError with older redirect_internal method
         # This older method will get deprecated in 3.3
 
-        if urlparts.scheme not in ('http', 'https', 'ftp'):
+        if urlparts.scheme not in ('http', 'https', 'ftp', ''):
             raise HTTPError(newurl, errcode,
                             errmsg +
                             " Redirection to url '%s' is not allowed." % newurl,
