@@ -293,14 +293,27 @@ class BasicTest(TestCase):
             'Transfer-Encoding: chunked\r\n\r\n'
             'a\r\n'
             'hello worl\r\n'
-            '1\r\n'
-            'd\r\n'
+            '3\r\n'
+            'd! \r\n'
+            '8\r\n'
+            'and now \r\n'
+            '22\r\n'
+            'for something completely different\r\n'
         )
+        expected = b'hello world! and now for something completely different'
         sock = FakeSocket(chunked_start + '0\r\n')
         resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
-        self.assertEqual(resp.read(), b'hello world')
+        self.assertEqual(resp.read(), expected)
         resp.close()
+
+        # Various read sizes
+        for n in range(1, 12):
+            sock = FakeSocket(chunked_start + '0\r\n')
+            resp = client.HTTPResponse(sock, method="GET")
+            resp.begin()
+            self.assertEqual(resp.read(n) + resp.read(n) + resp.read(), expected)
+            resp.close()
 
         for x in ('', 'foo\r\n'):
             sock = FakeSocket(chunked_start + x)
@@ -309,9 +322,10 @@ class BasicTest(TestCase):
             try:
                 resp.read()
             except client.IncompleteRead as i:
-                self.assertEqual(i.partial, b'hello world')
-                self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
-                self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
+                self.assertEqual(i.partial, expected)
+                expected_message = 'IncompleteRead(%d bytes read)' % len(expected)
+                self.assertEqual(repr(i), expected_message)
+                self.assertEqual(str(i), expected_message)
             else:
                 self.fail('IncompleteRead expected')
             finally:
@@ -323,29 +337,49 @@ class BasicTest(TestCase):
             'Transfer-Encoding: chunked\r\n\r\n'
             'a\r\n'
             'hello worl\r\n'
-            '1\r\n'
-            'd\r\n'
+            '3\r\n'
+            'd! \r\n'
+            '8\r\n'
+            'and now \r\n'
+            '22\r\n'
+            'for something completely different\r\n'
         )
+        expected = b'hello world! and now for something completely different'
+        nexpected = len(expected)
+        b = bytearray(128)
+
         sock = FakeSocket(chunked_start + '0\r\n')
         resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
-        b = bytearray(16)
         n = resp.readinto(b)
-        self.assertEqual(b[:11], b'hello world')
-        self.assertEqual(n, 11)
+        self.assertEqual(b[:nexpected], expected)
+        self.assertEqual(n, nexpected)
         resp.close()
+
+        # Various read sizes
+        for n in range(1, 12):
+            sock = FakeSocket(chunked_start + '0\r\n')
+            resp = client.HTTPResponse(sock, method="GET")
+            resp.begin()
+            m = memoryview(b)
+            i = resp.readinto(m[0:n])
+            i += resp.readinto(m[i:n + i])
+            i += resp.readinto(m[i:])
+            self.assertEqual(b[:nexpected], expected)
+            self.assertEqual(i, nexpected)
+            resp.close()
 
         for x in ('', 'foo\r\n'):
             sock = FakeSocket(chunked_start + x)
             resp = client.HTTPResponse(sock, method="GET")
             resp.begin()
             try:
-                b = bytearray(16)
                 n = resp.readinto(b)
             except client.IncompleteRead as i:
-                self.assertEqual(i.partial, b'hello world')
-                self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
-                self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
+                self.assertEqual(i.partial, expected)
+                expected_message = 'IncompleteRead(%d bytes read)' % len(expected)
+                self.assertEqual(repr(i), expected_message)
+                self.assertEqual(str(i), expected_message)
             else:
                 self.fail('IncompleteRead expected')
             finally:
