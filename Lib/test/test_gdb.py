@@ -662,6 +662,8 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
@@ -695,6 +697,8 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_locals_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
