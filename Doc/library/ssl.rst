@@ -1174,6 +1174,25 @@ SSLv2 explicitly using the :data:`SSLContext.options` attribute::
 The SSL context created above will allow SSLv3 and TLSv1 connections, but
 not SSLv2.
 
+Cipher selection
+^^^^^^^^^^^^^^^^
+
+If you have advanced security requirements, fine-tuning of the ciphers
+enabled when negotiating a SSL session is possible through the
+:meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
+ssl module disables certain weak ciphers by default, but you may want
+to further restrict the cipher choice.  For example::
+
+   context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+   context.set_ciphers('HIGH:!aNULL:!eNULL')
+
+The ``!aNULL:!eNULL`` part of the cipher spec is necessary to disable ciphers
+which don't provide both encryption and authentication.  Be sure to read
+OpenSSL's documentation about the `cipher list
+format <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
+If you want to check which ciphers are enabled by a given cipher list,
+use the ``openssl ciphers`` command on your system.
+
 
 .. seealso::
 
