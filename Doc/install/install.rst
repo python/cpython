@@ -1,7 +1,7 @@
 .. highlightlang:: none
 
 ====================================
-Installing Python projects: overwiew
+Installing Python projects: overview
 ====================================
 
 .. _packaging-install-intro:
