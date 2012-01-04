@@ -703,6 +703,19 @@ how the command-line arguments should be handled. The supported actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<type 'str'>, <type 'int'>])
 
+* ``'count'`` - This counts the number of times a keyword argument occurs. For
+  example, this is useful for increasing verbosity levels::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--verbose', '-v', action='count')
+    >>> parser.parse_args('-vvv'.split())
+    Namespace(verbose=3)
+
+* ``'help'`` - This prints a complete help message for all the options in the
+  current parser and then exits. By default a help action is automatically
+  added to the parser. See :class:`ArgumentParser` for details of how the
+  output is created.
+
 * ``'version'`` - This expects a ``version=`` keyword argument in the
   :meth:`~ArgumentParser.add_argument` call, and prints version information
   and exits when invoked.
