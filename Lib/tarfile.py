@@ -2340,12 +2340,6 @@ class TarFile(object):
                     self._extract_member(self._find_link_target(tarinfo),
                                          targetpath)
         except symlink_exception:
-            if tarinfo.issym():
-                linkpath = os.path.join(os.path.dirname(tarinfo.name),
-                                        tarinfo.linkname)
-            else:
-                linkpath = tarinfo.linkname
-        else:
             try:
                 self._extract_member(self._find_link_target(tarinfo),
                                      targetpath)
