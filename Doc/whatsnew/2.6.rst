@@ -611,8 +611,8 @@ multiple of 4.
         result = queue.get()
         print 'Factorial', N, '=', result
 
-A :class:`Queue` is used to communicate the input parameter *N* and
-the result.  The :class:`Queue` object is stored in a global variable.
+A :class:`Queue` is used to communicate the result of the factorial.
+The :class:`Queue` object is stored in a global variable.
 The child process will use the value of the variable when the child
 was created; because it's a :class:`Queue`, parent and child can use
 the object to communicate.  (If the parent were to change the value of
