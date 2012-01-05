@@ -24,11 +24,3 @@ This module also provides one additional data object:
    Dictionary mapping the numeric values of the constants defined in this module
    back to name strings, allowing more human-readable representation of parse trees
    to be generated.
-
-
-.. seealso::
-
-   Module :mod:`parser`
-      The second example for the :mod:`parser` module shows how to use the
-      :mod:`symbol` module.
-
