@@ -97,6 +97,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12926: Fix a bug in tarfile's link extraction.
+
 - Issue #13696: Fix the 302 Relative URL Redirection problem.
 
 - Issue #13636: Weak ciphers are now disabled by default in the ssl module
