@@ -25,10 +25,3 @@ This module also provides one additional data object:
    back to name strings, allowing more human-readable representation of parse trees
    to be generated.
 
-
-.. seealso::
-
-   Module :mod:`parser`
-      The second example for the :mod:`parser` module shows how to use the
-      :mod:`symbol` module.
-
