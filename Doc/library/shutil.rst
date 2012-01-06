@@ -196,7 +196,12 @@ Directory and files operations
 
    If the destination is on the current filesystem, then :func:`os.rename` is
    used.  Otherwise, *src* is copied (using :func:`copy2`) to *dst* and then
-   removed.
+   removed. In case of symlinks, a new symlink pointing to the target of *src*
+   will be created in or as *dst* and *src* will be removed.
+
+   .. versionchanged:: 3.3
+      Added explicit symlink handling for foreign filesystems, thus adapting
+      it to the behavior of GNU's :program:`mv`.
 
 .. function:: disk_usage(path)
 
