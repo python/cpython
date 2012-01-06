@@ -1104,6 +1104,49 @@ class TestMove(unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
+    @support.skip_unless_symlink
+    @mock_rename
+    def test_move_file_symlink(self):
+        dst = os.path.join(self.src_dir, 'bar')
+        os.symlink(self.src_file, dst)
+        shutil.move(dst, self.dst_file)
+        self.assertTrue(os.path.islink(self.dst_file))
+        self.assertTrue(os.path.samefile(self.src_file, self.dst_file))
+
+    @support.skip_unless_symlink
+    @mock_rename
+    def test_move_file_symlink_to_dir(self):
+        filename = "bar"
+        dst = os.path.join(self.src_dir, filename)
+        os.symlink(self.src_file, dst)
+        shutil.move(dst, self.dst_dir)
+        final_link = os.path.join(self.dst_dir, filename)
+        self.assertTrue(os.path.islink(final_link))
+        self.assertTrue(os.path.samefile(self.src_file, final_link))
+
+    @support.skip_unless_symlink
+    @mock_rename
+    def test_move_dangling_symlink(self):
+        src = os.path.join(self.src_dir, 'baz')
+        dst = os.path.join(self.src_dir, 'bar')
+        os.symlink(src, dst)
+        dst_link = os.path.join(self.dst_dir, 'quux')
+        shutil.move(dst, dst_link)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertEqual(os.path.realpath(src), os.path.realpath(dst_link))
+
+    @support.skip_unless_symlink
+    @mock_rename
+    def test_move_dir_symlink(self):
+        src = os.path.join(self.src_dir, 'baz')
+        dst = os.path.join(self.src_dir, 'bar')
+        os.mkdir(src)
+        os.symlink(src, dst)
+        dst_link = os.path.join(self.dst_dir, 'quux')
+        shutil.move(dst, dst_link)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertTrue(os.path.samefile(src, dst_link))
+
 
 class TestCopyFile(unittest.TestCase):
 
