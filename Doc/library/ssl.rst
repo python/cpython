@@ -788,10 +788,19 @@ This example connects to an SSL server and prints the server's certificate::
    # note that closing the SSLSocket will also close the underlying socket
    ssl_sock.close()
 
-As of October 6, 2010, the certificate printed by this program looks like
+As of January 6, 2012, the certificate printed by this program looks like
 this::
 
-   {'notAfter': 'May 25 23:59:59 2012 GMT',
+   {'issuer': ((('countryName', 'US'),),
+               (('organizationName', 'VeriSign, Inc.'),),
+               (('organizationalUnitName', 'VeriSign Trust Network'),),
+               (('organizationalUnitName',
+                 'Terms of use at https://www.verisign.com/rpa (c)06'),),
+               (('commonName',
+                 'VeriSign Class 3 Extended Validation SSL SGC CA'),)),
+    'notAfter': 'May 25 23:59:59 2012 GMT',
+    'notBefore': 'May 26 00:00:00 2010 GMT',
+    'serialNumber': '53D2BEF924A7245E83CA01E46CAA2477',
     'subject': ((('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
                 (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
                 (('businessCategory', 'V1.0, Clause 5.(b)'),),
@@ -803,7 +812,16 @@ this::
                 (('streetAddress', '487 East Middlefield Road'),),
                 (('organizationName', 'VeriSign, Inc.'),),
                 (('organizationalUnitName', ' Production Security Services'),),
-                (('commonName', 'www.verisign.com'),))}
+                (('commonName', 'www.verisign.com'),)),
+    'subjectAltName': (('DNS', 'www.verisign.com'),
+                       ('DNS', 'verisign.com'),
+                       ('DNS', 'www.verisign.net'),
+                       ('DNS', 'verisign.net'),
+                       ('DNS', 'www.verisign.mobi'),
+                       ('DNS', 'verisign.mobi'),
+                       ('DNS', 'www.verisign.eu'),
+                       ('DNS', 'verisign.eu')),
+    'version': 3}
 
 This other example first creates an SSL context, instructs it to verify
 certificates sent by peers, and feeds it a set of recognized certificate
@@ -834,9 +852,26 @@ Visual inspection shows that the certificate does identify the desired service
 (that is, the HTTPS host ``linuxfr.org``)::
 
    >>> pprint.pprint(cert)
-   {'notAfter': 'Jun 26 21:41:46 2011 GMT',
+   {'issuer': ((('organizationName', 'CAcert Inc.'),),
+               (('organizationalUnitName', 'http://www.CAcert.org'),),
+               (('commonName', 'CAcert Class 3 Root'),)),
+    'notAfter': 'Jun  7 21:02:24 2013 GMT',
+    'notBefore': 'Jun  8 21:02:24 2011 GMT',
+    'serialNumber': 'D3E9',
     'subject': ((('commonName', 'linuxfr.org'),),),
-    'subjectAltName': (('DNS', 'linuxfr.org'), ('othername', '<unsupported>'))}
+    'subjectAltName': (('DNS', 'linuxfr.org'),
+                       ('othername', '<unsupported>'),
+                       ('DNS', 'linuxfr.org'),
+                       ('othername', '<unsupported>'),
+                       ('DNS', 'dev.linuxfr.org'),
+                       ('othername', '<unsupported>'),
+                       ('DNS', 'prod.linuxfr.org'),
+                       ('othername', '<unsupported>'),
+                       ('DNS', 'alpha.linuxfr.org'),
+                       ('othername', '<unsupported>'),
+                       ('DNS', '*.linuxfr.org'),
+                       ('othername', '<unsupported>')),
+    'version': 3}
 
 Now that you are assured of its authenticity, you can proceed to talk with
 the server::
