@@ -356,7 +356,10 @@ def move(src, dst):
     overwritten depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
-    Otherwise, src is copied to the destination and then removed.
+    Otherwise, src is copied to the destination and then removed. Symlinks are
+    recreated under the new name if os.rename() fails because of cross
+    filesystem renames.
+
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
 
@@ -375,7 +378,11 @@ def move(src, dst):
     try:
         os.rename(src, real_dst)
     except OSError:
-        if os.path.isdir(src):
+        if os.path.islink(src):
+            linkto = os.readlink(src)
+            os.symlink(linkto, real_dst)
+            os.unlink(src)
+        elif os.path.isdir(src):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself '%s'." % (src, dst))
             copytree(src, real_dst, symlinks=True)
