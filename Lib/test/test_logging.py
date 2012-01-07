@@ -3625,23 +3625,24 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(m2)
         fn = namer(self.fn + ".1")
         self.assertLogFile(fn)
+        newline = os.linesep
         with open(fn, "rb") as f:
             compressed = f.read()
             data = zlib.decompress(compressed)
-            self.assertEqual(data.decode("ascii"), m1.msg + "\n")
+            self.assertEqual(data.decode("ascii"), m1.msg + newline)
         rh.emit(self.next_rec())
         fn = namer(self.fn + ".2")
         self.assertLogFile(fn)
         with open(fn, "rb") as f:
             compressed = f.read()
             data = zlib.decompress(compressed)
-            self.assertEqual(data.decode("ascii"), m1.msg + "\n")
+            self.assertEqual(data.decode("ascii"), m1.msg + newline)
         rh.emit(self.next_rec())
         fn = namer(self.fn + ".2")
         with open(fn, "rb") as f:
             compressed = f.read()
             data = zlib.decompress(compressed)
-            self.assertEqual(data.decode("ascii"), m2.msg + "\n")
+            self.assertEqual(data.decode("ascii"), m2.msg + newline)
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
