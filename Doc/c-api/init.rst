@@ -31,7 +31,7 @@ Initializing and finalizing the interpreter
 
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
-   exception of :cfunc:`Py_SetProgramName`, :cfunc:`PyEval_InitThreads`,
+   exception of :cfunc:`Py_SetProgramName`, :cfunc:`Py_SetPythonHome`, :cfunc:`PyEval_InitThreads`,
    :cfunc:`PyEval_ReleaseLock`, and :cfunc:`PyEval_AcquireLock`. This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`__builtin__`, :mod:`__main__` and :mod:`sys`.  It also initializes
