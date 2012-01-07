@@ -418,9 +418,10 @@ class _Event(_Verbose):
     def wait(self, timeout=None):
         self._cond.acquire()
         try:
-            if not self._flag:
-                self._cond.wait(timeout)
-            return self._flag
+            signaled = self._flag
+            if not signaled:
+                signaled = self._cond.wait(timeout)
+            return signaled
         finally:
             self._cond.release()
 
