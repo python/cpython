@@ -746,7 +746,8 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv()
 
       Return an object sent from the other end of the connection using
-      :meth:`send`.  Raises :exc:`EOFError` if there is nothing left to receive
+      :meth:`send`.  Blocks until there its something to receive.  Raises
+      :exc:`EOFError` if there is nothing left to receive
       and the other end was closed.
 
    .. method:: fileno()
@@ -780,7 +781,8 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv_bytes([maxlength])
 
       Return a complete message of byte data sent from the other end of the
-      connection as a string.  Raises :exc:`EOFError` if there is nothing left
+      connection as a string.  Blocks until there is something to receive.
+      Raises :exc:`EOFError` if there is nothing left
       to receive and the other end has closed.
 
       If *maxlength* is specified and the message is longer than *maxlength*
@@ -795,7 +797,8 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv_bytes_into(buffer[, offset])
 
       Read into *buffer* a complete message of byte data sent from the other end
-      of the connection and return the number of bytes in the message.  Raises
+      of the connection and return the number of bytes in the message.  Blocks
+      until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive and the other end was
       closed.
 
