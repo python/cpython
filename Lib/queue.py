@@ -26,17 +26,21 @@ class Queue:
     def __init__(self, maxsize=0):
         self.maxsize = maxsize
         self._init(maxsize)
+
         # mutex must be held whenever the queue is mutating.  All methods
         # that acquire mutex must release it before returning.  mutex
         # is shared between the three conditions, so acquiring and
         # releasing the conditions also acquires and releases mutex.
         self.mutex = _threading.Lock()
+
         # Notify not_empty whenever an item is added to the queue; a
         # thread waiting to get is notified then.
         self.not_empty = _threading.Condition(self.mutex)
+
         # Notify not_full whenever an item is removed from the queue;
         # a thread waiting to put is notified then.
         self.not_full = _threading.Condition(self.mutex)
+
         # Notify all_tasks_done whenever the number of unfinished tasks
         # drops to zero; thread waiting to join() is notified to resume
         self.all_tasks_done = _threading.Condition(self.mutex)
@@ -56,16 +60,13 @@ class Queue:
         Raises a ValueError if called more times than there were items
         placed in the queue.
         """
-        self.all_tasks_done.acquire()
-        try:
+        with self.all_tasks_done:
             unfinished = self.unfinished_tasks - 1
             if unfinished <= 0:
                 if unfinished < 0:
                     raise ValueError('task_done() called too many times')
                 self.all_tasks_done.notify_all()
             self.unfinished_tasks = unfinished
-        finally:
-            self.all_tasks_done.release()
 
     def join(self):
         """Blocks until all items in the Queue have been gotten and processed.
@@ -76,19 +77,14 @@ class Queue:
 
         When the count of unfinished tasks drops to zero, join() unblocks.
         """
-        self.all_tasks_done.acquire()
-        try:
+        with self.all_tasks_done:
             while self.unfinished_tasks:
                 self.all_tasks_done.wait()
-        finally:
-            self.all_tasks_done.release()
 
     def qsize(self):
         """Return the approximate size of the queue (not reliable!)."""
-        self.mutex.acquire()
-        n = self._qsize()
-        self.mutex.release()
-        return n
+        with self.mutex:
+            return self._qsize()
 
     def empty(self):
         """Return True if the queue is empty, False otherwise (not reliable!).
@@ -102,10 +98,8 @@ class Queue:
         completed, the preferred technique is to use the join() method.
 
         """
-        self.mutex.acquire()
-        n = not self._qsize()
-        self.mutex.release()
-        return n
+        with self.mutex:
+            return not self._qsize()
 
     def full(self):
         """Return True if the queue is full, False otherwise (not reliable!).
@@ -116,10 +110,8 @@ class Queue:
         qsize() can be used.
 
         """
-        self.mutex.acquire()
-        n = 0 < self.maxsize <= self._qsize()
-        self.mutex.release()
-        return n
+        with self.mutex:
+            return 0 < self.maxsize <= self._qsize()
 
     def put(self, item, block=True, timeout=None):
         """Put an item into the queue.
@@ -132,8 +124,7 @@ class Queue:
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
         """
-        self.not_full.acquire()
-        try:
+        with self.not_full:
             if self.maxsize > 0:
                 if not block:
                     if self._qsize() >= self.maxsize:
@@ -153,8 +144,6 @@ class Queue:
             self._put(item)
             self.unfinished_tasks += 1
             self.not_empty.notify()
-        finally:
-            self.not_full.release()
 
     def put_nowait(self, item):
         """Put an item into the queue without blocking.
@@ -175,8 +164,7 @@ class Queue:
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
         """
-        self.not_empty.acquire()
-        try:
+        with self.not_empty:
             if not block:
                 if not self._qsize():
                     raise Empty
@@ -195,8 +183,6 @@ class Queue:
             item = self._get()
             self.not_full.notify()
             return item
-        finally:
-            self.not_empty.release()
 
     def get_nowait(self):
         """Remove and return an item from the queue without blocking.
