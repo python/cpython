@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13502: threading: Fix a race condition in Event.wait() that made it
+  return False when the event was set and cleared right after.
+
 - Issue #12926: Fix a bug in tarfile's link extraction.
 
 - Issue #13696: Fix the 302 Relative URL Redirection problem.

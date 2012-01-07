@@ -782,8 +782,10 @@ An event object manages an internal flag that can be set to true with the
       floating point number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
-      This method returns the internal flag on exit, so it will always return
-      ``True`` except if a timeout is given and the operation times out.
+      This method returns true if and only if the internal flag has been set to
+      true, either before the wait call or after the wait starts, so it will
+      always return ``True`` except if a timeout is given and the operation
+      times out.
 
       .. versionchanged:: 3.1
          Previously, the method always returned ``None``.
