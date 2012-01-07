@@ -422,6 +422,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13502: threading: Fix a race condition in Event.wait() that made it
+  return False when the event was set and cleared right after.
+
 - Issue #9993: When the source and destination are on different filesystems,
   and the source is a symlink, shutil.move() now recreates a symlink on the
   destination instead of copying the file contents.  Patch by Jonathan Niehof
