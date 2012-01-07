@@ -351,6 +351,22 @@ class EventTests(BaseTestCase):
         for r, dt in results2:
             self.assertTrue(r)
 
+    def test_set_and_clear(self):
+        # Issue #13502: check that wait() returns true even when the event is
+        # cleared before the waiting thread is woken up.
+        evt = self.eventtype()
+        results = []
+        N = 5
+        def f():
+            results.append(evt.wait(1))
+        b = Bunch(f, N)
+        b.wait_for_started()
+        time.sleep(0.5)
+        evt.set()
+        evt.clear()
+        b.wait_for_finished()
+        self.assertEqual(results, [True] * N)
+
 
 class ConditionTests(BaseTestCase):
     """
