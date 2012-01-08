@@ -109,6 +109,12 @@ class ExecutorShutdownTest(unittest.TestCase):
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
+    def test_hang_issue12364(self):
+        fs = [self.executor.submit(time.sleep, 0.1) for _ in range(50)]
+        self.executor.shutdown()
+        for f in fs:
+            f.result()
+
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest):
     def _prime_executor(self):
