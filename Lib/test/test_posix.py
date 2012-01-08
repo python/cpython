@@ -454,14 +454,22 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fdlistdir'), "test needs posix.fdlistdir()")
     def test_fdlistdir(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
+        self.addCleanup(posix.close, f)
+        f1 = posix.dup(f)
         self.assertEqual(
             sorted(posix.listdir('.')),
-            sorted(posix.fdlistdir(f))
+            sorted(posix.fdlistdir(f1))
             )
         # Check the fd was closed by fdlistdir
         with self.assertRaises(OSError) as ctx:
-            posix.close(f)
+            posix.close(f1)
         self.assertEqual(ctx.exception.errno, errno.EBADF)
+        # Check that the fd offset was reset (issue #13739)
+        f2 = posix.dup(f)
+        self.assertEqual(
+            sorted(posix.listdir('.')),
+            sorted(posix.fdlistdir(f2))
+            )
 
     def test_access(self):
         if hasattr(posix, 'access'):
