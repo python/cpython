@@ -2906,6 +2906,7 @@ posix_fdlistdir(PyObject *self, PyObject *args)
                 break;
             } else {
                 Py_BEGIN_ALLOW_THREADS
+                rewinddir(dirp);
                 closedir(dirp);
                 Py_END_ALLOW_THREADS
                 Py_DECREF(d);
@@ -2929,6 +2930,7 @@ posix_fdlistdir(PyObject *self, PyObject *args)
         Py_DECREF(v);
     }
     Py_BEGIN_ALLOW_THREADS
+    rewinddir(dirp);
     closedir(dirp);
     Py_END_ALLOW_THREADS
 
