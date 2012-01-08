@@ -422,6 +422,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12364: Fix a hang in concurrent.futures.ProcessPoolExecutor.
+  The hang would occur when retrieving the result of a scheduled future after
+  the executor had been shut down.
+
 - Issue #13502: threading: Fix a race condition in Event.wait() that made it
   return False when the event was set and cleared right after.
 
