@@ -213,9 +213,7 @@ def _queue_management_worker(executor_reference,
                 work_item.future.set_exception(result_item.exception)
             else:
                 work_item.future.set_result(result_item.result)
-            continue
-        # If we come here, we either got a timeout or were explicitly woken up.
-        # In either case, check whether we should start shutting down.
+        # Check whether we should start shutting down.
         executor = executor_reference()
         # No more work items can be added if:
         #   - The interpreter is shutting down OR
@@ -234,9 +232,6 @@ def _queue_management_worker(executor_reference,
                     p.join()
                 call_queue.close()
                 return
-            else:
-                # Start shutting down by telling a process it can exit.
-                shutdown_one_process()
         del executor
 
 _system_limits_checked = False
