@@ -273,9 +273,6 @@ def _queue_management_worker(executor_reference,
                 if not pending_work_items:
                     shutdown_worker()
                     return
-                else:
-                    # Start shutting down by telling a process it can exit.
-                    call_queue.put_nowait(None)
             except Full:
                 # This is not a problem: we will eventually be woken up (in
                 # result_queue.get()) and be able to send a sentinel again.
