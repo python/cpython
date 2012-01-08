@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13738: Simplify implementation of bytes.lower() and bytes.upper().
+
 - Issue #13577: Built-in methods and functions now have a __qualname__.
   Patch by sbt.
 

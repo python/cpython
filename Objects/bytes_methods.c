@@ -248,12 +248,8 @@ _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len)
 {
     Py_ssize_t i;
 
-    Py_MEMCPY(result, cptr, len);
-
     for (i = 0; i < len; i++) {
-        int c = Py_CHARMASK(result[i]);
-        if (Py_ISUPPER(c))
-            result[i] = Py_TOLOWER(c);
+        result[i] = Py_TOLOWER((unsigned char) cptr[i]);
     }
 }
 
@@ -268,12 +264,8 @@ _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 {
     Py_ssize_t i;
 
-    Py_MEMCPY(result, cptr, len);
-
     for (i = 0; i < len; i++) {
-        int c = Py_CHARMASK(result[i]);
-        if (Py_ISLOWER(c))
-            result[i] = Py_TOUPPER(c);
+        result[i] = Py_TOUPPER((unsigned char) cptr[i]);
     }
 }
 
