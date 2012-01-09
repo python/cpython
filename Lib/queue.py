@@ -3,7 +3,7 @@
 try:
     import threading
 except ImportError:
-    import dummythreading as threading
+    import dummy_threading as threading
 from collections import deque
 from heapq import heappush, heappop
 from time import time
