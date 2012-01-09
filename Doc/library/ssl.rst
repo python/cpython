@@ -103,9 +103,8 @@ Functions, Constants, and Exceptions
    The parameter ``ssl_version`` specifies which version of the SSL protocol to
    use.  Typically, the server chooses a particular protocol version, and the
    client must adapt to the server's choice.  Most of the versions are not
-   interoperable with the other versions.  If not specified, for client-side
-   operation, the default SSL version is SSLv3; for server-side operation,
-   SSLv23.  These version selections provide the most compatibility with other
+   interoperable with the other versions.  If not specified, the default is
+   :data:`PROTOCOL_SSLv23`; it provides the most compatibility with other
    versions.
 
    Here's a table showing which versions in a client (down the side) can connect
