@@ -461,6 +461,10 @@ class TestFTPClass(TestCase):
         self.client.close()
         self.server.stop()
 
+    def check_data(self, received, expected):
+        self.assertEqual(len(received), len(expected))
+        self.assertEqual(received, expected)
+
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(), '220 welcome')
 
@@ -542,7 +546,7 @@ class TestFTPClass(TestCase):
             received.append(data.decode('ascii'))
         received = []
         self.client.retrbinary('retr', callback)
-        self.assertEqual(''.join(received), RETR_DATA)
+        self.check_data(''.join(received), RETR_DATA)
 
     def test_retrbinary_rest(self):
         def callback(data):
@@ -550,20 +554,17 @@ class TestFTPClass(TestCase):
         for rest in (0, 10, 20):
             received = []
             self.client.retrbinary('retr', callback, rest=rest)
-            self.assertEqual(''.join(received), RETR_DATA[rest:],
-                             msg='rest test case %d %d %d' % (rest,
-                                                              len(''.join(received)),
-                                                              len(RETR_DATA[rest:])))
+            self.check_data(''.join(received), RETR_DATA[rest:])
 
     def test_retrlines(self):
         received = []
         self.client.retrlines('retr', received.append)
-        self.assertEqual(''.join(received), RETR_DATA.replace('\r\n', ''))
+        self.check_data(''.join(received), RETR_DATA.replace('\r\n', ''))
 
     def test_storbinary(self):
         f = io.BytesIO(RETR_DATA.encode('ascii'))
         self.client.storbinary('stor', f)
-        self.assertEqual(self.server.handler_instance.last_received_data, RETR_DATA)
+        self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
         # test new callback arg
         flag = []
         f.seek(0)
@@ -580,7 +581,7 @@ class TestFTPClass(TestCase):
     def test_storlines(self):
         f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('ascii'))
         self.client.storlines('stor', f)
-        self.assertEqual(self.server.handler_instance.last_received_data, RETR_DATA)
+        self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
         # test new callback arg
         flag = []
         f.seek(0)
@@ -781,6 +782,7 @@ class TestIPv6Environment(TestCase):
                 received.append(data.decode('ascii'))
             received = []
             self.client.retrbinary('retr', callback)
+            self.assertEqual(len(''.join(received)), len(RETR_DATA))
             self.assertEqual(''.join(received), RETR_DATA)
         self.client.set_pasv(True)
         retr()
