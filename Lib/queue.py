@@ -1,12 +1,12 @@
 """A multi-producer, multi-consumer queue."""
 
-from time import time as _time
 try:
-    import threading as _threading
+    import threading
 except ImportError:
-    import dummy_threading as _threading
+    import dummythreading as threading
 from collections import deque
-import heapq
+from heapq import heappush, heappop
+from time import time
 
 __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
 
@@ -31,19 +31,19 @@ class Queue:
         # that acquire mutex must release it before returning.  mutex
         # is shared between the three conditions, so acquiring and
         # releasing the conditions also acquires and releases mutex.
-        self.mutex = _threading.Lock()
+        self.mutex = threading.Lock()
 
         # Notify not_empty whenever an item is added to the queue; a
         # thread waiting to get is notified then.
-        self.not_empty = _threading.Condition(self.mutex)
+        self.not_empty = threading.Condition(self.mutex)
 
         # Notify not_full whenever an item is removed from the queue;
         # a thread waiting to put is notified then.
-        self.not_full = _threading.Condition(self.mutex)
+        self.not_full = threading.Condition(self.mutex)
 
         # Notify all_tasks_done whenever the number of unfinished tasks
         # drops to zero; thread waiting to join() is notified to resume
-        self.all_tasks_done = _threading.Condition(self.mutex)
+        self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
 
     def task_done(self):
@@ -135,9 +135,9 @@ class Queue:
                 elif timeout < 0:
                     raise ValueError("'timeout' must be a positive number")
                 else:
-                    endtime = _time() + timeout
+                    endtime = time() + timeout
                     while self._qsize() >= self.maxsize:
-                        remaining = endtime - _time()
+                        remaining = endtime - time()
                         if remaining <= 0.0:
                             raise Full
                         self.not_full.wait(remaining)
@@ -174,9 +174,9 @@ class Queue:
             elif timeout < 0:
                 raise ValueError("'timeout' must be a positive number")
             else:
-                endtime = _time() + timeout
+                endtime = time() + timeout
                 while not self._qsize():
-                    remaining = endtime - _time()
+                    remaining = endtime - time()
                     if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
@@ -200,7 +200,7 @@ class Queue:
     def _init(self, maxsize):
         self.queue = deque()
 
-    def _qsize(self, len=len):
+    def _qsize(self):
         return len(self.queue)
 
     # Put a new item in the queue
@@ -221,13 +221,13 @@ class PriorityQueue(Queue):
     def _init(self, maxsize):
         self.queue = []
 
-    def _qsize(self, len=len):
+    def _qsize(self):
         return len(self.queue)
 
-    def _put(self, item, heappush=heapq.heappush):
+    def _put(self, item):
         heappush(self.queue, item)
 
-    def _get(self, heappop=heapq.heappop):
+    def _get(self):
         return heappop(self.queue)
 
 
@@ -237,7 +237,7 @@ class LifoQueue(Queue):
     def _init(self, maxsize):
         self.queue = []
 
-    def _qsize(self, len=len):
+    def _qsize(self):
         return len(self.queue)
 
     def _put(self, item):
