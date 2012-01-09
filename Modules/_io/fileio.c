@@ -46,6 +46,7 @@
 typedef struct {
     PyObject_HEAD
     int fd;
+    unsigned int created : 1;
     unsigned int readable : 1;
     unsigned int writable : 1;
     signed int seekable : 2; /* -1 means unknown */
@@ -152,6 +153,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (fileio *) type->tp_alloc(type, 0);
     if (self != NULL) {
         self->fd = -1;
+        self->created = 0;
         self->readable = 0;
         self->writable = 0;
         self->seekable = -1;
@@ -290,14 +292,22 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     s = mode;
     while (*s) {
         switch (*s++) {
-        case 'r':
+        case 'x':
             if (rwa) {
             bad_mode:
                 PyErr_SetString(PyExc_ValueError,
-                                "Must have exactly one of read/write/append "
+                                "Must have exactly one of create/read/write/append "
                                 "mode and at most one plus");
                 goto error;
             }
+            rwa = 1;
+            self->created = 1;
+            self->writable = 1;
+            flags |= O_EXCL | O_CREAT;
+            break;
+        case 'r':
+            if (rwa)
+                goto bad_mode;
             rwa = 1;
             self->readable = 1;
             break;
@@ -988,6 +998,12 @@ fileio_truncate(fileio *self, PyObject *args)
 static char *
 mode_string(fileio *self)
 {
+    if (self->created) {
+        if (self->readable)
+            return "xb+";
+        else
+            return "xb";
+    }
     if (self->readable) {
         if (self->writable)
             return "rb+";
@@ -1049,15 +1065,17 @@ fileio_getstate(fileio *self)
 PyDoc_STRVAR(fileio_doc,
 "file(name: str[, mode: str][, opener: None]) -> file IO object\n"
 "\n"
-"Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n"
-"writing or appending.  The file will be created if it doesn't exist\n"
-"when opened for writing or appending; it will be truncated when\n"
-"opened for writing.  Add a '+' to the mode to allow simultaneous\n"
-"reading and writing. A custom opener can be used by passing a\n"
-"callable as *opener*. The underlying file descriptor for the file\n"
+"Open a file.  The mode can be 'r', 'w', 'x' or 'a' for reading (default),\n"
+"writing, creating or appending.  The file will be created if it doesn't\n"
+"exist when opened for writing or appending; it will be truncated when\n"
+"opened for writing.  A `FileExistsError` will be raised if it already\n"
+"exists when opened for creating. Opening a file for creating implies\n"
+"writing so this mode behaves in a similar way to 'w'.Add a '+' to the mode\n"
+"to allow simultaneous reading and writing. A custom opener can be used by\n"
+"passing a callable as *opener*. The underlying file descriptor for the file\n"
 "object is then obtained by calling opener with (*name*, *flags*).\n"
-"*opener* must return an open file descriptor (passing os.open as\n"
-"*opener* results in functionality similar to passing None).");
+"*opener* must return an open file descriptor (passing os.open as *opener*\n"
+"results in functionality similar to passing None).");
 
 PyDoc_STRVAR(read_doc,
 "read(size: int) -> bytes.  read at most size bytes, returned as bytes.\n"

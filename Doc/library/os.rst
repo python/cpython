@@ -591,7 +591,8 @@ These functions create new :term:`file objects <file object>`. (See also :func:`
    the built-in :func:`open` function.
 
    When specified, the *mode* argument must start with one of the letters
-   ``'r'``, ``'w'``, or ``'a'``, otherwise a :exc:`ValueError` is raised.
+   ``'r'``, ``'w'``, ``'x'`` or ``'a'``, otherwise a :exc:`ValueError` is
+   raised.
 
    On Unix, when the *mode* argument starts with ``'a'``, the *O_APPEND* flag is
    set on the file descriptor (which the :c:func:`fdopen` implementation already
@@ -599,6 +600,8 @@ These functions create new :term:`file objects <file object>`. (See also :func:`
 
    Availability: Unix, Windows.
 
+   .. versionchanged:: 3.3
+      The ``'x'`` mode was added.
 
 .. _os-fd-ops:
 
