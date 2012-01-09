@@ -408,6 +408,15 @@ parameter to control parameters of the secure channel.
 (Contributed by Sijin Joseph in :issue:`8808`)
 
 
+io
+--
+
+The :func:`~io.open` function has a new ``'x'`` mode that can be used to create
+a new file, and raise a :exc:`FileExistsError` if the file already exists.
+
+(Contributed by David Townshend in :issue:`12760`)
+
+
 lzma
 ----
 

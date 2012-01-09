@@ -108,18 +108,19 @@ PyDoc_STRVAR(open_doc,
 "mode is an optional string that specifies the mode in which the file\n"
 "is opened. It defaults to 'r' which means open for reading in text\n"
 "mode.  Other common values are 'w' for writing (truncating the file if\n"
-"it already exists), and 'a' for appending (which on some Unix systems,\n"
-"means that all writes append to the end of the file regardless of the\n"
-"current seek position). In text mode, if encoding is not specified the\n"
-"encoding used is platform dependent. (For reading and writing raw\n"
-"bytes use binary mode and leave encoding unspecified.) The available\n"
-"modes are:\n"
+"it already exists), 'x' for creating and writing to a new file, and\n"
+"'a' for appending (which on some Unix systems, means that all writes\n"
+"append to the end of the file regardless of the current seek position).\n"
+"In text mode, if encoding is not specified the encoding used is platform\n"
+"dependent. (For reading and writing raw bytes use binary mode and leave\n"
+"encoding unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
 "--------- ---------------------------------------------------------------\n"
 "'r'       open for reading (default)\n"
 "'w'       open for writing, truncating the file first\n"
+"'x'       create a new file and open it for writing\n"
 "'a'       open for writing, appending to the end of the file if it exists\n"
 "'b'       binary mode\n"
 "'t'       text mode (default)\n"
@@ -130,7 +131,8 @@ PyDoc_STRVAR(open_doc,
 "\n"
 "The default mode is 'rt' (open for reading text). For binary random\n"
 "access, the mode 'w+b' opens and truncates the file to 0 bytes, while\n"
-"'r+b' opens the file without truncation.\n"
+"'r+b' opens the file without truncation. The 'x' mode implies 'w' and\n"
+"raises an `FileExistsError` if the file already exists.\n"
 "\n"
 "Python distinguishes between files opened in binary and text modes,\n"
 "even when the underlying operating system doesn't. Files opened in\n"
@@ -223,7 +225,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     char *encoding = NULL, *errors = NULL, *newline = NULL;
     unsigned i;
 
-    int reading = 0, writing = 0, appending = 0, updating = 0;
+    int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
     int text = 0, binary = 0, universal = 0;
 
     char rawmode[5], *m;
@@ -254,6 +256,9 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         char c = mode[i];
 
         switch (c) {
+        case 'x':
+            creating = 1;
+            break;
         case 'r':
             reading = 1;
             break;
@@ -290,6 +295,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     m = rawmode;
+    if (creating)  *(m++) = 'x';
     if (reading)   *(m++) = 'r';
     if (writing)   *(m++) = 'w';
     if (appending) *(m++) = 'a';
@@ -312,9 +318,9 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (reading + writing + appending > 1) {
+    if (creating + reading + writing + appending > 1) {
         PyErr_SetString(PyExc_ValueError,
-                        "must have exactly one of read/write/append mode");
+                        "must have exactly one of create/read/write/append mode");
         return NULL;
     }
 
@@ -408,7 +414,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
         if (updating)
             Buffered_class = (PyObject *)&PyBufferedRandom_Type;
-        else if (writing || appending)
+        else if (creating || writing || appending)
             Buffered_class = (PyObject *)&PyBufferedWriter_Type;
         else if (reading)
             Buffered_class = (PyObject *)&PyBufferedReader_Type;

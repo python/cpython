@@ -2825,6 +2825,19 @@ class MiscIOTest(unittest.TestCase):
         self.assertTrue(wf.closed)
         self.assertTrue(rf.closed)
 
+    def test_create_fail(self):
+        # 'x' mode fails if file is existing
+        with self.open(support.TESTFN, 'w'):
+            pass
+        self.assertRaises(FileExistsError, self.open, support.TESTFN, 'x')
+
+    def test_create_writes(self):
+        # 'x' mode opens for writing
+        with self.open(support.TESTFN, 'xb') as f:
+            f.write(b"spam")
+        with self.open(support.TESTFN, 'rb') as f:
+            self.assertEqual(b"spam", f.read())
+
 class CMiscIOTest(MiscIOTest):
     io = io
 

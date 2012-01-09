@@ -38,21 +38,22 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     wrapped. (If a file descriptor is given, it is closed when the
     returned I/O object is closed, unless closefd is set to False.)
 
-    mode is an optional string that specifies the mode in which the file
-    is opened. It defaults to 'r' which means open for reading in text
-    mode.  Other common values are 'w' for writing (truncating the file if
-    it already exists), and 'a' for appending (which on some Unix systems,
-    means that all writes append to the end of the file regardless of the
-    current seek position). In text mode, if encoding is not specified the
-    encoding used is platform dependent. (For reading and writing raw
-    bytes use binary mode and leave encoding unspecified.) The available
-    modes are:
+    mode is an optional string that specifies the mode in which the file is
+    opened. It defaults to 'r' which means open for reading in text mode. Other
+    common values are 'w' for writing (truncating the file if it already
+    exists), 'x' for creating and writing to a new file, and 'a' for appending
+    (which on some Unix systems, means that all writes append to the end of the
+    file regardless of the current seek position). In text mode, if encoding is
+    not specified the encoding used is platform dependent. (For reading and
+    writing raw bytes use binary mode and leave encoding unspecified.) The
+    available modes are:
 
     ========= ===============================================================
     Character Meaning
     --------- ---------------------------------------------------------------
     'r'       open for reading (default)
     'w'       open for writing, truncating the file first
+    'x'       create a new file and open it for writing
     'a'       open for writing, appending to the end of the file if it exists
     'b'       binary mode
     't'       text mode (default)
@@ -63,7 +64,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
 
     The default mode is 'rt' (open for reading text). For binary random
     access, the mode 'w+b' opens and truncates the file to 0 bytes, while
-    'r+b' opens the file without truncation.
+    'r+b' opens the file without truncation. The 'x' mode implies 'w' and
+    raises an `FileExistsError` if the file already exists.
 
     Python distinguishes between files opened in binary and text modes,
     even when the underlying operating system doesn't. Files opened in
@@ -154,8 +156,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if errors is not None and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
-    if modes - set("arwb+tU") or len(mode) > len(modes):
+    if modes - set("axrwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
+    creating = "x" in modes
     reading = "r" in modes
     writing = "w" in modes
     appending = "a" in modes
@@ -163,14 +166,14 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     text = "t" in modes
     binary = "b" in modes
     if "U" in modes:
-        if writing or appending:
+        if creating or writing or appending:
             raise ValueError("can't use U and writing mode at once")
         reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
-    if reading + writing + appending > 1:
+    if creating + reading + writing + appending > 1:
         raise ValueError("can't have read/write/append mode at once")
-    if not (reading or writing or appending):
+    if not (creating or reading or writing or appending):
         raise ValueError("must have exactly one of read/write/append mode")
     if binary and encoding is not None:
         raise ValueError("binary mode doesn't take an encoding argument")
@@ -179,6 +182,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
     raw = FileIO(file,
+                 (creating and "x" or "") +
                  (reading and "r" or "") +
                  (writing and "w" or "") +
                  (appending and "a" or "") +
@@ -205,7 +209,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("can't have unbuffered text I/O")
     if updating:
         buffer = BufferedRandom(raw, buffering)
-    elif writing or appending:
+    elif creating or writing or appending:
         buffer = BufferedWriter(raw, buffering)
     elif reading:
         buffer = BufferedReader(raw, buffering)
