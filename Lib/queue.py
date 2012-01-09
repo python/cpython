@@ -145,14 +145,6 @@ class Queue:
             self.unfinished_tasks += 1
             self.not_empty.notify()
 
-    def put_nowait(self, item):
-        """Put an item into the queue without blocking.
-
-        Only enqueue the item if a free slot is immediately available.
-        Otherwise raise the Full exception.
-        """
-        return self.put(item, False)
-
     def get(self, block=True, timeout=None):
         """Remove and return an item from the queue.
 
@@ -184,13 +176,21 @@ class Queue:
             self.not_full.notify()
             return item
 
+    def put_nowait(self, item):
+        """Put an item into the queue without blocking.
+
+        Only enqueue the item if a free slot is immediately available.
+        Otherwise raise the Full exception.
+        """
+        return self.put(item, block=False)
+
     def get_nowait(self):
         """Remove and return an item from the queue without blocking.
 
         Only get an item if one is immediately available. Otherwise
         raise the Empty exception.
         """
-        return self.get(False)
+        return self.get(block=False)
 
     # Override these methods to implement other queue organizations
     # (e.g. stack or priority queue).
