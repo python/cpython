@@ -27,6 +27,8 @@ import socket
 import os
 import time
 import sys
+import base64
+
 from urlparse import urljoin as basejoin
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
@@ -318,13 +320,13 @@ class URLopener:
         if not host: raise IOError, ('http error', 'no host given')
 
         if proxy_passwd:
-            import base64
+            proxy_passwd = unquote(proxy_passwd)
             proxy_auth = base64.b64encode(proxy_passwd).strip()
         else:
             proxy_auth = None
 
         if user_passwd:
-            import base64
+            user_passwd = unquote(user_passwd)
             auth = base64.b64encode(user_passwd).strip()
         else:
             auth = None
@@ -408,12 +410,12 @@ class URLopener:
                 #print "proxy via https:", host, selector
             if not host: raise IOError, ('https error', 'no host given')
             if proxy_passwd:
-                import base64
+                proxy_passwd = unquote(proxy_passwd)
                 proxy_auth = base64.b64encode(proxy_passwd).strip()
             else:
                 proxy_auth = None
             if user_passwd:
-                import base64
+                user_passwd = unquote(user_passwd)
                 auth = base64.b64encode(user_passwd).strip()
             else:
                 auth = None
@@ -589,7 +591,6 @@ class URLopener:
                                             time.gmtime(time.time())))
         msg.append('Content-type: %s' % type)
         if encoding == 'base64':
-            import base64
             data = base64.decodestring(data)
         else:
             data = unquote(data)
