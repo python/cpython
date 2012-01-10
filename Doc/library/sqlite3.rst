@@ -66,7 +66,7 @@ example::
 
    # Larger example
    for t in [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-             ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+             ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
              ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
             ]:
        c.execute('insert into stocks values (?,?,?,?,?)', t)
@@ -86,7 +86,7 @@ This example uses the iterator form::
    (u'2006-01-05', u'BUY', u'RHAT', 100, 35.14)
    (u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
    (u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
-   (u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
+   (u'2006-04-05', u'BUY', u'MSFT', 1000, 72.0)
    >>>
 
 
