@@ -274,10 +274,10 @@ Utility functions
 .. function:: getproxies()
 
    This helper function returns a dictionary of scheme to proxy server URL
-   mappings. It scans the environment for variables named ``<scheme>_proxy``
-   for all operating systems first, and when it cannot find it, looks for proxy
-   information from Mac OSX System Configuration for Mac OS X and Windows
-   Systems Registry for Windows.
+   mappings. It scans the environment for variables named ``<scheme>_proxy``,
+   in case insensitive way, for all operating systems first, and when it cannot
+   find it, looks for proxy information from Mac OSX System Configuration for
+   Mac OS X and Windows Systems Registry for Windows.
 
 
 URL Opener objects
