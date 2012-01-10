@@ -1282,8 +1282,8 @@ void _PyFaulthandler_Fini(void)
 
 #ifdef FAULTHANDLER_LATER
     /* later */
-    cancel_dump_tracebacks_later();
     if (thread.cancel_event) {
+        cancel_dump_tracebacks_later();
         PyThread_release_lock(thread.cancel_event);
         PyThread_free_lock(thread.cancel_event);
         thread.cancel_event = NULL;
@@ -1296,8 +1296,8 @@ void _PyFaulthandler_Fini(void)
 
 #ifdef FAULTHANDLER_WATCHDOG
     /* file watchdog */
-    cancel_file_watchdog();
     if (watchdog.cancel_event) {
+        cancel_file_watchdog();
         PyThread_release_lock(watchdog.cancel_event);
         PyThread_free_lock(watchdog.cancel_event);
         watchdog.cancel_event = NULL;
