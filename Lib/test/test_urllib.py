@@ -3,12 +3,15 @@
 import urllib
 import httplib
 import unittest
-from test import test_support
 import os
 import sys
 import mimetools
 import tempfile
 import StringIO
+
+from test import test_support
+from base64 import b64encode
+
 
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""
@@ -22,8 +25,9 @@ class FakeHTTPMixin(object):
     def fakehttp(self, fakedata):
         class FakeSocket(StringIO.StringIO):
 
-            def sendall(self, str):
-                pass
+            def sendall(self, data):
+                FakeHTTPConnection.buf = data
+
             def makefile(self, *args, **kwds):
                 return self
 
@@ -38,9 +42,15 @@ class FakeHTTPMixin(object):
                 return StringIO.StringIO.readline(self, length)
 
         class FakeHTTPConnection(httplib.HTTPConnection):
+
+            # buffer to store data for verification in urlopen tests.
+            buf = ""
+
             def connect(self):
                 self.sock = FakeSocket(fakedata)
+
         assert httplib.HTTP._connection_class == httplib.HTTPConnection
+
         httplib.HTTP._connection_class = FakeHTTPConnection
 
     def unfakehttp(self):
@@ -208,6 +218,41 @@ Content-Type: text/html; charset=iso-8859-1
             self.assertRaises(IOError, urllib.urlopen, 'http://something')
         finally:
             self.unfakehttp()
+
+    def test_userpass_inurl(self):
+        self.fakehttp('Hello!')
+        try:
+            fakehttp_wrapper = httplib.HTTP._connection_class
+            fp = urllib.urlopen("http://user:pass@python.org/")
+            authorization = ("Authorization: Basic %s\r\n" %
+                            b64encode('user:pass'))
+            # The authorization header must be in place
+            self.assertIn(authorization, fakehttp_wrapper.buf)
+            self.assertEqual(fp.readline(), "Hello!")
+            self.assertEqual(fp.readline(), "")
+            self.assertEqual(fp.geturl(), 'http://user:pass@python.org/')
+            self.assertEqual(fp.getcode(), 200)
+        finally:
+            self.unfakehttp()
+
+    def test_userpass_with_spaces_inurl(self):
+        self.fakehttp('Hello!')
+        try:
+            url = "http://a b:c d@python.org/"
+            fakehttp_wrapper = httplib.HTTP._connection_class
+            authorization = ("Authorization: Basic %s\r\n" %
+                             b64encode('a b:c d'))
+            fp = urllib.urlopen(url)
+            # The authorization header must be in place
+            self.assertIn(authorization, fakehttp_wrapper.buf)
+            self.assertEqual(fp.readline(), "Hello!")
+            self.assertEqual(fp.readline(), "")
+            # the spaces are quoted in URL so no match
+            self.assertNotEqual(fp.geturl(), url)
+            self.assertEqual(fp.getcode(), 200)
+        finally:
+            self.unfakehttp()
+
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
@@ -716,6 +761,9 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user', 'a\fb'),urllib.splitpasswd('user:a\fb'))
         self.assertEqual(('user', 'a\vb'),urllib.splitpasswd('user:a\vb'))
         self.assertEqual(('user', 'a:b'),urllib.splitpasswd('user:a:b'))
+        self.assertEqual(('user', 'a b'),urllib.splitpasswd('user:a b'))
+        self.assertEqual(('user 2', 'ab'),urllib.splitpasswd('user 2:ab'))
+        self.assertEqual(('user+1', 'a+b'),urllib.splitpasswd('user+1:a+b'))
 
 
 class URLopener_Tests(unittest.TestCase):
