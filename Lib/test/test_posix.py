@@ -455,20 +455,14 @@ class PosixTester(unittest.TestCase):
     def test_fdlistdir(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         self.addCleanup(posix.close, f)
-        f1 = posix.dup(f)
         self.assertEqual(
             sorted(posix.listdir('.')),
-            sorted(posix.fdlistdir(f1))
+            sorted(posix.fdlistdir(f))
             )
-        # Check the fd was closed by fdlistdir
-        with self.assertRaises(OSError) as ctx:
-            posix.close(f1)
-        self.assertEqual(ctx.exception.errno, errno.EBADF)
         # Check that the fd offset was reset (issue #13739)
-        f2 = posix.dup(f)
         self.assertEqual(
             sorted(posix.listdir('.')),
-            sorted(posix.fdlistdir(f2))
+            sorted(posix.fdlistdir(f))
             )
 
     def test_access(self):
