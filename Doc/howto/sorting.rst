@@ -276,11 +276,15 @@ Odd and Ends
     >>> data = [('red', 1), ('blue', 1), ('red', 2), ('blue', 2)]
     >>> assert sorted(data, reverse=True) == list(reversed(sorted(reversed(data))))
 
-* The sort routines are guaranteed to use :meth:`__lt__` when making comparisons
-  between two objects. So, it is easy to add a standard sort order to a class by
-  defining an :meth:`__lt__` method::
+* To create a standard sort order for a class, just add the appropriate rich
+  comparison methods:
 
+    >>> Student.__eq__ = lambda self, other: self.age == other.age
+    >>> Student.__ne__ = lambda self, other: self.age != other.age
     >>> Student.__lt__ = lambda self, other: self.age < other.age
+    >>> Student.__le__ = lambda self, other: self.age <= other.age
+    >>> Student.__gt__ = lambda self, other: self.age > other.age
+    >>> Student.__ge__ = lambda self, other: self.age >= other.age
     >>> sorted(student_objects)
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
