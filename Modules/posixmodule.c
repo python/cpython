@@ -2869,8 +2869,7 @@ posix_listdir(PyObject *self, PyObject *args)
 #ifdef HAVE_FDOPENDIR
 PyDoc_STRVAR(posix_fdlistdir__doc__,
 "fdlistdir(fd) -> list_of_strings\n\n\
-Like listdir(), but uses a file descriptor instead.\n\
-After succesful execution of this function, fd will be closed.");
+Like listdir(), but uses a file descriptor instead.");
 
 static PyObject *
 posix_fdlistdir(PyObject *self, PyObject *args)
@@ -2883,6 +2882,10 @@ posix_fdlistdir(PyObject *self, PyObject *args)
     errno = 0;
     if (!PyArg_ParseTuple(args, "i:fdlistdir", &fd))
         return NULL;
+    /* closedir() closes the FD, so we duplicate it */
+    fd = dup(fd);
+    if (fd < 0)
+        return posix_error();
     Py_BEGIN_ALLOW_THREADS
     dirp = fdopendir(fd);
     Py_END_ALLOW_THREADS

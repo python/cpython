@@ -772,7 +772,7 @@ as internal buffering of data.
 .. function:: fdlistdir(fd)
 
    Like :func:`listdir`, but uses a file descriptor instead and always returns
-   strings.  After execution of this function, *fd* will be closed.
+   strings.
 
    Availability: Unix.
 
