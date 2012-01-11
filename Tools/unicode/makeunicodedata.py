@@ -22,6 +22,7 @@
 # 2006-03-10 mvl  update to Unicode 4.1; add UCD 3.2 delta
 # 2008-06-11 gb   add PRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
 # 2011-10-21 ezio add support for name aliases and named sequences
+# 2012-01    benjamin add full case mappings
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -47,6 +48,7 @@ DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
 LINE_BREAK = "LineBreak%s.txt"
 NAME_ALIASES = "NameAliases%s.txt"
 NAMED_SEQUENCES = "NamedSequences%s.txt"
+SPECIAL_CASING = "SpecialCasing%s.txt"
 
 # Private Use Areas -- in planes 1, 15, 16
 PUA_1 = range(0xE000, 0xF900)
@@ -84,8 +86,10 @@ UPPER_MASK = 0x80
 XID_START_MASK = 0x100
 XID_CONTINUE_MASK = 0x200
 PRINTABLE_MASK = 0x400
-NODELTA_MASK = 0x800
-NUMERIC_MASK = 0x1000
+NUMERIC_MASK = 0x800
+CASE_IGNORABLE_MASK = 0x1000
+CASED_MASK = 0x2000
+EXTENDED_CASE_MASK = 0x4000
 
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
@@ -384,6 +388,7 @@ def makeunicodetype(unicode, trace):
     numeric = {}
     spaces = []
     linebreaks = []
+    extra_casing = []
 
     for char in unicode.chars:
         record = unicode.table[char]
@@ -396,7 +401,7 @@ def makeunicodetype(unicode, trace):
             delta = True
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
                 flags |= ALPHA_MASK
-            if category == "Ll":
+            if "Lowercase" in properties:
                 flags |= LOWER_MASK
             if 'Line_Break' in properties or bidirectional == "B":
                 flags |= LINEBREAK_MASK
@@ -406,7 +411,7 @@ def makeunicodetype(unicode, trace):
                 spaces.append(char)
             if category == "Lt":
                 flags |= TITLE_MASK
-            if category == "Lu":
+            if "Uppercase" in properties:
                 flags |= UPPER_MASK
             if char == ord(" ") or category[0] not in ("C", "Z"):
                 flags |= PRINTABLE_MASK
@@ -414,35 +419,41 @@ def makeunicodetype(unicode, trace):
                 flags |= XID_START_MASK
             if "XID_Continue" in properties:
                 flags |= XID_CONTINUE_MASK
-            # use delta predictor for upper/lower/title if it fits
-            if record[12]:
-                upper = int(record[12], 16)
+            if "Cased" in properties:
+                flags |= CASED_MASK
+            if "Case_Ignorable" in properties:
+                flags |= CASE_IGNORABLE_MASK
+            sc = unicode.special_casing.get(char)
+            if sc is None:
+                if record[12]:
+                    upper = int(record[12], 16)
+                else:
+                    upper = char
+                if record[13]:
+                    lower = int(record[13], 16)
+                else:
+                    lower = char
+                if record[14]:
+                    title = int(record[14], 16)
+                else:
+                    title = upper
+                if upper == lower == title:
+                    upper = lower = title = 0
             else:
-                upper = char
-            if record[13]:
-                lower = int(record[13], 16)
-            else:
-                lower = char
-            if record[14]:
-                title = int(record[14], 16)
-            else:
-                # UCD.html says that a missing title char means that
-                # it defaults to the uppercase character, not to the
-                # character itself. Apparently, in the current UCD (5.x)
-                # this feature is never used
-                title = upper
-            upper_d = upper - char
-            lower_d = lower - char
-            title_d = title - char
-            if -32768 <= upper_d <= 32767 and \
-               -32768 <= lower_d <= 32767 and \
-               -32768 <= title_d <= 32767:
-                # use deltas
-                upper = upper_d & 0xffff
-                lower = lower_d & 0xffff
-                title = title_d & 0xffff
-            else:
-                flags |= NODELTA_MASK
+                # This happens when some character maps to more than one
+                # character in uppercase, lowercase, or titlecase. The extra
+                # characters are stored in a different array.
+                flags |= EXTENDED_CASE_MASK
+                lower = len(extra_casing) | (len(sc[0]) << 24)
+                extra_casing.extend(sc[0])
+                upper = len(extra_casing) | (len(sc[2]) << 24)
+                extra_casing.extend(sc[2])
+                # Title is probably equal to upper.
+                if sc[1] == sc[2]:
+                    title = upper
+                else:
+                    title = len(extra_casing) | (len(sc[1]) << 24)
+                    extra_casing.extend(sc[1])
             # decimal digit, integer digit
             decimal = 0
             if record[6]:
@@ -469,6 +480,7 @@ def makeunicodetype(unicode, trace):
     print(sum(map(len, numeric.values())), "numeric code points")
     print(len(spaces), "whitespace code points")
     print(len(linebreaks), "linebreak code points")
+    print(len(extra_casing), "extended case array")
 
     print("--- Writing", FILE, "...")
 
@@ -479,6 +491,14 @@ def makeunicodetype(unicode, trace):
     print("const _PyUnicode_TypeRecord _PyUnicode_TypeRecords[] = {", file=fp)
     for item in table:
         print("    {%d, %d, %d, %d, %d, %d}," % item, file=fp)
+    print("};", file=fp)
+    print(file=fp)
+
+    print("/* extended case mappings */", file=fp)
+    print(file=fp)
+    print("const Py_UCS4 _PyUnicode_ExtendedCase[] = {", file=fp)
+    for c in extra_casing:
+        print("    %d," % c, file=fp)
     print("};", file=fp)
     print(file=fp)
 
@@ -1070,6 +1090,23 @@ class UnicodeData:
             # Patch the numeric field
             if table[i] is not None:
                 table[i][8] = value
+        sc = self.special_casing = {}
+        with open_data(SPECIAL_CASING, version) as file:
+            for s in file:
+                s = s[:-1].split('#', 1)[0]
+                if not s:
+                    continue
+                data = s.split("; ")
+                if data[4]:
+                    # We ignore all conditionals (since they depend on
+                    # languages) except for one, which is hardcoded. See
+                    # handle_capital_sigma in unicodeobject.c.
+                    continue
+                c = int(data[0], 16)
+                lower = [int(char, 16) for char in data[1].split()]
+                title = [int(char, 16) for char in data[2].split()]
+                upper = [int(char, 16) for char in data[3].split()]
+                sc[c] = (lower, title, upper)
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
