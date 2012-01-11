@@ -458,8 +458,8 @@ argument::
            self.add(x)
 
 Methods may reference global names in the same way as ordinary functions.  The
-global scope associated with a method is the module containing the class
-definition.  (The class itself is never used as a global scope.)  While one
+global scope associated with a method is the module containing its
+definition.  (A class is never used as a global scope.)  While one
 rarely encounters a good reason for using global data in a method, there are
 many legitimate uses of the global scope: for one thing, functions and modules
 imported into the global scope can be used by methods, as well as functions and
