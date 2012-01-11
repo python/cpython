@@ -1049,7 +1049,7 @@ string functions based on regular expressions.
 
    Return the string left justified in a string of length *width*. Padding is done
    using the specified *fillchar* (default is a space).  The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
    .. versionchanged:: 2.4
       Support for the *fillchar* argument.
@@ -1113,7 +1113,7 @@ string functions based on regular expressions.
 
    Return the string right justified in a string of length *width*. Padding is done
    using the specified *fillchar* (default is a space). The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
    .. versionchanged:: 2.4
       Support for the *fillchar* argument.
@@ -1293,7 +1293,7 @@ string functions based on regular expressions.
 
    Return the numeric string left filled with zeros in a string of length
    *width*.  A sign prefix is handled correctly.  The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
 
    .. versionadded:: 2.2.2
