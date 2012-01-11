@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12736: Use full unicode case mappings for upper, lower, and title case.
+
 - Issue #12760: Add a create mode to open(). Patch by David Townshend.
 
 - Issue #13738: Simplify implementation of bytes.lower() and bytes.upper().

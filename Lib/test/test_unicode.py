@@ -369,6 +369,8 @@ class UnicodeTest(string_tests.CommonTest,
     def test_islower(self):
         string_tests.MixinStrUnicodeUserStringTest.test_islower(self)
         self.checkequalnofix(False, '\u1FFc', 'islower')
+        self.assertFalse('\u2167'.islower())
+        self.assertTrue('\u2177'.islower())
         # non-BMP, uppercase
         self.assertFalse('\U00010401'.islower())
         self.assertFalse('\U00010427'.islower())
@@ -383,6 +385,8 @@ class UnicodeTest(string_tests.CommonTest,
         string_tests.MixinStrUnicodeUserStringTest.test_isupper(self)
         if not sys.platform.startswith('java'):
             self.checkequalnofix(False, '\u1FFc', 'isupper')
+        self.assertTrue('\u2167'.isupper())
+        self.assertFalse('\u2177'.isupper())
         # non-BMP, uppercase
         self.assertTrue('\U00010401'.isupper())
         self.assertTrue('\U00010427'.isupper())
@@ -548,6 +552,18 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U0001044F\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.lower(),
                          'x\U0001044Fx\U0001044F')
+        self.assertEqual('ﬁ'.lower(), 'ﬁ')
+        self.assertEqual('\u0130'.lower(), '\u0069\u0307')
+        # Special case for GREEK CAPITAL LETTER SIGMA U+03A3
+        self.assertEqual('\u03a3'.lower(), '\u03c3')
+        self.assertEqual('\u0345\u03a3'.lower(), '\u0345\u03c3')
+        self.assertEqual('A\u0345\u03a3'.lower(), 'a\u0345\u03c2')
+        self.assertEqual('A\u0345\u03a3a'.lower(), 'a\u0345\u03c3a')
+        self.assertEqual('A\u0345\u03a3'.lower(), 'a\u0345\u03c2')
+        self.assertEqual('A\u03a3\u0345'.lower(), 'a\u03c2\u0345')
+        self.assertEqual('\u03a3\u0345 '.lower(), '\u03c3\u0345 ')
+        self.assertEqual('\U0008fffe'.lower(), '\U0008fffe')
+        self.assertEqual('\u2177'.lower(), '\u2177')
 
     def test_upper(self):
         string_tests.CommonTest.test_upper(self)
@@ -558,6 +574,13 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U00010427\U00010427')
         self.assertEqual('X\U00010427x\U0001044F'.upper(),
                          'X\U00010427X\U00010427')
+        self.assertEqual('ﬁ'.upper(), 'FI')
+        self.assertEqual('\u0130'.upper(), '\u0130')
+        self.assertEqual('\u03a3'.upper(), '\u03a3')
+        self.assertEqual('ß'.upper(), 'SS')
+        self.assertEqual('\u1fd2'.upper(), '\u0399\u0308\u0300')
+        self.assertEqual('\U0008fffe'.upper(), '\U0008fffe')
+        self.assertEqual('\u2177'.upper(), '\u2167')
 
     def test_capitalize(self):
         string_tests.CommonTest.test_capitalize(self)
@@ -570,6 +593,11 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.capitalize(),
                          'X\U0001044Fx\U0001044F')
+        self.assertEqual('h\u0130'.capitalize(), 'H\u0069\u0307')
+        exp = '\u0399\u0308\u0300\u0069\u0307'
+        self.assertEqual('\u1fd2\u0130'.capitalize(), exp)
+        self.assertEqual('ﬁnnish'.capitalize(), 'FInnish')
+        self.assertEqual('A\u0345\u03a3'.capitalize(), 'A\u0345\u03c2')
 
     def test_title(self):
         string_tests.MixinStrUnicodeUserStringTest.test_title(self)
@@ -584,6 +612,9 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U00010427\U0001044F \U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F X\U00010427x\U0001044F'.title(),
                          'X\U0001044Fx\U0001044F X\U0001044Fx\U0001044F')
+        self.assertEqual('ﬁNNISH'.title(), 'Finnish')
+        self.assertEqual('A\u03a3 \u1fa1xy'.title(), 'A\u03c2 \u1fa9xy')
+        self.assertEqual('A\u03a3A'.title(), 'A\u03c3a')
 
     def test_swapcase(self):
         string_tests.CommonTest.test_swapcase(self)
@@ -597,6 +628,19 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U00010427\U0001044F')
         self.assertEqual('X\U00010427x\U0001044F'.swapcase(),
                          'x\U0001044FX\U00010427')
+        self.assertEqual('ﬁ'.swapcase(), 'FI')
+        self.assertEqual('\u0130'.swapcase(), '\u0069\u0307')
+        # Special case for GREEK CAPITAL LETTER SIGMA U+03A3
+        self.assertEqual('\u03a3'.swapcase(), '\u03c3')
+        self.assertEqual('\u0345\u03a3'.swapcase(), '\u0399\u03c3')
+        self.assertEqual('A\u0345\u03a3'.swapcase(), 'a\u0399\u03c2')
+        self.assertEqual('A\u0345\u03a3a'.swapcase(), 'a\u0399\u03c3A')
+        self.assertEqual('A\u0345\u03a3'.swapcase(), 'a\u0399\u03c2')
+        self.assertEqual('A\u03a3\u0345'.swapcase(), 'a\u03c2\u0399')
+        self.assertEqual('\u03a3\u0345 '.swapcase(), '\u03c3\u0399 ')
+        self.assertEqual('\u03a3'.swapcase(), '\u03c3')
+        self.assertEqual('ß'.swapcase(), 'SS')
+        self.assertEqual('\u1fd2'.swapcase(), '\u0399\u0308\u0300')
 
     def test_contains(self):
         # Testing Unicode contains method

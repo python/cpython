@@ -318,15 +318,24 @@ These APIs can be used for fast direct character conversions:
 
    Return the character *ch* converted to lower case.
 
+   .. deprecated:: 3.3
+      This function uses simple case mappings.
+
 
 .. c:function:: Py_UNICODE Py_UNICODE_TOUPPER(Py_UNICODE ch)
 
    Return the character *ch* converted to upper case.
 
+   .. deprecated:: 3.3
+      This function uses simple case mappings.
+
 
 .. c:function:: Py_UNICODE Py_UNICODE_TOTITLE(Py_UNICODE ch)
 
    Return the character *ch* converted to title case.
+
+   .. deprecated:: 3.3
+      This function uses simple case mappings.
 
 
 .. c:function:: int Py_UNICODE_TODECIMAL(Py_UNICODE ch)

@@ -2008,6 +2008,29 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 
+PyAPI_FUNC(int) _PyUnicode_ToLowerFull(
+    Py_UCS4 ch,       /* Unicode character */
+    Py_UCS4 *res
+    );
+
+PyAPI_FUNC(int) _PyUnicode_ToTitleFull(
+    Py_UCS4 ch,       /* Unicode character */
+    Py_UCS4 *res
+    );
+
+PyAPI_FUNC(int) _PyUnicode_ToUpperFull(
+    Py_UCS4 ch,       /* Unicode character */
+    Py_UCS4 *res
+    );
+
+PyAPI_FUNC(int) _PyUnicode_IsCaseIgnorable(
+    const Py_UCS4 ch         /* Unicode character */
+    );
+
+PyAPI_FUNC(int) _PyUnicode_IsCased(
+    const Py_UCS4 ch         /* Unicode character */
+    );
+
 PyAPI_FUNC(int) _PyUnicode_ToDecimalDigit(
     Py_UCS4 ch       /* Unicode character */
     );
