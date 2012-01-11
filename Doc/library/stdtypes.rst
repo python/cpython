@@ -1189,7 +1189,7 @@ functions based on regular expressions.
 
    Return a string which is the concatenation of the strings in the
    :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *seq*, including :class:`bytes` objects.  The
+   any non-string values in *iterable*, including :class:`bytes` objects.  The
    separator between elements is the string providing this method.
 
 
@@ -1197,7 +1197,7 @@ functions based on regular expressions.
 
    Return the string left justified in a string of length *width*. Padding is done
    using the specified *fillchar* (default is a space).  The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
 
 .. method:: str.lower()
@@ -1266,7 +1266,7 @@ functions based on regular expressions.
 
    Return the string right justified in a string of length *width*. Padding is done
    using the specified *fillchar* (default is a space). The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
 
 .. method:: str.rpartition(sep)
@@ -1414,7 +1414,7 @@ functions based on regular expressions.
 
    Return the numeric string left filled with zeros in a string of length
    *width*.  A sign prefix is handled correctly.  The original string is
-   returned if *width* is less than ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.
 
 
 
