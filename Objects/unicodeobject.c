@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "ucnhash.h"
+#include "bytes_methods.h"
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -9428,188 +9429,222 @@ fixup(PyObject *self,
     return v;
 }
 
-static Py_UCS4
-fixupper(PyObject *self)
+static PyObject *
+ascii_upper_or_lower(PyObject *self, int lower)
 {
-    /* No need to call PyUnicode_READY(self) because this function is only
-       called as a callback from fixup() which does it already. */
-    const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    int touched = 0;
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(self);
+    char *resdata, *data = PyUnicode_DATA(self);
+    PyObject *res;
 
-    for (i = 0; i < len; ++i) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        const Py_UCS4 up = Py_UNICODE_TOUPPER(ch);
-        if (up != ch) {
-            if (up > maxchar)
-                maxchar = up;
-            PyUnicode_WRITE(kind, data, i, up);
-            touched = 1;
-        }
-        else if (ch > maxchar)
-            maxchar = ch;
-    }
-
-    if (touched)
-        return maxchar;
+    res = PyUnicode_New(len, 127);
+    if (res == NULL)
+        return NULL;
+    resdata = PyUnicode_DATA(res);
+    if (lower)
+        _Py_bytes_lower(resdata, data, len);
     else
-        return 0;
+        _Py_bytes_upper(resdata, data, len);
+    return res;
 }
 
 static Py_UCS4
-fixlower(PyObject *self)
+handle_capital_sigma(int kind, void *data, Py_ssize_t length, Py_ssize_t i)
 {
-    /* No need to call PyUnicode_READY(self) because fixup() which does it. */
-    const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    int touched = 0;
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i;
+    Py_ssize_t j;
+    int final_sigma;
+    Py_UCS4 c;
+    /* U+03A3 is in the Final_Sigma context when, it is found like this:
 
-    for(i = 0; i < len; ++i) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        const Py_UCS4 lo = Py_UNICODE_TOLOWER(ch);
-        if (lo != ch) {
-            if (lo > maxchar)
-                maxchar = lo;
-            PyUnicode_WRITE(kind, data, i, lo);
-            touched = 1;
-        }
-        else if (ch > maxchar)
-            maxchar = ch;
+     \p{cased}\p{case-ignorable}*U+03A3!(\p{case-ignorable}*\p{cased})
+
+    where ! is a negation and \p{xxx} is a character with property xxx.
+    */
+    for (j = i - 1; j >= 0; j--) {
+        c = PyUnicode_READ(kind, data, j);
+        if (!_PyUnicode_IsCaseIgnorable(c))
+            break;
     }
-
-    if (touched)
-        return maxchar;
-    else
-        return 0;
+    final_sigma = j >= 0 && _PyUnicode_IsCased(c);
+    if (final_sigma) {
+        for (j = i + 1; j < length; j++) {
+            c = PyUnicode_READ(kind, data, j);
+            if (!_PyUnicode_IsCaseIgnorable(c))
+                break;
+        }
+        final_sigma = j == length || !_PyUnicode_IsCased(c);
+    }
+    return (final_sigma) ? 0x3C2 : 0x3C3;
 }
 
-static Py_UCS4
-fixswapcase(PyObject *self)
+static int
+lower_ucs4(int kind, void *data, Py_ssize_t length, Py_ssize_t i,
+           Py_UCS4 c, Py_UCS4 *mapped)
 {
-    /* No need to call PyUnicode_READY(self) because fixup() which does it. */
-    const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    int touched = 0;
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i;
-
-    for(i = 0; i < len; ++i) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        Py_UCS4 nu = 0;
-
-        if (Py_UNICODE_ISUPPER(ch))
-            nu = Py_UNICODE_TOLOWER(ch);
-        else if (Py_UNICODE_ISLOWER(ch))
-            nu = Py_UNICODE_TOUPPER(ch);
-
-        if (nu != 0) {
-            if (nu > maxchar)
-                maxchar = nu;
-            PyUnicode_WRITE(kind, data, i, nu);
-            touched = 1;
-        }
-        else if (ch > maxchar)
-            maxchar = ch;
+    /* Obscure special case. */
+    if (c == 0x3A3) {
+        mapped[0] = handle_capital_sigma(kind, data, length, i);
+        return 1;
     }
-
-    if (touched)
-        return maxchar;
-    else
-        return 0;
+    return _PyUnicode_ToLowerFull(c, mapped);
 }
 
-static Py_UCS4
-fixcapitalize(PyObject *self)
+static Py_ssize_t
+do_capitalize(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
 {
-    /* No need to call PyUnicode_READY(self) because fixup() which does it. */
-    const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    int touched = 0;
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i = 0;
-    Py_UCS4 ch;
+    Py_ssize_t i, k = 0;
+    int n_res, j;
+    Py_UCS4 c, mapped[3];
 
-    if (len == 0)
-        return 0;
-
-    ch = PyUnicode_READ(kind, data, i);
-    if (!Py_UNICODE_ISUPPER(ch)) {
-        maxchar = Py_UNICODE_TOUPPER(ch);
-        PyUnicode_WRITE(kind, data, i, maxchar);
-        touched = 1;
+    c = PyUnicode_READ(kind, data, 0);
+    n_res = _PyUnicode_ToUpperFull(c, mapped);
+    for (j = 0; j < n_res; j++) {
+        if (mapped[j] > *maxchar)
+            *maxchar = mapped[j];
+        res[k++] = mapped[j];
     }
-    ++i;
-    for(; i < len; ++i) {
-        ch = PyUnicode_READ(kind, data, i);
-        if (!Py_UNICODE_ISLOWER(ch)) {
-            const Py_UCS4 lo = Py_UNICODE_TOLOWER(ch);
-            if (lo > maxchar)
-                maxchar = lo;
-            PyUnicode_WRITE(kind, data, i, lo);
-            touched = 1;
+    for (i = 1; i < length; i++) {
+        c = PyUnicode_READ(kind, data, i);
+        n_res = lower_ucs4(kind, data, length, i, c, mapped);
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
         }
-        else if (ch > maxchar)
-            maxchar = ch;
     }
-
-    if (touched)
-        return maxchar;
-    else
-        return 0;
+    return k;
 }
 
-static Py_UCS4
-fixtitle(PyObject *self)
+static Py_ssize_t
+do_swapcase(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar) {
+    Py_ssize_t i, k = 0;
+
+    for (i = 0; i < length; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, data, i), mapped[3];
+        int n_res, j;
+        if (Py_UNICODE_ISUPPER(c)) {
+            n_res = lower_ucs4(kind, data, length, i, c, mapped);
+        }
+        else if (Py_UNICODE_ISLOWER(c)) {
+            n_res = _PyUnicode_ToUpperFull(c, mapped);
+        }
+        else {
+            n_res = 1;
+            mapped[0] = c;
+        }
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
+        }
+    }
+    return k;
+}
+
+static Py_ssize_t
+do_upper_or_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res,
+                  Py_UCS4 *maxchar, int lower)
 {
-    /* No need to call PyUnicode_READY(self) because fixup() which does it. */
-    const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
-    const int kind = PyUnicode_KIND(self);
-    void *data = PyUnicode_DATA(self);
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t i = 0;
+    Py_ssize_t i, k = 0;
+
+    for (i = 0; i < length; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, data, i), mapped[3];
+        int n_res, j;
+        if (lower)
+            n_res = lower_ucs4(kind, data, length, i, c, mapped);
+        else
+            n_res = _PyUnicode_ToUpperFull(c, mapped);
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
+        }
+    }
+    return k;
+}
+
+static Py_ssize_t
+do_upper(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
+{
+    return do_upper_or_lower(kind, data, length, res, maxchar, 0);
+}
+
+static Py_ssize_t
+do_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
+{
+    return do_upper_or_lower(kind, data, length, res, maxchar, 1);
+}
+
+static PyObject *
+case_operation(PyObject *self,
+               Py_ssize_t (*perform)(int, void *, Py_ssize_t, Py_UCS4 *, Py_UCS4 *))
+{
+    PyObject *res = NULL;
+    Py_ssize_t length, newlength = 0;
+    int kind, outkind;
+    void *data, *outdata;
+    Py_UCS4 maxchar = 0, *tmp, *tmpend;
+
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+
+    kind = PyUnicode_KIND(self);
+    data = PyUnicode_DATA(self);
+    length = PyUnicode_GET_LENGTH(self);
+    tmp = PyMem_MALLOC(sizeof(Py_UCS4) * 3 * length);
+    if (tmp == NULL)
+        return PyErr_NoMemory();
+    newlength = perform(kind, data, length, tmp, &maxchar);
+    res = PyUnicode_New(newlength, maxchar);
+    if (res == NULL)
+        goto leave;
+    tmpend = tmp + newlength;
+    outdata = PyUnicode_DATA(res);
+    outkind = PyUnicode_KIND(res);
+    switch (outkind) {
+    case PyUnicode_1BYTE_KIND:
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS1, tmp, tmpend, outdata);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS2, tmp, tmpend, outdata);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        memcpy(outdata, tmp, sizeof(Py_UCS4) * newlength);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+  leave:
+    PyMem_FREE(tmp);
+    return res;
+}
+
+static Py_ssize_t
+do_title(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
+{
+    Py_ssize_t i, k = 0;
     int previous_is_cased;
 
-    /* Shortcut for single character strings */
-    if (len == 1) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        const Py_UCS4 ti = Py_UNICODE_TOTITLE(ch);
-        if (ti != ch) {
-            PyUnicode_WRITE(kind, data, i, ti);
-            return ti;
-        }
-        else
-            return 0;
-    }
     previous_is_cased = 0;
-    for(; i < len; ++i) {
-        const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        Py_UCS4 nu;
+    for (i = 0; i < length; i++) {
+        const Py_UCS4 c = PyUnicode_READ(kind, data, i);
+        Py_UCS4 mapped[3];
+        int n_res, j;
 
         if (previous_is_cased)
-            nu = Py_UNICODE_TOLOWER(ch);
+            n_res = lower_ucs4(kind, data, length, i, c, mapped);
         else
-            nu = Py_UNICODE_TOTITLE(ch);
+            n_res = _PyUnicode_ToTitleFull(c, mapped);
 
-        if (nu > maxchar)
-            maxchar = nu;
-        PyUnicode_WRITE(kind, data, i, nu);
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
+        }
 
-        if (Py_UNICODE_ISLOWER(ch) ||
-            Py_UNICODE_ISUPPER(ch) ||
-            Py_UNICODE_ISTITLE(ch))
-            previous_is_cased = 1;
-        else
-            previous_is_cased = 0;
+        previous_is_cased = _PyUnicode_IsCased(c);
     }
-    return maxchar;
+    return k;
 }
 
 PyObject *
@@ -10445,7 +10480,7 @@ characters, all remaining cased characters have lower case.");
 static PyObject*
 unicode_title(PyObject *self)
 {
-    return fixup(self, fixtitle);
+    return case_operation(self, do_title);
 }
 
 PyDoc_STRVAR(capitalize__doc__,
@@ -10457,7 +10492,11 @@ have upper case and the rest lower case.");
 static PyObject*
 unicode_capitalize(PyObject *self)
 {
-    return fixup(self, fixcapitalize);
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+    if (PyUnicode_GET_LENGTH(self) == 0)
+        return unicode_result_unchanged(self);
+    return case_operation(self, do_capitalize);
 }
 
 #if 0
@@ -11715,7 +11754,11 @@ Return a copy of the string S converted to lowercase.");
 static PyObject*
 unicode_lower(PyObject *self)
 {
-    return fixup(self, fixlower);
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+    if (PyUnicode_IS_ASCII(self))
+        return ascii_upper_or_lower(self, 1);
+    return case_operation(self, do_lower);
 }
 
 #define LEFTSTRIP 0
@@ -12604,7 +12647,7 @@ and vice versa.");
 static PyObject*
 unicode_swapcase(PyObject *self)
 {
-    return fixup(self, fixswapcase);
+    return case_operation(self, do_swapcase);
 }
 
 PyDoc_STRVAR(maketrans__doc__,
@@ -12750,7 +12793,11 @@ Return a copy of S converted to uppercase.");
 static PyObject*
 unicode_upper(PyObject *self)
 {
-    return fixup(self, fixupper);
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+    if (PyUnicode_IS_ASCII(self))
+        return ascii_upper_or_lower(self, 0);
+    return case_operation(self, do_upper);
 }
 
 PyDoc_STRVAR(zfill__doc__,

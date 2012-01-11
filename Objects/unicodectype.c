@@ -21,8 +21,10 @@
 #define XID_START_MASK 0x100
 #define XID_CONTINUE_MASK 0x200
 #define PRINTABLE_MASK 0x400
-#define NODELTA_MASK 0x800
-#define NUMERIC_MASK 0x1000
+#define NUMERIC_MASK 0x800
+#define CASE_IGNORABLE_MASK 0x1000
+#define CASED_MASK 0x2000
+#define EXTENDED_CASE_MASK 0x4000
 
 typedef struct {
     const Py_UCS4 upper;
@@ -57,15 +59,8 @@ gettyperecord(Py_UCS4 code)
 Py_UCS4 _PyUnicode_ToTitlecase(register Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-    int delta = ctype->title;
 
-    if (ctype->flags & NODELTA_MASK)
-        return delta;
-
-    if (delta >= 32768)
-            delta -= 65536;
-
-    return ch + delta;
+    return ctype->title ? ctype->title : ch;
 }
 
 /* Returns 1 for Unicode characters having the category 'Lt', 0
@@ -188,12 +183,10 @@ int _PyUnicode_IsUppercase(Py_UCS4 ch)
 Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-    int delta = ctype->upper;
-    if (ctype->flags & NODELTA_MASK)
-        return delta;
-    if (delta >= 32768)
-            delta -= 65536;
-    return ch + delta;
+
+    if (ctype->flags & EXTENDED_CASE_MASK)
+        return _PyUnicode_ExtendedCase[ctype->upper & 0xFFFFFF];
+    return ctype->upper ? ctype->upper : ch;
 }
 
 /* Returns the lowercase Unicode characters corresponding to ch or just
@@ -202,12 +195,72 @@ Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
 Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-    int delta = ctype->lower;
-    if (ctype->flags & NODELTA_MASK)
-        return delta;
-    if (delta >= 32768)
-            delta -= 65536;
-    return ch + delta;
+
+    if (ctype->flags & EXTENDED_CASE_MASK)
+        return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFFFF];
+    return ctype->lower ? ctype->lower : ch;
+}
+
+int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        int index = ctype->lower & 0xFFFFFF;
+        int n = ctype->lower >> 24;
+        int i;
+        for (i = 0; i < n; i++)
+            res[i] = _PyUnicode_ExtendedCase[index + i];
+        return n;
+    }
+    res[0] = ctype->lower ? ctype->lower : ch;
+    return 1;
+}
+
+int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        int index = ctype->title & 0xFFFFFF;
+        int n = ctype->title >> 24;
+        int i;
+        for (i = 0; i < n; i++)
+            res[i] = _PyUnicode_ExtendedCase[index + i];
+        return n;
+    }
+    res[0] = ctype->title ? ctype->title : ch;
+    return 1;
+}
+
+int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        int index = ctype->upper & 0xFFFFFF;
+        int n = ctype->upper >> 24;
+        int i;
+        for (i = 0; i < n; i++)
+            res[i] = _PyUnicode_ExtendedCase[index + i];
+        return n;
+    }
+    res[0] = ctype->upper ? ctype->upper : ch;
+    return 1;
+}
+
+int _PyUnicode_IsCased(Py_UCS4 ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags & CASED_MASK) != 0;
+}
+
+int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags & CASE_IGNORABLE_MASK) != 0;
 }
 
 /* Returns 1 for Unicode characters having the category 'Ll', 'Lu', 'Lt',
