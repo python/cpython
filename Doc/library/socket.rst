@@ -284,10 +284,17 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Convenience function.  Connect to *address* (a 2-tuple ``(host, port)``),
-   and return the socket object.  Passing the optional *timeout* parameter will
-   set the timeout on the socket instance before attempting to connect.  If no
-   *timeout* is supplied, the global default timeout setting returned by
+   Connect to a TCP service listening on the Internet *address* (a 2-tuple
+   ``(host, port)``), and return the socket object.  This is a higher-level
+   function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
+   it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
+   and then try to connect to all possible addresses in turn until a
+   connection succeeds.  This makes it easy to write clients that are
+   compatible to both IPv4 and IPv6.
+
+   Passing the optional *timeout* parameter will set the timeout on the
+   socket instance before attempting to connect.  If no *timeout* is
+   supplied, the global default timeout setting returned by
    :func:`getdefaulttimeout` is used.
 
    If supplied, *source_address* must be a 2-tuple ``(host, port)`` for the
