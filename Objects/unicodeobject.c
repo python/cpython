@@ -8845,6 +8845,7 @@ fix_decimal_and_space_to_ascii(PyObject *self)
     const int kind = PyUnicode_KIND(self);
     void *data = PyUnicode_DATA(self);
     Py_UCS4 maxchar = 0, ch, fixed;
+    int modified = 0;
     Py_ssize_t i;
 
     for (i = 0; i < len; ++i) {
@@ -8859,6 +8860,7 @@ fix_decimal_and_space_to_ascii(PyObject *self)
                     fixed = '0' + decimal;
             }
             if (fixed != 0) {
+                modified = 1;
                 if (fixed > maxchar)
                     maxchar = fixed;
                 PyUnicode_WRITE(kind, data, i, fixed);
@@ -8870,7 +8872,7 @@ fix_decimal_and_space_to_ascii(PyObject *self)
             maxchar = ch;
     }
 
-    return maxchar;
+    return (modified) ? maxchar : 0;
 }
 
 PyObject *
