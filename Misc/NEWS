@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13748: Raw bytes literals can now be written with the ``rb`` prefix
+  as well as ``br``.
+
 - Issue #12736: Use full unicode case mappings for upper, lower, and title case.
 
 - Issue #12760: Add a create mode to open(). Patch by David Townshend.

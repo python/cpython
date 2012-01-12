@@ -1412,13 +1412,15 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
     /* Identifier (most frequent token!) */
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
-        /* Process b"", r"" and br"" */
-        if (c == 'b' || c == 'B') {
-            c = tok_nextc(tok);
-            if (c == '"' || c == '\'')
-                goto letter_quote;
-        }
-        if (c == 'r' || c == 'R') {
+        /* Process b"", r"", br"" and rb"" */
+        int saw_b = 0, saw_r = 0;
+        while (1) {
+            if (!saw_b && (c == 'b' || c == 'B'))
+                saw_b = 1;
+            else if (!saw_r && (c == 'r' || c == 'R'))
+                saw_r = 1;
+            else
+                break;
             c = tok_nextc(tok);
             if (c == '"' || c == '\'')
                 goto letter_quote;

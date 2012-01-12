@@ -3744,13 +3744,18 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
     int rawmode = 0;
     int need_encoding;
     if (isalpha(quote)) {
-        if (quote == 'b' || quote == 'B') {
-            quote = *++s;
-            *bytesmode = 1;
-        }
-        if (quote == 'r' || quote == 'R') {
-            quote = *++s;
-            rawmode = 1;
+        while (!*bytesmode || !rawmode) {
+            if (quote == 'b' || quote == 'B') {
+                quote = *++s;
+                *bytesmode = 1;
+            }
+            else if (quote == 'r' || quote == 'R') {
+                quote = *++s;
+                rawmode = 1;
+            }
+            else {
+                break;
+            }
         }
     }
     if (quote != '\'' && quote != '\"') {
