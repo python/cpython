@@ -1502,10 +1502,8 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *sep = NULL, *end = NULL, *file = NULL;
     int i, err;
 
-    if (dummy_args == NULL) {
-        if (!(dummy_args = PyTuple_New(0)))
+    if (dummy_args == NULL && !(dummy_args = PyTuple_New(0)))
             return NULL;
-    }
     if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
                                      kwlist, &sep, &end, &file))
         return NULL;
