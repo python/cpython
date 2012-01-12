@@ -412,7 +412,7 @@ String literals are described by the following lexical definitions:
 
 .. productionlist::
    bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
-   bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR"
+   bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR" | "rb" | "rB" | "Rb" | "RB"
    shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
    longbytes: "'''" `longbytesitem`* "'''" | '"""' `longbytesitem`* '"""'
    shortbytesitem: `shortbyteschar` | `bytesescapeseq`
@@ -445,6 +445,10 @@ Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
 literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
 escapes in raw strings are not treated specially.
+
+   .. versionadded:: 3.3
+      The ``'rb'`` prefix of raw bytes literals has been added as a synonym
+      of ``'br'``.
 
 In triple-quoted strings, unescaped newlines and quotes are allowed (and are
 retained), except that three unescaped quotes in a row terminate the string.  (A

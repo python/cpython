@@ -2,10 +2,10 @@ r"""Test correct treatment of various string literals by the parser.
 
 There are four types of string literals:
 
-    'abc'   -- normal str
-    r'abc'  -- raw str
-    b'xyz'  -- normal bytes
-    br'xyz' -- raw bytes
+    'abc'             -- normal str
+    r'abc'            -- raw str
+    b'xyz'            -- normal bytes
+    br'xyz' | rb'xyz' -- raw bytes
 
 The difference between normal and raw strings is of course that in a
 raw string, \ escapes (while still used to determine the end of the
@@ -103,12 +103,25 @@ class TestLiterals(unittest.TestCase):
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')
+        self.assertEqual(eval(""" rb'x' """), b'x')
         self.assertEqual(eval(r""" br'\x01' """), b'\\' + b'x01')
+        self.assertEqual(eval(r""" rb'\x01' """), b'\\' + b'x01')
         self.assertEqual(eval(""" br'\x01' """), byte(1))
+        self.assertEqual(eval(""" rb'\x01' """), byte(1))
         self.assertEqual(eval(r""" br'\x81' """), b"\\" + b"x81")
+        self.assertEqual(eval(r""" rb'\x81' """), b"\\" + b"x81")
         self.assertRaises(SyntaxError, eval, """ br'\x81' """)
+        self.assertRaises(SyntaxError, eval, """ rb'\x81' """)
         self.assertEqual(eval(r""" br'\u1881' """), b"\\" + b"u1881")
+        self.assertEqual(eval(r""" rb'\u1881' """), b"\\" + b"u1881")
         self.assertRaises(SyntaxError, eval, """ br'\u1881' """)
+        self.assertRaises(SyntaxError, eval, """ rb'\u1881' """)
+        self.assertRaises(SyntaxError, eval, """ bb'' """)
+        self.assertRaises(SyntaxError, eval, """ rr'' """)
+        self.assertRaises(SyntaxError, eval, """ brr'' """)
+        self.assertRaises(SyntaxError, eval, """ bbr'' """)
+        self.assertRaises(SyntaxError, eval, """ rrb'' """)
+        self.assertRaises(SyntaxError, eval, """ rbb'' """)
 
     def check_encoding(self, encoding, extra=""):
         modname = "xx_" + encoding.replace("-", "_")
