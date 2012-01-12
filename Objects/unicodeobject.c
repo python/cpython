@@ -10499,44 +10499,6 @@ unicode_capitalize(PyObject *self)
     return case_operation(self, do_capitalize);
 }
 
-#if 0
-PyDoc_STRVAR(capwords__doc__,
-             "S.capwords() -> str\n\
-\n\
-Apply .capitalize() to all words in S and return the result with\n\
-normalized whitespace (all whitespace strings are replaced by ' ').");
-
-static PyObject*
-unicode_capwords(PyObject *self)
-{
-    PyObject *list;
-    PyObject *item;
-    Py_ssize_t i;
-
-    /* Split into words */
-    list = split(self, NULL, -1);
-    if (!list)
-        return NULL;
-
-    /* Capitalize each word */
-    for (i = 0; i < PyList_GET_SIZE(list); i++) {
-        item = fixup(PyList_GET_ITEM(list, i),
-                     fixcapitalize);
-        if (item == NULL)
-            goto onError;
-        Py_DECREF(PyList_GET_ITEM(list, i));
-        PyList_SET_ITEM(list, i, item);
-    }
-
-    /* Join the words to form a new string */
-    item = PyUnicode_Join(NULL, list);
-
-  onError:
-    Py_DECREF(list);
-    return item;
-}
-#endif
-
 /* Argument converter.  Coerces to a single unicode character */
 
 static int
@@ -13074,10 +13036,6 @@ static PyMethodDef unicode_methods[] = {
     {"maketrans", (PyCFunction) unicode_maketrans,
      METH_VARARGS | METH_STATIC, maketrans__doc__},
     {"__sizeof__", (PyCFunction) unicode__sizeof__, METH_NOARGS, sizeof__doc__},
-#if 0
-    {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
-#endif
-
 #if 0
     /* These methods are just used for debugging the implementation. */
     {"_decimal2ascii", (PyCFunction) unicode__decimal2ascii, METH_NOARGS},
