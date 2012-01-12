@@ -561,13 +561,14 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
             return -1;
         if (toupper) {
             Py_ssize_t t;
-            /* XXX if the upper-case prefix is wider than the target
-               buffer, the caller should have allocated a wider string,
-               but currently doesn't. */
-            for (t = 0; t < spec->n_prefix; ++t)
-                PyUnicode_WRITE(kind, data, pos + t,
-                                Py_UNICODE_TOUPPER(
-                                    PyUnicode_READ(kind, data, pos + t)));
+            for (t = 0; t < spec->n_prefix; t++) {
+                Py_UCS4 c = PyUnicode_READ(kind, data, pos + t);
+                if (c > 127) {
+                    PyErr_SetString(PyExc_SystemError, "prefix not ASCII");
+                    return -1;
+                }
+                PyUnicode_WRITE(kind, data, pos + t, Py_TOUPPER(c));
+            }
         }
         pos += spec->n_prefix;
     }
@@ -607,10 +608,14 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     }
     if (toupper) {
         Py_ssize_t t;
-        for (t = 0; t < spec->n_grouped_digits; ++t)
-            PyUnicode_WRITE(kind, data, pos + t,
-                            Py_UNICODE_TOUPPER(
-                                PyUnicode_READ(kind, data, pos + t)));
+        for (t = 0; t < spec->n_grouped_digits; t++) {
+            Py_UCS4 c = PyUnicode_READ(kind, data, pos + t);
+            if (c > 127) {
+                PyErr_SetString(PyExc_SystemError, "non-ascii grouped digit");
+                return -1;
+            }
+            PyUnicode_WRITE(kind, data, pos + t, Py_TOUPPER(c));
+        }
     }
     pos += spec->n_grouped_digits;
 
