@@ -114,6 +114,19 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 #endif
 
+#ifdef HAVE_STAT
+int isdir(char *path) {
+    struct stat statbuf;
+	return stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode);
+}
+#else
+/* with RISCOS, isdir is in unixstuff */
+#ifndef RISCOS
+int isdir(char *path) {
+	return 0;
+}
+#endif
+#endif
 
 /* Initialize things */
 
@@ -1204,9 +1217,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     char *filemode;
     FILE *fp = NULL;
     PyObject *path_hooks, *path_importer_cache;
-#ifndef RISCOS
-    struct stat statbuf;
-#endif
     static struct filedescr fd_frozen = {"", "", PY_FROZEN};
     static struct filedescr fd_builtin = {"", "", C_BUILTIN};
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
@@ -1392,9 +1402,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 
         /* Check for package import (buf holds a directory name,
            and there's an __init__ module in that directory */
-#ifdef HAVE_STAT
-        if (stat(buf, &statbuf) == 0 &&         /* it exists */
-            S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
+        if (isdir(buf) &&         /* it's an existing directory */
             case_ok(buf, len, namelen, name)) { /* case matches */
             if (find_init_module(buf)) { /* and has __init__.py */
                 Py_XDECREF(copy);
@@ -1412,28 +1420,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
                 }
             }
         }
-#else
-        /* XXX How are you going to test for directories? */
-#ifdef RISCOS
-        if (isdir(buf) &&
-            case_ok(buf, len, namelen, name)) {
-            if (find_init_module(buf)) {
-                Py_XDECREF(copy);
-                return &fd_package;
-            }
-            else {
-                char warnstr[MAXPATHLEN+80];
-                sprintf(warnstr, "Not importing directory "
-                    "'%.*s': missing __init__.py",
-                    MAXPATHLEN, buf);
-                if (PyErr_Warn(PyExc_ImportWarning,
-                               warnstr)) {
-                    Py_XDECREF(copy);
-                    return NULL;
-                }
-        }
-#endif
-#endif
 #if defined(PYOS_OS2)
         /* take a snapshot of the module spec for restoration
          * after the 8 character DLL hackery
