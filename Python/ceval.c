@@ -1837,6 +1837,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             /* x is now the iterator, make the first next() call */
             retval = (*Py_TYPE(x)->tp_iternext)(x);
             if (!retval) {
+                PyObject *et, *ev, *tb;
                 /* iter may be exhausted */
                 Py_CLEAR(x);
                 if (PyErr_Occurred() &&
@@ -1845,7 +1846,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     break;
                 }
                 /* try to get return value from exception */
-                PyObject *et, *ev, *tb;
                 PyErr_Fetch(&et, &ev, &tb);
                 Py_XDECREF(et);
                 Py_XDECREF(tb);
