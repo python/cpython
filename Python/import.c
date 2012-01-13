@@ -116,28 +116,28 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 
 #ifdef MS_WINDOWS
 int isdir(char *path) {
-	DWORD rv;
-	/* see issue1293 and issue3677:
-	 * stat() on Windows doesn't recognise paths like
-	 * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
-	 * Also reference issue6727:
-	 * stat() on Windows is broken and doesn't resolve symlinks properly.
-	 */
-	rv = GetFileAttributesA(path);
-	return rv != INVALID_FILE_ATTRIBUTES && rv & FILE_ATTRIBUTE_DIRECTORY;
+    DWORD rv;
+    /* see issue1293 and issue3677:
+     * stat() on Windows doesn't recognise paths like
+     * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
+     * Also reference issue6727:
+     * stat() on Windows is broken and doesn't resolve symlinks properly.
+     */
+    rv = GetFileAttributesA(path);
+    return rv != INVALID_FILE_ATTRIBUTES && rv & FILE_ATTRIBUTE_DIRECTORY;
 }
 #else
 #if HAVE_STAT
 int isdir(char *path) {
     struct stat statbuf;
-	return stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode);
+    return stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode);
 }
 #else
 #ifdef RISCOS
 /* with RISCOS, isdir is in unixstuff */
 #else
 int isdir(char *path) {
-	return 0;
+    return 0;
 }
 #endif /* RISCOS */
 #endif /* HAVE_STAT */
@@ -3200,11 +3200,11 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
         PyErr_SetString(PyExc_ImportError, "empty pathname");
         return -1;
     } else {
-		if(isdir(path)) {
-			PyErr_SetString(PyExc_ImportError,
-							"existing directory");
-			return -1;
-		}
+        if(isdir(path)) {
+            PyErr_SetString(PyExc_ImportError,
+                            "existing directory");
+            return -1;
+        }
     }
     return 0;
 }
