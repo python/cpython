@@ -1839,7 +1839,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (!retval) {
                 /* iter may be exhausted */
                 Py_CLEAR(x);
-                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                if (PyErr_Occurred() &&
+                    !PyErr_ExceptionMatches(PyExc_StopIteration)) {
                     /* some other exception */
                     break;
                 }
