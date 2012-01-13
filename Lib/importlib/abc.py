@@ -123,7 +123,20 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
 
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
-        raise NotImplementedError
+        if self.path_stats.__func__ is SourceLoader.path_stats:
+            raise NotImplementedError
+        return int(self.path_stats(path)['mtime'])
+
+    def path_stats(self, path):
+        """Return a metadata dict for the source pointed to by the path (str).
+        Possible keys:
+        - 'mtime' (mandatory) is the numeric timestamp of last source
+          code modification;
+        - 'size' (optional) is the size in bytes of the source code.
+        """
+        if self.path_mtime.__func__ is SourceLoader.path_mtime:
+            raise NotImplementedError
+        return {'mtime': self.path_mtime(path)}
 
     def set_data(self, path, data):
         """Write the bytes to the path (if possible).

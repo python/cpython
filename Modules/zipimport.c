@@ -1033,7 +1033,9 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
         return Py_None;  /* signal caller to try alternative */
     }
 
-    code = PyMarshal_ReadObjectFromString(buf + 8, size - 8);
+    /* XXX the pyc's size field is ignored; timestamp collisions are probably
+       unimportant with zip files. */
+    code = PyMarshal_ReadObjectFromString(buf + 12, size - 12);
     if (code == NULL)
         return NULL;
     if (!PyCode_Check(code)) {
