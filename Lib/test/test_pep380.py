@@ -831,6 +831,11 @@ class TestPEP380Operation(unittest.TestCase):
             "Enter f",
         ])
 
+    def test_yield_from_empty(self):
+        def g():
+            yield from ()
+        self.assertRaises(StopIteration, next, g())
+
 
 def test_main():
     from test import support
