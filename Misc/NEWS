@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13761: Add a "flush" keyword argument to the print() function,
+  used to ensure flushing the output stream.
+
 - Issue #13645: pyc files now contain the size of the corresponding source
   code, to avoid timestamp collisions (especially on filesystems with a low
   timestamp resolution) when checking for freshness of the bytecode.
