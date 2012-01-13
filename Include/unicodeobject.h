@@ -2024,11 +2024,11 @@ PyAPI_FUNC(int) _PyUnicode_ToUpperFull(
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsCaseIgnorable(
-    const Py_UCS4 ch         /* Unicode character */
+    Py_UCS4 ch         /* Unicode character */
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsCased(
-    const Py_UCS4 ch         /* Unicode character */
+    Py_UCS4 ch         /* Unicode character */
     );
 
 PyAPI_FUNC(int) _PyUnicode_ToDecimalDigit(
