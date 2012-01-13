@@ -840,6 +840,7 @@ opcode_stack_effect(int opcode, int oparg)
         case IMPORT_STAR:
             return -1;
         case YIELD_VALUE:
+        case YIELD_FROM:
             return 0;
 
         case POP_BLOCK:
@@ -3318,7 +3319,12 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         else {
             ADDOP_O(c, LOAD_CONST, Py_None, consts);
         }
-        ADDOP(c, YIELD_VALUE);
+        if (e->v.Yield.is_from) {
+            ADDOP(c, YIELD_FROM);
+        }
+        else {
+            ADDOP(c, YIELD_VALUE);
+        }
         break;
     case Compare_kind:
         return compiler_compare(c, e);

@@ -487,8 +487,70 @@ SimpleExtendsException(PyExc_Exception, TypeError,
 /*
  *    StopIteration extends Exception
  */
-SimpleExtendsException(PyExc_Exception, StopIteration,
-                       "Signal the end from iterator.__next__().");
+
+static PyMemberDef StopIteration_members[] = {
+    {"value", T_OBJECT, offsetof(PyStopIterationObject, value), 0,
+        PyDoc_STR("generator return value")},
+    {NULL}  /* Sentinel */
+};
+
+static int
+StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+    PyObject *value;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+        return -1;
+    Py_CLEAR(self->value);
+    if (size > 0)
+        value = PyTuple_GET_ITEM(args, 0);
+    else
+        value = Py_None;
+    Py_INCREF(value);
+    self->value = value;
+    return 0;
+}
+
+static int
+StopIteration_clear(PyStopIterationObject *self)
+{
+    Py_CLEAR(self->value);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+StopIteration_dealloc(PyStopIterationObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    StopIteration_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->value);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+PyObject *
+PyStopIteration_Create(PyObject *value)
+{
+    return PyObject_CallFunctionObjArgs(PyExc_StopIteration, value, NULL);
+}
+
+ComplexExtendsException(
+    PyExc_Exception,       /* base */
+    StopIteration,         /* name */
+    StopIteration,         /* prefix for *_init, etc */
+    0,                     /* new */
+    0,                     /* methods */
+    StopIteration_members, /* members */
+    0,                     /* getset */
+    0,                     /* str */
+    "Signal the end from iterator.__next__()."
+);
 
 
 /*

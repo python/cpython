@@ -458,7 +458,39 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "class foo:return 1")
 
     def test_yield(self):
+        # Allowed as standalone statement
+        def g(): yield 1
+        def g(): yield from ()
+        # Allowed as RHS of assignment
+        def g(): x = yield 1
+        def g(): x = yield from ()
+        # Ordinary yield accepts implicit tuples
+        def g(): yield 1, 1
+        def g(): x = yield 1, 1
+        # 'yield from' does not
+        check_syntax_error(self, "def g(): yield from (), 1")
+        check_syntax_error(self, "def g(): x = yield from (), 1")
+        # Requires parentheses as subexpression
+        def g(): 1, (yield 1)
+        def g(): 1, (yield from ())
+        check_syntax_error(self, "def g(): 1, yield 1")
+        check_syntax_error(self, "def g(): 1, yield from ()")
+        # Requires parentheses as call argument
+        def g(): f((yield 1))
+        def g(): f((yield 1), 1)
+        def g(): f((yield from ()))
+        def g(): f((yield from ()), 1)
+        check_syntax_error(self, "def g(): f(yield 1)")
+        check_syntax_error(self, "def g(): f(yield 1, 1)")
+        check_syntax_error(self, "def g(): f(yield from ())")
+        check_syntax_error(self, "def g(): f(yield from (), 1)")
+        # Not allowed at top level
+        check_syntax_error(self, "yield")
+        check_syntax_error(self, "yield from")
+        # Not allowed at class scope
         check_syntax_error(self, "class foo:yield 1")
+        check_syntax_error(self, "class foo:yield from ()")
+
 
     def test_raise(self):
         # 'raise' test [',' test]

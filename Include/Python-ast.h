@@ -245,6 +245,7 @@ struct _expr {
                 } GeneratorExp;
                 
                 struct {
+                        int is_from;
                         expr_ty value;
                 } Yield;
                 
@@ -487,8 +488,9 @@ expr_ty _Py_DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int
 #define GeneratorExp(a0, a1, a2, a3, a4) _Py_GeneratorExp(a0, a1, a2, a3, a4)
 expr_ty _Py_GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
                          col_offset, PyArena *arena);
-#define Yield(a0, a1, a2, a3) _Py_Yield(a0, a1, a2, a3)
-expr_ty _Py_Yield(expr_ty value, int lineno, int col_offset, PyArena *arena);
+#define Yield(a0, a1, a2, a3, a4) _Py_Yield(a0, a1, a2, a3, a4)
+expr_ty _Py_Yield(int is_from, expr_ty value, int lineno, int col_offset,
+                  PyArena *arena);
 #define Compare(a0, a1, a2, a3, a4, a5) _Py_Compare(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
                     int lineno, int col_offset, PyArena *arena);

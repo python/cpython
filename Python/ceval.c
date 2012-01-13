@@ -1828,6 +1828,52 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             why = WHY_RETURN;
             goto fast_block_end;
 
+        TARGET(YIELD_FROM)
+            u = POP();
+            x = PyObject_GetIter(u);
+            Py_DECREF(u);
+            if (x == NULL)
+                break;
+            /* x is now the iterator, make the first next() call */
+            retval = (*Py_TYPE(x)->tp_iternext)(x);
+            if (!retval) {
+                /* iter may be exhausted */
+                Py_CLEAR(x);
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    /* some other exception */
+                    break;
+                }
+                /* try to get return value from exception */
+                PyObject *et, *ev, *tb;
+                PyErr_Fetch(&et, &ev, &tb);
+                Py_XDECREF(et);
+                Py_XDECREF(tb);
+                /* u is return value */
+                u = NULL;
+                if (ev) {
+                    u = PyObject_GetAttrString(ev, "value");
+                    Py_DECREF(ev);
+                    if (u == NULL) {
+                        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                            /* some other exception */
+                            break;
+                        }
+                        PyErr_Clear();
+                    }
+                }
+                if (u == NULL) {
+                    u = Py_None;
+                    Py_INCREF(u);
+                }
+                PUSH(u);
+                continue;
+            }
+            /* x is iterator, retval is value to be yielded */
+            f->f_yieldfrom = x;
+            f->f_stacktop = stack_pointer;
+            why = WHY_YIELD;
+            goto fast_yield;
+
         TARGET(YIELD_VALUE)
             retval = POP();
             f->f_stacktop = stack_pointer;

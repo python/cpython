@@ -813,7 +813,8 @@ class ASTValidatorTests(unittest.TestCase):
         self._check_comprehension(factory)
 
     def test_yield(self):
-        self.expr(ast.Yield(ast.Name("x", ast.Store())), "must have Load")
+        self.expr(ast.Yield(0, ast.Name("x", ast.Store())), "must have Load")
+        self.expr(ast.Yield(1, ast.Name("x", ast.Store())), "must have Load")
 
     def test_compare(self):
         left = ast.Name("x", ast.Load())
