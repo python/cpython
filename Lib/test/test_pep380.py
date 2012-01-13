@@ -364,6 +364,17 @@ class TestPEP380Operation(unittest.TestCase):
         ])
 
 
+    def test_exception_value_crash(self):
+        # There used to be a refcount error when the return value
+        # stored in the StopIteration has a refcount of 1.
+        def g1():
+            yield from g2()
+        def g2():
+            yield "g2"
+            return [42]
+        self.assertEqual(list(g1()), ["g2"])
+
+
     def test_generator_return_value(self):
         """
         Test generator return value
