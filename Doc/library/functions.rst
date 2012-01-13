@@ -946,7 +946,7 @@ are always available.  They are listed here in alphabetical order.
    must be of integer types, and *y* must be non-negative.
 
 
-.. function:: print([object, ...], *, sep=' ', end='\\n', file=sys.stdout)
+.. function:: print([object, ...], *, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
    Print *object*\(s) to the stream *file*, separated by *sep* and followed by
    *end*.  *sep*, *end* and *file*, if present, must be given as keyword
@@ -959,9 +959,12 @@ are always available.  They are listed here in alphabetical order.
    *end*.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
-   is not present or ``None``, :data:`sys.stdout` will be used. Output buffering
-   is determined by *file*. Use ``file.flush()`` to ensure, for instance,
-   immediate appearance on a screen.
+   is not present or ``None``, :data:`sys.stdout` will be used.  Whether output
+   is buffered is usually determined by *file*, but if the  *flush* keyword
+   argument is true, the stream is forcibly flushed.
+
+   .. versionchanged:: 3.3
+      Added the *flush* keyword argument.
 
 
 .. function:: property(fget=None, fset=None, fdel=None, doc=None)
