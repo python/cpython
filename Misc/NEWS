@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- PEP 380, Issue #11682: Add "yield from <x>" to support easy delegation to
+  subgenerators (initial patch by Greg Ewing, integration into 3.3 by
+  Renaud Blanch, Ryan Kelly, Zbigniew Jędrzejewski-Szmek and Nick Coghlan)
+
 - Issue #13748: Raw bytes literals can now be written with the ``rb`` prefix
   as well as ``br``.
 

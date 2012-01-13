@@ -425,10 +425,10 @@ When :keyword:`return` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
 really leaving the function.
 
-In a generator function, the :keyword:`return` statement is not allowed to
-include an :token:`expression_list`.  In that context, a bare :keyword:`return`
-indicates that the generator is done and will cause :exc:`StopIteration` to be
-raised.
+In a generator function, the :keyword:`return` statement indicates that the
+generator is done and will cause :exc:`StopIteration` to be raised. The returned
+value (if any) is used as an argument to construct :exc:`StopIteration` and
+becomes the :attr:`StopIteration.value` attribute.
 
 
 .. _yield:
@@ -450,6 +450,7 @@ The :keyword:`yield` statement is only used when defining a generator function,
 and is only used in the body of the generator function. Using a :keyword:`yield`
 statement in a function definition is sufficient to cause that definition to
 create a generator function instead of a normal function.
+
 When a generator function is called, it returns an iterator known as a generator
 iterator, or more commonly, a generator.  The body of the generator function is
 executed by calling the :func:`next` function on the generator repeatedly until
@@ -469,14 +470,25 @@ resumed before it is finalized (by reaching a zero reference count or by being
 garbage collected), the generator-iterator's :meth:`close` method will be
 called, allowing any pending :keyword:`finally` clauses to execute.
 
+When ``yield from expression`` is used, it treats the supplied expression as
+a subiterator, producing values from it until the underlying iterator is
+exhausted.
+
+For full details of :keyword:`yield` semantics, refer to the :ref:`yieldexpr`
+section.
+
 .. seealso::
 
    :pep:`0255` - Simple Generators
       The proposal for adding generators and the :keyword:`yield` statement to Python.
 
    :pep:`0342` - Coroutines via Enhanced Generators
-      The proposal that, among other generator enhancements, proposed allowing
-      :keyword:`yield` to appear inside a :keyword:`try` ... :keyword:`finally` block.
+      The proposal to enhance the API and syntax of generators, making them
+      usable as simple coroutines.
+
+   :pep:`0380` - Syntax for Delegating to a Subgenerator
+      The proposal to introduce the :token:`yield_from` syntax, making delegation
+      to sub-generators easy.
 
 
 .. _raise:

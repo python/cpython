@@ -195,6 +195,22 @@ inspection of exception attributes::
         print("You are not allowed to read document.txt")
 
 
+PEP 380: Syntax for Delegating to a Subgenerator
+================================================
+
+PEP 380 adds the ``yield from`` expression, allowing a generator to delegate
+part of its operations to another generator. This allows a section of code
+containing 'yield' to be factored out and placed in another generator.
+Additionally, the subgenerator is allowed to return with a value, and the
+value is made available to the delegating generator.
+While designed primarily for use in delegating to a subgenerator, the ``yield
+from`` expression actually allows delegation to arbitrary subiterators.
+
+(Implementation by Greg Ewing, integrated into 3.3 by Renaud Blanch, Ryan
+Kelly and Nick Coghlan, documentation by Zbigniew Jędrzejewski-Szmek and
+Nick Coghlan)
+
+
 PEP 3155: Qualified name for classes and functions
 ==================================================
 
@@ -208,7 +224,6 @@ it provides better information about where they were actually defined, and
 how they might be accessible from the global scope.
 
 Example with (non-bound) methods::
-
    >>> class C:
    ...     def meth(self):
    ...         pass

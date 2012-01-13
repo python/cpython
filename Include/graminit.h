@@ -81,3 +81,4 @@
 #define comp_if 334
 #define encoding_decl 335
 #define yield_expr 336
+#define yield_arg 337

@@ -19,10 +19,6 @@
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
-#define RETURN_VAL_IN_GENERATOR \
-    "'return' with argument inside generator"
-
-
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, int lineno, int col_offset)
@@ -1133,14 +1129,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.Return.value) {
             VISIT(st, expr, s->v.Return.value);
             st->st_cur->ste_returns_value = 1;
-            if (st->st_cur->ste_generator) {
-                PyErr_SetString(PyExc_SyntaxError,
-                    RETURN_VAL_IN_GENERATOR);
-                PyErr_SyntaxLocationEx(st->st_filename,
-                                       s->lineno,
-                                       s->col_offset);
-                return 0;
-            }
         }
         break;
     case Delete_kind:
@@ -1345,13 +1333,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Yield.value)
             VISIT(st, expr, e->v.Yield.value);
         st->st_cur->ste_generator = 1;
-        if (st->st_cur->ste_returns_value) {
-            PyErr_SetString(PyExc_SyntaxError,
-                RETURN_VAL_IN_GENERATOR);
-            PyErr_SyntaxLocationEx(st->st_filename,
-                                   e->lineno, e->col_offset);
-            return 0;
-        }
         break;
     case Compare_kind:
         VISIT(st, expr, e->v.Compare.left);

@@ -250,7 +250,16 @@ The following exceptions are the exceptions that are usually raised.
 .. exception:: StopIteration
 
    Raised by built-in function :func:`next` and an :term:`iterator`\'s
-   :meth:`__next__` method to signal that there are no further values.
+   :meth:`__next__` method to signal that there are no further items to be
+   produced by the iterator.
+
+   The exception object has a single attribute :attr:`value`, which is
+   given as an argument when constructing the exception, and defaults
+   to :const:`None`.
+
+   When a generator function returns, a new :exc:`StopIteration` instance is
+   raised, and the value returned by the function is used as the
+   :attr:`value` parameter to the constructor of the exception.
 
 
 .. exception:: SyntaxError
