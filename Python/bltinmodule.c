@@ -1484,15 +1484,15 @@ equivalent to (x**y) % z, but may be more efficient (e.g. for longs).");
 static PyObject *
 builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"sep", "end", "file", 0};
+    static char *kwlist[] = {"sep", "end", "file", "flush", 0};
     static PyObject *dummy_args;
-    PyObject *sep = NULL, *end = NULL, *file = NULL;
+    PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
 
     if (dummy_args == NULL && !(dummy_args = PyTuple_New(0)))
-            return NULL;
-    if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
-                                     kwlist, &sep, &end, &file))
+        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOOO:print",
+                                     kwlist, &sep, &end, &file, &flush))
         return NULL;
     if (file == NULL || file == Py_None) {
         file = PySys_GetObject("stdout");
@@ -1542,6 +1542,20 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
     if (err)
         return NULL;
+
+    if (flush != NULL) {
+        PyObject *tmp;
+        int do_flush = PyObject_IsTrue(flush);
+        if (do_flush == -1)
+            return NULL;
+        else if (do_flush) {
+            tmp = PyObject_CallMethod(file, "flush", "");
+            if (tmp == NULL)
+                return NULL;
+            else
+                Py_DECREF(tmp);
+        }
+    }
 
     Py_RETURN_NONE;
 }
