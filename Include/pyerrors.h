@@ -51,6 +51,11 @@ typedef struct {
     Py_ssize_t written;   /* only for BlockingIOError, -1 otherwise */
 } PyOSErrorObject;
 
+typedef struct {
+    PyException_HEAD
+    PyObject *value;
+} PyStopIterationObject;
+
 /* Compatibility typedefs */
 typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS
@@ -380,6 +385,8 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
     const char *reason          /* UTF-8 encoded string */
     );
 
+/* create a StopIteration exception with the given value */
+PyAPI_FUNC(PyObject *) PyStopIteration_Create(PyObject *);
 
 /* These APIs aren't really part of the error implementation, but
    often needed to format error messages; the native C lib APIs are

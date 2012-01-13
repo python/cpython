@@ -71,7 +71,7 @@ static void *opcode_targets[256] = {
     &&TARGET_STORE_LOCALS,
     &&TARGET_PRINT_EXPR,
     &&TARGET_LOAD_BUILD_CLASS,
-    &&_unknown_opcode,
+    &&TARGET_YIELD_FROM,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&TARGET_INPLACE_LSHIFT,

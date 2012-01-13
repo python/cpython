@@ -431,6 +431,13 @@ the stack so that it is available for further iterations of the loop.
    Pops ``TOS`` and yields it from a :term:`generator`.
 
 
+.. opcode:: YIELD_FROM
+
+   Pops ``TOS`` and delegates to it as a subiterator from a :term:`generator`.
+
+   .. versionadded:: 3.3
+
+
 .. opcode:: IMPORT_STAR
 
    Loads all symbols not starting with ``'_'`` directly from the module TOS to the

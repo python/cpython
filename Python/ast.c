@@ -2369,13 +2369,24 @@ ast_for_expr(struct compiling *c, const node *n)
             }
             return ast_for_binop(c, n);
         case yield_expr: {
+            node *an = NULL;
+            node *en = NULL;
+            int is_from = 0;
             expr_ty exp = NULL;
-            if (NCH(n) == 2) {
-                exp = ast_for_testlist(c, CHILD(n, 1));
+            if (NCH(n) > 1)
+                an = CHILD(n, 1); /* yield_arg */
+            if (an) {
+                en = CHILD(an, NCH(an) - 1);
+                if (NCH(an) == 2) {
+                    is_from = 1;
+                    exp = ast_for_expr(c, en);
+                }
+                else
+                    exp = ast_for_testlist(c, en);
                 if (!exp)
                     return NULL;
             }
-            return Yield(exp, LINENO(n), n->n_col_offset, c->c_arena);
+            return Yield(is_from, exp, LINENO(n), n->n_col_offset, c->c_arena);
         }
         case factor:
             if (NCH(n) == 1) {
@@ -2399,7 +2410,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
     /*
       arglist: (argument ',')* (argument [',']| '*' test [',' '**' test]
                | '**' test)
-      argument: [test '='] test [comp_for]        # Really [keyword '='] test
+      argument: [test '='] (test) [comp_for]        # Really [keyword '='] test
     */
 
     int i, nargs, nkeywords, ngens;
@@ -2693,7 +2704,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
       continue_stmt: 'continue'
       return_stmt: 'return' [testlist]
       yield_stmt: yield_expr
-      yield_expr: 'yield' testlist
+      yield_expr: 'yield' testlist | 'yield' 'from' test
       raise_stmt: 'raise' [test [',' test [',' test]]]
     */
     node *ch;
