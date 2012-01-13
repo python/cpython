@@ -70,11 +70,6 @@ class SimpleTest(unittest.TestCase):
             module_dict_id = id(module.__dict__)
             with open(mapping['_temp'], 'w') as file:
                 file.write("testing_var = 42\n")
-            # For filesystems where the mtime is only to a second granularity,
-            # everything that has happened above can be too fast;
-            # force an mtime on the source that is guaranteed to be different
-            # than the original mtime.
-            loader.path_mtime = self.fake_mtime(loader.path_mtime)
             module = loader.load_module('_temp')
             self.assertTrue('testing_var' in module.__dict__,
                          "'testing_var' not in "
@@ -190,10 +185,17 @@ class BadBytecodeTest(unittest.TestCase):
                                                 del_source=del_source)
             test('_temp', mapping, bc_path)
 
+    def _test_partial_size(self, test, *, del_source=False):
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:11],
+                                                del_source=del_source)
+            test('_temp', mapping, bc_path)
+
     def _test_no_marshal(self, *, del_source=False):
         with source_util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:8],
+                                                lambda bc: bc[:12],
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bc_path
             with self.assertRaises(EOFError):
@@ -202,7 +204,7 @@ class BadBytecodeTest(unittest.TestCase):
     def _test_non_code_marshal(self, *, del_source=False):
         with source_util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                    lambda bc: bc[:8] + marshal.dumps(b'abcd'),
+                                    lambda bc: bc[:12] + marshal.dumps(b'abcd'),
                                     del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(ImportError):
@@ -211,7 +213,7 @@ class BadBytecodeTest(unittest.TestCase):
     def _test_bad_marshal(self, *, del_source=False):
         with source_util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:8] + b'<test>',
+                                                lambda bc: bc[:12] + b'<test>',
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(EOFError):
@@ -235,7 +237,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 8)
+                self.assertGreater(len(file.read()), 12)
 
         self._test_empty_file(test)
 
@@ -243,7 +245,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 8)
+                self.assertGreater(len(file.read()), 12)
 
         self._test_partial_magic(test)
 
@@ -254,7 +256,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 8)
+                self.assertGreater(len(file.read()), 12)
 
         self._test_magic_only(test)
 
@@ -276,9 +278,20 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         def test(name, mapping, bc_path):
             self.import_(mapping[name], name)
             with open(bc_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 8)
+                self.assertGreater(len(file.read()), 12)
 
         self._test_partial_timestamp(test)
+
+    @source_util.writes_bytecode_files
+    def test_partial_size(self):
+        # When the size is partial, regenerate the .pyc, else
+        # raise EOFError.
+        def test(name, mapping, bc_path):
+            self.import_(mapping[name], name)
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 12)
+
+        self._test_partial_size(test)
 
     @source_util.writes_bytecode_files
     def test_no_marshal(self):
@@ -374,6 +387,13 @@ class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
                 self.import_(bytecode_path, name)
 
         self._test_partial_timestamp(test, del_source=True)
+
+    def test_partial_size(self):
+        def test(name, mapping, bytecode_path):
+            with self.assertRaises(EOFError):
+                self.import_(bytecode_path, name)
+
+        self._test_partial_size(test, del_source=True)
 
     def test_no_marshal(self):
         self._test_no_marshal(del_source=True)

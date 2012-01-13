@@ -331,25 +331,40 @@ class _LoaderBasics:
         filename = self.get_filename(fullname).rpartition(path_sep)[2]
         return filename.rsplit('.', 1)[0] == '__init__'
 
-    def _bytes_from_bytecode(self, fullname, data, source_mtime):
+    def _bytes_from_bytecode(self, fullname, data, source_stats):
         """Return the marshalled bytes from bytecode, verifying the magic
-        number and timestamp along the way.
+        number, timestamp and source size along the way.
 
-        If source_mtime is None then skip the timestamp check.
+        If source_stats is None then skip the timestamp check.
 
         """
         magic = data[:4]
         raw_timestamp = data[4:8]
+        raw_size = data[8:12]
         if len(magic) != 4 or magic != imp.get_magic():
             raise ImportError("bad magic number in {}".format(fullname))
         elif len(raw_timestamp) != 4:
             raise EOFError("bad timestamp in {}".format(fullname))
-        elif source_mtime is not None:
-            if marshal._r_long(raw_timestamp) != source_mtime:
-                raise ImportError("bytecode is stale for {}".format(fullname))
+        elif len(raw_size) != 4:
+            raise EOFError("bad size in {}".format(fullname))
+        if source_stats is not None:
+            try:
+                source_mtime = int(source_stats['mtime'])
+            except KeyError:
+                pass
+            else:
+                if marshal._r_long(raw_timestamp) != source_mtime:
+                    raise ImportError("bytecode is stale for {}".format(fullname))
+            try:
+                source_size = source_stats['size'] & 0xFFFFFFFF
+            except KeyError:
+                pass
+            else:
+                if marshal._r_long(raw_size) != source_size:
+                    raise ImportError("bytecode is stale for {}".format(fullname))
         # Can't return the code object as errors from marshal loading need to
         # propagate even when source is available.
-        return data[8:]
+        return data[12:]
 
     @module_for_loader
     def _load_module(self, module, *, sourceless=False):
@@ -377,11 +392,20 @@ class SourceLoader(_LoaderBasics):
     def path_mtime(self, path):
         """Optional method that returns the modification time (an int) for the
         specified path, where path is a str.
-
-        Implementing this method allows the loader to read bytecode files.
-
         """
         raise NotImplementedError
+
+    def path_stats(self, path):
+        """Optional method returning a metadata dict for the specified path
+        to by the path (str).
+        Possible keys:
+        - 'mtime' (mandatory) is the numeric timestamp of last source
+          code modification;
+        - 'size' (optional) is the size in bytes of the source code.
+
+        Implementing this method allows the loader to read bytecode files.
+        """
+        return {'mtime': self.path_mtime(path)}
 
     def set_data(self, path, data):
         """Optional method which writes data (bytes) to a file path (a str).
@@ -407,7 +431,7 @@ class SourceLoader(_LoaderBasics):
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
 
-        Reading of bytecode requires path_mtime to be implemented. To write
+        Reading of bytecode requires path_stats to be implemented. To write
         bytecode, set_data must also be implemented.
 
         """
@@ -416,10 +440,11 @@ class SourceLoader(_LoaderBasics):
         source_mtime = None
         if bytecode_path is not None:
             try:
-                source_mtime = self.path_mtime(source_path)
+                st = self.path_stats(source_path)
             except NotImplementedError:
                 pass
             else:
+                source_mtime = int(st['mtime'])
                 try:
                     data = self.get_data(bytecode_path)
                 except IOError:
@@ -427,7 +452,7 @@ class SourceLoader(_LoaderBasics):
                 else:
                     try:
                         bytes_data = self._bytes_from_bytecode(fullname, data,
-                                                               source_mtime)
+                                                               st)
                     except (ImportError, EOFError):
                         pass
                     else:
@@ -448,6 +473,7 @@ class SourceLoader(_LoaderBasics):
             # throw an exception.
             data = bytearray(imp.get_magic())
             data.extend(marshal._w_long(source_mtime))
+            data.extend(marshal._w_long(len(source_bytes)))
             data.extend(marshal.dumps(code_object))
             try:
                 self.set_data(bytecode_path, data)
@@ -492,9 +518,10 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
 
     """Concrete implementation of SourceLoader using the file system."""
 
-    def path_mtime(self, path):
-        """Return the modification time for the path."""
-        return int(_os.stat(path).st_mtime)
+    def path_stats(self, path):
+        """Return the metadat for the path."""
+        st = _os.stat(path)
+        return {'mtime': st.st_mtime, 'size': st.st_size}
 
     def set_data(self, path, data):
         """Write bytes data to a file."""

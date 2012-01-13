@@ -1844,6 +1844,8 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
                    "Bad magic number in .pyc file");
         return NULL;
     }
+    /* Skip mtime and size */
+    (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     v = PyMarshal_ReadLastObjectFromFile(fp);
     fclose(fp);

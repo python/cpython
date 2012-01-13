@@ -2800,7 +2800,7 @@ ast2obj_expr(void* _o)
                 if (!result) goto failed;
                 value = ast2obj_int(o->v.Yield.is_from);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "is_from", value) == -1)
+                if (_PyObject_SetAttrId(result, &PyId_is_from, value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_expr(o->v.Yield.value);

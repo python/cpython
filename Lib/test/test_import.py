@@ -380,7 +380,7 @@ func_filename = func.__code__.co_filename
     def test_foreign_code(self):
         py_compile.compile(self.file_name)
         with open(self.compiled_name, "rb") as f:
-            header = f.read(8)
+            header = f.read(12)
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = test_main.__code__
@@ -643,6 +643,16 @@ class PycacheTests(unittest.TestCase):
         foo_pyc = imp.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
                          os.path.join(os.curdir, foo_pyc))
+
+    def test_recompute_pyc_same_second(self):
+        # Even when the source file doesn't change timestamp, a change in
+        # source size is enough to trigger recomputation of the pyc file.
+        __import__(TESTFN)
+        unload(TESTFN)
+        with open(self.source, 'a') as fp:
+            print("x = 5", file=fp)
+        m = __import__(TESTFN)
+        self.assertEqual(m.x, 5)
 
 
 class RelativeImportFromImportlibTests(test_relative_imports.RelativeImports):

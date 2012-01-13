@@ -239,10 +239,29 @@ are also provided to help in implementing the core ABCs.
     optimization to speed up loading by removing the parsing step of Python's
     compiler, and so no bytecode-specific API is exposed.
 
+    .. method:: path_stats(self, path)
+
+        Optional abstract method which returns a :class:`dict` containing
+        metadata about the specifed path.  Supported dictionary keys are:
+
+        - ``'mtime'`` (mandatory): an integer or floating-point number
+          representing the modification time of the source code;
+        - ``'size'`` (optional): the size in bytes of the source code.
+
+        Any other keys in the dictionary are ignored, to allow for future
+        extensions.
+
+        .. versionadded:: 3.3
+
     .. method:: path_mtime(self, path)
 
         Optional abstract method which returns the modification time for the
         specified path.
+
+        .. deprecated:: 3.3
+           This method is deprecated in favour of :meth:`path_stats`.  You don't
+           have to implement it, but it is still available for compatibility
+           purposes.
 
     .. method:: set_data(self, path, data)
 

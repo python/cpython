@@ -21,7 +21,7 @@ def read_code(stream):
     if magic != imp.get_magic():
         return None
 
-    stream.read(4) # Skip timestamp
+    stream.read(8) # Skip timestamp and size
     return marshal.load(stream)
 
 
