@@ -374,6 +374,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #13774: json: Fix a SystemError when a bogus encoding is passed to
+  json.loads().
+
 - Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
   Vilmos Nebehaj.
 
