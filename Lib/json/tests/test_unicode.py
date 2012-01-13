@@ -80,6 +80,10 @@ class TestUnicode(object):
         # Issue 10038.
         self.assertEqual(type(self.loads('"foo"')), unicode)
 
+    def test_bad_encoding(self):
+        self.assertRaises(UnicodeEncodeError, self.loads, '"a"', u"rat\xe9")
+        self.assertRaises(TypeError, self.loads, '"a"', 1)
+
 
 class TestPyUnicode(TestUnicode, PyTest): pass
 class TestCUnicode(TestUnicode, CTest): pass

@@ -1725,8 +1725,15 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(s->encoding);
         s->encoding = tmp;
     }
-    if (s->encoding == NULL || !PyString_Check(s->encoding))
+    if (s->encoding == NULL)
         goto bail;
+    if (!PyString_Check(s->encoding)) {
+	PyErr_Format(PyExc_TypeError,
+		     "encoding must be a string, not %.80s",
+		     Py_TYPE(s->encoding)->tp_name);
+	goto bail;
+    }
+       
 
     /* All of these will fail "gracefully" so we don't need to verify them */
     s->strict = PyObject_GetAttrString(ctx, "strict");
