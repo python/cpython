@@ -9576,6 +9576,34 @@ do_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar
     return do_upper_or_lower(kind, data, length, res, maxchar, 1);
 }
 
+static Py_ssize_t
+do_title(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
+{
+    Py_ssize_t i, k = 0;
+    int previous_is_cased;
+
+    previous_is_cased = 0;
+    for (i = 0; i < length; i++) {
+        const Py_UCS4 c = PyUnicode_READ(kind, data, i);
+        Py_UCS4 mapped[3];
+        int n_res, j;
+
+        if (previous_is_cased)
+            n_res = lower_ucs4(kind, data, length, i, c, mapped);
+        else
+            n_res = _PyUnicode_ToTitleFull(c, mapped);
+
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
+        }
+
+        previous_is_cased = _PyUnicode_IsCased(c);
+    }
+    return k;
+}
+
 static PyObject *
 case_operation(PyObject *self,
                Py_ssize_t (*perform)(int, void *, Py_ssize_t, Py_UCS4 *, Py_UCS4 *))
@@ -9619,34 +9647,6 @@ case_operation(PyObject *self,
   leave:
     PyMem_FREE(tmp);
     return res;
-}
-
-static Py_ssize_t
-do_title(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
-{
-    Py_ssize_t i, k = 0;
-    int previous_is_cased;
-
-    previous_is_cased = 0;
-    for (i = 0; i < length; i++) {
-        const Py_UCS4 c = PyUnicode_READ(kind, data, i);
-        Py_UCS4 mapped[3];
-        int n_res, j;
-
-        if (previous_is_cased)
-            n_res = lower_ucs4(kind, data, length, i, c, mapped);
-        else
-            n_res = _PyUnicode_ToTitleFull(c, mapped);
-
-        for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
-            res[k++] = mapped[j];
-        }
-
-        previous_is_cased = _PyUnicode_IsCased(c);
-    }
-    return k;
 }
 
 PyObject *
