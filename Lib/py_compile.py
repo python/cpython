@@ -110,9 +110,11 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     """
     with tokenize.open(file) as f:
         try:
-            timestamp = int(os.fstat(f.fileno()).st_mtime)
+            st = os.fstat(f.fileno())
         except AttributeError:
-            timestamp = int(os.stat(file).st_mtime)
+            st = os.stat(file)
+        timestamp = int(st.st_mtime)
+        size = st.st_size & 0xFFFFFFFF
         codestring = f.read()
     try:
         codeobject = builtins.compile(codestring, dfile or file, 'exec',
@@ -139,6 +141,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     with open(cfile, 'wb') as fc:
         fc.write(b'\0\0\0\0')
         wr_long(fc, timestamp)
+        wr_long(fc, size)
         marshal.dump(codeobject, fc)
         fc.flush()
         fc.seek(0, 0)

@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13645: pyc files now contain the size of the corresponding source
+  code, to avoid timestamp collisions (especially on filesystems with a low
+  timestamp resolution) when checking for freshness of the bytecode.
+
 - PEP 380, Issue #11682: Add "yield from <x>" to support easy delegation to
   subgenerators (initial patch by Greg Ewing, integration into 3.3 by
   Renaud Blanch, Ryan Kelly, Zbigniew Jędrzejewski-Szmek and Nick Coghlan)

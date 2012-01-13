@@ -104,6 +104,7 @@ typedef unsigned short mode_t;
        Python 3.2a2  3180 (add DELETE_DEREF)
        Python 3.3a0  3190 __class__ super closure changed
        Python 3.3a0  3200 (__qualname__ added)
+                     3210 (added size modulo 2**32 to the pyc header)
 */
 
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -116,7 +117,7 @@ typedef unsigned short mode_t;
 #define STRIFY(name) QUOTE(name)
 #define MAJOR STRIFY(PY_MAJOR_VERSION)
 #define MINOR STRIFY(PY_MINOR_VERSION)
-#define MAGIC (3200 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3210 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */
@@ -1071,11 +1072,12 @@ make_source_pathname(PyObject *path)
    Doesn't set an exception. */
 
 static FILE *
-check_compiled_module(PyObject *pathname, time_t mtime, PyObject *cpathname)
+check_compiled_module(PyObject *pathname, struct stat *srcstat, PyObject *cpathname)
 {
     FILE *fp;
     long magic;
     long pyc_mtime;
+    long pyc_size;
 
     fp = _Py_fopen(cpathname, "rb");
     if (fp == NULL)
@@ -1088,9 +1090,16 @@ check_compiled_module(PyObject *pathname, time_t mtime, PyObject *cpathname)
         return NULL;
     }
     pyc_mtime = PyMarshal_ReadLongFromFile(fp);
-    if (pyc_mtime != mtime) {
+    if (pyc_mtime != srcstat->st_mtime) {
         if (Py_VerboseFlag)
             PySys_FormatStderr("# %R has bad mtime\n", cpathname);
+        fclose(fp);
+        return NULL;
+    }
+    pyc_size = PyMarshal_ReadLongFromFile(fp);
+    if (pyc_size != (srcstat->st_size & 0xFFFFFFFF)) {
+        if (Py_VerboseFlag)
+            PySys_FormatStderr("# %R has bad size\n", cpathname);
         fclose(fp);
         return NULL;
     }
@@ -1136,6 +1145,8 @@ load_compiled_module(PyObject *name, PyObject *cpathname, FILE *fp)
                      "Bad magic number in %R", cpathname);
         return NULL;
     }
+    /* Skip mtime and size */
+    (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     co = read_compiled_module(cpathname, fp);
     if (co == NULL)
@@ -1196,6 +1207,7 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     Py_UCS4 *cpathname_ucs4;
     FILE *fp;
     time_t mtime = srcstat->st_mtime;
+    long size = srcstat->st_size & 0xFFFFFFFF;
     PyObject *cpathname_tmp;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
@@ -1326,14 +1338,16 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
         return;
     }
     PyMarshal_WriteLongToFile(pyc_magic, fp, Py_MARSHAL_VERSION);
-    /* First write a 0 for mtime */
+    /* First write a 0 for mtime and size */
+    PyMarshal_WriteLongToFile(0L, fp, Py_MARSHAL_VERSION);
     PyMarshal_WriteLongToFile(0L, fp, Py_MARSHAL_VERSION);
     PyMarshal_WriteObjectToFile((PyObject *)co, fp, Py_MARSHAL_VERSION);
     fflush(fp);
-    /* Now write the true mtime */
+    /* Now write the true mtime and size */
     fseek(fp, 4L, 0);
     assert(mtime < LONG_MAX);
     PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
+    PyMarshal_WriteLongToFile(size, fp, Py_MARSHAL_VERSION);
     if (fflush(fp) != 0 || ferror(fp)) {
         if (Py_VerboseFlag)
             PySys_FormatStderr("# can't write %R\n", cpathname);
@@ -1478,7 +1492,7 @@ load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
     cpathname = make_compiled_pathname(pathname, !Py_OptimizeFlag);
 
     if (cpathname != NULL)
-        fpc = check_compiled_module(pathname, st.st_mtime, cpathname);
+        fpc = check_compiled_module(pathname, &st, cpathname);
     else
         fpc = NULL;
 
