@@ -475,6 +475,7 @@ PyGen_FetchStopIterationValue(PyObject **pvalue) {
         Py_XDECREF(tb);
         if (ev) {
             value = ((PyStopIterationObject *)ev)->value;
+            Py_INCREF(value);
             Py_DECREF(ev);
         }
     } else if (PyErr_Occurred()) {
@@ -482,8 +483,8 @@ PyGen_FetchStopIterationValue(PyObject **pvalue) {
     }
     if (value == NULL) {
         value = Py_None;
+        Py_INCREF(value);
     }
-    Py_INCREF(value);
     *pvalue = value;
     return 0;
 }
