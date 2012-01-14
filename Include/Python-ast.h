@@ -180,10 +180,10 @@ struct _stmt {
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
                   SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
-                  Yield_kind=12, Compare_kind=13, Call_kind=14, Num_kind=15,
-                  Str_kind=16, Bytes_kind=17, Ellipsis_kind=18,
-                  Attribute_kind=19, Subscript_kind=20, Starred_kind=21,
-                  Name_kind=22, List_kind=23, Tuple_kind=24};
+                  Yield_kind=12, YieldFrom_kind=13, Compare_kind=14,
+                  Call_kind=15, Num_kind=16, Str_kind=17, Bytes_kind=18,
+                  Ellipsis_kind=19, Attribute_kind=20, Subscript_kind=21,
+                  Starred_kind=22, Name_kind=23, List_kind=24, Tuple_kind=25};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -245,9 +245,12 @@ struct _expr {
                 } GeneratorExp;
                 
                 struct {
-                        int is_from;
                         expr_ty value;
                 } Yield;
+                
+                struct {
+                        expr_ty value;
+                } YieldFrom;
                 
                 struct {
                         expr_ty left;
@@ -488,9 +491,11 @@ expr_ty _Py_DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int
 #define GeneratorExp(a0, a1, a2, a3, a4) _Py_GeneratorExp(a0, a1, a2, a3, a4)
 expr_ty _Py_GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
                          col_offset, PyArena *arena);
-#define Yield(a0, a1, a2, a3, a4) _Py_Yield(a0, a1, a2, a3, a4)
-expr_ty _Py_Yield(int is_from, expr_ty value, int lineno, int col_offset,
-                  PyArena *arena);
+#define Yield(a0, a1, a2, a3) _Py_Yield(a0, a1, a2, a3)
+expr_ty _Py_Yield(expr_ty value, int lineno, int col_offset, PyArena *arena);
+#define YieldFrom(a0, a1, a2, a3) _Py_YieldFrom(a0, a1, a2, a3)
+expr_ty _Py_YieldFrom(expr_ty value, int lineno, int col_offset, PyArena
+                      *arena);
 #define Compare(a0, a1, a2, a3, a4, a5) _Py_Compare(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
                     int lineno, int col_offset, PyArena *arena);

@@ -223,6 +223,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_expr(exp->v.DictComp.value, Load);
     case Yield_kind:
         return !exp->v.Yield.value || validate_expr(exp->v.Yield.value, Load);
+    case YieldFrom_kind:
+        return !exp->v.YieldFrom.value ||
+            validate_expr(exp->v.YieldFrom.value, Load);
     case Compare_kind:
         if (!asdl_seq_LEN(exp->v.Compare.comparators)) {
             PyErr_SetString(PyExc_ValueError, "Compare with no comparators");
@@ -942,6 +945,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             expr_name = "generator expression";
             break;
         case Yield_kind:
+        case YieldFrom_kind:
             expr_name = "yield expression";
             break;
         case ListComp_kind:
@@ -2386,7 +2390,9 @@ ast_for_expr(struct compiling *c, const node *n)
                 if (!exp)
                     return NULL;
             }
-            return Yield(is_from, exp, LINENO(n), n->n_col_offset, c->c_arena);
+            if (is_from)
+                return YieldFrom(exp, LINENO(n), n->n_col_offset, c->c_arena);
+            return Yield(exp, LINENO(n), n->n_col_offset, c->c_arena);
         }
         case factor:
             if (NCH(n) == 1) {
