@@ -87,6 +87,11 @@ instantiated directly, but always through the module-level function
    If the root is reached, and it has a level of NOTSET, then all messages will be
    processed. Otherwise, the root's level will be used as the effective level.
 
+   .. versionchanged:: 3.2
+      The *lvl* parameter now accepts a string representation of the
+      level such as 'INFO' as an alternative to the integer constants
+      such as :const:`INFO`.
+
 
 .. method:: Logger.isEnabledFor(lvl)
 
@@ -318,6 +323,11 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
    Sets the threshold for this handler to *lvl*. Logging messages which are less
    severe than *lvl* will be ignored. When a handler is created, the level is set
    to :const:`NOTSET` (which causes all messages to be processed).
+
+   .. versionchanged:: 3.2
+      The *lvl* parameter now accepts a string representation of the
+      level such as 'INFO' as an alternative to the integer constants
+      such as :const:`INFO`.
 
 
 .. method:: Handler.setFormatter(form)
