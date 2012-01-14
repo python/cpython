@@ -118,7 +118,7 @@ BOOL CallModuleDllMain(char *modName, DWORD dwReason)
     BOOL (WINAPI * pfndllmain)(HINSTANCE, DWORD, LPVOID);
 
     char funcName[255];
-    HMODULE hmod = GetModuleHandle(NULL);
+    HMODULE hmod = GetModuleHandleW(NULL);
     strcpy(funcName, "_DllMain");
     strcat(funcName, modName);
     strcat(funcName, "@12"); // stdcall convention.

@@ -1155,7 +1155,7 @@ check_GetFinalPathNameByHandle()
     /* only recheck */
     if (!has_GetFinalPathNameByHandle)
     {
-        hKernel32 = GetModuleHandle("KERNEL32");
+        hKernel32 = GetModuleHandleW(L"KERNEL32");
         *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
                                                 "GetFinalPathNameByHandleA");
         *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
@@ -6526,7 +6526,7 @@ check_CreateSymbolicLinkW()
     /* only recheck */
     if (has_CreateSymbolicLinkW)
         return has_CreateSymbolicLinkW;
-    hKernel32 = GetModuleHandle("KERNEL32");
+    hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
                                                         "CreateSymbolicLinkW");
     if (Py_CreateSymbolicLinkW)
@@ -9365,7 +9365,7 @@ win32_urandom(PyObject *self, PyObject *args)
 
         /* Obtain handle to the DLL containing CryptoAPI
            This should not fail         */
-        hAdvAPI32 = GetModuleHandle("advapi32.dll");
+        hAdvAPI32 = GetModuleHandleW(L"advapi32.dll");
         if(hAdvAPI32 == NULL)
             return win32_error("GetModuleHandle", NULL);
 
