@@ -1002,6 +1002,14 @@ functions based on regular expressions.
    rest lowercased.
 
 
+.. method:: str.casefold()
+
+   Return a casefolded copy of the string. Casefolded strings may be used for
+   caseless matching. For example, ``"MASSE".casefold() == "maße".casefold()``.
+
+   .. versionadded:: 3.3
+
+
 .. method:: str.center(width[, fillchar])
 
    Return centered in a string of length *width*. Padding is done using the

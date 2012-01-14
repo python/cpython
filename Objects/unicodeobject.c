@@ -9577,6 +9577,24 @@ do_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar
 }
 
 static Py_ssize_t
+do_casefold(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
+{
+    Py_ssize_t i, k = 0;
+
+    for (i = 0; i < length; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, data, i);
+        Py_UCS4 mapped[3];
+        int j, n_res = _PyUnicode_ToFoldedFull(c, mapped);
+        for (j = 0; j < n_res; j++) {
+            if (mapped[j] > *maxchar)
+                *maxchar = mapped[j];
+            res[k++] = mapped[j];
+        }
+    }
+    return k;
+}
+
+static Py_ssize_t
 do_title(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar)
 {
     Py_ssize_t i, k = 0;
@@ -10500,6 +10518,22 @@ unicode_capitalize(PyObject *self)
         return unicode_result_unchanged(self);
     return case_operation(self, do_capitalize);
 }
+
+PyDoc_STRVAR(casefold__doc__,
+             "S.casefold() -> str\n\
+\n\
+Return a version of S suitable for caseless comparisons.");
+
+static PyObject *
+unicode_casefold(PyObject *self)
+{
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
+    if (PyUnicode_IS_ASCII(self))
+        return ascii_upper_or_lower(self, 1);
+    return case_operation(self, do_casefold);
+}
+
 
 /* Argument converter.  Coerces to a single unicode character */
 
@@ -12998,6 +13032,7 @@ static PyMethodDef unicode_methods[] = {
     {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
     {"join", (PyCFunction) unicode_join, METH_O, join__doc__},
     {"capitalize", (PyCFunction) unicode_capitalize, METH_NOARGS, capitalize__doc__},
+    {"casefold", (PyCFunction) unicode_casefold, METH_NOARGS, casefold__doc__},
     {"title", (PyCFunction) unicode_title, METH_NOARGS, title__doc__},
     {"center", (PyCFunction) unicode_center, METH_VARARGS, center__doc__},
     {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
