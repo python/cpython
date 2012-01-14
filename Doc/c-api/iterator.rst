@@ -12,23 +12,23 @@ the callable for each item in the sequence, and ending the iteration when the
 sentinel value is returned.
 
 
-.. cvar:: PyTypeObject PySeqIter_Type
+.. c:var:: PyTypeObject PySeqIter_Type
 
-   Type object for iterator objects returned by :cfunc:`PySeqIter_New` and the
+   Type object for iterator objects returned by :c:func:`PySeqIter_New` and the
    one-argument form of the :func:`iter` built-in function for built-in sequence
    types.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: int PySeqIter_Check(op)
+.. c:function:: int PySeqIter_Check(op)
 
-   Return true if the type of *op* is :cdata:`PySeqIter_Type`.
+   Return true if the type of *op* is :c:data:`PySeqIter_Type`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PySeqIter_New(PyObject *seq)
+.. c:function:: PyObject* PySeqIter_New(PyObject *seq)
 
    Return an iterator that works with a general sequence object, *seq*.  The
    iteration ends when the sequence raises :exc:`IndexError` for the subscripting
@@ -37,22 +37,22 @@ sentinel value is returned.
    .. versionadded:: 2.2
 
 
-.. cvar:: PyTypeObject PyCallIter_Type
+.. c:var:: PyTypeObject PyCallIter_Type
 
-   Type object for iterator objects returned by :cfunc:`PyCallIter_New` and the
+   Type object for iterator objects returned by :c:func:`PyCallIter_New` and the
    two-argument form of the :func:`iter` built-in function.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: int PyCallIter_Check(op)
+.. c:function:: int PyCallIter_Check(op)
 
-   Return true if the type of *op* is :cdata:`PyCallIter_Type`.
+   Return true if the type of *op* is :c:data:`PyCallIter_Type`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyCallIter_New(PyObject *callable, PyObject *sentinel)
+.. c:function:: PyObject* PyCallIter_New(PyObject *callable, PyObject *sentinel)
 
    Return a new iterator.  The first parameter, *callable*, can be any Python
    callable object that can be called with no parameters; each call to it should

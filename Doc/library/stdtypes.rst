@@ -226,11 +226,11 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`long`, :class:`complex`
 There are four distinct numeric types: :dfn:`plain integers`, :dfn:`long
 integers`, :dfn:`floating point numbers`, and :dfn:`complex numbers`. In
 addition, Booleans are a subtype of plain integers. Plain integers (also just
-called :dfn:`integers`) are implemented using :ctype:`long` in C, which gives
+called :dfn:`integers`) are implemented using :c:type:`long` in C, which gives
 them at least 32 bits of precision (``sys.maxint`` is always set to the maximum
 plain integer value for the current platform, the minimum value is
 ``-sys.maxint - 1``).  Long integers have unlimited precision.  Floating point
-numbers are usually implemented using :ctype:`double` in C; information about
+numbers are usually implemented using :c:type:`double` in C; information about
 the precision and internal representation of floating point numbers for the
 machine on which your program is running is available in
 :data:`sys.float_info`.  Complex numbers have a real and imaginary part, which
@@ -1335,7 +1335,7 @@ operator (modulo).  This is also known as the string *formatting* or
 *interpolation* operator.  Given ``format % values`` (where *format* is a string
 or Unicode object), ``%`` conversion specifications in *format* are replaced
 with zero or more elements of *values*.  The effect is similar to the using
-:cfunc:`sprintf` in the C language.  If *format* is a Unicode object, or if any
+:c:func:`sprintf` in the C language.  If *format* is a Unicode object, or if any
 of the objects being converted using the ``%s`` conversion are Unicode objects,
 the result will also be a Unicode object.
 
@@ -2331,7 +2331,7 @@ Files have the following methods:
 
 .. method:: file.flush()
 
-   Flush the internal buffer, like ``stdio``'s :cfunc:`fflush`.  This may be a
+   Flush the internal buffer, like ``stdio``'s :c:func:`fflush`.  This may be a
    no-op on some file-like objects.
 
    .. note::
@@ -2392,14 +2392,14 @@ Files have the following methods:
    all data until EOF is reached.  The bytes are returned as a string object.  An
    empty string is returned when EOF is encountered immediately.  (For certain
    files, like ttys, it makes sense to continue reading after an EOF is hit.)  Note
-   that this method may call the underlying C function :cfunc:`fread` more than
+   that this method may call the underlying C function :c:func:`fread` more than
    once in an effort to acquire as close to *size* bytes as possible. Also note
    that when in non-blocking mode, less data than was requested may be
    returned, even if no *size* parameter was given.
 
    .. note::
       This function is simply a wrapper for the underlying
-      :cfunc:`fread` C function, and will behave the same in corner cases,
+      :c:func:`fread` C function, and will behave the same in corner cases,
       such as whether the EOF value is cached.
 
 
@@ -2414,7 +2414,7 @@ Files have the following methods:
 
    .. note::
 
-      Unlike ``stdio``'s :cfunc:`fgets`, the returned string contains null characters
+      Unlike ``stdio``'s :c:func:`fgets`, the returned string contains null characters
       (``'\0'``) if they occurred in the input.
 
 
@@ -2440,7 +2440,7 @@ Files have the following methods:
 
 .. method:: file.seek(offset[, whence])
 
-   Set the file's current position, like ``stdio``'s :cfunc:`fseek`. The *whence*
+   Set the file's current position, like ``stdio``'s :c:func:`fseek`. The *whence*
    argument is optional and defaults to  ``os.SEEK_SET`` or ``0`` (absolute file
    positioning); other values are ``os.SEEK_CUR`` or ``1`` (seek relative to the
    current position) and ``os.SEEK_END`` or ``2``  (seek relative to the file's
@@ -2465,11 +2465,11 @@ Files have the following methods:
 
 .. method:: file.tell()
 
-   Return the file's current position, like ``stdio``'s :cfunc:`ftell`.
+   Return the file's current position, like ``stdio``'s :c:func:`ftell`.
 
    .. note::
 
-      On Windows, :meth:`tell` can return illegal values (after an :cfunc:`fgets`)
+      On Windows, :meth:`tell` can return illegal values (after an :c:func:`fgets`)
       when reading files with Unix-style line-endings. Use binary mode (``'rb'``) to
       circumvent this problem.
 

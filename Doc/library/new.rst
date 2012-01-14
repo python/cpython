@@ -48,7 +48,7 @@ The :mod:`new` module defines the following functions:
 
 .. function:: code(argcount, nlocals, stacksize, flags, codestring, constants, names, varnames, filename, name, firstlineno, lnotab)
 
-   This function is an interface to the :cfunc:`PyCode_New` C function.
+   This function is an interface to the :c:func:`PyCode_New` C function.
 
    .. XXX This is still undocumented!
 

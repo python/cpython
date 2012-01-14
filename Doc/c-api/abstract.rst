@@ -13,7 +13,7 @@ sequence types).  When used on object types for which they do not apply, they
 will raise a Python exception.
 
 It is not possible to use these functions on objects that are not properly
-initialized, such as a list object that has been created by :cfunc:`PyList_New`,
+initialized, such as a list object that has been created by :c:func:`PyList_New`,
 but whose items have not been set to some non-\ ``NULL`` value yet.
 
 .. toctree::

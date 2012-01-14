@@ -3,19 +3,19 @@
 Codec registry and support functions
 ====================================
 
-.. cfunction:: int PyCodec_Register(PyObject *search_function)
+.. c:function:: int PyCodec_Register(PyObject *search_function)
 
    Register a new codec search function.
 
    As side effect, this tries to load the :mod:`encodings` package, if not yet
    done, to make sure that it is always first in the list of search functions.
 
-.. cfunction:: int PyCodec_KnownEncoding(const char *encoding)
+.. c:function:: int PyCodec_KnownEncoding(const char *encoding)
 
    Return ``1`` or ``0`` depending on whether there is a registered codec for
    the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_Encode(PyObject *object, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyCodec_Encode(PyObject *object, const char *encoding, const char *errors)
 
    Generic codec based encoding API.
 
@@ -24,7 +24,7 @@ Codec registry and support functions
    be *NULL* to use the default method defined for the codec.  Raises a
    :exc:`LookupError` if no encoder can be found.
 
-.. cfunction:: PyObject* PyCodec_Decode(PyObject *object, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyCodec_Decode(PyObject *object, const char *encoding, const char *errors)
 
    Generic codec based decoding API.
 
@@ -42,27 +42,27 @@ lower-case characters, which makes encodings looked up through this mechanism
 effectively case-insensitive.  If no codec is found, a :exc:`KeyError` is set
 and *NULL* returned.
 
-.. cfunction:: PyObject* PyCodec_Encoder(const char *encoding)
+.. c:function:: PyObject* PyCodec_Encoder(const char *encoding)
 
    Get an encoder function for the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_Decoder(const char *encoding)
+.. c:function:: PyObject* PyCodec_Decoder(const char *encoding)
 
    Get a decoder function for the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_IncrementalEncoder(const char *encoding, const char *errors)
+.. c:function:: PyObject* PyCodec_IncrementalEncoder(const char *encoding, const char *errors)
 
    Get an :class:`IncrementalEncoder` object for the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_IncrementalDecoder(const char *encoding, const char *errors)
+.. c:function:: PyObject* PyCodec_IncrementalDecoder(const char *encoding, const char *errors)
 
    Get an :class:`IncrementalDecoder` object for the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_StreamReader(const char *encoding, PyObject *stream, const char *errors)
+.. c:function:: PyObject* PyCodec_StreamReader(const char *encoding, PyObject *stream, const char *errors)
 
    Get a :class:`StreamReader` factory function for the given *encoding*.
 
-.. cfunction:: PyObject* PyCodec_StreamWriter(const char *encoding, PyObject *stream, const char *errors)
+.. c:function:: PyObject* PyCodec_StreamWriter(const char *encoding, PyObject *stream, const char *errors)
 
    Get a :class:`StreamWriter` factory function for the given *encoding*.
 
@@ -70,7 +70,7 @@ and *NULL* returned.
 Registry API for Unicode encoding error handlers
 ------------------------------------------------
 
-.. cfunction:: int PyCodec_RegisterError(const char *name, PyObject *error)
+.. c:function:: int PyCodec_RegisterError(const char *name, PyObject *error)
 
    Register the error handling callback function *error* under the given *name*.
    This callback function will be called by a codec when it encounters
@@ -89,29 +89,29 @@ Registry API for Unicode encoding error handlers
 
    Return ``0`` on success, ``-1`` on error.
 
-.. cfunction:: PyObject* PyCodec_LookupError(const char *name)
+.. c:function:: PyObject* PyCodec_LookupError(const char *name)
 
    Lookup the error handling callback function registered under *name*.  As a
    special case *NULL* can be passed, in which case the error handling callback
    for "strict" will be returned.
 
-.. cfunction:: PyObject* PyCodec_StrictErrors(PyObject *exc)
+.. c:function:: PyObject* PyCodec_StrictErrors(PyObject *exc)
 
    Raise *exc* as an exception.
 
-.. cfunction:: PyObject* PyCodec_IgnoreErrors(PyObject *exc)
+.. c:function:: PyObject* PyCodec_IgnoreErrors(PyObject *exc)
 
    Ignore the unicode error, skipping the faulty input.
 
-.. cfunction:: PyObject* PyCodec_ReplaceErrors(PyObject *exc)
+.. c:function:: PyObject* PyCodec_ReplaceErrors(PyObject *exc)
 
    Replace the unicode encode error with ``?`` or ``U+FFFD``.
 
-.. cfunction:: PyObject* PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
+.. c:function:: PyObject* PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
    Replace the unicode encode error with XML character references.
 
-.. cfunction:: PyObject* PyCodec_BackslashReplaceErrors(PyObject *exc)
+.. c:function:: PyObject* PyCodec_BackslashReplaceErrors(PyObject *exc)
 
    Replace the unicode encode error with backslash escapes (``\x``, ``\u`` and
    ``\U``).

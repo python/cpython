@@ -808,7 +808,7 @@ available.  They are listed here in alphabetical order.
    :exc:`IOError` is raised.  When opening a file, it's preferable to use
    :func:`open` instead of invoking the :class:`file` constructor directly.
 
-   The first two arguments are the same as for ``stdio``'s :cfunc:`fopen`:
+   The first two arguments are the same as for ``stdio``'s :c:func:`fopen`:
    *name* is the file name to be opened, and *mode* is a string indicating how
    the file is to be opened.
 
@@ -841,7 +841,7 @@ available.  They are listed here in alphabetical order.
    binary mode, on systems that differentiate between binary and text files; on
    systems that don't have this distinction, adding the ``'b'`` has no effect.
 
-   In addition to the standard :cfunc:`fopen` values *mode* may be ``'U'`` or
+   In addition to the standard :c:func:`fopen` values *mode* may be ``'U'`` or
    ``'rU'``.  Python is usually built with universal newline support; supplying
    ``'U'`` opens the file as a text file, but lines may be terminated by any of the
    following: the Unix end-of-line convention ``'\n'``,  the Macintosh convention
@@ -1662,8 +1662,8 @@ bypass these functions without concerns about missing something important.
 .. [#] It is used relatively rarely so does not warrant being made into a statement.
 
 .. [#] Specifying a buffer size currently has no effect on systems that don't have
-   :cfunc:`setvbuf`.  The interface to specify the buffer size is not done using a
-   method that calls :cfunc:`setvbuf`, because that may dump core when called after
+   :c:func:`setvbuf`.  The interface to specify the buffer size is not done using a
+   method that calls :c:func:`setvbuf`, because that may dump core when called after
    any I/O has been performed, and there's no reliable way to determine whether
    this is the case.
 

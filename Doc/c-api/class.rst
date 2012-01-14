@@ -12,12 +12,12 @@ will go away in Python 3. When creating new types for extension modules, you
 will want to work with type objects (section :ref:`typeobjects`).
 
 
-.. ctype:: PyClassObject
+.. c:type:: PyClassObject
 
    The C structure of the objects used to describe built-in classes.
 
 
-.. cvar:: PyObject* PyClass_Type
+.. c:var:: PyObject* PyClass_Type
 
    .. index:: single: ClassType (in module types)
 
@@ -25,13 +25,13 @@ will want to work with type objects (section :ref:`typeobjects`).
    ``types.ClassType`` in the Python layer.
 
 
-.. cfunction:: int PyClass_Check(PyObject *o)
+.. c:function:: int PyClass_Check(PyObject *o)
 
    Return true if the object *o* is a class object, including instances of types
    derived from the standard class object.  Return false in all other cases.
 
 
-.. cfunction:: int PyClass_IsSubclass(PyObject *klass, PyObject *base)
+.. c:function:: int PyClass_IsSubclass(PyObject *klass, PyObject *base)
 
    Return true if *klass* is a subclass of *base*. Return false in all other cases.
 
@@ -41,23 +41,23 @@ will want to work with type objects (section :ref:`typeobjects`).
 There are very few functions specific to instance objects.
 
 
-.. cvar:: PyTypeObject PyInstance_Type
+.. c:var:: PyTypeObject PyInstance_Type
 
    Type object for class instances.
 
 
-.. cfunction:: int PyInstance_Check(PyObject *obj)
+.. c:function:: int PyInstance_Check(PyObject *obj)
 
    Return true if *obj* is an instance.
 
 
-.. cfunction:: PyObject* PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
+.. c:function:: PyObject* PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
 
    Create a new instance of a specific class.  The parameters *arg* and *kw* are
    used as the positional and keyword parameters to the object's constructor.
 
 
-.. cfunction:: PyObject* PyInstance_NewRaw(PyObject *class, PyObject *dict)
+.. c:function:: PyObject* PyInstance_NewRaw(PyObject *class, PyObject *dict)
 
    Create a new instance of a specific class without calling its constructor.
    *class* is the class of new object.  The *dict* parameter will be used as the

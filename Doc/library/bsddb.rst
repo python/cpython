@@ -54,7 +54,7 @@ arguments should be used in most instances.
    optional *flag* identifies the mode used to open the file.  It may be ``'r'``
    (read only), ``'w'`` (read-write) , ``'c'`` (read-write - create if necessary;
    the default) or ``'n'`` (read-write - truncate to zero length).  The other
-   arguments are rarely used and are just passed to the low-level :cfunc:`dbopen`
+   arguments are rarely used and are just passed to the low-level :c:func:`dbopen`
    function.  Consult the Berkeley DB documentation for their use and
    interpretation.
 

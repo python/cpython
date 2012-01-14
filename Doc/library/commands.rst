@@ -38,7 +38,7 @@ The :mod:`commands` module defines the following functions:
    ``(status, output)``.  *cmd* is actually run as ``{ cmd ; } 2>&1``, so that the
    returned output will contain output or error messages. A trailing newline is
    stripped from the output. The exit status for the command can be interpreted
-   according to the rules for the C function :cfunc:`wait`.
+   according to the rules for the C function :c:func:`wait`.
 
 
 .. function:: getoutput(cmd)

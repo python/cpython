@@ -61,7 +61,7 @@ specified information.
 
 .. data:: F_FLAG
 
-   Flags. System dependent: see :cfunc:`statvfs` man page.
+   Flags. System dependent: see :c:func:`statvfs` man page.
 
 
 .. data:: F_NAMEMAX

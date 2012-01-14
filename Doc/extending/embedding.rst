@@ -25,14 +25,14 @@ the Python interpreter to run some Python code.
 
 So if you are embedding Python, you are providing your own main program.  One of
 the things this main program has to do is initialize the Python interpreter.  At
-the very least, you have to call the function :cfunc:`Py_Initialize`.  There are
+the very least, you have to call the function :c:func:`Py_Initialize`.  There are
 optional calls to pass command line arguments to Python.  Then later you can
 call the interpreter from any part of the application.
 
 There are several different ways to call the interpreter: you can pass a string
-containing Python statements to :cfunc:`PyRun_SimpleString`, or you can pass a
+containing Python statements to :c:func:`PyRun_SimpleString`, or you can pass a
 stdio file pointer and a file name (for identification in error messages only)
-to :cfunc:`PyRun_SimpleFile`.  You can also call the lower-level operations
+to :c:func:`PyRun_SimpleFile`.  You can also call the lower-level operations
 described in the previous chapters to construct and use Python objects.
 
 A simple demo of embedding Python can be found in the directory
@@ -69,12 +69,12 @@ perform some operation on a file. ::
    }
 
 The above code first initializes the Python interpreter with
-:cfunc:`Py_Initialize`, followed by the execution of a hard-coded Python script
-that print the date and time.  Afterwards, the :cfunc:`Py_Finalize` call shuts
+:c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
+that print the date and time.  Afterwards, the :c:func:`Py_Finalize` call shuts
 the interpreter down, followed by the end of the program.  In a real program,
 you may want to get the Python script from another source, perhaps a text-editor
 routine, a file, or a database.  Getting the Python code from a file can better
-be done by using the :cfunc:`PyRun_SimpleFile` function, which saves you the
+be done by using the :c:func:`PyRun_SimpleFile` function, which saves you the
 trouble of allocating memory space and loading the file contents.
 
 
@@ -162,8 +162,8 @@ interesting part with respect to embedding Python starts with ::
    pModule = PyImport_Import(pName);
 
 After initializing the interpreter, the script is loaded using
-:cfunc:`PyImport_Import`.  This routine needs a Python string as its argument,
-which is constructed using the :cfunc:`PyString_FromString` data conversion
+:c:func:`PyImport_Import`.  This routine needs a Python string as its argument,
+which is constructed using the :c:func:`PyString_FromString` data conversion
 routine. ::
 
    pFunc = PyObject_GetAttrString(pModule, argv[2]);
@@ -175,7 +175,7 @@ routine. ::
    Py_XDECREF(pFunc);
 
 Once the script is loaded, the name we're looking for is retrieved using
-:cfunc:`PyObject_GetAttrString`.  If the name exists, and the object returned is
+:c:func:`PyObject_GetAttrString`.  If the name exists, and the object returned is
 callable, you can safely assume that it is a function.  The program then
 proceeds by constructing a tuple of arguments as normal.  The call to the Python
 function is then made with::
@@ -218,8 +218,8 @@ Python extension.  For example::
        {NULL, NULL, 0, NULL}
    };
 
-Insert the above code just above the :cfunc:`main` function. Also, insert the
-following two statements directly after :cfunc:`Py_Initialize`::
+Insert the above code just above the :c:func:`main` function. Also, insert the
+following two statements directly after :c:func:`Py_Initialize`::
 
    numargs = argc;
    Py_InitModule("emb", EmbMethods);

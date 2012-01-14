@@ -93,10 +93,10 @@ methods (except ``control`` objects which only provide :meth:`getinfo`,
    names and meanings of the attributes are described in ``<sun/audioio.h>`` and in
    the :manpage:`audio(7I)` manual page.  Member names are slightly different from
    their C counterparts: a status object is only a single structure. Members of the
-   :cdata:`play` substructure have ``o_`` prepended to their name and members of
-   the :cdata:`record` structure have ``i_``. So, the C member
-   :cdata:`play.sample_rate` is accessed as :attr:`o_sample_rate`,
-   :cdata:`record.gain` as :attr:`i_gain` and :cdata:`monitor_gain` plainly as
+   :c:data:`play` substructure have ``o_`` prepended to their name and members of
+   the :c:data:`record` structure have ``i_``. So, the C member
+   :c:data:`play.sample_rate` is accessed as :attr:`o_sample_rate`,
+   :c:data:`record.gain` as :attr:`i_gain` and :c:data:`monitor_gain` plainly as
    :attr:`monitor_gain`.
 
 

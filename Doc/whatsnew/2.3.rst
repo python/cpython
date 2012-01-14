@@ -1797,8 +1797,8 @@ Pymalloc: A Specialized Object Allocator
 
 Pymalloc, a specialized object allocator written by Vladimir Marangozov, was a
 feature added to Python 2.1.  Pymalloc is intended to be faster than the system
-:cfunc:`malloc` and to have less memory overhead for allocation patterns typical
-of Python programs. The allocator uses C's :cfunc:`malloc` function to get large
+:c:func:`malloc` and to have less memory overhead for allocation patterns typical
+of Python programs. The allocator uses C's :c:func:`malloc` function to get large
 pools of memory and then fulfills smaller memory requests from these pools.
 
 In 2.1 and 2.2, pymalloc was an experimental feature and wasn't enabled by
@@ -1814,13 +1814,13 @@ runtime.
 
 There's one particularly common error that causes problems.  There are a number
 of memory allocation functions in Python's C API that have previously just been
-aliases for the C library's :cfunc:`malloc` and :cfunc:`free`, meaning that if
+aliases for the C library's :c:func:`malloc` and :c:func:`free`, meaning that if
 you accidentally called mismatched functions the error wouldn't be noticeable.
 When the object allocator is enabled, these functions aren't aliases of
-:cfunc:`malloc` and :cfunc:`free` any more, and calling the wrong function to
+:c:func:`malloc` and :c:func:`free` any more, and calling the wrong function to
 free memory may get you a core dump.  For example, if memory was allocated using
-:cfunc:`PyObject_Malloc`, it has to be freed using :cfunc:`PyObject_Free`, not
-:cfunc:`free`.  A few modules included with Python fell afoul of this and had to
+:c:func:`PyObject_Malloc`, it has to be freed using :c:func:`PyObject_Free`, not
+:c:func:`free`.  A few modules included with Python fell afoul of this and had to
 be fixed; doubtless there are more third-party modules that will have the same
 problem.
 
@@ -1831,14 +1831,14 @@ one family for allocating chunks of memory and another family of functions
 specifically for allocating Python objects.
 
 * To allocate and free an undistinguished chunk of memory use the "raw memory"
-  family: :cfunc:`PyMem_Malloc`, :cfunc:`PyMem_Realloc`, and :cfunc:`PyMem_Free`.
+  family: :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`, and :c:func:`PyMem_Free`.
 
 * The "object memory" family is the interface to the pymalloc facility described
   above and is biased towards a large number of "small" allocations:
-  :cfunc:`PyObject_Malloc`, :cfunc:`PyObject_Realloc`, and :cfunc:`PyObject_Free`.
+  :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`, and :c:func:`PyObject_Free`.
 
 * To allocate and free Python objects, use the "object" family
-  :cfunc:`PyObject_New`, :cfunc:`PyObject_NewVar`, and :cfunc:`PyObject_Del`.
+  :c:func:`PyObject_New`, :c:func:`PyObject_NewVar`, and :c:func:`PyObject_Del`.
 
 Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides debugging
 features to catch memory overwrites and doubled frees in both extension modules
@@ -1877,10 +1877,10 @@ Changes to Python's build process and to the C API include:
   (:file:`libpython2.3.so`) by supplying :option:`--enable-shared` when running
   Python's :program:`configure` script.  (Contributed by Ondrej Palkovsky.)
 
-* The :cmacro:`DL_EXPORT` and :cmacro:`DL_IMPORT` macros are now deprecated.
+* The :c:macro:`DL_EXPORT` and :c:macro:`DL_IMPORT` macros are now deprecated.
   Initialization functions for Python extension modules should now be declared
-  using the new macro :cmacro:`PyMODINIT_FUNC`, while the Python core will
-  generally use the :cmacro:`PyAPI_FUNC` and :cmacro:`PyAPI_DATA` macros.
+  using the new macro :c:macro:`PyMODINIT_FUNC`, while the Python core will
+  generally use the :c:macro:`PyAPI_FUNC` and :c:macro:`PyAPI_DATA` macros.
 
 * The interpreter can be compiled without any docstrings for the built-in
   functions and modules by supplying :option:`--without-doc-strings` to the
@@ -1888,19 +1888,19 @@ Changes to Python's build process and to the C API include:
   but will also mean that you can't get help for Python's built-ins.  (Contributed
   by Gustavo Niemeyer.)
 
-* The :cfunc:`PyArg_NoArgs` macro is now deprecated, and code that uses it
+* The :c:func:`PyArg_NoArgs` macro is now deprecated, and code that uses it
   should be changed.  For Python 2.2 and later, the method definition table can
   specify the :const:`METH_NOARGS` flag, signalling that there are no arguments,
   and the argument checking can then be removed.  If compatibility with pre-2.2
   versions of Python is important, the code could use ``PyArg_ParseTuple(args,
   "")`` instead, but this will be slower than using :const:`METH_NOARGS`.
 
-* :cfunc:`PyArg_ParseTuple` accepts new format characters for various sizes of
-  unsigned integers: ``B`` for :ctype:`unsigned char`, ``H`` for :ctype:`unsigned
-  short int`,  ``I`` for :ctype:`unsigned int`,  and ``K`` for :ctype:`unsigned
+* :c:func:`PyArg_ParseTuple` accepts new format characters for various sizes of
+  unsigned integers: ``B`` for :c:type:`unsigned char`, ``H`` for :c:type:`unsigned
+  short int`,  ``I`` for :c:type:`unsigned int`,  and ``K`` for :c:type:`unsigned
   long long`.
 
-* A new function, :cfunc:`PyObject_DelItemString(mapping, char \*key)` was added
+* A new function, :c:func:`PyObject_DelItemString(mapping, char \*key)` was added
   as shorthand for ``PyObject_DelItem(mapping, PyString_New(key))``.
 
 * File objects now manage their internal string buffer differently, increasing
@@ -1910,7 +1910,7 @@ Changes to Python's build process and to the C API include:
 
 * It's now possible to define class and static methods for a C extension type by
   setting either the :const:`METH_CLASS` or :const:`METH_STATIC` flags in a
-  method's :ctype:`PyMethodDef` structure.
+  method's :c:type:`PyMethodDef` structure.
 
 * Python now includes a copy of the Expat XML parser's source code, removing any
   dependence on a system version or local installation of Expat.

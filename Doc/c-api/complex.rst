@@ -21,7 +21,7 @@ them as results do so *by value* rather than dereferencing them through
 pointers.  This is consistent throughout the API.
 
 
-.. ctype:: Py_complex
+.. c:type:: Py_complex
 
    The C structure which corresponds to the value portion of a Python complex
    number object.  Most of the functions for dealing with complex number objects
@@ -34,103 +34,103 @@ pointers.  This is consistent throughout the API.
       } Py_complex;
 
 
-.. cfunction:: Py_complex _Py_c_sum(Py_complex left, Py_complex right)
+.. c:function:: Py_complex _Py_c_sum(Py_complex left, Py_complex right)
 
-   Return the sum of two complex numbers, using the C :ctype:`Py_complex`
+   Return the sum of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
 
-.. cfunction:: Py_complex _Py_c_diff(Py_complex left, Py_complex right)
+.. c:function:: Py_complex _Py_c_diff(Py_complex left, Py_complex right)
 
    Return the difference between two complex numbers, using the C
-   :ctype:`Py_complex` representation.
+   :c:type:`Py_complex` representation.
 
 
-.. cfunction:: Py_complex _Py_c_neg(Py_complex complex)
+.. c:function:: Py_complex _Py_c_neg(Py_complex complex)
 
    Return the negation of the complex number *complex*, using the C
-   :ctype:`Py_complex` representation.
+   :c:type:`Py_complex` representation.
 
 
-.. cfunction:: Py_complex _Py_c_prod(Py_complex left, Py_complex right)
+.. c:function:: Py_complex _Py_c_prod(Py_complex left, Py_complex right)
 
-   Return the product of two complex numbers, using the C :ctype:`Py_complex`
+   Return the product of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
 
-.. cfunction:: Py_complex _Py_c_quot(Py_complex dividend, Py_complex divisor)
+.. c:function:: Py_complex _Py_c_quot(Py_complex dividend, Py_complex divisor)
 
-   Return the quotient of two complex numbers, using the C :ctype:`Py_complex`
+   Return the quotient of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
    If *divisor* is null, this method returns zero and sets
-   :cdata:`errno` to :cdata:`EDOM`.
+   :c:data:`errno` to :c:data:`EDOM`.
 
 
-.. cfunction:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
+.. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
 
-   Return the exponentiation of *num* by *exp*, using the C :ctype:`Py_complex`
+   Return the exponentiation of *num* by *exp*, using the C :c:type:`Py_complex`
    representation.
 
    If *num* is null and *exp* is not a positive real number,
-   this method returns zero and sets :cdata:`errno` to :cdata:`EDOM`.
+   this method returns zero and sets :c:data:`errno` to :c:data:`EDOM`.
 
 
 Complex Numbers as Python Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-.. ctype:: PyComplexObject
+.. c:type:: PyComplexObject
 
-   This subtype of :ctype:`PyObject` represents a Python complex number object.
+   This subtype of :c:type:`PyObject` represents a Python complex number object.
 
 
-.. cvar:: PyTypeObject PyComplex_Type
+.. c:var:: PyTypeObject PyComplex_Type
 
-   This instance of :ctype:`PyTypeObject` represents the Python complex number
+   This instance of :c:type:`PyTypeObject` represents the Python complex number
    type. It is the same object as ``complex`` and ``types.ComplexType``.
 
 
-.. cfunction:: int PyComplex_Check(PyObject *p)
+.. c:function:: int PyComplex_Check(PyObject *p)
 
-   Return true if its argument is a :ctype:`PyComplexObject` or a subtype of
-   :ctype:`PyComplexObject`.
+   Return true if its argument is a :c:type:`PyComplexObject` or a subtype of
+   :c:type:`PyComplexObject`.
 
    .. versionchanged:: 2.2
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyComplex_CheckExact(PyObject *p)
+.. c:function:: int PyComplex_CheckExact(PyObject *p)
 
-   Return true if its argument is a :ctype:`PyComplexObject`, but not a subtype of
-   :ctype:`PyComplexObject`.
+   Return true if its argument is a :c:type:`PyComplexObject`, but not a subtype of
+   :c:type:`PyComplexObject`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyComplex_FromCComplex(Py_complex v)
+.. c:function:: PyObject* PyComplex_FromCComplex(Py_complex v)
 
-   Create a new Python complex number object from a C :ctype:`Py_complex` value.
-
-
-.. cfunction:: PyObject* PyComplex_FromDoubles(double real, double imag)
-
-   Return a new :ctype:`PyComplexObject` object from *real* and *imag*.
+   Create a new Python complex number object from a C :c:type:`Py_complex` value.
 
 
-.. cfunction:: double PyComplex_RealAsDouble(PyObject *op)
+.. c:function:: PyObject* PyComplex_FromDoubles(double real, double imag)
 
-   Return the real part of *op* as a C :ctype:`double`.
-
-
-.. cfunction:: double PyComplex_ImagAsDouble(PyObject *op)
-
-   Return the imaginary part of *op* as a C :ctype:`double`.
+   Return a new :c:type:`PyComplexObject` object from *real* and *imag*.
 
 
-.. cfunction:: Py_complex PyComplex_AsCComplex(PyObject *op)
+.. c:function:: double PyComplex_RealAsDouble(PyObject *op)
 
-   Return the :ctype:`Py_complex` value of the complex number *op*.
+   Return the real part of *op* as a C :c:type:`double`.
+
+
+.. c:function:: double PyComplex_ImagAsDouble(PyObject *op)
+
+   Return the imaginary part of *op* as a C :c:type:`double`.
+
+
+.. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
+
+   Return the :c:type:`Py_complex` value of the complex number *op*.
    Upon failure, this method returns ``-1.0`` as a real value.
 
    .. versionchanged:: 2.6

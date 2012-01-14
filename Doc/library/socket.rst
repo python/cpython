@@ -119,7 +119,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    The accompanying value is a pair ``(h_errno, string)`` representing an error
    returned by a library call. *string* represents the description of *h_errno*, as
-   returned by the :cfunc:`hstrerror` C function.
+   returned by the :c:func:`hstrerror` C function.
 
 
 .. exception:: gaierror
@@ -127,7 +127,7 @@ The module :mod:`socket` exports the following constants and functions:
    This exception is raised for address-related errors, for :func:`getaddrinfo` and
    :func:`getnameinfo`. The accompanying value is a pair ``(error, string)``
    representing an error returned by a library call. *string* represents the
-   description of *error*, as returned by the :cfunc:`gai_strerror` C function. The
+   description of *error*, as returned by the :c:func:`gai_strerror` C function. The
    *error* value will match one of the :const:`EAI_\*` constants defined in this
    module.
 
@@ -430,7 +430,7 @@ The module :mod:`socket` exports the following constants and functions:
    Convert an IPv4 address from dotted-quad string format (for example,
    '123.45.67.89') to 32-bit packed binary format, as a string four characters in
    length.  This is useful when conversing with a program that uses the standard C
-   library and needs objects of type :ctype:`struct in_addr`, which is the C type
+   library and needs objects of type :c:type:`struct in_addr`, which is the C type
    for the 32-bit packed binary this function returns.
 
    :func:`inet_aton` also accepts strings with less than three dots; see the
@@ -438,7 +438,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    If the IPv4 address string passed to this function is invalid,
    :exc:`socket.error` will be raised. Note that exactly what is valid depends on
-   the underlying C implementation of :cfunc:`inet_aton`.
+   the underlying C implementation of :c:func:`inet_aton`.
 
    :func:`inet_aton` does not support IPv6, and :func:`inet_pton` should be used
    instead for IPv4/v6 dual stack support.
@@ -449,7 +449,7 @@ The module :mod:`socket` exports the following constants and functions:
    Convert a 32-bit packed IPv4 address (a string four characters in length) to its
    standard dotted-quad string representation (for example, '123.45.67.89').  This
    is useful when conversing with a program that uses the standard C library and
-   needs objects of type :ctype:`struct in_addr`, which is the C type for the
+   needs objects of type :c:type:`struct in_addr`, which is the C type for the
    32-bit packed binary data this function takes as an argument.
 
    If the string passed to this function is not exactly 4 bytes in length,
@@ -461,14 +461,14 @@ The module :mod:`socket` exports the following constants and functions:
 
    Convert an IP address from its family-specific string format to a packed, binary
    format. :func:`inet_pton` is useful when a library or network protocol calls for
-   an object of type :ctype:`struct in_addr` (similar to :func:`inet_aton`) or
-   :ctype:`struct in6_addr`.
+   an object of type :c:type:`struct in_addr` (similar to :func:`inet_aton`) or
+   :c:type:`struct in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
    :exc:`socket.error` will be raised. Note that exactly what is valid depends on
    both the value of *address_family* and the underlying implementation of
-   :cfunc:`inet_pton`.
+   :c:func:`inet_pton`.
 
    Availability: Unix (maybe not all platforms).
 
@@ -480,8 +480,8 @@ The module :mod:`socket` exports the following constants and functions:
    Convert a packed IP address (a string of some number of characters) to its
    standard, family-specific string representation (for example, ``'7.10.0.5'`` or
    ``'5aef:2b::8'``) :func:`inet_ntop` is useful when a library or network protocol
-   returns an object of type :ctype:`struct in_addr` (similar to :func:`inet_ntoa`)
-   or :ctype:`struct in6_addr`.
+   returns an object of type :c:type:`struct in_addr` (similar to :func:`inet_ntoa`)
+   or :c:type:`struct in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the string *packed_ip* is not the correct length for the
@@ -583,10 +583,10 @@ correspond to Unix system calls applicable to sockets.
 .. method:: socket.connect_ex(address)
 
    Like ``connect(address)``, but return an error indicator instead of raising an
-   exception for errors returned by the C-level :cfunc:`connect` call (other
+   exception for errors returned by the C-level :c:func:`connect` call (other
    problems, such as "host not found," can still raise exceptions).  The error
    indicator is ``0`` if the operation succeeded, otherwise the value of the
-   :cdata:`errno` variable.  This is useful to support, for example, asynchronous
+   :c:data:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
    .. note::
@@ -661,7 +661,7 @@ correspond to Unix system calls applicable to sockets.
 
    Return a :dfn:`file object` associated with the socket.  (File objects are
    described in :ref:`bltin-file-objects`.) The file object
-   references a :cfunc:`dup`\ ped version of the socket file descriptor, so the
+   references a :c:func:`dup`\ ped version of the socket file descriptor, so the
    file object and socket object may be closed or garbage-collected independently.
    The socket must be in blocking mode (it can not have a timeout). The optional
    *mode* and *bufsize* arguments are interpreted the same way as by the built-in

@@ -27,7 +27,7 @@ provided by Windows platforms.  It includes functions and several constants.
 
 .. function:: PlaySound(sound, flags)
 
-   Call the underlying :cfunc:`PlaySound` function from the Platform API.  The
+   Call the underlying :c:func:`PlaySound` function from the Platform API.  The
    *sound* parameter may be a filename, audio data as a string, or ``None``.  Its
    interpretation depends on the value of *flags*, which can be a bitwise ORed
    combination of the constants described below. If the *sound* parameter is
@@ -37,7 +37,7 @@ provided by Windows platforms.  It includes functions and several constants.
 
 .. function:: MessageBeep([type=MB_OK])
 
-   Call the underlying :cfunc:`MessageBeep` function from the Platform API.  This
+   Call the underlying :c:func:`MessageBeep` function from the Platform API.  This
    plays a sound as specified in the registry.  The *type* argument specifies which
    sound to play; possible values are ``-1``, ``MB_ICONASTERISK``,
    ``MB_ICONEXCLAMATION``, ``MB_ICONHAND``, ``MB_ICONQUESTION``, and ``MB_OK``, all

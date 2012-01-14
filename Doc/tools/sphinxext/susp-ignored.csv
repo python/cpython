@@ -236,9 +236,9 @@ documenting/markup,88,:noindex,:noindex:
 documenting/markup,95,.. function:,.. function:: spam(eggs)
 documenting/markup,95,:noindex,:noindex:
 documenting/markup,101,.. method:,.. method:: FileInput.input(...)
-documenting/markup,121,.. cfunction:,".. cfunction:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)"
-documenting/markup,131,.. cmember:,.. cmember:: PyObject* PyTypeObject.tp_bases
-documenting/markup,150,.. cvar:,.. cvar:: PyObject* PyClass_Type
+documenting/markup,121,.. cfunction:,".. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)"
+documenting/markup,131,.. cmember:,.. c:member:: PyObject* PyTypeObject.tp_bases
+documenting/markup,150,.. cvar:,.. c:var:: PyObject* PyClass_Type
 documenting/markup,179,.. function:,".. function:: Timer.repeat([repeat=3[, number=1000000]])"
 documenting/markup,209,.. cmdoption:,.. cmdoption:: -m <module>
 documenting/markup,227,.. describe:,.. describe:: opcode

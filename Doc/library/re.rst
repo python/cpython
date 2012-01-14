@@ -1053,14 +1053,14 @@ Simulating scanf()
 
 .. index:: single: scanf()
 
-Python does not currently have an equivalent to :cfunc:`scanf`.  Regular
+Python does not currently have an equivalent to :c:func:`scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than
-:cfunc:`scanf` format strings.  The table below offers some more-or-less
-equivalent mappings between :cfunc:`scanf` format tokens and regular
+:c:func:`scanf` format strings.  The table below offers some more-or-less
+equivalent mappings between :c:func:`scanf` format tokens and regular
 expressions.
 
 +--------------------------------+---------------------------------------------+
-| :cfunc:`scanf` Token           | Regular Expression                          |
+| :c:func:`scanf` Token          | Regular Expression                          |
 +================================+=============================================+
 | ``%c``                         | ``.``                                       |
 +--------------------------------+---------------------------------------------+
@@ -1085,7 +1085,7 @@ To extract the filename and numbers from a string like ::
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :cfunc:`scanf` format like ::
+you would use a :c:func:`scanf` format like ::
 
    %s - %d errors, %d warnings
 

@@ -388,7 +388,7 @@ always available.
 
 .. function:: getdlopenflags()
 
-   Return the current value of the flags that are used for :cfunc:`dlopen` calls.
+   Return the current value of the flags that are used for :c:func:`dlopen` calls.
    The flag constants are defined in the :mod:`dl` and :mod:`DLFCN` modules.
    Availability: Unix.
 
@@ -533,8 +533,8 @@ always available.
    +---------------------------------------+---------------------------------+
 
 
-   This function wraps the Win32 :cfunc:`GetVersionEx` function; see the
-   Microsoft documentation on :cfunc:`OSVERSIONINFOEX` for more information
+   This function wraps the Win32 :c:func:`GetVersionEx` function; see the
+   Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
    Availability: Windows.
@@ -827,7 +827,7 @@ always available.
 
 .. function:: setdlopenflags(n)
 
-   Set the flags used by the interpreter for :cfunc:`dlopen` calls, such as when
+   Set the flags used by the interpreter for :c:func:`dlopen` calls, such as when
    the interpreter loads extension modules.  Among other things, this will enable a
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as

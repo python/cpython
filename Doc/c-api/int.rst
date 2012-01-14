@@ -8,39 +8,39 @@ Plain Integer Objects
 .. index:: object: integer
 
 
-.. ctype:: PyIntObject
+.. c:type:: PyIntObject
 
-   This subtype of :ctype:`PyObject` represents a Python integer object.
+   This subtype of :c:type:`PyObject` represents a Python integer object.
 
 
-.. cvar:: PyTypeObject PyInt_Type
+.. c:var:: PyTypeObject PyInt_Type
 
    .. index:: single: IntType (in modules types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python plain integer type.
+   This instance of :c:type:`PyTypeObject` represents the Python plain integer type.
    This is the same object as ``int`` and ``types.IntType``.
 
 
-.. cfunction:: int PyInt_Check(PyObject *o)
+.. c:function:: int PyInt_Check(PyObject *o)
 
-   Return true if *o* is of type :cdata:`PyInt_Type` or a subtype of
-   :cdata:`PyInt_Type`.
+   Return true if *o* is of type :c:data:`PyInt_Type` or a subtype of
+   :c:data:`PyInt_Type`.
 
    .. versionchanged:: 2.2
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyInt_CheckExact(PyObject *o)
+.. c:function:: int PyInt_CheckExact(PyObject *o)
 
-   Return true if *o* is of type :cdata:`PyInt_Type`, but not a subtype of
-   :cdata:`PyInt_Type`.
+   Return true if *o* is of type :c:data:`PyInt_Type`, but not a subtype of
+   :c:data:`PyInt_Type`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyInt_FromString(char *str, char **pend, int base)
+.. c:function:: PyObject* PyInt_FromString(char *str, char **pend, int base)
 
-   Return a new :ctype:`PyIntObject` or :ctype:`PyLongObject` based on the string
+   Return a new :c:type:`PyIntObject` or :c:type:`PyLongObject` based on the string
    value in *str*, which is interpreted according to the radix in *base*.  If
    *pend* is non-*NULL*, ``*pend`` will point to the first character in *str* which
    follows the representation of the number.  If *base* is ``0``, the radix will be
@@ -49,13 +49,13 @@ Plain Integer Objects
    8 will be used; otherwise radix 10 will be used.  If *base* is not ``0``, it
    must be between ``2`` and ``36``, inclusive.  Leading spaces are ignored.  If
    there are no digits, :exc:`ValueError` will be raised.  If the string represents
-   a number too large to be contained within the machine's :ctype:`long int` type
-   and overflow warnings are being suppressed, a :ctype:`PyLongObject` will be
+   a number too large to be contained within the machine's :c:type:`long int` type
+   and overflow warnings are being suppressed, a :c:type:`PyLongObject` will be
    returned.  If overflow warnings are not being suppressed, *NULL* will be
    returned in this case.
 
 
-.. cfunction:: PyObject* PyInt_FromLong(long ival)
+.. c:function:: PyObject* PyInt_FromLong(long ival)
 
    Create a new integer object with a value of *ival*.
 
@@ -66,7 +66,7 @@ Plain Integer Objects
    undefined. :-)
 
 
-.. cfunction:: PyObject* PyInt_FromSsize_t(Py_ssize_t ival)
+.. c:function:: PyObject* PyInt_FromSsize_t(Py_ssize_t ival)
 
    Create a new integer object with a value of *ival*. If the value is larger
    than ``LONG_MAX`` or smaller than ``LONG_MIN``, a long integer object is
@@ -75,7 +75,7 @@ Plain Integer Objects
    .. versionadded:: 2.5
 
 
-.. cfunction:: PyObject* PyInt_FromSize_t(size_t ival)
+.. c:function:: PyObject* PyInt_FromSize_t(size_t ival)
 
    Create a new integer object with a value of *ival*. If the value exceeds
    ``LONG_MAX``, a long integer object is returned.
@@ -83,47 +83,47 @@ Plain Integer Objects
    .. versionadded:: 2.5
 
 
-.. cfunction:: long PyInt_AsLong(PyObject *io)
+.. c:function:: long PyInt_AsLong(PyObject *io)
 
-   Will first attempt to cast the object to a :ctype:`PyIntObject`, if it is not
+   Will first attempt to cast the object to a :c:type:`PyIntObject`, if it is not
    already one, and then return its value. If there is an error, ``-1`` is
    returned, and the caller should check ``PyErr_Occurred()`` to find out whether
    there was an error, or whether the value just happened to be -1.
 
 
-.. cfunction:: long PyInt_AS_LONG(PyObject *io)
+.. c:function:: long PyInt_AS_LONG(PyObject *io)
 
    Return the value of the object *io*.  No error checking is performed.
 
 
-.. cfunction:: unsigned long PyInt_AsUnsignedLongMask(PyObject *io)
+.. c:function:: unsigned long PyInt_AsUnsignedLongMask(PyObject *io)
 
-   Will first attempt to cast the object to a :ctype:`PyIntObject` or
-   :ctype:`PyLongObject`, if it is not already one, and then return its value as
+   Will first attempt to cast the object to a :c:type:`PyIntObject` or
+   :c:type:`PyLongObject`, if it is not already one, and then return its value as
    unsigned long.  This function does not check for overflow.
 
    .. versionadded:: 2.3
 
 
-.. cfunction:: unsigned PY_LONG_LONG PyInt_AsUnsignedLongLongMask(PyObject *io)
+.. c:function:: unsigned PY_LONG_LONG PyInt_AsUnsignedLongLongMask(PyObject *io)
 
-   Will first attempt to cast the object to a :ctype:`PyIntObject` or
-   :ctype:`PyLongObject`, if it is not already one, and then return its value as
+   Will first attempt to cast the object to a :c:type:`PyIntObject` or
+   :c:type:`PyLongObject`, if it is not already one, and then return its value as
    unsigned long long, without checking for overflow.
 
    .. versionadded:: 2.3
 
 
-.. cfunction:: Py_ssize_t PyInt_AsSsize_t(PyObject *io)
+.. c:function:: Py_ssize_t PyInt_AsSsize_t(PyObject *io)
 
-   Will first attempt to cast the object to a :ctype:`PyIntObject` or
-   :ctype:`PyLongObject`, if it is not already one, and then return its value as
-   :ctype:`Py_ssize_t`.
+   Will first attempt to cast the object to a :c:type:`PyIntObject` or
+   :c:type:`PyLongObject`, if it is not already one, and then return its value as
+   :c:type:`Py_ssize_t`.
 
    .. versionadded:: 2.5
 
 
-.. cfunction:: long PyInt_GetMax()
+.. c:function:: long PyInt_GetMax()
 
    .. index:: single: LONG_MAX
 
@@ -131,7 +131,7 @@ Plain Integer Objects
    (:const:`LONG_MAX`, as defined in the system header files).
 
 
-.. cfunction:: int PyInt_ClearFreeList()
+.. c:function:: int PyInt_ClearFreeList()
 
    Clear the integer free list. Return the number of items that could not
    be freed.
