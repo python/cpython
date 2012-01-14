@@ -231,9 +231,11 @@ static char *GeneratorExp_fields[]={
         "generators",
 };
 static PyTypeObject *Yield_type;
-_Py_IDENTIFIER(is_from);
 static char *Yield_fields[]={
-        "is_from",
+        "value",
+};
+static PyTypeObject *YieldFrom_type;
+static char *YieldFrom_fields[]={
         "value",
 };
 static PyTypeObject *Compare_type;
@@ -812,8 +814,10 @@ static int init_types(void)
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
                                       GeneratorExp_fields, 2);
         if (!GeneratorExp_type) return 0;
-        Yield_type = make_type("Yield", expr_type, Yield_fields, 2);
+        Yield_type = make_type("Yield", expr_type, Yield_fields, 1);
         if (!Yield_type) return 0;
+        YieldFrom_type = make_type("YieldFrom", expr_type, YieldFrom_fields, 1);
+        if (!YieldFrom_type) return 0;
         Compare_type = make_type("Compare", expr_type, Compare_fields, 3);
         if (!Compare_type) return 0;
         Call_type = make_type("Call", expr_type, Call_fields, 5);
@@ -1749,15 +1753,28 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
 }
 
 expr_ty
-Yield(int is_from, expr_ty value, int lineno, int col_offset, PyArena *arena)
+Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
         p->kind = Yield_kind;
-        p->v.Yield.is_from = is_from;
         p->v.Yield.value = value;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
+YieldFrom(expr_ty value, int lineno, int col_offset, PyArena *arena)
+{
+        expr_ty p;
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = YieldFrom_kind;
+        p->v.YieldFrom.value = value;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2798,12 +2815,16 @@ ast2obj_expr(void* _o)
         case Yield_kind:
                 result = PyType_GenericNew(Yield_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_int(o->v.Yield.is_from);
+                value = ast2obj_expr(o->v.Yield.value);
                 if (!value) goto failed;
-                if (_PyObject_SetAttrId(result, &PyId_is_from, value) == -1)
+                if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_expr(o->v.Yield.value);
+                break;
+        case YieldFrom_kind:
+                result = PyType_GenericNew(YieldFrom_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.YieldFrom.value);
                 if (!value) goto failed;
                 if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
                         goto failed;
@@ -5345,21 +5366,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 return 1;
         }
         if (isinstance) {
-                int is_from;
                 expr_ty value;
 
-                if (_PyObject_HasAttrId(obj, &PyId_is_from)) {
-                        int res;
-                        tmp = _PyObject_GetAttrId(obj, &PyId_is_from);
-                        if (tmp == NULL) goto failed;
-                        res = obj2ast_int(tmp, &is_from, arena);
-                        if (res != 0) goto failed;
-                        Py_XDECREF(tmp);
-                        tmp = NULL;
-                } else {
-                        PyErr_SetString(PyExc_TypeError, "required field \"is_from\" missing from Yield");
-                        return 1;
-                }
                 if (_PyObject_HasAttrId(obj, &PyId_value)) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_value);
@@ -5371,7 +5379,29 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 } else {
                         value = NULL;
                 }
-                *out = Yield(is_from, value, lineno, col_offset, arena);
+                *out = Yield(value, lineno, col_offset, arena);
+                if (*out == NULL) goto failed;
+                return 0;
+        }
+        isinstance = PyObject_IsInstance(obj, (PyObject*)YieldFrom_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
+                expr_ty value;
+
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
+                        int res;
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &value, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        value = NULL;
+                }
+                *out = YieldFrom(value, lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
                 return 0;
         }
@@ -6928,6 +6958,8 @@ PyInit__ast(void)
             (PyObject*)GeneratorExp_type) < 0) return NULL;
         if (PyDict_SetItemString(d, "Yield", (PyObject*)Yield_type) < 0) return
             NULL;
+        if (PyDict_SetItemString(d, "YieldFrom", (PyObject*)YieldFrom_type) <
+            0) return NULL;
         if (PyDict_SetItemString(d, "Compare", (PyObject*)Compare_type) < 0)
             return NULL;
         if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return

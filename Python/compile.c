@@ -3311,21 +3311,25 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case DictComp_kind:
         return compiler_dictcomp(c, e);
     case Yield_kind:
+    case YieldFrom_kind: {
+        expr_ty value;
         if (c->u->u_ste->ste_type != FunctionBlock)
             return compiler_error(c, "'yield' outside function");
-        if (e->v.Yield.value) {
-            VISIT(c, expr, e->v.Yield.value);
+        value = (e->kind == YieldFrom_kind) ? e->v.YieldFrom.value : e->v.Yield.value;
+        if (value) {
+            VISIT(c, expr, value);
         }
         else {
             ADDOP_O(c, LOAD_CONST, Py_None, consts);
         }
-        if (e->v.Yield.is_from) {
+        if (e->kind == YieldFrom_kind) {
             ADDOP(c, YIELD_FROM);
         }
         else {
             ADDOP(c, YIELD_VALUE);
         }
         break;
+    }
     case Compare_kind:
         return compiler_compare(c, e);
     case Call_kind:

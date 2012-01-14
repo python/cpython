@@ -1330,10 +1330,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             return 0;
         break;
     case Yield_kind:
-        if (e->v.Yield.value)
-            VISIT(st, expr, e->v.Yield.value);
+    case YieldFrom_kind: {
+        expr_ty value;
+        value = (e->kind == YieldFrom_kind) ? e->v.YieldFrom.value : e->v.Yield.value;
+        if (value)
+            VISIT(st, expr, value);
         st->st_cur->ste_generator = 1;
         break;
+    }
     case Compare_kind:
         VISIT(st, expr, e->v.Compare.left);
         VISIT_SEQ(st, expr, e->v.Compare.comparators);
