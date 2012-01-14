@@ -224,6 +224,7 @@ it provides better information about where they were actually defined, and
 how they might be accessible from the global scope.
 
 Example with (non-bound) methods::
+
    >>> class C:
    ...     def meth(self):
    ...         pass
