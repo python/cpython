@@ -33,7 +33,7 @@ Verbosity
 -W/--verbose3   -- display test output on failure
 -d/--debug      -- print traceback for failed tests
 -q/--quiet      -- no output unless one or more tests fail
--S/--slow       -- print the slowest 10 tests
+-o/--slow       -- print the slowest 10 tests
    --header     -- print header with interpreter info
 
 Selecting tests
@@ -298,7 +298,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:Gm:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsoSrf:lu:t:TD:NLR:FwWM:nj:Gm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'random', 'fromfile', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
@@ -340,7 +340,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             start = a
         elif o in ('-s', '--single'):
             single = True
-        elif o in ('-S', '--slow'):
+        elif o in ('-o', '--slow'):
             print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
