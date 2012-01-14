@@ -2755,24 +2755,10 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     return clone;
 }
 
-/*
-    Borrowed from stringobject.c, originally it was string_hash()
-*/
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
-    register unsigned char *p;
-    register Py_uhash_t x;
-
-    p = (unsigned char *) data;
-    x = (Py_uhash_t)*p << 7;
-    while (--len >= 0)
-        x = (1000003U*x) ^ (Py_uhash_t)*p++;
-    x ^= (Py_uhash_t)len;
-    if (x == -1)
-        x = -2;
-
-    return x;
+    return _Py_HashBytes(data, len);
 }
 
 
