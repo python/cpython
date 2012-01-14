@@ -13,7 +13,6 @@
    c-api/index.rst
    packaging/index.rst
    install/index.rst
-   documenting/index.rst
    howto/index.rst
    faq/index.rst
    glossary.rst
