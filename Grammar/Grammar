@@ -121,7 +121,7 @@ arglist: (argument ',')* (argument [',']
                          |'**' test)
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.
-argument: (test) [comp_for] | test '=' test  # Really [keyword '='] test
+argument: test [comp_for] | test '=' test  # Really [keyword '='] test
 comp_iter: comp_for | comp_if
 comp_for: 'for' exprlist 'in' or_test [comp_iter]
 comp_if: 'if' test_nocond [comp_iter]
