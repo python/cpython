@@ -232,7 +232,7 @@ have adopted Sphinx as their documentation tool.
 
 .. seealso::
 
-   :ref:`documenting-index`
+   `Documenting Python <http://docs.python.org/devguide/documenting.html>`__
        Describes how to write for Python's documentation.
 
    `Sphinx <http://sphinx.pocoo.org/>`__
