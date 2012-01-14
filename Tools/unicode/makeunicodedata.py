@@ -49,6 +49,7 @@ LINE_BREAK = "LineBreak%s.txt"
 NAME_ALIASES = "NameAliases%s.txt"
 NAMED_SEQUENCES = "NamedSequences%s.txt"
 SPECIAL_CASING = "SpecialCasing%s.txt"
+CASE_FOLDING = "CaseFolding%s.txt"
 
 # Private Use Areas -- in planes 1, 15, 16
 PUA_1 = range(0xE000, 0xF900)
@@ -424,28 +425,36 @@ def makeunicodetype(unicode, trace):
             if "Case_Ignorable" in properties:
                 flags |= CASE_IGNORABLE_MASK
             sc = unicode.special_casing.get(char)
+            cf = unicode.case_folding.get(char, [char])
+            if record[12]:
+                upper = int(record[12], 16)
+            else:
+                upper = char
+            if record[13]:
+                lower = int(record[13], 16)
+            else:
+                lower = char
+            if record[14]:
+                title = int(record[14], 16)
+            else:
+                title = upper
+            if sc is None and cf != [lower]:
+                sc = ([lower], [title], [upper])
             if sc is None:
-                if record[12]:
-                    upper = int(record[12], 16)
-                else:
-                    upper = char
-                if record[13]:
-                    lower = int(record[13], 16)
-                else:
-                    lower = char
-                if record[14]:
-                    title = int(record[14], 16)
-                else:
-                    title = upper
                 if upper == lower == title:
                     upper = lower = title = 0
             else:
-                # This happens when some character maps to more than one
-                # character in uppercase, lowercase, or titlecase. The extra
-                # characters are stored in a different array.
+                # This happens either when some character maps to more than one
+                # character in uppercase, lowercase, or titlecase or the
+                # casefolded version of the character is different from the
+                # lowercase. The extra characters are stored in a different
+                # array.
                 flags |= EXTENDED_CASE_MASK
                 lower = len(extra_casing) | (len(sc[0]) << 24)
                 extra_casing.extend(sc[0])
+                if cf != sc[0]:
+                    lower |= len(cf) << 20
+                    extra_casing.extend(cf)
                 upper = len(extra_casing) | (len(sc[2]) << 24)
                 extra_casing.extend(sc[2])
                 # Title is probably equal to upper.
@@ -1107,6 +1116,17 @@ class UnicodeData:
                 title = [int(char, 16) for char in data[2].split()]
                 upper = [int(char, 16) for char in data[3].split()]
                 sc[c] = (lower, title, upper)
+        cf = self.case_folding = {}
+        if version != '3.2.0':
+            with open_data(CASE_FOLDING, version) as file:
+                for s in file:
+                    s = s[:-1].split('#', 1)[0]
+                    if not s:
+                        continue
+                    data = s.split("; ")
+                    if data[1] in "CF":
+                        c = int(data[0], 16)
+                        cf[c] = [int(char, 16) for char in data[2].split()]
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1

@@ -2023,6 +2023,11 @@ PyAPI_FUNC(int) _PyUnicode_ToUpperFull(
     Py_UCS4 *res
     );
 
+PyAPI_FUNC(int) _PyUnicode_ToFoldedFull(
+    Py_UCS4 ch,       /* Unicode character */
+    Py_UCS4 *res
+    );
+
 PyAPI_FUNC(int) _PyUnicode_IsCaseIgnorable(
     Py_UCS4 ch         /* Unicode character */
     );
