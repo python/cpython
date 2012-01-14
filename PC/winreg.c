@@ -1066,7 +1066,7 @@ PyDeleteKeyEx(PyObject *self, PyObject *args, PyObject *kwargs)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically. */
-    hMod = GetModuleHandle("advapi32.dll");
+    hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDKEFunc)GetProcAddress(hMod,
                                                                    "RegDeleteKeyExW");
@@ -1590,7 +1590,7 @@ PyDisableReflectionKey(PyObject *self, PyObject *args)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
-    hMod = GetModuleHandle("advapi32.dll");
+    hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDRKFunc)GetProcAddress(hMod,
                                        "RegDisableReflectionKey");
@@ -1626,7 +1626,7 @@ PyEnableReflectionKey(PyObject *self, PyObject *args)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
-    hMod = GetModuleHandle("advapi32.dll");
+    hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RERKFunc)GetProcAddress(hMod,
                                        "RegEnableReflectionKey");
@@ -1663,7 +1663,7 @@ PyQueryReflectionKey(PyObject *self, PyObject *args)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
-    hMod = GetModuleHandle("advapi32.dll");
+    hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RQRKFunc)GetProcAddress(hMod,
                                        "RegQueryReflectionKey");
