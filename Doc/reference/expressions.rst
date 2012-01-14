@@ -355,7 +355,7 @@ resumed before it is finalized (by reaching a zero reference count or by being
 garbage collected), the generator-iterator's :meth:`close` method will be
 called, allowing any pending :keyword:`finally` clauses to execute.
 
-When ``yield from expression`` is used, it treats the supplied expression as
+When ``yield from <expr>`` is used, it treats the supplied expression as
 a subiterator. All values produced by that subiterator are passed directly
 to the caller of the current generator's methods. Any values passed in with
 :meth:`send` and any exceptions passed in with :meth:`throw` are passed to
@@ -368,6 +368,9 @@ attribute of the raised :exc:`StopIteration` instance becomes the value of
 the yield expression. It can be either set explicitly when raising
 :exc:`StopIteration`, or automatically when the sub-iterator is a generator
 (by returning a value from the sub-generator).
+
+   .. versionchanged:: 3.3
+      Added ``yield from <expr>`` to delegate control flow to a subiterator
 
 The parentheses can be omitted when the :keyword:`yield` expression is the
 sole expression on the right hand side of an assignment statement.
