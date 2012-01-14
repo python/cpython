@@ -20,17 +20,17 @@ format for floating point numbers.  *Py_MARSHAL_VERSION* indicates the current
 file format (currently 2).
 
 
-.. cfunction:: void PyMarshal_WriteLongToFile(long value, FILE *file, int version)
+.. c:function:: void PyMarshal_WriteLongToFile(long value, FILE *file, int version)
 
-   Marshal a :ctype:`long` integer, *value*, to *file*.  This will only write
+   Marshal a :c:type:`long` integer, *value*, to *file*.  This will only write
    the least-significant 32 bits of *value*; regardless of the size of the
-   native :ctype:`long` type.
+   native :c:type:`long` type.
 
    .. versionchanged:: 2.4
       *version* indicates the file format.
 
 
-.. cfunction:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
+.. c:function:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
 
    Marshal a Python object, *value*, to *file*.
 
@@ -38,7 +38,7 @@ file format (currently 2).
       *version* indicates the file format.
 
 
-.. cfunction:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
+.. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
    Return a string object containing the marshalled representation of *value*.
 
@@ -55,31 +55,31 @@ no error.  What's the right way to tell? Should only non-negative values be
 written using these routines?
 
 
-.. cfunction:: long PyMarshal_ReadLongFromFile(FILE *file)
+.. c:function:: long PyMarshal_ReadLongFromFile(FILE *file)
 
-   Return a C :ctype:`long` from the data stream in a :ctype:`FILE\*` opened
+   Return a C :c:type:`long` from the data stream in a :c:type:`FILE\*` opened
    for reading.  Only a 32-bit value can be read in using this function,
-   regardless of the native size of :ctype:`long`.
+   regardless of the native size of :c:type:`long`.
 
 
-.. cfunction:: int PyMarshal_ReadShortFromFile(FILE *file)
+.. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
 
-   Return a C :ctype:`short` from the data stream in a :ctype:`FILE\*` opened
+   Return a C :c:type:`short` from the data stream in a :c:type:`FILE\*` opened
    for reading.  Only a 16-bit value can be read in using this function,
-   regardless of the native size of :ctype:`short`.
+   regardless of the native size of :c:type:`short`.
 
 
-.. cfunction:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
+.. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
 
-   Return a Python object from the data stream in a :ctype:`FILE\*` opened for
+   Return a Python object from the data stream in a :c:type:`FILE\*` opened for
    reading.  On error, sets the appropriate exception (:exc:`EOFError` or
    :exc:`TypeError`) and returns *NULL*.
 
 
-.. cfunction:: PyObject* PyMarshal_ReadLastObjectFromFile(FILE *file)
+.. c:function:: PyObject* PyMarshal_ReadLastObjectFromFile(FILE *file)
 
-   Return a Python object from the data stream in a :ctype:`FILE\*` opened for
-   reading.  Unlike :cfunc:`PyMarshal_ReadObjectFromFile`, this function
+   Return a Python object from the data stream in a :c:type:`FILE\*` opened for
+   reading.  Unlike :c:func:`PyMarshal_ReadObjectFromFile`, this function
    assumes that no further objects will be read from the file, allowing it to
    aggressively load file data into memory so that the de-serialization can
    operate from data in memory rather than reading a byte at a time from the
@@ -88,7 +88,7 @@ written using these routines?
    (:exc:`EOFError` or :exc:`TypeError`) and returns *NULL*.
 
 
-.. cfunction:: PyObject* PyMarshal_ReadObjectFromString(char *string, Py_ssize_t len)
+.. c:function:: PyObject* PyMarshal_ReadObjectFromString(char *string, Py_ssize_t len)
 
    Return a Python object from the data stream in a character buffer
    containing *len* bytes pointed to by *string*.  On error, sets the
@@ -96,5 +96,5 @@ written using these routines?
    *NULL*.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *len*. This might require
+      This function used an :c:type:`int` type for *len*. This might require
       changes in your code for properly supporting 64-bit systems.

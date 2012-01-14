@@ -360,7 +360,7 @@ Other constructors, all class methods:
 
    Return the local date corresponding to the POSIX timestamp, such as is returned
    by :func:`time.time`.  This may raise :exc:`ValueError`, if the timestamp is out
-   of the range of values supported by the platform C :cfunc:`localtime` function.
+   of the range of values supported by the platform C :c:func:`localtime` function.
    It's common for this to be restricted to years from 1970 through 2038.  Note
    that on non-POSIX systems that include leap seconds in their notion of a
    timestamp, leap seconds are ignored by :meth:`fromtimestamp`.
@@ -534,7 +534,7 @@ Instance methods:
    Return a string representing the date, for example ``date(2002, 12,
    4).ctime() == 'Wed Dec 4 00:00:00 2002'``. ``d.ctime()`` is equivalent to
    ``time.ctime(time.mktime(d.timetuple()))`` on platforms where the native C
-   :cfunc:`ctime` function (which :func:`time.ctime` invokes, but which
+   :c:func:`ctime` function (which :func:`time.ctime` invokes, but which
    :meth:`date.ctime` does not invoke) conforms to the C standard.
 
 
@@ -641,7 +641,7 @@ Other constructors, all class methods:
    or not specified, this is like :meth:`today`, but, if possible, supplies more
    precision than can be gotten from going through a :func:`time.time` timestamp
    (for example, this may be possible on platforms supplying the C
-   :cfunc:`gettimeofday` function).
+   :c:func:`gettimeofday` function).
 
    Else *tz* must be an instance of a class :class:`tzinfo` subclass, and the
    current date and time are converted to *tz*'s time zone.  In this case the
@@ -669,8 +669,8 @@ Other constructors, all class methods:
    ``tz.fromutc(datetime.utcfromtimestamp(timestamp).replace(tzinfo=tz))``.
 
    :meth:`fromtimestamp` may raise :exc:`ValueError`, if the timestamp is out of
-   the range of values supported by the platform C :cfunc:`localtime` or
-   :cfunc:`gmtime` functions.  It's common for this to be restricted to years in
+   the range of values supported by the platform C :c:func:`localtime` or
+   :c:func:`gmtime` functions.  It's common for this to be restricted to years in
    1970 through 2038. Note that on non-POSIX systems that include leap seconds in
    their notion of a timestamp, leap seconds are ignored by :meth:`fromtimestamp`,
    and then it's possible to have two timestamps differing by a second that yield
@@ -681,7 +681,7 @@ Other constructors, all class methods:
 
    Return the UTC :class:`datetime` corresponding to the POSIX timestamp, with
    :attr:`tzinfo` ``None``. This may raise :exc:`ValueError`, if the timestamp is
-   out of the range of values supported by the platform C :cfunc:`gmtime` function.
+   out of the range of values supported by the platform C :c:func:`gmtime` function.
    It's common for this to be restricted to years in 1970 through 2038. See also
    :meth:`fromtimestamp`.
 
@@ -1024,7 +1024,7 @@ Instance methods:
    Return a string representing the date and time, for example ``datetime(2002, 12,
    4, 20, 30, 40).ctime() == 'Wed Dec  4 20:30:40 2002'``. ``d.ctime()`` is
    equivalent to ``time.ctime(time.mktime(d.timetuple()))`` on platforms where the
-   native C :cfunc:`ctime` function (which :func:`time.ctime` invokes, but which
+   native C :c:func:`ctime` function (which :func:`time.ctime` invokes, but which
    :meth:`datetime.ctime` does not invoke) conforms to the C standard.
 
 

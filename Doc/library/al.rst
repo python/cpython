@@ -53,7 +53,7 @@ The module defines the following functions:
 .. function:: queryparams(device)
 
    The device argument is an integer.  The return value is a list of integers
-   containing the data returned by :cfunc:`ALqueryparams`.
+   containing the data returned by :c:func:`ALqueryparams`.
 
 
 .. function:: getparams(device, list)

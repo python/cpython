@@ -10,15 +10,15 @@ Module Objects
 There are only a few functions special to module objects.
 
 
-.. cvar:: PyTypeObject PyModule_Type
+.. c:var:: PyTypeObject PyModule_Type
 
    .. index:: single: ModuleType (in module types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python module type.  This
+   This instance of :c:type:`PyTypeObject` represents the Python module type.  This
    is exposed to Python programs as ``types.ModuleType``.
 
 
-.. cfunction:: int PyModule_Check(PyObject *p)
+.. c:function:: int PyModule_Check(PyObject *p)
 
    Return true if *p* is a module object, or a subtype of a module object.
 
@@ -26,15 +26,15 @@ There are only a few functions special to module objects.
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyModule_CheckExact(PyObject *p)
+.. c:function:: int PyModule_CheckExact(PyObject *p)
 
    Return true if *p* is a module object, but not a subtype of
-   :cdata:`PyModule_Type`.
+   :c:data:`PyModule_Type`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyModule_New(const char *name)
+.. c:function:: PyObject* PyModule_New(const char *name)
 
    .. index::
       single: __name__ (module attribute)
@@ -46,18 +46,18 @@ There are only a few functions special to module objects.
    the caller is responsible for providing a :attr:`__file__` attribute.
 
 
-.. cfunction:: PyObject* PyModule_GetDict(PyObject *module)
+.. c:function:: PyObject* PyModule_GetDict(PyObject *module)
 
    .. index:: single: __dict__ (module attribute)
 
    Return the dictionary object that implements *module*'s namespace; this object
    is the same as the :attr:`__dict__` attribute of the module object.  This
    function never fails.  It is recommended extensions use other
-   :cfunc:`PyModule_\*` and :cfunc:`PyObject_\*` functions rather than directly
+   :c:func:`PyModule_\*` and :c:func:`PyObject_\*` functions rather than directly
    manipulate a module's :attr:`__dict__`.
 
 
-.. cfunction:: char* PyModule_GetName(PyObject *module)
+.. c:function:: char* PyModule_GetName(PyObject *module)
 
    .. index::
       single: __name__ (module attribute)
@@ -67,7 +67,7 @@ There are only a few functions special to module objects.
    or if it is not a string, :exc:`SystemError` is raised and *NULL* is returned.
 
 
-.. cfunction:: char* PyModule_GetFilename(PyObject *module)
+.. c:function:: char* PyModule_GetFilename(PyObject *module)
 
    .. index::
       single: __file__ (module attribute)
@@ -78,7 +78,7 @@ There are only a few functions special to module objects.
    raise :exc:`SystemError` and return *NULL*.
 
 
-.. cfunction:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
+.. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
    Add an object to *module* as *name*.  This is a convenience function which can
    be used from the module's initialization function.  This steals a reference to
@@ -87,7 +87,7 @@ There are only a few functions special to module objects.
    .. versionadded:: 2.0
 
 
-.. cfunction:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
+.. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
    Add an integer constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function. Return ``-1`` on error, ``0`` on
@@ -96,7 +96,7 @@ There are only a few functions special to module objects.
    .. versionadded:: 2.0
 
 
-.. cfunction:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
+.. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
@@ -104,7 +104,7 @@ There are only a few functions special to module objects.
 
    .. versionadded:: 2.0
 
-.. cfunction:: int PyModule_AddIntMacro(PyObject *module, macro)
+.. c:function:: int PyModule_AddIntMacro(PyObject *module, macro)
 
    Add an int constant to *module*. The name and the value are taken from
    *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
@@ -113,7 +113,7 @@ There are only a few functions special to module objects.
 
    .. versionadded:: 2.6
 
-.. cfunction:: int PyModule_AddStringMacro(PyObject *module, macro)
+.. c:function:: int PyModule_AddStringMacro(PyObject *module, macro)
 
    Add a string constant to *module*.
 

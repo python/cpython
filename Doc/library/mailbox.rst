@@ -459,7 +459,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :cfunc:`flock` and :cfunc:`lockf` system calls.
+      :c:func:`flock` and :c:func:`lockf` system calls.
 
 
 .. seealso::
@@ -573,7 +573,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :cfunc:`flock` and :cfunc:`lockf` system calls. For MH mailboxes, locking
+      :c:func:`flock` and :c:func:`lockf` system calls. For MH mailboxes, locking
       the mailbox means locking the :file:`.mh_sequences` file and, only for the
       duration of any operations that affect them, locking individual message
       files.
@@ -671,7 +671,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :cfunc:`flock` and :cfunc:`lockf` system calls.
+      :c:func:`flock` and :c:func:`lockf` system calls.
 
 
 .. seealso::
@@ -722,7 +722,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :cfunc:`flock` and :cfunc:`lockf` system calls.
+      :c:func:`flock` and :c:func:`lockf` system calls.
 
 
 .. seealso::

@@ -13,7 +13,7 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
 :ref:`bufferobjects` for more information.
 
 
-.. cfunction:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a read-only memory location usable as character-based
    input.  The *obj* argument must support the single-segment character buffer
@@ -24,11 +24,11 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    .. versionadded:: 1.6
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
+      This function used an :c:type:`int *` type for *buffer_len*. This might
       require changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a read-only memory location containing arbitrary data.
    The *obj* argument must support the single-segment readable buffer
@@ -39,11 +39,11 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    .. versionadded:: 1.6
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
+      This function used an :c:type:`int *` type for *buffer_len*. This might
       require changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: int PyObject_CheckReadBuffer(PyObject *o)
+.. c:function:: int PyObject_CheckReadBuffer(PyObject *o)
 
    Returns ``1`` if *o* supports the single-segment readable buffer interface.
    Otherwise returns ``0``.
@@ -51,7 +51,7 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    .. versionadded:: 2.2
 
 
-.. cfunction:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a writeable memory location.  The *obj* argument must
    support the single-segment, character buffer interface.  On success,
@@ -61,6 +61,6 @@ shortcomings of the protocol, and has been backported to Python 2.6.  See
    .. versionadded:: 1.6
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *buffer_len*. This might
+      This function used an :c:type:`int *` type for *buffer_len*. This might
       require changes in your code for properly supporting 64-bit systems.
 

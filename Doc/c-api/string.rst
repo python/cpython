@@ -17,20 +17,20 @@ called with a non-string parameter.
 .. index:: object: string
 
 
-.. ctype:: PyStringObject
+.. c:type:: PyStringObject
 
-   This subtype of :ctype:`PyObject` represents a Python string object.
+   This subtype of :c:type:`PyObject` represents a Python string object.
 
 
-.. cvar:: PyTypeObject PyString_Type
+.. c:var:: PyTypeObject PyString_Type
 
    .. index:: single: StringType (in module types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python string type; it is
+   This instance of :c:type:`PyTypeObject` represents the Python string type; it is
    the same object as ``str`` and ``types.StringType`` in the Python layer. .
 
 
-.. cfunction:: int PyString_Check(PyObject *o)
+.. c:function:: int PyString_Check(PyObject *o)
 
    Return true if the object *o* is a string object or an instance of a subtype of
    the string type.
@@ -39,7 +39,7 @@ called with a non-string parameter.
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyString_CheckExact(PyObject *o)
+.. c:function:: int PyString_CheckExact(PyObject *o)
 
    Return true if the object *o* is a string object, but not an instance of a
    subtype of the string type.
@@ -47,27 +47,27 @@ called with a non-string parameter.
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyString_FromString(const char *v)
+.. c:function:: PyObject* PyString_FromString(const char *v)
 
    Return a new string object with a copy of the string *v* as value on success,
    and *NULL* on failure.  The parameter *v* must not be *NULL*; it will not be
    checked.
 
 
-.. cfunction:: PyObject* PyString_FromStringAndSize(const char *v, Py_ssize_t len)
+.. c:function:: PyObject* PyString_FromStringAndSize(const char *v, Py_ssize_t len)
 
    Return a new string object with a copy of the string *v* as value and length
    *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of the
    string are uninitialized.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *len*. This might require
+      This function used an :c:type:`int` type for *len*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: PyObject* PyString_FromFormat(const char *format, ...)
+.. c:function:: PyObject* PyString_FromFormat(const char *format, ...)
 
-   Take a C :cfunc:`printf`\ -style *format* string and a variable number of
+   Take a C :c:func:`printf`\ -style *format* string and a variable number of
    arguments, calculate the size of the resulting Python string and return a string
    with the values formatted into it.  The variable arguments must be C types and
    must correspond exactly to the format characters in the *format* string.  The
@@ -144,31 +144,31 @@ called with a non-string parameter.
       Support for `"%lld"` and `"%llu"` added.
 
 
-.. cfunction:: PyObject* PyString_FromFormatV(const char *format, va_list vargs)
+.. c:function:: PyObject* PyString_FromFormatV(const char *format, va_list vargs)
 
-   Identical to :cfunc:`PyString_FromFormat` except that it takes exactly two
+   Identical to :c:func:`PyString_FromFormat` except that it takes exactly two
    arguments.
 
 
-.. cfunction:: Py_ssize_t PyString_Size(PyObject *string)
+.. c:function:: Py_ssize_t PyString_Size(PyObject *string)
 
    Return the length of the string in string object *string*.
 
    .. versionchanged:: 2.5
-      This function returned an :ctype:`int` type. This might require changes
+      This function returned an :c:type:`int` type. This might require changes
       in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: Py_ssize_t PyString_GET_SIZE(PyObject *string)
+.. c:function:: Py_ssize_t PyString_GET_SIZE(PyObject *string)
 
-   Macro form of :cfunc:`PyString_Size` but without error checking.
+   Macro form of :c:func:`PyString_Size` but without error checking.
 
    .. versionchanged:: 2.5
-      This macro returned an :ctype:`int` type. This might require changes in
+      This macro returned an :c:type:`int` type. This might require changes in
       your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: char* PyString_AsString(PyObject *string)
+.. c:function:: char* PyString_AsString(PyObject *string)
 
    Return a NUL-terminated representation of the contents of *string*.  The pointer
    refers to the internal buffer of *string*, not a copy.  The data must not be
@@ -176,16 +176,16 @@ called with a non-string parameter.
    ``PyString_FromStringAndSize(NULL, size)``. It must not be deallocated.  If
    *string* is a Unicode object, this function computes the default encoding of
    *string* and operates on that.  If *string* is not a string object at all,
-   :cfunc:`PyString_AsString` returns *NULL* and raises :exc:`TypeError`.
+   :c:func:`PyString_AsString` returns *NULL* and raises :exc:`TypeError`.
 
 
-.. cfunction:: char* PyString_AS_STRING(PyObject *string)
+.. c:function:: char* PyString_AS_STRING(PyObject *string)
 
-   Macro form of :cfunc:`PyString_AsString` but without error checking.  Only
+   Macro form of :c:func:`PyString_AsString` but without error checking.  Only
    string objects are supported; no Unicode objects should be passed.
 
 
-.. cfunction:: int PyString_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
+.. c:function:: int PyString_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
 
    Return a NUL-terminated representation of the contents of the object *obj*
    through the output variables *buffer* and *length*.
@@ -200,14 +200,14 @@ called with a non-string parameter.
    ``PyString_FromStringAndSize(NULL, size)``.  It must not be deallocated.  If
    *string* is a Unicode object, this function computes the default encoding of
    *string* and operates on that.  If *string* is not a string object at all,
-   :cfunc:`PyString_AsStringAndSize` returns ``-1`` and raises :exc:`TypeError`.
+   :c:func:`PyString_AsStringAndSize` returns ``-1`` and raises :exc:`TypeError`.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *length*. This might
+      This function used an :c:type:`int *` type for *length*. This might
       require changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: void PyString_Concat(PyObject **string, PyObject *newpart)
+.. c:function:: void PyString_Concat(PyObject **string, PyObject *newpart)
 
    Create a new string object in *\*string* containing the contents of *newpart*
    appended to *string*; the caller will own the new reference.  The reference to
@@ -216,13 +216,13 @@ called with a non-string parameter.
    *\*string* will be set to *NULL*; the appropriate exception will be set.
 
 
-.. cfunction:: void PyString_ConcatAndDel(PyObject **string, PyObject *newpart)
+.. c:function:: void PyString_ConcatAndDel(PyObject **string, PyObject *newpart)
 
    Create a new string object in *\*string* containing the contents of *newpart*
    appended to *string*.  This version decrements the reference count of *newpart*.
 
 
-.. cfunction:: int _PyString_Resize(PyObject **string, Py_ssize_t newsize)
+.. c:function:: int _PyString_Resize(PyObject **string, Py_ssize_t newsize)
 
    A way to resize a string object even though it is "immutable". Only use this to
    build up a brand new string object; don't use this if the string may already be
@@ -235,16 +235,16 @@ called with a non-string parameter.
    set to *NULL*, a memory exception is set, and ``-1`` is returned.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *newsize*. This might
+      This function used an :c:type:`int` type for *newsize*. This might
       require changes in your code for properly supporting 64-bit systems.
 
-.. cfunction:: PyObject* PyString_Format(PyObject *format, PyObject *args)
+.. c:function:: PyObject* PyString_Format(PyObject *format, PyObject *args)
 
    Return a new string object from *format* and *args*. Analogous to ``format %
    args``.  The *args* argument must be a tuple.
 
 
-.. cfunction:: void PyString_InternInPlace(PyObject **string)
+.. c:function:: void PyString_InternInPlace(PyObject **string)
 
    Intern the argument *\*string* in place.  The argument must be the address of a
    pointer variable pointing to a Python string object.  If there is an existing
@@ -261,10 +261,10 @@ called with a non-string parameter.
       This function is not available in 3.x and does not have a PyBytes alias.
 
 
-.. cfunction:: PyObject* PyString_InternFromString(const char *v)
+.. c:function:: PyObject* PyString_InternFromString(const char *v)
 
-   A combination of :cfunc:`PyString_FromString` and
-   :cfunc:`PyString_InternInPlace`, returning either a new string object that has
+   A combination of :c:func:`PyString_FromString` and
+   :c:func:`PyString_InternInPlace`, returning either a new string object that has
    been interned, or a new ("owned") reference to an earlier interned string object
    with the same value.
 
@@ -273,7 +273,7 @@ called with a non-string parameter.
       This function is not available in 3.x and does not have a PyBytes alias.
 
 
-.. cfunction:: PyObject* PyString_Decode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyString_Decode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
 
    Create an object by decoding *size* bytes of the encoded buffer *s* using the
    codec registered for *encoding*.  *encoding* and *errors* have the same meaning
@@ -286,11 +286,11 @@ called with a non-string parameter.
       This function is not available in 3.x and does not have a PyBytes alias.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *size*. This might require
+      This function used an :c:type:`int` type for *size*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: PyObject* PyString_AsDecodedObject(PyObject *str, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyString_AsDecodedObject(PyObject *str, const char *encoding, const char *errors)
 
    Decode a string object by passing it to the codec registered for *encoding* and
    return the result as Python object. *encoding* and *errors* have the same
@@ -303,9 +303,9 @@ called with a non-string parameter.
       This function is not available in 3.x and does not have a PyBytes alias.
 
 
-.. cfunction:: PyObject* PyString_Encode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyString_Encode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
 
-   Encode the :ctype:`char` buffer of the given size by passing it to the codec
+   Encode the :c:type:`char` buffer of the given size by passing it to the codec
    registered for *encoding* and return a Python object. *encoding* and *errors*
    have the same meaning as the parameters of the same name in the string
    :meth:`encode` method. The codec to be used is looked up using the Python codec
@@ -316,11 +316,11 @@ called with a non-string parameter.
       This function is not available in 3.x and does not have a PyBytes alias.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *size*. This might require
+      This function used an :c:type:`int` type for *size*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)
+.. c:function:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)
 
    Encode a string object using the codec registered for *encoding* and return the
    result as Python object. *encoding* and *errors* have the same meaning as the

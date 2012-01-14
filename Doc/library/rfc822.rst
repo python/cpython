@@ -42,8 +42,8 @@ various end-user mail programs.
    from a buffered stream.
 
    The optional *seekable* argument is provided as a workaround for certain stdio
-   libraries in which :cfunc:`tell` discards buffered data before discovering that
-   the :cfunc:`lseek` system call doesn't work.  For maximum portability, you
+   libraries in which :c:func:`tell` discards buffered data before discovering that
+   the :c:func:`lseek` system call doesn't work.  For maximum portability, you
    should set the seekable argument to zero to prevent that initial :meth:`tell`
    when passing in an unseekable object such as a file object created from a socket
    object.

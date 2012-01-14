@@ -870,31 +870,31 @@ to be able to remove the string-exception feature in a few releases.
 PEP 353: Using ssize_t as the index type
 ========================================
 
-A wide-ranging change to Python's C API, using a new  :ctype:`Py_ssize_t` type
-definition instead of :ctype:`int`,  will permit the interpreter to handle more
+A wide-ranging change to Python's C API, using a new  :c:type:`Py_ssize_t` type
+definition instead of :c:type:`int`,  will permit the interpreter to handle more
 data on 64-bit platforms. This change doesn't affect Python's capacity on 32-bit
 platforms.
 
-Various pieces of the Python interpreter used C's :ctype:`int` type to store
+Various pieces of the Python interpreter used C's :c:type:`int` type to store
 sizes or counts; for example, the number of items in a list or tuple were stored
-in an :ctype:`int`.  The C compilers for most 64-bit platforms still define
-:ctype:`int` as a 32-bit type, so that meant that lists could only hold up to
+in an :c:type:`int`.  The C compilers for most 64-bit platforms still define
+:c:type:`int` as a 32-bit type, so that meant that lists could only hold up to
 ``2**31 - 1`` = 2147483647 items. (There are actually a few different
 programming models that 64-bit C compilers can use -- see
 http://www.unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
-most commonly available model leaves :ctype:`int` as 32 bits.)
+most commonly available model leaves :c:type:`int` as 32 bits.)
 
 A limit of 2147483647 items doesn't really matter on a 32-bit platform because
 you'll run out of memory before hitting the length limit. Each list item
 requires space for a pointer, which is 4 bytes, plus space for a
-:ctype:`PyObject` representing the item.  2147483647\*4 is already more bytes
+:c:type:`PyObject` representing the item.  2147483647\*4 is already more bytes
 than a 32-bit address space can contain.
 
 It's possible to address that much memory on a 64-bit platform, however.  The
 pointers for a list that size would only require 16 GiB of space, so it's not
 unreasonable that Python programmers might construct lists that large.
 Therefore, the Python interpreter had to be changed to use some type other than
-:ctype:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
+:c:type:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
 will cause incompatibilities on 64-bit machines, so it was deemed worth making
 the transition now, while the number of 64-bit users is still relatively small.
 (In 5 or 10 years, we may *all* be on 64-bit machines, and the transition would
@@ -902,15 +902,15 @@ be more painful then.)
 
 This change most strongly affects authors of C extension modules.   Python
 strings and container types such as lists and tuples  now use
-:ctype:`Py_ssize_t` to store their size.   Functions such as
-:cfunc:`PyList_Size`  now return :ctype:`Py_ssize_t`.  Code in extension modules
-may therefore need to have some variables changed to :ctype:`Py_ssize_t`.
+:c:type:`Py_ssize_t` to store their size.   Functions such as
+:c:func:`PyList_Size`  now return :c:type:`Py_ssize_t`.  Code in extension modules
+may therefore need to have some variables changed to :c:type:`Py_ssize_t`.
 
-The :cfunc:`PyArg_ParseTuple` and :cfunc:`Py_BuildValue` functions have a new
-conversion code, ``n``, for :ctype:`Py_ssize_t`.   :cfunc:`PyArg_ParseTuple`'s
-``s#`` and ``t#`` still output :ctype:`int` by default, but you can define the
-macro  :cmacro:`PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
-them return :ctype:`Py_ssize_t`.
+The :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` functions have a new
+conversion code, ``n``, for :c:type:`Py_ssize_t`.   :c:func:`PyArg_ParseTuple`'s
+``s#`` and ``t#`` still output :c:type:`int` by default, but you can define the
+macro  :c:macro:`PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
+them return :c:type:`Py_ssize_t`.
 
 :pep:`353` has a section on conversion guidelines that  extension authors should
 read to learn about supporting 64-bit platforms.
@@ -954,8 +954,8 @@ interpreter will check that the type returned is correct, and raises a
 :exc:`TypeError` if this requirement isn't met.
 
 A corresponding :attr:`nb_index` slot was added to the C-level
-:ctype:`PyNumberMethods` structure to let C extensions implement this protocol.
-:cfunc:`PyNumber_Index(obj)` can be used in extension code to call the
+:c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
+:c:func:`PyNumber_Index(obj)` can be used in extension code to call the
 :meth:`__index__` function and retrieve its result.
 
 
@@ -1179,7 +1179,7 @@ marked in the following list.
   (Contributed by Bob Ippolito at the NeedForSpeed sprint.)
 
 * The :mod:`re` module got a 1 or 2% speedup by switching to  Python's allocator
-  functions instead of the system's  :cfunc:`malloc` and :cfunc:`free`.
+  functions instead of the system's  :c:func:`malloc` and :c:func:`free`.
   (Contributed by Jack Diederich at the NeedForSpeed sprint.)
 
 * The code generator's peephole optimizer now performs simple constant folding
@@ -1203,7 +1203,7 @@ marked in the following list.
   Sean Reifschneider at the NeedForSpeed sprint.)
 
 * Importing now caches the paths tried, recording whether  they exist or not so
-  that the interpreter makes fewer  :cfunc:`open` and :cfunc:`stat` calls on
+  that the interpreter makes fewer  :c:func:`open` and :c:func:`stat` calls on
   startup. (Contributed by Martin von Löwis and Georg Brandl.)
 
   .. Patch 921466
@@ -1568,7 +1568,7 @@ complete list of changes, or look through the SVN logs for all the details.
   reporting ``('CPython', 'trunk', '45313:45315')``.
 
   This information is also available to C extensions via the
-  :cfunc:`Py_GetBuildInfo` function that returns a  string of build information
+  :c:func:`Py_GetBuildInfo` function that returns a  string of build information
   like this: ``"trunk:45355:45356M, Apr 13 2006, 07:42:19"``.   (Contributed by
   Barry Warsaw.)
 
@@ -1690,7 +1690,7 @@ attributes of the :class:`CDLL` object.   ::
    result = libc.printf("Line of output\n")
 
 Type constructors for the various C types are provided: :func:`c_int`,
-:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :ctype:`char
+:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:type:`char
 \*`), and so forth.  Unlike Python's types, the C versions are all mutable; you
 can assign to their :attr:`value` attribute to change the wrapped value.  Python
 integers and strings will be automatically converted to the corresponding C
@@ -1720,7 +1720,7 @@ attribute of the function object to  change this::
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
 calling into the interpreter's code.   There's a :class:`py_object()` type
-constructor that will create a  :ctype:`PyObject \*` pointer.  A simple usage::
+constructor that will create a  :c:type:`PyObject \*` pointer.  A simple usage::
 
    import ctypes
 
@@ -2087,8 +2087,8 @@ Changes to Python's build process and to the C API include:
   http://scan.coverity.com for the statistics.
 
 * The largest change to the C API came from :pep:`353`, which modifies the
-  interpreter to use a :ctype:`Py_ssize_t` type definition instead of
-  :ctype:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
+  interpreter to use a :c:type:`Py_ssize_t` type definition instead of
+  :c:type:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
   change.
 
 * The design of the bytecode compiler has changed a great deal,  no longer
@@ -2113,10 +2113,10 @@ Changes to Python's build process and to the C API include:
   discusses the design.  To start learning about the code, read the definition of
   the various AST nodes in :file:`Parser/Python.asdl`.  A Python script reads this
   file and generates a set of C structure definitions in
-  :file:`Include/Python-ast.h`.  The :cfunc:`PyParser_ASTFromString` and
-  :cfunc:`PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
+  :file:`Include/Python-ast.h`.  The :c:func:`PyParser_ASTFromString` and
+  :c:func:`PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
   Python source as input and return the root of an AST representing the contents.
-  This AST can then be turned into a code object by :cfunc:`PyAST_Compile`.  For
+  This AST can then be turned into a code object by :c:func:`PyAST_Compile`.  For
   more information, read the source code, and then ask questions on python-dev.
 
   The AST code was developed under Jeremy Hylton's management, and implemented by
@@ -2138,55 +2138,55 @@ Changes to Python's build process and to the C API include:
 
   Note that this change means extension modules must be more careful when
   allocating memory.  Python's API has many different functions for allocating
-  memory that are grouped into families.  For example, :cfunc:`PyMem_Malloc`,
-  :cfunc:`PyMem_Realloc`, and :cfunc:`PyMem_Free` are one family that allocates
-  raw memory, while :cfunc:`PyObject_Malloc`, :cfunc:`PyObject_Realloc`, and
-  :cfunc:`PyObject_Free` are another family that's supposed to be used for
+  memory that are grouped into families.  For example, :c:func:`PyMem_Malloc`,
+  :c:func:`PyMem_Realloc`, and :c:func:`PyMem_Free` are one family that allocates
+  raw memory, while :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`, and
+  :c:func:`PyObject_Free` are another family that's supposed to be used for
   creating Python objects.
 
   Previously these different families all reduced to the platform's
-  :cfunc:`malloc` and :cfunc:`free` functions.  This meant  it didn't matter if
-  you got things wrong and allocated memory with the :cfunc:`PyMem` function but
-  freed it with the :cfunc:`PyObject` function.  With 2.5's changes to obmalloc,
+  :c:func:`malloc` and :c:func:`free` functions.  This meant  it didn't matter if
+  you got things wrong and allocated memory with the :c:func:`PyMem` function but
+  freed it with the :c:func:`PyObject` function.  With 2.5's changes to obmalloc,
   these families now do different things and mismatches will probably result in a
   segfault.  You should carefully test your C extension modules with Python 2.5.
 
-* The built-in set types now have an official C API.  Call :cfunc:`PySet_New`
-  and :cfunc:`PyFrozenSet_New` to create a new set, :cfunc:`PySet_Add` and
-  :cfunc:`PySet_Discard` to add and remove elements, and :cfunc:`PySet_Contains`
-  and :cfunc:`PySet_Size` to examine the set's state. (Contributed by Raymond
+* The built-in set types now have an official C API.  Call :c:func:`PySet_New`
+  and :c:func:`PyFrozenSet_New` to create a new set, :c:func:`PySet_Add` and
+  :c:func:`PySet_Discard` to add and remove elements, and :c:func:`PySet_Contains`
+  and :c:func:`PySet_Size` to examine the set's state. (Contributed by Raymond
   Hettinger.)
 
 * C code can now obtain information about the exact revision of the Python
-  interpreter by calling the  :cfunc:`Py_GetBuildInfo` function that returns a
+  interpreter by calling the  :c:func:`Py_GetBuildInfo` function that returns a
   string of build information like this: ``"trunk:45355:45356M, Apr 13 2006,
   07:42:19"``.   (Contributed by Barry Warsaw.)
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  :cfunc:`Py_LOCAL(type)` declares the function as returning a value of the
+  :c:func:`Py_LOCAL(type)` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  :cfunc:`Py_LOCAL_INLINE(type)` does the same thing and also requests the
-  function be inlined.  If :cfunc:`PY_LOCAL_AGGRESSIVE` is defined before
+  :c:func:`Py_LOCAL_INLINE(type)` does the same thing and also requests the
+  function be inlined.  If :c:func:`PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
   optimizations actually make the code faster.  (Contributed by Fredrik Lundh at
   the NeedForSpeed sprint.)
 
-* :cfunc:`PyErr_NewException(name, base, dict)` can now accept a tuple of base
+* :c:func:`PyErr_NewException(name, base, dict)` can now accept a tuple of base
   classes as its *base* argument.  (Contributed by Georg Brandl.)
 
-* The :cfunc:`PyErr_Warn` function for issuing warnings is now deprecated in
-  favour of :cfunc:`PyErr_WarnEx(category, message, stacklevel)` which lets you
+* The :c:func:`PyErr_Warn` function for issuing warnings is now deprecated in
+  favour of :c:func:`PyErr_WarnEx(category, message, stacklevel)` which lets you
   specify the number of stack frames separating this function and the caller.  A
-  *stacklevel* of 1 is the function calling :cfunc:`PyErr_WarnEx`, 2 is the
+  *stacklevel* of 1 is the function calling :c:func:`PyErr_WarnEx`, 2 is the
   function above that, and so forth.  (Added by Neal Norwitz.)
 
 * The CPython interpreter is still written in C, but  the code can now be
   compiled with a C++ compiler without errors.   (Implemented by Anthony Baxter,
   Martin von Löwis, Skip Montanaro.)
 
-* The :cfunc:`PyRange_New` function was removed.  It was never documented, never
+* The :c:func:`PyRange_New` function was removed.  It was never documented, never
   used in the core code, and had dangerously lax error checking.  In the unlikely
   case that your extensions were using it, you can replace it by something like
   the following::
@@ -2203,7 +2203,7 @@ Port-Specific Changes
 ---------------------
 
 * MacOS X (10.3 and higher): dynamic loading of modules now uses the
-  :cfunc:`dlopen` function instead of MacOS-specific functions.
+  :c:func:`dlopen` function instead of MacOS-specific functions.
 
 * MacOS X: an :option:`--enable-universalsdk` switch was added to the
   :program:`configure` script that compiles the interpreter as a universal binary
@@ -2259,15 +2259,15 @@ code:
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path
   checking.
 
-* C API: Many functions now use :ctype:`Py_ssize_t`  instead of :ctype:`int` to
+* C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:type:`int` to
   allow processing more data on 64-bit machines.  Extension code may need to make
   the same change to avoid warnings and to support 64-bit machines.  See the
   earlier section :ref:`pep-353` for a discussion of this change.
 
 * C API:  The obmalloc changes mean that  you must be careful to not mix usage
-  of the :cfunc:`PyMem_\*` and :cfunc:`PyObject_\*` families of functions. Memory
-  allocated with  one family's :cfunc:`\*_Malloc` must be  freed with the
-  corresponding family's :cfunc:`\*_Free` function.
+  of the :c:func:`PyMem_\*` and :c:func:`PyObject_\*` families of functions. Memory
+  allocated with  one family's :c:func:`\*_Malloc` must be  freed with the
+  corresponding family's :c:func:`\*_Free` function.
 
 .. ======================================================================
 

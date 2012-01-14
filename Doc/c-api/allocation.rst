@@ -6,20 +6,20 @@ Allocating Objects on the Heap
 ==============================
 
 
-.. cfunction:: PyObject* _PyObject_New(PyTypeObject *type)
+.. c:function:: PyObject* _PyObject_New(PyTypeObject *type)
 
 
-.. cfunction:: PyVarObject* _PyObject_NewVar(PyTypeObject *type, Py_ssize_t size)
+.. c:function:: PyVarObject* _PyObject_NewVar(PyTypeObject *type, Py_ssize_t size)
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *size*. This might require
+      This function used an :c:type:`int` type for *size*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: void _PyObject_Del(PyObject *op)
+.. c:function:: void _PyObject_Del(PyObject *op)
 
 
-.. cfunction:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
+.. c:function:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
 
    Initialize a newly-allocated object *op* with its type and initial
    reference.  Returns the initialized object.  If *type* indicates that the
@@ -28,17 +28,17 @@ Allocating Objects on the Heap
    affected.
 
 
-.. cfunction:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
+.. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
 
-   This does everything :cfunc:`PyObject_Init` does, and also initializes the
+   This does everything :c:func:`PyObject_Init` does, and also initializes the
    length information for a variable-size object.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *size*. This might require
+      This function used an :c:type:`int` type for *size*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: TYPE* PyObject_New(TYPE, PyTypeObject *type)
+.. c:function:: TYPE* PyObject_New(TYPE, PyTypeObject *type)
 
    Allocate a new Python object using the C structure type *TYPE* and the
    Python type object *type*.  Fields not defined by the Python object header
@@ -47,7 +47,7 @@ Allocating Objects on the Heap
    the type object.
 
 
-.. cfunction:: TYPE* PyObject_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
+.. c:function:: TYPE* PyObject_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
 
    Allocate a new Python object using the C structure type *TYPE* and the
    Python type object *type*.  Fields not defined by the Python object header
@@ -59,20 +59,20 @@ Allocating Objects on the Heap
    improving the memory management efficiency.
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` type for *size*. This might require
+      This function used an :c:type:`int` type for *size*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: void PyObject_Del(PyObject *op)
+.. c:function:: void PyObject_Del(PyObject *op)
 
-   Releases memory allocated to an object using :cfunc:`PyObject_New` or
-   :cfunc:`PyObject_NewVar`.  This is normally called from the
+   Releases memory allocated to an object using :c:func:`PyObject_New` or
+   :c:func:`PyObject_NewVar`.  This is normally called from the
    :attr:`tp_dealloc` handler specified in the object's type.  The fields of
    the object should not be accessed after this call as the memory is no
    longer a valid Python object.
 
 
-.. cfunction:: PyObject* Py_InitModule(char *name, PyMethodDef *methods)
+.. c:function:: PyObject* Py_InitModule(char *name, PyMethodDef *methods)
 
    Create a new module object based on a name and table of functions,
    returning the new module object.
@@ -82,7 +82,7 @@ Allocating Objects on the Heap
       *methods* argument.
 
 
-.. cfunction:: PyObject* Py_InitModule3(char *name, PyMethodDef *methods, char *doc)
+.. c:function:: PyObject* Py_InitModule3(char *name, PyMethodDef *methods, char *doc)
 
    Create a new module object based on a name and table of functions,
    returning the new module object.  If *doc* is non-*NULL*, it will be used
@@ -93,7 +93,7 @@ Allocating Objects on the Heap
       *methods* argument.
 
 
-.. cfunction:: PyObject* Py_InitModule4(char *name, PyMethodDef *methods, char *doc, PyObject *self, int apiver)
+.. c:function:: PyObject* Py_InitModule4(char *name, PyMethodDef *methods, char *doc, PyObject *self, int apiver)
 
    Create a new module object based on a name and table of functions,
    returning the new module object.  If *doc* is non-*NULL*, it will be used
@@ -107,7 +107,7 @@ Allocating Objects on the Heap
    .. note::
 
       Most uses of this function should probably be using the
-      :cfunc:`Py_InitModule3` instead; only use this if you are sure you need
+      :c:func:`Py_InitModule3` instead; only use this if you are sure you need
       it.
 
    .. versionchanged:: 2.3
@@ -115,7 +115,7 @@ Allocating Objects on the Heap
       *methods* argument.
 
 
-.. cvar:: PyObject _Py_NoneStruct
+.. c:var:: PyObject _Py_NoneStruct
 
    Object which is visible in Python as ``None``.  This should only be
    accessed using the ``Py_None`` macro, which evaluates to a pointer to this

@@ -121,7 +121,7 @@ about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
 code to 3.0.  The value of this switch is available
 to Python code as the boolean variable :data:`sys.py3kwarning`,
-and to C extension code as :cdata:`Py_Py3kWarningFlag`.
+and to C extension code as :c:data:`Py_Py3kWarningFlag`.
 
 .. seealso::
 
@@ -975,10 +975,10 @@ can be used to include Unicode characters::
     print len(s)               # 12 Unicode characters
 
 At the C level, Python 3.0 will rename the existing 8-bit
-string type, called :ctype:`PyStringObject` in Python 2.x,
-to :ctype:`PyBytesObject`.  Python 2.6 uses ``#define``
-to support using the names :cfunc:`PyBytesObject`,
-:cfunc:`PyBytes_Check`, :cfunc:`PyBytes_FromStringAndSize`,
+string type, called :c:type:`PyStringObject` in Python 2.x,
+to :c:type:`PyBytesObject`.  Python 2.6 uses ``#define``
+to support using the names :c:func:`PyBytesObject`,
+:c:func:`PyBytes_Check`, :c:func:`PyBytes_FromStringAndSize`,
 and all the other functions and macros used with strings.
 
 Instances of the :class:`bytes` type are immutable just
@@ -1010,8 +1010,8 @@ and some of the methods of lists, such as :meth:`append`,
     bytearray(b'ABCde')
 
 There's also a corresponding C API, with
-:cfunc:`PyByteArray_FromObject`,
-:cfunc:`PyByteArray_FromStringAndSize`,
+:c:func:`PyByteArray_FromObject`,
+:c:func:`PyByteArray_FromStringAndSize`,
 and various other functions.
 
 .. seealso::
@@ -1130,7 +1130,7 @@ indicate that the external caller is done.
 
 .. XXX PyObject_GetBuffer not documented in c-api
 
-The *flags* argument to :cfunc:`PyObject_GetBuffer` specifies
+The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
  * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
@@ -1141,7 +1141,7 @@ constraints upon the memory returned.  Some examples are:
    requests a C-contiguous (last dimension varies the fastest) or
    Fortran-contiguous (first dimension varies the fastest) array layout.
 
-Two new argument codes for :cfunc:`PyArg_ParseTuple`,
+Two new argument codes for :c:func:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.
 
 .. seealso::
@@ -1635,7 +1635,7 @@ Some smaller changes made to the core Python language are:
   :meth:`__hash__` method inherited from a parent class, so
   assigning ``None`` was implemented as an override.  At the
   C level, extensions can set ``tp_hash`` to
-  :cfunc:`PyObject_HashNotImplemented`.
+  :c:func:`PyObject_HashNotImplemented`.
   (Fixed by Nick Coghlan and Amaury Forgeot d'Arc; :issue:`2235`.)
 
 * The :exc:`GeneratorExit` exception now subclasses
@@ -1705,7 +1705,7 @@ Optimizations
   By default, this change is only applied to types that are included with
   the Python core.  Extension modules may not necessarily be compatible with
   this cache,
-  so they must explicitly add :cmacro:`Py_TPFLAGS_HAVE_VERSION_TAG`
+  so they must explicitly add :c:macro:`Py_TPFLAGS_HAVE_VERSION_TAG`
   to the module's ``tp_flags`` field to enable the method cache.
   (To be compatible with the method cache, the extension module's code
   must not directly access and modify the ``tp_dict`` member of
@@ -2284,7 +2284,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Raymond Hettinger; :issue:`1861`.)
 
 * The :mod:`select` module now has wrapper functions
-  for the Linux :cfunc:`epoll` and BSD :cfunc:`kqueue` system calls.
+  for the Linux :c:func:`epoll` and BSD :c:func:`kqueue` system calls.
   :meth:`modify` method was added to the existing :class:`poll`
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, modifying the recorded event mask
@@ -2317,13 +2317,13 @@ changes, or look through the Subversion logs for all the details.
   Calling ``signal.set_wakeup_fd(fd)`` sets a file descriptor
   to be used; when a signal is received, a byte is written to that
   file descriptor.  There's also a C-level function,
-  :cfunc:`PySignal_SetWakeupFd`, for setting the descriptor.
+  :c:func:`PySignal_SetWakeupFd`, for setting the descriptor.
 
   Event loops will use this by opening a pipe to create two descriptors,
   one for reading and one for writing.  The writable descriptor
   will be passed to :func:`set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
-  :cfunc:`select` or :cfunc:`poll`.
+  :c:func:`select` or :c:func:`poll`.
   On receiving a signal, a byte will be written and the main event loop
   will be woken up, avoiding the need to poll.
 
@@ -2384,7 +2384,7 @@ changes, or look through the Subversion logs for all the details.
   has been updated from version 2.3.2 in Python 2.5 to
   version 2.4.1.
 
-* The :mod:`struct` module now supports the C99 :ctype:`_Bool` type,
+* The :mod:`struct` module now supports the C99 :c:type:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
 
@@ -2392,7 +2392,7 @@ changes, or look through the Subversion logs for all the details.
   now have :meth:`terminate`, :meth:`kill`, and :meth:`send_signal` methods.
   On Windows, :meth:`send_signal` only supports the :const:`SIGTERM`
   signal, and all these methods are aliases for the Win32 API function
-  :cfunc:`TerminateProcess`.
+  :c:func:`TerminateProcess`.
   (Contributed by Christian Heimes.)
 
 * A new variable in the :mod:`sys` module, :attr:`float_info`, is an
@@ -2977,7 +2977,7 @@ Changes to Python's build process and to the C API include:
 
 * Python now must be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree has dropped its
-  own implementations of :cfunc:`memmove` and :cfunc:`strerror`, which
+  own implementations of :c:func:`memmove` and :c:func:`strerror`, which
   are in the C89 standard library.
 
 * Python 2.6 can be built with Microsoft Visual Studio 2008 (version
@@ -2999,7 +2999,7 @@ Changes to Python's build process and to the C API include:
 
 * The new buffer interface, previously described in
   `the PEP 3118 section <#pep-3118-revised-buffer-protocol>`__,
-  adds :cfunc:`PyObject_GetBuffer` and :cfunc:`PyBuffer_Release`,
+  adds :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`,
   as well as a few other functions.
 
 * Python's use of the C stdio library is now thread-safe, or at least
@@ -3007,27 +3007,27 @@ Changes to Python's build process and to the C API include:
   bug occurred if one thread closed a file object while another thread
   was reading from or writing to the object.  In 2.6 file objects
   have a reference count, manipulated by the
-  :cfunc:`PyFile_IncUseCount` and :cfunc:`PyFile_DecUseCount`
+  :c:func:`PyFile_IncUseCount` and :c:func:`PyFile_DecUseCount`
   functions.  File objects can't be closed unless the reference count
-  is zero.  :cfunc:`PyFile_IncUseCount` should be called while the GIL
+  is zero.  :c:func:`PyFile_IncUseCount` should be called while the GIL
   is still held, before carrying out an I/O operation using the
-  ``FILE *`` pointer, and :cfunc:`PyFile_DecUseCount` should be called
+  ``FILE *`` pointer, and :c:func:`PyFile_DecUseCount` should be called
   immediately after the GIL is re-acquired.
   (Contributed by Antoine Pitrou and Gregory P. Smith.)
 
 * Importing modules simultaneously in two different threads no longer
   deadlocks; it will now raise an :exc:`ImportError`.  A new API
-  function, :cfunc:`PyImport_ImportModuleNoBlock`, will look for a
+  function, :c:func:`PyImport_ImportModuleNoBlock`, will look for a
   module in ``sys.modules`` first, then try to import it after
   acquiring an import lock.  If the import lock is held by another
   thread, an :exc:`ImportError` is raised.
   (Contributed by Christian Heimes.)
 
 * Several functions return information about the platform's
-  floating-point support.  :cfunc:`PyFloat_GetMax` returns
+  floating-point support.  :c:func:`PyFloat_GetMax` returns
   the maximum representable floating point value,
-  and :cfunc:`PyFloat_GetMin` returns the minimum
-  positive value.  :cfunc:`PyFloat_GetInfo` returns an object
+  and :c:func:`PyFloat_GetMin` returns the minimum
+  positive value.  :c:func:`PyFloat_GetInfo` returns an object
   containing more information from the :file:`float.h` file, such as
   ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
   (smallest difference between 1.0 and the next largest value
@@ -3035,7 +3035,7 @@ Changes to Python's build process and to the C API include:
   (Contributed by Christian Heimes; :issue:`1534`.)
 
 * C functions and methods that use
-  :cfunc:`PyComplex_AsCComplex` will now accept arguments that
+  :c:func:`PyComplex_AsCComplex` will now accept arguments that
   have a :meth:`__complex__` method.  In particular, the functions in the
   :mod:`cmath` module will now accept objects with this method.
   This is a backport of a Python 3.0 change.
@@ -3049,15 +3049,15 @@ Changes to Python's build process and to the C API include:
 * Many C extensions define their own little macro for adding
   integers and strings to the module's dictionary in the
   ``init*`` function.  Python 2.6 finally defines standard macros
-  for adding values to a module, :cmacro:`PyModule_AddStringMacro`
-  and :cmacro:`PyModule_AddIntMacro()`.  (Contributed by
+  for adding values to a module, :c:macro:`PyModule_AddStringMacro`
+  and :c:macro:`PyModule_AddIntMacro()`.  (Contributed by
   Christian Heimes.)
 
 * Some macros were renamed in both 3.0 and 2.6 to make it clearer that
   they are macros,
-  not functions.  :cmacro:`Py_Size()` became :cmacro:`Py_SIZE()`,
-  :cmacro:`Py_Type()` became :cmacro:`Py_TYPE()`, and
-  :cmacro:`Py_Refcnt()` became :cmacro:`Py_REFCNT()`.
+  not functions.  :c:macro:`Py_Size()` became :c:macro:`Py_SIZE()`,
+  :c:macro:`Py_Type()` became :c:macro:`Py_TYPE()`, and
+  :c:macro:`Py_Refcnt()` became :c:macro:`Py_REFCNT()`.
   The mixed-case macros are still available
   in Python 2.6 for backward compatibility.
   (:issue:`1629`)
@@ -3115,7 +3115,7 @@ Port-Specific Changes: Windows
 
 * The :mod:`socket` module's socket objects now have an
   :meth:`ioctl` method that provides a limited interface to the
-  :cfunc:`WSAIoctl` system interface.
+  :c:func:`WSAIoctl` system interface.
 
 * The :mod:`_winreg` module now has a function,
   :func:`ExpandEnvironmentStrings`,
@@ -3261,13 +3261,13 @@ that may require changes to your code:
   the implementation now explicitly checks for this case and raises
   an :exc:`ImportError`.
 
-* C API: the :cfunc:`PyImport_Import` and :cfunc:`PyImport_ImportModule`
+* C API: the :c:func:`PyImport_Import` and :c:func:`PyImport_ImportModule`
   functions now default to absolute imports, not relative imports.
   This will affect C extensions that import other modules.
 
 * C API: extension data types that shouldn't be hashable
   should define their ``tp_hash`` slot to
-  :cfunc:`PyObject_HashNotImplemented`.
+  :c:func:`PyObject_HashNotImplemented`.
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of

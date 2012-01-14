@@ -41,7 +41,7 @@ Note the capitalization of the module name; this is a historical artifact.
 
    This exception is raised on MacOS generated errors, either from functions in
    this module or from other mac-specific modules like the toolbox interfaces. The
-   arguments are the integer error code (the :cdata:`OSErr` value) and a textual
+   arguments are the integer error code (the :c:data:`OSErr` value) and a textual
    description of the error code. Symbolic names for all known error codes are
    defined in the standard module :mod:`macerrors`.
 

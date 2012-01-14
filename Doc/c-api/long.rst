@@ -8,100 +8,100 @@ Long Integer Objects
 .. index:: object: long integer
 
 
-.. ctype:: PyLongObject
+.. c:type:: PyLongObject
 
-   This subtype of :ctype:`PyObject` represents a Python long integer object.
+   This subtype of :c:type:`PyObject` represents a Python long integer object.
 
 
-.. cvar:: PyTypeObject PyLong_Type
+.. c:var:: PyTypeObject PyLong_Type
 
    .. index:: single: LongType (in modules types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python long integer type.
+   This instance of :c:type:`PyTypeObject` represents the Python long integer type.
    This is the same object as ``long`` and ``types.LongType``.
 
 
-.. cfunction:: int PyLong_Check(PyObject *p)
+.. c:function:: int PyLong_Check(PyObject *p)
 
-   Return true if its argument is a :ctype:`PyLongObject` or a subtype of
-   :ctype:`PyLongObject`.
+   Return true if its argument is a :c:type:`PyLongObject` or a subtype of
+   :c:type:`PyLongObject`.
 
    .. versionchanged:: 2.2
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyLong_CheckExact(PyObject *p)
+.. c:function:: int PyLong_CheckExact(PyObject *p)
 
-   Return true if its argument is a :ctype:`PyLongObject`, but not a subtype of
-   :ctype:`PyLongObject`.
+   Return true if its argument is a :c:type:`PyLongObject`, but not a subtype of
+   :c:type:`PyLongObject`.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: PyObject* PyLong_FromLong(long v)
+.. c:function:: PyObject* PyLong_FromLong(long v)
 
-   Return a new :ctype:`PyLongObject` object from *v*, or *NULL* on failure.
+   Return a new :c:type:`PyLongObject` object from *v*, or *NULL* on failure.
 
 
-.. cfunction:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
+.. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
 
-   Return a new :ctype:`PyLongObject` object from a C :ctype:`unsigned long`, or
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long`, or
    *NULL* on failure.
 
 
-.. cfunction:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
+.. c:function:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
 
-   Return a new :ctype:`PyLongObject` object from a C :ctype:`Py_ssize_t`, or
-   *NULL* on failure.
-
-   .. versionadded:: 2.6
-
-
-.. cfunction:: PyObject* PyLong_FromSize_t(size_t v)
-
-   Return a new :ctype:`PyLongObject` object from a C :ctype:`size_t`, or
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`Py_ssize_t`, or
    *NULL* on failure.
 
    .. versionadded:: 2.6
 
 
-.. cfunction:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
+.. c:function:: PyObject* PyLong_FromSize_t(size_t v)
 
-   Return a new :ctype:`PyLongObject` object with a value of *v*, or *NULL*
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`size_t`, or
+   *NULL* on failure.
+
+   .. versionadded:: 2.6
+
+
+.. c:function:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
+
+   Return a new :c:type:`PyLongObject` object with a value of *v*, or *NULL*
    on failure.
 
    .. versionadded:: 2.6
 
 
-.. cfunction:: PyObject* PyLong_FromSize_t(size_t v)
+.. c:function:: PyObject* PyLong_FromSize_t(size_t v)
 
-   Return a new :ctype:`PyLongObject` object with a value of *v*, or *NULL*
+   Return a new :c:type:`PyLongObject` object with a value of *v*, or *NULL*
    on failure.
 
    .. versionadded:: 2.6
 
 
-.. cfunction:: PyObject* PyLong_FromLongLong(PY_LONG_LONG v)
+.. c:function:: PyObject* PyLong_FromLongLong(PY_LONG_LONG v)
 
-   Return a new :ctype:`PyLongObject` object from a C :ctype:`long long`, or *NULL*
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`long long`, or *NULL*
    on failure.
 
 
-.. cfunction:: PyObject* PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG v)
+.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG v)
 
-   Return a new :ctype:`PyLongObject` object from a C :ctype:`unsigned long long`,
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long long`,
    or *NULL* on failure.
 
 
-.. cfunction:: PyObject* PyLong_FromDouble(double v)
+.. c:function:: PyObject* PyLong_FromDouble(double v)
 
-   Return a new :ctype:`PyLongObject` object from the integer part of *v*, or
+   Return a new :c:type:`PyLongObject` object from the integer part of *v*, or
    *NULL* on failure.
 
 
-.. cfunction:: PyObject* PyLong_FromString(char *str, char **pend, int base)
+.. c:function:: PyObject* PyLong_FromString(char *str, char **pend, int base)
 
-   Return a new :ctype:`PyLongObject` based on the string value in *str*, which is
+   Return a new :c:type:`PyLongObject` based on the string value in *str*, which is
    interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
    *\*pend* will point to the first character in *str* which follows the
    representation of the number.  If *base* is ``0``, the radix will be determined
@@ -112,7 +112,7 @@ Long Integer Objects
    no digits, :exc:`ValueError` will be raised.
 
 
-.. cfunction:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
+.. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 
    Convert a sequence of Unicode digits to a Python long integer value.  The first
    parameter, *u*, points to the first character of the Unicode string, *length*
@@ -123,14 +123,14 @@ Long Integer Objects
    .. versionadded:: 1.6
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int` for *length*. This might require
+      This function used an :c:type:`int` for *length*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: PyObject* PyLong_FromVoidPtr(void *p)
+.. c:function:: PyObject* PyLong_FromVoidPtr(void *p)
 
    Create a Python integer or long integer from the pointer *p*. The pointer value
-   can be retrieved from the resulting value using :cfunc:`PyLong_AsVoidPtr`.
+   can be retrieved from the resulting value using :c:func:`PyLong_AsVoidPtr`.
 
    .. versionadded:: 1.5.2
 
@@ -138,20 +138,20 @@ Long Integer Objects
       If the integer is larger than LONG_MAX, a positive long integer is returned.
 
 
-.. cfunction:: long PyLong_AsLong(PyObject *pylong)
+.. c:function:: long PyLong_AsLong(PyObject *pylong)
 
    .. index::
       single: LONG_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`long` representation of the contents of *pylong*.  If
+   Return a C :c:type:`long` representation of the contents of *pylong*.  If
    *pylong* is greater than :const:`LONG_MAX`, an :exc:`OverflowError` is raised
    and ``-1`` will be returned.
 
 
-.. cfunction:: long PyLong_AsLongAndOverflow(PyObject *pylong, int *overflow)
+.. c:function:: long PyLong_AsLongAndOverflow(PyObject *pylong, int *overflow)
 
-   Return a C :ctype:`long` representation of the contents of
+   Return a C :c:type:`long` representation of the contents of
    *pylong*.  If *pylong* is greater than :const:`LONG_MAX` or less
    than :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``,
    respectively, and return ``-1``; otherwise, set *\*overflow* to
@@ -162,9 +162,9 @@ Long Integer Objects
    .. versionadded:: 2.7
 
 
-.. cfunction:: PY_LONG_LONG PyLong_AsLongLongAndOverflow(PyObject *pylong, int *overflow)
+.. c:function:: PY_LONG_LONG PyLong_AsLongLongAndOverflow(PyObject *pylong, int *overflow)
 
-   Return a C :ctype:`long long` representation of the contents of
+   Return a C :c:type:`long long` representation of the contents of
    *pylong*.  If *pylong* is greater than :const:`PY_LLONG_MAX` or less
    than :const:`PY_LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``,
    respectively, and return ``-1``; otherwise, set *\*overflow* to
@@ -175,61 +175,61 @@ Long Integer Objects
    .. versionadded:: 2.7
 
 
-.. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
+.. c:function:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
 
    .. index::
       single: PY_SSIZE_T_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`Py_ssize_t` representation of the contents of *pylong*.  If
+   Return a C :c:type:`Py_ssize_t` representation of the contents of *pylong*.  If
    *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError` is raised
    and ``-1`` will be returned.
 
    .. versionadded:: 2.6
 
 
-.. cfunction:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
+.. c:function:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)
 
    .. index::
       single: ULONG_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`unsigned long` representation of the contents of *pylong*.
+   Return a C :c:type:`unsigned long` representation of the contents of *pylong*.
    If *pylong* is greater than :const:`ULONG_MAX`, an :exc:`OverflowError` is
    raised.
 
 
-.. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
+.. c:function:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
 
    .. index::
       single: PY_SSIZE_T_MAX
 
-   Return a :ctype:`Py_ssize_t` representation of the contents of *pylong*.  If
+   Return a :c:type:`Py_ssize_t` representation of the contents of *pylong*.  If
    *pylong* is greater than :const:`PY_SSIZE_T_MAX`, an :exc:`OverflowError` is
    raised.
 
    .. versionadded:: 2.6
 
 
-.. cfunction:: PY_LONG_LONG PyLong_AsLongLong(PyObject *pylong)
+.. c:function:: PY_LONG_LONG PyLong_AsLongLong(PyObject *pylong)
 
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`long long` from a Python long integer.  If
-   *pylong* cannot be represented as a :ctype:`long long`, an
+   Return a C :c:type:`long long` from a Python long integer.  If
+   *pylong* cannot be represented as a :c:type:`long long`, an
    :exc:`OverflowError` is raised and ``-1`` is returned.
 
    .. versionadded:: 2.2
 
 
-.. cfunction:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLong(PyObject *pylong)
+.. c:function:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLong(PyObject *pylong)
 
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :ctype:`unsigned long long` from a Python long integer. If
-   *pylong* cannot be represented as an :ctype:`unsigned long long`, an
+   Return a C :c:type:`unsigned long long` from a Python long integer. If
+   *pylong* cannot be represented as an :c:type:`unsigned long long`, an
    :exc:`OverflowError` is raised and ``(unsigned long long)-1`` is
    returned.
 
@@ -240,35 +240,35 @@ Long Integer Objects
       :exc:`TypeError`.
 
 
-.. cfunction:: unsigned long PyLong_AsUnsignedLongMask(PyObject *io)
+.. c:function:: unsigned long PyLong_AsUnsignedLongMask(PyObject *io)
 
-   Return a C :ctype:`unsigned long` from a Python long integer, without checking
+   Return a C :c:type:`unsigned long` from a Python long integer, without checking
    for overflow.
 
    .. versionadded:: 2.3
 
 
-.. cfunction:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLongMask(PyObject *io)
+.. c:function:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLongMask(PyObject *io)
 
-   Return a C :ctype:`unsigned long long` from a Python long integer, without
+   Return a C :c:type:`unsigned long long` from a Python long integer, without
    checking for overflow.
 
    .. versionadded:: 2.3
 
 
-.. cfunction:: double PyLong_AsDouble(PyObject *pylong)
+.. c:function:: double PyLong_AsDouble(PyObject *pylong)
 
-   Return a C :ctype:`double` representation of the contents of *pylong*.  If
-   *pylong* cannot be approximately represented as a :ctype:`double`, an
+   Return a C :c:type:`double` representation of the contents of *pylong*.  If
+   *pylong* cannot be approximately represented as a :c:type:`double`, an
    :exc:`OverflowError` exception is raised and ``-1.0`` will be returned.
 
 
-.. cfunction:: void* PyLong_AsVoidPtr(PyObject *pylong)
+.. c:function:: void* PyLong_AsVoidPtr(PyObject *pylong)
 
-   Convert a Python integer or long integer *pylong* to a C :ctype:`void` pointer.
+   Convert a Python integer or long integer *pylong* to a C :c:type:`void` pointer.
    If *pylong* cannot be converted, an :exc:`OverflowError` will be raised.  This
-   is only assured to produce a usable :ctype:`void` pointer for values created
-   with :cfunc:`PyLong_FromVoidPtr`.
+   is only assured to produce a usable :c:type:`void` pointer for values created
+   with :c:func:`PyLong_FromVoidPtr`.
 
    .. versionadded:: 1.5.2
 

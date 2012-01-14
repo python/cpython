@@ -22,7 +22,7 @@ Conditional compilation
 =======================
 
 The easiest way to compile only some code for 3.0 is to check if
-:cmacro:`PY_MAJOR_VERSION` is greater than or equal to 3. ::
+:c:macro:`PY_MAJOR_VERSION` is greater than or equal to 3. ::
 
    #if PY_MAJOR_VERSION >= 3
    #define IS_PY3K
@@ -47,12 +47,12 @@ Python 3.0's :func:`str` (``PyString_*`` functions in C) type is equivalent to
 2.x's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has become
 :func:`bytes`.  Python 2.6 and later provide a compatibility header,
 :file:`bytesobject.h`, mapping ``PyBytes`` names to ``PyString`` ones.  For best
-compatibility with 3.0, :ctype:`PyUnicode` should be used for textual data and
-:ctype:`PyBytes` for binary data.  It's also important to remember that
-:ctype:`PyBytes` and :ctype:`PyUnicode` in 3.0 are not interchangeable like
-:ctype:`PyString` and :ctype:`PyUnicode` are in 2.x.  The following example
-shows best practices with regards to :ctype:`PyUnicode`, :ctype:`PyString`,
-and :ctype:`PyBytes`. ::
+compatibility with 3.0, :c:type:`PyUnicode` should be used for textual data and
+:c:type:`PyBytes` for binary data.  It's also important to remember that
+:c:type:`PyBytes` and :c:type:`PyUnicode` in 3.0 are not interchangeable like
+:c:type:`PyString` and :c:type:`PyUnicode` are in 2.x.  The following example
+shows best practices with regards to :c:type:`PyUnicode`, :c:type:`PyString`,
+and :c:type:`PyBytes`. ::
 
    #include "stdlib.h"
    #include "Python.h"
@@ -212,43 +212,43 @@ both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::
 CObject replaced with Capsule
 =============================
 
-The :ctype:`Capsule` object was introduced in Python 3.1 and 2.7 to replace
-:ctype:`CObject`.  CObjects were useful,
-but the :ctype:`CObject` API was problematic: it didn't permit distinguishing
+The :c:type:`Capsule` object was introduced in Python 3.1 and 2.7 to replace
+:c:type:`CObject`.  CObjects were useful,
+but the :c:type:`CObject` API was problematic: it didn't permit distinguishing
 between valid CObjects, which allowed mismatched CObjects to crash the
 interpreter, and some of its APIs relied on undefined behavior in C.
 (For further reading on the rationale behind Capsules, please see :issue:`5630`.)
 
 If you're currently using CObjects, and you want to migrate to 3.1 or newer,
 you'll need to switch to Capsules.
-:ctype:`CObject` was deprecated in 3.1 and 2.7 and completely removed in
+:c:type:`CObject` was deprecated in 3.1 and 2.7 and completely removed in
 Python 3.2.  If you only support 2.7, or 3.1 and above, you
-can simply switch to :ctype:`Capsule`.  If you need to support 3.0 or
+can simply switch to :c:type:`Capsule`.  If you need to support 3.0 or
 versions of Python earlier than 2.7 you'll have to support both CObjects
 and Capsules.
 
 The following example header file :file:`capsulethunk.h` may
 solve the problem for you;
-simply write your code against the :ctype:`Capsule` API, include
+simply write your code against the :c:type:`Capsule` API, include
 this header file after ``"Python.h"``, and you'll automatically use CObjects
 in Python 3.0 or versions earlier than 2.7.
 
 :file:`capsulethunk.h` simulates Capsules using CObjects.  However,
-:ctype:`CObject` provides no place to store the capsule's "name".  As a
-result the simulated :ctype:`Capsule` objects created by :file:`capsulethunk.h`
+:c:type:`CObject` provides no place to store the capsule's "name".  As a
+result the simulated :c:type:`Capsule` objects created by :file:`capsulethunk.h`
 behave slightly differently from real Capsules.  Specifically:
 
-  * The name parameter passed in to :cfunc:`PyCapsule_New` is ignored.
+  * The name parameter passed in to :c:func:`PyCapsule_New` is ignored.
 
-  * The name parameter passed in to :cfunc:`PyCapsule_IsValid` and
-    :cfunc:`PyCapsule_GetPointer` is ignored, and no error checking
+  * The name parameter passed in to :c:func:`PyCapsule_IsValid` and
+    :c:func:`PyCapsule_GetPointer` is ignored, and no error checking
     of the name is performed.
 
-  * :cfunc:`PyCapsule_GetName` always returns NULL.
+  * :c:func:`PyCapsule_GetName` always returns NULL.
 
-  * :cfunc:`PyCapsule_SetName` always throws an exception and
+  * :c:func:`PyCapsule_SetName` always throws an exception and
     returns failure.  (Since there's no way to store a name
-    in a CObject, noisy failure of :cfunc:`PyCapsule_SetName`
+    in a CObject, noisy failure of :c:func:`PyCapsule_SetName`
     was deemed preferable to silent failure here.  If this is
     inconveient, feel free to modify your local
     copy as you see fit.)

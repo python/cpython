@@ -8,23 +8,23 @@ Dictionary Objects
 .. index:: object: dictionary
 
 
-.. ctype:: PyDictObject
+.. c:type:: PyDictObject
 
-   This subtype of :ctype:`PyObject` represents a Python dictionary object.
+   This subtype of :c:type:`PyObject` represents a Python dictionary object.
 
 
-.. cvar:: PyTypeObject PyDict_Type
+.. c:var:: PyTypeObject PyDict_Type
 
    .. index::
       single: DictType (in module types)
       single: DictionaryType (in module types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python dictionary
+   This instance of :c:type:`PyTypeObject` represents the Python dictionary
    type.  This is exposed to Python programs as ``dict`` and
    ``types.DictType``.
 
 
-.. cfunction:: int PyDict_Check(PyObject *p)
+.. c:function:: int PyDict_Check(PyObject *p)
 
    Return true if *p* is a dict object or an instance of a subtype of the dict
    type.
@@ -33,7 +33,7 @@ Dictionary Objects
       Allowed subtypes to be accepted.
 
 
-.. cfunction:: int PyDict_CheckExact(PyObject *p)
+.. c:function:: int PyDict_CheckExact(PyObject *p)
 
    Return true if *p* is a dict object, but not an instance of a subtype of
    the dict type.
@@ -41,12 +41,12 @@ Dictionary Objects
    .. versionadded:: 2.4
 
 
-.. cfunction:: PyObject* PyDict_New()
+.. c:function:: PyObject* PyDict_New()
 
    Return a new empty dictionary, or *NULL* on failure.
 
 
-.. cfunction:: PyObject* PyDictProxy_New(PyObject *dict)
+.. c:function:: PyObject* PyDictProxy_New(PyObject *dict)
 
    Return a proxy object for a mapping which enforces read-only behavior.
    This is normally used to create a proxy to prevent modification of the
@@ -55,12 +55,12 @@ Dictionary Objects
    .. versionadded:: 2.2
 
 
-.. cfunction:: void PyDict_Clear(PyObject *p)
+.. c:function:: void PyDict_Clear(PyObject *p)
 
    Empty an existing dictionary of all key-value pairs.
 
 
-.. cfunction:: int PyDict_Contains(PyObject *p, PyObject *key)
+.. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
    Determine if dictionary *p* contains *key*.  If an item in *p* is matches
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
@@ -69,74 +69,74 @@ Dictionary Objects
    .. versionadded:: 2.4
 
 
-.. cfunction:: PyObject* PyDict_Copy(PyObject *p)
+.. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
 
    .. versionadded:: 1.6
 
 
-.. cfunction:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
+.. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
    Insert *value* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
    ``0`` on success or ``-1`` on failure.
 
 
-.. cfunction:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
+.. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
    .. index:: single: PyString_FromString()
 
    Insert *value* into the dictionary *p* using *key* as a key. *key* should
-   be a :ctype:`char\*`.  The key object is created using
+   be a :c:type:`char\*`.  The key object is created using
    ``PyString_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.
 
 
-.. cfunction:: int PyDict_DelItem(PyObject *p, PyObject *key)
+.. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
 
    Remove the entry in dictionary *p* with key *key*. *key* must be hashable;
    if it isn't, :exc:`TypeError` is raised.  Return ``0`` on success or ``-1``
    on failure.
 
 
-.. cfunction:: int PyDict_DelItemString(PyObject *p, char *key)
+.. c:function:: int PyDict_DelItemString(PyObject *p, char *key)
 
    Remove the entry in dictionary *p* which has a key specified by the string
    *key*.  Return ``0`` on success or ``-1`` on failure.
 
 
-.. cfunction:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
+.. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
    Return the object from dictionary *p* which has a key *key*.  Return *NULL*
    if the key *key* is not present, but *without* setting an exception.
 
 
-.. cfunction:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
+.. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
-   This is the same as :cfunc:`PyDict_GetItem`, but *key* is specified as a
-   :ctype:`char\*`, rather than a :ctype:`PyObject\*`.
+   This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
+   :c:type:`char\*`, rather than a :c:type:`PyObject\*`.
 
 
-.. cfunction:: PyObject* PyDict_Items(PyObject *p)
+.. c:function:: PyObject* PyDict_Items(PyObject *p)
 
-   Return a :ctype:`PyListObject` containing all the items from the
+   Return a :c:type:`PyListObject` containing all the items from the
    dictionary, as in the dictionary method :meth:`dict.items`.
 
 
-.. cfunction:: PyObject* PyDict_Keys(PyObject *p)
+.. c:function:: PyObject* PyDict_Keys(PyObject *p)
 
-   Return a :ctype:`PyListObject` containing all the keys from the dictionary,
+   Return a :c:type:`PyListObject` containing all the keys from the dictionary,
    as in the dictionary method :meth:`dict.keys`.
 
 
-.. cfunction:: PyObject* PyDict_Values(PyObject *p)
+.. c:function:: PyObject* PyDict_Values(PyObject *p)
 
-   Return a :ctype:`PyListObject` containing all the values from the
+   Return a :c:type:`PyListObject` containing all the values from the
    dictionary *p*, as in the dictionary method :meth:`dict.values`.
 
 
-.. cfunction:: Py_ssize_t PyDict_Size(PyObject *p)
+.. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
 
    .. index:: builtin: len
 
@@ -144,18 +144,18 @@ Dictionary Objects
    ``len(p)`` on a dictionary.
 
    .. versionchanged:: 2.5
-      This function returned an :ctype:`int` type.  This might require changes
+      This function returned an :c:type:`int` type.  This might require changes
       in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
+.. c:function:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
    Iterate over all key-value pairs in the dictionary *p*.  The
-   :ctype:`Py_ssize_t` referred to by *ppos* must be initialized to ``0``
+   :c:type:`Py_ssize_t` referred to by *ppos* must be initialized to ``0``
    prior to the first call to this function to start the iteration; the
    function returns true for each pair in the dictionary, and false once all
    pairs have been reported.  The parameters *pkey* and *pvalue* should either
-   point to :ctype:`PyObject\*` variables that will be filled in with each key
+   point to :c:type:`PyObject\*` variables that will be filled in with each key
    and value, respectively, or may be *NULL*.  Any references returned through
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
@@ -192,15 +192,15 @@ Dictionary Objects
       }
 
    .. versionchanged:: 2.5
-      This function used an :ctype:`int *` type for *ppos*. This might require
+      This function used an :c:type:`int *` type for *ppos*. This might require
       changes in your code for properly supporting 64-bit systems.
 
 
-.. cfunction:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
+.. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
    Iterate over mapping object *b* adding key-value pairs to dictionary *a*.
-   *b* may be a dictionary, or any object supporting :cfunc:`PyMapping_Keys`
-   and :cfunc:`PyObject_GetItem`. If *override* is true, existing pairs in *a*
+   *b* may be a dictionary, or any object supporting :c:func:`PyMapping_Keys`
+   and :c:func:`PyObject_GetItem`. If *override* is true, existing pairs in *a*
    will be replaced if a matching key is found in *b*, otherwise pairs will
    only be added if there is not a matching key in *a*. Return ``0`` on
    success or ``-1`` if an exception was raised.
@@ -208,7 +208,7 @@ Dictionary Objects
    .. versionadded:: 2.2
 
 
-.. cfunction:: int PyDict_Update(PyObject *a, PyObject *b)
+.. c:function:: int PyDict_Update(PyObject *a, PyObject *b)
 
    This is the same as ``PyDict_Merge(a, b, 1)`` in C, or ``a.update(b)`` in
    Python.  Return ``0`` on success or ``-1`` if an exception was raised.
@@ -216,7 +216,7 @@ Dictionary Objects
    .. versionadded:: 2.2
 
 
-.. cfunction:: int PyDict_MergeFromSeq2(PyObject *a, PyObject *seq2, int override)
+.. c:function:: int PyDict_MergeFromSeq2(PyObject *a, PyObject *seq2, int override)
 
    Update or merge into dictionary *a*, from the key-value pairs in *seq2*.
    *seq2* must be an iterable object producing iterable objects of length 2,

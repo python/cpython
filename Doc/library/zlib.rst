@@ -132,7 +132,7 @@ The available exception and functions in this module are:
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
    don't have to get this value exactly right; tuning it will only save a few calls
-   to :cfunc:`malloc`.  The default size is 16384.
+   to :c:func:`malloc`.  The default size is 16384.
 
 
 .. function:: decompressobj([wbits])

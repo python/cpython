@@ -13,7 +13,7 @@
    pair: UNIX; I/O control
 
 This module performs file control and I/O control on file descriptors. It is an
-interface to the :cfunc:`fcntl` and :cfunc:`ioctl` Unix routines.
+interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
@@ -31,17 +31,17 @@ The module defines the following functions:
    :mod:`fcntl` module. The argument *arg* is optional, and defaults to the integer
    value ``0``.  When present, it can either be an integer value, or a string.
    With the argument missing or an integer value, the return value of this function
-   is the integer return value of the C :cfunc:`fcntl` call.  When the argument is
+   is the integer return value of the C :c:func:`fcntl` call.  When the argument is
    a string it represents a binary structure, e.g. created by :func:`struct.pack`.
    The binary data is copied to a buffer whose address is passed to the C
-   :cfunc:`fcntl` call.  The return value after a successful call is the contents
+   :c:func:`fcntl` call.  The return value after a successful call is the contents
    of the buffer, converted to a string object.  The length of the returned string
    will be the same as the length of the *arg* argument.  This is limited to 1024
    bytes.  If the information returned in the buffer by the operating system is
    larger than 1024 bytes, this is most likely to result in a segmentation
    violation or a more subtle data corruption.
 
-   If the :cfunc:`fcntl` fails, an :exc:`IOError` is raised.
+   If the :c:func:`fcntl` fails, an :exc:`IOError` is raised.
 
 
 .. function:: ioctl(fd, op[, arg[, mutate_flag]])
@@ -97,7 +97,7 @@ The module defines the following functions:
    Perform the lock operation *op* on file descriptor *fd* (file objects providing
    a :meth:`fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
-   using :cfunc:`fcntl`.)
+   using :c:func:`fcntl`.)
 
 
 .. function:: lockf(fd, operation, [length, [start, [whence]]])

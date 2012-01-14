@@ -11,26 +11,26 @@ creation and deletion functions don't apply to booleans.  The following macros
 are available, however.
 
 
-.. cfunction:: int PyBool_Check(PyObject *o)
+.. c:function:: int PyBool_Check(PyObject *o)
 
-   Return true if *o* is of type :cdata:`PyBool_Type`.
+   Return true if *o* is of type :c:data:`PyBool_Type`.
 
    .. versionadded:: 2.3
 
 
-.. cvar:: PyObject* Py_False
+.. c:var:: PyObject* Py_False
 
    The Python ``False`` object.  This object has no methods.  It needs to be
    treated just like any other object with respect to reference counts.
 
 
-.. cvar:: PyObject* Py_True
+.. c:var:: PyObject* Py_True
 
    The Python ``True`` object.  This object has no methods.  It needs to be treated
    just like any other object with respect to reference counts.
 
 
-.. cmacro:: Py_RETURN_FALSE
+.. c:macro:: Py_RETURN_FALSE
 
    Return :const:`Py_False` from a function, properly incrementing its reference
    count.
@@ -38,7 +38,7 @@ are available, however.
    .. versionadded:: 2.4
 
 
-.. cmacro:: Py_RETURN_TRUE
+.. c:macro:: Py_RETURN_TRUE
 
    Return :const:`Py_True` from a function, properly incrementing its reference
    count.
@@ -46,7 +46,7 @@ are available, however.
    .. versionadded:: 2.4
 
 
-.. cfunction:: PyObject* PyBool_FromLong(long v)
+.. c:function:: PyObject* PyBool_FromLong(long v)
 
    Return a new reference to :const:`Py_True` or :const:`Py_False` depending on the
    truth value of *v*.

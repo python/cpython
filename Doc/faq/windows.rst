@@ -537,7 +537,7 @@ assumed by the Python interpreter it won't work.
 The Python 1.5.* DLLs (``python15.dll``) are all compiled with MS VC++ 5.0 and
 with multithreading-DLL options (``/MD``).
 
-If you can't change compilers or flags, try using :cfunc:`Py_RunSimpleString`.
+If you can't change compilers or flags, try using :c:func:`Py_RunSimpleString`.
 A trick to get it to run an arbitrary file is to construct a call to
 :func:`execfile` with the name of your file as argument.
 

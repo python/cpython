@@ -98,8 +98,8 @@ described here are distributed with the Python sources in the
    it.  Copy your C sources into it.  Note that the module source file name does
    not necessarily have to match the module name, but the name of the
    initialization function should match the module name --- you can only import a
-   module :mod:`spam` if its initialization function is called :cfunc:`initspam`,
-   and it should call :cfunc:`Py_InitModule` with the string ``"spam"`` as its
+   module :mod:`spam` if its initialization function is called :c:func:`initspam`,
+   and it should call :c:func:`Py_InitModule` with the string ``"spam"`` as its
    first argument (use the minimal :file:`example.c` in this directory as a guide).
    By convention, it lives in a file called :file:`spam.c` or :file:`spammodule.c`.
    The output file should be called :file:`spam.pyd` (in Release mode) or
@@ -263,7 +263,7 @@ use these commands::
 
 The first command created three files: :file:`spam.obj`, :file:`spam.dll` and
 :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python functions (such
-as :cfunc:`PyArg_ParseTuple`), but it does know how to find the Python code
+as :c:func:`PyArg_ParseTuple`), but it does know how to find the Python code
 thanks to :file:`pythonXY.lib`.
 
 The second command created :file:`ni.dll` (and :file:`.obj` and :file:`.lib`),

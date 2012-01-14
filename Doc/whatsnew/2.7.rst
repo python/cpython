@@ -147,8 +147,8 @@ A partial list of 3.1 features that were backported to 2.7:
   ``float(repr(x))`` recovers ``x``.
 * Float-to-string and string-to-float conversions are correctly rounded.
   The :func:`round` function is also now correctly rounded.
-* The :ctype:`PyCapsule` type, used to provide a C API for extension modules.
-* The :cfunc:`PyLong_AsLongAndOverflow` C API function.
+* The :c:type:`PyCapsule` type, used to provide a C API for extension modules.
+* The :c:func:`PyLong_AsLongAndOverflow` C API function.
 
 Other new Python3-mode warnings include:
 
@@ -311,7 +311,7 @@ added as a more powerful replacement for the
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-library's :cfunc:`getopt` function, so it remains useful if you're writing a
+library's :c:func:`getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no
@@ -1478,7 +1478,7 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`ssl` module's :class:`~ssl.SSLSocket` objects now support the
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
-  OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
+  OpenSSL's :c:macro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
   code being returned from :meth:`recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
@@ -2050,49 +2050,49 @@ Changes to Python's build process and to the C API include:
   debugged doesn't hold the GIL; the macro now acquires it before printing.
   (Contributed by Victor Stinner; :issue:`3632`.)
 
-* :cfunc:`Py_AddPendingCall` is now thread-safe, letting any
+* :c:func:`Py_AddPendingCall` is now thread-safe, letting any
   worker thread submit notifications to the main Python thread.  This
   is particularly useful for asynchronous IO operations.
   (Contributed by Kristján Valur Jónsson; :issue:`4293`.)
 
-* New function: :cfunc:`PyCode_NewEmpty` creates an empty code object;
+* New function: :c:func:`PyCode_NewEmpty` creates an empty code object;
   only the filename, function name, and first line number are required.
   This is useful for extension modules that are attempting to
   construct a more useful traceback stack.  Previously such
-  extensions needed to call :cfunc:`PyCode_New`, which had many
+  extensions needed to call :c:func:`PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
 
-* New function: :cfunc:`PyErr_NewExceptionWithDoc` creates a new
-  exception class, just as the existing :cfunc:`PyErr_NewException` does,
+* New function: :c:func:`PyErr_NewExceptionWithDoc` creates a new
+  exception class, just as the existing :c:func:`PyErr_NewException` does,
   but takes an extra ``char *`` argument containing the docstring for the
   new exception class.  (Added by 'lekma' on the Python bug tracker;
   :issue:`7033`.)
 
-* New function: :cfunc:`PyFrame_GetLineNumber` takes a frame object
+* New function: :c:func:`PyFrame_GetLineNumber` takes a frame object
   and returns the line number that the frame is currently executing.
   Previously code would need to get the index of the bytecode
   instruction currently executing, and then look up the line number
   corresponding to that address.  (Added by Jeffrey Yasskin.)
 
-* New functions: :cfunc:`PyLong_AsLongAndOverflow` and
-  :cfunc:`PyLong_AsLongLongAndOverflow`  approximates a Python long
-  integer as a C :ctype:`long` or :ctype:`long long`.
+* New functions: :c:func:`PyLong_AsLongAndOverflow` and
+  :c:func:`PyLong_AsLongLongAndOverflow`  approximates a Python long
+  integer as a C :c:type:`long` or :c:type:`long long`.
   If the number is too large to fit into
   the output type, an *overflow* flag is set and returned to the caller.
   (Contributed by Case Van Horsen; :issue:`7528` and :issue:`7767`.)
 
 * New function: stemming from the rewrite of string-to-float conversion,
-  a new :cfunc:`PyOS_string_to_double` function was added.  The old
-  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions
+  a new :c:func:`PyOS_string_to_double` function was added.  The old
+  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions
   are now deprecated.
 
-* New function: :cfunc:`PySys_SetArgvEx` sets the value of
+* New function: :c:func:`PySys_SetArgvEx` sets the value of
   ``sys.argv`` and can optionally update ``sys.path`` to include the
   directory containing the script named by ``sys.argv[0]`` depending
   on the value of an *updatepath* parameter.
 
   This function was added to close a security hole for applications
-  that embed Python.  The old function, :cfunc:`PySys_SetArgv`, would
+  that embed Python.  The old function, :c:func:`PySys_SetArgv`, would
   always update ``sys.path``, and sometimes it would add the current
   directory.  This meant that, if you ran an application embedding
   Python in a directory controlled by someone else, attackers could
@@ -2100,8 +2100,8 @@ Changes to Python's build process and to the C API include:
   :file:`os.py`) that your application would then import and run.
 
   If you maintain a C/C++ application that embeds Python, check
-  whether you're calling :cfunc:`PySys_SetArgv` and carefully consider
-  whether the application should be using :cfunc:`PySys_SetArgvEx`
+  whether you're calling :c:func:`PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`PySys_SetArgvEx`
   with *updatepath* set to false.
 
   Security issue reported as `CVE-2008-5983
@@ -2109,14 +2109,14 @@ Changes to Python's build process and to the C API include:
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
-  :cmacro:`Py_ISALNUM`,
-  :cmacro:`Py_ISALPHA`,
-  :cmacro:`Py_ISDIGIT`,
-  :cmacro:`Py_ISLOWER`,
-  :cmacro:`Py_ISSPACE`,
-  :cmacro:`Py_ISUPPER`,
-  :cmacro:`Py_ISXDIGIT`,
-  :cmacro:`Py_TOLOWER`, and :cmacro:`Py_TOUPPER`.
+  :c:macro:`Py_ISALNUM`,
+  :c:macro:`Py_ISALPHA`,
+  :c:macro:`Py_ISDIGIT`,
+  :c:macro:`Py_ISLOWER`,
+  :c:macro:`Py_ISSPACE`,
+  :c:macro:`Py_ISUPPER`,
+  :c:macro:`Py_ISXDIGIT`,
+  :c:macro:`Py_TOLOWER`, and :c:macro:`Py_TOUPPER`.
   All of these functions are analogous to the C
   standard macros for classifying characters, but ignore the current
   locale setting, because in
@@ -2126,15 +2126,15 @@ Changes to Python's build process and to the C API include:
 
   .. XXX these macros don't seem to be described in the c-api docs.
 
-* Removed function: :cmacro:`PyEval_CallObject` is now only available
+* Removed function: :c:macro:`PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
   deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
-* New format codes: the :cfunc:`PyFormat_FromString`,
-  :cfunc:`PyFormat_FromStringV`, and :cfunc:`PyErr_Format` functions now
+* New format codes: the :c:func:`PyFormat_FromString`,
+  :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
-  C's :ctype:`long long` types.
+  C's :c:type:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
 
 * The complicated interaction between threads and process forking has
@@ -2150,17 +2150,17 @@ Changes to Python's build process and to the C API include:
   Python 2.7 acquires the import lock before performing an
   :func:`os.fork`, and will also clean up any locks created using the
   :mod:`threading` module.  C extension modules that have internal
-  locks, or that call :cfunc:`fork()` themselves, will not benefit
+  locks, or that call :c:func:`fork()` themselves, will not benefit
   from this clean-up.
 
   (Fixed by Thomas Wouters; :issue:`1590864`.)
 
-* The :cfunc:`Py_Finalize` function now calls the internal
+* The :c:func:`Py_Finalize` function now calls the internal
   :func:`threading._shutdown` function; this prevents some exceptions from
   being raised when an interpreter shuts down.
   (Patch by Adam Olsen; :issue:`1722344`.)
 
-* When using the :ctype:`PyMemberDef` structure to define attributes
+* When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
   :const:`T_STRING_INPLACE` attribute.
 
@@ -2187,7 +2187,7 @@ Changes to Python's build process and to the C API include:
   :issue:`6491`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
-  on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
+  on certain 32-bit Intel chips and defines a :c:macro:`X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
@@ -2208,7 +2208,7 @@ Changes to Python's build process and to the C API include:
 Capsules
 -------------------
 
-Python 3.1 adds a new C datatype, :ctype:`PyCapsule`, for providing a
+Python 3.1 adds a new C datatype, :c:type:`PyCapsule`, for providing a
 C API to an extension module.  A capsule is essentially the holder of
 a C ``void *`` pointer, and is made available as a module attribute; for
 example, the :mod:`socket` module's API is exposed as ``socket.CAPI``,
@@ -2218,10 +2218,10 @@ object, and then get the ``void *`` pointer, which will usually point
 to an array of pointers to the module's various API functions.
 
 There is an existing data type already used for this,
-:ctype:`PyCObject`, but it doesn't provide type safety.  Evil code
+:c:type:`PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
-:ctype:`PyCObject` from module A and somehow substituting it for the
-:ctype:`PyCObject` in module B.   Capsules know their own name,
+:c:type:`PyCObject` from module A and somehow substituting it for the
+:c:type:`PyCObject` in module B.   Capsules know their own name,
 and getting the pointer requires providing the name::
 
    void *vtable;
@@ -2234,15 +2234,15 @@ and getting the pointer requires providing the name::
    vtable = PyCapsule_GetPointer(capsule, "mymodule.CAPI");
 
 You are assured that ``vtable`` points to whatever you're expecting.
-If a different capsule was passed in, :cfunc:`PyCapsule_IsValid` would
+If a different capsule was passed in, :c:func:`PyCapsule_IsValid` would
 detect the mismatched name and return false.  Refer to
 :ref:`using-capsules` for more information on using these objects.
 
 Python 2.7 now uses capsules internally to provide various
-extension-module APIs, but the :cfunc:`PyCObject_AsVoidPtr` was
+extension-module APIs, but the :c:func:`PyCObject_AsVoidPtr` was
 modified to handle capsules, preserving compile-time compatibility
-with the :ctype:`CObject` interface.  Use of
-:cfunc:`PyCObject_AsVoidPtr` will signal a
+with the :c:type:`CObject` interface.  Use of
+:c:func:`PyCObject_AsVoidPtr` will signal a
 :exc:`PendingDeprecationWarning`, which is silent by default.
 
 Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
@@ -2269,7 +2269,7 @@ Port-Specific Changes: Windows
   were also tested and documented.
   (Implemented by Brian Curtin: :issue:`7347`.)
 
-* The new :cfunc:`_beginthreadex` API is used to start threads, and
+* The new :c:func:`_beginthreadex` API is used to start threads, and
   the native thread-local storage functions are now used.
   (Contributed by Kristján Valur Jónsson; :issue:`3582`.)
 
@@ -2277,7 +2277,7 @@ Port-Specific Changes: Windows
   can be the constants :const:`CTRL_C_EVENT`,
   :const:`CTRL_BREAK_EVENT`, or any integer.  The first two constants
   will send Control-C and Control-Break keystroke events to
-  subprocesses; any other value will use the :cfunc:`TerminateProcess`
+  subprocesses; any other value will use the :c:func:`TerminateProcess`
   API.  (Contributed by Miki Tebeka; :issue:`1220212`.)
 
 * The :func:`os.listdir` function now correctly fails
@@ -2450,17 +2450,17 @@ For C extensions:
   family of functions will now raise a :exc:`TypeError` exception
   instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
 
-* Use the new :cfunc:`PyOS_string_to_double` function instead of the old
-  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions,
+* Use the new :c:func:`PyOS_string_to_double` function instead of the old
+  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions,
   which are now deprecated.
 
 For applications that embed Python:
 
-* The :cfunc:`PySys_SetArgvEx` function was added, letting
+* The :c:func:`PySys_SetArgvEx` function was added, letting
   applications close a security hole when the existing
-  :cfunc:`PySys_SetArgv` function was used.  Check whether you're
-  calling :cfunc:`PySys_SetArgv` and carefully consider whether the
-  application should be using :cfunc:`PySys_SetArgvEx` with
+  :c:func:`PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`PySys_SetArgvEx` with
   *updatepath* set to false.
 
 .. ======================================================================
