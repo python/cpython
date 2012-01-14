@@ -470,9 +470,12 @@ resumed before it is finalized (by reaching a zero reference count or by being
 garbage collected), the generator-iterator's :meth:`close` method will be
 called, allowing any pending :keyword:`finally` clauses to execute.
 
-When ``yield from expression`` is used, it treats the supplied expression as
+When ``yield from <expr>`` is used, it treats the supplied expression as
 a subiterator, producing values from it until the underlying iterator is
 exhausted.
+
+   .. versionchanged:: 3.3
+      Added ``yield from <expr>`` to delegate control flow to a subiterator
 
 For full details of :keyword:`yield` semantics, refer to the :ref:`yieldexpr`
 section.
