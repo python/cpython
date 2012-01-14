@@ -139,7 +139,7 @@ Importing Modules
    probably damaged with respect to the module author's intents) state.
 
    The module's :attr:`__file__` attribute will be set to the code object's
-   :cmember:`co_filename`.
+   :c:member:`co_filename`.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.
