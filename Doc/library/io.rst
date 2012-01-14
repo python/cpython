@@ -472,12 +472,12 @@ Raw File I/O
      to which the resulting :class:`FileIO` object will give access.
 
    The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
-   (default), writing, creating or appending. The file will be created if it
-   doesn't exist when opened for writing or appending; it will be truncated
-   when opened for writing. :exc:`FileExistsError` will be raised if it already
-   exists when opened for creating. Opening a file for creating implies
-   writing, so this mode behaves in a similar way to ``'w'``. Add a ``'+'`` to
-   the mode to allow simultaneous reading and writing.
+   (default), writing, exclusive creation or appending. The file will be
+   created if it doesn't exist when opened for writing or appending; it will be
+   truncated when opened for writing. :exc:`FileExistsError` will be raised if
+   it already exists when opened for creating. Opening a file for creating
+   implies writing, so this mode behaves in a similar way to ``'w'``. Add a
+   ``'+'`` to the mode to allow simultaneous reading and writing.
 
    The :meth:`read` (when called with a positive argument), :meth:`readinto`
    and :meth:`write` methods on this class will only make one system call.
