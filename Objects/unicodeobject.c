@@ -2488,8 +2488,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 PyObject *str;
                 assert(obj);
                 str = PyObject_Str(obj);
-                if (!str || PyUnicode_READY(str) == -1)
+                if (!str)
                     goto fail;
+                if (PyUnicode_READY(str) == -1) {
+                    Py_DECREF(str);
+                    goto fail;
+                }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
                 maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(str);
@@ -2503,8 +2507,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 PyObject *repr;
                 assert(obj);
                 repr = PyObject_Repr(obj);
-                if (!repr || PyUnicode_READY(repr) == -1)
+                if (!repr)
                     goto fail;
+                if (PyUnicode_READY(repr) == -1) {
+                    Py_DECREF(repr);
+                    goto fail;
+                }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(repr);
                 maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(repr);
@@ -2518,8 +2526,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 PyObject *ascii;
                 assert(obj);
                 ascii = PyObject_ASCII(obj);
-                if (!ascii || PyUnicode_READY(ascii) == -1)
+                if (!ascii)
                     goto fail;
+                if (PyUnicode_READY(ascii) == -1) {
+                    Py_DECREF(ascii);
+                    goto fail;
+                }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(ascii);
                 maxchar = Py_MAX(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(ascii);
