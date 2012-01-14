@@ -881,7 +881,7 @@ bytes_hash(PyBytesObject *a)
     p = (unsigned char *) a->ob_sval;
     x = *p << 7;
     while (--len >= 0)
-        x = (1000003*x) ^ *p++;
+        x = (_PyHASH_MULTIPLIER*x) ^ *p++;
     x ^= Py_SIZE(a);
     if (x == -1)
         x = -2;
