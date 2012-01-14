@@ -261,6 +261,9 @@ The following exceptions are the exceptions that are usually raised.
    raised, and the value returned by the function is used as the
    :attr:`value` parameter to the constructor of the exception.
 
+   .. versionchanged:: 3.3
+      Added ``value`` attribute and the ability for generator functions to
+      use it to return a value.
 
 .. exception:: SyntaxError
 
