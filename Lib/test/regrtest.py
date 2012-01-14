@@ -28,7 +28,7 @@ Verbosity
 -W/--verbose3   -- display test output on failure
 -d/--debug      -- print traceback for failed tests
 -q/--quiet      -- no output unless one or more tests fail
--S/--slow       -- print the slowest 10 tests
+-o/--slow       -- print the slowest 10 tests
    --header     -- print header with interpreter info
 
 Selecting tests
@@ -312,7 +312,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             start = a
         elif o in ('-s', '--single'):
             single = True
-        elif o in ('-S', '--slow'):
+        elif o in ('-o', '--slow'):
             print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
