@@ -442,6 +442,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13726: Fix the ambiguous -S flag in regrtest. It is -o/--slow for slow
+  tests.
+
 - Issue #12364: Fix a hang in concurrent.futures.ProcessPoolExecutor.
   The hang would occur when retrieving the result of a scheduled future after
   the executor had been shut down.
