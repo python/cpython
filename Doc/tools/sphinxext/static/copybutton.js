@@ -8,8 +8,8 @@ $(document).ready(function() {
 
     // get the styles from the current theme
     pre.parent().parent().css('position', 'relative');
-    var hide_text = 'Hide the prompts and ouput';
-    var show_text = 'Show the prompts and ouput';
+    var hide_text = 'Hide the prompts and output';
+    var show_text = 'Show the prompts and output';
     var border_width = pre.css('border-top-width');
     var border_style = pre.css('border-top-style');
     var border_color = pre.css('border-top-color');
