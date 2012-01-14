@@ -706,7 +706,7 @@ within a package (as denoted by the existence of a dot in the name), then a
 second argument to :meth:`find_module` is given as the value of the
 :attr:`__path__` attribute from the parent package (everything up to the last
 dot in the name of the module being imported). If a finder can find the module
-it returns a :term:`loader` (discussed later) or returns :keyword:`None`.
+it returns a :term:`loader` (discussed later) or returns ``None``.
 
 .. index::
     single: sys.path_hooks
@@ -733,11 +733,11 @@ finder cached then :data:`sys.path_hooks` is searched by calling each object in
 the list with a single argument of the path, returning a finder or raises
 :exc:`ImportError`. If a finder is returned then it is cached in
 :data:`sys.path_importer_cache` and then used for that path entry. If no finder
-can be found but the path exists then a value of :keyword:`None` is
+can be found but the path exists then a value of ``None`` is
 stored in :data:`sys.path_importer_cache` to signify that an implicit,
 file-based finder that handles modules stored as individual files should be
 used for that path. If the path does not exist then a finder which always
-returns :keyword:`None` is placed in the cache for the path.
+returns `None`` is placed in the cache for the path.
 
 .. index::
     single: loader
