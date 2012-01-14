@@ -2288,7 +2288,6 @@ _PyObject_CallMethodId(PyObject *o, _Py_Identifier *name, char *format, ...)
 
     func = _PyObject_GetAttrId(o, name);
     if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, name->string);
         return 0;
     }
 
@@ -2330,7 +2329,6 @@ _PyObject_CallMethodId_SizeT(PyObject *o, _Py_Identifier *name, char *format, ..
 
     func = _PyObject_GetAttrId(o, name);
     if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, name->string);
         return NULL;
     }
     va_start(va, format);
