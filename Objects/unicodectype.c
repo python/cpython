@@ -185,7 +185,7 @@ Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     if (ctype->flags & EXTENDED_CASE_MASK)
-        return _PyUnicode_ExtendedCase[ctype->upper & 0xFFFFFF];
+        return _PyUnicode_ExtendedCase[ctype->upper & 0xFFFF];
     return ctype->upper ? ctype->upper : ch;
 }
 
@@ -197,7 +197,7 @@ Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     if (ctype->flags & EXTENDED_CASE_MASK)
-        return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFFFF];
+        return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFF];
     return ctype->lower ? ctype->lower : ch;
 }
 
@@ -206,7 +206,7 @@ int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     if (ctype->flags & EXTENDED_CASE_MASK) {
-        int index = ctype->lower & 0xFFFFFF;
+        int index = ctype->lower & 0xFFFF;
         int n = ctype->lower >> 24;
         int i;
         for (i = 0; i < n; i++)
@@ -222,7 +222,7 @@ int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     if (ctype->flags & EXTENDED_CASE_MASK) {
-        int index = ctype->title & 0xFFFFFF;
+        int index = ctype->title & 0xFFFF;
         int n = ctype->title >> 24;
         int i;
         for (i = 0; i < n; i++)
@@ -238,7 +238,7 @@ int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     if (ctype->flags & EXTENDED_CASE_MASK) {
-        int index = ctype->upper & 0xFFFFFF;
+        int index = ctype->upper & 0xFFFF;
         int n = ctype->upper >> 24;
         int i;
         for (i = 0; i < n; i++)
@@ -247,6 +247,21 @@ int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
     }
     res[0] = ctype->upper ? ctype->upper : ch;
     return 1;
+}
+
+int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    if (ctype->flags & EXTENDED_CASE_MASK && (ctype->lower >> 20) & 7) {
+        int index = (ctype->lower & 0xFFFF) + (ctype->lower >> 24);
+        int n = (ctype->lower >> 20) & 7;
+        int i;
+        for (i = 0; i < n; i++)
+            res[i] = _PyUnicode_ExtendedCase[index + i];
+        return n;
+    }
+    return _PyUnicode_ToLowerFull(ch, res);
 }
 
 int _PyUnicode_IsCased(Py_UCS4 ch)
