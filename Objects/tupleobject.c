@@ -315,7 +315,7 @@ tuplehash(PyTupleObject *v)
     register Py_hash_t x, y;
     register Py_ssize_t len = Py_SIZE(v);
     register PyObject **p;
-    Py_hash_t mult = 1000003L;
+    Py_hash_t mult = _PyHASH_MULTIPLIER;
     x = 0x345678L;
     p = v->ob_item;
     while (--len >= 0) {
