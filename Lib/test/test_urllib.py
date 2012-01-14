@@ -12,6 +12,8 @@ import os
 import sys
 import tempfile
 
+from base64 import b64encode
+
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""
     hex_repr = hex(ord(char))[2:].upper()
@@ -42,8 +44,8 @@ class FakeHTTPMixin(object):
         class FakeSocket(io.BytesIO):
             io_refs = 1
 
-            def sendall(self, str):
-                pass
+            def sendall(self, data):
+                FakeHTTPConnection.buf = data
 
             def makefile(self, *args, **kwds):
                 self.io_refs += 1
@@ -65,8 +67,13 @@ class FakeHTTPMixin(object):
                     io.BytesIO.close(self)
 
         class FakeHTTPConnection(http.client.HTTPConnection):
+
+            # buffer to store data for verification in urlopen tests.
+            buf = None
+
             def connect(self):
                 self.sock = FakeSocket(fakedata)
+
         self._connection_class = http.client.HTTPConnection
         http.client.HTTPConnection = FakeHTTPConnection
 
@@ -264,6 +271,25 @@ Content-Type: text/html; charset=iso-8859-1
             self.assertEqual(fp.readline(), b"Hello!")
             self.assertEqual(fp.readline(), b"")
             self.assertEqual(fp.geturl(), 'http://user:pass@python.org/')
+            self.assertEqual(fp.getcode(), 200)
+        finally:
+            self.unfakehttp()
+
+    def test_userpass_inurl_w_spaces(self):
+        self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
+        try:
+            userpass = "a b:c d"
+            url = "http://{}@python.org/".format(userpass)
+            fakehttp_wrapper = http.client.HTTPConnection
+            authorization = ("Authorization: Basic %s\r\n" %
+                             b64encode(userpass.encode("ASCII")).decode("ASCII"))
+            fp = urlopen(url)
+            # The authorization header must be in place
+            self.assertIn(authorization, fakehttp_wrapper.buf.decode("UTF-8"))
+            self.assertEqual(fp.readline(), b"Hello!")
+            self.assertEqual(fp.readline(), b"")
+            # the spaces are quoted in URL so no match
+            self.assertNotEqual(fp.geturl(), url)
             self.assertEqual(fp.getcode(), 200)
         finally:
             self.unfakehttp()
@@ -1111,6 +1137,9 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user', 'a\fb'),urllib.parse.splitpasswd('user:a\fb'))
         self.assertEqual(('user', 'a\vb'),urllib.parse.splitpasswd('user:a\vb'))
         self.assertEqual(('user', 'a:b'),urllib.parse.splitpasswd('user:a:b'))
+        self.assertEqual(('user', 'a b'),urllib.parse.splitpasswd('user:a b'))
+        self.assertEqual(('user 2', 'ab'),urllib.parse.splitpasswd('user 2:ab'))
+        self.assertEqual(('user+1', 'a+b'),urllib.parse.splitpasswd('user+1:a+b'))
 
     def test_thishost(self):
         """Test the urllib.request.thishost utility function returns a tuple"""
