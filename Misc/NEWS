@@ -2449,6 +2449,9 @@ Library
 C-API
 -----
 
+- PyObject_CallMethod now passes along any underlying AttributeError from
+  PyObject_GetAttr, instead of replacing it with something less informative
+
 - Issue #10913: Deprecate misleading functions PyEval_AcquireLock() and
   PyEval_ReleaseLock().  The thread-state aware APIs should be used instead.
 
