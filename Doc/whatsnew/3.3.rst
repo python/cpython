@@ -427,8 +427,9 @@ parameter to control parameters of the secure channel.
 io
 --
 
-The :func:`~io.open` function has a new ``'x'`` mode that can be used to create
-a new file, and raise a :exc:`FileExistsError` if the file already exists.
+The :func:`~io.open` function has a new ``'x'`` mode that can be used to
+exclusively create a new file, and raise a :exc:`FileExistsError` if the file
+already exists. It is based on the C11 'x' mode to fopen().
 
 (Contributed by David Townshend in :issue:`12760`)
 
