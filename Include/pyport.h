@@ -131,6 +131,9 @@ Used in:  PY_LONG_LONG
 #endif
 #endif
 
+/* Prime multiplier used in string and various other hashes. */
+#define _PyHASH_MULTIPLIER 1000003  /* 0xf4243 */
+
 /* Parameters used for the numeric hash implementation.  See notes for
    _Py_HashDouble in Objects/object.c.  Numeric hashes are based on
    reduction modulo the prime 2**_PyHASH_BITS - 1. */
@@ -143,7 +146,7 @@ Used in:  PY_LONG_LONG
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
 #define _PyHASH_NAN 0
-#define _PyHASH_IMAG 1000003UL
+#define _PyHASH_IMAG _PyHASH_MULTIPLIER
 
 /* uintptr_t is the C9X name for an unsigned integral type such that a
  * legitimate void* can be cast to uintptr_t and then back to void* again
