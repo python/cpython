@@ -1048,9 +1048,9 @@ must be plain or long integers.  The arguments are converted to a common type.
 
 .. _comparisons:
 .. _is:
-.. _isnot:
+.. _is not:
 .. _in:
-.. _notin:
+.. _not in:
 
 Comparisons
 ===========
