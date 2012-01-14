@@ -7666,7 +7666,7 @@ unicode_hash(PyUnicodeObject *self)
     p = self->str;
     x = *p << 7;
     while (--len >= 0)
-        x = (1000003*x) ^ *p++;
+        x = (_PyHASH_MULTIPLIER*x) ^ *p++;
     x ^= Py_SIZE(self);
     if (x == -1)
         x = -2;
