@@ -1661,13 +1661,13 @@ class URLopener:
         if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
-            import base64
+            proxy_passwd = unquote(proxy_passwd)
             proxy_auth = base64.b64encode(proxy_passwd.encode()).decode('ascii')
         else:
             proxy_auth = None
 
         if user_passwd:
-            import base64
+            user_passwd = unquote(user_passwd)
             auth = base64.b64encode(user_passwd.encode()).decode('ascii')
         else:
             auth = None
@@ -1871,7 +1871,6 @@ class URLopener:
                                             time.gmtime(time.time())))
         msg.append('Content-type: %s' % type)
         if encoding == 'base64':
-            import base64
             # XXX is this encoding/decoding ok?
             data = base64.decodebytes(data.encode('ascii')).decode('latin1')
         else:
