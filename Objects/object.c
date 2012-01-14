@@ -761,7 +761,7 @@ _Py_HashBytes(unsigned char *p, Py_ssize_t len)
 
     x = (Py_uhash_t) *p << 7;
     for (i = 0; i < len; i++)
-        x = (1000003U * x) ^ (Py_uhash_t) *p++;
+        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
     if (x == -1)
         x = -2;

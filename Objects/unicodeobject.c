@@ -11210,7 +11210,7 @@ unicode_hash(PyObject *self)
 #define HASH(P) \
     x = (Py_uhash_t)*P << 7; \
     while (--len >= 0) \
-        x = (1000003*x) ^ (Py_uhash_t)*P++;
+        x = (_PyHASH_MULTIPLIER*x) ^ (Py_uhash_t)*P++;
 
     switch (PyUnicode_KIND(self)) {
     case PyUnicode_1BYTE_KIND: {
