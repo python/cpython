@@ -1848,6 +1848,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #13725: Fix regrtest to recognize the documented -d flag.
+  Patch by Erno Tukia.
+
 - Issue #13304: Skip test case if user site-packages disabled (-s or
   PYTHONNOUSERSITE).  (Patch by Carl Meyer)
 
