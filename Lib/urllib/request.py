@@ -1693,11 +1693,13 @@ class URLopener:
         if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
+            proxy_passwd = unquote(proxy_passwd)
             proxy_auth = base64.b64encode(proxy_passwd.encode()).decode('ascii')
         else:
             proxy_auth = None
 
         if user_passwd:
+            user_passwd = unquote(user_passwd)
             auth = base64.b64encode(user_passwd.encode()).decode('ascii')
         else:
             auth = None
