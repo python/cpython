@@ -410,7 +410,7 @@ locks aren't as efficient.
 
 Since then, the idea of getting rid of the GIL has occasionally come up but
 nobody has found a way to deal with the expected slowdown, and users who don't
-use threads would not be happy if their code ran at half at the speed.  Greg's
+use threads would not be happy if their code ran at half the speed.  Greg's
 free threading patch set has not been kept up-to-date for later Python versions.
 
 This doesn't mean that you can't make good use of Python on multi-CPU machines!
