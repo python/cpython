@@ -443,6 +443,13 @@ def makeunicodetype(unicode, trace):
             if sc is None:
                 if upper == lower == title:
                     upper = lower = title = 0
+                else:
+                    upper = upper - char
+                    lower = lower - char
+                    title = title - char
+                    assert (abs(upper) <= 2147483647 and
+                            abs(lower) <= 2147483647 and
+                            abs(title) <= 2147483647)
             else:
                 # This happens either when some character maps to more than one
                 # character in uppercase, lowercase, or titlecase or the
