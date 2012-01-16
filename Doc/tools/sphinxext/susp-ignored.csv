@@ -164,35 +164,6 @@ whatsnew/2.5,,:memory,:memory:
 whatsnew/2.5,,:step,[start:stop:step]
 whatsnew/2.5,,:stop,[start:stop:step]
 distutils/examples,267,`,This is the description of the ``foobar`` package.
-documenting/fromlatex,39,:func,:func:`str(object)`
-documenting/fromlatex,39,`,:func:`str(object)`
-documenting/fromlatex,39,`,``str(object)``
-documenting/fromlatex,55,.. deprecated:,.. deprecated:: 2.5
-documenting/fromlatex,66,.. note:,.. note::
-documenting/fromlatex,76,:samp,":samp:`open({filename}, {mode})`"
-documenting/fromlatex,76,`,":samp:`open({filename}, {mode})`"
-documenting/fromlatex,80,`,``'c'``
-documenting/fromlatex,80,`,`Title <URL>`_
-documenting/fromlatex,80,`,``code``
-documenting/fromlatex,80,`,`Title <URL>`_
-documenting/fromlatex,99,:file,:file:`C:\\Temp\\my.tmp`
-documenting/fromlatex,99,`,:file:`C:\\Temp\\my.tmp`
-documenting/fromlatex,99,`,"``open(""C:\Temp\my.tmp"")``"
-documenting/fromlatex,129,.. function:,.. function:: do_foo(bar)
-documenting/fromlatex,141,.. function:,".. function:: open(filename[, mode[, buffering]])"
-documenting/fromlatex,152,.. function:,.. function:: foo_*
-documenting/fromlatex,152,:noindex,:noindex:
-documenting/fromlatex,162,.. describe:,.. describe:: a == b
-documenting/fromlatex,168,.. cmdoption:,.. cmdoption:: -O
-documenting/fromlatex,168,.. envvar:,.. envvar:: PYTHONINSPECT
-documenting/rest,33,`,``text``
-documenting/rest,47,:rolename,:rolename:`content`
-documenting/rest,47,`,:rolename:`content`
-documenting/rest,103,::,This is a normal text paragraph. The next paragraph is a code sample::
-documenting/rest,130,`,`Link text <http://target>`_
-documenting/rest,187,.. function:,.. function:: foo(x)
-documenting/rest,187,:bar,:bar: no
-documenting/rest,208,.. rubric:,.. rubric:: Footnotes
 faq/programming,,:reduce,"print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
@@ -224,81 +195,4 @@ whatsnew/2.7,,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
 howto/pyporting,75,::,# make sure to use :: Python *and* :: Python :: 3 so
 howto/pyporting,75,::,"'Programming Language :: Python',"
 howto/pyporting,75,::,'Programming Language :: Python :: 3'
-documenting/markup,33,.. sectionauthor:,.. sectionauthor:: Guido van Rossum <guido@python.org>
-documenting/markup,42,:mod,:mod:`parrot` -- Dead parrot access
-documenting/markup,42,`,:mod:`parrot` -- Dead parrot access
-documenting/markup,42,.. module:,.. module:: parrot
-documenting/markup,42,:platform,":platform: Unix, Windows"
-documenting/markup,42,:synopsis,:synopsis: Analyze and reanimate dead parrots.
-documenting/markup,42,.. moduleauthor:,.. moduleauthor:: Eric Cleese <eric@python.invalid>
-documenting/markup,42,.. moduleauthor:,.. moduleauthor:: John Idle <john@python.invalid>
-documenting/markup,88,:noindex,:noindex:
-documenting/markup,95,.. function:,.. function:: spam(eggs)
-documenting/markup,95,:noindex,:noindex:
-documenting/markup,101,.. method:,.. method:: FileInput.input(...)
-documenting/markup,121,.. cfunction:,".. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)"
-documenting/markup,131,.. cmember:,.. c:member:: PyObject* PyTypeObject.tp_bases
-documenting/markup,150,.. cvar:,.. c:var:: PyObject* PyClass_Type
-documenting/markup,179,.. function:,".. function:: Timer.repeat([repeat=3[, number=1000000]])"
-documenting/markup,209,.. cmdoption:,.. cmdoption:: -m <module>
-documenting/markup,227,.. describe:,.. describe:: opcode
-documenting/markup,256,.. highlightlang:,.. highlightlang:: c
-documenting/markup,276,.. literalinclude:,.. literalinclude:: example.py
-documenting/markup,291,:rolename,:rolename:`content`
-documenting/markup,291,`,:rolename:`content`
-documenting/markup,296,:role,:role:`title <target>`
-documenting/markup,296,`,:role:`title <target>`
-documenting/markup,302,:meth,:meth:`~Queue.Queue.get`
-documenting/markup,302,`,:meth:`~Queue.Queue.get`
-documenting/markup,350,:func,:func:`filter`
-documenting/markup,350,`,:func:`filter`
-documenting/markup,350,:func,:func:`foo.filter`
-documenting/markup,350,`,:func:`foo.filter`
-documenting/markup,356,:func,:func:`open`
-documenting/markup,356,`,:func:`open`
-documenting/markup,356,:func,:func:`.open`
-documenting/markup,356,`,:func:`.open`
-documenting/markup,435,:file,... is installed in :file:`/usr/lib/python2.{x}/site-packages` ...
-documenting/markup,435,`,... is installed in :file:`/usr/lib/python2.{x}/site-packages` ...
-documenting/markup,454,:kbd,:kbd:`C-x C-f`
-documenting/markup,454,`,:kbd:`C-x C-f`
-documenting/markup,454,:kbd,:kbd:`Control-x Control-f`
-documenting/markup,454,`,:kbd:`Control-x Control-f`
-documenting/markup,468,:mailheader,:mailheader:`Content-Type`
-documenting/markup,468,`,:mailheader:`Content-Type`
-documenting/markup,477,:manpage,:manpage:`ls(1)`
-documenting/markup,477,`,:manpage:`ls(1)`
-documenting/markup,493,:menuselection,:menuselection:`Start --> Programs`
-documenting/markup,493,`,:menuselection:`Start --> Programs`
-documenting/markup,508,`,``code``
-documenting/markup,526,:file,:file:
-documenting/markup,526,`,``code``
-documenting/markup,561,:ref,:ref:`label-name`
-documenting/markup,561,`,:ref:`label-name`
-documenting/markup,565,:ref,"It refers to the section itself, see :ref:`my-reference-label`."
-documenting/markup,565,`,"It refers to the section itself, see :ref:`my-reference-label`."
-documenting/markup,574,:ref,:ref:
-documenting/markup,595,.. note:,.. note::
-documenting/markup,622,.. versionadded:,.. versionadded:: 2.5
-documenting/markup,647,::,.. impl-detail::
-documenting/markup,647,::,.. impl-detail:: This shortly mentions an implementation detail.
-documenting/markup,667,.. seealso:,.. seealso::
-documenting/markup,667,:mod,Module :mod:`zipfile`
-documenting/markup,667,`,Module :mod:`zipfile`
-documenting/markup,667,:mod,Documentation of the :mod:`zipfile` standard module.
-documenting/markup,667,`,Documentation of the :mod:`zipfile` standard module.
-documenting/markup,667,`,"`GNU tar manual, Basic Tar Format <http://link>`_"
-documenting/markup,681,.. centered:,.. centered::
-documenting/markup,726,.. toctree:,.. toctree::
-documenting/markup,726,:maxdepth,:maxdepth: 2
-documenting/markup,742,.. index:,.. index::
-documenting/markup,772,.. index:,".. index:: BNF, grammar, syntax, notation"
-documenting/markup,803,`,"unaryneg ::= ""-"" `integer`"
-documenting/markup,808,.. productionlist:,.. productionlist::
-documenting/markup,808,`,"try1_stmt: ""try"" "":"" `suite`"
-documenting/markup,808,`,": (""except"" [`expression` ["","" `target`]] "":"" `suite`)+"
-documenting/markup,808,`,": [""else"" "":"" `suite`]"
-documenting/markup,808,`,": [""finally"" "":"" `suite`]"
-documenting/markup,808,`,"try2_stmt: ""try"" "":"" `suite`"
-documenting/markup,808,`,": ""finally"" "":"" `suite`"
 library/urllib2,67,:close,Connection:close
