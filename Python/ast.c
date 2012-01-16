@@ -540,13 +540,15 @@ new_identifier(const char* n, PyArena *arena)
     if (PyUnicode_IS_ASCII(id)) {
         PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
         PyObject *id2;
-        if (!m)
+        if (!m) {
+            Py_DECREF(id);
             return NULL;
+        }
         id2 = _PyObject_CallMethodId(m, &PyId_normalize, "sO", "NFKC", id);
         Py_DECREF(m);
+        Py_DECREF(id);
         if (!id2)
             return NULL;
-        Py_DECREF(id);
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
