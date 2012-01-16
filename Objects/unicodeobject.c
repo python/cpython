@@ -9644,8 +9644,7 @@ case_operation(PyObject *self,
     void *data, *outdata;
     Py_UCS4 maxchar = 0, *tmp, *tmpend;
 
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
+    assert(PyUnicode_IS_READY(self));
 
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
@@ -10512,6 +10511,8 @@ characters, all remaining cased characters have lower case.");
 static PyObject*
 unicode_title(PyObject *self)
 {
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
     return case_operation(self, do_title);
 }
 
@@ -12657,6 +12658,8 @@ and vice versa.");
 static PyObject*
 unicode_swapcase(PyObject *self)
 {
+    if (PyUnicode_READY(self) == -1)
+        return NULL;
     return case_operation(self, do_swapcase);
 }
 
