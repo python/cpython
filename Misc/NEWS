@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13629: Renumber the tokens in token.h so that they match the indexes
+  into _PyParser_TokenNames.
+
 - Issue #13752: Add a casefold() method to str.
 
 - Issue #13761: Add a "flush" keyword argument to the print() function,
