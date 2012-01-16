@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #13629: Renumber the tokens in token.h so that they match the indexes
+  into _PyParser_TokenNames.
+
 - Fix the fix for issue #12149: it was incorrect, although it had the side
   effect of appearing to resolve the issue.  Thanks to Mark Shannon for
   noticing.
