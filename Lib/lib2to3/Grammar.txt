@@ -1,4 +1,4 @@
-# Grammar for Python
+# Grammar for 2to3. This grammar supports Python 2.x and 3.x.
 
 # Note:  Changing the grammar specified in this file will most likely
 #        require corresponding changes in the parser module
