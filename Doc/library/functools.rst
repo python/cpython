@@ -24,7 +24,7 @@ The :mod:`functools` module defines the following functions:
    tools that accept key functions (such as :func:`sorted`, :func:`min`,
    :func:`max`, :func:`heapq.nlargest`, :func:`heapq.nsmallest`,
    :func:`itertools.groupby`).  This function is primarily used as a transition
-   tool for programs being converted from Py2.x which supported the use of
+   tool for programs being converted from Python 2 which supported the use of
    comparison functions.
 
    A compare function is any callable that accept two arguments, compares them,
