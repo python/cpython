@@ -9396,7 +9396,7 @@ $as_echo "MACHDEP_OBJS" >&6; }
 
 # checks for library functions
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr ctermid execv faccessat fchmod fchmodat fchown fchownat \
+ clock confstr ctermid dirfd execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
