@@ -490,7 +490,7 @@ PyAST_Validate(mod_ty mod)
     return res;
 }
 
-/* This is done here, so defines like "test" don't intefere with AST use above. */
+/* This is done here, so defines like "test" don't interfere with AST use above. */
 #include "grammar.h"
 #include "parsetok.h"
 #include "graminit.h"
