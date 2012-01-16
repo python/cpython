@@ -374,6 +374,9 @@ Library
 Extension Modules
 -----------------
 
+- bsddb module: Erratic behaviour of "DBEnv->rep_elect()" because a typo.
+  Possible crash.
+
 - Issue #13774: json: Fix a SystemError when a bogus encoding is passed to
   json.loads().
 
