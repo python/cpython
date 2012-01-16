@@ -122,26 +122,26 @@ code_type = type(_wrap.__code__)
 
 def set_package(fxn):
     """Set __package__ on the returned module."""
-    def wrapper(*args, **kwargs):
+    def set_package_wrapper(*args, **kwargs):
         module = fxn(*args, **kwargs)
         if not hasattr(module, '__package__') or module.__package__ is None:
             module.__package__ = module.__name__
             if not hasattr(module, '__path__'):
                 module.__package__ = module.__package__.rpartition('.')[0]
         return module
-    _wrap(wrapper, fxn)
-    return wrapper
+    _wrap(set_package_wrapper, fxn)
+    return set_package_wrapper
 
 
 def set_loader(fxn):
     """Set __loader__ on the returned module."""
-    def wrapper(self, *args, **kwargs):
+    def set_loader_wrapper(self, *args, **kwargs):
         module = fxn(self, *args, **kwargs)
         if not hasattr(module, '__loader__'):
             module.__loader__ = self
         return module
-    _wrap(wrapper, fxn)
-    return wrapper
+    _wrap(set_loader_wrapper, fxn)
+    return set_loader_wrapper
 
 
 def module_for_loader(fxn):
@@ -157,7 +157,7 @@ def module_for_loader(fxn):
     the second argument.
 
     """
-    def decorated(self, fullname, *args, **kwargs):
+    def module_for_loader_wrapper(self, fullname, *args, **kwargs):
         module = sys.modules.get(fullname)
         is_reload = bool(module)
         if not is_reload:
@@ -172,8 +172,8 @@ def module_for_loader(fxn):
             if not is_reload:
                 del sys.modules[fullname]
             raise
-    _wrap(decorated, fxn)
-    return decorated
+    _wrap(module_for_loader_wrapper, fxn)
+    return module_for_loader_wrapper
 
 
 def _check_name(method):
@@ -184,32 +184,32 @@ def _check_name(method):
     compared against. If the comparison fails then ImportError is raised.
 
     """
-    def inner(self, name, *args, **kwargs):
+    def _check_name_wrapper(self, name, *args, **kwargs):
         if self._name != name:
             raise ImportError("loader cannot handle %s" % name)
         return method(self, name, *args, **kwargs)
-    _wrap(inner, method)
-    return inner
+    _wrap(_check_name_wrapper, method)
+    return _check_name_wrapper
 
 
 def _requires_builtin(fxn):
     """Decorator to verify the named module is built-in."""
-    def wrapper(self, fullname):
+    def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
             raise ImportError("{0} is not a built-in module".format(fullname))
         return fxn(self, fullname)
-    _wrap(wrapper, fxn)
-    return wrapper
+    _wrap(_requires_builtin_wrapper, fxn)
+    return _requires_builtin_wrapper
 
 
 def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
-    def wrapper(self, fullname):
+    def _requires_frozen_wrapper(self, fullname):
         if not imp.is_frozen(fullname):
             raise ImportError("{0} is not a frozen module".format(fullname))
         return fxn(self, fullname)
-    _wrap(wrapper, fxn)
-    return wrapper
+    _wrap(_requires_frozen_wrapper, fxn)
+    return _requires_frozen_wrapper
 
 
 def _suffix_list(suffix_type):
