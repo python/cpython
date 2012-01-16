@@ -835,7 +835,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
         Py_DECREF(c.c_normalize_args);
     }
-    ast_error_finish(filename);
+    if (!res)
+        ast_error_finish(filename);
     return res;
 }
 
