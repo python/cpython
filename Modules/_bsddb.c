@@ -7257,7 +7257,7 @@ DBEnv_rep_elect(DBEnvObject* self, PyObject* args)
     }
     CHECK_ENV_NOT_CLOSED(self);
     MYDB_BEGIN_ALLOW_THREADS;
-    err = self->db_env->rep_elect(self->db_env, nvotes, nvotes, 0);
+    err = self->db_env->rep_elect(self->db_env, nsites, nvotes, 0);
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
     RETURN_NONE();
