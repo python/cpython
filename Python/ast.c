@@ -2530,13 +2530,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                  * then is very confusing.
                  */
                 if (e->kind == Lambda_kind) {
-                  ast_error(CHILD(ch, 0), "lambda cannot contain assignment");
-                  return NULL;
+                    ast_error(CHILD(ch, 0), "lambda cannot contain assignment");
+                    return NULL;
                 } else if (e->kind != Name_kind) {
-                  ast_error(CHILD(ch, 0), "keyword can't be an expression");
-                  return NULL;
+                    ast_error(CHILD(ch, 0), "keyword can't be an expression");
+                    return NULL;
                 } else if (forbidden_name(e->v.Name.id, ch, 1)) {
-                  return NULL;
+                    return NULL;
                 }
                 key = e->v.Name.id;
                 for (k = 0; k < nkeywords; k++) {
