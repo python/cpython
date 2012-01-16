@@ -500,6 +500,8 @@ struct compiling {
     char *c_encoding; /* source encoding */
     PyArena *c_arena; /* arena for allocating memeory */
     const char *c_filename; /* filename */
+    PyObject *c_normalize; /* Normalization function from unicodedata. */
+    PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -527,36 +529,54 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
 
-static identifier
-new_identifier(const char* n, PyArena *arena)
+static int
+init_normalization(struct compiling *c)
 {
-    _Py_IDENTIFIER(normalize);
+    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    if (!m)
+        return 0;
+    c->c_normalize = PyObject_GetAttrString(m, "normalize");
+    Py_DECREF(m);
+    if (!c->c_normalize)
+        return 0;
+    c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
+    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
+    if (!c->c_normalize_args) {
+        Py_CLEAR(c->c_normalize);
+        return 0;
+    }
+    return 1;
+}
+
+static identifier
+new_identifier(const char* n, struct compiling *c)
+{
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id)
         return NULL;
+    /* PyUnicode_DecodeUTF8 should always return a ready string. */
     assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
-        PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
         PyObject *id2;
-        if (!m) {
+        if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        id2 = _PyObject_CallMethodId(m, &PyId_normalize, "sO", "NFKC", id);
-        Py_DECREF(m);
+        PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
+        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
         Py_DECREF(id);
         if (!id2)
             return NULL;
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
-    PyArena_AddPyObject(arena, id);
+    PyArena_AddPyObject(c->c_arena, id);
     return id;
 }
 
-#define NEW_IDENTIFIER(n) new_identifier(STR(n), c->c_arena)
+#define NEW_IDENTIFIER(n) new_identifier(STR(n), c)
 
 /* This routine provides an invalid object for the syntax error.
    The outermost routine must unpack this error and create the
@@ -706,13 +726,14 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     stmt_ty s;
     node *ch;
     struct compiling c;
+    mod_ty res = NULL;
 
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
         c.c_encoding = "utf-8";
         if (TYPE(n) == encoding_decl) {
 #if 0
             ast_error(n, "encoding declaration in Unicode string");
-            goto error;
+            goto out;
 #endif
             n = CHILD(n, 0);
         }
@@ -725,13 +746,14 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     }
     c.c_arena = arena;
     c.c_filename = filename;
+    c.c_normalize = c.c_normalize_args = NULL;
 
     k = 0;
     switch (TYPE(n)) {
         case file_input:
             stmts = asdl_seq_new(num_stmts(n), arena);
             if (!stmts)
-                return NULL;
+                goto out;
             for (i = 0; i < NCH(n) - 1; i++) {
                 ch = CHILD(n, i);
                 if (TYPE(ch) == NEWLINE)
@@ -741,7 +763,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                 if (num == 1) {
                     s = ast_for_stmt(&c, ch);
                     if (!s)
-                        goto error;
+                        goto out;
                     asdl_seq_SET(stmts, k++, s);
                 }
                 else {
@@ -750,42 +772,44 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                     for (j = 0; j < num; j++) {
                         s = ast_for_stmt(&c, CHILD(ch, j * 2));
                         if (!s)
-                            goto error;
+                            goto out;
                         asdl_seq_SET(stmts, k++, s);
                     }
                 }
             }
-            return Module(stmts, arena);
+            res = Module(stmts, arena);
+            break;
         case eval_input: {
             expr_ty testlist_ast;
 
             /* XXX Why not comp_for here? */
             testlist_ast = ast_for_testlist(&c, CHILD(n, 0));
             if (!testlist_ast)
-                goto error;
-            return Expression(testlist_ast, arena);
+                goto out;
+            res = Expression(testlist_ast, arena);
+            break;
         }
         case single_input:
             if (TYPE(CHILD(n, 0)) == NEWLINE) {
                 stmts = asdl_seq_new(1, arena);
                 if (!stmts)
-                    goto error;
+                    goto out;
                 asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset,
                                             arena));
                 if (!asdl_seq_GET(stmts, 0))
-                    goto error;
-                return Interactive(stmts, arena);
+                    goto out;
+                res = Interactive(stmts, arena);
             }
             else {
                 n = CHILD(n, 0);
                 num = num_stmts(n);
                 stmts = asdl_seq_new(num, arena);
                 if (!stmts)
-                    goto error;
+                    goto out;
                 if (num == 1) {
                     s = ast_for_stmt(&c, n);
                     if (!s)
-                        goto error;
+                        goto out;
                     asdl_seq_SET(stmts, 0, s);
                 }
                 else {
@@ -796,21 +820,27 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                             break;
                         s = ast_for_stmt(&c, CHILD(n, i));
                         if (!s)
-                            goto error;
+                            goto out;
                         asdl_seq_SET(stmts, i / 2, s);
                     }
                 }
 
-                return Interactive(stmts, arena);
+                res = Interactive(stmts, arena);
+                break;
             }
         default:
             PyErr_Format(PyExc_SystemError,
                          "invalid node %d for PyAST_FromNode", TYPE(n));
-            goto error;
+            goto out;
     }
- error:
+ out:
+    if (c.c_normalize) {
+        Py_DECREF(c.c_normalize);
+        PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
+        Py_DECREF(c.c_normalize_args);
+    }
     ast_error_finish(filename);
-    return NULL;
+    return res;
 }
 
 /* Return the AST repr. of the operator represented as syntax (|, ^, etc.)
