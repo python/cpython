@@ -537,7 +537,7 @@ new_identifier(const char* n, PyArena *arena)
     assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
-    if (PyUnicode_MAX_CHAR_VALUE((PyUnicodeObject *)id) >= 128) {
+    if (PyUnicode_IS_ASCII(id)) {
         PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
         PyObject *id2;
         if (!m)
