@@ -5,7 +5,6 @@ from .. import abc as testing_abc
 from .. import util
 from . import util as source_util
 
-import collections
 import imp
 import inspect
 import io
