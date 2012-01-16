@@ -34,6 +34,7 @@ typedef struct {
     const int upper;
     const int lower;
     const int title;
+    /* Note if more flag space is needed, decimal and digit could be unified. */
     const unsigned char decimal;
     const unsigned char digit;
     const unsigned short flags;
