@@ -199,7 +199,7 @@ class ConfigDialog(Toplevel):
             ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'hilite'),
             ('\n  var2 = ','normal'),("'found'",'hit'),
             ('\n  var3 = ','normal'),('list', 'builtin'), ('(','normal'),
-            ('None', 'builtin'),(')\n\n','normal'),
+            ('None', 'keyword'),(')\n\n','normal'),
             (' error ','error'),(' ','normal'),('cursor |','cursor'),
             ('\n ','normal'),('shell','console'),(' ','normal'),('stdout','stdout'),
             (' ','normal'),('stderr','stderr'),('\n','normal'))
