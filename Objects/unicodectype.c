@@ -27,9 +27,13 @@
 #define EXTENDED_CASE_MASK 0x4000
 
 typedef struct {
-    const Py_UCS4 upper;
-    const Py_UCS4 lower;
-    const Py_UCS4 title;
+    /* 
+       These are either deltas to the character or offsets in
+       _PyUnicode_ExtendedCase.
+    */
+    const int upper;
+    const int lower;
+    const int title;
     const unsigned char decimal;
     const unsigned char digit;
     const unsigned short flags;
@@ -60,7 +64,7 @@ Py_UCS4 _PyUnicode_ToTitlecase(register Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
-    return ctype->title ? ctype->title : ch;
+    return ch + ctype->title;
 }
 
 /* Returns 1 for Unicode characters having the category 'Lt', 0
@@ -186,7 +190,7 @@ Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
 
     if (ctype->flags & EXTENDED_CASE_MASK)
         return _PyUnicode_ExtendedCase[ctype->upper & 0xFFFF];
-    return ctype->upper ? ctype->upper : ch;
+    return ch + ctype->upper;
 }
 
 /* Returns the lowercase Unicode characters corresponding to ch or just
@@ -198,7 +202,7 @@ Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
 
     if (ctype->flags & EXTENDED_CASE_MASK)
         return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFF];
-    return ctype->lower ? ctype->lower : ch;
+    return ch + ctype->lower;
 }
 
 int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
@@ -213,7 +217,7 @@ int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
             res[i] = _PyUnicode_ExtendedCase[index + i];
         return n;
     }
-    res[0] = ctype->lower ? ctype->lower : ch;
+    res[0] = ch + ctype->lower;
     return 1;
 }
 
@@ -229,7 +233,7 @@ int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res)
             res[i] = _PyUnicode_ExtendedCase[index + i];
         return n;
     }
-    res[0] = ctype->title ? ctype->title : ch;
+    res[0] = ch + ctype->title;
     return 1;
 }
 
@@ -245,7 +249,7 @@ int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
             res[i] = _PyUnicode_ExtendedCase[index + i];
         return n;
     }
-    res[0] = ctype->upper ? ctype->upper : ch;
+    res[0] = ch + ctype->upper;
     return 1;
 }
 
