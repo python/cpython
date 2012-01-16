@@ -117,8 +117,6 @@ latex_documents = [
      'The Python/C API', _stdauthor, 'manual'),
     ('distutils/index', 'distutils.tex',
      'Distributing Python Modules', _stdauthor, 'manual'),
-    ('documenting/index', 'documenting.tex',
-     'Documenting Python', 'Georg Brandl', 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
     ('install/index', 'install.tex',
