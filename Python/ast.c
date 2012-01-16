@@ -532,8 +532,9 @@ new_identifier(const char* n, PyArena *arena)
 {
     _Py_IDENTIFIER(normalize);
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
-    if (!id || PyUnicode_READY(id) == -1)
+    if (!id)
         return NULL;
+    assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (PyUnicode_MAX_CHAR_VALUE((PyUnicodeObject *)id) >= 128) {
