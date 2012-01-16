@@ -15,7 +15,8 @@ def any(name, alternates):
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     builtinlist = [str(name) for name in dir(builtins)
-                                        if not name.startswith('_')]
+                                        if not name.startswith('_') and \
+                                        name not in keyword.kwlist]
     # self.file = open("file") :
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
