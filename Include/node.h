@@ -28,6 +28,7 @@ PyAPI_FUNC(void) PyNode_Free(node *n);
 #define RCHILD(n, i)	(CHILD(n, NCH(n) + i))
 #define TYPE(n)		((n)->n_type)
 #define STR(n)		((n)->n_str)
+#define LINENO(n)       ((n)->n_lineno)
 
 /* Assert that the type of a node is what we expect */
 #define REQ(n, type) assert(TYPE(n) == (type))

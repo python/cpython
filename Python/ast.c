@@ -521,10 +521,6 @@ static PyObject *parsestr(struct compiling *, const node *n, int *bytesmode);
 static PyObject *parsestrplus(struct compiling *, const node *n,
                               int *bytesmode);
 
-#ifndef LINENO
-#define LINENO(n)       ((n)->n_lineno)
-#endif
-
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
