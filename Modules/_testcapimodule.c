@@ -2300,6 +2300,32 @@ crash_no_current_thread(PyObject *self)
     return NULL;
 }
 
+/* To run some code in a sub-interpreter. */
+static PyObject *
+run_in_subinterp(PyObject *self, PyObject *args)
+{
+    const char *code;
+    int r;
+    PyThreadState *substate, *mainstate;
+
+    if (!PyArg_ParseTuple(args, "s:run_in_subinterp",
+                          &code))
+        return NULL;
+
+    mainstate = PyThreadState_Get();
+
+    PyThreadState_Swap(NULL);
+
+    substate = Py_NewInterpreter();
+    r = PyRun_SimpleString(code);
+    Py_EndInterpreter(substate);
+
+    PyThreadState_Swap(mainstate);
+
+    return PyLong_FromLong(r);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -2385,6 +2411,7 @@ static PyMethodDef TestMethods[] = {
     {"make_memoryview_from_NULL_pointer", (PyCFunction)make_memoryview_from_NULL_pointer,
      METH_NOARGS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
+    {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
