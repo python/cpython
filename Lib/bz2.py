@@ -10,8 +10,12 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor", "compress",
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
 import io
-import threading
 import warnings
+
+try:
+    from threading import RLock
+except ImportError:
+    from dummy_threading import RLock
 
 from _bz2 import BZ2Compressor, BZ2Decompressor
 
@@ -53,7 +57,7 @@ class BZ2File(io.BufferedIOBase):
         """
         # This lock must be recursive, so that BufferedIOBase's
         # readline(), readlines() and writelines() don't deadlock.
-        self._lock = threading.RLock()
+        self._lock = RLock()
         self._fp = None
         self._closefp = False
         self._mode = _MODE_CLOSED
