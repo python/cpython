@@ -135,6 +135,12 @@ typedef struct
      (((PyDateTime_Time*)o)->data[4] << 8)  |           \
       ((PyDateTime_Time*)o)->data[5])
 
+/* Apply for time delta instances */
+#define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)o)->days)
+#define PyDateTime_DELTA_GET_SECONDS(o)      (((PyDateTime_Delta*)o)->seconds)
+#define PyDateTime_DELTA_GET_MICROSECONDS(o)            \
+    (((PyDateTime_Delta*)o)->microseconds)
+
 
 /* Define structure for C API. */
 typedef struct {
