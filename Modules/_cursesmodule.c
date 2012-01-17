@@ -2056,7 +2056,8 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
     {"encoding",
      (getter)PyCursesWindow_get_encoding,
      (setter)PyCursesWindow_set_encoding,
-     "the typecode character used to create the array"}
+     "the typecode character used to create the array"},
+    {NULL, NULL, NULL, NULL }  /* sentinel */
 };
 
 /* -------------------------------------------------------*/
