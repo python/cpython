@@ -3,6 +3,7 @@
 
 from __future__ import with_statement
 import os
+import pickle
 import random
 import subprocess
 import sys
@@ -136,6 +137,22 @@ class TestPendingCalls(unittest.TestCase):
         n = 64
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
+
+    def test_subinterps(self):
+        # XXX this test leaks in refleak runs
+        import builtins
+        r, w = os.pipe()
+        code = """if 1:
+            import sys, builtins, pickle
+            with open({:d}, "wb") as f:
+                pickle.dump(id(sys.modules), f)
+                pickle.dump(id(builtins), f)
+            """.format(w)
+        with open(r, "rb") as f:
+            ret = _testcapi.run_in_subinterp(code)
+            self.assertEqual(ret, 0)
+            self.assertNotEqual(pickle.load(f), id(sys.modules))
+            self.assertNotEqual(pickle.load(f), id(builtins))
 
 # Bug #6012
 class Test6012(unittest.TestCase):
