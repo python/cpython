@@ -170,6 +170,31 @@ and the type is not checked:
    Return the microsecond, as an int from 0 through 999999.
 
 
+Macros to extract fields from time delta objects.  The argument must be an
+instance of :c:data:`PyDateTime_Delta`, including subclasses. The argument must
+not be *NULL*, and the type is not checked:
+
+.. c:function:: int PyDateTime_DELTA_GET_DAYS(PyDateTime_Delta *o)
+
+   Return the number of days, as an int from -999999999 to 999999999.
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: int PyDateTime_DELTA_GET_SECONDS(PyDateTime_Delta *o)
+
+   Return the number of seconds, as an int from 0 through 86399.
+
+   .. versionadded:: 3.3
+
+
+.. c:function:: int PyDateTime_DELTA_GET_MICROSECOND(PyDateTime_Delta *o)
+
+   Return the number of microseconds, as an int from 0 through 999999.
+
+   .. versionadded:: 3.3
+
+
 Macros for the convenience of modules implementing the DB API:
 
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)

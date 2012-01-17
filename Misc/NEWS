@@ -2056,6 +2056,10 @@ Tests
 C-API
 -----
 
+- Issue #13727: Add 3 macros to access PyDateTime_Delta members:
+  PyDateTime_DELTA_GET_DAYS, PyDateTime_DELTA_GET_SECONDS,
+  PyDateTime_DELTA_GET_MICROSECONDS.
+
 - Issue #10542: Add 4 macros to work with surrogates: Py_UNICODE_IS_SURROGATE,
   Py_UNICODE_IS_HIGH_SURROGATE, Py_UNICODE_IS_LOW_SURROGATE,
   Py_UNICODE_JOIN_SURROGATES.
