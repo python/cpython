@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13589: Fix some serialization primitives in the aifc module.
+  Patch by Oleg Plakhotnyuk.
+
 - Issue #13642: Unquote before b64encoding user:password during Basic
   Authentication. Patch contributed by Joonas Kuorilehto and Michele Orrù.
 

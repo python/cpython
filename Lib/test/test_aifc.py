@@ -1,6 +1,7 @@
 from test.test_support import findfile, run_unittest, TESTFN
 import unittest
 import os
+import io
 
 import aifc
 
@@ -107,8 +108,45 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(testfile.closed, True)
 
 
+class AIFCLowLevelTest(unittest.TestCase):
+
+    def test_read_written(self):
+        def read_written(self, what):
+            f = io.BytesIO()
+            getattr(aifc, '_write_' + what)(f, x)
+            f.seek(0)
+            return getattr(aifc, '_read_' + what)(f)
+        for x in (-1, 0, 0.1, 1):
+            self.assertEqual(read_written(x, 'float'), x)
+        for x in (float('NaN'), float('Inf')):
+            self.assertEqual(read_written(x, 'float'), aifc._HUGE_VAL)
+        for x in (b'', b'foo', b'a' * 255):
+            self.assertEqual(read_written(x, 'string'), x)
+        for x in (-0x7FFFFFFF, -1, 0, 1, 0x7FFFFFFF):
+            self.assertEqual(read_written(x, 'long'), x)
+        for x in (0, 1, 0xFFFFFFFF):
+            self.assertEqual(read_written(x, 'ulong'), x)
+        for x in (-0x7FFF, -1, 0, 1, 0x7FFF):
+            self.assertEqual(read_written(x, 'short'), x)
+        for x in (0, 1, 0xFFFF):
+            self.assertEqual(read_written(x, 'ushort'), x)
+
+    def test_read_raises(self):
+        f = io.BytesIO(b'\x00')
+        self.assertRaises(EOFError, aifc._read_ulong, f)
+        self.assertRaises(EOFError, aifc._read_long, f)
+        self.assertRaises(EOFError, aifc._read_ushort, f)
+        self.assertRaises(EOFError, aifc._read_short, f)
+
+    def test_write_long_string_raises(self):
+        f = io.BytesIO()
+        with self.assertRaises(ValueError):
+            aifc._write_string(f, b'too long' * 255)
+
+
 def test_main():
     run_unittest(AIFCTest)
+    run_unittest(AIFCLowLevelTest)
 
 
 if __name__ == "__main__":

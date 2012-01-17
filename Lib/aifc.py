@@ -162,6 +162,12 @@ def _read_short(file):
     except struct.error:
         raise EOFError
 
+def _read_ushort(file):
+    try:
+        return struct.unpack('>H', file.read(2))[0]
+    except struct.error:
+        raise EOFError
+
 def _read_string(file):
     length = ord(file.read(1))
     if length == 0:
@@ -194,13 +200,19 @@ def _read_float(f): # 10 bytes
 def _write_short(f, x):
     f.write(struct.pack('>h', x))
 
+def _write_ushort(f, x):
+    f.write(struct.pack('>H', x))
+
 def _write_long(f, x):
+    f.write(struct.pack('>l', x))
+
+def _write_ulong(f, x):
     f.write(struct.pack('>L', x))
 
 def _write_string(f, s):
     if len(s) > 255:
         raise ValueError("string exceeds maximum pstring length")
-    f.write(chr(len(s)))
+    f.write(struct.pack('B', len(s)))
     f.write(s)
     if len(s) & 1 == 0:
         f.write(chr(0))
@@ -218,7 +230,7 @@ def _write_float(f, x):
         lomant = 0
     else:
         fmant, expon = math.frexp(x)
-        if expon > 16384 or fmant >= 1:     # Infinity or NaN
+        if expon > 16384 or fmant >= 1 or fmant != fmant: # Infinity or NaN
             expon = sign|0x7FFF
             himant = 0
             lomant = 0
@@ -234,9 +246,9 @@ def _write_float(f, x):
             fmant = math.ldexp(fmant - fsmant, 32)
             fsmant = math.floor(fmant)
             lomant = long(fsmant)
-    _write_short(f, expon)
-    _write_long(f, himant)
-    _write_long(f, lomant)
+    _write_ushort(f, expon)
+    _write_ulong(f, himant)
+    _write_ulong(f, lomant)
 
 from chunk import Chunk
 
@@ -840,15 +852,15 @@ class Aifc_write:
         if self._aifc:
             self._file.write('AIFC')
             self._file.write('FVER')
-            _write_long(self._file, 4)
-            _write_long(self._file, self._version)
+            _write_ulong(self._file, 4)
+            _write_ulong(self._file, self._version)
         else:
             self._file.write('AIFF')
         self._file.write('COMM')
-        _write_long(self._file, commlength)
+        _write_ulong(self._file, commlength)
         _write_short(self._file, self._nchannels)
         self._nframes_pos = self._file.tell()
-        _write_long(self._file, self._nframes)
+        _write_ulong(self._file, self._nframes)
         _write_short(self._file, self._sampwidth * 8)
         _write_float(self._file, self._framerate)
         if self._aifc:
@@ -856,9 +868,9 @@ class Aifc_write:
             _write_string(self._file, self._compname)
         self._file.write('SSND')
         self._ssnd_length_pos = self._file.tell()
-        _write_long(self._file, self._datalength + 8)
-        _write_long(self._file, 0)
-        _write_long(self._file, 0)
+        _write_ulong(self._file, self._datalength + 8)
+        _write_ulong(self._file, 0)
+        _write_ulong(self._file, 0)
 
     def _write_form_length(self, datalength):
         if self._aifc:
@@ -869,8 +881,8 @@ class Aifc_write:
         else:
             commlength = 18
             verslength = 0
-        _write_long(self._file, 4 + verslength + self._marklength + \
-                    8 + commlength + 16 + datalength)
+        _write_ulong(self._file, 4 + verslength + self._marklength + \
+                     8 + commlength + 16 + datalength)
         return commlength
 
     def _patchheader(self):
@@ -888,9 +900,9 @@ class Aifc_write:
         self._file.seek(self._form_length_pos, 0)
         dummy = self._write_form_length(datalength)
         self._file.seek(self._nframes_pos, 0)
-        _write_long(self._file, self._nframeswritten)
+        _write_ulong(self._file, self._nframeswritten)
         self._file.seek(self._ssnd_length_pos, 0)
-        _write_long(self._file, datalength + 8)
+        _write_ulong(self._file, datalength + 8)
         self._file.seek(curpos, 0)
         self._nframes = self._nframeswritten
         self._datalength = datalength
@@ -905,13 +917,13 @@ class Aifc_write:
             length = length + len(name) + 1 + 6
             if len(name) & 1 == 0:
                 length = length + 1
-        _write_long(self._file, length)
+        _write_ulong(self._file, length)
         self._marklength = length + 8
         _write_short(self._file, len(self._markers))
         for marker in self._markers:
             id, pos, name = marker
             _write_short(self._file, id)
-            _write_long(self._file, pos)
+            _write_ulong(self._file, pos)
             _write_string(self._file, name)
 
 def open(f, mode=None):
