@@ -6,7 +6,7 @@ one of the other *util.py modules.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, string, re, platform
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
@@ -76,6 +76,7 @@ def get_platform ():
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
             release = "%d.%s" % (int(release[0]) - 3, release[2:])
+            machine += ".%s" % platform.architecture()[0]
         # fall through to standard osname-release-machine representation
     elif osname[:4] == "irix":              # could be "irix64"!
         return "%s-%s" % (osname, release)
