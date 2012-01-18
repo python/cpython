@@ -100,6 +100,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13803: Under Solaris, distutils doesn't include bitness
+  in the directory name.
+
 - Issue #13589: Fix some serialization primitives in the aifc module.
   Patch by Oleg Plakhotnyuk.
 
