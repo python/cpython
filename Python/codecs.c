@@ -1041,15 +1041,6 @@ static int _PyCodecRegistry_Init(void)
 
     mod = PyImport_ImportModuleNoBlock("encodings");
     if (mod == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-            /* Ignore ImportErrors... this is done so that
-               distributions can disable the encodings package. Note
-               that other errors are not masked, e.g. SystemErrors
-               raised to inform the user of an error in the Python
-               configuration are still reported back to the user. */
-            PyErr_Clear();
-            return 0;
-        }
         return -1;
     }
     Py_DECREF(mod);
