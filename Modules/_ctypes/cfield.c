@@ -1365,7 +1365,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
         _RET(value);
     }
     PyErr_Format(PyExc_TypeError,
-                 "string or integer address expected instead of %s instance",
+                 "bytes or integer address expected instead of %s instance",
                  value->ob_type->tp_name);
     return NULL;
 }
