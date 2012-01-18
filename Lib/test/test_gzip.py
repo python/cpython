@@ -346,6 +346,14 @@ class TestGzip(unittest.TestCase):
             with io.TextIOWrapper(f, encoding="ascii") as t:
                 self.assertEqual(t.readlines(), lines)
 
+    def test_fileobj_from_fdopen(self):
+        # Issue #13781: Opening a GzipFile for writing fails when using a
+        # fileobj created with os.fdopen().
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT)
+        with os.fdopen(fd, "wb") as f:
+            with gzip.GzipFile(fileobj=f, mode="w") as g:
+                pass
+
     # Testing compress/decompress shortcut functions
 
     def test_compress(self):
