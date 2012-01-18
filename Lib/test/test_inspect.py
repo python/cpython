@@ -650,6 +650,17 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.getmembers(B, isdatadescriptor),
             [('dd', A.__dict__['dd'])])
 
+    def test_getmembers_method(self):
+        class B:
+            def f(self):
+                pass
+
+        self.assertIn(('f', B.f), inspect.getmembers(B))
+        self.assertNotIn(('f', B.f), inspect.getmembers(B, inspect.ismethod))
+        b = B()
+        self.assertIn(('f', b.f), inspect.getmembers(b))
+        self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
+
 
 class TestGetcallargsFunctions(unittest.TestCase):
 
