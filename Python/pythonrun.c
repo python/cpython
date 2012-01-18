@@ -1032,7 +1032,8 @@ initstdio(void)
         const char * encoding;
         encoding = _PyUnicode_AsString(encoding_attr);
         if (encoding != NULL) {
-            _PyCodec_Lookup(encoding);
+            PyObject *codec_info = _PyCodec_Lookup(encoding);
+            Py_XDECREF(codec_info);
         }
         Py_DECREF(encoding_attr);
     }
