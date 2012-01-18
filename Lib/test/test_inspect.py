@@ -600,56 +600,30 @@ class TestClassesAndFunctions(unittest.TestCase):
             if isinstance(builtin, type):
                 inspect.classify_class_attrs(builtin)
 
-    def test_getmembers_descriptors(self):
+    def test_getmembers_method(self):
         # Old-style classes
-        class A:
-            dd = _BrokenDataDescriptor()
-            md = _BrokenMethodDescriptor()
+        class B:
+            def f(self):
+                pass
 
-        self.assertEqual(inspect.getmembers(A, inspect.ismethoddescriptor),
-            [('md', A.__dict__['md'])])
-        self.assertEqual(inspect.getmembers(A, inspect.isdatadescriptor),
-            [('dd', A.__dict__['dd'])])
-
-        class B(A):
-            pass
-
-        self.assertEqual(inspect.getmembers(B, inspect.ismethoddescriptor),
-            [('md', A.__dict__['md'])])
-        self.assertEqual(inspect.getmembers(B, inspect.isdatadescriptor),
-            [('dd', A.__dict__['dd'])])
+        self.assertIn(('f', B.f), inspect.getmembers(B))
+        # contrary to spec, ismethod() is also True for unbound methods
+        # (see #1785)
+        self.assertIn(('f', B.f), inspect.getmembers(B, inspect.ismethod))
+        b = B()
+        self.assertIn(('f', b.f), inspect.getmembers(b))
+        self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
 
         # New-style classes
-        class A(object):
-            dd = _BrokenDataDescriptor()
-            md = _BrokenMethodDescriptor()
-
-        def pred_wrapper(pred):
-            # A quick'n'dirty way to discard standard attributes of new-style
-            # classes.
-            class Empty(object):
+        class B(object):
+            def f(self):
                 pass
-            def wrapped(x):
-                if hasattr(x, '__name__') and hasattr(Empty, x.__name__):
-                    return False
-                return pred(x)
-            return wrapped
 
-        ismethoddescriptor = pred_wrapper(inspect.ismethoddescriptor)
-        isdatadescriptor = pred_wrapper(inspect.isdatadescriptor)
-
-        self.assertEqual(inspect.getmembers(A, ismethoddescriptor),
-            [('md', A.__dict__['md'])])
-        self.assertEqual(inspect.getmembers(A, isdatadescriptor),
-            [('dd', A.__dict__['dd'])])
-
-        class B(A):
-            pass
-
-        self.assertEqual(inspect.getmembers(B, ismethoddescriptor),
-            [('md', A.__dict__['md'])])
-        self.assertEqual(inspect.getmembers(B, isdatadescriptor),
-            [('dd', A.__dict__['dd'])])
+        self.assertIn(('f', B.f), inspect.getmembers(B))
+        self.assertIn(('f', B.f), inspect.getmembers(B, inspect.ismethod))
+        b = B()
+        self.assertIn(('f', b.f), inspect.getmembers(b))
+        self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
 
 
 class TestGetcallargsFunctions(unittest.TestCase):
