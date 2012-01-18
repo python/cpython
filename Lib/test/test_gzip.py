@@ -274,6 +274,14 @@ class TestGzip(unittest.TestCase):
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
+    def test_fileobj_from_fdopen(self):
+        # Issue #13781: Creating a GzipFile using a fileobj from os.fdopen()
+        # should not embed the fake filename "<fdopen>" in the output file.
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT)
+        with os.fdopen(fd, "wb") as f:
+            with gzip.GzipFile(fileobj=f, mode="w") as g:
+                self.assertEqual(g.name, "")
+
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
 

@@ -6755,6 +6755,8 @@ posix_fdopen(PyObject *self, PyObject *args)
     PyMem_FREE(mode);
     if (fp == NULL)
         return posix_error();
+    /* The dummy filename used here must be kept in sync with the value
+       tested against in gzip.GzipFile.__init__() - see issue #13781. */
     f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);
     if (f != NULL)
         PyFile_SetBufSize(f, bufsize);
