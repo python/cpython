@@ -1959,10 +1959,14 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 */
 PyObject *PyExc_RecursionErrorInst = NULL;
 
-#define PRE_INIT(TYPE) if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
-    Py_FatalError("exceptions bootstrapping error.");
+#define PRE_INIT(TYPE) \
+    if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
+        if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
+            Py_FatalError("exceptions bootstrapping error."); \
+        Py_INCREF(PyExc_ ## TYPE); \
+    }
 
-#define POST_INIT(TYPE) Py_INCREF(PyExc_ ## TYPE); \
+#define POST_INIT(TYPE) \
     if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) \
         Py_FatalError("Module dictionary insertion problem.");
 
