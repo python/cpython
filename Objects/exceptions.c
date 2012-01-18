@@ -2400,9 +2400,11 @@ _PyExc_Init(void)
     POST_INIT(BytesWarning)
     POST_INIT(ResourceWarning)
 
-    errnomap = PyDict_New();
-    if (!errnomap)
-        Py_FatalError("Cannot allocate map from errnos to OSError subclasses");
+    if (!errnomap) {
+        errnomap = PyDict_New();
+        if (!errnomap)
+            Py_FatalError("Cannot allocate map from errnos to OSError subclasses");
+    }
 
     /* OSError subclasses */
     POST_INIT(ConnectionError);
