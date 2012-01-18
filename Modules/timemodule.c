@@ -128,8 +128,10 @@ time_clock_gettime(PyObject *self, PyObject *args)
         return NULL;
 
     ret = clock_gettime((clockid_t)clk_id, &tp);
-    if (ret != 0)
+    if (ret != 0) {
         PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
 
     return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 }
@@ -152,8 +154,10 @@ time_clock_getres(PyObject *self, PyObject *args)
         return NULL;
 
     ret = clock_getres((clockid_t)clk_id, &tp);
-    if (ret != 0)
+    if (ret != 0) {
         PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
 
     return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 }
