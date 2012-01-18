@@ -2225,6 +2225,7 @@ PyObject *PyExc_RecursionErrorInst = NULL;
         Py_FatalError("Module dictionary insertion problem.");
 
 #define INIT_ALIAS(NAME, TYPE) Py_INCREF(PyExc_ ## TYPE); \
+    Py_XDECREF(PyExc_ ## NAME); \
     PyExc_ ## NAME = PyExc_ ## TYPE; \
     if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) \
         Py_FatalError("Module dictionary insertion problem.");
@@ -2234,6 +2235,7 @@ PyObject *PyExc_RecursionErrorInst = NULL;
     assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
     if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) \
         Py_FatalError("errmap insertion problem."); \
+    Py_DECREF(_code); \
     }
 
 #ifdef MS_WINDOWS
