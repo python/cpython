@@ -144,8 +144,10 @@ class GzipFile(io.BufferedIOBase):
         if fileobj is None:
             fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
         if filename is None:
-            if hasattr(fileobj, 'name'): filename = fileobj.name
-            else: filename = ''
+            if hasattr(fileobj, 'name') and isinstance(fileobj.name, str):
+                filename = fileobj.name
+            else:
+                filename = ''
         if mode is None:
             if hasattr(fileobj, 'mode'): mode = fileobj.mode
             else: mode = 'rb'
