@@ -2542,6 +2542,7 @@ init_builtin(PyObject *name)
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
         PyObject *mod;
+        PyModuleDef *def;
         if (PyUnicode_CompareWithASCIIString(name, p->name) == 0) {
             if (p->initfunc == NULL) {
                 PyErr_Format(PyExc_ImportError,
@@ -2554,6 +2555,9 @@ init_builtin(PyObject *name)
             mod = (*p->initfunc)();
             if (mod == 0)
                 return -1;
+            /* Remember pointer to module init function. */
+            def = PyModule_GetDef(mod);
+            def->m_base.m_init = p->initfunc;
             if (_PyImport_FixupExtensionObject(mod, name, name) < 0)
                 return -1;
             /* FixupExtension has put the module into sys.modules,
