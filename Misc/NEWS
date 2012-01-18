@@ -447,6 +447,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13781: Fix GzipFile bug that caused an exception to be raised when
+  opening for writing using a fileobj returned by os.fdopen().
+
 - Issue #13803: Under Solaris, distutils doesn't include bitness
   in the directory name.
 
