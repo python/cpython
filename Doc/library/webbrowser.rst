@@ -164,12 +164,15 @@ Notes:
 (4)
    Only on Mac OS X platform.
 
+.. versionadded:: 3.3
+   Support for Chrome/Chromium has been added.
+
 Here are some simple examples::
 
-   url = 'http://www.python.org/'
+   url = 'http://docs.python.org/'
 
    # Open URL in a new tab, if a browser window is already open.
-   webbrowser.open_new_tab(url + 'doc/')
+   webbrowser.open_new_tab(url)
 
    # Open URL in new window, raising the window if possible.
    webbrowser.open_new(url)
