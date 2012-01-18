@@ -447,6 +447,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10278: Add time.wallclock() function, monotonic clock.
+
+- Issue #13809: Fix regression where bz2 module wouldn't work when threads are
+  disabled. Original patch by Amaury Forgeot d'Arc.
+
 - Issue #13589: Fix some serialization primitives in the aifc module.
   Patch by Oleg Plakhotnyuk.
 
