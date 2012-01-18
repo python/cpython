@@ -1126,7 +1126,7 @@ snippet, which shows zlib-based compression of the log file::
     rh.rotator = rotator
     rh.namer = namer
 
-These are not “true” .gz files, as they are bare compressed data, with no
-“container” such as you’d find in an actual gzip file. This snippet is just
+These are not "true" .gz files, as they are bare compressed data, with no
+"container" such as you’d find in an actual gzip file. This snippet is just
 for illustration purposes.
 

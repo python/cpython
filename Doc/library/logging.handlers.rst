@@ -209,7 +209,7 @@ need to override.
 
       The default implementation calls the 'namer' attribute of the handler,
       if it's callable, passing the default name to it. If the attribute isn't
-      callable (the default is `None`), the name is returned unchanged.
+      callable (the default is ``None``), the name is returned unchanged.
 
       :param default_name: The default name for the log file.
 
@@ -222,7 +222,7 @@ need to override.
 
       The default implementation calls the 'rotator' attribute of the handler,
       if it's callable, passing the source and dest arguments to it. If the
-      attribute isn't callable (the default is `None`), the source is simply
+      attribute isn't callable (the default is ``None``), the source is simply
       renamed to the destination.
 
       :param source: The source filename. This is normally the base
@@ -780,7 +780,7 @@ should, then :meth:`flush` is expected to do the needful.
 
    .. method:: close()
 
-      Calls :meth:`flush`, sets the target to :const:`None` and clears the
+      Calls :meth:`flush`, sets the target to ``None`` and clears the
       buffer.
 
 
