@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13722: Avoid silencing ImportErrors when initializing the codecs
+  registry.
+
 - Issue #13781: Fix GzipFile bug that caused an exception to be raised when
   opening for writing using a fileobj returned by os.fdopen().
 
