@@ -1807,7 +1807,7 @@ class TarFile(object):
         return t
 
     @classmethod
-    def xzopen(cls, name, mode="r", fileobj=None, preset=9, **kwargs):
+    def xzopen(cls, name, mode="r", fileobj=None, preset=None, **kwargs):
         """Open lzma compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
@@ -1818,10 +1818,6 @@ class TarFile(object):
             import lzma
         except ImportError:
             raise CompressionError("lzma module is not available")
-
-        if mode == "r":
-            # LZMAFile complains about a preset argument in read mode.
-            preset = None
 
         fileobj = lzma.LZMAFile(filename=name if fileobj is None else None,
                 mode=mode, fileobj=fileobj, preset=preset)
