@@ -775,7 +775,7 @@ PyDoc_STRVAR(wallclock_doc,
 \n\
 Return the current time in fractions of a second to the system's best\n\
 ability. Use this when the most accurate representation of wall-clock is\n\
-required, i.e. when "processor time" is inappropriate. The reference point\n\
+required, i.e. when \"processor time\" is inappropriate. The reference point\n\
 of the returned value is undefined so only the difference of consecutive\n\
 calls is valid.");
 
