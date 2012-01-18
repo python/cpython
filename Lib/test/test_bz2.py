@@ -463,6 +463,13 @@ class BZ2FileTest(BaseTest):
             for t in threads:
                 t.join()
 
+    def testWithoutThreading(self):
+        bz2 = support.import_fresh_module("bz2", blocked=("threading",))
+        with bz2.BZ2File(self.filename, "wb") as f:
+            f.write(b"abc")
+        with bz2.BZ2File(self.filename, "rb") as f:
+            self.assertEqual(f.read(), b"abc")
+
     def testMixedIterationAndReads(self):
         self.createTempFile()
         linelen = len(self.TEXT_LINES[0])

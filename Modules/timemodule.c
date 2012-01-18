@@ -737,6 +737,52 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
+static PyObject *
+time_wallclock(PyObject *self, PyObject *unused)
+{
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
+    return time_clock(self, NULL);
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+    static int clk_index = 0;
+    clockid_t clk_ids[] = {
+#ifdef CLOCK_MONOTONIC_RAW
+        CLOCK_MONOTONIC_RAW,
+#endif
+        CLOCK_MONOTONIC
+#ifdef CLOCK_REALTIME
+          /* On Linux, CLOCK_REALTIME uses the same clock than gettimeofday(),
+             but clock_gettime() has a nanosecond resolution. */
+        , CLOCK_REALTIME
+#endif
+    };
+    int ret;
+    struct timespec tp;
+
+    while (0 <= clk_index) {
+        clockid_t clk_id = clk_ids[clk_index];
+        ret = clock_gettime(clk_id, &tp);
+        if (ret == 0)
+            return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+
+        clk_index++;
+        if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
+            clk_index = -1;
+    }
+    return time_time(self, NULL);
+#else
+    return time_time(self, NULL);
+#endif
+}
+
+PyDoc_STRVAR(wallclock_doc,
+"wallclock() -> float\n\
+\n\
+Return the current time in fractions of a second to the system's best\n\
+ability. Use this when the most accurate representation of wall-clock is\n\
+required, i.e. when \"processor time\" is inappropriate. The reference point\n\
+of the returned value is undefined so only the difference of consecutive\n\
+calls is valid.");
+
 static void
 PyInit_timezone(PyObject *m) {
     /* This code moved from PyInit_time wholesale to allow calling it from
@@ -872,6 +918,7 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_WORKING_TZSET
     {"tzset",           time_tzset, METH_NOARGS, tzset_doc},
 #endif
+    {"wallclock",       time_wallclock, METH_NOARGS, wallclock_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
