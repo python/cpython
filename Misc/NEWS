@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13781: Prevent gzip.GzipFile from using the dummy filename provided by
+  file objects opened with os.fdopen().
+
 - Issue #13589: Fix some serialization primitives in the aifc module.
   Patch by Oleg Plakhotnyuk.
 
