@@ -958,23 +958,30 @@ _PyWarnings_Init(void)
     if (m == NULL)
         return NULL;
 
-    _filters = init_filters();
-    if (_filters == NULL)
-        return NULL;
+    if (_filters == NULL) {
+        _filters = init_filters();
+        if (_filters == NULL)
+            return NULL;
+    }
     Py_INCREF(_filters);
     if (PyModule_AddObject(m, "filters", _filters) < 0)
         return NULL;
 
-    _once_registry = PyDict_New();
-    if (_once_registry == NULL)
-        return NULL;
+    if (_once_registry == NULL) {
+        _once_registry = PyDict_New();
+        if (_once_registry == NULL)
+            return NULL;
+    }
     Py_INCREF(_once_registry);
     if (PyModule_AddObject(m, "_onceregistry", _once_registry) < 0)
         return NULL;
 
-    _default_action = PyUnicode_FromString("default");
-    if (_default_action == NULL)
-        return NULL;
+    if (_default_action == NULL) {
+        _default_action = PyUnicode_FromString("default");
+        if (_default_action == NULL)
+            return NULL;
+    }
+    Py_INCREF(_default_action);
     if (PyModule_AddObject(m, "_defaultaction", _default_action) < 0)
         return NULL;
     return m;
