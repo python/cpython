@@ -2437,27 +2437,29 @@ _PyExc_Init(void)
 
     preallocate_memerrors();
 
-    PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
-    if (!PyExc_RecursionErrorInst)
-        Py_FatalError("Cannot pre-allocate RuntimeError instance for "
-                        "recursion errors");
-    else {
-        PyBaseExceptionObject *err_inst =
-            (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-        PyObject *args_tuple;
-        PyObject *exc_message;
-        exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
-        if (!exc_message)
-            Py_FatalError("cannot allocate argument for RuntimeError "
-                            "pre-allocation");
-        args_tuple = PyTuple_Pack(1, exc_message);
-        if (!args_tuple)
-            Py_FatalError("cannot allocate tuple for RuntimeError "
-                            "pre-allocation");
-        Py_DECREF(exc_message);
-        if (BaseException_init(err_inst, args_tuple, NULL))
-            Py_FatalError("init of pre-allocated RuntimeError failed");
-        Py_DECREF(args_tuple);
+    if (!PyExc_RecursionErrorInst) {
+        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
+        if (!PyExc_RecursionErrorInst)
+            Py_FatalError("Cannot pre-allocate RuntimeError instance for "
+                            "recursion errors");
+        else {
+            PyBaseExceptionObject *err_inst =
+                (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
+            PyObject *args_tuple;
+            PyObject *exc_message;
+            exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
+            if (!exc_message)
+                Py_FatalError("cannot allocate argument for RuntimeError "
+                                "pre-allocation");
+            args_tuple = PyTuple_Pack(1, exc_message);
+            if (!args_tuple)
+                Py_FatalError("cannot allocate tuple for RuntimeError "
+                                "pre-allocation");
+            Py_DECREF(exc_message);
+            if (BaseException_init(err_inst, args_tuple, NULL))
+                Py_FatalError("init of pre-allocated RuntimeError failed");
+            Py_DECREF(args_tuple);
+        }
     }
 
     Py_DECREF(bltinmod);
