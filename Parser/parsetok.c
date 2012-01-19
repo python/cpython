@@ -239,6 +239,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
             if (c && c != '#') {
                 err_ret->error = E_BADSINGLE;
+                PyNode_Free(n);
                 n = NULL;
             }
         }
