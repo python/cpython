@@ -567,11 +567,12 @@ Non-ascii identifiers
 
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
-                     STRING, ENDMARKER, tok_name, detect_encoding,
+                     STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open)
 from io import BytesIO
 from unittest import TestCase
 import os, sys, glob
+import token
 
 def dump_tokens(s):
     """Print out the tokens in s in a table format.
@@ -922,6 +923,78 @@ class TestTokenize(TestCase):
 
         self.assertTrue(encoding_used, encoding)
 
+    def assertExactTypeEqual(self, opstr, *optypes):
+        tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
+        num_optypes = len(optypes)
+        self.assertEqual(len(tokens), 2 + num_optypes)
+        self.assertEqual(token.tok_name[tokens[0].exact_type],
+                         token.tok_name[ENCODING])
+        for i in range(num_optypes):
+            self.assertEqual(token.tok_name[tokens[i + 1].exact_type],
+                             token.tok_name[optypes[i]])
+        self.assertEqual(token.tok_name[tokens[1 + num_optypes].exact_type],
+                         token.tok_name[token.ENDMARKER])
+
+    def test_exact_type(self):
+        self.assertExactTypeEqual('()', token.LPAR, token.RPAR)
+        self.assertExactTypeEqual('[]', token.LSQB, token.RSQB)
+        self.assertExactTypeEqual(':', token.COLON)
+        self.assertExactTypeEqual(',', token.COMMA)
+        self.assertExactTypeEqual(';', token.SEMI)
+        self.assertExactTypeEqual('+', token.PLUS)
+        self.assertExactTypeEqual('-', token.MINUS)
+        self.assertExactTypeEqual('*', token.STAR)
+        self.assertExactTypeEqual('/', token.SLASH)
+        self.assertExactTypeEqual('|', token.VBAR)
+        self.assertExactTypeEqual('&', token.AMPER)
+        self.assertExactTypeEqual('<', token.LESS)
+        self.assertExactTypeEqual('>', token.GREATER)
+        self.assertExactTypeEqual('=', token.EQUAL)
+        self.assertExactTypeEqual('.', token.DOT)
+        self.assertExactTypeEqual('%', token.PERCENT)
+        self.assertExactTypeEqual('{}', token.LBRACE, token.RBRACE)
+        self.assertExactTypeEqual('==', token.EQEQUAL)
+        self.assertExactTypeEqual('!=', token.NOTEQUAL)
+        self.assertExactTypeEqual('<=', token.LESSEQUAL)
+        self.assertExactTypeEqual('>=', token.GREATEREQUAL)
+        self.assertExactTypeEqual('~', token.TILDE)
+        self.assertExactTypeEqual('^', token.CIRCUMFLEX)
+        self.assertExactTypeEqual('<<', token.LEFTSHIFT)
+        self.assertExactTypeEqual('>>', token.RIGHTSHIFT)
+        self.assertExactTypeEqual('**', token.DOUBLESTAR)
+        self.assertExactTypeEqual('+=', token.PLUSEQUAL)
+        self.assertExactTypeEqual('-=', token.MINEQUAL)
+        self.assertExactTypeEqual('*=', token.STAREQUAL)
+        self.assertExactTypeEqual('/=', token.SLASHEQUAL)
+        self.assertExactTypeEqual('%=', token.PERCENTEQUAL)
+        self.assertExactTypeEqual('&=', token.AMPEREQUAL)
+        self.assertExactTypeEqual('|=', token.VBAREQUAL)
+        self.assertExactTypeEqual('^=', token.CIRCUMFLEXEQUAL)
+        self.assertExactTypeEqual('^=', token.CIRCUMFLEXEQUAL)
+        self.assertExactTypeEqual('<<=', token.LEFTSHIFTEQUAL)
+        self.assertExactTypeEqual('>>=', token.RIGHTSHIFTEQUAL)
+        self.assertExactTypeEqual('**=', token.DOUBLESTAREQUAL)
+        self.assertExactTypeEqual('//', token.DOUBLESLASH)
+        self.assertExactTypeEqual('//=', token.DOUBLESLASHEQUAL)
+        self.assertExactTypeEqual('@', token.AT)
+
+        self.assertExactTypeEqual('a**2+b**2==c**2',
+                                  NAME, token.DOUBLESTAR, NUMBER,
+                                  token.PLUS,
+                                  NAME, token.DOUBLESTAR, NUMBER,
+                                  token.EQEQUAL,
+                                  NAME, token.DOUBLESTAR, NUMBER)
+        self.assertExactTypeEqual('{1, 2, 3}',
+                                  token.LBRACE,
+                                  token.NUMBER, token.COMMA,
+                                  token.NUMBER, token.COMMA,
+                                  token.NUMBER,
+                                  token.RBRACE)
+        self.assertExactTypeEqual('^(x & 0x1)',
+                                  token.CIRCUMFLEX,
+                                  token.LPAR,
+                                  token.NAME, token.AMPER, token.NUMBER,
+                                  token.RPAR)
 
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
