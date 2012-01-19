@@ -1005,7 +1005,16 @@ functions based on regular expressions.
 .. method:: str.casefold()
 
    Return a casefolded copy of the string. Casefolded strings may be used for
-   caseless matching. For example, ``"MASSE".casefold() == "maße".casefold()``.
+   caseless matching.
+
+   Casefolding is similar to lowercasing but more aggressive because it is
+   intended to remove all case distinctions in a string. For example, the German
+   lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
+   lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
+   converts it to ``"ss"``.
+
+   The casefolding algorithm is described in section 3.13 of the Unicode
+   Standard.
 
    .. versionadded:: 3.3
 
@@ -1217,6 +1226,9 @@ functions based on regular expressions.
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
+   The lowercasing algorithm used is described in section 3.13 of the Unicode
+   Standard.
+
 
 .. method:: str.lstrip([chars])
 
@@ -1420,7 +1432,11 @@ functions based on regular expressions.
    Return a copy of the string with all the cased characters [4]_ converted to
    uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
-   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter, titlecase).
+   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
+   titlecase).
+
+   The uppercasing algorithm used is described in section 3.13 of the Unicode
+   Standard.
 
 
 .. method:: str.zfill(width)
