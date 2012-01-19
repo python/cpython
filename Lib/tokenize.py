@@ -45,12 +45,64 @@ tok_name[NL] = 'NL'
 ENCODING = N_TOKENS + 2
 tok_name[ENCODING] = 'ENCODING'
 N_TOKENS += 3
+EXACT_TOKEN_TYPES = {
+    '(':   LPAR,
+    ')':   RPAR,
+    '[':   LSQB,
+    ']':   RSQB,
+    ':':   COLON,
+    ',':   COMMA,
+    ';':   SEMI,
+    '+':   PLUS,
+    '-':   MINUS,
+    '*':   STAR,
+    '/':   SLASH,
+    '|':   VBAR,
+    '&':   AMPER,
+    '<':   LESS,
+    '>':   GREATER,
+    '=':   EQUAL,
+    '.':   DOT,
+    '%':   PERCENT,
+    '{':   LBRACE,
+    '}':   RBRACE,
+    '==':  EQEQUAL,
+    '!=':  NOTEQUAL,
+    '<=':  LESSEQUAL,
+    '>=':  GREATEREQUAL,
+    '~':   TILDE,
+    '^':   CIRCUMFLEX,
+    '<<':  LEFTSHIFT,
+    '>>':  RIGHTSHIFT,
+    '**':  DOUBLESTAR,
+    '+=':  PLUSEQUAL,
+    '-=':  MINEQUAL,
+    '*=':  STAREQUAL,
+    '/=':  SLASHEQUAL,
+    '%=':  PERCENTEQUAL,
+    '&=':  AMPEREQUAL,
+    '|=':  VBAREQUAL,
+    '^=': CIRCUMFLEXEQUAL,
+    '<<=': LEFTSHIFTEQUAL,
+    '>>=': RIGHTSHIFTEQUAL,
+    '**=': DOUBLESTAREQUAL,
+    '//':  DOUBLESLASH,
+    '//=': DOUBLESLASHEQUAL,
+    '@':   AT
+}
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
         annotated_type = '%d (%s)' % (self.type, tok_name[self.type])
         return ('TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' %
                 self._replace(type=annotated_type))
+
+    @property
+    def exact_type(self):
+        if self.type == OP and self.string in EXACT_TOKEN_TYPES:
+            return EXACT_TOKEN_TYPES[self.string]
+        else:
+            return self.type
 
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
@@ -549,6 +601,8 @@ def main():
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')
+    parser.add_argument('-e', '--exact', dest='exact', action='store_true',
+                        help='display token names using the exact type')
     args = parser.parse_args()
 
     try:
@@ -563,9 +617,12 @@ def main():
 
         # Output the tokenization
         for token in tokens:
+            token_type = token.type
+            if args.exact:
+                token_type = token.exact_type
             token_range = "%d,%d-%d,%d:" % (token.start + token.end)
             print("%-20s%-15s%-15r" %
-                  (token_range, tok_name[token.type], token.string))
+                  (token_range, tok_name[token_type], token.string))
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))
