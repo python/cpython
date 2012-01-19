@@ -224,6 +224,23 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     if (err_ret->error == E_DONE) {
         n = ps->p_tree;
         ps->p_tree = NULL;
+
+        /* Check that the source for a single input statement really
+           is a single statement by looking at what is left in the
+           buffer after parsing.  Trailing whitespace and comments
+           are OK.  */
+        if (start == single_input) {
+            char *cur = tok->cur;
+            char c = *tok->cur;
+
+            while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
+                c = *++cur;
+
+            if (c && c != '#') {
+                err_ret->error = E_BADSINGLE;
+                n = NULL;
+            }
+        }
     }
     else
         n = NULL;
