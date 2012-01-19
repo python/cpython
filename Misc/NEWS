@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12705: A SyntaxError exception is now raised when attempting to
+  compile multiple statements as a single interactive statement.
+
 - Fix the builtin module initialization code to store the init function for
   future reinitialization.
 
