@@ -2129,6 +2129,9 @@ err_input(perrdetail *err)
     case E_IDENTIFIER:
         msg = "invalid character in identifier";
         break;
+    case E_BADSINGLE:
+        msg = "multiple statements found while compiling a single statement";
+        break;
     default:
         fprintf(stderr, "error=%d\n", err->error);
         msg = "unknown parsing error";
