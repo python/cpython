@@ -470,6 +470,8 @@ if 1:
         self.assertInvalidSingle('a = 13\nb = 187')
         self.assertInvalidSingle('del x\ndel y')
         self.assertInvalidSingle('f()\ng()')
+        self.assertInvalidSingle('f()\n# blah\nblah()')
+        self.assertInvalidSingle('f()\nxy # blah\nblah()')
 
 def test_main():
     support.run_unittest(TestSpecifics)

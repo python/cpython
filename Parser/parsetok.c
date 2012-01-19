@@ -234,13 +234,23 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             char *cur = tok->cur;
             char c = *tok->cur;
 
-            while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
-                c = *++cur;
+            for (;;) {
+                while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
+                    c = *++cur;
 
-            if (c && c != '#') {
-                err_ret->error = E_BADSINGLE;
-                PyNode_Free(n);
-                n = NULL;
+                if (!c)
+                    break;
+
+                if (c != '#') {
+                    err_ret->error = E_BADSINGLE;
+                    PyNode_Free(n);
+                    n = NULL;
+                    break;
+                }
+
+                /* Suck up comment. */
+                while (c && c != '\n')
+                    c = *++cur;
             }
         }
 #endif
