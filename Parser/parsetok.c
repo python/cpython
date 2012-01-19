@@ -225,6 +225,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         n = ps->p_tree;
         ps->p_tree = NULL;
 
+#ifndef PGEN
         /* Check that the source for a single input statement really
            is a single statement by looking at what is left in the
            buffer after parsing.  Trailing whitespace and comments
@@ -241,6 +242,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
                 n = NULL;
             }
         }
+#endif
     }
     else
         n = NULL;
