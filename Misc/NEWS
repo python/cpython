@@ -418,6 +418,9 @@ Extension Modules
 Documentation
 -------------
 
+- Issue #2134: The tokenize documentation has been clarified to explain why
+  all operator and delimiter tokens are treated as token.OP tokens.
+
 - Issue #13513: Fix io.IOBase documentation to correctly link to the
   io.IOBase.readline method instead of the readline module.
 
