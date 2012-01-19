@@ -838,16 +838,16 @@ values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: too few arguments
 
-* ``argparse.REMAINDER``.  All the remaining command-line arguments
-  are gathered into a lits. This is commonly useful for command line
-  utilities that dispatch to other command line utilities.
+* ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
+  into a list.  This is commonly useful for command line utilities that dispatch
+  to other command line utilities.
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> parser.add_argument('--foo')
      >>> parser.add_argument('command')
      >>> parser.add_argument('args', nargs=argparse.REMAINDER)
-     >>> print parser.parse_args('--foo B XX YY ZZ'.split())
-     Namespace(args=['YY', 'ZZ'], command='XX', foo='B')
+     >>> print parser.parse_args('--foo B cmd --arg1 XX ZZ'.split())
+     Namespace(args=['--arg1', 'XX', 'ZZ'], command='cmd', foo='B')
 
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
