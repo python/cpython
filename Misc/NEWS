@@ -2100,6 +2100,9 @@ C-API
 Documentation
 -------------
 
+- Issue #12949: Document the kwonlyargcount argument for the PyCode_New
+  C API function.
+
 - Issue #13513: Fix io.IOBase documentation to correctly link to the
   io.IOBase.readline method instead of the readline module.
 
