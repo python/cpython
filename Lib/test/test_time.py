@@ -332,11 +332,16 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
     def test_wallclock(self):
-        t0 = time.wallclock()
-        time.sleep(0.1)
         t1 = time.wallclock()
-        t = t1 - t0
-        self.assertAlmostEqual(t, 0.1, delta=0.2)
+        t2 = time.wallclock()
+        self.assertGreater(t2, t1)
+
+        t1 = time.wallclock()
+        time.sleep(0.1)
+        t2 = time.wallclock()
+        self.assertGreater(t2, t1)
+        dt = t2 - t1
+        self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
 
 class TestLocale(unittest.TestCase):
