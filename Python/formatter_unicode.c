@@ -241,8 +241,8 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* Finally, parse the type field. */
 
     if (end-pos > 1) {
-        /* More than one char remain, invalid conversion spec. */
-        PyErr_Format(PyExc_ValueError, "Invalid conversion specification");
+        /* More than one char remain, invalid format specifier. */
+        PyErr_Format(PyExc_ValueError, "Invalid format specifier");
         return 0;
     }
 
