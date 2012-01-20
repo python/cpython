@@ -418,6 +418,9 @@ Extension Modules
 Documentation
 -------------
 
+- Issue #12949: Document the kwonlyargcount argument for the PyCode_New
+  C API function.
+
 - Issue #2134: The tokenize documentation has been clarified to explain why
   all operator and delimiter tokens are treated as token.OP tokens.
 
