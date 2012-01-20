@@ -472,6 +472,7 @@ if 1:
         self.assertInvalidSingle('f()\ng()')
         self.assertInvalidSingle('f()\n# blah\nblah()')
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
+        self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
 
 def test_main():
     support.run_unittest(TestSpecifics)
