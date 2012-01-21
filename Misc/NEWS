@@ -453,8 +453,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #2134: A new attribute that specifies the exact type of token.OP
-  tokens has been added to tokenize.TokenInfo.
+- Issue #6631: Disallow relative file paths in urllib urlopen methods.
 
 - Issue #13722: Avoid silencing ImportErrors when initializing the codecs
   registry.

@@ -1813,6 +1813,8 @@ class URLopener:
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
+            elif file[:2] == './':
+                raise ValueError("local file url may start with / or file:. Unknown url of type: %s" % url)
             return addinfourl(open(localname, 'rb'), headers, urlfile)
         raise URLError('local file error', 'not on local host')
 
