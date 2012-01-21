@@ -16,6 +16,11 @@ Core and Builtins
 - Fix the builtin module initialization code to store the init function for
   future reinitialization.
 
+- Issue #8052: The posix subprocess module would take a long time closing
+  all possible file descriptors in the child process rather than just open
+  file descriptors.  It now closes only the open fds if possible for the
+  default close_fds=True behavior.
+
 - Issue #13629: Renumber the tokens in token.h so that they match the indexes
   into _PyParser_TokenNames.
 
