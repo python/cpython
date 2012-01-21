@@ -103,6 +103,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6631: Disallow relative file paths in urllib urlopen methods.
+
 - Issue #13722: Avoid silencing ImportErrors when initializing the codecs
   registry.
 
