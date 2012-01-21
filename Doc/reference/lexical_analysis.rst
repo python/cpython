@@ -359,9 +359,10 @@ exactly as written here:
 .. versionchanged:: 2.5
    Using :keyword:`as` and :keyword:`with` as identifiers triggers a warning.  To
    use them as keywords, enable the ``with_statement`` future feature .
-   
+
 .. versionchanged:: 2.6
     :keyword:`as` and :keyword:`with` are full keywords.
+
 
 .. _id-classes:
 
