@@ -274,12 +274,8 @@ parse_internal_render_format_spec(PyObject *format_spec,
         }
     }
 
-    if (format->fill_char > 127 || format->align > 127 ||
-        format->sign > 127) {
-        PyErr_SetString(PyExc_ValueError, "fill character too large");
-        return 0;
-    }
-
+    assert (format->align <= 127);
+    assert (format->sign <= 127);
     return 1;
 }
 
@@ -563,10 +559,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
             Py_ssize_t t;
             for (t = 0; t < spec->n_prefix; t++) {
                 Py_UCS4 c = PyUnicode_READ(kind, data, pos + t);
-                if (c > 127) {
-                    PyErr_SetString(PyExc_SystemError, "prefix not ASCII");
-                    return -1;
-                }
+                assert (c <= 127);
                 PyUnicode_WRITE(kind, data, pos + t, Py_TOUPPER(c));
             }
         }
@@ -722,6 +715,9 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
 
     calc_padding(len, format->width, format->align, &lpad, &rpad, &total);
 
+    if (lpad != 0 || rpad != 0)
+        maxchar = Py_MAX(maxchar, format->fill_char);
+
     /* allocate the resulting string */
     result = PyUnicode_New(total, maxchar);
     if (result == NULL)
@@ -791,21 +787,18 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
-/* XXX: won't work for int */
         x = PyLong_AsLong(value);
         if (x == -1 && PyErr_Occurred())
             goto done;
         if (x < 0 || x > 0x10ffff) {
             PyErr_SetString(PyExc_OverflowError,
-                            "%c arg not in range(0x110000) "
-                            "(wide Python build)");
+                            "%c arg not in range(0x110000)");
             goto done;
         }
         tmp = PyUnicode_FromOrdinal(x);
         inumeric_chars = 0;
         n_digits = 1;
-        if (x > maxchar)
-            maxchar = x;
+        maxchar = Py_MAX(maxchar, x);
 
         /* As a sort-of hack, we tell calc_number_widths that we only
            have "remainder" characters. calc_number_widths thinks
@@ -881,6 +874,9 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     /* Calculate how much memory we'll need. */
     n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
                                  inumeric_chars + n_digits, n_remainder, 0, &locale, format);
+
+    if (spec.n_lpadding || spec.n_spadding || spec.n_rpadding)
+        maxchar = Py_MAX(maxchar, format->fill_char);
 
     /* Allocate the memory. */
     result = PyUnicode_New(n_total, maxchar);
@@ -1019,6 +1015,9 @@ format_float_internal(PyObject *value,
     n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format);
+
+    if (spec.n_lpadding || spec.n_spadding || spec.n_rpadding)
+        maxchar = Py_MAX(maxchar, format->fill_char);
 
     /* Allocate the memory. */
     result = PyUnicode_New(n_total, maxchar);
@@ -1218,6 +1217,11 @@ format_complex_internal(PyObject *value,
     /* Add 1 for the 'j', and optionally 2 for parens. */
     calc_padding(n_re_total + n_im_total + 1 + add_parens * 2,
                  format->width, format->align, &lpad, &rpad, &total);
+
+    if (re_spec.n_lpadding || re_spec.n_spadding || re_spec.n_rpadding
+        || im_spec.n_lpadding || im_spec.n_spadding || im_spec.n_rpadding
+        || lpad || rpad)
+        maxchar = Py_MAX(maxchar, format->fill_char);
 
     result = PyUnicode_New(total, maxchar);
     if (result == NULL)
