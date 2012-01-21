@@ -53,7 +53,7 @@ static void child_exec(char *const exec_array[],
                        PyObject *preexec_fn,
                        PyObject *preexec_fn_args_tuple)
 {
-    int i, saved_errno, fd_num;
+    int i, saved_errno, fd_num, unused;
     PyObject *result;
     const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
@@ -191,22 +191,25 @@ static void child_exec(char *const exec_array[],
 error:
     saved_errno = errno;
     /* Report the posix error to our parent process. */
+    /* We ignore all write() return values as the total size of our writes is
+     * less than PIPEBUF and we cannot do anything about an error anyways. */
     if (saved_errno) {
         char *cur;
-        write(errpipe_write, "OSError:", 8);
+        unused = write(errpipe_write, "OSError:", 8);
         cur = hex_errno + sizeof(hex_errno);
         while (saved_errno != 0 && cur > hex_errno) {
             *--cur = "0123456789ABCDEF"[saved_errno % 16];
             saved_errno /= 16;
         }
-        write(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
-        write(errpipe_write, ":", 1);
+        unused = write(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
+        unused = write(errpipe_write, ":", 1);
         /* We can't call strerror(saved_errno).  It is not async signal safe.
          * The parent process will look the error message up. */
     } else {
-        write(errpipe_write, "RuntimeError:0:", 15);
-        write(errpipe_write, err_msg, strlen(err_msg));
+        unused = write(errpipe_write, "RuntimeError:0:", 15);
+        unused = write(errpipe_write, err_msg, strlen(err_msg));
     }
+    if (unused) return;  /* silly? yes! avoids gcc compiler warning. */
 }
 
 
