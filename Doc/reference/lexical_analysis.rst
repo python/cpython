@@ -357,12 +357,11 @@ exactly as written here:
    assign a different object to it.
 
 .. versionchanged:: 2.5
-   Both :keyword:`as` and :keyword:`with` are only recognized when the
-   ``with_statement`` future feature has been enabled. It will always be enabled in
-   Python 2.6.  See section :ref:`with` for details.  Note that using :keyword:`as`
-   and :keyword:`with` as identifiers will always issue a warning, even when the
-   ``with_statement`` future directive is not in effect.
-
+   Using :keyword:`as` and :keyword:`with` as identifiers triggers a warning.  To
+   use them as keywords, enable the ``with_statement`` future feature .
+   
+.. versionchanged:: 2.6
+    :keyword:`as` and :keyword:`with` are full keywords.
 
 .. _id-classes:
 
