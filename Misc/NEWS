@@ -89,6 +89,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6631: Disallow relative file paths in urllib urlopen methods.
+
 - Issue #13781: Prevent gzip.GzipFile from using the dummy filename provided by
   file objects opened with os.fdopen().
 
