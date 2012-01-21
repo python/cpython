@@ -5,7 +5,26 @@
 #endif
 #include <unistd.h>
 #include <fcntl.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SYSCALL_H
+#include <sys/syscall.h>
+#endif
+#ifdef HAVE_DIRENT_H
+#include <dirent.h>
+#endif
 
+#if defined(sun) && !defined(HAVE_DIRFD)
+/* Some versions of Solaris lack dirfd(). */
+# define DIRFD(dirp) ((dirp)->dd_fd)
+# define HAVE_DIRFD
+#else
+# define DIRFD(dirp) (dirfd(dirp))
+#endif
+
+#define LINUX_SOLARIS_FD_DIR "/proc/self/fd"
+#define BSD_OSX_FD_DIR "/dev/fd"
 
 #define POSIX_CALL(call)   if ((call) == -1) goto error
 
@@ -28,6 +47,233 @@ static int _enable_gc(PyObject *gc_module)
 }
 
 
+/* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
+static int _pos_int_from_ascii(char *name)
+{
+    int num = 0;
+    while (*name >= '0' && *name <= '9') {
+        num = num * 10 + (*name - '0');
+        ++name;
+    }
+    if (*name)
+        return -1;  /* Non digit found, not a number. */
+    return num;
+}
+
+
+/* Returns 1 if there is a problem with fd_sequence, 0 otherwise. */
+static int _sanity_check_python_fd_sequence(PyObject *fd_sequence)
+{
+    Py_ssize_t seq_idx, seq_len = PySequence_Length(fd_sequence);
+    long prev_fd = -1;
+    for (seq_idx = 0; seq_idx < seq_len; ++seq_idx) {
+        PyObject* py_fd = PySequence_Fast_GET_ITEM(fd_sequence, seq_idx);
+        long iter_fd = PyLong_AsLong(py_fd);
+        if (iter_fd < 0 || iter_fd < prev_fd || iter_fd > INT_MAX) {
+            /* Negative, overflow, not a Long, unsorted, too big for a fd. */
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+/* Is fd found in the sorted Python Sequence? */
+static int _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
+{
+    /* Binary search. */
+    Py_ssize_t search_min = 0;
+    Py_ssize_t search_max = PySequence_Length(fd_sequence) - 1;
+    if (search_max < 0)
+        return 0;
+    do {
+        long middle = (search_min + search_max) / 2;
+        long middle_fd = PyLong_AsLong(
+                PySequence_Fast_GET_ITEM(fd_sequence, middle));
+        if (fd == middle_fd)
+            return 1;
+        if (fd > middle_fd)
+            search_min = middle + 1;
+        else
+            search_max = middle - 1;
+    } while (search_min <= search_max);
+    return 0;
+}
+
+
+/* Close all file descriptors in the range start_fd inclusive to
+ * end_fd exclusive except for those in py_fds_to_keep.  If the
+ * range defined by [start_fd, end_fd) is large this will take a
+ * long time as it calls close() on EVERY possible fd.
+ */
+static void _close_fds_by_brute_force(int start_fd, int end_fd,
+                                      PyObject *py_fds_to_keep)
+{
+    Py_ssize_t num_fds_to_keep = PySequence_Length(py_fds_to_keep);
+    Py_ssize_t keep_seq_idx;
+    int fd_num;
+    /* As py_fds_to_keep is sorted we can loop through the list closing
+     * fds inbetween any in the keep list falling within our range. */
+    for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
+        PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
+                                                        keep_seq_idx);
+        int keep_fd = PyLong_AsLong(py_keep_fd);
+        if (keep_fd < start_fd)
+            continue;
+        for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
+            while (close(fd_num) < 0 && errno == EINTR);
+        }
+        start_fd = keep_fd + 1;
+    }
+    if (start_fd <= end_fd) {
+        for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
+            while (close(fd_num) < 0 && errno == EINTR);
+        }
+    }
+}
+
+
+#if defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)
+/* It doesn't matter if d_name has room for NAME_MAX chars; we're using this
+ * only to read a directory of short file descriptor number names.  The kernel
+ * will return an error if we didn't give it enough space.  Highly Unlikely.
+ * This structure is very old and stable: It will not change unless the kernel
+ * chooses to break compatibility with all existing binaries.  Highly Unlikely.
+ */
+struct linux_dirent {
+   unsigned long  d_ino;        /* Inode number */
+   unsigned long  d_off;        /* Offset to next linux_dirent */
+   unsigned short d_reclen;     /* Length of this linux_dirent */
+   char           d_name[256];  /* Filename (null-terminated) */
+};
+
+/* Close all open file descriptors in the range start_fd inclusive to end_fd
+ * exclusive. Do not close any in the sorted py_fds_to_keep list.
+ *
+ * This version is async signal safe as it does not make any unsafe C library
+ * calls, malloc calls or handle any locks.  It is _unfortunate_ to be forced
+ * to resort to making a kernel system call directly but this is the ONLY api
+ * available that does no harm.  opendir/readdir/closedir perform memory
+ * allocation and locking so while they usually work they are not guaranteed
+ * to (especially if you have replaced your malloc implementation).  A version
+ * of this function that uses those can be found in the _maybe_unsafe variant.
+ *
+ * This is Linux specific because that is all I am ready to test it on.  It
+ * should be easy to add OS specific dirent or dirent64 structures and modify
+ * it with some cpp #define magic to work on other OSes as well if you want.
+ */
+static void _close_open_fd_range_safe(int start_fd, int end_fd,
+                                      PyObject* py_fds_to_keep)
+{
+    int fd_dir_fd;
+    if (start_fd >= end_fd)
+        return;
+    fd_dir_fd = open(LINUX_SOLARIS_FD_DIR, O_RDONLY | O_CLOEXEC, 0);
+    /* Not trying to open the BSD_OSX path as this is currently Linux only. */
+    if (fd_dir_fd == -1) {
+        /* No way to get a list of open fds. */
+        _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
+        return;
+    } else {
+        char buffer[sizeof(struct linux_dirent)];
+        int bytes;
+        while ((bytes = syscall(SYS_getdents, fd_dir_fd,
+                                (struct linux_dirent *)buffer,
+                                sizeof(buffer))) > 0) {
+            struct linux_dirent *entry;
+            int offset;
+            for (offset = 0; offset < bytes; offset += entry->d_reclen) {
+                int fd;
+                entry = (struct linux_dirent *)(buffer + offset);
+                if ((fd = _pos_int_from_ascii(entry->d_name)) < 0)
+                    continue;  /* Not a number. */
+                if (fd != fd_dir_fd && fd >= start_fd && fd < end_fd &&
+                    !_is_fd_in_sorted_fd_sequence(fd, py_fds_to_keep)) {
+                    while (close(fd) < 0 && errno == EINTR);
+                }
+            }
+        }
+        close(fd_dir_fd);
+    }
+}
+
+#define _close_open_fd_range _close_open_fd_range_safe
+
+#else  /* NOT (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)) */
+
+
+/* Close all open file descriptors in the range start_fd inclusive to end_fd
+ * exclusive. Do not close any in the sorted py_fds_to_keep list.
+ *
+ * This function violates the strict use of async signal safe functions. :(
+ * It calls opendir(), readdir64() and closedir().  Of these, the one most
+ * likely to ever cause a problem is opendir() as it performs an internal
+ * malloc().  Practically this should not be a problem.  The Java VM makes the
+ * same calls between fork and exec in its own UNIXProcess_md.c implementation.
+ *
+ * readdir_r() is not used because it provides no benefit.  It is typically
+ * implemented as readdir() followed by memcpy().  See also:
+ *   http://womble.decadent.org.uk/readdir_r-advisory.html
+ */
+static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
+                                              PyObject* py_fds_to_keep)
+{
+    DIR *proc_fd_dir;
+#ifndef HAVE_DIRFD
+    while (_is_fd_in_sorted_fd_sequence(start_fd, py_fds_to_keep) &&
+           (start_fd < end_fd)) {
+        ++start_fd;
+    }
+    if (start_fd >= end_fd)
+        return;
+    /* Close our lowest fd before we call opendir so that it is likely to
+     * reuse that fd otherwise we might close opendir's file descriptor in
+     * our loop.  This trick assumes that fd's are allocated on a lowest
+     * available basis. */
+    while (close(start_fd) < 0 && errno == EINTR);
+    ++start_fd;
+#endif
+    if (start_fd >= end_fd)
+        return;
+
+    proc_fd_dir = opendir(BSD_OSX_FD_DIR);
+    if (!proc_fd_dir)
+        proc_fd_dir = opendir(LINUX_SOLARIS_FD_DIR);
+    if (!proc_fd_dir) {
+        /* No way to get a list of open fds. */
+        _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
+    } else {
+        struct dirent64 *dir_entry;
+#ifdef HAVE_DIRFD
+        int fd_used_by_opendir = DIRFD(proc_fd_dir);
+#else
+        int fd_used_by_opendir = start_fd - 1;
+#endif
+        errno = 0;
+        /* readdir64 is used to work around Solaris 9 bug 6395699. */
+        while ((dir_entry = readdir64(proc_fd_dir))) {
+            int fd;
+            if ((fd = _pos_int_from_ascii(dir_entry->d_name)) < 0)
+                continue;  /* Not a number. */
+            if (fd != fd_used_by_opendir && fd >= start_fd && fd < end_fd &&
+                !_is_fd_in_sorted_fd_sequence(fd, py_fds_to_keep)) {
+                while (close(fd) < 0 && errno == EINTR);
+            }
+            errno = 0;
+        }
+        if (errno) {
+            /* readdir error, revert behavior. Highly Unlikely. */
+            _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
+        }
+        closedir(proc_fd_dir);
+    }
+}
+
+#define _close_open_fd_range _close_open_fd_range_maybe_unsafe
+
+#endif  /* else NOT (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)) */
+
+
 /*
  * This function is code executed in the child process immediately after fork
  * to set things up and call exec().
@@ -48,12 +294,12 @@ static void child_exec(char *const exec_array[],
                        int errread, int errwrite,
                        int errpipe_read, int errpipe_write,
                        int close_fds, int restore_signals,
-                       int call_setsid, Py_ssize_t num_fds_to_keep,
+                       int call_setsid,
                        PyObject *py_fds_to_keep,
                        PyObject *preexec_fn,
                        PyObject *preexec_fn_args_tuple)
 {
-    int i, saved_errno, fd_num, unused;
+    int i, saved_errno, unused;
     PyObject *result;
     const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
@@ -115,33 +361,8 @@ static void child_exec(char *const exec_array[],
         POSIX_CALL(close(errwrite));
     }
 
-    /* close() is intentionally not checked for errors here as we are closing */
-    /* a large range of fds, some of which may be invalid. */
-    if (close_fds) {
-        Py_ssize_t keep_seq_idx;
-        int start_fd = 3;
-        for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
-            PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
-                                                            keep_seq_idx);
-            int keep_fd = PyLong_AsLong(py_keep_fd);
-            if (keep_fd < 0) {  /* Negative number, overflow or not a Long. */
-                err_msg = "bad value in fds_to_keep.";
-                errno = 0;  /* We don't want to report an OSError. */
-                goto error;
-            }
-            if (keep_fd < start_fd)
-                continue;
-            for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
-                close(fd_num);
-            }
-            start_fd = keep_fd + 1;
-        }
-        if (start_fd <= max_fd) {
-            for (fd_num = start_fd; fd_num < max_fd; ++fd_num) {
-                close(fd_num);
-            }
-        }
-    }
+    if (close_fds)
+        _close_open_fd_range(3, max_fd, py_fds_to_keep);
 
     if (cwd)
         POSIX_CALL(chdir(cwd));
@@ -229,7 +450,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     pid_t pid;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num, num_fds_to_keep;
+    Py_ssize_t arg_num;
 
     if (!PyArg_ParseTuple(
             args, "OOOOOOiiiiiiiiiiO:fork_exec",
@@ -245,9 +466,12 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
         return NULL;
     }
-    num_fds_to_keep = PySequence_Length(py_fds_to_keep);
-    if (num_fds_to_keep < 0) {
-        PyErr_SetString(PyExc_ValueError, "bad fds_to_keep");
+    if (PySequence_Length(py_fds_to_keep) < 0) {
+        PyErr_SetString(PyExc_ValueError, "cannot get length of fds_to_keep");
+        return NULL;
+    }
+    if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
+        PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
         return NULL;
     }
 
@@ -353,8 +577,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
-                   num_fds_to_keep, py_fds_to_keep,
-                   preexec_fn, preexec_fn_args_tuple);
+                   py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
     }
