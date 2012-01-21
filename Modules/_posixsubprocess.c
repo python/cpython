@@ -15,12 +15,17 @@
 #include <dirent.h>
 #endif
 
-#if defined(sun) && !defined(HAVE_DIRFD)
+#if defined(sun)
+/* readdir64 is used to work around Solaris 9 bug 6395699. */
+# define readdir readdir64
+# define dirent dirent64
+# if !defined(HAVE_DIRFD)
 /* Some versions of Solaris lack dirfd(). */
-# define DIRFD(dirp) ((dirp)->dd_fd)
-# define HAVE_DIRFD
-#else
-# define DIRFD(dirp) (dirfd(dirp))
+#  define DIRFD(dirp) ((dirp)->dd_fd)
+#  define HAVE_DIRFD
+# else
+#  define DIRFD(dirp) (dirfd(dirp))
+# endif
 #endif
 
 #define LINUX_SOLARIS_FD_DIR "/proc/self/fd"
@@ -206,7 +211,7 @@ static void _close_open_fd_range_safe(int start_fd, int end_fd,
  * exclusive. Do not close any in the sorted py_fds_to_keep list.
  *
  * This function violates the strict use of async signal safe functions. :(
- * It calls opendir(), readdir64() and closedir().  Of these, the one most
+ * It calls opendir(), readdir() and closedir().  Of these, the one most
  * likely to ever cause a problem is opendir() as it performs an internal
  * malloc().  Practically this should not be a problem.  The Java VM makes the
  * same calls between fork and exec in its own UNIXProcess_md.c implementation.
@@ -243,15 +248,14 @@ static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
         /* No way to get a list of open fds. */
         _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
     } else {
-        struct dirent64 *dir_entry;
+        struct dirent *dir_entry;
 #ifdef HAVE_DIRFD
         int fd_used_by_opendir = DIRFD(proc_fd_dir);
 #else
         int fd_used_by_opendir = start_fd - 1;
 #endif
         errno = 0;
-        /* readdir64 is used to work around Solaris 9 bug 6395699. */
-        while ((dir_entry = readdir64(proc_fd_dir))) {
+        while ((dir_entry = readdir(proc_fd_dir))) {
             int fd;
             if ((fd = _pos_int_from_ascii(dir_entry->d_name)) < 0)
                 continue;  /* Not a number. */
