@@ -126,6 +126,8 @@ class OtherNetworkTests(unittest.TestCase):
         finally:
             os.remove(TESTFN)
 
+        self.assertRaises(ValueError, urllib2.urlopen,'./relative_path/to/file')
+
     # XXX Following test depends on machine configurations that are internal
     # to CNRI.  Need to set up a public server with the right authentication
     # configuration for test purposes.
