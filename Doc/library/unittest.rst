@@ -376,7 +376,7 @@ The simplest :class:`TestCase` subclass will simply override the
            widget = Widget('The widget')
            self.assertEqual(widget.size(), (50, 50), 'incorrect default size')
 
-Note that in order to test something, we use the one of the :meth:`assert\*`
+Note that in order to test something, we use one of the :meth:`assert\*`
 methods provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised, and :mod:`unittest` will identify the test case as a
 :dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`. This
