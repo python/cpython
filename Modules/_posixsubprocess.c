@@ -21,10 +21,8 @@
 # define dirent dirent64
 # if !defined(HAVE_DIRFD)
 /* Some versions of Solaris lack dirfd(). */
-#  define DIRFD(dirp) ((dirp)->dd_fd)
+#  define dirfd(dirp) ((dirp)->dd_fd)
 #  define HAVE_DIRFD
-# else
-#  define DIRFD(dirp) (dirfd(dirp))
 # endif
 #endif
 
@@ -250,7 +248,7 @@ static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
     } else {
         struct dirent *dir_entry;
 #ifdef HAVE_DIRFD
-        int fd_used_by_opendir = DIRFD(proc_fd_dir);
+        int fd_used_by_opendir = dirfd(proc_fd_dir);
 #else
         int fd_used_by_opendir = start_fd - 1;
 #endif
