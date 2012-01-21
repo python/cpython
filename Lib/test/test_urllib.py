@@ -160,6 +160,9 @@ class urlopen_FileTests(unittest.TestCase):
         for line in self.returned_obj:
             self.assertEqual(line, self.text)
 
+    def test_relativelocalfile(self):
+        self.assertRaises(ValueError,urllib.request.urlopen,'./' + self.pathname)
+
 class ProxyTests(unittest.TestCase):
 
     def setUp(self):
