@@ -1437,7 +1437,7 @@ PyDoc_STRVAR(strip__doc__,
 "B.strip([bytes]) -> bytes\n\
 \n\
 Strip leading and trailing bytes contained in the argument.\n\
-If the argument is omitted, strip trailing ASCII whitespace.");
+If the argument is omitted, strip leading and trailing ASCII whitespace.");
 static PyObject *
 bytes_strip(PyBytesObject *self, PyObject *args)
 {
