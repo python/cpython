@@ -1273,8 +1273,18 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.addCleanup(p1.wait)
         self.addCleanup(p2.wait)
-        self.addCleanup(p1.terminate)
-        self.addCleanup(p2.terminate)
+        def kill_p1():
+            try:
+                p1.terminate()
+            except ProcessLookupError:
+                pass
+        def kill_p2():
+            try:
+                p2.terminate()
+            except ProcessLookupError:
+                pass
+        self.addCleanup(kill_p1)
+        self.addCleanup(kill_p2)
 
         p1.stdin.write(data)
         p1.stdin.close()
