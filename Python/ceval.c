@@ -138,7 +138,7 @@ static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, unsigned char *);
-static PyObject * special_lookup(PyObject *, char *, PyObject **);
+static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -2540,13 +2540,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(SETUP_WITH)
         {
-            static PyObject *exit, *enter;
+            _Py_IDENTIFIER(__exit__);
+            _Py_IDENTIFIER(__enter__);
             w = TOP();
-            x = special_lookup(w, "__exit__", &exit);
+            x = special_lookup(w, &PyId___exit__);
             if (!x)
                 break;
             SET_TOP(x);
-            u = special_lookup(w, "__enter__", &enter);
+            u = special_lookup(w, &PyId___enter__);
             Py_DECREF(w);
             if (!u) {
                 x = NULL;
@@ -3440,12 +3441,12 @@ fail: /* Jump here from prelude on failure */
 
 
 static PyObject *
-special_lookup(PyObject *o, char *meth, PyObject **cache)
+special_lookup(PyObject *o, _Py_Identifier *id)
 {
     PyObject *res;
-    res = _PyObject_LookupSpecial(o, meth, cache);
+    res = _PyObject_LookupSpecial(o, id);
     if (res == NULL && !PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_AttributeError, *cache);
+        PyErr_SetObject(PyExc_AttributeError, id->object);
         return NULL;
     }
     return res;
