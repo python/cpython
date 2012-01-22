@@ -887,10 +887,10 @@ FUNC1(atanh, m_atanh, 0,
       "atanh(x)\n\nReturn the hyperbolic arc tangent (measured in radians) of x.")
 
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
-    static PyObject *ceil_str = NULL;
+    _Py_IDENTIFIER(__ceil__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, "__ceil__", &ceil_str);
+    method = _PyObject_LookupSpecial(number, &PyId___ceil__);
     if (method == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -925,10 +925,10 @@ FUNC1(fabs, fabs, 0,
       "fabs(x)\n\nReturn the absolute value of the float x.")
 
 static PyObject * math_floor(PyObject *self, PyObject *number) {
-    static PyObject *floor_str = NULL;
+    _Py_IDENTIFIER(__floor__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, "__floor__", &floor_str);
+    method = _PyObject_LookupSpecial(number, &PyId___floor__);
     if (method == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -1462,7 +1462,7 @@ PyDoc_STRVAR(math_factorial_doc,
 static PyObject *
 math_trunc(PyObject *self, PyObject *number)
 {
-    static PyObject *trunc_str = NULL;
+    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (Py_TYPE(number)->tp_dict == NULL) {
@@ -1470,7 +1470,7 @@ math_trunc(PyObject *self, PyObject *number)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(number, "__trunc__", &trunc_str);
+    trunc = _PyObject_LookupSpecial(number, &PyId___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
