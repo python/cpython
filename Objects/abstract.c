@@ -74,7 +74,7 @@ PyObject_Length(PyObject *o)
 Py_ssize_t
 _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
-    static PyObject *hintstrobj = NULL;
+    _Py_IDENTIFIER(__length_hint__);
     PyObject *ro, *hintmeth;
     Py_ssize_t rv;
 
@@ -89,7 +89,7 @@ _PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     }
 
     /* try o.__length_hint__() */
-    hintmeth = _PyObject_LookupSpecial(o, "__length_hint__", &hintstrobj);
+    hintmeth = _PyObject_LookupSpecial(o, &PyId___length_hint__);
     if (hintmeth == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -697,7 +697,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
-    static PyObject *format_cache = NULL;
+    _Py_IDENTIFIER(__format__);
 
     /* If no format_spec is provided, use an empty string */
     if (format_spec == NULL) {
@@ -706,7 +706,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* Find the (unbound!) __format__ method (a borrowed reference) */
-    meth = _PyObject_LookupSpecial(obj, "__format__", &format_cache);
+    meth = _PyObject_LookupSpecial(obj, &PyId___format__);
     if (meth == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2571,7 +2571,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
 int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
-    static PyObject *name = NULL;
+    _Py_IDENTIFIER(__instancecheck__);
     PyObject *checker;
 
     /* Quick test for an exact match */
@@ -2597,7 +2597,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, "__instancecheck__", &name);
+    checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
     if (checker != NULL) {
         PyObject *res;
         int ok = -1;
@@ -2640,7 +2640,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
-    static PyObject *name = NULL;
+    _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
 
     if (PyTuple_Check(cls)) {
@@ -2662,7 +2662,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, "__subclasscheck__", &name);
+    checker = _PyObject_LookupSpecial(cls, &PyId___subclasscheck__);
     if (checker != NULL) {
         PyObject *res;
         int ok = -1;

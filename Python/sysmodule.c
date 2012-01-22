@@ -814,10 +814,11 @@ static PyObject *
 sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *res = NULL;
-    static PyObject *str__sizeof__ = NULL, *gc_head_size = NULL;
+    static PyObject *gc_head_size = NULL;
     static char *kwlist[] = {"object", "default", 0};
     PyObject *o, *dflt = NULL;
     PyObject *method;
+    _Py_IDENTIFIER(__sizeof__);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
                                      kwlist, &o, &dflt))
@@ -834,8 +835,7 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
     if (PyType_Ready(Py_TYPE(o)) < 0)
         return NULL;
 
-    method = _PyObject_LookupSpecial(o, "__sizeof__",
-                                     &str__sizeof__);
+    method = _PyObject_LookupSpecial(o, &PyId___sizeof__);
     if (method == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,

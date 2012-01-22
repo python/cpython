@@ -265,9 +265,9 @@ PyComplex_ImagAsDouble(PyObject *op)
 static PyObject *
 try_complex_special_method(PyObject *op) {
     PyObject *f;
-    static PyObject *complexstr;
+    _Py_IDENTIFIER(__complex__);
 
-    f = _PyObject_LookupSpecial(op, "__complex__", &complexstr);
+    f = _PyObject_LookupSpecial(op, &PyId___complex__);
     if (f) {
         PyObject *res = PyObject_CallFunctionObjArgs(f, NULL);
         Py_DECREF(f);

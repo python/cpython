@@ -470,7 +470,7 @@ PyObject *
 PyObject_Bytes(PyObject *v)
 {
     PyObject *result, *func;
-    static PyObject *bytesstring = NULL;
+    _Py_IDENTIFIER(__bytes__);
 
     if (v == NULL)
         return PyBytes_FromString("<NULL>");
@@ -480,7 +480,7 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    func = _PyObject_LookupSpecial(v, "__bytes__", &bytesstring);
+    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
         result = PyObject_CallFunctionObjArgs(func, NULL);
         Py_DECREF(func);
@@ -1298,8 +1298,8 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    static PyObject *dir_str = NULL;
-    PyObject *dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
+    _Py_IDENTIFIER(__dir__);
+    PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
 
     assert(obj);
     if (dirfunc == NULL) {
