@@ -8,6 +8,9 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#if defined(HAVE_SYS_STAT_H) && defined(__FreeBSD__)
+#include <sys/stat.h>
+#endif
 #ifdef HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
 #endif
@@ -26,8 +29,11 @@
 # endif
 #endif
 
-#define LINUX_SOLARIS_FD_DIR "/proc/self/fd"
-#define BSD_OSX_FD_DIR "/dev/fd"
+#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__))
+# define FD_DIR "/dev/fd"
+#else
+# define FD_DIR "/proc/self/fd"
+#endif
 
 #define POSIX_CALL(call)   if ((call) == -1) goto error
 
@@ -60,6 +66,28 @@ static int _pos_int_from_ascii(char *name)
         return -1;  /* Non digit found, not a number. */
     return num;
 }
+
+
+#if defined(__FreeBSD__)
+/* When /dev/fd isn't mounted it is often a static directory populated
+ * with 0 1 2 or entries for 0 .. 63 on FreeBSD, NetBSD and OpenBSD.
+ * NetBSD and OpenBSD have a /proc fs available (though not necessarily
+ * mounted) and do not have fdescfs for /dev/fd.  MacOS X has a devfs
+ * that properly supports /dev/fd.
+ */
+static int _is_fdescfs_mounted_on_dev_fd()
+{
+    struct stat dev_stat;
+    struct stat dev_fd_stat;
+    if (stat("/dev", &dev_stat) != 0)
+        return 0;
+    if (stat(FD_DIR, &dev_fd_stat) != 0)
+        return 0; 
+    if (dev_stat.st_dev == dev_fd_stat.st_dev)
+        return 0;  /* / == /dev == /dev/fd means it is static. #fail */
+    return 1;
+}
+#endif
 
 
 /* Returns 1 if there is a problem with fd_sequence, 0 otherwise. */
@@ -169,8 +197,7 @@ static void _close_open_fd_range_safe(int start_fd, int end_fd,
     int fd_dir_fd;
     if (start_fd >= end_fd)
         return;
-    fd_dir_fd = open(LINUX_SOLARIS_FD_DIR, O_RDONLY | O_CLOEXEC, 0);
-    /* Not trying to open the BSD_OSX path as this is currently Linux only. */
+        fd_dir_fd = open(FD_DIR, O_RDONLY | O_CLOEXEC, 0);
     if (fd_dir_fd == -1) {
         /* No way to get a list of open fds. */
         _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
@@ -237,9 +264,12 @@ static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
     if (start_fd >= end_fd)
         return;
 
-    proc_fd_dir = opendir(BSD_OSX_FD_DIR);
-    if (!proc_fd_dir)
-        proc_fd_dir = opendir(LINUX_SOLARIS_FD_DIR);
+#if defined(__FreeBSD__)
+    if (!_is_fdescfs_mounted_on_dev_fd())
+        proc_fd_dir = NULL;
+    else
+#endif
+        proc_fd_dir = opendir(FD_DIR);
     if (!proc_fd_dir) {
         /* No way to get a list of open fds. */
         _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
@@ -361,8 +391,16 @@ static void child_exec(char *const exec_array[],
         POSIX_CALL(close(errwrite));
     }
 
-    if (close_fds)
-        _close_open_fd_range(3, max_fd, py_fds_to_keep);
+    if (close_fds) {
+        int local_max_fd = max_fd;
+#if defined(__NetBSD__)
+        local_max_fd = fcntl(0, F_MAXFD);
+        if (local_max_fd < 0)
+            local_max_fd = max_fd;
+#endif
+        /* TODO HP-UX could use pstat_getproc() if anyone cares about it. */
+        _close_open_fd_range(3, local_max_fd, py_fds_to_keep);
+    }
 
     if (cwd)
         POSIX_CALL(chdir(cwd));
