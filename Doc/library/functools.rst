@@ -22,7 +22,7 @@ The :mod:`functools` module defines the following functions:
 
 ..  function:: cmp_to_key(func)
 
-   Transform an old-style comparison function to a key-function.  Used with
+   Transform an old-style comparison function to a key function.  Used with
    tools that accept key functions (such as :func:`sorted`, :func:`min`,
    :func:`max`, :func:`heapq.nlargest`, :func:`heapq.nsmallest`,
    :func:`itertools.groupby`).  This function is primarily used as a transition
