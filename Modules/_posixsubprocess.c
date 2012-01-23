@@ -43,7 +43,8 @@ static long max_fd;
 
 
 /* Given the gc module call gc.enable() and return 0 on success. */
-static int _enable_gc(PyObject *gc_module)
+static int
+_enable_gc(PyObject *gc_module)
 {
     PyObject *result;
     result = PyObject_CallMethod(gc_module, "enable", NULL);
@@ -55,7 +56,8 @@ static int _enable_gc(PyObject *gc_module)
 
 
 /* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
-static int _pos_int_from_ascii(char *name)
+static int
+_pos_int_from_ascii(char *name)
 {
     int num = 0;
     while (*name >= '0' && *name <= '9') {
@@ -75,7 +77,8 @@ static int _pos_int_from_ascii(char *name)
  * mounted) and do not have fdescfs for /dev/fd.  MacOS X has a devfs
  * that properly supports /dev/fd.
  */
-static int _is_fdescfs_mounted_on_dev_fd()
+static int
+_is_fdescfs_mounted_on_dev_fd()
 {
     struct stat dev_stat;
     struct stat dev_fd_stat;
@@ -91,7 +94,8 @@ static int _is_fdescfs_mounted_on_dev_fd()
 
 
 /* Returns 1 if there is a problem with fd_sequence, 0 otherwise. */
-static int _sanity_check_python_fd_sequence(PyObject *fd_sequence)
+static int
+_sanity_check_python_fd_sequence(PyObject *fd_sequence)
 {
     Py_ssize_t seq_idx, seq_len = PySequence_Length(fd_sequence);
     long prev_fd = -1;
@@ -108,7 +112,8 @@ static int _sanity_check_python_fd_sequence(PyObject *fd_sequence)
 
 
 /* Is fd found in the sorted Python Sequence? */
-static int _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
+static int
+_is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
 {
     /* Binary search. */
     Py_ssize_t search_min = 0;
@@ -135,8 +140,8 @@ static int _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
  * range defined by [start_fd, end_fd) is large this will take a
  * long time as it calls close() on EVERY possible fd.
  */
-static void _close_fds_by_brute_force(int start_fd, int end_fd,
-                                      PyObject *py_fds_to_keep)
+static void
+_close_fds_by_brute_force(int start_fd, int end_fd, PyObject *py_fds_to_keep)
 {
     Py_ssize_t num_fds_to_keep = PySequence_Length(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
@@ -191,8 +196,8 @@ struct linux_dirent {
  * should be easy to add OS specific dirent or dirent64 structures and modify
  * it with some cpp #define magic to work on other OSes as well if you want.
  */
-static void _close_open_fd_range_safe(int start_fd, int end_fd,
-                                      PyObject* py_fds_to_keep)
+static void
+_close_open_fd_range_safe(int start_fd, int end_fd, PyObject* py_fds_to_keep)
 {
     int fd_dir_fd;
     if (start_fd >= end_fd)
@@ -243,8 +248,9 @@ static void _close_open_fd_range_safe(int start_fd, int end_fd,
  * implemented as readdir() followed by memcpy().  See also:
  *   http://womble.decadent.org.uk/readdir_r-advisory.html
  */
-static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
-                                              PyObject* py_fds_to_keep)
+static void
+_close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
+                                  PyObject* py_fds_to_keep)
 {
     DIR *proc_fd_dir;
 #ifndef HAVE_DIRFD
@@ -315,19 +321,20 @@ static void _close_open_fd_range_maybe_unsafe(int start_fd, int end_fd,
  * This restriction is documented at
  * http://www.opengroup.org/onlinepubs/009695399/functions/fork.html.
  */
-static void child_exec(char *const exec_array[],
-                       char *const argv[],
-                       char *const envp[],
-                       const char *cwd,
-                       int p2cread, int p2cwrite,
-                       int c2pread, int c2pwrite,
-                       int errread, int errwrite,
-                       int errpipe_read, int errpipe_write,
-                       int close_fds, int restore_signals,
-                       int call_setsid,
-                       PyObject *py_fds_to_keep,
-                       PyObject *preexec_fn,
-                       PyObject *preexec_fn_args_tuple)
+static void
+child_exec(char *const exec_array[],
+           char *const argv[],
+           char *const envp[],
+           const char *cwd,
+           int p2cread, int p2cwrite,
+           int c2pread, int c2pwrite,
+           int errread, int errwrite,
+           int errpipe_read, int errpipe_write,
+           int close_fds, int restore_signals,
+           int call_setsid,
+           PyObject *py_fds_to_keep,
+           PyObject *preexec_fn,
+           PyObject *preexec_fn_args_tuple)
 {
     int i, saved_errno, unused;
     PyObject *result;
