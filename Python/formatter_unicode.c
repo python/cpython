@@ -798,7 +798,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         tmp = PyUnicode_FromOrdinal(x);
         inumeric_chars = 0;
         n_digits = 1;
-        maxchar = Py_MAX(maxchar, x);
+        maxchar = Py_MAX(maxchar, (Py_UCS4)x);
 
         /* As a sort-of hack, we tell calc_number_widths that we only
            have "remainder" characters. calc_number_widths thinks
