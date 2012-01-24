@@ -25,8 +25,6 @@ Core and Builtins
 - Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
   already accepts them).
 
-- Remove Py3k warning for callable.
-
 - Issue #10519: Avoid unnecessary recursive function calls in
   setobject.c.
 
@@ -73,8 +71,8 @@ Core and Builtins
   deallocator calls one of the methods on the type (e.g. when subclassing
   IOBase).  Diagnosis and patch by Davide Rizzo.
 
-- Issue #12501: Adjust callable() warning: callable() is only not supported in
-  Python 3.1. callable() is again supported in Python 3.2.
+- Issue #12501: Remove Py3k warning for callable. callable() is supported
+  again in Python 3.2.
 
 - Issue #9611, #9015: FileIO.read(), FileIO.readinto(), FileIO.write() and
   os.write() clamp the length to INT_MAX on Windows.
