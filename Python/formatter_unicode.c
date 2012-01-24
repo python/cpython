@@ -682,7 +682,7 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
     Py_ssize_t pos;
     Py_ssize_t len = PyUnicode_GET_LENGTH(value);
     PyObject *result = NULL;
-    int maxchar = 127;
+    Py_UCS4 maxchar = 127;
 
     /* sign is not allowed on strings */
     if (format->sign != '\0') {
@@ -749,7 +749,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
                             IntOrLongToString tostring)
 {
     PyObject *result = NULL;
-    int maxchar = 127;
+    Py_UCS4 maxchar = 127;
     PyObject *tmp = NULL;
     Py_ssize_t inumeric_chars;
     Py_UCS4 sign_char = '\0';
@@ -798,7 +798,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         tmp = PyUnicode_FromOrdinal(x);
         inumeric_chars = 0;
         n_digits = 1;
-        maxchar = Py_MAX(maxchar, x);
+        maxchar = Py_MAX(maxchar, (Py_UCS4)x);
 
         /* As a sort-of hack, we tell calc_number_widths that we only
            have "remainder" characters. calc_number_widths thinks
@@ -926,7 +926,7 @@ format_float_internal(PyObject *value,
     NumberFieldWidths spec;
     int flags = 0;
     PyObject *result = NULL;
-    int maxchar = 127;
+    Py_UCS4 maxchar = 127;
     Py_UCS4 sign_char = '\0';
     int float_type; /* Used to see if we have a nan, inf, or regular float. */
     PyObject *unicode_tmp = NULL;
@@ -1070,7 +1070,7 @@ format_complex_internal(PyObject *value,
     NumberFieldWidths im_spec;
     int flags = 0;
     PyObject *result = NULL;
-    int maxchar = 127;
+    Py_UCS4 maxchar = 127;
     int rkind;
     void *rdata;
     Py_ssize_t index;
