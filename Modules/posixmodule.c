@@ -5330,7 +5330,6 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *src, *dest;
     int target_is_directory = 0;
     DWORD res;
-    WIN32_FILE_ATTRIBUTE_DATA src_info;
 
     if (!check_CreateSymbolicLinkW())
     {
@@ -5349,16 +5348,6 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!convert_to_unicode(&dest)) {
         Py_DECREF(src);
         return NULL;
-    }
-
-    /* if src is a directory, ensure target_is_directory==1 */
-    if(
-        GetFileAttributesExW(
-            PyUnicode_AsUnicode(src), GetFileExInfoStandard, &src_info
-        ))
-    {
-        target_is_directory = target_is_directory ||
-            (src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
     }
 
     Py_BEGIN_ALLOW_THREADS

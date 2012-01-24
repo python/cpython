@@ -1429,11 +1429,9 @@ Files and Directories
    *target_is_directory*, which defaults to ``False``.
 
    On Windows, a symlink represents a file or a directory, and does not morph to
-   the target dynamically.  For this reason, when creating a symlink on Windows,
-   if the target is not already present, the symlink will default to being a
-   file symlink.  If *target_is_directory* is set to ``True``, the symlink will
-   be created as a directory symlink.  This parameter is ignored if the target
-   exists (and the symlink is created with the same type as the target).
+   the target dynamically.  If *target_is_directory* is set to ``True``, the
+   symlink will be created as a directory symlink, otherwise as a file symlink
+   (the default).
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
@@ -1445,7 +1443,6 @@ Files and Directories
       users but is available to accounts which can escalate privileges to the
       administrator level. Either obtaining the privilege or running your
       application as an administrator are ways to successfully create symlinks.
-
 
       :exc:`OSError` is raised when the function is called by an unprivileged
       user.
