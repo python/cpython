@@ -310,6 +310,18 @@ class ImportTests(unittest.TestCase):
             """))
         script_helper.assert_python_ok(testfn)
 
+    def test_timestamp_overflow(self):
+        # A modification timestamp larger than 2**32 should not be a problem
+        # when importing a module (issue #11235).
+        source = TESTFN + ".py"
+        compiled = imp.cache_from_source(source)
+        with open(source, 'w') as f:
+            pass
+        os.utime(source, (2 ** 33, 2 ** 33))
+        __import__(TESTFN)
+        # The pyc file was created.
+        os.stat(compiled)
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points

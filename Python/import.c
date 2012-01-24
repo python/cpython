@@ -1304,14 +1304,11 @@ load_source_module(char *name, char *pathname, FILE *fp)
     }
 #if SIZEOF_TIME_T > 4
     /* Python's .pyc timestamp handling presumes that the timestamp fits
-       in 4 bytes. This will be fine until sometime in the year 2038,
-       when a 4-byte signed time_t will overflow.
+       in 4 bytes. Since the code only does an equality comparison,
+       ordering is not important and we can safely ignore the higher bits
+       (collisions are extremely unlikely).
      */
-    if (st.st_mtime >> 32) {
-        PyErr_SetString(PyExc_OverflowError,
-            "modification time overflows a 4 byte field");
-        return NULL;
-    }
+    st.st_mtime &= 0xFFFFFFFF;
 #endif
     cpathname = make_compiled_pathname(
         pathname, buf, (size_t)MAXPATHLEN + 1, !Py_OptimizeFlag);
