@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #11235: Fix OverflowError when trying to import a source file whose
+  modification time doesn't fit in a 32-bit timestamp.
+
 - Issue #11638: Unicode strings in 'name' and 'version' no longer cause
   UnicodeDecodeErrors.
 
