@@ -6551,7 +6551,6 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     wchar_t *wsrc, *wdest;
     int target_is_directory = 0;
     DWORD res;
-    WIN32_FILE_ATTRIBUTE_DATA src_info;
 
     if (!check_CreateSymbolicLinkW())
     {
@@ -6580,16 +6579,6 @@ win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     wdest = PyUnicode_AsUnicode(udest);
     if (wsrc == NULL)
         goto error;
-
-    /* if src is a directory, ensure target_is_directory==1 */
-    if(
-        GetFileAttributesExW(
-            wsrc, GetFileExInfoStandard, &src_info
-        ))
-    {
-        target_is_directory = target_is_directory ||
-            (src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-    }
 
     Py_BEGIN_ALLOW_THREADS
     res = Py_CreateSymbolicLinkW(wdest, wsrc, target_is_directory);

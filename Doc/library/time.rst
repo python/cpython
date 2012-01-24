@@ -183,19 +183,6 @@ The module defines the following functions and data items:
 
    .. versionadded:: 3.3
 
-.. function:: wallclock()
-
-   .. index::
-      single: Wallclock
-      single: benchmarking
-
-   Return the current time in fractions of a second to the system's best ability.
-   Use this when the most accurate representation of wall-clock is required, i.e.
-   when "processor time" is inappropriate.  The reference point of the returned
-   value is undefined so only the difference of consecutive calls is valid.
-
-   .. versionadded: 3.3
-
 .. function:: ctime([secs])
 
    Convert a time expressed in seconds since the epoch to a string representing
@@ -548,6 +535,20 @@ The module defines the following functions and data items:
       >>> time.tzset()
       >>> time.tzname
       ('EET', 'EEST')
+
+
+.. function:: wallclock()
+
+   .. index::
+      single: Wallclock
+      single: benchmarking
+
+   Return the current time in fractions of a second to the system's best ability.
+   Use this when the most accurate representation of wall-clock is required, i.e.
+   when "processor time" is inappropriate.  The reference point of the returned
+   value is undefined so only the difference of consecutive calls is valid.
+
+   .. versionadded: 3.3
 
 
 .. seealso::
