@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #11235: Fix OverflowError when trying to import a source file whose
+  modification time doesn't fit in a 32-bit timestamp.
+
 - Issue #12705: A SyntaxError exception is now raised when attempting to
   compile multiple statements as a single interactive statement.
 
