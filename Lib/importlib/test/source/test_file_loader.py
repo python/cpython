@@ -128,6 +128,23 @@ class SimpleTest(unittest.TestCase):
             pycache = os.path.dirname(imp.cache_from_source(file_path))
             shutil.rmtree(pycache)
 
+    def test_timestamp_overflow(self):
+        # When a modification timestamp is larger than 2**32, it should be
+        # truncated rather than raise an OverflowError.
+        with source_util.create_modules('_temp') as mapping:
+            source = mapping['_temp']
+            compiled = imp.cache_from_source(source)
+            with open(source, 'w') as f:
+                f.write("x = 5")
+            os.utime(source, (2 ** 33, 2 ** 33))
+            loader = _bootstrap._SourceFileLoader('_temp', mapping['_temp'])
+            mod = loader.load_module('_temp')
+            # Sanity checks.
+            self.assertEqual(mod.__cached__, compiled)
+            self.assertEqual(mod.x, 5)
+            # The pyc file was created.
+            os.stat(compiled)
+
 
 class BadBytecodeTest(unittest.TestCase):
 
