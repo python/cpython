@@ -334,7 +334,7 @@ class TimeTestCase(unittest.TestCase):
     def test_wallclock(self):
         t1 = time.wallclock()
         t2 = time.wallclock()
-        self.assertGreater(t2, t1)
+        self.assertGreaterEqual(t2, t1)
 
         t1 = time.wallclock()
         time.sleep(0.1)
