@@ -476,7 +476,12 @@ class WalkTests(unittest.TestCase):
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
         if support.can_symlink():
-            os.symlink(os.path.abspath(t2_path), link_path)
+            if os.name == 'nt':
+                def symlink_to_dir(src, dest):
+                    os.symlink(src, dest, True)
+            else:
+                symlink_to_dir = os.symlink
+            symlink_to_dir(os.path.abspath(t2_path), link_path)
             sub2_tree = (sub2_path, ["link"], ["tmp3"])
         else:
             sub2_tree = (sub2_path, [], ["tmp3"])
@@ -1106,7 +1111,7 @@ class Win32SymlinkTests(unittest.TestCase):
             os.remove(self.missing_link)
 
     def test_directory_link(self):
-        os.symlink(self.dirlink_target, self.dirlink)
+        os.symlink(self.dirlink_target, self.dirlink, True)
         self.assertTrue(os.path.exists(self.dirlink))
         self.assertTrue(os.path.isdir(self.dirlink))
         self.assertTrue(os.path.islink(self.dirlink))

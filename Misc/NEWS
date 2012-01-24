@@ -108,6 +108,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13772: In os.symlink() under Windows, do not try to guess the link
+  target's type (file or directory).  The detection was buggy and made the
+  call non-atomic (therefore prone to race conditions).
+
 - Issue #6631: Disallow relative file paths in urllib urlopen methods.
 
 - Issue #13722: Avoid silencing ImportErrors when initializing the codecs
