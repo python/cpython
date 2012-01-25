@@ -461,6 +461,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13862: Fix spurious failure in test_zlib due to runtime/compile time
+  minor versions not matching.
+
 - Issue #12804: Fix test_socket and test_urllib2net failures when running tests
   on a system without internet access.
 
