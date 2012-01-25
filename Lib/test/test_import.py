@@ -11,6 +11,7 @@ import stat
 import sys
 import unittest
 import textwrap
+import errno
 
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
@@ -323,6 +324,10 @@ class ImportTests(unittest.TestCase):
                 os.utime(source, (2 ** 33, 2 ** 33))
             except OverflowError:
                 self.skipTest("cannot set modification time to large integer")
+            except OSError as e:
+                if e.errno != getattr(errno, 'EOVERFLOW', None):
+                    raise
+                self.skipTest("cannot set modification time to large integer ({})".format(e))
             __import__(TESTFN)
             # The pyc file was created.
             os.stat(compiled)
