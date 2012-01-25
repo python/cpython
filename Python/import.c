@@ -905,14 +905,9 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
         (void) unlink(cpathname);
         return;
     }
-    /* Now write the true mtime */
+    /* Now write the true mtime (as a 32-bit field) */
     fseek(fp, 4L, 0);
-    if (mtime >= LONG_MAX) {
-        fprintf(stderr, "** sizes=(%ld, %ld), mtime=%I64d >= %ld\n", sizeof(time_t), sizeof(srcstat->st_mtime), mtime, LONG_MAX);
-        assert(0);
-        /* can't get here */
-    }
-    assert(mtime < LONG_MAX);
+    assert(mtime <= 0xFFFFFFFF);
     PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
     fflush(fp);
     fclose(fp);
