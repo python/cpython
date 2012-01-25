@@ -1168,7 +1168,6 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'network is not enabled')
     def test_idna(self):
-        support.requires('network')
         # these should all be successful
         socket.gethostbyname('испытание.python.org')
         socket.gethostbyname_ex('испытание.python.org')
