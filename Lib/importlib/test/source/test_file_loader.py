@@ -4,6 +4,7 @@ from .. import abc
 from .. import util
 from . import util as source_util
 
+import errno
 import imp
 import marshal
 import os
@@ -131,7 +132,14 @@ class SimpleTest(unittest.TestCase):
             compiled = imp.cache_from_source(source)
             with open(source, 'w') as f:
                 f.write("x = 5")
-            os.utime(source, (2 ** 33, 2 ** 33))
+            try:
+                os.utime(source, (2 ** 33, 2 ** 33))
+            except OverflowError:
+                self.skipTest("cannot set modification time to large integer")
+            except OSError as e:
+                if e.errno != getattr(errno, 'EOVERFLOW', None):
+                    raise
+                self.skipTest("cannot set modification time to large integer ({})".format(e))
             loader = _bootstrap._SourceFileLoader('_temp', mapping['_temp'])
             mod = loader.load_module('_temp')
             # Sanity checks.

@@ -11,6 +11,7 @@ import stat
 import sys
 import unittest
 import textwrap
+import errno
 
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
@@ -309,14 +310,26 @@ class ImportTests(unittest.TestCase):
     def test_timestamp_overflow(self):
         # A modification timestamp larger than 2**32 should not be a problem
         # when importing a module (issue #11235).
-        source = TESTFN + ".py"
-        compiled = imp.cache_from_source(source)
-        with open(source, 'w') as f:
-            pass
-        os.utime(source, (2 ** 33, 2 ** 33))
-        __import__(TESTFN)
-        # The pyc file was created.
-        os.stat(compiled)
+        sys.path.insert(0, os.curdir)
+        try:
+            source = TESTFN + ".py"
+            compiled = imp.cache_from_source(source)
+            with open(source, 'w') as f:
+                pass
+            try:
+                os.utime(source, (2 ** 33, 2 ** 33))
+            except OverflowError:
+                self.skipTest("cannot set modification time to large integer")
+            except OSError as e:
+                if e.errno != getattr(errno, 'EOVERFLOW', None):
+                    raise
+                self.skipTest("cannot set modification time to large integer ({})".format(e))
+            __import__(TESTFN)
+            # The pyc file was created.
+            os.stat(compiled)
+        finally:
+            del sys.path[0]
+            remove_files(TESTFN)
 
 
 class PycRewritingTests(unittest.TestCase):
