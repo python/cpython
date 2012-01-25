@@ -383,12 +383,12 @@ modules.
 
 .. _bitstring-ops:
 
-Bit-string Operations on Integer Types
+Bitwise Operations on Integer Types
 --------------------------------------
 
 .. index::
    triple: operations on; integer; types
-   pair: bit-string; operations
+   pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
    operator: ^
@@ -396,15 +396,15 @@ Bit-string Operations on Integer Types
    operator: <<
    operator: >>
 
-Integers support additional operations that make sense only for bit-strings.
-Negative numbers are treated as their 2's complement value (this assumes a
-sufficiently large number of bits that no overflow occurs during the operation).
+Bitwise operations only make sense for integers.  Negative numbers are treated
+as their 2's complement value (this assumes a sufficiently large number of bits
+that no overflow occurs during the operation).
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
-This table lists the bit-string operations sorted in ascending priority
+This table lists the bitwise operations sorted in ascending priority
 (operations in the same box have the same priority):
 
 +------------+--------------------------------+----------+
