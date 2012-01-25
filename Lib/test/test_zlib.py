@@ -16,12 +16,12 @@ except ImportError:
 class VersionTestCase(unittest.TestCase):
 
     def test_library_version(self):
-        # On the build system, ZLIB_RUNTIME_VERSION should match ZLIB_VERSION.
-        # ZLIB_RUNTIME_VERSION is the actual library version while ZLIB_VERSION
-        # is the version from the header file. On the build system, the headers
-        # should match with the library exactly. At runtime, only the first
-        # digit is required to match.
-        self.assertEqual(zlib.ZLIB_RUNTIME_VERSION, zlib.ZLIB_VERSION)
+        # Test that the major version of the actual library in use matches the
+        # major version that we were compiled against. We can't guarantee that
+        # the minor versions will match (even on the machine on which the module
+        # was compiled), and the API is stable between minor versions, so
+        # testing only the major verions avoids spurious failures.
+        self.assertEqual(zlib.ZLIB_RUNTIME_VERSION[0], zlib.ZLIB_VERSION[0])
 
 
 class ChecksumTestCase(unittest.TestCase):
