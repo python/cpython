@@ -461,6 +461,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12804: Fix test_socket and test_urllib2net failures when running tests
+  on a system without internet access.
+
 - Issue #13772: In os.symlink() under Windows, do not try to guess the link
   target's type (file or directory).  The detection was buggy and made the
   call non-atomic (therefore prone to race conditions).
