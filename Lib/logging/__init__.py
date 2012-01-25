@@ -1,4 +1,4 @@
-# Copyright 2001-2011 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -288,7 +288,7 @@ class LogRecord(object):
                 # for an example
                 try:
                     self.processName = mp.current_process().name
-                except StandardError: #pragma: no cover
+                except Exception: #pragma: no cover
                     pass
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
