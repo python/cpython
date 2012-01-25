@@ -260,7 +260,7 @@ class PyPycLoader(PyLoader):
                 raw_timestamp = data[4:8]
                 if len(raw_timestamp) < 4:
                     raise EOFError("bad timestamp in {}".format(fullname))
-                pyc_timestamp = marshal._r_long(raw_timestamp)
+                pyc_timestamp = _bootstrap._r_long(raw_timestamp)
                 bytecode = data[8:]
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
@@ -292,7 +292,7 @@ class PyPycLoader(PyLoader):
         # Generate bytecode and write it out.
         if not sys.dont_write_bytecode:
             data = bytearray(imp.get_magic())
-            data.extend(marshal._w_long(source_timestamp))
+            data.extend(_bootstrap._w_long(source_timestamp))
             data.extend(marshal.dumps(code_object))
             self.write_bytecode(fullname, data)
         return code_object

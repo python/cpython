@@ -42,8 +42,8 @@ class SourceLoaderMock(SourceOnlyLoaderMock):
         self.bytecode_path = imp.cache_from_source(self.path)
         self.source_size = len(self.source)
         data = bytearray(magic)
-        data.extend(marshal._w_long(self.source_mtime))
-        data.extend(marshal._w_long(self.source_size))
+        data.extend(importlib._w_long(self.source_mtime))
+        data.extend(importlib._w_long(self.source_size))
         code_object = compile(self.source, self.path, 'exec',
                                 dont_inherit=True)
         data.extend(marshal.dumps(code_object))
@@ -658,8 +658,8 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
             data = bytearray(imp.get_magic())
-            data.extend(marshal._w_long(self.loader.source_mtime))
-            data.extend(marshal._w_long(self.loader.source_size))
+            data.extend(importlib._w_long(self.loader.source_mtime))
+            data.extend(importlib._w_long(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 
