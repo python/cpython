@@ -26,8 +26,15 @@ import os
 import re
 import tokenize
 
+# To simplify imports in test code
+_w_long = _bootstrap._w_long
+_r_long = _bootstrap._r_long
+
+
 # Bootstrap help #####################################################
 
+# TODO: Expose from import.c, else handle encode/decode as _os.environ returns
+#       bytes.
 def _case_ok(directory, check):
     """Check if the directory contains something matching 'check'.
 
@@ -36,37 +43,13 @@ def _case_ok(directory, check):
     """
     if 'PYTHONCASEOK' in os.environ:
         return True
-    elif check in os.listdir(directory if directory else os.getcwd()):
+    if not directory:
+        directory = os.getcwd()
+    if check in os.listdir(directory):
         return True
     return False
 
-
-def _w_long(x):
-    """Convert a 32-bit integer to little-endian.
-
-    XXX Temporary until marshal's long functions are exposed.
-
-    """
-    x = int(x)
-    int_bytes = []
-    int_bytes.append(x & 0xFF)
-    int_bytes.append((x >> 8) & 0xFF)
-    int_bytes.append((x >> 16) & 0xFF)
-    int_bytes.append((x >> 24) & 0xFF)
-    return bytearray(int_bytes)
-
-
-def _r_long(int_bytes):
-    """Convert 4 bytes in little-endian to an integer.
-
-    XXX Temporary until marshal's long function are exposed.
-
-    """
-    x = int_bytes[0]
-    x |= int_bytes[1] << 8
-    x |= int_bytes[2] << 16
-    x |= int_bytes[3] << 24
-    return x
+_bootstrap._case_ok = _case_ok
 
 
 # Required built-in modules.
@@ -93,10 +76,6 @@ _bootstrap._warnings = _warnings
 from os import sep
 # For os.path.join replacement; pull from Include/osdefs.h:SEP .
 _bootstrap.path_sep = sep
-
-_bootstrap._case_ok = _case_ok
-marshal._w_long = _w_long
-marshal._r_long = _r_long
 
 
 # Public API #########################################################
