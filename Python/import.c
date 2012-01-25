@@ -1343,9 +1343,9 @@ write_compiled_module(PyCodeObject *co, PyObject *cpathname,
     PyMarshal_WriteLongToFile(0L, fp, Py_MARSHAL_VERSION);
     PyMarshal_WriteObjectToFile((PyObject *)co, fp, Py_MARSHAL_VERSION);
     fflush(fp);
-    /* Now write the true mtime and size */
+    /* Now write the true mtime and size (as 32-bit fields) */
     fseek(fp, 4L, 0);
-    assert(mtime < LONG_MAX);
+    assert(mtime <= 0xFFFFFFFF);
     PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
     PyMarshal_WriteLongToFile(size, fp, Py_MARSHAL_VERSION);
     if (fflush(fp) != 0 || ferror(fp)) {
@@ -1476,14 +1476,14 @@ load_source_module(PyObject *name, PyObject *pathname, FILE *fp)
                      pathname);
         goto error;
     }
-#if SIZEOF_TIME_T > 4
-    /* Python's .pyc timestamp handling presumes that the timestamp fits
-       in 4 bytes. Since the code only does an equality comparison,
-       ordering is not important and we can safely ignore the higher bits
-       (collisions are extremely unlikely).
-     */
-    st.st_mtime &= 0xFFFFFFFF;
-#endif
+    if (sizeof st.st_mtime > 4) {
+        /* Python's .pyc timestamp handling presumes that the timestamp fits
+           in 4 bytes. Since the code only does an equality comparison,
+           ordering is not important and we can safely ignore the higher bits
+           (collisions are extremely unlikely).
+         */
+        st.st_mtime &= 0xFFFFFFFF;
+    }
     if (PyUnicode_READY(pathname) < 0)
         return NULL;
     cpathname = make_compiled_pathname(pathname, !Py_OptimizeFlag);
