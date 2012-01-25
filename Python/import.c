@@ -979,14 +979,14 @@ load_source_module(char *name, char *pathname, FILE *fp)
                      pathname);
         return NULL;
     }
-#if SIZEOF_TIME_T > 4
-    /* Python's .pyc timestamp handling presumes that the timestamp fits
-       in 4 bytes. Since the code only does an equality comparison,
-       ordering is not important and we can safely ignore the higher bits
-       (collisions are extremely unlikely).
-     */
-    st.st_mtime &= 0xFFFFFFFF;
-#endif
+    if (sizeof st.st_mtime > 4) {
+        /* Python's .pyc timestamp handling presumes that the timestamp fits
+           in 4 bytes. Since the code only does an equality comparison,
+           ordering is not important and we can safely ignore the higher bits
+           (collisions are extremely unlikely).
+         */
+        st.st_mtime &= 0xFFFFFFFF;
+    }
     cpathname = make_compiled_pathname(pathname, buf,
                                        (size_t)MAXPATHLEN + 1);
     if (cpathname != NULL &&
