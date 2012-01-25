@@ -1168,6 +1168,12 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'network is not enabled')
     def test_idna(self):
+        # Check for internet access before running test (issue #12804).
+        try:
+            socket.gethostbyname('python.org')
+        except socket.gaierror as e:
+            if e.errno == socket.EAI_NODATA:
+                self.skipTest('internet access required for this test')
         # these should all be successful
         socket.gethostbyname('испытание.python.org')
         socket.gethostbyname_ex('испытание.python.org')

@@ -83,12 +83,13 @@ class CloseSocketTest(unittest.TestCase):
     def test_close(self):
         # calling .close() on urllib2's response objects should close the
         # underlying socket
-
-        response = _urlopen_with_retry("http://www.python.org/")
-        sock = response.fp
-        self.assertTrue(not sock.closed)
-        response.close()
-        self.assertTrue(sock.closed)
+        url = "http://www.python.org/"
+        with support.transient_internet(url):
+            response = _urlopen_with_retry(url)
+            sock = response.fp
+            self.assertTrue(not sock.closed)
+            response.close()
+            self.assertTrue(sock.closed)
 
 class OtherNetworkTests(unittest.TestCase):
     def setUp(self):
