@@ -1,8 +1,8 @@
-:mod:`functools` --- Higher order functions and operations on callable objects
+:mod:`functools` --- Higher-order functions and operations on callable objects
 ==============================================================================
 
 .. module:: functools
-   :synopsis: Higher order functions and operations on callable objects.
+   :synopsis: Higher-order functions and operations on callable objects.
 .. moduleauthor:: Peter Harris <scav@blueyonder.co.uk>
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
@@ -29,7 +29,7 @@ The :mod:`functools` module defines the following functions:
    tool for programs being converted to Python 3 where comparison functions are
    no longer supported.
 
-   A compare function is any callable that accept two arguments, compares them,
+   A comparison function is any callable that accept two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
    argument and returns another value that indicates the position in the desired
