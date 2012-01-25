@@ -138,7 +138,7 @@ class SimpleTest(unittest.TestCase):
             with open(source, 'w') as f:
                 f.write("x = 5")
             try:
-                os.utime(source, (2 ** 33, 2 ** 33))
+                os.utime(source, (2 ** 33 - 5, 2 ** 33 - 5))
             except OverflowError:
                 self.skipTest("cannot set modification time to large integer")
             except OSError as e:
