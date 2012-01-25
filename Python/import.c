@@ -908,7 +908,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     /* Now write the true mtime */
     fseek(fp, 4L, 0);
     if (mtime >= LONG_MAX) {
-        fprintf(stderr, "** mtime=%ld > %ld (%ld, %ld)\n", mtime, LONG_MAX, sizeof(time_t), sizeof(srcstat->st_mtime));
+        fprintf(stderr, "** sizes=(%ld, %ld), mtime=%I64d >= %ld\n", sizeof(time_t), sizeof(srcstat->st_mtime), mtime, LONG_MAX);
         assert(0);
         /* can't get here */
     }
