@@ -422,12 +422,8 @@ The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
-<<<<<<< local
-This table lists the bit-string operations sorted in ascending priority:
-=======
 This table lists the bitwise operations sorted in ascending priority
 (operations in the same box have the same priority):
->>>>>>> other
 
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
