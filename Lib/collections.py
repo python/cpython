@@ -33,7 +33,7 @@ class OrderedDict(dict):
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
     # The sentinel is in self.__hardroot with a weakref proxy in self.__root.
-    # The prev/next links are weakref proxies (to prevent circular references).
+    # The prev links are weakref proxies (to prevent circular references).
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
