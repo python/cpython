@@ -309,7 +309,7 @@ class TimeTestCase(unittest.TestCase):
         for t in (-2, -1, 0, 1):
             try:
                 tt = time.localtime(t)
-            except (OverflowError, ValueError):
+            except (OverflowError, OSError):
                 pass
             else:
                 self.assertEqual(time.mktime(tt), t)
