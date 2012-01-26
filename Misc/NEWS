@@ -1837,6 +1837,9 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #13840: The error message produced by ctypes.create_string_buffer
+  when given a Unicode string has been fixed.
+
 - Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
   Vilmos Nebehaj.
 
