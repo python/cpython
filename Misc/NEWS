@@ -463,7 +463,8 @@ Library
 
 - Issue #13847: time.localtime() and time.gmtime() now raise an OSError instead
   of ValueError on failure. time.ctime() and time.asctime() now raises an
-  OSError if localtime() failed.
+  OSError if localtime() failed. time.clock() now raises a RuntimeError if the
+  processor time used is not available or its value cannot be represented
 
 - Issue #13862: Fix spurious failure in test_zlib due to runtime/compile time
   minor versions not matching.
