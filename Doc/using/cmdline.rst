@@ -448,7 +448,7 @@ These environment variables influence Python's behavior.
 .. envvar:: PYTHONCASEOK
 
    If this is set, Python ignores case in :keyword:`import` statements.  This
-   only works on Windows.
+   only works on Windows, OS X, and OS/2.
 
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
