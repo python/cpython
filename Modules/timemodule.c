@@ -62,6 +62,31 @@ PyDoc_STRVAR(time_doc,
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
 
+#if defined(HAVE_CLOCK)
+
+#ifndef CLOCKS_PER_SEC
+#ifdef CLK_TCK
+#define CLOCKS_PER_SEC CLK_TCK
+#else
+#define CLOCKS_PER_SEC 1000000
+#endif
+#endif
+
+static PyObject *
+pyclock(void)
+{
+    clock_t value;
+    value = clock();
+    if (value == (clock_t)-1) {
+        PyErr_SetString(PyExc_RuntimeError,
+                "the processor time used is not available "
+                "or its value cannot be represented");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)value / CLOCKS_PER_SEC);
+}
+#endif /* HAVE_CLOCK */
+
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement; we have our own version, due to Mark
    Hammond and Tim Peters */
@@ -79,8 +104,7 @@ time_clock(PyObject *self, PyObject *unused)
         if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
             /* Unlikely to happen - this works on all intel
                machines at least!  Revert to clock() */
-            return PyFloat_FromDouble(((double)clock()) /
-                                      CLOCKS_PER_SEC);
+            return pyclock();
         }
         divisor = (double)freq.QuadPart;
     }
@@ -91,18 +115,10 @@ time_clock(PyObject *self, PyObject *unused)
 
 #elif defined(HAVE_CLOCK)
 
-#ifndef CLOCKS_PER_SEC
-#ifdef CLK_TCK
-#define CLOCKS_PER_SEC CLK_TCK
-#else
-#define CLOCKS_PER_SEC 1000000
-#endif
-#endif
-
 static PyObject *
 time_clock(PyObject *self, PyObject *unused)
 {
-    return PyFloat_FromDouble(((double)clock()) / CLOCKS_PER_SEC);
+    return pyclock();
 }
 #endif /* HAVE_CLOCK */
 
