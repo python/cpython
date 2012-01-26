@@ -498,6 +498,8 @@ Tests
 Documentation
 -------------
 
+- Issue #13883: PYTHONCASEOK also works on OS X, OS/2, and RiscOS.
+
 - Issue #2134: The tokenize documentation has been clarified to explain why
   all operator and delimiter tokens are treated as token.OP tokens.
 
