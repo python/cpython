@@ -18,6 +18,37 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
+# TODO: Expose from marshal
+def _w_long(x):
+    """Convert a 32-bit integer to little-endian.
+
+    XXX Temporary until marshal's long functions are exposed.
+
+    """
+    x = int(x)
+    int_bytes = []
+    int_bytes.append(x & 0xFF)
+    int_bytes.append((x >> 8) & 0xFF)
+    int_bytes.append((x >> 16) & 0xFF)
+    int_bytes.append((x >> 24) & 0xFF)
+    return bytearray(int_bytes)
+
+
+# TODO: Expose from marshal
+def _r_long(int_bytes):
+    """Convert 4 bytes in little-endian to an integer.
+
+    XXX Temporary until marshal's long function are exposed.
+
+    """
+    x = int_bytes[0]
+    x |= int_bytes[1] << 8
+    x |= int_bytes[2] << 16
+    x |= int_bytes[3] << 24
+    return x
+
+
+
 # XXX Could also expose Modules/getpath.c:joinpath()
 def _path_join(*args):
     """Replacement for os.path.join."""
@@ -353,14 +384,14 @@ class _LoaderBasics:
             except KeyError:
                 pass
             else:
-                if marshal._r_long(raw_timestamp) != source_mtime:
+                if _r_long(raw_timestamp) != source_mtime:
                     raise ImportError("bytecode is stale for {}".format(fullname))
             try:
                 source_size = source_stats['size'] & 0xFFFFFFFF
             except KeyError:
                 pass
             else:
-                if marshal._r_long(raw_size) != source_size:
+                if _r_long(raw_size) != source_size:
                     raise ImportError("bytecode is stale for {}".format(fullname))
         # Can't return the code object as errors from marshal loading need to
         # propagate even when source is available.
@@ -472,8 +503,8 @@ class SourceLoader(_LoaderBasics):
             # their own cached file format, this block of code will most likely
             # throw an exception.
             data = bytearray(imp.get_magic())
-            data.extend(marshal._w_long(source_mtime))
-            data.extend(marshal._w_long(len(source_bytes)))
+            data.extend(_w_long(source_mtime))
+            data.extend(_w_long(len(source_bytes)))
             data.extend(marshal.dumps(code_object))
             try:
                 self.set_data(bytecode_path, data)
