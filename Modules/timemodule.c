@@ -247,55 +247,53 @@ tmtotuple(struct tm *p)
     return v;
 }
 
-static PyObject *
-time_convert(double when, struct tm * (*function)(const time_t *))
-{
-    struct tm *p;
-    time_t whent = _PyTime_DoubleToTimet(when);
-
-    if (whent == (time_t)-1 && PyErr_Occurred())
-        return NULL;
-    errno = 0;
-    p = function(&whent);
-    if (p == NULL) {
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        return PyErr_SetFromErrno(PyExc_ValueError);
-    }
-    return tmtotuple(p);
-}
-
 /* Parse arg tuple that can contain an optional float-or-None value;
    format needs to be "|O:name".
    Returns non-zero on success (parallels PyArg_ParseTuple).
 */
 static int
-parse_time_double_args(PyObject *args, char *format, double *pwhen)
+parse_time_t_args(PyObject *args, char *format, time_t *pwhen)
 {
     PyObject *ot = NULL;
+    time_t whent;
 
     if (!PyArg_ParseTuple(args, format, &ot))
         return 0;
-    if (ot == NULL || ot == Py_None)
-        *pwhen = floattime();
+    if (ot == NULL || ot == Py_None) {
+        whent = time(NULL);
+    }
     else {
-        double when = PyFloat_AsDouble(ot);
+        double d = PyFloat_AsDouble(ot);
         if (PyErr_Occurred())
             return 0;
-        *pwhen = when;
+        whent = _PyTime_DoubleToTimet(d);
+        if (whent == (time_t)-1 && PyErr_Occurred())
+            return 0;
     }
+    *pwhen = whent;
     return 1;
 }
 
 static PyObject *
 time_gmtime(PyObject *self, PyObject *args)
 {
-    double when;
-    if (!parse_time_double_args(args, "|O:gmtime", &when))
+    time_t when;
+    struct tm buf, *local;
+
+    if (!parse_time_t_args(args, "|O:gmtime", &when))
         return NULL;
-    return time_convert(when, gmtime);
+
+    errno = 0;
+    local = gmtime(&when);
+    if (local == NULL) {
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    buf = *local;
+    return tmtotuple(&buf);
 }
 
 PyDoc_STRVAR(gmtime_doc,
@@ -305,13 +303,37 @@ PyDoc_STRVAR(gmtime_doc,
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a.\n\
 GMT).  When 'seconds' is not passed in, convert the current time instead.");
 
+static int
+pylocaltime(time_t *timep, struct tm *result)
+{
+    struct tm *local;
+
+    assert (timep != NULL);
+    local = localtime(timep);
+    if (local == NULL) {
+        /* unconvertible time */
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    *result = *local;
+    return 0;
+}
+
 static PyObject *
 time_localtime(PyObject *self, PyObject *args)
 {
-    double when;
-    if (!parse_time_double_args(args, "|O:localtime", &when))
+    time_t when;
+    struct tm buf;
+
+    if (!parse_time_t_args(args, "|O:localtime", &when))
         return NULL;
-    return time_convert(when, localtime);
+    if (pylocaltime(&when, &buf) == 1)
+        return NULL;
+    return tmtotuple(&buf);
 }
 
 PyDoc_STRVAR(localtime_doc,
@@ -462,7 +484,8 @@ time_strftime(PyObject *self, PyObject *args)
 
     if (tup == NULL) {
         time_t tt = time(NULL);
-        buf = *localtime(&tt);
+        if (pylocaltime(&tt, &buf) == -1)
+            return NULL;
     }
     else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
@@ -627,7 +650,9 @@ time_asctime(PyObject *self, PyObject *args)
         return NULL;
     if (tup == NULL) {
         time_t tt = time(NULL);
-        buf = *localtime(&tt);
+        if (pylocaltime(&tt, &buf) == -1)
+            return NULL;
+
     } else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
     return _asctime(&buf);
@@ -643,28 +668,13 @@ is used.");
 static PyObject *
 time_ctime(PyObject *self, PyObject *args)
 {
-    PyObject *ot = NULL;
     time_t tt;
-    struct tm *timeptr;
-
-    if (!PyArg_UnpackTuple(args, "ctime", 0, 1, &ot))
+    struct tm buf;
+    if (!parse_time_t_args(args, "|O:ctime", &tt))
         return NULL;
-    if (ot == NULL || ot == Py_None)
-        tt = time(NULL);
-    else {
-        double dt = PyFloat_AsDouble(ot);
-        if (PyErr_Occurred())
-            return NULL;
-        tt = _PyTime_DoubleToTimet(dt);
-        if (tt == (time_t)-1 && PyErr_Occurred())
-            return NULL;
-    }
-    timeptr = localtime(&tt);
-    if (timeptr == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unconvertible time");
+    if (pylocaltime(&tt, &buf) == -1)
         return NULL;
-    }
-    return _asctime(timeptr);
+    return _asctime(&buf);
 }
 
 PyDoc_STRVAR(ctime_doc,

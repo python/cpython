@@ -1096,7 +1096,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 
     if (!PyBytes_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "str/bytes expected instead of %s instance",
+                     "bytes expected instead of %s instance",
                      Py_TYPE(value)->tp_name);
         return -1;
     } else

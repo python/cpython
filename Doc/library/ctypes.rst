@@ -1823,8 +1823,6 @@ Utility functions
    termination character. An integer can be passed as second argument which allows
    to specify the size of the array if the length of the bytes should not be used.
 
-   If the first parameter is a string, it is converted into a bytes object
-   according to ctypes conversion rules.
 
 
 .. function:: create_unicode_buffer(init_or_size, size=None)
@@ -1841,8 +1839,6 @@ Utility functions
    allows to specify the size of the array if the length of the string should not
    be used.
 
-   If the first parameter is a bytes object, it is converted into an unicode string
-   according to ctypes conversion rules.
 
 
 .. function:: DllCanUnloadNow()

@@ -343,6 +343,21 @@ class TimeTestCase(unittest.TestCase):
         dt = t2 - t1
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
+    def test_localtime_failure(self):
+        # Issue #13847: check for localtime() failure
+        invalid_time_t = 2**60
+        try:
+            time.localtime(invalid_time_t)
+        except ValueError as err:
+            if str(err) == "timestamp out of range for platform time_t":
+                self.skipTest("need 64-bit time_t")
+            else:
+                raise
+        except OSError:
+            pass
+        self.assertRaises(OSError, time.localtime, invalid_time_t)
+        self.assertRaises(OSError, time.gmtime, invalid_time_t)
+        self.assertRaises(OSError, time.ctime, invalid_time_t)
 
 class TestLocale(unittest.TestCase):
     def setUp(self):
