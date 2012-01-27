@@ -275,16 +275,17 @@ class Process(object):
                 exitcode = e.args[0]
             else:
                 sys.stderr.write(e.args[0] + '\n')
-                sys.stderr.flush()
                 exitcode = 1
         except:
             exitcode = 1
             import traceback
             sys.stderr.write('Process %s:\n' % self.name)
-            sys.stderr.flush()
             traceback.print_exc()
+        finally:
+            util.info('process exiting with exitcode %d' % exitcode)
+            sys.stdout.flush()
+            sys.stderr.flush()
 
-        util.info('process exiting with exitcode %d' % exitcode)
         return exitcode
 
 #

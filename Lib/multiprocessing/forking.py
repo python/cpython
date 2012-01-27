@@ -124,8 +124,6 @@ if sys.platform != 'win32':
                     import random
                     random.seed()
                 code = process_obj._bootstrap()
-                sys.stdout.flush()
-                sys.stderr.flush()
                 os._exit(code)
 
         def poll(self, flag=os.WNOHANG):
