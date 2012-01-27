@@ -18,6 +18,33 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
+# TODO: when not on any of these platforms, replace _case_ok() w/
+#       ``lambda x,y: True``.
+CASE_OK_PLATFORMS = 'win', 'cygwin', 'darwin'
+
+def _case_ok(directory, check):
+    """Check if the directory contains something matching 'check'
+    case-sensitively when running on Windows or OS X.
+
+    If running on Window or OS X and PYTHONCASEOK is a defined environment
+    variable then no case-sensitive check is performed. No check is done to see
+    if what is being checked for exists, so if the platform is not Windows or
+    OS X then assume the case is fine.
+
+    """
+    if (any(map(sys.platform.startswith, CASE_OK_PLATFORMS)) and
+            b'PYTHONCASEOK' not in _os.environ):
+        if not directory:
+            directory = '.'
+        if check in _os.listdir(directory):
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
+
 # TODO: Expose from marshal
 def _w_long(x):
     """Convert a 32-bit integer to little-endian.
