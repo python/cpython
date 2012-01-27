@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
+  IV attack countermeasure.
+
 
 What's New in Python 2.6.7?
 ===========================
