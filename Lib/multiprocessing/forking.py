@@ -129,8 +129,6 @@ if sys.platform != 'win32':
                     import random
                     random.seed()
                 code = process_obj._bootstrap()
-                sys.stdout.flush()
-                sys.stderr.flush()
                 os._exit(code)
 
             # `w` will be closed when the child exits, at which point `r`

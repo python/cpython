@@ -417,6 +417,29 @@ class _TestSubclassingProcess(BaseTestCase):
         uppercaser.stop()
         uppercaser.join()
 
+    def test_stderr_flush(self):
+        # sys.stderr is flushed at process shutdown (issue #13812)
+        if self.TYPE == "threads":
+            return
+
+        testfn = test.support.TESTFN
+        self.addCleanup(test.support.unlink, testfn)
+        proc = self.Process(target=self._test_stderr_flush, args=(testfn,))
+        proc.start()
+        proc.join()
+        with open(testfn, 'r') as f:
+            err = f.read()
+            # The whole traceback was printed
+            self.assertIn("ZeroDivisionError", err)
+            self.assertIn("test_multiprocessing.py", err)
+            self.assertIn("1/0 # MARKER", err)
+
+    @classmethod
+    def _test_stderr_flush(cls, testfn):
+        sys.stderr = open(testfn, 'w')
+        1/0 # MARKER
+
+
 #
 #
 #

@@ -461,6 +461,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13812: When a multiprocessing Process child raises an exception,
+  flush stderr after printing the exception traceback.
+
 - Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
   IV attack countermeasure.
 
