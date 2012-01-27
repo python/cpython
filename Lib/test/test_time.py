@@ -309,7 +309,7 @@ class TimeTestCase(unittest.TestCase):
         for t in (-2, -1, 0, 1):
             try:
                 tt = time.localtime(t)
-            except (OverflowError, ValueError):
+            except (OverflowError, OSError):
                 pass
             else:
                 self.assertEqual(time.mktime(tt), t)
@@ -345,16 +345,21 @@ class TimeTestCase(unittest.TestCase):
 
     def test_localtime_failure(self):
         # Issue #13847: check for localtime() failure
-        invalid_time_t = 2**60
-        try:
-            time.localtime(invalid_time_t)
-        except ValueError as err:
-            if str(err) == "timestamp out of range for platform time_t":
-                self.skipTest("need 64-bit time_t")
-            else:
-                raise
-        except OSError:
-            pass
+        invalid_time_t = None
+        for time_t in (-1, 2**30, 2**33, 2**60):
+            try:
+                time.localtime(time_t)
+            except ValueError as err:
+                if str(err) == "timestamp out of range for platform time_t":
+                    self.skipTest("need 64-bit time_t")
+                else:
+                    raise
+            except OSError:
+                invalid_time_t = time_t
+                break
+        if invalid_time_t is None:
+            self.skipTest("unable to find an invalid time_t value")
+
         self.assertRaises(OSError, time.localtime, invalid_time_t)
         self.assertRaises(OSError, time.gmtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
