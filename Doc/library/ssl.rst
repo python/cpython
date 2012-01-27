@@ -392,7 +392,8 @@ Constants
 .. data:: OP_ALL
 
    Enables workarounds for various bugs present in other SSL implementations.
-   This option is set by default.
+   This option is set by default.  It does not necessarily set the same
+   flags as OpenSSL's ``SSL_OP_ALL`` constant.
 
    .. versionadded:: 3.2
 
