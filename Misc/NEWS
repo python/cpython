@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
+  IV attack countermeasure.
+
 - Issue #11603: Fix a crash when __str__ is rebound as __repr__.  Patch by
   Andreas Stührk.
 
