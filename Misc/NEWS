@@ -111,6 +111,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
+  IV attack countermeasure.
+
 - Issue #13772: In os.symlink() under Windows, do not try to guess the link
   target's type (file or directory).  The detection was buggy and made the
   call non-atomic (therefore prone to race conditions).
