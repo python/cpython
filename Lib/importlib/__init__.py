@@ -33,25 +33,6 @@ _r_long = _bootstrap._r_long
 
 # Bootstrap help #####################################################
 
-# TODO: Expose from import.c, else handle encode/decode as _os.environ returns
-#       bytes.
-def _case_ok(directory, check):
-    """Check if the directory contains something matching 'check'.
-
-    No check is done if the file/directory exists or not.
-
-    """
-    if 'PYTHONCASEOK' in os.environ:
-        return True
-    if not directory:
-        directory = os.getcwd()
-    if check in os.listdir(directory):
-        return True
-    return False
-
-_bootstrap._case_ok = _case_ok
-
-
 # Required built-in modules.
 try:
     import posix as _os
