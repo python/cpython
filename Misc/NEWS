@@ -461,6 +461,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
+  IV attack countermeasure.
+
 - Issue #13847: time.localtime() and time.gmtime() now raise an OSError instead
   of ValueError on failure. time.ctime() and time.asctime() now raises an
   OSError if localtime() failed. time.clock() now raises a RuntimeError if the
