@@ -1032,6 +1032,7 @@ else:
                                          + repr(connaddr) + '\n')
                     handler = self.ConnectionHandler(self, newconn, connaddr)
                     handler.start()
+                    handler.join()
                 except socket.timeout:
                     pass
                 except KeyboardInterrupt:
