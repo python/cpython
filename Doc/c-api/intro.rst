@@ -246,17 +246,19 @@ sets all items of a list (actually, any mutable sequence) to a given item::
    int
    set_all(PyObject *target, PyObject *item)
    {
-       int i, n;
+       Py_ssize_t i, n;
 
        n = PyObject_Length(target);
        if (n < 0)
            return -1;
        for (i = 0; i < n; i++) {
-           PyObject *index = PyLong_FromLong(i);
+           PyObject *index = PyLong_FromSsize_t(i);
            if (!index)
                return -1;
-           if (PyObject_SetItem(target, index, item) < 0)
+           if (PyObject_SetItem(target, index, item) < 0) {
+               Py_DECREF(index);
                return -1;
+           }
            Py_DECREF(index);
        }
        return 0;
@@ -292,8 +294,8 @@ using :c:func:`PySequence_GetItem`. ::
    long
    sum_list(PyObject *list)
    {
-       int i, n;
-       long total = 0;
+       Py_ssize_t i, n;
+       long total = 0, value;
        PyObject *item;
 
        n = PyList_Size(list);
@@ -302,7 +304,11 @@ using :c:func:`PySequence_GetItem`. ::
        for (i = 0; i < n; i++) {
            item = PyList_GetItem(list, i); /* Can't fail */
            if (!PyLong_Check(item)) continue; /* Skip non-integers */
-           total += PyLong_AsLong(item);
+           value = PyLong_AsLong(item);
+           if (value == -1 && PyErr_Occurred())
+               /* Integer too big to fit in a C long, bail out */
+               return -1;
+           total += value;
        }
        return total;
    }
@@ -314,8 +320,8 @@ using :c:func:`PySequence_GetItem`. ::
    long
    sum_sequence(PyObject *sequence)
    {
-       int i, n;
-       long total = 0;
+       Py_ssize_t i, n;
+       long total = 0, value;
        PyObject *item;
        n = PySequence_Length(sequence);
        if (n < 0)
@@ -324,9 +330,17 @@ using :c:func:`PySequence_GetItem`. ::
            item = PySequence_GetItem(sequence, i);
            if (item == NULL)
                return -1; /* Not a sequence, or other failure */
-           if (PyLong_Check(item))
-               total += PyLong_AsLong(item);
-           Py_DECREF(item); /* Discard reference ownership */
+           if (PyLong_Check(item)) {
+               value = PyLong_AsLong(item);
+               Py_DECREF(item);
+               if (value == -1 && PyErr_Occurred())
+                   /* Integer too big to fit in a C long, bail out */
+                   return -1;
+               total += value;
+           }
+           else {
+               Py_DECREF(item); /* Discard reference ownership */
+           }
        }
        return total;
    }
