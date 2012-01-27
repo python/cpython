@@ -902,9 +902,12 @@ double_round(double x, int ndigits) {
     char *buf, *buf_end, shortbuf[100], *mybuf=shortbuf;
     int decpt, sign;
     PyObject *result = NULL;
+    _Py_SET_53BIT_PRECISION_HEADER;
 
     /* round to a decimal string */
+    _Py_SET_53BIT_PRECISION_START;
     buf = _Py_dg_dtoa(x, 3, ndigits, &decpt, &sign, &buf_end);
+    _Py_SET_53BIT_PRECISION_END;
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -927,7 +930,9 @@ double_round(double x, int ndigits) {
 
     /* and convert the resulting string back to a double */
     errno = 0;
+    _Py_SET_53BIT_PRECISION_START;
     rounded = _Py_dg_strtod(mybuf, NULL);
+    _Py_SET_53BIT_PRECISION_END;
     if (errno == ERANGE && fabs(rounded) >= 1.)
         PyErr_SetString(PyExc_OverflowError,
                         "rounded value too large to represent");
