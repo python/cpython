@@ -469,6 +469,11 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
       :class:`dict` class when the requested key is not found; whatever it
       returns or raises is then returned or raised by :meth:`__getitem__`.
 
+      Note that :meth:`__missing__` is *not* called for any operations besides
+      :meth:`__getitem__`. This means that :meth:`get` will, like normal
+      dictionaries, return ``None`` as a default rather than using
+      :attr:`default_factory`.
+
 
    :class:`defaultdict` objects support the following instance variable:
 
