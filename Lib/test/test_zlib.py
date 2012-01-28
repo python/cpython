@@ -20,7 +20,7 @@ class VersionTestCase(unittest.TestCase):
         # major version that we were compiled against. We can't guarantee that
         # the minor versions will match (even on the machine on which the module
         # was compiled), and the API is stable between minor versions, so
-        # testing only the major verions avoids spurious failures.
+        # testing only the major versions avoids spurious failures.
         self.assertEqual(zlib.ZLIB_RUNTIME_VERSION[0], zlib.ZLIB_VERSION[0])
 
 
