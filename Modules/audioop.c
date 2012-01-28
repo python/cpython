@@ -1311,7 +1311,7 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0;
 
-    if (!audioop_check_parameters(len, size))
+    if (!audioop_check_size(size))
         return NULL;
 
     if (len > PY_SSIZE_T_MAX/size) {
@@ -1380,7 +1380,7 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0;
 
-    if (!audioop_check_parameters(len, size))
+    if (!audioop_check_size(size))
         return NULL;
 
     if (len > PY_SSIZE_T_MAX/size) {
@@ -1524,7 +1524,7 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size, &state) )
         return 0;
 
-    if (!audioop_check_parameters(len, size))
+    if (!audioop_check_size(size))
         return NULL;
 
     /* Decode state, should have (value, step) */
