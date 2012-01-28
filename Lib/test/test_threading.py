@@ -726,6 +726,7 @@ class LockTests(lock_tests.LockTests):
 class PyRLockTests(lock_tests.RLockTests):
     locktype = staticmethod(threading._PyRLock)
 
+@unittest.skipIf(threading._CRLock is None, 'RLock not implemented in C')
 class CRLockTests(lock_tests.RLockTests):
     locktype = staticmethod(threading._CRLock)
 
