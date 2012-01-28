@@ -1198,33 +1198,33 @@ else:
                                     chatty=chatty,
                                     connectionchatty=False)
         with server:
-            s = client_context.wrap_socket(socket.socket())
-            s.connect((HOST, server.port))
-            for arg in [indata, bytearray(indata), memoryview(indata)]:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+                for arg in [indata, bytearray(indata), memoryview(indata)]:
+                    if connectionchatty:
+                        if support.verbose:
+                            sys.stdout.write(
+                                " client:  sending %r...\n" % indata)
+                    s.write(arg)
+                    outdata = s.read()
+                    if connectionchatty:
+                        if support.verbose:
+                            sys.stdout.write(" client:  read %r\n" % outdata)
+                    if outdata != indata.lower():
+                        raise AssertionError(
+                            "bad data <<%r>> (%d) received; expected <<%r>> (%d)\n"
+                            % (outdata[:20], len(outdata),
+                               indata[:20].lower(), len(indata)))
+                s.write(b"over\n")
                 if connectionchatty:
                     if support.verbose:
-                        sys.stdout.write(
-                            " client:  sending %r...\n" % indata)
-                s.write(arg)
-                outdata = s.read()
-                if connectionchatty:
-                    if support.verbose:
-                        sys.stdout.write(" client:  read %r\n" % outdata)
-                if outdata != indata.lower():
-                    raise AssertionError(
-                        "bad data <<%r>> (%d) received; expected <<%r>> (%d)\n"
-                        % (outdata[:20], len(outdata),
-                           indata[:20].lower(), len(indata)))
-            s.write(b"over\n")
-            if connectionchatty:
-                if support.verbose:
-                    sys.stdout.write(" client:  closing connection.\n")
-            stats = {
-                'compression': s.compression(),
-                'cipher': s.cipher(),
-            }
-            s.close()
-            return stats
+                        sys.stdout.write(" client:  closing connection.\n")
+                stats = {
+                    'compression': s.compression(),
+                    'cipher': s.cipher(),
+                }
+                s.close()
+                return stats
 
     def try_protocol_combo(server_protocol, client_protocol, expect_success,
                            certsreqs=None, server_options=0, client_options=0):
