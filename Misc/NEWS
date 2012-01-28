@@ -111,6 +111,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13806: The size check in audioop decompression functions was too
+  strict and could reject valid compressed data.  Patch by Oleg Plakhotnyuk.
+
 - Issue #13812: When a multiprocessing Process child raises an exception,
   flush stderr after printing the exception traceback.
 
