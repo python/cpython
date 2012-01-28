@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13806: The size check in audioop decompression functions was too
+  strict and could reject valid compressed data.  Patch by Oleg Plakhotnyuk.
+
 - Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
   IV attack countermeasure.
 
