@@ -21,9 +21,9 @@ def gendata4():
 data = [gendata1(), gendata2(), gendata4()]
 
 INVALID_DATA = [
-    ('abc', 0),
-    ('abc', 2),
-    ('abc', 4),
+    (b'abc', 0),
+    (b'abc', 2),
+    (b'abc', 4),
 ]
 
 
@@ -94,7 +94,9 @@ class TestAudioop(unittest.TestCase):
 
     def test_adpcm2lin(self):
         # Very cursory test
-        self.assertEqual(audioop.adpcm2lin('\0\0', 1, None), ('\0\0\0\0', (0,0)))
+        self.assertEqual(audioop.adpcm2lin(b'\0\0', 1, None), (b'\0' * 4, (0,0)))
+        self.assertEqual(audioop.adpcm2lin(b'\0\0', 2, None), (b'\0' * 8, (0,0)))
+        self.assertEqual(audioop.adpcm2lin(b'\0\0', 4, None), (b'\0' * 16, (0,0)))
 
     def test_lin2adpcm(self):
         # Very cursory test
@@ -109,6 +111,9 @@ class TestAudioop(unittest.TestCase):
         # Cursory
         d = audioop.lin2alaw(data[0], 1)
         self.assertEqual(audioop.alaw2lin(d, 1), data[0])
+        self.assertEqual(audioop.alaw2lin(d, 2), b'\x08\x00\x08\x01\x10\x02')
+        self.assertEqual(audioop.alaw2lin(d, 4),
+            b'\x00\x00\x08\x00\x00\x00\x08\x01\x00\x00\x10\x02')
 
     def test_lin2ulaw(self):
         self.assertEqual(audioop.lin2ulaw(data[0], 1), '\xff\xe7\xdb')
@@ -119,6 +124,9 @@ class TestAudioop(unittest.TestCase):
         # Cursory
         d = audioop.lin2ulaw(data[0], 1)
         self.assertEqual(audioop.ulaw2lin(d, 1), data[0])
+        self.assertEqual(audioop.ulaw2lin(d, 2), b'\x00\x00\x04\x01\x0c\x02')
+        self.assertEqual(audioop.ulaw2lin(d, 4),
+            b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x0c\x02')
 
     def test_mul(self):
         data2 = []
@@ -193,10 +201,15 @@ class TestAudioop(unittest.TestCase):
             self.assertRaises(audioop.error, audioop.lin2lin, data, size, size2)
             self.assertRaises(audioop.error, audioop.ratecv, data, size, 1, 1, 1, state)
             self.assertRaises(audioop.error, audioop.lin2ulaw, data, size)
-            self.assertRaises(audioop.error, audioop.ulaw2lin, data, size)
             self.assertRaises(audioop.error, audioop.lin2alaw, data, size)
-            self.assertRaises(audioop.error, audioop.alaw2lin, data, size)
             self.assertRaises(audioop.error, audioop.lin2adpcm, data, size, state)
+
+    def test_wrongsize(self):
+        data = b'abc'
+        state = None
+        for size in (-1, 3, 5):
+            self.assertRaises(audioop.error, audioop.ulaw2lin, data, size)
+            self.assertRaises(audioop.error, audioop.alaw2lin, data, size)
             self.assertRaises(audioop.error, audioop.adpcm2lin, data, size, state)
 
 def test_main():
