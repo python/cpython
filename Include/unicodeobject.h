@@ -1914,6 +1914,12 @@ PyAPI_FUNC(int) PyUnicode_Contains(
     PyObject *element           /* Element string */
     );
 
+/* Checks whether the string contains any NUL characters. */
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyUnicode_HasNULChars(PyObject *);
+#endif
+
 /* Checks whether argument is a valid identifier. */
 
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);

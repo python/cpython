@@ -461,6 +461,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13848: open() and the FileIO constructor now check for NUL
+  characters in the file name.  Patch by Hynek Schlawack.
+
 - Issue #13806: The size check in audioop decompression functions was too
   strict and could reject valid compressed data.  Patch by Oleg Plakhotnyuk.
 
