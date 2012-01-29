@@ -3575,6 +3575,19 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
 
 int
+_PyUnicode_HasNULChars(PyObject* s)
+{
+    static PyObject *nul = NULL;
+
+    if (nul == NULL)
+        nul = PyUnicode_FromStringAndSize("\0", 1);
+    if (nul == NULL)
+        return -1;
+    return PyUnicode_Contains(s, nul);
+}
+
+
+int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
 {
     PyObject *output = NULL;
