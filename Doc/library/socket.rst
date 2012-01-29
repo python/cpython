@@ -1071,9 +1071,7 @@ correspond to Unix system calls applicable to sockets.
    Shut down one or both halves of the connection.  If *how* is :const:`SHUT_RD`,
    further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
-   disallowed.  Depending on the platform, shutting down one half of the connection
-   can also close the opposite half (e.g. on Mac OS X, ``shutdown(SHUT_WR)`` does
-   not allow further reads on the other end of the connection).
+   disallowed.
 
 Note that there are no methods :meth:`read` or :meth:`write`; use
 :meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
