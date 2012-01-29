@@ -141,7 +141,9 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
       data or by a blank line.  Following the header block is the body of the
       message (which may contain MIME-encoded subparts).
 
-      Optional *headersonly* is as with the :meth:`parse` method.
+      Optional *headersonly* is a flag specifying whether to stop parsing after
+      reading the headers or not.  The default is ``False``, meaning it parses
+      the entire contents of the file.
 
    .. method:: parsestr(text, headersonly=False)
 
@@ -150,9 +152,7 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
       equivalent to wrapping *text* in a :class:`~io.StringIO` instance first and
       calling :meth:`parse`.
 
-      Optional *headersonly* is a flag specifying whether to stop parsing after
-      reading the headers or not.  The default is ``False``, meaning it parses
-      the entire contents of the file.
+      Optional *headersonly* is as with the :meth:`parse` method.
 
 
 .. class:: BytesParser(_class=email.message.Message, *, policy=policy.default)
