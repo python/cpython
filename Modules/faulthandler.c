@@ -943,10 +943,13 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
 static PyObject *
 faulthandler_read_null(PyObject *self, PyObject *args)
 {
-    int *x = NULL, y;
+    volatile int *x;
+    volatile int y;
     int release_gil = 0;
     if (!PyArg_ParseTuple(args, "|i:_read_null", &release_gil))
         return NULL;
+
+    x = NULL;
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
         y = *x;
