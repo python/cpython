@@ -361,7 +361,6 @@ class TimeTestCase(unittest.TestCase):
             self.skipTest("unable to find an invalid time_t value")
 
         self.assertRaises(OSError, time.localtime, invalid_time_t)
-        self.assertRaises(OSError, time.gmtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
 
 class TestLocale(unittest.TestCase):
