@@ -2394,7 +2394,8 @@ static short slotoffsets[] = {
 #include "typeslots.inc"
 };
 
-PyObject* PyType_FromSpec(PyType_Spec *spec)
+PyObject *
+PyType_FromSpec(PyType_Spec *spec)
 {
     PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
     char *res_start = (char*)res;
@@ -2433,6 +2434,9 @@ PyObject* PyType_FromSpec(PyType_Spec *spec)
             res->ht_type.tp_doc = tp_doc;
         }
     }
+
+    if (PyType_Ready(&res->ht_type) < 0)
+        goto fail;
 
     return (PyObject*)res;
 

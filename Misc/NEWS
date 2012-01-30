@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13908: Ready types returned from PyType_FromSpec.
+
 - Issue #11235: Fix OverflowError when trying to import a source file whose
   modification time doesn't fit in a 32-bit timestamp.
 
