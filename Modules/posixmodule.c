@@ -3280,17 +3280,16 @@ posix_setpriority(PyObject *self, PyObject *args)
 #endif /* HAVE_SETPRIORITY */
 
 
-PyDoc_STRVAR(posix_rename__doc__,
-"rename(old, new)\n\n\
-Rename a file or directory.");
-
 static PyObject *
-posix_rename(PyObject *self, PyObject *args)
+internal_rename(PyObject *self, PyObject *args, int is_replace)
 {
 #ifdef MS_WINDOWS
     PyObject *src, *dst;
     BOOL result;
-    if (PyArg_ParseTuple(args, "UU:rename", &src, &dst))
+    int flags = is_replace ? MOVEFILE_REPLACE_EXISTING : 0;
+    if (PyArg_ParseTuple(args,
+                         is_replace ? "UU:replace" : "UU:rename",
+                         &src, &dst))
     {
         wchar_t *wsrc, *wdst;
 
@@ -3301,16 +3300,17 @@ posix_rename(PyObject *self, PyObject *args)
         if (wdst == NULL)
             return NULL;
         Py_BEGIN_ALLOW_THREADS
-        result = MoveFileW(wsrc, wdst);
+        result = MoveFileExW(wsrc, wdst, flags);
         Py_END_ALLOW_THREADS
         if (!result)
-            return win32_error("rename", NULL);
+            return win32_error(is_replace ? "replace" : "rename", NULL);
         Py_INCREF(Py_None);
         return Py_None;
     }
     else {
         PyErr_Clear();
-        if (!PyArg_ParseTuple(args, "O&O&:rename",
+        if (!PyArg_ParseTuple(args,
+                              is_replace ? "O&O&:replace" : "O&O&:rename",
                               PyUnicode_FSConverter, &src,
                               PyUnicode_FSConverter, &dst))
             return NULL;
@@ -3319,15 +3319,15 @@ posix_rename(PyObject *self, PyObject *args)
             goto error;
 
         Py_BEGIN_ALLOW_THREADS
-        result = MoveFileA(PyBytes_AS_STRING(src),
-                           PyBytes_AS_STRING(dst));
+        result = MoveFileExA(PyBytes_AS_STRING(src),
+                             PyBytes_AS_STRING(dst), flags);
         Py_END_ALLOW_THREADS
 
         Py_XDECREF(src);
         Py_XDECREF(dst);
 
         if (!result)
-            return win32_error("rename", NULL);
+            return win32_error(is_replace ? "replace" : "rename", NULL);
         Py_INCREF(Py_None);
         return Py_None;
 
@@ -3337,10 +3337,30 @@ error:
         return NULL;
     }
 #else
-    return posix_2str(args, "O&O&:rename", rename);
+    return posix_2str(args,
+                      is_replace ? "O&O&:replace" : "O&O&:rename", rename);
 #endif
 }
 
+PyDoc_STRVAR(posix_rename__doc__,
+"rename(old, new)\n\n\
+Rename a file or directory.");
+
+static PyObject *
+posix_rename(PyObject *self, PyObject *args)
+{
+    return internal_rename(self, args, 0);
+}
+
+PyDoc_STRVAR(posix_replace__doc__,
+"replace(old, new)\n\n\
+Rename a file or directory, overwriting the destination.");
+
+static PyObject *
+posix_replace(PyObject *self, PyObject *args)
+{
+    return internal_rename(self, args, 1);
+}
 
 PyDoc_STRVAR(posix_rmdir__doc__,
 "rmdir(path)\n\n\
@@ -10555,6 +10575,7 @@ static PyMethodDef posix_methods[] = {
     {"readlink",        win_readlink, METH_VARARGS, win_readlink__doc__},
 #endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
     {"rename",          posix_rename, METH_VARARGS, posix_rename__doc__},
+    {"replace",         posix_replace, METH_VARARGS, posix_replace__doc__},
     {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
     {"stat",            posix_stat, METH_VARARGS, posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},

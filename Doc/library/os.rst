@@ -1889,8 +1889,9 @@ Files and Directories
    Unix flavors if *src* and *dst* are on different filesystems.  If successful,
    the renaming will be an atomic operation (this is a POSIX requirement).  On
    Windows, if *dst* already exists, :exc:`OSError` will be raised even if it is a
-   file; there may be no way to implement an atomic rename when *dst* names an
-   existing file.
+   file.
+
+   If you want cross-platform overwriting of the destination, use :func:`replace`.
 
    Availability: Unix, Windows.
 
@@ -1906,6 +1907,19 @@ Files and Directories
 
       This function can fail with the new directory structure made if you lack
       permissions needed to remove the leaf directory or file.
+
+
+.. function:: replace(src, dst)
+
+   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
+   :exc:`OSError` will be raised.  If *dst* exists and is a file, it will
+   be replaced silently if the user has permission.  The operation may fail
+   if *src* and *dst* are on different filesystems.  If successful,
+   the renaming will be an atomic operation (this is a POSIX requirement).
+
+   Availability: Unix, Windows
+
+   .. versionadded:: 3.3
 
 
 .. function:: rmdir(path)
