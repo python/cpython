@@ -20,12 +20,18 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
     def test_case_sensitive(self):
         with support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
+            if b'PYTHONCASEOK' in _bootstrap._os.environ:
+                self.skipTest('os.environ changes not reflected in '
+                              '_os.environ')
             loader = self.find_module()
             self.assertIsNone(loader)
 
     def test_case_insensitivity(self):
         with support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
+            if b'PYTHONCASEOK' not in _bootstrap._os.environ:
+                self.skipTest('os.environ changes not reflected in '
+                              '_os.environ')
             loader = self.find_module()
             self.assertTrue(hasattr(loader, 'load_module'))
 
