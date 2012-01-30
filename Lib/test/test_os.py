@@ -129,6 +129,18 @@ class FileTests(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+    def test_replace(self):
+        TESTFN2 = support.TESTFN + ".2"
+        with open(support.TESTFN, 'w') as f:
+            f.write("1")
+        with open(TESTFN2, 'w') as f:
+            f.write("2")
+        self.addCleanup(os.unlink, TESTFN2)
+        os.replace(support.TESTFN, TESTFN2)
+        self.assertRaises(FileNotFoundError, os.stat, support.TESTFN)
+        with open(TESTFN2, 'r') as f:
+            self.assertEqual(f.read(), "1")
+
 
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
