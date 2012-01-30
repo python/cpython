@@ -2386,6 +2386,9 @@ PyType_FromSpec(PyType_Spec *spec)
         }
     }
 
+    if (PyType_Ready(&res->ht_type) < 0)
+        goto fail;
+
     return (PyObject*)res;
 
  fail:
