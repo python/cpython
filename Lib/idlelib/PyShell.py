@@ -494,7 +494,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             path.extend(sys.path)
         else:
             path = sys.path
-            
+
         self.runcommand("""if 1:
         import sys as _sys
         _sys.path = %r
