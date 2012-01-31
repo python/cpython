@@ -559,8 +559,9 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
             Py_ssize_t t;
             for (t = 0; t < spec->n_prefix; t++) {
                 Py_UCS4 c = PyUnicode_READ(kind, data, pos + t);
+                c = Py_TOUPPER(c);
                 assert (c <= 127);
-                PyUnicode_WRITE(kind, data, pos + t, Py_TOUPPER(c));
+                PyUnicode_WRITE(kind, data, pos + t, c);
             }
         }
         pos += spec->n_prefix;
@@ -603,11 +604,12 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         Py_ssize_t t;
         for (t = 0; t < spec->n_grouped_digits; t++) {
             Py_UCS4 c = PyUnicode_READ(kind, data, pos + t);
+            c = Py_TOUPPER(c);
             if (c > 127) {
                 PyErr_SetString(PyExc_SystemError, "non-ascii grouped digit");
                 return -1;
             }
-            PyUnicode_WRITE(kind, data, pos + t, Py_TOUPPER(c));
+            PyUnicode_WRITE(kind, data, pos + t, c);
         }
     }
     pos += spec->n_grouped_digits;
@@ -733,6 +735,7 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
         Py_CLEAR(result);
 
 done:
+    assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
@@ -759,7 +762,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
                                    produces non-digits */
     Py_ssize_t n_prefix = 0;   /* Count of prefix chars, (e.g., '0x') */
     Py_ssize_t n_total;
-    Py_ssize_t prefix;
+    Py_ssize_t prefix = 0;
     NumberFieldWidths spec;
     long x;
     int err;
@@ -894,6 +897,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
 done:
     Py_XDECREF(tmp);
+    assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
@@ -1036,6 +1040,7 @@ format_float_internal(PyObject *value,
 done:
     PyMem_Free(buf);
     Py_DECREF(unicode_tmp);
+    assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
@@ -1270,6 +1275,7 @@ done:
     PyMem_Free(im_buf);
     Py_XDECREF(re_unicode_tmp);
     Py_XDECREF(im_unicode_tmp);
+    assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
