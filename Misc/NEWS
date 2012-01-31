@@ -463,6 +463,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13506: Add '' to path for IDLE Shell when started and restarted with Restart Shell.
+  Original patches by Marco Scataglini and Roger Serwy.
+
 - Issue #8828: Add new function os.replace(), for cross-platform renaming
   with overwriting.
 
