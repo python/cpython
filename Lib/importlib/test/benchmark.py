@@ -201,7 +201,7 @@ if __name__ == '__main__':
                              '(incompatible w/ --benchmark)')
     parser.add_argument('--benchmark', dest='benchmark',
                         help='specific benchmark to run '
-                             '(incompatible w/ --file')
+                             '(incompatible w/ --file)')
     options = parser.parse_args()
     if options.filename and options.benchmark:
         print('Cannot specify a benchmark *and* read/write results')
