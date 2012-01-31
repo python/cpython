@@ -499,14 +499,17 @@ enum PyUnicode_Kind {
     do { \
         switch ((kind)) { \
         case PyUnicode_1BYTE_KIND: { \
+            assert(value <= 0xff); \
             ((Py_UCS1 *)(data))[(index)] = (Py_UCS1)(value); \
             break; \
         } \
         case PyUnicode_2BYTE_KIND: { \
+            assert(value <= 0xffff); \
             ((Py_UCS2 *)(data))[(index)] = (Py_UCS2)(value); \
             break; \
         } \
         default: { \
+            assert(value <= 0x10ffff); \
             assert((kind) == PyUnicode_4BYTE_KIND); \
             ((Py_UCS4 *)(data))[(index)] = (Py_UCS4)(value); \
         } \
