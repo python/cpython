@@ -9,6 +9,7 @@ from .source import util as source_util
 import decimal
 import imp
 import importlib
+import json
 import os
 import py_compile
 import sys
@@ -132,7 +133,12 @@ def decimal_using_bytecode(seconds, repeat):
         yield result
 
 
-def main(import_):
+def main(import_, filename=None):
+    if filename and os.path.exists(filename):
+        with open(filename, 'r') as file:
+            prev_results = json.load(file)
+    else:
+        prev_results = {}
     __builtins__.__import__ = import_
     benchmarks = (from_cache, builtin_mod,
                   source_using_bytecode, source_wo_bytecode,
@@ -142,8 +148,11 @@ def main(import_):
     seconds = 1
     seconds_plural = 's' if seconds > 1 else ''
     repeat = 3
-    header = "Measuring imports/second over {} second{}, best out of {}\n"
-    print(header.format(seconds, seconds_plural, repeat))
+    header = ('Measuring imports/second over {} second{}, best out of {}\n'
+              'Entire benchmark run should take about {} seconds\n')
+    print(header.format(seconds, seconds_plural, repeat,
+                        len(benchmarks) * seconds * repeat))
+    new_results = {}
     for benchmark in benchmarks:
         print(benchmark.__doc__, "[", end=' ')
         sys.stdout.flush()
@@ -154,19 +163,36 @@ def main(import_):
             sys.stdout.flush()
         assert not sys.dont_write_bytecode
         print("]", "best is", format(max(results), ',d'))
+        new_results[benchmark.__doc__] = results
+    prev_results[import_.__module__] = new_results
+    if 'importlib._bootstrap' in prev_results and 'builtins' in prev_results:
+        print('\n\nComparing importlib vs. __import__\n')
+        importlib_results = prev_results['importlib._bootstrap']
+        builtins_results = prev_results['builtins']
+        for benchmark in benchmarks:
+            benchmark_name = benchmark.__doc__
+            importlib_result = max(importlib_results[benchmark_name])
+            builtins_result = max(builtins_results[benchmark_name])
+            result = '{:,d} vs. {:,d} ({:%})'.format(importlib_result,
+                                                     builtins_result,
+                                              importlib_result/builtins_result)
+            print(benchmark_name, ':', result)
+    if filename:
+        with open(filename, 'w') as file:
+            json.dump(prev_results, file, indent=2)
 
 
 if __name__ == '__main__':
-    import optparse
+    import argparse
 
-    parser = optparse.OptionParser()
-    parser.add_option('-b', '--builtin', dest='builtin', action='store_true',
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--builtin', dest='builtin', action='store_true',
                         default=False, help="use the built-in __import__")
-    options, args = parser.parse_args()
-    if args:
-        raise RuntimeError("unrecognized args: {}".format(args))
+    parser.add_argument('-f', '--file', dest='filename', default=None,
+                        help='file to read/write results from/to')
+    options = parser.parse_args()
     import_ = __import__
     if not options.builtin:
         import_ = importlib.__import__
 
-    main(import_)
+    main(import_, options.filename)
