@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13506: Add '' to path for IDLE Shell when started and restarted with Restart Shell.
+  Original patches by Marco Scataglini and Roger Serwy.
+
 - Issue #13806: The size check in audioop decompression functions was too
   strict and could reject valid compressed data.  Patch by Oleg Plakhotnyuk.
 
