@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13506: Add '' to path for IDLE Shell when started and restarted with Restart Shell.
+  Original patches by Marco Scataglini and Roger Serwy.
+
 - Issue #13848: open() and the FileIO constructor now check for NUL
   characters in the file name.  Patch by Hynek Schlawack.
 
