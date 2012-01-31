@@ -133,7 +133,7 @@ def decimal_using_bytecode(seconds, repeat):
         yield result
 
 
-def main(import_, filename=None):
+def main(import_, filename=None, benchmark=None):
     if filename and os.path.exists(filename):
         with open(filename, 'r') as file:
             prev_results = json.load(file)
@@ -145,6 +145,14 @@ def main(import_, filename=None):
                   source_writing_bytecode,
                   decimal_using_bytecode, decimal_writing_bytecode,
                   decimal_wo_bytecode,)
+    if benchmark:
+        for b in benchmarks:
+            if b.__doc__ == benchmark:
+                benchmarks = [b]
+                break
+        else:
+            print('Unknown benchmark: {!r}'.format(benchmark, file=sys.stderr))
+            sys.exit(1)
     seconds = 1
     seconds_plural = 's' if seconds > 1 else ''
     repeat = 3
@@ -189,10 +197,17 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--builtin', dest='builtin', action='store_true',
                         default=False, help="use the built-in __import__")
     parser.add_argument('-f', '--file', dest='filename', default=None,
-                        help='file to read/write results from/to')
+                        help='file to read/write results from/to'
+                             '(incompatible w/ --benchmark)')
+    parser.add_argument('--benchmark', dest='benchmark',
+                        help='specific benchmark to run '
+                             '(incompatible w/ --file')
     options = parser.parse_args()
+    if options.filename and options.benchmark:
+        print('Cannot specify a benchmark *and* read/write results')
+        sys.exit(1)
     import_ = __import__
     if not options.builtin:
         import_ = importlib.__import__
 
-    main(import_, options.filename)
+    main(import_, options.filename, options.benchmark)
