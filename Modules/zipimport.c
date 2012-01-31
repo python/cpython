@@ -728,14 +728,15 @@ read_directory(PyObject *archive)
     PyObject *files = NULL;
     FILE *fp;
     unsigned short flags;
-    long compress, crc, data_size, file_size, file_offset, date, time;
-    long header_offset, name_size, header_size, header_position;
+    short compress, time, date, name_size;
+    long crc, data_size, file_size, header_size;
+    Py_ssize_t file_offset, header_position, header_offset;
     long l, count;
     Py_ssize_t i;
     char name[MAXPATHLEN + 5];
     PyObject *nameobj = NULL;
     char *p, endof_central_dir[22];
-    long arc_offset; /* offset from beginning of file to start of zip-archive */
+    Py_ssize_t arc_offset;  /* Absolute offset to start of the zip-archive. */
     PyObject *path;
     const char *charset;
     int bootstrap;
@@ -835,7 +836,7 @@ read_directory(PyObject *archive)
         path = PyUnicode_FromFormat("%U%c%U", archive, SEP, nameobj);
         if (path == NULL)
             goto error;
-        t = Py_BuildValue("Niiiiiii", path, compress, data_size,
+        t = Py_BuildValue("Nhllnhhl", path, compress, data_size,
                           file_size, file_offset, time, date, crc);
         if (t == NULL)
             goto error;
