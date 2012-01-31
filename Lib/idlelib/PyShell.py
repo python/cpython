@@ -423,11 +423,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.register("flist", self.tkconsole.flist)
         self.rpcclt.register("linecache", linecache)
         self.rpcclt.register("interp", self)
-        self.transfer_path()
+        self.transfer_path(with_cwd=True)
         self.poll_subprocess()
         return self.rpcclt
 
-    def restart_subprocess(self):
+    def restart_subprocess(self, with_cwd=False):
         if self.restarting:
             return self.rpcclt
         self.restarting = True
@@ -451,7 +451,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except socket.timeout, err:
             self.display_no_subprocess_error()
             return None
-        self.transfer_path()
+        self.transfer_path(with_cwd=with_cwd)
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
         if was_executing:
@@ -501,12 +501,18 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 except OSError:
                     return
 
-    def transfer_path(self):
+    def transfer_path(self, with_cwd=False):
+        if with_cwd:        # Issue 13506
+            path = ['']     # include Current Working Directory
+            path.extend(sys.path)
+        else:
+            path = sys.path
+            
         self.runcommand("""if 1:
         import sys as _sys
         _sys.path = %r
         del _sys
-        \n""" % (sys.path,))
+        \n""" % (path,))
 
     active_seq = None
 
@@ -1209,7 +1215,8 @@ class PyShell(OutputWindow):
         self.text.see("restart")
 
     def restart_shell(self, event=None):
-        self.interp.restart_subprocess()
+        "Callback for Run/Restart Shell Cntl-F6"
+        self.interp.restart_subprocess(with_cwd=True)
 
     def showprompt(self):
         self.resetoutput()
