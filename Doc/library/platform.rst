@@ -188,8 +188,8 @@ Windows Platform
 .. function:: win32_ver(release='', version='', csd='', ptype='')
 
    Get additional version information from the Windows Registry and return a tuple
-   ``(version, csd, ptype)`` referring to version number, CSD level and OS type
-   (multi/single processor).
+   ``(version, csd, ptype)`` referring to version number, CSD level
+   (service pack) and OS type (multi/single processor).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
    and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
