@@ -590,6 +590,11 @@ loops that truncate the stream.
               for i in xrange(times):
                   yield object
 
+   A common use for *repeat* is to supply a stream of constant values to *imap*
+   or *zip*::
+ 
+      >>> list(imap(pow, range(10), repeat(2)))
+      [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
 .. function:: starmap(function, iterable)
 
