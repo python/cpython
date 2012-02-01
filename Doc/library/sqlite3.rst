@@ -22,6 +22,7 @@ To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
 :file:`/tmp/example` file::
 
+   import sqlite3
    conn = sqlite3.connect('/tmp/example')
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
