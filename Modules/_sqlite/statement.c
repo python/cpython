@@ -129,9 +129,9 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
             break;
         case TYPE_UNICODE:
-            string = _PyUnicode_AsString(parameter);
+            string = _PyUnicode_AsStringAndSize(parameter, &buflen);
             if (string != NULL)
-                rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
+                rc = sqlite3_bind_text(self->st, pos, string, buflen, SQLITE_TRANSIENT);
             else
                 rc = -1;
             break;
