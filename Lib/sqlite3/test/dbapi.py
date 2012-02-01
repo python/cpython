@@ -225,6 +225,13 @@ class CursorTests(unittest.TestCase):
     def CheckExecuteArgString(self):
         self.cu.execute("insert into test(name) values (?)", ("Hugo",))
 
+    def CheckExecuteArgStringWithZeroByte(self):
+        self.cu.execute("insert into test(name) values (?)", ("Hu\x00go",))
+
+        self.cu.execute("select name from test where id=?", (self.cu.lastrowid,))
+        row = self.cu.fetchone()
+        self.assertEqual(row[0], "Hu\x00go")
+
     def CheckExecuteWrongNoOfArgs1(self):
         # too many parameters
         try:
