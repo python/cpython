@@ -59,7 +59,7 @@ example::
 
    # Never do this -- insecure!
    symbol = 'IBM'
-   c.execute("... where symbol = '%s'" % symbol)
+   c.execute("select * from stocks where symbol = '%s'" % symbol)
 
    # Do this instead
    t = (symbol,)
