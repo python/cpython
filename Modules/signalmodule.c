@@ -976,10 +976,12 @@ void
 PyOS_AfterFork(void)
 {
 #ifdef WITH_THREAD
+    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
+     * can be called safely. */
+    PyThread_ReInitTLS();
     PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
     _PyImport_ReInitLock();
-    PyThread_ReInitTLS();
 #endif
 }
