@@ -115,7 +115,8 @@ The module defines the following functions and data items:
 
    .. note::
 
-      Unlike the C function of the same name, there is no trailing newline.
+      Unlike the C function of the same name, :func:`asctime` does not add a
+      trailing newline.
 
 
 .. function:: clock()
