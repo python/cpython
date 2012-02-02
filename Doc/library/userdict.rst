@@ -83,9 +83,18 @@ provide the following attribute:
 
 .. note::
 
-   This module is available for backward compatibility only.  If you are writing
-   code that does not need to work with versions of Python earlier than Python 2.2,
-   please consider subclassing directly from the built-in :class:`list` type.
+   When Python 2.2 was released, many of the use cases for this class were
+   subsumed by the ability to subclass :class:`list` directly.  However, a
+   handful of use cases remain.
+
+   This module provides a list-interface around an underlying data store.  By
+   default, that data store is a :class:`list`; however, it can be used to wrap
+   a list-like interface around other objects (such as persistent storage).
+
+   In addition, this class can be mixed-in with built-in classes using multiple
+   inheritance.  This can sometimes be useful.  For example, you can inherit
+   from :class:`UserList` and :class:`str` at the same time.  That would not be
+   possible with both a real :class:`list` and a real :class:`str`.
 
 This module defines a class that acts as a wrapper around list objects.  It is a
 useful base class for your own list-like classes, which can inherit from them
