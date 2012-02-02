@@ -1257,7 +1257,7 @@ Static objects:\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
-executable -- pathname of this Python interpreter\n\
+executable -- absolute path of the executable binary of the Python interpreter\n\
 float_info -- a struct sequence with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
 hexversion -- version information encoded as a single integer\n\
