@@ -454,6 +454,8 @@ Extension Modules
 Documentation
 -------------
 
+- Issue #13402: Document absoluteness of sys.executable.
+
 - Issue #13883: PYTHONCASEOK also used on OS X and OS/2.
 
 - Issue #12949: Document the kwonlyargcount argument for the PyCode_New
