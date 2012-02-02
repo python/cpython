@@ -1058,7 +1058,19 @@ available.  They are listed here in alphabetical order.
    it is placed before the items of the iterable in the calculation, and serves as
    a default when the iterable is empty.  If *initializer* is not given and
    *iterable* contains only one item, the first item is returned.
+   Roughly equivalent to::
 
+      def reduce(function, iterable, initializer=None):
+          it = iter(iterable)
+          if initializer is None:
+              try:
+                  initializer = next(it)
+              except StopIteration:
+                  raise TypeError('reduce() of empty sequence with no initial value')
+          accum_value = initializer
+          for x in iterable:
+              accum_value = function(accum_value, x)
+          return accum_value
 
 .. function:: reload(module)
 
