@@ -592,12 +592,9 @@ available.  They are listed here in alphabetical order.
 
    Equivalent to ``eval(raw_input(prompt))``.
 
-   .. note::
-
-      This function does not catch user errors.  It expects a valid Python
-      expression as input. If the input is not syntactically valid, a
-      :exc:`SyntaxError` will be raised. Other exceptions may be raised if there
-      is an error during evaluation.
+   This function does not catch user errors. If the input is not syntactically
+   valid, a :exc:`SyntaxError` will be raised. Other exceptions may be raised if
+   there is an error during evaluation.
 
    If the :mod:`readline` module was loaded, then :func:`input` will use it to
    provide elaborate line editing and history features.
