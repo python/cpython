@@ -635,6 +635,29 @@ class ThreadJoinOnShutdown(BaseTestCase):
         output = "end of worker thread\nend of main thread\n"
         self.assertScriptHasOutput(script, output)
 
+    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    def test_reinit_tls_after_fork(self):
+        # Issue #13817: fork() would deadlock in a multithreaded program with
+        # the ad-hoc TLS implementation.
+
+        def do_fork_and_wait():
+            # just fork a child process and wait it
+            pid = os.fork()
+            if pid > 0:
+                os.waitpid(pid, 0)
+            else:
+                os._exit(0)
+
+        # start a bunch of threads that will fork() child processes
+        threads = []
+        for i in range(16):
+            t = threading.Thread(target=do_fork_and_wait)
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
 
 class ThreadingExceptionTests(BaseTestCase):
     # A RuntimeError should be raised if Thread.start() is called
