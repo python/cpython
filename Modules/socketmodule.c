@@ -218,6 +218,11 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #  include <ioctl.h>
 #endif
 
+#ifdef __APPLE__
+# include <sys/ioctl.h>
+#endif
+
+
 #if defined(PYOS_OS2)
 # define  INCL_DOS
 # define  INCL_DOSERRORS
@@ -1239,6 +1244,23 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif
 
+#ifdef PF_SYSTEM
+    case PF_SYSTEM:
+        switch(proto) {
+#ifdef SYSPROTO_CONTROL
+        case SYSPROTO_CONTROL:
+        {
+            struct sockaddr_ctl *a = (struct sockaddr_ctl *)addr;
+            return Py_BuildValue("(II)", a->sc_id, a->sc_unit);
+        }
+#endif
+        default:
+            PyErr_SetString(PyExc_ValueError,
+                            "Invalid address type");
+            return 0;
+        }
+#endif
+
     /* More cases here... */
 
     default:
@@ -1677,6 +1699,64 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
 #endif
+            
+#ifdef PF_SYSTEM
+    case PF_SYSTEM:
+        switch (s->sock_proto) {
+#ifdef SYSPROTO_CONTROL
+        case SYSPROTO_CONTROL:
+        {
+            struct sockaddr_ctl *addr;
+            
+            addr = (struct sockaddr_ctl *)addr_ret;
+            addr->sc_family = AF_SYSTEM;
+            addr->ss_sysaddr = AF_SYS_CONTROL; 
+
+            if (PyUnicode_Check(args)) {
+                struct ctl_info info;
+                PyObject *ctl_name;
+
+                if (!PyArg_Parse(args, "O&",
+                                PyUnicode_FSConverter, &ctl_name)) {
+                    return 0;
+                }
+
+                if (PyBytes_GET_SIZE(ctl_name) > sizeof(info.ctl_name)) {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "provided string is too long");
+                    Py_DECREF(ctl_name);
+                    return 0;
+                }
+                strncpy(info.ctl_name, PyBytes_AS_STRING(ctl_name),
+                        sizeof(info.ctl_name));
+                Py_DECREF(ctl_name);
+
+                if (ioctl(s->sock_fd, CTLIOCGINFO, &info)) {
+                    PyErr_SetString(PyExc_OSError,
+                          "cannot find kernel control with provided name");
+                    return 0;
+                }
+                
+                addr->sc_id = info.ctl_id;
+                addr->sc_unit = 0;
+            } else if (!PyArg_ParseTuple(args, "II",
+                                         &(addr->sc_id), &(addr->sc_unit))) {
+                PyErr_SetString(PyExc_TypeError, "getsockaddrarg: "
+                                "expected str or tuple of two ints");
+                
+                return 0;
+            }
+              
+            *len_ret = sizeof(*addr);
+            return 1;
+        }
+#endif
+        default:
+            PyErr_SetString(PyExc_OSError,
+                            "getsockaddrarg: unsupported PF_SYSTEM protocol");
+            return 0;
+        }
+#endif
 
     /* More cases here... */
 
@@ -1782,6 +1862,21 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         *len_ret = sizeof (struct sockaddr_can);
         return 1;
     }
+#endif
+            
+#ifdef PF_SYSTEM
+    case PF_SYSTEM:
+        switch(s->sock_proto) {
+#ifdef SYSPROTO_CONTROL
+        case SYSPROTO_CONTROL:
+            *len_ret = sizeof (struct sockaddr_ctl);
+            return 1;
+#endif
+        default:
+            PyErr_SetString(PyExc_OSError, "getsockaddrlen: "
+                            "unknown PF_SYSTEM protocol");
+            return 0;
+        }
 #endif
 
     /* More cases here... */
@@ -5660,6 +5755,14 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "PF_RDS", PF_RDS);
 #endif
 
+/* Kernel event messages */
+#ifdef PF_SYSTEM
+    PyModule_AddIntConstant(m, "PF_SYSTEM", PF_SYSTEM);
+#endif
+#ifdef AF_SYSTEM
+    PyModule_AddIntConstant(m, "AF_SYSTEM", AF_SYSTEM);
+#endif
+
 #ifdef AF_PACKET
     PyModule_AddIntMacro(m, AF_PACKET);
 #endif
@@ -6094,6 +6197,10 @@ PyInit__socket(void)
 #endif
 #ifdef  IPPROTO_MAX
     PyModule_AddIntConstant(m, "IPPROTO_MAX", IPPROTO_MAX);
+#endif
+
+#ifdef  SYSPROTO_CONTROL
+    PyModule_AddIntConstant(m, "SYSPROTO_CONTROL", SYSPROTO_CONTROL);
 #endif
 
     /* Some port configuration */
