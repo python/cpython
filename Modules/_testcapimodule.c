@@ -2396,6 +2396,14 @@ run_in_subinterp(PyObject *self, PyObject *args)
     PyThreadState_Swap(NULL);
 
     substate = Py_NewInterpreter();
+    if (substate == NULL) {
+        /* Since no new thread state was created, there is no exception to
+           propagate; raise a fresh one after swapping in the old thread
+           state. */
+        PyThreadState_Swap(mainstate);
+        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        return NULL;
+    }
     r = PyRun_SimpleString(code);
     Py_EndInterpreter(substate);
 
