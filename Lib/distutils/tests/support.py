@@ -200,6 +200,9 @@ def fixup_build_ext(cmd):
         cmd = build_ext(dist)
         support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
+
+    Unlike most other Unix platforms, Mac OS X embeds absolute paths
+    to shared libraries into executables, so the fixup is not needed there.
     """
     if os.name == 'nt':
         cmd.debug = sys.executable.endswith('_d.exe')
@@ -211,5 +214,8 @@ def fixup_build_ext(cmd):
         if runshared is None:
             cmd.library_dirs = ['.']
         else:
-            name, equals, value = runshared.partition('=')
-            cmd.library_dirs = value.split(os.pathsep)
+            if sys.platform == 'darwin':
+                cmd.library_dirs = []
+            else:
+                name, equals, value = runshared.partition('=')
+                cmd.library_dirs = value.split(os.pathsep)
