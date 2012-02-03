@@ -405,7 +405,7 @@ class PydocImportTest(unittest.TestCase):
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
         with open(badsyntax, 'w') as f:
             f.write("invalid python syntax = $1\n")
-        result = run_pydoc('nothing', '-k', PYTHONPATH=TESTFN)
+        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
         self.assertEqual(b'', result)
 
     def test_apropos_with_unreadable_dir(self):
@@ -415,7 +415,7 @@ class PydocImportTest(unittest.TestCase):
         self.addCleanup(os.rmdir, self.unreadable_dir)
         # Note, on Windows the directory appears to be still
         #   readable so this is not really testing the issue there
-        result = run_pydoc('nothing', '-k', PYTHONPATH=TESTFN)
+        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
         self.assertEqual(b'', result)
 
 
