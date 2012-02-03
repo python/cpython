@@ -80,6 +80,13 @@ typedef int socklen_t;
 #include <linux/can/raw.h>
 #endif
 
+#ifdef HAVE_SYS_SYS_DOMAIN_H
+#include <sys/sys_domain.h>
+#endif
+#ifdef HAVE_SYS_KERN_CONTROL_H
+#include <sys/kern_control.h>
+#endif
+
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
 #ifdef __cplusplus
@@ -137,6 +144,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_LINUX_CAN_H
     struct sockaddr_can can;
+#endif
+#ifdef HAVE_SYS_KERN_CONTROL_H
+    struct sockaddr_ctl ctl;
 #endif
 } sock_addr_t;
 

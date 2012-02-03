@@ -99,6 +99,14 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
+- A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
+  protocol of the :const:`PF_SYSTEM` family. The string is the name of a
+  kernel control using a dynamically-assigned ID. The tuple can be used if ID
+  and unit number of the kernel control are known or if a registered ID is
+  used.
+
+  .. versionadded:: 3.3
+
 - Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`)
   support specific representations.
 
