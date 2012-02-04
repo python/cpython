@@ -12,7 +12,6 @@ import warnings
 
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
-from collections import deque
 
 # Note regarding PEP 8 compliant aliases
 #  This threading model was originally inspired by Java, and inherited
