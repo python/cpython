@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13933: IDLE auto-complete did not work with some imported
+  module, like hashlib.  (Patch by Roger Serwy)
+
 - Issue #13901: Prevent test_distutils failures on OS X with --enable-shared.
 
 - Issue #13676: Handle strings with embedded zeros correctly in sqlite3.
