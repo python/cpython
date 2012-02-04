@@ -47,13 +47,17 @@ class BZ2File(io.BufferedIOBase):
         the file object given by fileobj. Exactly one of these two
         parameters should be provided.
 
-        mode can be 'r' for reading (default), or 'w' for writing.
+        mode can be 'r' for reading (default), 'w' for (over)writing, or
+        'a' for appending.
 
         buffering is ignored. Its use is deprecated.
 
-        If mode is 'w', compresslevel can be a number between 1 and 9
-        specifying the level of compression: 1 produces the least
+        If mode is 'w' or 'a', compresslevel can be a number between 1
+        and 9 specifying the level of compression: 1 produces the least
         compression, and 9 (default) produces the most compression.
+
+        If mode is 'r', the input file may be the concatenation of
+        multiple compressed streams.
         """
         # This lock must be recursive, so that BufferedIOBase's
         # readline(), readlines() and writelines() don't deadlock.
