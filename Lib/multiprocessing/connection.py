@@ -575,10 +575,14 @@ class SocketListener(object):
     '''
     def __init__(self, address, family, backlog=1):
         self._socket = socket.socket(getattr(socket, family))
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._socket.bind(address)
-        self._socket.listen(backlog)
-        self._address = self._socket.getsockname()
+        try:
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._socket.bind(address)
+            self._socket.listen(backlog)
+            self._address = self._socket.getsockname()
+        except OSError:
+            self._socket.close()
+            raise
         self._family = family
         self._last_accepted = None
 
