@@ -32,7 +32,7 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
-.. class:: LZMAFile(filename=None, mode="r", fileobj=None, format=None, check=-1, preset=None, filters=None)
+.. class:: LZMAFile(filename=None, mode="r", \*, fileobj=None, format=None, check=-1, preset=None, filters=None)
 
    Open an LZMA-compressed file.
 
