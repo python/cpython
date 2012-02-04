@@ -29,7 +29,7 @@ All of the classes in this module may safely be accessed from multiple threads.
 (De)compression of files
 ------------------------
 
-.. class:: BZ2File(filename=None, mode='r', buffering=None, compresslevel=9, fileobj=None)
+.. class:: BZ2File(filename=None, mode='r', buffering=None, compresslevel=9, \*, fileobj=None)
 
    Open a bzip2-compressed file.
 
