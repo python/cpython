@@ -73,7 +73,6 @@ class SDistTestCase(support.TempdirManager,
                         'author_email': 'xxx'}
         dist = Distribution(metadata)
         dist.packages = ['somecode']
-        dist.include_package_data = True
         cmd = sdist(dist)
         cmd.dist_dir = 'dist'
         return dist, cmd
