@@ -40,7 +40,7 @@ class BZ2File(io.BufferedIOBase):
     """
 
     def __init__(self, filename=None, mode="r", buffering=None,
-                 compresslevel=9, fileobj=None):
+                 compresslevel=9, *, fileobj=None):
         """Open a bzip2-compressed file.
 
         If filename is given, open the named file. Otherwise, operate on
