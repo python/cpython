@@ -227,7 +227,8 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
         return -1;
     }
     seq = PySequence_Tuple(val);
-    if (!seq) return -1;
+    if (!seq)
+        return -1;
     Py_CLEAR(self->args);
     self->args = seq;
     return 0;
@@ -266,7 +267,8 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
 static PyObject *
 BaseException_get_context(PyObject *self) {
     PyObject *res = PyException_GetContext(self);
-    if (res) return res;  /* new reference already returned above */
+    if (res)
+        return res;  /* new reference already returned above */
     Py_RETURN_NONE;
 }
 
@@ -292,7 +294,8 @@ BaseException_set_context(PyObject *self, PyObject *arg) {
 static PyObject *
 BaseException_get_cause(PyObject *self) {
     PyObject *res = PyException_GetCause(self);
-    if (res) return res;  /* new reference already returned above */
+    if (res)
+        return res;  /* new reference already returned above */
     Py_RETURN_NONE;
 }
 
@@ -961,7 +964,8 @@ OSError_reduce(PyOSErrorObject *self)
      * file name given to OSError. */
     if (PyTuple_GET_SIZE(args) == 2 && self->filename) {
         args = PyTuple_New(3);
-        if (!args) return NULL;
+        if (!args)
+            return NULL;
 
         tmp = PyTuple_GET_ITEM(self->args, 0);
         Py_INCREF(tmp);
@@ -1132,7 +1136,8 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
         info = PySequence_Tuple(info);
-        if (!info) return -1;
+        if (!info)
+            return -1;
 
         if (PyTuple_GET_SIZE(info) != 4) {
             /* not a very good error message, but it's what Python 2.4 gives */
