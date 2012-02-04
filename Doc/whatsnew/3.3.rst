@@ -313,23 +313,23 @@ codecs
 ------
 
 The :mod:`~encodings.mbcs` codec has be rewritten to handle correclty
-``replace`` and ``ignore`` error handlers on all Windows versions. The
-:mod:`~encodings.mbcs` codec is now supporting all error handlers, instead of
-only ``replace`` to encode and ``ignore`` to decode.
+``replace`` and ``ignore`` error handlers on all Windows versions.  The
+:mod:`~encodings.mbcs` codec now supports all error handlers, instead of only
+``replace`` to encode and ``ignore`` to decode.
 
-A new Windows-only codec has been added: ``cp65001`` (:issue:`13216`). It is
-the Windows code page 65001 (Windows UTF-8, ``CP_UTF8``). For example, it is
-used by ``sys.stdout`` if the console output code page is set to cp65001 (e.g.
-using ``chcp 65001`` command).
+A new Windows-only codec has been added: ``cp65001`` (:issue:`13216`). It is the
+Windows code page 65001 (Windows UTF-8, ``CP_UTF8``).  For example, it is used
+by ``sys.stdout`` if the console output code page is set to cp65001 (e.g., using
+``chcp 65001`` command).
 
-Multibyte CJK decoders now resynchronize faster. They only ignore the first
+Multibyte CJK decoders now resynchronize faster.  They only ignore the first
 byte of an invalid byte sequence. For example, ``b'\xff\n'.decode('gb2312',
 'replace')`` now returns a ``\n`` after the replacement character.
 
 (:issue:`12016`)
 
-Don't reset incremental encoders of CJK codecs at each call to their encode()
-method anymore. For example::
+Incremental CJK codec encoders are no longer reset at each call to their
+encode() methods. For example::
 
     $ ./python -q
     >>> import codecs
