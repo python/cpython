@@ -2,18 +2,19 @@ import audioop
 import unittest
 from test.support import run_unittest
 
+endian = 'big' if audioop.getsample(b'\0\1', 2, 0) == 1 else 'little'
 
 def gendata1():
     return b'\0\1\2'
 
 def gendata2():
-    if audioop.getsample(b'\0\1', 2, 0) == 1:
+    if endian == 'big':
         return b'\0\0\0\1\0\2'
     else:
         return b'\0\0\1\0\2\0'
 
 def gendata4():
-    if audioop.getsample(b'\0\0\0\1', 4, 0) == 1:
+    if endian == 'big':
         return b'\0\0\0\0\0\0\0\1\0\0\0\2'
     else:
         return b'\0\0\0\0\1\0\0\0\2\0\0\0'
@@ -111,9 +112,16 @@ class TestAudioop(unittest.TestCase):
         # Cursory
         d = audioop.lin2alaw(data[0], 1)
         self.assertEqual(audioop.alaw2lin(d, 1), data[0])
-        self.assertEqual(audioop.alaw2lin(d, 2), b'\x08\x00\x08\x01\x10\x02')
-        self.assertEqual(audioop.alaw2lin(d, 4),
-            b'\x00\x00\x08\x00\x00\x00\x08\x01\x00\x00\x10\x02')
+        if endian == 'big':
+            self.assertEqual(audioop.alaw2lin(d, 2),
+                             b'\x00\x08\x01\x08\x02\x10')
+            self.assertEqual(audioop.alaw2lin(d, 4),
+                             b'\x00\x08\x00\x00\x01\x08\x00\x00\x02\x10\x00\x00')
+        else:
+            self.assertEqual(audioop.alaw2lin(d, 2),
+                             b'\x08\x00\x08\x01\x10\x02')
+            self.assertEqual(audioop.alaw2lin(d, 4),
+                             b'\x00\x00\x08\x00\x00\x00\x08\x01\x00\x00\x10\x02')
 
     def test_lin2ulaw(self):
         self.assertEqual(audioop.lin2ulaw(data[0], 1), b'\xff\xe7\xdb')
@@ -124,9 +132,16 @@ class TestAudioop(unittest.TestCase):
         # Cursory
         d = audioop.lin2ulaw(data[0], 1)
         self.assertEqual(audioop.ulaw2lin(d, 1), data[0])
-        self.assertEqual(audioop.ulaw2lin(d, 2), b'\x00\x00\x04\x01\x0c\x02')
-        self.assertEqual(audioop.ulaw2lin(d, 4),
-            b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x0c\x02')
+        if endian == 'big':
+            self.assertEqual(audioop.ulaw2lin(d, 2),
+                             b'\x00\x00\x01\x04\x02\x0c')
+            self.assertEqual(audioop.ulaw2lin(d, 4),
+                             b'\x00\x00\x00\x00\x01\x04\x00\x00\x02\x0c\x00\x00')
+        else:
+            self.assertEqual(audioop.ulaw2lin(d, 2),
+                             b'\x00\x00\x04\x01\x0c\x02')
+            self.assertEqual(audioop.ulaw2lin(d, 4),
+                             b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x0c\x02')
 
     def test_mul(self):
         data2 = []
