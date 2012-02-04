@@ -67,6 +67,15 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
       Support for the :keyword:`with` statement was added.
 
 
+   .. note::
+
+      This class does not support input files containing multiple streams (such
+      as those produced by the :program:`pbzip2` tool). When reading such an
+      input file, only the first stream will be accessible. If you require
+      support for multi-stream files, consider using the third-party `bz2file
+      module <http://pypi.python.org/pypi/bz2file>`_ instead of this class.
+
+
    .. method:: close()
 
       Close the file. Sets data attribute :attr:`closed` to true. A closed file
