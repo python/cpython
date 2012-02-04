@@ -900,14 +900,6 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
-   The :meth:`acquire` method of :class:`BoundedSemaphore`, :class:`Lock`,
-   :class:`RLock` and :class:`Semaphore` has a timeout parameter not supported
-   by the equivalents in :mod:`threading`.  The signature is
-   ``acquire(block=True, timeout=None)`` with keyword parameters being
-   acceptable.  If *block* is ``True`` and *timeout* is not ``None`` then it
-   specifies a timeout in seconds.  If *block* is ``False`` then *timeout* is
-   ignored.
-
    On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
    a timeout will emulate that function's behavior using a sleeping loop.
 
