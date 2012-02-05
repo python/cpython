@@ -271,7 +271,7 @@ it.
 
 To find out the required compiler and linker flags, you can execute the
 :file:`python{X.Y}-config` script which is generated as part of the
-installation process (a generic :file:`python3-config` script is also
+installation process (a :file:`python3-config` script may also be
 available).  This script has several options, of which the following will
 be directly useful to you:
 
@@ -294,9 +294,10 @@ be directly useful to you:
    example.
 
 If this procedure doesn't work for you (it is not guaranteed to work for
-all Unix-like platforms; however, we welcome bug reports at
-http://bugs.python.org),  you will have to read your system's documentation
-about dynamic linking and/or examine Python's Makefile and compilation
+all Unix-like platforms; however, we welcome :ref:`bug reports <reporting-bugs>`)
+you will have to read your system's documentation about dynamic linking and/or
+examine Python's :file:`Makefile` (use :func:`sysconfig.get_makefile_filename`
+to find its location) and compilation
 options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
 combine together::
