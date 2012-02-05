@@ -287,6 +287,7 @@ class MainProgram:
 
             # optional string entries
             if 'keywords' in self.data and self.data['keywords']:
+                # XXX shoud use comma to separate, not space
                 fp.write('keywords = %s\n' % ' '.join(self.data['keywords']))
             for name in ('home_page', 'author', 'author_email',
                          'maintainer', 'maintainer_email', 'description-file'):
@@ -306,17 +307,29 @@ class MainProgram:
                 fp.write('%s = ' % name)
                 fp.write(''.join('    %s\n' % val
                                  for val in self.data[name]).lstrip())
+
             fp.write('\n[files]\n')
-            for name in ('packages', 'modules', 'scripts',
-                         'package_data', 'extra_files'):
+
+            for name in ('packages', 'modules', 'scripts', 'extra_files'):
                 if not(name in self.data and self.data[name]):
                     continue
                 fp.write('%s = %s\n'
                          % (name, '\n    '.join(self.data[name]).strip()))
-            fp.write('\nresources =\n')
-            for src, dest in self.data['resources']:
-                fp.write('    %s = %s\n' % (src, dest))
-            fp.write('\n')
+
+            if self.data.get('package_data'):
+                fp.write('package_data =\n')
+                for pkg, spec in sorted(self.data['package_data'].items()):
+                    # put one spec per line, indented under the package name
+                    indent = ' ' * (len(pkg) + 7)
+                    spec = ('\n' + indent).join(spec)
+                    fp.write('    %s = %s\n' % (pkg, spec))
+                fp.write('\n')
+
+            if self.data.get('resources'):
+                fp.write('resources =\n')
+                for src, dest in self.data['resources']:
+                    fp.write('    %s = %s\n' % (src, dest))
+                fp.write('\n')
 
         os.chmod(_FILENAME, 0o644)
         logger.info('Wrote "%s".' % _FILENAME)
@@ -349,7 +362,6 @@ class MainProgram:
                       ('long_description', 'description'),
                       ('url', 'home_page'),
                       ('platforms', 'platform'),
-                      # backport only for 2.5+
                       ('provides', 'provides-dist'),
                       ('obsoletes', 'obsoletes-dist'),
                       ('requires', 'requires-dist'))
@@ -385,14 +397,8 @@ class MainProgram:
                                  for src in srcs]
                         data['resources'].extend(files)
 
-            # 2.2 package_data -> extra_files
-            package_dirs = dist.package_dir or {}
-            for package, extras in dist.package_data.items() or []:
-                package_dir = package_dirs.get(package, package)
-                for file_ in extras:
-                    if package_dir:
-                        file_ = package_dir + '/' + file_
-                    data['extra_files'].append(file_)
+            # 2.2 package_data
+            data['package_data'] = dist.package_data.copy()
 
             # Use README file if its content is the desciption
             if "description" in data:

@@ -116,7 +116,6 @@ class CreateTestCase(support.TempdirManager,
               package_data={
                   'babar': ['Pom', 'Flora', 'Alexander'],
                   'me': ['dady', 'mumy', 'sys', 'bro'],
-                  '':  ['setup.py', 'README'],
                   'pyxfoil': ['fengine.so'],
                            },
               scripts=['my_script', 'bin/run'],
@@ -150,16 +149,15 @@ class CreateTestCase(support.TempdirManager,
                 mymodule
             scripts = my_script
                 bin/run
-            extra_files = Martinique/Lamentin/dady
-                Martinique/Lamentin/mumy
-                Martinique/Lamentin/sys
-                Martinique/Lamentin/bro
-                setup.py
-                README
-                Pom
-                Flora
-                Alexander
-                pyxfoil/fengine.so
+            package_data =
+                babar = Pom
+                        Flora
+                        Alexander
+                me = dady
+                     mumy
+                     sys
+                     bro
+                pyxfoil = fengine.so
 
             resources =
                 README.rst = {doc}
@@ -217,8 +215,9 @@ ho, baby!
 
             [files]
             packages = pyxfoil
-            extra_files = pyxfoil/fengine.so
-                pyxfoil/babar.so
+            package_data =
+                pyxfoil = fengine.so
+                          babar.so
 
             resources =
                 README.rst = {doc}
