@@ -228,7 +228,19 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'Lib', 'site-packages')
             self.assertEqual(dirs[0], wanted)
+        elif (sys.platform == "darwin" and
+            sysconfig.get_config_var("PYTHONFRAMEWORK")):
+            # OS X framework builds
+            site.PREFIXES = ['Python.framework']
+            dirs = site.getsitepackages()
+            self.assertEqual(len(dirs), 3)
+            wanted = os.path.join('/Library',
+                                  sysconfig.get_config_var("PYTHONFRAMEWORK"),
+                                  sys.version[:3],
+                                  'site-packages')
+            self.assertEqual(dirs[2], wanted)
         elif os.sep == '/':
+            # OS X non-framwework builds, Linux, FreeBSD, etc
             self.assertEqual(len(dirs), 2)
             wanted = os.path.join('xoxo', 'lib', 'python' + sys.version[:3],
                                   'site-packages')
@@ -236,23 +248,11 @@ class HelperFunctionsTests(unittest.TestCase):
             wanted = os.path.join('xoxo', 'lib', 'site-python')
             self.assertEqual(dirs[1], wanted)
         else:
+            # other platforms
             self.assertEqual(len(dirs), 2)
             self.assertEqual(dirs[0], 'xoxo')
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
-
-        # let's try the specific Apple location
-        if (sys.platform == "darwin" and
-            sysconfig.get_config_var("PYTHONFRAMEWORK")):
-            site.PREFIXES = ['Python.framework']
-            dirs = site.getsitepackages()
-            self.assertEqual(len(dirs), 4)
-            wanted = os.path.join('~', 'Library', 'Python',
-                                  sys.version[:3], 'site-packages')
-            self.assertEqual(dirs[2], os.path.expanduser(wanted))
-            wanted = os.path.join('/Library', 'Python', sys.version[:3],
-                                  'site-packages')
-            self.assertEqual(dirs[3], wanted)
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
