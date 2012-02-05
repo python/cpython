@@ -14,9 +14,6 @@ decompressing data using the LZMA compression algorithm. Also included is a file
 interface supporting the ``.xz`` and legacy ``.lzma`` file formats used by the
 :program:`xz` utility, as well as raw compressed streams.
 
-For related file formats, see the :mod:`bz2`, :mod:`gzip`, :mod:`zipfile`, and
-:mod:`tarfile` modules.
-
 The interface provided by this module is very similar to that of the :mod:`bz2`
 module. However, note that :class:`LZMAFile` is *not* thread-safe, unlike
 :class:`bz2.BZ2File`, so if you need to use a single :class:`LZMAFile` instance
