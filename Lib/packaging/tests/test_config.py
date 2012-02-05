@@ -66,11 +66,15 @@ scripts =
   bin/taunt
 
 package_data =
-  cheese = data/templates/*
+  cheese = data/templates/* doc/*
+      doc/images/*.png
+
 
 extra_files = %(extra-files)s
 
 # Replaces MANIFEST.in
+# FIXME no, it's extra_files
+# (but sdist_extra is a better name, should use it)
 sdist_extra =
   include THANKS HACKING
   recursive-include examples *.txt *.py
@@ -94,6 +98,17 @@ setup_hooks = %(setup-hooks)s
 
 [install_dist]
 sub_commands = foo
+"""
+
+SETUP_CFG_PKGDATA_BUGGY_1 = """
+[files]
+package_data = foo.*
+"""
+
+SETUP_CFG_PKGDATA_BUGGY_2 = """
+[files]
+package_data =
+    foo.*
 """
 
 # Can not be merged with SETUP_CFG else install_dist
@@ -276,13 +291,14 @@ class ConfigTestCase(support.TempdirManager,
 
         self.assertEqual(dist.packages, ['one', 'two', 'three'])
         self.assertEqual(dist.py_modules, ['haven'])
-        self.assertEqual(dist.package_data, {'cheese': 'data/templates/*'})
-        self.assertEqual(
+        self.assertEqual(dist.package_data,
+                         {'cheese': ['data/templates/*', 'doc/*',
+                                     'doc/images/*.png']})
+        self.assertEqual(dist.data_files,
             {'bm/b1.gif': '{icon}/b1.gif',
              'bm/b2.gif': '{icon}/b2.gif',
              'Cfg/data.CFG': '{config}/baBar/data.CFG',
-             'init_script': '{script}/JunGle/init_script'},
-             dist.data_files)
+             'init_script': '{script}/JunGle/init_script'})
 
         self.assertEqual(dist.package_dir, 'src')
 
@@ -293,8 +309,8 @@ class ConfigTestCase(support.TempdirManager,
         # this file would be __main__.Foo when run as "python test_config.py".
         # The name FooBarBazTest should be unique enough to prevent
         # collisions.
-        self.assertEqual('FooBarBazTest',
-                         dist.get_command_obj('foo').__class__.__name__)
+        self.assertEqual(dist.get_command_obj('foo').__class__.__name__,
+                         'FooBarBazTest')
 
         # did the README got loaded ?
         self.assertEqual(dist.metadata['description'], 'yeah')
@@ -303,6 +319,13 @@ class ConfigTestCase(support.TempdirManager,
         self.assertIn('d', _COMPILERS)
         d = new_compiler(compiler='d')
         self.assertEqual(d.description, 'D Compiler')
+
+        # check error reporting for invalid package_data value
+        self.write_file('setup.cfg', SETUP_CFG_PKGDATA_BUGGY_1)
+        self.assertRaises(PackagingOptionError, self.get_dist)
+
+        self.write_file('setup.cfg', SETUP_CFG_PKGDATA_BUGGY_2)
+        self.assertRaises(PackagingOptionError, self.get_dist)
 
     def test_multiple_description_file(self):
         self.write_setup({'description-file': 'README  CHANGES'})

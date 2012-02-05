@@ -466,6 +466,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13712: pysetup create should not convert package_data to extra_files.
+
+- Issue #11805: package_data in setup.cfg should allow more than one value.
+
 - Issue #13933: IDLE auto-complete did not work with some imported
   module, like hashlib.  (Patch by Roger Serwy)
 
