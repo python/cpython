@@ -466,6 +466,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #964437 Make IDLE help window non-modal.
+  Patch by Guilherme Polo and Roger Serwy.
+
 - Issue #13734: Add os.fwalk(), a directory walking function yielding file
   descriptors.
 
