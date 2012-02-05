@@ -20,6 +20,8 @@ import uuid
 import asyncore
 import asynchat
 import socket
+import itertools
+import stat
 try:
     import threading
 except ImportError:
@@ -159,7 +161,6 @@ class StatAttributeTests(unittest.TestCase):
         if not hasattr(os, "stat"):
             return
 
-        import stat
         result = os.stat(fname)
 
         # Make sure direct access works
@@ -476,7 +477,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 
-    def test_traversal(self):
+    def setUp(self):
         import os
         from os.path import join
 
@@ -585,6 +586,60 @@ class WalkTests(unittest.TestCase):
                 else:
                     os.remove(dirname)
         os.rmdir(support.TESTFN)
+
+
+@unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
+class FwalkTests(WalkTests):
+    """Tests for os.fwalk()."""
+
+    def test_compare_to_walk(self):
+        # compare with walk() results
+        for topdown, followlinks in itertools.product((True, False), repeat=2):
+            args = support.TESTFN, topdown, None, followlinks
+            expected = {}
+            for root, dirs, files in os.walk(*args):
+                expected[root] = (set(dirs), set(files))
+
+            for root, dirs, files, rootfd in os.fwalk(*args):
+                self.assertIn(root, expected)
+                self.assertEqual(expected[root], (set(dirs), set(files)))
+
+    def test_dir_fd(self):
+        # check returned file descriptors
+        for topdown, followlinks in itertools.product((True, False), repeat=2):
+            args = support.TESTFN, topdown, None, followlinks
+            for root, dirs, files, rootfd in os.fwalk(*args):
+                # check that the FD is valid
+                os.fstat(rootfd)
+                # check that fdlistdir() returns consistent information
+                self.assertEqual(set(os.fdlistdir(rootfd)), set(dirs) | set(files))
+
+    def test_fd_leak(self):
+        # Since we're opening a lot of FDs, we must be careful to avoid leaks:
+        # we both check that calling fwalk() a large number of times doesn't
+        # yield EMFILE, and that the minimum allocated FD hasn't changed.
+        minfd = os.dup(1)
+        os.close(minfd)
+        for i in range(256):
+            for x in os.fwalk(support.TESTFN):
+                pass
+        newfd = os.dup(1)
+        self.addCleanup(os.close, newfd)
+        self.assertEqual(newfd, minfd)
+
+    def tearDown(self):
+        # cleanup
+        for root, dirs, files, rootfd in os.fwalk(support.TESTFN, topdown=False):
+            for name in files:
+                os.unlinkat(rootfd, name)
+            for name in dirs:
+                st = os.fstatat(rootfd, name, os.AT_SYMLINK_NOFOLLOW)
+                if stat.S_ISDIR(st.st_mode):
+                    os.unlinkat(rootfd, name, os.AT_REMOVEDIR)
+                else:
+                    os.unlinkat(rootfd, name)
+        os.rmdir(support.TESTFN)
+
 
 class MakedirTests(unittest.TestCase):
     def setUp(self):
@@ -1700,6 +1755,7 @@ def test_main():
         StatAttributeTests,
         EnvironTests,
         WalkTests,
+        FwalkTests,
         MakedirTests,
         DevNullTests,
         URandomTests,
