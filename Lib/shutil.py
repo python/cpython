@@ -493,7 +493,6 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
 
 _ARCHIVE_FORMATS = {
     'gztar': (_make_tarball, [('compress', 'gzip')], "gzip'ed tar-file"),
-    'bztar': (_make_tarball, [('compress', 'bzip2')], "bzip2'ed tar-file"),
     'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
     'zip':   (_make_zipfile, [],"ZIP file")
     }
