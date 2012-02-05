@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #964437 Make IDLE help window non-modal.
+  Patch by Guilherme Polo and Roger Serwy.
+
 - Issue #2945: Make the distutils upload command aware of bdist_rpm products.
 
 - Issue #13933: IDLE auto-complete did not work with some imported
