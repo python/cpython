@@ -4,7 +4,7 @@
 import sys
 from ctypes import *
 
-_array_type = type(c_int * 3)
+_array_type = type(Array)
 
 def _other_endian(typ):
     """Return the type with the 'other' byte order.  Simple types like
