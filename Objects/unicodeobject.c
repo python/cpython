@@ -1744,9 +1744,8 @@ PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
     if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
+        id->object = unicode_fromascii((unsigned char*)id->string,
+                                       strlen(id->string));
         if (!id->object)
             return NULL;
         PyUnicode_InternInPlace(&id->object);
