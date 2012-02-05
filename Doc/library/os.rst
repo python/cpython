@@ -2251,6 +2251,57 @@ Files and Directories
               os.rmdir(os.path.join(root, name))
 
 
+.. function:: fwalk(top, topdown=True, onerror=None, followlinks=False)
+
+   .. index::
+      single: directory; walking
+      single: directory; traversal
+
+    This behaves exactly like :func:`walk`, except that it yields a 4-tuple
+    ``(dirpath, dirnames, filenames, dirfd)``.
+
+   *dirpath*, *dirnames* and *filenames* are identical to :func:`walk` output,
+   and *dirfd* is a file descriptor referring to the directory *dirpath*.
+
+   .. note::
+
+      Since :func:`fwalk` yields file descriptors, those are only valid until
+      the next iteration step, so you should duplicate them (e.g. with
+      :func:`dup`) if you want to keep them longer.
+
+   This example displays the number of bytes taken by non-directory files in each
+   directory under the starting directory, except that it doesn't look under any
+   CVS subdirectory::
+
+      import os
+      for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
+          print(root, "consumes", end="")
+          print(sum([os.fstatat(rootfd, name).st_size for name in files]),
+                end="")
+          print("bytes in", len(files), "non-directory files")
+          if 'CVS' in dirs:
+              dirs.remove('CVS')  # don't visit CVS directories
+
+   In the next example, walking the tree bottom-up is essential:
+   :func:`unlinkat` doesn't allow deleting a directory before the directory is
+   empty::
+
+      # Delete everything reachable from the directory named in "top",
+      # assuming there are no symbolic links.
+      # CAUTION:  This is dangerous!  For example, if top == '/', it
+      # could delete all your disk files.
+      import os
+      for root, dirs, files, rootfd in os.fwalk(top, topdown=False):
+          for name in files:
+              os.unlinkat(rootfd, name)
+          for name in dirs:
+              os.unlinkat(rootfd, name, os.AT_REMOVEDIR)
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
 .. _os-process:
 
 Process Management

@@ -466,6 +466,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13734: Add os.fwalk(), a directory walking function yielding file
+  descriptors.
+
 - Issue #2945: Make the distutils upload command aware of bdist_rpm products.
 
 - Issue #13712: pysetup create should not convert package_data to extra_files.

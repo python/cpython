@@ -497,6 +497,10 @@ os
 
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
 
+* The :mod:`os` module has a new :func:`~os.fwalk` function similar to
+  :func:`~os.walk` except that it also yields file descriptors referring to the
+  directories visited. This is especially useful to avoid symlink races.
+
 * "at" functions (:issue:`4761`):
 
   * :func:`~os.faccessat`
