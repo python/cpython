@@ -63,6 +63,50 @@ def _find_module(fullname, path=None):
             descr = os.path.splitext(filename)[1], None, imp.PY_SOURCE
     return file, filename, descr
 
+
+class HelpDialog(object):
+
+    def __init__(self):
+        self.parent = None      # parent of help window
+        self.dlg = None         # the help window iteself
+
+    def display(self, parent, near=None):
+        """ Display the help dialog.
+
+            parent - parent widget for the help window
+
+            near - a Toplevel widget (e.g. EditorWindow or PyShell)
+                   to use as a reference for placing the help window
+        """
+        if self.dlg is None:
+            self.show_dialog(parent)
+        if near:
+            self.nearwindow(near)
+
+    def show_dialog(self, parent):
+        self.parent = parent
+        fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
+        self.dlg = dlg = textView.view_file(parent,'Help',fn, modal=False)
+        dlg.bind('<Destroy>', self.destroy, '+')
+
+    def nearwindow(self, near):
+        # Place the help dialog near the window specified by parent.
+        # Note - this may not reposition the window in Metacity
+        #  if "/apps/metacity/general/disable_workarounds" is enabled
+        dlg = self.dlg
+        geom = (near.winfo_rootx() + 10, near.winfo_rooty() + 10)
+        dlg.withdraw()
+        dlg.geometry("=+%d+%d" % geom)
+        dlg.deiconify()
+        dlg.lift()
+
+    def destroy(self, ev=None):
+        self.dlg = None
+        self.parent = None
+
+helpDialog = HelpDialog()  # singleton instance
+
+
 class EditorWindow(object):
     from idlelib.Percolator import Percolator
     from idlelib.ColorDelegator import ColorDelegator
@@ -453,8 +497,11 @@ class EditorWindow(object):
         configDialog.ConfigDialog(self.top,'Settings')
 
     def help_dialog(self, event=None):
-        fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
-        textView.view_file(self.top,'Help',fn)
+        if self.root:
+            parent = self.root
+        else:
+            parent = self.top
+        helpDialog.display(parent, near=self.top)
 
     def python_docs(self, event=None):
         if sys.platform[:3] == 'win':
