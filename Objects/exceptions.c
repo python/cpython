@@ -2475,7 +2475,6 @@ _PyExc_Init(void)
         }
     }
 
-    Py_DECREF(bltinmod);
 }
 
 void
