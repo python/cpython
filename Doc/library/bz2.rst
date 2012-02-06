@@ -12,9 +12,6 @@ This module provides a comprehensive interface for the bz2 compression library.
 It implements a complete file interface, one-shot (de)compression functions, and
 types for sequential (de)compression.
 
-For other archive formats, see the :mod:`gzip`, :mod:`zipfile`, and
-:mod:`tarfile` modules.
-
 Here is a summary of the features offered by the bz2 module:
 
 * :class:`BZ2File` class implements a complete file interface, including
@@ -63,6 +60,18 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
+
+
+   .. note::
+
+      This class does not support input files containing multiple streams (such
+      as those produced by the :program:`pbzip2` tool). When reading such an
+      input file, only the first stream will be accessible. If you require
+      support for multi-stream files, consider using the third-party
+      :mod:`bz2file` module (available from
+      `PyPI <http://pypi.python.org/pypi/bz2file>`_). This module provides a
+      backport of Python 3.3's :class:`BZ2File` class, which does support
+      multi-stream files.
 
 
    .. method:: close()
