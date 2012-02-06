@@ -466,6 +466,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10881: Fix test_site failure with OS X framework builds.
+
 - Issue #964437 Make IDLE help window non-modal.
   Patch by Guilherme Polo and Roger Serwy.
 
