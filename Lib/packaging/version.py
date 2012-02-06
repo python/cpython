@@ -293,12 +293,12 @@ def suggest_normalized_version(s):
 
     # The 'r' and the '-' tags are post release tags
     #   0.4a1.r10       ->  0.4a1.post10
-    #   0.9.33-17222    ->  0.9.3.post17222
-    #   0.9.33-r17222   ->  0.9.3.post17222
+    #   0.9.33-17222    ->  0.9.33.post17222
+    #   0.9.33-r17222   ->  0.9.33.post17222
     rs = re.sub(r"\.?(r|-|-r)\.?(\d+)$", r".post\2", rs)
 
     # Clean 'r' instead of 'dev' usage:
-    #   0.9.33+r17222   ->  0.9.3.dev17222
+    #   0.9.33+r17222   ->  0.9.33.dev17222
     #   1.0dev123       ->  1.0.dev123
     #   1.0.git123      ->  1.0.dev123
     #   1.0.bzr123      ->  1.0.dev123
