@@ -125,6 +125,10 @@ Basic Usage
    :class:`bytes` objects. Therefore, ``fp.write()`` must support :class:`str`
    input.
 
+   If *ensure_ascii* is ``True`` (the default), the output is guaranteed to
+   have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
+   ``False``, these characters will be output as-is.
+
    If *check_circular* is ``False`` (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
    will result in an :exc:`OverflowError` (or worse).
