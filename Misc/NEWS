@@ -1745,7 +1745,7 @@ Library
 
 - Issue #11297: Add collections.ChainMap().
 
-- Issue #10755: Add the posix.fdlistdir() function.  Patch by Ross Lagerwall.
+- Issue #10755: Add the posix.flistdir() function.  Patch by Ross Lagerwall.
 
 - Issue #4761: Add the *at() family of functions (openat(), etc.) to the posix
   module.  Patch by Ross Lagerwall.

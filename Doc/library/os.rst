@@ -769,7 +769,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: fdlistdir(fd)
+.. function:: flistdir(fd)
 
    Like :func:`listdir`, but uses a file descriptor instead and always returns
    strings.

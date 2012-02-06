@@ -357,7 +357,7 @@ if _exists("openat"):
         # whether to follow symlinks
         flag = 0 if followlinks else AT_SYMLINK_NOFOLLOW
 
-        names = fdlistdir(topfd)
+        names = flistdir(topfd)
         dirs, nondirs = [], []
         for name in names:
             # Here, we don't use AT_SYMLINK_NOFOLLOW to be consistent with

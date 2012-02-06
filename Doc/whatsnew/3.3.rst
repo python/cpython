@@ -571,7 +571,7 @@ os
 
 * Other new functions:
 
-  * :func:`~os.fdlistdir` (:issue:`10755`)
+  * :func:`~os.flistdir` (:issue:`10755`)
   * :func:`~os.getgrouplist` (:issue:`9344`)
 
 
