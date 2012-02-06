@@ -14,7 +14,8 @@
 
 The :mod:`tarfile` module makes it possible to read and write tar
 archives, including those using gzip or bz2 compression.
-(:file:`.zip` files can be read and written using the :mod:`zipfile` module.)
+Use the :mod:`zipfile` module to read or write :file:`.zip` files, or the
+higher-level functions in :ref:`shutil <archiving-operations>`.
 
 Some facts and figures:
 
