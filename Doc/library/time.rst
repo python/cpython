@@ -226,6 +226,14 @@ The module defines the following functions and data items:
    The earliest date for which it can generate a time is platform-dependent.
 
 
+.. function:: monotonic()
+
+   Monotonic clock.  The reference point of the returned value is undefined so
+   only the difference of consecutive calls is valid.
+
+   .. versionadded: 3.3
+
+
 .. function:: sleep(secs)
 
    Suspend execution for the given number of seconds.  The argument may be a
