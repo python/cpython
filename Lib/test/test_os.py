@@ -611,8 +611,8 @@ class FwalkTests(WalkTests):
             for root, dirs, files, rootfd in os.fwalk(*args):
                 # check that the FD is valid
                 os.fstat(rootfd)
-                # check that fdlistdir() returns consistent information
-                self.assertEqual(set(os.fdlistdir(rootfd)), set(dirs) | set(files))
+                # check that flistdir() returns consistent information
+                self.assertEqual(set(os.flistdir(rootfd)), set(dirs) | set(files))
 
     def test_fd_leak(self):
         # Since we're opening a lot of FDs, we must be careful to avoid leaks:

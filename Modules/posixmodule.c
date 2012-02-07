@@ -2867,12 +2867,12 @@ posix_listdir(PyObject *self, PyObject *args)
 }  /* end of posix_listdir */
 
 #ifdef HAVE_FDOPENDIR
-PyDoc_STRVAR(posix_fdlistdir__doc__,
-"fdlistdir(fd) -> list_of_strings\n\n\
+PyDoc_STRVAR(posix_flistdir__doc__,
+"flistdir(fd) -> list_of_strings\n\n\
 Like listdir(), but uses a file descriptor instead.");
 
 static PyObject *
-posix_fdlistdir(PyObject *self, PyObject *args)
+posix_flistdir(PyObject *self, PyObject *args)
 {
     PyObject *d, *v;
     DIR *dirp;
@@ -2880,7 +2880,7 @@ posix_fdlistdir(PyObject *self, PyObject *args)
     int fd;
 
     errno = 0;
-    if (!PyArg_ParseTuple(args, "i:fdlistdir", &fd))
+    if (!PyArg_ParseTuple(args, "i:flistdir", &fd))
         return NULL;
     /* closedir() closes the FD, so we duplicate it */
     fd = dup(fd);
@@ -10555,7 +10555,7 @@ static PyMethodDef posix_methods[] = {
 #endif /* HAVE_LINK */
     {"listdir",         posix_listdir, METH_VARARGS, posix_listdir__doc__},
 #ifdef HAVE_FDOPENDIR
-    {"fdlistdir",       posix_fdlistdir, METH_VARARGS, posix_fdlistdir__doc__},
+    {"flistdir",       posix_flistdir, METH_VARARGS, posix_flistdir__doc__},
 #endif
     {"lstat",           posix_lstat, METH_VARARGS, posix_lstat__doc__},
     {"mkdir",           posix_mkdir, METH_VARARGS, posix_mkdir__doc__},
