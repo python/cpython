@@ -451,18 +451,18 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'listdir'):
             self.assertTrue(support.TESTFN in posix.listdir())
 
-    @unittest.skipUnless(hasattr(posix, 'fdlistdir'), "test needs posix.fdlistdir()")
-    def test_fdlistdir(self):
+    @unittest.skipUnless(hasattr(posix, 'flistdir'), "test needs posix.flistdir()")
+    def test_flistdir(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         self.addCleanup(posix.close, f)
         self.assertEqual(
             sorted(posix.listdir('.')),
-            sorted(posix.fdlistdir(f))
+            sorted(posix.flistdir(f))
             )
         # Check that the fd offset was reset (issue #13739)
         self.assertEqual(
             sorted(posix.listdir('.')),
-            sorted(posix.fdlistdir(f))
+            sorted(posix.flistdir(f))
             )
 
     def test_access(self):
