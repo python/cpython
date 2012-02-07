@@ -466,6 +466,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13845: time.time() now uses GetSystemTimeAsFileTime() instead of
+  ftime() to have a resolution of 100 ns instead of 1 ms (the clock accuracy is
+  between 0.5 ms and 15 ms).
+
 - Issue #13846: Add time.monotonic(), monotonic clock.
 
 - Issue #10811: Fix recursive usage of cursors. Instead of crashing,
