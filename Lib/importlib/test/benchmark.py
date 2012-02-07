@@ -165,12 +165,13 @@ def main(import_, filename=None, benchmark=None):
         prev_results = {}
     __builtins__.__import__ = import_
     benchmarks = (from_cache, builtin_mod,
-                  source_using_bytecode, source_wo_bytecode,
                   source_writing_bytecode,
-                  tabnanny_using_bytecode, tabnanny_wo_bytecode,
+                  source_wo_bytecode, source_using_bytecode,
                   tabnanny_writing_bytecode,
-                  decimal_using_bytecode, decimal_writing_bytecode,
-                  decimal_wo_bytecode,)
+                  tabnanny_wo_bytecode, tabnanny_using_bytecode,
+                  decimal_writing_bytecode,
+                  decimal_wo_bytecode, decimal_using_bytecode,
+                )
     if benchmark:
         for b in benchmarks:
             if b.__doc__ == benchmark:
@@ -183,9 +184,10 @@ def main(import_, filename=None, benchmark=None):
     seconds_plural = 's' if seconds > 1 else ''
     repeat = 3
     header = ('Measuring imports/second over {} second{}, best out of {}\n'
-              'Entire benchmark run should take about {} seconds\n')
+              'Entire benchmark run should take about {} seconds\n'
+              'Using {!r} as __import__\n')
     print(header.format(seconds, seconds_plural, repeat,
-                        len(benchmarks) * seconds * repeat))
+                        len(benchmarks) * seconds * repeat, __import__))
     new_results = {}
     for benchmark in benchmarks:
         print(benchmark.__doc__, "[", end=' ')
