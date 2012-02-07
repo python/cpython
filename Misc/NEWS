@@ -466,6 +466,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13846: Add time.monotonic(), monotonic clock.
+
 - Issue #10811: Fix recursive usage of cursors. Instead of crashing,
   raise a ProgrammingError now.
 
