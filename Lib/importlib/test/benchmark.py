@@ -13,6 +13,7 @@ import json
 import os
 import py_compile
 import sys
+import tabnanny
 import timeit
 
 
@@ -60,7 +61,7 @@ def builtin_mod(seconds, repeat):
 
 
 def source_wo_bytecode(seconds, repeat):
-    """Source w/o bytecode: simple"""
+    """Source w/o bytecode: small"""
     sys.dont_write_bytecode = True
     try:
         name = '__importlib_test_benchmark__'
@@ -74,23 +75,30 @@ def source_wo_bytecode(seconds, repeat):
         sys.dont_write_bytecode = False
 
 
-def decimal_wo_bytecode(seconds, repeat):
-    """Source w/o bytecode: decimal"""
-    name = 'decimal'
-    decimal_bytecode = imp.cache_from_source(decimal.__file__)
-    if os.path.exists(decimal_bytecode):
-        os.unlink(decimal_bytecode)
-    sys.dont_write_bytecode = True
-    try:
-        for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                            seconds=seconds):
-            yield result
-    finally:
-        sys.dont_write_bytecode = False
+def _wo_bytecode(module):
+    name = module.__name__
+    def benchmark_wo_bytecode(seconds, repeat):
+        """Source w/o bytecode: {}"""
+        bytecode_path = imp.cache_from_source(module.__file__)
+        if os.path.exists(bytecode_path):
+            os.unlink(bytecode_path)
+        sys.dont_write_bytecode = True
+        try:
+            for result in bench(name, lambda: sys.modules.pop(name),
+                                repeat=repeat, seconds=seconds):
+                yield result
+        finally:
+            sys.dont_write_bytecode = False
+
+    benchmark_wo_bytecode.__doc__ = benchmark_wo_bytecode.__doc__.format(name)
+    return benchmark_wo_bytecode
+
+tabnanny_wo_bytecode = _wo_bytecode(tabnanny)
+decimal_wo_bytecode = _wo_bytecode(decimal)
 
 
 def source_writing_bytecode(seconds, repeat):
-    """Source writing bytecode: simple"""
+    """Source writing bytecode: small"""
     assert not sys.dont_write_bytecode
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
@@ -102,19 +110,27 @@ def source_writing_bytecode(seconds, repeat):
             yield result
 
 
-def decimal_writing_bytecode(seconds, repeat):
-    """Source writing bytecode: decimal"""
-    assert not sys.dont_write_bytecode
-    name = 'decimal'
-    def cleanup():
-        sys.modules.pop(name)
-        os.unlink(imp.cache_from_source(decimal.__file__))
-    for result in bench(name, cleanup, repeat=repeat, seconds=seconds):
-        yield result
+def _writing_bytecode(module):
+    name = module.__name__
+    def writing_bytecode_benchmark(seconds, repeat):
+        """Source writing bytecode: {}"""
+        assert not sys.dont_write_bytecode
+        def cleanup():
+            sys.modules.pop(name)
+            os.unlink(imp.cache_from_source(module.__file__))
+        for result in bench(name, cleanup, repeat=repeat, seconds=seconds):
+            yield result
+
+    writing_bytecode_benchmark.__doc__ = (
+                                writing_bytecode_benchmark.__doc__.format(name))
+    return writing_bytecode_benchmark
+
+tabnanny_writing_bytecode = _writing_bytecode(tabnanny)
+decimal_writing_bytecode = _writing_bytecode(decimal)
 
 
 def source_using_bytecode(seconds, repeat):
-    """Bytecode w/ source: simple"""
+    """Source w/ bytecode: small"""
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
         py_compile.compile(mapping[name])
@@ -124,13 +140,21 @@ def source_using_bytecode(seconds, repeat):
             yield result
 
 
-def decimal_using_bytecode(seconds, repeat):
-    """Bytecode w/ source: decimal"""
-    name = 'decimal'
-    py_compile.compile(decimal.__file__)
-    for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                        seconds=seconds):
-        yield result
+def _using_bytecode(module):
+    name = module.__name__
+    def using_bytecode_benchmark(seconds, repeat):
+        """Source w/ bytecode: {}"""
+        py_compile.compile(module.__file__)
+        for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
+                            seconds=seconds):
+            yield result
+
+    using_bytecode_benchmark.__doc__ = (
+                                using_bytecode_benchmark.__doc__.format(name))
+    return using_bytecode_benchmark
+
+tabnanny_using_bytecode = _using_bytecode(tabnanny)
+decimal_using_bytecode = _using_bytecode(decimal)
 
 
 def main(import_, filename=None, benchmark=None):
@@ -143,6 +167,8 @@ def main(import_, filename=None, benchmark=None):
     benchmarks = (from_cache, builtin_mod,
                   source_using_bytecode, source_wo_bytecode,
                   source_writing_bytecode,
+                  tabnanny_using_bytecode, tabnanny_wo_bytecode,
+                  tabnanny_writing_bytecode,
                   decimal_using_bytecode, decimal_writing_bytecode,
                   decimal_wo_bytecode,)
     if benchmark:
