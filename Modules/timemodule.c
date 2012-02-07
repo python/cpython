@@ -91,39 +91,44 @@ pyclock(void)
 /* Win32 has better clock replacement; we have our own version, due to Mark
    Hammond and Tim Peters */
 static PyObject *
-time_clock(PyObject *self, PyObject *unused)
+win32_clock(int fallback)
 {
-    static LARGE_INTEGER ctrStart;
-    static double divisor = 0.0;
+    static LONGLONG cpu_frequency = 0;
+    static LONGLONG ctrStart;
     LARGE_INTEGER now;
     double diff;
 
-    if (divisor == 0.0) {
+    if (cpu_frequency == 0) {
         LARGE_INTEGER freq;
-        QueryPerformanceCounter(&ctrStart);
+        QueryPerformanceCounter(&now);
+        ctrStart = now.QuadPart;
         if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
             /* Unlikely to happen - this works on all intel
                machines at least!  Revert to clock() */
-            return pyclock();
+            if (fallback)
+                return pyclock();
+            else
+                return PyErr_SetFromWindowsErr(0);
         }
-        divisor = (double)freq.QuadPart;
+        cpu_frequency = freq.QuadPart;
     }
     QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart.QuadPart);
-    return PyFloat_FromDouble(diff / divisor);
+    diff = (double)(now.QuadPart - ctrStart);
+    return PyFloat_FromDouble(diff / (double)cpu_frequency);
 }
+#endif
 
-#elif defined(HAVE_CLOCK)
-
+#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
 static PyObject *
 time_clock(PyObject *self, PyObject *unused)
 {
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
+    return win32_clock(1);
+#else
     return pyclock();
+#endif
 }
-#endif /* HAVE_CLOCK */
 
-
-#ifdef HAVE_CLOCK
 PyDoc_STRVAR(clock_doc,
 "clock() -> floating point number\n\
 \n\
@@ -767,7 +772,7 @@ static PyObject *
 time_wallclock(PyObject *self, PyObject *unused)
 {
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return time_clock(self, NULL);
+    return win32_clock(1);
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     static int clk_index = 0;
     clockid_t clk_ids[] = {
@@ -808,6 +813,50 @@ ability. Use this when the most accurate representation of wall-clock is\n\
 required, i.e. when \"processor time\" is inappropriate. The reference point\n\
 of the returned value is undefined so only the difference of consecutive\n\
 calls is valid.");
+
+#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) \
+    || (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC))
+#  define HAVE_PYTIME_MONOTONIC
+#endif
+
+#ifdef HAVE_PYTIME_MONOTONIC
+static PyObject *
+time_monotonic(PyObject *self, PyObject *unused)
+{
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
+    return win32_clock(0);
+#else
+    static int clk_index = 0;
+    clockid_t clk_ids[] = {
+#ifdef CLOCK_MONOTONIC_RAW
+        CLOCK_MONOTONIC_RAW,
+#endif
+        CLOCK_MONOTONIC
+    };
+    int ret;
+    struct timespec tp;
+
+    while (0 <= clk_index) {
+        clockid_t clk_id = clk_ids[clk_index];
+        ret = clock_gettime(clk_id, &tp);
+        if (ret == 0)
+            return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+
+        clk_index++;
+        if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
+            clk_index = -1;
+    }
+    PyErr_SetFromErrno(PyExc_OSError);
+    return NULL;
+#endif
+}
+
+PyDoc_STRVAR(monotonic_doc,
+"monotonic() -> float\n\
+\n\
+Monotonic clock. The reference point of the returned value is undefined so\n\
+only the difference of consecutive calls is valid.");
+#endif
 
 static void
 PyInit_timezone(PyObject *m) {
@@ -936,6 +985,9 @@ static PyMethodDef time_methods[] = {
     {"ctime",           time_ctime, METH_VARARGS, ctime_doc},
 #ifdef HAVE_MKTIME
     {"mktime",          time_mktime, METH_O, mktime_doc},
+#endif
+#ifdef HAVE_PYTIME_MONOTONIC
+    {"monotonic",       time_monotonic, METH_NOARGS, monotonic_doc},
 #endif
 #ifdef HAVE_STRFTIME
     {"strftime",        time_strftime, METH_VARARGS, strftime_doc},
