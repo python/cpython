@@ -1,7 +1,9 @@
 #include "Python.h"
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
 
-#ifdef __APPLE__
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
+#if defined(__APPLE__) && defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
   /*
    * _PyTime_gettimeofday falls back to ftime when getttimeofday fails because the latter
    * might fail on some platforms. This fallback is unwanted on MacOSX because
@@ -10,18 +12,30 @@
    */
 # undef HAVE_FTIME
 #endif
-#endif
 
-#ifdef HAVE_FTIME
+#if defined(HAVE_FTIME) && !defined(MS_WINDOWS)
 #include <sys/timeb.h>
-#if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
 extern int ftime(struct timeb *);
-#endif /* MS_WINDOWS */
-#endif /* HAVE_FTIME */
+#endif
 
 void
 _PyTime_gettimeofday(_PyTime_timeval *tp)
 {
+#ifdef MS_WINDOWS
+    FILETIME system_time;
+    ULARGE_INTEGER large;
+    ULONGLONG microseconds;
+
+    GetSystemTimeAsFileTime(&system_time);
+    large.u.LowPart = system_time.dwLowDateTime;
+    large.u.HighPart = system_time.dwHighDateTime;
+    /* 11,644,473,600,000,000: number of microseconds between
+       the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
+       days). */
+    microseconds = large.QuadPart / 10 - 11644473600000000;
+    tp->tv_sec = microseconds / 1000000;
+    tp->tv_usec = microseconds % 1000000;
+#else
     /* There are three ways to get the time:
       (1) gettimeofday() -- resolution in microseconds
       (2) ftime() -- resolution in milliseconds
@@ -30,6 +44,7 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
       Since on some systems (e.g. SCO ODT 3.0) gettimeofday() may
       fail, so we fall back on ftime() or time().
       Note: clock resolution does not imply clock accuracy! */
+
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_NO_TZ
     if (gettimeofday(tp) == 0)
@@ -39,6 +54,7 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
         return;
 #endif /* !GETTIMEOFDAY_NO_TZ */
 #endif /* !HAVE_GETTIMEOFDAY */
+
 #if defined(HAVE_FTIME)
     {
         struct timeb t;
@@ -50,7 +66,8 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
     tp->tv_sec = time(NULL);
     tp->tv_usec = 0;
 #endif /* !HAVE_FTIME */
-    return;
+
+#endif /* MS_WINDOWS */
 }
 
 void
