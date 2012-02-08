@@ -95,6 +95,14 @@ An explanation of some terminology and conventions is in order.
   | local time              |                         |                         |
   +-------------------------+-------------------------+-------------------------+
 
+.. _timestamp-types:
+
+* Python supports the following timestamp types:
+
+  * :class:`int`
+  * :class:`float`
+  * :class:`decimal.Decimal`
+
 
 The module defines the following functions and data items:
 
@@ -119,7 +127,7 @@ The module defines the following functions and data items:
       trailing newline.
 
 
-.. function:: clock()
+.. function:: clock(timestamp=float)
 
    .. index::
       single: CPU time
@@ -136,16 +144,27 @@ The module defines the following functions and data items:
    :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
    microsecond.
 
+   Return as a floating point number by default, set the *timestamp* argument
+   to get another :ref:`timestamp type <timestamp-types>`.
 
-.. function:: clock_getres(clk_id)
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
+
+
+.. function:: clock_getres(clk_id, timestamp=float)
 
    Return the resolution (precision) of the specified clock *clk_id*.
+   Return a floating point number by default, set the *timestamp* argument to
+   get another :ref:`timestamp type <timestamp-types>`.
+
 
    .. versionadded:: 3.3
 
-.. function:: clock_gettime(clk_id)
+.. function:: clock_gettime(clk_id, timestamp=float)
 
    Return the time of the specified clock *clk_id*.
+   Return a floating point number by default, set the *timestamp* argument to
+   get another :ref:`timestamp type <timestamp-types>`.
 
    .. versionadded:: 3.3
 
@@ -214,19 +233,22 @@ The module defines the following functions and data items:
    flag is set to ``1`` when DST applies to the given time.
 
 
-.. function:: mktime(t)
+.. function:: mktime(t, timestamp=float)
 
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`time`.
+   It returns a floating point number by default, for compatibility with
+   :func:`time`, set the *timestamp* argument to get another :ref:`timestamp
+   type <timestamp-types>`.
+
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: monotonic(timestamp=float)
 
    Monotonic clock.  The reference point of the returned value is undefined so
    only the difference of consecutive calls is valid.
@@ -440,14 +462,19 @@ The module defines the following functions and data items:
    :exc:`TypeError` is raised.
 
 
-.. function:: time()
+.. function:: time(timestamp=float)
 
-   Return the time as a floating point number expressed in seconds since the epoch,
-   in UTC.  Note that even though the time is always returned as a floating point
+   Return the time expressed in seconds since the epoch in UTC. Return a
+   floating point number by default, set the *timestamp* argument to get
+   another :ref:`timestamp type <timestamp-types>`.
+   Note that even though the time is always returned as a floating point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back between
    the two calls.
+
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
 
 
 .. data:: timezone
@@ -546,13 +573,16 @@ The module defines the following functions and data items:
       ('EET', 'EEST')
 
 
-.. function:: wallclock()
+.. function:: wallclock(timestamp=float)
 
    .. index::
       single: Wallclock
       single: benchmarking
 
    Return the current time in fractions of a second to the system's best ability.
+   Return a floating point number by default, set the *timestamp* argument to
+   get another :ref:`timestamp type <timestamp-types>`.
+
    Use this when the most accurate representation of wall-clock is required, i.e.
    when "processor time" is inappropriate.  The reference point of the returned
    value is undefined so only the difference of consecutive calls is valid.

@@ -40,24 +40,30 @@
 #include <sys/time.h>
 #endif
 
+#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
+#  define HAVE_PYCLOCK
+#endif
+
 /* Forward declarations */
 static int floatsleep(double);
-static double floattime(void);
 
 static PyObject *
-time_time(PyObject *self, PyObject *unused)
+time_time(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    double secs;
-    secs = floattime();
-    if (secs == 0.0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+    static char *kwlist[] = {"timestamp", NULL};
+    PyObject *timestamp = NULL;
+    _PyTime_t ts;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:time", kwlist,
+                                     &timestamp))
         return NULL;
-    }
-    return PyFloat_FromDouble(secs);
+
+    _PyTime_get(&ts);
+    return _PyTime_Convert(&ts, timestamp);
 }
 
 PyDoc_STRVAR(time_doc,
-"time() -> floating point number\n\
+"time(timestamp=float) -> floating point number\n\
 \n\
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
@@ -72,65 +78,91 @@ Fractions of a second may be present if the system clock provides them.");
 #endif
 #endif
 
-static PyObject *
-pyclock(void)
+static int
+pyclock(_PyTime_t *ts)
 {
-    clock_t value;
-    value = clock();
-    if (value == (clock_t)-1) {
+    clock_t processor_time;
+    processor_time = clock();
+    if (processor_time == (clock_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
                 "the processor time used is not available "
                 "or its value cannot be represented");
-        return NULL;
+        return -1;
     }
-    return PyFloat_FromDouble((double)value / CLOCKS_PER_SEC);
+    ts->seconds = 0;
+    assert(sizeof(clock_t) <= sizeof(_PyTime_fraction_t));
+    ts->numerator = Py_SAFE_DOWNCAST(processor_time,
+                                     clock_t, _PyTime_fraction_t);
+    ts->denominator = CLOCKS_PER_SEC;
+    return 0;
 }
 #endif /* HAVE_CLOCK */
 
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement; we have our own version, due to Mark
    Hammond and Tim Peters */
-static PyObject *
-win32_clock(int fallback)
+static int
+win32_clock(_PyTime_t *ts, int fallback)
 {
     static LONGLONG cpu_frequency = 0;
-    static LONGLONG ctrStart;
+    static LONGLONG start;
     LARGE_INTEGER now;
-    double diff;
+    LONGLONG dt;
 
     if (cpu_frequency == 0) {
         LARGE_INTEGER freq;
         QueryPerformanceCounter(&now);
-        ctrStart = now.QuadPart;
+        start = now.QuadPart;
         if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
             /* Unlikely to happen - this works on all intel
                machines at least!  Revert to clock() */
-            if (fallback)
-                return pyclock();
-            else
-                return PyErr_SetFromWindowsErr(0);
+            if (fallback) {
+                return pyclock(ts);
+            }
+            else {
+                PyErr_SetFromWindowsErr(0);
+                return  -1;
+            }
         }
         cpu_frequency = freq.QuadPart;
     }
     QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart);
-    return PyFloat_FromDouble(diff / (double)cpu_frequency);
+    dt = now.QuadPart - start;
+
+    ts->seconds = 0;
+    assert(sizeof(LONGLONG) <= sizeof(_PyTime_fraction_t));
+    ts->numerator = Py_SAFE_DOWNCAST(dt,
+                                     LONGLONG, _PyTime_fraction_t);
+    ts->denominator = Py_SAFE_DOWNCAST(cpu_frequency,
+                                       LONGLONG, _PyTime_fraction_t);
+    return 0;
 }
 #endif
 
 #if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
 static PyObject *
-time_clock(PyObject *self, PyObject *unused)
+time_clock(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"timestamp", NULL};
+    _PyTime_t ts;
+    PyObject *timestamp = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:clock", kwlist,
+                                     &timestamp))
+        return NULL;
+
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return win32_clock(1);
+    if (win32_clock(&ts, 1) == -1)
+        return NULL;
 #else
-    return pyclock();
+    if (pyclock(&ts) == -1)
+        return NULL;
 #endif
+    return _PyTime_Convert(&ts, timestamp);
 }
 
 PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
+"clock(timestamp=float) -> floating point number\n\
 \n\
 Return the CPU time or real time since the start of the process or since\n\
 the first call to clock().  This has as much precision as the system\n\
@@ -139,13 +171,17 @@ records.");
 
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
-time_clock_gettime(PyObject *self, PyObject *args)
+time_clock_gettime(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"clk_id", "timestamp", NULL};
+    PyObject *timestamp = NULL;
     int ret;
     clockid_t clk_id;
     struct timespec tp;
+    _PyTime_t ts;
 
-    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|O:clock_gettime", kwlist,
+                                     &clk_id, &timestamp))
         return NULL;
 
     ret = clock_gettime((clockid_t)clk_id, &tp);
@@ -153,25 +189,31 @@ time_clock_gettime(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-
-    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+    ts.seconds = tp.tv_sec;
+    ts.numerator = tp.tv_nsec;
+    ts.denominator = 1000000000;
+    return _PyTime_Convert(&ts, timestamp);
 }
 
 PyDoc_STRVAR(clock_gettime_doc,
-"clock_gettime(clk_id) -> floating point number\n\
+"clock_gettime(clk_id, timestamp=float) -> floating point number\n\
 \n\
 Return the time of the specified clock clk_id.");
 #endif
 
 #ifdef HAVE_CLOCK_GETRES
 static PyObject *
-time_clock_getres(PyObject *self, PyObject *args)
+time_clock_getres(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"clk_id", "timestamp", NULL};
+    PyObject *timestamp = NULL;
     int ret;
     clockid_t clk_id;
     struct timespec tp;
+    _PyTime_t ts;
 
-    if (!PyArg_ParseTuple(args, "i:clock_getres", &clk_id))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|O:clock_getres", kwlist,
+                                     &clk_id, &timestamp))
         return NULL;
 
     ret = clock_getres((clockid_t)clk_id, &tp);
@@ -179,12 +221,14 @@ time_clock_getres(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-
-    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+    ts.seconds = tp.tv_sec;
+    ts.numerator = tp.tv_nsec;
+    ts.denominator = 1000000000;
+    return _PyTime_Convert(&ts, timestamp);
 }
 
 PyDoc_STRVAR(clock_getres_doc,
-"clock_getres(clk_id) -> floating point number\n\
+"clock_getres(clk_id, timestamp=float) -> floating point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 #endif
@@ -707,10 +751,19 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tup)
+time_mktime(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"t", "timestamp", NULL};
+    PyObject *timestamp = NULL;
+    PyObject *tup;
     struct tm buf;
     time_t tt;
+    _PyTime_t ts;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:mktime", kwlist,
+                                     &tup, &timestamp))
+        return NULL;
+
     if (!gettmarg(tup, &buf))
         return NULL;
     buf.tm_wday = -1;  /* sentinel; original value ignored */
@@ -722,7 +775,10 @@ time_mktime(PyObject *self, PyObject *tup)
                         "mktime argument out of range");
         return NULL;
     }
-    return PyFloat_FromDouble((double)tt);
+    ts.seconds = tt;
+    ts.numerator = 0;
+    ts.denominator = 1;
+    return _PyTime_Convert(&ts, timestamp);
 }
 
 PyDoc_STRVAR(mktime_doc,
@@ -768,12 +824,14 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
-static PyObject *
-time_wallclock(PyObject *self, PyObject *unused)
+static int
+pywallclock(_PyTime_t *ts)
 {
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return win32_clock(1);
-#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+    return win32_clock(ts, 1);
+#else
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     static int clk_index = 0;
     clockid_t clk_ids[] = {
 #ifdef CLOCK_MONOTONIC_RAW
@@ -793,20 +851,41 @@ time_wallclock(PyObject *self, PyObject *unused)
         clockid_t clk_id = clk_ids[clk_index];
         ret = clock_gettime(clk_id, &tp);
         if (ret == 0)
-            return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+        {
+            ts->seconds = tp.tv_sec;
+            ts->numerator = tp.tv_nsec;
+            ts->denominator = 1000000000;
+            return 0;
+        }
 
         clk_index++;
         if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
             clk_index = -1;
     }
-    return time_time(self, NULL);
-#else
-    return time_time(self, NULL);
+#endif /* defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC) */
+
+    _PyTime_get(ts);
+    return 0;
 #endif
 }
 
+static PyObject *
+time_wallclock(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"timestamp", NULL};
+    PyObject *timestamp = NULL;
+    _PyTime_t ts;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:wallclock", kwlist,
+                                     &timestamp))
+        return NULL;
+    if (pywallclock(&ts))
+        return NULL;
+    return _PyTime_Convert(&ts, timestamp);
+}
+
 PyDoc_STRVAR(wallclock_doc,
-"wallclock() -> float\n\
+"wallclock(timestamp=float)\n\
 \n\
 Return the current time in fractions of a second to the system's best\n\
 ability. Use this when the most accurate representation of wall-clock is\n\
@@ -821,11 +900,11 @@ calls is valid.");
 
 #ifdef HAVE_PYTIME_MONOTONIC
 static PyObject *
-time_monotonic(PyObject *self, PyObject *unused)
+time_monotonic(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return win32_clock(0);
-#else
+    static char *kwlist[] = {"timestamp", NULL};
+    PyObject *timestamp = NULL;
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     static int clk_index = 0;
     clockid_t clk_ids[] = {
 #ifdef CLOCK_MONOTONIC_RAW
@@ -835,12 +914,28 @@ time_monotonic(PyObject *self, PyObject *unused)
     };
     int ret;
     struct timespec tp;
+#endif
+    _PyTime_t ts;
 
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:monotonic", kwlist,
+                                     &timestamp))
+        return NULL;
+
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
+    if (win32_clock(&ts, 0) == -1)
+        return NULL;
+    return _PyTime_Convert(&ts, timestamp);
+#else
     while (0 <= clk_index) {
         clockid_t clk_id = clk_ids[clk_index];
         ret = clock_gettime(clk_id, &tp);
         if (ret == 0)
-            return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+        {
+            ts.seconds = tp.tv_sec;
+            ts.numerator = tp.tv_nsec;
+            ts.denominator = 1000000000;
+            return _PyTime_Convert(&ts, timestamp);
+        }
 
         clk_index++;
         if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
@@ -968,15 +1063,19 @@ PyInit_timezone(PyObject *m) {
 
 
 static PyMethodDef time_methods[] = {
-    {"time",            time_time, METH_NOARGS, time_doc},
-#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) || defined(HAVE_CLOCK)
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
+    {"time",            (PyCFunction)time_time,
+                        METH_VARARGS | METH_KEYWORDS, time_doc},
+#ifdef HAVE_PYCLOCK
+    {"clock",           (PyCFunction)time_clock,
+                        METH_VARARGS | METH_KEYWORDS, clock_doc},
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-    {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
+    {"clock_gettime",   (PyCFunction)time_clock_gettime,
+                        METH_VARARGS | METH_KEYWORDS, clock_gettime_doc},
 #endif
 #ifdef HAVE_CLOCK_GETRES
-    {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
+    {"clock_getres",    (PyCFunction)time_clock_getres,
+                        METH_VARARGS | METH_KEYWORDS, clock_getres_doc},
 #endif
     {"sleep",           time_sleep, METH_VARARGS, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},
@@ -984,10 +1083,12 @@ static PyMethodDef time_methods[] = {
     {"asctime",         time_asctime, METH_VARARGS, asctime_doc},
     {"ctime",           time_ctime, METH_VARARGS, ctime_doc},
 #ifdef HAVE_MKTIME
-    {"mktime",          time_mktime, METH_O, mktime_doc},
+    {"mktime",          (PyCFunction)time_mktime,
+                        METH_VARARGS | METH_KEYWORDS, mktime_doc},
 #endif
 #ifdef HAVE_PYTIME_MONOTONIC
-    {"monotonic",       time_monotonic, METH_NOARGS, monotonic_doc},
+    {"monotonic",       (PyCFunction)time_monotonic,
+                        METH_VARARGS | METH_KEYWORDS, monotonic_doc},
 #endif
 #ifdef HAVE_STRFTIME
     {"strftime",        time_strftime, METH_VARARGS, strftime_doc},
@@ -996,7 +1097,8 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_WORKING_TZSET
     {"tzset",           time_tzset, METH_NOARGS, tzset_doc},
 #endif
-    {"wallclock",       time_wallclock, METH_NOARGS, wallclock_doc},
+    {"wallclock",       (PyCFunction)time_wallclock,
+                        METH_VARARGS | METH_KEYWORDS, wallclock_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1080,15 +1182,6 @@ PyInit_time(void)
     initialized = 1;
     return m;
 }
-
-static double
-floattime(void)
-{
-    _PyTime_timeval t;
-    _PyTime_gettimeofday(&t);
-    return (double)t.tv_sec + t.tv_usec*0.000001;
-}
-
 
 /* Implement floatsleep() for various platforms.
    When interrupted (or when another error occurs), return -1 and
