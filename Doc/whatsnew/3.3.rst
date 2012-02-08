@@ -399,9 +399,9 @@ time
 The :mod:`time` module has new functions:
 
 * :func:`~time.clock_getres` and :func:`~time.clock_gettime` functions and
-  ``CLOCK_xxx`` constants.  :func:`~time.clock_gettime` can be used with
-  :data:`time.CLOCK_MONOTONIC` to get a monotonic clock.
-* :func:`~time.wallclock`: monotonic clock.
+  ``CLOCK_xxx`` constants.
+* :func:`~time.monotonic`: monotonic clock.
+* :func:`~time.wallclock`.
 
 (Contributed by Victor Stinner in :issue:`10278`)
 
