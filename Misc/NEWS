@@ -467,7 +467,7 @@ Library
 -------
 
 - When '' is a path (e.g. in sys.path), make sure __file__ uses the current
-  working directory instead of ''.
+  working directory instead of '' in importlib.
 
 - Issue #13609: Add two functions to query the terminal size:
   os.get_terminal_size (low level) and shutil.get_terminal_size (high level).
