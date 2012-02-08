@@ -675,6 +675,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self.assertFalse(err)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_reinit_tls_after_fork(self):
         # Issue #13817: fork() would deadlock in a multithreaded program with
         # the ad-hoc TLS implementation.
