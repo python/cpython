@@ -1779,6 +1779,17 @@ class _TestConnection(BaseTestCase):
         self.assertRaises(RuntimeError, reduction.recv_handle, conn)
         p.join()
 
+class _TestListener(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes')
+
+    def test_multiple_bind(self):
+        for family in self.connection.families:
+            l = self.connection.Listener(family=family)
+            self.addCleanup(l.close)
+            self.assertRaises(OSError, self.connection.Listener,
+                              l.address, family)
+
 class _TestListenerClient(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
@@ -1799,6 +1810,7 @@ class _TestListenerClient(BaseTestCase):
             self.assertEqual(conn.recv(), 'hello')
             p.join()
             l.close()
+
 #
 # Test of sending connection and socket objects between processes
 #
