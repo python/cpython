@@ -187,6 +187,9 @@ corresponding Unix manual entries for more information on calls.");
 #endif  /* ! __WATCOMC__ || __QNX__ */
 #endif /* ! __IBMC__ */
 
+
+
+
 #ifndef _MSC_VER
 
 #if defined(__sgi)&&_COMPILER_VERSION>=700
@@ -3525,53 +3528,18 @@ posix_uname(PyObject *self, PyObject *noargs)
 #endif /* HAVE_UNAME */
 
 
-/*
- * Classic POSIX utime functions supported microseconds (1m/sec).
- * Newer POSIX functions support nanoseconds (1 billion per sec).
- * posixmodule now uses the new functions where possible.
- * This improves accuracy in many situations, for example shutil.copy2().
- *
- * The implementation isn't currently sophisticated enough to handle
- * a platform where HAVE_UTIMENSAT is true but HAVE_FUTIMENS is false.
- * Specifically, posix_futimes() would break.
- *
- * Supporting such a platform wouldn't be impossible; you'd need two
- * extract_time() functions, or make its precision a parameter.
- * Since such a platform seems unlikely we haven't bothered.
- */
-#if defined(HAVE_UTIMENSAT)
-#define EXTRACT_TIME_PRECISION (1e9)
-#if !defined(HAVE_FUTIMENS)
-#error You HAVE_UTIMENSAT but not HAVE_FUTIMENS... please see accompanying comment.
-#endif
-#else
-#define EXTRACT_TIME_PRECISION (1e6)
-#endif
-
 static int
-extract_time(PyObject *t, time_t* sec, long* usec)
+extract_time(PyObject *t, time_t* sec, long* nsec)
 {
     time_t intval;
     if (PyFloat_Check(t)) {
-        double tval = PyFloat_AsDouble(t);
-        PyObject *intobj = PyNumber_Long(t);
-        if (!intobj)
-            return -1;
-#if SIZEOF_TIME_T > SIZEOF_LONG
-        intval = PyLong_AsUnsignedLongLongMask(intobj);
-#else
-        intval = PyLong_AsLong(intobj);
-#endif
-        Py_DECREF(intobj);
-        if (intval == -1 && PyErr_Occurred())
-            return -1;
-        *sec = intval;
-
-        *usec = (long)((tval - intval) * EXTRACT_TIME_PRECISION);
-        if (*usec < 0)
-            /* If rounding gave us a negative number,
-               truncate.  */
-            *usec = 0;
+        double d = PyFloat_AsDouble(t);
+        double mod;
+        *sec = (time_t)d;
+        mod = fmod(d, 1.0);
+        mod *= 1e9;
+        *nsec = (long)mod;
+        printf("%g => (%u, %li)\n", d, *sec, *nsec);
         return 0;
     }
 #if SIZEOF_TIME_T > SIZEOF_LONG
@@ -3582,7 +3550,7 @@ extract_time(PyObject *t, time_t* sec, long* usec)
     if (intval == -1 && PyErr_Occurred())
         return -1;
     *sec = intval;
-    *usec = 0;
+    *nsec = 0;
     return 0;
 }
 
@@ -3602,7 +3570,7 @@ posix_utime(PyObject *self, PyObject *args)
     const char *apath;
     HANDLE hFile;
     time_t atimesec, mtimesec;
-    long ausec, musec;
+    long ansec, mnsec;
     FILETIME atime, mtime;
     PyObject *result = NULL;
 
@@ -3655,13 +3623,13 @@ posix_utime(PyObject *self, PyObject *args)
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atimesec, &ausec) == -1)
+                         &atimesec, &ansec) == -1)
             goto done;
-        time_t_to_FILE_TIME(atimesec, 1000*ausec, &atime);
+        time_t_to_FILE_TIME(atimesec, ansec, &atime);
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtimesec, &musec) == -1)
+                         &mtimesec, &mnsec) == -1)
             goto done;
-        time_t_to_FILE_TIME(mtimesec, 1000*musec, &mtime);
+        time_t_to_FILE_TIME(mtimesec, mnsec, &mtime);
     }
     if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
         /* Avoid putting the file name into the error here,
@@ -3681,7 +3649,7 @@ done:
     PyObject *opath;
     char *path;
     time_t atime, mtime;
-    long ausec, musec;
+    long ansec, mnsec;
     int res;
     PyObject* arg = Py_None;
 
@@ -3703,12 +3671,12 @@ done:
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atime, &ausec) == -1) {
+                         &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtime, &musec) == -1) {
+                         &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
@@ -3718,16 +3686,16 @@ done:
 #ifdef HAVE_UTIMENSAT
         struct timespec buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ausec;
+        buf[0].tv_nsec = ansec;
         buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = musec;
+        buf[1].tv_nsec = mnsec;
         res = utimensat(AT_FDCWD, path, buf, 0);
 #elif defined(HAVE_UTIMES)
         struct timeval buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_usec = ausec;
+        buf[0].tv_usec = ansec / 1000;
         buf[1].tv_sec = mtime;
-        buf[1].tv_usec = musec;
+        buf[1].tv_usec = mnsec / 1000;
         res = utimes(path, buf);
 #elif defined(HAVE_UTIME_H)
         /* XXX should define struct utimbuf instead, above */
@@ -3767,7 +3735,7 @@ posix_futimes(PyObject *self, PyObject *args)
     int res, fd;
     PyObject* arg = Py_None;
     time_t atime, mtime;
-    long ausec, musec;
+    long ansec, mnsec;
 
     if (!PyArg_ParseTuple(args, "i|O:futimes", &fd, &arg))
         return NULL;
@@ -3785,11 +3753,11 @@ posix_futimes(PyObject *self, PyObject *args)
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                &atime, &ausec) == -1) {
+                &atime, &ansec) == -1) {
             return NULL;
         }
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                &mtime, &musec) == -1) {
+                &mtime, &mnsec) == -1) {
             return NULL;
         }
         Py_BEGIN_ALLOW_THREADS
@@ -3797,16 +3765,16 @@ posix_futimes(PyObject *self, PyObject *args)
 #ifdef HAVE_FUTIMENS
         struct timespec buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ausec;
+        buf[0].tv_nsec = ansec;
         buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = musec;
+        buf[1].tv_nsec = mnsec;
         res = futimens(fd, buf);
 #else
         struct timeval buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_usec = ausec;
+        buf[0].tv_usec = ansec / 1000;
         buf[1].tv_sec = mtime;
-        buf[1].tv_usec = musec;
+        buf[1].tv_usec = mnsec / 1000;
         res = futimes(fd, buf);
 #endif
         }
@@ -3831,7 +3799,7 @@ posix_lutimes(PyObject *self, PyObject *args)
     const char *path;
     int res;
     time_t atime, mtime;
-    long ausec, musec;
+    long ansec, mnsec;
 
     if (!PyArg_ParseTuple(args, "O&|O:lutimes",
             PyUnicode_FSConverter, &opath, &arg))
@@ -3851,12 +3819,12 @@ posix_lutimes(PyObject *self, PyObject *args)
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                &atime, &ausec) == -1) {
+                &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                &mtime, &musec) == -1) {
+                &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
@@ -3865,16 +3833,16 @@ posix_lutimes(PyObject *self, PyObject *args)
 #ifdef HAVE_UTIMENSAT
         struct timespec buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ausec;
+        buf[0].tv_nsec = ansec;
         buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = musec;
+        buf[1].tv_nsec = mnsec;
         res = utimensat(AT_FDCWD, path, buf, AT_SYMLINK_NOFOLLOW);
 #else
         struct timeval buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_usec = ausec;
+        buf[0].tv_usec = ansec / 1000;
         buf[1].tv_sec = mtime;
-        buf[1].tv_usec = musec;
+        buf[1].tv_usec = mnsec / 1000;
         res = lutimes(path, buf);
 #endif
         }
@@ -9712,7 +9680,7 @@ posix_futimesat(PyObject *self, PyObject *args)
     int res, dirfd;
     PyObject* arg = Py_None;
     time_t atime, mtime;
-    long ausec, musec;
+    long ansec, mnsec;
 
     if (!PyArg_ParseTuple(args, "iO&|O:futimesat",
             &dirfd, PyUnicode_FSConverter, &opath, &arg))
@@ -9732,12 +9700,12 @@ posix_futimesat(PyObject *self, PyObject *args)
     }
     else {
         if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atime, &ausec) == -1) {
+                         &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
         if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtime, &musec) == -1) {
+                         &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
@@ -9747,16 +9715,16 @@ posix_futimesat(PyObject *self, PyObject *args)
 #ifdef HAVE_UTIMENSAT
         struct timespec buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ausec;
+        buf[0].tv_nsec = ansec;
         buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = musec;
+        buf[1].tv_nsec = mnsec;
         res = utimensat(dirfd, path, buf, 0);
 #else
         struct timeval buf[2];
         buf[0].tv_sec = atime;
-        buf[0].tv_usec = ausec;
+        buf[0].tv_usec = ansec / 1000;
         buf[1].tv_sec = mtime;
-        buf[1].tv_usec = musec;
+        buf[1].tv_usec = mnsec / 1000;
         res = futimesat(dirfd, path, buf);
 #endif
         }
