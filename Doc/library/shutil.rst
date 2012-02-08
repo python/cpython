@@ -459,3 +459,36 @@ The resulting archive contains::
     -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
     -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
+
+
+Querying the size of the output terminal
+----------------------------------------
+
+.. versionadded:: 3.3
+
+.. function:: get_terminal_size(fallback=(columns, lines))
+
+   Get the size of the terminal window.
+
+   For each of the two dimensions, the environment variable, ``COLUMNS``
+   and ``LINES`` respectively, is checked. If the variable is defined and
+   the value is a positive integer, it is used.
+
+   When ``COLUMNS`` or ``LINES`` is not defined, which is the common case,
+   the terminal connected to :data:`sys.__stdout__` is queried
+   by invoking :func:`os.get_terminal_size`.
+
+   If the terminal size cannot be successfully queried, either because
+   the system doesn't support querying, or because we are not
+   connected to a terminal, the value given in ``fallback`` parameter
+   is used. ``fallback`` defaults to ``(80, 24)`` which is the default
+   size used by many terminal emulators.
+
+   The value returned is a named tuple of type :class:`os.terminal_size`.
+
+   See also: The Single UNIX Specification, Version 2,
+   `Other Environment Variables`_.
+
+.. _`Other Environment Variables`:
+   http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
+

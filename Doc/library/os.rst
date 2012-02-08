@@ -1411,6 +1411,43 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    .. versionadded:: 3.3
 
 
+.. _terminal-size:
+
+Querying the size of a terminal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.3
+
+.. function:: get_terminal_size(fd=STDOUT_FILENO)
+
+   Return the size of the terminal window as ``(columns, lines)``,
+   tuple of type :class:`terminal_size`.
+
+   The optional argument ``fd`` (default ``STDOUT_FILENO``, or standard
+   output) specifies which file descriptor should be queried.
+
+   If the file descriptor is not connected to a terminal, an :exc:`OSError`
+   is thrown.
+
+   :func:`shutil.get_terminal_size` is the high-level function which
+   should normally be used, ``os.get_terminal_size`` is the low-level
+   implementation.
+
+   Availability: Unix, Windows.
+
+.. class:: terminal_size(tuple)
+
+   A tuple of ``(columns, lines)`` for holding terminal window size.
+
+   .. attribute:: columns
+
+      Width of the terminal window in characters.
+
+   .. attribute:: lines
+
+      Height of the terminal window in characters.
+
+
 .. _os-file-dir:
 
 Files and Directories
