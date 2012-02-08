@@ -544,7 +544,8 @@ else:
             obsize, ibsize = 0, BUFSIZE
 
         h1 = win32.CreateNamedPipe(
-            address, openmode | win32.FILE_FLAG_OVERLAPPED,
+            address, openmode | win32.FILE_FLAG_OVERLAPPED |
+            win32.FILE_FLAG_FIRST_PIPE_INSTANCE,
             win32.PIPE_TYPE_MESSAGE | win32.PIPE_READMODE_MESSAGE |
             win32.PIPE_WAIT,
             1, obsize, ibsize, win32.NMPWAIT_WAIT_FOREVER, win32.NULL
@@ -576,7 +577,10 @@ class SocketListener(object):
     def __init__(self, address, family, backlog=1):
         self._socket = socket.socket(getattr(socket, family))
         try:
-            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # SO_REUSEADDR has different semantics on Windows (issue #2550).
+            if os.name == 'posix':
+                self._socket.setsockopt(socket.SOL_SOCKET,
+                                        socket.SO_REUSEADDR, 1)
             self._socket.bind(address)
             self._socket.listen(backlog)
             self._address = self._socket.getsockname()
@@ -630,7 +634,8 @@ if sys.platform == 'win32':
         def __init__(self, address, backlog=None):
             self._address = address
             handle = win32.CreateNamedPipe(
-                address, win32.PIPE_ACCESS_DUPLEX,
+                address, win32.PIPE_ACCESS_DUPLEX |
+                win32.FILE_FLAG_FIRST_PIPE_INSTANCE,
                 win32.PIPE_TYPE_MESSAGE | win32.PIPE_READMODE_MESSAGE |
                 win32.PIPE_WAIT,
                 win32.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,

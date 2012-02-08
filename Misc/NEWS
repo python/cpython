@@ -472,6 +472,11 @@ Library
 
 - Issue #13846: Add time.monotonic(), monotonic clock.
 
+- Issue #8184: multiprocessing: On Windows, don't set SO_REUSEADDR on
+  Connection sockets, and set FILE_FLAG_FIRST_PIPE_INSTANCE on named pipes, to
+  make sure two listeners can't bind to the same socket/pipe (or any existing
+  socket/pipe).
+
 - Issue #10811: Fix recursive usage of cursors. Instead of crashing,
   raise a ProgrammingError now.
 
