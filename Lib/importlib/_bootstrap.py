@@ -1082,4 +1082,3 @@ def _setup(sys_module, imp_module):
         raise ImportError('importlib requires posix or nt')
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
-
