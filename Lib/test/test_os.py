@@ -1851,7 +1851,7 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            if e.errno == errno.EINVAL or sys.platform == "win32":
+            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
@@ -1873,7 +1873,14 @@ class TermsizeTests(unittest.TestCase):
             self.skipTest("stty invocation failed")
         expected = (int(size[1]), int(size[0])) # reversed order
 
-        actual = os.get_terminal_size(sys.__stdin__.fileno())
+        try:
+            actual = os.get_terminal_size(sys.__stdin__.fileno())
+        except OSError as e:
+            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
+                # Under win32 a generic OSError can be thrown if the
+                # handle cannot be retrieved
+                self.skipTest("failed to query terminal size")
+            raise
         self.assertEqual(expected, actual)
 
 
