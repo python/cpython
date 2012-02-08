@@ -307,7 +307,7 @@ class StatAttributeTests(unittest.TestCase):
         mtime = msec + mmsec * 1e-3
         filename = self.fname
         dirname = os.path.dirname(filename)
-        for func in ('utime', 'futimes', 'futimens', 'lutimes', 'utimensat'):
+        for func in ('utime', 'futimes', 'futimens', 'futimesat', 'lutimes', 'utimensat'):
             if not hasattr(os, func):
                 continue
             os.utime(filename, (0, 0))
@@ -324,6 +324,13 @@ class StatAttributeTests(unittest.TestCase):
                                (msec, mmsec * 1000000))
             elif func == 'lutimes':
                 os.lutimes(filename, (atime, mtime))
+            elif func == 'futimesat':
+                dirfd = os.open(dirname, os.O_RDONLY)
+                try:
+                    os.futimesat(dirfd, os.path.basename(filename),
+                                 (atime, mtime))
+                finally:
+                    os.close(dirfd)
             else:
                 dirfd = os.open(dirname, os.O_RDONLY)
                 try:
