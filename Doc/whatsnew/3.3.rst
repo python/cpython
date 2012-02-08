@@ -300,6 +300,23 @@ Some smaller changes made to the core Python language are:
 New and Improved Modules
 ========================
 
+abc
+---
+
+Improved support for abstract base classes containing descriptors composed with
+abstract methods. The recommended approach to declaring abstract descriptors is
+now to provide :attr:`__isabstractmethod__` as a dynamically updated
+property. The built-in descriptors have been updated accordingly.
+
+  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+    with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractclassmethod` has been deprecated, use
+    :class:`classmethod` with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractstaticmethod` has been deprecated, use
+    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+
+(Contributed by Darren Dale in :issue:`11610`)
+
 array
 -----
 
@@ -368,23 +385,6 @@ curses
 
 (Contributed by Iñigo Serna in :issue:`6755`)
 
-abc
----
-
-Improved support for abstract base classes containing descriptors composed with
-abstract methods. The recommended approach to declaring abstract descriptors is
-now to provide :attr:`__isabstractmethod__` as a dynamically updated
-property. The built-in descriptors have been updated accordingly.
-
-  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-    with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractclassmethod` has been deprecated, use
-    :class:`classmethod` with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
-
-(Contributed by Darren Dale in :issue:`11610`)
-
 faulthandler
 ------------
 
@@ -392,19 +392,6 @@ New module: :mod:`faulthandler`.
 
  * :envvar:`PYTHONFAULTHANDLER`
  * :option:`-X` ``faulthandler``
-
-time
-----
-
-The :mod:`time` module has new functions:
-
-* :func:`~time.clock_getres` and :func:`~time.clock_gettime` functions and
-  ``CLOCK_xxx`` constants.
-* :func:`~time.monotonic`: monotonic clock.
-* :func:`~time.wallclock`.
-
-(Contributed by Victor Stinner in :issue:`10278`)
-
 
 ftplib
 ------
@@ -508,7 +495,6 @@ os
   * :func:`~os.fchownat`
   * :func:`~os.fstatat`
   * :func:`~os.futimesat`
-  * :func:`~os.futimesat`
   * :func:`~os.linkat`
   * :func:`~os.mkdirat`
   * :func:`~os.mkfifoat`
@@ -518,7 +504,6 @@ os
   * :func:`~os.renameat`
   * :func:`~os.symlinkat`
   * :func:`~os.unlinkat`
-  * :func:`~os.utimensat`
   * :func:`~os.utimensat`
 
 * extended attributes (:issue:`12720`):
@@ -553,11 +538,8 @@ os
 
   * :func:`~os.fexecve`
   * :func:`~os.futimens`
-  * :func:`~os.futimens`
-  * :func:`~os.futimes`
   * :func:`~os.futimes`
   * :func:`~os.lockf`
-  * :func:`~os.lutimes`
   * :func:`~os.lutimes`
   * :func:`~os.posix_fadvise`
   * :func:`~os.posix_fallocate`
@@ -596,13 +578,43 @@ The Tk GUI and the :func:`~pydoc.serve` function have been removed from the
 in Python 3.2.
 
 
-sys
----
+sched
+-----
 
-* The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-  sequence` holding informations about the thread implementation.
+* :meth:`~sched.scheduler.run` now accepts a *blocking* parameter which when
+  set to False makes the method execute the scheduled events due to expire
+  soonest (if any) and then return immediately.
+  This is useful in case you want to use the :class:`~sched.scheduler` in
+  non-blocking applications.  (Contributed by Giampaolo Rodolà in :issue:`13449`)
 
-  (:issue:`11223`)
+* :class:`~sched.scheduler` class can now be safely used in multi-threaded
+  environments.  (Contributed by Josiah Carlson and Giampaolo Rodolà in
+  :issue:`8684`)
+
+* *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
+  constructor are now optional and defaults to :func:`time.time` and
+  :func:`time.sleep` respectively.  (Contributed by Chris Clark in
+  :issue:`13245`)
+
+* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
+  *argument* parameter is now optional.  (Contributed by Chris Clark in
+  :issue:`13245`)
+
+* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
+  now accept a *kwargs* parameter.  (Contributed by Chris Clark in
+  :issue:`13245`)
+
+
+shutil
+------
+
+* The :mod:`shutil` module has these new fuctions:
+
+  * :func:`~shutil.disk_usage`: provides total, used and free disk space
+    statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
+  * :func:`~shutil.chown`: allows one to change user and/or group of the given
+    path also specifying the user/group names and not only their numeric
+    ids. (Contributed by Sandro Tosi in :issue:`12191`)
 
 
 signal
@@ -627,6 +639,16 @@ signal
 * :func:`signal.signal` and :func:`signal.siginterrupt` raise an OSError,
   instead of a RuntimeError: OSError has an errno attribute.
 
+smtplib
+-------
+
+The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
+method now accept an SSLContext parameter to control parameters of the secure
+channel.
+
+(Contributed by Kasun Herath in :issue:`8809`)
+
+
 socket
 ------
 
@@ -649,6 +671,7 @@ socket
 * The :class:`~socket.socket` class now supports the PF_RDS protocol family
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
   http://oss.oracle.com/projects/rds/).
+
 
 ssl
 ---
@@ -689,25 +712,27 @@ ssl
   (Contributed by Antoine Pitrou in :issue:`13634`)
 
 
-shutil
-------
+sys
+---
 
-* The :mod:`shutil` module has these new fuctions:
+* The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
+  sequence` holding informations about the thread implementation.
 
-  * :func:`~shutil.disk_usage`: provides total, used and free disk space
-    statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
-  * :func:`~shutil.chown`: allows one to change user and/or group of the given
-    path also specifying the user/group names and not only their numeric
-    ids. (Contributed by Sandro Tosi in :issue:`12191`)
+  (:issue:`11223`)
 
-smtplib
--------
 
-The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
-method now accept an SSLContext parameter to control parameters of the secure
-channel.
+time
+----
 
-(Contributed by Kasun Herath in :issue:`8809`)
+The :mod:`time` module has new functions:
+
+* :func:`~time.clock_getres` and :func:`~time.clock_gettime` functions and
+  ``CLOCK_xxx`` constants.
+* :func:`~time.monotonic`: monotonic clock.
+* :func:`~time.wallclock`.
+
+(Contributed by Victor Stinner in :issue:`10278`)
+
 
 urllib
 ------
@@ -720,31 +745,6 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 
 (:issue:`1673007`)
 
-sched
------
-
-* :meth:`~sched.scheduler.run` now accepts a *blocking* parameter which when
-  set to False makes the method execute the scheduled events due to expire
-  soonest (if any) and then return immediately.
-  This is useful in case you want to use the :class:`~sched.scheduler` in
-  non-blocking applications.  (Contributed by Giampaolo Rodolà in :issue:`13449`)
-
-* :class:`~sched.scheduler` class can now be safely used in multi-threaded
-  environments.  (Contributed by Josiah Carlson and Giampaolo Rodolà in
-  :issue:`8684`)
-
-* *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
-  constructor are now optional and defaults to :func:`time.time` and
-  :func:`time.sleep` respectively.  (Contributed by Chris Clark in
-  :issue:`13245`)
-
-* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
-  *argument* parameter is now optional.  (Contributed by Chris Clark in
-  :issue:`13245`)
-
-* :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
-  now accept a *kwargs* parameter.  (Contributed by Chris Clark in
-  :issue:`13245`)
 
 Optimizations
 =============
