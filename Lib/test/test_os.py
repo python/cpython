@@ -27,6 +27,14 @@ try:
 except ImportError:
     threading = None
 
+os.stat_float_times(True)
+st = os.stat(__file__)
+stat_supports_subsecond = (
+    # check if float and int timestamps are different
+    (st.st_atime != st[7])
+    or (st.st_mtime != st[8])
+    or (st.st_ctime != st[9]))
+
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
 # when combining linuxthreads with a failed execv call: see
@@ -300,6 +308,8 @@ class StatAttributeTests(unittest.TestCase):
         st2 = os.stat(support.TESTFN)
         self.assertAlmostEqual(st1.st_mtime, st2.st_mtime, delta=10)
 
+    @unittest.skipUnless(stat_supports_subsecond,
+                         "os.stat() doesn't has a subsecond resolution")
     def _test_utime_subsecond(self, set_time_func):
         asec, amsec = 1, 901
         atime = asec + amsec * 1e-3
@@ -308,6 +318,7 @@ class StatAttributeTests(unittest.TestCase):
         filename = self.fname
         os.utime(filename, (0, 0))
         set_time_func(filename, atime, mtime)
+        os.stat_float_times(True)
         st = os.stat(filename)
         self.assertAlmostEqual(st.st_atime, atime, places=3)
         self.assertAlmostEqual(st.st_mtime, mtime, places=3)

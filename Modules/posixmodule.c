@@ -3539,7 +3539,6 @@ extract_time(PyObject *t, time_t* sec, long* nsec)
         mod = fmod(d, 1.0);
         mod *= 1e9;
         *nsec = (long)mod;
-        printf("%g => (%u, %li)\n", d, *sec, *nsec);
         return 0;
     }
 #if SIZEOF_TIME_T > SIZEOF_LONG
