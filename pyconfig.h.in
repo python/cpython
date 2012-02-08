@@ -908,6 +908,9 @@
 /* Define to 1 if you have the <sys/file.h> header file. */
 #undef HAVE_SYS_FILE_H
 
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
 /* Define to 1 if you have the <sys/kern_control.h> header file. */
 #undef HAVE_SYS_KERN_CONTROL_H
 
