@@ -300,49 +300,86 @@ class StatAttributeTests(unittest.TestCase):
         st2 = os.stat(support.TESTFN)
         self.assertAlmostEqual(st1.st_mtime, st2.st_mtime, delta=10)
 
-    def test_utime_subsecond(self):
+    def _test_utime_subsecond(self, set_time_func):
         asec, amsec = 1, 901
         atime = asec + amsec * 1e-3
-        msec, mmsec = 5, 901
+        msec, mmsec = 2, 901
         mtime = msec + mmsec * 1e-3
         filename = self.fname
-        dirname = os.path.dirname(filename)
-        for func in ('utime', 'futimes', 'futimens', 'futimesat', 'lutimes', 'utimensat'):
-            if not hasattr(os, func):
-                continue
-            os.utime(filename, (0, 0))
-            if func == 'utime':
-                os.utime(filename, (atime, mtime))
-            elif func == 'futimes':
-                with open(filename, "wb") as f:
-                    os.futimes(f.fileno(), (atime, mtime))
-                os.utime(filename, (atime, mtime))
-            elif func == 'futimens':
-                with open(filename, "wb") as f:
-                    os.futimens(f.fileno(),
-                               (asec, amsec * 1000000),
-                               (msec, mmsec * 1000000))
-            elif func == 'lutimes':
-                os.lutimes(filename, (atime, mtime))
-            elif func == 'futimesat':
-                dirfd = os.open(dirname, os.O_RDONLY)
-                try:
-                    os.futimesat(dirfd, os.path.basename(filename),
-                                 (atime, mtime))
-                finally:
-                    os.close(dirfd)
-            else:
-                dirfd = os.open(dirname, os.O_RDONLY)
-                try:
-                    os.utimensat(dirfd, os.path.basename(filename),
-                                 (asec, amsec * 1000000),
-                                 (msec, mmsec * 1000000))
-                finally:
-                    os.close(dirfd)
-            st = os.stat(filename)
-            self.assertAlmostEqual(st.st_atime, atime, places=3)
-            self.assertAlmostEqual(st.st_mtime, mtime, places=3)
+        os.utime(filename, (0, 0))
+        set_time_func(filename, atime, mtime)
+        st = os.stat(filename)
+        self.assertAlmostEqual(st.st_atime, atime, places=3)
+        self.assertAlmostEqual(st.st_mtime, mtime, places=3)
 
+    def test_utime_subsecond(self):
+        def set_time(filename, atime, mtime):
+            os.utime(filename, (atime, mtime))
+        self._test_utime_subsecond(set_time)
+
+    @unittest.skipUnless(hasattr(os, 'futimes'),
+                         "os.futimes required for this test.")
+    def test_futimes_subsecond(self):
+        def set_time(filename, atime, mtime):
+            with open(filename, "wb") as f:
+                os.futimes(f.fileno(), (atime, mtime))
+        self._test_utime_subsecond(set_time)
+
+    @unittest.skipUnless(hasattr(os, 'futimens'),
+                         "os.futimens required for this test.")
+    def test_futimens_subsecond(self):
+        def set_time(filename, atime, mtime):
+            with open(filename, "wb") as f:
+                asec, ansec = divmod(atime, 1.0)
+                asec = int(asec)
+                ansec = int(ansec * 1e9)
+                msec, mnsec = divmod(mtime, 1.0)
+                msec = int(msec)
+                mnsec = int(mnsec * 1e9)
+                os.futimens(f.fileno(),
+                           (asec, ansec),
+                           (msec, mnsec))
+        self._test_utime_subsecond(set_time)
+
+    @unittest.skipUnless(hasattr(os, 'futimesat'),
+                         "os.futimesat required for this test.")
+    def test_futimesat_subsecond(self):
+        def set_time(filename, atime, mtime):
+            dirname = os.path.dirname(filename)
+            dirfd = os.open(dirname, os.O_RDONLY)
+            try:
+                os.futimesat(dirfd, os.path.basename(filename),
+                             (atime, mtime))
+            finally:
+                os.close(dirfd)
+        self._test_utime_subsecond(set_time)
+
+    @unittest.skipUnless(hasattr(os, 'lutimes'),
+                         "os.lutimes required for this test.")
+    def test_lutimes_subsecond(self):
+        def set_time(filename, atime, mtime):
+            os.lutimes(filename, (atime, mtime))
+        self._test_utime_subsecond(set_time)
+
+    @unittest.skipUnless(hasattr(os, 'utimensat'),
+                         "os.utimensat required for this test.")
+    def test_utimensat_subsecond(self):
+        def set_time(filename, atime, mtime):
+            dirname = os.path.dirname(filename)
+            dirfd = os.open(dirname, os.O_RDONLY)
+            try:
+                asec, ansec = divmod(atime, 1.0)
+                asec = int(asec)
+                ansec = int(ansec * 1e9)
+                msec, mnsec = divmod(mtime, 1.0)
+                msec = int(msec)
+                mnsec = int(mnsec * 1e9)
+                os.utimensat(dirfd, os.path.basename(filename),
+                             (asec, ansec),
+                             (msec, mnsec))
+            finally:
+                os.close(dirfd)
+        self._test_utime_subsecond(set_time)
 
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
