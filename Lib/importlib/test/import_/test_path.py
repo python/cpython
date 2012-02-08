@@ -73,6 +73,16 @@ class FinderTests(unittest.TestCase):
             loader = machinery.PathFinder.find_module(module)
             self.assertTrue(loader is importer)
 
+    def test_path_importer_cache_empty_string(self):
+        # The empty string should create a finder using the cwd.
+        path = ''
+        module = '<test module>'
+        importer = util.mock_modules(module)
+        hook = import_util.mock_path_hook(os.getcwd(), importer=importer)
+        with util.import_state(path=[path], path_hooks=[hook]):
+            loader = machinery.PathFinder.find_module(module)
+            self.assertIs(loader, importer)
+            self.assertIn('', sys.path_importer_cache)
 
 
 class DefaultPathFinderTests(unittest.TestCase):
