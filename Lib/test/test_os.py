@@ -2,6 +2,7 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
+import decimal
 import os
 import errno
 import unittest
@@ -237,6 +238,36 @@ class StatAttributeTests(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             self.check_stat_attributes(fname)
+
+    def test_stat_timestamp(self):
+        # test deprecation
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, os.stat_float_times, False)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            old_value = os.stat_float_times()
+            try:
+                # test invalid timestamp types
+                self.assertRaises(ValueError, os.stat, self.fname,
+                                  timestamp="abc")
+                self.assertRaises(ValueError, os.stat, self.fname,
+                                  timestamp=decimal.Context)
+
+                for float_times in (False, True):
+                    os.stat_float_times(float_times)
+                    t = os.stat(self.fname).st_mtime
+                    if float_times:
+                        self.assertIsInstance(t, float)
+                    else:
+                        self.assertIsInstance(t, int)
+
+                    for type in (int, float, decimal.Decimal):
+                        t = os.stat(self.fname, timestamp=type).st_mtime
+                        self.assertIsInstance(t, type)
+            finally:
+                os.stat_float_times(old_value)
 
     def test_statvfs_attributes(self):
         if not hasattr(os, "statvfs"):

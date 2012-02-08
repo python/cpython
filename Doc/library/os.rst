@@ -808,13 +808,16 @@ as internal buffering of data.
    Availability: Unix.
 
 
-.. function:: fstat(fd)
+.. function:: fstat(fd, timestamp=None)
 
    Return status for file descriptor *fd*, like :func:`~os.stat`.
 
    Availability: Unix, Windows.
 
-.. function:: fstatat(dirfd, path, flags=0)
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
+
+.. function:: fstatat(dirfd, path, flags=0, timestamp="float")
 
    Like :func:`stat` but if *path* is relative, it is taken as relative to *dirfd*.
    *flags* is optional and may be 0 or :data:`AT_SYMLINK_NOFOLLOW`.
@@ -1696,7 +1699,7 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: lstat(path)
+.. function:: lstat(path, timestamp=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links.  On
@@ -1705,6 +1708,9 @@ Files and Directories
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
+
+   .. versionchanged:: 3.3
+      The *timestamp* argument was added.
 
 
 .. function:: lutimes(path[, times])
@@ -1969,7 +1975,7 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: stat(path)
+.. function:: stat(path, timestamp=None)
 
    Perform the equivalent of a :c:func:`stat` system call on the given path.
    (This function follows symlinks; to stat a symlink use :func:`lstat`.)
@@ -1988,6 +1994,11 @@ Files and Directories
    * :attr:`st_mtime` - time of most recent content modification,
    * :attr:`st_ctime` - platform dependent; time of most recent metadata change on
      Unix, or the time of creation on Windows)
+
+   :attr:`st_atime`, :attr:`st_mtime` and :attr:`st_ctime` are :class:`float`
+   by default, or :class:`int` if :func:`os.stat_float_times` is ``False``. Set
+   the *timestamp* argument to get another :ref:`timestamp type
+   <timestamp-types>`.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
@@ -2044,6 +2055,9 @@ Files and Directories
 
    Availability: Unix, Windows.
 
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
+
 
 .. function:: stat_float_times([newvalue])
 
@@ -2068,6 +2082,9 @@ Files and Directories
    application uses a library that works incorrectly if floating point time stamps
    are processed, this application should turn the feature off until the library
    has been corrected.
+
+   .. deprecated:: 3.3
+      Use *timestamp* argument of stat functions instead.
 
 
 .. function:: statvfs(path)
@@ -2859,26 +2876,38 @@ written in Python, such as a mail server's external command delivery program.
    with :const:`P_NOWAIT` return suitable process handles.
 
 
-.. function:: wait3([options])
+.. function:: wait3(options[, timestamp=float])
 
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication, and
    resource usage information is returned.  Refer to :mod:`resource`.\
    :func:`getrusage` for details on resource usage information.  The option
    argument is the same as that provided to :func:`waitpid` and :func:`wait4`.
+   :attr:`ru_utime` and :attr:`ru_stime` attributes of the resource usage are
+   :class:`float` by default, set the *timestamp* argument to get another
+   :ref:`timestamp type <timestamp-types>`.
 
    Availability: Unix.
 
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
 
-.. function:: wait4(pid, options)
+
+.. function:: wait4(pid, options[, timestamp=float])
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
    process id, exit status indication, and resource usage information is returned.
    Refer to :mod:`resource`.\ :func:`getrusage` for details on resource usage
    information.  The arguments to :func:`wait4` are the same as those provided to
    :func:`waitpid`.
+   :attr:`ru_utime` and :attr:`ru_stime` attributes of the resource usage are
+   :class:`float` by default, set the *timestamp* argument to get another
+   :ref:`timestamp type <timestamp-types>`.
 
    Availability: Unix.
+
+   .. versionchanged:: 3.3
+      Added the *timestamp* argument.
 
 
 .. data:: WNOHANG
