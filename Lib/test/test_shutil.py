@@ -1276,8 +1276,8 @@ class TermsizeTests(unittest.TestCase):
         terminal, so let's check if it returns something sensible instead.
         """
         size = shutil.get_terminal_size()
-        self.assertGreater(size.columns, 0)
-        self.assertGreater(size.lines, 0)
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
 
     def test_os_environ_first(self):
         "Check if environment variables have precedence"

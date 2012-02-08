@@ -1857,8 +1857,8 @@ class TermsizeTests(unittest.TestCase):
                 self.skipTest("failed to query terminal size")
             raise
 
-        self.assertGreater(size.columns, 0)
-        self.assertGreater(size.lines, 0)
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
 
     def test_stty_match(self):
         """Check if stty returns the same results
