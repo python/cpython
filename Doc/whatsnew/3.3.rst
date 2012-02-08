@@ -270,42 +270,6 @@ new, more precise information::
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
 
-PEP 410: Use decimal.Decimal type for timestamps
-================================================
-
-:pep:`410` - Use decimal.Decimal type for timestamps
- PEP written and implemented by Victor Stinner.
-
-The following functions have a new optional *timestamp* argument to get a
-timestamp as a :class:`decimal.Decimal` instead of :class:`int` or
-:class:`float`:
-
- * :mod:`time` module: :func:`~time.clock`, :func:`~time.clock_gettime`,
-   :func:`~time.clock_getres`, :func:`~time.monotonic`, :func:`~time.time` and
-   :func:`~time.wallclock`
- * :mod:`os` module: :func:`~os.fstat`, :func:`~os.fstatat`, :func:`~os.lstat`
-   and :func:`~os.stat` (``st_atime``, ``st_ctime`` and ``st_mtime`` fields of
-   the stat structure)
-
-:class:`decimal.Decimal` supports a resolution of a nanosecond (10^-9)
-resolution, whereas :class:`float` has only a resolution of a microsecond
-(10^-6) in common cases. See the list of available :ref:`timestamp types
-<timestamp-types>`.
-
-Example::
-
-    >>> import decimal, time
-    >>> time.time()
-    1328006975.681211
-    >>> time.time(timestamp=int)
-    1328006979
-    >>> time.time(timestamp=decimal.Decimal)
-    Decimal('1328006983.761119')
-
-:func:`os.stat_float_times` has been deprecated, use *timestamp* argument of
-`os.stat` instead.
-
-
 Other Language Changes
 ======================
 

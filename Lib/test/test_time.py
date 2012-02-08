@@ -1,10 +1,10 @@
-import locale
-import platform
-import sys
-import sysconfig
 from test import support
 import time
 import unittest
+import locale
+import sysconfig
+import sys
+import platform
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -344,31 +344,6 @@ class TimeTestCase(unittest.TestCase):
         dt = t2 - t1
         self.assertGreater(t2, t1)
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
-
-    def test_timestamp(self):
-        import decimal
-        calls = [
-            (time.time,),
-            (time.mktime, time.localtime()),
-        ]
-        if hasattr(time, 'monotonic'):
-            calls.append((time.monotonic,))
-        if hasattr(time, 'wallclock'):
-            calls.append((time.wallclock,))
-        if hasattr(time, 'CLOCK_REALTIME'):
-            if hasattr(time, 'clock_gettime'):
-                calls.append((time.clock_gettime, time.CLOCK_REALTIME))
-            if hasattr(time, 'clock_getres'):
-                calls.append((time.clock_getres, time.CLOCK_REALTIME))
-        for call in calls:
-            func, *args = call
-
-            # test invalid timestamp
-            for invalid in ("int", decimal.Context):
-                self.assertRaises(ValueError, func, *args, timestamp=invalid)
-
-            for type in (int, float, decimal.Decimal):
-                self.assertIsInstance(func(*args, timestamp=type), type)
 
     def test_wallclock(self):
         t1 = time.wallclock()

@@ -1702,12 +1702,6 @@ stat_float_times(PyObject* self, PyObject *args)
     int newval = -1;
     if (!PyArg_ParseTuple(args, "|i:stat_float_times", &newval))
         return NULL;
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "os.stat_float_times() has been deprecated, "
-                     "use timestamp argument of os.stat() instead",
-                     1))
-        return NULL;
-
     if (newval == -1)
         /* Return old value */
         return PyBool_FromLong(_stat_float_times);
@@ -1717,12 +1711,9 @@ stat_float_times(PyObject* self, PyObject *args)
 }
 
 static void
-fill_time(PyObject *v, int index, time_t sec, unsigned long nsec,
-          int has_nsec, PyObject *timestamp)
+fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 {
     PyObject *fval,*ival;
-    _PyTime_t ts;
-
 #if SIZEOF_TIME_T > SIZEOF_LONG
     ival = PyLong_FromLongLong((PY_LONG_LONG)sec);
 #else
@@ -1730,21 +1721,9 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec,
 #endif
     if (!ival)
         return;
-    if (timestamp == NULL && _stat_float_times)
-        timestamp = (PyObject*)&PyFloat_Type;
-    if (timestamp != NULL) {
-        ts.seconds = sec;
-        if (has_nsec) {
-            ts.numerator = nsec;
-            ts.denominator = 1000000000;
-        }
-        else {
-            ts.numerator = 0;
-            ts.denominator = 1;
-        }
-        fval = _PyTime_Convert(&ts, timestamp);
-    }
-    else {
+    if (_stat_float_times) {
+        fval = PyFloat_FromDouble(sec + 1e-9*nsec);
+    } else {
         fval = ival;
         Py_INCREF(fval);
     }
@@ -1755,14 +1734,9 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec,
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
-_pystat_fromstructstat(STRUCT_STAT *st, PyObject *timestamp)
+_pystat_fromstructstat(STRUCT_STAT *st)
 {
     unsigned long ansec, mnsec, cnsec;
-    int has_nsec;
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
-    _PyTime_t ts;
-#endif
-
     PyObject *v = PyStructSequence_New(&StatResultType);
     if (v == NULL)
         return NULL;
@@ -1794,24 +1768,20 @@ _pystat_fromstructstat(STRUCT_STAT *st, PyObject *timestamp)
     ansec = st->st_atim.tv_nsec;
     mnsec = st->st_mtim.tv_nsec;
     cnsec = st->st_ctim.tv_nsec;
-    has_nsec = 1;
 #elif defined(HAVE_STAT_TV_NSEC2)
     ansec = st->st_atimespec.tv_nsec;
     mnsec = st->st_mtimespec.tv_nsec;
     cnsec = st->st_ctimespec.tv_nsec;
-    has_nsec = 1;
 #elif defined(HAVE_STAT_NSEC)
     ansec = st->st_atime_nsec;
     mnsec = st->st_mtime_nsec;
     cnsec = st->st_ctime_nsec;
-    has_nsec = 1;
 #else
     ansec = mnsec = cnsec = 0;
-    has_nsec = 0;
 #endif
-    fill_time(v, 7, st->st_atime, ansec, has_nsec, timestamp);
-    fill_time(v, 8, st->st_mtime, mnsec, has_nsec, timestamp);
-    fill_time(v, 9, st->st_ctime, cnsec, has_nsec, timestamp);
+    fill_time(v, 7, st->st_atime, ansec);
+    fill_time(v, 8, st->st_mtime, mnsec);
+    fill_time(v, 9, st->st_ctime, cnsec);
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -1831,26 +1801,21 @@ _pystat_fromstructstat(STRUCT_STAT *st, PyObject *timestamp)
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
     {
-        PyObject *val;
-        ts.seconds = (long)st->st_birthtime;
+      PyObject *val;
+      unsigned long bsec,bnsec;
+      bsec = (long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
-        ts.numerator = st->st_birthtimespec.tv_nsec;
-        ts.denominator = 1000000000;
+      bnsec = st->st_birthtimespec.tv_nsec;
 #else
-        ts.numerator = 0;
-        ts.denominator = 1;
+      bnsec = 0;
 #endif
-        if (timestamp == NULL) {
-            if (_stat_float_times)
-                val = _PyTime_Convert(&ts, (PyObject*)&PyFloat_Type);
-            else
-                val = _PyTime_Convert(&ts, (PyObject*)&PyLong_Type);
-        }
-        else {
-            val = _PyTime_Convert(&ts, timestamp);
-        }
-        PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                val);
+      if (_stat_float_times) {
+        val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
+      } else {
+        val = PyLong_FromLong((long)bsec);
+      }
+      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
+                                val);
     }
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
@@ -1867,7 +1832,7 @@ _pystat_fromstructstat(STRUCT_STAT *st, PyObject *timestamp)
 }
 
 static PyObject *
-posix_do_stat(PyObject *self, PyObject *args, PyObject *kw,
+posix_do_stat(PyObject *self, PyObject *args,
               char *format,
 #ifdef __VMS
               int (*statfunc)(const char *, STRUCT_STAT *, ...),
@@ -1877,18 +1842,15 @@ posix_do_stat(PyObject *self, PyObject *args, PyObject *kw,
               char *wformat,
               int (*wstatfunc)(const wchar_t *, STRUCT_STAT *))
 {
-    static char *kwlist[] = {"path", "timestamp", NULL};
     STRUCT_STAT st;
     PyObject *opath;
     char *path;
     int res;
     PyObject *result;
-    PyObject *timestamp = NULL;
 
 #ifdef MS_WINDOWS
     PyObject *po;
-    if (PyArg_ParseTupleAndKeywords(args, kw, wformat, kwlist,
-                                    &po, &timestamp)) {
+    if (PyArg_ParseTuple(args, wformat, &po)) {
         wchar_t *wpath = PyUnicode_AsUnicode(po);
         if (wpath == NULL)
             return NULL;
@@ -1899,17 +1861,15 @@ posix_do_stat(PyObject *self, PyObject *args, PyObject *kw,
 
         if (res != 0)
             return win32_error_object("stat", po);
-        return _pystat_fromstructstat(&st, timestamp);
+        return _pystat_fromstructstat(&st);
     }
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-    timestamp = NULL;
 #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, format, kwlist,
-                                     PyUnicode_FSConverter, &opath,
-                                     &timestamp))
+    if (!PyArg_ParseTuple(args, format,
+                          PyUnicode_FSConverter, &opath))
         return NULL;
 #ifdef MS_WINDOWS
     if (win32_warn_bytes_api()) {
@@ -1930,7 +1890,7 @@ posix_do_stat(PyObject *self, PyObject *args, PyObject *kw,
 #endif
     }
     else
-        result = _pystat_fromstructstat(&st, timestamp);
+        result = _pystat_fromstructstat(&st);
 
     Py_DECREF(opath);
     return result;
@@ -3421,16 +3381,16 @@ posix_rmdir(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(posix_stat__doc__,
-"stat(path, timestamp=None) -> stat result\n\n\
+"stat(path) -> stat result\n\n\
 Perform a stat system call on the given path.");
 
 static PyObject *
-posix_stat(PyObject *self, PyObject *args, PyObject *kw)
+posix_stat(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    return posix_do_stat(self, args, kw, "O&|O:stat", STAT, "U|O:stat", win32_stat_w);
+    return posix_do_stat(self, args, "O&:stat", STAT, "U:stat", win32_stat_w);
 #else
-    return posix_do_stat(self, args, kw, "O&|O:stat", STAT, NULL, NULL);
+    return posix_do_stat(self, args, "O&:stat", STAT, NULL, NULL);
 #endif
 }
 
@@ -6158,12 +6118,11 @@ posix_setgroups(PyObject *self, PyObject *groups)
 
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
 static PyObject *
-wait_helper(pid_t pid, int status, struct rusage *ru, PyObject *timestamp)
+wait_helper(pid_t pid, int status, struct rusage *ru)
 {
     PyObject *result;
     static PyObject *struct_rusage;
     _Py_IDENTIFIER(struct_rusage);
-    _PyTime_t ts;
 
     if (pid == -1)
         return posix_error();
@@ -6187,17 +6146,10 @@ wait_helper(pid_t pid, int status, struct rusage *ru, PyObject *timestamp)
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 #endif
 
-    ts.seconds = ru->ru_utime.tv_sec;
-    ts.numerator = ru->ru_utime.tv_usec;
-    ts.denominator = 1000000;
     PyStructSequence_SET_ITEM(result, 0,
-                              _PyTime_Convert(&ts, timestamp));
-
-    ts.seconds = ru->ru_stime.tv_sec;
-    ts.numerator = ru->ru_stime.tv_usec;
-    ts.denominator = 1000000;
+                              PyFloat_FromDouble(doubletime(ru->ru_utime)));
     PyStructSequence_SET_ITEM(result, 1,
-                              _PyTime_Convert(&ts, timestamp));
+                              PyFloat_FromDouble(doubletime(ru->ru_stime)));
 #define SET_INT(result, index, value)\
         PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
     SET_INT(result, 2, ru->ru_maxrss);
@@ -6227,55 +6179,51 @@ wait_helper(pid_t pid, int status, struct rusage *ru, PyObject *timestamp)
 
 #ifdef HAVE_WAIT3
 PyDoc_STRVAR(posix_wait3__doc__,
-"wait3(options[, timestamp=float]) -> (pid, status, rusage)\n\n\
+"wait3(options) -> (pid, status, rusage)\n\n\
 Wait for completion of a child process.");
 
 static PyObject *
-posix_wait3(PyObject *self, PyObject *args, PyObject *kwargs)
+posix_wait3(PyObject *self, PyObject *args)
 {
-    static char *kwlist[] = {"options", "timestamp", NULL};
     pid_t pid;
     int options;
     struct rusage ru;
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
-    PyObject *timestamp = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|O:wait3", kwlist, &options, &timestamp))
+    if (!PyArg_ParseTuple(args, "i:wait3", &options))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     pid = wait3(&status, options, &ru);
     Py_END_ALLOW_THREADS
 
-    return wait_helper(pid, WAIT_STATUS_INT(status), &ru, timestamp);
+    return wait_helper(pid, WAIT_STATUS_INT(status), &ru);
 }
 #endif /* HAVE_WAIT3 */
 
 #ifdef HAVE_WAIT4
 PyDoc_STRVAR(posix_wait4__doc__,
-"wait4(pid, options[, timestamp=float]) -> (pid, status, rusage)\n\n\
+"wait4(pid, options) -> (pid, status, rusage)\n\n\
 Wait for completion of a given child process.");
 
 static PyObject *
-posix_wait4(PyObject *self, PyObject *args, PyObject *kwargs)
+posix_wait4(PyObject *self, PyObject *args)
 {
-    static char *kwlist[] = {"pid", "options", "timestamp", NULL};
     pid_t pid;
     int options;
     struct rusage ru;
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
-    PyObject *timestamp = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, _Py_PARSE_PID "i|O:wait4", kwlist, &pid, &options, &timestamp))
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i:wait4", &pid, &options))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     pid = wait4(pid, &status, options, &ru);
     Py_END_ALLOW_THREADS
 
-    return wait_helper(pid, WAIT_STATUS_INT(status), &ru, timestamp);
+    return wait_helper(pid, WAIT_STATUS_INT(status), &ru);
 }
 #endif /* HAVE_WAIT4 */
 
@@ -6402,20 +6350,20 @@ posix_wait(PyObject *self, PyObject *noargs)
 
 
 PyDoc_STRVAR(posix_lstat__doc__,
-"lstat(path, timestamp=None) -> stat result\n\n\
+"lstat(path) -> stat result\n\n\
 Like stat(path), but do not follow symbolic links.");
 
 static PyObject *
-posix_lstat(PyObject *self, PyObject *args, PyObject *kw)
+posix_lstat(PyObject *self, PyObject *args)
 {
 #ifdef HAVE_LSTAT
-    return posix_do_stat(self, args, kw, "O&|O:lstat", lstat, NULL, NULL);
+    return posix_do_stat(self, args, "O&:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
 #ifdef MS_WINDOWS
-    return posix_do_stat(self, args, kw, "O&|O:lstat", win32_lstat, "U|O:lstat",
+    return posix_do_stat(self, args, "O&:lstat", win32_lstat, "U:lstat",
                          win32_lstat_w);
 #else
-    return posix_do_stat(self, args, "kw, O&|O:lstat", STAT, NULL, NULL);
+    return posix_do_stat(self, args, "O&:lstat", STAT, NULL, NULL);
 #endif
 #endif /* !HAVE_LSTAT */
 }
@@ -7374,19 +7322,16 @@ done:
 #endif
 
 PyDoc_STRVAR(posix_fstat__doc__,
-"fstat(fd, timestamp=None) -> stat result\n\n\
+"fstat(fd) -> stat result\n\n\
 Like stat(), but for an open file descriptor.");
 
 static PyObject *
-posix_fstat(PyObject *self, PyObject *args, PyObject *kwargs)
+posix_fstat(PyObject *self, PyObject *args)
 {
-    static char *kwlist[] = {"fd", "timestamp", NULL};
     int fd;
     STRUCT_STAT st;
     int res;
-    PyObject *timestamp = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|O:fstat", kwlist,
-                                     &fd, &timestamp))
+    if (!PyArg_ParseTuple(args, "i:fstat", &fd))
         return NULL;
 #ifdef __VMS
     /* on OpenVMS we must ensure that all bytes are written to the file */
@@ -7405,7 +7350,7 @@ posix_fstat(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
     }
 
-    return _pystat_fromstructstat(&st, timestamp);
+    return _pystat_fromstructstat(&st);
 }
 
 PyDoc_STRVAR(posix_isatty__doc__,
@@ -9689,25 +9634,22 @@ posix_fchownat(PyObject *self, PyObject *args)
 
 #ifdef HAVE_FSTATAT
 PyDoc_STRVAR(posix_fstatat__doc__,
-"fstatat(dirfd, path, flags=0, timestamp=None) -> stat result\n\n\
+"fstatat(dirfd, path, flags=0) -> stat result\n\n\
 Like stat() but if path is relative, it is taken as relative to dirfd.\n\
 flags is optional and may be 0 or AT_SYMLINK_NOFOLLOW.\n\
 If path is relative and dirfd is the special value AT_FDCWD, then path\n\
 is interpreted relative to the current working directory.");
 
 static PyObject *
-posix_fstatat(PyObject *self, PyObject *args, PyObject *kwargs)
+posix_fstatat(PyObject *self, PyObject *args)
 {
-    static char *kwlist[] = {"dirfd", "path", "flags", "timestamp", NULL};
     PyObject *opath;
     char *path;
     STRUCT_STAT st;
     int dirfd, res, flags = 0;
-    PyObject *timestamp = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO&|iO:fstatat", kwlist,
-                                     &dirfd, PyUnicode_FSConverter, &opath,
-                                     &flags, &timestamp))
+    if (!PyArg_ParseTuple(args, "iO&|i:fstatat",
+            &dirfd, PyUnicode_FSConverter, &opath, &flags))
         return NULL;
     path = PyBytes_AsString(opath);
 
@@ -9718,7 +9660,7 @@ posix_fstatat(PyObject *self, PyObject *args, PyObject *kwargs)
     if (res != 0)
         return posix_error();
 
-    return _pystat_fromstructstat(&st, timestamp);
+    return _pystat_fromstructstat(&st);
 }
 #endif
 
@@ -10582,7 +10524,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FDOPENDIR
     {"flistdir",       posix_flistdir, METH_VARARGS, posix_flistdir__doc__},
 #endif
-    {"lstat",           (PyCFunction)posix_lstat, METH_VARARGS | METH_KEYWORDS, posix_lstat__doc__},
+    {"lstat",           posix_lstat, METH_VARARGS, posix_lstat__doc__},
     {"mkdir",           posix_mkdir, METH_VARARGS, posix_mkdir__doc__},
 #ifdef HAVE_NICE
     {"nice",            posix_nice, METH_VARARGS, posix_nice__doc__},
@@ -10602,8 +10544,7 @@ static PyMethodDef posix_methods[] = {
     {"rename",          posix_rename, METH_VARARGS, posix_rename__doc__},
     {"replace",         posix_replace, METH_VARARGS, posix_replace__doc__},
     {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
-    {"stat",            (PyCFunction)posix_stat,
-                        METH_VARARGS | METH_KEYWORDS, posix_stat__doc__},
+    {"stat",            posix_stat, METH_VARARGS, posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
 #if defined(HAVE_SYMLINK) && !defined(MS_WINDOWS)
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
@@ -10764,12 +10705,10 @@ static PyMethodDef posix_methods[] = {
     {"wait",            posix_wait, METH_NOARGS, posix_wait__doc__},
 #endif /* HAVE_WAIT */
 #ifdef HAVE_WAIT3
-    {"wait3",           (PyCFunction)posix_wait3,
-                        METH_VARARGS | METH_KEYWORDS, posix_wait3__doc__},
+    {"wait3",           posix_wait3, METH_VARARGS, posix_wait3__doc__},
 #endif /* HAVE_WAIT3 */
 #ifdef HAVE_WAIT4
-    {"wait4",           (PyCFunction)posix_wait4,
-                        METH_VARARGS | METH_KEYWORDS, posix_wait4__doc__},
+    {"wait4",           posix_wait4, METH_VARARGS, posix_wait4__doc__},
 #endif /* HAVE_WAIT4 */
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     {"waitid",          posix_waitid, METH_VARARGS, posix_waitid__doc__},
@@ -10820,8 +10759,7 @@ static PyMethodDef posix_methods[] = {
     {"sendfile",        (PyCFunction)posix_sendfile, METH_VARARGS | METH_KEYWORDS,
                             posix_sendfile__doc__},
 #endif
-    {"fstat",           (PyCFunction)posix_fstat, METH_VARARGS | METH_KEYWORDS,
-                            posix_fstat__doc__},
+    {"fstat",           posix_fstat, METH_VARARGS, posix_fstat__doc__},
     {"isatty",          posix_isatty, METH_VARARGS, posix_isatty__doc__},
 #ifdef HAVE_PIPE
     {"pipe",            posix_pipe, METH_NOARGS, posix_pipe__doc__},
@@ -10956,8 +10894,7 @@ static PyMethodDef posix_methods[] = {
     {"fchownat",        posix_fchownat, METH_VARARGS, posix_fchownat__doc__},
 #endif /* HAVE_FCHOWNAT */
 #ifdef HAVE_FSTATAT
-    {"fstatat",         (PyCFunction)posix_fstatat, METH_VARARGS | METH_KEYWORDS,
-                            posix_fstatat__doc__},
+    {"fstatat",         posix_fstatat, METH_VARARGS, posix_fstatat__doc__},
 #endif
 #ifdef HAVE_FUTIMESAT
     {"futimesat",       posix_futimesat, METH_VARARGS, posix_futimesat__doc__},

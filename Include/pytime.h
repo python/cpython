@@ -2,8 +2,7 @@
 #ifndef Py_PYTIME_H
 #define Py_PYTIME_H
 
-#include "pyport.h"
-#include "object.h"
+#include "pyconfig.h" /* include for defines */
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to time related
@@ -37,31 +36,6 @@ do { \
 #define _PyTime_INTERVAL(tv_start, tv_end) \
     ((tv_end.tv_sec - tv_start.tv_sec) + \
      (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
-
-#if defined(HAVE_LONG_LONG)
-typedef unsigned PY_LONG_LONG _PyTime_fraction_t;
-#else
-typedef size_t _PyTime_fraction_t;
-#endif
-
-typedef struct
-{
-    /* timestamp = seconds + numerator / denominator */
-    time_t seconds;
-    _PyTime_fraction_t numerator;
-    /* denominator cannot be zero */
-    _PyTime_fraction_t denominator;
-    /* the timestamp resolution is 1/divisor */
-} _PyTime_t;
-
-/* Similar to POSIX gettimeofday.  If system gettimeofday
-   fails or is not available, fall back to lower resolution clocks.  */
-PyAPI_FUNC(void) _PyTime_get(_PyTime_t *tp);
-
-/* Convert a timestamp structure to the specified timestamp type.
-
-   Raise a ValueError if the timestamp type is unknown. */
-PyAPI_FUNC(PyObject*) _PyTime_Convert(_PyTime_t *ts, PyObject *timestamp);
 
 /* Dummy to force linking. */
 PyAPI_FUNC(void) _PyTime_Init(void);
