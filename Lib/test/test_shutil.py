@@ -9,6 +9,7 @@ import os
 import os.path
 import errno
 import functools
+import subprocess
 from test import support
 from test.support import TESTFN
 from os.path import splitdrive
@@ -1267,10 +1268,55 @@ class TestCopyFile(unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+class TermsizeTests(unittest.TestCase):
+    def test_does_not_crash(self):
+        """Check if get_terminal_size() returns a meaningful value.
+
+        There's no easy portable way to actually check the size of the
+        terminal, so let's check if it returns something sensible instead.
+        """
+        size = shutil.get_terminal_size()
+        self.assertGreater(size.columns, 0)
+        self.assertGreater(size.lines, 0)
+
+    def test_os_environ_first(self):
+        "Check if environment variables have precedence"
+
+        with support.EnvironmentVarGuard() as env:
+            env['COLUMNS'] = '777'
+            size = shutil.get_terminal_size()
+        self.assertEqual(size.columns, 777)
+
+        with support.EnvironmentVarGuard() as env:
+            env['LINES'] = '888'
+            size = shutil.get_terminal_size()
+        self.assertEqual(size.lines, 888)
+
+    @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
+    def test_stty_match(self):
+        """Check if stty returns the same results ignoring env
+
+        This test will fail if stdin and stdout are connected to
+        different terminals with different sizes. Nevertheless, such
+        situations should be pretty rare.
+        """
+        try:
+            size = subprocess.check_output(['stty', 'size']).decode().split()
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            self.skipTest("stty invocation failed")
+        expected = (int(size[1]), int(size[0])) # reversed order
+
+        with support.EnvironmentVarGuard() as env:
+            del env['LINES']
+            del env['COLUMNS']
+            actual = shutil.get_terminal_size()
+
+        self.assertEqual(expected, actual)
 
 
 def test_main():
-    support.run_unittest(TestShutil, TestMove, TestCopyFile)
+    support.run_unittest(TestShutil, TestMove, TestCopyFile,
+                         TermsizeTests)
 
 if __name__ == '__main__':
     test_main()
