@@ -300,6 +300,43 @@ class StatAttributeTests(unittest.TestCase):
         st2 = os.stat(support.TESTFN)
         self.assertAlmostEqual(st1.st_mtime, st2.st_mtime, delta=10)
 
+    def test_utime_subsecond(self):
+        asec, amsec = 1, 901
+        atime = asec + amsec * 1e-3
+        msec, mmsec = 5, 901
+        mtime = msec + mmsec * 1e-3
+        filename = self.fname
+        dirname = os.path.dirname(filename)
+        for func in ('utime', 'futimes', 'futimens', 'lutimes', 'utimensat'):
+            if not hasattr(os, func):
+                continue
+            os.utime(filename, (0, 0))
+            if func == 'utime':
+                os.utime(filename, (atime, mtime))
+            elif func == 'futimes':
+                with open(filename, "wb") as f:
+                    os.futimes(f.fileno(), (atime, mtime))
+                os.utime(filename, (atime, mtime))
+            elif func == 'futimens':
+                with open(filename, "wb") as f:
+                    os.futimens(f.fileno(),
+                               (asec, amsec * 1000000),
+                               (msec, mmsec * 1000000))
+            elif func == 'lutimes':
+                os.lutimes(filename, (atime, mtime))
+            else:
+                dirfd = os.open(dirname, os.O_RDONLY)
+                try:
+                    os.utimensat(dirfd, os.path.basename(filename),
+                                 (asec, amsec * 1000000),
+                                 (msec, mmsec * 1000000))
+                finally:
+                    os.close(dirfd)
+            st = os.stat(filename)
+            self.assertAlmostEqual(st.st_atime, atime, places=3)
+            self.assertAlmostEqual(st.st_mtime, mtime, places=3)
+
+
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
     if sys.platform == 'win32':
