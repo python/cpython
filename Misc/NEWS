@@ -90,6 +90,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9021: Add an introduction to the copy module documentation.
+
 - Issue #6005: Examples in the socket library documentation use sendall, where
   relevant, instead send method.
 
