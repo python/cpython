@@ -67,6 +67,23 @@ class RunTestCase(support.TempdirManager,
         self.assertGreater(out, b'')
         self.assertEqual(err, b'')
 
+    def test_list_commands(self):
+        status, out, err = assert_python_ok('-m', 'packaging.run', 'run',
+                                            '--list-commands')
+        # check that something is displayed
+        self.assertEqual(status, 0)
+        self.assertGreater(out, b'')
+        self.assertEqual(err, b'')
+
+        # make sure the manual grouping of commands is respected
+        check_position = out.find(b'  check: ')
+        build_position = out.find(b'  build: ')
+        self.assertTrue(check_position, out)  # "out" printed as debugging aid
+        self.assertTrue(build_position, out)
+        self.assertLess(check_position, build_position, out)
+
+        # TODO test that custom commands don't break --list-commands
+
 
 def test_suite():
     return unittest.makeSuite(RunTestCase)
