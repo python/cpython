@@ -6,38 +6,28 @@ from packaging.util import resolve_name
 __all__ = ['get_command_names', 'set_command', 'get_command_class',
            'STANDARD_COMMANDS']
 
-_COMMANDS = {
-    'check': 'packaging.command.check.check',
-    'test': 'packaging.command.test.test',
-    'build': 'packaging.command.build.build',
-    'build_py': 'packaging.command.build_py.build_py',
-    'build_ext': 'packaging.command.build_ext.build_ext',
-    'build_clib': 'packaging.command.build_clib.build_clib',
-    'build_scripts': 'packaging.command.build_scripts.build_scripts',
-    'clean': 'packaging.command.clean.clean',
-    'install_dist': 'packaging.command.install_dist.install_dist',
-    'install_lib': 'packaging.command.install_lib.install_lib',
-    'install_headers': 'packaging.command.install_headers.install_headers',
-    'install_scripts': 'packaging.command.install_scripts.install_scripts',
-    'install_data': 'packaging.command.install_data.install_data',
-    'install_distinfo':
-        'packaging.command.install_distinfo.install_distinfo',
-    'sdist': 'packaging.command.sdist.sdist',
-    'bdist': 'packaging.command.bdist.bdist',
-    'bdist_dumb': 'packaging.command.bdist_dumb.bdist_dumb',
-    'bdist_wininst': 'packaging.command.bdist_wininst.bdist_wininst',
-    'register': 'packaging.command.register.register',
-    'upload': 'packaging.command.upload.upload',
-    'upload_docs': 'packaging.command.upload_docs.upload_docs',
-}
 
-# XXX this is crappy
+STANDARD_COMMANDS = [
+    # packaging
+    'check', 'test',
+    # building
+    'build', 'build_py', 'build_ext', 'build_clib', 'build_scripts', 'clean',
+    # installing
+    'install_dist', 'install_lib', 'install_headers', 'install_scripts',
+    'install_data', 'install_distinfo',
+    # distributing
+    'sdist', 'bdist', 'bdist_dumb', 'bdist_wininst',
+    'register', 'upload', 'upload_docs',
+    ]
+
 if os.name == 'nt':
-    _COMMANDS['bdist_msi'] = 'packaging.command.bdist_msi.bdist_msi'
+    STANDARD_COMMANDS.insert(STANDARD_COMMANDS.index('bdist_wininst'),
+                             'bdist_msi')
 
-# XXX use OrderedDict to preserve the grouping (build-related, install-related,
-# distribution-related)
-STANDARD_COMMANDS = set(_COMMANDS)
+# XXX maybe we need more than one registry, so that --list-comands can display
+# standard, custom and overriden standard commands differently
+_COMMANDS = dict((name, 'packaging.command.%s.%s' % (name, name))
+                 for name in STANDARD_COMMANDS)
 
 
 def get_command_names():
