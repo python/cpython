@@ -87,7 +87,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     return rc;
 }
 
-int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter, int allow_8bit_chars)
+int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
 {
     int rc = SQLITE_OK;
     PY_LONG_LONG longlongval;
@@ -166,7 +166,7 @@ static int _need_adapt(PyObject* obj)
     }
 }
 
-void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters, int allow_8bit_chars)
+void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters)
 {
     PyObject* current_param;
     PyObject* adapted;
@@ -220,7 +220,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i + 1, adapted, allow_8bit_chars);
+            rc = pysqlite_statement_bind_parameter(self, i + 1, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
@@ -265,7 +265,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 }
             }
 
-            rc = pysqlite_statement_bind_parameter(self, i, adapted, allow_8bit_chars);
+            rc = pysqlite_statement_bind_parameter(self, i, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {

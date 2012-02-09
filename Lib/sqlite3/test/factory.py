@@ -178,6 +178,8 @@ class TextFactoryTests(unittest.TestCase):
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
 
     def CheckOptimizedUnicode(self):
+        # In py3k, str objects are always returned when text_factory
+        # is OptimizedUnicode
         self.con.text_factory = sqlite.OptimizedUnicode
         austria = "Österreich"
         germany = "Deutchland"
