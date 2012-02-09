@@ -38,8 +38,6 @@ extern PyObject* pysqlite_IntegrityError;
 extern PyObject* pysqlite_DataError;
 extern PyObject* pysqlite_NotSupportedError;
 
-extern PyObject* pysqlite_OptimizedUnicode;
-
 /* the functions time.time() and time.sleep() */
 extern PyObject* time_time;
 extern PyObject* time_sleep;

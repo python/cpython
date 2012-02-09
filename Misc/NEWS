@@ -466,6 +466,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13921: Undocument and clean up sqlite3.OptimizedUnicode,
+  which is obsolete in Python 3.x. It's now aliased to str for
+  backwards compatibility.
+
 - When '' is a path (e.g. in sys.path), make sure __file__ uses the current
   working directory instead of '' in importlib.
 

@@ -46,8 +46,8 @@ extern PyTypeObject pysqlite_StatementType;
 int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql);
 void pysqlite_statement_dealloc(pysqlite_Statement* self);
 
-int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter, int allow_8bit_chars);
-void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters, int allow_8bit_chars);
+int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter);
+void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters);
 
 int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* parameters);
 int pysqlite_statement_finalize(pysqlite_Statement* self);

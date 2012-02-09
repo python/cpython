@@ -30,14 +30,3 @@ cur.execute("select ?", ("this is latin1 and would normally create errors" +
                          "\xe4\xf6\xfc".encode("latin1"),))
 row = cur.fetchone()
 assert type(row[0]) == str
-
-# sqlite3 offers a built-in optimized text_factory that will return bytestring
-# objects, if the data is in ASCII only, and otherwise return unicode objects
-con.text_factory = sqlite3.OptimizedUnicode
-cur.execute("select ?", (AUSTRIA,))
-row = cur.fetchone()
-assert type(row[0]) == str
-
-cur.execute("select ?", ("Germany",))
-row = cur.fetchone()
-assert type(row[0]) == str
