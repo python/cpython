@@ -1,4 +1,4 @@
-"""Compatibility helpers."""
+"""Support for build-time 2to3 conversion."""
 
 from packaging import logger
 
@@ -25,7 +25,7 @@ class Mixin2to3(_KLASS):
     """
     if _CONVERT:
 
-        def _run_2to3(self, files, doctests=[], fixers=[]):
+        def _run_2to3(self, files=[], doctests=[], fixers=[]):
             """ Takes a list of files and doctests, and performs conversion
             on those.
               - First, the files which contain the code(`files`) are converted.
@@ -35,17 +35,16 @@ class Mixin2to3(_KLASS):
             if fixers:
                 self.fixer_names = fixers
 
-            logger.info('converting Python code')
-            _KLASS.run_2to3(self, files)
+            if files:
+                logger.info('converting Python code and doctests')
+                _KLASS.run_2to3(self, files)
+                _KLASS.run_2to3(self, files, doctests_only=True)
 
-            logger.info('converting doctests in Python files')
-            _KLASS.run_2to3(self, files, doctests_only=True)
-
-            if doctests != []:
-                logger.info('converting doctest in text files')
+            if doctests:
+                logger.info('converting doctests in text files')
                 _KLASS.run_2to3(self, doctests, doctests_only=True)
     else:
         # If run on Python 2.x, there is nothing to do.
 
-        def _run_2to3(self, files, doctests=[], fixers=[]):
+        def _run_2to3(self, files=[], doctests=[], fixers=[]):
             pass

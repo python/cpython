@@ -853,13 +853,11 @@ def run_2to3(files, doctests_only=False, fixer_names=None,
 
     # Make this class local, to delay import of 2to3
     from lib2to3.refactor import get_fixers_from_package, RefactoringTool
-    fixers = []
     fixers = get_fixers_from_package('lib2to3.fixes')
 
     if fixer_names:
         for fixername in fixer_names:
-            fixers.extend(fixer for fixer in
-                          get_fixers_from_package(fixername))
+            fixers.extend(get_fixers_from_package(fixername))
     r = RefactoringTool(fixers, options=options)
     r.refactor(files, write=True, doctests_only=doctests_only)
 
@@ -870,20 +868,22 @@ class Mixin2to3:
     the class variables, or inherit from this class
     to override how 2to3 is invoked.
     """
-    # provide list of fixers to run.
-    # defaults to all from lib2to3.fixers
+    # list of fixers to run; defaults to all implicit from lib2to3.fixers
     fixer_names = None
-
-    # options dictionary
+    # dict of options
     options = None
-
-    # list of fixers to invoke even though they are marked as explicit
+    # list of extra fixers to invoke
     explicit = None
+    # TODO need a better way to add just one fixer from a package
+    # TODO need a way to exclude individual fixers
 
     def run_2to3(self, files, doctests_only=False):
         """ Issues a call to util.run_2to3. """
         return run_2to3(files, doctests_only, self.fixer_names,
                         self.options, self.explicit)
+
+    # TODO provide initialize/finalize_options
+
 
 RICH_GLOB = re.compile(r'\{([^}]*)\}')
 _CHECK_RECURSIVE_GLOB = re.compile(r'[^/\\,{]\*\*|\*\*[^/\\,}]')
