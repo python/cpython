@@ -21,8 +21,6 @@ class MarkersTestCase(LoggingCatcher,
 
         self.assertTrue(interpret("sys.platform == '%s'" % sys_platform))
         self.assertTrue(interpret(
-            "sys.platform == '%s' or python_version == '2.4'" % sys_platform))
-        self.assertTrue(interpret(
             "sys.platform == '%s' and python_full_version == '%s'" %
             (sys_platform, version)))
         self.assertTrue(interpret("'%s' == sys.platform" % sys_platform))
@@ -41,12 +39,18 @@ class MarkersTestCase(LoggingCatcher,
 
         # combined operations
         OP = 'os.name == "%s"' % os_name
+        FALSEOP = 'os.name == "buuuu"'
         AND = ' and '
         OR = ' or '
         self.assertTrue(interpret(OP + AND + OP))
         self.assertTrue(interpret(OP + AND + OP + AND + OP))
         self.assertTrue(interpret(OP + OR + OP))
-        self.assertTrue(interpret(OP + OR + OP + OR + OP))
+        self.assertTrue(interpret(OP + OR + FALSEOP))
+        self.assertTrue(interpret(OP + OR + OP + OR + FALSEOP))
+        self.assertTrue(interpret(OP + OR + FALSEOP + OR + FALSEOP))
+        self.assertTrue(interpret(FALSEOP + OR + OP))
+        self.assertFalse(interpret(FALSEOP + AND + FALSEOP))
+        self.assertFalse(interpret(FALSEOP + OR + FALSEOP))
 
         # other operators
         self.assertTrue(interpret("os.name != 'buuuu'"))
