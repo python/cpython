@@ -731,7 +731,8 @@ correspond to Unix system calls applicable to sockets.
    optional *flags* argument has the same meaning as for :meth:`recv` above.
    Returns the number of bytes sent. Applications are responsible for checking that
    all data has been sent; if only some of the data was transmitted, the
-   application needs to attempt delivery of the remaining data.
+   application needs to attempt delivery of the remaining data. For further
+   information on this topic, consult the :ref:`socket-howto`.
 
 
 .. method:: socket.sendall(bytes[, flags])
@@ -886,8 +887,8 @@ using it.  Note that a server must perform the sequence :func:`socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
 client only needs the sequence :func:`socket`, :meth:`~socket.connect`.  Also
-note that the server does not :meth:`~socket.send`/:meth:`~socket.recv` on the
-socket it is listening on but on the new socket returned by
+note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
+the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.
 
 The first two examples support IPv4 only. ::
@@ -905,7 +906,7 @@ The first two examples support IPv4 only. ::
    while True:
        data = conn.recv(1024)
        if not data: break
-       conn.send(data)
+       conn.sendall(data)
    conn.close()
 
 ::
@@ -917,7 +918,7 @@ The first two examples support IPv4 only. ::
    PORT = 50007              # The same port as used by the server
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.connect((HOST, PORT))
-   s.send(b'Hello, world')
+   s.sendall(b'Hello, world')
    data = s.recv(1024)
    s.close()
    print('Received', repr(data))
@@ -989,7 +990,7 @@ sends traffic to the first one connected successfully. ::
    if s is None:
        print('could not open socket')
        sys.exit(1)
-   s.send(b'Hello, world')
+   s.sendall(b'Hello, world')
    data = s.recv(1024)
    s.close()
    print('Received', repr(data))
