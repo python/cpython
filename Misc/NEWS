@@ -484,6 +484,8 @@ Library
   make sure two listeners can't bind to the same socket/pipe (or any existing
   socket/pipe).
 
+- Issue #9021: Add an introduction to the copy module documentation.
+
 - Issue #6005: Examples in the socket library documentation use sendall, where
   relevant, instead send method.
 
