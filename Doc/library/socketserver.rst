@@ -360,7 +360,7 @@ This is the server side::
            print "{} wrote:".format(self.client_address[0])
            print self.data
            # just send back the same data, but upper-cased
-           self.request.send(self.data.upper())
+           self.request.sendall(self.data.upper())
 
    if __name__ == "__main__":
        HOST, PORT = "localhost", 9999
@@ -390,7 +390,7 @@ objects that simplify communication by providing the standard file interface)::
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
 single ``recv()`` call in the first handler will just return what has been sent
-from the client in one ``send()`` call.
+from the client in one ``sendall()`` call.
 
 
 This is the client side::
@@ -407,7 +407,7 @@ This is the client side::
    try:
        # Connect to server and send data
        sock.connect((HOST, PORT))
-       sock.send(data + "\n")
+       sock.sendall(data + "\n")
 
        # Receive data from the server and shut down
        received = sock.recv(1024)
@@ -505,7 +505,7 @@ An example for the :class:`ThreadingMixIn` class::
            data = self.request.recv(1024)
            cur_thread = threading.current_thread()
            response = "{}: {}".format(cur_thread.name, data)
-           self.request.send(response)
+           self.request.sendall(response)
 
    class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
        pass
@@ -514,7 +514,7 @@ An example for the :class:`ThreadingMixIn` class::
        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
        sock.connect((ip, port))
        try:
-           sock.send(message)
+           sock.sendall(message)
            response = sock.recv(1024)
            print "Received: {}".format(response)
        finally:
