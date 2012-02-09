@@ -267,11 +267,6 @@ PyObject* _pysqlite_build_column_name(const char* colname)
     }
 }
 
-PyObject* pysqlite_unicode_from_string(const char* val_str, Py_ssize_t size, int optimize)
-{
-    return PyUnicode_FromStringAndSize(val_str, size);
-}
-
 /*
  * Returns a row from the currently active SQLite statement
  *
@@ -355,12 +350,8 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             } else if (coltype == SQLITE_TEXT) {
                 val_str = (const char*)sqlite3_column_text(self->statement->st, i);
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
-                if ((self->connection->text_factory == (PyObject*)&PyUnicode_Type)
-                    || (self->connection->text_factory == pysqlite_OptimizedUnicode)) {
-
-                    converted = pysqlite_unicode_from_string(val_str, nbytes,
-                        self->connection->text_factory == pysqlite_OptimizedUnicode ? 1 : 0);
-
+                if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
+                    converted = PyUnicode_FromStringAndSize(val_str, nbytes);
                     if (!converted) {
                         colname = sqlite3_column_name(self->statement->st, i);
                         if (!colname) {
@@ -459,7 +450,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     int statement_type;
     PyObject* descriptor;
     PyObject* second_argument = NULL;
-    int allow_8bit_chars;
 
     if (!check_cursor(self)) {
         goto error;
@@ -467,10 +457,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
     self->locked = 1;
     self->reset = 0;
-
-    /* Make shooting yourself in the foot with not utf-8 decodable 8-bit-strings harder */
-    allow_8bit_chars = ((self->connection->text_factory != (PyObject*)&PyUnicode_Type) &&
-        (self->connection->text_factory != pysqlite_OptimizedUnicode));
 
     Py_XDECREF(self->next_row);
     self->next_row = NULL;
@@ -630,7 +616,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
         pysqlite_statement_mark_dirty(self->statement);
 
-        pysqlite_statement_bind_parameters(self->statement, parameters, allow_8bit_chars);
+        pysqlite_statement_bind_parameters(self->statement, parameters);
         if (PyErr_Occurred()) {
             goto error;
         }
