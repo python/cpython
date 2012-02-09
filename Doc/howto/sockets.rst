@@ -1,3 +1,5 @@
+.. _socket-howto:
+
 ****************************
   Socket Programming HOWTO
 ****************************
