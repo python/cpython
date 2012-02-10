@@ -90,6 +90,19 @@ Core and Builtins
 Library
 -------
 
+- Issue #13590: On OS X 10.7 and 10.6 with Xcode 4.2, building
+  Distutils-based packages with C extension modules may fail because
+  Apple has removed gcc-4.2, the version used to build python.org
+  64-bit/32-bit Pythons.  If the user does not explicitly override
+  the default C compiler by setting the CC environment variable,
+  Distutils will now attempt to compile extension modules with clang
+  if gcc-4.2 is required but not found. Also as a convenience, if
+  the user does explicitly set CC, substitute its value as the default
+  compiler in the Distutils LDSHARED configuration variable for OS X.
+  (Note, the python.org 32-bit-only Pythons use gcc-4.0 and the 10.4u
+  SDK, neither of which are available in Xcode 4.  This change does not
+  attempt to override settings to support their use with Xcode 4.)
+
 - Issue #9021: Add an introduction to the copy module documentation.
 
 - Issue #6005: Examples in the socket library documentation use sendall, where
