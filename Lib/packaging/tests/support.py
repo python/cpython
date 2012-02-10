@@ -56,8 +56,9 @@ __all__ = [
     # misc. functions and decorators
     'fake_dec', 'create_distribution', 'use_command',
     'copy_xxmodule_c', 'fixup_build_ext',
+    'skip_2to3_optimize',
     # imported from this module for backport purposes
-    'unittest', 'requires_zlib', 'skip_2to3_optimize', 'skip_unless_symlink',
+    'unittest', 'requires_zlib', 'skip_unless_symlink',
 ]
 
 
@@ -332,22 +333,18 @@ def copy_xxmodule_c(directory):
     """
     filename = _get_xxmodule_path()
     if filename is None:
-        raise unittest.SkipTest('cannot find xxmodule.c (test must run in '
-                                'the python build dir)')
+        raise unittest.SkipTest('cannot find xxmodule.c')
     shutil.copy(filename, directory)
 
 
 def _get_xxmodule_path():
-    srcdir = sysconfig.get_config_var('srcdir')
-    candidates = [
-        # use installed copy if available
-        os.path.join(os.path.dirname(__file__), 'xxmodule.c'),
-        # otherwise try using copy from build directory
-        os.path.join(srcdir, 'Modules', 'xxmodule.c'),
-    ]
-    for path in candidates:
-        if os.path.exists(path):
-            return path
+    if sysconfig.is_python_build():
+        srcdir = sysconfig.get_config_var('projectbase')
+        path = os.path.join(os.getcwd(), srcdir, 'Modules', 'xxmodule.c')
+    else:
+        os.path.join(os.path.dirname(__file__), 'xxmodule.c')
+    if os.path.exists(path):
+        return path
 
 
 def fixup_build_ext(cmd):
@@ -355,20 +352,21 @@ def fixup_build_ext(cmd):
 
     When Python was built with --enable-shared on Unix, -L. is not enough to
     find libpython<blah>.so, because regrtest runs in a tempdir, not in the
-    source directory where the .so lives.
+    source directory where the .so lives.  (Mac OS X embeds absolute paths
+    to shared libraries into executables, so the fixup is a no-op on that
+    platform.)
 
     When Python was built with in debug mode on Windows, build_ext commands
     need their debug attribute set, and it is not done automatically for
     some reason.
 
-    This function handles both of these things.  Example use:
+    This function handles both of these things, and also fixes
+    cmd.distribution.include_dirs if the running Python is an uninstalled
+    build.  Example use:
 
         cmd = build_ext(dist)
         support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
-
-    Unlike most other Unix platforms, Mac OS X embeds absolute paths
-    to shared libraries into executables, so the fixup is not needed there.
     """
     if os.name == 'nt':
         cmd.debug = sys.executable.endswith('_d.exe')
@@ -386,12 +384,17 @@ def fixup_build_ext(cmd):
                 name, equals, value = runshared.partition('=')
                 cmd.library_dirs = value.split(os.pathsep)
 
+    # Allow tests to run with an uninstalled Python
+    if sysconfig.is_python_build():
+        pysrcdir = sysconfig.get_config_var('projectbase')
+        cmd.distribution.include_dirs.append(os.path.join(pysrcdir, 'Include'))
+
+
 try:
     from test.support import skip_unless_symlink
 except ImportError:
     skip_unless_symlink = unittest.skip(
         'requires test.support.skip_unless_symlink')
-
 
 skip_2to3_optimize = unittest.skipIf(sys.flags.optimize,
                                      "2to3 doesn't work under -O")
