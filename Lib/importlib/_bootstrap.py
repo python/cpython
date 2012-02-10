@@ -36,10 +36,7 @@ def _case_ok(directory, check):
             b'PYTHONCASEOK' not in _os.environ):
         if not directory:
             directory = '.'
-        if check in _os.listdir(directory):
-            return True
-        else:
-            return False
+        return check in _os.listdir(directory)
     else:
         return True
 
