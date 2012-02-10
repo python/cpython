@@ -26,7 +26,8 @@ class BuildTestCase(support.TempdirManager,
         # build_platlib is 'build/lib.platform-x.x[-pydebug]'
         # examples:
         #   build/lib.macosx-10.3-i386-2.7
-        plat_spec = '.%s-%s' % (cmd.plat_name, sys.version[0:3])
+        pyversion = '%s.%s' % sys.version_info[:2]
+        plat_spec = '.%s-%s' % (cmd.plat_name, pyversion)
         if hasattr(sys, 'gettotalrefcount'):
             self.assertTrue(cmd.build_platlib.endswith('-pydebug'))
             plat_spec += '-pydebug'
@@ -41,7 +42,7 @@ class BuildTestCase(support.TempdirManager,
         self.assertEqual(cmd.build_temp, wanted)
 
         # build_scripts is build/scripts-x.x
-        wanted = os.path.join(cmd.build_base, 'scripts-' + sys.version[0:3])
+        wanted = os.path.join(cmd.build_base, 'scripts-' + pyversion)
         self.assertEqual(cmd.build_scripts, wanted)
 
         # executable is os.path.normpath(sys.executable)
