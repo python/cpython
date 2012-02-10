@@ -7,9 +7,8 @@ import sys
 import os
 import msilib
 
-
-from sysconfig import get_python_version
 from shutil import rmtree
+from sysconfig import get_python_version
 from packaging.command.cmd import Command
 from packaging.version import NormalizedVersion
 from packaging.errors import PackagingOptionError
@@ -204,7 +203,7 @@ class bdist_msi(Command):
             target_version = self.target_version
             if not target_version:
                 assert self.skip_build, "Should have already checked this"
-                target_version = sys.version[0:3]
+                target_version = '%s.%s' % sys.version_info[:2]
             plat_specifier = ".%s-%s" % (self.plat_name, target_version)
             build = self.get_finalized_command('build')
             build.build_lib = os.path.join(build.build_base,
