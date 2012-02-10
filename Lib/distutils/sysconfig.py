@@ -146,6 +146,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             "I don't know where Python installs its library "
             "on platform '%s'" % os.name)
 
+_USE_CLANG = None
 
 def customize_compiler(compiler):
     """Do any platform-specific customization of a CCompiler instance.
@@ -158,8 +159,38 @@ def customize_compiler(compiler):
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SO', 'AR', 'ARFLAGS')
 
+        newcc = None
         if 'CC' in os.environ:
-            cc = os.environ['CC']
+            newcc = os.environ['CC']
+        elif sys.platform == 'darwin' and cc == 'gcc-4.2':
+            # Issue #13590:
+            #       Since Apple removed gcc-4.2 in Xcode 4.2, we can no
+            #       longer assume it is available for extension module builds.
+            #       If Python was built with gcc-4.2, check first to see if
+            #       it is available on this system; if not, try to use clang
+            #       instead unless the caller explicitly set CC.
+            global _USE_CLANG
+            if _USE_CLANG is None:
+                from distutils import log
+                from subprocess import Popen, PIPE
+                p = Popen("! type gcc-4.2 && type clang && exit 2",
+                                shell=True, stdout=PIPE, stderr=PIPE)
+                p.wait()
+                if p.returncode == 2:
+                    _USE_CLANG = True
+                    log.warn("gcc-4.2 not found, using clang instead")
+                else:
+                    _USE_CLANG = False
+            if _USE_CLANG:
+                newcc = 'clang'
+        if newcc:
+            # On OS X, if CC is overridden, use that as the default
+            #       command for LDSHARED as well
+            if (sys.platform == 'darwin'
+                    and 'LDSHARED' not in os.environ
+                    and ldshared.startswith(cc)):
+                ldshared = newcc + ldshared[len(cc):]
+            cc = newcc
         if 'CXX' in os.environ:
             cxx = os.environ['CXX']
         if 'LDSHARED' in os.environ:
