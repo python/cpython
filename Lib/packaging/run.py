@@ -254,16 +254,13 @@ def _run(dispatcher, args, **kw):
     parser = dispatcher.parser
     args = args[1:]
 
-    commands = STANDARD_COMMANDS  # + extra commands
+    commands = STANDARD_COMMANDS  # FIXME display extra commands
 
     if args == ['--list-commands']:
         print('List of available commands:')
-        cmds = sorted(commands)
-
-        for cmd in cmds:
+        for cmd in commands:
             cls = dispatcher.cmdclass.get(cmd) or get_command_class(cmd)
-            desc = getattr(cls, 'description',
-                            '(no description available)')
+            desc = getattr(cls, 'description', '(no description available)')
             print('  %s: %s' % (cmd, desc))
         return
 
