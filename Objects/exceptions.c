@@ -2209,7 +2209,7 @@ _PyExc_Init(void)
             Py_FatalError("init of pre-allocated RuntimeError failed");
         Py_DECREF(args_tuple);
     }
-
+    Py_DECREF(bltinmod);
 }
 
 void
