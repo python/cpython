@@ -372,6 +372,15 @@ class BZ2FileTest(BaseTest):
             bz2f.close()
         self.assertRaises(ValueError, bz2f.seekable)
 
+        src = BytesIO(self.DATA)
+        src.seekable = lambda: False
+        bz2f = BZ2File(fileobj=src)
+        try:
+            self.assertFalse(bz2f.seekable())
+        finally:
+            bz2f.close()
+        self.assertRaises(ValueError, bz2f.seekable)
+
     def testReadable(self):
         bz2f = BZ2File(fileobj=BytesIO(self.DATA))
         try:
