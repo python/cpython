@@ -329,7 +329,7 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 codecs
 ------
 
-The :mod:`~encodings.mbcs` codec has be rewritten to handle correclty
+The :mod:`~encodings.mbcs` codec has be rewritten to handle correctly
 ``replace`` and ``ignore`` error handlers on all Windows versions.  The
 :mod:`~encodings.mbcs` codec now supports all error handlers, instead of only
 ``replace`` to encode and ``ignore`` to decode.
