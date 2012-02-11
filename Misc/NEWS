@@ -90,6 +90,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #13994: Earler partial revert of Distutils enhancements in 2.7
+  has left two versions of customize_compiler, the original in
+  distutils.sysconfig and another copy in distutils.ccompiler, with some
+  parts of distutils calling one and others using the other.
+  Complete the revert back to only having one in distutils.sysconfig as
+  is the case in 3.x.
+
 - Issue #13590: On OS X 10.7 and 10.6 with Xcode 4.2, building
   Distutils-based packages with C extension modules may fail because
   Apple has removed gcc-4.2, the version used to build python.org
