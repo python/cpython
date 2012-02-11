@@ -44,9 +44,11 @@ The module defines the following items:
 
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``, ``'w'``,
    or ``'wb'``, depending on whether the file will be read or written.  The default
-   is the mode of *fileobj* if discernible; otherwise, the default is ``'rb'``. If
-   not given, the 'b' flag will be added to the mode to ensure the file is opened
-   in binary mode for cross-platform portability.
+   is the mode of *fileobj* if discernible; otherwise, the default is ``'rb'``.
+
+   Note that the file is always opened in binary mode; text mode is not
+   supported. If you need to read a compressed file in text mode, wrap your
+   :class:`GzipFile` with an :class:`io.TextIOWrapper`.
 
    The *compresslevel* argument is an integer from ``1`` to ``9`` controlling the
    level of compression; ``1`` is fastest and produces the least compression, and
