@@ -326,6 +326,28 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
+bz2
+---
+
+The :mod:`bz2` module has been rewritten from scratch. In the process, several
+new features have been added:
+
+* :class:`bz2.BZ2File` can now read from and write to arbitrary file-like
+  objects, by means of its constructor's *fileobj* argument.
+
+  (Contributed by Nadeem Vawda in :issue:`5863`)
+
+* :class:`bz2.BZ2File` and :func:`bz2.decompress` can now decompress
+  multi-stream inputs (such as those produced by the :program:`pbzip2` tool).
+  :class:`bz2.BZ2File` can now also be used to create this type of file, using
+  the ``'a'`` (append) mode.
+
+  (Contributed by Nir Aides in :issue:`1625`)
+
+* :class:`bz2.BZ2File` now implements all of the :class:`io.BufferedIOBase` API,
+  except for the :meth:`detach` and :meth:`truncate` methods.
+
+
 codecs
 ------
 
