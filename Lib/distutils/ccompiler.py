@@ -18,58 +18,6 @@ from distutils.dep_util import newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
 
-_sysconfig = __import__('sysconfig')
-
-def customize_compiler(compiler):
-    """Do any platform-specific customization of a CCompiler instance.
-
-    Mainly needed on Unix, so we can plug in the information that
-    varies across Unices and is stored in Python's Makefile.
-    """
-    if compiler.compiler_type == "unix":
-        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar, ar_flags) = \
-            _sysconfig.get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
-                                       'CCSHARED', 'LDSHARED', 'SO', 'AR',
-                                       'ARFLAGS')
-
-        if 'CC' in os.environ:
-            cc = os.environ['CC']
-        if 'CXX' in os.environ:
-            cxx = os.environ['CXX']
-        if 'LDSHARED' in os.environ:
-            ldshared = os.environ['LDSHARED']
-        if 'CPP' in os.environ:
-            cpp = os.environ['CPP']
-        else:
-            cpp = cc + " -E"           # not always
-        if 'LDFLAGS' in os.environ:
-            ldshared = ldshared + ' ' + os.environ['LDFLAGS']
-        if 'CFLAGS' in os.environ:
-            cflags = opt + ' ' + os.environ['CFLAGS']
-            ldshared = ldshared + ' ' + os.environ['CFLAGS']
-        if 'CPPFLAGS' in os.environ:
-            cpp = cpp + ' ' + os.environ['CPPFLAGS']
-            cflags = cflags + ' ' + os.environ['CPPFLAGS']
-            ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
-        if 'AR' in os.environ:
-            ar = os.environ['AR']
-        if 'ARFLAGS' in os.environ:
-            archiver = ar + ' ' + os.environ['ARFLAGS']
-        else:
-            archiver = ar + ' ' + ar_flags
-
-        cc_cmd = cc + ' ' + cflags
-        compiler.set_executables(
-            preprocessor=cpp,
-            compiler=cc_cmd,
-            compiler_so=cc_cmd + ' ' + ccshared,
-            compiler_cxx=cxx,
-            linker_so=ldshared,
-            linker_exe=cc,
-            archiver=archiver)
-
-        compiler.shared_lib_extension = so_ext
-
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
     by real compiler classes.  Also has some utility methods used by

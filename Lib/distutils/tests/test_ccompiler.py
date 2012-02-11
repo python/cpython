@@ -4,7 +4,8 @@ import unittest
 from test.test_support import captured_stdout
 
 from distutils.ccompiler import (gen_lib_options, CCompiler,
-                                 get_default_compiler, customize_compiler)
+                                 get_default_compiler)
+from distutils.sysconfig import customize_compiler
 from distutils import debug
 from distutils.tests import support
 
