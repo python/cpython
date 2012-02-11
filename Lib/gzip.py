@@ -141,7 +141,7 @@ class GzipFile(io.BufferedIOBase):
         """
 
         if mode and ('t' in mode or 'U' in mode):
-            raise IOError("Mode " + mode + " not supported")
+            raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
         if fileobj is None:
@@ -152,10 +152,9 @@ class GzipFile(io.BufferedIOBase):
             else:
                 filename = ''
         if mode is None:
-            if hasattr(fileobj, 'mode'): mode = fileobj.mode
-            else: mode = 'rb'
+            mode = getattr(fileobj, 'mode', 'rb')
 
-        if mode[0:1] == 'r':
+        if mode.startswith('r'):
             self.mode = READ
             # Set flag indicating start of a new member
             self._new_member = True
@@ -170,7 +169,7 @@ class GzipFile(io.BufferedIOBase):
             self.min_readsize = 100
             fileobj = _PaddedFile(fileobj)
 
-        elif mode[0:1] == 'w' or mode[0:1] == 'a':
+        elif mode.startswith(('w', 'a')):
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,
@@ -179,7 +178,7 @@ class GzipFile(io.BufferedIOBase):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
         else:
-            raise IOError("Mode " + mode + " not supported")
+            raise ValueError("Invalid mode: {!r}".format(mode))
 
         self.fileobj = fileobj
         self.offset = 0
