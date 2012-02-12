@@ -79,11 +79,11 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         if self._append_suffix:
             filename += self._append_suffix
         if orig_filename != filename:
-          output_dir = os.path.dirname(filename)
-          if not os.path.isdir(output_dir):
-              os.makedirs(output_dir)
-          self.log_message('Writing converted %s to %s.', orig_filename,
-                           filename)
+            output_dir = os.path.dirname(filename)
+            if not os.path.isdir(output_dir):
+                os.makedirs(output_dir)
+            self.log_message('Writing converted %s to %s.', orig_filename,
+                             filename)
         if not self.nobackups:
             # Make backup
             backup = filename + ".bak"
