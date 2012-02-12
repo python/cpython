@@ -366,10 +366,8 @@ def _translate_pattern(pattern, anchor=True, prefix=None, is_regex=False):
         # ditch end of pattern character
         empty_pattern = _glob_to_re('')
         prefix_re = _glob_to_re(prefix)[:-len(empty_pattern)]
-        # match both path separators, as in Postel's principle
-        sep_pat = "[" + re.escape(os.path.sep + os.path.altsep
-                                  if os.path.altsep else os.path.sep) + "]"
-        pattern_re = "^" + sep_pat.join([prefix_re, ".*" + pattern_re])
+        # paths should always use / in manifest templates
+        pattern_re = "^%s/.*%s" % (prefix_re, pattern_re)
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
