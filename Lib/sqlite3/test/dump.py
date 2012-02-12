@@ -13,6 +13,14 @@ class DumpTests(unittest.TestCase):
 
     def CheckTableDump(self):
         expected_sqls = [
+                """CREATE TABLE "index"("index" blob);"""
+                ,
+                """INSERT INTO "index" VALUES(X'01');"""
+                ,
+                """CREATE TABLE "quoted""table"("quoted""field" text);"""
+                ,
+                """INSERT INTO "quoted""table" VALUES('quoted''value');"""
+                ,
                 "CREATE TABLE t1(id integer primary key, s1 text, " \
                 "t1_i1 integer not null, i2 integer, unique (s1), " \
                 "constraint t1_idx1 unique (i2));"
