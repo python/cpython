@@ -25,12 +25,41 @@ def diff_texts(a, b, filename):
 
 class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
     """
+    A refactoring tool that can avoid overwriting its input files.
     Prints output to stdout.
+
+    Output files can optionally be written to a different directory and or
+    have an extra file suffix appended to their name for use in situations
+    where you do not want to replace the input files.
     """
 
-    def __init__(self, fixers, options, explicit, nobackups, show_diffs):
+    def __init__(self, fixers, options, explicit, nobackups, show_diffs,
+                 input_base_dir='', output_dir='', append_suffix=''):
+        """
+        Args:
+            fixers: A list of fixers to import.
+            options: A dict with RefactoringTool configuration.
+            explicit: A list of fixers to run even if they are explicit.
+            nobackups: If true no backup '.bak' files will be created for those
+                files that are being refactored.
+            show_diffs: Should diffs of the refactoring be printed to stdout?
+            input_base_dir: The base directory for all input files.  This class
+                will strip this path prefix off of filenames before substituting
+                it with output_dir.  Only meaningful if output_dir is supplied.
+                All files processed by refactor() must start with this path.
+            output_dir: If supplied, all converted files will be written into
+                this directory tree instead of input_base_dir.
+            append_suffix: If supplied, all files output by this tool will have
+                this appended to their filename.  Useful for changing .py to
+                .py3 for example by passing append_suffix='3'.
+        """
         self.nobackups = nobackups
         self.show_diffs = show_diffs
+        if input_base_dir and not input_base_dir.endswith(os.sep):
+            input_base_dir += os.sep
+        self._input_base_dir = input_base_dir
+        self._output_dir = output_dir
+        self._append_suffix = append_suffix
         super(StdoutRefactoringTool, self).__init__(fixers, options, explicit)
 
     def log_error(self, msg, *args, **kwargs):
@@ -38,6 +67,23 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         self.logger.error(msg, *args, **kwargs)
 
     def write_file(self, new_text, filename, old_text, encoding):
+        orig_filename = filename
+        if self._output_dir:
+            if filename.startswith(self._input_base_dir):
+                filename = os.path.join(self._output_dir,
+                                        filename[len(self._input_base_dir):])
+            else:
+                raise ValueError('filename %s does not start with the '
+                                 'input_base_dir %s' % (
+                                         filename, self._input_base_dir))
+        if self._append_suffix:
+            filename += self._append_suffix
+        if orig_filename != filename:
+          output_dir = os.path.dirname(filename)
+          if not os.path.isdir(output_dir):
+              os.makedirs(output_dir)
+          self.log_message('Writing converted %s to %s.', orig_filename,
+                           filename)
         if not self.nobackups:
             # Make backup
             backup = filename + ".bak"
@@ -55,6 +101,9 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         write(new_text, filename, old_text, encoding)
         if not self.nobackups:
             shutil.copymode(backup, filename)
+        if orig_filename != filename:
+            # Preserve the file mode in the new output directory.
+            shutil.copymode(orig_filename, filename)
 
     def print_output(self, old, new, filename, equal):
         if equal:
@@ -113,11 +162,33 @@ def main(fixer_pkg, args=None):
                       help="Write back modified files")
     parser.add_option("-n", "--nobackups", action="store_true", default=False,
                       help="Don't write backups for modified files")
+    parser.add_option("-o", "--output-dir", action="store", type="str",
+                      default="", help="Put output files in this directory "
+                      "instead of overwriting the input files.  Requires -n.")
+    parser.add_option("-W", "--write-unchanged-files", action="store_true",
+                      help="Also write files even if no changes were required"
+                      " (useful with --output-dir); implies -w.")
+    parser.add_option("--add-suffix", action="store", type="str", default="",
+                      help="Append this string to all output filenames."
+                      " Requires -n if non-empty.  "
+                      "ex: --add-suffix='3' will generate .py3 files.")
 
     # Parse command line arguments
     refactor_stdin = False
     flags = {}
     options, args = parser.parse_args(args)
+    if options.write_unchanged_files:
+        flags["write_unchanged_files"] = True
+        if not options.write:
+            warn("--write-unchanged-files/-W implies -w.")
+        options.write = True
+    # If we allowed these, the original files would be renamed to backup names
+    # but not replaced.
+    if options.output_dir and not options.nobackups:
+        parser.error("Can't use --output-dir/-o without -n.")
+    if options.add_suffix and not options.nobackups:
+        parser.error("Can't use --add-suffix without -n.")
+
     if not options.write and options.no_diffs:
         warn("not writing files and not printing diffs; that's not very useful")
     if not options.write and options.nobackups:
@@ -143,6 +214,7 @@ def main(fixer_pkg, args=None):
     # Set up logging handler
     level = logging.DEBUG if options.verbose else logging.INFO
     logging.basicConfig(format='%(name)s: %(message)s', level=level)
+    logger = logging.getLogger('lib2to3.main')
 
     # Initialize the refactoring tool
     avail_fixes = set(refactor.get_fixers_from_package(fixer_pkg))
@@ -159,8 +231,23 @@ def main(fixer_pkg, args=None):
     else:
         requested = avail_fixes.union(explicit)
     fixer_names = requested.difference(unwanted_fixes)
-    rt = StdoutRefactoringTool(sorted(fixer_names), flags, sorted(explicit),
-                               options.nobackups, not options.no_diffs)
+    input_base_dir = os.path.commonprefix(args)
+    if (input_base_dir and not input_base_dir.endswith(os.sep)
+        and not os.path.isdir(input_base_dir)):
+        # One or more similar names were passed, their directory is the base.
+        # os.path.commonprefix() is ignorant of path elements, this corrects
+        # for that weird API.
+        input_base_dir = os.path.dirname(input_base_dir)
+    if options.output_dir:
+        input_base_dir = input_base_dir.rstrip(os.sep)
+        logger.info('Output in %r will mirror the input directory %r layout.',
+                    options.output_dir, input_base_dir)
+    rt = StdoutRefactoringTool(
+            sorted(fixer_names), flags, sorted(explicit),
+            options.nobackups, not options.no_diffs,
+            input_base_dir=input_base_dir,
+            output_dir=options.output_dir,
+            append_suffix=options.add_suffix)
 
     # Refactor all files and directories passed as arguments
     if not rt.errors:
