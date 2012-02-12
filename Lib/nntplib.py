@@ -378,7 +378,7 @@ class _NNTPBase:
             self.nntp_implementation = None
             try:
                 resp, caps = self.capabilities()
-            except NNTPPermanentError:
+            except (NNTPPermanentError, NNTPTemporaryError):
                 # Server doesn't support capabilities
                 self._caps = {}
             else:
@@ -955,6 +955,9 @@ class _NNTPBase:
                 resp = self._shortcmd('authinfo pass ' + password)
                 if not resp.startswith('281'):
                     raise NNTPPermanentError(resp)
+        # Capabilities might have changed after login
+        self._caps = None
+        self.getcapabilities()
         # Attempt to send mode reader if it was requested after login.
         if self.readermode_afterauth:
             self._setreadermode()
