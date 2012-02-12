@@ -466,6 +466,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10287: nntplib now queries the server's CAPABILITIES again after
+  authenticating (since the result may change, according to RFC 4643).
+  Patch by Hynek Schlawack.
+
 - Issue #13989: Document that GzipFile does not support text mode, and give a
   more helpful error message when opened with an invalid mode string.
 
