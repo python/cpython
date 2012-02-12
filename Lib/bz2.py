@@ -138,7 +138,7 @@ class BZ2File(io.BufferedIOBase):
 
     def seekable(self):
         """Return whether the file supports seeking."""
-        return self.readable()
+        return self.readable() and self._fp.seekable()
 
     def readable(self):
         """Return whether the file was opened for reading."""
@@ -165,9 +165,12 @@ class BZ2File(io.BufferedIOBase):
             raise io.UnsupportedOperation("File not open for writing")
 
     def _check_can_seek(self):
-        if not self.seekable():
+        if not self.readable():
             raise io.UnsupportedOperation("Seeking is only supported "
                                           "on files open for reading")
+        if not self._fp.seekable():
+            raise io.UnsupportedOperation("The underlying file object "
+                                          "does not support seeking")
 
     # Fill the readahead buffer if it is empty. Returns False on EOF.
     def _fill_buffer(self):

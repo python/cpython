@@ -184,7 +184,17 @@ class HTMLParser(_markupbase.ParserBase):
                 elif startswith("<?", i):
                     k = self.parse_pi(i)
                 elif startswith("<!", i):
-                    k = self.parse_declaration(i)
+                    # this might fail with things like <! not a comment > or
+                    # <! -- space before '--' -->.  When strict is True an
+                    # error is raised, when it's False they will be considered
+                    # as bogus comments and parsed (see parse_bogus_comment).
+                    if self.strict:
+                        k = self.parse_declaration(i)
+                    else:
+                        try:
+                            k = self.parse_declaration(i)
+                        except HTMLParseError:
+                            k = self.parse_bogus_comment(i)
                 elif (i + 1) < n:
                     self.handle_data("<")
                     k = i + 1
@@ -255,6 +265,19 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_data(rawdata[i:n])
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
+
+    # Internal -- parse bogus comment, return length or -1 if not terminated
+    # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
+    def parse_bogus_comment(self, i, report=1):
+        rawdata = self.rawdata
+        if rawdata[i:i+2] != '<!':
+            self.error('unexpected call to parse_comment()')
+        pos = rawdata.find('>', i+2)
+        if pos == -1:
+            return -1
+        if report:
+            self.handle_comment(rawdata[i+2:pos])
+        return pos + 1
 
     # Internal -- parse processing instr, return end or -1 if not terminated
     def parse_pi(self, i):

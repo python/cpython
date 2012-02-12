@@ -56,6 +56,10 @@ from packaging.errors import PackagingExecError, CompileError, UnknownFileError
 from packaging.util import get_compiler_versions
 import sysconfig
 
+# TODO use platform instead of sys.version
+# (platform does unholy sys.version parsing too, but at least it gives other
+# VMs a chance to override the returned values)
+
 
 def get_msvcr():
     """Include the appropriate MSVC runtime library if Python was built

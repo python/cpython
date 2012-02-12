@@ -242,7 +242,7 @@ class install_dist(Command):
         # $platbase in the other installation directories and not worry
         # about needing recursive variable expansion (shudder).
 
-        py_version = sys.version.split()[0]
+        py_version = '%s.%s' % sys.version_info[:2]
         prefix, exec_prefix, srcdir, projectbase = get_config_vars(
             'prefix', 'exec_prefix', 'srcdir', 'projectbase')
 

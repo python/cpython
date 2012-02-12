@@ -323,6 +323,23 @@ DOCTYPE html [
                                 ("endtag", element_lower)],
                             collector=Collector())
 
+    def test_comments(self):
+        html = ("<!-- I'm a valid comment -->"
+                '<!--me too!-->'
+                '<!------>'
+                '<!---->'
+                '<!----I have many hyphens---->'
+                '<!-- I have a > in the middle -->'
+                '<!-- and I have -- in the middle! -->')
+        expected = [('comment', " I'm a valid comment "),
+                    ('comment', 'me too!'),
+                    ('comment', '--'),
+                    ('comment', ''),
+                    ('comment', '--I have many hyphens--'),
+                    ('comment', ' I have a > in the middle '),
+                    ('comment', ' and I have -- in the middle! ')]
+        self._run_check(html, expected)
+
     def test_condcoms(self):
         html = ('<!--[if IE & !(lte IE 8)]>aren\'t<![endif]-->'
                 '<!--[if IE 8]>condcoms<![endif]-->'
@@ -425,6 +442,19 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self.assertEqual(p.unescape('&#0038;'),'&')
         # see #12888
         self.assertEqual(p.unescape('&#123; ' * 1050), '{ ' * 1050)
+
+    def test_broken_comments(self):
+        html = ('<! not really a comment >'
+                '<! not a comment either -->'
+                '<! -- close enough -->'
+                '<!!! another bogus comment !!!>')
+        expected = [
+            ('comment', ' not really a comment '),
+            ('comment', ' not a comment either --'),
+            ('comment', ' -- close enough --'),
+            ('comment', '!! another bogus comment !!!'),
+        ]
+        self._run_check(html, expected)
 
     def test_broken_condcoms(self):
         # these condcoms are missing the '--' after '<!' and before the '>'
