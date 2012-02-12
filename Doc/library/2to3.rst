@@ -94,6 +94,38 @@ change can also be enabled manually with the :option:`-p` flag.  Use
 :option:`-p` to run fixers on code that already has had its print statements
 converted.
 
+The :option:`-o` or :option:`--output-dir` option allows specification of an
+alternate directory for processed output files to be written to.  The
+:option:`-n` flag is required when using this as backup files do not make sense
+when not overwriting the input files.
+
+.. versionadded:: 3.2.3
+   The :option:`-o` option was added.
+
+The :option:`-W` or :option:`--write-unchanged-files` flag tells 2to3 to always
+write output files even if no changes were required to the file.  This is most
+useful with :option:`-o` so that an entire Python source tree is copied with
+translation from one directory to another.
+This option implies the :option:`-w` flag as it would not make sense otherwise.
+
+.. versionadded:: 3.2.3
+   The :option:`-W` flag was added.
+
+The :option:`--add-suffix` option specifies a string to append to all output
+filenames.  The :option:`-n` flag is required when specifying this as backups
+are not necessary when writing to different filenames.  Example::
+
+   $ 2to3 -n -W --add-suffix=3 example.py
+
+Will cause a converted file named ``example.py3`` to be written.
+
+.. versionadded:: 3.2.3
+   The :option:`--add-suffix` option was added.
+
+To translate an entire project from one directory tree to another use::
+
+   $ 2to3 --output-dir=python3-version/mycode -W -n python2-version/mycode
+
 
 .. _2to3-fixers:
 
