@@ -489,11 +489,13 @@ Build
 Tools/Demos
 -----------
 
+- Issue #13930: 2to3 is now able to write its converted output files to another
+  directory tree as well as copying unchanged files and altering the file
+  suffix.  See its new -o, -W and --add-suffix options.  This makes it more
+  useful in many automated code translation workflows.
+
 - Issue #10639: reindent.py no longer converts newlines and will raise
   an error if attempting to convert a file with mixed newlines.
-
-Tools/Demos
------------
 
 - Issue #13628: python-gdb.py is now able to retrieve more frames in the Python
   traceback if Python is optimized.
