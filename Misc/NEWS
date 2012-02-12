@@ -90,7 +90,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #13994: Earler partial revert of Distutils enhancements in 2.7
+- Issue #13994: Earlier partial revert of Distutils enhancements in 2.7
   has left two versions of customize_compiler, the original in
   distutils.sysconfig and another copy in distutils.ccompiler, with some
   parts of distutils calling one and others using the other.
