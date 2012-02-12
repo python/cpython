@@ -282,8 +282,7 @@ Library
 - Issues #1745761, #755670, #13357, #12629, #1200313: HTMLParser now correctly
   handles non-valid attributes, including adjacent and unquoted attributes.
 
-- Issue #13193: Fix distutils.filelist.FileList under Windows.  The
-  "recursive-include" directive now recognizes both legal path separators.
+- Issue #13193: Fix distutils.filelist.FileList under Windows.
 
 - Issue #13384: Remove unnecessary __future__ import in Lib/random.py
 
