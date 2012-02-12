@@ -90,6 +90,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9750: Fix sqlite3.Connection.iterdump on tables and fields
+  with a name that is a keyword or contains quotes. Patch by Marko
+  Kohtala.
+
 - Issue #13994: Earlier partial revert of Distutils enhancements in 2.7
   has left two versions of customize_compiler, the original in
   distutils.sysconfig and another copy in distutils.ccompiler, with some
