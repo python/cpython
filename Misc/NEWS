@@ -466,6 +466,25 @@ Core and Builtins
 Library
 -------
 
+- Issue #13989: Document that GzipFile does not support text mode, and give a
+  more helpful error message when opened with an invalid mode string.
+
+- Issue #13590: On OS X 10.7 and 10.6 with Xcode 4.2, building
+  Distutils-based packages with C extension modules may fail because
+  Apple has removed gcc-4.2, the version used to build python.org
+  64-bit/32-bit Pythons.  If the user does not explicitly override
+  the default C compiler by setting the CC environment variable,
+  Distutils will now attempt to compile extension modules with clang
+  if gcc-4.2 is required but not found. Also as a convenience, if
+  the user does explicitly set CC, substitute its value as the default
+  compiler in the Distutils LDSHARED configuration variable for OS X.
+  (Note, the python.org 32-bit-only Pythons use gcc-4.0 and the 10.4u
+  SDK, neither of which are available in Xcode 4.  This change does not
+  attempt to override settings to support their use with Xcode 4.)
+
+- Issue #13960: HTMLParser is now able to handle broken comments when
+  strict=False.
+
 - Issue #13921: Undocument and clean up sqlite3.OptimizedUnicode,
   which is obsolete in Python 3.x. It's now aliased to str for
   backwards compatibility.
@@ -498,7 +517,7 @@ Library
 
 - Issue #10881: Fix test_site failure with OS X framework builds.
 
-- Issue #964437 Make IDLE help window non-modal.
+- Issue #964437: Make IDLE help window non-modal.
   Patch by Guilherme Polo and Roger Serwy.
 
 - Issue #13734: Add os.fwalk(), a directory walking function yielding file
@@ -758,9 +777,8 @@ Library
 - Issues #1745761, #755670, #13357, #12629, #1200313: HTMLParser now correctly
   handles non-valid attributes, including adjacent and unquoted attributes.
 
-- Issue #13193: Fix distutils.filelist.FileList and
-  packaging.manifest.Manifest under Windows.  The "recursive-include"
-  directive now recognizes both legal path separators.
+- Issue #13193: Fix distutils.filelist.FileList and packaging.manifest.Manifest
+  under Windows.
 
 - Issue #13384: Remove unnecessary __future__ import in Lib/random.py
 

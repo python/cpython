@@ -2294,8 +2294,8 @@ Files and Directories
       single: directory; walking
       single: directory; traversal
 
-    This behaves exactly like :func:`walk`, except that it yields a 4-tuple
-    ``(dirpath, dirnames, filenames, dirfd)``.
+   This behaves exactly like :func:`walk`, except that it yields a 4-tuple
+   ``(dirpath, dirnames, filenames, dirfd)``.
 
    *dirpath*, *dirnames* and *filenames* are identical to :func:`walk` output,
    and *dirfd* is a file descriptor referring to the directory *dirpath*.

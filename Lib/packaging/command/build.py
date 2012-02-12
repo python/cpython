@@ -82,8 +82,8 @@ class build(Command):
                 raise PackagingOptionError(
                             "--plat-name only supported on Windows (try "
                             "using './configure --help' on your platform)")
-
-        plat_specifier = ".%s-%s" % (self.plat_name, sys.version[0:3])
+        pyversion = '%s.%s' % sys.version_info[:2]
+        plat_specifier = ".%s-%s" % (self.plat_name, pyversion)
 
         # Make it so Python 2.x and Python 2.x with --with-pydebug don't
         # share the same build directories. Doing so confuses the build
@@ -116,7 +116,7 @@ class build(Command):
                                            'temp' + plat_specifier)
         if self.build_scripts is None:
             self.build_scripts = os.path.join(self.build_base,
-                                              'scripts-' + sys.version[0:3])
+                                              'scripts-' + pyversion)
 
         if self.executable is None:
             self.executable = os.path.normpath(sys.executable)

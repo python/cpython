@@ -1,11 +1,10 @@
 """Parser for the environment markers micro-language defined in PEP 345."""
 
+import os
 import sys
 import platform
-import os
-
-from tokenize import tokenize, NAME, OP, STRING, ENDMARKER, ENCODING
 from io import BytesIO
+from tokenize import tokenize, NAME, OP, STRING, ENDMARKER, ENCODING
 
 __all__ = ['interpret']
 
@@ -27,12 +26,15 @@ def _operate(operation, x, y):
 
 # restricted set of variables
 _VARS = {'sys.platform': sys.platform,
-         'python_version': sys.version[:3],
+         'python_version': '%s.%s' % sys.version_info[:2],
+         # FIXME parsing sys.platform is not reliable, but there is no other
+         # way to get e.g. 2.7.2+, and the PEP is defined with sys.version
          'python_full_version': sys.version.split(' ', 1)[0],
          'os.name': os.name,
          'platform.version': platform.version(),
          'platform.machine': platform.machine(),
-         'platform.python_implementation': platform.python_implementation()}
+         'platform.python_implementation': platform.python_implementation(),
+        }
 
 
 class _Operation:

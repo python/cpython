@@ -93,6 +93,9 @@ class GzipFile(io.BufferedIOBase):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the readinto() and truncate() methods.
 
+    This class only supports opening files in binary mode. If you need to open a
+    compressed file in text mode, wrap your GzipFile with an io.TextIOWrapper.
+
     """
 
     myfileobj = None
@@ -119,8 +122,8 @@ class GzipFile(io.BufferedIOBase):
         The mode argument can be any of 'r', 'rb', 'a', 'ab', 'w', or 'wb',
         depending on whether the file will be read or written.  The default
         is the mode of fileobj if discernible; otherwise, the default is 'rb'.
-        Be aware that only the 'rb', 'ab', and 'wb' values should be used
-        for cross-platform portability.
+        A mode of 'r' is equivalent to one of 'rb', and similarly for 'w' and
+        'wb', and 'a' and 'ab'.
 
         The compresslevel argument is an integer from 1 to 9 controlling the
         level of compression; 1 is fastest and produces the least compression,
@@ -137,8 +140,8 @@ class GzipFile(io.BufferedIOBase):
 
         """
 
-        # guarantee the file is opened in binary mode on platforms
-        # that care about that sort of thing
+        if mode and ('t' in mode or 'U' in mode):
+            raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
         if fileobj is None:
@@ -149,10 +152,9 @@ class GzipFile(io.BufferedIOBase):
             else:
                 filename = ''
         if mode is None:
-            if hasattr(fileobj, 'mode'): mode = fileobj.mode
-            else: mode = 'rb'
+            mode = getattr(fileobj, 'mode', 'rb')
 
-        if mode[0:1] == 'r':
+        if mode.startswith('r'):
             self.mode = READ
             # Set flag indicating start of a new member
             self._new_member = True
@@ -167,7 +169,7 @@ class GzipFile(io.BufferedIOBase):
             self.min_readsize = 100
             fileobj = _PaddedFile(fileobj)
 
-        elif mode[0:1] == 'w' or mode[0:1] == 'a':
+        elif mode.startswith(('w', 'a')):
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,
@@ -176,7 +178,7 @@ class GzipFile(io.BufferedIOBase):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
         else:
-            raise IOError("Mode " + mode + " not supported")
+            raise ValueError("Invalid mode: {!r}".format(mode))
 
         self.fileobj = fileobj
         self.offset = 0
