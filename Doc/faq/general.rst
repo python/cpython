@@ -157,7 +157,7 @@ How do I obtain a copy of the Python source?
 
 The latest Python source distribution is always available from python.org, at
 http://www.python.org/download/.  The latest development sources can be obtained
-via anonymous Subversion at http://svn.python.org/projects/python/trunk.
+via anonymous Mercurial access at http://hg.python.org/cpython.
 
 The source distribution is a gzipped tar file containing the complete C source,
 Sphinx-formatted documentation, Python library modules, example programs, and
