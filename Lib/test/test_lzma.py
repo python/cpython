@@ -525,6 +525,15 @@ class FileTestCase(unittest.TestCase):
             f.close()
         self.assertRaises(ValueError, f.seekable)
 
+        src = BytesIO(COMPRESSED_XZ)
+        src.seekable = lambda: False
+        f = LZMAFile(fileobj=src)
+        try:
+            self.assertFalse(f.seekable())
+        finally:
+            f.close()
+        self.assertRaises(ValueError, f.seekable)
+
     def test_readable(self):
         f = LZMAFile(fileobj=BytesIO(COMPRESSED_XZ))
         try:

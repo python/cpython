@@ -35,8 +35,8 @@ __all__ = ['Crawler', 'DEFAULT_SIMPLE_INDEX_URL']
 DEFAULT_SIMPLE_INDEX_URL = "http://a.pypi.python.org/simple/"
 DEFAULT_HOSTS = ("*",)
 SOCKET_TIMEOUT = 15
-USER_AGENT = "Python-urllib/%s packaging/%s" % (
-    sys.version[:3], packaging_version)
+USER_AGENT = "Python-urllib/%s.%s packaging/%s" % (
+    sys.version_info[0], sys.version_info[1], packaging_version)
 
 # -- Regexps -------------------------------------------------
 EGG_FRAGMENT = re.compile(r'^egg=([-A-Za-z0-9_.]+)$')
