@@ -842,6 +842,8 @@ Deprecated Python modules, functions and methods
 * :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
   module. Use Unicode filenames, instead of bytes filenames, to not depend on
   the ANSI code page anymore and to support any filename.
+* :issue:`13988`: The :mod:`xml.etree.cElementTree` module is deprecated.  The
+  accelerator is used automatically whenever available.
 
 
 Deprecated functions and types of the C API
