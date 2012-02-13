@@ -393,7 +393,6 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
 
     def test_illegal_declarations(self):
-        # XXX this might be wrong
         self._run_check('<!spacer type="block" height="25">',
                         [('comment', 'spacer type="block" height="25"')])
 
