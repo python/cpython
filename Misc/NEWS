@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13993: HTMLParser is now able to handle broken end tags when
+  strict=False.
+
 - Issue #9750: Fix sqlite3.Connection.iterdump on tables and fields
   with a name that is a keyword or contains quotes. Patch by Marko
   Kohtala.
