@@ -93,7 +93,7 @@ class TestCaseBase(unittest.TestCase):
 
     def _parse_error(self, source):
         def parse(source=source):
-            parser = html.parser.HTMLParser()
+            parser = self.get_collector()
             parser.feed(source)
             parser.close()
         self.assertRaises(html.parser.HTMLParseError, parse)
@@ -368,6 +368,30 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
                             ('comment', '/img'),
                             ('endtag', 'html<')])
 
+    def test_starttag_junk_chars(self):
+        self._run_check("</>", [])
+        self._run_check("</$>", [('comment', '$')])
+        self._run_check("</", [('data', '</')])
+        self._run_check("</a", [('data', '</a')])
+        # XXX this might be wrong
+        self._run_check("<a<a>", [('data', '<a'), ('starttag', 'a', [])])
+        self._run_check("</a<a>", [('endtag', 'a<a')])
+        self._run_check("<!", [('data', '<!')])
+        self._run_check("<a", [('data', '<a')])
+        self._run_check("<a foo='bar'", [('data', "<a foo='bar'")])
+        self._run_check("<a foo='bar", [('data', "<a foo='bar")])
+        self._run_check("<a foo='>'", [('data', "<a foo='>'")])
+        self._run_check("<a foo='>", [('data', "<a foo='>")])
+
+    def test_declaration_junk_chars(self):
+        # XXX this is wrong
+        self._run_check("<!DOCTYPE foo $ >", [('comment', 'DOCTYPE foo $ ')])
+
+    def test_illegal_declarations(self):
+        # XXX this might be wrong
+        self._run_check('<!spacer type="block" height="25">',
+                        [('comment', 'spacer type="block" height="25"')])
+
     def test_with_unquoted_attributes(self):
         # see #12008
         html = ("<html><body bgcolor=d0ca90 text='181008'>"
@@ -476,7 +500,7 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check(html, expected)
 
     def test_unescape_function(self):
-        p = html.parser.HTMLParser()
+        p = self.get_collector()
         self.assertEqual(p.unescape('&#bad;'),'&#bad;')
         self.assertEqual(p.unescape('&#0038;'),'&')
         # see #12888
