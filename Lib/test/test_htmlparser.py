@@ -114,7 +114,7 @@ comment1b-->
 <Img sRc='Bar' isMAP>sample
 text
 &#x201C;
-<!--comment2a-- --comment2b--><!>
+<!--comment2a-- --comment2b-->
 </Html>
 """, [
     ("data", "\n"),
@@ -142,24 +142,6 @@ text
             ("data", " foo"),
             ])
 
-    def test_doctype_decl(self):
-        inside = """\
-DOCTYPE html [
-  <!ELEMENT html - O EMPTY>
-  <!ATTLIST html
-      version CDATA #IMPLIED
-      profile CDATA 'DublinCore'>
-  <!NOTATION datatype SYSTEM 'http://xml.python.org/notations/python-module'>
-  <!ENTITY myEntity 'internal parsed entity'>
-  <!ENTITY anEntity SYSTEM 'http://xml.python.org/entities/something.xml'>
-  <!ENTITY % paramEntity 'name|name|name'>
-  %paramEntity;
-  <!-- comment -->
-]"""
-        self._run_check("<!%s>" % inside, [
-            ("decl", inside),
-            ])
-
     def test_bad_nesting(self):
         # Strangely, this *is* supposed to test that overlapping
         # elements are allowed.  HTMLParser is more geared toward
@@ -182,7 +164,8 @@ DOCTYPE html [
             ])
 
     def test_illegal_declarations(self):
-        self._parse_error('<!spacer type="block" height="25">')
+        self._run_check('<!spacer type="block" height="25">',
+                        [('comment', 'spacer type="block" height="25"')])
 
     def test_starttag_end_boundary(self):
         self._run_check("""<a b='<'>""", [("starttag", "a", [("b", "<")])])
@@ -233,7 +216,7 @@ DOCTYPE html [
         self._parse_error("<a foo='>")
 
     def test_declaration_junk_chars(self):
-        self._parse_error("<!DOCTYPE foo $ >")
+        self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
 
     def test_startendtag(self):
         self._run_check("<p/>", [
@@ -448,6 +431,39 @@ class AttributesTestCase(TestCaseBase):
                         [("starttag", "a",
                           [("href", "http://www.example.org/\">;")]),
                          ("data", "spam"), ("endtag", "a")])
+
+    def test_comments(self):
+        html = ("<!-- I'm a valid comment -->"
+                '<!--me too!-->'
+                '<!------>'
+                '<!---->'
+                '<!----I have many hyphens---->'
+                '<!-- I have a > in the middle -->'
+                '<!-- and I have -- in the middle! -->')
+        expected = [('comment', " I'm a valid comment "),
+                    ('comment', 'me too!'),
+                    ('comment', '--'),
+                    ('comment', ''),
+                    ('comment', '--I have many hyphens--'),
+                    ('comment', ' I have a > in the middle '),
+                    ('comment', ' and I have -- in the middle! ')]
+        self._run_check(html, expected)
+
+    def test_broken_comments(self):
+        html = ('<! not really a comment >'
+                '<! not a comment either -->'
+                '<! -- close enough -->'
+                '<!><!<-- this was an empty comment>'
+                '<!!! another bogus comment !!!>')
+        expected = [
+            ('comment', ' not really a comment '),
+            ('comment', ' not a comment either --'),
+            ('comment', ' -- close enough --'),
+            ('comment', ''),
+            ('comment', '<-- this was an empty comment'),
+            ('comment', '!! another bogus comment !!!'),
+        ]
+        self._run_check(html, expected)
 
     def test_condcoms(self):
         html = ('<!--[if IE & !(lte IE 8)]>aren\'t<![endif]-->'
