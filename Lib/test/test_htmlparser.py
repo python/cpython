@@ -93,7 +93,7 @@ class TestCaseBase(unittest.TestCase):
 
     def _parse_error(self, source):
         def parse(source=source):
-            parser = html.parser.HTMLParser()
+            parser = self.get_collector()
             parser.feed(source)
             parser.close()
         self.assertRaises(html.parser.HTMLParseError, parse)
@@ -122,7 +122,7 @@ comment1b-->
 <Img sRc='Bar' isMAP>sample
 text
 &#x201C;
-<!--comment2a-- --comment2b--><!>
+<!--comment2a-- --comment2b-->
 </Html>
 """, [
     ("data", "\n"),
@@ -155,24 +155,6 @@ text
         self._run_check("&entityref foo", [
             ("entityref", "entityref"),
             ("data", " foo"),
-            ])
-
-    def test_doctype_decl(self):
-        inside = """\
-DOCTYPE html [
-  <!ELEMENT html - O EMPTY>
-  <!ATTLIST html
-      version CDATA #IMPLIED
-      profile CDATA 'DublinCore'>
-  <!NOTATION datatype SYSTEM 'http://xml.python.org/notations/python-module'>
-  <!ENTITY myEntity 'internal parsed entity'>
-  <!ENTITY anEntity SYSTEM 'http://xml.python.org/entities/something.xml'>
-  <!ENTITY % paramEntity 'name|name|name'>
-  %paramEntity;
-  <!-- comment -->
-]"""
-        self._run_check("<!%s>" % inside, [
-            ("decl", inside),
             ])
 
     def test_bad_nesting(self):
@@ -246,6 +228,30 @@ DOCTYPE html [
         self._parse_error("<a foo='bar")
         self._parse_error("<a foo='>'")
         self._parse_error("<a foo='>")
+
+    def test_valid_doctypes(self):
+        # from http://www.w3.org/QA/2002/04/valid-dtd-list.html
+        dtds = ['HTML',  # HTML5 doctype
+                ('HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                 '"http://www.w3.org/TR/html4/strict.dtd"'),
+                ('HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '
+                 '"http://www.w3.org/TR/html4/loose.dtd"'),
+                ('html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" '
+                 '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"'),
+                ('html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" '
+                 '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"'),
+                ('math PUBLIC "-//W3C//DTD MathML 2.0//EN" '
+                 '"http://www.w3.org/Math/DTD/mathml2/mathml2.dtd"'),
+                ('html PUBLIC "-//W3C//DTD '
+                 'XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN" '
+                 '"http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd"'),
+                ('svg PUBLIC "-//W3C//DTD SVG 1.1//EN" '
+                 '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"'),
+                'html PUBLIC "-//IETF//DTD HTML 2.0//EN"',
+                'html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN"']
+        for dtd in dtds:
+            self._run_check("<!DOCTYPE %s>" % dtd,
+                            [('decl', 'DOCTYPE ' + dtd)])
 
     def test_declaration_junk_chars(self):
         self._parse_error("<!DOCTYPE foo $ >")
@@ -368,6 +374,29 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
                             ('comment', '/img'),
                             ('endtag', 'html<')])
 
+    def test_starttag_junk_chars(self):
+        self._run_check("</>", [])
+        self._run_check("</$>", [('comment', '$')])
+        self._run_check("</", [('data', '</')])
+        self._run_check("</a", [('data', '</a')])
+        # XXX this might be wrong
+        self._run_check("<a<a>", [('data', '<a'), ('starttag', 'a', [])])
+        self._run_check("</a<a>", [('endtag', 'a<a')])
+        self._run_check("<!", [('data', '<!')])
+        self._run_check("<a", [('data', '<a')])
+        self._run_check("<a foo='bar'", [('data', "<a foo='bar'")])
+        self._run_check("<a foo='bar", [('data', "<a foo='bar")])
+        self._run_check("<a foo='>'", [('data', "<a foo='>'")])
+        self._run_check("<a foo='>", [('data', "<a foo='>")])
+
+    def test_declaration_junk_chars(self):
+        self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
+
+    def test_illegal_declarations(self):
+        # XXX this might be wrong
+        self._run_check('<!spacer type="block" height="25">',
+                        [('comment', 'spacer type="block" height="25"')])
+
     def test_with_unquoted_attributes(self):
         # see #12008
         html = ("<html><body bgcolor=d0ca90 text='181008'>"
@@ -476,7 +505,7 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check(html, expected)
 
     def test_unescape_function(self):
-        p = html.parser.HTMLParser()
+        p = self.get_collector()
         self.assertEqual(p.unescape('&#bad;'),'&#bad;')
         self.assertEqual(p.unescape('&#0038;'),'&')
         # see #12888
@@ -486,11 +515,14 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'
                 '<! -- close enough -->'
+                '<!><!<-- this was an empty comment>'
                 '<!!! another bogus comment !!!>')
         expected = [
             ('comment', ' not really a comment '),
             ('comment', ' not a comment either --'),
             ('comment', ' -- close enough --'),
+            ('comment', ''),
+            ('comment', '<-- this was an empty comment'),
             ('comment', '!! another bogus comment !!!'),
         ]
         self._run_check(html, expected)
