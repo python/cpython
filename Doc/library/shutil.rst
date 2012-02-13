@@ -21,8 +21,8 @@ copying and removal. For operations on individual files, see also the
 
 .. warning::
 
-   Even the higher-level file copying functions (:func:`copy`, :func:`copy2`)
-   can't copy all file metadata.
+   Even the higher-level file copying functions (:func:`shutil.copy`,
+   :func:`shutil.copy2`) can't copy all file metadata.
 
    On POSIX platforms, this means that file owner and group are lost as well
    as ACLs.  On Mac OS, the resource fork and other metadata are not used.
@@ -47,10 +47,10 @@ Directory and files operations
 
 .. function:: copyfile(src, dst)
 
-   Copy the contents (no metadata) of the file named *src* to a file named *dst*.
-   *dst* must be the complete target file name; look at :func:`copy` for a copy that
-   accepts a target directory path.  If *src* and *dst* are the same files,
-   :exc:`Error` is raised.
+   Copy the contents (no metadata) of the file named *src* to a file named
+   *dst*.  *dst* must be the complete target file name; look at
+   :func:`shutil.copy` for a copy that accepts a target directory path.  If
+   *src* and *dst* are the same files, :exc:`Error` is raised.
    The destination location must be writable; otherwise,  an :exc:`IOError` exception
    will be raised. If *dst* already exists, it will be replaced.   Special files
    such as character or block devices and pipes cannot be copied with this
@@ -80,9 +80,9 @@ Directory and files operations
 
 .. function:: copy2(src, dst)
 
-   Similar to :func:`copy`, but metadata is copied as well -- in fact, this is just
-   :func:`copy` followed by :func:`copystat`.  This is similar to the
-   Unix command :program:`cp -p`.
+   Similar to :func:`shutil.copy`, but metadata is copied as well -- in fact,
+   this is just :func:`shutil.copy` followed by :func:`copystat`.  This is
+   similar to the Unix command :program:`cp -p`.
 
 
 .. function:: ignore_patterns(\*patterns)
@@ -97,10 +97,10 @@ Directory and files operations
 .. function:: copytree(src, dst[, symlinks=False[, ignore=None]])
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
-   directory, named by *dst*, must not already exist; it will be created as well
-   as missing parent directories.  Permissions and times of directories are
-   copied with :func:`copystat`, individual files are copied using
-   :func:`copy2`.
+   directory, named by *dst*, must not already exist; it will be created as
+   well as missing parent directories.  Permissions and times of directories
+   are copied with :func:`copystat`, individual files are copied using
+   :func:`shutil.copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree, but the metadata of the original links is NOT
@@ -170,8 +170,8 @@ Directory and files operations
    :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
-   used.  Otherwise, *src* is copied (using :func:`copy2`) to *dst* and then
-   removed.
+   used.  Otherwise, *src* is copied (using :func:`shutil.copy2`) to *dst* and
+   then removed.
 
    .. versionadded:: 2.3
 
