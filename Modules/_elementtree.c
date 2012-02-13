@@ -70,7 +70,7 @@
    helps if you have lots of leaf nodes with attributes). */
 
 /* Also note that pymalloc always allocates blocks in multiples of
-   eight bytes.  For the current version of cElementTree, this means
+   eight bytes.  For the current C version of ElementTree, this means
    that the number of children should be an even number, at least on
    32-bit platforms. */
 
@@ -2649,7 +2649,7 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
             PyExc_TypeError,
-            "event handling only supported for cElementTree.Treebuilder "
+            "event handling only supported for ElementTree.TreeBuilder "
             "targets"
             );
         return NULL;
@@ -2906,7 +2906,7 @@ PyInit__elementtree(void)
 #endif
 
     elementtree_parseerror_obj = PyErr_NewException(
-        "cElementTree.ParseError", PyExc_SyntaxError, NULL
+        "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
     Py_INCREF(elementtree_parseerror_obj);
     PyModule_AddObject(m, "ParseError", elementtree_parseerror_obj);

@@ -1886,6 +1886,9 @@ Library
 - Issue #12191: Added shutil.chown() to change user and/or group owner of a
   given path also specifying their names.
 
+- Issue #13988: The _elementtree accelerator is used whenever available.
+  Now xml.etree.cElementTree becomes a deprecated alias to ElementTree.
+
 Build
 -----
 

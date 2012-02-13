@@ -68,8 +68,9 @@ __all__ = [
     "tostring", "tostringlist",
     "TreeBuilder",
     "VERSION",
-    "XML",
+    "XML", "XMLID",
     "XMLParser", "XMLTreeBuilder",
+    "register_namespace",
     ]
 
 VERSION = "1.3.0"
@@ -148,9 +149,9 @@ class ParseError(SyntaxError):
 # @defreturn flag
 
 def iselement(element):
-    # FIXME: not sure about this; might be a better idea to look
-    # for tag/attrib/text attributes
-    return isinstance(element, Element) or hasattr(element, "tag")
+    # FIXME: not sure about this;
+    # isinstance(element, Element) or look for tag/attrib/text attributes
+    return hasattr(element, 'tag')
 
 ##
 # Element class.  This class defines the Element interface, and
@@ -1683,6 +1684,87 @@ class XMLParser:
         tree = self.target.close()
         del self.target, self._parser # get rid of circular references
         return tree
+
+
+# Import the C accelerators
+try:
+    # Element, SubElement, ParseError, TreeBuilder, XMLParser
+    from _elementtree import *
+except ImportError:
+    pass
+else:
+    # Overwrite 'ElementTree.parse' and 'iterparse' to use the C XMLParser
+
+    class ElementTree(ElementTree):
+        def parse(self, source, parser=None):
+            close_source = False
+            if not hasattr(source, 'read'):
+                source = open(source, 'rb')
+                close_source = True
+            try:
+                if parser is not None:
+                    while True:
+                        data = source.read(65536)
+                        if not data:
+                            break
+                        parser.feed(data)
+                    self._root = parser.close()
+                else:
+                    parser = XMLParser()
+                    self._root = parser._parse(source)
+                return self._root
+            finally:
+                if close_source:
+                    source.close()
+
+    class iterparse:
+        root = None
+        def __init__(self, file, events=None):
+            self._close_file = False
+            if not hasattr(file, 'read'):
+                file = open(file, 'rb')
+                self._close_file = True
+            self._file = file
+            self._events = []
+            self._index = 0
+            self._error = None
+            self.root = self._root = None
+            b = TreeBuilder()
+            self._parser = XMLParser(b)
+            self._parser._setevents(self._events, events)
+
+        def __next__(self):
+            while True:
+                try:
+                    item = self._events[self._index]
+                    self._index += 1
+                    return item
+                except IndexError:
+                    pass
+                if self._error:
+                    e = self._error
+                    self._error = None
+                    raise e
+                if self._parser is None:
+                    self.root = self._root
+                    if self._close_file:
+                        self._file.close()
+                    raise StopIteration
+                # load event buffer
+                del self._events[:]
+                self._index = 0
+                data = self._file.read(16384)
+                if data:
+                    try:
+                        self._parser.feed(data)
+                    except SyntaxError as exc:
+                        self._error = exc
+                else:
+                    self._root = self._parser.close()
+                    self._parser = None
+
+        def __iter__(self):
+            return self
 
 # compatibility
 XMLTreeBuilder = XMLParser

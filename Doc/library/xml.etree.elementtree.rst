@@ -32,16 +32,17 @@ To create an element instance, use the :class:`Element` constructor or the
 The :class:`ElementTree` class can be used to wrap an element structure, and
 convert it from and to XML.
 
-A C implementation of this API is available as :mod:`xml.etree.cElementTree`.
-
 See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.  Fredrik Lundh's page is also the location of the development version of
-the xml.etree.ElementTree.
+docs.
 
 .. versionchanged:: 3.2
    The ElementTree API is updated to 1.3.  For more information, see
    `Introducing ElementTree 1.3
    <http://effbot.org/zone/elementtree-13-intro.htm>`_.
+
+.. versionchanged:: 3.3
+   This module will use a fast implementation whenever available.
+   The :mod:`xml.etree.cElementTree` module is deprecated.
 
 
 .. _elementtree-functions:
