@@ -23,6 +23,9 @@ starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
+# see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
+# and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+tagfind_tolerant = re.compile('[a-zA-Z][^\t\n\r\f />\x00]*')
 # Note, the strict one of this pair isn't really strict, but we can't
 # make it correctly strict without breaking backward compatibility.
 attrfind = re.compile(
@@ -270,7 +273,7 @@ class HTMLParser(_markupbase.ParserBase):
     # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
-        if rawdata[i:i+2] != '<!':
+        if rawdata[i:i+2] not in ('<!', '</'):
             self.error('unexpected call to parse_comment()')
         pos = rawdata.find('>', i+2)
         if pos == -1:
@@ -398,31 +401,40 @@ class HTMLParser(_markupbase.ParserBase):
         match = endendtag.search(rawdata, i+1) # >
         if not match:
             return -1
-        j = match.end()
+        gtpos = match.end()
         match = endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
             if self.cdata_elem is not None:
-                self.handle_data(rawdata[i:j])
-                return j
+                self.handle_data(rawdata[i:gtpos])
+                return gtpos
             if self.strict:
-                self.error("bad end tag: %r" % (rawdata[i:j],))
-            k = rawdata.find('<', i + 1, j)
-            if k > i:
-                j = k
-            if j <= i:
-                j = i + 1
-            self.handle_data(rawdata[i:j])
-            return j
+                self.error("bad end tag: %r" % (rawdata[i:gtpos],))
+            # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
+            namematch = tagfind_tolerant.match(rawdata, i+2)
+            if not namematch:
+                # w3.org/TR/html5/tokenization.html#end-tag-open-state
+                if rawdata[i:i+3] == '</>':
+                    return i+3
+                else:
+                    return self.parse_bogus_comment(i)
+            tagname = namematch.group().lower()
+            # consume and ignore other stuff between the name and the >
+            # Note: this is not 100% correct, since we might have things like
+            # </tag attr=">">, but looking for > after tha name should cover
+            # most of the cases and is much simpler
+            gtpos = rawdata.find('>', namematch.end())
+            self.handle_endtag(tagname)
+            return gtpos+1
 
         elem = match.group(1).lower() # script or style
         if self.cdata_elem is not None:
             if elem != self.cdata_elem:
-                self.handle_data(rawdata[i:j])
-                return j
+                self.handle_data(rawdata[i:gtpos])
+                return gtpos
 
         self.handle_endtag(elem.lower())
         self.clear_cdata_mode()
-        return j
+        return gtpos
 
     # Overridable -- finish processing of start+end tag: <tag.../>
     def handle_startendtag(self, tag, attrs):
