@@ -90,6 +90,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13993: HTMLParser is now able to handle broken end tags.
+
 - Issue #13960: HTMLParser is now able to handle broken comments.
 
 - Issue #9750: Fix sqlite3.Connection.iterdump on tables and fields
