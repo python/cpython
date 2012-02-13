@@ -1,9 +1,11 @@
 # xml.etree test for cElementTree
 
 from test import support
+from test.support import import_fresh_module
 import unittest
 
-from xml.etree import ElementTree as cET, cElementTree as cET_alias
+cET = import_fresh_module('xml.etree.ElementTree', fresh=['_elementtree'])
+cET_alias = import_fresh_module('xml.etree.cElementTree', fresh=['_elementtree'])
 
 
 # cElementTree specific tests
