@@ -16,9 +16,9 @@ import html
 import unittest
 
 from test import support
-from test.support import findfile
+from test.support import findfile, import_fresh_module
 
-from xml.etree import ElementTree as ET
+pyET = import_fresh_module('xml.etree.ElementTree', blocked=['_elementtree'])
 
 SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
 try:
@@ -275,7 +275,7 @@ def simplefind():
     """
     Test find methods using the elementpath fallback.
 
-    >>> from xml.etree import ElementTree
+    >>> ElementTree = pyET
 
     >>> CurrentElementPath = ElementTree.ElementPath
     >>> ElementTree.ElementPath = ElementTree._SimpleElementPath()
@@ -460,17 +460,19 @@ def path_cache():
     """
     Check that the path cache behaves sanely.
 
+    >>> from xml.etree import ElementPath
+
     >>> elem = ET.XML(SAMPLE_XML)
     >>> for i in range(10): ET.ElementTree(elem).find('./'+str(i))
-    >>> cache_len_10 = len(ET.ElementPath._cache)
+    >>> cache_len_10 = len(ElementPath._cache)
     >>> for i in range(10): ET.ElementTree(elem).find('./'+str(i))
-    >>> len(ET.ElementPath._cache) == cache_len_10
+    >>> len(ElementPath._cache) == cache_len_10
     True
     >>> for i in range(20): ET.ElementTree(elem).find('./'+str(i))
-    >>> len(ET.ElementPath._cache) > cache_len_10
+    >>> len(ElementPath._cache) > cache_len_10
     True
     >>> for i in range(600): ET.ElementTree(elem).find('./'+str(i))
-    >>> len(ET.ElementPath._cache) < 500
+    >>> len(ElementPath._cache) < 500
     True
     """
 
@@ -1879,37 +1881,38 @@ class CleanContext(object):
         self.checkwarnings = support.check_warnings(*deprecations, quiet=quiet)
 
     def __enter__(self):
-        from xml.etree import ElementTree
-        self._nsmap = ElementTree._namespace_map
-        self._path_cache = ElementTree.ElementPath._cache
+        from xml.etree import ElementPath
+        if hasattr(ET, '_namespace_map'):
+            self._nsmap = ET._namespace_map
+        else:
+            # when testing the cElementTree alias
+            from xml.etree.ElementTree import _namespace_map
+            self._nsmap = _namespace_map
         # Copy the default namespace mapping
-        ElementTree._namespace_map = self._nsmap.copy()
+        self._nsmap_copy = self._nsmap.copy()
         # Copy the path cache (should be empty)
-        ElementTree.ElementPath._cache = self._path_cache.copy()
+        self._path_cache = ElementPath._cache
+        ElementPath._cache = self._path_cache.copy()
         self.checkwarnings.__enter__()
 
     def __exit__(self, *args):
-        from xml.etree import ElementTree
+        from xml.etree import ElementPath
         # Restore mapping and path cache
-        ElementTree._namespace_map = self._nsmap
-        ElementTree.ElementPath._cache = self._path_cache
+        self._nsmap.clear()
+        self._nsmap.update(self._nsmap_copy)
+        ElementPath._cache = self._path_cache
         self.checkwarnings.__exit__(*args)
 
 
-def test_main(module_name='xml.etree.ElementTree'):
+def test_main(module=pyET):
     from test import test_xml_etree
 
-    use_py_module = (module_name == 'xml.etree.ElementTree')
-
     # The same doctests are used for both the Python and the C implementations
-    assert test_xml_etree.ET.__name__ == module_name
+    test_xml_etree.ET = module
 
     # XXX the C module should give the same warnings as the Python module
-    with CleanContext(quiet=not use_py_module):
+    with CleanContext(quiet=(module is not pyET)):
         support.run_doctest(test_xml_etree, verbosity=True)
-
-    # The module should not be changed by the tests
-    assert test_xml_etree.ET.__name__ == module_name
 
 if __name__ == '__main__':
     test_main()
