@@ -187,17 +187,10 @@ class HTMLParser(_markupbase.ParserBase):
                 elif startswith("<?", i):
                     k = self.parse_pi(i)
                 elif startswith("<!", i):
-                    # this might fail with things like <! not a comment > or
-                    # <! -- space before '--' -->.  When strict is True an
-                    # error is raised, when it's False they will be considered
-                    # as bogus comments and parsed (see parse_bogus_comment).
                     if self.strict:
                         k = self.parse_declaration(i)
                     else:
-                        try:
-                            k = self.parse_declaration(i)
-                        except HTMLParseError:
-                            k = self.parse_bogus_comment(i)
+                        k = self.parse_html_declaration(i)
                 elif (i + 1) < n:
                     self.handle_data("<")
                     k = i + 1
@@ -268,6 +261,27 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_data(rawdata[i:n])
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
+
+    # Internal -- parse html declarations, return length or -1 if not terminated
+    # See w3.org/TR/html5/tokenization.html#markup-declaration-open-state
+    # See also parse_declaration in _markupbase
+    def parse_html_declaration(self, i):
+        rawdata = self.rawdata
+        if rawdata[i:i+2] != '<!':
+            self.error('unexpected call to parse_html_declaration()')
+        if rawdata[i:i+4] == '<!--':
+            return self.parse_comment(i)
+        elif rawdata[i:i+3] == '<![':
+            return self.parse_marked_section(i)
+        elif rawdata[i:i+9].lower() == '<!doctype':
+            # find the closing >
+            gtpos = rawdata.find('>', 9)
+            if gtpos == -1:
+                return -1
+            self.handle_decl(rawdata[i+2:gtpos])
+            return gtpos+1
+        else:
+            return self.parse_bogus_comment(i)
 
     # Internal -- parse bogus comment, return length or -1 if not terminated
     # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
