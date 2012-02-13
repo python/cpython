@@ -230,7 +230,7 @@ from __future__ import print_function"""
                 os.sep, os.path.basename(test_file))
         for message in debug_messages:
             if "Not writing changes" in message:
-                self.assertRegexpMatches(message, message_regex)
+                self.assertRegex(message, message_regex)
                 break
         else:
             self.fail("%r not matched in %r" % (message_regex, debug_messages))
