@@ -466,6 +466,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13993: HTMLParser is now able to handle broken end tags when
+  strict=False.
+
 - Issue #13930: lib2to3 now supports writing converted output files to another
   directory tree as well as copying unchanged files and altering the file
   suffix.
