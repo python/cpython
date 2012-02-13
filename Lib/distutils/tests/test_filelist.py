@@ -1,7 +1,6 @@
 """Tests for distutils.filelist."""
 import re
 import unittest
-from os.path import join
 from distutils import debug
 from distutils.log import WARN
 from distutils.errors import DistutilsTemplateError
@@ -54,15 +53,15 @@ class FileListTestCase(support.LoggingSilencer,
 
         # simulated file list
         file_list.allfiles = ['foo.tmp', 'ok', 'xo', 'four.txt',
-                              join('global', 'one.txt'),
-                              join('global', 'two.txt'),
-                              join('global', 'files.x'),
-                              join('global', 'here.tmp'),
-                              join('f', 'o', 'f.oo'),
-                              join('dir', 'graft-one'),
-                              join('dir', 'dir2', 'graft2'),
-                              join('dir3', 'ok'),
-                              join('dir3', 'sub', 'ok.txt'),
+                              'global/one.txt',
+                              'global/two.txt',
+                              'global/files.x',
+                              'global/here.tmp',
+                              'f/o/f.oo',
+                              'dir/graft-one',
+                              'dir/dir2/graft2',
+                              'dir3/ok',
+                              'dir3/sub/ok.txt',
                               ]
 
         for line in MANIFEST_IN.split('\n'):
@@ -70,9 +69,8 @@ class FileListTestCase(support.LoggingSilencer,
                 continue
             file_list.process_template_line(line)
 
-        wanted = ['ok', 'four.txt', join('global', 'one.txt'),
-                  join('global', 'two.txt'), join('f', 'o', 'f.oo'),
-                  join('dir', 'graft-one'), join('dir', 'dir2', 'graft2')]
+        wanted = ['ok', 'four.txt', 'global/one.txt', 'global/two.txt',
+                  'f/o/f.oo', 'dir/graft-one', 'dir/dir2/graft2']
 
         self.assertEqual(file_list.files, wanted)
 
