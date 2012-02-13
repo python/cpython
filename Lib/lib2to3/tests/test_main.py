@@ -94,7 +94,7 @@ class TestMain(unittest.TestCase):
             self.assertIn("Writing converted %s to %s" % (
                     os.path.join(self.py2_src_dir, name),
                     os.path.join(self.py3_dest_dir, name+suffix)), stderr)
-        self.assertRegexpMatches(stderr, r"No changes to .*/__init__\.py")
+        self.assertRegex(stderr, r"No changes to .*/__init__\.py")
         self.assertNotRegex(stderr, r"No changes to .*/trivial\.py")
 
     def test_filename_changing_on_output_two_files(self):
