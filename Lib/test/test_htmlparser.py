@@ -364,8 +364,9 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
                             ('data', '<<bc'),
                             ('endtag', 'a'),
                             ('endtag', 'html'),
-                            ('data', '\n<img src="URL><//img></html'),
-                            ('endtag', 'html')])
+                            ('data', '\n<img src="URL>'),
+                            ('comment', '/img'),
+                            ('endtag', 'html<')])
 
     def test_with_unquoted_attributes(self):
         # see #12008
@@ -402,6 +403,44 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check('<form action=bogus|&#()value>', [
                             ('starttag', 'form',
                                 [('action', 'bogus|&#()value')])])
+
+    def test_invalid_end_tags(self):
+        # A collection of broken end tags. <br> is used as separator.
+        # see http://www.w3.org/TR/html5/tokenization.html#end-tag-open-state
+        # and #13993
+        html = ('<br></label</p><br></div end tmAd-leaderBoard><br></<h4><br>'
+                '</li class="unit"><br></li\r\n\t\t\t\t\t\t</ul><br></><br>')
+        expected = [('starttag', 'br', []),
+                    # < is part of the name, / is discarded, p is an attribute
+                    ('endtag', 'label<'),
+                    ('starttag', 'br', []),
+                    # text and attributes are discarded
+                    ('endtag', 'div'),
+                    ('starttag', 'br', []),
+                    # comment because the first char after </ is not a-zA-Z
+                    ('comment', '<h4'),
+                    ('starttag', 'br', []),
+                    # attributes are discarded
+                    ('endtag', 'li'),
+                    ('starttag', 'br', []),
+                    # everything till ul (included) is discarded
+                    ('endtag', 'li'),
+                    ('starttag', 'br', []),
+                    # </> is ignored
+                    ('starttag', 'br', [])]
+        self._run_check(html, expected)
+
+    def test_broken_invalid_end_tag(self):
+        # This is technically wrong (the "> shouldn't be included in the 'data')
+        # but is probably not worth fixing it (in addition to all the cases of
+        # the previous test, it would require a full attribute parsing).
+        # see #13993
+        html = '<b>This</b attr=">"> confuses the parser'
+        expected = [('starttag', 'b', []),
+                    ('data', 'This'),
+                    ('endtag', 'b'),
+                    ('data', '"> confuses the parser')]
+        self._run_check(html, expected)
 
     def test_correct_detection_of_start_tags(self):
         # see #13273
