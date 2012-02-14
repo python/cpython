@@ -4794,7 +4794,7 @@ decode_utf8_errors(const char *starts,
       utf8Error:
         if (unicode_decode_call_errorhandler(
                 errors, &errorHandler,
-                "utf8", errmsg,
+                "utf-8", errmsg,
                 &starts, &e, &startinpos, &endinpos, &exc, &s,
                 &unicode, &i))
             goto onError;
