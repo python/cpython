@@ -3,6 +3,7 @@ import sys
 import codecs
 import logging
 import os
+import re
 import shutil
 import StringIO
 import sys
@@ -104,10 +105,11 @@ class TestMain(unittest.TestCase):
             self.assertIn("Writing converted %s to %s" % (
                     os.path.join(self.py2_src_dir, name),
                     os.path.join(self.py3_dest_dir, name+suffix)), stderr)
+        sep = re.escape(os.sep)
         self.assertRegexpMatches(
-                stderr, r"No changes to .*/__init__\.py".replace("/", os.sep))
+                stderr, r"No changes to .*/__init__\.py".replace("/", sep))
         self.assertNotRegex(
-                stderr, r"No changes to .*/trivial\.py".replace("/", os.sep))
+                stderr, r"No changes to .*/trivial\.py".replace("/", sep))
 
     def test_filename_changing_on_output_two_files(self):
         """2to3 two files in one directory with a new output dir."""
