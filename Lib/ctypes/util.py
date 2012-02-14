@@ -182,28 +182,6 @@ elif os.name == "posix":
 
     else:
 
-        def _findLib_ldconfig(name):
-            # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'/[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-            f = os.popen('LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null')
-            try:
-                data = f.read()
-            finally:
-                f.close()
-            res = re.search(expr, data)
-            if not res:
-                # Hm, this works only for libs needed by the python executable.
-                cmd = 'ldd %s 2>/dev/null' % sys.executable
-                f = os.popen(cmd)
-                try:
-                    data = f.read()
-                finally:
-                    f.close()
-                res = re.search(expr, data)
-                if not res:
-                    return None
-            return res.group(0)
-
         def _findSoname_ldconfig(name):
             import struct
             if struct.calcsize('l') == 4:
@@ -220,8 +198,7 @@ elif os.name == "posix":
             abi_type = mach_map.get(machine, 'libc6')
 
             # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
-                   % (abi_type, re.escape(name))
+            expr = r'\s+(lib%s\.[^\s]+)\s+\(%s' % (re.escape(name), abi_type)
             f = os.popen('/sbin/ldconfig -p 2>/dev/null')
             try:
                 data = f.read()
