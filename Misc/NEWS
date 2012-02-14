@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13979: A bug in ctypes.util.find_library that caused
+  the wrong library name to be returned has been fixed.
+
 - Issue #13993: HTMLParser is now able to handle broken end tags.
 
 - Issue #13960: HTMLParser is now able to handle broken comments.
