@@ -466,6 +466,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10287: nntplib now queries the server's CAPABILITIES first before
+  sending MODE READER, and only sends it if not already in READER mode.
+  Patch by Hynek Schlawack.
+
 - Issue #13993: HTMLParser is now able to handle broken end tags when
   strict=False.
 
