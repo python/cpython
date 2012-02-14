@@ -3,6 +3,7 @@ import codecs
 import io
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
