@@ -231,7 +231,7 @@ The module defines the following functions and data items:
    Monotonic clock.  The reference point of the returned value is undefined so
    only the difference of consecutive calls is valid.
 
-   .. versionadded: 3.3
+   .. versionadded:: 3.3
 
 
 .. function:: sleep(secs)
@@ -557,7 +557,7 @@ The module defines the following functions and data items:
    when "processor time" is inappropriate.  The reference point of the returned
    value is undefined so only the difference of consecutive calls is valid.
 
-   .. versionadded: 3.3
+   .. versionadded:: 3.3
 
 
 .. seealso::
