@@ -112,7 +112,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
             PyErr_SetString(Error, "unsupported locale setting");
             return NULL;
         }
-        result_object = PyUnicode_DecodeLocale(result, 0);
+        result_object = PyUnicode_DecodeLocale(result, NULL);
         if (!result_object)
             return NULL;
     } else {
@@ -122,7 +122,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
             PyErr_SetString(Error, "locale query failed");
             return NULL;
         }
-        result_object = PyUnicode_DecodeLocale(result, 0);
+        result_object = PyUnicode_DecodeLocale(result, NULL);
     }
     return result_object;
 }
@@ -148,7 +148,7 @@ PyLocale_localeconv(PyObject* self)
        involved herein */
 
 #define RESULT_STRING(s)\
-    x = PyUnicode_DecodeLocale(l->s, 0);   \
+    x = PyUnicode_DecodeLocale(l->s, NULL);   \
     if (!x) goto failed;\
     PyDict_SetItemString(result, #s, x);\
     Py_XDECREF(x)
@@ -439,7 +439,7 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
             result = result != NULL ? result : "";
-            return PyUnicode_DecodeLocale(result, 0);
+            return PyUnicode_DecodeLocale(result, NULL);
         }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
@@ -458,7 +458,7 @@ PyIntl_gettext(PyObject* self, PyObject *args)
     char *in;
     if (!PyArg_ParseTuple(args, "s", &in))
         return 0;
-    return PyUnicode_DecodeLocale(gettext(in), 0);
+    return PyUnicode_DecodeLocale(gettext(in), NULL);
 }
 
 PyDoc_STRVAR(dgettext__doc__,
@@ -471,7 +471,7 @@ PyIntl_dgettext(PyObject* self, PyObject *args)
     char *domain, *in;
     if (!PyArg_ParseTuple(args, "zs", &domain, &in))
         return 0;
-    return PyUnicode_DecodeLocale(dgettext(domain, in), 0);
+    return PyUnicode_DecodeLocale(dgettext(domain, in), NULL);
 }
 
 PyDoc_STRVAR(dcgettext__doc__,
@@ -485,7 +485,7 @@ PyIntl_dcgettext(PyObject *self, PyObject *args)
     int category;
     if (!PyArg_ParseTuple(args, "zsi", &domain, &msgid, &category))
         return 0;
-    return PyUnicode_DecodeLocale(dcgettext(domain,msgid,category), 0);
+    return PyUnicode_DecodeLocale(dcgettext(domain,msgid,category), NULL);
 }
 
 PyDoc_STRVAR(textdomain__doc__,
@@ -503,7 +503,7 @@ PyIntl_textdomain(PyObject* self, PyObject* args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return PyUnicode_DecodeLocale(domain, 0);
+    return PyUnicode_DecodeLocale(domain, NULL);
 }
 
 PyDoc_STRVAR(bindtextdomain__doc__,
@@ -535,7 +535,7 @@ PyIntl_bindtextdomain(PyObject* self,PyObject*args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    result = PyUnicode_DecodeLocale(current_dirname, 0);
+    result = PyUnicode_DecodeLocale(current_dirname, NULL);
     Py_XDECREF(dirname_bytes);
     return result;
 }
@@ -553,7 +553,7 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
         return NULL;
     codeset = bind_textdomain_codeset(domain, codeset);
     if (codeset)
-        return PyUnicode_DecodeLocale(codeset, 0);
+        return PyUnicode_DecodeLocale(codeset, NULL);
     Py_RETURN_NONE;
 }
 #endif
