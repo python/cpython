@@ -10,6 +10,7 @@ work. One should use importlib as the public-facing version of this module.
 # Injected modules are '_warnings', 'imp', 'sys', 'marshal', '_io',
 # and '_os' (a.k.a. 'posix', 'nt' or 'os2').
 # Injected attribute is path_sep.
+# Most injection is handled by _setup().
 #
 # When editing this code be aware that code executed at import time CANNOT
 # reference any injected objects! This includes not only global code but also
@@ -999,7 +1000,7 @@ def _setup(sys_module, imp_module):
     into the global namespace.
 
     As sys is needed for sys.modules access and imp is needed to load built-in
-    modules those two modules must be explicitly passed in.
+    modules, those two modules must be explicitly passed in.
 
     """
     global imp, sys
@@ -1035,3 +1036,16 @@ def _setup(sys_module, imp_module):
         raise ImportError('importlib requires posix or nt')
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
+
+
+def _install(sys_module, imp_module):
+    """Install importlib as the implementation of import.
+
+    It is assumed that imp and sys have been imported and injected into the
+    global namespace for the module prior to calling this function.
+
+    """
+    _setup(sys_module, imp_module)
+    orig_import = builtins.__import__
+    builtins.__import__ = __import__
+    builtins.__original_import__ = orig_import
