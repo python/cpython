@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10287: nntplib now queries the server's CAPABILITIES first before
+  sending MODE READER, and only sends it if not already in READER mode.
+  Patch by Hynek Schlawack.
+
 - Issue #13979: A bug in ctypes.util.find_library that caused
   the wrong library name to be returned has been fixed.
 

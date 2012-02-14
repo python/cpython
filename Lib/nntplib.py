@@ -324,24 +324,29 @@ class _NNTPBase:
         self.debugging = 0
         self.welcome = self._getresp()
 
+        # Inquire about capabilities (RFC 3977).
+        self._caps = None
+        self.getcapabilities()
+
         # 'MODE READER' is sometimes necessary to enable 'reader' mode.
         # However, the order in which 'MODE READER' and 'AUTHINFO' need to
         # arrive differs between some NNTP servers. If _setreadermode() fails
         # with an authorization failed error, it will set this to True;
         # the login() routine will interpret that as a request to try again
         # after performing its normal function.
+        # Enable only if we're not already in READER mode anyway.
         self.readermode_afterauth = False
-        if readermode:
+        if readermode and 'READER' not in self._caps:
             self._setreadermode()
+            if not self.readermode_afterauth:
+                # Capabilities might have changed after MODE READER
+                self._caps = None
+                self.getcapabilities()
 
         # RFC 4642 2.2.2: Both the client and the server MUST know if there is
         # a TLS session active.  A client MUST NOT attempt to start a TLS
         # session if a TLS session is already active.
         self.tls_on = False
-
-        # Inquire about capabilities (RFC 3977).
-        self._caps = None
-        self.getcapabilities()
 
         # Log in and encryption setup order is left to subclasses.
         self.authenticated = False
@@ -945,8 +950,12 @@ class _NNTPBase:
         self._caps = None
         self.getcapabilities()
         # Attempt to send mode reader if it was requested after login.
-        if self.readermode_afterauth:
+        # Only do so if we're not in reader mode already.
+        if self.readermode_afterauth and 'READER' not in self._caps:
             self._setreadermode()
+            # Capabilities might have changed after MODE READER
+            self._caps = None
+            self.getcapabilities()
 
     def _setreadermode(self):
         try:
