@@ -2763,7 +2763,7 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
         outpos = p-PyUnicode_AS_UNICODE(unicode);
         if (unicode_decode_call_errorhandler(
                 errors, &errorHandler,
-                "utf8", errmsg,
+                "utf-8", errmsg,
                 &starts, &e, &startinpos, &endinpos, &exc, &s,
                 &unicode, &outpos, &p))
             goto onError;
