@@ -364,6 +364,12 @@ class MockedNNTPTestsMixin:
         return self.server
 
 
+class MockedNNTPWithReaderModeMixin(MockedNNTPTestsMixin):
+    def setUp(self):
+        super().setUp()
+        self.make_server(readermode=True)
+
+
 class NNTPv1Handler:
     """A handler for RFC 977"""
 
@@ -704,6 +710,9 @@ class NNTPv2Handler(NNTPv1Handler):
         else:
             self.push_lit(fmt.format(''))
 
+    def handle_MODE(self, _):
+        raise Exception('MODE READER sent despite READER has been advertised')
+
     def handle_OVER(self, message_spec=None):
         return self.handle_XOVER(message_spec)
 
@@ -716,6 +725,34 @@ class CapsAfterLoginNNTPv2Handler(NNTPv2Handler):
             self.push_lit('480 You must log in.')
         else:
             super().handle_CAPABILITIES()
+
+
+class ModeSwitchingNNTPv2Handler(NNTPv2Handler):
+    """A server that starts in transit mode"""
+
+    def __init__(self):
+        self._switched = False
+
+    def handle_CAPABILITIES(self):
+        fmt = """\
+            101 Capability list:
+            VERSION 2 3
+            IMPLEMENTATION INN 2.5.1
+            HDR
+            LIST ACTIVE ACTIVE.TIMES DISTRIB.PATS HEADERS NEWSGROUPS OVERVIEW.FMT
+            OVER
+            POST
+            {}READER
+            ."""
+        if self._switched:
+            self.push_lit(fmt.format(''))
+        else:
+            self.push_lit(fmt.format('MODE-'))
+
+    def handle_MODE(self, what):
+        assert not self._switched and what == 'reader'
+        self._switched = True
+        self.push_lit('200 Posting allowed')
 
 
 class NNTPv1v2TestsMixin:
@@ -1124,6 +1161,18 @@ class CapsAfterLoginNNTPv2Tests(MockedNNTPTestsMixin, unittest.TestCase):
         self.assertIn('VERSION', self.server._caps)
 
 
+class SendReaderNNTPv2Tests(MockedNNTPWithReaderModeMixin,
+        unittest.TestCase):
+    """Same tests as for v2 but we tell NTTP to send MODE READER to a server
+    that isn't in READER mode by default."""
+
+    nntp_version = 2
+    handler_class = ModeSwitchingNNTPv2Handler
+
+    def test_we_are_in_reader_mode_after_connect(self):
+        self.assertIn('READER', self.server._caps)
+
+
 class MiscTests(unittest.TestCase):
 
     def test_decode_header(self):
@@ -1284,7 +1333,7 @@ class MiscTests(unittest.TestCase):
 
 def test_main():
     tests = [MiscTests, NNTPv1Tests, NNTPv2Tests, CapsAfterLoginNNTPv2Tests,
-            NetworkedNNTPTests]
+            SendReaderNNTPv2Tests, NetworkedNNTPTests]
     if _have_ssl:
         tests.append(NetworkedNNTP_SSLTests)
     support.run_unittest(*tests)
