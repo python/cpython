@@ -48,7 +48,7 @@ __all__ = [
     'Manager', 'Pipe', 'cpu_count', 'log_to_stderr', 'get_logger',
     'allow_connection_pickling', 'BufferTooShort', 'TimeoutError',
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
-    'Event', 'Queue', 'JoinableQueue', 'Pool', 'Value', 'Array',
+    'Event', 'Queue', 'SimpleQueue', 'JoinableQueue', 'Pool', 'Value', 'Array',
     'RawValue', 'RawArray', 'SUBDEBUG', 'SUBWARNING',
     ]
 
@@ -222,6 +222,13 @@ def JoinableQueue(maxsize=0):
     '''
     from multiprocessing.queues import JoinableQueue
     return JoinableQueue(maxsize)
+
+def SimpleQueue():
+    '''
+    Returns a queue object
+    '''
+    from multiprocessing.queues import SimpleQueue
+    return SimpleQueue()
 
 def Pool(processes=None, initializer=None, initargs=(), maxtasksperchild=None):
     '''
