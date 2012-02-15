@@ -472,13 +472,9 @@ Cursor Objects
    kinds of placeholders: question marks (qmark style) and named placeholders
    (named style).
 
-   This example shows how to use parameters with qmark style:
+   Here's an example of both styles:
 
    .. literalinclude:: ../includes/sqlite3/execute_1.py
-
-   This example shows how to use the named style:
-
-   .. literalinclude:: ../includes/sqlite3/execute_2.py
 
    :meth:`execute` will only execute a single SQL statement. If you try to execute
    more than one statement with it, it will raise a Warning. Use
@@ -761,7 +757,7 @@ and constructs a :class:`Point` object from it.
 ::
 
    def convert_point(s):
-       x, y = map(float, s.split(";"))
+       x, y = map(float, s.split(b";"))
        return Point(x, y)
 
 Now you need to make the :mod:`sqlite3` module know that what you select from
