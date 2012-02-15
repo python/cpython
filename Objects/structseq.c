@@ -129,6 +129,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     res = (PyStructSequence*) PyStructSequence_New(type);
     if (res == NULL) {
+        Py_DECREF(arg);
         return NULL;
     }
     for (i = 0; i < len; ++i) {
