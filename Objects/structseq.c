@@ -103,27 +103,27 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (min_len != max_len) {
         if (len < min_len) {
             PyErr_Format(PyExc_TypeError,
-           "%.500s() takes an at least %zd-sequence (%zd-sequence given)",
-                                 type->tp_name, min_len, len);
-                    Py_DECREF(arg);
-                    return NULL;
+                "%.500s() takes an at least %zd-sequence (%zd-sequence given)",
+                type->tp_name, min_len, len);
+            Py_DECREF(arg);
+            return NULL;
         }
 
         if (len > max_len) {
             PyErr_Format(PyExc_TypeError,
-           "%.500s() takes an at most %zd-sequence (%zd-sequence given)",
-                                 type->tp_name, max_len, len);
-                    Py_DECREF(arg);
-                    return NULL;
+                "%.500s() takes an at most %zd-sequence (%zd-sequence given)",
+                type->tp_name, max_len, len);
+            Py_DECREF(arg);
+            return NULL;
         }
     }
     else {
         if (len != min_len) {
             PyErr_Format(PyExc_TypeError,
-           "%.500s() takes a %zd-sequence (%zd-sequence given)",
-                                 type->tp_name, min_len, len);
-                    Py_DECREF(arg);
-                    return NULL;
+                         "%.500s() takes a %zd-sequence (%zd-sequence given)",
+                         type->tp_name, min_len, len);
+            Py_DECREF(arg);
+            return NULL;
         }
     }
 
