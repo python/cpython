@@ -8,10 +8,10 @@ class Point:
         return "(%f;%f)" % (self.x, self.y)
 
 def adapt_point(point):
-    return "%f;%f" % (point.x, point.y)
+    return ("%f;%f" % (point.x, point.y)).encode('ascii')
 
 def convert_point(s):
-    x, y = list(map(float, s.split(";")))
+    x, y = list(map(float, s.split(b";")))
     return Point(x, y)
 
 # Register the adapter
