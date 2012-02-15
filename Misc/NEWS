@@ -94,7 +94,7 @@ Library
 -------
 
 - Issue #13987: HTMLParser is now able to handle EOFs in the middle of a
-  construct.
+  construct and malformed start tags.
 
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
   Patch by Suman Saha.
