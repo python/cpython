@@ -90,6 +90,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
+  Patch by Suman Saha.
+
 - Issue #13979: A bug in ctypes.util.find_library that caused
   the wrong library name to be returned has been fixed.
 
