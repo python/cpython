@@ -1403,8 +1403,10 @@ defdict_repr(defdictobject *dd)
     {
         int status = Py_ReprEnter(dd->default_factory);
         if (status != 0) {
-            if (status < 0)
+            if (status < 0) {
+                Py_DECREF(baserepr);
                 return NULL;
+            }
             defrepr = PyUnicode_FromString("...");
         }
         else
