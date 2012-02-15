@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
+  Patch by Suman Saha.
+
 - Issue #10287: nntplib now queries the server's CAPABILITIES first before
   sending MODE READER, and only sends it if not already in READER mode.
   Patch by Hynek Schlawack.
