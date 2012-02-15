@@ -170,9 +170,16 @@ class HTMLParser(markupbase.ParserBase):
                 else:
                     break
                 if k < 0:
-                    if end:
-                        self.error("EOF in middle of construct")
-                    break
+                    if not end:
+                        break
+                    k = rawdata.find('>', i + 1)
+                    if k < 0:
+                        k = rawdata.find('<', i + 1)
+                        if k < 0:
+                            k = i + 1
+                    else:
+                        k += 1
+                    self.handle_data(rawdata[i:k])
                 i = self.updatepos(i, k)
             elif startswith("&#", i):
                 match = charref.match(rawdata, i)

@@ -93,6 +93,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13987: HTMLParser is now able to handle EOFs in the middle of a
+  construct.
+
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
   Patch by Suman Saha.
 
