@@ -204,16 +204,16 @@ text
     def test_starttag_junk_chars(self):
         self._run_check("</>", [])
         self._run_check("</$>", [('comment', '$')])
-        self._parse_error("</")
-        self._parse_error("</a")
+        self._run_check("</", [('data', '</')])
+        self._run_check("</a", [('data', '</a')])
         self._parse_error("<a<a>")
         self._run_check("</a<a>", [('endtag', 'a<a')])
-        self._parse_error("<!")
-        self._parse_error("<a")
-        self._parse_error("<a foo='bar'")
-        self._parse_error("<a foo='bar")
-        self._parse_error("<a foo='>'")
-        self._parse_error("<a foo='>")
+        self._run_check("<!", [('data', '<!')])
+        self._run_check("<a", [('data', '<a')])
+        self._run_check("<a foo='bar'", [('data', "<a foo='bar'")])
+        self._run_check("<a foo='bar", [('data', "<a foo='bar")])
+        self._run_check("<a foo='>'", [('data', "<a foo='>'")])
+        self._run_check("<a foo='>", [('data', "<a foo='>")])
 
     def test_valid_doctypes(self):
         # from http://www.w3.org/QA/2002/04/valid-dtd-list.html
