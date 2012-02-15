@@ -472,8 +472,9 @@ Library
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
   Patch by Suman Saha.
 
-- Issue #1326113: distutils' build_ext command --libraries option now
-  correctly parses multiple values separated by whitespace or commas.
+- Issue #1326113: distutils' and packaging's build_ext commands option now
+  correctly parses multiple values (separated by whitespace or commas) given
+  to their --libraries option.
 
 - Issue #10287: nntplib now queries the server's CAPABILITIES first before
   sending MODE READER, and only sends it if not already in READER mode.
