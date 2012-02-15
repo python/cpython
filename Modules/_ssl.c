@@ -644,15 +644,20 @@ _create_tuple_for_X509_NAME (X509_NAME *xname)
             goto fail1;
     }
     /* now, there's typically a dangling RDN */
-    if ((rdn != NULL) && (PyList_Size(rdn) > 0)) {
-        rdnt = PyList_AsTuple(rdn);
-        Py_DECREF(rdn);
-        if (rdnt == NULL)
-            goto fail0;
-        retcode = PyList_Append(dn, rdnt);
-        Py_DECREF(rdnt);
-        if (retcode < 0)
-            goto fail0;
+    if (rdn != NULL) {
+        if (PyList_GET_SIZE(rdn) > 0) {
+            rdnt = PyList_AsTuple(rdn);
+            Py_DECREF(rdn);
+            if (rdnt == NULL)
+                goto fail0;
+            retcode = PyList_Append(dn, rdnt);
+            Py_DECREF(rdnt);
+            if (retcode < 0)
+                goto fail0;
+        }
+        else {
+            Py_DECREF(rdn);
+        }
     }
 
     /* convert list to tuple */
