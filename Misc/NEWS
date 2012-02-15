@@ -13,9 +13,6 @@ Core and Builtins
 - Issue #13020: Fix a reference leak when allocating a structsequence object
   fails.  Patch by Suman Saha.
 
-- Issue #13777: Add PF_SYSTEM sockets on OS X.
-  Patch by Michael Goderbauer.
-
 - Issue #13908: Ready types returned from PyType_FromSpec.
 
 - Issue #11235: Fix OverflowError when trying to import a source file whose
@@ -468,6 +465,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #13777: Add PF_SYSTEM sockets on OS X.
+  Patch by Michael Goderbauer.
 
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
   Patch by Suman Saha.
