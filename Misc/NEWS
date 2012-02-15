@@ -116,6 +116,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13014: Fix a possible reference leak in SSLSocket.getpeercert().
+
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
   Patch by Suman Saha.
 
