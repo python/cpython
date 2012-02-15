@@ -979,6 +979,26 @@ class NNTPv1v2TestsMixin:
             self.server.head("<non-existent@example.com>")
         self.assertEqual(cm.exception.response, "430 No Such Article Found")
 
+    def test_head_file(self):
+        f = io.BytesIO()
+        resp, info = self.server.head(file=f)
+        self.assertEqual(resp, "221 3000237 <45223423@example.com>")
+        art_num, message_id, lines = info
+        self.assertEqual(art_num, 3000237)
+        self.assertEqual(message_id, "<45223423@example.com>")
+        self.assertEqual(lines, [])
+        data = f.getvalue()
+        self.assertTrue(data.startswith(
+            b'From: "Demo User" <nobody@example.net>\r\n'
+            b'Subject: I am just a test article\r\n'
+            ), ascii(data))
+        self.assertFalse(data.endswith(
+            b'This is just a test article.\r\n'
+            b'.Here is a dot-starting line.\r\n'
+            b'\r\n'
+            b'-- Signed by Andr\xc3\xa9.\r\n'
+            ), ascii(data))
+
     def test_body(self):
         # BODY
         resp, info = self.server.body()
@@ -1005,6 +1025,26 @@ class NNTPv1v2TestsMixin:
         with self.assertRaises(nntplib.NNTPTemporaryError) as cm:
             self.server.body("<non-existent@example.com>")
         self.assertEqual(cm.exception.response, "430 No Such Article Found")
+
+    def test_body_file(self):
+        f = io.BytesIO()
+        resp, info = self.server.body(file=f)
+        self.assertEqual(resp, "222 3000237 <45223423@example.com>")
+        art_num, message_id, lines = info
+        self.assertEqual(art_num, 3000237)
+        self.assertEqual(message_id, "<45223423@example.com>")
+        self.assertEqual(lines, [])
+        data = f.getvalue()
+        self.assertFalse(data.startswith(
+            b'From: "Demo User" <nobody@example.net>\r\n'
+            b'Subject: I am just a test article\r\n'
+            ), ascii(data))
+        self.assertTrue(data.endswith(
+            b'This is just a test article.\r\n'
+            b'.Here is a dot-starting line.\r\n'
+            b'\r\n'
+            b'-- Signed by Andr\xc3\xa9.\r\n'
+            ), ascii(data))
 
     def check_over_xover_resp(self, resp, overviews):
         self.assertTrue(resp.startswith("224 "), resp)
