@@ -464,7 +464,7 @@ primitives like locks.
 For passing messages one can use :func:`Pipe` (for a connection between two
 processes) or a queue (which allows multiple producers and consumers).
 
-The :class:`Queue` and :class:`JoinableQueue` types are multi-producer,
+The :class:`Queue`, :class:`multiprocessing.queues.SimpleQueue` and :class:`JoinableQueue` types are multi-producer,
 multi-consumer FIFO queues modelled on the :class:`Queue.Queue` class in the
 standard library.  They differ in that :class:`Queue` lacks the
 :meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join` methods introduced
@@ -608,6 +608,23 @@ For an example of the usage of queues for interprocess communication see
       Prevent :meth:`join_thread` from blocking.  In particular, this prevents
       the background thread from being joined automatically when the process
       exits -- see :meth:`join_thread`.
+
+
+.. class:: multiprocessing.queues.SimpleQueue()
+
+   It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
+
+   .. method:: empty()
+
+      Return ``True`` if the queue is empty, ``False`` otherwise.
+
+   .. method:: get()
+
+      Remove and return an item from the queue.
+
+   .. method:: put(item)
+
+      Put *item* into the queue.
 
 
 .. class:: JoinableQueue([maxsize])
