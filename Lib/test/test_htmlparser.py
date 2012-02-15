@@ -206,7 +206,8 @@ text
         self._run_check("</$>", [('comment', '$')])
         self._run_check("</", [('data', '</')])
         self._run_check("</a", [('data', '</a')])
-        self._parse_error("<a<a>")
+        # XXX this might be wrong
+        self._run_check("<a<a>", [('data', '<a'), ('starttag', 'a', [])])
         self._run_check("</a<a>", [('endtag', 'a<a')])
         self._run_check("<!", [('data', '<!')])
         self._run_check("<a", [('data', '<a')])
