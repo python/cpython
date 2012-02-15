@@ -524,6 +524,9 @@ Extension Modules
 Documentation
 -------------
 
+- Issue #13491: Fix many errors in sqlite3 documentation. Initial
+  patch by Johannes Vogel.
+
 - Issue #13402: Document absoluteness of sys.executable.
 
 - Issue #13883: PYTHONCASEOK also used on OS X and OS/2.
