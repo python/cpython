@@ -26,7 +26,7 @@ is detected, or when :func:`os._exit` is called.
 .. index:: single: exitfunc (in sys)
 
 This is an alternate interface to the functionality provided by the
-``sys.exitfunc`` variable.
+:func:`sys.exitfunc` variable.
 
 Note: This module is unlikely to work correctly when used with other code that
 sets ``sys.exitfunc``.  In particular, other core Python modules are free to use
@@ -40,7 +40,8 @@ simplest way to convert code that sets ``sys.exitfunc`` is to import
 
    Register *func* as a function to be executed at termination.  Any optional
    arguments that are to be passed to *func* must be passed as arguments to
-   :func:`register`.
+   :func:`register`.  It is possible to register the same function and arguments
+   more than once.
 
    At normal program termination (for instance, if :func:`sys.exit` is called or
    the main module's execution completes), all functions registered are called in
@@ -54,8 +55,8 @@ simplest way to convert code that sets ``sys.exitfunc`` is to import
    be raised is re-raised.
 
    .. versionchanged:: 2.6
-      This function now returns *func* which makes it possible to use it as a
-      decorator without binding the original name to ``None``.
+      This function now returns *func*, which makes it possible to use it as a
+      decorator.
 
 
 .. seealso::
@@ -109,5 +110,4 @@ Usage as a :term:`decorator`::
    def goodbye():
        print "You are now leaving the Python sector."
 
-This obviously only works with functions that don't take arguments.
-
+This only works with functions that can be called without arguments.
