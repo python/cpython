@@ -9,6 +9,9 @@ What's New in Python 2.7.3?
 Core and Builtins
 -----------------
 
+- Issue #13020: Fix a reference leak when allocating a structsequence object
+  fails.  Patch by Suman Saha.
+
 - Issue #11235: Fix OverflowError when trying to import a source file whose
   modification time doesn't fit in a 32-bit timestamp.
 
