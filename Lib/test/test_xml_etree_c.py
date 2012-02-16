@@ -46,6 +46,16 @@ class MiscTests(unittest.TestCase):
         finally:
             data = None
 
+class TestAcceleratorImported(unittest.TestCase):
+    # Test that the C accelerator was imported, as expected
+    def test_correct_import_cET(self):
+        # In the C accelerator, Element is just a factory function, not an
+        # actual class. In the Python version it's a class.
+        self.assertNotIsInstance(cET.Element, type)
+
+    def test_correct_import_cET_alias(self):
+        self.assertNotIsInstance(cET_alias.Element, type)
+
 
 def test_main():
     from test import test_xml_etree, test_xml_etree_c
@@ -53,7 +63,7 @@ def test_main():
     # Run the tests specific to the C implementation
     support.run_doctest(test_xml_etree_c, verbosity=True)
 
-    support.run_unittest(MiscTests)
+    support.run_unittest(MiscTests, TestAcceleratorImported)
 
     # Run the same test suite as the Python module
     test_xml_etree.test_main(module=cET)
