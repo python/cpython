@@ -46,15 +46,11 @@ class MiscTests(unittest.TestCase):
         finally:
             data = None
 
+@unittest.skipUnless(cET, 'requires _elementtree')
 class TestAcceleratorImported(unittest.TestCase):
     # Test that the C accelerator was imported, as expected
     def test_correct_import_cET(self):
-        # In the C accelerator, Element is just a factory function, not an
-        # actual class. In the Python version it's a class.
-        self.assertNotIsInstance(cET.Element, type)
-
-    #def test_correct_import_cET_alias(self):
-        #self.assertNotIsInstance(cET_alias.Element, type)
+        self.assertEqual(cET.Element.__module__, '_elementtree')
 
 
 def test_main():
