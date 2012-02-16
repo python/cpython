@@ -1907,9 +1907,7 @@ class CleanContext(object):
 class TestAcceleratorNotImported(unittest.TestCase):
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
-        # In the C accelerator, Element is just a factory function, not an
-        # actual class. In the Python version it's a class.
-        self.assertIsInstance(pyET.Element, type)
+        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
 
 
 def test_main(module=pyET):
