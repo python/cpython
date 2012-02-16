@@ -1352,7 +1352,6 @@ def xinclude():
     r"""
     Basic inclusion example (XInclude C.1)
 
-    >>> from xml.etree import ElementTree as ET
     >>> from xml.etree import ElementInclude
 
     >>> document = xinclude_loader("C1.xml")

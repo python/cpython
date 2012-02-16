@@ -5,7 +5,7 @@ from test.support import import_fresh_module
 import unittest
 
 cET = import_fresh_module('xml.etree.ElementTree', fresh=['_elementtree'])
-cET_alias = import_fresh_module('xml.etree.cElementTree', fresh=['_elementtree'])
+cET_alias = import_fresh_module('xml.etree.cElementTree', fresh=['_elementtree', 'xml.etree'])
 
 
 # cElementTree specific tests
@@ -51,6 +51,9 @@ class TestAcceleratorImported(unittest.TestCase):
     # Test that the C accelerator was imported, as expected
     def test_correct_import_cET(self):
         self.assertEqual(cET.Element.__module__, '_elementtree')
+
+    def test_correct_import_cET_alias(self):
+        self.assertEqual(cET_alias.Element.__module__, '_elementtree')
 
 
 def test_main():
