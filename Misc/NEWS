@@ -2258,8 +2258,8 @@ C-API
 Documentation
 -------------
 
-- Issue #13491: Fix many errors in sqlite3 documentation. Initial
-  patch by Johannes Vogel.
+- Issues #13491 and #13995: Fix many errors in sqlite3 documentation.
+  Initial patch for #13491 by Johannes Vogel.
 
 - Issue #13402: Document absoluteness of sys.executable.
 
