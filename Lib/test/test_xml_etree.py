@@ -1904,11 +1904,21 @@ class CleanContext(object):
         self.checkwarnings.__exit__(*args)
 
 
+class TestAcceleratorNotImported(unittest.TestCase):
+    # Test that the C accelerator was not imported for pyET
+    def test_correct_import_pyET(self):
+        # In the C accelerator, Element is just a factory function, not an
+        # actual class. In the Python version it's a class.
+        self.assertIsInstance(pyET.Element, type)
+
+
 def test_main(module=pyET):
     from test import test_xml_etree
 
     # The same doctests are used for both the Python and the C implementations
     test_xml_etree.ET = module
+
+    support.run_unittest(TestAcceleratorNotImported)
 
     # XXX the C module should give the same warnings as the Python module
     with CleanContext(quiet=(module is not pyET)):
