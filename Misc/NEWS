@@ -575,6 +575,8 @@ Tests
 Documentation
 -------------
 
+- Issue #13995: Fix errors in sqlite3's Cursor.rowcount documentation
+
 - Issue #13402: Document absoluteness of sys.executable.
 
 - Issue #13883: PYTHONCASEOK also works on OS X, OS/2, and RiscOS.
