@@ -173,6 +173,11 @@ class UtilTestCase(support.EnvironRestorer,
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
 
+    def test_set_platform(self):
+        self.addCleanup(util.set_platform, util.get_platform())
+        util.set_platform("fake")
+        self.assertEqual("fake", util.get_platform())
+
     def test_convert_path(self):
         # linux/mac
         os.sep = '/'
