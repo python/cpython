@@ -466,6 +466,9 @@ Core and Builtins
 Library
 -------
 
+- Do away with ambiguous level values (as suggested by PEP 328) in
+  importlib.__import__() by raising ValueError when level < 0.
+
 - Issue #2489: pty.spawn could consume 100% cpu when it encountered an EOF.
 
 - Issue #13014: Fix a possible reference leak in SSLSocket.getpeercert().

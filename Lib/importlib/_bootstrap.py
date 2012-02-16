@@ -1048,6 +1048,8 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         raise TypeError("module name must be str, not {}".format(type(name)))
     if level == 0:
         module = _gcd_import(name)
+    elif level < 0:
+        raise ValueError('level must be >= 0')
     else:
         package = _calc___package__(globals)
         module = _gcd_import(name, package, level)
