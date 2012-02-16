@@ -1881,12 +1881,7 @@ class CleanContext(object):
 
     def __enter__(self):
         from xml.etree import ElementPath
-        if hasattr(ET, '_namespace_map'):
-            self._nsmap = ET._namespace_map
-        else:
-            # when testing the cElementTree alias
-            from xml.etree.ElementTree import _namespace_map
-            self._nsmap = _namespace_map
+        self._nsmap = ET.register_namespace._namespace_map
         # Copy the default namespace mapping
         self._nsmap_copy = self._nsmap.copy()
         # Copy the path cache (should be empty)

@@ -1086,6 +1086,8 @@ _namespace_map = {
     # dublin core
     "http://purl.org/dc/elements/1.1/": "dc",
 }
+# For tests and troubleshooting
+register_namespace._namespace_map = _namespace_map
 
 def _raise_serialization_error(text):
     raise TypeError(
