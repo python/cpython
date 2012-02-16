@@ -142,15 +142,21 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
     Copies
             pty master -> standard output   (master_read)
             standard input -> pty master    (stdin_read)"""
-    while 1:
-        rfds, wfds, xfds = select(
-                [master_fd, STDIN_FILENO], [], [])
+    fds = [master_fd, STDIN_FILENO]
+    while True:
+        rfds, wfds, xfds = select(fds, [], [])
         if master_fd in rfds:
             data = master_read(master_fd)
-            os.write(STDOUT_FILENO, data)
+            if not data:  # Reached EOF.
+                fds.remove(master_fd)
+            else:
+                os.write(STDOUT_FILENO, data)
         if STDIN_FILENO in rfds:
             data = stdin_read(STDIN_FILENO)
-            _writen(master_fd, data)
+            if not data:
+                fds.remove(STDIN_FILENO)
+            else:
+                _writen(master_fd, data)
 
 def spawn(argv, master_read=_read, stdin_read=_read):
     """Create a spawned process."""
