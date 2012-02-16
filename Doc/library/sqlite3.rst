@@ -543,18 +543,17 @@ Cursor Objects
    attribute, the database engine's own support for the determination of "rows
    affected"/"rows selected" is quirky.
 
-   For ``DELETE`` statements, SQLite reports :attr:`rowcount` as 0 if you make a
-   ``DELETE FROM table`` without any condition.
-
    For :meth:`executemany` statements, the number of modifications are summed up
    into :attr:`rowcount`.
 
    As required by the Python DB API Spec, the :attr:`rowcount` attribute "is -1 in
    case no ``executeXX()`` has been performed on the cursor or the rowcount of the
-   last operation is not determinable by the interface".
+   last operation is not determinable by the interface". This includes ``SELECT``
+   statements because we cannot determine the number of rows a query produced
+   until all rows were fetched.
 
-   This includes ``SELECT`` statements because we cannot determine the number of
-   rows a query produced until all rows were fetched.
+   With SQLite versions before 3.6.5, :attr:`rowcount` is set to 0 if
+   you make a ``DELETE FROM table`` without any condition.
 
 .. attribute:: Cursor.lastrowid
 
