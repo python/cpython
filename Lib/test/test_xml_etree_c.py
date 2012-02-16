@@ -53,8 +53,8 @@ class TestAcceleratorImported(unittest.TestCase):
         # actual class. In the Python version it's a class.
         self.assertNotIsInstance(cET.Element, type)
 
-    def test_correct_import_cET_alias(self):
-        self.assertNotIsInstance(cET_alias.Element, type)
+    #def test_correct_import_cET_alias(self):
+        #self.assertNotIsInstance(cET_alias.Element, type)
 
 
 def test_main():
