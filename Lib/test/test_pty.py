@@ -253,7 +253,7 @@ class SmallPtyTests(unittest.TestCase):
 
         # Test that the right data went to the right places.
         rfds = select.select([read_from_stdout_fd, masters[1]], [], [], 0)[0]
-        self.assertSameElements([read_from_stdout_fd, masters[1]], rfds)
+        self.assertEqual([read_from_stdout_fd, masters[1]], rfds)
         self.assertEqual(os.read(read_from_stdout_fd, 20), b'from master')
         self.assertEqual(os.read(masters[1], 20), b'from stdin')
 
