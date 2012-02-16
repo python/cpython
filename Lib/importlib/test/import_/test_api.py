@@ -12,6 +12,13 @@ class APITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             util.import_(42)
 
+    def test_negative_level(self):
+        # Raise ValueError when a negative level is specified.
+        # PEP 328 did away with sys.module None entries and the ambiguity of
+        # absolute/relative imports.
+        with self.assertRaises(ValueError):
+            util.import_('os', globals(), level=-1)
+
 
 def test_main():
     from test.support import run_unittest
