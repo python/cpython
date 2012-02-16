@@ -466,6 +466,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2489: pty.spawn could consume 100% cpu when it encountered an EOF.
+
 - Issue #13014: Fix a possible reference leak in SSLSocket.getpeercert().
 
 - Issue #13777: Add PF_SYSTEM sockets on OS X.
