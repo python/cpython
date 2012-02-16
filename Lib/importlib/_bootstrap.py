@@ -713,10 +713,12 @@ class PathFinder:
         the default hook, for which ImportError is raised.
 
         """
+        if path == '':
+            path = _os.getcwd()
         try:
             finder = sys.path_importer_cache[path]
         except KeyError:
-            finder = cls._path_hooks(path if path != '' else _os.getcwd())
+            finder = cls._path_hooks(path)
             sys.path_importer_cache[path] = finder
         else:
             if finder is None and default:
