@@ -786,18 +786,26 @@ $(DESTSHARED):
 		done
 
 
-# Install the interpreter (by creating a hard link to python$(VERSION))
+# Install the interpreter by creating a symlink chain:
+#  $(PYTHON) -> python2 -> python$(VERSION))
+# Also create equivalent chains for other installed files
 bininstall:	altbininstall
 	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON); \
 	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON); \
 	else true; \
 	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python2$(EXE) $(PYTHON))
+	-rm -f $(DESTDIR)$(BINDIR)/python2$(EXE)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)$(EXE) python2$(EXE))
+	-rm -f $(DESTDIR)$(BINDIR)/python2-config
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python2-config)
 	-rm -f $(DESTDIR)$(BINDIR)/python-config
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python2-config python-config)
 	-test -d $(DESTDIR)$(LIBPC) || $(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC)
+	-rm -f $(DESTDIR)$(LIBPC)/python2.pc
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python2.pc)
 	-rm -f $(DESTDIR)$(LIBPC)/python.pc
-	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python.pc)
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python2.pc python.pc)
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
