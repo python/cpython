@@ -466,6 +466,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13961: Move importlib over to using os.replace() for atomic renaming.
+
 - Do away with ambiguous level values (as suggested by PEP 328) in
   importlib.__import__() by raising ValueError when level < 0.
 
