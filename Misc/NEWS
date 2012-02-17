@@ -526,6 +526,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11689: Fix a variable scoping error in an sqlite3 test.
+  Initial patch by Torsten Landschoff.
+
 - Issue #13304: Skip test case if user site-packages disabled (-s or
   PYTHONNOUSERSITE).  (Patch by Carl Meyer)
 
