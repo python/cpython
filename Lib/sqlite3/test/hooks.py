@@ -166,14 +166,14 @@ class ProgressTests(unittest.TestCase):
         Test that setting the progress handler to None clears the previously set handler.
         """
         con = sqlite.connect(":memory:")
-        action = 0
+        action = []
         def progress():
-            action = 1
+            action.append(1)
             return 0
         con.set_progress_handler(progress, 1)
         con.set_progress_handler(None, 1)
         con.execute("select 1 union select 2 union select 3").fetchall()
-        self.assertEqual(action, 0, "progress handler was not cleared")
+        self.assertEqual(len(action), 0, "progress handler was not cleared")
 
 def suite():
     collation_suite = unittest.makeSuite(CollationTests, "Check")
