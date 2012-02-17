@@ -477,6 +477,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11689: Fix a variable scoping error in an sqlite3 test
+
 - Issue #13786: Remove unimplemented 'trace' long option from regrtest.py.
 
 - Issue #13725: Fix regrtest to recognize the documented -d flag.
