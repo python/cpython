@@ -19,28 +19,33 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
-# TODO: when not on any of these platforms, replace _case_ok() w/
-#       ``lambda x,y: True``.
-CASE_OK_PLATFORMS = 'win', 'cygwin', 'darwin'
+CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
-def _case_ok(directory, check):
-    """Check if the directory contains something matching 'check'
-    case-sensitively when running on Windows or OS X.
+def _case_insensitive_ok(directory, check):
+    """Check if the directory contains something matching 'check' exists in the
+    directory.
 
-    If running on Window or OS X and PYTHONCASEOK is a defined environment
-    variable then no case-sensitive check is performed. No check is done to see
-    if what is being checked for exists, so if the platform is not Windows or
-    OS X then assume the case is fine.
+    If PYTHONCASEOK is a defined environment variable then skip the
+    case-sensitivity check.
 
     """
-    if (any(map(sys.platform.startswith, CASE_OK_PLATFORMS)) and
-            b'PYTHONCASEOK' not in _os.environ):
+    if b'PYTHONCASEOK' not in _os.environ:
         if not directory:
             directory = '.'
         return check in _os.listdir(directory)
     else:
         return True
 
+def _case_sensitive_ok(directory, check):
+    """Under case-sensitive filesystems always assume the case matches.
+
+    Since other code does the file existence check, that subsumes a
+    case-sensitivity check.
+
+    """
+    return True
+
+_case_ok = None
 
 
 # TODO: Expose from marshal
@@ -1055,7 +1060,7 @@ def _setup(sys_module, imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global imp, sys
+    global _case_ok, imp, sys
     imp = imp_module
     sys = sys_module
 
@@ -1088,6 +1093,11 @@ def _setup(sys_module, imp_module):
         raise ImportError('importlib requires posix or nt')
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
+
+    if sys_module.platform in CASE_INSENSITIVE_PLATFORMS:
+        _case_ok = _case_insensitive_ok
+    else:
+        _case_ok = _case_sensitive_ok
 
 
 def _install(sys_module, imp_module):
