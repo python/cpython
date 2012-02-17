@@ -168,6 +168,7 @@ class ProgressTests(unittest.TestCase):
         con = sqlite.connect(":memory:")
         action = 0
         def progress():
+            nonlocal action
             action = 1
             return 0
         con.set_progress_handler(progress, 1)
