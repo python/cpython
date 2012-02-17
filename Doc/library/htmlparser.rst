@@ -22,7 +22,7 @@
 
 --------------
 
-This module defines a class :class:`HTMLParser` which serves as the basis for
+This module defines a class :class:`.HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 Unlike the parser in :mod:`htmllib`, this parser is not based on the SGML parser
 in :mod:`sgmllib`.
@@ -30,11 +30,12 @@ in :mod:`sgmllib`.
 
 .. class:: HTMLParser()
 
-   The :class:`HTMLParser` class is instantiated without arguments.
+   An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
+   when start tags, end tags, text, comments, and other markup elements are
+   encountered.  The user should subclass :class:`.HTMLParser` and override its
+   methods to implement the desired behavior.
 
-   An :class:`HTMLParser` instance is fed HTML data and calls handler functions when tags
-   begin and end.  The :class:`HTMLParser` class is meant to be overridden by the
-   user to provide a desired behavior.
+   The :class:`.HTMLParser` class is instantiated without arguments.
 
    Unlike the parser in :mod:`htmllib`, this parser does not check that end tags
    match start tags or call the end-tag handler for elements which are closed
@@ -42,22 +43,59 @@ in :mod:`sgmllib`.
 
 An exception is defined as well:
 
-
 .. exception:: HTMLParseError
 
-   Exception raised by the :class:`HTMLParser` class when it encounters an error
-   while parsing.  This exception provides three attributes: :attr:`msg` is a brief
-   message explaining the error, :attr:`lineno` is the number of the line on which
-   the broken construct was detected, and :attr:`offset` is the number of
+   :class:`.HTMLParser` is able to handle broken markup, but in some cases it
+   might raise this exception when it encounters an error while parsing.
+   This exception provides three attributes: :attr:`msg` is a brief
+   message explaining the error, :attr:`lineno` is the number of the line on
+   which the broken construct was detected, and :attr:`offset` is the number of
    characters into the line at which the construct starts.
 
-:class:`HTMLParser` instances have the following methods:
+
+Example HTML Parser Application
+-------------------------------
+
+As a basic example, below is a simple HTML parser that uses the
+:class:`.HTMLParser` class to print out start tags, end tags and data
+as they are encountered::
+
+   from HTMLParser import HTMLParser
+
+   # create a subclass and override the handler methods
+   class MyHTMLParser(HTMLParser):
+       def handle_starttag(self, tag, attrs):
+           print "Encountered a start tag:", tag
+       def handle_endtag(self, tag):
+           print "Encountered an end tag :", tag
+       def handle_data(self, data):
+           print "Encountered some data  :", data
+
+   # instantiate the parser and fed it some HTML
+   parser = MyHTMLParser()
+   parser.feed('<html><head><title>Test</title></head>'
+               '<body><h1>Parse me!</h1></body></html>')
+
+The output will then be::
+
+   Encountered a start tag: html
+   Encountered a start tag: head
+   Encountered a start tag: title
+   Encountered some data  : Test
+   Encountered an end tag : title
+   Encountered an end tag : head
+   Encountered a start tag: body
+   Encountered a start tag: h1
+   Encountered some data  : Parse me!
+   Encountered an end tag : h1
+   Encountered an end tag : body
+   Encountered an end tag : html
 
 
-.. method:: HTMLParser.reset()
+:class:`.HTMLParser` Methods
+----------------------------
 
-   Reset the instance.  Loses all unprocessed data.  This is called implicitly at
-   instantiation time.
+:class:`.HTMLParser` instances have the following methods:
 
 
 .. method:: HTMLParser.feed(data)
@@ -73,7 +111,13 @@ An exception is defined as well:
    Force processing of all buffered data as if it were followed by an end-of-file
    mark.  This method may be redefined by a derived class to define additional
    processing at the end of the input, but the redefined version should always call
-   the :class:`HTMLParser` base class method :meth:`close`.
+   the :class:`.HTMLParser` base class method :meth:`close`.
+
+
+.. method:: HTMLParser.reset()
+
+   Reset the instance.  Loses all unprocessed data.  This is called implicitly at
+   instantiation time.
 
 
 .. method:: HTMLParser.getpos()
@@ -89,22 +133,34 @@ An exception is defined as well:
    attributes can be preserved, etc.).
 
 
+The following methods are called when data or markup elements are encountered
+and they are meant to be overridden in a subclass.  The base class
+implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
+
+
 .. method:: HTMLParser.handle_starttag(tag, attrs)
 
-   This method is called to handle the start of a tag.  It is intended to be
-   overridden by a derived class; the base class implementation does nothing.
+   This method is called to handle the start of a tag (e.g. ``<div id="main">``).
 
    The *tag* argument is the name of the tag converted to lower case. The *attrs*
    argument is a list of ``(name, value)`` pairs containing the attributes found
    inside the tag's ``<>`` brackets.  The *name* will be translated to lower case,
    and quotes in the *value* have been removed, and character and entity references
-   have been replaced.  For instance, for the tag ``<A
-   HREF="http://www.cwi.nl/">``, this method would be called as
-   ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
+   have been replaced.
+
+   For instance, for the tag ``<A HREF="http://www.cwi.nl/">``, this method
+   would be called as ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
 
    .. versionchanged:: 2.6
-      All entity references from :mod:`htmlentitydefs` are now replaced in the attribute
-      values.
+      All entity references from :mod:`htmlentitydefs` are now replaced in the
+      attribute values.
+
+
+.. method:: HTMLParser.handle_endtag(tag)
+
+   This method is called to handle the end tag of an element (e.g. ``</div>``).
+
+   The *tag* argument is the name of the tag converted to lower case.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
@@ -115,94 +171,175 @@ An exception is defined as well:
    implementation simply calls :meth:`handle_starttag` and :meth:`handle_endtag`.
 
 
-.. method:: HTMLParser.handle_endtag(tag)
-
-   This method is called to handle the end tag of an element.  It is intended to be
-   overridden by a derived class; the base class implementation does nothing.  The
-   *tag* argument is the name of the tag converted to lower case.
-
-
 .. method:: HTMLParser.handle_data(data)
 
-   This method is called to process arbitrary data (e.g. the content of
-   ``<script>...</script>`` and ``<style>...</style>``).  It is intended to be
-   overridden by a derived class; the base class implementation does nothing.
-
-
-.. method:: HTMLParser.handle_charref(name)
-
-   This method is called to process a character reference of the form ``&#ref;``.
-   It is intended to be overridden by a derived class; the base class
-   implementation does nothing.
+   This method is called to process arbitrary data (e.g. text nodes and the
+   content of ``<script>...</script>`` and ``<style>...</style>``).
 
 
 .. method:: HTMLParser.handle_entityref(name)
 
-   This method is called to process a general entity reference of the form
-   ``&name;`` where *name* is an general entity reference.  It is intended to be
-   overridden by a derived class; the base class implementation does nothing.
+   This method is called to process a named character reference of the form
+   ``&name;`` (e.g. ``&gt;``), where *name* is a general entity reference
+   (e.g. ``'gt'``).
+
+
+.. method:: HTMLParser.handle_charref(name)
+
+   This method is called to process decimal and hexadecimal numeric character
+   references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
+   equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
+   in this case the method will receive ``'62'`` or ``'x3E'``.
 
 
 .. method:: HTMLParser.handle_comment(data)
 
-   This method is called when a comment is encountered.  The *comment* argument is
-   a string containing the text between the ``--`` and ``--`` delimiters, but not
-   the delimiters themselves.  For example, the comment ``<!--text-->`` will cause
-   this method to be called with the argument ``'text'``.  It is intended to be
-   overridden by a derived class; the base class implementation does nothing.
+   This method is called when a comment is encountered (e.g. ``<!--comment-->``).
+
+   For example, the comment ``<!-- comment -->`` will cause this method to be
+   called with the argument ``' comment '``.
+
+   The content of Internet Explorer conditional comments (condcoms) will also be
+   sent to this method, so, for ``<!--[if IE 9]>IE9-specific content<![endif]-->``,
+   this method will receive ``'[if IE 9]>IE-specific content<![endif]'``.
 
 
 .. method:: HTMLParser.handle_decl(decl)
 
-   Method called when an SGML ``doctype`` declaration is read by the parser.
+   This method is called to handle an HTML doctype declaration (e.g.
+   ``<!DOCTYPE html>``).
+
    The *decl* parameter will be the entire contents of the declaration inside
-   the ``<!...>`` markup.  It is intended to be overridden by a derived class;
-   the base class implementation does nothing.
-
-
-.. method:: HTMLParser.unknown_decl(data)
-
-   Method called when an unrecognized SGML declaration is read by the parser.
-   The *data* parameter will be the entire contents of the declaration inside
-   the ``<!...>`` markup.  It is sometimes useful to be overridden by a
-   derived class; the base class implementation throws an :exc:`HTMLParseError`.
+   the ``<!...>`` markup (e.g. ``'DOCTYPE html'``).
 
 
 .. method:: HTMLParser.handle_pi(data)
 
-   Method called when a processing instruction is encountered.  The *data*
-   parameter will contain the entire processing instruction. For example, for the
+   This method is called when a processing instruction is encountered.  The *data*
+   parameter will contain the entire processing instruction.  For example, for the
    processing instruction ``<?proc color='red'>``, this method would be called as
-   ``handle_pi("proc color='red'")``.  It is intended to be overridden by a derived
-   class; the base class implementation does nothing.
+   ``handle_pi("proc color='red'")``.
 
    .. note::
 
-      The :class:`HTMLParser` class uses the SGML syntactic rules for processing
+      The :class:`.HTMLParser` class uses the SGML syntactic rules for processing
       instructions.  An XHTML processing instruction using the trailing ``'?'`` will
       cause the ``'?'`` to be included in *data*.
 
 
-.. _htmlparser-example:
+.. method:: HTMLParser.unknown_decl(data)
 
-Example HTML Parser Application
--------------------------------
+   This method is called when an unrecognized declaration is read by the parser.
 
-As a basic example, below is a simple HTML parser that uses the
-:class:`HTMLParser` class to print out start tags, end tags and data
-as they are encountered::
+   The *data* parameter will be the entire contents of the declaration inside
+   the ``<![...]>`` markup.  It is sometimes useful to be overridden by a
+   derived class.
+
+
+.. _htmlparser-examples:
+
+Examples
+--------
+
+The following class implements a parser that will be used to illustrate more
+examples::
 
    from HTMLParser import HTMLParser
+   from htmlentitydefs import name2codepoint
 
    class MyHTMLParser(HTMLParser):
        def handle_starttag(self, tag, attrs):
-           print "Encountered a start tag:", tag
+           print "Start tag:", tag
+           for attr in attrs:
+               print "     attr:", attr
        def handle_endtag(self, tag):
-           print "Encountered  an end tag:", tag
+           print "End tag  :", tag
        def handle_data(self, data):
-           print "Encountered   some data:", data
-
+           print "Data     :", data
+       def handle_comment(self, data):
+           print "Comment  :", data
+       def handle_entityref(self, name):
+           c = unichr(name2codepoint[name])
+           print "Named ent:", c
+       def handle_charref(self, name):
+           if name.startswith('x'):
+               c = unichr(int(name[1:], 16))
+           else:
+               c = unichr(int(name))
+           print "Num ent  :", c
+       def handle_decl(self, data):
+           print "Decl     :", data
 
    parser = MyHTMLParser()
-   parser.feed('<html><head><title>Test</title></head>'
-               '<body><h1>Parse me!</h1></body></html>')
+
+Parsing a doctype::
+
+   >>> parser.feed('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+   ...             '"http://www.w3.org/TR/html4/strict.dtd">')
+   Decl     : DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"
+
+Parsing an element with a few attributes and a title::
+
+   >>> parser.feed('<img src="python-logo.png" alt="The Python logo">')
+   Start tag: img
+        attr: ('src', 'python-logo.png')
+        attr: ('alt', 'The Python logo')
+   >>>
+   >>> parser.feed('<h1>Python</h1>')
+   Start tag: h1
+   Data     : Python
+   End tag  : h1
+
+The content of ``script`` and ``style`` elements is returned as is, without
+further parsing::
+
+   >>> parser.feed('<style type="text/css">#python { color: green }</style>')
+   Start tag: style
+        attr: ('type', 'text/css')
+   Data     : #python { color: green }
+   End tag  : style
+   >>>
+   >>> parser.feed('<script type="text/javascript">'
+   ...             'alert("<strong>hello!</strong>");</script>')
+   Start tag: script
+        attr: ('type', 'text/javascript')
+   Data     : alert("<strong>hello!</strong>");
+   End tag  : script
+
+Parsing comments::
+
+   >>> parser.feed('<!-- a comment -->'
+   ...             '<!--[if IE 9]>IE-specific content<![endif]-->')
+   Comment  :  a comment
+   Comment  : [if IE 9]>IE-specific content<![endif]
+
+Parsing named and numeric character references and converting them to the
+correct char (note: these 3 references are all equivalent to ``'>'``)::
+
+   >>> parser.feed('&gt;&#62;&#x3E;')
+   Named ent: >
+   Num ent  : >
+   Num ent  : >
+
+Feeding incomplete chunks to :meth:`~HTMLParser.feed` works, but
+:meth:`~HTMLParser.handle_data` might be called more than once::
+
+   >>> for chunk in ['<sp', 'an>buff', 'ered ', 'text</s', 'pan>']:
+   ...     parser.feed(chunk)
+   ...
+   Start tag: span
+   Data     : buff
+   Data     : ered
+   Data     : text
+   End tag  : span
+
+Parsing invalid HTML (e.g. unquoted attributes) also works::
+
+   >>> parser.feed('<p><a class=link href=#main>tag soup</p ></a>')
+   Start tag: p
+   Start tag: a
+        attr: ('class', 'link')
+        attr: ('href', '#main')
+   Data     : tag soup
+   End tag  : p
+   End tag  : a
