@@ -145,6 +145,12 @@ static unsigned int _ssl_locks_count = 0;
 # define HAVE_OPENSSL_FINISHED 0
 #endif
 
+/* ECDH support got added to OpenSSL in 0.9.8 */
+#if OPENSSL_VERSION_NUMBER < 0x0090800fL && !defined(OPENSSL_NO_ECDH)
+# define OPENSSL_NO_ECDH
+#endif
+
+
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
