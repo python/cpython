@@ -2375,7 +2375,7 @@ copying.  Memory is generally interpreted as simple bytes.
       bytearray(b'zbcefg')
       >>> v[1:4] = b'123'
       >>> data
-      bytearray(b'a123fg')
+      bytearray(b'z123fg')
       >>> v[2] = b'spam'
       Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
