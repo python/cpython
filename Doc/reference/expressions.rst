@@ -116,11 +116,11 @@ literals.  See section :ref:`literals` for details.
    triple: immutable; data; type
    pair: immutable; object
 
-With the exception of bytes literals, these all correspond to immutable data
-types, and hence the object's identity is less important than its value.
-Multiple evaluations of literals with the same value (either the same occurrence
-in the program text or a different occurrence) may obtain the same object or a
-different object with the same value.
+All literals correspond to immutable data types, and hence the object's identity
+is less important than its value.  Multiple evaluations of literals with the
+same value (either the same occurrence in the program text or a different
+occurrence) may obtain the same object or a different object with the same
+value.
 
 
 .. _parenthesized:
