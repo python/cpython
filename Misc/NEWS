@@ -93,6 +93,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
+  SimpleXMLRPCServer upon malformed POST request.
+
 - Issue #2489: pty.spawn could consume 100% cpu when it encountered an EOF.
 
 - Issue #13014: Fix a possible reference leak in SSLSocket.getpeercert().
