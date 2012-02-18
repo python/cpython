@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
+  SimpleXMLRPCServer upon malformed POST request.
+
 - Issue #13885: CVE-2011-3389: the _ssl module would always disable the CBC
   IV attack countermeasure.
 
