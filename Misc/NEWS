@@ -466,6 +466,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
+  SimpleXMLRPCServer upon malformed POST request.
+
 - Issue #13961: Move importlib over to using os.replace() for atomic renaming.
 
 - Do away with ambiguous level values (as suggested by PEP 328) in
