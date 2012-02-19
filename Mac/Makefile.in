@@ -52,13 +52,17 @@ installapps: install_Python install_pythonw install_BuildApplet install_PythonLa
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
-	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python"
-	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw"
+	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python2"
+	ln -sf python2 "$(DESTDIR)$(prefix)/bin/python"
+	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw2"
+	ln -sf pythonw2 "$(DESTDIR)$(prefix)/bin/pythonw"
 ifneq ($(LIPO_32BIT_FLAGS),)
 	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/python$(VERSION)-32 pythonw
 	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32 pythonw
-	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python-32"
-	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw-32"
+	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python2-32"
+	ln -sf python2-32 "$(DESTDIR)$(prefix)/bin/python-32"
+	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw2-32"
+	ln -sf pythonw2-32 "$(DESTDIR)$(prefix)/bin/pythonw-32"
 endif
 
 
@@ -71,6 +75,9 @@ installunixtools:
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
 	for fn in python pythonw idle pydoc python-config smtpd.py 2to3 \
+		  python2 pythonw2 idle2 \
+		  pydoc2 python2-config smtpd2.py \
+		  2to3-2 \
 		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
 		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py \
 		  2to3-$(VERSION) ;\
@@ -79,6 +86,7 @@ installunixtools:
 	done
 ifneq ($(LIPO_32BIT_FLAGS),)
 	for fn in python-32 pythonw-32 \
+		  python2-32 pythonw2-32 \
 		  python$(VERSION)-32 pythonw$(VERSION)-32 ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
@@ -117,19 +125,18 @@ install_versionedtools:
 			continue ;\
 		fi ;\
 		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
-		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
+		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}2" ;\
+		ln -sf "$${fn}2" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
 	done
-	if [ ! -h "$(DESTDIR)$(prefix)/bin/python-config" ]; then \
-		mv "$(DESTDIR)$(prefix)/bin/python-config" "$(DESTDIR)$(prefix)/bin/python$(VERSION)-config" ;\
-		ln -sf "python$(VERSION)-config" "$(DESTDIR)$(prefix)/bin/python-config" ; \
-	fi
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
-		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
+		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd2.py" ;\
+		ln -sf "smtpd2.py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
 	fi
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/2to3" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/2to3" "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)"  ;\
-		ln -sf "2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3" ;\
+		ln -sf "2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3-2" ;\
+		ln -sf "2to3-2" "$(DESTDIR)$(prefix)/bin/2to3" ;\
 	fi
 
 
