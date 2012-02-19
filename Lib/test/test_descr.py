@@ -1444,6 +1444,7 @@ order (MRO) for bases """
             self.fail("classmethod shouldn't accept keyword args")
 
         cm = classmethod(f)
+        self.assertEqual(cm.__dict__, {})
         cm.x = 42
         self.assertEqual(cm.x, 42)
         self.assertEqual(cm.__dict__, {"x" : 42})
@@ -1482,6 +1483,7 @@ order (MRO) for bases """
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
         sm = staticmethod(None)
+        self.assertEqual(sm.__dict__, {})
         sm.x = 42
         self.assertEqual(sm.x, 42)
         self.assertEqual(sm.__dict__, {"x" : 42})
