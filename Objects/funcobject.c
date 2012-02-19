@@ -754,6 +754,7 @@ PyTypeObject PyFunction_Type = {
 typedef struct {
     PyObject_HEAD
     PyObject *cm_callable;
+    PyObject *cm_dict;
 } classmethod;
 
 static void
@@ -761,6 +762,7 @@ cm_dealloc(classmethod *cm)
 {
     _PyObject_GC_UNTRACK((PyObject *)cm);
     Py_XDECREF(cm->cm_callable);
+    Py_XDECREF(cm->cm_dict);
     Py_TYPE(cm)->tp_free((PyObject *)cm);
 }
 
@@ -768,6 +770,7 @@ static int
 cm_traverse(classmethod *cm, visitproc visit, void *arg)
 {
     Py_VISIT(cm->cm_callable);
+    Py_VISIT(cm->cm_dict);
     return 0;
 }
 
@@ -775,6 +778,7 @@ static int
 cm_clear(classmethod *cm)
 {
     Py_CLEAR(cm->cm_callable);
+    Py_CLEAR(cm->cm_dict);
     return 0;
 }
 
@@ -827,11 +831,19 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+cm_get___dict__(classmethod *cm, void *closure)
+{
+    Py_INCREF(cm->cm_dict);
+    return cm->cm_dict;
+}
+
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)cm_get___isabstractmethod__, NULL,
      NULL,
      NULL},
+    {"__dict__", (getter)cm_get___dict__, NULL, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -891,7 +903,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_dict */
     cm_descr_get,                               /* tp_descr_get */
     0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
+    offsetof(classmethod, cm_dict),             /* tp_dictoffset */
     cm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
@@ -930,6 +942,7 @@ PyClassMethod_New(PyObject *callable)
 typedef struct {
     PyObject_HEAD
     PyObject *sm_callable;
+    PyObject *sm_dict;
 } staticmethod;
 
 static void
@@ -937,6 +950,7 @@ sm_dealloc(staticmethod *sm)
 {
     _PyObject_GC_UNTRACK((PyObject *)sm);
     Py_XDECREF(sm->sm_callable);
+    Py_XDECREF(sm->sm_dict);
     Py_TYPE(sm)->tp_free((PyObject *)sm);
 }
 
@@ -944,6 +958,7 @@ static int
 sm_traverse(staticmethod *sm, visitproc visit, void *arg)
 {
     Py_VISIT(sm->sm_callable);
+    Py_VISIT(sm->sm_dict);
     return 0;
 }
 
@@ -952,6 +967,7 @@ sm_clear(staticmethod *sm)
 {
     Py_XDECREF(sm->sm_callable);
     sm->sm_callable = NULL;
+    Py_CLEAR(sm->sm_dict);
 
     return 0;
 }
@@ -1003,11 +1019,19 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+sm_get___dict__(staticmethod *sm, void *closure)
+{
+    Py_INCREF(sm->sm_dict);
+    return sm->sm_dict;
+}
+
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)sm_get___isabstractmethod__, NULL,
      NULL,
      NULL},
+    {"__dict__", (getter)sm_get___dict__, NULL, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1046,7 +1070,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1064,7 +1088,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_dict */
     sm_descr_get,                               /* tp_descr_get */
     0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
+    offsetof(staticmethod, sm_dict),            /* tp_dictoffset */
     sm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
