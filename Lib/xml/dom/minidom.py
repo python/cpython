@@ -286,10 +286,10 @@ def _append_child(self, node):
     childNodes = self.childNodes
     if childNodes:
         last = childNodes[-1]
-        node.__dict__["previousSibling"] = last
-        last.__dict__["nextSibling"] = node
+        node.previousSibling = last
+        last.nextSibling = node
     childNodes.append(node)
-    node.__dict__["parentNode"] = self
+    node.parentNode = self
 
 def _in_document(node):
     # return True iff node is part of a document tree
@@ -342,9 +342,10 @@ class DocumentFragment(Node):
 
 
 class Attr(Node):
+    __slots__=('_name', '_value', 'namespaceURI',
+               '_prefix', 'childNodes', '_localName', 'ownerDocument', 'ownerElement')
     nodeType = Node.ATTRIBUTE_NODE
     attributes = None
-    ownerElement = None
     specified = False
     _is_id = False
 
@@ -352,12 +353,11 @@ class Attr(Node):
 
     def __init__(self, qName, namespaceURI=EMPTY_NAMESPACE, localName=None,
                  prefix=None):
-        # skip setattr for performance
-        d = self.__dict__
-        d["nodeName"] = d["name"] = qName
-        d["namespaceURI"] = namespaceURI
-        d["prefix"] = prefix
-        d['childNodes'] = NodeList()
+        self.ownerElement = None
+        self._name = qName
+        self.namespaceURI = namespaceURI
+        self._prefix = prefix
+        self.childNodes = NodeList()
 
         # Add the single child node that represents the value of the attr
         self.childNodes.append(Text())
@@ -365,9 +365,10 @@ class Attr(Node):
         # nodeValue and value are set elsewhere
 
     def _get_localName(self):
-        if 'localName' in self.__dict__:
-            return self.__dict__['localName']
-        return self.nodeName.split(":", 1)[-1]
+        try:
+            return self._localName
+        except AttributeError:
+            return self.nodeName.split(":", 1)[-1]
 
     def _get_name(self):
         return self.name
@@ -375,20 +376,30 @@ class Attr(Node):
     def _get_specified(self):
         return self.specified
 
-    def __setattr__(self, name, value):
-        d = self.__dict__
-        if name in ("value", "nodeValue"):
-            d["value"] = d["nodeValue"] = value
-            d2 = self.childNodes[0].__dict__
-            d2["data"] = d2["nodeValue"] = value
-            if self.ownerElement is not None:
-                _clear_id_cache(self.ownerElement)
-        elif name in ("name", "nodeName"):
-            d["name"] = d["nodeName"] = value
-            if self.ownerElement is not None:
-                _clear_id_cache(self.ownerElement)
-        else:
-            d[name] = value
+    def _get_name(self):
+        return self._name
+
+    def _set_name(self, value):
+        self._name = value
+        if self.ownerElement is not None:
+            _clear_id_cache(self.ownerElement)
+
+    nodeName = name = property(_get_name, _set_name)
+
+    def _get_value(self):
+        return self._value
+
+    def _set_value(self, value):
+        self._value = value
+        self.childNodes[0].data = value
+        if self.ownerElement is not None:
+            _clear_id_cache(self.ownerElement)
+        self.childNodes[0].data = value
+
+    nodeValue = value = property(_get_value, _set_value)
+
+    def _get_prefix(self):
+        return self._prefix
 
     def _set_prefix(self, prefix):
         nsuri = self.namespaceURI
@@ -396,22 +407,16 @@ class Attr(Node):
             if nsuri and nsuri != XMLNS_NAMESPACE:
                 raise xml.dom.NamespaceErr(
                     "illegal use of 'xmlns' prefix for the wrong namespace")
-        d = self.__dict__
-        d['prefix'] = prefix
+        self._prefix = prefix
         if prefix is None:
             newName = self.localName
         else:
             newName = "%s:%s" % (prefix, self.localName)
         if self.ownerElement:
             _clear_id_cache(self.ownerElement)
-        d['nodeName'] = d['name'] = newName
+        self.name = newName
 
-    def _set_value(self, value):
-        d = self.__dict__
-        d['value'] = d['nodeValue'] = value
-        if self.ownerElement:
-            _clear_id_cache(self.ownerElement)
-        self.childNodes[0].data = value
+    prefix = property(_get_prefix, _set_prefix)
 
     def unlink(self):
         # This implementation does not call the base implementation
@@ -586,8 +591,8 @@ class NamedNodeMap(object):
             _clear_id_cache(self._ownerElement)
             del self._attrs[n.nodeName]
             del self._attrsNS[(n.namespaceURI, n.localName)]
-            if 'ownerElement' in n.__dict__:
-                n.__dict__['ownerElement'] = None
+            if hasattr(n, 'ownerElement'):
+                n.ownerElement = None
             return n
         else:
             raise xml.dom.NotFoundErr()
@@ -598,8 +603,8 @@ class NamedNodeMap(object):
             _clear_id_cache(self._ownerElement)
             del self._attrsNS[(n.namespaceURI, n.localName)]
             del self._attrs[n.nodeName]
-            if 'ownerElement' in n.__dict__:
-                n.__dict__['ownerElement'] = None
+            if hasattr(n, 'ownerElement'):
+                n.ownerElement = None
             return n
         else:
             raise xml.dom.NotFoundErr()
@@ -659,6 +664,9 @@ class TypeInfo(object):
 _no_type = TypeInfo(None, None)
 
 class Element(Node):
+    __slots__=('ownerDocument', 'parentNode', 'tagName', 'nodeName', 'prefix',
+               'namespaceURI', '_localName', 'childNodes', '_attrs', '_attrsNS',
+               'nextSibling', 'previousSibling')
     nodeType = Node.ELEMENT_NODE
     nodeValue = None
     schemaType = _no_type
@@ -674,10 +682,12 @@ class Element(Node):
 
     def __init__(self, tagName, namespaceURI=EMPTY_NAMESPACE, prefix=None,
                  localName=None):
+        self.parentNode = None
         self.tagName = self.nodeName = tagName
         self.prefix = prefix
         self.namespaceURI = namespaceURI
         self.childNodes = NodeList()
+        self.nextSibling = self.previousSibling = None
 
         self._attrs = {}   # attributes are double-indexed:
         self._attrsNS = {} #    tagName -> Attribute
@@ -688,9 +698,10 @@ class Element(Node):
                            # namespaces.
 
     def _get_localName(self):
-        if 'localName' in self.__dict__:
-            return self.__dict__['localName']
-        return self.tagName.split(":", 1)[-1]
+        try:
+            return self._localName
+        except AttributeError:
+            return self.tagName.split(":", 1)[-1]
 
     def _get_tagName(self):
         return self.tagName
@@ -718,14 +729,11 @@ class Element(Node):
         attr = self.getAttributeNode(attname)
         if attr is None:
             attr = Attr(attname)
-            # for performance
-            d = attr.__dict__
-            d["value"] = d["nodeValue"] = value
-            d["ownerDocument"] = self.ownerDocument
+            attr.value = value # also sets nodeValue
+            attr.ownerDocument = self.ownerDocument
             self.setAttributeNode(attr)
         elif value != attr.value:
-            d = attr.__dict__
-            d["value"] = d["nodeValue"] = value
+            attr.value = value
             if attr.isId:
                 _clear_id_cache(self)
 
@@ -733,23 +741,18 @@ class Element(Node):
         prefix, localname = _nssplit(qualifiedName)
         attr = self.getAttributeNodeNS(namespaceURI, localname)
         if attr is None:
-            # for performance
             attr = Attr(qualifiedName, namespaceURI, localname, prefix)
-            d = attr.__dict__
-            d["prefix"] = prefix
-            d["nodeName"] = qualifiedName
-            d["value"] = d["nodeValue"] = value
-            d["ownerDocument"] = self.ownerDocument
+            attr.value = value
+            attr.ownerDocument = self.ownerDocument
             self.setAttributeNode(attr)
         else:
-            d = attr.__dict__
             if value != attr.value:
-                d["value"] = d["nodeValue"] = value
+                attr.value = value
                 if attr.isId:
                     _clear_id_cache(self)
             if attr.prefix != prefix:
-                d["prefix"] = prefix
-                d["nodeName"] = qualifiedName
+                attr.prefix = prefix
+                attr.nodeName = qualifiedName
 
     def getAttributeNode(self, attrname):
         return self._attrs.get(attrname)
@@ -874,7 +877,7 @@ class Element(Node):
         if _get_containing_entref(self) is not None:
             raise xml.dom.NoModificationAllowedErr()
         if not idAttr._is_id:
-            idAttr.__dict__['_is_id'] = True
+            idAttr._is_id = True
             self._magic_id_nodes += 1
             self.ownerDocument._magic_id_count += 1
             _clear_id_cache(self)
@@ -893,8 +896,7 @@ def _set_attribute_node(element, attr):
     # This creates a circular reference, but Element.unlink()
     # breaks the cycle since the references to the attribute
     # dictionaries are tossed.
-    attr.__dict__['ownerElement'] = element
-
+    attr.ownerElement = element
 
 class Childless:
     """Mixin that makes childless-ness easy to implement and avoids
@@ -938,54 +940,49 @@ class Childless:
 
 class ProcessingInstruction(Childless, Node):
     nodeType = Node.PROCESSING_INSTRUCTION_NODE
+    __slots__ = ('target', 'data')
 
     def __init__(self, target, data):
-        self.target = self.nodeName = target
-        self.data = self.nodeValue = data
+        self.target = target
+        self.data = data
 
-    def _get_data(self):
+    # nodeValue is an alias for data
+    def _get_nodeValue(self):
         return self.data
-    def _set_data(self, value):
-        d = self.__dict__
-        d['data'] = d['nodeValue'] = value
+    def _set_nodeValue(self, value):
+        self.data = data
+    nodeValue = property(_get_nodeValue, _set_nodeValue)
 
-    def _get_target(self):
+    # nodeName is an alias for target
+    def _get_nodeName(self):
         return self.target
-    def _set_target(self, value):
-        d = self.__dict__
-        d['target'] = d['nodeName'] = value
-
-    def __setattr__(self, name, value):
-        if name == "data" or name == "nodeValue":
-            self.__dict__['data'] = self.__dict__['nodeValue'] = value
-        elif name == "target" or name == "nodeName":
-            self.__dict__['target'] = self.__dict__['nodeName'] = value
-        else:
-            self.__dict__[name] = value
+    def _set_nodeName(self, value):
+        self.target = value
+    nodeName = property(_get_nodeName, _set_nodeName)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
 
 
 class CharacterData(Childless, Node):
+    __slots__=('_data', 'ownerDocument','parentNode', 'previousSibling', 'nextSibling')
+
+    def __init__(self):
+        self.ownerDocument = self.parentNode = None
+        self.previousSibling = self.nextSibling = None
+        self._data = ''
+        Node.__init__(self)
+
     def _get_length(self):
         return len(self.data)
     __len__ = _get_length
 
     def _get_data(self):
-        return self.__dict__['data']
+        return self._data
     def _set_data(self, data):
-        d = self.__dict__
-        d['data'] = d['nodeValue'] = data
+        self._data = data
 
-    _get_nodeValue = _get_data
-    _set_nodeValue = _set_data
-
-    def __setattr__(self, name, value):
-        if name == "data" or name == "nodeValue":
-            self.__dict__['data'] = self.__dict__['nodeValue'] = value
-        else:
-            self.__dict__[name] = value
+    data = nodeValue = property(_get_data, _set_data)
 
     def __repr__(self):
         data = self.data
@@ -1042,11 +1039,6 @@ defproperty(CharacterData, "length", doc="Length of the string data.")
 
 
 class Text(CharacterData):
-    # Make sure we don't add an instance __dict__ if we don't already
-    # have one, at least when that's possible:
-    # XXX this does not work, CharacterData is an old-style class
-    # __slots__ = ()
-
     nodeType = Node.TEXT_NODE
     nodeName = "#text"
     attributes = None
@@ -1112,9 +1104,7 @@ class Text(CharacterData):
             else:
                 break
         if content:
-            d = self.__dict__
-            d['data'] = content
-            d['nodeValue'] = content
+            self.data = content
             return self
         else:
             return None
@@ -1160,7 +1150,8 @@ class Comment(CharacterData):
     nodeName = "#comment"
 
     def __init__(self, data):
-        self.data = self.nodeValue = data
+        CharacterData.__init__(self)
+        self._data = data
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         if "--" in self.data:
@@ -1169,11 +1160,6 @@ class Comment(CharacterData):
 
 
 class CDATASection(Text):
-    # Make sure we don't add an instance __dict__ if we don't already
-    # have one, at least when that's possible:
-    # XXX this does not work, Text is an old-style class
-    # __slots__ = ()
-
     nodeType = Node.CDATA_SECTION_NODE
     nodeName = "#cdata-section"
 
@@ -1504,18 +1490,19 @@ def _clear_id_cache(node):
         node.ownerDocument._id_search_stack= None
 
 class Document(Node, DocumentLS):
+    __slots__ = ('_elem_info', 'doctype',
+                 '_id_search_stack', 'childNodes', '_id_cache')
     _child_node_types = (Node.ELEMENT_NODE, Node.PROCESSING_INSTRUCTION_NODE,
                          Node.COMMENT_NODE, Node.DOCUMENT_TYPE_NODE)
 
+    implementation = DOMImplementation()
     nodeType = Node.DOCUMENT_NODE
     nodeName = "#document"
     nodeValue = None
     attributes = None
-    doctype = None
     parentNode = None
     previousSibling = nextSibling = None
 
-    implementation = DOMImplementation()
 
     # Document attributes from Level 3 (WD 9 April 2002)
 
@@ -1530,6 +1517,7 @@ class Document(Node, DocumentLS):
     _magic_id_count = 0
 
     def __init__(self):
+        self.doctype = None
         self.childNodes = NodeList()
         # mapping of (namespaceURI, localName) -> ElementInfo
         #        and tagName -> ElementInfo
@@ -1815,17 +1803,15 @@ class Document(Node, DocumentLS):
                 element.removeAttributeNode(n)
         else:
             element = None
-        # avoid __setattr__
-        d = n.__dict__
-        d['prefix'] = prefix
-        d['localName'] = localName
-        d['namespaceURI'] = namespaceURI
-        d['nodeName'] = name
+        n.prefix = prefix
+        n._localName = localName
+        n.namespaceURI = namespaceURI
+        n.nodeName = name
         if n.nodeType == Node.ELEMENT_NODE:
-            d['tagName'] = name
+            n.tagName = name
         else:
             # attribute node
-            d['name'] = name
+            n.name = name
             if element is not None:
                 element.setAttributeNode(n)
                 if is_id:
