@@ -1554,7 +1554,7 @@ Acknowledgements
 ================
 
 The author would like to thank the following people for offering suggestions,
-corrections and assistance with various drafts of this article: Koray Can, Hye-
-Shik Chang, Michael Dyck, Raymond Hettinger, Brian Hurt, Hamish Lawson, Fredrik
-Lundh, Sean Reifschneider, Sadruddin Rejeb.
+corrections and assistance with various drafts of this article: Koray Can,
+Hye-Shik Chang, Michael Dyck, Raymond Hettinger, Brian Hurt, Hamish Lawson,
+Fredrik Lundh, Sean Reifschneider, Sadruddin Rejeb.
 
