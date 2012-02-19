@@ -186,7 +186,7 @@ class TestAlternateInput(unittest.TestCase):
     class simplecmd2(simplecmd):
 
         def do_EOF(self, args):
-            print('*** Unknown syntax: EOF', file=self.stdout)
+            print >>self.stdout, '*** Unknown syntax: EOF'
             return True
 
 
@@ -203,8 +203,8 @@ class TestAlternateInput(unittest.TestCase):
 
 
     def test_input_reset_at_EOF(self):
-        input = io.StringIO("print test\nprint test2")
-        output = io.StringIO()
+        input = StringIO.StringIO("print test\nprint test2")
+        output = StringIO.StringIO()
         cmd = self.simplecmd2(stdin=input, stdout=output)
         cmd.use_rawinput = False
         cmd.cmdloop()
@@ -212,8 +212,8 @@ class TestAlternateInput(unittest.TestCase):
             ("(Cmd) test\n"
              "(Cmd) test2\n"
              "(Cmd) *** Unknown syntax: EOF\n"))
-        input = io.StringIO("print \n\n")
-        output = io.StringIO()
+        input = StringIO.StringIO("print \n\n")
+        output = StringIO.StringIO()
         cmd.stdin = input
         cmd.stdout = output
         cmd.cmdloop()
