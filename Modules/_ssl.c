@@ -150,6 +150,11 @@ static unsigned int _ssl_locks_count = 0;
 # define OPENSSL_NO_ECDH
 #endif
 
+/* compression support got added to OpenSSL in 0.9.8 */
+#if OPENSSL_VERSION_NUMBER < 0x0090800fL && !defined(OPENSSL_NO_COMP)
+# define OPENSSL_NO_COMP
+#endif
+
 
 typedef struct {
     PyObject_HEAD
