@@ -121,6 +121,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
+  on 32-bit architectures. Initial patch by Philippe Devalkeneer.
+
 - HTMLParser is now able to handle slashes in the start tag.
 
 - Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
