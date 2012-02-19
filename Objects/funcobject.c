@@ -832,10 +832,13 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
 }
 
 static PyObject *
-cm_get___dict__(classmethod *cm, void *closure)
+cm_get___dict__(PyObject *cm, void *closure)
 {
-    Py_INCREF(cm->cm_dict);
-    return cm->cm_dict;
+    PyObject **dictptr = _PyObject_GetDictPtr(cm);
+    if (*dictptr == NULL)
+        *dictptr = PyDict_New();
+    Py_XINCREF(*dictptr);
+    return *dictptr;
 }
 
 static PyGetSetDef cm_getsetlist[] = {
@@ -1018,10 +1021,13 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
 }
 
 static PyObject *
-sm_get___dict__(staticmethod *sm, void *closure)
+sm_get___dict__(PyObject *sm, void *closure)
 {
-    Py_INCREF(sm->sm_dict);
-    return sm->sm_dict;
+    PyObject **dictptr = _PyObject_GetDictPtr(sm);
+    if (*dictptr == NULL)
+        *dictptr = PyDict_New();
+    Py_XINCREF(*dictptr);
+    return *dictptr;
 }
 
 static PyGetSetDef sm_getsetlist[] = {
