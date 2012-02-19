@@ -102,7 +102,8 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_REQUIRED
         ssl.OP_CIPHER_SERVER_PREFERENCE
         ssl.OP_SINGLE_DH_USE
-        ssl.OP_SINGLE_ECDH_USE
+        if ssl.HAS_ECDH:
+            ssl.OP_SINGLE_ECDH_USE
         if ssl.OPENSSL_VERSION_INFO >= (1, 0):
             ssl.OP_NO_COMPRESSION
         self.assertIn(ssl.HAS_SNI, {True, False})
