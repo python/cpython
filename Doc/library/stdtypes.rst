@@ -2378,7 +2378,7 @@ copying.  Memory is generally interpreted as simple bytes.
       bytearray(b'z123fg')
       >>> v[2] = b'spam'
       Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
+        File "<stdin>", line 1, in <module>
       ValueError: cannot modify size of memoryview object
 
    Notice how the size of the memoryview object cannot be changed.
