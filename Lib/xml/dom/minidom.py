@@ -689,13 +689,21 @@ class Element(Node):
         self.childNodes = NodeList()
         self.nextSibling = self.previousSibling = None
 
-        self._attrs = {}   # attributes are double-indexed:
-        self._attrsNS = {} #    tagName -> Attribute
-                           #    URI,localName -> Attribute
-                           # in the future: consider lazy generation
-                           # of attribute objects this is too tricky
-                           # for now because of headaches with
-                           # namespaces.
+        # Attribute dictionaries are lazily created
+        # attributes are double-indexed:
+        #    tagName -> Attribute
+        #    URI,localName -> Attribute
+        # in the future: consider lazy generation
+        # of attribute objects this is too tricky
+        # for now because of headaches with
+        # namespaces.
+        self._attrs = None
+        self._attrsNS = None
+
+    def _ensure_attributes(self):
+        if self._attrs is None:
+            self._attrs = {}
+            self._attrsNS = {}
 
     def _get_localName(self):
         try:
@@ -707,8 +715,9 @@ class Element(Node):
         return self.tagName
 
     def unlink(self):
-        for attr in list(self._attrs.values()):
-            attr.unlink()
+        if self._attrs is not None:
+            for attr in list(self._attrs.values()):
+                attr.unlink()
         self._attrs = None
         self._attrsNS = None
         Node.unlink(self)
@@ -755,14 +764,19 @@ class Element(Node):
                 attr.nodeName = qualifiedName
 
     def getAttributeNode(self, attrname):
+        if self._attrs is None:
+            return None
         return self._attrs.get(attrname)
 
     def getAttributeNodeNS(self, namespaceURI, localName):
+        if self._attrsNS is None:
+            return None
         return self._attrsNS.get((namespaceURI, localName))
 
     def setAttributeNode(self, attr):
         if attr.ownerElement not in (None, self):
             raise xml.dom.InuseAttributeErr("attribute node already owned")
+        self._ensure_attributes()
         old1 = self._attrs.get(attr.name, None)
         if old1 is not None:
             self.removeAttributeNode(old1)
@@ -781,6 +795,8 @@ class Element(Node):
     setAttributeNodeNS = setAttributeNode
 
     def removeAttribute(self, name):
+        if self._attrsNS is None:
+            raise xml.dom.NotFoundErr()
         try:
             attr = self._attrs[name]
         except KeyError:
@@ -788,6 +804,8 @@ class Element(Node):
         self.removeAttributeNode(attr)
 
     def removeAttributeNS(self, namespaceURI, localName):
+        if self._attrsNS is None:
+            raise xml.dom.NotFoundErr()
         try:
             attr = self._attrsNS[(namespaceURI, localName)]
         except KeyError:
@@ -810,9 +828,13 @@ class Element(Node):
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
+        if self._attrs is None:
+            return False
         return name in self._attrs
 
     def hasAttributeNS(self, namespaceURI, localName):
+        if self._attrsNS is None:
+            return False
         return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
@@ -853,6 +875,7 @@ class Element(Node):
             writer.write("/>%s"%(newl))
 
     def _get_attributes(self):
+        self._ensure_attributes()
         return NamedNodeMap(self._attrs, self._attrsNS, self)
 
     def hasAttributes(self):
@@ -890,6 +913,7 @@ defproperty(Element, "localName",
 
 def _set_attribute_node(element, attr):
     _clear_id_cache(element)
+    element._ensure_attributes()
     element._attrs[attr.name] = attr
     element._attrsNS[(attr.namespaceURI, attr.localName)] = attr
 
