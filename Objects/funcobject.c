@@ -889,9 +889,7 @@ sm_traverse(staticmethod *sm, visitproc visit, void *arg)
 static int
 sm_clear(staticmethod *sm)
 {
-    Py_XDECREF(sm->sm_callable);
-    sm->sm_callable = NULL;
-
+    Py_CLEAR(sm->sm_callable);
     return 0;
 }
 
