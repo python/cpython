@@ -760,6 +760,7 @@ class Namespaces:
             del self._ns_ordered_prefixes[:]
 
         if attributes:
+            node._ensure_attributes()
             _attrs = node._attrs
             _attrsNS = node._attrsNS
             for i in range(0, len(attributes), 2):
