@@ -102,44 +102,53 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_b64decode(self):
         eq = self.assertEqual
-        eq(base64.b64decode(b"d3d3LnB5dGhvbi5vcmc="), b"www.python.org")
-        eq(base64.b64decode(b'AA=='), b'\x00')
-        eq(base64.b64decode(b"YQ=="), b"a")
-        eq(base64.b64decode(b"YWI="), b"ab")
-        eq(base64.b64decode(b"YWJj"), b"abc")
-        eq(base64.b64decode(b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
-                            b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
-                            b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ=="),
-           b"abcdefghijklmnopqrstuvwxyz"
-           b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-           b"0123456789!@#0^&*();:<>,. []{}")
-        eq(base64.b64decode(b''), b'')
+
+        tests = {b"d3d3LnB5dGhvbi5vcmc=": b"www.python.org",
+                 b'AA==': b'\x00',
+                 b"YQ==": b"a",
+                 b"YWI=": b"ab",
+                 b"YWJj": b"abc",
+                 b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
+                 b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
+                 b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==":
+
+                 b"abcdefghijklmnopqrstuvwxyz"
+                 b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                 b"0123456789!@#0^&*();:<>,. []{}",
+                 b'': b'',
+                 }
+        for data, res in tests.items():
+            eq(base64.b64decode(data), res)
+            eq(base64.b64decode(data.decode('ascii')), res)
+
         # Test with arbitrary alternative characters
-        eq(base64.b64decode(b'01a*b$cd', altchars=b'*$'), b'\xd3V\xbeo\xf7\x1d')
-        # Check if passing a str object raises an error
-        self.assertRaises(TypeError, base64.b64decode, "")
-        self.assertRaises(TypeError, base64.b64decode, b"", altchars="")
+        tests_altchars = {(b'01a*b$cd', b'*$'): b'\xd3V\xbeo\xf7\x1d',
+                          }
+        for (data, altchars), res in tests_altchars.items():
+            data_str = data.decode('ascii')
+            altchars_str = altchars.decode('ascii')
+
+            eq(base64.b64decode(data, altchars=altchars), res)
+            eq(base64.b64decode(data_str, altchars=altchars), res)
+            eq(base64.b64decode(data, altchars=altchars_str), res)
+            eq(base64.b64decode(data_str, altchars=altchars_str), res)
+
         # Test standard alphabet
-        eq(base64.standard_b64decode(b"d3d3LnB5dGhvbi5vcmc="), b"www.python.org")
-        eq(base64.standard_b64decode(b"YQ=="), b"a")
-        eq(base64.standard_b64decode(b"YWI="), b"ab")
-        eq(base64.standard_b64decode(b"YWJj"), b"abc")
-        eq(base64.standard_b64decode(b""), b"")
-        eq(base64.standard_b64decode(b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
-                                     b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0NT"
-                                     b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ=="),
-           b"abcdefghijklmnopqrstuvwxyz"
-           b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-           b"0123456789!@#0^&*();:<>,. []{}")
-        # Check if passing a str object raises an error
-        self.assertRaises(TypeError, base64.standard_b64decode, "")
-        self.assertRaises(TypeError, base64.standard_b64decode, b"", altchars="")
+        for data, res in tests.items():
+            eq(base64.standard_b64decode(data), res)
+            eq(base64.standard_b64decode(data.decode('ascii')), res)
+
         # Test with 'URL safe' alternative characters
-        eq(base64.urlsafe_b64decode(b'01a-b_cd'), b'\xd3V\xbeo\xf7\x1d')
-        self.assertRaises(TypeError, base64.urlsafe_b64decode, "")
+        tests_urlsafe = {b'01a-b_cd': b'\xd3V\xbeo\xf7\x1d',
+                         b'': b'',
+                         }
+        for data, res in tests_urlsafe.items():
+            eq(base64.urlsafe_b64decode(data), res)
+            eq(base64.urlsafe_b64decode(data.decode('ascii')), res)
 
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
+        self.assertRaises(binascii.Error, base64.b64decode, 'abc')
 
     def test_b64decode_invalid_chars(self):
         # issue 1466065: Test some invalid characters.
@@ -154,8 +163,10 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'YWJj\nYWI=', b'abcab'))
         for bstr, res in tests:
             self.assertEqual(base64.b64decode(bstr), res)
+            self.assertEqual(base64.b64decode(bstr.decode('ascii')), res)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr, validate=True)
+                base64.b64decode(bstr.decode('ascii'), validate=True)
 
     def test_b32encode(self):
         eq = self.assertEqual
@@ -170,40 +181,62 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_b32decode(self):
         eq = self.assertEqual
-        eq(base64.b32decode(b''), b'')
-        eq(base64.b32decode(b'AA======'), b'\x00')
-        eq(base64.b32decode(b'ME======'), b'a')
-        eq(base64.b32decode(b'MFRA===='), b'ab')
-        eq(base64.b32decode(b'MFRGG==='), b'abc')
-        eq(base64.b32decode(b'MFRGGZA='), b'abcd')
-        eq(base64.b32decode(b'MFRGGZDF'), b'abcde')
-        self.assertRaises(TypeError, base64.b32decode, "")
+        tests = {b'': b'',
+                 b'AA======': b'\x00',
+                 b'ME======': b'a',
+                 b'MFRA====': b'ab',
+                 b'MFRGG===': b'abc',
+                 b'MFRGGZA=': b'abcd',
+                 b'MFRGGZDF': b'abcde',
+                 }
+        for data, res in tests.items():
+            eq(base64.b32decode(data), res)
+            eq(base64.b32decode(data.decode('ascii')), res)
 
     def test_b32decode_casefold(self):
         eq = self.assertEqual
-        eq(base64.b32decode(b'', True), b'')
-        eq(base64.b32decode(b'ME======', True), b'a')
-        eq(base64.b32decode(b'MFRA====', True), b'ab')
-        eq(base64.b32decode(b'MFRGG===', True), b'abc')
-        eq(base64.b32decode(b'MFRGGZA=', True), b'abcd')
-        eq(base64.b32decode(b'MFRGGZDF', True), b'abcde')
-        # Lower cases
-        eq(base64.b32decode(b'me======', True), b'a')
-        eq(base64.b32decode(b'mfra====', True), b'ab')
-        eq(base64.b32decode(b'mfrgg===', True), b'abc')
-        eq(base64.b32decode(b'mfrggza=', True), b'abcd')
-        eq(base64.b32decode(b'mfrggzdf', True), b'abcde')
-        # Expected exceptions
+        tests = {b'': b'',
+                 b'ME======': b'a',
+                 b'MFRA====': b'ab',
+                 b'MFRGG===': b'abc',
+                 b'MFRGGZA=': b'abcd',
+                 b'MFRGGZDF': b'abcde',
+                 # Lower cases
+                 b'me======': b'a',
+                 b'mfra====': b'ab',
+                 b'mfrgg===': b'abc',
+                 b'mfrggza=': b'abcd',
+                 b'mfrggzdf': b'abcde',
+                 }
+
+        for data, res in tests.items():
+            eq(base64.b32decode(data, True), res)
+            eq(base64.b32decode(data.decode('ascii'), True), res)
+
         self.assertRaises(TypeError, base64.b32decode, b'me======')
+        self.assertRaises(TypeError, base64.b32decode, 'me======')
+
         # Mapping zero and one
         eq(base64.b32decode(b'MLO23456'), b'b\xdd\xad\xf3\xbe')
-        eq(base64.b32decode(b'M1023456', map01=b'L'), b'b\xdd\xad\xf3\xbe')
-        eq(base64.b32decode(b'M1023456', map01=b'I'), b'b\x1d\xad\xf3\xbe')
-        self.assertRaises(TypeError, base64.b32decode, b"", map01="")
+        eq(base64.b32decode('MLO23456'), b'b\xdd\xad\xf3\xbe')
+
+        map_tests = {(b'M1023456', b'L'): b'b\xdd\xad\xf3\xbe',
+                     (b'M1023456', b'I'): b'b\x1d\xad\xf3\xbe',
+                     }
+        for (data, map01), res in map_tests.items():
+            data_str = data.decode('ascii')
+            map01_str = map01.decode('ascii')
+
+            eq(base64.b32decode(data, map01=map01), res)
+            eq(base64.b32decode(data_str, map01=map01), res)
+            eq(base64.b32decode(data, map01=map01_str), res)
+            eq(base64.b32decode(data_str, map01=map01_str), res)
 
     def test_b32decode_error(self):
-        self.assertRaises(binascii.Error, base64.b32decode, b'abc')
-        self.assertRaises(binascii.Error, base64.b32decode, b'ABCDEF==')
+        for data in [b'abc', b'ABCDEF==']:
+            with self.assertRaises(binascii.Error):
+                base64.b32decode(data)
+                base64.b32decode(data.decode('ascii'))
 
     def test_b16encode(self):
         eq = self.assertEqual
@@ -214,12 +247,24 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b16decode(self):
         eq = self.assertEqual
         eq(base64.b16decode(b'0102ABCDEF'), b'\x01\x02\xab\xcd\xef')
+        eq(base64.b16decode('0102ABCDEF'), b'\x01\x02\xab\xcd\xef')
         eq(base64.b16decode(b'00'), b'\x00')
+        eq(base64.b16decode('00'), b'\x00')
         # Lower case is not allowed without a flag
         self.assertRaises(binascii.Error, base64.b16decode, b'0102abcdef')
+        self.assertRaises(binascii.Error, base64.b16decode, '0102abcdef')
         # Case fold
         eq(base64.b16decode(b'0102abcdef', True), b'\x01\x02\xab\xcd\xef')
-        self.assertRaises(TypeError, base64.b16decode, "")
+        eq(base64.b16decode('0102abcdef', True), b'\x01\x02\xab\xcd\xef')
+
+    def test_decode_nonascii_str(self):
+        decode_funcs = (base64.b64decode,
+                        base64.standard_b64decode,
+                        base64.urlsafe_b64decode,
+                        base64.b32decode,
+                        base64.b16decode)
+        for f in decode_funcs:
+            self.assertRaises(ValueError, f, 'with non-ascii \xcb')
 
     def test_ErrorHeritage(self):
         self.assertTrue(issubclass(binascii.Error, ValueError))
