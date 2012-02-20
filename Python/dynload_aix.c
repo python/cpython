@@ -28,7 +28,6 @@ typedef struct Module {
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
     {".so", "rb", C_EXTENSION},
-    {"module.so", "rb", C_EXTENSION},
     {0, 0}
 };
 

@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14040: Remove rarely used file name suffixes for C extensions
+  (under POSIX mainly).
+
 - Issue #14051: Allow arbitrary attributes to be set of classmethod and
   staticmethod.
 
@@ -468,6 +471,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #13641: Decoding functions in the base64 module now accept ASCII-only
+  unicode strings.  Patch by Catalin Iacob.
 
 - Issue #14043: Speed up importlib's _FileFinder by at least 8x, and add a
   new importlib.invalidate_caches() function.

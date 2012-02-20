@@ -29,6 +29,16 @@ __all__ = [
 
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
+def _bytes_from_decode_data(s):
+    if isinstance(s, str):
+        try:
+            return s.encode('ascii')
+        except UnicodeEncodeError:
+            raise ValueError('string argument should contain only ASCII characters')
+    elif isinstance(s, bytes_types):
+        return s
+    else:
+        raise TypeError("argument should be bytes or ASCII string, not %s" % s.__class__.__name__)
 
 def _translate(s, altchars):
     if not isinstance(s, bytes_types):
@@ -79,12 +89,9 @@ def b64decode(s, altchars=None, validate=False):
     discarded prior to the padding check.  If validate is True,
     non-base64-alphabet characters in the input result in a binascii.Error.
     """
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+    s = _bytes_from_decode_data(s)
     if altchars is not None:
-        if not isinstance(altchars, bytes_types):
-            raise TypeError("expected bytes, not %s"
-                            % altchars.__class__.__name__)
+        altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = _translate(s, {chr(altchars[0]): b'+', chr(altchars[1]): b'/'})
     if validate and not re.match(b'^[A-Za-z0-9+/]*={0,2}$', s):
@@ -211,8 +218,7 @@ def b32decode(s, casefold=False, map01=None):
     the input is incorrectly padded or if there are non-alphabet
     characters present in the input.
     """
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+    s = _bytes_from_decode_data(s)
     quanta, leftover = divmod(len(s), 8)
     if leftover:
         raise binascii.Error('Incorrect padding')
@@ -220,8 +226,7 @@ def b32decode(s, casefold=False, map01=None):
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
     if map01 is not None:
-        if not isinstance(map01, bytes_types):
-            raise TypeError("expected bytes, not %s" % map01.__class__.__name__)
+        map01 = _bytes_from_decode_data(map01)
         assert len(map01) == 1, repr(map01)
         s = _translate(s, {b'0': b'O', b'1': map01})
     if casefold:
@@ -292,8 +297,7 @@ def b16decode(s, casefold=False):
     s were incorrectly padded or if there are non-alphabet characters
     present in the string.
     """
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+    s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
     if re.search(b'[^0-9A-F]', s):
