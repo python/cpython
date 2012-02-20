@@ -11219,6 +11219,14 @@ unicode_hash(PyObject *self)
     if (PyUnicode_READY(self) == -1)
         return -1;
     len = PyUnicode_GET_LENGTH(self);
+    /*
+      We make the hash of the empty string be 0, rather than using
+      (prefix ^ suffix), since this slightly obfuscates the hash secret
+    */
+    if (len == 0) {
+        _PyUnicode_HASH(self) = 0;
+        return 0;
+    }
 
     /* The hash function as a macro, gets expanded three times below. */
 #define HASH(P)                                            \
