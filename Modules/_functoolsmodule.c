@@ -155,44 +155,8 @@ static PyMemberDef partial_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyObject *
-partial_get_dict(partialobject *pto)
-{
-    if (pto->dict == NULL) {
-        pto->dict = PyDict_New();
-        if (pto->dict == NULL)
-            return NULL;
-    }
-    Py_INCREF(pto->dict);
-    return pto->dict;
-}
-
-static int
-partial_set_dict(partialobject *pto, PyObject *value)
-{
-    PyObject *tmp;
-
-    /* It is illegal to del p.__dict__ */
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "a partial object's dictionary may not be deleted");
-        return -1;
-    }
-    /* Can only set __dict__ to a dictionary */
-    if (!PyDict_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "setting partial object's dictionary to a non-dict");
-        return -1;
-    }
-    tmp = pto->dict;
-    Py_INCREF(value);
-    pto->dict = value;
-    Py_XDECREF(tmp);
-    return 0;
-}
-
 static PyGetSetDef partial_getsetlist[] = {
-    {"__dict__", (getter)partial_get_dict, (setter)partial_set_dict},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {NULL} /* Sentinel */
 };
 

@@ -177,36 +177,6 @@ static PyMethodDef BaseException_methods[] = {
    {NULL, NULL, 0, NULL},
 };
 
-
-static PyObject *
-BaseException_get_dict(PyBaseExceptionObject *self)
-{
-    if (self->dict == NULL) {
-        self->dict = PyDict_New();
-        if (!self->dict)
-            return NULL;
-    }
-    Py_INCREF(self->dict);
-    return self->dict;
-}
-
-static int
-BaseException_set_dict(PyBaseExceptionObject *self, PyObject *val)
-{
-    if (val == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__dict__ may not be deleted");
-        return -1;
-    }
-    if (!PyDict_Check(val)) {
-        PyErr_SetString(PyExc_TypeError, "__dict__ must be a dictionary");
-        return -1;
-    }
-    Py_CLEAR(self->dict);
-    Py_INCREF(val);
-    self->dict = val;
-    return 0;
-}
-
 static PyObject *
 BaseException_get_args(PyBaseExceptionObject *self)
 {
@@ -320,7 +290,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg) {
 
 
 static PyGetSetDef BaseException_getset[] = {
-    {"__dict__", (getter)BaseException_get_dict, (setter)BaseException_set_dict},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", (getter)BaseException_get_context,
