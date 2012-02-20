@@ -469,6 +469,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14043: Speed up importlib's _FileFinder by at least 8x, and add a
+  new importlib.invalidate_caches() function.
+
 - Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
   SimpleXMLRPCServer upon malformed POST request.
 

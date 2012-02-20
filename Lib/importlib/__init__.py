@@ -18,7 +18,7 @@ References on import:
           http://www.python.org/dev/peps/pep-0328
 
 """
-__all__ = ['__import__', 'import_module']
+__all__ = ['__import__', 'import_module', 'invalidate_caches']
 
 from . import _bootstrap
 
@@ -37,7 +37,7 @@ _bootstrap._setup(sys, imp)
 
 # Public API #########################################################
 
-from ._bootstrap import __import__
+from ._bootstrap import __import__, invalidate_caches
 
 
 def import_module(name, package=None):
