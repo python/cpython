@@ -106,11 +106,15 @@ Object Protocol
    A generic implementation for the getter of a ``__dict__`` descriptor. It
    creates the dictionary if necessary.
 
+   .. versionadded:: 3.3
+
 
 .. c:function:: int PyType_GenericSetDict(PyObject *o, void *context)
 
    A generic implementation for the setter of a ``__dict__`` descriptor. This
    implementation does not allow the dictionary to be deleted.
+
+   .. versionadded:: 3.3
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
