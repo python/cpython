@@ -496,11 +496,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         except ValueError:
             print("Couldn't find starting test (%s), using all tests" % start)
     if randomize:
-        hashseed = os.getenv('PYTHONHASHSEED')
-        if not hashseed:
-            os.environ['PYTHONHASHSEED'] = str(random_seed)
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-            return
         random.seed(random_seed)
         print("Using random seed", random_seed)
         random.shuffle(selected)
