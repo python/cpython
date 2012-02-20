@@ -4300,8 +4300,18 @@ class DictProxyTests(unittest.TestCase):
 
     def test_repr(self):
         # Testing dict_proxy.__repr__
+        def sorted_dict_repr(repr_):
+            # Given the repr of a dict, sort the keys
+            assert repr_.startswith('{')
+            assert repr_.endswith('}')
+            kvs = repr_[1:-1].split(', ')
+            return '{' + ', '.join(sorted(kvs)) + '}'
         dict_ = {k: v for k, v in self.C.__dict__.items()}
-        self.assertEqual(repr(self.C.__dict__), 'dict_proxy({!r})'.format(dict_))
+        repr_ = repr(self.C.__dict__)
+        self.assert_(repr_.startswith('dict_proxy('))
+        self.assert_(repr_.endswith(')'))
+        self.assertEqual(sorted_dict_repr(repr_[len('dict_proxy('):-len(')')]),
+                         sorted_dict_repr('{!r}'.format(dict_)))
 
 
 class PTypesLongInitTest(unittest.TestCase):

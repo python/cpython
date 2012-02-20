@@ -734,6 +734,17 @@ class TestBasicOps(unittest.TestCase):
         if self.repr is not None:
             self.assertEqual(repr(self.set), self.repr)
 
+    def check_repr_against_values(self):
+        text = repr(self.set)
+        self.assertTrue(text.startswith('{'))
+        self.assertTrue(text.endswith('}'))
+
+        result = text[1:-1].split(', ')
+        result.sort()
+        sorted_repr_values = [repr(value) for value in self.values]
+        sorted_repr_values.sort()
+        self.assertEqual(result, sorted_repr_values)
+
     def test_print(self):
         try:
             fo = open(support.TESTFN, "w")
@@ -892,7 +903,9 @@ class TestBasicOpsString(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 3
-        self.repr   = "{'a', 'c', 'b'}"
+
+    def test_repr(self):
+        self.check_repr_against_values()
 
 #------------------------------------------------------------------------------
 
@@ -903,7 +916,9 @@ class TestBasicOpsBytes(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 3
-        self.repr   = "{b'a', b'c', b'b'}"
+
+    def test_repr(self):
+        self.check_repr_against_values()
 
 #------------------------------------------------------------------------------
 
@@ -916,10 +931,12 @@ class TestBasicOpsMixedStringBytes(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 4
-        self.repr   = "{'a', b'a', 'b', b'b'}"
 
     def tearDown(self):
         warnings.filters = self.warning_filters
+
+    def test_repr(self):
+        self.check_repr_against_values()
 
 #==============================================================================
 

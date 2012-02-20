@@ -7344,11 +7344,21 @@ unicode_hash(PyUnicodeObject *self)
     if (self->hash != -1)
         return self->hash;
     len = Py_SIZE(self);
+    /*
+      We make the hash of the empty string be 0, rather than using
+      (prefix ^ suffix), since this slightly obfuscates the hash secret
+    */
+    if (len == 0) {
+        self->hash = 0;
+        return 0;
+    }
     p = self->str;
-    x = *p << 7;
+    x = _Py_HashSecret.prefix;
+    x ^= *p << 7;
     while (--len >= 0)
         x = (1000003*x) ^ *p++;
     x ^= Py_SIZE(self);
+    x ^= _Py_HashSecret.suffix;
     if (x == -1)
         x = -2;
     self->hash = x;

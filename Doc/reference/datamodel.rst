@@ -1265,6 +1265,8 @@ Basic customization
    inheritance of :meth:`__hash__` will be blocked, just as if :attr:`__hash__`
    had been explicitly set to :const:`None`.
 
+   See also the :option:`-R` command-line option.
+
 
 .. method:: object.__bool__(self)
 

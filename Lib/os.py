@@ -611,23 +611,6 @@ try:
 except NameError: # statvfs_result may not exist
     pass
 
-if not _exists("urandom"):
-    def urandom(n):
-        """urandom(n) -> str
-
-        Return a string of n random bytes suitable for cryptographic use.
-
-        """
-        try:
-            _urandomfd = open("/dev/urandom", O_RDONLY)
-        except (OSError, IOError):
-            raise NotImplementedError("/dev/urandom (or equivalent) not found")
-        bs = b""
-        while len(bs) < n:
-            bs += read(_urandomfd, n - len(bs))
-        close(_urandomfd)
-        return bs
-
 # Supply os.popen()
 def popen(cmd, mode="r", buffering=-1):
     if not isinstance(cmd, str):

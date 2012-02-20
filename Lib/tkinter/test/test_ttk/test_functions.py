@@ -143,7 +143,7 @@ class InternalFunctionsTest(unittest.TestCase):
             ('a', 'b', 'c')), ("test {a b} c", ()))
         # state spec and options
         self.assertEqual(ttk._format_elemcreate('image', False, 'test',
-            ('a', 'b'), a='x', b='y'), ("test a b", ("-a", "x", "-b", "y")))
+            ('a', 'b'), a='x'), ("test a b", ("-a", "x")))
         # format returned values as a tcl script
         # state spec with multiple states and an option with a multivalue
         self.assertEqual(ttk._format_elemcreate('image', True, 'test',

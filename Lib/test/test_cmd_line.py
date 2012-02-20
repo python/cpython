@@ -4,7 +4,6 @@
 
 import os
 import test.support, unittest
-import os
 import sys
 import subprocess
 
@@ -190,6 +189,22 @@ sys.stdout.buffer.write(path)"""
             self.assertTrue(path1.encode('ascii') in stdout)
             self.assertTrue(path2.encode('ascii') in stdout)
 
+    def test_hash_randomization(self):
+        # Verify that -R enables hash randomization:
+        self.verify_valid_flag('-R')
+        hashes = []
+        for i in range(2):
+            code = 'print(hash("spam"))'
+            data, rc = self.start_python_and_exit_code('-R', '-c', code)
+            self.assertEqual(rc, 0)
+            hashes.append(data)
+        self.assertNotEqual(hashes[0], hashes[1])
+
+        # Verify that sys.flags contains hash_randomization
+        code = 'import sys; print("random is", sys.flags.hash_randomization)'
+        data, rc = self.start_python_and_exit_code('-R', '-c', code)
+        self.assertEqual(rc, 0)
+        self.assertIn(b'random is 1', data)
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
