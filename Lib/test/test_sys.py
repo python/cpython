@@ -742,9 +742,9 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            check(foo, size(h + 'P'))
+            check(foo, size(h + 'PP'))
             # classmethod
-            check(bar, size(h + 'P'))
+            check(bar, size(h + 'PP'))
         # generator
         def get_gen(): yield 1
         check(get_gen(), size(h + 'Pi2P'))
