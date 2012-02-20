@@ -86,6 +86,14 @@ Functions
     that was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
     top-level package or module (e.g. ``pkg``).
 
+.. function:: invalidate_caches()
+
+   Invalidate importlib's internal caches.  Calling this function may be
+   needed if some modules are installed while your program is running and
+   you expect the program to notice the changes.
+
+   .. versionadded:: 3.3
+
 
 :mod:`importlib.abc` -- Abstract base classes related to import
 ---------------------------------------------------------------

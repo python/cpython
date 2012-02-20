@@ -21,31 +21,16 @@ work. One should use importlib as the public-facing version of this module.
 
 CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
-def _case_insensitive_ok(directory, check):
-    """Check if the directory contains something matching 'check' exists in the
-    directory.
 
-    If PYTHONCASEOK is a defined environment variable then skip the
-    case-sensitivity check.
-
-    """
-    if b'PYTHONCASEOK' not in _os.environ:
-        if not directory:
-            directory = '.'
-        return check in _os.listdir(directory)
+def _relax_case():
+    """True if filenames must be checked case-insensitively."""
+    if any(map(sys.platform.startswith, CASE_INSENSITIVE_PLATFORMS)):
+        def _relax_case():
+            return b'PYTHONCASEOK' in _os.environ
     else:
-        return True
-
-def _case_sensitive_ok(directory, check):
-    """Under case-sensitive filesystems always assume the case matches.
-
-    Since other code does the file existence check, that subsumes a
-    case-sensitivity check.
-
-    """
-    return True
-
-_case_ok = None
+        def _relax_case():
+            return False
+    return _relax_case
 
 
 # TODO: Expose from marshal
@@ -171,6 +156,18 @@ def _wrap(new, old):
 code_type = type(_wrap.__code__)
 
 # Finder/loader utility code ##################################################
+
+_cache_refresh = 0
+
+def invalidate_caches():
+    """Invalidate importlib's internal caches.
+
+    Calling this function may be needed if some modules are installed while
+    your program is running and you expect the program to notice the changes.
+    """
+    global _cache_refresh
+    _cache_refresh += 1
+
 
 def set_package(fxn):
     """Set __package__ on the returned module."""
@@ -708,7 +705,7 @@ class PathFinder:
 
         """
         if path == '':
-            path = _os.getcwd()
+            path = '.'
         try:
             finder = sys.path_importer_cache[path]
         except KeyError:
@@ -760,28 +757,54 @@ class _FileFinder:
                                 for suffix in detail.suffixes)
         self.packages = packages
         self.modules = modules
-        self.path = path
+        # Base (directory) path
+        self.path = path or '.'
+        self._path_mtime = -1
+        self._path_cache = set()
+        self._cache_refresh = 0
 
     def find_module(self, fullname):
         """Try to find a loader for the specified module."""
         tail_module = fullname.rpartition('.')[2]
-        base_path = _path_join(self.path, tail_module)
-        if _path_isdir(base_path) and _case_ok(self.path, tail_module):
-            for suffix, loader in self.packages:
-                init_filename = '__init__' + suffix
-                full_path = _path_join(base_path, init_filename)
-                if (_path_isfile(full_path) and
-                        _case_ok(base_path, init_filename)):
-                    return loader(fullname, full_path)
-            else:
-                msg = "Not importing directory {}: missing __init__"
-                _warnings.warn(msg.format(base_path), ImportWarning)
+        if _relax_case():
+            tail_module = tail_module.lower()
+        try:
+            mtime = _os.stat(self.path).st_mtime
+        except OSError:
+            mtime = -1
+        if mtime != self._path_mtime or _cache_refresh != self._cache_refresh:
+            self._fill_cache()
+            self._path_mtime = mtime
+            self._cache_refresh = _cache_refresh
+        cache = self._path_cache
+        if tail_module in cache:
+            base_path = _path_join(self.path, tail_module)
+            if _path_isdir(base_path):
+                for suffix, loader in self.packages:
+                    init_filename = '__init__' + suffix
+                    full_path = _path_join(base_path, init_filename)
+                    if _path_isfile(full_path):
+                        return loader(fullname, full_path)
+                else:
+                    msg = "Not importing directory {}: missing __init__"
+                    _warnings.warn(msg.format(base_path), ImportWarning)
         for suffix, loader in self.modules:
             mod_filename = tail_module + suffix
-            full_path = _path_join(self.path, mod_filename)
-            if _path_isfile(full_path) and _case_ok(self.path, mod_filename):
-                return loader(fullname, full_path)
+            if mod_filename in cache:
+                full_path = _path_join(self.path, mod_filename)
+                if _path_isfile(full_path):
+                    return loader(fullname, full_path)
         return None
+
+    def _fill_cache(self):
+        """Fill the cache of potential modules and packages for this directory."""
+        path = self.path
+        contents = _os.listdir(path)
+        if _relax_case():
+            self._path_cache = set(fn.lower() for fn in contents)
+        else:
+            self._path_cache = set(contents)
+
 
 class _SourceFinderDetails:
 
@@ -1060,7 +1083,7 @@ def _setup(sys_module, imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global _case_ok, imp, sys
+    global imp, sys
     imp = imp_module
     sys = sys_module
 
@@ -1093,12 +1116,8 @@ def _setup(sys_module, imp_module):
         raise ImportError('importlib requires posix or nt')
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
-
-    if any(sys_module.platform.startswith(x)
-            for x in CASE_INSENSITIVE_PLATFORMS):
-        _case_ok = _case_insensitive_ok
-    else:
-        _case_ok = _case_sensitive_ok
+    # Constants
+    setattr(self_module, '_relax_case', _relax_case())
 
 
 def _install(sys_module, imp_module):
