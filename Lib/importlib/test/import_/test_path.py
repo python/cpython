@@ -78,11 +78,11 @@ class FinderTests(unittest.TestCase):
         path = ''
         module = '<test module>'
         importer = util.mock_modules(module)
-        hook = import_util.mock_path_hook(os.getcwd(), importer=importer)
+        hook = import_util.mock_path_hook(os.curdir, importer=importer)
         with util.import_state(path=[path], path_hooks=[hook]):
             loader = machinery.PathFinder.find_module(module)
             self.assertIs(loader, importer)
-            self.assertIn(os.getcwd(), sys.path_importer_cache)
+            self.assertIn(os.curdir, sys.path_importer_cache)
 
 
 class DefaultPathFinderTests(unittest.TestCase):

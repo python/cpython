@@ -6,6 +6,7 @@
 import sys
 import os
 import shutil
+import importlib
 import unittest
 
 from test.support import run_unittest, create_empty_file
@@ -212,6 +213,7 @@ class LongReprTest(unittest.TestCase):
         # Remember where we are
         self.here = os.getcwd()
         sys.path.insert(0, self.here)
+        importlib.invalidate_caches()
 
     def tearDown(self):
         actions = []

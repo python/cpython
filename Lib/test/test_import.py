@@ -2,6 +2,7 @@ import builtins
 import imp
 from importlib.test.import_ import test_relative_imports
 from importlib.test.import_ import util as importlib_util
+import importlib
 import marshal
 import os
 import platform
@@ -34,6 +35,7 @@ class ImportTests(unittest.TestCase):
 
     def setUp(self):
         remove_files(TESTFN)
+        importlib.invalidate_caches()
 
     def tearDown(self):
         unload(TESTFN)
@@ -107,6 +109,7 @@ class ImportTests(unittest.TestCase):
                 create_empty_file(fname)
                 fn = imp.cache_from_source(fname)
                 unlink(fn)
+                importlib.invalidate_caches()
                 __import__(TESTFN)
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
@@ -260,6 +263,7 @@ class ImportTests(unittest.TestCase):
             os.remove(source)
             del sys.modules[TESTFN]
             make_legacy_pyc(source)
+            importlib.invalidate_caches()
             mod = __import__(TESTFN)
             base, ext = os.path.splitext(mod.__file__)
             self.assertIn(ext, ('.pyc', '.pyo'))
@@ -358,6 +362,7 @@ func_filename = func.__code__.co_filename
         with open(self.file_name, "w") as f:
             f.write(self.module_source)
         sys.path.insert(0, self.dir_name)
+        importlib.invalidate_caches()
 
     def tearDown(self):
         sys.path[:] = self.sys_path
@@ -552,6 +557,7 @@ class PycacheTests(unittest.TestCase):
         with open(self.source, 'w') as fp:
             print('# This is a test file written by test_import.py', file=fp)
         sys.path.insert(0, os.curdir)
+        importlib.invalidate_caches()
 
     def tearDown(self):
         assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
@@ -599,6 +605,7 @@ class PycacheTests(unittest.TestCase):
         pyc_file = make_legacy_pyc(self.source)
         os.remove(self.source)
         unload(TESTFN)
+        importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__file__,
                          os.path.join(os.curdir, os.path.relpath(pyc_file)))
@@ -619,6 +626,7 @@ class PycacheTests(unittest.TestCase):
         pyc_file = make_legacy_pyc(self.source)
         os.remove(self.source)
         unload(TESTFN)
+        importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__cached__,
                          os.path.join(os.curdir, os.path.relpath(pyc_file)))
