@@ -517,6 +517,12 @@ PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
 #endif
 
+typedef struct {
+    Py_hash_t prefix;
+    Py_hash_t suffix;
+} _Py_HashSecret_t;
+PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
+
 /* Helper for passing objects to printf and the like */
 #define PyObject_REPR(obj) _PyUnicode_AsString(PyObject_Repr(obj))
 

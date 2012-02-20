@@ -14,7 +14,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
     def _reference(self):
         """Return a dictionary of values which are invariant by storage
         in the object under test."""
-        return {1:2, "key1":"value1", "key2":(1,2,3)}
+        return {"1": "2", "key1":"value1", "key2":(1,2,3)}
     def _empty_mapping(self):
         """Return an empty mapping object"""
         return self.type2test()
