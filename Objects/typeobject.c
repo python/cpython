@@ -1759,8 +1759,6 @@ raise_dict_descr_error(PyObject *obj)
 static PyObject *
 subtype_dict(PyObject *obj, void *context)
 {
-    PyObject **dictptr;
-    PyObject *dict;
     PyTypeObject *base;
 
     base = get_builtin_base_with_dict(Py_TYPE(obj));
@@ -1778,25 +1776,13 @@ subtype_dict(PyObject *obj, void *context)
         }
         return func(descr, obj, (PyObject *)(Py_TYPE(obj)));
     }
-
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return NULL;
-    }
-    dict = *dictptr;
-    if (dict == NULL)
-        *dictptr = dict = PyDict_New();
-    Py_XINCREF(dict);
-    return dict;
+    return PyObject_GenericGetDict(obj, context);
 }
 
 static int
 subtype_setdict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject **dictptr;
-    PyObject *dict;
+    PyObject *dict, **dictptr;
     PyTypeObject *base;
 
     base = get_builtin_base_with_dict(Py_TYPE(obj));
@@ -1814,14 +1800,14 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         }
         return func(descr, obj, value);
     }
-
+    /* Almost like PyObject_GenericSetDict, but allow __dict__ to be deleted. */
     dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "This object has no __dict__");
         return -1;
     }
-    if (value != NULL && !PyDict_Check(value)) {
+    if (!PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);

@@ -77,7 +77,6 @@ Type Objects
 
    XXX: Document.
 
-
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
    Finalize a type object.  This should be called on all type objects to finish
