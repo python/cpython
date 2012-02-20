@@ -22,12 +22,13 @@ work. One should use importlib as the public-facing version of this module.
 CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
 
-def _relax_case():
-    """True if filenames must be checked case-insensitively."""
+def _make_relax_case():
     if any(map(sys.platform.startswith, CASE_INSENSITIVE_PLATFORMS)):
+        """True if filenames must be checked case-insensitively."""
         def _relax_case():
             return b'PYTHONCASEOK' in _os.environ
     else:
+        """True if filenames must be checked case-insensitively."""
         def _relax_case():
             return False
     return _relax_case
@@ -1117,7 +1118,7 @@ def _setup(sys_module, imp_module):
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     # Constants
-    setattr(self_module, '_relax_case', _relax_case())
+    setattr(self_module, '_relax_case', _make_relax_case())
 
 
 def _install(sys_module, imp_module):
