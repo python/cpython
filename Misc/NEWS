@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14040: Remove rarely used file name suffixes for C extensions
+  (under POSIX mainly).
+
 - Issue #14051: Allow arbitrary attributes to be set of classmethod and
   staticmethod.
 

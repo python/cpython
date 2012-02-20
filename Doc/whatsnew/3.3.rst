@@ -939,6 +939,20 @@ Porting C code
   :c:func:`PyUnicode_FromFormat()`, your code will automatically take
   advantage of the new unicode representations.
 
+Building C extensions
+---------------------
+
+* The range of possible file names for C extensions has been narrowed.
+  Very rarely used spellings have been suppressed: under POSIX, files
+  named ``xxxmodule.so``, ``xxxmodule.abi3.so`` and
+  ``xxxmodule.cpython-*.so`` are no longer recognized as implementing
+  the ``xxx`` module.  If you had been generating such files, you have
+  to switch to the other spellings (i.e., remove the ``module`` string
+  from the file names).
+
+  (implemented in :issue:`14040`.)
+
+
 Other issues
 ------------
 

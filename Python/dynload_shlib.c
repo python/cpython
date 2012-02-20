@@ -39,7 +39,6 @@
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     {".dll", "rb", C_EXTENSION},
-    {"module.dll", "rb", C_EXTENSION},
 #else  /* !__CYGWIN__ */
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     {".pyd", "rb", C_EXTENSION},
@@ -48,15 +47,10 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 #ifdef __VMS
     {".exe", "rb", C_EXTENSION},
     {".EXE", "rb", C_EXTENSION},
-    {"module.exe", "rb", C_EXTENSION},
-    {"MODULE.EXE", "rb", C_EXTENSION},
 #else  /* !__VMS */
     {"." SOABI ".so", "rb", C_EXTENSION},
-    {"module." SOABI ".so", "rb", C_EXTENSION},
     {".abi" PYTHON_ABI_STRING ".so", "rb", C_EXTENSION},
-    {"module.abi" PYTHON_ABI_STRING ".so", "rb", C_EXTENSION},
     {".so", "rb", C_EXTENSION},
-    {"module.so", "rb", C_EXTENSION},
 #endif  /* __VMS */
 #endif  /* defined(PYOS_OS2) && defined(PYCC_GCC) */
 #endif  /* __CYGWIN__ */
