@@ -31,7 +31,9 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',', ':'))
+    >>> from collections import OrderedDict
+    >>> mydict = OrderedDict([('4', 5), ('6', 7)])
+    >>> json.dumps([1,2,3,mydict], separators=(',', ':'))
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
