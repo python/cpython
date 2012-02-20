@@ -1774,7 +1774,7 @@ class CommandsWithSpaces (BaseTestCase):
         self.with_spaces([sys.executable, self.fname, "ab cd"])
 
 
-class ContextManagerTests(ProcessTestCase):
+class ContextManagerTests(BaseTestCase):
 
     def test_pipe(self):
         with subprocess.Popen([sys.executable, "-c",

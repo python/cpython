@@ -1588,6 +1588,7 @@ def args_from_interpreter_flags():
     flag_opt_map = {
         'bytes_warning': 'b',
         'dont_write_bytecode': 'B',
+        'hash_randomization': 'R',
         'ignore_environment': 'E',
         'no_user_site': 's',
         'no_site': 'S',

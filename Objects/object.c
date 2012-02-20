@@ -759,10 +759,19 @@ _Py_HashBytes(unsigned char *p, Py_ssize_t len)
     Py_uhash_t x;
     Py_ssize_t i;
 
-    x = (Py_uhash_t) *p << 7;
+    /*
+      We make the hash of the empty string be 0, rather than using
+      (prefix ^ suffix), since this slightly obfuscates the hash secret
+    */
+    if (len == 0) {
+        return 0;
+    }
+    x = (Py_uhash_t) _Py_HashSecret.prefix;
+    x ^= (Py_uhash_t) *p << 7;
     for (i = 0; i < len; i++)
         x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
+    x ^= (Py_uhash_t) _Py_HashSecret.suffix;
     if (x == -1)
         x = -2;
     return x;
@@ -775,6 +784,8 @@ PyObject_HashNotImplemented(PyObject *v)
                  Py_TYPE(v)->tp_name);
     return -1;
 }
+
+_Py_HashSecret_t _Py_HashSecret;
 
 Py_hash_t
 PyObject_Hash(PyObject *v)

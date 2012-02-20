@@ -52,13 +52,18 @@ class DebuggerTests(unittest.TestCase):
 
     """Test that the debugger can debug Python."""
 
-    def run_gdb(self, *args):
+    def run_gdb(self, *args, **env_vars):
         """Runs gdb with the command line given by *args.
 
         Returns its stdout, stderr
         """
+        if env_vars:
+            env = os.environ.copy()
+            env.update(env_vars)
+        else:
+            env = None
         out, err = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
             ).communicate()
         return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
 
@@ -118,7 +123,7 @@ class DebuggerTests(unittest.TestCase):
         # print ' '.join(args)
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = self.run_gdb(*args)
+        out, err = self.run_gdb(*args, PYTHONHASHSEED='0')
 
         # Ignore some noise on stderr due to the pending breakpoint:
         err = err.replace('Function "%s" not defined.\n' % breakpoint, '')
@@ -207,7 +212,8 @@ class PrettyPrintTests(DebuggerTests):
         'Verify the pretty-printing of dictionaries'
         self.assertGdbRepr({})
         self.assertGdbRepr({'foo': 'bar'})
-        self.assertGdbRepr({'foo': 'bar', 'douglas':42})
+        self.assertGdbRepr({'foo': 'bar', 'douglas': 42},
+                           "{'foo': 'bar', 'douglas': 42}")
 
     def test_lists(self):
         'Verify the pretty-printing of lists'
@@ -269,8 +275,8 @@ class PrettyPrintTests(DebuggerTests):
     def test_sets(self):
         'Verify the pretty-printing of sets'
         self.assertGdbRepr(set())
-        self.assertGdbRepr(set(['a', 'b']))
-        self.assertGdbRepr(set([4, 5, 6]))
+        self.assertGdbRepr(set(['a', 'b']), "{'a', 'b'}")
+        self.assertGdbRepr(set([4, 5, 6]), "{4, 5, 6}")
 
         # Ensure that we handle sets containing the "dummy" key value,
         # which happens on deletion:
@@ -282,8 +288,8 @@ id(s)''')
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
         self.assertGdbRepr(frozenset())
-        self.assertGdbRepr(frozenset(['a', 'b']))
-        self.assertGdbRepr(frozenset([4, 5, 6]))
+        self.assertGdbRepr(frozenset(['a', 'b']), "frozenset({'a', 'b'})")
+        self.assertGdbRepr(frozenset([4, 5, 6]), "frozenset({4, 5, 6})")
 
     def test_exceptions(self):
         # Test a RuntimeError

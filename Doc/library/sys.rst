@@ -252,10 +252,14 @@ always available.
    :const:`verbose`              :option:`-v`
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
+   :const:`hash_randomization`   :option:`-R`
    ============================= =============================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
+
+   .. versionadded:: 3.2.3
+      The ``hash_randomization`` attribute.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
