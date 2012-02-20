@@ -762,13 +762,12 @@ class _FileFinder:
         self.path = path or '.'
         self._path_mtime = -1
         self._path_cache = set()
+        self._relaxed_path_cache = set()
         self._cache_refresh = 0
 
     def find_module(self, fullname):
         """Try to find a loader for the specified module."""
         tail_module = fullname.rpartition('.')[2]
-        if _relax_case():
-            tail_module = tail_module.lower()
         try:
             mtime = _os.stat(self.path).st_mtime
         except OSError:
@@ -777,8 +776,14 @@ class _FileFinder:
             self._fill_cache()
             self._path_mtime = mtime
             self._cache_refresh = _cache_refresh
-        cache = self._path_cache
-        if tail_module in cache:
+        # tail_module keeps the original casing, for __file__ and friends
+        if _relax_case():
+            cache = self._relaxed_path_cache
+            cache_module = tail_module.lower()
+        else:
+            cache = self._path_cache
+            cache_module = tail_module
+        if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
             if _path_isdir(base_path):
                 for suffix, loader in self.packages:
@@ -790,9 +795,8 @@ class _FileFinder:
                     msg = "Not importing directory {}: missing __init__"
                     _warnings.warn(msg.format(base_path), ImportWarning)
         for suffix, loader in self.modules:
-            mod_filename = tail_module + suffix
-            if mod_filename in cache:
-                full_path = _path_join(self.path, mod_filename)
+            if cache_module + suffix in cache:
+                full_path = _path_join(self.path, tail_module + suffix)
                 if _path_isfile(full_path):
                     return loader(fullname, full_path)
         return None
@@ -801,10 +805,10 @@ class _FileFinder:
         """Fill the cache of potential modules and packages for this directory."""
         path = self.path
         contents = _os.listdir(path)
-        if _relax_case():
-            self._path_cache = set(fn.lower() for fn in contents)
-        else:
-            self._path_cache = set(contents)
+        # We store two cached versions, to handle runtime changes of the
+        # PYTHONCASEOK environment variable.
+        self._path_cache = set(contents)
+        self._relaxed_path_cache = set(fn.lower() for fn in contents)
 
 
 class _SourceFinderDetails:
