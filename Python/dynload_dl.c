@@ -11,7 +11,6 @@ extern char *Py_GetProgramName(void);
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
     {".o", "rb", C_EXTENSION},
-    {"module.o", "rb", C_EXTENSION},
     {0, 0}
 };
 
