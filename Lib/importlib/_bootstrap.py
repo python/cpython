@@ -24,12 +24,12 @@ CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
 def _make_relax_case():
     if any(map(sys.platform.startswith, CASE_INSENSITIVE_PLATFORMS)):
-        """True if filenames must be checked case-insensitively."""
         def _relax_case():
+            """True if filenames must be checked case-insensitively."""
             return b'PYTHONCASEOK' in _os.environ
     else:
-        """True if filenames must be checked case-insensitively."""
         def _relax_case():
+            """True if filenames must be checked case-insensitively."""
             return False
     return _relax_case
 
