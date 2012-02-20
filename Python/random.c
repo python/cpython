@@ -269,7 +269,7 @@ _PyRandom_Init(void)
     */
 
     env = Py_GETENV("PYTHONHASHSEED");
-    if (env && *env != '\0' & strcmp(env, "random") != 0) {
+    if (env && *env != '\0' && strcmp(env, "random") != 0) {
         char *endptr = env;
         unsigned long seed;
         seed = strtoul(env, &endptr, 10);
