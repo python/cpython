@@ -245,42 +245,6 @@ static PyMemberDef func_memberlist[] = {
 };
 
 static PyObject *
-func_get_dict(PyFunctionObject *op)
-{
-    if (op->func_dict == NULL) {
-        op->func_dict = PyDict_New();
-        if (op->func_dict == NULL)
-            return NULL;
-    }
-    Py_INCREF(op->func_dict);
-    return op->func_dict;
-}
-
-static int
-func_set_dict(PyFunctionObject *op, PyObject *value)
-{
-    PyObject *tmp;
-
-    /* It is illegal to del f.func_dict */
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "function's dictionary may not be deleted");
-        return -1;
-    }
-    /* Can only set func_dict to a dictionary */
-    if (!PyDict_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "setting function's dictionary to a non-dict");
-        return -1;
-    }
-    tmp = op->func_dict;
-    Py_INCREF(value);
-    op->func_dict = value;
-    Py_XDECREF(tmp);
-    return 0;
-}
-
-static PyObject *
 func_get_code(PyFunctionObject *op)
 {
     Py_INCREF(op->func_code);
@@ -476,7 +440,7 @@ static PyGetSetDef func_getsetlist[] = {
      (setter)func_set_kwdefaults},
     {"__annotations__", (getter)func_get_annotations,
      (setter)func_set_annotations},
-    {"__dict__", (getter)func_get_dict, (setter)func_set_dict},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
     {NULL} /* Sentinel */
@@ -831,22 +795,12 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
     Py_RETURN_FALSE;
 }
 
-static PyObject *
-cm_get___dict__(PyObject *cm, void *closure)
-{
-    PyObject **dictptr = _PyObject_GetDictPtr(cm);
-    if (*dictptr == NULL)
-        *dictptr = PyDict_New();
-    Py_XINCREF(*dictptr);
-    return *dictptr;
-}
-
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)cm_get___isabstractmethod__, NULL,
      NULL,
      NULL},
-    {"__dict__", (getter)cm_get___dict__, NULL, NULL, NULL},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1020,22 +974,12 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
     Py_RETURN_FALSE;
 }
 
-static PyObject *
-sm_get___dict__(PyObject *sm, void *closure)
-{
-    PyObject **dictptr = _PyObject_GetDictPtr(sm);
-    if (*dictptr == NULL)
-        *dictptr = PyDict_New();
-    Py_XINCREF(*dictptr);
-    return *dictptr;
-}
-
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)sm_get___isabstractmethod__, NULL,
      NULL,
      NULL},
-    {"__dict__", (getter)sm_get___dict__, NULL, NULL, NULL},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
