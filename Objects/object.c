@@ -754,6 +754,8 @@ PyObject_HashNotImplemented(PyObject *v)
     return -1;
 }
 
+_Py_HashSecret_t _Py_HashSecret;
+
 Py_hash_t
 PyObject_Hash(PyObject *v)
 {
