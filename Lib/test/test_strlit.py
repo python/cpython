@@ -65,7 +65,7 @@ class TestLiterals(unittest.TestCase):
         sys.path.insert(0, self.tmpdir)
 
     def tearDown(self):
-        sys.path = self.save_path
+        sys.path[:] = self.save_path
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_template(self):

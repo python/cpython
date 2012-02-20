@@ -324,6 +324,22 @@ class CmdLineTest(unittest.TestCase):
     def test_no_std_streams(self):
         self._test_no_stdio(['stdin', 'stdout', 'stderr'])
 
+    def test_hash_randomization(self):
+        # Verify that -R enables hash randomization:
+        self.verify_valid_flag('-R')
+        hashes = []
+        for i in range(2):
+            code = 'print(hash("spam"))'
+            rc, out, err = assert_python_ok('-R', '-c', code)
+            self.assertEqual(rc, 0)
+            hashes.append(out)
+        self.assertNotEqual(hashes[0], hashes[1])
+
+        # Verify that sys.flags contains hash_randomization
+        code = 'import sys; print("random is", sys.flags.hash_randomization)'
+        rc, out, err = assert_python_ok('-R', '-c', code)
+        self.assertEqual(rc, 0)
+        self.assertIn(b'random is 1', out)
 
 def test_main():
     test.support.run_unittest(CmdLineTest)

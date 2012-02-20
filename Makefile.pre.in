@@ -322,6 +322,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
+		Python/random.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \

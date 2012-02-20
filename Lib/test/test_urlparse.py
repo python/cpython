@@ -769,7 +769,8 @@ class UrlParseTestCase(unittest.TestCase):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
         result = urllib.parse.urlencode({'a': [1, 2], 'b': (3, 4, 5)}, True)
-        self.assertEqual(result, 'a=1&a=2&b=3&b=4&b=5')
+        # we cannot rely on ordering here
+        assert set(result.split('&')) == {'a=1', 'a=2', 'b=3', 'b=4', 'b=5'}
 
         class Trivial:
             def __str__(self):

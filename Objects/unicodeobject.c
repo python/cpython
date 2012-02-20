@@ -11221,11 +11221,12 @@ unicode_hash(PyObject *self)
     len = PyUnicode_GET_LENGTH(self);
 
     /* The hash function as a macro, gets expanded three times below. */
-#define HASH(P) \
-    x = (Py_uhash_t)*P << 7; \
-    while (--len >= 0) \
-        x = (_PyHASH_MULTIPLIER*x) ^ (Py_uhash_t)*P++;
+#define HASH(P)                                            \
+    x ^= (Py_uhash_t) *P << 7;                             \
+    while (--len >= 0)                                     \
+        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *P++;  \
 
+    x = (Py_uhash_t) _Py_HashSecret.prefix;
     switch (PyUnicode_KIND(self)) {
     case PyUnicode_1BYTE_KIND: {
         const unsigned char *c = PyUnicode_1BYTE_DATA(self);
@@ -11246,7 +11247,8 @@ unicode_hash(PyObject *self)
         break;
     }
     }
-    x ^= (Py_uhash_t)PyUnicode_GET_LENGTH(self);
+    x ^= (Py_uhash_t) PyUnicode_GET_LENGTH(self);
+    x ^= (Py_uhash_t) _Py_HashSecret.suffix;
 
     if (x == -1)
         x = -2;
