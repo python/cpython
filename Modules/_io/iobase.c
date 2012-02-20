@@ -159,19 +159,6 @@ iobase_closed_get(PyObject *self, void *context)
     return PyBool_FromLong(IS_CLOSED(self));
 }
 
-static PyObject *
-iobase_get_dict(PyObject *self)
-{
-    PyObject **dictptr = _PyObject_GetDictPtr(self);
-    PyObject *dict;
-    assert(dictptr);
-    dict = *dictptr;
-    if (dict == NULL)
-        dict = *dictptr = PyDict_New();
-    Py_XINCREF(dict);
-    return dict;
-}
-
 PyObject *
 _PyIOBase_check_closed(PyObject *self, PyObject *args)
 {
@@ -714,7 +701,7 @@ static PyMethodDef iobase_methods[] = {
 };
 
 static PyGetSetDef iobase_getset[] = {
-    {"__dict__", (getter)iobase_get_dict, NULL, NULL},
+    {"__dict__", PyObject_GenericGetDict, NULL, NULL},
     {"closed", (getter)iobase_closed_get, NULL, NULL},
     {NULL}
 };
