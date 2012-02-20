@@ -166,6 +166,7 @@ class BaseXYTestCase(unittest.TestCase):
             self.assertEqual(base64.b64decode(bstr.decode('ascii')), res)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr, validate=True)
+            with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
 
     def test_b32encode(self):
@@ -236,6 +237,7 @@ class BaseXYTestCase(unittest.TestCase):
         for data in [b'abc', b'ABCDEF==']:
             with self.assertRaises(binascii.Error):
                 base64.b32decode(data)
+            with self.assertRaises(binascii.Error):
                 base64.b32decode(data.decode('ascii'))
 
     def test_b16encode(self):
