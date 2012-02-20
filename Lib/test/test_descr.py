@@ -4482,8 +4482,8 @@ class DictProxyTests(unittest.TestCase):
             return '{' + ', '.join(sorted(kvs)) + '}'
         dict_ = {k: v for k, v in self.C.__dict__.items()}
         repr_ = repr(self.C.__dict__)
-        self.assert_(repr_.startswith('dict_proxy('))
-        self.assert_(repr_.endswith(')'))
+        self.assertTrue(repr_.startswith('dict_proxy('))
+        self.assertTrue(repr_.endswith(')'))
         self.assertEqual(sorted_dict_repr(repr_[len('dict_proxy('):-len(')')]),
                          sorted_dict_repr('{!r}'.format(dict_)))
 
