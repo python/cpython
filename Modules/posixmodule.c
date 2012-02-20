@@ -9317,82 +9317,6 @@ posix_getloadavg(PyObject *self, PyObject *noargs)
 }
 #endif
 
-#ifdef MS_WINDOWS
-
-PyDoc_STRVAR(win32_urandom__doc__,
-"urandom(n) -> str\n\n\
-Return n random bytes suitable for cryptographic use.");
-
-typedef BOOL (WINAPI *CRYPTACQUIRECONTEXTA)(HCRYPTPROV *phProv,\
-              LPCSTR pszContainer, LPCSTR pszProvider, DWORD dwProvType,\
-              DWORD dwFlags );
-typedef BOOL (WINAPI *CRYPTGENRANDOM)(HCRYPTPROV hProv, DWORD dwLen,\
-              BYTE *pbBuffer );
-
-static CRYPTGENRANDOM pCryptGenRandom = NULL;
-/* This handle is never explicitly released. Instead, the operating
-   system will release it when the process terminates. */
-static HCRYPTPROV hCryptProv = 0;
-
-static PyObject*
-win32_urandom(PyObject *self, PyObject *args)
-{
-    int howMany;
-    PyObject* result;
-
-    /* Read arguments */
-    if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
-        return NULL;
-    if (howMany < 0)
-        return PyErr_Format(PyExc_ValueError,
-                            "negative argument not allowed");
-
-    if (hCryptProv == 0) {
-        HINSTANCE hAdvAPI32 = NULL;
-        CRYPTACQUIRECONTEXTA pCryptAcquireContext = NULL;
-
-        /* Obtain handle to the DLL containing CryptoAPI
-           This should not fail         */
-        hAdvAPI32 = GetModuleHandleW(L"advapi32.dll");
-        if(hAdvAPI32 == NULL)
-            return win32_error("GetModuleHandle", NULL);
-
-        /* Obtain pointers to the CryptoAPI functions
-           This will fail on some early versions of Win95 */
-        pCryptAcquireContext = (CRYPTACQUIRECONTEXTA)GetProcAddress(
-                                        hAdvAPI32,
-                                        "CryptAcquireContextA");
-        if (pCryptAcquireContext == NULL)
-            return PyErr_Format(PyExc_NotImplementedError,
-                                "CryptAcquireContextA not found");
-
-        pCryptGenRandom = (CRYPTGENRANDOM)GetProcAddress(
-                                        hAdvAPI32, "CryptGenRandom");
-        if (pCryptGenRandom == NULL)
-            return PyErr_Format(PyExc_NotImplementedError,
-                                "CryptGenRandom not found");
-
-        /* Acquire context */
-        if (! pCryptAcquireContext(&hCryptProv, NULL, NULL,
-                                   PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
-            return win32_error("CryptAcquireContext", NULL);
-    }
-
-    /* Allocate bytes */
-    result = PyBytes_FromStringAndSize(NULL, howMany);
-    if (result != NULL) {
-        /* Get random data */
-        memset(PyBytes_AS_STRING(result), 0, howMany); /* zero seed */
-        if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
-                              PyBytes_AS_STRING(result))) {
-            Py_DECREF(result);
-            return win32_error("CryptGenRandom", NULL);
-        }
-    }
-    return result;
-}
-#endif
-
 PyDoc_STRVAR(device_encoding__doc__,
 "device_encoding(fd) -> str\n\n\
 Return a string describing the encoding of the device\n\
@@ -10490,6 +10414,36 @@ posix_flistxattr(PyObject *self, PyObject *args)
 #endif /* USE_XATTRS */
 
 
+PyDoc_STRVAR(posix_urandom__doc__,
+"urandom(n) -> str\n\n\
+Return n random bytes suitable for cryptographic use.");
+
+static PyObject *
+posix_urandom(PyObject *self, PyObject *args)
+{
+    Py_ssize_t size;
+    PyObject *result;
+    int ret;
+
+     /* Read arguments */
+    if (!PyArg_ParseTuple(args, "n:urandom", &size))
+        return NULL;
+    if (size < 0)
+        return PyErr_Format(PyExc_ValueError,
+                            "negative argument not allowed");
+    result = PyBytes_FromStringAndSize(NULL, size);
+    if (result == NULL)
+        return NULL;
+
+    ret = _PyOS_URandom(PyBytes_AS_STRING(result),
+                        PyBytes_GET_SIZE(result));
+    if (ret == -1) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
 /* Terminal size querying */
 
 static PyTypeObject TerminalSizeType;
@@ -10984,12 +10938,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
 #endif
- #ifdef MS_WINDOWS
-    {"urandom", win32_urandom, METH_VARARGS, win32_urandom__doc__},
- #endif
- #ifdef __VMS
-    {"urandom", vms_urandom, METH_VARARGS, vms_urandom__doc__},
- #endif
+    {"urandom",         posix_urandom,   METH_VARARGS, posix_urandom__doc__},
 #ifdef HAVE_SETRESUID
     {"setresuid",       posix_setresuid, METH_VARARGS, posix_setresuid__doc__},
 #endif

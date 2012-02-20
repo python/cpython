@@ -26,6 +26,7 @@ try:
     import threading
 except ImportError:
     threading = None
+from test.script_helper import assert_python_ok
 
 os.stat_float_times(True)
 st = os.stat(__file__)
@@ -794,14 +795,33 @@ class DevNullTests(unittest.TestCase):
             self.assertEqual(f.read(), b'')
 
 class URandomTests(unittest.TestCase):
-    def test_urandom(self):
-        try:
-            self.assertEqual(len(os.urandom(1)), 1)
-            self.assertEqual(len(os.urandom(10)), 10)
-            self.assertEqual(len(os.urandom(100)), 100)
-            self.assertEqual(len(os.urandom(1000)), 1000)
-        except NotImplementedError:
-            pass
+    def test_urandom_length(self):
+        self.assertEqual(len(os.urandom(0)), 0)
+        self.assertEqual(len(os.urandom(1)), 1)
+        self.assertEqual(len(os.urandom(10)), 10)
+        self.assertEqual(len(os.urandom(100)), 100)
+        self.assertEqual(len(os.urandom(1000)), 1000)
+
+    def test_urandom_value(self):
+        data1 = os.urandom(16)
+        data2 = os.urandom(16)
+        self.assertNotEqual(data1, data2)
+
+    def get_urandom_subprocess(self, count):
+        code = '\n'.join((
+            'import os, sys',
+            'data = os.urandom(%s)' % count,
+            'sys.stdout.buffer.write(data)',
+            'sys.stdout.buffer.flush()'))
+        out = assert_python_ok('-c', code)
+        stdout = out[1]
+        self.assertEqual(len(stdout), 16)
+        return stdout
+
+    def test_urandom_subprocess(self):
+        data1 = self.get_urandom_subprocess(16)
+        data2 = self.get_urandom_subprocess(16)
+        self.assertNotEqual(data1, data2)
 
 @contextlib.contextmanager
 def _execvpe_mockup(defpath=None):
