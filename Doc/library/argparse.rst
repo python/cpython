@@ -720,7 +720,7 @@ how the command-line arguments should be handled. The supported actions are:
 
 * ``'version'`` - This expects a ``version=`` keyword argument in the
   :meth:`~ArgumentParser.add_argument` call, and prints version information
-  and exits when invoked.
+  and exits when invoked::
 
     >>> import argparse
     >>> parser = argparse.ArgumentParser(prog='PROG')
@@ -772,8 +772,8 @@ single action to be taken.  The ``nargs`` keyword argument associates a
 different number of command-line arguments with a single action.  The supported
 values are:
 
-* ``N`` (an integer).  ``N`` arguments from the command line will be gathered together into a
-  list.  For example::
+* ``N`` (an integer).  ``N`` arguments from the command line will be gathered
+  together into a list.  For example::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', nargs=2)
@@ -842,7 +842,7 @@ values are:
 
 * ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
   into a list.  This is commonly useful for command line utilities that dispatch
-  to other command line utilities.
+  to other command line utilities::
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> parser.add_argument('--foo')
@@ -865,7 +865,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
 
 * When :meth:`~ArgumentParser.add_argument` is called with
   ``action='store_const'`` or ``action='append_const'``.  These actions add the
-  ``const`` value to one of the attributes of the object returned by :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
+  ``const`` value to one of the attributes of the object returned by
+  :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
 
 * When :meth:`~ArgumentParser.add_argument` is called with option strings
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
@@ -1576,21 +1577,21 @@ FileType objects
    The :class:`FileType` factory creates objects that can be passed to the type
    argument of :meth:`ArgumentParser.add_argument`.  Arguments that have
    :class:`FileType` objects as their type will open command-line arguments as files
-   with the requested modes and buffer sizes:
+   with the requested modes and buffer sizes::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--output', type=argparse.FileType('wb', 0))
-   >>> parser.parse_args(['--output', 'out'])
-   Namespace(output=<_io.BufferedWriter name='out'>)
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('--output', type=argparse.FileType('wb', 0))
+      >>> parser.parse_args(['--output', 'out'])
+      Namespace(output=<_io.BufferedWriter name='out'>)
 
    FileType objects understand the pseudo-argument ``'-'`` and automatically
    convert this into ``sys.stdin`` for readable :class:`FileType` objects and
-   ``sys.stdout`` for writable :class:`FileType` objects:
+   ``sys.stdout`` for writable :class:`FileType` objects::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('infile', type=argparse.FileType('r'))
-   >>> parser.parse_args(['-'])
-   Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('infile', type=argparse.FileType('r'))
+      >>> parser.parse_args(['-'])
+      Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
 
 Argument groups
