@@ -1094,7 +1094,8 @@ def _setup(sys_module, imp_module):
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
 
-    if sys_module.platform in CASE_INSENSITIVE_PLATFORMS:
+    if any(sys_module.platform.startswith(x)
+            for x in CASE_INSENSITIVE_PLATFORMS):
         _case_ok = _case_insensitive_ok
     else:
         _case_ok = _case_sensitive_ok
