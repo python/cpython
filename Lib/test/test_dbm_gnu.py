@@ -49,7 +49,7 @@ class TestGdbm(unittest.TestCase):
         all = set(gdbm.open_flags)
         # Test standard flags (presumably "crwn").
         modes = all - set('fsu')
-        for mode in modes:
+        for mode in sorted(modes):  # put "c" mode first
             self.g = gdbm.open(filename, mode)
             self.g.close()
 
