@@ -1210,6 +1210,48 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
     return _PyObject_GenericSetAttrWithDict(obj, name, value, NULL);
 }
 
+PyObject *
+PyObject_GenericGetDict(PyObject *obj, void *context)
+{
+    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "This object has no __dict__");
+        return NULL;
+    }
+    dict = *dictptr;
+    if (dict == NULL)
+        *dictptr = dict = PyDict_New();
+    Py_XINCREF(dict);
+    return dict;
+}
+
+int
+PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
+{
+    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "This object has no __dict__");
+        return -1;
+    }
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot delete __dict__");
+        return -1;
+    }
+    if (!PyDict_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__dict__ must be set to a dictionary, "
+                     "not a '%.200s'", Py_TYPE(value)->tp_name);
+        return -1;
+    }
+    dict = *dictptr;
+    Py_XINCREF(value);
+    *dictptr = value;
+    Py_XDECREF(dict);
+    return 0;
+}
+
 
 /* Test a value used as condition, e.g., in a for or if statement.
    Return -1 if an error occurred */

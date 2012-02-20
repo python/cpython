@@ -101,6 +101,18 @@ Object Protocol
    This is the equivalent of the Python statement ``del o.attr_name``.
 
 
+.. c:function:: PyObject* PyType_GenericGetDict(PyObject *o, void *context)
+
+   A generic implementation for the getter of a ``__dict__`` descriptor. It
+   creates the dictionary if necessary.
+
+
+.. c:function:: int PyType_GenericSetDict(PyObject *o, void *context)
+
+   A generic implementation for the setter of a ``__dict__`` descriptor. This
+   implementation does not allow the dictionary to be deleted.
+
+
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
