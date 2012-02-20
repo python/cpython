@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiOsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiORsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -215,6 +215,29 @@ Miscellaneous options
    Discard docstrings in addition to the :option:`-O` optimizations.
 
 
+.. cmdoption:: -R
+
+   Turn on hash randomization, so that the :meth:`__hash__` values of str, bytes
+   and datetime objects are "salted" with an unpredictable random value.
+   Although they remain constant within an individual Python process, they are
+   not predictable between repeated invocations of Python.
+
+   This is intended to provide protection against a denial-of-service caused by
+   carefully-chosen inputs that exploit the worst case performance of a dict
+   insertion, O(n^2) complexity.  See
+   http://www.ocert.org/advisories/ocert-2011-003.html for details.
+
+   Changing hash values affects the order in which keys are retrieved from a
+   dict.  Although Python has never made guarantees about this ordering (and it
+   typically varies between 32-bit and 64-bit builds), enough real-world code
+   implicitly relies on this non-guaranteed behavior that the randomization is
+   disabled by default.
+
+   See also :envvar:`PYTHONHASHSEED`.
+
+   .. versionadded:: 3.1.5
+
+
 .. cmdoption:: -s
 
    Don't add user site directory to sys.path
@@ -314,6 +337,7 @@ Miscellaneous options
 
    .. note:: The line numbers in error messages will be off by one.
 
+
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -327,6 +351,7 @@ Options you shouldn't use
 
     Reserved for alternative implementations of Python to use for their own
     purposes.
+
 
 .. _using-on-envvars:
 
@@ -433,6 +458,27 @@ These environment variables influence Python's behavior.
 
    If this is set, Python won't try to write ``.pyc`` or ``.pyo`` files on the
    import of source modules.
+
+
+.. envvar:: PYTHONHASHSEED
+
+   If this variable is set to ``random``, the effect is the same as specifying
+   the :option:`-R` option: a random value is used to seed the hashes of str,
+   bytes and datetime objects.
+
+   If :envvar:`PYTHONHASHSEED` is set to an integer value, it is used as a fixed
+   seed for generating the hash() of the types covered by the hash
+   randomization.
+
+   Its purpose is to allow repeatable hashing, such as for selftests for the
+   interpreter itself, or to allow a cluster of python processes to share hash
+   values.
+
+   The integer must be a decimal number in the range [0,4294967295].  Specifying
+   the value 0 will lead to the same hash values as when hash randomization is
+   disabled.
+
+   .. versionadded:: 3.1.5
 
 
 .. envvar:: PYTHONIOENCODING
