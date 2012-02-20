@@ -335,6 +335,7 @@ class TestWeakSet(unittest.TestCase):
             try:
                 it = iter(s)
                 next(it)
+                del it
                 # Schedule an item for removal and recreate it
                 u = ustr(str(items.pop()))
                 gc.collect()      # just in case
