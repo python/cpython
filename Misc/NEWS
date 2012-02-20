@@ -2253,6 +2253,10 @@ Tests
 C-API
 -----
 
+- Add PyObject_GenericGetDict and PyObject_GeneriSetDict. They are generic
+  implementations for the getter and setter of a ``__dict__`` descriptor of C
+  types.
+
 - Issue #13727: Add 3 macros to access PyDateTime_Delta members:
   PyDateTime_DELTA_GET_DAYS, PyDateTime_DELTA_GET_SECONDS,
   PyDateTime_DELTA_GET_MICROSECONDS.
