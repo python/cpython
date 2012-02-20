@@ -1126,6 +1126,7 @@ static PyStructSequence_Field flags_fields[] = {
     /* {"unbuffered",                   "-u"}, */
     /* {"skip_first",                   "-x"}, */
     {"bytes_warning", "-b"},
+    {"hash_randomization", "-R"},
     {0}
 };
 
@@ -1134,9 +1135,9 @@ static PyStructSequence_Desc flags_desc = {
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
 #ifdef RISCOS
-    12
+    13
 #else
-    11
+    12
 #endif
 };
 
@@ -1169,6 +1170,7 @@ make_flags(void)
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(Py_BytesWarningFlag);
+    SetFlag(Py_HashRandomizationFlag);
 #undef SetFlag
 
     if (PyErr_Occurred()) {

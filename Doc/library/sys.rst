@@ -220,7 +220,11 @@ always available.
    :const:`ignore_environment`   :option:`-E`
    :const:`verbose`              :option:`-v`
    :const:`bytes_warning`        :option:`-b`
+   :const:`hash_randomization`   :option:`-R`
    ============================= =============================
+
+   .. versionadded:: 3.1.5
+      The ``hash_randomization`` attribute.
 
 
 .. data:: float_info

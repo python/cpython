@@ -3,7 +3,6 @@
 
 import sys
 import os
-import re
 import os.path
 import tempfile
 import subprocess
@@ -19,11 +18,15 @@ def _assert_python(expected_success, *args, **env_vars):
     cmd_line = [sys.executable]
     if not env_vars:
         cmd_line.append('-E')
-    cmd_line.extend(args)
     # Need to preserve the original environment, for in-place testing of
     # shared library builds.
     env = os.environ.copy()
+    # But a special flag that can be set to override -- in this case, the
+    # caller is responsible to pass the full environment.
+    if env_vars.pop('__cleanenv', None):
+        env = {}
     env.update(env_vars)
+    cmd_line.extend(args)
     p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          env=env)

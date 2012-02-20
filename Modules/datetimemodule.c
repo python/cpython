@@ -2566,10 +2566,12 @@ generic_hash(unsigned char *data, int len)
     register long x;
 
     p = (unsigned char *) data;
-    x = *p << 7;
+    x = _Py_HashSecret.prefix;
+    x ^= *p << 7;
     while (--len >= 0)
         x = (1000003*x) ^ *p++;
     x ^= len;
+    x ^= _Py_HashSecret.suffix;
     if (x == -1)
         x = -2;
 
