@@ -293,12 +293,12 @@ Names:
 Variable names:
    0: c
 Free variables:
-   0: e
-   1: d
-   2: f
-   3: y
-   4: x
-   5: z"""
+   0: [edfxyz]
+   1: [edfxyz]
+   2: [edfxyz]
+   3: [edfxyz]
+   4: [edfxyz]
+   5: [edfxyz]"""
 
 code_info_expr_str = """\
 Name:              <module>
