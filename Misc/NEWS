@@ -469,6 +469,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13641: Decoding functions in the base64 module now accept ASCII-only
+  unicode strings.  Patch by Catalin Iacob.
+
 - Issue #14043: Speed up importlib's _FileFinder by at least 8x, and add a
   new importlib.invalidate_caches() function.
 
