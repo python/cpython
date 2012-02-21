@@ -1942,6 +1942,8 @@ Library
 Build
 -----
 
+- Issue #10580: Minor grammar change in Windows installer.
+
 - Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
 
 - PEP 393: the configure option --with-wide-unicode is removed.
