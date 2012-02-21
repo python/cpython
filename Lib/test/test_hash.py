@@ -212,6 +212,7 @@ def test_main():
                          HashBuiltinsTestCase,
                          StrHashRandomizationTests,
                          BytesHashRandomizationTests,
+                         MemoryviewHashRandomizationTests,
                          DatetimeDateTests,
                          DatetimeDatetimeTests,
                          DatetimeTimeTests)
