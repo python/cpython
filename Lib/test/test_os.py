@@ -527,19 +527,6 @@ class DevNullTests (unittest.TestCase):
         f.close()
 
 class URandomTests (unittest.TestCase):
-    def test_urandom(self):
-        try:
-            self.assertEqual(len(os.urandom(1)), 1)
-            self.assertEqual(len(os.urandom(10)), 10)
-            self.assertEqual(len(os.urandom(100)), 100)
-            self.assertEqual(len(os.urandom(1000)), 1000)
-            # see http://bugs.python.org/issue3708
-            self.assertRaises(TypeError, os.urandom, 0.9)
-            self.assertRaises(TypeError, os.urandom, 1.1)
-            self.assertRaises(TypeError, os.urandom, 2.0)
-            self.assertEqual(len(os.urandom(0.9)), 0)
-            self.assertEqual(len(os.urandom(1.1)), 1)
-            self.assertEqual(len(os.urandom(2.0)), 2)
 
     def test_urandom_length(self):
         self.assertEqual(len(os.urandom(0)), 0)
@@ -571,7 +558,6 @@ class URandomTests (unittest.TestCase):
         data1 = self.get_urandom_subprocess(16)
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
->>>>>>> other
 
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
