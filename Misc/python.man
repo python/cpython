@@ -37,9 +37,6 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-OO
 ]
 [
-.B \-R
-]
-[
 .B \-s
 ]
 [
@@ -150,18 +147,6 @@ Discard docstrings in addition to the \fB-O\fP optimizations.
 .B \-q
 Do not print the version and copyright messages. These messages are 
 also suppressed in non-interactive mode.
-.TP
-.B \-R
-Turn on "hash randomization", so that the hash() values of str, bytes and
-datetime objects are "salted" with an unpredictable pseudo-random value.
-Although they remain constant within an individual Python process, they are
-not predictable between repeated invocations of Python.
-.IP
-This is intended to provide protection against a denial of service
-caused by carefully-chosen inputs that exploit the worst case performance
-of a dict insertion, O(n^2) complexity.  See
-http://www.ocert.org/advisories/ocert-2011-003.html
-for details.
 .TP
 .B \-s
 Don't add user site directory to sys.path.
@@ -418,9 +403,8 @@ specifying \fB\-v\fP multiple times.
 If this is set to a comma-separated string it is equivalent to
 specifying the \fB\-W\fP option for each separate value.
 .IP PYTHONHASHSEED
-If this variable is set to "random", the effect is the same as specifying
-the \fB-R\fP option: a random value is used to seed the hashes of str,
-bytes and datetime objects.
+If this variable is set to "random", a random value is used to seed the hashes
+of str, bytes and datetime objects.
 
 If PYTHONHASHSEED is set to an integer value, it is used as a fixed seed for
 generating the hash() of the types covered by the hash randomization.  Its
@@ -429,8 +413,7 @@ interpreter itself, or to allow a cluster of python processes to share hash
 values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
-the value 0 will lead to the same hash values as when hash randomization is
-disabled.
+the value 0 will disable hash randomization.
 .SH AUTHOR
 The Python Software Foundation: http://www.python.org/psf
 .SH INTERNET RESOURCES

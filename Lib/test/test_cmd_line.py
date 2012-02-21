@@ -330,14 +330,14 @@ class CmdLineTest(unittest.TestCase):
         hashes = []
         for i in range(2):
             code = 'print(hash("spam"))'
-            rc, out, err = assert_python_ok('-R', '-c', code)
+            rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(rc, 0)
             hashes.append(out)
         self.assertNotEqual(hashes[0], hashes[1])
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
-        rc, out, err = assert_python_ok('-R', '-c', code)
+        rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(rc, 0)
         self.assertIn(b'random is 1', out)
 
