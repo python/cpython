@@ -128,6 +128,7 @@ PyAPI_FUNC(int) _PyInt_Init(void);
 PyAPI_FUNC(int) _PyLong_Init(void);
 PyAPI_FUNC(void) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
+PyAPI_FUNC(void) _PyRandom_Init(void);
 
 /* Various internal finalizers */
 PyAPI_FUNC(void) _PyExc_Fini(void);
