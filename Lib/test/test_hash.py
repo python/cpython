@@ -234,7 +234,7 @@ def test_main():
                               DatetimeDateTests,
                               DatetimeDatetimeTests,
                               DatetimeTimeTests)
-                              
+
 
 
 if __name__ == "__main__":
