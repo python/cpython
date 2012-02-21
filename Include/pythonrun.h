@@ -193,6 +193,7 @@ PyAPI_FUNC(void) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(void) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
+PyAPI_FUNC(void) _PyRandom_Init(void);
 #endif
 
 /* Various internal finalizers */

@@ -339,7 +339,33 @@ Py_Main(int argc, wchar_t **argv)
     orig_argc = argc;           /* For Py_GetArgcArgv() */
     orig_argv = argv;
 
+    /* Hash randomization needed early for all string operations
+       (including -W and -X options). */
+    while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
+        if (c == 'm' || c == 'c') {
+            /* -c / -m is the last option: following arguments are
+               not interpreter options. */
+            break;
+        }
+        switch (c) {
+        case 'E':
+            Py_IgnoreEnvironmentFlag++;
+            break;
+        case 'R':
+            Py_HashRandomizationFlag++;
+            break;
+        }
+    }
+    /* The variable is only tested for existence here; _PyRandom_Init will
+       check its value further. */
+    if (!Py_HashRandomizationFlag &&
+        (p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
+        Py_HashRandomizationFlag = 1;
+
+    _PyRandom_Init();
+
     PySys_ResetWarnOptions();
+    _PyOS_ResetGetOpt();
 
     while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
         if (c == 'c') {
@@ -400,7 +426,7 @@ Py_Main(int argc, wchar_t **argv)
             break;
 
         case 'E':
-            Py_IgnoreEnvironmentFlag++;
+            /* Already handled above */
             break;
 
         case 't':
@@ -442,7 +468,7 @@ Py_Main(int argc, wchar_t **argv)
             break;
 
         case 'R':
-            Py_HashRandomizationFlag++;
+            /* Already handled above */
             break;
 
         /* This space reserved for other options */

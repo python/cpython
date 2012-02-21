@@ -41,9 +41,18 @@ int _PyOS_opterr = 1;          /* generate error messages */
 int _PyOS_optind = 1;          /* index into argv array   */
 wchar_t *_PyOS_optarg = NULL;     /* optional argument       */
 
+static wchar_t *opt_ptr = L"";
+
+void _PyOS_ResetGetOpt(void)
+{
+    _PyOS_opterr = 1;
+    _PyOS_optind = 1;
+    _PyOS_optarg = NULL;
+    opt_ptr = L"";
+}
+
 int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
 {
-    static wchar_t *opt_ptr = L"";
     wchar_t *ptr;
     wchar_t option;
 
