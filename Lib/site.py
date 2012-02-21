@@ -55,7 +55,6 @@ ImportError exception, it is silently ignored.
 import sys
 import os
 import builtins
-import traceback
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -157,6 +156,7 @@ def addpackage(sitedir, name, known_paths):
             except Exception:
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
+                import traceback
                 for record in traceback.format_exception(*sys.exc_info()):
                     for line in record.splitlines():
                         print('  '+line, file=sys.stderr)
