@@ -29,7 +29,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',',':'))
+    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], sort_keys=True, separators=(',',':'))
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing (using repr() because of extraneous whitespace in the output)::
