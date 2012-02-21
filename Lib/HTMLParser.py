@@ -28,19 +28,19 @@ tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
 tagfind_tolerant = re.compile('[a-zA-Z][^\t\n\r\f />\x00]*')
 
 attrfind = re.compile(
-    r'\s*((?<=[\'"\s])[^\s/>][^\s/=>]*)(\s*=+\s*'
-    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?')
+    r'[\s/]*((?<=[\'"\s/])[^\s/>][^\s/=>]*)(\s*=+\s*'
+    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?(?:\s|/(?!>))*')
 
 locatestarttagend = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
-  (?:\s+                             # whitespace before attribute name
-    (?:(?<=['"\s])[^\s/>][^\s/=>]*   # attribute name
+  (?:[\s/]*                          # optional whitespace before attribute name
+    (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
       (?:\s*=+\s*                    # value indicator
         (?:'[^']*'                   # LITA-enclosed value
           |"[^"]*"                   # LIT-enclosed value
           |(?!['"])[^>\s]*           # bare value
          )
-       )?\s*
+       )?(?:\s|/(?!>))*
      )*
    )?
   \s*                                # trailing whitespace
