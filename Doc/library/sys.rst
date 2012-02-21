@@ -286,6 +286,7 @@ always available.
    :const:`verbose`              :option:`-v`
    :const:`unicode`              :option:`-U`
    :const:`bytes_warning`        :option:`-b`
+   :const:`hash_randomization`   :option:`-R`
    ============================= ===================================
 
    .. versionadded:: 2.6

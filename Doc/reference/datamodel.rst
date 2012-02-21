@@ -1282,6 +1282,8 @@ Basic customization
       modules are still available at the time when the :meth:`__del__` method is
       called.
 
+   See also the :option:`-R` command-line option.
+
 
 .. method:: object.__repr__(self)
 

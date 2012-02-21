@@ -10,6 +10,7 @@ import sys
 import signal
 import subprocess
 import time
+
 from test import test_support
 import mmap
 import uuid
@@ -536,8 +537,41 @@ class URandomTests (unittest.TestCase):
             self.assertRaises(TypeError, os.urandom, 0.9)
             self.assertRaises(TypeError, os.urandom, 1.1)
             self.assertRaises(TypeError, os.urandom, 2.0)
-        except NotImplementedError:
-            pass
+            self.assertEqual(len(os.urandom(0.9)), 0)
+            self.assertEqual(len(os.urandom(1.1)), 1)
+            self.assertEqual(len(os.urandom(2.0)), 2)
+
+    def test_urandom_length(self):
+        self.assertEqual(len(os.urandom(0)), 0)
+        self.assertEqual(len(os.urandom(1)), 1)
+        self.assertEqual(len(os.urandom(10)), 10)
+        self.assertEqual(len(os.urandom(100)), 100)
+        self.assertEqual(len(os.urandom(1000)), 1000)
+
+    def test_urandom_value(self):
+        data1 = os.urandom(16)
+        data2 = os.urandom(16)
+        self.assertNotEqual(data1, data2)
+
+    def get_urandom_subprocess(self, count):
+        code = '\n'.join((
+            'import os, sys',
+            'data = os.urandom(%s)' % count,
+            'sys.stdout.write(data)',
+            'sys.stdout.flush()'))
+        cmd_line = [sys.executable, '-c', code]
+        p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out, err = p.communicate()
+        out = test_support.strip_python_stderr(out)
+        self.assertEqual(len(out), count)
+        return out
+
+    def test_urandom_subprocess(self):
+        data1 = self.get_urandom_subprocess(16)
+        data2 = self.get_urandom_subprocess(16)
+        self.assertNotEqual(data1, data2)
+>>>>>>> other
 
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)

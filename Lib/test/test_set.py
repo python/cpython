@@ -687,6 +687,17 @@ class TestBasicOps(unittest.TestCase):
         if self.repr is not None:
             self.assertEqual(repr(self.set), self.repr)
 
+    def check_repr_against_values(self):
+        text = repr(self.set)
+        self.assertTrue(text.startswith('{'))
+        self.assertTrue(text.endswith('}'))
+
+        result = text[1:-1].split(', ')
+        result.sort()
+        sorted_repr_values = [repr(value) for value in self.values]
+        sorted_repr_values.sort()
+        self.assertEqual(result, sorted_repr_values)
+
     def test_print(self):
         fo = open(test_support.TESTFN, "wb")
         try:
@@ -835,6 +846,46 @@ class TestBasicOpsTriple(TestBasicOps):
         self.dup    = set(self.values)
         self.length = 3
         self.repr   = None
+
+#------------------------------------------------------------------------------
+
+class TestBasicOpsString(TestBasicOps):
+    def setUp(self):
+        self.case   = "string set"
+        self.values = ["a", "b", "c"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 3
+
+    def test_repr(self):
+        self.check_repr_against_values()
+
+#------------------------------------------------------------------------------
+
+class TestBasicOpsUnicode(TestBasicOps):
+    def setUp(self):
+        self.case   = "unicode set"
+        self.values = [u"a", u"b", u"c"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 3
+
+    def test_repr(self):
+        self.check_repr_against_values()
+
+#------------------------------------------------------------------------------
+
+class TestBasicOpsMixedStringUnicode(TestBasicOps):
+    def setUp(self):
+        self.case   = "string and bytes set"
+        self.values = ["a", "b", u"a", u"b"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 4
+
+    def test_repr(self):
+        with test_support.check_warnings():
+            self.check_repr_against_values()
 
 #==============================================================================
 

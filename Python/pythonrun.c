@@ -67,6 +67,7 @@ static void call_sys_exitfunc(void);
 static void call_ll_exitfuncs(void);
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
+extern void _PyRandom_Init(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -89,6 +90,7 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
   true divisions (which they will be in 2.3). */
 int _Py_QnewFlag = 0;
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
+int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 
 /* PyModule_GetWarningsModule is no longer necessary as of 2.6
 since _warnings is builtin.  This API should not be used. */
@@ -166,6 +168,12 @@ Py_InitializeEx(int install_sigs)
         Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
         Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
+    /* The variable is only tested for existence here; _PyRandom_Init will
+       check its value further. */
+    if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
+        Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
+
+    _PyRandom_Init();
 
     interp = PyInterpreterState_New();
     if (interp == NULL)

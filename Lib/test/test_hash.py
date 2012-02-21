@@ -3,9 +3,17 @@
 #
 # Also test that hash implementations are inherited as expected
 
+import os
+import sys
+import struct
+import datetime
 import unittest
+import subprocess
+
 from test import test_support
 from collections import Hashable
+
+IS_64BIT = (struct.calcsize('l') == 8)
 
 
 class HashEqualityTestCase(unittest.TestCase):
@@ -134,10 +142,100 @@ class HashBuiltinsTestCase(unittest.TestCase):
         for obj in self.hashes_to_check:
             self.assertEqual(hash(obj), _default_hash(obj))
 
+class HashRandomizationTests(unittest.TestCase):
+
+    # Each subclass should define a field "repr_", containing the repr() of
+    # an object to be tested
+
+    def get_hash_command(self, repr_):
+        return 'print(hash(%s))' % repr_
+
+    def get_hash(self, repr_, seed=None):
+        env = os.environ.copy()
+        if seed is not None:
+            env['PYTHONHASHSEED'] = str(seed)
+        else:
+            env.pop('PYTHONHASHSEED', None)
+        cmd_line = [sys.executable, '-c', self.get_hash_command(repr_)]
+        p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             env=env)
+        out, err = p.communicate()
+        out = test_support.strip_python_stderr(out)
+        return int(out.strip())
+
+    def test_randomized_hash(self):
+        # two runs should return different hashes
+        run1 = self.get_hash(self.repr_, seed='random')
+        run2 = self.get_hash(self.repr_, seed='random')
+        self.assertNotEqual(run1, run2)
+
+class StringlikeHashRandomizationTests(HashRandomizationTests):
+    def test_null_hash(self):
+        # PYTHONHASHSEED=0 disables the randomized hash
+        if IS_64BIT:
+            known_hash_of_obj = 1453079729188098211
+        else:
+            known_hash_of_obj = -1600925533
+
+        # Randomization is disabled by default:
+        self.assertEqual(self.get_hash(self.repr_), known_hash_of_obj)
+
+        # It can also be disabled by setting the seed to 0:
+        self.assertEqual(self.get_hash(self.repr_, seed=0), known_hash_of_obj)
+
+    def test_fixed_hash(self):
+        # test a fixed seed for the randomized hash
+        # Note that all types share the same values:
+        if IS_64BIT:
+            h = -4410911502303878509
+        else:
+            h = -206076799
+        self.assertEqual(self.get_hash(self.repr_, seed=42), h)
+
+class StrHashRandomizationTests(StringlikeHashRandomizationTests):
+    repr_ = repr('abc')
+
+    def test_empty_string(self):
+        self.assertEqual(hash(""), 0)
+
+class UnicodeHashRandomizationTests(StringlikeHashRandomizationTests):
+    repr_ = repr(u'abc')
+
+    def test_empty_string(self):
+        self.assertEqual(hash(u""), 0)
+
+class BufferHashRandomizationTests(StringlikeHashRandomizationTests):
+    repr_ = 'buffer("abc")'
+
+    def test_empty_string(self):
+        self.assertEqual(hash(buffer("")), 0)
+
+class DatetimeTests(HashRandomizationTests):
+    def get_hash_command(self, repr_):
+        return 'import datetime; print(hash(%s))' % repr_
+
+class DatetimeDateTests(DatetimeTests):
+    repr_ = repr(datetime.date(1066, 10, 14))
+
+class DatetimeDatetimeTests(DatetimeTests):
+    repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7))
+
+class DatetimeTimeTests(DatetimeTests):
+    repr_ = repr(datetime.time(0))
+
+
 def test_main():
     test_support.run_unittest(HashEqualityTestCase,
                               HashInheritanceTestCase,
-                              HashBuiltinsTestCase)
+                              HashBuiltinsTestCase,
+                              StrHashRandomizationTests,
+                              UnicodeHashRandomizationTests,
+                              BufferHashRandomizationTests,
+                              DatetimeDateTests,
+                              DatetimeDatetimeTests,
+                              DatetimeTimeTests)
+
 
 
 if __name__ == "__main__":
