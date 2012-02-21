@@ -498,7 +498,7 @@ def add_ui(db):
 
     exit_dialog = PyDialog(db, "ExitDialog", x, y, w, h, modal, title,
                          "Finish", "Finish", "Finish")
-    exit_dialog.title("Completing the [ProductName] Installer")
+    exit_dialog.title("Complete the [ProductName] Installer")
     exit_dialog.back("< Back", "Finish", active = 0)
     exit_dialog.cancel("Cancel", "Back", active = 0)
     exit_dialog.text("Acknowledgements", 135, 95, 220, 120, 0x30003,
