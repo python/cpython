@@ -240,6 +240,27 @@ text
             self._run_check("<!DOCTYPE %s>" % dtd,
                             [('decl', 'DOCTYPE ' + dtd)])
 
+    def test_slashes_in_starttag(self):
+        self._run_check('<a foo="var"/>', [('startendtag', 'a', [('foo', 'var')])])
+        html = ('<img width=902 height=250px '
+                'src="/sites/default/files/images/homepage/foo.jpg" '
+                '/*what am I doing here*/ />')
+        expected = [(
+            'startendtag', 'img',
+            [('width', '902'), ('height', '250px'),
+             ('src', '/sites/default/files/images/homepage/foo.jpg'),
+             ('*what', None), ('am', None), ('i', None),
+             ('doing', None), ('here*', None)]
+        )]
+        self._run_check(html, expected)
+        html = ('<a / /foo/ / /=/ / /bar/ / />'
+                '<a / /foo/ / /=/ / /bar/ / >')
+        expected = [
+            ('startendtag', 'a', [('foo', None), ('=', None), ('bar', None)]),
+            ('starttag', 'a', [('foo', None), ('=', None), ('bar', None)])
+        ]
+        self._run_check(html, expected)
+
     def test_declaration_junk_chars(self):
         self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
 
