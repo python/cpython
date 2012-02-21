@@ -280,6 +280,7 @@ PYTHON_OBJS=	\
 		Python/pymath.o \
 		Python/pystate.o \
 		Python/pythonrun.o \
+                Python/random.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -708,7 +709,7 @@ buildbottest:	all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
-		$(TESTPYTHON) $(TESTPROG) -uall -rw $(TESTOPTS)
+		$(TESTPYTHON) -R $(TESTPROG) -uall -rw $(TESTOPTS)
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \

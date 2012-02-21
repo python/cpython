@@ -6,6 +6,8 @@ import os
 import unittest
 import warnings
 import sys
+import subprocess
+
 from test import test_support
 
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
@@ -499,18 +501,46 @@ class DevNullTests (unittest.TestCase):
 
 class URandomTests (unittest.TestCase):
     def test_urandom(self):
-        try:
-            with test_support.check_warnings():
-                self.assertEqual(len(os.urandom(1)), 1)
-                self.assertEqual(len(os.urandom(10)), 10)
-                self.assertEqual(len(os.urandom(100)), 100)
-                self.assertEqual(len(os.urandom(1000)), 1000)
-                # see http://bugs.python.org/issue3708
-                self.assertEqual(len(os.urandom(0.9)), 0)
-                self.assertEqual(len(os.urandom(1.1)), 1)
-                self.assertEqual(len(os.urandom(2.0)), 2)
-        except NotImplementedError:
-            pass
+        with test_support.check_warnings():
+            self.assertEqual(len(os.urandom(1)), 1)
+            self.assertEqual(len(os.urandom(10)), 10)
+            self.assertEqual(len(os.urandom(100)), 100)
+            self.assertEqual(len(os.urandom(1000)), 1000)
+            # see http://bugs.python.org/issue3708
+            self.assertEqual(len(os.urandom(0.9)), 0)
+            self.assertEqual(len(os.urandom(1.1)), 1)
+            self.assertEqual(len(os.urandom(2.0)), 2)
+
+    def test_urandom_length(self):
+        self.assertEqual(len(os.urandom(0)), 0)
+        self.assertEqual(len(os.urandom(1)), 1)
+        self.assertEqual(len(os.urandom(10)), 10)
+        self.assertEqual(len(os.urandom(100)), 100)
+        self.assertEqual(len(os.urandom(1000)), 1000)
+
+    def test_urandom_value(self):
+        data1 = os.urandom(16)
+        data2 = os.urandom(16)
+        self.assertNotEqual(data1, data2)
+
+    def get_urandom_subprocess(self, count):
+        code = '\n'.join((
+            'import os, sys',
+            'data = os.urandom(%s)' % count,
+            'sys.stdout.write(data)',
+            'sys.stdout.flush()'))
+        cmd_line = [sys.executable, '-c', code]
+        p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out, err = p.communicate()
+        out = test_support.strip_python_stderr(out)
+        self.assertEqual(len(out), count)
+        return out
+
+    def test_urandom_subprocess(self):
+        data1 = self.get_urandom_subprocess(16)
+        data2 = self.get_urandom_subprocess(16)
+        self.assertNotEqual(data1, data2)
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
