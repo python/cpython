@@ -105,9 +105,9 @@ PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n\
 ";
 static char *usage_6 = "\
-PYTHONHASHSEED: if this variable is set to ``random``, the effect is the same \n\
-   as specifying the :option:`-R` option: a random value is used to seed the\n\
-   hashes of str, bytes and datetime objects.  It can also be set to an integer\n\
+PYTHONHASHSEED: if this variable is set to 'random', the effect is the same\n\
+   as specifying the -R option: a random value is used to seed the hashes of\n\
+   str, bytes and datetime objects.  It can also be set to an integer\n\
    in the range [0,4294967295] to get hash values with a predictable seed.\n\
 ";
 
