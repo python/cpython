@@ -21,7 +21,7 @@ errors = 'surrogatepass'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'df0b3ca6785a070b21f837b227dbdbdff3c2e921'
+    expectedchecksum = 'bf7a78f1a532421b5033600102e23a92044dbba9'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -80,7 +80,7 @@ class UnicodeDatabaseTest(unittest.TestCase):
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # update this, if the database changes
-    expectedchecksum = 'c23dfc0b5eaf3ca2aad32d733de96bb182ccda50'
+    expectedchecksum = '17fe2f12b788e4fff5479b469c4404bb6ecf841f'
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()

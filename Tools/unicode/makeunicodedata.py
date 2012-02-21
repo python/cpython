@@ -38,7 +38,7 @@ SCRIPT = sys.argv[0]
 VERSION = "3.2"
 
 # The Unicode Database
-UNIDATA_VERSION = "6.0.0"
+UNIDATA_VERSION = "6.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -58,7 +58,7 @@ PUA_16 = range(0x100000, 0x10FFFE)
 
 # we use this ranges of PUA_15 to store name aliases and named sequences
 NAME_ALIASES_START = 0xF0000
-NAMED_SEQUENCES_START = 0xF0100
+NAMED_SEQUENCES_START = 0xF0200
 
 old_versions = ["3.2.0"]
 
@@ -95,7 +95,7 @@ EXTENDED_CASE_MASK = 0x4000
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
     ('3400', '4DB5'),
-    ('4E00', '9FCB'),
+    ('4E00', '9FCC'),
     ('20000', '2A6D6'),
     ('2A700', '2B734'),
     ('2B740', '2B81D')
@@ -958,7 +958,7 @@ class UnicodeData:
                     s = s.strip()
                     if not s or s.startswith('#'):
                         continue
-                    char, name = s.split(';')
+                    char, name, abbrev = s.split(';')
                     char = int(char, 16)
                     self.aliases.append((name, char))
                     # also store the name in the PUA 1
@@ -971,6 +971,7 @@ class UnicodeData:
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters.
 
+            assert pua_index < NAMED_SEQUENCES_START
             pua_index = NAMED_SEQUENCES_START
             with open_data(NAMED_SEQUENCES, version) as file:
                 for s in file:
