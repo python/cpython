@@ -198,10 +198,7 @@ def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
     return _compile(pattern, flags|T)
 
-_alphanum = {}
-for c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890':
-    _alphanum[c] = 1
-del c
+_alphanum = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890')
 
 def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
