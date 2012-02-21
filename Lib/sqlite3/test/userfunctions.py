@@ -37,6 +37,8 @@ def func_returnnull():
     return None
 def func_returnblob():
     return buffer("blob")
+def func_returnlonglong():
+    return 1<<31
 def func_raiseexception():
     5 // 0
 
@@ -50,6 +52,8 @@ def func_isnone(v):
     return type(v) is type(None)
 def func_isblob(v):
     return type(v) is buffer
+def func_islonglong(v):
+    return isinstance(v, (int, long)) and v >= 1<<31
 
 class AggrNoStep:
     def __init__(self):
@@ -126,6 +130,7 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnfloat", 0, func_returnfloat)
         self.con.create_function("returnnull", 0, func_returnnull)
         self.con.create_function("returnblob", 0, func_returnblob)
+        self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("raiseexception", 0, func_raiseexception)
 
         self.con.create_function("isstring", 1, func_isstring)
@@ -133,6 +138,7 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("isfloat", 1, func_isfloat)
         self.con.create_function("isnone", 1, func_isnone)
         self.con.create_function("isblob", 1, func_isblob)
+        self.con.create_function("islonglong", 1, func_islonglong)
 
     def tearDown(self):
         self.con.close()
@@ -199,6 +205,12 @@ class FunctionTests(unittest.TestCase):
         self.assertEqual(type(val), buffer)
         self.assertEqual(val, buffer("blob"))
 
+    def CheckFuncReturnLongLong(self):
+        cur = self.con.cursor()
+        cur.execute("select returnlonglong()")
+        val = cur.fetchone()[0]
+        self.assertEqual(val, 1<<31)
+
     def CheckFuncException(self):
         cur = self.con.cursor()
         try:
@@ -235,6 +247,12 @@ class FunctionTests(unittest.TestCase):
     def CheckParamBlob(self):
         cur = self.con.cursor()
         cur.execute("select isblob(?)", (buffer("blob"),))
+        val = cur.fetchone()[0]
+        self.assertEqual(val, 1)
+
+    def CheckParamLongLong(self):
+        cur = self.con.cursor()
+        cur.execute("select islonglong(?)", (1<<42,))
         val = cur.fetchone()[0]
         self.assertEqual(val, 1)
 
