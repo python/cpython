@@ -104,7 +104,7 @@ static char *usage_5 =
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n\
 ";
 static char *usage_6 = "\
-PYTHONHASHSEED: if this variable is set to ``random``, a random value is used\n\
+PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n\
    to seed the hashes of str, bytes and datetime objects.  It can also be\n\
    set to an integer in the range [0,4294967295] to get hash values with a\n\
    predictable seed.\n\
