@@ -540,7 +540,6 @@ error:
 
 void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
 {
-    long longval;
     const char* buffer;
     Py_ssize_t buflen;
     PyObject* stringval;
@@ -550,8 +549,9 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (py_val == Py_None) {
         sqlite3_result_null(context);
     } else if (PyInt_Check(py_val)) {
-        longval = PyInt_AsLong(py_val);
-        sqlite3_result_int64(context, (PY_LONG_LONG)longval);
+        sqlite3_result_int64(context, (sqlite3_int64)PyInt_AsLong(py_val));
+    } else if (PyLong_Check(py_val)) {
+        sqlite3_result_int64(context, PyLong_AsLongLong(py_val));
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyBuffer_Check(py_val)) {
@@ -580,7 +580,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     sqlite3_value* cur_value;
     PyObject* cur_py_value;
     const char* val_str;
-    PY_LONG_LONG val_int;
+    sqlite3_int64 val_int;
     Py_ssize_t buflen;
     void* raw_buffer;
 
@@ -594,7 +594,10 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
         switch (sqlite3_value_type(argv[i])) {
             case SQLITE_INTEGER:
                 val_int = sqlite3_value_int64(cur_value);
-                cur_py_value = PyInt_FromLong((long)val_int);
+                if(val_int < LONG_MIN || val_int > LONG_MAX)
+                    cur_py_value = PyLong_FromLongLong(val_int);
+                else
+                    cur_py_value = PyInt_FromLong((long)val_int);
                 break;
             case SQLITE_FLOAT:
                 cur_py_value = PyFloat_FromDouble(sqlite3_value_double(cur_value));
