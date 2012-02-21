@@ -408,7 +408,7 @@ class Directory:
         self.physical = physical
         self.logical = logical
         self.component = None
-        self.short_names = sets.Set()
+        self.short_names = {}
         self.ids = sets.Set()
         self.keyfiles = {}
         self.componentflags = componentflags
@@ -456,23 +456,25 @@ class Directory:
                         [(feature.id, component)])
 
     def make_short(self, file):
+        long = file
         file = re.sub(r'[\?|><:/*"+,;=\[\]]', '_', file) # restrictions on short names
-        parts = file.split(".")
+        parts = file.split(".", 1)
         if len(parts)>1:
-            suffix = parts[-1].upper()
+            suffix = parts[1].upper()
         else:
-            suffix = None
+            suffix = ''
         prefix = parts[0].upper()
-        if len(prefix) <= 8 and (not suffix or len(suffix)<=3):
+        if len(prefix) <= 8 and '.' not in suffix and len(suffix) <= 3:
             if suffix:
                 file = prefix+"."+suffix
             else:
                 file = prefix
-            assert file not in self.short_names
+            assert file not in self.short_names, (file, self.short_names[file])
         else:
             prefix = prefix[:6]
             if suffix:
-                suffix = suffix[:3]
+                # last three characters of last suffix
+                suffix = suffix.rsplit('.')[-1][:3]
             pos = 1
             while 1:
                 if suffix:
@@ -484,7 +486,7 @@ class Directory:
                 assert pos < 10000
                 if pos in (10, 100, 1000):
                     prefix = prefix[:-1]
-        self.short_names.add(file)
+        self.short_names[file] = long
         return file
 
     def add_file(self, file, src=None, version=None, language=None):
