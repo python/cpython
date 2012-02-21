@@ -517,6 +517,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6807: Run msisupport.mak earlier.
+
 - Issue #10580: Minor grammar change in Windows installer.
 
 - Issue #12627: Implement PEP 394 for Python 2.7 ("python2").
