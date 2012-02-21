@@ -479,6 +479,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
+  on 32-bit architectures. Initial patch by Philippe Devalkeneer.
+
 - HTMLParser is now able to handle slashes in the start tag.
 
 - Issue #13641: Decoding functions in the base64 module now accept ASCII-only
