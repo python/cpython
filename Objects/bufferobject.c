@@ -334,10 +334,20 @@ buffer_hash(PyBufferObject *self)
         return -1;
     p = (unsigned char *) ptr;
     len = size;
-    x = *p << 7;
+    /*
+      We make the hash of the empty buffer be 0, rather than using
+      (prefix ^ suffix), since this slightly obfuscates the hash secret
+    */
+    if (len == 0) {
+        self->b_hash = 0;
+        return 0;
+    }
+    x = _Py_HashSecret.prefix;
+    x ^= *p << 7;
     while (--len >= 0)
         x = (1000003*x) ^ *p++;
     x ^= size;
+    x ^= _Py_HashSecret.suffix;
     if (x == -1)
         x = -2;
     self->b_hash = x;

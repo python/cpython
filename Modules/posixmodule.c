@@ -8538,117 +8538,35 @@ posix_getloadavg(PyObject *self, PyObject *noargs)
 }
 #endif
 
-#ifdef MS_WINDOWS
-
-PyDoc_STRVAR(win32_urandom__doc__,
+PyDoc_STRVAR(posix_urandom__doc__,
 "urandom(n) -> str\n\n\
-Return a string of n random bytes suitable for cryptographic use.");
+Return n random bytes suitable for cryptographic use.");
 
-typedef BOOL (WINAPI *CRYPTACQUIRECONTEXTA)(HCRYPTPROV *phProv,\
-              LPCSTR pszContainer, LPCSTR pszProvider, DWORD dwProvType,\
-              DWORD dwFlags );
-typedef BOOL (WINAPI *CRYPTGENRANDOM)(HCRYPTPROV hProv, DWORD dwLen,\
-              BYTE *pbBuffer );
-
-static CRYPTGENRANDOM pCryptGenRandom = NULL;
-/* This handle is never explicitly released. Instead, the operating
-   system will release it when the process terminates. */
-static HCRYPTPROV hCryptProv = 0;
-
-static PyObject*
-win32_urandom(PyObject *self, PyObject *args)
+static PyObject *
+posix_urandom(PyObject *self, PyObject *args)
 {
-    int howMany;
-    PyObject* result;
+    Py_ssize_t size;
+    PyObject *result;
+    int ret;
 
-    /* Read arguments */
-    if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
+     /* Read arguments */
+    if (!PyArg_ParseTuple(args, "n:urandom", &size))
         return NULL;
-    if (howMany < 0)
+    if (size < 0)
         return PyErr_Format(PyExc_ValueError,
                             "negative argument not allowed");
+    result = PyBytes_FromStringAndSize(NULL, size);
+    if (result == NULL)
+        return NULL;
 
-    if (hCryptProv == 0) {
-        HINSTANCE hAdvAPI32 = NULL;
-        CRYPTACQUIRECONTEXTA pCryptAcquireContext = NULL;
-
-        /* Obtain handle to the DLL containing CryptoAPI
-           This should not fail         */
-        hAdvAPI32 = GetModuleHandle("advapi32.dll");
-        if(hAdvAPI32 == NULL)
-            return win32_error("GetModuleHandle", NULL);
-
-        /* Obtain pointers to the CryptoAPI functions
-           This will fail on some early versions of Win95 */
-        pCryptAcquireContext = (CRYPTACQUIRECONTEXTA)GetProcAddress(
-                                        hAdvAPI32,
-                                        "CryptAcquireContextA");
-        if (pCryptAcquireContext == NULL)
-            return PyErr_Format(PyExc_NotImplementedError,
-                                "CryptAcquireContextA not found");
-
-        pCryptGenRandom = (CRYPTGENRANDOM)GetProcAddress(
-                                        hAdvAPI32, "CryptGenRandom");
-        if (pCryptGenRandom == NULL)
-            return PyErr_Format(PyExc_NotImplementedError,
-                                "CryptGenRandom not found");
-
-        /* Acquire context */
-        if (! pCryptAcquireContext(&hCryptProv, NULL, NULL,
-                                   PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
-            return win32_error("CryptAcquireContext", NULL);
-    }
-
-    /* Allocate bytes */
-    result = PyString_FromStringAndSize(NULL, howMany);
-    if (result != NULL) {
-        /* Get random data */
-        memset(PyString_AS_STRING(result), 0, howMany); /* zero seed */
-        if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
-                              PyString_AS_STRING(result))) {
-            Py_DECREF(result);
-            return win32_error("CryptGenRandom", NULL);
-        }
+    ret = _PyOS_URandom(PyBytes_AS_STRING(result),
+                        PyBytes_GET_SIZE(result));
+    if (ret == -1) {
+        Py_DECREF(result);
+        return NULL;
     }
     return result;
 }
-#endif
-
-#ifdef __VMS
-/* Use openssl random routine */
-#include <openssl/rand.h>
-PyDoc_STRVAR(vms_urandom__doc__,
-"urandom(n) -> str\n\n\
-Return a string of n random bytes suitable for cryptographic use.");
-
-static PyObject*
-vms_urandom(PyObject *self, PyObject *args)
-{
-    int howMany;
-    PyObject* result;
-
-    /* Read arguments */
-    if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
-        return NULL;
-    if (howMany < 0)
-        return PyErr_Format(PyExc_ValueError,
-                            "negative argument not allowed");
-
-    /* Allocate bytes */
-    result = PyString_FromStringAndSize(NULL, howMany);
-    if (result != NULL) {
-        /* Get random data */
-        if (RAND_pseudo_bytes((unsigned char*)
-                              PyString_AS_STRING(result),
-                              howMany) < 0) {
-            Py_DECREF(result);
-            return PyErr_Format(PyExc_ValueError,
-                                "RAND_pseudo_bytes");
-        }
-    }
-    return result;
-}
-#endif
 
 #ifdef HAVE_SETRESUID
 PyDoc_STRVAR(posix_setresuid__doc__,
@@ -9035,12 +8953,6 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
 #endif
- #ifdef MS_WINDOWS
-    {"urandom", win32_urandom, METH_VARARGS, win32_urandom__doc__},
- #endif
- #ifdef __VMS
-    {"urandom", vms_urandom, METH_VARARGS, vms_urandom__doc__},
- #endif
 #ifdef HAVE_SETRESUID
     {"setresuid",       posix_setresuid, METH_VARARGS, posix_setresuid__doc__},
 #endif
@@ -9053,7 +8965,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETRESGID
     {"getresgid",       posix_getresgid, METH_NOARGS, posix_getresgid__doc__},
 #endif
-
+    {"urandom",         posix_urandom,   METH_VARARGS, posix_urandom__doc__},
     {NULL,              NULL}            /* Sentinel */
 };
 

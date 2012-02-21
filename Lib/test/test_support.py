@@ -36,8 +36,8 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
            "threading_cleanup", "reap_children", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes",
-           "import_fresh_module"]
-
+           "import_fresh_module", "threading_cleanup", "reap_children",
+           "strip_python_stderr"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
