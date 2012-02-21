@@ -265,8 +265,14 @@ class PrettyPrintTests(DebuggerTests):
     def test_sets(self):
         'Verify the pretty-printing of sets'
         self.assertGdbRepr(set())
-        self.assertGdbRepr(set(['a', 'b']))
-        self.assertGdbRepr(set([4, 5, 6]))
+        rep = self.get_gdb_repr("print set(['a', 'b'])")[0]
+        self.assertTrue(rep.startswith("set(["))
+        self.assertTrue(rep.endswith("])"))
+        self.assertEqual(eval(rep), {'a', 'b'})
+        rep = self.get_gdb_repr("print set([4, 5])")[0]
+        self.assertTrue(rep.startswith("set(["))
+        self.assertTrue(rep.endswith("])"))
+        self.assertEqual(eval(rep), {4, 5})
 
         # Ensure that we handled sets containing the "dummy" key value,
         # which happens on deletion:
@@ -278,8 +284,14 @@ print s''')
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
         self.assertGdbRepr(frozenset())
-        self.assertGdbRepr("frozenset(['a', 'b'])")
-        self.assertGdbRepr("frozenset([4, 5, 6])")
+        rep = self.get_gdb_repr("print frozenset(['a', 'b'])")[0]
+        self.assertTrue(rep.startswith("frozenset(["))
+        self.assertTrue(rep.endswith("])"))
+        self.assertEqual(eval(rep), {'a', 'b'})
+        rep = self.get_gdb_repr("print frozenset([4, 5])")[0]
+        self.assertTrue(rep.startswith("frozenset(["))
+        self.assertTrue(rep.endswith("])"))
+        self.assertEqual(eval(rep), {4, 5})
 
     def test_exceptions(self):
         # Test a RuntimeError
