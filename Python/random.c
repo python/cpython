@@ -257,17 +257,6 @@ _PyRandom_Init(void)
     _Py_HashSecret_Initialized = 1;
 
     /*
-      By default, hash randomization is disabled, and only
-      enabled if PYTHONHASHSEED is set to non-empty or if
-      "-R" is provided at the command line:
-    */
-    if (!Py_HashRandomizationFlag) {
-        /* Disable the randomized hash: */
-        memset(secret, 0, secret_size);
-        return;
-    }
-
-    /*
       Hash randomization is enabled.  Generate a per-process secret,
       using PYTHONHASHSEED if provided.
     */

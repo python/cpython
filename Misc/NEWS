@@ -18,10 +18,9 @@ Core and Builtins
 - Issue #14051: Allow arbitrary attributes to be set of classmethod and
   staticmethod.
 
-- Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
-  environment variable, to provide an opt-in way to protect against denial of
-  service attacks due to hash collisions within the dict and set types.  Patch
-  by David Malcolm, based on work by Victor Stinner.
+- Issue #13703: oCERT-2011-003: Randomize hashes of str and bytes to protect
+  against denial of service attacks due to hash collisions within the dict and
+  set types.  Patch by David Malcolm, based on work by Victor Stinner.
 
 - Issue #13020: Fix a reference leak when allocating a structsequence object
   fails.  Patch by Suman Saha.

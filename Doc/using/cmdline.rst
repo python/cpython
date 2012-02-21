@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiORqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -486,9 +486,8 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONHASHSEED
 
-   If this variable is set to ``random``, the effect is the same as specifying
-   the :option:`-R` option: a random value is used to seed the hashes of str,
-   bytes and datetime objects.
+   If this variable is set to ``random``, a random value is used to seed the
+   hashes of str, bytes and datetime objects.
 
    If :envvar:`PYTHONHASHSEED` is set to an integer value, it is used as a fixed
    seed for generating the hash() of the types covered by the hash
@@ -499,8 +498,7 @@ These environment variables influence Python's behavior.
    values.
 
    The integer must be a decimal number in the range [0,4294967295].  Specifying
-   the value 0 will lead to the same hash values as when hash randomization is
-   disabled.
+   the value 0 will disable hash randomization.
 
    .. versionadded:: 3.2.3
 

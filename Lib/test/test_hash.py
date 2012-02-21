@@ -159,8 +159,8 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
         else:
             known_hash_of_obj = -1600925533
 
-        # Randomization is disabled by default:
-        self.assertEqual(self.get_hash(self.repr_), known_hash_of_obj)
+        # Randomization is enabled by default:
+        self.assertNotEqual(self.get_hash(self.repr_), known_hash_of_obj)
 
         # It can also be disabled by setting the seed to 0:
         self.assertEqual(self.get_hash(self.repr_, seed=0), known_hash_of_obj)
