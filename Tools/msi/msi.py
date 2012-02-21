@@ -179,6 +179,8 @@ mingw_lib = os.path.join(srcdir, PCBUILD, "libpython%s%s.a" % (major, minor))
 have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 
 # Determine the target architecture
+if os.system("nmake /nologo /c /f msisupport.mak") != 0:
+    raise RuntimeError("'nmake /f msisupport.mak' failed")
 dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
@@ -376,8 +378,6 @@ def add_ui(db):
     # UpdateEditIDLE sets the REGISTRY.tcl component into
     # the installed/uninstalled state according to both the
     # Extensions and TclTk features.
-    if os.system("nmake /nologo /c /f msisupport.mak") != 0:
-        raise RuntimeError("'nmake /f msisupport.mak' failed")
     add_data(db, "Binary", [("Script", msilib.Binary("msisupport.dll"))])
     # See "Custom Action Type 1"
     if msilib.Win64:
