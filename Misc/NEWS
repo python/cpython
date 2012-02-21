@@ -121,6 +121,8 @@ Core and Builtins
 Library
 -------
 
+- HTMLParser is now able to handle slashes in the start tag.
+
 - Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
   SimpleXMLRPCServer upon malformed POST request.
 
