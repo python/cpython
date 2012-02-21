@@ -26,14 +26,18 @@ tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
 # see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
 # and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
 tagfind_tolerant = re.compile('[a-zA-Z][^\t\n\r\f />\x00]*')
-# Note, the strict one of this pair isn't really strict, but we can't
-# make it correctly strict without breaking backward compatibility.
+# Note:
+#  1) the strict attrfind isn't really strict, but we can't make it
+#     correctly strict without breaking backward compatibility;
+#  2) if you change attrfind remember to update locatestarttagend too;
+#  3) if you change attrfind and/or locatestarttagend the parser will
+#     explode, so don't do it.
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[^\s"\'=<>`]*))?')
 attrfind_tolerant = re.compile(
-    r'\s*((?<=[\'"\s])[^\s/>][^\s/=>]*)(\s*=+\s*'
-    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?')
+    r'[\s/]*((?<=[\'"\s/])[^\s/>][^\s/=>]*)(\s*=+\s*'
+    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?(?:\s|/(?!>))*')
 locatestarttagend = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
   (?:\s+                             # whitespace before attribute name
@@ -50,15 +54,15 @@ locatestarttagend = re.compile(r"""
 """, re.VERBOSE)
 locatestarttagend_tolerant = re.compile(r"""
   <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
-  (?:\s*                             # optional whitespace before attribute name
-    (?:(?<=['"\s])[^\s/>][^\s/=>]*   # attribute name
+  (?:[\s/]*                          # optional whitespace before attribute name
+    (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
       (?:\s*=+\s*                    # value indicator
         (?:'[^']*'                   # LITA-enclosed value
           |"[^"]*"                   # LIT-enclosed value
           |(?!['"])[^>\s]*           # bare value
          )
          (?:\s*,)*                   # possibly followed by a comma
-       )?\s*
+       )?(?:\s|/(?!>))*
      )*
    )?
   \s*                                # trailing whitespace
