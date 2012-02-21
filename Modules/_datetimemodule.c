@@ -2784,6 +2784,7 @@ generic_hash(unsigned char *data, int len)
     register unsigned char *p;
     register Py_hash_t x;
 
+    assert(_Py_HashSecret_Initialized);
     p = (unsigned char *) data;
     x = _Py_HashSecret.prefix;
     x ^= *p << 7;
