@@ -422,12 +422,6 @@ Py_Main(int argc, char **argv)
 
         case 'W':
             PySys_AddWarnOption(_PyOS_optarg);
-            /* Extremely obscure hack: if _PyOS_optarg was one character,
-               PyString_FromString in PySys_AddWarnOption will try to intern
-               it. This is bad because hash randomization has not been setup
-               yet, so the string will get the wrong hash. The following call
-               will cause all the cached characters to be released. */
-            PyString_Fini();
             break;
 
         case 'R':
