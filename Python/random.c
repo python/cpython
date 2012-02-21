@@ -5,7 +5,11 @@
 #include <fcntl.h>
 #endif
 
-static int random_initialized = 0;
+#ifdef Py_DEBUG
+int _Py_HashSecret_Initialized = 0;
+#else
+static int _Py_HashSecret_Initialized = 0;
+#endif
 
 #ifdef MS_WINDOWS
 typedef BOOL (WINAPI *CRYPTACQUIRECONTEXTA)(HCRYPTPROV *phProv,\
@@ -246,11 +250,11 @@ _PyRandom_Init(void)
 {
     char *env;
     void *secret = &_Py_HashSecret;
-    Py_ssize_t secret_size = sizeof(_Py_HashSecret);
+    Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
 
-    if (random_initialized)
+    if (_Py_HashSecret_Initialized)
         return;
-    random_initialized = 1;
+    _Py_HashSecret_Initialized = 1;
 
     /*
       By default, hash randomization is disabled, and only
