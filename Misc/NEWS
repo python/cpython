@@ -474,6 +474,8 @@ Library
 Build
 -----
 
+- Issue #10580: Minor grammar change in Windows installer.
+
 - Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
 
 Tools/Demos
