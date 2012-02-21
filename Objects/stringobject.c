@@ -1262,6 +1262,7 @@ string_hash(PyStringObject *a)
     register unsigned char *p;
     register long x;
 
+    assert(_Py_HashSecret_Initialized);
     if (a->ob_shash != -1)
         return a->ob_shash;
     len = Py_SIZE(a);

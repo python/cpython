@@ -6538,6 +6538,7 @@ unicode_hash(PyUnicodeObject *self)
     register Py_UNICODE *p;
     register long x;
 
+    assert(_Py_HashSecret_Initialized);
     if (self->hash != -1)
         return self->hash;
     len = PyUnicode_GET_SIZE(self);
