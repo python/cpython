@@ -186,6 +186,12 @@ class BytesHashRandomizationTests(StringlikeHashRandomizationTests):
     def test_empty_string(self):
         self.assertEqual(hash(b""), 0)
 
+class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests):
+    repr_ = "memoryview(b'abc')"
+
+    def test_empty_string(self):
+        self.assertEqual(hash(memoryview(b"")), 0)
+
 class DatetimeTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
         return 'import datetime; print(hash(%s))' % repr_
