@@ -1291,10 +1291,8 @@ Basic customization
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the order in which keys are retrieved from a
-      dict.  Although Python has never made guarantees about this ordering (and
-      it typically varies between 32-bit and 64-bit builds), enough real-world
-      code implicitly relies on this non-guaranteed behavior that the
-      randomization is disabled by default.
+      dict.  Note Python has never made guarantees about this ordering (and it
+      typically varies between 32-bit and 64-bit builds).
 
       See also :envvar:`PYTHONHASHSEED`.
 
