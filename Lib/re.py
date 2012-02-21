@@ -199,7 +199,7 @@ def template(pattern, flags=0):
     return _compile(pattern, flags|T)
 
 _alphanum = frozenset(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
