@@ -37,10 +37,18 @@ extern "C" {
 int _PyOS_opterr = 1;          /* generate error messages */
 int _PyOS_optind = 1;          /* index into argv array   */
 char *_PyOS_optarg = NULL;     /* optional argument       */
+static char *opt_ptr = "";
+
+void _PyOS_ResetGetOpt(void)
+{
+    _PyOS_opterr = 1;
+    _PyOS_optind = 1;
+    _PyOS_optarg = NULL;
+    opt_ptr = "";
+}
 
 int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 {
-    static char *opt_ptr = "";
     char *ptr;
     int option;
 
