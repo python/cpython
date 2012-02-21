@@ -73,7 +73,6 @@ extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
 extern int _PyFaulthandler_Init(void);
 extern void _PyFaulthandler_Fini(void);
-extern void _PyRandom_Init(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
