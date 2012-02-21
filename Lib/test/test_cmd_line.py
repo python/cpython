@@ -103,6 +103,20 @@ class CmdLineTest(unittest.TestCase):
             self.exit_code('-c', 'pass'),
             0)
 
+    def test_hash_randomization(self):
+        # Verify that -R enables hash randomization:
+        self.verify_valid_flag('-R')
+        hashes = []
+        for i in range(2):
+            code = 'print(hash("spam"))'
+            data = self.start_python('-R', '-c', code)
+            hashes.append(data)
+        self.assertNotEqual(hashes[0], hashes[1])
+
+        # Verify that sys.flags contains hash_randomization
+        code = 'import sys; print sys.flags'
+        data = self.start_python('-R', '-c', code)
+        self.assertTrue('hash_randomization=1' in data)
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)

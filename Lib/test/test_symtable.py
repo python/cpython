@@ -105,10 +105,11 @@ class SymtableTest(unittest.TestCase):
 
     def test_function_info(self):
         func = self.spam
-        self.assertEqual(func.get_parameters(), ("a", "b", "kw", "var"))
-        self.assertEqual(func.get_locals(),
+        self.assertEqual(
+            tuple(sorted(func.get_parameters())), ("a", "b", "kw", "var"))
+        self.assertEqual(tuple(sorted(func.get_locals())),
                          ("a", "b", "bar", "internal", "kw", "var", "x"))
-        self.assertEqual(func.get_globals(), ("bar", "glob"))
+        self.assertEqual(tuple(sorted(func.get_globals())), ("bar", "glob"))
         self.assertEqual(self.internal.get_frees(), ("x",))
 
     def test_globals(self):
