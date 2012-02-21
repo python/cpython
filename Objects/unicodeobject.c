@@ -7341,6 +7341,7 @@ unicode_hash(PyUnicodeObject *self)
     Py_UNICODE *p;
     long x;
 
+    assert(_Py_HashSecret_Initialized);
     if (self->hash != -1)
         return self->hash;
     len = Py_SIZE(self);
