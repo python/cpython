@@ -1277,7 +1277,29 @@ Basic customization
    inheritance of :meth:`__hash__` will be blocked, just as if :attr:`__hash__`
    had been explicitly set to :const:`None`.
 
-   See also the :option:`-R` command-line option.
+
+   .. note::
+
+      Note by default the :meth:`__hash__` values of str, bytes and datetime
+      objects are "salted" with an unpredictable random value.  Although they
+      remain constant within an individual Python process, they are not
+      predictable between repeated invocations of Python.
+
+      This is intended to provide protection against a denial-of-service caused
+      by carefully-chosen inputs that exploit the worst case performance of a
+      dict insertion, O(n^2) complexity.  See
+      http://www.ocert.org/advisories/ocert-2011-003.html for details.
+
+      Changing hash values affects the order in which keys are retrieved from a
+      dict.  Although Python has never made guarantees about this ordering (and
+      it typically varies between 32-bit and 64-bit builds), enough real-world
+      code implicitly relies on this non-guaranteed behavior that the
+      randomization is disabled by default.
+
+      See also :envvar:`PYTHONHASHSEED`.
+
+   .. versionchanged:: 3.3
+      Hash randomization is enabled by default.
 
 
 .. method:: object.__bool__(self)
