@@ -763,6 +763,7 @@ _Py_HashBytes(unsigned char *p, Py_ssize_t len)
       We make the hash of the empty string be 0, rather than using
       (prefix ^ suffix), since this slightly obfuscates the hash secret
     */
+    assert(_Py_HashSecret_Initialized);
     if (len == 0) {
         return 0;
     }
