@@ -332,8 +332,7 @@ class PEP3147Tests(unittest.TestCase):
         support.unload('pep3147')
         m = __import__('pep3147')
         support.unload('pep3147')
-        sys.stdout.flush()
-        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__))
+        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__, sys.path))
 
 
 class NullImporterTests(unittest.TestCase):
