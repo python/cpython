@@ -36,6 +36,16 @@ def status(message, modal=False, info=None):
     return decorated_fxn
 
 
+def mq_patches_applied():
+    """Check if there are any applied MQ patches."""
+    cmd = 'hg qapplied'
+    with subprocess.Popen(cmd.split(),
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as st:
+        bstdout, _ = st.communicate()
+        return st.returncode == 0 and bstdout
+
+
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files():
@@ -43,6 +53,8 @@ def changed_files():
     if os.path.isdir(os.path.join(SRCDIR, '.hg')):
         vcs = 'hg'
         cmd = 'hg status --added --modified --no-status'
+        if mq_patches_applied():
+            cmd += ' --rev qparent'
     elif os.path.isdir('.svn'):
         vcs = 'svn'
         cmd = 'svn status --quiet --non-interactive --ignore-externals'
