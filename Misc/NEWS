@@ -10,6 +10,9 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
+- Issue #14084: Fix a file descriptor leak when importing a module with a
+  bad encoding.
+
 - Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
   environment variable, to provide an opt-in way to protect against denial of
   service attacks due to hash collisions within the dict and set types.  Patch

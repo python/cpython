@@ -3195,8 +3195,10 @@ call_find_module(char *name, PyObject *path)
                memory. */
             found_encoding = PyTokenizer_FindEncoding(fd);
             lseek(fd, 0, 0); /* Reset position */
-            if (found_encoding == NULL && PyErr_Occurred())
+            if (found_encoding == NULL && PyErr_Occurred()) {
+                close(fd);
                 return NULL;
+            }
             encoding = (found_encoding != NULL) ? found_encoding :
                    (char*)PyUnicode_GetDefaultEncoding();
         }
