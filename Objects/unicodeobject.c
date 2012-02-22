@@ -998,6 +998,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
             is_sharing = 1;
     }
     else {
+        assert(maxchar <= MAX_UNICODE);
         kind_state = PyUnicode_4BYTE_KIND;
         char_size = 4;
         if (sizeof(wchar_t) == 4)
@@ -1627,6 +1628,7 @@ static int
 unicode_putchar(PyObject **p_unicode, Py_ssize_t *pos,
                 Py_UCS4 ch)
 {
+    assert(ch <= MAX_UNICODE);
     if (unicode_widen(p_unicode, ch) < 0)
         return -1;
     PyUnicode_WRITE(PyUnicode_KIND(*p_unicode),
