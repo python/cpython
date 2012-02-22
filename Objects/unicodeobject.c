@@ -8929,15 +8929,15 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
     enum PyUnicode_Kind kind;
     void *data;
 
-    maxchar = 0;
+    maxchar = 127;
     for (i = 0; i < length; i++) {
         Py_UNICODE ch = s[i];
         if (ch > 127) {
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal >= 0)
                 ch = '0' + decimal;
+            maxchar = Py_MAX(maxchar, ch);
         }
-        maxchar = Py_MAX(maxchar, ch);
     }
 
     /* Copy to a new string */
