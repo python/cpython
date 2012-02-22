@@ -169,9 +169,15 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
         # test a fixed seed for the randomized hash
         # Note that all types share the same values:
         if IS_64BIT:
-            h = -4410911502303878509
+            if sys.byteorder == 'little':
+                h = -4410911502303878509
+            else:
+                h = -3570150969479994130
         else:
-            h = -206076799
+            if sys.byteorder == 'little':
+                h = -206076799
+            else:
+                h = -1024014457
         self.assertEqual(self.get_hash(self.repr_, seed=42), h)
 
 class StrHashRandomizationTests(StringlikeHashRandomizationTests):
