@@ -483,6 +483,9 @@ Build
 Tools/Demos
 -----------
 
+- Issue #14053: patchcheck.py ("make patchcheck") now works with MQ patches.
+  Patch by Francisco Martín Brugué.
+
 - Issue #13930: 2to3 is now able to write its converted output files to another
   directory tree as well as copying unchanged files and altering the file
   suffix.  See its new -o, -W and --add-suffix options.  This makes it more
