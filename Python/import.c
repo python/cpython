@@ -3628,11 +3628,9 @@ call_find_module(PyObject *name, PyObject *path_list)
         if (fd != -1)
             fd = dup(fd);
         fclose(fp);
-        if (fd == -1) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            return NULL;
-        }
         fp = NULL;
+        if (fd == -1)
+            return PyErr_SetFromErrno(PyExc_OSError);
     }
     if (fd != -1) {
         if (strchr(fdp->mode, 'b') == NULL) {
@@ -3642,6 +3640,7 @@ call_find_module(PyObject *name, PyObject *path_list)
             lseek(fd, 0, 0); /* Reset position */
             if (found_encoding == NULL && PyErr_Occurred()) {
                 Py_XDECREF(pathobj);
+                close(fd);
                 return NULL;
             }
             encoding = (found_encoding != NULL) ? found_encoding :
