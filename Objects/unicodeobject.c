@@ -9975,7 +9975,6 @@ pad(PyObject *self,
     assert(_PyUnicode_CheckConsistency(u, 1));
     return u;
 }
-#undef FILL
 
 PyObject *
 PyUnicode_Splitlines(PyObject *string, int keepends)
@@ -11141,10 +11140,8 @@ unicode_expandtabs(PyObject *self, PyObject *args)
             if (tabsize > 0) {
                 incr = tabsize - (line_pos % tabsize);
                 line_pos += incr;
-                while (incr--) {
-                    PyUnicode_WRITE(kind, dest_data, j, ' ');
-                    j++;
-                }
+                FILL(kind, dest_data, ' ', j, incr);
+                j += incr;
             }
         }
         else {
