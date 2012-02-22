@@ -3186,6 +3186,8 @@ call_find_module(char *name, PyObject *path)
             fd = dup(fd);
         fclose(fp);
         fp = NULL;
+        if (fd == -1)
+            return PyErr_SetFromErrno(PyExc_OSError);
     }
     if (fd != -1) {
         if (strchr(fdp->mode, 'b') == NULL) {
