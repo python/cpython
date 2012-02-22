@@ -325,12 +325,15 @@ class PEP3147Tests(unittest.TestCase):
         self.addCleanup(cleanup)
         # Touch the __init__.py file.
         support.create_empty_file('pep3147/__init__.py')
+        expected___file__ = os.sep.join(('.', 'pep3147', '__init__.py'))
         m = __import__('pep3147')
+        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__))
         # Ensure we load the pyc file.
         support.forget('pep3147')
         m = __import__('pep3147')
-        self.assertEqual(m.__file__,
-                         os.sep.join(('.', 'pep3147', '__init__.py')))
+        support.forget('pep3147')
+        sys.stdout.flush()
+        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__))
 
 
 class NullImporterTests(unittest.TestCase):
