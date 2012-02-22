@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14084: Fix a file descriptor leak when importing a module with a
+  bad encoding.
+
 - Upgrade Unicode data to Unicode 6.1.
 
 - Issue #14040: Remove rarely used file name suffixes for C extensions
