@@ -528,12 +528,13 @@ class URandomTests (unittest.TestCase):
             'import os, sys',
             'data = os.urandom(%s)' % count,
             'sys.stdout.write(data)',
-            'sys.stdout.flush()'))
+            'sys.stdout.flush()',
+            'print >> sys.stderr, (len(data), data)'))
         cmd_line = [sys.executable, '-c', code]
         p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
-        out = test_support.strip_python_stderr(out)
+        self.assertEqual(p.wait(), 0, (p.wait(), err))
         self.assertEqual(len(out), count)
         return out
 
