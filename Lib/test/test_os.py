@@ -541,10 +541,12 @@ class URandomTests (unittest.TestCase):
         self.assertNotEqual(data1, data2)
 
     def get_urandom_subprocess(self, count):
+        # We need to use repr() and eval() to avoid line ending conversions
+        # under Windows.
         code = '\n'.join((
             'import os, sys',
             'data = os.urandom(%s)' % count,
-            'sys.stdout.write(data)',
+            'sys.stdout.write(repr(data))',
             'sys.stdout.flush()',
             'print >> sys.stderr, (len(data), data)'))
         cmd_line = [sys.executable, '-c', code]
@@ -552,7 +554,8 @@ class URandomTests (unittest.TestCase):
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         self.assertEqual(p.wait(), 0, (p.wait(), err))
-        self.assertEqual(len(out), count)
+        out = eval(out)
+        self.assertEqual(len(out), count, err)
         return out
 
     def test_urandom_subprocess(self):
