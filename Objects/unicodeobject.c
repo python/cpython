@@ -1652,7 +1652,7 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index, const char *str)
     case PyUnicode_1BYTE_KIND: {
         Py_ssize_t len = strlen(str);
         assert(index + len <= PyUnicode_GET_LENGTH(unicode));
-        memcpy(data + index, str, len);
+        memcpy((char *) data + index, str, len);
         return len;
     }
     case PyUnicode_2BYTE_KIND: {
