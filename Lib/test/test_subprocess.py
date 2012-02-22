@@ -688,8 +688,8 @@ class ProcessTestCase(BaseTestCase):
 
     def test_poll(self):
         p = subprocess.Popen([sys.executable, "-c",
-                              "import os",
-                              "os.read(1)"], stdin=subprocess.PIPE)
+                              "import os; os.read(0, 1)"],
+                             stdin=subprocess.PIPE)
         self.addCleanup(p.stdin.close)
         self.assertIsNone(p.poll())
         os.write(p.stdin.fileno(), b'A')
