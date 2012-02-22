@@ -1640,8 +1640,9 @@ unicode_putchar(PyObject **p_unicode, Py_ssize_t *pos,
 /* Copy a ASCII or latin1 char* string into a Python Unicode string.
    Return the length of the input string.
 
-   WARNING: Don't copy the terminating null character and don't check the
-   maximum character (may write a latin1 character in an ASCII string). */
+   WARNING: The function doesn't copy the terminating null character and
+   doesn't check the maximum character (may write a latin1 character in an
+   ASCII string). */
 static Py_ssize_t
 unicode_write_cstr(PyObject *unicode, Py_ssize_t index, const char *str)
 {
