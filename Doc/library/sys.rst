@@ -195,7 +195,7 @@ always available.
    be set at build time with the ``--exec-prefix`` argument to the
    :program:`configure` script.  Specifically, all configuration files (e.g. the
    :file:`pyconfig.h` header file) are installed in the directory
-   :file:`{exec_prefix}/lib/python{X.Y}/config', and shared library modules are
+   :file:`{exec_prefix}/lib/python{X.Y}/config`, and shared library modules are
    installed in :file:`{exec_prefix}/lib/python{X.Y}/lib-dynload`, where *X.Y*
    is the version number of Python, for example ``3.2``.
 
@@ -750,11 +750,13 @@ always available.
    ====================== ===========================
 
    .. seealso::
+
       :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the
       system's identity.
+
 
 .. data:: prefix
 
@@ -764,7 +766,7 @@ always available.
    argument to the :program:`configure` script.  The main collection of Python
    library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}``
    while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}``, where *X.Y* is the version
+   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
    number of Python, for example ``3.2``.
 
 
