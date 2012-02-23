@@ -21,13 +21,10 @@
 #define STRINGLIB_RESIZE         not_supported
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
-#define STRINGLIB_GROUPING       _PyUnicode_InsertThousandsGrouping
-#define STRINGLIB_GROUPING_LOCALE _PyUnicode_InsertThousandsGroupingLocale
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII
 
 #define _Py_InsertThousandsGrouping _PyUnicode_ucs1_InsertThousandsGrouping
-#define _Py_InsertThousandsGroupingLocale _PyUnicode_ucs1_InsertThousandsGroupingLocale
 
 

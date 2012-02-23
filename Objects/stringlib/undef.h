@@ -7,5 +7,5 @@
 #undef  STRINGLIB_NEW
 #undef  STRINGLIB_RESIZE
 #undef  _Py_InsertThousandsGrouping
-#undef  _Py_InsertThousandsGroupingLocale
+#undef STRINGLIB_IS_UNICODE
 
