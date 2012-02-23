@@ -2,21 +2,21 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.3?
-===========================
+What's New in Python 3.2.3 release candidate 1?
+===============================================
 
-*Release date: XX-XXX-2011*
+*Release date: 24-Feb-2011*
 
 Core and Builtins
 -----------------
-
-- Issue #14084: Fix a file descriptor leak when importing a module with a
-  bad encoding.
 
 - Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
   environment variable, to provide an opt-in way to protect against denial of
   service attacks due to hash collisions within the dict and set types.  Patch
   by David Malcolm, based on work by Victor Stinner.
+
+- Issue #14084: Fix a file descriptor leak when importing a module with a
+  bad encoding.
 
 - Issue #13020: Fix a reference leak when allocating a structsequence object
   fails.  Patch by Suman Saha.
