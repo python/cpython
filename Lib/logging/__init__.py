@@ -16,9 +16,9 @@
 
 """
 Logging package for Python. Based on PEP 282 and comments thereto in
-comp.lang.python, and influenced by Apache's log4j system.
+comp.lang.python.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """

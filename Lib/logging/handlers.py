@@ -16,10 +16,9 @@
 
 """
 Additional handlers for the logging package for Python. The core package is
-based on PEP 282 and comments thereto in comp.lang.python, and influenced by
-Apache's log4j system.
+based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
