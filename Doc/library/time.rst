@@ -228,8 +228,9 @@ The module defines the following functions and data items:
 
 .. function:: monotonic()
 
-   Monotonic clock.  The reference point of the returned value is undefined so
-   only the difference of consecutive calls is valid.
+   Monotonic non-decreasing clock. The clock is not related to the system clock
+   and cannot go backward.  The reference point of the returned
+   value is undefined so only the difference of consecutive calls is valid.
 
    .. versionadded:: 3.3
 
