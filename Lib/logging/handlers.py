@@ -1,4 +1,4 @@
-# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,10 +16,9 @@
 
 """
 Additional handlers for the logging package for Python. The core package is
-based on PEP 282 and comments thereto in comp.lang.python, and influenced by
-Apache's log4j system.
+based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -554,10 +553,11 @@ class SocketHandler(logging.Handler):
         """
         Closes the socket.
         """
-        if self.sock:
-            self.sock.close()
-            self.sock = None
-        logging.Handler.close(self)
+        with self.lock:
+            if self.sock:
+                self.sock.close()
+                self.sock = None
+            logging.Handler.close(self)
 
 class DatagramHandler(SocketHandler):
     """
@@ -752,9 +752,10 @@ class SysLogHandler(logging.Handler):
         """
         Closes the socket.
         """
-        if self.unixsocket:
-            self.socket.close()
-        logging.Handler.close(self)
+        with self.lock:
+            if self.unixsocket:
+                self.socket.close()
+            logging.Handler.close(self)
 
     def mapPriority(self, levelName):
         """
@@ -1095,7 +1096,8 @@ class BufferingHandler(logging.Handler):
 
         This version just zaps the buffer to empty.
         """
-        self.buffer = []
+        with self.lock:
+            self.buffer = []
 
     def close(self):
         """
@@ -1145,18 +1147,20 @@ class MemoryHandler(BufferingHandler):
 
         The record buffer is also cleared by this operation.
         """
-        if self.target:
-            for record in self.buffer:
-                self.target.handle(record)
-            self.buffer = []
+        with self.lock:
+            if self.target:
+                for record in self.buffer:
+                    self.target.handle(record)
+                self.buffer = []
 
     def close(self):
         """
         Flush, set the target to None and lose the buffer.
         """
         self.flush()
-        self.target = None
-        BufferingHandler.close(self)
+        with self.lock:
+            self.target = None
+            BufferingHandler.close(self)
 
 
 class QueueHandler(logging.Handler):
