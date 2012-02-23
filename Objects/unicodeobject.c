@@ -9151,34 +9151,75 @@ any_find_slice(int direction, PyObject* s1, PyObject* s2,
 }
 
 Py_ssize_t
-_PyUnicode_InsertThousandsGrouping(PyObject *unicode, int kind, void *data,
-                                   Py_ssize_t n_buffer,
-                                   void *digits, Py_ssize_t n_digits,
-                                   Py_ssize_t min_width,
-                                   const char *grouping,
-                                   const char *thousands_sep)
+_PyUnicode_InsertThousandsGrouping(
+    PyObject *unicode, Py_ssize_t index,
+    Py_ssize_t n_buffer,
+    void *digits, Py_ssize_t n_digits,
+    Py_ssize_t min_width,
+    const char *grouping, PyObject *thousands_sep,
+    Py_UCS4 *maxchar)
 {
+    unsigned int kind, thousands_sep_kind;
+    void *data, *thousands_sep_data;
+    Py_ssize_t thousands_sep_len;
+    Py_ssize_t len;
+
+    if (unicode != NULL) {
+        kind = PyUnicode_KIND(unicode);
+        data = PyUnicode_DATA(unicode) + index * kind;
+    }
+    else {
+        kind = PyUnicode_1BYTE_KIND;
+        data = NULL;
+    }
+    thousands_sep_kind = PyUnicode_KIND(thousands_sep);
+    thousands_sep_data = PyUnicode_DATA(thousands_sep);
+    thousands_sep_len = PyUnicode_GET_LENGTH(thousands_sep);
+    if (unicode != NULL && thousands_sep_kind != kind) {
+        thousands_sep_data = _PyUnicode_AsKind(thousands_sep, kind);
+        if (!thousands_sep_data)
+            return -1;
+    }
+
     switch (kind) {
     case PyUnicode_1BYTE_KIND:
         if (unicode != NULL && PyUnicode_IS_ASCII(unicode))
-            return _PyUnicode_ascii_InsertThousandsGrouping(
+            len = asciilib_InsertThousandsGrouping(
                 (Py_UCS1*)data, n_buffer, (Py_UCS1*)digits, n_digits,
-                min_width, grouping, thousands_sep);
+                min_width, grouping,
+                thousands_sep_data, thousands_sep_len);
         else
-            return _PyUnicode_ucs1_InsertThousandsGrouping(
+            len = ucs1lib_InsertThousandsGrouping(
                 (Py_UCS1*)data, n_buffer, (Py_UCS1*)digits, n_digits,
-                min_width, grouping, thousands_sep);
+                min_width, grouping,
+                thousands_sep_data, thousands_sep_len);
+        break;
     case PyUnicode_2BYTE_KIND:
-        return _PyUnicode_ucs2_InsertThousandsGrouping(
+        len = ucs2lib_InsertThousandsGrouping(
             (Py_UCS2*)data, n_buffer, (Py_UCS2*)digits, n_digits,
-            min_width, grouping, thousands_sep);
+            min_width, grouping,
+            thousands_sep_data, thousands_sep_len);
+        break;
     case PyUnicode_4BYTE_KIND:
-        return _PyUnicode_ucs4_InsertThousandsGrouping(
+        len = ucs4lib_InsertThousandsGrouping(
             (Py_UCS4*)data, n_buffer, (Py_UCS4*)digits, n_digits,
-            min_width, grouping, thousands_sep);
+            min_width, grouping,
+            thousands_sep_data, thousands_sep_len);
+        break;
+    default:
+        assert(0);
+        return -1;
     }
-    assert(0);
-    return -1;
+    if (unicode != NULL && thousands_sep_kind != kind)
+        PyMem_Free(thousands_sep_data);
+    if (unicode == NULL) {
+        *maxchar = 127;
+        if (len != n_digits) {
+            *maxchar = Py_MAX(*maxchar,
+                              PyUnicode_MAX_CHAR_VALUE(thousands_sep));
+        }
+    }
+    return len;
 }
 
 
