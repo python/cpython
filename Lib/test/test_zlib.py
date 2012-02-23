@@ -7,11 +7,6 @@ from test.support import bigmemtest, _1G, _4G
 
 zlib = support.import_module('zlib')
 
-try:
-    import mmap
-except ImportError:
-    mmap = None
-
 
 class VersionTestCase(unittest.TestCase):
 
@@ -77,24 +72,11 @@ class ChecksumTestCase(unittest.TestCase):
 # Issue #10276 - check that inputs >=4GB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
-    def setUp(self):
-        with open(support.TESTFN, "wb+") as f:
-            f.seek(_4G)
-            f.write(b"asdf")
-            f.flush()
-            self.mapping = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-
-    def tearDown(self):
-        self.mapping.close()
-        support.unlink(support.TESTFN)
-
-    @unittest.skipUnless(mmap, "mmap() is not available.")
-    @unittest.skipUnless(sys.maxsize > _4G, "Can't run on a 32-bit system.")
-    @unittest.skipUnless(support.is_resource_enabled("largefile"),
-                         "May use lots of disk space.")
-    def test_big_buffer(self):
-        self.assertEqual(zlib.crc32(self.mapping), 3058686908)
-        self.assertEqual(zlib.adler32(self.mapping), 82837919)
+    @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
+    def test_big_buffer(self, size):
+        data = b"nyan" * (_1G + 1)
+        self.assertEqual(zlib.crc32(data), 1044521549)
+        self.assertEqual(zlib.adler32(data), 2256789997)
 
 
 class ExceptionTestCase(unittest.TestCase):
@@ -197,10 +179,8 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_big_decompress_buffer(self, size):
         self.check_big_decompress_buffer(size, zlib.decompress)
 
-    @bigmemtest(size=_4G + 100, memuse=1)
+    @bigmemtest(size=_4G + 100, memuse=1, dry_run=False)
     def test_length_overflow(self, size):
-        if size < _4G + 100:
-            self.skipTest("not enough free memory, need at least 4 GB")
         data = b'x' * size
         try:
             self.assertRaises(OverflowError, zlib.compress, data, 1)
@@ -554,10 +534,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         decompress = lambda s: d.decompress(s) + d.flush()
         self.check_big_decompress_buffer(size, decompress)
 
-    @bigmemtest(size=_4G + 100, memuse=1)
+    @bigmemtest(size=_4G + 100, memuse=1, dry_run=False)
     def test_length_overflow(self, size):
-        if size < _4G + 100:
-            self.skipTest("not enough free memory, need at least 4 GB")
         data = b'x' * size
         c = zlib.compressobj(1)
         d = zlib.decompressobj()
