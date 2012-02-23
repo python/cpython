@@ -562,10 +562,13 @@ class SocketHandler(logging.Handler):
         """
         Closes the socket.
         """
-        with self.lock:
+        self.acquire()
+        try:
             if self.sock:
                 self.sock.close()
                 self.sock = None
+        finally:
+            self.release()
         logging.Handler.close(self)
 
 class DatagramHandler(SocketHandler):
@@ -767,9 +770,12 @@ class SysLogHandler(logging.Handler):
         """
         Closes the socket.
         """
-        with self.lock:
+        self.acquire()
+        try:
             if self.unixsocket:
                 self.socket.close()
+        finally:
+            self.release()
         logging.Handler.close(self)
 
     def mapPriority(self, levelName):
@@ -1097,8 +1103,11 @@ class BufferingHandler(logging.Handler):
 
         This version just zaps the buffer to empty.
         """
-        with self.lock:
+        self.acquire()
+        try:
             self.buffer = []
+        finally:
+            self.release()
 
     def close(self):
         """
@@ -1146,17 +1155,23 @@ class MemoryHandler(BufferingHandler):
         records to the target, if there is one. Override if you want
         different behaviour.
         """
-        with self.lock:
+        self.acquire()
+        try:
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
                 self.buffer = []
+        finally:
+            self.release()
 
     def close(self):
         """
         Flush, set the target to None and lose the buffer.
         """
         self.flush()
-        with self.lock:
+        self.acquire()
+        try:
             self.target = None
             BufferingHandler.close(self)
+        finally:
+            self.release()
