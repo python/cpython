@@ -16,9 +16,9 @@
 
 """
 Logging package for Python. Based on PEP 282 and comments thereto in
-comp.lang.python, and influenced by Apache's log4j system.
+comp.lang.python.
 
-Copyright (C) 2001-2011 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -914,8 +914,9 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        if self.stream and hasattr(self.stream, "flush"):
-            self.stream.flush()
+        with self.lock:
+            if self.stream and hasattr(self.stream, "flush"):
+                self.stream.flush()
 
     def emit(self, record):
         """
@@ -964,12 +965,13 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        if self.stream:
-            self.flush()
-            if hasattr(self.stream, "close"):
-                self.stream.close()
-            StreamHandler.close(self)
-            self.stream = None
+        with self.lock:
+            if self.stream:
+                self.flush()
+                if hasattr(self.stream, "close"):
+                    self.stream.close()
+                StreamHandler.close(self)
+                self.stream = None
 
     def _open(self):
         """
