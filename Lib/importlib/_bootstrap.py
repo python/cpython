@@ -926,7 +926,7 @@ def _sanity_check(name, package, level):
         raise ValueError('level must be >= 0')
     if package:
         if not isinstance(package, str):
-            raise ValueError("__package__ not set to a string")
+            raise TypeError("__package__ not set to a string")
         elif package not in sys.modules:
             msg = ("Parent module {0!r} not loaded, cannot perform relative "
                    "import")

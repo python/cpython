@@ -67,7 +67,7 @@ class Using__package__(unittest.TestCase):
 
     def test_bunk__package__(self):
         globals = {'__package__': 42}
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             import_util.import_('', globals, {}, ['relimport'], 1)
 
 
