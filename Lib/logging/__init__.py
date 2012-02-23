@@ -917,9 +917,12 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        with self.lock:
+        self.acquire()
+        try:
             if self.stream and hasattr(self.stream, "flush"):
                 self.stream.flush()
+        finally:
+            self.release()
 
     def emit(self, record):
         """
@@ -970,13 +973,16 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        with self.lock:
+        self.acquire()
+        try:
             if self.stream:
                 self.flush()
                 if hasattr(self.stream, "close"):
                     self.stream.close()
                 StreamHandler.close(self)
                 self.stream = None
+        finally:
+            self.release()
 
     def _open(self):
         """
