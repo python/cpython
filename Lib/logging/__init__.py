@@ -1,4 +1,4 @@
-# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -828,8 +828,9 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        if self.stream and hasattr(self.stream, "flush"):
-            self.stream.flush()
+        with self.lock:
+            if self.stream and hasattr(self.stream, "flush"):
+                self.stream.flush()
 
     def emit(self, record):
         """
@@ -900,12 +901,13 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        if self.stream:
-            self.flush()
-            if hasattr(self.stream, "close"):
-                self.stream.close()
-            StreamHandler.close(self)
-            self.stream = None
+        with self.lock:
+            if self.stream:
+                self.flush()
+                if hasattr(self.stream, "close"):
+                    self.stream.close()
+                StreamHandler.close(self)
+                self.stream = None
 
     def _open(self):
         """
