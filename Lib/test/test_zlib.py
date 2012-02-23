@@ -72,8 +72,8 @@ class ChecksumTestCase(unittest.TestCase):
 # Issue #10276 - check that inputs >=4GB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
-    @bigmemtest(size=_4G + 4, memuse=1)
-    def test_big_buffer(self,size):
+    @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
+    def test_big_buffer(self, size):
         data = b"nyan" * (_1G + 1)
         self.assertEqual(zlib.crc32(data), 1044521549)
         self.assertEqual(zlib.adler32(data), 2256789997)
