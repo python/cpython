@@ -207,7 +207,7 @@ default values. The arguments that are most commonly needed are:
    When *stdout* or *stderr* are pipes and *universal_newlines* is
    :const:`True` then the output data is assumed to be encoded as UTF-8 and
    will automatically be decoded to text. All line endings will be converted
-   to ``'\n'`` as described for the universal newlines `'U'`` mode argument
+   to ``'\n'`` as described for the universal newlines ``'U'`` mode argument
    to :func:`open`.
 
    If *shell* is :const:`True`, the specified command will be executed through
