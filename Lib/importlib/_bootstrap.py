@@ -920,12 +920,12 @@ def _find_module(name, path):
 
 def _sanity_check(name, package, level):
     """Verify arguments are "sane"."""
-    if not hasattr(name, 'rpartition'):
+    if not isinstance(name, str):
         raise TypeError("module name must be str, not {}".format(type(name)))
     if level < 0:
         raise ValueError('level must be >= 0')
     if package:
-        if not hasattr(package, 'rindex'):
+        if not isinstance(package, str):
             raise ValueError("__package__ not set to a string")
         elif package not in sys.modules:
             msg = ("Parent module {0!r} not loaded, cannot perform relative "
