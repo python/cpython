@@ -289,10 +289,18 @@ class FormatTest(unittest.TestCase):
         except locale.Error as err:
             self.skipTest("Cannot set locale: {}".format(err))
         try:
-            sep = locale.localeconv()['thousands_sep']
+            localeconv = locale.localeconv()
+            sep = localeconv['thousands_sep']
+            point = localeconv['decimal_point']
+
             text = format(123456789, "n")
             self.assertIn(sep, text)
             self.assertEqual(text.replace(sep, ''), '123456789')
+
+            text = format(1234.5, "n")
+            self.assertIn(sep, text)
+            self.assertIn(point, text)
+            self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
         finally:
             locale.setlocale(locale.LC_ALL, oldloc)
 

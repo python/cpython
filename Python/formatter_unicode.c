@@ -529,6 +529,9 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     if (spec->n_lpadding || spec->n_spadding || spec->n_rpadding)
         *maxchar = Py_MAX(*maxchar, format->fill_char);
 
+    if (spec->n_decimal)
+        *maxchar = Py_MAX(*maxchar, PyUnicode_MAX_CHAR_VALUE(locale->decimal_point));
+
     return spec->n_lpadding + spec->n_sign + spec->n_prefix +
         spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +
         spec->n_remainder + spec->n_rpadding;
@@ -548,10 +551,7 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     Py_ssize_t d_pos = d_start;
     unsigned int kind = PyUnicode_KIND(out);
     void *data = PyUnicode_DATA(out);
-
-#ifndef NDEBUG
     Py_ssize_t r;
-#endif
 
     if (spec->n_lpadding) {
         PyUnicode_Fill(out, pos, pos + spec->n_lpadding, fill_char);
@@ -593,18 +593,15 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
             if (pdigits == NULL)
                 return -1;
         }
-#ifndef NDEBUG
-        r =
-#endif
-            _PyUnicode_InsertThousandsGrouping(
+        r = _PyUnicode_InsertThousandsGrouping(
                 out, pos,
                 spec->n_grouped_digits,
                 pdigits + kind * d_pos,
                 spec->n_digits, spec->n_min_width,
                 locale->grouping, locale->thousands_sep, NULL);
-#ifndef NDEBUG
+        if (r == -1)
+            return -1;
         assert(r == spec->n_grouped_digits);
-#endif
         if (PyUnicode_KIND(digits) < kind)
             PyMem_Free(pdigits);
         d_pos += spec->n_digits;
