@@ -9160,13 +9160,13 @@ _PyUnicode_InsertThousandsGrouping(
     Py_UCS4 *maxchar)
 {
     unsigned int kind, thousands_sep_kind;
-    void *data, *thousands_sep_data;
+    char *data, *thousands_sep_data;
     Py_ssize_t thousands_sep_len;
     Py_ssize_t len;
 
     if (unicode != NULL) {
         kind = PyUnicode_KIND(unicode);
-        data = PyUnicode_DATA(unicode) + index * kind;
+        data = (char *) PyUnicode_DATA(unicode) + index * kind;
     }
     else {
         kind = PyUnicode_1BYTE_KIND;
@@ -9192,26 +9192,26 @@ _PyUnicode_InsertThousandsGrouping(
     case PyUnicode_1BYTE_KIND:
         if (unicode != NULL && PyUnicode_IS_ASCII(unicode))
             len = asciilib_InsertThousandsGrouping(
-                (Py_UCS1*)data, n_buffer, (Py_UCS1*)digits, n_digits,
+                (Py_UCS1 *) data, n_buffer, (Py_UCS1 *) digits, n_digits,
                 min_width, grouping,
-                thousands_sep_data, thousands_sep_len);
+                (Py_UCS1 *) thousands_sep_data, thousands_sep_len);
         else
             len = ucs1lib_InsertThousandsGrouping(
                 (Py_UCS1*)data, n_buffer, (Py_UCS1*)digits, n_digits,
                 min_width, grouping,
-                thousands_sep_data, thousands_sep_len);
+                (Py_UCS1 *) thousands_sep_data, thousands_sep_len);
         break;
     case PyUnicode_2BYTE_KIND:
         len = ucs2lib_InsertThousandsGrouping(
-            (Py_UCS2*)data, n_buffer, (Py_UCS2*)digits, n_digits,
+            (Py_UCS2 *) data, n_buffer, (Py_UCS2 *) digits, n_digits,
             min_width, grouping,
-            thousands_sep_data, thousands_sep_len);
+            (Py_UCS2 *) thousands_sep_data, thousands_sep_len);
         break;
     case PyUnicode_4BYTE_KIND:
         len = ucs4lib_InsertThousandsGrouping(
-            (Py_UCS4*)data, n_buffer, (Py_UCS4*)digits, n_digits,
+            (Py_UCS4 *) data, n_buffer, (Py_UCS4 *) digits, n_digits,
             min_width, grouping,
-            thousands_sep_data, thousands_sep_len);
+            (Py_UCS4 *) thousands_sep_data, thousands_sep_len);
         break;
     default:
         assert(0);
