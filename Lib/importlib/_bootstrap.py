@@ -890,17 +890,11 @@ class _ImportLockContext:
 
 def _resolve_name(name, package, level):
     """Resolve a relative module name to an absolute one."""
-    dot = len(package)
-    for x in range(level, 1, -1):
-        try:
-            dot = package.rindex('.', 0, dot)
-        except ValueError:
-            raise ValueError("attempted relative import beyond "
-                             "top-level package")
-    if name:
-        return "{0}.{1}".format(package[:dot], name)
-    else:
-        return package[:dot]
+    bits = package.rsplit('.', level-1)
+    if len(bits) < level:
+        raise ValueError('attempted relative import beyond top-level package')
+    base = bits[0]
+    return '{0}.{1}'.format(base, name) if name else base
 
 
 def _find_module(name, path):
