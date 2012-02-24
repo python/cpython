@@ -157,10 +157,10 @@ tabnanny_using_bytecode = _using_bytecode(tabnanny)
 decimal_using_bytecode = _using_bytecode(decimal)
 
 
-def main(import_, filename=None, benchmark=None):
-    if filename and os.path.exists(filename):
-        with open(filename, 'r') as file:
-            prev_results = json.load(file)
+def main(import_, options):
+    if options.source_file:
+        with options.source_file:
+            prev_results = json.load(options.source_file)
     else:
         prev_results = {}
     __builtins__.__import__ = import_
@@ -172,13 +172,14 @@ def main(import_, filename=None, benchmark=None):
                   decimal_writing_bytecode,
                   decimal_wo_bytecode, decimal_using_bytecode,
                 )
-    if benchmark:
+    if options.benchmark:
         for b in benchmarks:
-            if b.__doc__ == benchmark:
+            if b.__doc__ == options.benchmark:
                 benchmarks = [b]
                 break
         else:
-            print('Unknown benchmark: {!r}'.format(benchmark, file=sys.stderr))
+            print('Unknown benchmark: {!r}'.format(options.benchmark,
+                  file=sys.stderr))
             sys.exit(1)
     seconds = 1
     seconds_plural = 's' if seconds > 1 else ''
@@ -200,22 +201,19 @@ def main(import_, filename=None, benchmark=None):
         assert not sys.dont_write_bytecode
         print("]", "best is", format(max(results), ',d'))
         new_results[benchmark.__doc__] = results
-    prev_results[import_.__module__] = new_results
-    if 'importlib._bootstrap' in prev_results and 'builtins' in prev_results:
-        print('\n\nComparing importlib vs. __import__\n')
-        importlib_results = prev_results['importlib._bootstrap']
-        builtins_results = prev_results['builtins']
+    if prev_results:
+        print('\n\nComparing new vs. old\n')
         for benchmark in benchmarks:
             benchmark_name = benchmark.__doc__
-            importlib_result = max(importlib_results[benchmark_name])
-            builtins_result = max(builtins_results[benchmark_name])
-            result = '{:,d} vs. {:,d} ({:%})'.format(importlib_result,
-                                                     builtins_result,
-                                              importlib_result/builtins_result)
+            old_result = max(prev_results[benchmark_name])
+            new_result = max(new_results[benchmark_name])
+            result = '{:,d} vs. {:,d} ({:%})'.format(new_result,
+                                                     old_result,
+                                              new_result/old_result)
             print(benchmark_name, ':', result)
-    if filename:
-        with open(filename, 'w') as file:
-            json.dump(prev_results, file, indent=2)
+    if options.dest_file:
+        with options.dest_file:
+            json.dump(new_results, options.dest_file, indent=2)
 
 
 if __name__ == '__main__':
@@ -224,18 +222,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--builtin', dest='builtin', action='store_true',
                         default=False, help="use the built-in __import__")
-    parser.add_argument('-f', '--file', dest='filename', default=None,
-                        help='file to read/write results from/to'
-                             '(incompatible w/ --benchmark)')
+    parser.add_argument('-r', '--read', dest='source_file',
+                        type=argparse.FileType('r'),
+                        help='file to read benchmark data from to compare '
+                             'against')
+    parser.add_argument('-w', '--write', dest='dest_file',
+                        type=argparse.FileType('w'),
+                        help='file to write benchmark data to')
     parser.add_argument('--benchmark', dest='benchmark',
-                        help='specific benchmark to run '
-                             '(incompatible w/ --file)')
+                        help='specific benchmark to run')
     options = parser.parse_args()
-    if options.filename and options.benchmark:
-        print('Cannot specify a benchmark *and* read/write results')
-        sys.exit(1)
     import_ = __import__
     if not options.builtin:
         import_ = importlib.__import__
 
-    main(import_, options.filename, options.benchmark)
+    main(import_, options)
