@@ -10628,10 +10628,7 @@ unicode_title(PyObject *self)
 {
     if (PyUnicode_READY(self) == -1)
         return NULL;
-    if (PyUnicode_IS_ASCII(self))
-        return ascii_case_operation(self, ascii_do_title);
-    else
-        return case_operation(self, do_title);
+    return case_operation(self, do_title);
 }
 
 PyDoc_STRVAR(capitalize__doc__,
@@ -10647,10 +10644,7 @@ unicode_capitalize(PyObject *self)
         return NULL;
     if (PyUnicode_GET_LENGTH(self) == 0)
         return unicode_result_unchanged(self);
-    if (PyUnicode_IS_ASCII(self))
-        return ascii_case_operation(self, ascii_do_capitalize);
-    else
-        return case_operation(self, do_capitalize);
+    return case_operation(self, do_capitalize);
 }
 
 PyDoc_STRVAR(casefold__doc__,
@@ -10665,8 +10659,7 @@ unicode_casefold(PyObject *self)
         return NULL;
     if (PyUnicode_IS_ASCII(self))
         return ascii_upper_or_lower(self, 1);
-    else
-        return case_operation(self, do_casefold);
+    return case_operation(self, do_casefold);
 }
 
 
@@ -11900,8 +11893,7 @@ unicode_lower(PyObject *self)
         return NULL;
     if (PyUnicode_IS_ASCII(self))
         return ascii_upper_or_lower(self, 1);
-    else
-        return case_operation(self, do_lower);
+    return case_operation(self, do_lower);
 }
 
 #define LEFTSTRIP 0
@@ -12792,10 +12784,7 @@ unicode_swapcase(PyObject *self)
 {
     if (PyUnicode_READY(self) == -1)
         return NULL;
-    if (PyUnicode_IS_ASCII(self))
-        return ascii_case_operation(self, ascii_do_swapcase);
-    else
-        return case_operation(self, do_swapcase);
+    return case_operation(self, do_swapcase);
 }
 
 PyDoc_STRVAR(maketrans__doc__,
@@ -12945,8 +12934,7 @@ unicode_upper(PyObject *self)
         return NULL;
     if (PyUnicode_IS_ASCII(self))
         return ascii_upper_or_lower(self, 0);
-    else
-        return case_operation(self, do_upper);
+    return case_operation(self, do_upper);
 }
 
 PyDoc_STRVAR(zfill__doc__,
