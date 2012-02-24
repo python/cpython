@@ -1936,32 +1936,20 @@ PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
     );
 #endif
 
-/* Using the current locale, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGroupingLocale(Py_UNICODE *buffer,
-                                                   Py_ssize_t n_buffer,
-                                                   Py_UNICODE *digits,
-                                                   Py_ssize_t n_digits,
-                                                   Py_ssize_t min_width);
-#endif
-
 /* Using explicit passed-in values, insert the thousands grouping
    into the string pointed to by buffer.  For the argument descriptions,
    see Objects/stringlib/localeutil.h */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGrouping(
     PyObject *unicode,
-    int kind,
-    void *buffer,
+    Py_ssize_t index,
     Py_ssize_t n_buffer,
     void *digits,
     Py_ssize_t n_digits,
     Py_ssize_t min_width,
     const char *grouping,
-    const char *thousands_sep);
+    PyObject *thousands_sep,
+    Py_UCS4 *maxchar);
 #endif
 /* === Characters Type APIs =============================================== */
 

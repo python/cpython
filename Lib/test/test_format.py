@@ -1,4 +1,5 @@
 from test.support import verbose, TestFailed
+import locale
 import sys
 import test.support as support
 import unittest
@@ -281,6 +282,20 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12.3, "\u2007^6"), "\u200712.3\u2007")
         self.assertEqual(format(1+2j, "\u2007^8"), "\u2007(1+2j)\u2007")
         self.assertEqual(format(0j, "\u2007^4"), "\u20070j\u2007")
+
+    def test_locale(self):
+        try:
+            oldloc = locale.setlocale(locale.LC_ALL, '')
+        except locale.Error as err:
+            self.skipTest("Cannot set locale: {}".format(err))
+        try:
+            sep = locale.localeconv()['thousands_sep']
+            text = format(123456789, "n")
+            self.assertIn(sep, text)
+            self.assertEqual(text.replace(sep, ''), '123456789')
+        finally:
+            locale.setlocale(locale.LC_ALL, oldloc)
+
 
 
 def test_main():

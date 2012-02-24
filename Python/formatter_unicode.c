@@ -346,10 +346,12 @@ fill_padding(PyObject *s, Py_ssize_t start, Py_ssize_t nchars,
    before and including the decimal. Note that locales only support
    8-bit chars, not unicode. */
 typedef struct {
-    char *decimal_point;
-    char *thousands_sep;
-    char *grouping;
+    PyObject *decimal_point;
+    PyObject *thousands_sep;
+    const char *grouping;
 } LocaleInfo;
+
+#define STATIC_LOCALE_INFO_INIT {0, 0, 0}
 
 /* describes the layout for an integer, see the comment in
    calc_number_widths() for details */
@@ -415,7 +417,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
                    Py_UCS4 sign_char, PyObject *number, Py_ssize_t n_start,
                    Py_ssize_t n_end, Py_ssize_t n_remainder,
                    int has_decimal, const LocaleInfo *locale,
-                   const InternalFormatSpec *format)
+                   const InternalFormatSpec *format, Py_UCS4 *maxchar)
 {
     Py_ssize_t n_non_digit_non_padding;
     Py_ssize_t n_padding;
@@ -423,7 +425,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     spec->n_digits = n_end - n_start - n_remainder - (has_decimal?1:0);
     spec->n_lpadding = 0;
     spec->n_prefix = n_prefix;
-    spec->n_decimal = has_decimal ? strlen(locale->decimal_point) : 0;
+    spec->n_decimal = has_decimal ? PyUnicode_GET_LENGTH(locale->decimal_point) : 0;
     spec->n_remainder = n_remainder;
     spec->n_spadding = 0;
     spec->n_rpadding = 0;
@@ -484,11 +486,15 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
            to special case it because the grouping code always wants
            to have at least one character. */
         spec->n_grouped_digits = 0;
-    else
+    else {
+        Py_UCS4 grouping_maxchar;
         spec->n_grouped_digits = _PyUnicode_InsertThousandsGrouping(
-            NULL, PyUnicode_1BYTE_KIND, NULL, 0, NULL,
+            NULL, 0,
+            0, NULL,
             spec->n_digits, spec->n_min_width,
-            locale->grouping, locale->thousands_sep);
+            locale->grouping, locale->thousands_sep, &grouping_maxchar);
+        *maxchar = Py_MAX(*maxchar, grouping_maxchar);
+    }
 
     /* Given the desired width and the total of digit and non-digit
        space we consume, see if we need any padding. format->width can
@@ -519,6 +525,10 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             break;
         }
     }
+
+    if (spec->n_lpadding || spec->n_spadding || spec->n_rpadding)
+        *maxchar = Py_MAX(*maxchar, format->fill_char);
+
     return spec->n_lpadding + spec->n_sign + spec->n_prefix +
         spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +
         spec->n_remainder + spec->n_rpadding;
@@ -587,12 +597,11 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
         r =
 #endif
             _PyUnicode_InsertThousandsGrouping(
-                out, kind,
-                (char*)data + kind * pos,
+                out, pos,
                 spec->n_grouped_digits,
                 pdigits + kind * d_pos,
                 spec->n_digits, spec->n_min_width,
-                locale->grouping, locale->thousands_sep);
+                locale->grouping, locale->thousands_sep, NULL);
 #ifndef NDEBUG
         assert(r == spec->n_grouped_digits);
 #endif
@@ -615,10 +624,8 @@ fill_number(PyObject *out, Py_ssize_t pos, const NumberFieldWidths *spec,
     pos += spec->n_grouped_digits;
 
     if (spec->n_decimal) {
-        Py_ssize_t t;
-        for (t = 0; t < spec->n_decimal; ++t)
-            PyUnicode_WRITE(kind, data, pos + t,
-                            locale->decimal_point[t]);
+        if (PyUnicode_CopyCharacters(out, pos, locale->decimal_point, 0, spec->n_decimal) < 0)
+            return -1;
         pos += spec->n_decimal;
         d_pos += 1;
     }
@@ -643,32 +650,60 @@ static char no_grouping[1] = {CHAR_MAX};
    grouping description, either for the current locale if type is
    LT_CURRENT_LOCALE, a hard-coded locale if LT_DEFAULT_LOCALE, or
    none if LT_NO_LOCALE. */
-static void
+static int
 get_locale_info(int type, LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
         struct lconv *locale_data = localeconv();
-        locale_info->decimal_point = locale_data->decimal_point;
-        locale_info->thousands_sep = locale_data->thousands_sep;
+        locale_info->decimal_point = PyUnicode_DecodeLocale(
+                                         locale_data->decimal_point,
+                                         NULL);
+        if (locale_info->decimal_point == NULL)
+            return -1;
+        locale_info->thousands_sep = PyUnicode_DecodeLocale(
+                                         locale_data->thousands_sep,
+                                         NULL);
+        if (locale_info->thousands_sep == NULL) {
+            Py_DECREF(locale_info->decimal_point);
+            return -1;
+        }
         locale_info->grouping = locale_data->grouping;
         break;
     }
     case LT_DEFAULT_LOCALE:
-        locale_info->decimal_point = ".";
-        locale_info->thousands_sep = ",";
+        locale_info->decimal_point = PyUnicode_FromOrdinal('.');
+        locale_info->thousands_sep = PyUnicode_FromOrdinal(',');
+        if (!locale_info->decimal_point || !locale_info->thousands_sep) {
+            Py_XDECREF(locale_info->decimal_point);
+            Py_XDECREF(locale_info->thousands_sep);
+            return -1;
+        }
         locale_info->grouping = "\3"; /* Group every 3 characters.  The
                                          (implicit) trailing 0 means repeat
                                          infinitely. */
         break;
     case LT_NO_LOCALE:
-        locale_info->decimal_point = ".";
-        locale_info->thousands_sep = "";
+        locale_info->decimal_point = PyUnicode_FromOrdinal('.');
+        locale_info->thousands_sep = PyUnicode_New(0, 0);
+        if (!locale_info->decimal_point || !locale_info->thousands_sep) {
+            Py_XDECREF(locale_info->decimal_point);
+            Py_XDECREF(locale_info->thousands_sep);
+            return -1;
+        }
         locale_info->grouping = no_grouping;
         break;
     default:
         assert(0);
     }
+    return 0;
+}
+
+static void
+free_locale_info(LocaleInfo *locale_info)
+{
+    Py_XDECREF(locale_info->decimal_point);
+    Py_XDECREF(locale_info->thousands_sep);
 }
 
 /************************************************************************/
@@ -769,7 +804,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale;
+    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
 
     /* no precision allowed on integers */
     if (format->precision != -1) {
@@ -868,18 +903,17 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
     }
 
     /* Determine the grouping, separator, and decimal point, if any. */
-    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
-                    (format->thousands_separators ?
-                     LT_DEFAULT_LOCALE :
-                     LT_NO_LOCALE),
-                    &locale);
+    if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                        (format->thousands_separators ?
+                         LT_DEFAULT_LOCALE :
+                         LT_NO_LOCALE),
+                        &locale) == -1)
+        goto done;
 
     /* Calculate how much memory we'll need. */
     n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
-                                 inumeric_chars + n_digits, n_remainder, 0, &locale, format);
-
-    if (spec.n_lpadding || spec.n_spadding || spec.n_rpadding)
-        maxchar = Py_MAX(maxchar, format->fill_char);
+                                 inumeric_chars + n_digits, n_remainder, 0,
+                                 &locale, format, &maxchar);
 
     /* Allocate the memory. */
     result = PyUnicode_New(n_total, maxchar);
@@ -897,6 +931,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
 done:
     Py_XDECREF(tmp);
+    free_locale_info(&locale);
     assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
@@ -938,7 +973,7 @@ format_float_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale;
+    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
@@ -1009,19 +1044,17 @@ format_float_internal(PyObject *value,
     parse_number(unicode_tmp, index, index + n_digits, &n_remainder, &has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
-    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
-                    (format->thousands_separators ?
-                     LT_DEFAULT_LOCALE :
-                     LT_NO_LOCALE),
-                    &locale);
+    if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                        (format->thousands_separators ?
+                         LT_DEFAULT_LOCALE :
+                         LT_NO_LOCALE),
+                        &locale) == -1)
+        goto done;
 
     /* Calculate how much memory we'll need. */
     n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
                                  index + n_digits, n_remainder, has_decimal,
-                                 &locale, format);
-
-    if (spec.n_lpadding || spec.n_spadding || spec.n_rpadding)
-        maxchar = Py_MAX(maxchar, format->fill_char);
+                                 &locale, format, &maxchar);
 
     /* Allocate the memory. */
     result = PyUnicode_New(n_total, maxchar);
@@ -1040,6 +1073,7 @@ format_float_internal(PyObject *value,
 done:
     PyMem_Free(buf);
     Py_DECREF(unicode_tmp);
+    free_locale_info(&locale);
     assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
@@ -1094,7 +1128,7 @@ format_complex_internal(PyObject *value,
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
-    LocaleInfo locale;
+    LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
 
     /* Zero padding is not allowed. */
     if (format->fill_char == '0') {
@@ -1190,11 +1224,12 @@ format_complex_internal(PyObject *value,
                  &n_im_remainder, &im_has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
-    get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
-                    (format->thousands_separators ?
-                     LT_DEFAULT_LOCALE :
-                     LT_NO_LOCALE),
-                    &locale);
+    if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
+                        (format->thousands_separators ?
+                         LT_DEFAULT_LOCALE :
+                         LT_NO_LOCALE),
+                        &locale) == -1)
+        goto done;
 
     /* Turn off any padding. We'll do it later after we've composed
        the numbers without padding. */
@@ -1205,7 +1240,8 @@ format_complex_internal(PyObject *value,
     /* Calculate how much memory we'll need. */
     n_re_total = calc_number_widths(&re_spec, 0, re_sign_char, re_unicode_tmp,
                                     i_re, i_re + n_re_digits, n_re_remainder,
-                                    re_has_decimal, &locale, &tmp_format);
+                                    re_has_decimal, &locale, &tmp_format,
+                                    &maxchar);
 
     /* Same formatting, but always include a sign, unless the real part is
      * going to be omitted, in which case we use whatever sign convention was
@@ -1214,7 +1250,8 @@ format_complex_internal(PyObject *value,
         tmp_format.sign = '+';
     n_im_total = calc_number_widths(&im_spec, 0, im_sign_char, im_unicode_tmp,
                                     i_im, i_im + n_im_digits, n_im_remainder,
-                                    im_has_decimal, &locale, &tmp_format);
+                                    im_has_decimal, &locale, &tmp_format,
+                                    &maxchar);
 
     if (skip_re)
         n_re_total = 0;
@@ -1223,9 +1260,7 @@ format_complex_internal(PyObject *value,
     calc_padding(n_re_total + n_im_total + 1 + add_parens * 2,
                  format->width, format->align, &lpad, &rpad, &total);
 
-    if (re_spec.n_lpadding || re_spec.n_spadding || re_spec.n_rpadding
-        || im_spec.n_lpadding || im_spec.n_spadding || im_spec.n_rpadding
-        || lpad || rpad)
+    if (lpad || rpad)
         maxchar = Py_MAX(maxchar, format->fill_char);
 
     result = PyUnicode_New(total, maxchar);
@@ -1275,6 +1310,7 @@ done:
     PyMem_Free(im_buf);
     Py_XDECREF(re_unicode_tmp);
     Py_XDECREF(im_unicode_tmp);
+    free_locale_info(&locale);
     assert(!result || _PyUnicode_CheckConsistency(result, 1));
     return result;
 }
