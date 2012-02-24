@@ -9176,9 +9176,16 @@ _PyUnicode_InsertThousandsGrouping(
     thousands_sep_data = PyUnicode_DATA(thousands_sep);
     thousands_sep_len = PyUnicode_GET_LENGTH(thousands_sep);
     if (unicode != NULL && thousands_sep_kind != kind) {
-        thousands_sep_data = _PyUnicode_AsKind(thousands_sep, kind);
-        if (!thousands_sep_data)
-            return -1;
+        if (thousands_sep_kind < kind) {
+            thousands_sep_data = _PyUnicode_AsKind(thousands_sep, kind);
+            if (!thousands_sep_data)
+                return -1;
+        }
+        else {
+            data = _PyUnicode_AsKind(unicode, thousands_sep_kind);
+            if (!data)
+                return -1;
+        }
     }
 
     switch (kind) {
@@ -9210,8 +9217,12 @@ _PyUnicode_InsertThousandsGrouping(
         assert(0);
         return -1;
     }
-    if (unicode != NULL && thousands_sep_kind != kind)
-        PyMem_Free(thousands_sep_data);
+    if (unicode != NULL && thousands_sep_kind != kind) {
+        if (thousands_sep_kind < kind)
+            PyMem_Free(thousands_sep_data);
+        else
+            PyMem_Free(data);
+    }
     if (unicode == NULL) {
         *maxchar = 127;
         if (len != n_digits) {
