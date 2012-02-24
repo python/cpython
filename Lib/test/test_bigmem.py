@@ -69,8 +69,7 @@ ucs4_char_size = 4
 
 class BaseStrTest:
 
-    @bigmemtest(size=_2G, memuse=2)
-    def test_capitalize(self, size):
+    def _test_capitalize(self, size):
         _ = self.from_latin1
         SUBSTR = self.from_latin1(' abc def ghi')
         s = _('-') * size + SUBSTR
@@ -421,8 +420,7 @@ class BaseStrTest:
         self.assertEqual(len(s), size)
         self.assertEqual(s.strip(), SUBSTR.strip())
 
-    @bigmemtest(size=_2G, memuse=2)
-    def test_swapcase(self, size):
+    def _test_swapcase(self, size):
         _ = self.from_latin1
         SUBSTR = _("aBcDeFG12.'\xa9\x00")
         sublen = len(SUBSTR)
@@ -433,8 +431,7 @@ class BaseStrTest:
         self.assertEqual(s[:sublen * 3], SUBSTR.swapcase() * 3)
         self.assertEqual(s[-sublen * 3:], SUBSTR.swapcase() * 3)
 
-    @bigmemtest(size=_2G, memuse=2)
-    def test_title(self, size):
+    def _test_title(self, size):
         _ = self.from_latin1
         SUBSTR = _('SpaaHAaaAaham')
         s = SUBSTR * (size // len(SUBSTR) + 2)
@@ -608,6 +605,18 @@ class StrTest(unittest.TestCase, BaseStrTest):
         for name, memuse in self._adjusted.items():
             getattr(type(self), name).memuse = memuse
 
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    def test_capitalize(self, size):
+        self._test_capitalize(size)
+
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    def test_title(self, size):
+        self._test_title(size)
+
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    def test_swapcase(self, size):
+        self._test_swapcase(size)
+
     # Many codecs convert to the legacy representation first, explaining
     # why we add 'ucs4_char_size' to the 'memuse' below.
 
@@ -763,6 +772,18 @@ class BytesTest(unittest.TestCase, BaseStrTest):
         s = self.from_latin1('.') * size
         self.assertEqual(len(s.decode('utf-8')), size)
 
+    @bigmemtest(size=_2G, memuse=2)
+    def test_capitalize(self, size):
+        self._test_capitalize(size)
+
+    @bigmemtest(size=_2G, memuse=2)
+    def test_title(self, size):
+        self._test_title(size)
+
+    @bigmemtest(size=_2G, memuse=2)
+    def test_swapcase(self, size):
+        self._test_swapcase(size)
+
 
 class BytearrayTest(unittest.TestCase, BaseStrTest):
 
@@ -773,6 +794,18 @@ class BytearrayTest(unittest.TestCase, BaseStrTest):
     def test_decode(self, size):
         s = self.from_latin1('.') * size
         self.assertEqual(len(s.decode('utf-8')), size)
+
+    @bigmemtest(size=_2G, memuse=2)
+    def test_capitalize(self, size):
+        self._test_capitalize(size)
+
+    @bigmemtest(size=_2G, memuse=2)
+    def test_title(self, size):
+        self._test_title(size)
+
+    @bigmemtest(size=_2G, memuse=2)
+    def test_swapcase(self, size):
+        self._test_swapcase(size)
 
     test_hash = None
     test_split_large = None
