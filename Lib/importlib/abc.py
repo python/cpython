@@ -1,15 +1,11 @@
 """Abstract base classes related to import."""
 from . import _bootstrap
 from . import machinery
-from . import util
 import abc
 import imp
-import io
 import marshal
-import os.path
 import sys
 import tokenize
-import types
 import warnings
 
 
@@ -256,7 +252,8 @@ class PyPycLoader(PyLoader):
             try:
                 magic = data[:4]
                 if len(magic) < 4:
-                    raise ImportError("bad magic number in {}".format(fullname))
+                    raise ImportError(
+                        "bad magic number in {}".format(fullname))
                 raw_timestamp = data[4:8]
                 if len(raw_timestamp) < 4:
                     raise EOFError("bad timestamp in {}".format(fullname))
@@ -264,7 +261,8 @@ class PyPycLoader(PyLoader):
                 bytecode = data[8:]
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
-                    raise ImportError("bad magic number in {}".format(fullname))
+                    raise ImportError(
+                        "bad magic number in {}".format(fullname))
                 # Verify that the bytecode is not stale (only matters when
                 # there is source to fall back on.
                 if source_timestamp:
