@@ -2,10 +2,25 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.3?
+===========================
+
+*Release date: XX-XXX-2012*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
+
 What's New in Python 3.2.3 release candidate 1?
 ===============================================
 
-*Release date: 24-Feb-2011*
+*Release date: 24-Feb-2012*
 
 Core and Builtins
 -----------------
@@ -123,9 +138,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
-  on Windows.
 
 - Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
   on 32-bit architectures. Initial patch by Philippe Devalkeneer.
