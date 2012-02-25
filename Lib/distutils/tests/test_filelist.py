@@ -1,4 +1,5 @@
 """Tests for distutils.filelist."""
+import os
 import re
 import unittest
 from distutils import debug
@@ -14,6 +15,7 @@ include ok
 include xo
 exclude xo
 include foo.tmp
+include buildout.cfg
 global-include *.x
 global-include *.txt
 global-exclude *.tmp
@@ -22,6 +24,11 @@ recursive-exclude global *.x
 graft dir
 prune dir3
 """
+
+
+def make_local_path(s):
+    """Converts '/' in a string to os.sep"""
+    return s.replace('/', os.sep)
 
 
 class FileListTestCase(support.LoggingSilencer,
@@ -36,41 +43,60 @@ class FileListTestCase(support.LoggingSilencer,
         self.clear_logs()
 
     def test_glob_to_re(self):
-        # simple cases
-        self.assertEqual(glob_to_re('foo*'), 'foo[^/]*\\Z(?ms)')
-        self.assertEqual(glob_to_re('foo?'), 'foo[^/]\\Z(?ms)')
-        self.assertEqual(glob_to_re('foo??'), 'foo[^/][^/]\\Z(?ms)')
+        sep = os.sep
+        if os.sep == '\\':
+            sep = re.escape(os.sep)
 
-        # special cases
-        self.assertEqual(glob_to_re(r'foo\\*'), r'foo\\\\[^/]*\Z(?ms)')
-        self.assertEqual(glob_to_re(r'foo\\\*'), r'foo\\\\\\[^/]*\Z(?ms)')
-        self.assertEqual(glob_to_re('foo????'), r'foo[^/][^/][^/][^/]\Z(?ms)')
-        self.assertEqual(glob_to_re(r'foo\\??'), r'foo\\\\[^/][^/]\Z(?ms)')
+        for glob, regex in (
+            # simple cases
+            ('foo*', r'foo[^%(sep)s]*\Z(?ms)'),
+            ('foo?', r'foo[^%(sep)s]\Z(?ms)'),
+            ('foo??', r'foo[^%(sep)s][^%(sep)s]\Z(?ms)'),
+            # special cases
+            (r'foo\\*', r'foo\\\\[^%(sep)s]*\Z(?ms)'),
+            (r'foo\\\*', r'foo\\\\\\[^%(sep)s]*\Z(?ms)'),
+            ('foo????', r'foo[^%(sep)s][^%(sep)s][^%(sep)s][^%(sep)s]\Z(?ms)'),
+            (r'foo\\??', r'foo\\\\[^%(sep)s][^%(sep)s]\Z(?ms)')):
+            regex = regex % {'sep': sep}
+            self.assertEqual(glob_to_re(glob), regex)
 
     def test_process_template_line(self):
         # testing  all MANIFEST.in template patterns
         file_list = FileList()
+        l = make_local_path
 
         # simulated file list
         file_list.allfiles = ['foo.tmp', 'ok', 'xo', 'four.txt',
-                              'global/one.txt',
-                              'global/two.txt',
-                              'global/files.x',
-                              'global/here.tmp',
-                              'f/o/f.oo',
-                              'dir/graft-one',
-                              'dir/dir2/graft2',
-                              'dir3/ok',
-                              'dir3/sub/ok.txt',
-                              ]
+                              'buildout.cfg',
+                              # filelist does not filter out VCS directories,
+                              # it's sdist that does
+                              l('.hg/last-message.txt'),
+                              l('global/one.txt'),
+                              l('global/two.txt'),
+                              l('global/files.x'),
+                              l('global/here.tmp'),
+                              l('f/o/f.oo'),
+                              l('dir/graft-one'),
+                              l('dir/dir2/graft2'),
+                              l('dir3/ok'),
+                              l('dir3/sub/ok.txt'),
+                             ]
 
         for line in MANIFEST_IN.split('\n'):
             if line.strip() == '':
                 continue
             file_list.process_template_line(line)
 
-        wanted = ['ok', 'four.txt', 'global/one.txt', 'global/two.txt',
-                  'f/o/f.oo', 'dir/graft-one', 'dir/dir2/graft2']
+        wanted = ['ok',
+                  'buildout.cfg',
+                  'four.txt',
+                  l('.hg/last-message.txt'),
+                  l('global/one.txt'),
+                  l('global/two.txt'),
+                  l('f/o/f.oo'),
+                  l('dir/graft-one'),
+                  l('dir/dir2/graft2'),
+                 ]
 
         self.assertEqual(file_list.files, wanted)
 
@@ -158,6 +184,7 @@ class FileListTestCase(support.LoggingSilencer,
         self.assertEqual(file_list.allfiles, ['a.py', 'b.txt'])
 
     def test_process_template(self):
+        l = make_local_path
         # invalid lines
         file_list = FileList()
         for action in ('include', 'exclude', 'global-include',
@@ -168,7 +195,7 @@ class FileListTestCase(support.LoggingSilencer,
 
         # include
         file_list = FileList()
-        file_list.set_allfiles(['a.py', 'b.txt', 'd/c.py'])
+        file_list.set_allfiles(['a.py', 'b.txt', l('d/c.py')])
 
         file_list.process_template_line('include *.py')
         self.assertEqual(file_list.files, ['a.py'])
@@ -180,31 +207,31 @@ class FileListTestCase(support.LoggingSilencer,
 
         # exclude
         file_list = FileList()
-        file_list.files = ['a.py', 'b.txt', 'd/c.py']
+        file_list.files = ['a.py', 'b.txt', l('d/c.py')]
 
         file_list.process_template_line('exclude *.py')
-        self.assertEqual(file_list.files, ['b.txt', 'd/c.py'])
+        self.assertEqual(file_list.files, ['b.txt', l('d/c.py')])
         self.assertNoWarnings()
 
         file_list.process_template_line('exclude *.rb')
-        self.assertEqual(file_list.files, ['b.txt', 'd/c.py'])
+        self.assertEqual(file_list.files, ['b.txt', l('d/c.py')])
         self.assertWarnings()
 
         # global-include
         file_list = FileList()
-        file_list.set_allfiles(['a.py', 'b.txt', 'd/c.py'])
+        file_list.set_allfiles(['a.py', 'b.txt', l('d/c.py')])
 
         file_list.process_template_line('global-include *.py')
-        self.assertEqual(file_list.files, ['a.py', 'd/c.py'])
+        self.assertEqual(file_list.files, ['a.py', l('d/c.py')])
         self.assertNoWarnings()
 
         file_list.process_template_line('global-include *.rb')
-        self.assertEqual(file_list.files, ['a.py', 'd/c.py'])
+        self.assertEqual(file_list.files, ['a.py', l('d/c.py')])
         self.assertWarnings()
 
         # global-exclude
         file_list = FileList()
-        file_list.files = ['a.py', 'b.txt', 'd/c.py']
+        file_list.files = ['a.py', 'b.txt', l('d/c.py')]
 
         file_list.process_template_line('global-exclude *.py')
         self.assertEqual(file_list.files, ['b.txt'])
@@ -216,50 +243,52 @@ class FileListTestCase(support.LoggingSilencer,
 
         # recursive-include
         file_list = FileList()
-        file_list.set_allfiles(['a.py', 'd/b.py', 'd/c.txt', 'd/d/e.py'])
+        file_list.set_allfiles(['a.py', l('d/b.py'), l('d/c.txt'),
+                                l('d/d/e.py')])
 
         file_list.process_template_line('recursive-include d *.py')
-        self.assertEqual(file_list.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(file_list.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertNoWarnings()
 
         file_list.process_template_line('recursive-include e *.py')
-        self.assertEqual(file_list.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(file_list.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertWarnings()
 
         # recursive-exclude
         file_list = FileList()
-        file_list.files = ['a.py', 'd/b.py', 'd/c.txt', 'd/d/e.py']
+        file_list.files = ['a.py', l('d/b.py'), l('d/c.txt'), l('d/d/e.py')]
 
         file_list.process_template_line('recursive-exclude d *.py')
-        self.assertEqual(file_list.files, ['a.py', 'd/c.txt'])
+        self.assertEqual(file_list.files, ['a.py', l('d/c.txt')])
         self.assertNoWarnings()
 
         file_list.process_template_line('recursive-exclude e *.py')
-        self.assertEqual(file_list.files, ['a.py', 'd/c.txt'])
+        self.assertEqual(file_list.files, ['a.py', l('d/c.txt')])
         self.assertWarnings()
 
         # graft
         file_list = FileList()
-        file_list.set_allfiles(['a.py', 'd/b.py', 'd/d/e.py', 'f/f.py'])
+        file_list.set_allfiles(['a.py', l('d/b.py'), l('d/d/e.py'),
+                                l('f/f.py')])
 
         file_list.process_template_line('graft d')
-        self.assertEqual(file_list.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(file_list.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertNoWarnings()
 
         file_list.process_template_line('graft e')
-        self.assertEqual(file_list.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(file_list.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertWarnings()
 
         # prune
         file_list = FileList()
-        file_list.files = ['a.py', 'd/b.py', 'd/d/e.py', 'f/f.py']
+        file_list.files = ['a.py', l('d/b.py'), l('d/d/e.py'), l('f/f.py')]
 
         file_list.process_template_line('prune d')
-        self.assertEqual(file_list.files, ['a.py', 'f/f.py'])
+        self.assertEqual(file_list.files, ['a.py', l('f/f.py')])
         self.assertNoWarnings()
 
         file_list.process_template_line('prune e')
-        self.assertEqual(file_list.files, ['a.py', 'f/f.py'])
+        self.assertEqual(file_list.files, ['a.py', l('f/f.py')])
         self.assertWarnings()
 
 

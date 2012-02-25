@@ -98,6 +98,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
 - Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
   on 32-bit architectures. Initial patch by Philippe Devalkeneer.
 
@@ -249,8 +252,6 @@ Library
 
 - Issues #1745761, #755670, #13357, #12629, #1200313: HTMLParser now correctly
   handles non-valid attributes, including adjacent and unquoted attributes.
-
-- Issue #13193: Fix distutils.filelist.FileList under Windows.
 
 - Issue #13373: multiprocessing.Queue.get() could sometimes block indefinitely
   when called with a timeout.  Patch by Arnaud Ysmal.
