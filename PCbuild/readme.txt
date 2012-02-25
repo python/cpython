@@ -92,6 +92,9 @@ _socket
 _testcapi
     tests of the Python C API, run via Lib/test/test_capi.py, and
     implemented by module Modules/_testcapimodule.c
+_testbuffer
+    buffer protocol tests, run via Lib/test/test_buffer.py, and
+    implemented by module Modules/_testbuffer.c
 pyexpat
     Python wrapper for accelerated XML parsing, which incorporates stable
     code from the Expat project:  http://sourceforge.net/projects/expat/

@@ -1198,46 +1198,74 @@ Buffer Object Structures
 
 .. sectionauthor:: Greg J. Stein <greg@lyra.org>
 .. sectionauthor:: Benjamin Peterson
-
-
-The :ref:`buffer interface <bufferobjects>` exports a model where an object can expose its internal
-data.
-
-If an object does not export the buffer interface, then its :attr:`tp_as_buffer`
-member in the :c:type:`PyTypeObject` structure should be *NULL*.  Otherwise, the
-:attr:`tp_as_buffer` will point to a :c:type:`PyBufferProcs` structure.
-
+.. sectionauthor:: Stefan Krah
 
 .. c:type:: PyBufferProcs
 
-   Structure used to hold the function pointers which define an implementation of
-   the buffer protocol.
+   This structure holds pointers to the functions required by the
+   :ref:`Buffer protocol <bufferobjects>`. The protocol defines how
+   an exporter object can expose its internal data to consumer objects.
 
-   .. c:member:: getbufferproc bf_getbuffer
+.. c:member:: getbufferproc PyBufferProcs.bf_getbuffer
 
-      This should fill a :c:type:`Py_buffer` with the necessary data for
-      exporting the type.  The signature of :data:`getbufferproc` is ``int
-      (PyObject *obj, Py_buffer *view, int flags)``.  *obj* is the object to
-      export, *view* is the :c:type:`Py_buffer` struct to fill, and *flags* gives
-      the conditions the caller wants the memory under.  (See
-      :c:func:`PyObject_GetBuffer` for all flags.)  :c:member:`bf_getbuffer` is
-      responsible for filling *view* with the appropriate information.
-      (:c:func:`PyBuffer_FillView` can be used in simple cases.)  See
-      :c:type:`Py_buffer`\s docs for what needs to be filled in.
+   The signature of this function is::
+
+       int (PyObject *exporter, Py_buffer *view, int flags);
+
+   Handle a request to *exporter* to fill in *view* as specified by *flags*.
+   A standard implementation of this function will take these steps:
+
+   - Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
+     set :c:data:`view->obj` to *NULL* and return -1.
+
+   - Fill in the requested fields.
+
+   - Increment an internal counter for the number of exports.
+
+   - Set :c:data:`view->obj` to *exporter* and increment :c:data:`view->obj`.
+
+   - Return 0.
+
+   The individual fields of *view* are described in section
+   :ref:`Buffer structure <buffer-structure>`, the rules how an exporter
+   must react to specific requests are in section
+   :ref:`Buffer request types <buffer-request-types>`.
+
+   All memory pointed to in the :c:type:`Py_buffer` structure belongs to
+   the exporter and must remain valid until there are no consumers left.
+   :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`,
+   :c:member:`~Py_buffer.suboffsets` and :c:member:`~Py_buffer.internal`
+   are read-only for the consumer.
+
+   :c:func:`PyBuffer_FillInfo` provides an easy way of exposing a simple
+   bytes buffer while dealing correctly with all request types.
+
+   :c:func:`PyObject_GetBuffer` is the interface for the consumer that
+   wraps this function.
+
+.. c:member:: releasebufferproc PyBufferProcs.bf_releasebuffer
+
+   The signature of this function is::
+
+       void (PyObject *exporter, Py_buffer *view);
+
+   Handle a request to release the resources of the buffer. If no resources
+   need to be released, this field may be *NULL*. A standard implementation
+   of this function will take these steps:
+
+   - Decrement an internal counter for the number of exports.
+
+   - If the counter is 0, free all memory associated with *view*.
+
+   The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
+   track of buffer-specific resources (if present). This field is guaranteed
+   to remain constant, while a consumer MAY pass a copy of the original buffer
+   as the *view* argument.
 
 
-   .. c:member:: releasebufferproc bf_releasebuffer
+   This function MUST NOT decrement :c:data:`view->obj`, since that is
+   done automatically in :c:func:`PyBuffer_Release`.
 
-      This should release the resources of the buffer.  The signature of
-      :c:data:`releasebufferproc` is ``void (PyObject *obj, Py_buffer *view)``.
-      If the :c:data:`bf_releasebuffer` function is not provided (i.e. it is
-      *NULL*), then it does not ever need to be called.
 
-      The exporter of the buffer interface must make sure that any memory
-      pointed to in the :c:type:`Py_buffer` structure remains valid until
-      releasebuffer is called.  Exporters will need to define a
-      :c:data:`bf_releasebuffer` function if they can re-allocate their memory,
-      strides, shape, suboffsets, or format variables which they might share
-      through the struct bufferinfo.
-
-      See :c:func:`PyBuffer_Release`.
+   :c:func:`PyBuffer_Release` is the interface for the consumer that
+   wraps this function.

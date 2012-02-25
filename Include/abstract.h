@@ -559,7 +559,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     /* Copy the data from the src buffer to the buffer of destination
      */
 
-     PyAPI_FUNC(int) PyBuffer_IsContiguous(Py_buffer *view, char fort);
+     PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char fort);
 
 
      PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims,

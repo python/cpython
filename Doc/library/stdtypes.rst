@@ -2377,7 +2377,7 @@ memoryview type
 
 :class:`memoryview` objects allow Python code to access the internal data
 of an object that supports the :ref:`buffer protocol <bufferobjects>` without
-copying.  Memory is generally interpreted as simple bytes.
+copying.
 
 .. class:: memoryview(obj)
 
@@ -2391,51 +2391,87 @@ copying.  Memory is generally interpreted as simple bytes.
    is a single byte, but other types such as :class:`array.array` may have
    bigger elements.
 
-   ``len(view)`` returns the total number of elements in the memoryview,
-   *view*.  The :class:`~memoryview.itemsize` attribute will give you the
+   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`.
+   If ``view.ndim = 0``, the length is 1. If ``view.ndim = 1``, the length
+   is equal to the number of elements in the view. For higher dimensions,
+   the length is equal to the length of the nested list representation of
+   the view. The :class:`~memoryview.itemsize` attribute will give you the
    number of bytes in a single element.
 
-   A :class:`memoryview` supports slicing to expose its data.  Taking a single
-   index will return a single element as a :class:`bytes` object.  Full
-   slicing will result in a subview::
+   A :class:`memoryview` supports slicing to expose its data. If
+   :class:`~memoryview.format` is one of the native format specifiers
+   from the :mod:`struct` module, indexing will return a single element
+   with the correct type. Full slicing will result in a subview::
 
-      >>> v = memoryview(b'abcefg')
-      >>> v[1]
-      b'b'
-      >>> v[-1]
-      b'g'
-      >>> v[1:4]
-      <memory at 0x77ab28>
-      >>> bytes(v[1:4])
-      b'bce'
+    >>> v = memoryview(b'abcefg')
+    >>> v[1]
+    98
+    >>> v[-1]
+    103
+    >>> v[1:4]
+    <memory at 0x7f3ddc9f4350>
+    >>> bytes(v[1:4])
+    b'bce'
 
-   If the object the memoryview is over supports changing its data, the
-   memoryview supports slice assignment::
+   Other native formats::
+
+      >>> import array
+      >>> a = array.array('l', [-11111111, 22222222, -33333333, 44444444])
+      >>> a[0]
+      -11111111
+      >>> a[-1]
+      44444444
+      >>> a[2:3].tolist()
+      [-33333333]
+      >>> a[::2].tolist()
+      [-11111111, -33333333]
+      >>> a[::-1].tolist()
+      [44444444, -33333333, 22222222, -11111111]
+
+   .. versionadded:: 3.3
+
+   If the underlying object is writable, the memoryview supports slice
+   assignment. Resizing is not allowed::
 
       >>> data = bytearray(b'abcefg')
       >>> v = memoryview(data)
       >>> v.readonly
       False
-      >>> v[0] = b'z'
+      >>> v[0] = ord(b'z')
       >>> data
       bytearray(b'zbcefg')
       >>> v[1:4] = b'123'
       >>> data
       bytearray(b'z123fg')
-      >>> v[2] = b'spam'
+      >>> v[2:3] = b'spam'
       Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      ValueError: cannot modify size of memoryview object
+      File "<stdin>", line 1, in <module>
+      ValueError: memoryview assignment: lvalue and rvalue have different structures
+      >>> v[2:6] = b'spam'
+      >>> data
+      bytearray(b'z1spam')
 
-   Notice how the size of the memoryview object cannot be changed.
-
-   Memoryviews of hashable (read-only) types are also hashable and their
-   hash value matches the corresponding bytes object::
+   Memoryviews of hashable (read-only) types are also hashable. The hash
+   is defined as ``hash(m) == hash(m.tobytes())``::
 
       >>> v = memoryview(b'abcefg')
       >>> hash(v) == hash(b'abcefg')
       True
       >>> hash(v[2:4]) == hash(b'ce')
+      True
+      >>> hash(v[::-2]) == hash(b'abcefg'[::-2])
+      True
+
+   Hashing of multi-dimensional objects is supported::
+
+      >>> buf = bytes(list(range(12)))
+      >>> x = memoryview(buf)
+      >>> y = x.cast('B', shape=[2,2,3])
+      >>> x.tolist()
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      >>> y.tolist()
+      [[[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]]]
+      >>> hash(x) == hash(y) == hash(y.tobytes())
       True
 
    .. versionchanged:: 3.3
@@ -2455,12 +2491,20 @@ copying.  Memory is generally interpreted as simple bytes.
          >>> bytes(m)
          b'abc'
 
+      For non-contiguous arrays the result is equal to the flattened list
+      representation with all elements converted to bytes.
+
    .. method:: tolist()
 
-      Return the data in the buffer as a list of integers. ::
+      Return the data in the buffer as a list of elements. ::
 
          >>> memoryview(b'abc').tolist()
          [97, 98, 99]
+         >>> import array
+         >>> a = array.array('d', [1.1, 2.2, 3.3])
+         >>> m = memoryview(a)
+         >>> m.tolist()
+         [1.1, 2.2, 3.3]
 
    .. method:: release()
 
@@ -2487,7 +2531,7 @@ copying.  Memory is generally interpreted as simple bytes.
          >>> with memoryview(b'abc') as m:
          ...     m[0]
          ...
-         b'a'
+         97
          >>> m[0]
          Traceback (most recent call last):
            File "<stdin>", line 1, in <module>
@@ -2495,45 +2539,219 @@ copying.  Memory is generally interpreted as simple bytes.
 
       .. versionadded:: 3.2
 
+   .. method:: cast(format[, shape])
+
+      Cast a memoryview to a new format or shape. *shape* defaults to
+      ``[byte_length//new_itemsize]``, which means that the result view
+      will be one-dimensional. The return value is a new memoryview, but
+      the buffer itself is not copied. Supported casts are 1D -> C-contiguous
+      and C-contiguous -> 1D. One of the formats must be a byte format
+      ('B', 'b' or 'c'). The byte length of the result must be the same
+      as the original length.
+
+      Cast 1D/long to 1D/unsigned bytes::
+
+         >>> import array
+         >>> a = array.array('l', [1,2,3])
+         >>> x = memoryview(a)
+         >>> x.format
+         'l'
+         >>> x.itemsize
+         8
+         >>> len(x)
+         3
+         >>> x.nbytes
+         24
+         >>> y = x.cast('B')
+         >>> y.format
+         'B'
+         >>> y.itemsize
+         1
+         >>> len(y)
+         24
+         >>> y.nbytes
+         24
+
+      Cast 1D/unsigned bytes to 1D/char::
+
+         >>> b = bytearray(b'zyz')
+         >>> x = memoryview(b)
+         >>> x[0] = b'a'
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         ValueError: memoryview: invalid value for format "B"
+         >>> y = x.cast('c')
+         >>> y[0] = b'a'
+         >>> b
+         bytearray(b'ayz')
+
+      Cast 1D/bytes to 3D/ints to 1D/signed char::
+
+         >>> import struct
+         >>> buf = struct.pack("i"*12, *list(range(12)))
+         >>> x = memoryview(buf)
+         >>> y = x.cast('i', shape=[2,2,3])
+         >>> y.tolist()
+         [[[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]]]
+         >>> y.format
+         'i'
+         >>> y.itemsize
+         4
+         >>> len(y)
+         2
+         >>> y.nbytes
+         48
+         >>> z = y.cast('b')
+         >>> z.format
+         'b'
+         >>> z.itemsize
+         1
+         >>> len(z)
+         48
+         >>> z.nbytes
+         48
+
+      Cast 1D/unsigned char to to 2D/unsigned long::
+
+         >>> buf = struct.pack("L"*6, *list(range(6)))
+         >>> x = memoryview(buf)
+         >>> y = x.cast('L', shape=[2,3])
+         >>> len(y)
+         2
+         >>> y.nbytes
+         48
+         >>> y.tolist()
+         [[0, 1, 2], [3, 4, 5]]
+
+      .. versionadded:: 3.3
+
    There are also several readonly attributes available:
+
+   .. attribute:: obj
+
+      The underlying object of the memoryview::
+
+         >>> b  = bytearray(b'xyz')
+         >>> m = memoryview(b)
+         >>> m.obj is b
+         True
+
+      .. versionadded:: 3.3
+
+   .. attribute:: nbytes
+
+      ``nbytes == product(shape) * itemsize == len(m.tobytes())``. This is
+      the amount of space in bytes that the array would use in a contiguous
+      representation. It is not necessarily equal to len(m)::
+
+         >>> import array
+         >>> a = array.array('i', [1,2,3,4,5])
+         >>> m = memoryview(a)
+         >>> len(m)
+         5
+         >>> m.nbytes
+         20
+         >>> y = m[::2]
+         >>> len(y)
+         3
+         >>> y.nbytes
+         12
+         >>> len(y.tobytes())
+         12
+
+      Multi-dimensional arrays::
+
+         >>> import struct
+         >>> buf = struct.pack("d"*12, *[1.5*x for x in range(12)])
+         >>> x = memoryview(buf)
+         >>> y = x.cast('d', shape=[3,4])
+         >>> y.tolist()
+         [[0.0, 1.5, 3.0, 4.5], [6.0, 7.5, 9.0, 10.5], [12.0, 13.5, 15.0, 16.5]]
+         >>> len(y)
+         3
+         >>> y.nbytes
+         96
+
+      .. versionadded:: 3.3
+
+   .. attribute:: readonly
+
+      A bool indicating whether the memory is read only.
 
    .. attribute:: format
 
       A string containing the format (in :mod:`struct` module style) for each
-      element in the view.  This defaults to ``'B'``, a simple bytestring.
+      element in the view. A memoryview can be created from exporters with
+      arbitrary format strings, but some methods (e.g. :meth:`tolist`) are
+      restricted to native single element formats. Special care must be taken
+      when comparing memoryviews. Since comparisons are required to return a
+      value for ``==`` and ``!=``, two memoryviews referencing the same
+      exporter can compare as not-equal if the exporter's format is not
+      understood::
+
+         >>> from ctypes import BigEndianStructure, c_long
+         >>> class BEPoint(BigEndianStructure):
+         ...     _fields_ = [("x", c_long), ("y", c_long)]
+         ...
+         >>> point = BEPoint(100, 200)
+         >>> a = memoryview(point)
+         >>> b = memoryview(point)
+         >>> a == b
+         False
+         >>> a.tolist()
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         NotImplementedError: memoryview: unsupported format T{>l:x:>l:y:}
 
    .. attribute:: itemsize
 
       The size in bytes of each element of the memoryview::
 
-         >>> m = memoryview(array.array('H', [1,2,3]))
+         >>> import array, struct
+         >>> m = memoryview(array.array('H', [32000, 32001, 32002]))
          >>> m.itemsize
          2
          >>> m[0]
-         b'\x01\x00'
-         >>> len(m[0]) == m.itemsize
+         32000
+         >>> struct.calcsize('H') == m.itemsize
          True
-
-   .. attribute:: shape
-
-      A tuple of integers the length of :attr:`ndim` giving the shape of the
-      memory as a N-dimensional array.
 
    .. attribute:: ndim
 
       An integer indicating how many dimensions of a multi-dimensional array the
       memory represents.
 
+   .. attribute:: shape
+
+      A tuple of integers the length of :attr:`ndim` giving the shape of the
+      memory as a N-dimensional array.
+
    .. attribute:: strides
 
       A tuple of integers the length of :attr:`ndim` giving the size in bytes to
       access each element for each dimension of the array.
 
-   .. attribute:: readonly
+   .. attribute:: suboffsets
 
-      A bool indicating whether the memory is read only.
+      Used internally for PIL-style arrays. The value is informational only.
 
-   .. memoryview.suboffsets isn't documented because it only seems useful for C
+   .. attribute:: c_contiguous
+
+      A bool indicating whether the memory is C-contiguous.
+
+      .. versionadded:: 3.3
+
+   .. attribute:: f_contiguous
+
+      A bool indicating whether the memory is Fortran contiguous.
+
+      .. versionadded:: 3.3
+
+   .. attribute:: contiguous
+
+      A bool indicating whether the memory is contiguous.
+
+      .. versionadded:: 3.3
 
 
 .. _typecontextmanager:
