@@ -186,15 +186,16 @@ typedef struct bufferinfo {
     Py_ssize_t *shape;
     Py_ssize_t *strides;
     Py_ssize_t *suboffsets;
-    Py_ssize_t smalltable[2];  /* static store for shape and strides of
-                                  mono-dimensional buffers. */
     void *internal;
 } Py_buffer;
 
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
-    /* Flags for getting buffers */
+/* Maximum number of dimensions */
+#define PyBUF_MAX_NDIM 64
+
+/* Flags for getting buffers */
 #define PyBUF_SIMPLE 0
 #define PyBUF_WRITABLE 0x0001
 /*  we used to include an E, backwards compatible alias  */

@@ -49,6 +49,62 @@
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
+.. _pep-3118:
+
+PEP 3118: New memoryview implementation and buffer protocol documentation
+=========================================================================
+
+:issue:`10181` - memoryview bug fixes and features.
+  Written by Stefan Krah.
+
+The new memoryview implementation comprehensively fixes all ownership and
+lifetime issues of dynamically allocated fields in the Py_buffer struct
+that led to multiple crash reports. Additionally, several functions that
+crashed or returned incorrect results for non-contiguous or multi-dimensional
+input have been fixed.
+
+The memoryview object now has a PEP-3118 compliant getbufferproc()
+that checks the consumer's request type. Many new features have been
+added, most of them work in full generality for non-contiguous arrays
+and arrays with suboffsets.
+
+The documentation has been updated, clearly spelling out responsibilities
+for both exporters and consumers. Buffer request flags are grouped into
+basic and compound flags. The memory layout of non-contiguous and
+multi-dimensional NumPy-style arrays is explained.
+
+Features
+--------
+
+* All native single character format specifiers in struct module syntax
+  (optionally prefixed with '@') are now supported.
+
+* With some restrictions, the cast() method allows changing of format and
+  shape of C-contiguous arrays.
+
+* Multi-dimensional list representations are supported for any array type.
+
+* Multi-dimensional comparisons are supported for any array type.
+
+* All array types are hashable if the exporting object is hashable
+  and the view is read-only.
+
+* Arbitrary slicing of any 1-D arrays type is supported. For example, it
+  is now possible to reverse a memoryview in O(1) by using a negative step.
+
+API changes
+-----------
+
+* The maximum number of dimensions is officially limited to 64.
+
+* The representation of empty shape, strides and suboffsets is now
+  an empty tuple instead of None.
+
+* Accessing a memoryview element with format 'B' (unsigned bytes)
+  now returns an integer (in accordance with the struct module syntax).
+  For returning a bytes object the view must be cast to 'c' first.
+
+
 .. _pep-393:
 
 PEP 393: Flexible String Representation

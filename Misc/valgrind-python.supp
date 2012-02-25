@@ -412,4 +412,15 @@
    fun:SHA1_Update
 }
 
+{
+   test_buffer_non_debug
+   Memcheck:Addr4
+   fun:PyUnicodeUCS2_FSConverter
+}
+
+{
+   test_buffer_non_debug
+   Memcheck:Addr4
+   fun:PyUnicode_FSConverter
+}
 

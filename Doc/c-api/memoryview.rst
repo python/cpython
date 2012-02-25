@@ -17,16 +17,19 @@ any other object.
 
    Create a memoryview object from an object that provides the buffer interface.
    If *obj* supports writable buffer exports, the memoryview object will be
-   readable and writable, otherwise it will be read-only.
+   read/write, otherwise it may be either read-only or read/write at the
+   discretion of the exporter.
 
+.. c:function:: PyObject *PyMemoryView_FromMemory(char *mem, Py_ssize_t size, int flags)
+
+   Create a memoryview object using *mem* as the underlying buffer.
+   *flags* can be one of :c:macro:`PyBUF_READ` or :c:macro:`PyBUF_WRITE`.
 
 .. c:function:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
 
    Create a memoryview object wrapping the given buffer structure *view*.
-   The memoryview object then owns the buffer represented by *view*, which
-   means you shouldn't try to call :c:func:`PyBuffer_Release` yourself: it
-   will be done on deallocation of the memoryview object.
-
+   For simple byte buffers, :c:func:`PyMemoryView_FromMemory` is the preferred
+   function.
 
 .. c:function:: PyObject *PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
 
@@ -43,10 +46,16 @@ any other object.
    currently allowed to create subclasses of :class:`memoryview`.
 
 
-.. c:function:: Py_buffer *PyMemoryView_GET_BUFFER(PyObject *obj)
+.. c:function:: Py_buffer *PyMemoryView_GET_BUFFER(PyObject *mview)
 
-   Return a pointer to the buffer structure wrapped by the given
-   memoryview object.  The object **must** be a memoryview instance;
-   this macro doesn't check its type, you must do it yourself or you
-   will risk crashes.
+   Return a pointer to the memoryview's private copy of the exporter's buffer.
+   *mview* **must** be a memoryview instance; this macro doesn't check its type,
+   you must do it yourself or you will risk crashes.
+
+.. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
+
+   Return either a pointer to the exporting object that the memoryview is based
+   on or *NULL* if the memoryview has been created by one of the functions
+   :c:func:`PyMemoryView_FromMemory` or :c:func:`PyMemoryView_FromBuffer`.
+   *mview* **must** be a memoryview instance.
 

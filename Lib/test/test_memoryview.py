@@ -24,15 +24,14 @@ class AbstractMemoryTests:
         return filter(None, [self.ro_type, self.rw_type])
 
     def check_getitem_with_type(self, tp):
-        item = self.getitem_type
         b = tp(self._source)
         oldrefcount = sys.getrefcount(b)
         m = self._view(b)
-        self.assertEqual(m[0], item(b"a"))
-        self.assertIsInstance(m[0], bytes)
-        self.assertEqual(m[5], item(b"f"))
-        self.assertEqual(m[-1], item(b"f"))
-        self.assertEqual(m[-6], item(b"a"))
+        self.assertEqual(m[0], ord(b"a"))
+        self.assertIsInstance(m[0], int)
+        self.assertEqual(m[5], ord(b"f"))
+        self.assertEqual(m[-1], ord(b"f"))
+        self.assertEqual(m[-6], ord(b"a"))
         # Bounds checking
         self.assertRaises(IndexError, lambda: m[6])
         self.assertRaises(IndexError, lambda: m[-7])
@@ -76,7 +75,9 @@ class AbstractMemoryTests:
         b = self.rw_type(self._source)
         oldrefcount = sys.getrefcount(b)
         m = self._view(b)
-        m[0] = tp(b"0")
+        m[0] = ord(b'1')
+        self._check_contents(tp, b, b"1bcdef")
+        m[0:1] = tp(b"0")
         self._check_contents(tp, b, b"0bcdef")
         m[1:3] = tp(b"12")
         self._check_contents(tp, b, b"012def")
@@ -102,10 +103,17 @@ class AbstractMemoryTests:
         # Wrong index/slice types
         self.assertRaises(TypeError, setitem, 0.0, b"a")
         self.assertRaises(TypeError, setitem, (0,), b"a")
+        self.assertRaises(TypeError, setitem, (slice(0,1,1), 0), b"a")
+        self.assertRaises(TypeError, setitem, (0, slice(0,1,1)), b"a")
+        self.assertRaises(TypeError, setitem, (0,), b"a")
         self.assertRaises(TypeError, setitem, "a", b"a")
+        # Not implemented: multidimensional slices
+        slices = (slice(0,1,1), slice(0,1,2))
+        self.assertRaises(NotImplementedError, setitem, slices, b"a")
         # Trying to resize the memory object
-        self.assertRaises(ValueError, setitem, 0, b"")
-        self.assertRaises(ValueError, setitem, 0, b"ab")
+        exc = ValueError if m.format == 'c' else TypeError
+        self.assertRaises(exc, setitem, 0, b"")
+        self.assertRaises(exc, setitem, 0, b"ab")
         self.assertRaises(ValueError, setitem, slice(1,1), b"a")
         self.assertRaises(ValueError, setitem, slice(0,2), b"a")
 
@@ -175,7 +183,7 @@ class AbstractMemoryTests:
         self.assertEqual(m.shape, (6,))
         self.assertEqual(len(m), 6)
         self.assertEqual(m.strides, (self.itemsize,))
-        self.assertEqual(m.suboffsets, None)
+        self.assertEqual(m.suboffsets, ())
         return m
 
     def test_attributes_readonly(self):
@@ -209,12 +217,16 @@ class AbstractMemoryTests:
                 # If tp is a factory rather than a plain type, skip
                 continue
 
+            class MyView():
+                def __init__(self, base):
+                    self.m = memoryview(base)
             class MySource(tp):
                 pass
             class MyObject:
                 pass
 
-            # Create a reference cycle through a memoryview object
+            # Create a reference cycle through a memoryview object.
+            # This exercises mbuf_clear().
             b = MySource(tp(b'abc'))
             m = self._view(b)
             o = MyObject()
@@ -222,6 +234,17 @@ class AbstractMemoryTests:
             b.o = o
             wr = weakref.ref(o)
             b = m = o = None
+            # The cycle must be broken
+            gc.collect()
+            self.assertTrue(wr() is None, wr())
+
+            # This exercises memory_clear().
+            m = MyView(tp(b'abc'))
+            o = MyObject()
+            m.x = m
+            m.o = o
+            wr = weakref.ref(o)
+            m = o = None
             # The cycle must be broken
             gc.collect()
             self.assertTrue(wr() is None, wr())
@@ -283,9 +306,12 @@ class AbstractMemoryTests:
         i = io.BytesIO(b'ZZZZ')
         self.assertRaises(TypeError, i.readinto, m)
 
+    def test_getbuf_fail(self):
+        self.assertRaises(TypeError, self._view, {})
+
     def test_hash(self):
         # Memoryviews of readonly (hashable) types are hashable, and they
-        # hash as the corresponding object.
+        # hash as hash(obj.tobytes()).
         tp = self.ro_type
         if tp is None:
             self.skipTest("no read-only type to test")
