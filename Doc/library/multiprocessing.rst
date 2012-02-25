@@ -107,7 +107,7 @@ processes:
 
 **Queues**
 
-   The :class:`Queue` class is a near clone of :class:`Queue.Queue`.  For
+   The :class:`~multiprocessing.Queue` class is a near clone of :class:`Queue.Queue`.  For
    example::
 
       from multiprocessing import Process, Queue
@@ -231,7 +231,7 @@ However, if you really do need to use some shared data then
    A manager returned by :func:`Manager` will support types :class:`list`,
    :class:`dict`, :class:`Namespace`, :class:`Lock`, :class:`RLock`,
    :class:`Semaphore`, :class:`BoundedSemaphore`, :class:`Condition`,
-   :class:`Event`, :class:`Queue`, :class:`Value` and :class:`Array`.  For
+   :class:`Event`, :class:`~multiprocessing.Queue`, :class:`Value` and :class:`Array`.  For
    example, ::
 
       from multiprocessing import Process, Manager
@@ -464,9 +464,9 @@ primitives like locks.
 For passing messages one can use :func:`Pipe` (for a connection between two
 processes) or a queue (which allows multiple producers and consumers).
 
-The :class:`Queue`, :class:`multiprocessing.queues.SimpleQueue` and :class:`JoinableQueue` types are multi-producer,
+The :class:`~multiprocessing.Queue`, :class:`multiprocessing.queues.SimpleQueue` and :class:`JoinableQueue` types are multi-producer,
 multi-consumer FIFO queues modelled on the :class:`Queue.Queue` class in the
-standard library.  They differ in that :class:`Queue` lacks the
+standard library.  They differ in that :class:`~multiprocessing.Queue` lacks the
 :meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join` methods introduced
 into Python 2.5's :class:`Queue.Queue` class.
 
@@ -489,7 +489,7 @@ Note that one can also create a shared queue by using a manager object -- see
 .. warning::
 
    If a process is killed using :meth:`Process.terminate` or :func:`os.kill`
-   while it is trying to use a :class:`Queue`, then the data in the queue is
+   while it is trying to use a :class:`~multiprocessing.Queue`, then the data in the queue is
    likely to become corrupted.  This may cause any other process to get an
    exception when it tries to use the queue later on.
 
@@ -531,7 +531,7 @@ For an example of the usage of queues for interprocess communication see
    The usual :exc:`Queue.Empty` and :exc:`Queue.Full` exceptions from the
    standard library's :mod:`Queue` module are raised to signal timeouts.
 
-   :class:`Queue` implements all the methods of :class:`Queue.Queue` except for
+   :class:`~multiprocessing.Queue` implements all the methods of :class:`Queue.Queue` except for
    :meth:`~Queue.Queue.task_done` and :meth:`~Queue.Queue.join`.
 
    .. method:: qsize()
@@ -582,7 +582,7 @@ For an example of the usage of queues for interprocess communication see
 
       Equivalent to ``get(False)``.
 
-   :class:`multiprocessing.Queue` has a few additional methods not found in
+   :class:`~multiprocessing.Queue` has a few additional methods not found in
    :class:`Queue.Queue`.  These methods are usually unnecessary for most
    code:
 
@@ -612,7 +612,7 @@ For an example of the usage of queues for interprocess communication see
 
 .. class:: multiprocessing.queues.SimpleQueue()
 
-   It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
+   It is a simplified :class:`~multiprocessing.Queue` type, very close to a locked :class:`Pipe`.
 
    .. method:: empty()
 
@@ -629,7 +629,7 @@ For an example of the usage of queues for interprocess communication see
 
 .. class:: JoinableQueue([maxsize])
 
-   :class:`JoinableQueue`, a :class:`Queue` subclass, is a queue which
+   :class:`JoinableQueue`, a :class:`~multiprocessing.Queue` subclass, is a queue which
    additionally has :meth:`task_done` and :meth:`join` methods.
 
    .. method:: task_done()
@@ -2084,7 +2084,7 @@ Joining processes that use queues
     Bear in mind that a process that has put items in a queue will wait before
     terminating until all the buffered items are fed by the "feeder" thread to
     the underlying pipe.  (The child process can call the
-    :meth:`Queue.cancel_join_thread` method of the queue to avoid this behaviour.)
+    :meth:`~multiprocessing.Queue.cancel_join_thread` method of the queue to avoid this behaviour.)
 
     This means that whenever you use a queue you need to make sure that all
     items which have been put on the queue will eventually be removed before the
