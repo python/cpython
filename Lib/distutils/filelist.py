@@ -201,6 +201,7 @@ class FileList:
 
         Return True if files are found, False otherwise.
         """
+        # XXX docstring lying about what the special chars are?
         files_found = False
         pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
         self.debug_print("include_pattern: applying regex r'%s'" %
@@ -284,11 +285,14 @@ def glob_to_re(pattern):
     # IMHO is wrong -- '?' and '*' aren't supposed to match slash in Unix,
     # and by extension they shouldn't match such "special characters" under
     # any OS.  So change all non-escaped dots in the RE to match any
-    # character except the special characters.
-    # XXX currently the "special characters" are just slash -- i.e. this is
-    # Unix-only.
-    pattern_re = re.sub(r'((?<!\\)(\\\\)*)\.', r'\1[^/]', pattern_re)
-
+    # character except the special characters (currently: just os.sep).
+    sep = os.sep
+    if os.sep == '\\':
+        # we're using a regex to manipulate a regex, so we need
+        # to escape the backslash twice
+        sep = r'\\\\'
+    escaped = r'\1[^%s]' % sep
+    pattern_re = re.sub(r'((?<!\\)(\\\\)*)\.', escaped, pattern_re)
     return pattern_re
 
 
@@ -312,9 +316,11 @@ def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
     if prefix is not None:
         # ditch end of pattern character
         empty_pattern = glob_to_re('')
-        prefix_re = (glob_to_re(prefix))[:-len(empty_pattern)]
-        # paths should always use / in manifest templates
-        pattern_re = "^%s/.*%s" % (prefix_re, pattern_re)
+        prefix_re = glob_to_re(prefix)[:-len(empty_pattern)]
+        sep = os.sep
+        if os.sep == '\\':
+            sep = r'\\'
+        pattern_re = "^" + sep.join((prefix_re, ".*" + pattern_re))
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
