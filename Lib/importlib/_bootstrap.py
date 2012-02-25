@@ -69,7 +69,7 @@ def _r_long(int_bytes):
 def _path_join(*args):
     """Replacement for os.path.join."""
     return path_sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
-                            for x in args if x)
+                         for x in args if x)
 
 
 def _path_exists(path):
@@ -406,14 +406,16 @@ class _LoaderBasics:
                 pass
             else:
                 if _r_long(raw_timestamp) != source_mtime:
-                    raise ImportError("bytecode is stale for {}".format(fullname))
+                    raise ImportError(
+                        "bytecode is stale for {}".format(fullname))
             try:
                 source_size = source_stats['size'] & 0xFFFFFFFF
             except KeyError:
                 pass
             else:
                 if _r_long(raw_size) != source_size:
-                    raise ImportError("bytecode is stale for {}".format(fullname))
+                    raise ImportError(
+                        "bytecode is stale for {}".format(fullname))
         # Can't return the code object as errors from marshal loading need to
         # propagate even when source is available.
         return data[12:]
@@ -519,7 +521,7 @@ class SourceLoader(_LoaderBasics):
         code_object = compile(source_bytes, source_path, 'exec',
                                 dont_inherit=True)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
-                source_mtime is not None):
+            source_mtime is not None):
             # If e.g. Jython ever implements imp.cache_from_source to have
             # their own cached file format, this block of code will most likely
             # throw an exception.
@@ -890,7 +892,7 @@ class _ImportLockContext:
 
 def _resolve_name(name, package, level):
     """Resolve a relative module name to an absolute one."""
-    bits = package.rsplit('.', level-1)
+    bits = package.rsplit('.', level - 1)
     if len(bits) < level:
         raise ValueError('attempted relative import beyond top-level package')
     base = bits[0]
@@ -1010,7 +1012,7 @@ def _handle_fromlist(module, fromlist, import_):
             fromlist = list(fromlist)
             fromlist.remove('*')
             fromlist.extend(module.__all__)
-        for x in (y for y in fromlist if not hasattr(module,y)):
+        for x in (y for y in fromlist if not hasattr(module, y)):
             try:
                 import_('{0}.{1}'.format(module.__name__, x))
             except ImportError:
