@@ -1961,10 +1961,10 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
-    PyObject *name, *bases, *dict;
+    PyObject *name, *bases = NULL, *orig_dict, *dict = NULL;
     static char *kwlist[] = {"name", "bases", "dict", 0};
-    PyObject *qualname, *slots, *tmp, *newslots;
-    PyTypeObject *type, *base, *tmptype, *winner;
+    PyObject *qualname, *slots = NULL, *tmp, *newslots;
+    PyTypeObject *type = NULL, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
     PyMemberDef *mp;
     Py_ssize_t i, nbases, nslots, slotoffset, add_dict, add_weak;
@@ -1998,7 +1998,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "UO!O!:type", kwlist,
                                      &name,
                                      &PyTuple_Type, &bases,
-                                     &PyDict_Type, &dict))
+                                     &PyDict_Type, &orig_dict))
         return NULL;
 
     /* Determine the proper metatype to deal with this: */
@@ -2018,39 +2018,27 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (nbases == 0) {
         bases = PyTuple_Pack(1, &PyBaseObject_Type);
         if (bases == NULL)
-            return NULL;
+            goto error;
         nbases = 1;
     }
     else
         Py_INCREF(bases);
 
-    /* XXX From here until type is allocated, "return NULL" leaks bases! */
-
     /* Calculate best base, and check that all bases are type objects */
     base = best_base(bases);
     if (base == NULL) {
-        Py_DECREF(bases);
-        return NULL;
+        goto error;
     }
     if (!PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
         PyErr_Format(PyExc_TypeError,
                      "type '%.100s' is not an acceptable base type",
                      base->tp_name);
-        Py_DECREF(bases);
-        return NULL;
+        goto error;
     }
 
-    /* Check for a __qualname__ variable in dict */
-    qualname = PyDict_GetItemString(dict, "__qualname__");
-    if (qualname == NULL) {
-        qualname = name;
-    }
-    else {
-        if (PyDict_DelItemString(dict, "__qualname__") < 0) {
-            Py_DECREF(bases);
-            return NULL;
-        }
-    }
+    dict = PyDict_Copy(orig_dict);
+    if (dict == NULL)
+        goto error;
 
     /* Check for a __slots__ sequence variable in dict, and count it */
     slots = PyDict_GetItemString(dict, "__slots__");
@@ -2075,10 +2063,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             slots = PyTuple_Pack(1, slots);
         else
             slots = PySequence_Tuple(slots);
-        if (slots == NULL) {
-            Py_DECREF(bases);
-            return NULL;
-        }
+        if (slots == NULL)
+            goto error;
         assert(PyTuple_Check(slots));
 
         /* Are slots allowed? */
@@ -2088,24 +2074,21 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                          "nonempty __slots__ "
                          "not supported for subtype of '%s'",
                          base->tp_name);
-          bad_slots:
-            Py_DECREF(bases);
-            Py_DECREF(slots);
-            return NULL;
+            goto error;
         }
 
         /* Check for valid slot names and two special cases */
         for (i = 0; i < nslots; i++) {
             PyObject *tmp = PyTuple_GET_ITEM(slots, i);
             if (!valid_identifier(tmp))
-                goto bad_slots;
+                goto error;
             assert(PyUnicode_Check(tmp));
             if (PyUnicode_CompareWithASCIIString(tmp, "__dict__") == 0) {
                 if (!may_add_dict || add_dict) {
                     PyErr_SetString(PyExc_TypeError,
                         "__dict__ slot disallowed: "
                         "we already got one");
-                    goto bad_slots;
+                    goto error;
                 }
                 add_dict++;
             }
@@ -2115,7 +2098,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                         "__weakref__ slot disallowed: "
                         "either we already got one, "
                         "or __itemsize__ != 0");
-                    goto bad_slots;
+                    goto error;
                 }
                 add_weak++;
             }
@@ -2127,7 +2110,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         */
         newslots = PyList_New(nslots - add_dict - add_weak);
         if (newslots == NULL)
-            goto bad_slots;
+            goto error;
         for (i = j = 0; i < nslots; i++) {
             tmp = PyTuple_GET_ITEM(slots, i);
             if ((add_dict &&
@@ -2138,7 +2121,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             tmp =_Py_Mangle(name, tmp);
             if (!tmp) {
                 Py_DECREF(newslots);
-                goto bad_slots;
+                goto error;
             }
             PyList_SET_ITEM(newslots, j, tmp);
             if (PyDict_GetItem(dict, tmp)) {
@@ -2146,24 +2129,21 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                              "%R in __slots__ conflicts with class variable",
                              tmp);
                 Py_DECREF(newslots);
-                goto bad_slots;
+                goto error;
             }
             j++;
         }
         assert(j == nslots - add_dict - add_weak);
         nslots = j;
-        Py_DECREF(slots);
+        Py_CLEAR(slots);
         if (PyList_Sort(newslots) == -1) {
-            Py_DECREF(bases);
             Py_DECREF(newslots);
-            return NULL;
+            goto error;
         }
         slots = PyList_AsTuple(newslots);
         Py_DECREF(newslots);
-        if (slots == NULL) {
-            Py_DECREF(bases);
-            return NULL;
-        }
+        if (slots == NULL)
+            goto error;
 
         /* Secondary bases may provide weakrefs or dict */
         if (nbases > 1 &&
@@ -2191,24 +2171,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         }
     }
 
-    /* XXX From here until type is safely allocated,
-       "return NULL" may leak slots! */
-
     /* Allocate the type object */
     type = (PyTypeObject *)metatype->tp_alloc(metatype, nslots);
-    if (type == NULL) {
-        Py_XDECREF(slots);
-        Py_DECREF(bases);
-        return NULL;
-    }
+    if (type == NULL)
+        goto error;
 
     /* Keep name and slots alive in the extended type object */
     et = (PyHeapTypeObject *)type;
     Py_INCREF(name);
-    Py_INCREF(qualname);
     et->ht_name = name;
-    et->ht_qualname = qualname;
     et->ht_slots = slots;
+    slots = NULL;
 
     /* Initialize tp_flags */
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
@@ -2222,22 +2195,18 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
     type->tp_name = _PyUnicode_AsString(name);
-    if (!type->tp_name) {
-        Py_DECREF(type);
-        return NULL;
-    }
+    if (!type->tp_name)
+        goto error;
 
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
+    bases = NULL;
     Py_INCREF(base);
     type->tp_base = base;
 
     /* Initialize tp_dict from passed-in dict */
-    type->tp_dict = dict = PyDict_Copy(dict);
-    if (dict == NULL) {
-        Py_DECREF(type);
-        return NULL;
-    }
+    Py_INCREF(dict);
+    type->tp_dict = dict;
 
     /* Set __module__ in the dict */
     if (PyDict_GetItemString(dict, "__module__") == NULL) {
@@ -2247,10 +2216,28 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if (tmp != NULL) {
                 if (PyDict_SetItemString(dict, "__module__",
                                          tmp) < 0)
-                    return NULL;
+                    goto error;
             }
         }
     }
+
+    /* Set ht_qualname to dict['__qualname__'] if available, else to
+       __name__.  The __qualname__ accessor will look for ht_qualname.
+    */
+    qualname = PyDict_GetItemString(dict, "__qualname__");
+    if (qualname != NULL) {
+        if (!PyUnicode_Check(qualname)) {
+            PyErr_Format(PyExc_TypeError,
+                         "type __qualname__ must be a str, not %s",
+                         Py_TYPE(qualname)->tp_name);
+            goto error;
+        }
+    }
+    else {
+        qualname = et->ht_name;
+    }
+    Py_INCREF(qualname);
+    et->ht_qualname = qualname;
 
     /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
        and is a string.  The __doc__ accessor will first look for tp_doc;
@@ -2264,17 +2251,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             char *tp_doc;
 
             doc_str = _PyUnicode_AsString(doc);
-            if (doc_str == NULL) {
-                Py_DECREF(type);
-                return NULL;
-            }
+            if (doc_str == NULL)
+                goto error;
             /* Silently truncate the docstring if it contains null bytes. */
             len = strlen(doc_str);
             tp_doc = (char *)PyObject_MALLOC(len + 1);
-            if (tp_doc == NULL) {
-                Py_DECREF(type);
-                return NULL;
-            }
+            if (tp_doc == NULL)
+                goto error;
             memcpy(tp_doc, doc_str, len + 1);
             type->tp_doc = tp_doc;
         }
@@ -2285,10 +2268,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     tmp = PyDict_GetItemString(dict, "__new__");
     if (tmp != NULL && PyFunction_Check(tmp)) {
         tmp = PyStaticMethod_New(tmp);
-        if (tmp == NULL) {
-            Py_DECREF(type);
-            return NULL;
-        }
+        if (tmp == NULL)
+            goto error;
         PyDict_SetItemString(dict, "__new__", tmp);
         Py_DECREF(tmp);
     }
@@ -2296,14 +2277,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     /* Add descriptors for custom slots from __slots__, or for __dict__ */
     mp = PyHeapType_GET_MEMBERS(et);
     slotoffset = base->tp_basicsize;
-    if (slots != NULL) {
+    if (et->ht_slots != NULL) {
         for (i = 0; i < nslots; i++, mp++) {
             mp->name = _PyUnicode_AsString(
-                PyTuple_GET_ITEM(slots, i));
-            if (mp->name == NULL) {
-                Py_DECREF(type);
-                return NULL;
-            }
+                PyTuple_GET_ITEM(et->ht_slots, i));
+            if (mp->name == NULL)
+                goto error;
             mp->type = T_OBJECT_EX;
             mp->offset = slotoffset;
 
@@ -2364,15 +2343,21 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         type->tp_free = PyObject_Del;
 
     /* Initialize the rest */
-    if (PyType_Ready(type) < 0) {
-        Py_DECREF(type);
-        return NULL;
-    }
+    if (PyType_Ready(type) < 0)
+        goto error;
 
     /* Put the proper slots in place */
     fixup_slot_dispatchers(type);
 
+    Py_DECREF(dict);
     return (PyObject *)type;
+
+error:
+    Py_XDECREF(dict);
+    Py_XDECREF(bases);
+    Py_XDECREF(slots);
+    Py_XDECREF(type);
+    return NULL;
 }
 
 static short slotoffsets[] = {
