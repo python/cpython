@@ -530,6 +530,8 @@ class PyBuildExt(build_ext):
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c'],
                                depends=['testcapi_long.h']) )
+        # Python PEP-3118 (buffer protocol) test module
+        exts.append( Extension('_testbuffer', ['_testbuffer.c']) )
         # profiler (_lsprof is for cProfile.py)
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database

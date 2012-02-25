@@ -340,7 +340,7 @@ PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 }
 
 static int
-_IsFortranContiguous(Py_buffer *view)
+_IsFortranContiguous(const Py_buffer *view)
 {
     Py_ssize_t sd, dim;
     int i;
@@ -361,7 +361,7 @@ _IsFortranContiguous(Py_buffer *view)
 }
 
 static int
-_IsCContiguous(Py_buffer *view)
+_IsCContiguous(const Py_buffer *view)
 {
     Py_ssize_t sd, dim;
     int i;
@@ -382,16 +382,16 @@ _IsCContiguous(Py_buffer *view)
 }
 
 int
-PyBuffer_IsContiguous(Py_buffer *view, char fort)
+PyBuffer_IsContiguous(const Py_buffer *view, char order)
 {
 
     if (view->suboffsets != NULL) return 0;
 
-    if (fort == 'C')
+    if (order == 'C')
         return _IsCContiguous(view);
-    else if (fort == 'F')
+    else if (order == 'F')
         return _IsFortranContiguous(view);
-    else if (fort == 'A')
+    else if (order == 'A')
         return (_IsCContiguous(view) || _IsFortranContiguous(view));
     return 0;
 }
@@ -651,7 +651,7 @@ int
 PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
               int readonly, int flags)
 {
-    if (view == NULL) return 0;
+    if (view == NULL) return 0; /* XXX why not -1? */
     if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
         (readonly == 1)) {
         PyErr_SetString(PyExc_BufferError,

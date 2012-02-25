@@ -10,6 +10,23 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10181: New memoryview implementation fixes multiple ownership
+  and lifetime issues of dynamically allocated Py_buffer members (#9990)
+  as well as crashes (#8305, #7433). Many new features have been added
+  (See whatsnew/3.3), and the documentation has been updated extensively.
+  The ndarray test object from _testbuffer.c implements all aspects of
+  PEP-3118, so further development towards the complete implementation
+  of the PEP can proceed in a test-driven manner.
+
+  Thanks to Nick Coghlan, Antoine Pitrou and Pauli Virtanen for review
+  and many ideas.
+
+- Issue #12834: Fix incorrect results of memoryview.tobytes() for
+  non-contiguous arrays.
+
+- Issue #5231: Introduce memoryview.cast() method that allows changing
+  format and shape without making a copy of the underlying memory.
+
 - Issue #14084: Fix a file descriptor leak when importing a module with a
   bad encoding.
 

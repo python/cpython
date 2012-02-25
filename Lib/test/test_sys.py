@@ -773,8 +773,8 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE), size(vh) + 2*self.longdigit)
         check(int(PyLong_BASE**2-1), size(vh) + 2*self.longdigit)
         check(int(PyLong_BASE**2), size(vh) + 3*self.longdigit)
-        # memory (Py_buffer + hash value)
-        check(memoryview(b''), size(h + 'PP2P2i7P' + 'P'))
+        # memoryview
+        check(memoryview(b''), size(h + 'PPiP4P2i5P3cP'))
         # module
         check(unittest, size(h + '3P'))
         # None

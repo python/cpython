@@ -142,6 +142,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python3dll", "python3dll.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xxlimited", "xxlimited.vcproj", "{F749B822-B489-4CA5-A3AD-CE078F5F338A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testbuffer", "_testbuffer.vcproj", "{A2697BD3-28C1-4AEC-9106-8B748639FD16}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -609,6 +614,22 @@ Global
 		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|Win32.Build.0 = Release|Win32
 		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|x64.ActiveCfg = Release|x64
 		{F749B822-B489-4CA5-A3AD-CE078F5F338A}.Release|x64.Build.0 = Release|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Debug|Win32.Build.0 = Debug|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Debug|x64.ActiveCfg = Debug|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Debug|x64.Build.0 = Debug|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|Win32.ActiveCfg = Release|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|Win32.Build.0 = Release|Win32
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|x64.ActiveCfg = Release|x64
+		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -25,14 +25,17 @@ class Test(unittest.TestCase):
             v = memoryview(ob)
             try:
                 self.assertEqual(normalize(v.format), normalize(fmt))
-                if shape is not None:
+                if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
                     self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
-                # ctypes object always have a non-strided memory block
-                self.assertEqual(v.strides, None)
+                # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
+                #     if requested. memoryview currently reconstructs missing
+                #     stride information, so this assert will fail.
+                # self.assertEqual(v.strides, ())
+
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
@@ -52,14 +55,15 @@ class Test(unittest.TestCase):
             v = memoryview(ob)
             try:
                 self.assertEqual(v.format, fmt)
-                if shape is not None:
+                if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
                     self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
-                # ctypes object always have a non-strided memory block
-                self.assertEqual(v.strides, None)
+                # XXX Issue #12851
+                # self.assertEqual(v.strides, ())
+
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
@@ -110,34 +114,34 @@ native_types = [
 
     ## simple types
 
-    (c_char,                    "<c",                   None,           c_char),
-    (c_byte,                    "<b",                   None,           c_byte),
-    (c_ubyte,                   "<B",                   None,           c_ubyte),
-    (c_short,                   "<h",                   None,           c_short),
-    (c_ushort,                  "<H",                   None,           c_ushort),
+    (c_char,                    "<c",                   (),           c_char),
+    (c_byte,                    "<b",                   (),           c_byte),
+    (c_ubyte,                   "<B",                   (),           c_ubyte),
+    (c_short,                   "<h",                   (),           c_short),
+    (c_ushort,                  "<H",                   (),           c_ushort),
 
     # c_int and c_uint may be aliases to c_long
-    #(c_int,                     "<i",                   None,           c_int),
-    #(c_uint,                    "<I",                   None,           c_uint),
+    #(c_int,                     "<i",                   (),           c_int),
+    #(c_uint,                    "<I",                   (),           c_uint),
 
-    (c_long,                    "<l",                   None,           c_long),
-    (c_ulong,                   "<L",                   None,           c_ulong),
+    (c_long,                    "<l",                   (),           c_long),
+    (c_ulong,                   "<L",                   (),           c_ulong),
 
     # c_longlong and c_ulonglong are aliases on 64-bit platforms
     #(c_longlong,                "<q",                   None,           c_longlong),
     #(c_ulonglong,               "<Q",                   None,           c_ulonglong),
 
-    (c_float,                   "<f",                   None,           c_float),
-    (c_double,                  "<d",                   None,           c_double),
+    (c_float,                   "<f",                   (),           c_float),
+    (c_double,                  "<d",                   (),           c_double),
     # c_longdouble may be an alias to c_double
 
-    (c_bool,                    "<?",                   None,           c_bool),
-    (py_object,                 "<O",                   None,           py_object),
+    (c_bool,                    "<?",                   (),           c_bool),
+    (py_object,                 "<O",                   (),           py_object),
 
     ## pointers
 
-    (POINTER(c_byte),           "&<b",                  None,           POINTER(c_byte)),
-    (POINTER(POINTER(c_long)),  "&&<l",                 None,           POINTER(POINTER(c_long))),
+    (POINTER(c_byte),           "&<b",                  (),           POINTER(c_byte)),
+    (POINTER(POINTER(c_long)),  "&&<l",                 (),           POINTER(POINTER(c_long))),
 
     ## arrays and pointers
 
@@ -145,32 +149,32 @@ native_types = [
     (c_float * 4 * 3 * 2,       "(2,3,4)<f",            (2,3,4),        c_float),
     (POINTER(c_short) * 2,      "(2)&<h",               (2,),           POINTER(c_short)),
     (POINTER(c_short) * 2 * 3,  "(3,2)&<h",             (3,2,),         POINTER(c_short)),
-    (POINTER(c_short * 2),      "&(2)<h",               None,           POINTER(c_short)),
+    (POINTER(c_short * 2),      "&(2)<h",               (),           POINTER(c_short)),
 
     ## structures and unions
 
-    (Point,                     "T{<l:x:<l:y:}",        None,           Point),
+    (Point,                     "T{<l:x:<l:y:}",        (),           Point),
     # packed structures do not implement the pep
-    (PackedPoint,               "B",                    None,           PackedPoint),
-    (Point2,                    "T{<l:x:<l:y:}",        None,           Point2),
-    (EmptyStruct,               "T{}",                  None,           EmptyStruct),
+    (PackedPoint,               "B",                    (),           PackedPoint),
+    (Point2,                    "T{<l:x:<l:y:}",        (),           Point2),
+    (EmptyStruct,               "T{}",                  (),           EmptyStruct),
     # the pep does't support unions
-    (aUnion,                    "B",                    None,           aUnion),
+    (aUnion,                    "B",                    (),           aUnion),
 
     ## pointer to incomplete structure
-    (Incomplete,                "B",                    None,           Incomplete),
-    (POINTER(Incomplete),       "&B",                   None,           POINTER(Incomplete)),
+    (Incomplete,                "B",                    (),           Incomplete),
+    (POINTER(Incomplete),       "&B",                   (),           POINTER(Incomplete)),
 
     # 'Complete' is a structure that starts incomplete, but is completed after the
     # pointer type to it has been created.
-    (Complete,                  "T{<l:a:}",             None,           Complete),
+    (Complete,                  "T{<l:a:}",             (),           Complete),
     # Unfortunately the pointer format string is not fixed...
-    (POINTER(Complete),         "&B",                   None,           POINTER(Complete)),
+    (POINTER(Complete),         "&B",                   (),           POINTER(Complete)),
 
     ## other
 
     # function signatures are not implemented
-    (CFUNCTYPE(None),           "X{}",                  None,           CFUNCTYPE(None)),
+    (CFUNCTYPE(None),           "X{}",                  (),           CFUNCTYPE(None)),
 
     ]
 
@@ -186,10 +190,10 @@ class LEPoint(LittleEndianStructure):
 # and little endian machines.
 #
 endian_types = [
-    (BEPoint,                   "T{>l:x:>l:y:}",        None,           BEPoint),
-    (LEPoint,                   "T{<l:x:<l:y:}",        None,           LEPoint),
-    (POINTER(BEPoint),          "&T{>l:x:>l:y:}",       None,           POINTER(BEPoint)),
-    (POINTER(LEPoint),          "&T{<l:x:<l:y:}",       None,           POINTER(LEPoint)),
+    (BEPoint,                   "T{>l:x:>l:y:}",        (),           BEPoint),
+    (LEPoint,                   "T{<l:x:<l:y:}",        (),           LEPoint),
+    (POINTER(BEPoint),          "&T{>l:x:>l:y:}",       (),           POINTER(BEPoint)),
+    (POINTER(LEPoint),          "&T{<l:x:<l:y:}",       (),           POINTER(LEPoint)),
     ]
 
 if __name__ == "__main__":
