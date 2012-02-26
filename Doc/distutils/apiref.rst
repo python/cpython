@@ -444,7 +444,9 @@ This module provides the following functions.
       Define a preprocessor macro for all compilations driven by this compiler object.
       The optional parameter *value* should be a string; if it is not supplied, then
       the macro will be defined without an explicit value and the exact outcome
-      depends on the compiler used (XXX true? does ANSI say anything about this?)
+      depends on the compiler used.
+
+      .. XXX true? does ANSI say anything about this?
 
 
    .. method:: CCompiler.undefine_macro(name)
@@ -598,7 +600,9 @@ This module provides the following functions.
 
       *output_libname* should be a library name, not a filename; the filename will be
       inferred from the library name.  *output_dir* is the directory where the library
-      file will be put. XXX defaults to what?
+      file will be put.
+
+      .. XXX defaults to what?
 
       *debug* is a boolean; if true, debugging information will be included in the
       library (note that on most platforms, it is the compile step where this matters:
@@ -718,30 +722,29 @@ This module provides the following functions.
 
       Invokes :func:`distutils.util.execute` This method invokes a  Python function
       *func* with the given arguments *args*, after  logging and taking into account
-      the *dry_run* flag. XXX see also.
+      the *dry_run* flag.
 
 
    .. method:: CCompiler.spawn(cmd)
 
       Invokes :func:`distutils.util.spawn`. This invokes an external  process to run
-      the given command. XXX see also.
+      the given command.
 
 
    .. method:: CCompiler.mkpath(name[, mode=511])
 
       Invokes :func:`distutils.dir_util.mkpath`. This creates a directory  and any
-      missing ancestor directories. XXX see also.
+      missing ancestor directories.
 
 
    .. method:: CCompiler.move_file(src, dst)
 
-      Invokes :meth:`distutils.file_util.move_file`. Renames *src* to  *dst*.  XXX see
-      also.
+      Invokes :meth:`distutils.file_util.move_file`. Renames *src* to  *dst*.
 
 
    .. method:: CCompiler.announce(msg[, level=1])
 
-      Write a message using :func:`distutils.log.debug`. XXX see also.
+      Write a message using :func:`distutils.log.debug`.
 
 
    .. method:: CCompiler.warn(msg)
@@ -869,8 +872,6 @@ tarballs or zipfiles.
    prefix of all files and directories in the archive.  *root_dir* and *base_dir*
    both default to the current directory.  Returns the name of the archive file.
 
-   .. XXX This should be changed to support bz2 files.
-
 
 .. function:: make_tarball(base_name, base_dir[, compress='gzip', verbose=0, dry_run=0])
 
@@ -881,8 +882,6 @@ tarballs or zipfiles.
    Unix-specific.  The  output tar file will be named :file:`base_dir.tar`,
    possibly plus the appropriate compression extension (:file:`.gz`, :file:`.bz2`
    or :file:`.Z`).  Return the output filename.
-
-   .. XXX This should be replaced with calls to the :mod:`tarfile` module.
 
 
 .. function:: make_zipfile(base_name, base_dir[, verbose=0, dry_run=0])
@@ -994,8 +993,6 @@ directories.
    Recursively remove *directory* and all files and directories underneath it. Any
    errors are ignored (apart from being reported to ``sys.stdout`` if *verbose* is
    true).
-
-.. XXX Some of this could be replaced with the shutil module?
 
 
 :mod:`distutils.file_util` --- Single file operations
@@ -1109,8 +1106,6 @@ other utility module.
    * ``macosx-10.5-universal``
 
    * ``macosx-10.6-intel``
-
-   .. % XXX isn't this also provided by some other non-distutils module?
 
 
 .. function:: convert_path(pathname)
@@ -1311,8 +1306,6 @@ provides the following additional features:
   the "negative alias" of :option:`--verbose`, then :option:`--quiet` on the
   command line sets *verbose* to false.
 
-.. XXX Should be replaced with :mod:`optparse`.
-
 
 .. function:: fancy_getopt(options, negative_opt, object, args)
 
@@ -1329,8 +1322,6 @@ provides the following additional features:
 
    Wraps *text* to less than *width* wide.
 
-   .. XXX Should be replaced with :mod:`textwrap` (which is available in Python
-      2.3 and later).
 
 
 .. class:: FancyGetopt([option_table=None])
@@ -1392,10 +1383,6 @@ filesystem and building lists of files.
 
 .. module:: distutils.log
    :synopsis: A simple logging mechanism, 282-style
-
-
-.. XXX Should be replaced with standard :mod:`logging` module.
-
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
@@ -1892,9 +1879,6 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. module:: distutils.command.build_py
    :synopsis: Build the .py/.pyc files of a package
-
-
-.. % todo
 
 
 :mod:`distutils.command.build_scripts` --- Build the scripts of a package
