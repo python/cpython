@@ -459,7 +459,7 @@ Main website:  http://www.python.org/
 .br
 Documentation:  http://docs.python.org/
 .br
-Developer resources:  http://www.python.org/dev/
+Developer resources:  http://docs.python.org/devguide/
 .br
 Downloads:  http://python.org/download/
 .br
