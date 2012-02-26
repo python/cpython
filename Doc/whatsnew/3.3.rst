@@ -49,8 +49,6 @@
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
-.. _pep-3118:
-
 PEP 3118: New memoryview implementation and buffer protocol documentation
 =========================================================================
 
