@@ -972,7 +972,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 #define STRIPNAME(i) (stripformat[i]+3)
 
 PyDoc_STRVAR(split__doc__,
-"B.split([sep[, maxsplit]]) -> list of bytes\n\
+"B.split(sep=None, maxsplit=-1) -> list of bytes\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter.\n\
 If sep is not specified or is None, B is split on ASCII whitespace\n\
@@ -980,15 +980,17 @@ characters (space, tab, return, newline, formfeed, vertical tab).\n\
 If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
-bytes_split(PyBytesObject *self, PyObject *args)
+bytes_split(PyBytesObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"sep", "maxsplit", 0};
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     Py_ssize_t maxsplit = -1;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
     PyObject *list, *subobj = Py_None;
 
-    if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:split",
+                                     kwlist, &subobj, &maxsplit))
         return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
@@ -1060,7 +1062,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *sep_obj)
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-"B.rsplit([sep[, maxsplit]]) -> list of bytes\n\
+"B.rsplit(sep=None, maxsplit=-1) -> list of bytes\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter,\n\
 starting at the end of B and working to the front.\n\
@@ -1070,15 +1072,17 @@ If maxsplit is given, at most maxsplit splits are done.");
 
 
 static PyObject *
-bytes_rsplit(PyBytesObject *self, PyObject *args)
+bytes_rsplit(PyBytesObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"sep", "maxsplit", 0};
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     Py_ssize_t maxsplit = -1;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
     PyObject *list, *subobj = Py_None;
 
-    if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:rsplit",
+                                     kwlist, &subobj, &maxsplit))
         return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
@@ -2470,9 +2474,9 @@ bytes_methods[] = {
     {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
     {"rpartition", (PyCFunction)bytes_rpartition, METH_O,
      rpartition__doc__},
-    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS, rsplit__doc__},
+    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS | METH_KEYWORDS, rsplit__doc__},
     {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
-    {"split", (PyCFunction)bytes_split, METH_VARARGS, split__doc__},
+    {"split", (PyCFunction)bytes_split, METH_VARARGS | METH_KEYWORDS, split__doc__},
     {"splitlines", (PyCFunction)bytes_splitlines, METH_VARARGS | METH_KEYWORDS,
      splitlines__doc__},
     {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,

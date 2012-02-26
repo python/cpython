@@ -435,6 +435,14 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(b.split(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
         self.assertEqual(b.split(b'ss'), [b'mi', b'i', b'ippi'])
         self.assertEqual(b.split(b'w'), [b])
+        # with keyword args
+        b = self.type2test(b'a|b|c|d')
+        self.assertEqual(b.split(sep=b'|'), [b'a', b'b', b'c', b'd'])
+        self.assertEqual(b.split(b'|', maxsplit=1), [b'a', b'b|c|d'])
+        self.assertEqual(b.split(sep=b'|', maxsplit=1), [b'a', b'b|c|d'])
+        self.assertEqual(b.split(maxsplit=1, sep=b'|'), [b'a', b'b|c|d'])
+        b = self.type2test(b'a b c d')
+        self.assertEqual(b.split(maxsplit=1), [b'a', b'b c d'])
 
     def test_split_whitespace(self):
         for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',
@@ -463,6 +471,14 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(b.rsplit(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
         self.assertEqual(b.rsplit(b'ss'), [b'mi', b'i', b'ippi'])
         self.assertEqual(b.rsplit(b'w'), [b])
+        # with keyword args
+        b = self.type2test(b'a|b|c|d')
+        self.assertEqual(b.rsplit(sep=b'|'), [b'a', b'b', b'c', b'd'])
+        self.assertEqual(b.rsplit(b'|', maxsplit=1), [b'a|b|c', b'd'])
+        self.assertEqual(b.rsplit(sep=b'|', maxsplit=1), [b'a|b|c', b'd'])
+        self.assertEqual(b.rsplit(maxsplit=1, sep=b'|'), [b'a|b|c', b'd'])
+        b = self.type2test(b'a b c d')
+        self.assertEqual(b.rsplit(maxsplit=1), [b'a b c', b'd'])
 
     def test_rsplit_whitespace(self):
         for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',

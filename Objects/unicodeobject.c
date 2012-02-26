@@ -12499,7 +12499,7 @@ PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 PyDoc_STRVAR(split__doc__,
-             "S.split([sep[, maxsplit]]) -> list of strings\n\
+             "S.split(sep=None, maxsplit=-1) -> list of strings\n\
 \n\
 Return a list of the words in S, using sep as the\n\
 delimiter string.  If maxsplit is given, at most maxsplit\n\
@@ -12508,12 +12508,14 @@ whitespace string is a separator and empty strings are\n\
 removed from the result.");
 
 static PyObject*
-unicode_split(PyObject *self, PyObject *args)
+unicode_split(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"sep", "maxsplit", 0};
     PyObject *substring = Py_None;
     Py_ssize_t maxcount = -1;
 
-    if (!PyArg_ParseTuple(args, "|On:split", &substring, &maxcount))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:split",
+                                     kwlist, &substring, &maxcount))
         return NULL;
 
     if (substring == Py_None)
@@ -12722,7 +12724,7 @@ PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-             "S.rsplit([sep[, maxsplit]]) -> list of strings\n\
+             "S.rsplit(sep=None, maxsplit=-1) -> list of strings\n\
 \n\
 Return a list of the words in S, using sep as the\n\
 delimiter string, starting at the end of the string and\n\
@@ -12731,12 +12733,14 @@ splits are done. If sep is not specified, any whitespace string\n\
 is a separator.");
 
 static PyObject*
-unicode_rsplit(PyObject *self, PyObject *args)
+unicode_rsplit(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"sep", "maxsplit", 0};
     PyObject *substring = Py_None;
     Py_ssize_t maxcount = -1;
 
-    if (!PyArg_ParseTuple(args, "|On:rsplit", &substring, &maxcount))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:rsplit",
+                                     kwlist, &substring, &maxcount))
         return NULL;
 
     if (substring == Py_None)
@@ -13167,8 +13171,8 @@ static PyMethodDef unicode_methods[] = {
 
     {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
-    {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
-    {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
+    {"split", (PyCFunction) unicode_split, METH_VARARGS | METH_KEYWORDS, split__doc__},
+    {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS | METH_KEYWORDS, rsplit__doc__},
     {"join", (PyCFunction) unicode_join, METH_O, join__doc__},
     {"capitalize", (PyCFunction) unicode_capitalize, METH_NOARGS, capitalize__doc__},
     {"casefold", (PyCFunction) unicode_casefold, METH_NOARGS, casefold__doc__},
