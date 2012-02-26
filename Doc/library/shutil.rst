@@ -285,7 +285,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
 
-   *logger* is an instance of :class:`logging.Logger`.
+   *logger* must be an object compatible with :pep:`282`, usually an instance of
+   :class:`logging.Logger`.
 
    .. versionadded:: 2.7
 
