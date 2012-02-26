@@ -56,7 +56,7 @@ class BaseTest(unittest.TestCase):
         result = self.fixtype(result)
         obj = self.fixtype(obj)
         args = self.fixtype(args)
-        kwargs = self.fixtype(kwargs)
+        kwargs = {k: self.fixtype(v) for k,v in kwargs.items()}
         realresult = getattr(obj, methodname)(*args, **kwargs)
         self.assertEqual(
             result,
@@ -389,6 +389,17 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a']*18 + ['aBLAHa'], ('aBLAH'*20)[:-4],
                         'split', 'BLAH', 18)
 
+        # with keyword args
+        self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', sep='|')
+        self.checkequal(['a', 'b|c|d'],
+                        'a|b|c|d', 'split', '|', maxsplit=1)
+        self.checkequal(['a', 'b|c|d'],
+                        'a|b|c|d', 'split', sep='|', maxsplit=1)
+        self.checkequal(['a', 'b|c|d'],
+                        'a|b|c|d', 'split', maxsplit=1, sep='|')
+        self.checkequal(['a', 'b c d'],
+                        'a b c d', 'split', maxsplit=1)
+
         # argument type
         self.checkraises(TypeError, 'hello', 'split', 42, 42, 42)
 
@@ -445,6 +456,17 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a']*20, ('aBLAH'*20)[:-4], 'rsplit', 'BLAH', 19)
         self.checkequal(['aBLAHa'] + ['a']*18, ('aBLAH'*20)[:-4],
                         'rsplit', 'BLAH', 18)
+
+        # with keyword args
+        self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', sep='|')
+        self.checkequal(['a|b|c', 'd'],
+                        'a|b|c|d', 'rsplit', '|', maxsplit=1)
+        self.checkequal(['a|b|c', 'd'],
+                        'a|b|c|d', 'rsplit', sep='|', maxsplit=1)
+        self.checkequal(['a|b|c', 'd'],
+                        'a|b|c|d', 'rsplit', maxsplit=1, sep='|')
+        self.checkequal(['a b c', 'd'],
+                        'a b c d', 'rsplit', maxsplit=1)
 
         # argument type
         self.checkraises(TypeError, 'hello', 'rsplit', 42, 42, 42)
