@@ -7,7 +7,22 @@ from packaging.manifest import Manifest, _translate_pattern, _glob_to_re
 
 from packaging.tests import unittest, support
 
-_MANIFEST = """\
+MANIFEST_IN = """\
+include ok
+include xo
+exclude xo
+include foo.tmp
+include buildout.cfg
+global-include *.x
+global-include *.txt
+global-exclude *.tmp
+recursive-include f *.oo
+recursive-exclude global *.x
+graft dir
+prune dir3
+"""
+
+MANIFEST_IN_2 = """\
 recursive-include foo *.py   # ok
 # nothing here
 
@@ -17,10 +32,15 @@ recursive-include bar \\
   *.dat   *.txt
 """
 
-_MANIFEST2 = """\
+MANIFEST_IN_3 = """\
 README
 file1
 """
+
+
+def make_local_path(s):
+    """Converts '/' in a string to os.sep"""
+    return s.replace('/', os.sep)
 
 
 class ManifestTestCase(support.TempdirManager,
@@ -37,7 +57,7 @@ class ManifestTestCase(support.TempdirManager,
         tmpdir = self.mkdtemp()
         MANIFEST = os.path.join(tmpdir, 'MANIFEST.in')
         with open(MANIFEST, 'w') as f:
-            f.write(_MANIFEST)
+            f.write(MANIFEST_IN_2)
 
         manifest = Manifest()
         manifest.read_template(MANIFEST)
@@ -63,27 +83,74 @@ class ManifestTestCase(support.TempdirManager,
         os.chdir(tmpdir)
         self.write_file('README', 'xxx')
         self.write_file('file1', 'xxx')
-        content = StringIO(_MANIFEST2)
+        content = StringIO(MANIFEST_IN_3)
         manifest = Manifest()
         manifest.read_template(content)
         self.assertEqual(['README', 'file1'], manifest.files)
 
     def test_glob_to_re(self):
-        # simple cases
-        self.assertEqual(_glob_to_re('foo*'), 'foo[^/]*\\Z(?ms)')
-        self.assertEqual(_glob_to_re('foo?'), 'foo[^/]\\Z(?ms)')
-        self.assertEqual(_glob_to_re('foo??'), 'foo[^/][^/]\\Z(?ms)')
+        sep = os.sep
+        if os.sep == '\\':
+            sep = r'\\'
 
-        # special cases
-        self.assertEqual(_glob_to_re(r'foo\\*'), r'foo\\\\[^/]*\Z(?ms)')
-        self.assertEqual(_glob_to_re(r'foo\\\*'), r'foo\\\\\\[^/]*\Z(?ms)')
-        self.assertEqual(_glob_to_re('foo????'), r'foo[^/][^/][^/][^/]\Z(?ms)')
-        self.assertEqual(_glob_to_re(r'foo\\??'), r'foo\\\\[^/][^/]\Z(?ms)')
+        for glob, regex in (
+            # simple cases
+            ('foo*', r'foo[^%(sep)s]*\Z(?ms)'),
+            ('foo?', r'foo[^%(sep)s]\Z(?ms)'),
+            ('foo??', r'foo[^%(sep)s][^%(sep)s]\Z(?ms)'),
+            # special cases
+            (r'foo\\*', r'foo\\\\[^%(sep)s]*\Z(?ms)'),
+            (r'foo\\\*', r'foo\\\\\\[^%(sep)s]*\Z(?ms)'),
+            ('foo????', r'foo[^%(sep)s][^%(sep)s][^%(sep)s][^%(sep)s]\Z(?ms)'),
+            (r'foo\\??', r'foo\\\\[^%(sep)s][^%(sep)s]\Z(?ms)'),
+        ):
+            regex = regex % {'sep': sep}
+            self.assertEqual(_glob_to_re(glob), regex)
+
+    def test_process_template_line(self):
+        # testing  all MANIFEST.in template patterns
+        manifest = Manifest()
+        l = make_local_path
+
+        # simulated file list
+        manifest.allfiles = ['foo.tmp', 'ok', 'xo', 'four.txt',
+                              'buildout.cfg',
+                              # filelist does not filter out VCS directories,
+                              # it's sdist that does
+                              l('.hg/last-message.txt'),
+                              l('global/one.txt'),
+                              l('global/two.txt'),
+                              l('global/files.x'),
+                              l('global/here.tmp'),
+                              l('f/o/f.oo'),
+                              l('dir/graft-one'),
+                              l('dir/dir2/graft2'),
+                              l('dir3/ok'),
+                              l('dir3/sub/ok.txt'),
+                             ]
+
+        for line in MANIFEST_IN.split('\n'):
+            if line.strip() == '':
+                continue
+            manifest._process_template_line(line)
+
+        wanted = ['ok',
+                  'buildout.cfg',
+                  'four.txt',
+                  l('.hg/last-message.txt'),
+                  l('global/one.txt'),
+                  l('global/two.txt'),
+                  l('f/o/f.oo'),
+                  l('dir/graft-one'),
+                  l('dir/dir2/graft2'),
+                 ]
+
+        self.assertEqual(manifest.files, wanted)
 
     def test_remove_duplicates(self):
         manifest = Manifest()
         manifest.files = ['a', 'b', 'a', 'g', 'c', 'g']
-        # files must be sorted beforehand
+        # files must be sorted beforehand (like sdist does)
         manifest.sort()
         manifest.remove_duplicates()
         self.assertEqual(manifest.files, ['a', 'b', 'c', 'g'])
@@ -143,6 +210,7 @@ class ManifestTestCase(support.TempdirManager,
         self.assertEqual(manifest.allfiles, ['a.py', 'b.txt'])
 
     def test_process_template(self):
+        l = make_local_path
         # invalid lines
         manifest = Manifest()
         for action in ('include', 'exclude', 'global-include',
@@ -153,7 +221,7 @@ class ManifestTestCase(support.TempdirManager,
 
         # implicit include
         manifest = Manifest()
-        manifest.allfiles = ['a.py', 'b.txt', 'd/c.py']
+        manifest.allfiles = ['a.py', 'b.txt', l('d/c.py')]
 
         manifest._process_template_line('*.py')
         self.assertEqual(manifest.files, ['a.py'])
@@ -161,7 +229,7 @@ class ManifestTestCase(support.TempdirManager,
 
         # include
         manifest = Manifest()
-        manifest.allfiles = ['a.py', 'b.txt', 'd/c.py']
+        manifest.allfiles = ['a.py', 'b.txt', l('d/c.py')]
 
         manifest._process_template_line('include *.py')
         self.assertEqual(manifest.files, ['a.py'])
@@ -173,31 +241,31 @@ class ManifestTestCase(support.TempdirManager,
 
         # exclude
         manifest = Manifest()
-        manifest.files = ['a.py', 'b.txt', 'd/c.py']
+        manifest.files = ['a.py', 'b.txt', l('d/c.py')]
 
         manifest._process_template_line('exclude *.py')
-        self.assertEqual(manifest.files, ['b.txt', 'd/c.py'])
+        self.assertEqual(manifest.files, ['b.txt', l('d/c.py')])
         self.assertNoWarnings()
 
         manifest._process_template_line('exclude *.rb')
-        self.assertEqual(manifest.files, ['b.txt', 'd/c.py'])
+        self.assertEqual(manifest.files, ['b.txt', l('d/c.py')])
         self.assertWarnings()
 
         # global-include
         manifest = Manifest()
-        manifest.allfiles = ['a.py', 'b.txt', 'd/c.py']
+        manifest.allfiles = ['a.py', 'b.txt', l('d/c.py')]
 
         manifest._process_template_line('global-include *.py')
-        self.assertEqual(manifest.files, ['a.py', 'd/c.py'])
+        self.assertEqual(manifest.files, ['a.py', l('d/c.py')])
         self.assertNoWarnings()
 
         manifest._process_template_line('global-include *.rb')
-        self.assertEqual(manifest.files, ['a.py', 'd/c.py'])
+        self.assertEqual(manifest.files, ['a.py', l('d/c.py')])
         self.assertWarnings()
 
         # global-exclude
         manifest = Manifest()
-        manifest.files = ['a.py', 'b.txt', 'd/c.py']
+        manifest.files = ['a.py', 'b.txt', l('d/c.py')]
 
         manifest._process_template_line('global-exclude *.py')
         self.assertEqual(manifest.files, ['b.txt'])
@@ -209,50 +277,50 @@ class ManifestTestCase(support.TempdirManager,
 
         # recursive-include
         manifest = Manifest()
-        manifest.allfiles = ['a.py', 'd/b.py', 'd/c.txt', 'd/d/e.py']
+        manifest.allfiles = ['a.py', l('d/b.py'), l('d/c.txt'), l('d/d/e.py')]
 
         manifest._process_template_line('recursive-include d *.py')
-        self.assertEqual(manifest.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(manifest.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertNoWarnings()
 
         manifest._process_template_line('recursive-include e *.py')
-        self.assertEqual(manifest.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(manifest.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertWarnings()
 
         # recursive-exclude
         manifest = Manifest()
-        manifest.files = ['a.py', 'd/b.py', 'd/c.txt', 'd/d/e.py']
+        manifest.files = ['a.py', l('d/b.py'), l('d/c.txt'), l('d/d/e.py')]
 
         manifest._process_template_line('recursive-exclude d *.py')
-        self.assertEqual(manifest.files, ['a.py', 'd/c.txt'])
+        self.assertEqual(manifest.files, ['a.py', l('d/c.txt')])
         self.assertNoWarnings()
 
         manifest._process_template_line('recursive-exclude e *.py')
-        self.assertEqual(manifest.files, ['a.py', 'd/c.txt'])
+        self.assertEqual(manifest.files, ['a.py', l('d/c.txt')])
         self.assertWarnings()
 
         # graft
         manifest = Manifest()
-        manifest.allfiles = ['a.py', 'd/b.py', 'd/d/e.py', 'f/f.py']
+        manifest.allfiles = ['a.py', l('d/b.py'), l('d/d/e.py'), l('f/f.py')]
 
         manifest._process_template_line('graft d')
-        self.assertEqual(manifest.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(manifest.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertNoWarnings()
 
         manifest._process_template_line('graft e')
-        self.assertEqual(manifest.files, ['d/b.py', 'd/d/e.py'])
+        self.assertEqual(manifest.files, [l('d/b.py'), l('d/d/e.py')])
         self.assertWarnings()
 
         # prune
         manifest = Manifest()
-        manifest.files = ['a.py', 'd/b.py', 'd/d/e.py', 'f/f.py']
+        manifest.files = ['a.py', l('d/b.py'), l('d/d/e.py'), l('f/f.py')]
 
         manifest._process_template_line('prune d')
-        self.assertEqual(manifest.files, ['a.py', 'f/f.py'])
+        self.assertEqual(manifest.files, ['a.py', l('f/f.py')])
         self.assertNoWarnings()
 
         manifest._process_template_line('prune e')
-        self.assertEqual(manifest.files, ['a.py', 'f/f.py'])
+        self.assertEqual(manifest.files, ['a.py', l('f/f.py')])
         self.assertWarnings()
 
 
