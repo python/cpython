@@ -9,16 +9,6 @@ extern "C" {
 
 #include <stddef.h> /* For offsetof */
 
-/* The offsetof() macro calculates the offset of a structure member
-   in its structure.  Unfortunately this cannot be written down
-   portably, hence it is provided by a Standard C header file.
-   For pre-Standard C compilers, here is a version that usually works
-   (but watch out!): */
-
-#ifndef offsetof
-#define offsetof(type, member) ( (int) & ((type*)0) -> member )
-#endif
-
 /* An array of PyMemberDef structures defines the name, type and offset
    of selected members of a C structure.  These can be read by
    PyMember_GetOne() and set by PyMember_SetOne() (except if their READONLY
