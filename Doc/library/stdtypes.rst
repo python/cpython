@@ -1301,7 +1301,7 @@ functions based on regular expressions.
    two empty strings, followed by the string itself.
 
 
-.. method:: str.rsplit([sep[, maxsplit]])
+.. method:: str.rsplit(sep=None, maxsplit=-1)
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
@@ -1323,7 +1323,7 @@ functions based on regular expressions.
       'mississ'
 
 
-.. method:: str.split([sep[, maxsplit]])
+.. method:: str.split(sep=None, maxsplit=-1)
 
    Return a list of the words in the string, using *sep* as the delimiter
    string.  If *maxsplit* is given, at most *maxsplit* splits are done (thus,
