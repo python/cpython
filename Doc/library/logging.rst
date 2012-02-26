@@ -1077,7 +1077,7 @@ with the :mod:`warnings` module.
    If *capture* is ``True``, warnings issued by the :mod:`warnings` module will
    be redirected to the logging system. Specifically, a warning will be
    formatted using :func:`warnings.formatwarning` and the resulting string
-   logged to a logger named ``'py.warnings'`` with a severity of ``'WARNING'``.
+   logged to a logger named ``'py.warnings'`` with a severity of :const:`WARNING`.
 
    If *capture* is ``False``, the redirection of warnings to the logging system
    will stop, and warnings will be redirected to their original destinations
