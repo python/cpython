@@ -1437,8 +1437,13 @@ Old String Formatting Operations
 
 .. note::
 
-   The formatting operations described here are obsolete and may go away in future
-   versions of Python.  Use the new :ref:`string-formatting` in new code.
+   The formatting operations described here are modelled on C's printf()
+   syntax.  They only support formatting of certain builtin types.  The
+   use of a binary operator means that care may be needed in order to
+   format tuples and dictionaries correctly.  As the new
+   :ref:`string-formatting` syntax is more flexible and handles tuples and
+   dictionaries naturally, it is recommended for new code.  However, there
+   are no current plans to deprecate printf-style formatting.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
