@@ -6,6 +6,7 @@ import warnings
 import zipfile
 from os.path import join
 from textwrap import dedent
+from test.test_support import captured_stdout, check_warnings, run_unittest
 
 # zlib is not used here, but if it's not available
 # the tests that use zipfile may fail
@@ -21,7 +22,6 @@ try:
 except ImportError:
     UID_GID_SUPPORT = False
 
-from test.test_support import captured_stdout, check_warnings, run_unittest
 
 from distutils.command.sdist import sdist, show_formats
 from distutils.core import Distribution
@@ -375,7 +375,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
     # the following tests make sure there is a nice error message instead
     # of a traceback when parsing an invalid manifest template
 
-    def _test_template(self, content):
+    def _check_template(self, content):
         dist, cmd = self.get_cmd()
         os.chdir(self.tmp_dir)
         self.write_file('MANIFEST.in', content)
@@ -386,17 +386,17 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEqual(len(warnings), 1)
 
     def test_invalid_template_unknown_command(self):
-        self._test_template('taunt knights *')
+        self._check_template('taunt knights *')
 
     def test_invalid_template_wrong_arguments(self):
         # this manifest command takes one argument
-        self._test_template('prune')
+        self._check_template('prune')
 
     @unittest.skipIf(os.name != 'nt', 'test relevant for Windows only')
     def test_invalid_template_wrong_path(self):
         # on Windows, trailing slashes are not allowed
         # this used to crash instead of raising a warning: #8286
-        self._test_template('include examples/')
+        self._check_template('include examples/')
 
     @unittest.skipUnless(zlib, "requires zlib")
     def test_get_file_list(self):
