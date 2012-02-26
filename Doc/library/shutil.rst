@@ -31,6 +31,8 @@ copying and removal. For operations on individual files, see also the
    are not copied.
 
 
+.. _file-operations:
+
 Directory and files operations
 ------------------------------
 
@@ -185,7 +187,7 @@ Directory and files operations
    .. versionadded:: 2.3
 
 
-.. _shutil-example:
+.. _copytree-example:
 
 copytree example
 ::::::::::::::::
@@ -254,8 +256,13 @@ Another example that uses the *ignore* argument to add a logging call::
    copytree(source, destination, ignore=_logpath)
 
 
-Archives operations
--------------------
+.. _archiving-operations:
+
+Archiving operations
+--------------------
+
+High-level utilities to create and read compressed and archived files are also
+provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
 .. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
 
@@ -278,7 +285,8 @@ Archives operations
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
 
-   *logger* is an instance of :class:`logging.Logger`.
+   *logger* must be an object compatible with :pep:`282`, usually an instance of
+   :class:`logging.Logger`.
 
    .. versionadded:: 2.7
 
@@ -322,6 +330,8 @@ Archives operations
    .. versionadded:: 2.7
 
 
+.. _archiving-example:
+
 Archiving example
 :::::::::::::::::
 
@@ -346,5 +356,3 @@ The resulting archive contains::
     -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
     -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
-
-
