@@ -1698,7 +1698,11 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
         else if (PyExceptionInstance_Check(value)) {
             cause = PyException_GetCause(value);
             context = PyException_GetContext(value);
-            if (cause) {
+            if (cause && cause == Py_None) {
+                /* print neither cause nor context */
+                ;
+            }
+            else if (cause) {
                 res = PySet_Contains(seen, cause);
                 if (res == -1)
                     PyErr_Clear();

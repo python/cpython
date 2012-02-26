@@ -34,6 +34,24 @@ programmers are encouraged to at least derive new exceptions from the
 defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
+When raising (or re-raising) an exception in an :keyword:`except` clause
+:attr:`__context__` is automatically set to the last exception caught; if the
+new exception is not handled the traceback that is eventually displayed will
+include the originating exception(s) and the final exception.
+
+This implicit exception chain can be made explicit by using :keyword:`from`
+with :keyword:`raise`.  The single argument to :keyword:`from` must be an
+exception or :const:`None`, and it will bet set as :attr:`__cause__` on the
+raised exception.  If :attr:`__cause__` is an exception it will be displayed
+instead of :attr:`__context__`; if :attr:`__cause__` is None,
+:attr:`__context__` will not be displayed by the default exception handling
+code.  (Note:  the default value for :attr:`__context__` is :const:`None`,
+while the default value for :attr:`__cause__` is :const:`Ellipsis`.)
+
+In either case, the default exception handling code will not display
+any of the remaining links in the :attr:`__context__` chain if
+:attr:`__cause__` has been set.
+
 
 Base classes
 ------------

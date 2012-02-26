@@ -105,6 +105,7 @@ PyAPI_FUNC(PyObject *) PyException_GetTraceback(PyObject *);
 /* Cause manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetCause(PyObject *);
 PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyException_SetCauseChecked(PyObject *, PyObject *);
 
 /* Context manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
