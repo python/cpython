@@ -14,9 +14,6 @@ This module provides a comprehensive interface for the bz2 compression library.
 It implements a complete file interface, one-shot (de)compression functions, and
 types for sequential (de)compression.
 
-For other archive formats, see the :mod:`gzip`, :mod:`zipfile`, and
-:mod:`tarfile` modules.
-
 Here is a summary of the features offered by the bz2 module:
 
 * :class:`BZ2File` class implements a complete file interface, including
