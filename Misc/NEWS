@@ -98,6 +98,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2945: Make the distutils upload command aware of bdist_rpm products.
+
 - Issue #13447: Add a test file to host regression tests for bugs in the
   scripts found in the Tools directory.
 

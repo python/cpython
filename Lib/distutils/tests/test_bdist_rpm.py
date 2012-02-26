@@ -79,6 +79,10 @@ class BuildRpmTestCase(support.TempdirManager,
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
         self.assertTrue('foo-0.1-1.noarch.rpm' in dist_created)
 
+        # bug #2945: upload ignores bdist_rpm files
+        self.assertIn(('bdist_rpm', 'any', 'dist/foo-0.1-1.src.rpm'), dist.dist_files)
+        self.assertIn(('bdist_rpm', 'any', 'dist/foo-0.1-1.noarch.rpm'), dist.dist_files)
+
     def test_no_optimize_flag(self):
 
         # XXX I am unable yet to make this test work without
@@ -118,6 +122,11 @@ class BuildRpmTestCase(support.TempdirManager,
 
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
         self.assertTrue('foo-0.1-1.noarch.rpm' in dist_created)
+
+        # bug #2945: upload ignores bdist_rpm files
+        self.assertIn(('bdist_rpm', 'any', 'dist/foo-0.1-1.src.rpm'), dist.dist_files)
+        self.assertIn(('bdist_rpm', 'any', 'dist/foo-0.1-1.noarch.rpm'), dist.dist_files)
+
         os.remove(os.path.join(pkg_dir, 'dist', 'foo-0.1-1.noarch.rpm'))
 
 def test_suite():
