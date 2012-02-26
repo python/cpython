@@ -1,4 +1,3 @@
-
 :mod:`sys` --- System-specific parameters and functions
 =======================================================
 
@@ -291,6 +290,8 @@ always available.
 
    .. versionadded:: 2.6
 
+   .. versionadded:: 2.7.3
+      The ``hash_randomization`` attribute.
 
 .. data:: float_info
 
