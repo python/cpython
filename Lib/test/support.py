@@ -45,6 +45,11 @@ try:
 except ImportError:
     zlib = None
 
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -1184,6 +1189,11 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
         pipe_fd, wfd = os.pipe()
+        # set the write end of the pipe non-blocking to avoid blocking the
+        # watchdog thread when the consumer doesn't drain the pipe fast enough
+        if fcntl:
+            flags = fcntl.fcntl(wfd, fcntl.F_GETFL)
+            fcntl.fcntl(wfd, fcntl.F_SETFL, flags|os.O_NONBLOCK)
         # _file_watchdog() doesn't take the GIL in its child thread, and
         # therefore collects statistics timely
         faulthandler._file_watchdog(rfd, wfd, 1.0)
