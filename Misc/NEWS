@@ -10,6 +10,9 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #13521: dict.setdefault() now does only one lookup for the given key,
+  making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
+
 - PEP 409, Issue #6210: "raise X from None" is now supported as a means of
   suppressing the display of the chained exception context. The chained
   context still remains available as the __context__ attribute.
