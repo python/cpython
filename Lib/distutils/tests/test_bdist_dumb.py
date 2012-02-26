@@ -1,8 +1,10 @@
 """Tests for distutils.command.bdist_dumb."""
 
-import unittest
-import sys
 import os
+import sys
+import zipfile
+import unittest
+from test.test_support import run_unittest
 
 # zlib is not used here, but if it's not available
 # test_simple_built will fail
@@ -10,8 +12,6 @@ try:
     import zlib
 except ImportError:
     zlib = None
-
-from test.test_support import run_unittest
 
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
@@ -73,15 +73,23 @@ class BuildDumbTestCase(support.TempdirManager,
 
         # see what we have
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
-        base = "%s.%s" % (dist.get_fullname(), cmd.plat_name)
+        base = "%s.%s.zip" % (dist.get_fullname(), cmd.plat_name)
         if os.name == 'os2':
             base = base.replace(':', '-')
 
-        wanted = ['%s.zip' % base]
-        self.assertEqual(dist_created, wanted)
+        self.assertEqual(dist_created, [base])
 
         # now let's check what we have in the zip file
-        # XXX to be done
+        fp = zipfile.ZipFile(os.path.join('dist', base))
+        try:
+            contents = fp.namelist()
+        finally:
+            fp.close()
+
+        contents = sorted(os.path.basename(fn) for fn in contents)
+        wanted = ['foo-0.1-py%s.%s.egg-info' % sys.version_info[:2],
+                  'foo.py', 'foo.pyc']
+        self.assertEqual(contents, sorted(wanted))
 
     def test_finalize_options(self):
         pkg_dir, dist = self.create_dist()
