@@ -9,6 +9,9 @@ What's New in Python 2.7.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #13521: dict.setdefault() now does only one lookup for the given key,
+  making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
+
 - Issue #13020: Fix a reference leak when allocating a structsequence object
   fails.  Patch by Suman Saha.
 

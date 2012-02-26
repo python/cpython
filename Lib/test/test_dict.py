@@ -299,6 +299,26 @@ class DictTest(unittest.TestCase):
         x.fail = True
         self.assertRaises(Exc, d.setdefault, x, [])
 
+    def test_setdefault_atomic(self):
+        # Issue #13521: setdefault() calls __hash__ and __eq__ only once.
+        class Hashed(object):
+            def __init__(self):
+                self.hash_count = 0
+                self.eq_count = 0
+            def __hash__(self):
+                self.hash_count += 1
+                return 42
+            def __eq__(self, other):
+                self.eq_count += 1
+                return id(self) == id(other)
+        hashed1 = Hashed()
+        y = {hashed1: 5}
+        hashed2 = Hashed()
+        y.setdefault(hashed2, [])
+        self.assertEqual(hashed1.hash_count, 1)
+        self.assertEqual(hashed2.hash_count, 1)
+        self.assertEqual(hashed1.eq_count + hashed2.eq_count, 1)
+
     def test_popitem(self):
         # dict.popitem()
         for copymode in -1, +1:
