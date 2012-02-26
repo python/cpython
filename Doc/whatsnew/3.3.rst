@@ -254,6 +254,9 @@ inspection of exception attributes::
 PEP 380: Syntax for Delegating to a Subgenerator
 ================================================
 
+:pep:`380` - Syntax for Delegating to a Subgenerator
+ PEP written by Greg Ewing.
+
 PEP 380 adds the ``yield from`` expression, allowing a generator to delegate
 part of its operations to another generator. This allows a section of code
 containing 'yield' to be factored out and placed in another generator.
@@ -265,6 +268,67 @@ from`` expression actually allows delegation to arbitrary subiterators.
 (Implementation by Greg Ewing, integrated into 3.3 by Renaud Blanch, Ryan
 Kelly and Nick Coghlan, documentation by Zbigniew Jędrzejewski-Szmek and
 Nick Coghlan)
+
+
+PEP 409: Suppressing exception context
+======================================
+
+:pep:`409` - Suppressing exception context
+ PEP written by Ethan Furman, implemented by Ethan Furman and Nick Coghlan.
+
+PEP 409 introduces new syntax that allows the display of the chained
+exception context to be disabled. This allows cleaner error messages in
+applications that convert between exception types::
+
+    >>> class D:
+    ...     def __init__(self, extra):
+    ...         self._extra_attributes = extra
+    ...     def __getattr__(self, attr):
+    ...         try:
+    ...             return self._extra_attributes[attr]
+    ...         except KeyError:
+    ...             raise AttributeError(attr) from None
+    ...
+    >>> D({}).x
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "<stdin>", line 8, in __getattr__
+    AttributeError: x
+
+Without the ``from None`` suffix to suppress the cause, the original
+exception would be displayed by default::
+
+    >>> class C:
+    ...     def __init__(self, extra):
+    ...         self._extra_attributes = extra
+    ...     def __getattr__(self, attr):
+    ...         try:
+    ...             return self._extra_attributes[attr]
+    ...         except KeyError:
+    ...             raise AttributeError(attr)
+    ...
+    >>> C({}).x
+    Traceback (most recent call last):
+      File "<stdin>", line 6, in __getattr__
+    KeyError: 'x'
+
+    During handling of the above exception, another exception occurred:
+
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "<stdin>", line 8, in __getattr__
+    AttributeError: x
+
+No debugging capability is lost, as the original exception context remains
+available if needed (for example, if an intervening library has incorrectly
+suppressed valuable underlying details)::
+
+    >>> try:
+    ...     D({}).x
+    ... except AttributeError as exc:
+    ...     print(repr(exc.__context__))
+    ...
+    KeyError('x',)
 
 
 PEP 3155: Qualified name for classes and functions

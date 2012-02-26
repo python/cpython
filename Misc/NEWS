@@ -10,6 +10,10 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- PEP 409, Issue #6210: "raise X from None" is now supported as a means of
+  suppressing the display of the chained exception context. The chained
+  context still remains available as the __context__ attribute.
+
 - Issue #10181: New memoryview implementation fixes multiple ownership
   and lifetime issues of dynamically allocated Py_buffer members (#9990)
   as well as crashes (#8305, #7433). Many new features have been added

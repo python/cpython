@@ -3567,22 +3567,23 @@ do_raise(PyObject *exc, PyObject *cause)
 
     if (cause) {
         PyObject *fixed_cause;
+        int result;
         if (PyExceptionClass_Check(cause)) {
             fixed_cause = PyObject_CallObject(cause, NULL);
             if (fixed_cause == NULL)
                 goto raise_error;
-            Py_DECREF(cause);
-        }
-        else if (PyExceptionInstance_Check(cause)) {
+            Py_CLEAR(cause);
+        } else {
+            /* Let "exc.__cause__ = cause" handle all further checks */
             fixed_cause = cause;
+            cause = NULL; /* Steal the reference */
         }
-        else {
-            PyErr_SetString(PyExc_TypeError,
-                            "exception causes must derive from "
-                            "BaseException");
+        /* We retain ownership of the reference to fixed_cause */
+        result = _PyException_SetCauseChecked(value, fixed_cause);
+        Py_DECREF(fixed_cause);
+        if (result < 0) {
             goto raise_error;
         }
-        PyException_SetCause(value, fixed_cause);
     }
 
     PyErr_SetObject(type, value);
