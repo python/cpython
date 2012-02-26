@@ -6,6 +6,7 @@ import warnings
 import zipfile
 from os.path import join
 from textwrap import dedent
+from test.support import captured_stdout, check_warnings, run_unittest
 
 try:
     import zlib
@@ -13,7 +14,6 @@ try:
 except ImportError:
     ZLIB_SUPPORT = False
 
-from test.support import captured_stdout, check_warnings, run_unittest
 
 from distutils.command.sdist import sdist, show_formats
 from distutils.core import Distribution
@@ -326,6 +326,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # filling data_files by pointing files in package_data
         dist.package_data = {'somecode': ['*.txt']}
         self.write_file((self.tmp_dir, 'somecode', 'doc.txt'), '#')
+        cmd.formats = ['gztar']
         cmd.ensure_finalized()
         cmd.run()
 
