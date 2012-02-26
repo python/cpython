@@ -421,17 +421,24 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 
-   Return the cause (another exception instance set by ``raise ... from ...``)
-   associated with the exception as a new reference, as accessible from Python
-   through :attr:`__cause__`.  If there is no cause associated, this returns
-   *NULL*.
+   Return the cause (either an exception instance, or :const:`None`,
+   set by ``raise ... from ...``) associated with the exception as a new
+   reference, as accessible from Python through :attr:`__cause__`.
+
+   If there is no cause associated, this returns *NULL* (from Python
+   ``__cause__ is Ellipsis``).  If the cause is :const:`None`, the default
+   exception display routines stop showing the context chain.
 
 
 .. c:function:: void PyException_SetCause(PyObject *ex, PyObject *ctx)
 
    Set the cause associated with the exception to *ctx*.  Use *NULL* to clear
-   it.  There is no type check to make sure that *ctx* is an exception instance.
-   This steals a reference to *ctx*.
+   it.  There is no type check to make sure that *ctx* is either an exception
+   instance or :const:`None`.  This steals a reference to *ctx*.
+
+   If the cause is set to :const:`None` the default exception display
+   routines will not display this exception's context, and will not follow the
+   chain any further.
 
 
 .. _unicodeexceptions:

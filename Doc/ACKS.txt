@@ -62,6 +62,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Stefan Franke
    * Jim Fulton
    * Peter Funk
+   * Ethan Furman
    * Lele Gaifax
    * Matthew Gallagher
    * Gabriel Genellina

@@ -387,19 +387,36 @@ class ExceptionTests(unittest.TestCase):
 
     def testChainingAttrs(self):
         e = Exception()
-        self.assertEqual(e.__context__, None)
-        self.assertEqual(e.__cause__, None)
+        self.assertIsNone(e.__context__)
+        self.assertIs(e.__cause__, Ellipsis)
 
         e = TypeError()
-        self.assertEqual(e.__context__, None)
-        self.assertEqual(e.__cause__, None)
+        self.assertIsNone(e.__context__)
+        self.assertIs(e.__cause__, Ellipsis)
 
         class MyException(EnvironmentError):
             pass
 
         e = MyException()
-        self.assertEqual(e.__context__, None)
-        self.assertEqual(e.__cause__, None)
+        self.assertIsNone(e.__context__)
+        self.assertIs(e.__cause__, Ellipsis)
+
+    def testChainingDescriptors(self):
+        try:
+            raise Exception()
+        except Exception as exc:
+            e = exc
+
+        self.assertIsNone(e.__context__)
+        self.assertIs(e.__cause__, Ellipsis)
+
+        e.__context__ = NameError()
+        e.__cause__ = None
+        self.assertIsInstance(e.__context__, NameError)
+        self.assertIsNone(e.__cause__)
+
+        e.__cause__ = Ellipsis
+        self.assertIs(e.__cause__, Ellipsis)
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,

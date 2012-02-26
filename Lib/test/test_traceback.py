@@ -246,6 +246,21 @@ class BaseExceptionReportingTests:
         self.check_zero_div(blocks[0])
         self.assertIn('inner_raise() # Marker', blocks[2])
 
+    def test_context_suppression(self):
+        try:
+            try:
+                raise Exception
+            except:
+                raise ZeroDivisionError from None
+        except ZeroDivisionError as _:
+            e = _
+        lines = self.get_report(e).splitlines()
+        self.assertEqual(len(lines), 4)
+        self.assertTrue(lines[0].startswith('Traceback'))
+        self.assertTrue(lines[1].startswith('  File'))
+        self.assertIn('ZeroDivisionError from None', lines[2])
+        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+
     def test_cause_and_context(self):
         # When both a cause and a context are set, only the cause should be
         # displayed and the context should be muted.
