@@ -328,12 +328,12 @@ class PEP3147Tests(unittest.TestCase):
         importlib.invalidate_caches()
         expected___file__ = os.sep.join(('.', 'pep3147', '__init__.py'))
         m = __import__('pep3147')
-        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__, sys.path))
+        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__, sys.path, sys.path_importer_cache))
         # Ensure we load the pyc file.
         support.unload('pep3147')
         m = __import__('pep3147')
         support.unload('pep3147')
-        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__, sys.path))
+        self.assertEqual(m.__file__, expected___file__, (m.__file__, m.__path__, sys.path, sys.path_importer_cache))
 
 
 class NullImporterTests(unittest.TestCase):
