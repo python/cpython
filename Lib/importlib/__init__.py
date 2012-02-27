@@ -1,23 +1,4 @@
-"""A pure Python implementation of import.
-
-References on import:
-
-    * Language reference
-          http://docs.python.org/ref/import.html
-    * __import__ function
-          http://docs.python.org/lib/built-in-funcs.html
-    * Packages
-          http://www.python.org/doc/essays/packages.html
-    * PEP 235: Import on Case-Insensitive Platforms
-          http://www.python.org/dev/peps/pep-0235
-    * PEP 275: Import Modules from Zip Archives
-          http://www.python.org/dev/peps/pep-0273
-    * PEP 302: New Import Hooks
-          http://www.python.org/dev/peps/pep-0302/
-    * PEP 328: Imports: Multi-line and Absolute/Relative
-          http://www.python.org/dev/peps/pep-0328
-
-"""
+"""A pure Python implementation of import."""
 __all__ = ['__import__', 'import_module', 'invalidate_caches']
 
 from . import _bootstrap
@@ -37,7 +18,15 @@ _bootstrap._setup(sys, imp)
 
 # Public API #########################################################
 
-from ._bootstrap import __import__, invalidate_caches
+from ._bootstrap import __import__
+
+
+def invalidate_caches():
+    """Call the invalidate_caches() method on all finders stored in
+    sys.path_importer_caches (where implemented)."""
+    for finder in sys.path_importer_cache.values():
+        if hasattr(finder, 'invalidate_caches'):
+            finder.invalidate_caches()
 
 
 def import_module(name, package=None):
