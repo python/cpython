@@ -268,12 +268,12 @@ Dealing with handlers that block
 .. currentmodule:: logging.handlers
 
 Sometimes you have to get your logging handlers to do their work without
-blocking the thread you’re logging from. This is common in Web applications,
+blocking the thread you're logging from. This is common in Web applications,
 though of course it also occurs in other scenarios.
 
 A common culprit which demonstrates sluggish behaviour is the
 :class:`SMTPHandler`: sending emails can take a long time, for a
-number of reasons outside the developer’s control (for example, a poorly
+number of reasons outside the developer's control (for example, a poorly
 performing mail or network infrastructure). But almost any network-based
 handler can block: Even a :class:`SocketHandler` operation may do a
 DNS query under the hood which is too slow (and this query can be deep in the
@@ -292,7 +292,7 @@ developers who will use your code.
 
 The second part of the solution is :class:`QueueListener`, which has been
 designed as the counterpart to :class:`QueueHandler`.  A
-:class:`QueueListener` is very simple: it’s passed a queue and some handlers,
+:class:`QueueListener` is very simple: it's passed a queue and some handlers,
 and it fires up an internal thread which listens to its queue for LogRecords
 sent from ``QueueHandlers`` (or any other source of ``LogRecords``, for that
 matter). The ``LogRecords`` are removed from the queue and passed to the
@@ -745,7 +745,7 @@ the basis for code meeting your own specific requirements::
                 raise
             except:
                 import sys, traceback
-                print >> sys.stderr, 'Whoops! Problem:'
+                print('Whoops! Problem:', file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
 
     # Arrays used for random selections in this demo
@@ -963,6 +963,134 @@ and each time it reaches the size limit it is renamed with the suffix
 
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
+
+.. _format-styles:
+
+Use of alternative formatting styles
+------------------------------------
+
+When logging was added to the Python standard library, the only way of
+formatting messages with variable content was to use the %-formatting
+method. Since then, Python has gained two new formatting approaches:
+string.Template (added in Python 2.4) and str.format (added in Python 2.6).
+
+Logging now (as of 3.2) provides improved support for these two additional
+formatting styles. The :class:`Formatter` class been enhanced for Python 3.2 to
+take an additional, optional keyword parameter named ``style``. This defaults
+to ``'%'``, but other possible values are ``'{'`` and ``'$'``, which correspond
+to the other two formatting styles. Backwards compatibility is maintained by
+default (as you would expect), but by explicitly specifying a style parameter,
+you get the ability to specify format strings which work with
+:meth:`str.format` or :class:`string.Template`. Here's an example console
+session to show the possibilities:
+
+.. code-block:: pycon
+
+    >>> import logging
+    >>> root = logging.getLogger()
+    >>> root.setLevel(logging.DEBUG)
+    >>> handler = logging.StreamHandler()
+    >>> bf = logging.Formatter('{asctime} {name} {levelname:8s} {message}',
+    ...                        style='{')
+    >>> handler.setFormatter(bf)
+    >>> root.addHandler(handler)
+    >>> logger = logging.getLogger('foo.bar')
+    >>> logger.debug('This is a DEBUG message')
+    2010-10-28 15:11:55,341 foo.bar DEBUG    This is a DEBUG message
+    >>> logger.critical('This is a CRITICAL message')
+    2010-10-28 15:12:11,526 foo.bar CRITICAL This is a CRITICAL message
+    >>> df = logging.Formatter('$asctime $name ${levelname} $message',
+    ...                        style='$')
+    >>> handler.setFormatter(df)
+    >>> logger.debug('This is a DEBUG message')
+    2010-10-28 15:13:06,924 foo.bar DEBUG This is a DEBUG message
+    >>> logger.critical('This is a CRITICAL message')
+    2010-10-28 15:13:11,494 foo.bar CRITICAL This is a CRITICAL message
+    >>>
+
+Note that the formatting of logging messages for final output to logs is
+completely independent of how an individual logging message is constructed.
+That can still use %-formatting, as shown here::
+
+    >>> logger.error('This is an%s %s %s', 'other,', 'ERROR,', 'message')
+    2010-10-28 15:19:29,833 foo.bar ERROR This is another, ERROR, message
+    >>>
+
+Logging calls (``logger.debug()``, ``logger.info()`` etc.) only take
+positional parameters for the actual logging message itself, with keyword
+parameters used only for determining options for how to handle the actual
+logging call (e.g. the ``exc_info`` keyword parameter to indicate that
+traceback information should be logged, or the ``extra`` keyword parameter
+to indicate additional contextual information to be added to the log). So
+you cannot directly make logging calls using :meth:`str.format` or
+:class:`string.Template` syntax, because internally the logging package
+uses %-formatting to merge the format string and the variable arguments.
+There would no changing this while preserving backward compatibility, since
+all logging calls which are out there in existing code will be using %-format
+strings.
+
+There is, however, a way that you can use {}- and $- formatting to construct
+your individual log messages. Recall that for a message you can use an
+arbitrary object as a message format string, and that the logging package will
+call ``str()`` on that object to get the actual format string. Consider the
+following two classes::
+
+    class BraceMessage(object):
+        def __init__(self, fmt, *args, **kwargs):
+            self.fmt = fmt
+            self.args = args
+            self.kwargs = kwargs
+
+        def __str__(self):
+            return self.fmt.format(*self.args, **self.kwargs)
+
+    class DollarMessage(object):
+        def __init__(self, fmt, **kwargs):
+            self.fmt = fmt
+            self.kwargs = kwargs
+
+        def __str__(self):
+            from string import Template
+            return Template(self.fmt).substitute(**self.kwargs)
+
+Either of these can be used in place of a format string, to allow {}- or
+$-formatting to be used to build the actual "message" part which appears in the
+formatted log output in place of "%(message)s" or "{message}" or "$message".
+It's a little unwieldy to use the class names whenever you want to log
+something, but it's quite palatable if you use an alias such as __ (double
+underscore – not to be confused with _, the single underscore used as a
+synonym/alias for :func:`gettext.gettext` or its brethren).
+
+The above classes are not included in Python, though they're easy enough to
+copy and paste into your own code. They can be used as follows (assuming that
+they're declared in a module called ``wherever``):
+
+.. code-block:: pycon
+
+    >>> from wherever import BraceMessage as __
+    >>> print(__('Message with {0} {1}', 2, 'placeholders'))
+    Message with 2 placeholders
+    >>> class Point: pass
+    ...
+    >>> p = Point()
+    >>> p.x = 0.5
+    >>> p.y = 0.5
+    >>> print(__('Message with coordinates: ({point.x:.2f}, {point.y:.2f})',
+    ...       point=p))
+    Message with coordinates: (0.50, 0.50)
+    >>> from wherever import DollarMessage as __
+    >>> print(__('Message with $num $what', num=2, what='placeholders'))
+    Message with 2 placeholders
+    >>>
+
+One thing to note is that you pay no significant performance penalty with this
+approach: the actual formatting happens not when you make the logging call, but
+when (and if) the logged message is actually about to be output to a log by a
+handler. So the only slightly unusual thing which might trip you up is that the
+parentheses go around the format string and the arguments, not just the format
+string. That's because the __ notation is just syntax sugar for a constructor
+call to one of the XXXMessage classes.
+
 
 .. _zeromq-handlers:
 
