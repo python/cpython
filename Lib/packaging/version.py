@@ -11,19 +11,20 @@ __all__ = ['NormalizedVersion', 'suggest_normalized_version',
 # A marker used in the second and third parts of the `parts` tuple, for
 # versions that don't have those segments, to sort properly. An example
 # of versions in sort order ('highest' last):
-#   1.0b1                 ((1,0), ('b',1), ('f',))
-#   1.0.dev345            ((1,0), ('f',),  ('dev', 345))
-#   1.0                   ((1,0), ('f',),  ('f',))
-#   1.0.post256.dev345    ((1,0), ('f',),  ('f', 'post', 256, 'dev', 345))
-#   1.0.post345           ((1,0), ('f',),  ('f', 'post', 345, 'f'))
+#   1.0b1                 ((1,0), ('b',1), ('z',))
+#   1.0.dev345            ((1,0), ('z',),  ('dev', 345))
+#   1.0                   ((1,0), ('z',),  ('z',))
+#   1.0.post256.dev345    ((1,0), ('z',),  ('z', 'post', 256, 'dev', 345))
+#   1.0.post345           ((1,0), ('z',),  ('z', 'post', 345, 'z'))
 #                                   ^        ^                 ^
-#   'b' < 'f' ---------------------/         |                 |
+#   'b' < 'z' ---------------------/         |                 |
 #                                            |                 |
-#   'dev' < 'f' < 'post' -------------------/                  |
+#   'dev' < 'z' ----------------------------/                  |
 #                                                              |
-#   'dev' < 'f' ----------------------------------------------/
-# Other letters would do, but 'f' for 'final' is kind of nice.
-_FINAL_MARKER = ('f',)
+#   'dev' < 'z' ----------------------------------------------/
+# 'f' for 'final' would be kind of nice, but due to bugs in the support of
+# 'rc' we must use 'z'
+_FINAL_MARKER = ('z',)
 
 _VERSION_RE = re.compile(r'''
     ^
@@ -167,8 +168,9 @@ class NormalizedVersion:
         if prerel is not _FINAL_MARKER:
             s += prerel[0]
             s += '.'.join(str(v) for v in prerel[1:])
+        # XXX clean up: postdev is always true; code is obscure
         if postdev and postdev is not _FINAL_MARKER:
-            if postdev[0] == 'f':
+            if postdev[0] == _FINAL_MARKER[0]:
                 postdev = postdev[1:]
             i = 0
             while i < len(postdev):
