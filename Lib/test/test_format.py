@@ -285,7 +285,8 @@ class FormatTest(unittest.TestCase):
 
     def test_locale(self):
         try:
-            oldloc = locale.setlocale(locale.LC_ALL, '')
+            oldloc = locale.setlocale(locale.LC_ALL)
+            locale.setlocale(locale.LC_ALL, '')
         except locale.Error as err:
             self.skipTest("Cannot set locale: {}".format(err))
         try:
