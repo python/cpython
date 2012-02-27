@@ -26,11 +26,12 @@ The Basics
 ==========
 
 The Python runtime sees all Python objects as variables of type
-:c:type:`PyObject\*`.  A :c:type:`PyObject` is not a very magnificent object - it
-just contains the refcount and a pointer to the object's "type object".  This is
-where the action is; the type object determines which (C) functions get called
-when, for instance, an attribute gets looked up on an object or it is multiplied
-by another object.  These C functions are called "type methods".
+:c:type:`PyObject\*`, which serves as a "base type" for all Python objects.
+:c:type:`PyObject` itself only contains the refcount and a pointer to the
+object's "type object".  This is where the action is; the type object determines
+which (C) functions get called when, for instance, an attribute gets looked
+up on an object or it is multiplied by another object.  These C functions
+are called "type methods".
 
 So, if you want to define a new object type, you need to create a new type
 object.
@@ -50,15 +51,15 @@ The first bit that will be new is::
        PyObject_HEAD
    } noddy_NoddyObject;
 
-This is what a Noddy object will contain---in this case, nothing more than every
-Python object contains, namely a refcount and a pointer to a type object.  These
-are the fields the ``PyObject_HEAD`` macro brings in.  The reason for the macro
-is to standardize the layout and to enable special debugging fields in debug
-builds.  Note that there is no semicolon after the ``PyObject_HEAD`` macro; one
-is included in the macro definition.  Be wary of adding one by accident; it's
-easy to do from habit, and your compiler might not complain, but someone else's
-probably will!  (On Windows, MSVC is known to call this an error and refuse to
-compile the code.)
+This is what a Noddy object will contain---in this case, nothing more than what
+every Python object contains---a refcount and a pointer to a type object.
+These are the fields the ``PyObject_HEAD`` macro brings in.  The reason for the
+macro is to standardize the layout and to enable special debugging fields in
+debug builds.  Note that there is no semicolon after the ``PyObject_HEAD``
+macro; one is included in the macro definition.  Be wary of adding one by
+accident; it's easy to do from habit, and your compiler might not complain,
+but someone else's probably will!  (On Windows, MSVC is known to call this an
+error and refuse to compile the code.)
 
 For contrast, let's take a look at the corresponding definition for standard
 Python floats::
@@ -224,7 +225,7 @@ doesn't do anything. It can't even be subclassed.
 Adding data and methods to the Basic example
 --------------------------------------------
 
-Let's expend the basic example to add some data and methods.  Let's also make
+Let's extend the basic example to add some data and methods.  Let's also make
 the type usable as a base class. We'll create a new module, :mod:`noddy2` that
 adds these capabilities:
 
@@ -325,8 +326,8 @@ any arguments passed when the type was called, and that returns the new object
 created. New methods always accept positional and keyword arguments, but they
 often ignore the arguments, leaving the argument handling to initializer
 methods. Note that if the type supports subclassing, the type passed may not be
-the type being defined.  The new method calls the tp_alloc slot to allocate
-memory. We don't fill the :attr:`tp_alloc` slot ourselves. Rather
+the type being defined.  The new method calls the :attr:`tp_alloc` slot to
+allocate memory. We don't fill the :attr:`tp_alloc` slot ourselves. Rather
 :c:func:`PyType_Ready` fills it for us by inheriting it from our base class,
 which is :class:`object` by default.  Most types use the default allocation.
 
@@ -443,15 +444,6 @@ concatenation of the first and last names. ::
    static PyObject *
    Noddy_name(Noddy* self)
    {
-       static PyObject *format = NULL;
-       PyObject *args, *result;
-
-       if (format == NULL) {
-           format = PyString_FromString("%s %s");
-           if (format == NULL)
-               return NULL;
-       }
-
        if (self->first == NULL) {
            PyErr_SetString(PyExc_AttributeError, "first");
            return NULL;
@@ -462,20 +454,13 @@ concatenation of the first and last names. ::
            return NULL;
        }
 
-       args = Py_BuildValue("OO", self->first, self->last);
-       if (args == NULL)
-           return NULL;
-
-       result = PyString_Format(format, args);
-       Py_DECREF(args);
-
-       return result;
+       return PyUnicode_FromFormat("%S %S", self->first, self->last);
    }
 
 The method is implemented as a C function that takes a :class:`Noddy` (or
 :class:`Noddy` subclass) instance as the first argument.  Methods always take an
 instance as the first argument. Methods often take positional and keyword
-arguments as well, but in this cased we don't take any and don't need to accept
+arguments as well, but in this case we don't take any and don't need to accept
 a positional argument tuple or keyword argument dictionary. This method is
 equivalent to the Python method::
 
@@ -1122,9 +1107,6 @@ needed for methods inherited from a base type.  One additional entry is needed
 at the end; it is a sentinel that marks the end of the array.  The
 :attr:`ml_name` field of the sentinel must be *NULL*.
 
-XXX Need to refer to some unified discussion of the structure fields, shared
-with the next section.
-
 The second table is used to define attributes which map directly to data stored
 in the instance.  A variety of primitive C types are supported, and access may
 be read-only or read-write.  The structures in the table are defined as::
@@ -1143,8 +1125,6 @@ type which will be able to extract a value from the instance structure.  The
 :file:`structmember.h` header; the value will be used to determine how to
 convert Python values to and from C values.  The :attr:`flags` field is used to
 store flags which control how the attribute can be accessed.
-
-XXX Need to move some of this to a shared section!
 
 The following flag constants are defined in :file:`structmember.h`; they may be
 combined using bitwise-OR.
@@ -1370,7 +1350,7 @@ Here is a desultory example of the implementation of the call function. ::
        return result;
    }
 
-XXX some fields need to be added here... ::
+::
 
    /* Iterators */
    getiterfunc tp_iter;

@@ -384,9 +384,6 @@ optionally followed by an import of the module::
           imports it. */
        PyImport_ImportModule("spam");
 
-An example may be found in the file :file:`Demo/embed/demo.c` in the Python
-source distribution.
-
 .. note::
 
    Removing entries from ``sys.modules`` or importing compiled modules into
