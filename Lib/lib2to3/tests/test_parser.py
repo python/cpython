@@ -11,10 +11,14 @@ from __future__ import with_statement
 # Testing imports
 from . import support
 from .support import driver, test_dir
+from test.support import verbose
 
 # Python imports
 import os
+import sys
 import unittest
+import warnings
+import subprocess
 
 # Local imports
 from lib2to3.pgen2 import tokenize
@@ -171,10 +175,12 @@ class TestParserIdempotency(support.TestCase):
             try:
                 tree = driver.parse_string(source)
             except ParseError as err:
-                print('ParseError on file', filepath, err)
+                if verbose > 0:
+                    warnings.warn('ParseError on file %s (%s)' % (filepath, err))
                 continue
             new = str(tree)
-            if diff(filepath, new):
+            x = diff(filepath, new)
+            if x:
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -182,6 +188,7 @@ class TestParserIdempotency(support.TestCase):
         driver.parse_string("[*a, b] = x\n")
         driver.parse_string("(z, *y, w) = m\n")
         driver.parse_string("for *z, m in d: pass\n")
+
 
 class TestLiterals(GrammarTest):
 
@@ -221,7 +228,7 @@ def diff(fn, result):
         with open('@', 'w') as f:
             f.write(str(result))
         fn = fn.replace('"', '\\"')
-        return os.system('diff -u "%s" @' % fn)
+        return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
     finally:
         try:
             os.remove("@")
