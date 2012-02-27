@@ -16,6 +16,7 @@ class VersionTestCase(unittest.TestCase):
                 (V('1.2'), '1.2'),
                 (V('1.2.3a4'), '1.2.3a4'),
                 (V('1.2c4'), '1.2c4'),
+                (V('4.17rc2'), '4.17rc2'),
                 (V('1.2.3.4'), '1.2.3.4'),
                 (V('1.2.3.4.0b3'), '1.2.3.4b3'),
                 (V('1.2.0.0.0'), '1.2'),
@@ -145,6 +146,14 @@ class VersionTestCase(unittest.TestCase):
         True
         """
         doctest.script_from_examples(comparison_doctest_string)
+
+        # the doctest above is never run, so temporarily add real unit
+        # tests until the doctest is rewritten
+        self.assertLessEqual(V('1.2.0rc1'), V('1.2.0'))
+        self.assertGreater(V('1.0'), V('1.0c2'))
+        self.assertGreater(V('1.0'), V('1.0rc2'))
+        self.assertGreater(V('1.0rc2'), V('1.0rc1'))
+        self.assertGreater(V('1.0c4'), V('1.0c1'))
 
     def test_suggest_normalized_version(self):
 
