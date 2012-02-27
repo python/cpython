@@ -88,9 +88,12 @@ Functions
 
 .. function:: invalidate_caches()
 
-   Invalidate importlib's internal caches.  Calling this function may be
-   needed if some modules are installed while your program is running and
-   you expect the program to notice the changes.
+   Invalidate the internal caches of the finders stored at
+   :data:`sys.path_importer_cache`. If a finder implements
+   :meth:`abc.Finder.invalidate_caches()` then it will be called to perform the
+   invalidation.  This function may be needed if some modules are installed
+   while your program is running and you expect the program to notice the
+   changes.
 
    .. versionadded:: 3.3
 
@@ -118,6 +121,12 @@ are also provided to help in implementing the core ABCs.
         module to be searched for is a subpackage or module then *path* will
         be the value of :attr:`__path__` from the parent package. If a loader
         cannot be found, ``None`` is returned.
+
+   .. method:: invalidate_caches()
+
+        An optional method which, when called, should invalidate any internal
+        cache used by the finder. Used by :func:`invalidate_caches()` when
+        invalidating the caches of all cached finders.
 
 
 .. class:: Loader

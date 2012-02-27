@@ -143,6 +143,13 @@ class FinderTests(abc.FinderTests):
         finally:
             os.unlink('mod.py')
 
+    def test_invalidate_caches(self):
+        # invalidate_caches() should reset the mtime.
+        finder = _bootstrap._FileFinder('', _bootstrap._SourceFinderDetails())
+        finder._path_mtime = 42
+        finder.invalidate_caches()
+        self.assertEqual(finder._path_mtime, -1)
+
 
 def test_main():
     from test.support import run_unittest
