@@ -540,7 +540,7 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = PyBytes_AS_STRING(format);
 #endif
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
     /* check that the format string contains only valid directives */
     for(outbuf = strchr(fmt, '%');
         outbuf != NULL;
@@ -552,7 +552,8 @@ time_strftime(PyObject *self, PyObject *args)
             !strchr("aAbBcdHIjmMpSUwWxXyYzZ%", outbuf[1]))
         {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            return 0;
+            Py_DECREF(format);
+            return NULL;
         }
     }
 #endif
