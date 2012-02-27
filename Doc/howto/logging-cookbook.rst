@@ -1092,6 +1092,88 @@ string. That's because the __ notation is just syntax sugar for a constructor
 call to one of the XXXMessage classes.
 
 
+.. currentmodule:: logging
+
+.. custom-logrecord:
+
+Customising ``LogRecord``
+-------------------------
+
+Every logging event is represented by a :class:`LogRecord` instance.
+When an event is logged and not filtered out by a logger's level, a
+:class:`LogRecord` is created, populated with information about the event and
+then passed to the handlers for that logger (and its ancestors, up to and
+including the logger where further propagation up the hierarchy is disabled).
+Before Python 3.2, there were only two places where this creation was done:
+
+* :meth:`Logger.makeRecord`, which is called in the normal process of
+  logging an event. This invoked :class:`LogRecord` directly to create an
+  instance.
+* :func:`makeLogRecord`, which is called with a dictionary containing
+  attributes to be added to the LogRecord. This is typically invoked when a
+  suitable dictionary has been received over the network (e.g. in pickle form
+  via a :class:`~handlers.SocketHandler`, or in JSON form via an
+  :class:`~handlers.HTTPHandler`).
+
+This has usually meant that if you need to do anything special with a
+:class:`LogRecord`, you've had to do one of the following.
+
+* Create your own :class:`Logger` subclass, which overrides
+  :meth:`Logger.makeRecord`, and set it using :func:`~logging.setLoggerClass`
+  before any loggers that you care about are instantiated.
+* Add a :class:`Filter` to a logger or handler, which does the
+  necessary special manipulation you need when its
+  :meth:`~Filter.filter` method is called.
+
+The first approach would be a little unwieldy in the scenario where (say)
+several different libraries wanted to do different things. Each would attempt
+to set its own :class:`Logger` subclass, and the one which did this last would
+win.
+
+The second approach works reasonably well for many cases, but does not allow
+you to e.g. use a specialized subclass of :class:`LogRecord`. Library
+developers can set a suitable filter on their loggers, but they would have to
+remember to do this every time they introduced a new logger (which they would
+do simply by adding new packages or modules and doing
+
+.. code-block:: python
+
+   logger = logging.getLogger(__name__)
+
+at module level). It's probably one too many things to think about. Developers
+could also add the filter to a :class:`~logging.NullHandler` attached to their
+top-level logger, but this would not be invoked if an application developer
+attached a handler to a lower-level library logger – so output from that
+handler would not reflect the intentions of the library developer.
+
+In Python 3.2 and later, :class:`~logging.LogRecord` creation is done through a
+factory, which you can specify. The factory is just a callable you can set with
+:func:`~logging.setLogRecordFactory`, and interrogate with
+:func:`~logging.getLogRecordFactory`. The factory is invoked with the same
+signature as the :class:`~logging.LogRecord` constructor, as :class:`LogRecord`
+is the default setting for the factory.
+
+This approach allows a custom factory to control all aspects of LogRecord
+creation. For example, you could return a subclass, or just add some additional
+attributes to the record once created, using a pattern similar to this::
+
+    old_factory = logging.getLogRecordFactory()
+
+    def record_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        record.custom_attribute = 0xdecafbad
+        return record
+
+    logging.setLogRecordFactory(record_factory)
+
+This pattern allows different libraries to chain factories together, and as
+long as they don't overwrite each other's attributes or unintentionally
+overwrite the attributes provided as standard, there should be no surprises.
+However, it should be borne in mind that each link in the chain adds run-time
+overhead to all logging operations, and the technique should only be used when
+the use of a :class:`Filter` does not provide the desired result.
+
+
 .. _zeromq-handlers:
 
 Subclassing QueueHandler - a ZeroMQ example
