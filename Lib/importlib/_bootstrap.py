@@ -160,17 +160,6 @@ code_type = type(_wrap.__code__)
 
 # Finder/loader utility code ##################################################
 
-_cache_refresh = 0
-
-def invalidate_caches():
-    """Invalidate importlib's internal caches.
-
-    Calling this function may be needed if some modules are installed while
-    your program is running and you expect the program to notice the changes.
-    """
-    global _cache_refresh
-    _cache_refresh += 1
-
 
 def set_package(fxn):
     """Set __package__ on the returned module."""
@@ -768,7 +757,10 @@ class _FileFinder:
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
-        self._cache_refresh = 0
+
+    def invalidate_caches(self):
+        """Invalidate the directory mtime."""
+        self._path_mtime = -1
 
     def find_module(self, fullname):
         """Try to find a loader for the specified module."""
@@ -777,10 +769,9 @@ class _FileFinder:
             mtime = _os.stat(self.path).st_mtime
         except OSError:
             mtime = -1
-        if mtime != self._path_mtime or _cache_refresh != self._cache_refresh:
+        if mtime != self._path_mtime:
             self._fill_cache()
             self._path_mtime = mtime
-            self._cache_refresh = _cache_refresh
         # tail_module keeps the original casing, for __file__ and friends
         if _relax_case():
             cache = self._relaxed_path_cache

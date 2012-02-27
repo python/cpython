@@ -84,6 +84,34 @@ class ImportModuleTests(unittest.TestCase):
                 importlib.import_module('a.b')
         self.assertEqual(b_load_count, 1)
 
+
+class InvalidateCacheTests(unittest.TestCase):
+
+    def test_method_called(self):
+        # If defined the method should be called.
+        class InvalidatingNullFinder:
+            def __init__(self, *ignored):
+                self.called = False
+            def find_module(self, *args):
+                return None
+            def invalidate_caches(self):
+                self.called = True
+
+        key = 'gobledeegook'
+        ins = InvalidatingNullFinder()
+        sys.path_importer_cache[key] = ins
+        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        importlib.invalidate_caches()
+        self.assertTrue(ins.called)
+
+    def test_method_lacking(self):
+        # There should be no issues if the method is not defined.
+        key = 'gobbledeegook'
+        sys.path_importer_cache[key] = imp.NullImporter('abc')
+        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        importlib.invalidate_caches()  # Shouldn't trigger an exception.
+
+
 def test_main():
     from test.support import run_unittest
     run_unittest(ImportModuleTests)
