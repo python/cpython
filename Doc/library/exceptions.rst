@@ -41,7 +41,7 @@ include the originating exception(s) and the final exception.
 
 This implicit exception chain can be made explicit by using :keyword:`from`
 with :keyword:`raise`.  The single argument to :keyword:`from` must be an
-exception or :const:`None`, and it will bet set as :attr:`__cause__` on the
+exception or :const:`None`, and it will be set as :attr:`__cause__` on the
 raised exception.  If :attr:`__cause__` is an exception it will be displayed
 instead of :attr:`__context__`; if :attr:`__cause__` is None,
 :attr:`__context__` will not be displayed by the default exception handling
