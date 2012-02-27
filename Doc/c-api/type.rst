@@ -75,7 +75,8 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   XXX: Document.
+   Generic handler for the :attr:`tp_new` slot of a type object.  Initialize
+   all instance variables to *NULL*.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
