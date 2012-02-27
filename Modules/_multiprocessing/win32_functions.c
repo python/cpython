@@ -708,9 +708,12 @@ win32_WaitForMultipleObjects(PyObject* self, PyObject* args)
         PyObject *v = PySequence_GetItem(handle_seq, i);
         if (v == NULL)
             return NULL;
-        if (!PyArg_Parse(v, F_HANDLE, &h))
+        if (!PyArg_Parse(v, F_HANDLE, &h)) {
+            Py_DECREF(v);
             return NULL;
+        }
         handles[i] = h;
+        Py_DECREF(v);
     }
     /* If this is the main thread then make the wait interruptible
        by Ctrl-C unless we are waiting for *all* handles */
