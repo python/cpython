@@ -127,6 +127,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13125: Silence spurious test_lib2to3 output when in non-verbose mode.
+  Patch by Mikhail Novikov.
+
 - Issue #13447: Add a test file to host regression tests for bugs in the
   scripts found in the Tools directory.
 
