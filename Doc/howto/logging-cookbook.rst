@@ -972,12 +972,13 @@ Use of alternative formatting styles
 When logging was added to the Python standard library, the only way of
 formatting messages with variable content was to use the %-formatting
 method. Since then, Python has gained two new formatting approaches:
-string.Template (added in Python 2.4) and str.format (added in Python 2.6).
+:class:`string.Template` (added in Python 2.4) and :meth:`str.format`
+(added in Python 2.6).
 
-Logging now (as of 3.2) provides improved support for these two additional
-formatting styles. The :class:`Formatter` class been enhanced for Python 3.2 to
-take an additional, optional keyword parameter named ``style``. This defaults
-to ``'%'``, but other possible values are ``'{'`` and ``'$'``, which correspond
+Logging (as of 3.2) provides improved support for these two additional
+formatting styles. The :class:`Formatter` class been enhanced to take an
+additional, optional keyword parameter named ``style``. This defaults to
+``'%'``, but other possible values are ``'{'`` and ``'$'``, which correspond
 to the other two formatting styles. Backwards compatibility is maintained by
 default (as you would expect), but by explicitly specifying a style parameter,
 you get the ability to specify format strings which work with
@@ -1068,7 +1069,7 @@ they're declared in a module called ``wherever``):
 .. code-block:: pycon
 
     >>> from wherever import BraceMessage as __
-    >>> print(__('Message with {0} {1}', 2, 'placeholders'))
+    >>> print(__('Message with {0} {name}', 2, name='placeholders'))
     Message with 2 placeholders
     >>> class Point: pass
     ...
@@ -1082,6 +1083,10 @@ they're declared in a module called ``wherever``):
     >>> print(__('Message with $num $what', num=2, what='placeholders'))
     Message with 2 placeholders
     >>>
+
+While the above examples use ``print()`` to show how the formatting works, you
+would of course use ``logger.debug()`` or similar to actually log using this
+approach.
 
 One thing to note is that you pay no significant performance penalty with this
 approach: the actual formatting happens not when you make the logging call, but
