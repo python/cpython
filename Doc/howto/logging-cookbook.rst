@@ -1094,7 +1094,7 @@ call to one of the XXXMessage classes.
 
 .. currentmodule:: logging
 
-.. custom-logrecord:
+.. _custom-logrecord:
 
 Customising ``LogRecord``
 -------------------------
@@ -1134,9 +1134,7 @@ The second approach works reasonably well for many cases, but does not allow
 you to e.g. use a specialized subclass of :class:`LogRecord`. Library
 developers can set a suitable filter on their loggers, but they would have to
 remember to do this every time they introduced a new logger (which they would
-do simply by adding new packages or modules and doing
-
-.. code-block:: python
+do simply by adding new packages or modules and doing ::
 
    logger = logging.getLogger(__name__)
 
