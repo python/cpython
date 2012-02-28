@@ -2,27 +2,28 @@
 
 .. _cporting-howto:
 
-********************************
-Porting Extension Modules to 3.0
-********************************
+*************************************
+Porting Extension Modules to Python 3
+*************************************
 
 :author: Benjamin Peterson
 
 
 .. topic:: Abstract
 
-   Although changing the C-API was not one of Python 3.0's objectives, the many
-   Python level changes made leaving 2.x's API intact impossible.  In fact, some
-   changes such as :func:`int` and :func:`long` unification are more obvious on
-   the C level.  This document endeavors to document incompatibilities and how
-   they can be worked around.
+   Although changing the C-API was not one of Python 3's objectives,
+   the many Python-level changes made leaving Python 2's API intact
+   impossible.  In fact, some changes such as :func:`int` and
+   :func:`long` unification are more obvious on the C level.  This
+   document endeavors to document incompatibilities and how they can
+   be worked around.
 
 
 Conditional compilation
 =======================
 
-The easiest way to compile only some code for 3.0 is to check if
-:c:macro:`PY_MAJOR_VERSION` is greater than or equal to 3. ::
+The easiest way to compile only some code for Python 3 is to check
+if :c:macro:`PY_MAJOR_VERSION` is greater than or equal to 3. ::
 
    #if PY_MAJOR_VERSION >= 3
    #define IS_PY3K
@@ -35,7 +36,7 @@ conditional blocks.
 Changes to Object APIs
 ======================
 
-Python 3.0 merged together some types with similar functions while cleanly
+Python 3 merged together some types with similar functions while cleanly
 separating others.
 
 
@@ -43,14 +44,14 @@ str/unicode Unification
 -----------------------
 
 
-Python 3.0's :func:`str` (``PyString_*`` functions in C) type is equivalent to
-2.x's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has become
-:func:`bytes`.  Python 2.6 and later provide a compatibility header,
+Python 3's :func:`str` (``PyString_*`` functions in C) type is equivalent to
+Python 2's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has
+become :func:`bytes`.  Python 2.6 and later provide a compatibility header,
 :file:`bytesobject.h`, mapping ``PyBytes`` names to ``PyString`` ones.  For best
-compatibility with 3.0, :c:type:`PyUnicode` should be used for textual data and
+compatibility with Python 3, :c:type:`PyUnicode` should be used for textual data and
 :c:type:`PyBytes` for binary data.  It's also important to remember that
-:c:type:`PyBytes` and :c:type:`PyUnicode` in 3.0 are not interchangeable like
-:c:type:`PyString` and :c:type:`PyUnicode` are in 2.x.  The following example
+:c:type:`PyBytes` and :c:type:`PyUnicode` in Python 3 are not interchangeable like
+:c:type:`PyString` and :c:type:`PyUnicode` are in Python 2.  The following example
 shows best practices with regards to :c:type:`PyUnicode`, :c:type:`PyString`,
 and :c:type:`PyBytes`. ::
 
@@ -94,10 +95,12 @@ and :c:type:`PyBytes`. ::
 long/int Unification
 --------------------
 
-In Python 3.0, there is only one integer type.  It is called :func:`int` on the
-Python level, but actually corresponds to 2.x's :func:`long` type.  In the
-C-API, ``PyInt_*`` functions are replaced by their ``PyLong_*`` neighbors.  The
-best course of action here is using the ``PyInt_*`` functions aliased to
+Python 3 has only one integer type, :func:`int`.  But it actually
+corresponds to Python 2's :func:`long` type--the :func:`int` type
+used in Python 2 was removed.  In the C-API, ``PyInt_*`` functions
+are replaced by their ``PyLong_*`` equivalents.
+
+The best course of action here is using the ``PyInt_*`` functions aliased to
 ``PyLong_*`` found in :file:`intobject.h`.  The abstract ``PyNumber_*`` APIs
 can also be used in some cases. ::
 
@@ -120,10 +123,11 @@ can also be used in some cases. ::
 Module initialization and state
 ===============================
 
-Python 3.0 has a revamped extension module initialization system.  (See
-:pep:`3121`.)  Instead of storing module state in globals, they should be stored
-in an interpreter specific structure.  Creating modules that act correctly in
-both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::
+Python 3 has a revamped extension module initialization system.  (See
+:pep:`3121`.)  Instead of storing module state in globals, they should
+be stored in an interpreter specific structure.  Creating modules that
+act correctly in both Python 2 and Python 3 is tricky.  The following
+simple example demonstrates how. ::
 
    #include "Python.h"
 
@@ -223,15 +227,18 @@ If you're currently using CObjects, and you want to migrate to 3.1 or newer,
 you'll need to switch to Capsules.
 :c:type:`CObject` was deprecated in 3.1 and 2.7 and completely removed in
 Python 3.2.  If you only support 2.7, or 3.1 and above, you
-can simply switch to :c:type:`Capsule`.  If you need to support 3.0 or
-versions of Python earlier than 2.7 you'll have to support both CObjects
-and Capsules.
+can simply switch to :c:type:`Capsule`.  If you need to support Python 3.0,
+or versions of Python earlier than 2.7,
+you'll have to support both CObjects and Capsules.
+(Note that Python 3.0 is no longer supported, and it is not recommended
+for production use.)
 
 The following example header file :file:`capsulethunk.h` may
-solve the problem for you;
-simply write your code against the :c:type:`Capsule` API, include
-this header file after ``"Python.h"``, and you'll automatically use CObjects
-in Python 3.0 or versions earlier than 2.7.
+solve the problem for you.  Simply write your code against the
+:c:type:`Capsule` API and include this header file after
+:file:`Python.h`.  Your code will automatically use Capsules
+in versions of Python with Capsules, and switch to CObjects
+when Capsules are unavailable.
 
 :file:`capsulethunk.h` simulates Capsules using CObjects.  However,
 :c:type:`CObject` provides no place to store the capsule's "name".  As a
@@ -266,5 +273,5 @@ Other options
 
 If you are writing a new extension module, you might consider `Cython
 <http://www.cython.org>`_.  It translates a Python-like language to C.  The
-extension modules it creates are compatible with Python 3.x and 2.x.
+extension modules it creates are compatible with Python 3 and Python 2.
 
