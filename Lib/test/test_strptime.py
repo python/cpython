@@ -38,9 +38,9 @@ class LocaleTime_Tests(unittest.TestCase):
         comparison = testing[self.time_tuple[tuple_position]]
         self.assertIn(strftime_output, testing,
                       "%s: not found in tuple" % error_msg)
-        self.assertTrue(comparison == strftime_output,
-                        "%s: position within tuple incorrect; %s != %s" %
-                        (error_msg, comparison, strftime_output))
+        self.assertEqual(comparison, strftime_output,
+                         "%s: position within tuple incorrect; %s != %s" %
+                         (error_msg, comparison, strftime_output))
 
     def test_weekday(self):
         # Make sure that full and abbreviated weekday names are correct in
@@ -65,8 +65,8 @@ class LocaleTime_Tests(unittest.TestCase):
                       "AM/PM representation not in tuple")
         if self.time_tuple[3] < 12: position = 0
         else: position = 1
-        self.assertTrue(strftime_output == self.LT_ins.am_pm[position],
-                        "AM/PM representation in the wrong position within the tuple")
+        self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
+                         "AM/PM representation in the wrong position within the tuple")
 
     def test_timezone(self):
         # Make sure timezone is correct
@@ -165,8 +165,8 @@ class TimeRETests(unittest.TestCase):
         # Fixes bug #661354
         test_locale = _strptime.LocaleTime()
         test_locale.timezone = (frozenset(), frozenset())
-        self.assertTrue(_strptime.TimeRE(test_locale).pattern("%Z") == '',
-                        "with timezone == ('',''), TimeRE().pattern('%Z') != ''")
+        self.assertEqual(_strptime.TimeRE(test_locale).pattern("%Z"), '',
+                         "with timezone == ('',''), TimeRE().pattern('%Z') != ''")
 
     def test_matching_with_escapes(self):
         # Make sure a format that requires escaping of characters works
@@ -192,7 +192,7 @@ class TimeRETests(unittest.TestCase):
         # so as to not allow to subpatterns to end up next to each other and
         # "steal" characters from each other.
         pattern = self.time_re.pattern('%j %H')
-        self.assertTrue(not re.match(pattern, "180"))
+        self.assertFalse(re.match(pattern, "180"))
         self.assertTrue(re.match(pattern, "18 0"))
 
 
