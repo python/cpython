@@ -3680,6 +3680,10 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             files = [f for f in os.listdir(dn) if f.startswith(fn)]
             print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"), file=sys.stderr)
             print('The only matching files are: %s' % files, file=sys.stderr)
+            for f in files:
+                print('Contents of %s:' % f)
+                with open(f, 'r') as tf:
+                    print(tf.read())
         self.assertTrue(found, msg=msg)
 
     def test_invalid(self):
