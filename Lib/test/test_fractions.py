@@ -6,6 +6,7 @@ import math
 import numbers
 import operator
 import fractions
+import sys
 import unittest
 from copy import copy, deepcopy
 from cPickle import dumps, loads
@@ -87,6 +88,9 @@ class DummyRational(object):
     # Silence Py3k warning
     __hash__ = None
 
+
+class DummyFraction(fractions.Fraction):
+    """Dummy Fraction subclass for copy and deepcopy testing."""
 
 class GcdTest(unittest.TestCase):
 
@@ -301,11 +305,15 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(201, 200).limit_denominator(100), F(1))
         self.assertEqual(F(201, 200).limit_denominator(101), F(102, 101))
         self.assertEqual(F(0).limit_denominator(10000), F(0))
+        for i in (0, -1):
+            self.assertRaisesMessage(
+                ValueError, "max_denominator should be at least 1",
+                F(1).limit_denominator, i)
 
     def testConversions(self):
         self.assertTypedEquals(-1, math.trunc(F(-11, 10)))
         self.assertTypedEquals(-1, int(F(-11, 10)))
-
+        self.assertTypedEquals(1, math.trunc(F(11, 10)))
         self.assertEqual(False, bool(F(0, 1)))
         self.assertEqual(True, bool(F(3, 2)))
         self.assertTypedEquals(0.1, float(F(1, 10)))
@@ -330,6 +338,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(8, 27), F(2, 3) ** F(3))
         self.assertEqual(F(27, 8), F(2, 3) ** F(-3))
         self.assertTypedEquals(2.0, F(4) ** F(1, 2))
+        self.assertEqual(F(1, 1), +F(1, 1))
         # Will return 1j in 3.0:
         self.assertRaises(ValueError, pow, F(-1), F(1, 2))
 
@@ -394,6 +403,10 @@ class FractionTest(unittest.TestCase):
             TypeError,
             "unsupported operand type(s) for +: 'Fraction' and 'Decimal'",
             operator.add, F(3,11), Decimal('3.1415926'))
+        self.assertRaisesMessage(
+            TypeError,
+            "unsupported operand type(s) for +: 'Decimal' and 'Fraction'",
+            operator.add, Decimal('3.1415926'), F(3,11))
         self.assertNotEqual(F(5, 2), Decimal('2.5'))
 
     def testComparisons(self):
@@ -571,9 +584,14 @@ class FractionTest(unittest.TestCase):
 
     def test_copy_deepcopy_pickle(self):
         r = F(13, 7)
+        dr = DummyFraction(13, 7)
         self.assertEqual(r, loads(dumps(r)))
         self.assertEqual(id(r), id(copy(r)))
         self.assertEqual(id(r), id(deepcopy(r)))
+        self.assertNotEqual(id(dr), id(copy(dr)))
+        self.assertNotEqual(id(dr), id(deepcopy(dr)))
+        self.assertTypedEquals(dr, copy(dr))
+        self.assertTypedEquals(dr, deepcopy(dr))
 
     def test_slots(self):
         # Issue 4998
