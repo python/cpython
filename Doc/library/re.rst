@@ -325,14 +325,19 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    Matches the empty string, but only at the beginning or end of a word.  A word is
    defined as a sequence of alphanumeric or underscore characters, so the end of a
    word is indicated by whitespace or a non-alphanumeric, non-underscore character.
-   Note that  ``\b`` is defined as the boundary between ``\w`` and ``\W``, so the
-   precise set of characters deemed to be alphanumeric depends on the values of the
-   ``UNICODE`` and ``LOCALE`` flags.  Inside a character range, ``\b`` represents
-   the backspace character, for compatibility with Python's string literals.
+   Note that formally, ``\b`` is defined as the boundary between a ``\w`` and
+   a ``\W`` character (or vice versa), or between ``\w`` and the beginning/end
+   of the string, so the precise set of characters deemed to be alphanumeric
+   depends on the values of the ``UNICODE`` and ``LOCALE`` flags.
+   For example, ``r'\bfoo\b'`` matches ``'foo'``, ``'foo.'``, ``'(foo)'``,
+   ``'bar foo baz'`` but not ``'foobar'`` or ``'foo3'``.
+   Inside a character range, ``\b`` represents the backspace character, for compatibility with Python's string literals.
 
 ``\B``
    Matches the empty string, but only when it is *not* at the beginning or end of a
-   word.  This is just the opposite of ``\b``, so is also subject to the settings
+   word.  This means that ``r'py\B'`` matches ``'python'``, ``'py3'``, ``'py2'``,
+   but not ``'py'``, ``'py.'``, or ``'py!'``.
+   ``\B`` is just the opposite of ``\b``, so is also subject to the settings
    of ``LOCALE`` and ``UNICODE``.
 
 ``\d``
