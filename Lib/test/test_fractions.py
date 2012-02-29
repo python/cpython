@@ -6,6 +6,7 @@ import math
 import numbers
 import operator
 import fractions
+import sys
 import unittest
 from copy import copy, deepcopy
 from pickle import dumps, loads
@@ -75,6 +76,9 @@ class DummyRational(object):
     # should never be used for a comparison, since it loses accuracy
     def __float__(self):
         assert False, "__float__ should not be invoked"
+
+class DummyFraction(fractions.Fraction):
+    """Dummy Fraction subclass for copy and deepcopy testing."""
 
 class GcdTest(unittest.TestCase):
 
@@ -286,9 +290,14 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(201, 200).limit_denominator(100), F(1))
         self.assertEqual(F(201, 200).limit_denominator(101), F(102, 101))
         self.assertEqual(F(0).limit_denominator(10000), F(0))
+        for i in (0, -1):
+            self.assertRaisesMessage(
+                ValueError, "max_denominator should be at least 1",
+                F(1).limit_denominator, i)
 
     def testConversions(self):
         self.assertTypedEquals(-1, math.trunc(F(-11, 10)))
+        self.assertTypedEquals(1, math.trunc(F(11, 10)))
         self.assertTypedEquals(-2, math.floor(F(-11, 10)))
         self.assertTypedEquals(-1, math.ceil(F(-11, 10)))
         self.assertTypedEquals(-1, math.ceil(F(-10, 10)))
@@ -329,6 +338,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(8, 27), F(2, 3) ** F(3))
         self.assertEqual(F(27, 8), F(2, 3) ** F(-3))
         self.assertTypedEquals(2.0, F(4) ** F(1, 2))
+        self.assertEqual(F(1, 1), +F(1, 1))
         z = pow(F(-1), F(1, 2))
         self.assertAlmostEqual(z.real, 0)
         self.assertEqual(z.imag, 1)
@@ -395,6 +405,10 @@ class FractionTest(unittest.TestCase):
             TypeError,
             "unsupported operand type(s) for +: 'Fraction' and 'Decimal'",
             operator.add, F(3,11), Decimal('3.1415926'))
+        self.assertRaisesMessage(
+            TypeError,
+            "unsupported operand type(s) for +: 'Decimal' and 'Fraction'",
+            operator.add, Decimal('3.1415926'), F(3,11))
 
     def testComparisons(self):
         self.assertTrue(F(1, 2) < F(2, 3))
@@ -538,9 +552,12 @@ class FractionTest(unittest.TestCase):
         self.assertEqual("7", str(F(7, 1)))
 
     def testHash(self):
+        hmod = sys.hash_info.modulus
+        hinf = sys.hash_info.inf
         self.assertEqual(hash(2.5), hash(F(5, 2)))
         self.assertEqual(hash(10**50), hash(F(10**50)))
         self.assertNotEqual(hash(float(10**23)), hash(F(10**23)))
+        self.assertEqual(hinf, hash(F(1, hmod)))
         # Check that __hash__ produces the same value as hash(), for
         # consistency with int and Decimal.  (See issue #10356.)
         self.assertEqual(hash(F(-1)), F(-1).__hash__())
@@ -574,9 +591,14 @@ class FractionTest(unittest.TestCase):
 
     def test_copy_deepcopy_pickle(self):
         r = F(13, 7)
+        dr = DummyFraction(13, 7)
         self.assertEqual(r, loads(dumps(r)))
         self.assertEqual(id(r), id(copy(r)))
         self.assertEqual(id(r), id(deepcopy(r)))
+        self.assertNotEqual(id(dr), id(copy(dr)))
+        self.assertNotEqual(id(dr), id(deepcopy(dr)))
+        self.assertTypedEquals(dr, copy(dr))
+        self.assertTypedEquals(dr, deepcopy(dr))
 
     def test_slots(self):
         # Issue 4998
