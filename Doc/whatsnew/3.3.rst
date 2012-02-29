@@ -102,6 +102,7 @@ API changes
   now returns an integer (in accordance with the struct module syntax).
   For returning a bytes object the view must be cast to 'c' first.
 
+* For further changes see `Build and C API Changes`_ and `Porting C code`_ .
 
 .. _pep-393:
 
@@ -1048,6 +1049,14 @@ Porting Python code
 
 Porting C code
 --------------
+
+* In the course of changes to the buffer API the undocumented
+  :c:member:`~Py_buffer.smalltable` member of the
+  :c:type:`Py_buffer` structure has been removed and the
+  layout of the :c:type:`PyMemoryViewObject` has changed.
+
+  All extensions relying on the relevant parts in ``memoryobject.h``
+  or ``object.h`` must be rebuilt.
 
 * Due to :ref:`PEP 393 <pep-393>`, the :c:type:`Py_UNICODE` type and all
   functions using this type are deprecated (but will stay available for
