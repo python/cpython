@@ -906,6 +906,10 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
+* New :pep:`3118` related function:
+
+  * :c:func:`PyMemoryView_FromMemory`
+
 * The :pep:`393` added new Unicode types, macros and functions:
 
   * High-level API:
