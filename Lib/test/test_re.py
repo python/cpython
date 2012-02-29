@@ -373,6 +373,32 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a", re.UNICODE).group(0), "1aa! a")
 
+    def test_string_boundaries(self):
+        # See http://bugs.python.org/issue10713
+        self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1),
+                         "abc")
+        # There's a word boundary at the start of a string.
+        self.assertTrue(re.match(r"\b", "abc"))
+        # A non-empty string includes a non-boundary zero-length match.
+        self.assertTrue(re.search(r"\B", "abc"))
+        # There is no non-boundary match at the start of a string.
+        self.assertFalse(re.match(r"\B", "abc"))
+        # However, an empty string contains no word boundaries, and also no
+        # non-boundaries.
+        self.assertEqual(re.search(r"\B", ""), None)
+        # This one is questionable and different from the perlre behaviour,
+        # but describes current behavior.
+        self.assertEqual(re.search(r"\b", ""), None)
+        # A single word-character string has two boundaries, but no
+        # non-boundary gaps.
+        self.assertEqual(len(re.findall(r"\b", "a")), 2)
+        self.assertEqual(len(re.findall(r"\B", "a")), 0)
+        # If there are no words, there are no boundaries
+        self.assertEqual(len(re.findall(r"\b", " ")), 0)
+        self.assertEqual(len(re.findall(r"\b", "   ")), 0)
+        # Can match around the whitespace.
+        self.assertEqual(len(re.findall(r"\B", " ")), 2)
+
     def test_bigcharset(self):
         self.assertEqual(re.match(u"([\u2222\u2223])",
                                   u"\u2222").group(1), u"\u2222")
