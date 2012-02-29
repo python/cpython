@@ -9326,35 +9326,11 @@ static PyObject *
 device_encoding(PyObject *self, PyObject *args)
 {
     int fd;
-#if defined(MS_WINDOWS) || defined(MS_WIN64)
-    UINT cp;
-#endif
+
     if (!PyArg_ParseTuple(args, "i:device_encoding", &fd))
         return NULL;
-    if (!_PyVerify_fd(fd) || !isatty(fd)) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-#if defined(MS_WINDOWS) || defined(MS_WIN64)
-    if (fd == 0)
-        cp = GetConsoleCP();
-    else if (fd == 1 || fd == 2)
-        cp = GetConsoleOutputCP();
-    else
-        cp = 0;
-    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
-       has no console */
-    if (cp != 0)
-        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
-    {
-        char *codeset = nl_langinfo(CODESET);
-        if (codeset != NULL && codeset[0] != 0)
-            return PyUnicode_FromString(codeset);
-    }
-#endif
-    Py_INCREF(Py_None);
-    return Py_None;
+
+    return _Py_device_encoding(fd);
 }
 
 #ifdef __VMS

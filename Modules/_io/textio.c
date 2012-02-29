@@ -14,7 +14,6 @@
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(decode);
-_Py_IDENTIFIER(device_encoding);
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(getpreferredencoding);
@@ -875,9 +874,13 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
             }
         }
         else {
-            self->encoding = _PyObject_CallMethodId(state->os_module,
-                                                    &PyId_device_encoding,
-                                                    "N", fileno);
+            int fd = (int) PyLong_AsLong(fileno);
+            Py_DECREF(fileno);
+            if (fd == -1 && PyErr_Occurred()) {
+                goto error;
+            }
+
+            self->encoding = _Py_device_encoding(fd);
             if (self->encoding == NULL)
                 goto error;
             else if (!PyUnicode_Check(self->encoding))
