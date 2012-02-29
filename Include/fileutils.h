@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
+
 PyAPI_FUNC(wchar_t *) _Py_char2wchar(
     const char *arg,
     size_t *size);

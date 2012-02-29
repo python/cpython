@@ -50,8 +50,8 @@ extern PyObject *_PyIncrementalNewlineDecoder_decode(
    `*consumed`.
    If not found, returns -1 and sets `*consumed` to the number of characters
    which can be safely put aside until another search.
-   
-   NOTE: for performance reasons, `end` must point to a NUL character ('\0'). 
+
+   NOTE: for performance reasons, `end` must point to a NUL character ('\0').
    Otherwise, the function will scan further and return garbage. */
 extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
@@ -124,7 +124,6 @@ extern PyModuleDef _PyIO_Module;
 
 typedef struct {
     int initialized;
-    PyObject *os_module;
     PyObject *locale_module;
 
     PyObject *unsupported_operation;

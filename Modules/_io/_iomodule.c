@@ -1,9 +1,9 @@
 /*
     An implementation of the new I/O lib as defined by PEP 3116 - "New I/O"
-    
+
     Classes defined here: UnsupportedOperation, BlockingIOError.
     Functions defined here: open().
-    
+
     Mostly written by Amaury Forgeot d'Arc
 */
 
@@ -510,7 +510,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 
 
 /* Basically the "n" format code with the ability to turn None into -1. */
-int 
+int
 _PyIO_ConvertSsize_t(PyObject *obj, void *result) {
     Py_ssize_t limit;
     if (obj == Py_None) {
@@ -537,7 +537,6 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = IO_MOD_STATE(mod);
     if (!state->initialized)
         return 0;
-    Py_VISIT(state->os_module);
     if (state->locale_module != NULL) {
         Py_VISIT(state->locale_module);
     }
@@ -551,7 +550,6 @@ iomodule_clear(PyObject *mod) {
     _PyIO_State *state = IO_MOD_STATE(mod);
     if (!state->initialized)
         return 0;
-    Py_CLEAR(state->os_module);
     if (state->locale_module != NULL)
         Py_CLEAR(state->locale_module);
     Py_CLEAR(state->unsupported_operation);
@@ -594,11 +592,6 @@ PyInit__io(void)
         return NULL;
     state = IO_MOD_STATE(m);
     state->initialized = 0;
-
-    /* put os in the module state */
-    state->os_module = PyImport_ImportModule("os");
-    if (state->os_module == NULL)
-        goto fail;
 
 #define ADD_TYPE(type, name) \
     if (PyType_Ready(type) < 0) \
@@ -725,7 +718,6 @@ PyInit__io(void)
     return m;
 
   fail:
-    Py_XDECREF(state->os_module);
     Py_XDECREF(state->unsupported_operation);
     Py_DECREF(m);
     return NULL;
