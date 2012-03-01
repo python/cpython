@@ -1,8 +1,8 @@
 import sqlite3
+import string
 
 def char_generator():
-    import string
-    for c in string.letters[:26]:
+    for c in string.lowercase:
         yield (c,)
 
 con = sqlite3.connect(":memory:")
