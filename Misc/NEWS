@@ -127,6 +127,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14159: Fix the len() of weak containers (WeakSet, WeakKeyDictionary,
+  WeakValueDictionary) to return a better approximation when some objects
+  are dead or dying.  Moreover, the implementation is now O(1) rather than
+  O(n).
+
 - Issue #13125: Silence spurious test_lib2to3 output when in non-verbose mode.
   Patch by Mikhail Novikov.
 
