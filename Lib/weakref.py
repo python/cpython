@@ -78,7 +78,7 @@ class WeakValueDictionary(collections.MutableMapping):
         del self.data[key]
 
     def __len__(self):
-        return sum(wr() is not None for wr in self.data.values())
+        return len(self.data) - len(self._pending_removals)
 
     def __contains__(self, key):
         try:
@@ -290,7 +290,7 @@ class WeakKeyDictionary(collections.MutableMapping):
         return self.data[ref(key)]
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) - len(self._pending_removals)
 
     def __repr__(self):
         return "<WeakKeyDictionary at %s>" % id(self)
