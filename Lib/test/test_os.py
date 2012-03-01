@@ -1433,8 +1433,8 @@ class DeviceEncodingTests(unittest.TestCase):
         # Return None when an fd doesn't actually exist.
         self.assertIsNone(os.device_encoding(123456))
 
-    @unittest.skipUnless(sys.platform.startswith('win') or
-            (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET')),
+    @unittest.skipUnless(os.isatty(0) and (sys.platform.startswith('win') or
+            (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
         encoding = os.device_encoding(0)
