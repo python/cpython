@@ -3,7 +3,7 @@
 
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
-.. sectionauthor:: Gerhard HÃ¤ring <gh@ghaering.de>
+.. sectionauthor:: Gerhard Häring <gh@ghaering.de>
 
 
 SQLite is a C library that provides a lightweight disk-based database that
@@ -20,6 +20,7 @@ To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
 :file:`/tmp/example` file::
 
+   import sqlite3
    conn = sqlite3.connect('/tmp/example')
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
@@ -56,7 +57,7 @@ example::
 
    # Never do this -- insecure!
    symbol = 'IBM'
-   c.execute("... where symbol = '%s'" % symbol)
+   c.execute("select * from stocks where symbol = '%s'" % symbol)
 
    # Do this instead
    t = (symbol,)
@@ -64,7 +65,7 @@ example::
 
    # Larger example
    for t in [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-             ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+             ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
              ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
             ]:
        c.execute('insert into stocks values (?,?,?,?,?)', t)
@@ -271,7 +272,6 @@ Connection Objects
    calling the cursor method, then calls the cursor's :meth:`executemany
    <Cursor.executemany>` method with the parameters given.
 
-
 .. method:: Connection.executescript(sql_script)
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
@@ -392,11 +392,11 @@ Connection Objects
    aggregates or whole new virtual table implementations.  One well-known
    extension is the fulltext-search extension distributed with SQLite.
 
+   Loadable extensions are disabled by default. See [#f1]_.
+
    .. versionadded:: 3.2
 
    .. literalinclude:: ../includes/sqlite3/load_extension.py
-
-   Loadable extensions are disabled by default. See [#f1]_.
 
 .. method:: Connection.load_extension(path)
 
@@ -404,9 +404,9 @@ Connection Objects
    enable extension loading with :meth:`enable_load_extension` before you can
    use this routine.
 
-   .. versionadded:: 3.2
-
    Loadable extensions are disabled by default. See [#f1]_.
+
+   .. versionadded:: 3.2
 
 .. attribute:: Connection.row_factory
 
