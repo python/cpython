@@ -66,6 +66,7 @@ The :mod:`shlex` module defines the following functions:
       >>> command
       ['ls', '-l', 'somefile; rm -rf ~']
 
+   .. versionadded:: 3.3
 
 The :mod:`shlex` module defines the following class:
 
