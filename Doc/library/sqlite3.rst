@@ -3,7 +3,7 @@
 
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
-.. sectionauthor:: Gerhard HÃ¤ring <gh@ghaering.de>
+.. sectionauthor:: Gerhard Häring <gh@ghaering.de>
 
 
 .. versionadded:: 2.5
@@ -82,7 +82,7 @@ This example uses the iterator form::
    >>> c = conn.cursor()
    >>> c.execute('select * from stocks order by price')
    >>> for row in c:
-   ...    print row
+   ...     print row
    ...
    (u'2006-01-05', u'BUY', u'RHAT', 100, 35.14)
    (u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
@@ -237,7 +237,6 @@ Connection Objects
    supplied, this must be a custom cursor class that extends
    :class:`sqlite3.Cursor`.
 
-
 .. method:: Connection.commit()
 
    This method commits the current transaction. If you don't call this method,
@@ -357,8 +356,6 @@ Connection Objects
 
 .. method:: Connection.set_progress_handler(handler, n)
 
-   .. versionadded:: 2.6
-
    This routine registers a callback. The callback is invoked for every *n*
    instructions of the SQLite virtual machine. This is useful if you want to
    get called from SQLite during long-running operations, for example to update
@@ -367,29 +364,31 @@ Connection Objects
    If you want to clear any previously installed progress handler, call the
    method with :const:`None` for *handler*.
 
+   .. versionadded:: 2.6
+
 
 .. method:: Connection.enable_load_extension(enabled)
-
-   .. versionadded:: 2.7
 
    This routine allows/disallows the SQLite engine to load SQLite extensions
    from shared libraries.  SQLite extensions can define new functions,
    aggregates or whole new virtual table implementations.  One well-known
    extension is the fulltext-search extension distributed with SQLite.
 
-   .. literalinclude:: ../includes/sqlite3/load_extension.py
-
-   Loadable extensions are disabled by default. See [#f1]_
-
-.. method:: Connection.load_extension(path)
+   Loadable extensions are disabled by default. See [#f1]_.
 
    .. versionadded:: 2.7
+
+   .. literalinclude:: ../includes/sqlite3/load_extension.py
+
+.. method:: Connection.load_extension(path)
 
    This routine loads a SQLite extension from a shared library.  You have to
    enable extension loading with :meth:`enable_load_extension` before you can
    use this routine.
 
-   Loadable extensions are disabled by default. See [#f1]_
+   Loadable extensions are disabled by default. See [#f1]_.
+
+   .. versionadded:: 2.7
 
 .. attribute:: Connection.row_factory
 
@@ -473,13 +472,9 @@ Cursor Objects
    kinds of placeholders: question marks (qmark style) and named placeholders
    (named style).
 
-   This example shows how to use parameters with qmark style:
+   Here's an example of both styles:
 
    .. literalinclude:: ../includes/sqlite3/execute_1.py
-
-   This example shows how to use the named style:
-
-   .. literalinclude:: ../includes/sqlite3/execute_2.py
 
    :meth:`execute` will only execute a single SQL statement. If you try to execute
    more than one statement with it, it will raise a Warning. Use
@@ -633,7 +628,8 @@ Now we plug :class:`Row` in::
    ['date', 'trans', 'symbol', 'qty', 'price']
    >>> r['qty']
    100.0
-   >>> for member in r: print member
+   >>> for member in r:
+   ...     print member
    ...
    2006-01-05
    BUY

@@ -613,7 +613,8 @@ Tests
 Documentation
 -------------
 
-- Issue #13995: Fix errors in sqlite3's Cursor.rowcount documentation
+- Issues #13491 and #13995: Fix many errors in sqlite3 documentation.
+  Initial patch for #13491 by Johannes Vogel.
 
 - Issue #13402: Document absoluteness of sys.executable.
 
