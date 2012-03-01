@@ -1435,7 +1435,7 @@ class DeviceEncodingTests(unittest.TestCase):
 
     @unittest.skipUnless(os.isatty(0) and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
-            'test requires either Windows or nl_langinfo(CODESET)')
+            'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
         encoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)
