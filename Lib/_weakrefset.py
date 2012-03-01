@@ -63,7 +63,7 @@ class WeakSet(object):
                     yield item
 
     def __len__(self):
-        return sum(x() is not None for x in self.data)
+        return len(self.data) - len(self._pending_removals)
 
     def __contains__(self, item):
         try:
