@@ -101,6 +101,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14159: Fix the len() of weak sets to return a better approximation
+  when some objects are dead or dying.  Moreover, the implementation is now
+  O(1) rather than O(n).
+
 - Issue #2945: Make the distutils upload command aware of bdist_rpm products.
 
 - Issue #13447: Add a test file to host regression tests for bugs in the

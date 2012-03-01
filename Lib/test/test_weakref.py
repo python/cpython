@@ -815,10 +815,70 @@ class Object:
     def __repr__(self):
         return "<Object %r>" % self.arg
 
+class RefCycle:
+    def __init__(self):
+        self.cycle = self
+
 
 class MappingTestCase(TestBase):
 
     COUNT = 10
+
+    def check_len_cycles(self, dict_type, cons):
+        N = 20
+        items = [RefCycle() for i in range(N)]
+        dct = dict_type(cons(o) for o in items)
+        # Keep an iterator alive
+        it = dct.iteritems()
+        try:
+            next(it)
+        except StopIteration:
+            pass
+        del items
+        gc.collect()
+        n1 = len(dct)
+        del it
+        gc.collect()
+        n2 = len(dct)
+        # one item may be kept alive inside the iterator
+        self.assertIn(n1, (0, 1))
+        self.assertEqual(n2, 0)
+
+    def test_weak_keyed_len_cycles(self):
+        self.check_len_cycles(weakref.WeakKeyDictionary, lambda k: (k, 1))
+
+    def test_weak_valued_len_cycles(self):
+        self.check_len_cycles(weakref.WeakValueDictionary, lambda k: (1, k))
+
+    def check_len_race(self, dict_type, cons):
+        # Extended sanity checks for len() in the face of cyclic collection
+        self.addCleanup(gc.set_threshold, *gc.get_threshold())
+        for th in range(1, 100):
+            N = 20
+            gc.collect(0)
+            gc.set_threshold(th, th, th)
+            items = [RefCycle() for i in range(N)]
+            dct = dict_type(cons(o) for o in items)
+            del items
+            # All items will be collected at next garbage collection pass
+            it = dct.iteritems()
+            try:
+                next(it)
+            except StopIteration:
+                pass
+            n1 = len(dct)
+            del it
+            n2 = len(dct)
+            self.assertGreaterEqual(n1, 0)
+            self.assertLessEqual(n1, N)
+            self.assertGreaterEqual(n2, 0)
+            self.assertLessEqual(n2, n1)
+
+    def test_weak_keyed_len_race(self):
+        self.check_len_race(weakref.WeakKeyDictionary, lambda k: (k, 1))
+
+    def test_weak_valued_len_race(self):
+        self.check_len_race(weakref.WeakValueDictionary, lambda k: (1, k))
 
     def test_weak_values(self):
         #

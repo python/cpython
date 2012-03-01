@@ -30,6 +30,10 @@ class SomeClass(object):
     def __hash__(self):
         return hash((SomeClass, self.value))
 
+class RefCycle(object):
+    def __init__(self):
+        self.cycle = self
+
 class TestWeakSet(unittest.TestCase):
 
     def setUp(self):
@@ -368,6 +372,49 @@ class TestWeakSet(unittest.TestCase):
         with testcontext() as u:
             s.clear()
         self.assertEqual(len(s), 0)
+
+    def test_len_cycles(self):
+        N = 20
+        items = [RefCycle() for i in range(N)]
+        s = WeakSet(items)
+        del items
+        it = iter(s)
+        try:
+            next(it)
+        except StopIteration:
+            pass
+        gc.collect()
+        n1 = len(s)
+        del it
+        gc.collect()
+        n2 = len(s)
+        # one item may be kept alive inside the iterator
+        self.assertIn(n1, (0, 1))
+        self.assertEqual(n2, 0)
+
+    def test_len_race(self):
+        # Extended sanity checks for len() in the face of cyclic collection
+        self.addCleanup(gc.set_threshold, *gc.get_threshold())
+        for th in range(1, 100):
+            N = 20
+            gc.collect(0)
+            gc.set_threshold(th, th, th)
+            items = [RefCycle() for i in range(N)]
+            s = WeakSet(items)
+            del items
+            # All items will be collected at next garbage collection pass
+            it = iter(s)
+            try:
+                next(it)
+            except StopIteration:
+                pass
+            n1 = len(s)
+            del it
+            n2 = len(s)
+            self.assertGreaterEqual(n1, 0)
+            self.assertLessEqual(n1, N)
+            self.assertGreaterEqual(n2, 0)
+            self.assertLessEqual(n2, n1)
 
 
 def test_main(verbose=None):
