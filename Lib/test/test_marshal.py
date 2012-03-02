@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from test import support
+import array
 import marshal
 import sys
 import unittest
@@ -137,6 +138,27 @@ class ContainerTestCase(unittest.TestCase, HelperMixin):
         for constructor in (set, frozenset):
             self.helper(constructor(self.d.keys()))
 
+
+class BufferTestCase(unittest.TestCase, HelperMixin):
+
+    def test_bytearray(self):
+        b = bytearray(b"abc")
+        self.helper(b)
+        new = marshal.loads(marshal.dumps(b))
+        self.assertEqual(type(new), bytes)
+
+    def test_memoryview(self):
+        b = memoryview(b"abc")
+        self.helper(b)
+        new = marshal.loads(marshal.dumps(b))
+        self.assertEqual(type(new), bytes)
+
+    def test_array(self):
+        a = array.array('B', b"abc")
+        new = marshal.loads(marshal.dumps(a))
+        self.assertEqual(new, b"abc")
+
+
 class BugsTestCase(unittest.TestCase):
     def test_bug_5888452(self):
         # Simple-minded check for SF 588452: Debug build crashes
@@ -243,6 +265,7 @@ def test_main():
                               CodeTestCase,
                               ContainerTestCase,
                               ExceptionTestCase,
+                              BufferTestCase,
                               BugsTestCase)
 
 if __name__ == "__main__":

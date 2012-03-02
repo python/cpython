@@ -10,6 +10,9 @@ What's New in Python 3.2.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #14172: Fix reference leak when marshalling a buffer-like object
+  (other than a bytes object).
+
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
 
