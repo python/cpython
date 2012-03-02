@@ -411,11 +411,12 @@ w_object(PyObject *v, WFILE *p)
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown buffer-style objects as a string */
         char *s;
-        PyBufferProcs *pb = v->ob_type->tp_as_buffer;
         Py_buffer view;
-        if ((*pb->bf_getbuffer)(v, &view, PyBUF_SIMPLE) != 0) {
+        if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
+            p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
+            return;
         }
         w_byte(TYPE_STRING, p);
         n = view.len;
@@ -427,8 +428,7 @@ w_object(PyObject *v, WFILE *p)
         }
         w_long((long)n, p);
         w_string(s, (int)n, p);
-        if (pb->bf_releasebuffer != NULL)
-            (*pb->bf_releasebuffer)(v, &view);
+        PyBuffer_Release(&view);
     }
     else {
         w_byte(TYPE_UNKNOWN, p);
