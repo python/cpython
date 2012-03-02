@@ -18,6 +18,14 @@
 Model interface.  It is intended to be simpler than the full DOM and also
 significantly smaller.
 
+.. note::
+
+   The :mod:`xml.dom.minidom` module provides an implementation of the W3C-DOM,
+   with an API similar to that in other programming languages.  Users who are
+   unfamiliar with the W3C-DOM interface or who would like to write less code
+   for processing XML files should consider using the
+   :mod:`xml.etree.ElementTree` module instead.
+
 DOM applications typically start by parsing some XML into a DOM.  With
 :mod:`xml.dom.minidom`, this is done through the parse functions::
 
