@@ -677,10 +677,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if bad:
             print(count(len(bad), "test"), "failed:")
             printlist(bad)
-        if environment_changed:
-            print("{} altered the execution environment:".format(
-                     count(len(environment_changed), "test")))
-            printlist(environment_changed)
+    if environment_changed:
+        print("{} altered the execution environment:".format(
+                 count(len(environment_changed), "test")))
+        printlist(environment_changed)
     if skipped and not quiet:
         print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
@@ -890,7 +890,9 @@ class saved_test_environment:
                  'logging._handlers', 'logging._handlerList',
                  'shutil.archive_formats', 'shutil.unpack_formats',
                  'sys.warnoptions', 'threading._dangling',
-                 'multiprocessing.process._dangling')
+                 'multiprocessing.process._dangling',
+                 'support.TESTFN',
+                )
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -1019,6 +1021,21 @@ class saved_test_environment:
             return
         multiprocessing.process._dangling.clear()
         multiprocessing.process._dangling.update(saved)
+
+    def get_support_TESTFN(self):
+        if os.path.isfile(support.TESTFN):
+            result = 'f'
+        elif os.path.isdir(support.TESTFN):
+            result = 'd'
+        else:
+            result = None
+        return result
+    def restore_support_TESTFN(self, saved_value):
+        if saved_value is None:
+            if os.path.isfile(support.TESTFN):
+                os.unlink(support.TESTFN)
+            elif os.path.isdir(support.TESTFN):
+                shutil.rmtree(support.TESTFN)
 
     def resource_info(self):
         for name in self.resources:

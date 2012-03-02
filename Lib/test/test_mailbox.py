@@ -7,6 +7,7 @@ import email
 import email.message
 import re
 import io
+import shutil
 import tempfile
 from test import support
 import unittest
@@ -38,12 +39,7 @@ class TestBase(unittest.TestCase):
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            for path, dirs, files in os.walk(target, topdown=False):
-                for name in files:
-                    os.remove(os.path.join(path, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(path, name))
-            os.rmdir(target)
+            shutil.rmtree(target)
         elif os.path.exists(target):
             os.remove(target)
 
@@ -2029,6 +2025,10 @@ class MaildirTestCase(unittest.TestCase):
     def setUp(self):
         # create a new maildir mailbox to work with:
         self._dir = support.TESTFN
+        if os.path.isdir(self._dir):
+            shutil.rmtree(self._dir)
+        elif os.path.isfile(self._dir):
+            os.unlink(self._dir)
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))
