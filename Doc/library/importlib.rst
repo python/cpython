@@ -487,7 +487,7 @@ find and load modules.
         Class method that attempts to find a :term:`loader` for the module
         specified by *fullname* on :data:`sys.path` or, if defined, on
         *path*. For each path entry that is searched,
-        :data:`sys.path_importer_cache` is checked. If an non-false object is
+        :data:`sys.path_importer_cache` is checked. If a non-false object is
         found then it is used as the :term:`finder` to look for the module
         being searched for. If no entry is found in
         :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
@@ -500,7 +500,7 @@ find and load modules.
 ---------------------------------------------------
 
 .. module:: importlib.util
-    :synopsis: Importers and path hooks
+    :synopsis: Utility code for importers
 
 This module contains the various objects that help in the construction of
 an :term:`importer`.
@@ -536,7 +536,7 @@ an :term:`importer`.
     to set the :attr:`__loader__`
     attribute on loaded modules. If the attribute is already set the decorator
     does nothing. It is assumed that the first positional argument to the
-    wrapped method is what :attr:`__loader__` should be set to.
+    wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set to.
 
 .. decorator:: set_package
 
@@ -547,8 +547,8 @@ an :term:`importer`.
     set on and not the module found in :data:`sys.modules`.
 
     Reliance on this decorator is discouraged when it is possible to set
-    :attr:`__package__` before the execution of the code is possible. By
-    setting it before the code for the module is executed it allows the
-    attribute to be used at the global level of the module during
+    :attr:`__package__` before importing. By
+    setting it beforehand the code for the module is executed with the
+    attribute set and thus can be used by global level code during
     initialization.
 
