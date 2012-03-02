@@ -783,16 +783,11 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
     siginfo_t si;
     int err;
 
-    if (!PyArg_ParseTuple(args, "OO:sigtimedwait", &signals, &timeout))
+    if (!PyArg_ParseTuple(args, "OO:sigtimedwait",
+                          &signals, &timeout))
         return NULL;
 
-    if (!PyTuple_Check(timeout) || PyTuple_Size(timeout) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "sigtimedwait() arg 2 must be a tuple "
-            "(timeout_sec, timeout_nsec)");
-        return NULL;
-    } else if (!PyArg_ParseTuple(timeout, "ll:sigtimedwait",
-                    &(buf.tv_sec), &(buf.tv_nsec)))
+    if (_PyTime_ObjectToTimespec(timeout, &buf.tv_sec, &buf.tv_nsec) == -1)
         return NULL;
 
     if (buf.tv_sec < 0 || buf.tv_nsec < 0) {

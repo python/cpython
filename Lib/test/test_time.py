@@ -497,12 +497,31 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
     pass
 
 
+class TestPytime(unittest.TestCase):
+    def test_timespec(self):
+        from _testcapi import pytime_object_to_timespec
+        for obj, timespec in (
+            (0, (0, 0)),
+            (-1, (-1, 0)),
+            (-1.0, (-1, 0)),
+            (-1e-9, (-1, 999999999)),
+            (-1.2, (-2, 800000000)),
+            (1.123456789, (1, 123456789)),
+        ):
+            self.assertEqual(pytime_object_to_timespec(obj), timespec)
+
+        for invalid in (-(2 ** 100), -(2.0 ** 100.0), 2 ** 100, 2.0 ** 100.0):
+            self.assertRaises(OverflowError, pytime_object_to_timespec, invalid)
+
+
+
 def test_main():
     support.run_unittest(
         TimeTestCase,
         TestLocale,
         TestAsctime4dyear,
-        TestStrftime4dyear)
+        TestStrftime4dyear,
+        TestPytime)
 
 if __name__ == "__main__":
     test_main()
