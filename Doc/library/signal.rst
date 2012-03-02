@@ -369,12 +369,11 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
 
-.. function:: sigtimedwait(sigset, (timeout_sec, timeout_nsec))
+.. function:: sigtimedwait(sigset, timeout)
 
-   Like :func:`sigtimedwait`, but takes a tuple of ``(seconds, nanoseconds)``
-   as an additional argument specifying a timeout. If both *timeout_sec* and
-   *timeout_nsec* are specified as :const:`0`, a poll is performed. Returns
-   :const:`None` if a timeout occurs.
+   Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
+   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   performed. Returns :const:`None` if a timeout occurs.
 
    Availability: Unix (see the man page :manpage:`sigtimedwait(2)` for further
    information).

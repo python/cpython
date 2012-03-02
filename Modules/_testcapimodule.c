@@ -2323,6 +2323,24 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
+static PyObject *
+test_pytime_object_to_timespec(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    time_t sec;
+    long nsec;
+    if (!PyArg_ParseTuple(args, "O:pytime_object_to_timespec", &obj))
+        return NULL;
+    if (_PyTime_ObjectToTimespec(obj, &sec, &nsec) == -1)
+        return NULL;
+#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+    return Py_BuildValue("Ll", (PY_LONG_LONG)sec, nsec);
+#else
+    assert(sizeof(time_t) <= sizeof(long));
+    return Py_BuildValue("ll", (long)sec, nsec);
+#endif
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -2412,6 +2430,7 @@ static PyMethodDef TestMethods[] = {
      METH_NOARGS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
+    {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
