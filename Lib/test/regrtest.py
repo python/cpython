@@ -749,10 +749,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if bad:
             print(count(len(bad), "test"), "failed:")
             printlist(bad)
-        if environment_changed:
-            print("{} altered the execution environment:".format(
-                     count(len(environment_changed), "test")))
-            printlist(environment_changed)
+    if environment_changed:
+        print("{} altered the execution environment:".format(
+                 count(len(environment_changed), "test")))
+        printlist(environment_changed)
     if skipped and not quiet:
         print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
@@ -970,6 +970,7 @@ class saved_test_environment:
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
                  'packaging.command._COMMANDS', 'packaging.database_caches',
+                 'support.TESTFN',
                 )
 
     def get_sys_argv(self):
@@ -1163,6 +1164,20 @@ class saved_test_environment:
         sysconfig._SCHEMES._sections.clear()
         sysconfig._SCHEMES._sections.update(saved[2])
 
+    def get_support_TESTFN(self):
+        if os.path.isfile(support.TESTFN):
+            result = 'f'
+        elif os.path.isdir(support.TESTFN):
+            result = 'd'
+        else:
+            result = None
+        return result
+    def restore_support_TESTFN(self, saved_value):
+        if saved_value is None:
+            if os.path.isfile(support.TESTFN):
+                os.unlink(support.TESTFN)
+            elif os.path.isdir(support.TESTFN):
+                shutil.rmtree(support.TESTFN)
 
     def resource_info(self):
         for name in self.resources:
