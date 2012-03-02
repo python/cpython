@@ -477,7 +477,9 @@ find and load modules.
 
     This class does not perfectly mirror the semantics of :keyword:`import` in
     terms of :data:`sys.path`. No implicit path hooks are assumed for
-    simplification of the class and its semantics.
+    simplification of the class and its semantics. This implies that when
+    ``None`` is found in :data:`sys.path_importer_cache` that it is simply
+    ignored instead of implying a default finder.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
