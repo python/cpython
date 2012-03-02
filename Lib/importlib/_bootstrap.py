@@ -625,12 +625,6 @@ class _ExtensionFileLoader:
     """
 
     def __init__(self, name, path):
-        """Initialize the loader.
-
-        If is_pkg is True then an exception is raised as extension modules
-        cannot be the __init__ module for an extension module.
-
-        """
         self._name = name
         self._path = path
 
