@@ -1239,7 +1239,6 @@ PyObject *
 PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
     WFILE wf;
-    PyObject *res = NULL;
 
     wf.fp = NULL;
     wf.readable = NULL;
@@ -1273,12 +1272,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
                :"object too deeply nested to marshal");
         return NULL;
     }
-    if (wf.str != NULL) {
-        /* XXX Quick hack -- need to do this differently */
-        res = PyBytes_FromObject(wf.str);
-        Py_DECREF(wf.str);
-    }
-    return res;
+    return wf.str;
 }
 
 /* And an interface for Python programs... */
