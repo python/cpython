@@ -38,7 +38,7 @@ class ExceptionTests(unittest.TestCase):
         try:
             try:
                 import marshal
-                marshal.loads('')
+                marshal.loads(b'')
             except EOFError:
                 pass
         finally:
