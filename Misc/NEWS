@@ -130,6 +130,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14177: marshal.loads() now raises TypeError when given an unicode
+  string.  Patch by Guilherme Gonçalves.
+
 - Issue #14159: Fix the len() of weak containers (WeakSet, WeakKeyDictionary,
   WeakValueDictionary) to return a better approximation when some objects
   are dead or dying.  Moreover, the implementation is now O(1) rather than
