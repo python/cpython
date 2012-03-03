@@ -1383,7 +1383,7 @@ marshal_loads(PyObject *self, PyObject *args)
     char *s;
     Py_ssize_t n;
     PyObject* result;
-    if (!PyArg_ParseTuple(args, "s*:loads", &p))
+    if (!PyArg_ParseTuple(args, "y*:loads", &p))
         return NULL;
     s = p.buf;
     n = p.len;
@@ -1400,10 +1400,10 @@ marshal_loads(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(loads_doc,
-"loads(string)\n\
+"loads(bytes)\n\
 \n\
-Convert the string to a value. If no valid value is found, raise\n\
-EOFError, ValueError or TypeError. Extra characters in the string are\n\
+Convert the bytes object to a value. If no valid value is found, raise\n\
+EOFError, ValueError or TypeError. Extra characters in the input are\n\
 ignored.");
 
 static PyMethodDef marshal_methods[] = {
