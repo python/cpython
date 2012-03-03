@@ -3682,7 +3682,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             print('The only matching files are: %s' % files, file=sys.stderr)
             for f in files:
                 print('Contents of %s:' % f)
-                with open(f, 'r') as tf:
+                path = os.path.join(dn, f)
+                with open(path, 'r') as tf:
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
