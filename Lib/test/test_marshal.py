@@ -184,7 +184,7 @@ class BugsTestCase(unittest.TestCase):
                 pass
 
     def test_loads_recursion(self):
-        s = 'c' + ('X' * 4*4) + '{' * 2**20
+        s = b'c' + (b'X' * 4*4) + b'{' * 2**20
         self.assertRaises(ValueError, marshal.loads, s)
 
     def test_recursion_limit(self):
@@ -256,6 +256,11 @@ class BugsTestCase(unittest.TestCase):
                         self.assertEqual(positions[i], f.tell())
             finally:
                 support.unlink(support.TESTFN)
+
+    def test_loads_reject_unicode_strings(self):
+        # Issue #14177: marshal.loads() should not accept unicode strings
+        unicode_string = 'T'
+        self.assertRaises(TypeError, marshal.loads, unicode_string)
 
 
 def test_main():
