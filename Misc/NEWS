@@ -511,6 +511,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14177: marshal.loads() now raises TypeError when given an unicode
+  string.  Patch by Guilherme Gonçalves.
+
 - Issue #13550: Remove the debug machinery from the threading module: remove
   verbose arguments from all threading classes and functions.
 
