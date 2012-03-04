@@ -511,6 +511,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14166: Pickler objects now have an optional ``dispatch_table``
+  attribute which allows to set custom per-pickler reduction functions.
+  Patch by sbt.
+
 - Issue #14177: marshal.loads() now raises TypeError when given an unicode
   string.  Patch by Guilherme Gonçalves.
 
