@@ -52,7 +52,6 @@ class TestAliasWorking(unittest.TestCase):
     def test_alias_working(self):
         e = cET_alias.Element('foo')
         self.assertEqual(e.tag, 'foo')
-        
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAcceleratorImported(unittest.TestCase):
