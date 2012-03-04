@@ -112,9 +112,6 @@ library/turtle,,::,Example::
 library/urllib,,:port,:port
 library/urllib2,,:password,"""joe:password@python.org"""
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/xmlrpclib,,:pass,http://user:pass@host:port/path
-library/xmlrpclib,,:pass,user:pass
-library/xmlrpclib,,:port,http://user:pass@host:port/path
 license,,`,THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 license,,:zooko,mailto:zooko@zooko.com
 license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
@@ -185,14 +182,13 @@ library/stdtypes,,:end,s[start:end]
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
-library/xmlrpc.client,103,:pass,http://user:pass@host:port/path
-library/xmlrpc.client,103,:port,http://user:pass@host:port/path
-library/xmlrpc.client,103,:pass,user:pass
+library/xmlrpc.client,,:pass,http://user:pass@host:port/path
+library/xmlrpc.client,,:port,http://user:pass@host:port/path
+library/xmlrpc.client,,:pass,user:pass
 license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 license,,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
 license,,`,"``Software''), to deal in the Software without restriction, including"
 license,,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
-reference/lexical_analysis,704,`,$       ?       `
 whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
 whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
@@ -295,3 +291,17 @@ packaging/tutorial,,::,2) License :: OSI Approved :: GNU Library or Lesser Gener
 packaging/tutorial,,::,Type the number of the license you wish to use or ? to try again:: 1
 packaging/tutorial,,::,classifier = Development Status :: 3 - Alpha
 packaging/tutorial,,::,License :: OSI Approved :: GNU General Public License (GPL)
+c-api/unicode,,:start,unicode[start:start+length]
+library/smtplib,,:port,method must support that as well as a regular host:port
+library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
+library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/stdtypes,,::,>>> a[::2].tolist()
+library/stdtypes,,::,>>> a[::-1].tolist()
+library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
+library/stdtypes,,::,>>> y = m[::2]
+reference/lexical_analysis,,`,$       ?       `
+library/tarfile,,:xz,'r:xz'
+library/tarfile,,:xz,'w:xz'
+library/tarfile,,:xz,'a:xz'
