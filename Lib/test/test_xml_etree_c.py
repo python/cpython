@@ -47,13 +47,21 @@ class MiscTests(unittest.TestCase):
             data = None
 
 @unittest.skipUnless(cET, 'requires _elementtree')
+class TestAliasWorking(unittest.TestCase):
+    # Test that the cET alias module is alive
+    def test_alias_working(self):
+        e = cET_alias.Element('foo')
+        self.assertEqual(e.tag, 'foo')
+        
+
+@unittest.skipUnless(cET, 'requires _elementtree')
 class TestAcceleratorImported(unittest.TestCase):
     # Test that the C accelerator was imported, as expected
     def test_correct_import_cET(self):
-        self.assertEqual(cET.Element.__module__, '_elementtree')
+        self.assertEqual(cET.SubElement.__module__, '_elementtree')
 
     def test_correct_import_cET_alias(self):
-        self.assertEqual(cET_alias.Element.__module__, '_elementtree')
+        self.assertEqual(cET_alias.SubElement.__module__, '_elementtree')
 
 
 def test_main():
@@ -61,13 +69,15 @@ def test_main():
 
     # Run the tests specific to the C implementation
     support.run_doctest(test_xml_etree_c, verbosity=True)
-
-    support.run_unittest(MiscTests, TestAcceleratorImported)
+    support.run_unittest(
+        MiscTests,
+        TestAliasWorking,
+        TestAcceleratorImported
+        )
 
     # Run the same test suite as the Python module
     test_xml_etree.test_main(module=cET)
-    # Exercise the deprecated alias
-    test_xml_etree.test_main(module=cET_alias)
+
 
 if __name__ == '__main__':
     test_main()
