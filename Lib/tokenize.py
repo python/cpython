@@ -135,10 +135,10 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group("[bB]?[rR]?'''", '[bB]?[rR]?"""')
+Triple = group("[bBuU]?[rR]?'''", '[bBuU]?[rR]?"""')
 # Single-line ' or " string.
-String = group(r"[bB]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               r'[bB]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(r"[bBuU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               r'[bBuU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
 # Because of leftmost-then-longest match semantics, be sure to put the
 # longest operators first (e.g., if = came before ==, == would get
@@ -156,9 +156,9 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(r"[bB]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+ContStr = group(r"[bBuU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
-                r'[bB]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                r'[bBuU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
@@ -176,21 +176,35 @@ endpats = {"'": Single, '"': Double,
            "bR'''": Single3, 'bR"""': Double3,
            "Br'''": Single3, 'Br"""': Double3,
            "BR'''": Single3, 'BR"""': Double3,
-           'r': None, 'R': None, 'b': None, 'B': None}
+           "u'''": Single3, 'u"""': Double3,
+           "ur'''": Single3, 'ur"""': Double3,
+           "R'''": Single3, 'R"""': Double3,
+           "U'''": Single3, 'U"""': Double3,
+           "uR'''": Single3, 'uR"""': Double3,
+           "Ur'''": Single3, 'Ur"""': Double3,
+           "UR'''": Single3, 'UR"""': Double3,
+           'r': None, 'R': None, 'b': None, 'B': None,
+           'u': None, 'U': None}
 
 triple_quoted = {}
 for t in ("'''", '"""',
           "r'''", 'r"""', "R'''", 'R"""',
           "b'''", 'b"""', "B'''", 'B"""',
           "br'''", 'br"""', "Br'''", 'Br"""',
-          "bR'''", 'bR"""', "BR'''", 'BR"""'):
+          "bR'''", 'bR"""', "BR'''", 'BR"""',
+          "u'''", 'u"""', "U'''", 'U"""',
+          "ur'''", 'ur"""', "Ur'''", 'Ur"""',
+          "uR'''", 'uR"""', "UR'''", 'UR"""'):
     triple_quoted[t] = t
 single_quoted = {}
 for t in ("'", '"',
           "r'", 'r"', "R'", 'R"',
           "b'", 'b"', "B'", 'B"',
           "br'", 'br"', "Br'", 'Br"',
-          "bR'", 'bR"', "BR'", 'BR"' ):
+          "bR'", 'bR"', "BR'", 'BR"' ,
+          "u'", 'u"', "U'", 'U"',
+          "ur'", 'ur"', "Ur'", 'Ur"',
+          "uR'", 'uR"', "UR'", 'UR"' ):
     single_quoted[t] = t
 
 tabsize = 8

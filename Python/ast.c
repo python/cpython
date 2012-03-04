@@ -3796,6 +3796,9 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
                 quote = *++s;
                 *bytesmode = 1;
             }
+            else if (quote == 'u' || quote == 'U') {
+                quote = *++s;
+            }
             else if (quote == 'r' || quote == 'R') {
                 quote = *++s;
                 rawmode = 1;
