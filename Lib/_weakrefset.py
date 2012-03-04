@@ -114,11 +114,8 @@ class WeakSet:
     def update(self, other):
         if self._pending_removals:
             self._commit_removals()
-        if isinstance(other, self.__class__):
-            self.data.update(other.data)
-        else:
-            for element in other:
-                self.add(element)
+        for element in other:
+            self.add(element)
 
     def __ior__(self, other):
         self.update(other)
