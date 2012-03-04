@@ -101,7 +101,6 @@ import sys
 import re
 import warnings
 
-
 class _SimpleElementPath:
     # emulate pre-1.2 find/findtext/findall behaviour
     def find(self, element, tag, namespaces=None):
