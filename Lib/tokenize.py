@@ -127,6 +127,8 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group(r'[0-9]+[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
+StringPrefix = r'(?:[uU][rR]?|[bB][rR]|[rR][bB]|[rR]|[uU])?'
+
 # Tail end of ' string.
 Single = r"[^'\\]*(?:\\.[^'\\]*)*'"
 # Tail end of " string.
@@ -135,10 +137,10 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group("[bBuU]?[rR]?'''", '[bBuU]?[rR]?"""')
+Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 # Single-line ' or " string.
-String = group(r"[bBuU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               r'[bBuU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
 # Because of leftmost-then-longest match semantics, be sure to put the
 # longest operators first (e.g., if = came before ==, == would get
@@ -156,9 +158,9 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(r"[bBuU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
-                r'[bBuU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
@@ -170,12 +172,16 @@ endpats = {"'": Single, '"': Double,
            "'''": Single3, '"""': Double3,
            "r'''": Single3, 'r"""': Double3,
            "b'''": Single3, 'b"""': Double3,
-           "br'''": Single3, 'br"""': Double3,
            "R'''": Single3, 'R"""': Double3,
            "B'''": Single3, 'B"""': Double3,
+           "br'''": Single3, 'br"""': Double3,
            "bR'''": Single3, 'bR"""': Double3,
            "Br'''": Single3, 'Br"""': Double3,
            "BR'''": Single3, 'BR"""': Double3,
+           "rb'''": Single3, 'rb"""': Double3,
+           "Rb'''": Single3, 'Rb"""': Double3,
+           "rB'''": Single3, 'rB"""': Double3,
+           "RB'''": Single3, 'RB"""': Double3,
            "u'''": Single3, 'u"""': Double3,
            "ur'''": Single3, 'ur"""': Double3,
            "R'''": Single3, 'R"""': Double3,
@@ -192,6 +198,8 @@ for t in ("'''", '"""',
           "b'''", 'b"""', "B'''", 'B"""',
           "br'''", 'br"""', "Br'''", 'Br"""',
           "bR'''", 'bR"""', "BR'''", 'BR"""',
+          "rb'''", 'rb"""', "rB'''", 'rB"""',
+          "Rb'''", 'Rb"""', "RB'''", 'RB"""',
           "u'''", 'u"""', "U'''", 'U"""',
           "ur'''", 'ur"""', "Ur'''", 'Ur"""',
           "uR'''", 'uR"""', "UR'''", 'UR"""'):
@@ -202,6 +210,8 @@ for t in ("'", '"',
           "b'", 'b"', "B'", 'B"',
           "br'", 'br"', "Br'", 'Br"',
           "bR'", 'bR"', "BR'", 'BR"' ,
+          "rb'", 'rb"', "rB'", 'rB"',
+          "Rb'", 'Rb"', "RB'", 'RB"' ,
           "u'", 'u"', "U'", 'U"',
           "ur'", 'ur"', "Ur'", 'Ur"',
           "uR'", 'uR"', "UR'", 'UR"' ):
