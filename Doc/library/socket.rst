@@ -1311,7 +1311,7 @@ network. This example might require special priviledge::
    import struct
 
 
-   # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
+   # CAN frame packing/unpacking (see 'struct can_frame' in <linux/can.h>)
 
    can_frame_fmt = "=IB3x8s"
    can_frame_size = struct.calcsize(can_frame_fmt)
@@ -1326,7 +1326,7 @@ network. This example might require special priviledge::
        return (can_id, can_dlc, data[:can_dlc])
 
 
-   # create a raw socket and bind it to the `vcan0` interface
+   # create a raw socket and bind it to the 'vcan0' interface
    s = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
    s.bind(('vcan0',))
 
