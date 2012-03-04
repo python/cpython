@@ -1605,6 +1605,105 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 self.assertEqual(unpickler.load(), data)
 
 
+# Tests for dispatch_table attribute
+
+REDUCE_A = 'reduce_A'
+
+class AAA(object):
+    def __reduce__(self):
+        return str, (REDUCE_A,)
+
+class BBB(object):
+    pass
+
+class AbstractDispatchTableTests(unittest.TestCase):
+
+    def test_default_dispatch_table(self):
+        # No dispatch_table attribute by default
+        f = io.BytesIO()
+        p = self.pickler_class(f, 0)
+        with self.assertRaises(AttributeError):
+            p.dispatch_table
+        self.assertFalse(hasattr(p, 'dispatch_table'))
+
+    def test_class_dispatch_table(self):
+        # A dispatch_table attribute can be specified class-wide
+        dt = self.get_dispatch_table()
+
+        class MyPickler(self.pickler_class):
+            dispatch_table = dt
+
+        def dumps(obj, protocol=None):
+            f = io.BytesIO()
+            p = MyPickler(f, protocol)
+            self.assertEqual(p.dispatch_table, dt)
+            p.dump(obj)
+            return f.getvalue()
+
+        self._test_dispatch_table(dumps, dt)
+
+    def test_instance_dispatch_table(self):
+        # A dispatch_table attribute can also be specified instance-wide
+        dt = self.get_dispatch_table()
+
+        def dumps(obj, protocol=None):
+            f = io.BytesIO()
+            p = self.pickler_class(f, protocol)
+            p.dispatch_table = dt
+            self.assertEqual(p.dispatch_table, dt)
+            p.dump(obj)
+            return f.getvalue()
+
+        self._test_dispatch_table(dumps, dt)
+
+    def _test_dispatch_table(self, dumps, dispatch_table):
+        def custom_load_dump(obj):
+            return pickle.loads(dumps(obj, 0))
+
+        def default_load_dump(obj):
+            return pickle.loads(pickle.dumps(obj, 0))
+
+        # pickling complex numbers using protocol 0 relies on copyreg
+        # so check pickling a complex number still works
+        z = 1 + 2j
+        self.assertEqual(custom_load_dump(z), z)
+        self.assertEqual(default_load_dump(z), z)
+
+        # modify pickling of complex
+        REDUCE_1 = 'reduce_1'
+        def reduce_1(obj):
+            return str, (REDUCE_1,)
+        dispatch_table[complex] = reduce_1
+        self.assertEqual(custom_load_dump(z), REDUCE_1)
+        self.assertEqual(default_load_dump(z), z)
+
+        # check picklability of AAA and BBB
+        a = AAA()
+        b = BBB()
+        self.assertEqual(custom_load_dump(a), REDUCE_A)
+        self.assertIsInstance(custom_load_dump(b), BBB)
+        self.assertEqual(default_load_dump(a), REDUCE_A)
+        self.assertIsInstance(default_load_dump(b), BBB)
+
+        # modify pickling of BBB
+        dispatch_table[BBB] = reduce_1
+        self.assertEqual(custom_load_dump(a), REDUCE_A)
+        self.assertEqual(custom_load_dump(b), REDUCE_1)
+        self.assertEqual(default_load_dump(a), REDUCE_A)
+        self.assertIsInstance(default_load_dump(b), BBB)
+
+        # revert pickling of BBB and modify pickling of AAA
+        REDUCE_2 = 'reduce_2'
+        def reduce_2(obj):
+            return str, (REDUCE_2,)
+        dispatch_table[AAA] = reduce_2
+        del dispatch_table[BBB]
+        self.assertEqual(custom_load_dump(a), REDUCE_2)
+        self.assertIsInstance(custom_load_dump(b), BBB)
+        self.assertEqual(default_load_dump(a), REDUCE_A)
+        self.assertIsInstance(default_load_dump(b), BBB)
+
+
 if __name__ == "__main__":
     # Print some stuff that can be used to rewrite DATA{0,1,2}
     from pickletools import dis

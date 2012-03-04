@@ -32,6 +32,8 @@ Such constructors may be factory functions or class instances.
    returned by *function* at pickling time.  :exc:`TypeError` will be raised if
    *object* is a class or *constructor* is not callable.
 
-   See the :mod:`pickle` module for more details on the interface expected of
-   *function* and *constructor*.
-
+   See the :mod:`pickle` module for more details on the interface
+   expected of *function* and *constructor*.  Note that the
+   :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
+   object or subclass of :class:`pickle.Pickler` can also be used for
+   declaring reduction functions.

@@ -319,6 +319,7 @@ typedef struct PicklerObject {
                                    objects to support self-referential objects
                                    pickling. */
     PyObject *pers_func;        /* persistent_id() method, can be NULL */
+    PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
     PyObject *arg;
 
     PyObject *write;            /* write() method of the output stream. */
@@ -764,6 +765,7 @@ _Pickler_New(void)
         return NULL;
 
     self->pers_func = NULL;
+    self->dispatch_table = NULL;
     self->arg = NULL;
     self->write = NULL;
     self->proto = 0;
@@ -3176,17 +3178,24 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     /* XXX: This part needs some unit tests. */
 
     /* Get a reduction callable, and call it.  This may come from
-     * copyreg.dispatch_table, the object's __reduce_ex__ method,
-     * or the object's __reduce__ method.
+     * self.dispatch_table, copyreg.dispatch_table, the object's
+     * __reduce_ex__ method, or the object's __reduce__ method.
      */
-    reduce_func = PyDict_GetItem(dispatch_table, (PyObject *)type);
+    if (self->dispatch_table == NULL) {
+        reduce_func = PyDict_GetItem(dispatch_table, (PyObject *)type);
+        /* PyDict_GetItem() unlike PyObject_GetItem() and
+           PyObject_GetAttr() returns a borrowed ref */
+        Py_XINCREF(reduce_func);
+    } else {
+        reduce_func = PyObject_GetItem(self->dispatch_table, (PyObject *)type);
+        if (reduce_func == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_KeyError))
+                PyErr_Clear();
+            else
+                goto error;
+        }
+    }
     if (reduce_func != NULL) {
-        /* Here, the reference count of the reduce_func object returned by
-           PyDict_GetItem needs to be increased to be consistent with the one
-           returned by PyObject_GetAttr. This is allow us to blindly DECREF
-           reduce_func at the end of the save() routine.
-        */
-        Py_INCREF(reduce_func);
         Py_INCREF(obj);
         reduce_value = _Pickler_FastCall(self, reduce_func, obj);
     }
@@ -3359,6 +3368,7 @@ Pickler_dealloc(PicklerObject *self)
     Py_XDECREF(self->output_buffer);
     Py_XDECREF(self->write);
     Py_XDECREF(self->pers_func);
+    Py_XDECREF(self->dispatch_table);
     Py_XDECREF(self->arg);
     Py_XDECREF(self->fast_memo);
 
@@ -3372,6 +3382,7 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->write);
     Py_VISIT(self->pers_func);
+    Py_VISIT(self->dispatch_table);
     Py_VISIT(self->arg);
     Py_VISIT(self->fast_memo);
     return 0;
@@ -3383,6 +3394,7 @@ Pickler_clear(PicklerObject *self)
     Py_CLEAR(self->output_buffer);
     Py_CLEAR(self->write);
     Py_CLEAR(self->pers_func);
+    Py_CLEAR(self->dispatch_table);
     Py_CLEAR(self->arg);
     Py_CLEAR(self->fast_memo);
 
@@ -3427,6 +3439,7 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
     _Py_IDENTIFIER(persistent_id);
+    _Py_IDENTIFIER(dispatch_table);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:Pickler",
                                      kwlist, &file, &proto_obj, &fix_imports))
@@ -3466,6 +3479,13 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_id);
         if (self->pers_func == NULL)
+            return -1;
+    }
+    self->dispatch_table = NULL;
+    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
+        self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
+                                                   &PyId_dispatch_table);
+        if (self->dispatch_table == NULL)
             return -1;
     }
     return 0;
@@ -3749,6 +3769,7 @@ Pickler_set_persid(PicklerObject *self, PyObject *value)
 static PyMemberDef Pickler_members[] = {
     {"bin", T_INT, offsetof(PicklerObject, bin)},
     {"fast", T_INT, offsetof(PicklerObject, fast)},
+    {"dispatch_table", T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
     {NULL}
 };
 
