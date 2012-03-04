@@ -6,7 +6,6 @@ from msilib import Feature, CAB, Directory, Dialog, Binary, add_data
 import uisample
 from win32com.client import constants
 from distutils.spawn import find_executable
-from uuids import product_codes
 import tempfile
 
 # Settings can be overridden in config.py below
@@ -77,9 +76,6 @@ upgrade_code_64='{6A965A0C-6EE6-4E3A-9983-3263F56311EC}'
 
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
-    product_code = msilib.gen_uuid()
-else:
-    product_code = product_codes[current_version]
 
 if full_current_version is None:
     full_current_version = current_version
@@ -187,12 +183,19 @@ dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
     raise SystemError("msisupport.dll for incorrect architecture")
+
 if msilib.Win64:
     upgrade_code = upgrade_code_64
-    # Bump the last digit of the code by one, so that 32-bit and 64-bit
-    # releases get separate product codes
-    digit = hex((int(product_code[-2],16)+1)%16)[-1]
-    product_code = product_code[:-2] + digit + '}'
+
+if snapshot:
+    product_code = msilib.gen_uuid()
+else:
+    # official release: generate UUID from the download link that the file will have
+    import uuid
+    product_code = uuid.uuid3(uuid.NAMESPACE_URL,
+                    'http://www.python.org/ftp/python/%s.%s.%s/python-%s%s.msi' %
+                    (major, minor, micro, full_current_version, msilib.arch_ext))
+    product_code = '{%s}' % product_code
 
 if testpackage:
     ext = 'px'
