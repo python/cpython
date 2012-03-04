@@ -998,7 +998,11 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
             is_sharing = 1;
     }
     else {
-        assert(maxchar <= MAX_UNICODE);
+        if (maxchar > MAX_UNICODE) {
+            PyErr_SetString(PyExc_SystemError,
+                            "invalid maximum character passed to PyUnicode_New");
+            return NULL;
+        }
         kind_state = PyUnicode_4BYTE_KIND;
         char_size = 4;
         if (sizeof(wchar_t) == 4)
@@ -3931,6 +3935,7 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 int
 PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
 {
+    Py_UCS4 maxchar;
     if (!PyUnicode_Check(unicode) || !PyUnicode_IS_COMPACT(unicode)) {
         PyErr_BadArgument();
         return -1;
@@ -3942,6 +3947,10 @@ PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
     }
     if (unicode_check_modifiable(unicode))
         return -1;
+    if (ch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
+        PyErr_SetString(PyExc_ValueError, "character out of range");
+        return -1;
+    }
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     index, ch);
     return 0;
