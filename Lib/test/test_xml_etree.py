@@ -1901,16 +1901,51 @@ class CleanContext(object):
 class TestAcceleratorNotImported(unittest.TestCase):
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
-        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
+        self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
+
+
+class TestElementClass(unittest.TestCase):
+    def test_Element_is_a_type(self):
+        self.assertIsInstance(ET.Element, type)
+
+    def test_Element_subclass_trivial(self):
+        class MyElement(ET.Element):
+            pass
+
+        mye = MyElement('foo')
+        self.assertIsInstance(mye, ET.Element)
+        self.assertIsInstance(mye, MyElement)
+        self.assertEqual(mye.tag, 'foo')
+
+    def test_Element_subclass_constructor(self):
+        class MyElement(ET.Element):
+            def __init__(self, tag, attrib={}, **extra):
+                super(MyElement, self).__init__(tag + '__', attrib, **extra)
+
+        mye = MyElement('foo', {'a': 1, 'b': 2}, c=3, d=4)
+        self.assertEqual(mye.tag, 'foo__')
+        self.assertEqual(sorted(mye.items()),
+            [('a', 1), ('b', 2), ('c', 3), ('d', 4)])
+
+    def test_Element_subclass_new_method(self):
+        class MyElement(ET.Element):
+            def newmethod(self):
+                return self.tag
+
+        mye = MyElement('joe')
+        self.assertEqual(mye.newmethod(), 'joe')
 
 
 def test_main(module=pyET):
     from test import test_xml_etree
 
+    # Run the tests specific to the Python implementation
+    support.run_unittest(TestAcceleratorNotImported)
+
     # The same doctests are used for both the Python and the C implementations
     test_xml_etree.ET = module
 
-    support.run_unittest(TestAcceleratorNotImported)
+    support.run_unittest(TestElementClass)
 
     # XXX the C module should give the same warnings as the Python module
     with CleanContext(quiet=(module is not pyET)):
