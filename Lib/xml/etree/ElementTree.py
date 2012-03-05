@@ -1674,12 +1674,11 @@ class XMLParser:
         except self._error as v:
             self._raiseerror(v)
         try:
-            try:
-                close_handler = self.target.close
-            except AttributeError:
-                pass
-            else:
-                return close_handler()
+            close_handler = self.target.close
+        except AttributeError:
+            pass
+        else:
+            return close_handler()
         finally:
             # get rid of circular references
             del self.parser, self._parser
