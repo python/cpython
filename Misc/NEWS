@@ -511,6 +511,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14168: Check for presence of _attrs before accessing it.
+
 - Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
   return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
   fixed.
