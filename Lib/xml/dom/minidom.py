@@ -723,12 +723,16 @@ class Element(Node):
         Node.unlink(self)
 
     def getAttribute(self, attname):
+        if self._attrs is None:
+            return ""
         try:
             return self._attrs[attname].value
         except KeyError:
             return ""
 
     def getAttributeNS(self, namespaceURI, localName):
+        if self._attrsNS is None:
+            return ""
         try:
             return self._attrsNS[(namespaceURI, localName)].value
         except KeyError:
