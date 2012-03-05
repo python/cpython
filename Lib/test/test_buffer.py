@@ -3609,6 +3609,12 @@ class TestBufferProtocol(unittest.TestCase):
                     lst=lst)
         del x, y, z, m
 
+    def test_memoryview_getbuffer_undefined(self):
+
+        # getbufferproc does not adhere to the new documentation
+        nd = ndarray([1,2,3], [3], flags=ND_GETBUF_FAIL|ND_GETBUF_UNDEFINED)
+        self.assertRaises(BufferError, memoryview, nd)
+
     def test_issue_7385(self):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
