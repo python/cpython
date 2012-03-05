@@ -350,13 +350,31 @@ class MinidomTest(unittest.TestCase):
     def testGetAttrList(self):
         pass
 
-    def testGetAttrValues(self): pass
+    def testGetAttrValues(self):
+        pass
 
-    def testGetAttrLength(self): pass
+    def testGetAttrLength(self):
+        pass
 
-    def testGetAttribute(self): pass
+    def testGetAttribute(self):
+        dom = Document()
+        child = dom.appendChild(
+            dom.createElementNS("http://www.python.org", "python:abc"))
+        self.assertEqual(child.getAttribute('missing'), '')
 
-    def testGetAttributeNS(self): pass
+    def testGetAttributeNS(self):
+        dom = Document()
+        child = dom.appendChild(
+                dom.createElementNS("http://www.python.org", "python:abc"))
+        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+                                                "http://www.python.org")
+        self.assertEqual(child.getAttributeNS("http://www.w3.org", "python"),
+            'http://www.python.org')
+        self.assertEqual(child.getAttributeNS("http://www.w3.org", "other"),
+            '')
+        child2 = child.appendChild(dom.createElement('abc'))
+        self.assertEqual(child2.getAttributeNS("http://www.python.org", "missing"),
+                         '')
 
     def testGetAttributeNode(self): pass
 
