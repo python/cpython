@@ -2,8 +2,6 @@
 directly. Instead, the functions getDOMImplementation and
 registerDOMImplementation should be imported from xml.dom."""
 
-from xml.dom.minicompat import *  # isinstance, StringTypes
-
 # This is a list of well-known implementations.  Well-known names
 # should be published by posting to xml-sig@python.org, and are
 # subsequently recorded in this file.

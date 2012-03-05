@@ -33,8 +33,6 @@ from xml.parsers import expat
 from xml.dom.minidom import _append_child, _set_attribute_node
 from xml.dom.NodeFilter import NodeFilter
 
-from xml.dom.minicompat import *
-
 TEXT_NODE = Node.TEXT_NODE
 CDATA_SECTION_NODE = Node.CDATA_SECTION_NODE
 DOCUMENT_NODE = Node.DOCUMENT_NODE
@@ -755,7 +753,7 @@ class Namespaces:
                     a = minidom.Attr("xmlns", XMLNS_NAMESPACE,
                                      "xmlns", EMPTY_PREFIX)
                 a.value = uri
-                a.ownerDocuemnt = self.document
+                a.ownerDocument = self.document
                 _set_attribute_node(node, a)
             del self._ns_ordered_prefixes[:]
 
