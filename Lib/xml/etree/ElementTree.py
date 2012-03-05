@@ -1511,24 +1511,30 @@ class XMLParser:
         self.target = self._target = target
         self._error = expat.error
         self._names = {} # name memo cache
-        # callbacks
+        # main callbacks
         parser.DefaultHandlerExpand = self._default
-        parser.StartElementHandler = self._start
-        parser.EndElementHandler = self._end
-        parser.CharacterDataHandler = self._data
-        # optional callbacks
-        parser.CommentHandler = self._comment
-        parser.ProcessingInstructionHandler = self._pi
+        if hasattr(target, 'start'):
+            parser.StartElementHandler = self._start
+        if hasattr(target, 'end'):
+            parser.EndElementHandler = self._end
+        if hasattr(target, 'data'):
+            parser.CharacterDataHandler = target.data
+        # miscellaneous callbacks
+        if hasattr(target, 'comment'):
+            parser.CommentHandler = target.comment
+        if hasattr(target, 'pi'):
+            parser.ProcessingInstructionHandler = target.pi
         # let expat do the buffering, if supported
         try:
-            self._parser.buffer_text = 1
+            parser.buffer_text = 1
         except AttributeError:
             pass
         # use new-style attribute handling, if supported
         try:
-            self._parser.ordered_attributes = 1
-            self._parser.specified_attributes = 1
-            parser.StartElementHandler = self._start_list
+            parser.ordered_attributes = 1
+            parser.specified_attributes = 1
+            if hasattr(target, 'start'):
+                parser.StartElementHandler = self._start_list
         except AttributeError:
             pass
         self._doctype = None
@@ -1572,44 +1578,29 @@ class XMLParser:
                 attrib[fixname(attrib_in[i])] = attrib_in[i+1]
         return self.target.start(tag, attrib)
 
-    def _data(self, text):
-        return self.target.data(text)
-
     def _end(self, tag):
         return self.target.end(self._fixname(tag))
-
-    def _comment(self, data):
-        try:
-            comment = self.target.comment
-        except AttributeError:
-            pass
-        else:
-            return comment(data)
-
-    def _pi(self, target, data):
-        try:
-            pi = self.target.pi
-        except AttributeError:
-            pass
-        else:
-            return pi(target, data)
 
     def _default(self, text):
         prefix = text[:1]
         if prefix == "&":
             # deal with undefined entities
             try:
-                self.target.data(self.entity[text[1:-1]])
+                data_handler = self.target.data
+            except AttributeError:
+                return
+            try:
+                data_handler(self.entity[text[1:-1]])
             except KeyError:
                 from xml.parsers import expat
                 err = expat.error(
                     "undefined entity %s: line %d, column %d" %
-                    (text, self._parser.ErrorLineNumber,
-                    self._parser.ErrorColumnNumber)
+                    (text, self.parser.ErrorLineNumber,
+                    self.parser.ErrorColumnNumber)
                     )
                 err.code = 11 # XML_ERROR_UNDEFINED_ENTITY
-                err.lineno = self._parser.ErrorLineNumber
-                err.offset = self._parser.ErrorColumnNumber
+                err.lineno = self.parser.ErrorLineNumber
+                err.offset = self.parser.ErrorColumnNumber
                 raise err
         elif prefix == "<" and text[:9] == "<!DOCTYPE":
             self._doctype = [] # inside a doctype declaration
@@ -1636,7 +1627,7 @@ class XMLParser:
                     pubid = pubid[1:-1]
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
-                elif self.doctype is not self._XMLParser__doctype:
+                elif self.doctype != self._XMLParser__doctype:
                     # warn about deprecated call
                     self._XMLParser__doctype(name, pubid, system[1:-1])
                     self.doctype(name, pubid, system[1:-1])
@@ -1667,7 +1658,7 @@ class XMLParser:
 
     def feed(self, data):
         try:
-            self._parser.Parse(data, 0)
+            self.parser.Parse(data, 0)
         except self._error as v:
             self._raiseerror(v)
 
@@ -1679,12 +1670,20 @@ class XMLParser:
 
     def close(self):
         try:
-            self._parser.Parse("", 1) # end of data
+            self.parser.Parse("", 1) # end of data
         except self._error as v:
             self._raiseerror(v)
-        tree = self.target.close()
-        del self.target, self._parser # get rid of circular references
-        return tree
+        try:
+            try:
+                close_handler = self.target.close
+            except AttributeError:
+                pass
+            else:
+                return close_handler()
+        finally:
+            # get rid of circular references
+            del self.parser, self._parser
+            del self.target, self._target
 
 
 # Import the C accelerators
