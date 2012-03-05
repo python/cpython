@@ -53,14 +53,14 @@ static PyTypeObject NDArray_Type;
 #define ND_SCALAR       0x008   /* scalar: ndim = 0 */
 #define ND_PIL          0x010   /* convert to PIL-style array (suboffsets) */
 #define ND_GETBUF_FAIL  0x020   /* test issue 7385 */
+#define ND_REDIRECT     0x040   /* redirect buffer requests */
 
 /* Default: NumPy style (strides), read-only, no var-export, C-style layout */
 #define ND_DEFAULT      0x0
 
 /* Internal flags for the base buffer */
-#define ND_C            0x040   /* C contiguous layout (default) */
-#define ND_OWN_ARRAYS   0x080   /* consumer owns arrays */
-#define ND_UNUSED       0x100   /* initializer */
+#define ND_C            0x080   /* C contiguous layout (default) */
+#define ND_OWN_ARRAYS   0x100   /* consumer owns arrays */
 
 /* ndarray properties */
 #define ND_IS_CONSUMER(nd) \
@@ -1290,7 +1290,7 @@ ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *strides = NULL; /* number of bytes to the next elt in each dim */
     Py_ssize_t offset = 0;            /* buffer offset */
     PyObject *format = simple_format; /* struct module specifier: "B" */
-    int flags = ND_UNUSED;            /* base buffer and ndarray flags */
+    int flags = ND_DEFAULT;           /* base buffer and ndarray flags */
 
     int getbuf = PyBUF_UNUSED; /* re-exporter: getbuffer request flags */
 
@@ -1302,10 +1302,10 @@ ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
     /* NDArrayObject is re-exporter */
     if (PyObject_CheckBuffer(v) && shape == NULL) {
         if (strides || offset || format != simple_format ||
-            flags != ND_UNUSED) {
+            !(flags == ND_DEFAULT || flags == ND_REDIRECT)) {
             PyErr_SetString(PyExc_TypeError,
-               "construction from exporter object only takes a single "
-               "additional getbuf argument");
+               "construction from exporter object only takes 'obj', 'getbuf' "
+               "and 'flags' arguments");
             return -1;
         }
 
@@ -1315,6 +1315,7 @@ ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
             return -1;
 
         init_flags(nd->head);
+        nd->head->flags |= flags;
 
         return 0;
     }
@@ -1333,8 +1334,6 @@ ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (flags == ND_UNUSED)
-        flags = ND_DEFAULT;
     if (flags & ND_VAREXPORT) {
         nd->flags |= ND_VAREXPORT;
         flags &= ~ND_VAREXPORT;
@@ -1357,7 +1356,7 @@ ndarray_push(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *strides = NULL; /* number of bytes to the next elt in each dim */
     PyObject *format = simple_format;  /* struct module specifier: "B" */
     Py_ssize_t offset = 0;             /* buffer offset */
-    int flags = ND_UNUSED;             /* base buffer flags */
+    int flags = ND_DEFAULT;            /* base buffer flags */
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OnOi", kwlist,
             &items, &shape, &strides, &offset, &format, &flags))
@@ -1422,6 +1421,11 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
     ndbuf_t *ndbuf = self->head;
     Py_buffer *base = &ndbuf->base;
     int baseflags = ndbuf->flags;
+
+    /* redirect mode */
+    if (base->obj != NULL && (baseflags&ND_REDIRECT)) {
+        return PyObject_GetBuffer(base->obj, view, flags);
+    }
 
     /* start with complete information */
     *view = *base;
@@ -2654,6 +2658,7 @@ PyInit__testbuffer(void)
     PyModule_AddIntConstant(m, "ND_SCALAR", ND_SCALAR);
     PyModule_AddIntConstant(m, "ND_PIL", ND_PIL);
     PyModule_AddIntConstant(m, "ND_GETBUF_FAIL", ND_GETBUF_FAIL);
+    PyModule_AddIntConstant(m, "ND_REDIRECT", ND_REDIRECT);
 
     PyModule_AddIntConstant(m, "PyBUF_SIMPLE", PyBUF_SIMPLE);
     PyModule_AddIntConstant(m, "PyBUF_WRITABLE", PyBUF_WRITABLE);

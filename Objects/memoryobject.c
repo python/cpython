@@ -91,9 +91,6 @@ _PyManagedBuffer_FromObject(PyObject *base)
         return NULL;
     }
 
-    /* Assume that master.obj is a new reference to base. */
-    assert(mbuf->master.obj == base);
-
     return (PyObject *)mbuf;
 }
 
