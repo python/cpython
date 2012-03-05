@@ -28,6 +28,12 @@ class TestWeakSet(unittest.TestCase):
         # need to keep references to them
         self.items = [ustr(c) for c in ('a', 'b', 'c')]
         self.items2 = [ustr(c) for c in ('x', 'y', 'z')]
+        self.ab_items = [ustr(c) for c in 'ab']
+        self.abcde_items = [ustr(c) for c in 'abcde']
+        self.def_items = [ustr(c) for c in 'def']
+        self.ab_weakset = WeakSet(self.ab_items)
+        self.abcde_weakset = WeakSet(self.abcde_items)
+        self.def_weakset = WeakSet(self.def_items)
         self.letters = [ustr(c) for c in string.ascii_letters]
         self.s = WeakSet(self.items)
         self.d = dict.fromkeys(self.items)
@@ -137,21 +143,27 @@ class TestWeakSet(unittest.TestCase):
         self.assertEqual(self.s ^ frozenset(self.items2), i)
 
     def test_sub_and_super(self):
-        pl, ql, rl = map(lambda s: [ustr(c) for c in s], ['ab', 'abcde', 'def'])
-        p, q, r = map(WeakSet, (pl, ql, rl))
-        self.assertTrue(p < q)
-        self.assertTrue(p <= q)
-        self.assertTrue(q <= q)
-        self.assertTrue(q > p)
-        self.assertTrue(q >= p)
-        self.assertFalse(q < r)
-        self.assertFalse(q <= r)
-        self.assertFalse(q > r)
-        self.assertFalse(q >= r)
+        self.assertTrue(self.ab_weakset <= self.abcde_weakset)
+        self.assertTrue(self.abcde_weakset <= self.abcde_weakset)
+        self.assertTrue(self.abcde_weakset >= self.ab_weakset)
+        self.assertFalse(self.abcde_weakset <= self.def_weakset)
+        self.assertFalse(self.abcde_weakset >= self.def_weakset)
         self.assertTrue(set('a').issubset('abc'))
         self.assertTrue(set('abc').issuperset('a'))
         self.assertFalse(set('a').issubset('cbs'))
         self.assertFalse(set('cbs').issuperset('a'))
+
+    def test_lt(self):
+        self.assertTrue(self.ab_weakset < self.abcde_weakset)
+        self.assertFalse(self.abcde_weakset < self.def_weakset)
+        self.assertFalse(self.ab_weakset < self.ab_weakset)
+        self.assertFalse(WeakSet() < WeakSet())
+
+    def test_gt(self):
+        self.assertTrue(self.abcde_weakset > self.ab_weakset)
+        self.assertFalse(self.abcde_weakset > self.def_weakset)
+        self.assertFalse(self.ab_weakset > self.ab_weakset)
+        self.assertFalse(WeakSet() > WeakSet())
 
     def test_gc(self):
         # Create a nest of cycles to exercise overall ref count check

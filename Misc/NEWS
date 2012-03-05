@@ -511,6 +511,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
+  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
+  fixed.
+
 - Issue #14166: Pickler objects now have an optional ``dispatch_table``
   attribute which allows to set custom per-pickler reduction functions.
   Patch by sbt.
