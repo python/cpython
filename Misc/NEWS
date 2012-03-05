@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14007: Accept incomplete TreeBuilder objects (missing start, end,
+  data or close method) for the Python implementation as well.
+  Drop the no-op TreeBuilder().xml() method from the C implementation.
+
 
 What's New in Python 3.3.0 Alpha 1?
 ===================================

@@ -3651,6 +3651,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover(self):
         fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
                                                        backupCount=1)
+        fmt = logging.Formatter('%(asctime)s %(message)s')
+        fh.setFormatter(fmt)
         r = logging.makeLogRecord({'msg': 'testing'})
         fh.emit(r)
         self.assertLogFile(self.fn)
