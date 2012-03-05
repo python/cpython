@@ -101,6 +101,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13719: Make the distutils upload command aware of bdist_msi products.
+
 - Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
   return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
   fixed.
