@@ -3484,11 +3484,12 @@ class TestBufferProtocol(unittest.TestCase):
                         self.assertEqual(m3[2], ord(b'3'))
                         del m1, m2, m3
 
-        # XXX If m1 has exports, raise BufferError.
-        # x = bytearray(b'123')
-        # with memoryview(x) as m1:
-        #     ex = ndarray(m1)
-        #     m1[0] == ord(b'1')
+        # memoryview.release() fails if the view has exported buffers.
+        x = bytearray(b'123')
+        with self.assertRaises(BufferError):
+            with memoryview(x) as m:
+                ex = ndarray(m)
+                m[0] == ord(b'1')
 
     def test_memoryview_redirect(self):
 
