@@ -1699,13 +1699,6 @@ treebuilder_dealloc(TreeBuilderObject* self)
 /* handlers */
 
 LOCAL(PyObject*)
-treebuilder_handle_xml(TreeBuilderObject* self, PyObject* encoding,
-                       PyObject* standalone)
-{
-    Py_RETURN_NONE;
-}
-
-LOCAL(PyObject*)
 treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
                          PyObject* attrib)
 {
@@ -1976,22 +1969,10 @@ treebuilder_start(TreeBuilderObject* self, PyObject* args)
     return treebuilder_handle_start(self, tag, attrib);
 }
 
-static PyObject*
-treebuilder_xml(TreeBuilderObject* self, PyObject* args)
-{
-    PyObject* encoding;
-    PyObject* standalone;
-    if (!PyArg_ParseTuple(args, "OO:xml", &encoding, &standalone))
-        return NULL;
-
-    return treebuilder_handle_xml(self, encoding, standalone);
-}
-
 static PyMethodDef treebuilder_methods[] = {
     {"data", (PyCFunction) treebuilder_data, METH_VARARGS},
     {"start", (PyCFunction) treebuilder_start, METH_VARARGS},
     {"end", (PyCFunction) treebuilder_end, METH_VARARGS},
-    {"xml", (PyCFunction) treebuilder_xml, METH_VARARGS},
     {"close", (PyCFunction) treebuilder_close, METH_VARARGS},
     {NULL, NULL}
 };
@@ -2051,8 +2032,6 @@ typedef struct {
     PyObject* entity;
 
     PyObject* names;
-
-    PyObject* handle_xml;
 
     PyObject* handle_start;
     PyObject* handle_data;
@@ -2506,7 +2485,6 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
         Py_INCREF(target);
     self->target = target;
 
-    self->handle_xml = PyObject_GetAttrString(target, "xml");
     self->handle_start = PyObject_GetAttrString(target, "start");
     self->handle_data = PyObject_GetAttrString(target, "data");
     self->handle_end = PyObject_GetAttrString(target, "end");
@@ -2562,7 +2540,6 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_XDECREF(self->handle_end);
     Py_XDECREF(self->handle_data);
     Py_XDECREF(self->handle_start);
-    Py_XDECREF(self->handle_xml);
 
     Py_DECREF(self->target);
     Py_DECREF(self->entity);
