@@ -62,10 +62,7 @@ class Node(xml.dom.Node):
             return writer.stream.getvalue()
 
     def hasChildNodes(self):
-        if self.childNodes:
-            return True
-        else:
-            return False
+        return bool(self.childNodes)
 
     def _get_childNodes(self):
         return self.childNodes
@@ -930,6 +927,7 @@ class Childless:
     """Mixin that makes childless-ness easy to implement and avoids
     the complexity of the Node methods that deal with children.
     """
+    __slots__ = ()
 
     attributes = None
     childNodes = EmptyNodeList()
@@ -1067,6 +1065,8 @@ defproperty(CharacterData, "length", doc="Length of the string data.")
 
 
 class Text(CharacterData):
+    __slots__ = ()
+
     nodeType = Node.TEXT_NODE
     nodeName = "#text"
     attributes = None
@@ -1188,6 +1188,8 @@ class Comment(CharacterData):
 
 
 class CDATASection(Text):
+    __slots__ = ()
+
     nodeType = Node.CDATA_SECTION_NODE
     nodeName = "#cdata-section"
 
@@ -1266,8 +1268,7 @@ defproperty(ReadOnlySequentialNamedNodeMap, "length",
 class Identified:
     """Mix-in class that supports the publicId and systemId attributes."""
 
-    # XXX this does not work, this is an old-style class
-    # __slots__ = 'publicId', 'systemId'
+    __slots__ = 'publicId', 'systemId'
 
     def _identified_mixin_init(self, publicId, systemId):
         self.publicId = publicId
