@@ -264,8 +264,7 @@ the  organizations that use Python.
 
 **What are the restrictions on Python's use?**
 
-They're practically nonexistent.  Consult the :file:`Misc/COPYRIGHT` file in the
-source distribution, or the section :ref:`history-and-license` for the full
+They're practically nonexistent.  Consult :ref:`history-and-license` for the full
 language, but it boils down to three conditions:
 
 * You have to leave the copyright notice on the software; if you don't include

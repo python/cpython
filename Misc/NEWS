@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13719: Make the distutils upload command aware of bdist_msi products.
+
 - Issue #14007: Accept incomplete TreeBuilder objects (missing start, end,
   data or close method) for the Python implementation as well.
   Drop the no-op TreeBuilder().xml() method from the C implementation.
