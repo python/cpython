@@ -3654,10 +3654,10 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         fmt = logging.Formatter('%(asctime)s %(message)s')
         fh.setFormatter(fmt)
         r1 = logging.makeLogRecord({'msg': 'testing - initial'})
-        r2 = logging.makeLogRecord({'msg': 'testing - after delay'})
         fh.emit(r1)
         self.assertLogFile(self.fn)
         time.sleep(1.1)    # a little over a second ...
+        r2 = logging.makeLogRecord({'msg': 'testing - after delay'})
         fh.emit(r2)
         fh.close()
         # At this point, we should have a recent rotated file which we
