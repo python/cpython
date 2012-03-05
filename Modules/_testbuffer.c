@@ -44,23 +44,21 @@ static PyTypeObject NDArray_Type;
 #define ADJUST_PTR(ptr, suboffsets) \
     (HAVE_PTR(suboffsets) ? *((char**)ptr) + suboffsets[0] : ptr)
 
-/* User configurable flags for the ndarray */
-#define ND_VAREXPORT    0x001   /* change layout while buffers are exported */
-
-/* User configurable flags for each base buffer */
-#define ND_WRITABLE     0x002   /* mark base buffer as writable */
-#define ND_FORTRAN      0x004   /* Fortran contiguous layout */
-#define ND_SCALAR       0x008   /* scalar: ndim = 0 */
-#define ND_PIL          0x010   /* convert to PIL-style array (suboffsets) */
-#define ND_GETBUF_FAIL  0x020   /* test issue 7385 */
-#define ND_REDIRECT     0x040   /* redirect buffer requests */
-
 /* Default: NumPy style (strides), read-only, no var-export, C-style layout */
-#define ND_DEFAULT      0x0
-
+#define ND_DEFAULT          0x000
+/* User configurable flags for the ndarray */
+#define ND_VAREXPORT        0x001   /* change layout while buffers are exported */
+/* User configurable flags for each base buffer */
+#define ND_WRITABLE         0x002   /* mark base buffer as writable */
+#define ND_FORTRAN          0x004   /* Fortran contiguous layout */
+#define ND_SCALAR           0x008   /* scalar: ndim = 0 */
+#define ND_PIL              0x010   /* convert to PIL-style array (suboffsets) */
+#define ND_REDIRECT         0x020   /* redirect buffer requests */
+#define ND_GETBUF_FAIL      0x040   /* trigger getbuffer failure */
+#define ND_GETBUF_UNDEFINED 0x080   /* undefined view.obj */
 /* Internal flags for the base buffer */
-#define ND_C            0x080   /* C contiguous layout (default) */
-#define ND_OWN_ARRAYS   0x100   /* consumer owns arrays */
+#define ND_C                0x100   /* C contiguous layout (default) */
+#define ND_OWN_ARRAYS       0x200   /* consumer owns arrays */
 
 /* ndarray properties */
 #define ND_IS_CONSUMER(nd) \
@@ -1449,6 +1447,8 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
     if (baseflags & ND_GETBUF_FAIL) {
         PyErr_SetString(PyExc_BufferError,
             "ND_GETBUF_FAIL: forced test exception");
+        if (baseflags & ND_GETBUF_UNDEFINED)
+            view->obj = (PyObject *)0x1; /* wrong but permitted in <= 3.2 */
         return -1;
     }
 
@@ -2782,6 +2782,7 @@ PyInit__testbuffer(void)
     PyModule_AddIntConstant(m, "ND_SCALAR", ND_SCALAR);
     PyModule_AddIntConstant(m, "ND_PIL", ND_PIL);
     PyModule_AddIntConstant(m, "ND_GETBUF_FAIL", ND_GETBUF_FAIL);
+    PyModule_AddIntConstant(m, "ND_GETBUF_UNDEFINED", ND_GETBUF_UNDEFINED);
     PyModule_AddIntConstant(m, "ND_REDIRECT", ND_REDIRECT);
 
     PyModule_AddIntConstant(m, "PyBUF_SIMPLE", PyBUF_SIMPLE);

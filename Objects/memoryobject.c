@@ -86,7 +86,7 @@ _PyManagedBuffer_FromObject(PyObject *base)
         return NULL;
 
     if (PyObject_GetBuffer(base, &mbuf->master, PyBUF_FULL_RO) < 0) {
-        /* mbuf->master.obj must be NULL. */
+        mbuf->master.obj = NULL;
         Py_DECREF(mbuf);
         return NULL;
     }
