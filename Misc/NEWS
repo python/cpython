@@ -130,6 +130,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
+  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
+  fixed.
+
 - Issue #14177: marshal.loads() now raises TypeError when given an unicode
   string.  Patch by Guilherme Gonçalves.
 
