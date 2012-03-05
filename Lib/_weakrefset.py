@@ -154,17 +154,17 @@ class WeakSet(object):
 
     def issubset(self, other):
         return self.data.issubset(ref(item) for item in other)
-    __lt__ = issubset
+    __le__ = issubset
 
-    def __le__(self, other):
-        return self.data <= set(ref(item) for item in other)
+    def __lt__(self, other):
+        return self.data < set(ref(item) for item in other)
 
     def issuperset(self, other):
         return self.data.issuperset(ref(item) for item in other)
-    __gt__ = issuperset
+    __ge__ = issuperset
 
-    def __ge__(self, other):
-        return self.data >= set(ref(item) for item in other)
+    def __gt__(self, other):
+        return self.data > set(ref(item) for item in other)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
