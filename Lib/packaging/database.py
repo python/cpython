@@ -19,6 +19,7 @@ __all__ = [
     'get_distributions', 'get_distribution', 'get_file_users',
     'provides_distribution', 'obsoletes_distribution',
     'enable_cache', 'disable_cache', 'clear_cache',
+    # XXX these functions' names look like get_file_users but are not related
     'get_file_path', 'get_file']
 
 
