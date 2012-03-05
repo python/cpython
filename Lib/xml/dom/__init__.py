@@ -17,6 +17,7 @@ pulldom -- DOM builder supporting on-demand tree-building for selected
 
 class Node:
     """Class giving the NodeType constants."""
+    __slots__ = ()
 
     # DOM implementations may use this as a base class for their own
     # Node implementations.  If they don't, the constants defined here
