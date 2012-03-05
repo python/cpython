@@ -20,7 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
-    {"f_yieldfrom",     T_OBJECT,       OFF(f_yieldfrom), READONLY},
     {NULL}      /* Sentinel */
 };
 
