@@ -3653,11 +3653,12 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                                                        backupCount=1)
         fmt = logging.Formatter('%(asctime)s %(message)s')
         fh.setFormatter(fmt)
-        r = logging.makeLogRecord({'msg': 'testing'})
-        fh.emit(r)
+        r1 = logging.makeLogRecord({'msg': 'testing - initial'})
+        r2 = logging.makeLogRecord({'msg': 'testing - after delay'})
+        fh.emit(r1)
         self.assertLogFile(self.fn)
-        time.sleep(1.01)    # just a little over a second ...
-        fh.emit(r)
+        time.sleep(1.1)    # a little over a second ...
+        fh.emit(r2)
         fh.close()
         # At this point, we should have a recent rotated file which we
         # can test for the existence of. However, in practice, on some
