@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14168: Check for presence of Element._attrs in minidom before 
+  accessing it.
+
 - Issue #12328: Fix multiprocessing's use of overlapped I/O on Windows.
   Also, add a multiprocessing.connection.wait(rlist, timeout=None) function
   for polling multiple objects at once.  Patch by sbt.
@@ -533,8 +536,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #14168: Check for presence of _attrs before accessing it.
 
 - Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
   return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
