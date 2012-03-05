@@ -261,8 +261,8 @@ behave slightly differently from real Capsules.  Specifically:
     copy as you see fit.)
 
 You can find :file:`capsulethunk.h` in the Python source distribution
-in the :file:`Doc/includes` directory.  We also include it here for
-your reference; here is :file:`capsulethunk.h`:
+as :source:`Doc/includes/capsulethunk.h`.  We also include it here for
+your convenience:
 
 .. literalinclude:: ../includes/capsulethunk.h
 

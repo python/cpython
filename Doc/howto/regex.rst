@@ -360,7 +360,7 @@ and more.
 
 You can learn about this by interactively experimenting with the :mod:`re`
 module.  If you have :mod:`tkinter` available, you may also want to look at
-:file:`Tools/demo/redemo.py`, a demonstration program included with the
+:source:`Tools/demo/redemo.py`, a demonstration program included with the
 Python distribution.  It allows you to enter REs and strings, and displays
 whether the RE matches or fails. :file:`redemo.py` can be quite useful when
 trying to debug a complicated RE.  Phil Schwartz's `Kodos
@@ -495,7 +495,7 @@ more convenient.  If a program contains a lot of regular expressions, or re-uses
 the same ones in several locations, then it might be worthwhile to collect all
 the definitions in one place, in a section of code that compiles all the REs
 ahead of time.  To take an example from the standard library, here's an extract
-from the now deprecated :file:`xmllib.py`::
+from the now-defunct Python 2 standard :mod:`xmllib` module::
 
    ref = re.compile( ... )
    entityref = re.compile( ... )
