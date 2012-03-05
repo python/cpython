@@ -1,4 +1,3 @@
-
 .. _markup:
 
 **********************************
@@ -26,7 +25,7 @@ definition of the Python bindings for the DOM and SAX interfaces.
    htmlparser.rst
    sgmllib.rst
    htmllib.rst
-   pyexpat.rst
+   xml.etree.elementtree.rst
    xml.dom.rst
    xml.dom.minidom.rst
    xml.dom.pulldom.rst
@@ -34,4 +33,4 @@ definition of the Python bindings for the DOM and SAX interfaces.
    xml.sax.handler.rst
    xml.sax.utils.rst
    xml.sax.reader.rst
-   xml.etree.elementtree.rst
+   pyexpat.rst
