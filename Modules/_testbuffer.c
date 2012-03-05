@@ -2602,6 +2602,126 @@ static PyTypeObject NDArray_Type = {
     ndarray_new,                 /* tp_new */
 };
 
+/**************************************************************************/
+/*                          StaticArray Object                            */
+/**************************************************************************/
+
+static PyTypeObject StaticArray_Type;
+
+typedef struct {
+    PyObject_HEAD
+    int legacy_mode; /* if true, use the view.obj==NULL hack */
+} StaticArrayObject;
+
+static char static_mem[12] = {0,1,2,3,4,5,6,7,8,9,10,11};
+static Py_ssize_t static_shape[1] = {12};
+static Py_ssize_t static_strides[1] = {1};
+static Py_buffer static_buffer = {
+    static_mem,     /* buf */
+    NULL,           /* obj */
+    12,             /* len */
+    1,              /* itemsize */
+    1,              /* readonly */
+    1,              /* ndim */
+    "B",            /* format */
+    static_shape,   /* shape */
+    static_strides, /* strides */
+    NULL,           /* suboffsets */
+    NULL            /* internal */
+};
+
+static PyObject *
+staticarray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    return (PyObject *)PyObject_New(StaticArrayObject, &StaticArray_Type);
+}
+
+static int
+staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    StaticArrayObject *a = (StaticArrayObject *)self;
+    static char *kwlist[] = {
+        "legacy_mode", NULL
+    };
+    PyObject *legacy_mode = Py_False;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &legacy_mode))
+        return -1;
+
+    a->legacy_mode = (legacy_mode != Py_False);
+    return 0;
+}
+
+static void
+staticarray_dealloc(StaticArrayObject *self)
+{
+    PyObject_Del(self);
+}
+
+/* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,
+   which makes this object a non-compliant exporter! */
+static int
+staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
+{
+    *view = static_buffer;
+
+    if (self->legacy_mode) {
+        view->obj = NULL; /* Don't use this in new code. */
+    }
+    else {
+        view->obj = (PyObject *)self;
+        Py_INCREF(view->obj);
+    }
+
+    return 0;
+}
+
+static PyBufferProcs staticarray_as_buffer = {
+    (getbufferproc)staticarray_getbuf, /* bf_getbuffer */
+    NULL,                              /* bf_releasebuffer */
+};
+
+static PyTypeObject StaticArray_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "staticarray",                   /* Name of this type */
+    sizeof(StaticArrayObject),       /* Basic object size */
+    0,                               /* Item size for varobject */
+    (destructor)staticarray_dealloc, /* tp_dealloc */
+    0,                               /* tp_print */
+    0,                               /* tp_getattr */
+    0,                               /* tp_setattr */
+    0,                               /* tp_compare */
+    0,                               /* tp_repr */
+    0,                               /* tp_as_number */
+    0,                               /* tp_as_sequence */
+    0,                               /* tp_as_mapping */
+    0,                               /* tp_hash */
+    0,                               /* tp_call */
+    0,                               /* tp_str */
+    0,                               /* tp_getattro */
+    0,                               /* tp_setattro */
+    &staticarray_as_buffer,          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,              /* tp_flags */
+    0,                               /* tp_doc */
+    0,                               /* tp_traverse */
+    0,                               /* tp_clear */
+    0,                               /* tp_richcompare */
+    0,                               /* tp_weaklistoffset */
+    0,                               /* tp_iter */
+    0,                               /* tp_iternext */
+    0,                               /* tp_methods */
+    0,                               /* tp_members */
+    0,                               /* tp_getset */
+    0,                               /* tp_base */
+    0,                               /* tp_dict */
+    0,                               /* tp_descr_get */
+    0,                               /* tp_descr_set */
+    0,                               /* tp_dictoffset */
+    staticarray_init,                /* tp_init */
+    0,                               /* tp_alloc */
+    staticarray_new,                 /* tp_new */
+};
+
 
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
@@ -2634,9 +2754,13 @@ PyInit__testbuffer(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&NDArray_Type)=&PyType_Type;
+    Py_TYPE(&NDArray_Type) = &PyType_Type;
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
+
+    Py_TYPE(&StaticArray_Type) = &PyType_Type;
+    Py_INCREF(&StaticArray_Type);
+    PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)
