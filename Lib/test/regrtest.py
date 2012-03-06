@@ -758,7 +758,9 @@ class saved_test_environment:
     # the corresponding method names.
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
-                 'os.environ', 'sys.path', 'asyncore.socket_map')
+                 'os.environ', 'sys.path', 'asyncore.socket_map',
+                 'test_support.TESTFN',
+                )
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -808,6 +810,21 @@ class saved_test_environment:
         if asyncore is not None:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
+
+    def get_test_support_TESTFN(self):
+        if os.path.isfile(test_support.TESTFN):
+            result = 'f'
+        elif os.path.isdir(test_support.TESTFN):
+            result = 'd'
+        else:
+            result = None
+        return result
+    def restore_test_support_TESTFN(self, saved_value):
+        if saved_value is None:
+            if os.path.isfile(test_support.TESTFN):
+                os.unlink(test_support.TESTFN)
+            elif os.path.isdir(test_support.TESTFN):
+                shutil.rmtree(test_support.TESTFN)
 
     def resource_info(self):
         for name in self.resources:
