@@ -205,6 +205,7 @@ class SmallPtyTests(unittest.TestCase):
         self.orig_stdout_fileno = pty.STDOUT_FILENO
         self.orig_pty_select = pty.select
         self.fds = []  # A list of file descriptors to close.
+        self.files = []
         self.select_rfds_lengths = []
         self.select_rfds_results = []
 
@@ -212,16 +213,26 @@ class SmallPtyTests(unittest.TestCase):
         pty.STDIN_FILENO = self.orig_stdin_fileno
         pty.STDOUT_FILENO = self.orig_stdout_fileno
         pty.select = self.orig_pty_select
+        for file in self.files:
+            try:
+                file.close()
+            except OSError:
+                pass
         for fd in self.fds:
             try:
                 os.close(fd)
-            except:
+            except OSError:
                 pass
 
     def _pipe(self):
         pipe_fds = os.pipe()
         self.fds.extend(pipe_fds)
         return pipe_fds
+
+    def _socketpair(self):
+        socketpair = socket.socketpair()
+        self.files.extend(socketpair)
+        return socketpair
 
     def _mock_select(self, rfds, wfds, xfds):
         # This will raise IndexError when no more expected calls exist.
@@ -234,9 +245,8 @@ class SmallPtyTests(unittest.TestCase):
         pty.STDOUT_FILENO = mock_stdout_fd
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
         pty.STDIN_FILENO = mock_stdin_fd
-        socketpair = socket.socketpair()
+        socketpair = self._socketpair()
         masters = [s.fileno() for s in socketpair]
-        self.fds.extend(masters)
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
         os.write(masters[1], b'from master')
@@ -263,9 +273,8 @@ class SmallPtyTests(unittest.TestCase):
         pty.STDOUT_FILENO = mock_stdout_fd
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
         pty.STDIN_FILENO = mock_stdin_fd
-        socketpair = socket.socketpair()
+        socketpair = self._socketpair()
         masters = [s.fileno() for s in socketpair]
-        self.fds.extend(masters)
 
         os.close(masters[1])
         socketpair[1].close()
