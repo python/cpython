@@ -347,12 +347,9 @@ lookdict(PyDictObject *mp, PyObject *key, register Py_hash_t hash)
                     return ep;
             }
             else {
-                /* The compare did major nasty stuff to the
-                 * dict:  start over.
-                 * XXX A clever adversary could prevent this
-                 * XXX from terminating.
-                 */
-                return lookdict(mp, key, hash);
+                PyErr_SetString(PyExc_RuntimeError,
+                                "dictionary changed size during lookup");
+                return NULL;
             }
         }
         freeslot = NULL;
@@ -379,12 +376,9 @@ lookdict(PyDictObject *mp, PyObject *key, register Py_hash_t hash)
                     return ep;
             }
             else {
-                /* The compare did major nasty stuff to the
-                 * dict:  start over.
-                 * XXX A clever adversary could prevent this
-                 * XXX from terminating.
-                 */
-                return lookdict(mp, key, hash);
+                PyErr_SetString(PyExc_RuntimeError,
+                                "dictionary changed size during lookup");
+                return NULL;
             }
         }
         else if (ep->me_key == dummy && freeslot == NULL)
