@@ -3935,7 +3935,6 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 int
 PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
 {
-    Py_UCS4 maxchar;
     if (!PyUnicode_Check(unicode) || !PyUnicode_IS_COMPACT(unicode)) {
         PyErr_BadArgument();
         return -1;
