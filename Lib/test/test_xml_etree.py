@@ -1855,6 +1855,102 @@ def check_issue10777():
 # --------------------------------------------------------------------
 
 
+class ElementTreeTest(unittest.TestCase):
+
+    def test_istype(self):
+        self.assertIsInstance(ET.ParseError, type)
+        self.assertIsInstance(ET.QName, type)
+        self.assertIsInstance(ET.ElementTree, type)
+        self.assertIsInstance(ET.Element, type)
+        # XXX issue 14128 with C ElementTree
+        # self.assertIsInstance(ET.TreeBuilder, type)
+        # self.assertIsInstance(ET.XMLParser, type)
+
+    def test_Element_subclass_trivial(self):
+        class MyElement(ET.Element):
+            pass
+
+        mye = MyElement('foo')
+        self.assertIsInstance(mye, ET.Element)
+        self.assertIsInstance(mye, MyElement)
+        self.assertEqual(mye.tag, 'foo')
+
+    def test_Element_subclass_constructor(self):
+        class MyElement(ET.Element):
+            def __init__(self, tag, attrib={}, **extra):
+                super(MyElement, self).__init__(tag + '__', attrib, **extra)
+
+        mye = MyElement('foo', {'a': 1, 'b': 2}, c=3, d=4)
+        self.assertEqual(mye.tag, 'foo__')
+        self.assertEqual(sorted(mye.items()),
+            [('a', 1), ('b', 2), ('c', 3), ('d', 4)])
+
+    def test_Element_subclass_new_method(self):
+        class MyElement(ET.Element):
+            def newmethod(self):
+                return self.tag
+
+        mye = MyElement('joe')
+        self.assertEqual(mye.newmethod(), 'joe')
+
+
+class TreeBuilderTest(unittest.TestCase):
+
+    sample1 = ('<!DOCTYPE html PUBLIC'
+        ' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+        ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+        '<html>text</html>')
+
+    def test_dummy_builder(self):
+        class BaseDummyBuilder:
+            def close(self):
+                return 42
+
+        class DummyBuilder(BaseDummyBuilder):
+            data = start = end = lambda *a: None
+
+        parser = ET.XMLParser(target=DummyBuilder())
+        parser.feed(self.sample1)
+        self.assertEqual(parser.close(), 42)
+
+        parser = ET.XMLParser(target=BaseDummyBuilder())
+        parser.feed(self.sample1)
+        self.assertEqual(parser.close(), 42)
+
+        parser = ET.XMLParser(target=object())
+        parser.feed(self.sample1)
+        self.assertIsNone(parser.close())
+
+
+    @unittest.expectedFailure   # XXX issue 14007 with C ElementTree
+    def test_doctype(self):
+        class DoctypeParser:
+            _doctype = None
+
+            def doctype(self, name, pubid, system):
+                self._doctype = (name, pubid, system)
+
+            def close(self):
+                return self._doctype
+
+        parser = ET.XMLParser(target=DoctypeParser())
+        parser.feed(self.sample1)
+
+        self.assertEqual(parser.close(),
+            ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
+             'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+
+class NoAcceleratorTest(unittest.TestCase):
+
+    # Test that the C accelerator was not imported for pyET
+    def test_correct_import_pyET(self):
+        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
+        self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
+
+# --------------------------------------------------------------------
+
+
 class CleanContext(object):
     """Provide default namespace mapping and path cache."""
     checkwarnings = None
@@ -1873,10 +1969,7 @@ class CleanContext(object):
             ("This method will be removed in future versions.  "
              "Use .+ instead.", DeprecationWarning),
             ("This method will be removed in future versions.  "
-             "Use .+ instead.", PendingDeprecationWarning),
-            # XMLParser.doctype() is deprecated.
-            ("This method of XMLParser is deprecated.  Define doctype.. "
-             "method on the TreeBuilder target.", DeprecationWarning))
+             "Use .+ instead.", PendingDeprecationWarning))
         self.checkwarnings = support.check_warnings(*deprecations, quiet=quiet)
 
     def __enter__(self):
@@ -1898,19 +1991,18 @@ class CleanContext(object):
         self.checkwarnings.__exit__(*args)
 
 
-class TestAcceleratorNotImported(unittest.TestCase):
-    # Test that the C accelerator was not imported for pyET
-    def test_correct_import_pyET(self):
-        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
-
-
 def test_main(module=pyET):
     from test import test_xml_etree
 
     # The same doctests are used for both the Python and the C implementations
     test_xml_etree.ET = module
 
-    support.run_unittest(TestAcceleratorNotImported)
+    test_classes = [ElementTreeTest, TreeBuilderTest]
+    if module is pyET:
+        # Run the tests specific to the Python implementation
+        test_classes += [NoAcceleratorTest]
+
+    support.run_unittest(*test_classes)
 
     # XXX the C module should give the same warnings as the Python module
     with CleanContext(quiet=(module is not pyET)):

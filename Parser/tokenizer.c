@@ -1412,11 +1412,15 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
     /* Identifier (most frequent token!) */
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
-        /* Process b"", r"", br"" and rb"" */
-        int saw_b = 0, saw_r = 0;
+        /* Process b"", r"", u"", br"", rb"" and ur"" */
+        int saw_b = 0, saw_r = 0, saw_u = 0;
         while (1) {
-            if (!saw_b && (c == 'b' || c == 'B'))
+            if (!(saw_b || saw_u) && (c == 'b' || c == 'B'))
                 saw_b = 1;
+            /* Since this is a backwards compatibility support literal we don't
+               want to support it in arbitrary order like byte literals. */
+            else if (!(saw_b || saw_u || saw_r) && (c == 'u' || c == 'U'))
+                saw_u = 1;
             else if (!saw_r && (c == 'r' || c == 'R'))
                 saw_r = 1;
             else

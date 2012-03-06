@@ -959,13 +959,13 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 }
 
 static PySequenceMethods mmap_as_sequence = {
-    (lenfunc)mmap_length,                      /*sq_length*/
-    (binaryfunc)mmap_concat,                   /*sq_concat*/
-    (ssizeargfunc)mmap_repeat,                 /*sq_repeat*/
-    (ssizeargfunc)mmap_item,                           /*sq_item*/
-    0,                                        /*sq_slice*/
-    (ssizeobjargproc)mmap_ass_item,            /*sq_ass_item*/
-    0,                                        /*sq_ass_slice*/
+    (lenfunc)mmap_length,            /*sq_length*/
+    (binaryfunc)mmap_concat,         /*sq_concat*/
+    (ssizeargfunc)mmap_repeat,       /*sq_repeat*/
+    (ssizeargfunc)mmap_item,         /*sq_item*/
+    0,                               /*sq_slice*/
+    (ssizeobjargproc)mmap_ass_item,  /*sq_ass_item*/
+    0,                               /*sq_ass_slice*/
 };
 
 static PyMappingMethods mmap_as_mapping = {
@@ -1027,7 +1027,7 @@ static PyTypeObject mmap_object_type = {
     PyObject_GenericGetAttr,                    /*tp_getattro*/
     0,                                          /*tp_setattro*/
     &mmap_as_buffer,                            /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                   /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
     mmap_doc,                                   /*tp_doc*/
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1043,10 +1043,10 @@ static PyTypeObject mmap_object_type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    0,                                      /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     new_mmap_object,                            /* tp_new */
-    PyObject_Del,                           /* tp_free */
+    PyObject_Del,                               /* tp_free */
 };
 
 
@@ -1097,8 +1097,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     int devzero = -1;
     int access = (int)ACCESS_DEFAULT;
     static char *keywords[] = {"fileno", "length",
-                                     "flags", "prot",
-                                     "access", "offset", NULL};
+                               "flags", "prot",
+                               "access", "offset", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|iii" _Py_PARSE_OFF_T, keywords,
                                      &fd, &map_size_obj, &flags, &prot,
@@ -1260,8 +1260,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     int access = (access_mode)ACCESS_DEFAULT;
     DWORD flProtect, dwDesiredAccess;
     static char *keywords[] = { "fileno", "length",
-                                      "tagname",
-                                      "access", "offset", NULL };
+                                "tagname",
+                                "access", "offset", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|ziL", keywords,
                                      &fileno, &map_size_obj,

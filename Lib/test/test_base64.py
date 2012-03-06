@@ -2,6 +2,7 @@ import unittest
 from test import support
 import base64
 import binascii
+import os
 import sys
 import subprocess
 
@@ -274,6 +275,10 @@ class BaseXYTestCase(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
+    def tearDown(self):
+        if os.path.exists(support.TESTFN):
+            os.unlink(support.TESTFN)
+
     def get_output(self, *args, **options):
         args = (sys.executable, '-m', 'base64') + args
         return subprocess.check_output(args, **options)

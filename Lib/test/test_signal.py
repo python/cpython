@@ -662,7 +662,7 @@ class PendingSignalsTests(unittest.TestCase):
         self.wait_helper(signal.SIGALRM, '''
         def test(signum):
             signal.alarm(1)
-            info = signal.sigtimedwait([signum], (10, 1000))
+            info = signal.sigtimedwait([signum], 10.1000)
             if info.si_signo != signum:
                 raise Exception('info.si_signo != %s' % signum)
         ''')
@@ -675,7 +675,7 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             import os
             os.kill(os.getpid(), signum)
-            info = signal.sigtimedwait([signum], (0, 0))
+            info = signal.sigtimedwait([signum], 0)
             if info.si_signo != signum:
                 raise Exception('info.si_signo != %s' % signum)
         ''')
@@ -685,7 +685,7 @@ class PendingSignalsTests(unittest.TestCase):
     def test_sigtimedwait_timeout(self):
         self.wait_helper(signal.SIGALRM, '''
         def test(signum):
-            received = signal.sigtimedwait([signum], (1, 0))
+            received = signal.sigtimedwait([signum], 1.0)
             if received is not None:
                 raise Exception("received=%r" % (received,))
         ''')
@@ -694,9 +694,7 @@ class PendingSignalsTests(unittest.TestCase):
                          'need signal.sigtimedwait()')
     def test_sigtimedwait_negative_timeout(self):
         signum = signal.SIGALRM
-        self.assertRaises(ValueError, signal.sigtimedwait, [signum], (-1, -1))
-        self.assertRaises(ValueError, signal.sigtimedwait, [signum], (0, -1))
-        self.assertRaises(ValueError, signal.sigtimedwait, [signum], (-1, 0))
+        self.assertRaises(ValueError, signal.sigtimedwait, [signum], -1.0)
 
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')

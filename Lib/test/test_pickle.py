@@ -1,5 +1,6 @@
 import pickle
 import io
+import collections
 
 from test import support
 
@@ -7,6 +8,7 @@ from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
 from test.pickletester import AbstractPicklerUnpicklerObjectTests
+from test.pickletester import AbstractDispatchTableTests
 from test.pickletester import BigmemPickleTests
 
 try:
@@ -80,6 +82,18 @@ class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
     unpickler_class = pickle._Unpickler
 
 
+class PyDispatchTableTests(AbstractDispatchTableTests):
+    pickler_class = pickle._Pickler
+    def get_dispatch_table(self):
+        return pickle.dispatch_table.copy()
+
+
+class PyChainDispatchTableTests(AbstractDispatchTableTests):
+    pickler_class = pickle._Pickler
+    def get_dispatch_table(self):
+        return collections.ChainMap({}, pickle.dispatch_table)
+
+
 if has_c_implementation:
     class CPicklerTests(PyPicklerTests):
         pickler = _pickle.Pickler
@@ -101,14 +115,26 @@ if has_c_implementation:
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
 
+    class CDispatchTableTests(AbstractDispatchTableTests):
+        pickler_class = pickle.Pickler
+        def get_dispatch_table(self):
+            return pickle.dispatch_table.copy()
+
+    class CChainDispatchTableTests(AbstractDispatchTableTests):
+        pickler_class = pickle.Pickler
+        def get_dispatch_table(self):
+            return collections.ChainMap({}, pickle.dispatch_table)
+
 
 def test_main():
-    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests]
+    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
+             PyDispatchTableTests, PyChainDispatchTableTests]
     if has_c_implementation:
         tests.extend([CPicklerTests, CPersPicklerTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
+                      CDispatchTableTests, CChainDispatchTableTests,
                       InMemoryPickleTests])
     support.run_unittest(*tests)
     support.run_doctest(pickle)

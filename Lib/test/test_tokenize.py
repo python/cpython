@@ -563,6 +563,18 @@ Non-ascii identifiers
     NAME       'grün'        (2, 0) (2, 4)
     OP         '='           (2, 5) (2, 6)
     STRING     "'green'"     (2, 7) (2, 14)
+
+Legacy unicode literals:
+
+    >>> dump_tokens("Örter = u'places'\\ngrün = UR'green'")
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    NAME       'Örter'       (1, 0) (1, 5)
+    OP         '='           (1, 6) (1, 7)
+    STRING     "u'places'"   (1, 8) (1, 17)
+    NEWLINE    '\\n'          (1, 17) (1, 18)
+    NAME       'grün'        (2, 0) (2, 4)
+    OP         '='           (2, 5) (2, 6)
+    STRING     "UR'green'"   (2, 7) (2, 16)
 """
 
 from test import support

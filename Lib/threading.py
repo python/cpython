@@ -34,40 +34,6 @@ TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
 
-# Debug support (adapted from ihooks.py).
-
-_VERBOSE = False
-
-if __debug__:
-
-    class _Verbose(object):
-
-        def __init__(self, verbose=None):
-            if verbose is None:
-                verbose = _VERBOSE
-            self._verbose = verbose
-
-        def _note(self, format, *args):
-            if self._verbose:
-                format = format % args
-                # Issue #4188: calling current_thread() can incur an infinite
-                # recursion if it has to create a DummyThread on the fly.
-                ident = get_ident()
-                try:
-                    name = _active[ident].name
-                except KeyError:
-                    name = "<OS thread %d>" % ident
-                format = "%s: %s\n" % (name, format)
-                _sys.stderr.write(format)
-
-else:
-    # Disable this when using "python -O"
-    class _Verbose(object):
-        def __init__(self, verbose=None):
-            pass
-        def _note(self, *args):
-            pass
-
 # Support for profile and trace hooks
 
 _profile_hook = None
@@ -85,17 +51,14 @@ def settrace(func):
 
 Lock = _allocate_lock
 
-def RLock(verbose=None, *args, **kwargs):
-    if verbose is None:
-        verbose = _VERBOSE
-    if (__debug__ and verbose) or _CRLock is None:
-        return _PyRLock(verbose, *args, **kwargs)
+def RLock(*args, **kwargs):
+    if _CRLock is None:
+        return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
 
-class _RLock(_Verbose):
+class _RLock:
 
-    def __init__(self, verbose=None):
-        _Verbose.__init__(self, verbose)
+    def __init__(self):
         self._block = _allocate_lock()
         self._owner = None
         self._count = 0
@@ -113,18 +76,11 @@ class _RLock(_Verbose):
         me = get_ident()
         if self._owner == me:
             self._count = self._count + 1
-            if __debug__:
-                self._note("%s.acquire(%s): recursive success", self, blocking)
             return 1
         rc = self._block.acquire(blocking, timeout)
         if rc:
             self._owner = me
             self._count = 1
-            if __debug__:
-                self._note("%s.acquire(%s): initial success", self, blocking)
-        else:
-            if __debug__:
-                self._note("%s.acquire(%s): failure", self, blocking)
         return rc
 
     __enter__ = acquire
@@ -136,11 +92,6 @@ class _RLock(_Verbose):
         if not count:
             self._owner = None
             self._block.release()
-            if __debug__:
-                self._note("%s.release(): final release", self)
-        else:
-            if __debug__:
-                self._note("%s.release(): non-final release", self)
 
     def __exit__(self, t, v, tb):
         self.release()
@@ -150,12 +101,8 @@ class _RLock(_Verbose):
     def _acquire_restore(self, state):
         self._block.acquire()
         self._count, self._owner = state
-        if __debug__:
-            self._note("%s._acquire_restore()", self)
 
     def _release_save(self):
-        if __debug__:
-            self._note("%s._release_save()", self)
         if self._count == 0:
             raise RuntimeError("cannot release un-acquired lock")
         count = self._count
@@ -171,10 +118,9 @@ class _RLock(_Verbose):
 _PyRLock = _RLock
 
 
-class Condition(_Verbose):
+class Condition:
 
-    def __init__(self, lock=None, verbose=None):
-        _Verbose.__init__(self, verbose)
+    def __init__(self, lock=None):
         if lock is None:
             lock = RLock()
         self._lock = lock
@@ -233,23 +179,16 @@ class Condition(_Verbose):
             if timeout is None:
                 waiter.acquire()
                 gotit = True
-                if __debug__:
-                    self._note("%s.wait(): got it", self)
             else:
                 if timeout > 0:
                     gotit = waiter.acquire(True, timeout)
                 else:
                     gotit = waiter.acquire(False)
                 if not gotit:
-                    if __debug__:
-                        self._note("%s.wait(%s): timed out", self, timeout)
                     try:
                         self._waiters.remove(waiter)
                     except ValueError:
                         pass
-                else:
-                    if __debug__:
-                        self._note("%s.wait(%s): got it", self, timeout)
             return gotit
         finally:
             self._acquire_restore(saved_state)
@@ -265,19 +204,9 @@ class Condition(_Verbose):
                 else:
                     waittime = endtime - _time()
                     if waittime <= 0:
-                        if __debug__:
-                            self._note("%s.wait_for(%r, %r): Timed out.",
-                                       self, predicate, timeout)
                         break
-            if __debug__:
-                self._note("%s.wait_for(%r, %r): Waiting with timeout=%s.",
-                           self, predicate, timeout, waittime)
             self.wait(waittime)
             result = predicate()
-        else:
-            if __debug__:
-                self._note("%s.wait_for(%r, %r): Success.",
-                           self, predicate, timeout)
         return result
 
     def notify(self, n=1):
@@ -286,11 +215,7 @@ class Condition(_Verbose):
         __waiters = self._waiters
         waiters = __waiters[:n]
         if not waiters:
-            if __debug__:
-                self._note("%s.notify(): no waiters", self)
             return
-        self._note("%s.notify(): notifying %d waiter%s", self, n,
-                   n!=1 and "s" or "")
         for waiter in waiters:
             waiter.release()
             try:
@@ -304,14 +229,13 @@ class Condition(_Verbose):
     notifyAll = notify_all
 
 
-class Semaphore(_Verbose):
+class Semaphore:
 
     # After Tim Peters' semaphore class, but not quite the same (no maximum)
 
-    def __init__(self, value=1, verbose=None):
+    def __init__(self, value=1):
         if value < 0:
             raise ValueError("semaphore initial value must be >= 0")
-        _Verbose.__init__(self, verbose)
         self._cond = Condition(Lock())
         self._value = value
 
@@ -324,9 +248,6 @@ class Semaphore(_Verbose):
         while self._value == 0:
             if not blocking:
                 break
-            if __debug__:
-                self._note("%s.acquire(%s): blocked waiting, value=%s",
-                           self, blocking, self._value)
             if timeout is not None:
                 if endtime is None:
                     endtime = _time() + timeout
@@ -337,9 +258,6 @@ class Semaphore(_Verbose):
             self._cond.wait(timeout)
         else:
             self._value = self._value - 1
-            if __debug__:
-                self._note("%s.acquire: success, value=%s",
-                           self, self._value)
             rc = True
         self._cond.release()
         return rc
@@ -349,9 +267,6 @@ class Semaphore(_Verbose):
     def release(self):
         self._cond.acquire()
         self._value = self._value + 1
-        if __debug__:
-            self._note("%s.release: success, value=%s",
-                       self, self._value)
         self._cond.notify()
         self._cond.release()
 
@@ -361,8 +276,8 @@ class Semaphore(_Verbose):
 
 class BoundedSemaphore(Semaphore):
     """Semaphore that checks that # releases is <= # acquires"""
-    def __init__(self, value=1, verbose=None):
-        Semaphore.__init__(self, value, verbose)
+    def __init__(self, value=1):
+        Semaphore.__init__(self, value)
         self._initial_value = value
 
     def release(self):
@@ -371,12 +286,11 @@ class BoundedSemaphore(Semaphore):
         return Semaphore.release(self)
 
 
-class Event(_Verbose):
+class Event:
 
     # After Tim Peters' event class (without is_posted())
 
-    def __init__(self, verbose=None):
-        _Verbose.__init__(self, verbose)
+    def __init__(self):
         self._cond = Condition(Lock())
         self._flag = False
 
@@ -426,13 +340,13 @@ class Event(_Verbose):
 # since the previous cycle.  In addition, a 'resetting' state exists which is
 # similar to 'draining' except that threads leave with a BrokenBarrierError,
 # and a 'broken' state in which all threads get the exception.
-class Barrier(_Verbose):
+class Barrier:
     """
     Barrier.  Useful for synchronizing a fixed number of threads
     at known synchronization points.  Threads block on 'wait()' and are
     simultaneously once they have all made that call.
     """
-    def __init__(self, parties, action=None, timeout=None, verbose=None):
+    def __init__(self, parties, action=None, timeout=None):
         """
         Create a barrier, initialised to 'parties' threads.
         'action' is a callable which, when supplied, will be called
@@ -441,7 +355,6 @@ class Barrier(_Verbose):
         If a 'timeout' is provided, it is uses as the default for
         all subsequent 'wait()' calls.
         """
-        _Verbose.__init__(self, verbose)
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout
@@ -602,7 +515,7 @@ _dangling = WeakSet()
 
 # Main class for threads
 
-class Thread(_Verbose):
+class Thread:
 
     __initialized = False
     # Need to store a reference to sys.exc_info for printing
@@ -615,9 +528,8 @@ class Thread(_Verbose):
     #XXX __exc_clear = _sys.exc_clear
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None, *, daemon=None):
+                 args=(), kwargs=None, *, daemon=None):
         assert group is None, "group argument must be None for now"
-        _Verbose.__init__(self, verbose)
         if kwargs is None:
             kwargs = {}
         self._target = target
@@ -664,8 +576,6 @@ class Thread(_Verbose):
 
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
-        if __debug__:
-            self._note("%s.start(): starting thread", self)
         with _active_limbo_lock:
             _limbo[self] = self
         try:
@@ -715,24 +625,17 @@ class Thread(_Verbose):
             with _active_limbo_lock:
                 _active[self._ident] = self
                 del _limbo[self]
-            if __debug__:
-                self._note("%s._bootstrap(): thread started", self)
 
             if _trace_hook:
-                self._note("%s._bootstrap(): registering trace hook", self)
                 _sys.settrace(_trace_hook)
             if _profile_hook:
-                self._note("%s._bootstrap(): registering profile hook", self)
                 _sys.setprofile(_profile_hook)
 
             try:
                 self.run()
             except SystemExit:
-                if __debug__:
-                    self._note("%s._bootstrap(): raised SystemExit", self)
+                pass
             except:
-                if __debug__:
-                    self._note("%s._bootstrap(): unhandled exception", self)
                 # If sys.stderr is no more (most likely from interpreter
                 # shutdown) use self._stderr.  Otherwise still use sys (as in
                 # _sys) in case sys.stderr was redefined since the creation of
@@ -763,9 +666,6 @@ class Thread(_Verbose):
                     # hog; deleting everything else is just for thoroughness
                     finally:
                         del exc_type, exc_value, exc_tb
-            else:
-                if __debug__:
-                    self._note("%s._bootstrap(): normal return", self)
             finally:
                 # Prevent a race in
                 # test_threading.test_no_refcycle_through_target when
@@ -832,29 +732,18 @@ class Thread(_Verbose):
         if self is current_thread():
             raise RuntimeError("cannot join current thread")
 
-        if __debug__:
-            if not self._stopped:
-                self._note("%s.join(): waiting until thread stops", self)
-
         self._block.acquire()
         try:
             if timeout is None:
                 while not self._stopped:
                     self._block.wait()
-                if __debug__:
-                    self._note("%s.join(): thread stopped", self)
             else:
                 deadline = _time() + timeout
                 while not self._stopped:
                     delay = deadline - _time()
                     if delay <= 0:
-                        if __debug__:
-                            self._note("%s.join(): timed out", self)
                         break
                     self._block.wait(delay)
-                else:
-                    if __debug__:
-                        self._note("%s.join(): thread stopped", self)
         finally:
             self._block.release()
 
@@ -947,14 +836,9 @@ class _MainThread(Thread):
     def _exitfunc(self):
         self._stop()
         t = _pickSomeNonDaemonThread()
-        if t:
-            if __debug__:
-                self._note("%s: waiting for other threads", self)
         while t:
             t.join()
             t = _pickSomeNonDaemonThread()
-        if __debug__:
-            self._note("%s: exiting", self)
         self._delete()
 
 def _pickSomeNonDaemonThread():

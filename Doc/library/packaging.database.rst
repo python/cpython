@@ -15,6 +15,11 @@ Installed Python distributions are represented by instances of
 Most functions also provide an extra argument ``use_egg_info`` to take legacy
 distributions into account.
 
+For the purpose of this module, "installed" means that the distribution's
+:file:`.dist-info`, :file:`.egg-info` or :file:`egg` directory or file is found
+on :data:`sys.path`.  For example, if the parent directory of a
+:file:`dist-info` directory  is added to :envvar:`PYTHONPATH`, then it will be
+available in the database.
 
 Classes representing installed distributions
 --------------------------------------------
@@ -128,7 +133,7 @@ Functions to work with the database
    for the first installed distribution matching *name*.  Egg distributions are
    considered only if *use_egg_info* is true; if both a dist-info and an egg
    file are found, the dist-info prevails.  The directories to be searched are
-   given in *paths*, which defaults to :data:`sys.path`.  Return ``None`` if no
+   given in *paths*, which defaults to :data:`sys.path`.  Returns ``None`` if no
    matching distribution is found.
 
    .. FIXME param should be named use_egg
@@ -200,20 +205,23 @@ functions:
 Examples
 --------
 
-Print all information about a distribution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Printing all information about a distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given a path to a ``.dist-info`` distribution, we shall print out all
+Given the name of an installed distribution, we shall print out all
 information that can be obtained using functions provided in this module::
 
    import sys
    import packaging.database
 
-   path = input()
-   # first create the Distribution instance
    try:
-       dist = packaging.database.Distribution(path)
-   except FileNotFoundError:
+       name = sys.argv[1]
+   except ValueError:
+       sys.exit('Not enough arguments')
+
+   # first create the Distribution instance
+   dist = packaging.database.Distribution(path)
+   if dist is None:
        sys.exit('No such distribution')
 
    print('Information about %r' % dist.name)
@@ -244,7 +252,7 @@ information from a :file:`.dist-info` directory.  By typing in the console:
 
 .. code-block:: sh
 
-   $ echo /tmp/choxie/choxie-2.0.0.9.dist-info | python3 print_info.py
+   python print_info.py choxie
 
 we get the following output:
 
@@ -299,10 +307,23 @@ we get the following output:
   * It was installed as a dependency
 
 
-Find out obsoleted distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Getting metadata about a distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Now, we take tackle a different problem, we are interested in finding out
+Sometimes you're not interested about the packaging information contained in a
+full :class:`Distribution` object but just want to do something with its
+:attr:`~Distribution.metadata`::
+
+   >>> from packaging.database import get_distribution
+   >>> info = get_distribution('chocolate').metadata
+   >>> info['Keywords']
+   ['cooking', 'happiness']
+
+
+Finding out obsoleted distributions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Now, we tackle a different problem, we are interested in finding out
 which distributions have been obsoleted. This can be easily done as follows::
 
   import packaging.database

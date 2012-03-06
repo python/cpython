@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from test import support
+import array
 import marshal
 import sys
 import unittest
@@ -154,6 +155,27 @@ class ContainerTestCase(unittest.TestCase, HelperMixin):
         for constructor in (set, frozenset):
             self.helper(constructor(self.d.keys()))
 
+
+class BufferTestCase(unittest.TestCase, HelperMixin):
+
+    def test_bytearray(self):
+        b = bytearray(b"abc")
+        self.helper(b)
+        new = marshal.loads(marshal.dumps(b))
+        self.assertEqual(type(new), bytes)
+
+    def test_memoryview(self):
+        b = memoryview(b"abc")
+        self.helper(b)
+        new = marshal.loads(marshal.dumps(b))
+        self.assertEqual(type(new), bytes)
+
+    def test_array(self):
+        a = array.array('B', b"abc")
+        new = marshal.loads(marshal.dumps(a))
+        self.assertEqual(new, b"abc")
+
+
 class BugsTestCase(unittest.TestCase):
     def test_bug_5888452(self):
         # Simple-minded check for SF 588452: Debug build crashes
@@ -179,7 +201,7 @@ class BugsTestCase(unittest.TestCase):
                 pass
 
     def test_loads_recursion(self):
-        s = 'c' + ('X' * 4*4) + '{' * 2**20
+        s = b'c' + (b'X' * 4*4) + b'{' * 2**20
         self.assertRaises(ValueError, marshal.loads, s)
 
     def test_recursion_limit(self):
@@ -252,6 +274,11 @@ class BugsTestCase(unittest.TestCase):
             finally:
                 support.unlink(support.TESTFN)
 
+    def test_loads_reject_unicode_strings(self):
+        # Issue #14177: marshal.loads() should not accept unicode strings
+        unicode_string = 'T'
+        self.assertRaises(TypeError, marshal.loads, unicode_string)
+
 
 def test_main():
     support.run_unittest(IntTestCase,
@@ -260,6 +287,7 @@ def test_main():
                               CodeTestCase,
                               ContainerTestCase,
                               ExceptionTestCase,
+                              BufferTestCase,
                               BugsTestCase)
 
 if __name__ == "__main__":
