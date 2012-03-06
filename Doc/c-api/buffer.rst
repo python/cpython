@@ -81,17 +81,23 @@ allows them to be created and copied very simply.  When a generic wrapper
 around a buffer is needed, a :ref:`memoryview <memoryview-objects>` object
 can be created.
 
+For short instructions how to write an exporting object, see
+:ref:`Buffer Object Structures <buffer-structs>`. For obtaining
+a buffer, see :c:func:`PyObject_GetBuffer`.
 
 .. c:type:: Py_buffer
 
    .. c:member:: void \*obj
 
-      A new reference to the exporting object or *NULL*. The reference is owned
-      by the consumer and automatically decremented and set to *NULL* by
-      :c:func:`PyBuffer_Release`.
+      A new reference to the exporting object. The reference is owned by
+      the consumer and automatically decremented and set to *NULL* by
+      :c:func:`PyBuffer_Release`. The field is the equivalent of the return
+      value of any standard C-API function.
 
-      For temporary buffers that are wrapped by :c:func:`PyMemoryView_FromBuffer`
-      this field must be *NULL*.
+      As a special case, for *temporary* buffers that are wrapped by
+      :c:func:`PyMemoryView_FromBuffer` or :c:func:`PyBuffer_FillInfo`
+      this field is *NULL*. In general, exporting objects MUST NOT
+      use this scheme.
 
    .. c:member:: void \*buf
 
@@ -423,7 +429,9 @@ Buffer-related functions
    return -1.
 
    On success, fill in *view*, set :c:member:`view->obj` to a new reference
-   to *exporter* and return 0.
+   to *exporter* and return 0. In the case of chained buffer providers
+   that redirect requests to a single object, :c:member:`view->obj` MAY
+   refer to this object instead of *exporter* (See :ref:`Buffer Object Structures <buffer-structs>`).
 
    Successful calls to :c:func:`PyObject_GetBuffer` must be paired with calls
    to :c:func:`PyBuffer_Release`, similar to :c:func:`malloc` and :c:func:`free`.
