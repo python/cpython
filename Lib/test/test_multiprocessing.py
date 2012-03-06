@@ -2494,15 +2494,14 @@ class TestWait(unittest.TestCase):
         w.close()
 
     def test_wait(self, slow=False):
-        from multiprocessing import Pipe, Process
         from multiprocessing.connection import wait
         readers = []
         procs = []
         messages = []
 
         for i in range(4):
-            r, w = Pipe(duplex=False)
-            p = Process(target=self._child_test_wait, args=(w, slow))
+            r, w = multiprocessing.Pipe(duplex=False)
+            p = multiprocessing.Process(target=self._child_test_wait, args=(w, slow))
             p.daemon = True
             p.start()
             w.close()
@@ -2535,7 +2534,6 @@ class TestWait(unittest.TestCase):
         s.close()
 
     def test_wait_socket(self, slow=False):
-        from multiprocessing import Process
         from multiprocessing.connection import wait
         l = socket.socket()
         l.bind(('', 0))
@@ -2546,7 +2544,8 @@ class TestWait(unittest.TestCase):
         dic = {}
 
         for i in range(4):
-            p = Process(target=self._child_test_wait_socket, args=(addr, slow))
+            p = multiprocessing.Process(target=self._child_test_wait_socket,
+                                        args=(addr, slow))
             p.daemon = True
             p.start()
             procs.append(p)
