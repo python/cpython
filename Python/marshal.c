@@ -409,11 +409,12 @@ w_object(PyObject *v, WFILE *p)
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown buffer-style objects as a string */
         char *s;
-        PyBufferProcs *pb = v->ob_type->tp_as_buffer;
         Py_buffer view;
-        if ((*pb->bf_getbuffer)(v, &view, PyBUF_SIMPLE) != 0) {
+        if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
+            p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
+            return;
         }
         w_byte(TYPE_STRING, p);
         n = view.len;
@@ -425,8 +426,7 @@ w_object(PyObject *v, WFILE *p)
         }
         w_long((long)n, p);
         w_string(s, (int)n, p);
-        if (pb->bf_releasebuffer != NULL)
-            (*pb->bf_releasebuffer)(v, &view);
+        PyBuffer_Release(&view);
     }
     else {
         w_byte(TYPE_UNKNOWN, p);
@@ -1239,7 +1239,6 @@ PyObject *
 PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
     WFILE wf;
-    PyObject *res = NULL;
 
     wf.fp = NULL;
     wf.readable = NULL;
@@ -1273,12 +1272,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
                :"object too deeply nested to marshal");
         return NULL;
     }
-    if (wf.str != NULL) {
-        /* XXX Quick hack -- need to do this differently */
-        res = PyBytes_FromObject(wf.str);
-        Py_DECREF(wf.str);
-    }
-    return res;
+    return wf.str;
 }
 
 /* And an interface for Python programs... */
@@ -1390,7 +1384,7 @@ marshal_loads(PyObject *self, PyObject *args)
     char *s;
     Py_ssize_t n;
     PyObject* result;
-    if (!PyArg_ParseTuple(args, "s*:loads", &p))
+    if (!PyArg_ParseTuple(args, "y*:loads", &p))
         return NULL;
     s = p.buf;
     n = p.len;
@@ -1406,10 +1400,10 @@ marshal_loads(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(loads_doc,
-"loads(string)\n\
+"loads(bytes)\n\
 \n\
-Convert the string to a value. If no valid value is found, raise\n\
-EOFError, ValueError or TypeError. Extra characters in the string are\n\
+Convert the bytes object to a value. If no valid value is found, raise\n\
+EOFError, ValueError or TypeError. Extra characters in the input are\n\
 ignored.");
 
 static PyMethodDef marshal_methods[] = {

@@ -44,7 +44,7 @@ import errno
 
 from queue import Empty, Full
 import _multiprocessing
-from multiprocessing.connection import Pipe, SentinelReady
+from multiprocessing.connection import Pipe
 from multiprocessing.synchronize import Lock, BoundedSemaphore, Semaphore, Condition
 from multiprocessing.util import debug, info, Finalize, register_after_fork
 from multiprocessing.forking import assert_spawning
@@ -360,6 +360,7 @@ class SimpleQueue(object):
     def __init__(self):
         self._reader, self._writer = Pipe(duplex=False)
         self._rlock = Lock()
+        self._poll = self._reader.poll
         if sys.platform == 'win32':
             self._wlock = None
         else:
@@ -367,7 +368,7 @@ class SimpleQueue(object):
         self._make_methods()
 
     def empty(self):
-        return not self._reader.poll()
+        return not self._poll()
 
     def __getstate__(self):
         assert_spawning(self)
@@ -380,10 +381,10 @@ class SimpleQueue(object):
     def _make_methods(self):
         recv = self._reader.recv
         racquire, rrelease = self._rlock.acquire, self._rlock.release
-        def get(*, sentinels=None):
+        def get():
             racquire()
             try:
-                return recv(sentinels)
+                return recv()
             finally:
                 rrelease()
         self.get = get
