@@ -649,7 +649,7 @@ PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
 
 int
 PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
-              int readonly, int flags)
+                  int readonly, int flags)
 {
     if (view == NULL) return 0; /* XXX why not -1? */
     if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
