@@ -6,6 +6,7 @@ import socket
 import email
 import email.message
 import re
+import shutil
 import StringIO
 from test import test_support
 import unittest
@@ -38,12 +39,7 @@ class TestBase(unittest.TestCase):
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            for path, dirs, files in os.walk(target, topdown=False):
-                for name in files:
-                    os.remove(os.path.join(path, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(path, name))
-            os.rmdir(target)
+            shutil.rmtree(target)
         elif os.path.exists(target):
             os.remove(target)
 
