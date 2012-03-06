@@ -1213,18 +1213,29 @@ Buffer Object Structures
        int (PyObject *exporter, Py_buffer *view, int flags);
 
    Handle a request to *exporter* to fill in *view* as specified by *flags*.
-   A standard implementation of this function will take these steps:
+   Except for point (3), an implementation of this function MUST take these
+   steps:
 
-   - Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
-     set :c:data:`view->obj` to *NULL* and return -1.
+   (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
+       set :c:data:`view->obj` to *NULL* and return -1.
 
-   - Fill in the requested fields.
+   (2) Fill in the requested fields.
 
-   - Increment an internal counter for the number of exports.
+   (3) Increment an internal counter for the number of exports.
 
-   - Set :c:data:`view->obj` to *exporter* and increment :c:data:`view->obj`.
+   (4) Set :c:data:`view->obj` to *exporter* and increment :c:data:`view->obj`.
 
-   - Return 0.
+   (5) Return 0.
+
+   If *exporter* is part of a chain or tree of buffer providers, two main
+   schemes can be used:
+
+   * Re-export: Each member of the tree acts as the exporting object and
+     sets :c:data:`view->obj` to a new reference to itself.
+
+   * Redirect: The buffer request is redirected to the root object of the
+     tree. Here, :c:data:`view->obj` will be a new reference to the root
+     object.
 
    The individual fields of *view* are described in section
    :ref:`Buffer structure <buffer-structure>`, the rules how an exporter
@@ -1233,8 +1244,9 @@ Buffer Object Structures
 
    All memory pointed to in the :c:type:`Py_buffer` structure belongs to
    the exporter and must remain valid until there are no consumers left.
-   :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`,
-   :c:member:`~Py_buffer.suboffsets` and :c:member:`~Py_buffer.internal`
+   :c:member:`~Py_buffer.format`, :c:member:`~Py_buffer.shape`,
+   :c:member:`~Py_buffer.strides`, :c:member:`~Py_buffer.suboffsets`
+   and :c:member:`~Py_buffer.internal`
    are read-only for the consumer.
 
    :c:func:`PyBuffer_FillInfo` provides an easy way of exposing a simple
@@ -1250,21 +1262,23 @@ Buffer Object Structures
        void (PyObject *exporter, Py_buffer *view);
 
    Handle a request to release the resources of the buffer. If no resources
-   need to be released, this field may be *NULL*. A standard implementation
-   of this function will take these steps:
+   need to be released, :c:member:`PyBufferProcs.bf_releasebuffer` may be
+   *NULL*. Otherwise, a standard implementation of this function will take
+   these optional steps:
 
-   - Decrement an internal counter for the number of exports.
+   (1) Decrement an internal counter for the number of exports.
 
-   - If the counter is 0, free all memory associated with *view*.
+   (2) If the counter is 0, free all memory associated with *view*.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
-   track of buffer-specific resources (if present). This field is guaranteed
-   to remain constant, while a consumer MAY pass a copy of the original buffer
-   as the *view* argument.
+   track of buffer-specific resources. This field is guaranteed to remain
+   constant, while a consumer MAY pass a copy of the original buffer as the
+   *view* argument.
 
 
    This function MUST NOT decrement :c:data:`view->obj`, since that is
-   done automatically in :c:func:`PyBuffer_Release`.
+   done automatically in :c:func:`PyBuffer_Release` (this scheme is
+   useful for breaking reference cycles).
 
 
    :c:func:`PyBuffer_Release` is the interface for the consumer that
