@@ -10,10 +10,13 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #14205: dict lookup raises a RuntimeError if the dict is modified
+  during a lookup.
+
 Library
 -------
 
-- Issue #14168: Check for presence of Element._attrs in minidom before 
+- Issue #14168: Check for presence of Element._attrs in minidom before
   accessing it.
 
 - Issue #12328: Fix multiprocessing's use of overlapped I/O on Windows.
