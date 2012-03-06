@@ -3651,11 +3651,14 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover(self):
         fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
                                                        backupCount=1)
-        r = logging.makeLogRecord({'msg': 'testing'})
-        fh.emit(r)
+        fmt = logging.Formatter('%(asctime)s %(message)s')
+        fh.setFormatter(fmt)
+        r1 = logging.makeLogRecord({'msg': 'testing - initial'})
+        fh.emit(r1)
         self.assertLogFile(self.fn)
-        time.sleep(1.01)    # just a little over a second ...
-        fh.emit(r)
+        time.sleep(1.1)    # a little over a second ...
+        r2 = logging.makeLogRecord({'msg': 'testing - after delay'})
+        fh.emit(r2)
         fh.close()
         # At this point, we should have a recent rotated file which we
         # can test for the existence of. However, in practice, on some
@@ -3682,7 +3685,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             print('The only matching files are: %s' % files, file=sys.stderr)
             for f in files:
                 print('Contents of %s:' % f)
-                with open(f, 'r') as tf:
+                path = os.path.join(dn, f)
+                with open(path, 'r') as tf:
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 

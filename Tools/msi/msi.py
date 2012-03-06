@@ -2,12 +2,11 @@
 # (C) 2003 Martin v. Loewis
 # See "FOO" in comments refers to MSDN sections with the title FOO.
 import msilib, schema, sequence, os, glob, time, re, shutil, zipfile
+import subprocess, tempfile
 from msilib import Feature, CAB, Directory, Dialog, Binary, add_data
 import uisample
 from win32com.client import constants
 from distutils.spawn import find_executable
-from uuids import product_codes
-import tempfile
 
 # Settings can be overridden in config.py below
 # 0 for official python.org releases
@@ -77,9 +76,6 @@ upgrade_code_64='{6A965A0C-6EE6-4E3A-9983-3263F56311EC}'
 
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
-    product_code = msilib.gen_uuid()
-else:
-    product_code = product_codes[current_version]
 
 if full_current_version is None:
     full_current_version = current_version
@@ -187,12 +183,19 @@ dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
     raise SystemError("msisupport.dll for incorrect architecture")
+
 if msilib.Win64:
     upgrade_code = upgrade_code_64
-    # Bump the last digit of the code by one, so that 32-bit and 64-bit
-    # releases get separate product codes
-    digit = hex((int(product_code[-2],16)+1)%16)[-1]
-    product_code = product_code[:-2] + digit + '}'
+
+if snapshot:
+    product_code = msilib.gen_uuid()
+else:
+    # official release: generate UUID from the download link that the file will have
+    import uuid
+    product_code = uuid.uuid3(uuid.NAMESPACE_URL,
+                    'http://www.python.org/ftp/python/%s.%s.%s/python-%s%s.msi' %
+                    (major, minor, micro, full_current_version, msilib.arch_ext))
+    product_code = '{%s}' % product_code
 
 if testpackage:
     ext = 'px'
@@ -906,31 +909,27 @@ class PyDirectory(Directory):
             kw['componentflags'] = 2 #msidbComponentAttributesOptional
         Directory.__init__(self, *args, **kw)
 
-    def check_unpackaged(self):
-        self.unpackaged_files.discard('__pycache__')
-        self.unpackaged_files.discard('.svn')
-        if self.unpackaged_files:
-            print "Warning: Unpackaged files in %s" % self.absolute
-            print self.unpackaged_files
+def hgmanifest():
+    # Fetch file list from Mercurial
+    process = subprocess.Popen(['hg', 'manifest'], stdout=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    # Create nested directories for file tree
+    result = {}
+    for line in stdout.splitlines():
+        components = line.split('/')
+        d = result
+        while len(components) > 1:
+            d1 = d.setdefault(components[0], {})
+            d = d1
+            del components[0]
+        d[components[0]] = None
+    return result
 
-
-def inside_test(dir):
-    if dir.physical in ('test', 'tests'):
-        return True
-    if dir.basedir:
-        return inside_test(dir.basedir)
-    return False
-
-def in_packaging_tests(dir):
-    if dir.physical == 'tests' and dir.basedir.physical == 'packaging':
-        return True
-    if dir.basedir:
-        return in_packaging_tests(dir.basedir)
-    return False
 
 # See "File Table", "Component Table", "Directory Table",
 # "FeatureComponents Table"
 def add_files(db):
+    hgfiles = hgmanifest()
     cab = CAB("python")
     tmpfiles = []
     # Add all executables, icons, text files into the TARGETDIR component
@@ -992,123 +991,40 @@ def add_files(db):
 
     # Add all .py files in Lib, except tkinter, test
     dirs = []
-    pydirs = [(root,"Lib")]
+    pydirs = [(root, "Lib", hgfiles["Lib"], default_feature)]
     while pydirs:
         # Commit every now and then, or else installer will complain
         db.Commit()
-        parent, dir = pydirs.pop()
-        if dir == ".svn" or dir == '__pycache__' or dir.startswith("plat-"):
+        parent, dir, files, feature = pydirs.pop()
+        if dir.startswith("plat-"):
             continue
-        elif dir in ["tkinter", "idlelib", "Icons"]:
+        if dir in ["tkinter", "idlelib", "turtledemo"]:
             if not have_tcl:
                 continue
+            feature = tcltk
             tcltk.set_current()
-        elif dir in ('test', 'tests') or inside_test(parent):
-            testsuite.set_current()
+        elif dir in ('test', 'tests'):
+            feature = testsuite
         elif not have_ctypes and dir == "ctypes":
             continue
-        else:
-            default_feature.set_current()
+        feature.set_current()
         lib = PyDirectory(db, cab, parent, dir, dir, "%s|%s" % (parent.make_short(dir), dir))
-        # Add additional files
         dirs.append(lib)
-        lib.glob("*.txt")
-        if dir=='site-packages':
-            lib.add_file("README.txt", src="README")
-            continue
-        files = lib.glob("*.py")
-        files += lib.glob("*.pyw")
-        if files:
-            # Add an entry to the RemoveFile table to remove bytecode files.
-            lib.remove_pyc()
-        # package READMEs if present
-        lib.glob("README")
-        if dir=='Lib':
-            lib.add_file("sysconfig.cfg")
-        if dir=='test' and parent.physical=='Lib':
-            lib.add_file("185test.db")
-            lib.add_file("audiotest.au")
-            lib.add_file("sgml_input.html")
-            lib.add_file("testtar.tar")
-            lib.add_file("test_difflib_expect.html")
-            lib.add_file("check_soundcard.vbs")
-            lib.add_file("empty.vbs")
-            lib.add_file("Sine-1000Hz-300ms.aif")
-            lib.glob("*.uue")
-            lib.glob("*.pem")
-            lib.glob("*.pck")
-            lib.glob("cfgparser.*")
-            lib.add_file("zip_cp437_header.zip")
-            lib.add_file("zipdir.zip")
-            lib.add_file("mime.types")
-        if dir=='capath':
-            lib.glob("*.0")
-        if dir=='tests' and parent.physical=='distutils':
-            lib.add_file("Setup.sample")
-        if dir=='decimaltestdata':
-            lib.glob("*.decTest")
-        if dir=='xmltestdata':
-            lib.glob("*.xml")
-            lib.add_file("test.xml.out")
-        if dir=='output':
-            lib.glob("test_*")
-        if dir=='sndhdrdata':
-            lib.glob("sndhdr.*")
-        if dir=='idlelib':
-            lib.glob("*.def")
-            lib.add_file("idle.bat")
-            lib.add_file("ChangeLog")
-        if dir=="Icons":
-            lib.glob("*.gif")
-            lib.add_file("idle.icns")
-        if dir=="command" and parent.physical in ("distutils", "packaging"):
-            lib.glob("wininst*.exe")
-            lib.add_file("command_template")
-        if dir=="lib2to3":
-            lib.removefile("pickle", "*.pickle")
-        if dir=="macholib":
-            lib.add_file("README.ctypes")
-            lib.glob("fetch_macholib*")
-        if dir=='turtledemo':
-            lib.add_file("turtle.cfg")
-        if dir=="pydoc_data":
-            lib.add_file("_pydoc.css")
-        if dir.endswith('.dist-info'):
-            lib.add_file('INSTALLER')
-            lib.add_file('REQUESTED')
-            lib.add_file('RECORD')
-            lib.add_file('METADATA')
-            lib.glob('RESOURCES')
-        if dir.endswith('.egg-info') or dir == 'EGG-INFO':
-            lib.add_file('PKG-INFO')
-        if in_packaging_tests(parent):
-            lib.glob('*.html')
-            lib.glob('*.tar.gz')
-        if dir=='fake_dists':
-            # cannot use glob since there are also egg-info directories here
-            lib.add_file('cheese-2.0.2.egg-info')
-            lib.add_file('nut-funkyversion.egg-info')
-            lib.add_file('strawberry-0.6.egg')
-            lib.add_file('truffles-5.0.egg-info')
-            lib.add_file('babar.cfg')
-            lib.add_file('babar.png')
-        if dir=="data" and parent.physical=="test_email":
-            # This should contain all non-.svn files listed in subversion
-            for f in os.listdir(lib.absolute):
-                if f.endswith(".txt") or f==".svn":continue
-                if f.endswith(".au") or f.endswith(".gif"):
-                    lib.add_file(f)
+        has_py = False
+        for name, subdir in files.items():
+            if subdir is None:
+                assert os.path.isfile(os.path.join(lib.absolute, name))
+                if name == 'README':
+                    lib.add_file("README.txt", src="README")
                 else:
-                    print("WARNING: New file %s in test/test_email/data" % f)
-        if dir=='tests' and parent.physical == 'packaging':
-            lib.add_file('SETUPTOOLS-PKG-INFO2')
-            lib.add_file('SETUPTOOLS-PKG-INFO')
-            lib.add_file('PKG-INFO')
-        for f in os.listdir(lib.absolute):
-            if os.path.isdir(os.path.join(lib.absolute, f)):
-                pydirs.append((lib, f))
-    for d in dirs:
-        d.check_unpackaged()
+                    lib.add_file(name)
+                    has_py = has_py or name.endswith(".py") or name.endswith(".pyw")
+            else:
+                assert os.path.isdir(os.path.join(lib.absolute, name))
+                pydirs.append((lib, name, subdir, feature))
+
+        if has_py:
+            lib.remove_pyc()
     # Add DLLs
     default_feature.set_current()
     lib = DLLs

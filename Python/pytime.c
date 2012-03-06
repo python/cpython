@@ -70,6 +70,51 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
 #endif /* MS_WINDOWS */
 }
 
+int
+_PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec)
+{
+    if (PyFloat_Check(obj)) {
+        double d, intpart, floatpart, err;
+
+        d = PyFloat_AsDouble(obj);
+        floatpart = modf(d, &intpart);
+        if (floatpart < 0) {
+            floatpart = 1.0 + floatpart;
+            intpart -= 1.0;
+        }
+
+        *sec = (time_t)intpart;
+        err = intpart - (double)*sec;
+        if (err <= -1.0 || err >= 1.0)
+            goto overflow;
+
+        floatpart *= 1e9;
+        *nsec = (long)floatpart;
+        return 0;
+    }
+    else {
+#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+        *sec = PyLong_AsLongLong(obj);
+#else
+        assert(sizeof(time_t) <= sizeof(long));
+        *sec = PyLong_AsLong(obj);
+#endif
+        if (*sec == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+                goto overflow;
+            else
+                return -1;
+        }
+        *nsec = 0;
+        return 0;
+    }
+
+overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "timestamp out of range for platform time_t");
+    return -1;
+}
+
 void
 _PyTime_Init()
 {

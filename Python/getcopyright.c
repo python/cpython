@@ -19,5 +19,5 @@ All Rights Reserved.";
 const char *
 Py_GetCopyright(void)
 {
-	return cprt;
+    return cprt;
 }

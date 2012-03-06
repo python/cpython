@@ -285,6 +285,29 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+   .. attribute:: dispatch_table
+
+      A pickler object's dispatch table is a registry of *reduction
+      functions* of the kind which can be declared using
+      :func:`copyreg.pickle`.  It is a mapping whose keys are classes
+      and whose values are reduction functions.  A reduction function
+      takes a single argument of the associated class and should
+      conform to the same interface as a :meth:`~object.__reduce__`
+      method.
+
+      By default, a pickler object will not have a
+      :attr:`dispatch_table` attribute, and it will instead use the
+      global dispatch table managed by the :mod:`copyreg` module.
+      However, to customize the pickling for a specific pickler object
+      one can set the :attr:`dispatch_table` attribute to a dict-like
+      object.  Alternatively, if a subclass of :class:`Pickler` has a
+      :attr:`dispatch_table` attribute then this will be used as the
+      default dispatch table for instances of that class.
+
+      See :ref:`pickle-dispatch` for usage examples.
+
+      .. versionadded:: 3.3
+
    .. attribute:: fast
 
       Deprecated. Enable fast mode if set to a true value.  The fast mode
@@ -575,6 +598,44 @@ pickle external objects by reference.
 
 .. literalinclude:: ../includes/dbpickle.py
 
+.. _pickle-dispatch:
+
+Dispatch Tables
+^^^^^^^^^^^^^^^
+
+If one wants to customize pickling of some classes without disturbing
+any other code which depends on pickling, then one can create a
+pickler with a private dispatch table.
+
+The global dispatch table managed by the :mod:`copyreg` module is
+available as :data:`copyreg.dispatch_table`.  Therefore, one may
+choose to use a modified copy of :data:`copyreg.dispatch_table` as a
+private dispatch table.
+
+For example ::
+
+   f = io.BytesIO()
+   p = pickle.Pickler(f)
+   p.dispatch_table = copyreg.dispatch_table.copy()
+   p.dispatch_table[SomeClass] = reduce_SomeClass
+
+creates an instance of :class:`pickle.Pickler` with a private dispatch
+table which handles the ``SomeClass`` class specially.  Alternatively,
+the code ::
+
+   class MyPickler(pickle.Pickler):
+       dispatch_table = copyreg.dispatch_table.copy()
+       dispatch_table[SomeClass] = reduce_SomeClass
+   f = io.BytesIO()
+   p = MyPickler(f)
+
+does the same, but all instances of ``MyPickler`` will by default
+share the same dispatch table.  The equivalent code using the
+:mod:`copyreg` module is ::
+
+   copyreg.pickle(SomeClass, reduce_SomeClass)
+   f = io.BytesIO()
+   p = pickle.Pickler(f)
 
 .. _pickle-state:
 

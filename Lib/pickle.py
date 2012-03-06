@@ -297,8 +297,8 @@ class _Pickler:
             f(self, obj) # Call unbound method with explicit self
             return
 
-        # Check copyreg.dispatch_table
-        reduce = dispatch_table.get(t)
+        # Check private dispatch table if any, or else copyreg.dispatch_table
+        reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
         if reduce:
             rv = reduce(obj)
         else:

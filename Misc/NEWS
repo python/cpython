@@ -2,13 +2,45 @@
 Python News
 +++++++++++
 
-What's New in Python 3.3 Alpha 1?
-=================================
+What's New in Python 3.3.0 Alpha 2?
+===================================
 
-*Release date: XX-XXX-20XX*
+*Release date: XXXX-XX-XX*
 
 Core and Builtins
 -----------------
+
+- Issue #14205: dict lookup raises a RuntimeError if the dict is modified
+  during a lookup.
+
+Library
+-------
+
+- Issue #14168: Check for presence of Element._attrs in minidom before
+  accessing it.
+
+- Issue #12328: Fix multiprocessing's use of overlapped I/O on Windows.
+  Also, add a multiprocessing.connection.wait(rlist, timeout=None) function
+  for polling multiple objects at once.  Patch by sbt.
+
+- Issue #13719: Make the distutils and packaging upload commands aware of
+  bdist_msi products.
+
+- Issue #14007: Accept incomplete TreeBuilder objects (missing start, end,
+  data or close method) for the Python implementation as well.
+  Drop the no-op TreeBuilder().xml() method from the C implementation.
+
+
+What's New in Python 3.3.0 Alpha 1?
+===================================
+
+*Release date: 05-Mar-2012*
+
+Core and Builtins
+-----------------
+
+- Issue #14172: Fix reference leak when marshalling a buffer-like object
+  (other than a bytes object).
 
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
@@ -507,6 +539,20 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
+  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
+  fixed.
+
+- Issue #14166: Pickler objects now have an optional ``dispatch_table``
+  attribute which allows to set custom per-pickler reduction functions.
+  Patch by sbt.
+
+- Issue #14177: marshal.loads() now raises TypeError when given an unicode
+  string.  Patch by Guilherme Gonçalves.
+
+- Issue #13550: Remove the debug machinery from the threading module: remove
+  verbose arguments from all threading classes and functions.
 
 - Issue #14159: Fix the len() of weak containers (WeakSet, WeakKeyDictionary,
   WeakValueDictionary) to return a better approximation when some objects

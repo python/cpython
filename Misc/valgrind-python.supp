@@ -310,6 +310,38 @@
 ###   fun:MD5_Update
 ###}
 
+# Fedora's package "openssl-1.0.1-0.1.beta2.fc17.x86_64" on x86_64
+# See http://bugs.python.org/issue14171
+{
+   openssl 1.0.1 prng 1
+   Memcheck:Cond
+   fun:bcmp
+   fun:fips_get_entropy
+   fun:FIPS_drbg_instantiate
+   fun:RAND_init_fips
+   fun:OPENSSL_init_library
+   fun:SSL_library_init
+   fun:init_hashlib
+}
+
+{
+   openssl 1.0.1 prng 2
+   Memcheck:Cond
+   fun:fips_get_entropy
+   fun:FIPS_drbg_instantiate
+   fun:RAND_init_fips
+   fun:OPENSSL_init_library
+   fun:SSL_library_init
+   fun:init_hashlib
+}
+
+{
+   openssl 1.0.1 prng 3
+   Memcheck:Value8
+   fun:_x86_64_AES_encrypt_compact
+   fun:AES_encrypt
+}
+
 #
 # All of these problems come from using test_socket_ssl
 #
