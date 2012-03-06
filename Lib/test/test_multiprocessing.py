@@ -2508,6 +2508,7 @@ class TestWait(unittest.TestCase):
             w.close()
             readers.append(r)
             procs.append(p)
+            self.addCleanup(p.join)
 
         while readers:
             for r in wait(readers):
@@ -2549,6 +2550,7 @@ class TestWait(unittest.TestCase):
             p.daemon = True
             p.start()
             procs.append(p)
+            self.addCleanup(p.join)
 
         for i in range(4):
             r, _ = l.accept()
