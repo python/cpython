@@ -49,6 +49,8 @@
 This article explains the new features in Python 3.3, compared to 3.2.
 
 
+.. pep-3118-update:
+
 PEP 3118: New memoryview implementation and buffer protocol documentation
 =========================================================================
 
@@ -85,7 +87,9 @@ Features
 * Multi-dimensional comparisons are supported for any array type.
 
 * All array types are hashable if the exporting object is hashable
-  and the view is read-only.
+  and the view is read-only. (Contributed by Antoine Pitrou in
+  :issue:`13411`)
+
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
   is now possible to reverse a memoryview in O(1) by using a negative step.
@@ -258,8 +262,55 @@ part of its operations to another generator. This allows a section of code
 containing 'yield' to be factored out and placed in another generator.
 Additionally, the subgenerator is allowed to return with a value, and the
 value is made available to the delegating generator.
+
 While designed primarily for use in delegating to a subgenerator, the ``yield
 from`` expression actually allows delegation to arbitrary subiterators.
+
+For simple iterators, ``yield from iterable`` is essentially just a shortened
+form of ``for item in iterable: yield item``::
+
+    >>> def g(x):
+    ...     yield from range(x, 0, -1)
+    ...     yield from range(x)
+    ...
+    >>> list(g(5))
+    [5, 4, 3, 2, 1, 0, 1, 2, 3, 4]
+
+However, unlike an ordinary loop, ``yield from`` allows subgenerators to
+receive sent and thrown values directly from the calling scope, and
+return a final value to the outer generator::
+
+    >>> def accumulate(start=0):
+    ...     tally = start
+    ...     while 1:
+    ...         next = yield
+    ...         if next is None:
+    ...             return tally
+    ...         tally += next
+    ...
+    >>> def gather_tallies(tallies, start=0):
+    ...     while 1:
+    ...         tally = yield from accumulate()
+    ...         tallies.append(tally)
+    ...
+    >>> tallies = []
+    >>> acc = gather_tallies(tallies)
+    >>> next(acc) # Ensure the accumulator is ready to accept values
+    >>> for i in range(10):
+    ...     acc.send(i)
+    ...
+    >>> acc.send(None) # Finish the first tally
+    >>> for i in range(5):
+    ...     acc.send(i)
+    ...
+    >>> acc.send(None) # Finish the second tally
+    >>> tallies
+    [45, 10]
+
+The main principle driving this change is to allow even generators that are
+designed to be used with the ``send`` and ``throw`` methods to be split into
+multiple subgenerators as easily as a single large function can be split into
+multiple subfunctions.
 
 (Implementation by Greg Ewing, integrated into 3.3 by Renaud Blanch, Ryan
 Kelly and Nick Coghlan, documentation by Zbigniew Jędrzejewski-Szmek and
@@ -325,6 +376,21 @@ suppressed valuable underlying details)::
     ...     print(repr(exc.__context__))
     ...
     KeyError('x',)
+
+
+PEP 414: Explicit Unicode literals
+======================================
+
+:pep:`414` - Explicit Unicode literals
+ PEP written by Armin Ronacher.
+
+To ease the transition from Python 2 for Unicode aware Python applications
+that make heavy use of Unicode literals, Python 3.3 once again supports the
+"``u``" prefix for string literals. This prefix has no semantic significance
+in Python 3, it is provided solely to reduce the number of purely mechanical
+changes in migrating to Python 3, making it easier for developers to focus on
+the more significant semantic changes (such as the stricter default
+separation of binary and text data).
 
 
 PEP 3155: Qualified name for classes and functions
@@ -407,10 +473,6 @@ Some smaller changes made to the core Python language are:
   integer between 0 and 255 as their first argument.
 
   (:issue:`12170`)
-
-* Memoryview objects are now hashable when the underlying object is hashable.
-
-  (Contributed by Antoine Pitrou in :issue:`13411`)
 
 
 New and Improved Modules
