@@ -1,4 +1,5 @@
-from test.support import verbose, run_unittest
+from test.support import verbose, run_unittest, gc_collect
+import io
 import re
 from re import Scanner
 import sys
@@ -15,6 +16,17 @@ from weakref import proxy
 import unittest
 
 class ReTests(unittest.TestCase):
+
+    def test_keep_buffer(self):
+        # See bug 14212
+        b = bytearray(b'x')
+        it = re.finditer(b'a', b)
+        with self.assertRaises(BufferError):
+            b.extend(b'x'*400)
+        list(it)
+        del it
+        gc_collect()
+        b.extend(b'x'*400)
 
     def test_weakref(self):
         s = 'QabbbcR'
