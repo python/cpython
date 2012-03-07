@@ -1664,7 +1664,7 @@ state_reset(SRE_STATE* state)
 }
 
 static void*
-getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
+getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize, Py_buffer *view)
 {
     /* given a python object, return a data pointer, a length (in
        characters), and a character size.  return NULL if the object
@@ -1674,7 +1674,6 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     Py_ssize_t size, bytes;
     int charsize;
     void* ptr;
-    Py_buffer view;
 
     /* Unicode objects do not support the buffer API. So, get the data
        directly instead. */
@@ -1686,26 +1685,21 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     }
 
     /* get pointer to string buffer */
-    view.len = -1;
+    view->len = -1;
     buffer = Py_TYPE(string)->tp_as_buffer;
     if (!buffer || !buffer->bf_getbuffer ||
-        (*buffer->bf_getbuffer)(string, &view, PyBUF_SIMPLE) < 0) {
+        (*buffer->bf_getbuffer)(string, view, PyBUF_SIMPLE) < 0) {
             PyErr_SetString(PyExc_TypeError, "expected string or buffer");
             return NULL;
     }
 
     /* determine buffer size */
-    bytes = view.len;
-    ptr = view.buf;
-
-    /* Release the buffer immediately --- possibly dangerous
-       but doing something else would require some re-factoring
-    */
-    PyBuffer_Release(&view);
+    bytes = view->len;
+    ptr = view->buf;
 
     if (bytes < 0) {
         PyErr_SetString(PyExc_TypeError, "buffer has negative size");
-        return NULL;
+        goto err;
     }
 
     /* determine character size */
@@ -1719,7 +1713,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 #endif
     else {
         PyErr_SetString(PyExc_TypeError, "buffer size mismatch");
-        return NULL;
+        goto err;
     }
 
     *p_length = size;
@@ -1728,8 +1722,13 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "Buffer is NULL");
+            goto err;
     }
     return ptr;
+  err:
+    PyBuffer_Release(view);
+    view->buf = NULL;
+    return NULL;
 }
 
 LOCAL(PyObject*)
@@ -1747,20 +1746,21 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
-    ptr = getstring(string, &length, &charsize);
+    state->buffer.buf = NULL;
+    ptr = getstring(string, &length, &charsize, &state->buffer);
     if (!ptr)
-        return NULL;
+        goto err;
 
-	if (charsize == 1 && pattern->charsize > 1) {
-		PyErr_SetString(PyExc_TypeError,
+    if (charsize == 1 && pattern->charsize > 1) {
+        PyErr_SetString(PyExc_TypeError,
 			"can't use a string pattern on a bytes-like object");
-		return NULL;
-	}
-	if (charsize > 1 && pattern->charsize == 1) {
-		PyErr_SetString(PyExc_TypeError,
+        goto err;
+    }
+    if (charsize > 1 && pattern->charsize == 1) {
+        PyErr_SetString(PyExc_TypeError,
 			"can't use a bytes pattern on a string-like object");
-		return NULL;
-	}
+        goto err;
+    }
 
     /* adjust boundaries */
     if (start < 0)
@@ -1797,11 +1797,17 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
         state->lower = sre_lower;
 
     return string;
+  err:
+    if (state->buffer.buf)
+        PyBuffer_Release(&state->buffer);
+    return NULL;
 }
 
 LOCAL(void)
 state_fini(SRE_STATE* state)
 {
+    if (state->buffer.buf)
+        PyBuffer_Release(&state->buffer);
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
 }
@@ -1863,6 +1869,8 @@ pattern_dealloc(PatternObject* self)
 {
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
+    if (self->view.buf)
+        PyBuffer_Release(&self->view);
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
@@ -2297,6 +2305,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     Py_ssize_t i, b, e;
     int bint;
     int filter_is_callable;
+    Py_buffer view;
 
     if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
@@ -2306,7 +2315,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
-        ptr = getstring(ptemplate, &n, &bint);
+        view.buf = NULL;
+        ptr = getstring(ptemplate, &n, &bint, &view);
         b = bint;
         if (ptr) {
             if (b == 1) {
@@ -2320,6 +2330,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             PyErr_Clear();
             literal = 0;
         }
+        if (view.buf)
+            PyBuffer_Release(&view);
         if (literal) {
             filter = ptemplate;
             Py_INCREF(filter);
@@ -2661,6 +2673,7 @@ _compile(PyObject* self_, PyObject* args)
     Py_ssize_t groups = 0;
     PyObject* groupindex = NULL;
     PyObject* indexgroup = NULL;
+
     if (!PyArg_ParseTuple(args, "OiO!|nOO", &pattern, &flags,
                           &PyList_Type, &code, &groups,
                           &groupindex, &indexgroup))
@@ -2675,6 +2688,7 @@ _compile(PyObject* self_, PyObject* args)
     self->pattern = NULL;
     self->groupindex = NULL;
     self->indexgroup = NULL;
+    self->view.buf = NULL;
 
     self->codesize = n;
 
@@ -2694,15 +2708,15 @@ _compile(PyObject* self_, PyObject* args)
         return NULL;
     }
 
-	if (pattern == Py_None)
-		self->charsize = -1;
-	else {
-		Py_ssize_t p_length;
-		if (!getstring(pattern, &p_length, &self->charsize)) {
-			Py_DECREF(self);
-			return NULL;
-		}
-	}
+    if (pattern == Py_None)
+        self->charsize = -1;
+    else {
+        Py_ssize_t p_length;
+        if (!getstring(pattern, &p_length, &self->charsize, &self->view)) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
 
     Py_INCREF(pattern);
     self->pattern = pattern;
