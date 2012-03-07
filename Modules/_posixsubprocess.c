@@ -80,7 +80,7 @@ _pos_int_from_ascii(char *name)
  * that properly supports /dev/fd.
  */
 static int
-_is_fdescfs_mounted_on_dev_fd()
+_is_fdescfs_mounted_on_dev_fd(void)
 {
     struct stat dev_stat;
     struct stat dev_fd_stat;
