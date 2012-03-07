@@ -32,6 +32,7 @@ typedef struct {
     PyObject *weakreflist; /* List of weak references */
     int logical_charsize; /* pattern charsize (or -1) */
     int charsize;
+    Py_buffer view;
     /* pattern code */
     Py_ssize_t codesize;
     SRE_CODE code[1];
@@ -82,6 +83,7 @@ typedef struct {
     char* data_stack;
     size_t data_stack_size;
     size_t data_stack_base;
+    Py_buffer buffer;
     /* current repeat context */
     SRE_REPEAT *repeat;
     /* hooks */

@@ -27,6 +27,12 @@ Library
   data or close method) for the Python implementation as well.
   Drop the no-op TreeBuilder().xml() method from the C implementation.
 
+Extension Modules
+-----------------
+
+- Issue #14212: The re module didn't retain a reference to buffers it was
+  scanning, resulting in segfaults.
+
 
 What's New in Python 3.3.0 Alpha 1?
 ===================================
