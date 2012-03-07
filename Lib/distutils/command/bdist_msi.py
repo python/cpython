@@ -262,7 +262,7 @@ class bdist_msi (Command):
         self.db.Commit()
 
         if hasattr(self.distribution, 'dist_files'):
-            tup = 'bdist_msi', self.target_version or 'any', installer_name
+            tup = 'bdist_msi', self.target_version or 'any', fullname
             self.distribution.dist_files.append(tup)
 
         if not self.keep_temp:
