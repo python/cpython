@@ -1,5 +1,4 @@
 """Tests for distutils.command.bdist_msi."""
-import os
 import sys
 
 from packaging.tests import unittest, support
@@ -16,14 +15,6 @@ class BDistMSITestCase(support.TempdirManager,
         project_dir, dist = self.create_dist()
         cmd = bdist_msi(dist)
         cmd.ensure_finalized()
-        cmd.run()
-
-        bdists = os.listdir(os.path.join(project_dir, 'dist'))
-        self.assertEqual(bdists, ['foo-0.1.msi'])
-
-        # bug #13719: upload ignores bdist_msi files
-        self.assertEqual(dist.dist_files,
-                         [('bdist_msi', 'any', 'dist/foo-0.1.msi')])
 
 
 def test_suite():
