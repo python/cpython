@@ -31,6 +31,7 @@ typedef struct {
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
 	int charsize; /* pattern charsize (or -1) */
+    Py_buffer view;
     /* pattern code */
     Py_ssize_t codesize;
     SRE_CODE code[1];
@@ -80,6 +81,7 @@ typedef struct {
     char* data_stack;
     size_t data_stack_size;
     size_t data_stack_base;
+    Py_buffer buffer;
     /* current repeat context */
     SRE_REPEAT *repeat;
     /* hooks */
