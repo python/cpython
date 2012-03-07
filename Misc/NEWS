@@ -23,9 +23,6 @@ Library
   Also, add a multiprocessing.connection.wait(rlist, timeout=None) function
   for polling multiple objects at once.  Patch by sbt.
 
-- Issue #13719: Make the distutils and packaging upload commands aware of
-  bdist_msi products.
-
 - Issue #14007: Accept incomplete TreeBuilder objects (missing start, end,
   data or close method) for the Python implementation as well.
   Drop the no-op TreeBuilder().xml() method from the C implementation.
