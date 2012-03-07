@@ -41,6 +41,15 @@ gen_dealloc(PyGenObject *gen)
     PyObject_GC_Del(gen);
 }
 
+static int
+gen_running(PyGenObject *gen)
+{
+    if (gen->gi_running) {
+        PyErr_SetString(PyExc_ValueError, "generator already executing");
+        return 1;
+    }
+    return 0;
+}
 
 static PyObject *
 gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
@@ -49,11 +58,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
 
-    if (gen->gi_running) {
-        PyErr_SetString(PyExc_ValueError,
-                        "generator already executing");
-        return NULL;
-    }
+    assert(!gen->gi_running);
     if (f==NULL || f->f_stacktop == NULL) {
         /* Only set exception if called from send() */
         if (arg && !exc)
@@ -137,12 +142,15 @@ gen_send(PyGenObject *gen, PyObject *arg)
     int exc = 0;
     PyObject *ret;
     PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
+    if (gen_running(gen))
+        return NULL;
     /* XXX (ncoghlan): Are the incref/decref on arg and yf strictly needed?
      *                 Or would it be valid to rely on borrowed references?
      */
     Py_INCREF(arg);
     if (yf) {
         Py_INCREF(yf);
+        gen->gi_running = 1;
         if (PyGen_CheckExact(yf)) {
             ret = gen_send((PyGenObject *)yf, arg);
         } else {
@@ -151,6 +159,7 @@ gen_send(PyGenObject *gen, PyObject *arg)
             else
                 ret = PyObject_CallMethod(yf, "send", "O", arg);
         }
+        gen->gi_running = 0;
         if (ret) {
             Py_DECREF(yf);
             goto done;
@@ -177,17 +186,19 @@ PyDoc_STRVAR(close_doc,
  */
 
 static int
-gen_close_iter(PyObject *yf)
+gen_close_iter(PyGenObject *gen, PyObject *yf)
 {
     PyObject *retval = NULL;
+    int err = 0;
     
     if (PyGen_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
-        if (retval == NULL) {
-            return -1;
-        }
+        if (!retval)
+            err = -1;
     } else {
-        PyObject *meth = PyObject_GetAttrString(yf, "close");
+        PyObject *meth;
+        gen->gi_running = 1;
+        meth = PyObject_GetAttrString(yf, "close");
         if (meth == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_WriteUnraisable(yf);
@@ -197,11 +208,12 @@ gen_close_iter(PyObject *yf)
             retval = PyObject_CallFunction(meth, "");
             Py_DECREF(meth);
             if (!retval)
-                return -1;
+                err = -1;
         }
+        gen->gi_running = 0;
     }
     Py_XDECREF(retval);
-    return 0;
+    return err;
 }       
 
 static PyObject *
@@ -211,9 +223,11 @@ gen_close(PyGenObject *gen, PyObject *args)
     PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
     int err = 0;
 
+    if (gen_running(gen))
+        return NULL;
     if (yf) {
         Py_INCREF(yf);
-        err = gen_close_iter(yf);
+        err = gen_close_iter(gen, yf);
         gen_undelegate(gen);
         Py_DECREF(yf);
     }
@@ -314,18 +328,22 @@ gen_throw(PyGenObject *gen, PyObject *args)
     if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
         return NULL;
 
+    if (gen_running(gen))
+        return NULL;
+
     if (yf) {
         PyObject *ret;
         int err;
         Py_INCREF(yf);
         if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
-            err = gen_close_iter(yf);
+            err = gen_close_iter(gen, yf);
             Py_DECREF(yf);
             gen_undelegate(gen);
             if (err < 0)
                 return gen_send_ex(gen, Py_None, 1);
             goto throw_here;
         }
+        gen->gi_running = 1;
         if (PyGen_CheckExact(yf)) {
             ret = gen_throw((PyGenObject *)yf, args);
         } else {
@@ -343,6 +361,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
             ret = PyObject_CallObject(meth, args);
             Py_DECREF(meth);
         }
+        gen->gi_running = 0;
         Py_DECREF(yf);
         if (!ret) {
             PyObject *val;
@@ -423,10 +442,14 @@ gen_iternext(PyGenObject *gen)
     PyObject *ret;
     int exc = 0;
     PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
+    if (gen_running(gen))
+        return NULL;
     if (yf) {
         Py_INCREF(yf);
         /* ceval.c ensures that yf is an iterator */
+        gen->gi_running = 1;
         ret = Py_TYPE(yf)->tp_iternext(yf);
+        gen->gi_running = 0;
         if (ret) {
             Py_DECREF(yf);
             return ret;

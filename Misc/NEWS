@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #14205: dict lookup raises a RuntimeError if the dict is modified
   during a lookup.
 
+- Issue #14220: When a generator is delegating to another iterator with the
+  yield from syntax, it needs to have its ``gi_running`` flag set to True.
+
 Library
 -------
 
