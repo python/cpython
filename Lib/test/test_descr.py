@@ -1,7 +1,9 @@
 import __builtin__
+import gc
 import sys
 import types
 import unittest
+import weakref
 
 from copy import deepcopy
 from test import test_support
@@ -1127,7 +1129,6 @@ order (MRO) for bases """
         self.assertEqual(Counted.counter, 0)
 
         # Test lookup leaks [SF bug 572567]
-        import gc
         if hasattr(gc, 'get_objects'):
             class G(object):
                 def __cmp__(self, other):
@@ -4541,7 +4542,6 @@ order (MRO) for bases """
         self.assertRaises(AttributeError, getattr, C(), "attr")
         self.assertEqual(descr.counter, 4)
 
-        import gc
         class EvilGetattribute(object):
             # This used to segfault
             def __getattr__(self, name):
@@ -4589,6 +4589,21 @@ order (MRO) for bases """
         Foo.__repr__ = Foo.__str__
         foo = Foo()
         str(foo)
+
+    def test_cycle_through_dict(self):
+        # See bug #1469629
+        class X(dict):
+            def __init__(self):
+                dict.__init__(self)
+                self.__dict__ = self
+        x = X()
+        x.attr = 42
+        wr = weakref.ref(x)
+        del x
+        test_support.gc_collect()
+        self.assertIsNone(wr())
+        for o in gc.get_objects():
+            self.assertIsNot(type(o), X)
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
