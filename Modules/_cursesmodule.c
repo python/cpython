@@ -340,7 +340,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #endif
     {
         *ch = (chtype)value;
-        if ((long)*ch != value || value < 0 || value > 255) {
+        if ((long)*ch != value) {
             PyErr_Format(PyExc_OverflowError,
                          "byte doesn't fit in chtype");
             return 0;
