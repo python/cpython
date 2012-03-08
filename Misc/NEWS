@@ -1,10 +1,10 @@
 Python News
 +++++++++++
 
-What's New in Python 2.7.3 release candidate 1?
-===============================================
+What's New in Python 2.7.4
+==========================
 
-*Release date: 2012-02-23*
+*Release date: XXXX-XX-XX*
 
 Core and Builtins
 -----------------
@@ -14,6 +14,34 @@ Core and Builtins
 
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
+
+Library
+-------
+
+- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
+  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
+  fixed.
+
+- Issue #14159: Fix the len() of weak sets to return a better approximation
+  when some objects are dead or dying.  Moreover, the implementation is now
+  O(1) rather than O(n).
+
+- Issue #2945: Make the distutils upload command aware of bdist_rpm products.
+
+- Issue #13447: Add a test file to host regression tests for bugs in the
+  scripts found in the Tools directory.
+
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
+
+What's New in Python 2.7.3 release candidate 1?
+===============================================
+
+*Release date: 2012-02-23*
+
+Core and Builtins
+-----------------
 
 - Issue #13020: Fix a reference leak when allocating a structsequence object
   fails.  Patch by Suman Saha.
@@ -103,22 +131,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
-  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
-  fixed.
-
-- Issue #14159: Fix the len() of weak sets to return a better approximation
-  when some objects are dead or dying.  Moreover, the implementation is now
-  O(1) rather than O(n).
-
-- Issue #2945: Make the distutils upload command aware of bdist_rpm products.
-
-- Issue #13447: Add a test file to host regression tests for bugs in the
-  scripts found in the Tools directory.
-
-- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
-  on Windows.
 
 - Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
   on 32-bit architectures. Initial patch by Philippe Devalkeneer.
