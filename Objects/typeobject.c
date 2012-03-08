@@ -2450,6 +2450,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
 
     res = NULL;
+    /* keep a strong reference to mro because type->tp_mro can be replaced
+       during PyDict_GetItem(dict, name)  */
+    Py_INCREF(mro);
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
     for (i = 0; i < n; i++) {
@@ -2461,6 +2464,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         if (res != NULL)
             break;
     }
+    Py_DECREF(mro);
 
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
@@ -6281,6 +6285,9 @@ super_getattro(PyObject *self, PyObject *name)
         }
         i++;
         res = NULL;
+        /* keep a strong reference to mro because starttype->tp_mro can be
+           replaced during PyDict_GetItem(dict, name)  */
+        Py_INCREF(mro);
         for (; i < n; i++) {
             tmp = PyTuple_GET_ITEM(mro, i);
             if (PyType_Check(tmp))
@@ -6305,9 +6312,11 @@ super_getattro(PyObject *self, PyObject *name)
                     Py_DECREF(res);
                     res = tmp;
                 }
+                Py_DECREF(mro);
                 return res;
             }
         }
+        Py_DECREF(mro);
     }
     return PyObject_GenericGetAttr(self, name);
 }
