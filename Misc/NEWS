@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #1469629: Allow cycles through an object's __dict__ slot to be
+  collected. (For example if ``x.__dict__ is x``).
+
 - Issue #14205: dict lookup raises a RuntimeError if the dict is modified
   during a lookup.
 
