@@ -9,6 +9,9 @@ What's New in Python 2.7.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #1469629: Allow cycles through an object's __dict__ slot to be
+  collected. (For example if ``x.__dict__ is x``).
+
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
 

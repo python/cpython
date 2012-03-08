@@ -876,8 +876,13 @@ subtype_clear(PyObject *self)
         assert(base);
     }
 
-    /* There's no need to clear the instance dict (if any);
-       the collector will call its tp_clear handler. */
+    /* Clear the instance dict (if any), to break cycles involving only
+       __dict__ slots (as in the case 'self.__dict__ is self'). */
+    if (type->tp_dictoffset != base->tp_dictoffset) {
+        PyObject **dictptr = _PyObject_GetDictPtr(self);
+        if (dictptr && *dictptr)
+            Py_CLEAR(*dictptr);
+    }
 
     if (baseclear)
         return baseclear(self);
