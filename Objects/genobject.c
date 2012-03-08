@@ -356,6 +356,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
                 PyErr_Clear();
                 Py_DECREF(yf);
                 gen_undelegate(gen);
+                gen->gi_running = 0;
                 goto throw_here;
             }
             ret = PyObject_CallObject(meth, args);
