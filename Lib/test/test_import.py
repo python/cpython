@@ -494,7 +494,10 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
     package_name = 'sample'
 
     def setUp(self):
-        if os.path.exists('sample-tagged'): shutil.rmtree('sample-tagged')
+        if os.path.exists(self.tagged):
+            shutil.rmtree(self.tagged)
+        if os.path.exists(self.package_name):
+            self.remove_symlink(self.package_name)
         self.orig_sys_path = sys.path[:]
 
         symlink = getattr(os, 'symlink', None) or self._symlink_win32
@@ -583,23 +586,30 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
     # regression test for issue6727
     @unittest.skipUnless(
         not hasattr(sys, 'getwindowsversion')
-        or sys.getwindowsversion() >= (6,0),
+        or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']
 
         # and try to import the package
-        pkg = __import__(self.package_name)
+        __import__(self.package_name)
 
     def tearDown(self):
         # now cleanup
         if os.path.exists(self.package_name):
-            os.rmdir(self.package_name)
+            self.remove_symlink(self.package_name)
         if os.path.exists(self.tagged):
             shutil.rmtree(self.tagged)
         sys.path[:] = self.orig_sys_path
 
+    @staticmethod
+    def remove_symlink(name):
+        # On Windows, to remove a directory symlink, one must use rmdir
+        try:
+            os.rmdir(name)
+        except OSError:
+            os.remove(name)
 
 def test_main(verbose=None):
     run_unittest(ImportTests, PycRewritingTests, PathsTests,
