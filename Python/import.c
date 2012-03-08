@@ -127,7 +127,7 @@ int isdir(char *path) {
     return rv != INVALID_FILE_ATTRIBUTES && rv & FILE_ATTRIBUTE_DIRECTORY;
 }
 #else
-#if HAVE_STAT
+#ifdef HAVE_STAT
 int isdir(char *path) {
     struct stat statbuf;
     return stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode);
