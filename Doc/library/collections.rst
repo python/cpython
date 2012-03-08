@@ -91,65 +91,66 @@ The class can be used to simulate nested scopes and is useful in templating.
       The use-cases also parallel those for the builtin :func:`super` function.
       A reference to  ``d.parents`` is equivalent to: ``ChainMap(*d.maps[1:])``.
 
-  .. versionadded:: 3.3
+   .. versionadded:: 3.3
 
-  Example of simulating Python's internal lookup chain::
+   Example of simulating Python's internal lookup chain::
 
-     import builtins
-     pylookup = ChainMap(locals(), globals(), vars(builtins))
+      import builtins
+      pylookup = ChainMap(locals(), globals(), vars(builtins))
 
-  Example of letting user specified values take precedence over environment
-  variables which in turn take precedence over default values::
+   Example of letting user specified values take precedence over environment
+   variables which in turn take precedence over default values::
 
-     import os, argparse
-     defaults = {'color': 'red', 'user': guest}
-     parser = argparse.ArgumentParser()
-     parser.add_argument('-u', '--user')
-     parser.add_argument('-c', '--color')
-     user_specified = vars(parser.parse_args())
-     combined = ChainMap(user_specified, os.environ, defaults)
+      import os, argparse
+      defaults = {'color': 'red', 'user': guest}
+      parser = argparse.ArgumentParser()
+      parser.add_argument('-u', '--user')
+      parser.add_argument('-c', '--color')
+      user_specified = vars(parser.parse_args())
+      combined = ChainMap(user_specified, os.environ, defaults)
 
-  Example patterns for using the :class:`ChainMap` class to simulate nested
-  contexts::
+   Example patterns for using the :class:`ChainMap` class to simulate nested
+   contexts::
 
-    c = ChainMap()          Create root context
-    d = c.new_child()       Create nested child context
-    e = c.new_child()       Child of c, independent from d
-    e.maps[0]               Current context dictionary -- like Python's locals()
-    e.maps[-1]              Root context -- like Python's globals()
-    e.parents               Enclosing context chain -- like Python's nonlocals
+      c = ChainMap()        # Create root context
+      d = c.new_child()     # Create nested child context
+      e = c.new_child()     # Child of c, independent from d
+      e.maps[0]             # Current context dictionary -- like Python's locals()
+      e.maps[-1]            # Root context -- like Python's globals()
+      e.parents             # Enclosing context chain -- like Python's nonlocals
 
-    d['x']                  Get first key in the chain of contexts
-    d['x'] = 1              Set value in current context
-    del['x']                Delete from current context
-    list(d)                 All nested values
-    k in d                  Check all nested values
-    len(d)                  Number of nested values
-    d.items()               All nested items
-    dict(d)                 Flatten into a regular dictionary
+      d['x']                # Get first key in the chain of contexts
+      d['x'] = 1            # Set value in current context
+      del['x']              # Delete from current context
+      list(d)               # All nested values
+      k in d                # Check all nested values
+      len(d)                # Number of nested values
+      d.items()             # All nested items
+      dict(d)               # Flatten into a regular dictionary
 
-  .. seealso::
+   .. seealso::
 
-     * The `MultiContext class
-       <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
-       in the Enthought `CodeTools package
-       <https://github.com/enthought/codetools>`_ has options to support
-       writing to any mapping in the chain.
+      * The `MultiContext class
+        <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
+        in the Enthought `CodeTools package
+        <https://github.com/enthought/codetools>`_ has options to support
+        writing to any mapping in the chain.
 
-     * Django's `Context class
-       <http://code.djangoproject.com/browser/django/trunk/django/template/context.py>`_
-       for templating is a read-only chain of mappings.  It also features
-       pushing and popping of contexts similar to the
-       :meth:`~collections.ChainMap.new_child` method and the
-       :meth:`~collections.ChainMap.parents` property.
+      * Django's `Context class
+        <http://code.djangoproject.com/browser/django/trunk/django/template/context.py>`_
+        for templating is a read-only chain of mappings.  It also features
+        pushing and popping of contexts similar to the
+        :meth:`~collections.ChainMap.new_child` method and the
+        :meth:`~collections.ChainMap.parents` property.
 
-     * The `Nested Contexts recipe
-       <http://code.activestate.com/recipes/577434/>`_ has options to control
-       whether writes and other mutations apply only to the first mapping or to
-       any mapping in the chain.
+      * The `Nested Contexts recipe
+        <http://code.activestate.com/recipes/577434/>`_ has options to control
+        whether writes and other mutations apply only to the first mapping or to
+        any mapping in the chain.
 
-     * A `greatly simplified read-only version of Chainmap
-       <http://code.activestate.com/recipes/305268/>`_.
+      * A `greatly simplified read-only version of Chainmap
+        <http://code.activestate.com/recipes/305268/>`_.
+
 
 :class:`Counter` objects
 ------------------------
