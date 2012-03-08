@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.3 release candidate 1?
-===============================================
+What's New in Python 3.2.4
+==========================
 
-*Release date: 24-Feb-2011*
+*Release date: XX-XX-XXXX*
 
 Core and Builtins
 -----------------
@@ -18,6 +18,48 @@ Core and Builtins
 
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
+
+Library
+-------
+
+- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
+  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
+  fixed.
+
+- Issue #14177: marshal.loads() now raises TypeError when given an unicode
+  string.  Patch by Guilherme Gonçalves.
+
+- Issue #14159: Fix the len() of weak containers (WeakSet, WeakKeyDictionary,
+  WeakValueDictionary) to return a better approximation when some objects
+  are dead or dying.  Moreover, the implementation is now O(1) rather than
+  O(n).
+
+- Issue #13125: Silence spurious test_lib2to3 output when in non-verbose mode.
+  Patch by Mikhail Novikov.
+
+- Issue #13447: Add a test file to host regression tests for bugs in the
+  scripts found in the Tools directory.
+
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
+- Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
+  on 32-bit architectures. Initial patch by Philippe Devalkeneer.
+
+Extension Modules
+-----------------
+
+- Issue #14212: The re module didn't retain a reference to buffers it was
+  scanning, resulting in segfaults.
+
+
+What's New in Python 3.2.3 release candidate 1?
+===============================================
+
+*Release date: 24-Feb-2011*
+
+Core and Builtins
+-----------------
 
 - Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
   environment variable, to provide an opt-in way to protect against denial of
@@ -132,30 +174,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
-  return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
-  fixed.
-
-- Issue #14177: marshal.loads() now raises TypeError when given an unicode
-  string.  Patch by Guilherme Gonçalves.
-
-- Issue #14159: Fix the len() of weak containers (WeakSet, WeakKeyDictionary,
-  WeakValueDictionary) to return a better approximation when some objects
-  are dead or dying.  Moreover, the implementation is now O(1) rather than
-  O(n).
-
-- Issue #13125: Silence spurious test_lib2to3 output when in non-verbose mode.
-  Patch by Mikhail Novikov.
-
-- Issue #13447: Add a test file to host regression tests for bugs in the
-  scripts found in the Tools directory.
-
-- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
-  on Windows.
-
-- Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
-  on 32-bit architectures. Initial patch by Philippe Devalkeneer.
 
 - HTMLParser is now able to handle slashes in the start tag.
 
@@ -549,9 +567,6 @@ Tests
 
 Extension Modules
 -----------------
-
-- Issue #14212: The re module didn't retain a reference to buffers it was
-  scanning, resulting in segfaults.
 
 - Issue #13840: The error message produced by ctypes.create_string_buffer
   when given a Unicode string has been fixed.
