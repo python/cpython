@@ -10,6 +10,9 @@ What's New in Python 3.2.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #1469629: Allow cycles through an object's __dict__ slot to be
+  collected. (For example if ``x.__dict__ is x``).
+
 - Issue #14172: Fix reference leak when marshalling a buffer-like object
   (other than a bytes object).
 
