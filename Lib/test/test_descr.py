@@ -4582,10 +4582,38 @@ class PTypesLongInitTest(unittest.TestCase):
         type.mro(tuple)
 
 
+class MiscTests(unittest.TestCase):
+    def test_type_lookup_mro_reference(self):
+        # Issue #14199: _PyType_Lookup() has to keep a strong reference to
+        # the type MRO because it may be modified during the lookup, if
+        # __bases__ is set during the lookup for example.
+        class MyKey(object):
+            def __hash__(self):
+                return hash('mykey')
+
+            def __eq__(self, other):
+                X.__bases__ = (Base2,)
+
+        class Base(object):
+            mykey = 'from Base'
+            mykey2 = 'from Base'
+
+        class Base2(object):
+            mykey = 'from Base2'
+            mykey2 = 'from Base2'
+
+        X = type('X', (Base,), {MyKey(): 5})
+        # mykey is read from Base
+        self.assertEqual(X.mykey, 'from Base')
+        # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
+        self.assertEqual(X.mykey2, 'from Base2')
+
+
 def test_main():
     # Run all local test cases, with PTypesLongInitTest first.
     support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                              ClassPropertiesAndMethods, DictProxyTests)
+                         ClassPropertiesAndMethods, DictProxyTests,
+                         MiscTests)
 
 if __name__ == "__main__":
     test_main()
