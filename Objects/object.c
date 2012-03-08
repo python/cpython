@@ -1074,7 +1074,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         f = descr->ob_type->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)obj->ob_type);
-            Py_DECREF(descr);
             goto done;
         }
     }
@@ -1105,7 +1104,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         res = PyDict_GetItem(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-            Py_XDECREF(descr);
             Py_DECREF(dict);
             goto done;
         }
@@ -1114,13 +1112,12 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 
     if (f != NULL) {
         res = f(descr, obj, (PyObject *)Py_TYPE(obj));
-        Py_DECREF(descr);
         goto done;
     }
 
     if (descr != NULL) {
         res = descr;
-        /* descr was already increfed above */
+        descr = NULL;
         goto done;
     }
 
@@ -1128,6 +1125,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
   done:
+    Py_XDECREF(descr);
     Py_DECREF(name);
     return res;
 }
@@ -1163,6 +1161,8 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     descr = _PyType_Lookup(tp, name);
+    Py_XINCREF(descr);
+
     f = NULL;
     if (descr != NULL) {
         f = descr->ob_type->tp_descr_set;
@@ -1212,6 +1212,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                  "'%.50s' object attribute '%U' is read-only",
                  tp->tp_name, name);
   done:
+    Py_XDECREF(descr);
     Py_DECREF(name);
     return res;
 }
