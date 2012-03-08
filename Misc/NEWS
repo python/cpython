@@ -22,6 +22,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14223: curses.addch() is no more limited to the range 0-255 when the
+  Python curses is not linked to libncursesw. It was a regression introduced
+  in Python 3.3a1.
+
 - Issue #14168: Check for presence of Element._attrs in minidom before
   accessing it.
 
