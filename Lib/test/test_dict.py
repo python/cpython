@@ -392,20 +392,27 @@ class DictTest(unittest.TestCase):
         class NastyKey:
             mutate_dict = None
 
+            def __init__(self, value):
+                self.value = value
+
             def __hash__(self):
                 # hash collision!
                 return 1
 
             def __eq__(self, other):
-                if self.mutate_dict:
-                    self.mutate_dict[self] = 1
-                return self == other
+                if NastyKey.mutate_dict:
+                    mydict, key = NastyKey.mutate_dict
+                    NastyKey.mutate_dict = None
+                    del mydict[key]
+                return self.value == other.value
 
-        d = {}
-        d[NastyKey()] = 0
-        NastyKey.mutate_dict = d
-        with self.assertRaises(RuntimeError):
-            d[NastyKey()] = None
+        key1 = NastyKey(1)
+        key2 = NastyKey(2)
+        d = {key1: 1}
+        NastyKey.mutate_dict = (d, key1)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'dictionary changed size during lookup'):
+            d[key2] = 2
 
     def test_repr(self):
         d = {}
