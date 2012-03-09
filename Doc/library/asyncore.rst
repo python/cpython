@@ -190,7 +190,8 @@ any that have been added to the map during asynchronous service) is closed.
       same options for creation.  Refer to the :mod:`socket` documentation for
       information on creating sockets.
 
-  .. versionchanged:: 3.3 family and type arguments can be omitted.
+      .. versionchanged:: 3.3
+         *family* and *type* arguments can be omitted.
 
 
    .. method:: connect(address)
