@@ -180,7 +180,10 @@ binding::
    scope_test()
    print("In global scope:", spam)
 
-The output of the example code is::
+The output of the example code is:
+
+.. code-block:: none
+
 
    After local assignment: test spam
    After nonlocal assignment: nonlocal spam
