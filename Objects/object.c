@@ -1152,13 +1152,11 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                      name->ob_type->tp_name);
         return -1;
     }
-    else
-        Py_INCREF(name);
 
-    if (tp->tp_dict == NULL) {
-        if (PyType_Ready(tp) < 0)
-            goto done;
-    }
+    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+        return -1;
+
+    Py_INCREF(name);
 
     descr = _PyType_Lookup(tp, name);
     Py_XINCREF(descr);
@@ -1190,9 +1188,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = PyDict_DelItem(dict, name);
         else
             res = PyDict_SetItem(dict, name, value);
+        Py_DECREF(dict);
         if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetObject(PyExc_AttributeError, name);
-        Py_DECREF(dict);
         goto done;
     }
 
