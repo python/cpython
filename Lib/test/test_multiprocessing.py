@@ -2587,8 +2587,8 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [])
-        self.assertLess(delta, expected + 0.2)
-        self.assertGreater(delta, expected - 0.2)
+        self.assertLess(delta, expected + 0.5)
+        self.assertGreater(delta, expected - 0.5)
 
         b.send(None)
 
@@ -2597,7 +2597,7 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [a])
-        self.assertLess(delta, 0.2)
+        self.assertLess(delta, 0.4)
 
     def test_wait_integer(self):
         from multiprocessing.connection import wait
@@ -2614,8 +2614,8 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [p.sentinel])
-        self.assertLess(delta, expected + 1)
-        self.assertGreater(delta, expected - 1)
+        self.assertLess(delta, expected + 2)
+        self.assertGreater(delta, expected - 2)
 
         a.send(None)
 
@@ -2624,7 +2624,7 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [p.sentinel, b])
-        self.assertLess(delta, 0.2)
+        self.assertLess(delta, 0.4)
 
         b.send(None)
 
@@ -2633,7 +2633,7 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [a, p.sentinel, b])
-        self.assertLess(delta, 0.2)
+        self.assertLess(delta, 0.4)
 
         p.join()
 
