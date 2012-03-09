@@ -1343,9 +1343,74 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             return -1;
         }
 
-        if (value == NULL)
-            newlen = 0;
+        if (value == NULL) {
+            /* Delete slice */
+            size_t cur;
+            Py_ssize_t i;
+
+            if (slicelen <= 0)
+                return 0;
+
+            /* Since we're deleting, the direction of the range doesn't matter,
+             * so for simplicity make it always ascending.
+            */
+            if (step < 0) {
+                stop = start + 1;
+                start = stop + step * (slicelen - 1) - 1;
+                step = -step;
+            }
+
+            assert((size_t)slicelen <= PY_SIZE_MAX / sizeof(PyObject *));
+
+            /* recycle is a list that will contain all the children
+             * scheduled for removal.
+            */
+            if (!(recycle = PyList_New(slicelen))) {
+                PyErr_NoMemory();
+                return -1;
+            }
+
+            /* This loop walks over all the children that have to be deleted,
+             * with cur pointing at them. num_moved is the amount of children
+             * until the next deleted child that have to be "shifted down" to
+             * occupy the deleted's places.
+             * Note that in the ith iteration, shifting is done i+i places down
+             * because i children were already removed.
+            */
+            for (cur = start, i = 0; cur < (size_t)stop; cur += step, ++i) {
+                /* Compute how many children have to be moved, clipping at the
+                 * list end.
+                */
+                Py_ssize_t num_moved = step - 1;
+                if (cur + step >= (size_t)self->extra->length) {
+                    num_moved = self->extra->length - cur - 1;
+                }
+
+                PyList_SET_ITEM(recycle, i, self->extra->children[cur]);
+
+                memmove(
+                    self->extra->children + cur - i,
+                    self->extra->children + cur + 1,
+                    num_moved * sizeof(PyObject *));
+            }
+
+            /* Leftover "tail" after the last removed child */
+            cur = start + (size_t)slicelen * step;
+            if (cur < (size_t)self->extra->length) {
+                memmove(
+                    self->extra->children + cur - slicelen,
+                    self->extra->children + cur,
+                    (self->extra->length - cur) * sizeof(PyObject *));
+            }
+
+            self->extra->length -= slicelen;
+
+            /* Discard the recycle list with all the deleted sub-elements */
+            Py_XDECREF(recycle);
+            return 0;
+        }
         else {
+            /* A new slice is actually being assigned */
             seq = PySequence_Fast(value, "");
             if (!seq) {
                 PyErr_Format(
@@ -1366,7 +1431,6 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 );
             return -1;
         }
-
 
         /* Resize before creating the recycle bin, to prevent refleaks. */
         if (newlen > slicelen) {

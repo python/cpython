@@ -1,10 +1,13 @@
 # xml.etree test.  This file contains enough tests to make sure that
 # all included components work as they should.
 # Large parts are extracted from the upstream test suite.
-
-# IMPORTANT: the same doctests are run from "test_xml_etree_c" in
-# order to ensure consistency between the C implementation and the
-# Python implementation.
+#
+# PLEASE write all new tests using the standard unittest infrastructure and
+# not doctest.
+#
+# IMPORTANT: the same tests are run from "test_xml_etree_c" in order
+# to ensure consistency between the C implementation and the Python
+# implementation.
 #
 # For this purpose, the module-level "ET" symbol is temporarily
 # monkey-patched when running the "test_xml_etree_c" test suite.
@@ -1948,6 +1951,81 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
         self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
 
+
+class ElementSlicingTest(unittest.TestCase):
+    def _elem_tags(self, elemlist):
+        return [e.tag for e in elemlist]
+
+    def _subelem_tags(self, elem):
+        return self._elem_tags(list(elem))
+
+    def _make_elem_with_children(self, numchildren):
+        """Create an Element with a tag 'a', with the given amount of children
+           named 'a0', 'a1' ... and so on.
+
+        """
+        e = ET.Element('a')
+        for i in range(numchildren):
+            ET.SubElement(e, 'a%s' % i)
+        return e
+
+    def test_getslice_single_index(self):
+        e = self._make_elem_with_children(10)
+
+        self.assertEqual(e[1].tag, 'a1')
+        self.assertEqual(e[-2].tag, 'a8')
+
+        self.assertRaises(IndexError, lambda: e[12])
+
+    def test_getslice_range(self):
+        e = self._make_elem_with_children(6)
+
+        self.assertEqual(self._elem_tags(e[3:]), ['a3', 'a4', 'a5'])
+        self.assertEqual(self._elem_tags(e[3:6]), ['a3', 'a4', 'a5'])
+        self.assertEqual(self._elem_tags(e[3:16]), ['a3', 'a4', 'a5'])
+        self.assertEqual(self._elem_tags(e[3:5]), ['a3', 'a4'])
+        self.assertEqual(self._elem_tags(e[3:-1]), ['a3', 'a4'])
+        self.assertEqual(self._elem_tags(e[:2]), ['a0', 'a1'])
+
+    def test_getslice_steps(self):
+        e = self._make_elem_with_children(10)
+
+        self.assertEqual(self._elem_tags(e[8:10:1]), ['a8', 'a9'])
+        self.assertEqual(self._elem_tags(e[::3]), ['a0', 'a3', 'a6', 'a9'])
+        self.assertEqual(self._elem_tags(e[::8]), ['a0', 'a8'])
+        self.assertEqual(self._elem_tags(e[1::8]), ['a1', 'a9'])
+
+    def test_getslice_negative_steps(self):
+        e = self._make_elem_with_children(4)
+
+        self.assertEqual(self._elem_tags(e[::-1]), ['a3', 'a2', 'a1', 'a0'])
+        self.assertEqual(self._elem_tags(e[::-2]), ['a3', 'a1'])
+
+    def test_delslice(self):
+        e = self._make_elem_with_children(4)
+        del e[0:2]
+        self.assertEqual(self._subelem_tags(e), ['a2', 'a3'])
+
+        e = self._make_elem_with_children(4)
+        del e[0:]
+        self.assertEqual(self._subelem_tags(e), [])
+
+        e = self._make_elem_with_children(4)
+        del e[::-1]
+        self.assertEqual(self._subelem_tags(e), [])
+
+        e = self._make_elem_with_children(4)
+        del e[::-2]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'a2'])
+
+        e = self._make_elem_with_children(4)
+        del e[1::2]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'a2'])
+
+        e = self._make_elem_with_children(2)
+        del e[::2]
+        self.assertEqual(self._subelem_tags(e), ['a1'])
+
 # --------------------------------------------------------------------
 
 
@@ -1997,7 +2075,10 @@ def test_main(module=pyET):
     # The same doctests are used for both the Python and the C implementations
     test_xml_etree.ET = module
 
-    test_classes = [ElementTreeTest, TreeBuilderTest]
+    test_classes = [
+        ElementSlicingTest,
+        ElementTreeTest,
+        TreeBuilderTest]
     if module is pyET:
         # Run the tests specific to the Python implementation
         test_classes += [NoAcceleratorTest]
