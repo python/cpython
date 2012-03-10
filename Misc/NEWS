@@ -37,6 +37,9 @@ Library
   data or close method) for the Python implementation as well.
   Drop the no-op TreeBuilder().xml() method from the C implementation.
 
+- Issue #14210: pdb now has tab-completion not only for command names, but
+  also for their arguments, wherever possible.
+
 Extension Modules
 -----------------
 

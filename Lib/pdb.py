@@ -73,6 +73,7 @@ import cmd
 import bdb
 import dis
 import code
+import glob
 import pprint
 import signal
 import inspect
@@ -155,6 +156,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Try to load readline if it exists
         try:
             import readline
+            # remove some common file name delimiters
+            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
         self.allow_kbdint = False
@@ -445,6 +448,61 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def error(self, msg):
         print('***', msg, file=self.stdout)
 
+    # Generic completion functions.  Individual complete_foo methods can be
+    # assigned below to one of these functions.
+
+    def _complete_location(self, text, line, begidx, endidx):
+        # Complete a file/module/function location for break/tbreak/clear.
+        if line.strip().endswith((':', ',')):
+            # Here comes a line number or a condition which we can't complete.
+            return []
+        # First, try to find matching functions (i.e. expressions).
+        try:
+            ret = self._complete_expression(text, line, begidx, endidx)
+        except Exception:
+            ret = []
+        # Then, try to complete file names as well.
+        globs = glob.glob(text + '*')
+        for fn in globs:
+            if os.path.isdir(fn):
+                ret.append(fn + '/')
+            elif os.path.isfile(fn) and fn.lower().endswith(('.py', '.pyw')):
+                ret.append(fn + ':')
+        return ret
+
+    def _complete_bpnumber(self, text, line, begidx, endidx):
+        # Complete a breakpoint number.  (This would be more helpful if we could
+        # display additional info along with the completions, such as file/line
+        # of the breakpoint.)
+        return [str(i) for i, bp in enumerate(bdb.Breakpoint.bpbynumber)
+                if bp is not None and str(i).startswith(text)]
+
+    def _complete_expression(self, text, line, begidx, endidx):
+        # Complete an arbitrary expression.
+        if not self.curframe:
+            return []
+        # Collect globals and locals.  It is usually not really sensible to also
+        # complete builtins, and they clutter the namespace quite heavily, so we
+        # leave them out.
+        ns = self.curframe.f_globals.copy()
+        ns.update(self.curframe_locals)
+        if '.' in text:
+            # Walk an attribute chain up to the last part, similar to what
+            # rlcompleter does.  This will bail if any of the parts are not
+            # simple attribute access, which is what we want.
+            dotted = text.split('.')
+            try:
+                obj = ns[dotted[0]]
+                for part in dotted[1:-1]:
+                    obj = getattr(obj, part)
+            except (KeyError, AttributeError):
+                return []
+            prefix = '.'.join(dotted[:-1]) + '.'
+            return [prefix + n for n in dir(obj) if n.startswith(dotted[-1])]
+        else:
+            # Complete a simple name.
+            return [n for n in ns.keys() if n.startswith(text)]
+
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
     # Return true to exit from the command loop
@@ -525,6 +583,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         finally:
             self.commands_defining = False
             self.prompt = prompt_back
+
+    complete_commands = _complete_bpnumber
 
     def do_break(self, arg, temporary = 0):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
@@ -628,12 +688,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     do_b = do_break
 
+    complete_break = _complete_location
+    complete_b = _complete_location
+
     def do_tbreak(self, arg):
         """tbreak [ ([filename:]lineno | function) [, condition] ]
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
         self.do_break(arg, 1)
+
+    complete_tbreak = _complete_location
 
     def lineinfo(self, identifier):
         failed = (None, None, None)
@@ -704,6 +769,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 bp.enable()
                 self.message('Enabled %s' % bp)
 
+    complete_enable = _complete_bpnumber
+
     def do_disable(self, arg):
         """disable bpnumber [bpnumber ...]
         Disables the breakpoints given as a space separated list of
@@ -721,6 +788,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 bp.disable()
                 self.message('Disabled %s' % bp)
+
+    complete_disable = _complete_bpnumber
 
     def do_condition(self, arg):
         """condition bpnumber [condition]
@@ -744,6 +813,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('Breakpoint %d is now unconditional.' % bp.number)
             else:
                 self.message('New condition set for breakpoint %d.' % bp.number)
+
+    complete_condition = _complete_bpnumber
 
     def do_ignore(self, arg):
         """ignore bpnumber [count]
@@ -775,6 +846,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.message('Will stop next time breakpoint %d is reached.'
                              % bp.number)
+
+    complete_ignore = _complete_bpnumber
 
     def do_clear(self, arg):
         """cl(ear) filename:lineno\ncl(ear) [bpnumber [bpnumber...]]
@@ -823,6 +896,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.clear_bpbynumber(i)
                 self.message('Deleted %s' % bp)
     do_cl = do_clear # 'c' is already an abbreviation for 'continue'
+
+    complete_clear = _complete_location
+    complete_cl = _complete_location
 
     def do_where(self, arg):
         """w(here)
@@ -1007,6 +1083,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
 
+    complete_debug = _complete_expression
+
     def do_quit(self, arg):
         """q(uit)\nexit
         Quit from the debugger. The program being executed is aborted.
@@ -1093,6 +1171,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             pass
 
+    complete_print = _complete_expression
+    complete_p = _complete_expression
+    complete_pp = _complete_expression
+
     def do_list(self, arg):
         """l(ist) [first [,last] | .]
 
@@ -1173,6 +1255,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         self._print_lines(lines, lineno)
 
+    complete_source = _complete_expression
+
     def _print_lines(self, lines, start, breaks=(), frame=None):
         """Print a range of lines."""
         if frame:
@@ -1227,6 +1311,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # None of the above...
         self.message(type(value))
 
+    complete_whatis = _complete_expression
+
     def do_display(self, arg):
         """display [expression]
 
@@ -1244,6 +1330,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.displaying.setdefault(self.curframe, {})[arg] = val
             self.message('display %s: %r' % (arg, val))
 
+    complete_display = _complete_expression
+
     def do_undisplay(self, arg):
         """undisplay [expression]
 
@@ -1258,6 +1346,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error('not displaying %s' % arg)
         else:
             self.displaying.pop(self.curframe, None)
+
+    def complete_undisplay(self, text, line, begidx, endidx):
+        return [e for e in self.displaying.get(self.curframe, {})
+                if e.startswith(text)]
 
     def do_interact(self, arg):
         """interact
@@ -1312,6 +1404,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if len(args) == 0: return
         if args[0] in self.aliases:
             del self.aliases[args[0]]
+
+    def complete_unalias(self, text, line, begidx, endidx):
+        return [a for a in self.aliases if a.startswith(text)]
 
     # List of all the commands making the program resume execution.
     commands_resuming = ['do_continue', 'do_step', 'do_next', 'do_return',
