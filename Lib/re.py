@@ -179,14 +179,19 @@ def subn(pattern, repl, string, count=0, flags=0):
 
 def split(pattern, string, maxsplit=0, flags=0):
     """Split the source string by the occurrences of the pattern,
-    returning a list containing the resulting substrings."""
+    returning a list containing the resulting substrings.  If
+    capturing parentheses are used in pattern, then the text of all
+    groups in the pattern are also returned as part of the resulting
+    list.  If maxsplit is nonzero, at most maxsplit splits occur,
+    and the remainder of the string is returned as the final element
+    of the list."""
     return _compile(pattern, flags).split(string, maxsplit)
 
 def findall(pattern, string, flags=0):
     """Return a list of all non-overlapping matches in the string.
 
-    If one or more groups are present in the pattern, return a
-    list of groups; this will be a list of tuples if the pattern
+    If one or more capturing groups are present in the pattern, return
+    a list of groups; this will be a list of tuples if the pattern
     has more than one group.
 
     Empty matches are included in the result."""
