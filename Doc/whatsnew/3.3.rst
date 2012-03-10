@@ -777,6 +777,14 @@ name :mod:`distutils2`.
 .. TODO add examples and howto to the packaging docs and link to them
 
 
+pdb
+---
+
+* Tab-completion is now available not only for command names, but also their
+  arguments.  For example, for the ``break`` command, function and file names
+  are completed.  (Contributed by Georg Brandl in :issue:`14210`)
+
+
 pydoc
 -----
 
