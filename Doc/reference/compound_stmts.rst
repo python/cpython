@@ -535,6 +535,11 @@ returned or passed around.  Free variables used in the nested function can
 access the local variables of the function containing the def.  See section
 :ref:`naming` for details.
 
+.. seealso::
+
+   :pep:`3107` - Function Annotations
+      The original specification for function annotations.
+
 
 .. _class:
 
