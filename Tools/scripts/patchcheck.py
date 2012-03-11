@@ -132,6 +132,21 @@ def reported_news(file_paths):
     """Check if Misc/NEWS has been changed."""
     return 'Misc/NEWS' in file_paths
 
+@status("configure regenerated", modal=True, info=str)
+def regenerated_configure(file_paths):
+    """Check if configure has been regenerated."""
+    if 'configure.in' in file_paths:
+        return "yes" if 'configure' in file_paths else "no"
+    else:
+        return "not needed"
+
+@status("pyconfig.h.in regenerated", modal=True, info=str)
+def regenerated_pyconfig_h_in(file_paths):
+    """Check if pyconfig.h.in has been regenerated."""
+    if 'configure.in' in file_paths:
+        return "yes" if 'pyconfig.h.in' in file_paths else "no"
+    else:
+        return "not needed"
 
 def main():
     file_paths = changed_files()
@@ -151,6 +166,10 @@ def main():
     credit_given(special_files)
     # Misc/NEWS changed.
     reported_news(special_files)
+    # Regenerated configure, if necessary.
+    regenerated_configure(file_paths)
+    # Regenerated pyconfig.h.in, if necessary.
+    regenerated_pyconfig_h_in(file_paths)
 
     # Test suite run and passed.
     if python_files or c_files:
