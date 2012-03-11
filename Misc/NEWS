@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14161: fix the __repr__ of file objects to escape the file name.
+
 - Issue #1469629: Allow cycles through an object's __dict__ slot to be
   collected. (For example if ``x.__dict__ is x``).
 
