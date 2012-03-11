@@ -89,6 +89,13 @@ class AutoFileTests(unittest.TestCase):
     def testRepr(self):
         # verify repr works
         self.assertTrue(repr(self.f).startswith("<open file '" + TESTFN))
+        # see issue #14161
+        # Windows doesn't like \r\n\t" in the file name, but ' is ok
+        fname = 'xx\rxx\nxx\'xx"xx' if sys.platform != "win32" else "xx'xx"
+        with open(fname, 'w') as f:
+            self.addCleanup(os.remove, fname)
+            self.assertTrue(repr(f).startswith(
+                    "<open file %r, mode 'w' at" % fname))
 
     def testErrors(self):
         self.f.close()
