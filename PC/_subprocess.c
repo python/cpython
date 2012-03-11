@@ -691,6 +691,7 @@ PyInit__subprocess()
     defint(d, "WAIT_TIMEOUT", WAIT_TIMEOUT);
     defint(d, "CREATE_NEW_CONSOLE", CREATE_NEW_CONSOLE);
     defint(d, "CREATE_NEW_PROCESS_GROUP", CREATE_NEW_PROCESS_GROUP);
+    defint(d, "STILL_ACTIVE", STILL_ACTIVE);
 
     return m;
 }
