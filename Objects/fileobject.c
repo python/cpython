@@ -639,8 +639,9 @@ file_repr(PyFileObject *f)
     PyObject *name = NULL;
     if (PyUnicode_Check(f->f_name)) {
 #ifdef Py_USING_UNICODE
+        const char *name_str;
         name = PyUnicode_AsUnicodeEscapeString(f->f_name);
-        const char *name_str = name ? PyString_AsString(name) : "?";
+        name_str = name ? PyString_AsString(name) : "?";
         ret = PyString_FromFormat("<%s file u'%s', mode '%s' at %p>",
                            f->f_fp == NULL ? "closed" : "open",
                            name_str,
