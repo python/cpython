@@ -211,17 +211,19 @@ class TestProgram(object):
         elif options.quiet:
             self.verbosity = 0
 
-
-    def _do_discovery(self, argv, Loader=loader.TestLoader):
-        # handle command line args for test discovery
-        self.progName = '%s discover' % self.progName
-        parser = self._getOptParser()
+    def _addDiscoveryOptions(self, parser):
         parser.add_option('-s', '--start-directory', dest='start', default='.',
                           help="Directory to start discovery ('.' default)")
         parser.add_option('-p', '--pattern', dest='pattern', default='test*.py',
                           help="Pattern to match tests ('test*.py' default)")
         parser.add_option('-t', '--top-level-directory', dest='top', default=None,
                           help='Top level directory of project (defaults to start directory)')
+
+    def _do_discovery(self, argv, Loader=loader.TestLoader):
+        # handle command line args for test discovery
+        self.progName = '%s discover' % self.progName
+        parser = self._getOptParser()
+        self._addDiscoveryOptions(parser)
 
         options, args = parser.parse_args(argv)
         if len(args) > 3:
