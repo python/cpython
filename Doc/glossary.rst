@@ -147,7 +147,7 @@ Glossary
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The keys
-      can be any object with :meth:`__hash__` function and :meth:`__eq__`
+      can be any object with :meth:`__hash__` method and :meth:`__eq__`
       methods. Called a hash in Perl.
 
    docstring
