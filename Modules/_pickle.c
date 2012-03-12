@@ -2814,14 +2814,19 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
 static int
 save_ellipsis(PicklerObject *self, PyObject *obj)
 {
-    return save_global(self, Py_Ellipsis, PyUnicode_FromString("Ellipsis"));
+    PyObject *str = PyUnicode_FromString("Ellipsis");
+    if (str == NULL)
+      return -1;
+    return save_global(self, Py_Ellipsis, str);
 }
 
 static int
 save_notimplemented(PicklerObject *self, PyObject *obj)
 {
-    return save_global(self, Py_NotImplemented,
-                       PyUnicode_FromString("NotImplemented"));
+    PyObject *str = PyUnicode_FromString("NotImplemented");
+    if (str == NULL)
+      return -1;
+    return save_global(self, Py_NotImplemented, str);
 }
 
 static int

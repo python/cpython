@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13394: the aifc module now uses warnings.warn() to signal warnings.
+
 - Issue #14252: Fix subprocess.Popen.terminate() to not raise an error under
   Windows when the child process has already exited.
 
