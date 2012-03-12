@@ -39,14 +39,13 @@ import socket
 import struct
 import sys
 import tempfile
-from test.support import captured_stdout, run_with_locale, run_unittest, patch
-from test.support import TestHandler, Matcher
+from test.support import (captured_stdout, run_with_locale, run_unittest,
+                          patch, requires_zlib, TestHandler, Matcher)
 import textwrap
 import time
 import unittest
 import warnings
 import weakref
-import zlib
 try:
     import threading
     # The following imports are needed only for tests which
@@ -70,6 +69,10 @@ try:
 except ImportError:
     win32evtlogutil = None
     win32evtlog = None
+try:
+    import zlib
+except ImportError:
+    pass
 
 
 class BaseTest(unittest.TestCase):
@@ -3602,6 +3605,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
+    @requires_zlib
     def test_rotator(self):
         def namer(name):
             return name + ".gz"
