@@ -645,7 +645,7 @@ seq_for_testlist(struct compiling *c, const node *n)
 }
 
 static arg_ty
-compiler_arg(struct compiling *c, const node *n)
+ast_for_arg(struct compiling *c, const node *n)
 {
     identifier name;
     expr_ty annotation = NULL;
@@ -859,7 +859,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                              "non-default argument follows default argument");
                     return NULL;
                 }
-                arg = compiler_arg(c, ch);
+                arg = ast_for_arg(c, ch);
                 if (!arg)
                     return NULL;
                 asdl_seq_SET(posargs, k++, arg);
