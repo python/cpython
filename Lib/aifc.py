@@ -136,6 +136,7 @@ writeframesraw.
 
 import struct
 import builtins
+import warnings
 
 __all__ = ["Error", "open", "openfp"]
 
@@ -440,7 +441,7 @@ class Aifc_read:
             kludge = 0
             if chunk.chunksize == 18:
                 kludge = 1
-                print('Warning: bad COMM chunk size')
+                warnings.warn('Warning: bad COMM chunk size')
                 chunk.chunksize = 23
             #DEBUG end
             self._comptype = chunk.read(4)
@@ -484,11 +485,10 @@ class Aifc_read:
                     # a position 0 and name ''
                     self._markers.append((id, pos, name))
         except EOFError:
-            print('Warning: MARK chunk contains only', end=' ')
-            print(len(self._markers), end=' ')
-            if len(self._markers) == 1: print('marker', end=' ')
-            else: print('markers', end=' ')
-            print('instead of', nmarkers)
+            w = ('Warning: MARK chunk contains only %s marker%s instead of %s' %
+                 (len(self._markers), '' if len(self._markers) == 1 else 's',
+                  nmarkers))
+            warnings.warn(w)
 
 class Aifc_write:
     # Variables used in this class:
