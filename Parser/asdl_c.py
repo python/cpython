@@ -603,6 +603,11 @@ class PyTypesVisitor(PickleVisitor):
 
     def visitModule(self, mod):
         self.emit("""
+typedef struct {
+    PyObject_HEAD;
+    PyObject *dict;
+} AST_object;
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -681,10 +686,15 @@ static PyMethodDef ast_type_methods[] = {
     {NULL}
 };
 
+static PyGetSetDef ast_type_getsets[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {NULL}
+};
+
 static PyTypeObject AST_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_ast.AST",
-    sizeof(PyObject),
+    sizeof(AST_object),
     0,
     0,                       /* tp_dealloc */
     0,                       /* tp_print */
@@ -711,12 +721,12 @@ static PyTypeObject AST_type = {
     0,                       /* tp_iternext */
     ast_type_methods,        /* tp_methods */
     0,                       /* tp_members */
-    0,                       /* tp_getset */
+    ast_type_getsets,        /* tp_getset */
     0,                       /* tp_base */
     0,                       /* tp_dict */
     0,                       /* tp_descr_get */
     0,                       /* tp_descr_set */
-    0,                       /* tp_dictoffset */
+    offsetof(AST_object, dict),/* tp_dictoffset */
     (initproc)ast_type_init, /* tp_init */
     PyType_GenericAlloc,     /* tp_alloc */
     PyType_GenericNew,       /* tp_new */
@@ -1185,6 +1195,8 @@ def main(srcfile):
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
         f = open(p, "w")
         f.write(auto_gen_msg)
+        f.write('#include <stddef.h>\n')
+        f.write('\n')
         f.write('#include "Python.h"\n')
         f.write('#include "%s-ast.h"\n' % mod.name)
         f.write('\n')

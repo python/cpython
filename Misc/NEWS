@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Give the ast.AST class a __dict__.
+
 - Issue #1469629: Allow cycles through an object's __dict__ slot to be
   collected. (For example if ``x.__dict__ is x``).
 
