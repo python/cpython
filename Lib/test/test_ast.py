@@ -196,9 +196,6 @@ class AST_Tests(unittest.TestCase):
             x.vararg
 
         with self.assertRaises(AttributeError):
-            x.foobar = 21
-
-        with self.assertRaises(AttributeError):
             ast.AST(lineno=2)
 
         with self.assertRaises(TypeError):
