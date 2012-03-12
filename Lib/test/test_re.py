@@ -825,6 +825,16 @@ class ReTests(unittest.TestCase):
         self.assertIsNotNone(re.search("123.*-", '123\U0010ffff-'))
         self.assertIsNotNone(re.search("123.*-", '123\xe9\u20ac\U0010ffff-'))
 
+    def test_compile(self):
+        # Test return value when given string and pattern as parameter
+        pattern = re.compile('random pattern')
+        self.assertIsInstance(pattern, re._pattern_type)
+        same_pattern = re.compile(pattern)
+        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIs(same_pattern, pattern)
+        # Test behaviour when not given a string or pattern as parameter
+        self.assertRaises(TypeError, re.compile, 0)
+
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
