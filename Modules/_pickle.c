@@ -2816,7 +2816,7 @@ save_ellipsis(PicklerObject *self, PyObject *obj)
 {
     PyObject *str = PyUnicode_FromString("Ellipsis");
     if (str == NULL)
-      return -1;
+        return -1;
     return save_global(self, Py_Ellipsis, str);
 }
 
@@ -2825,7 +2825,7 @@ save_notimplemented(PicklerObject *self, PyObject *obj)
 {
     PyObject *str = PyUnicode_FromString("NotImplemented");
     if (str == NULL)
-      return -1;
+        return -1;
     return save_global(self, Py_NotImplemented, str);
 }
 
