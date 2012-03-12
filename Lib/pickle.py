@@ -438,6 +438,14 @@ class _Pickler:
         self.write(NONE)
     dispatch[type(None)] = save_none
 
+    def save_ellipsis(self, obj):
+        self.save_global(Ellipsis, 'Ellipsis')
+    dispatch[type(Ellipsis)] = save_ellipsis
+
+    def save_notimplemented(self, obj):
+        self.save_global(NotImplemented, 'NotImplemented')
+    dispatch[type(NotImplemented)] = save_notimplemented
+
     def save_bool(self, obj):
         if self.proto >= 2:
             self.write(obj and NEWTRUE or NEWFALSE)
