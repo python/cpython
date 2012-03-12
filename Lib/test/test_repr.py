@@ -130,10 +130,10 @@ class ReprTests(unittest.TestCase):
     def test_file(self):
         fp = open(unittest.__file__)
         self.assertTrue(repr(fp).startswith(
-            "<open file '%s', mode 'r' at 0x" % unittest.__file__))
+            "<open file %r, mode 'r' at 0x" % unittest.__file__))
         fp.close()
         self.assertTrue(repr(fp).startswith(
-            "<closed file '%s', mode 'r' at 0x" % unittest.__file__))
+            "<closed file %r, mode 'r' at 0x" % unittest.__file__))
 
     def test_lambda(self):
         self.assertTrue(repr(lambda x: x).startswith(
