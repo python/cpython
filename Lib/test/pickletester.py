@@ -743,6 +743,18 @@ class AbstractPickleTests(unittest.TestCase):
                 u = self.loads(s)
                 self.assertEqual(t, u)
 
+    def test_ellipsis(self):
+        for proto in protocols:
+            s = self.dumps(..., proto)
+            u = self.loads(s)
+            self.assertEqual(..., u)
+
+    def test_notimplemented(self):
+        for proto in protocols:
+            s = self.dumps(NotImplemented, proto)
+            u = self.loads(s)
+            self.assertEqual(NotImplemented, u)
+
     # Tests for protocol 2
 
     def test_proto(self):
