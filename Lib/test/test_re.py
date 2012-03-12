@@ -818,6 +818,16 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
         self.assertRaises(TypeError, _sre.compile, {}, 0, [])
 
+    def test_compile(self):
+        # Test return value when given string and pattern as parameter
+        pattern = re.compile('random pattern')
+        self.assertIsInstance(pattern, re._pattern_type)
+        same_pattern = re.compile(pattern)
+        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIs(same_pattern, pattern)
+        # Test behaviour when not given a string or pattern as parameter
+        self.assertRaises(TypeError, re.compile, 0)
+
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
