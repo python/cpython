@@ -196,6 +196,9 @@ class AST_Tests(unittest.TestCase):
     def test_AST_objects(self):
         x = ast.AST()
         self.assertEqual(x._fields, ())
+        x.foobar = 42
+        self.assertEqual(x.foobar, 42)
+        self.assertEqual(x.__dict__["foobar"], 42)
 
         with self.assertRaises(AttributeError):
             x.vararg
