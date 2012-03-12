@@ -1174,12 +1174,6 @@ ast_for_arg(struct compiling *c, const node *n)
     }
 
     return arg(name, annotation, c->c_arena);
-#if 0
-    result = Tuple(args, Store, LINENO(n), n->n_col_offset, c->c_arena);
-    if (!set_context(c, result, Store, n))
-        return NULL;
-    return result;
-#endif
 }
 
 /* returns -1 if failed to handle keyword only arguments
