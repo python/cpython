@@ -882,7 +882,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size(h + ''))
+        check(_ast.AST(), size(h + 'P'))
         # imp.NullImporter
         import imp
         check(imp.NullImporter(self.file.name), size(h + ''))
