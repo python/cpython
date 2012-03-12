@@ -1,7 +1,8 @@
-from test.support import findfile, run_unittest, TESTFN
+from test.support import findfile, run_unittest, TESTFN, captured_stdout, unlink
 import unittest
 import os
 import io
+import struct
 
 import aifc
 
@@ -20,10 +21,8 @@ class AIFCTest(unittest.TestCase):
                 self.fout.close()
             except (aifc.Error, AttributeError):
                 pass
-        try:
-            os.remove(TESTFN)
-        except OSError:
-            pass
+        unlink(TESTFN)
+        unlink(TESTFN + '.aiff')
 
     def test_skipunknown(self):
         #Issue 2245
@@ -32,6 +31,7 @@ class AIFCTest(unittest.TestCase):
 
     def test_params(self):
         f = self.f = aifc.open(self.sndfilepath)
+        self.assertEqual(f.getfp().name, self.sndfilepath)
         self.assertEqual(f.getnchannels(), 2)
         self.assertEqual(f.getsampwidth(), 2)
         self.assertEqual(f.getframerate(), 48000)
@@ -45,6 +45,7 @@ class AIFCTest(unittest.TestCase):
 
     def test_read(self):
         f = self.f = aifc.open(self.sndfilepath)
+        self.assertEqual(f.readframes(0), b'')
         self.assertEqual(f.tell(), 0)
         self.assertEqual(f.readframes(2), b'\x00\x00\x00\x00\x0b\xd4\x0b\xd4')
         f.rewind()
@@ -58,6 +59,10 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(f.readframes(2), b'\x17t\x17t"\xad"\xad')
         f.setpos(pos0)
         self.assertEqual(f.readframes(2), b'\x00\x00\x00\x00\x0b\xd4\x0b\xd4')
+        with self.assertRaises(aifc.Error):
+            f.setpos(-1)
+        with self.assertRaises(aifc.Error):
+            f.setpos(f.getnframes() + 1)
 
     def test_write(self):
         f = self.f = aifc.open(self.sndfilepath)
@@ -92,8 +97,6 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(f.getparams()[0:3], fout.getparams()[0:3])
         self.assertEqual(fout.getcomptype(), b'ULAW')
         self.assertEqual(fout.getcompname(), b'foo')
-        # XXX: this test fails, not sure if it should succeed or not
-        # self.assertEqual(f.readframes(5), fout.readframes(5))
 
     def test_close(self):
         class Wrapfile(object):
@@ -112,7 +115,7 @@ class AIFCTest(unittest.TestCase):
 
     def test_write_header_comptype_sampwidth(self):
         for comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
-            fout = self.fout = aifc.open(io.BytesIO(), 'wb')
+            fout = aifc.open(io.BytesIO(), 'wb')
             fout.setnchannels(1)
             fout.setframerate(1)
             fout.setcomptype(comptype, b'')
@@ -121,7 +124,7 @@ class AIFCTest(unittest.TestCase):
             fout.initfp(None)
 
     def test_write_markers_values(self):
-        fout = self.fout = aifc.open(io.BytesIO(), 'wb')
+        fout = aifc.open(io.BytesIO(), 'wb')
         self.assertEqual(fout.getmarkers(), None)
         fout.setmark(1, 0, b'foo1')
         fout.setmark(1, 1, b'foo2')
@@ -178,6 +181,148 @@ class AIFCLowLevelTest(unittest.TestCase):
         f = io.BytesIO()
         with self.assertRaises(ValueError):
             aifc._write_string(f, b'too long' * 255)
+
+    def test_wrong_open_mode(self):
+        with self.assertRaises(aifc.Error):
+            aifc.open(TESTFN, 'wrong_mode')
+
+    def test_read_wrong_form(self):
+        b1 = io.BytesIO(b'WRNG' + struct.pack('>L', 0))
+        b2 = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'WRNG')
+        self.assertRaises(aifc.Error, aifc.open, b1)
+        self.assertRaises(aifc.Error, aifc.open, b2)
+
+    def test_read_no_comm_chunk(self):
+        b = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'AIFF')
+        self.assertRaises(aifc.Error, aifc.open, b)
+
+    def test_read_wrong_compression_type(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 23, 0, 0, 0, 0, 0, 0)
+        b += b'WRNG' + struct.pack('B', 0)
+        self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
+
+    def test_read_wrong_marks(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFF'
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+        b += b'MARK' + struct.pack('>LhB', 3, 1, 1)
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(
+            s.getvalue(),
+            'Warning: MARK chunk contains only 0 markers instead of 1\n')
+        self.assertEqual(f.getmarkers(), None)
+
+    def test_read_comm_kludge_compname_even(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'NONE' + struct.pack('B', 4) + b'even' + b'\x00'
+        b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(s.getvalue(), 'Warning: bad COMM chunk size\n')
+        self.assertEqual(f.getcompname(), b'even')
+
+    def test_read_comm_kludge_compname_odd(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'NONE' + struct.pack('B', 3) + b'odd'
+        b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(s.getvalue(), 'Warning: bad COMM chunk size\n')
+        self.assertEqual(f.getcompname(), b'odd')
+
+    def test_write_params_raises(self):
+        fout = aifc.open(io.BytesIO(), 'wb')
+        wrong_params = (0, 0, 0, 0, b'WRNG', '')
+        self.assertRaises(aifc.Error, fout.setparams, wrong_params)
+        self.assertRaises(aifc.Error, fout.getparams)
+        self.assertRaises(aifc.Error, fout.setnchannels, 0)
+        self.assertRaises(aifc.Error, fout.getnchannels)
+        self.assertRaises(aifc.Error, fout.setsampwidth, 0)
+        self.assertRaises(aifc.Error, fout.getsampwidth)
+        self.assertRaises(aifc.Error, fout.setframerate, 0)
+        self.assertRaises(aifc.Error, fout.getframerate)
+        self.assertRaises(aifc.Error, fout.setcomptype, b'WRNG', '')
+        fout.aiff()
+        fout.setnchannels(1)
+        fout.setsampwidth(1)
+        fout.setframerate(1)
+        fout.setnframes(1)
+        fout.writeframes(b'\x00')
+        self.assertRaises(aifc.Error, fout.setparams, (1, 1, 1, 1, 1, 1))
+        self.assertRaises(aifc.Error, fout.setnchannels, 1)
+        self.assertRaises(aifc.Error, fout.setsampwidth, 1)
+        self.assertRaises(aifc.Error, fout.setframerate, 1)
+        self.assertRaises(aifc.Error, fout.setnframes, 1)
+        self.assertRaises(aifc.Error, fout.setcomptype, b'NONE', '')
+        self.assertRaises(aifc.Error, fout.aiff)
+        self.assertRaises(aifc.Error, fout.aifc)
+
+    def test_write_params_singles(self):
+        fout = aifc.open(io.BytesIO(), 'wb')
+        fout.aifc()
+        fout.setnchannels(1)
+        fout.setsampwidth(2)
+        fout.setframerate(3)
+        fout.setnframes(4)
+        fout.setcomptype(b'NONE', b'name')
+        self.assertEqual(fout.getnchannels(), 1)
+        self.assertEqual(fout.getsampwidth(), 2)
+        self.assertEqual(fout.getframerate(), 3)
+        self.assertEqual(fout.getnframes(), 0)
+        self.assertEqual(fout.tell(), 0)
+        self.assertEqual(fout.getcomptype(), b'NONE')
+        self.assertEqual(fout.getcompname(), b'name')
+        fout.writeframes(b'\x00' * 4 * fout.getsampwidth() * fout.getnchannels())
+        self.assertEqual(fout.getnframes(), 4)
+        self.assertEqual(fout.tell(), 4)
+
+    def test_write_params_bunch(self):
+        fout = aifc.open(io.BytesIO(), 'wb')
+        fout.aifc()
+        p = (1, 2, 3, 4, b'NONE', b'name')
+        fout.setparams(p)
+        self.assertEqual(fout.getparams(), p)
+        fout.initfp(None)
+
+    def test_write_header_raises(self):
+        fout = aifc.open(io.BytesIO(), 'wb')
+        self.assertRaises(aifc.Error, fout.close)
+        fout.setnchannels(1)
+        self.assertRaises(aifc.Error, fout.close)
+        fout.setsampwidth(1)
+        self.assertRaises(aifc.Error, fout.close)
+        fout.initfp(None)
+
+    def test_write_header_comptype_raises(self):
+        for comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
+            fout = aifc.open(io.BytesIO(), 'wb')
+            fout.setsampwidth(1)
+            fout.setcomptype(comptype, b'')
+            self.assertRaises(aifc.Error, fout.close)
+            fout.initfp(None)
+
+    def test_write_markers_raises(self):
+        fout = aifc.open(io.BytesIO(), 'wb')
+        self.assertRaises(aifc.Error, fout.setmark, 0, 0, b'')
+        self.assertRaises(aifc.Error, fout.setmark, 1, -1, b'')
+        self.assertRaises(aifc.Error, fout.setmark, 1, 0, None)
+        self.assertRaises(aifc.Error, fout.getmark, 1)
+        fout.initfp(None)
+
+    def test_write_aiff_by_extension(self):
+        sampwidth = 2
+        fout = self.fout = aifc.open(TESTFN + '.aiff', 'wb')
+        fout.setparams((1, sampwidth, 1, 1, b'ULAW', b''))
+        frames = b'\x00' * fout.getnchannels() * sampwidth
+        fout.writeframes(frames)
+        fout.close()
+        f = self.f = aifc.open(TESTFN + '.aiff', 'rb')
+        self.assertEqual(f.getcomptype(), b'NONE')
+        f.close()
 
 
 def test_main():
