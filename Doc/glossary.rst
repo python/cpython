@@ -152,9 +152,9 @@ Glossary
       For more information about descriptors' methods, see :ref:`descriptors`.
 
    dictionary
-      An associative array, where arbitrary keys are mapped to values.  The keys
-      can be any object with :meth:`__hash__` method and :meth:`__eq__`
-      methods. Called a hash in Perl.
+      An associative array, where arbitrary keys are mapped to values.  The
+      keys can be any object with :meth:`__hash__`  and :meth:`__eq__` methods.
+      Called a hash in Perl.
 
    docstring
       A string literal which appears as the first expression in a class,
