@@ -361,12 +361,12 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    character properties database.
 
 ``\S``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any non-whitespace character; this is equivalent to the set ``[^ \t\n\r\f\v]``
-   With :const:`LOCALE`, it will match any character not in this set, and not
-   defined as space in the current locale. If :const:`UNICODE` is set, this will
-   match anything other than ``[ \t\n\r\f\v]`` and characters marked as space in
-   the Unicode character properties database.
+   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified,
+   matches any non-whitespace character; this is equivalent to the set ``[^
+   \t\n\r\f\v]`` With :const:`LOCALE`, it will match the above set plus any
+   non-space character in the current locale. If :const:`UNICODE` is set, the
+   above set ``[^ \t\n\r\f\v]`` plus the characters not marked as space in the
+   Unicode character properties database.
 
 ``\w``
    When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
@@ -381,11 +381,15 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    any non-alphanumeric character; this is equivalent to the set ``[^a-zA-Z0-9_]``.
    With :const:`LOCALE`, it will match any character not in the set ``[0-9_]``, and
    not defined as alphanumeric for the current locale. If :const:`UNICODE` is set,
-   this will match anything other than ``[0-9_]`` and characters marked as
-   alphanumeric in the Unicode character properties database.
+   this will match anything other than ``[0-9_]`` plus characters classied as
+   not alphanumeric in the Unicode character properties database.
 
 ``\Z``
    Matches only at the end of the string.
+
+If both :const:`LOCALE` and :const:`UNICODE` flags are included for a
+particular sequence, then :const:`LOCALE` flag takes effect first followed by
+the :const:`UNICODE`.
 
 Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
