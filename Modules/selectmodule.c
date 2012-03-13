@@ -223,8 +223,10 @@ select_select(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv.tv_usec) == -1)
+        long usec;
+        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &usec) == -1)
             return NULL;
+        tv.tv_usec = usec;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
             return NULL;
@@ -1837,7 +1839,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     PyObject *result = NULL;
     struct kevent *evl = NULL;
     struct kevent *chl = NULL;
-    struct timespec timeoutspec;
+    struct timespec timeout;
     struct timespec *ptimeoutspec;
 
     if (self->kqfd < 0)
