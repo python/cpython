@@ -2812,6 +2812,24 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
 }
 
 static int
+save_ellipsis(PicklerObject *self, PyObject *obj)
+{
+    PyObject *str = PyUnicode_FromString("Ellipsis");
+    if (str == NULL)
+        return -1;
+    return save_global(self, Py_Ellipsis, str);
+}
+
+static int
+save_notimplemented(PicklerObject *self, PyObject *obj)
+{
+    PyObject *str = PyUnicode_FromString("NotImplemented");
+    if (str == NULL)
+        return -1;
+    return save_global(self, Py_NotImplemented, str);
+}
+
+static int
 save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
 {
     PyObject *pid = NULL;
@@ -3112,6 +3130,14 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
 
     if (obj == Py_None) {
         status = save_none(self, obj);
+        goto done;
+    }
+    else if (obj == Py_Ellipsis) {
+        status = save_ellipsis(self, obj);
+        goto done;
+    }
+    else if (obj == Py_NotImplemented) {
+        status = save_notimplemented(self, obj);
         goto done;
     }
     else if (obj == Py_False || obj == Py_True) {

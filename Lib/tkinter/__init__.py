@@ -155,6 +155,7 @@ class Variable:
     Subclasses StringVar, IntVar, DoubleVar, BooleanVar are specializations
     that constrain the type of the value returned from get()."""
     _default = ""
+    _tk = None
     def __init__(self, master=None, value=None, name=None):
         """Construct a variable
 
@@ -165,6 +166,11 @@ class Variable:
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
+        # check for type of NAME parameter to override weird error message
+        # raised from Modules/_tkinter.c:SetVar like:
+        # TypeError: setvar() takes exactly 3 arguments (2 given)
+        if name is not None and not isinstance(name, str):
+            raise TypeError("name must be a string")
         global _varnum
         if not master:
             master = _default_root
@@ -176,18 +182,21 @@ class Variable:
             self._name = 'PY_VAR' + repr(_varnum)
             _varnum += 1
         if value is not None:
-            self.set(value)
+            self.initialize(value)
         elif not self._tk.call("info", "exists", self._name):
-            self.set(self._default)
+            self.initialize(self._default)
     def __del__(self):
         """Unset the variable in Tcl."""
-        self._tk.globalunsetvar(self._name)
+        if (self._tk is not None and self._tk.call("info", "exists",
+                                                   self._name)):
+            self._tk.globalunsetvar(self._name)
     def __str__(self):
         """Return the name of the variable in Tcl."""
         return self._name
     def set(self, value):
         """Set the variable to VALUE."""
         return self._tk.globalsetvar(self._name, value)
+    initialize = set
     def get(self):
         """Return value of variable."""
         return self._tk.globalgetvar(self._name)
@@ -262,12 +271,6 @@ class IntVar(Variable):
         """
         Variable.__init__(self, master, value, name)
 
-    def set(self, value):
-        """Set the variable to value, converting booleans to integers."""
-        if isinstance(value, bool):
-            value = int(value)
-        return Variable.set(self, value)
-
     def get(self):
         """Return the value of the variable as an integer."""
         return getint(self._tk.globalgetvar(self._name))
@@ -308,7 +311,10 @@ class BooleanVar(Variable):
 
     def get(self):
         """Return the value of the variable as a bool."""
-        return self._tk.getboolean(self._tk.globalgetvar(self._name))
+        try:
+            return self._tk.getboolean(self._tk.globalgetvar(self._name))
+        except TclError:
+            raise ValueError("invalid literal for getboolean()")
 
 def mainloop(n=0):
     """Run the main loop of Tcl."""
@@ -320,7 +326,10 @@ getdouble = float
 
 def getboolean(s):
     """Convert true and false to integer values 1 and 0."""
-    return _default_root.tk.getboolean(s)
+    try:
+        return _default_root.tk.getboolean(s)
+    except TclError:
+        raise ValueError("invalid literal for getboolean()")
 
 # Methods defined on both toplevel and interior widgets
 class Misc:
@@ -410,7 +419,10 @@ class Misc:
     getdouble = float
     def getboolean(self, s):
         """Return a boolean value for Tcl boolean values true and false given as parameter."""
-        return self.tk.getboolean(s)
+        try:
+            return self.tk.getboolean(s)
+        except TclError:
+            raise ValueError("invalid literal for getboolean()")
     def focus_set(self):
         """Direct input focus to this widget.
 

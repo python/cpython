@@ -652,6 +652,26 @@ class ReTests(unittest.TestCase):
         self.assertEqual([item.group(0) for item in iter],
                          [":", "::", ":::"])
 
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", 1, 10)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", pos=1, endpos=10)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", endpos=10, pos=1)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", pos=3, endpos=8)
+        self.assertEqual([item.group(0) for item in iter],
+                         ["::", "::"])
+
     def test_bug_926075(self):
         self.assertTrue(re.compile('bug_926075') is not
                      re.compile(b'bug_926075'))
@@ -824,6 +844,16 @@ class ReTests(unittest.TestCase):
         self.assertIsNotNone(re.search("123.*-", '123\u20ac-'))
         self.assertIsNotNone(re.search("123.*-", '123\U0010ffff-'))
         self.assertIsNotNone(re.search("123.*-", '123\xe9\u20ac\U0010ffff-'))
+
+    def test_compile(self):
+        # Test return value when given string and pattern as parameter
+        pattern = re.compile('random pattern')
+        self.assertIsInstance(pattern, re._pattern_type)
+        same_pattern = re.compile(pattern)
+        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIs(same_pattern, pattern)
+        # Test behaviour when not given a string or pattern as parameter
+        self.assertRaises(TypeError, re.compile, 0)
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
