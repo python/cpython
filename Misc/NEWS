@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14184: Increase the default stack size for secondary threads on
+  Mac OS X to avoid interpreter crashes when using threads on 10.7.
+
 - Issue #14180: time.ctime(), gmtime(), time.localtime(),
   datetime.date.fromtimestamp(), datetime.datetime.fromtimestamp() and
   datetime.datetime.utcfromtimestamp() now raises an OverflowError, instead of
