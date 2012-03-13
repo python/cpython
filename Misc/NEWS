@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2843: Add new Tk API to Tkinter.
+
 - Issue #14184: Increase the default stack size for secondary threads on
   Mac OS X to avoid interpreter crashes when using threads on 10.7.
 
