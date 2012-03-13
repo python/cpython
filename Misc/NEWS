@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1178863: Separate initialisation from setting when initializing
+  Tkinter.Variables; harmonize exceptions to ValueError; only delete variables
+  that have not been deleted; assert that variable names are strings.
+
 - Issue #14104: Implement time.monotonic() on Mac OS X, patch written by
   Nicholas Riley.
 
