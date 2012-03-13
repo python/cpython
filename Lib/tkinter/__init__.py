@@ -1245,6 +1245,13 @@ class Misc:
                    self.tk.call(
                        'place', 'slaves', self._w))]
     # Grid methods that apply to the master
+    def grid_anchor(self, anchor=None): # new in Tk 8.5
+        """The anchor value controls how to place the grid within the
+        master when no row/column has any weight.
+
+        The default anchor is nw."""
+        self.tk.call('grid', 'anchor', self._w, anchor)
+    anchor = grid_anchor
     def grid_bbox(self, column=None, row=None, col2=None, row2=None):
         """Return a tuple of integer coordinates for the bounding
         box of this widget controlled by the geometry manager grid.
@@ -1263,7 +1270,6 @@ class Misc:
         if col2 is not None and row2 is not None:
             args = args + (col2, row2)
         return self._getints(self.tk.call(*args)) or None
-
     bbox = grid_bbox
     def _grid_configure(self, command, index, cnf, kw):
         """Internal function."""
@@ -1522,6 +1528,14 @@ class Wm:
         the focus. Return current focus model if MODEL is None."""
         return self.tk.call('wm', 'focusmodel', self._w, model)
     focusmodel = wm_focusmodel
+    def wm_forget(self, window): # new in Tk 8.5
+        """The window will be unmappend from the screen and will no longer
+        be managed by wm. toplevel windows will be treated like frame
+        windows once they are no longer managed by wm, however, the menu
+        option configuration will be remembered and the menus will return
+        once the widget is managed again."""
+        self.tk.call('wm', 'forget', window)
+    forget = wm_forget
     def wm_frame(self):
         """Return identifier for decorative frame of this widget if present."""
         return self.tk.call('wm', 'frame', self._w)
@@ -1575,6 +1589,31 @@ class Wm:
         None is given."""
         return self.tk.call('wm', 'iconname', self._w, newName)
     iconname = wm_iconname
+    def wm_iconphoto(self, default=False, *args): # new in Tk 8.5
+        """Sets the titlebar icon for this window based on the named photo
+        images passed through args. If default is True, this is applied to
+        all future created toplevels as well.
+
+        The data in the images is taken as a snapshot at the time of
+        invocation. If the images are later changed, this is not reflected
+        to the titlebar icons. Multiple images are accepted to allow
+        different images sizes to be provided. The window manager may scale
+        provided icons to an appropriate size.
+
+        On Windows, the images are packed into a Windows icon structure.
+        This will override an icon specified to wm_iconbitmap, and vice
+        versa.
+
+        On X, the images are arranged into the _NET_WM_ICON X property,
+        which most modern window managers support. An icon specified by
+        wm_iconbitmap may exist simuultaneously.
+
+        On Macintosh, this currently does nothing."""
+        if default:
+            self.tk.call('wm', 'iconphoto', self._w, "-default", *args)
+        else:
+            self.tk.call('wm', 'iconphoto', self._w, *args)
+    iconphoto = wm_iconphoto
     def wm_iconposition(self, x=None, y=None):
         """Set the position of the icon of this widget to X and Y. Return
         a tuple of the current values of X and X if None is given."""
@@ -1586,6 +1625,12 @@ class Wm:
         value if None is given."""
         return self.tk.call('wm', 'iconwindow', self._w, pathName)
     iconwindow = wm_iconwindow
+    def wm_manage(self, widget): # new in Tk 8.5
+        """The widget specified will become a stand alone top-level window.
+        The window will be decorated with the window managers title bar,
+        etc."""
+        self.tk.call('wm', 'manage', widget)
+    manage = wm_manage
     def wm_maxsize(self, width=None, height=None):
         """Set max WIDTH and HEIGHT for this widget. If the window is gridded
         the values are given in grid units. Return the current values if None
@@ -2677,6 +2722,10 @@ class Menu(Widget):
     def unpost(self):
         """Unmap a menu."""
         self.tk.call(self._w, 'unpost')
+    def xposition(self, index): # new in Tk 8.5
+        """Return the x-position of the leftmost pixel of the menu item
+        at INDEX."""
+        return getint(self.tk.call(self._w, 'xposition', index))
     def yposition(self, index):
         """Return the y-position of the topmost pixel of the menu item at INDEX."""
         return getint(self.tk.call(
@@ -2836,6 +2885,25 @@ class Text(Widget, XView, YView):
         relation OP is satisfied. OP is one of <, <=, ==, >=, >, or !=."""
         return self.tk.getboolean(self.tk.call(
             self._w, 'compare', index1, op, index2))
+    def count(self, index1, index2, *args): # new in Tk 8.5
+        """Counts the number of relevant things between the two indices.
+        If index1 is after index2, the result will be a negative number
+        (and this holds for each of the possible options).
+
+        The actual items which are counted depends on the options given by
+        args. The result is a list of integers, one for the result of each
+        counting option given. Valid counting options are "chars",
+        "displaychars", "displayindices", "displaylines", "indices",
+        "lines", "xpixels" and "ypixels". There is an additional possible
+        option "update", which if given then all subsequent options ensure
+        that any possible out of date information is recalculated."""
+        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
+        args += [index1, index2]
+        res = self.tk.call(self._w, 'count', *args) or None
+        if res is not None and len(args) <= 3:
+            return (res, )
+        else:
+            return res
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text
         widget according to BOOLEAN."""
@@ -2998,6 +3066,24 @@ class Text(Widget, XView, YView):
     def mark_previous(self, index):
         """Return the name of the previous mark before INDEX."""
         return self.tk.call(self._w, 'mark', 'previous', index) or None
+    def peer_create(self, newPathName, cnf={}, **kw): # new in Tk 8.5
+        """Creates a peer text widget with the given newPathName, and any
+        optional standard configuration options. By default the peer will
+        have the same start and and end line as the parent widget, but
+        these can be overriden with the standard configuration options."""
+        self.tk.call(self._w, 'peer', 'create', newPathName,
+            *self._options(cnf, kw))
+    def peer_names(self): # new in Tk 8.5
+        """Returns a list of peers of this widget (this does not include
+        the widget itself)."""
+        return self.tk.splitlist(self.tk.call(self._w, 'peer', 'names'))
+    def replace(self, index1, index2, chars, *args): # new in Tk 8.5
+        """Replaces the range of characters between index1 and index2 with
+        the given characters and tags specified by args.
+
+        See the method insert for some more information about args, and the
+        method delete for information about the indices."""
+        self.tk.call(self._w, 'replace', index1, index2, chars, *args)
     def scan_mark(self, x, y):
         """Remember the current X, Y coordinates."""
         self.tk.call(self._w, 'scan', 'mark', x, y)
