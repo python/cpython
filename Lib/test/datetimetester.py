@@ -1741,16 +1741,21 @@ class TestDateTime(TestDate):
             zero = fts(0)
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
-            minus_one = fts(-1e-6)
-            self.assertEqual(minus_one.second, 59)
-            self.assertEqual(minus_one.microsecond, 999999)
+            try:
+                minus_one = fts(-1e-6)
+            except OSError:
+                # localtime(-1) and gmtime(-1) is not supported on Windows
+                pass
+            else:
+                self.assertEqual(minus_one.second, 59)
+                self.assertEqual(minus_one.microsecond, 999999)
 
-            t = fts(-1e-8)
-            self.assertEqual(t, minus_one)
-            t = fts(-9e-7)
-            self.assertEqual(t, minus_one)
-            t = fts(-1e-7)
-            self.assertEqual(t, minus_one)
+                t = fts(-1e-8)
+                self.assertEqual(t, minus_one)
+                t = fts(-9e-7)
+                self.assertEqual(t, minus_one)
+                t = fts(-1e-7)
+                self.assertEqual(t, minus_one)
 
             t = fts(1e-7)
             self.assertEqual(t, zero)
