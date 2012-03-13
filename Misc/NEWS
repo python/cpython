@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5219: Prevent event handler cascade in IDLE.
+
 - Issue #3835: Refuse to use unthreaded Tcl in threaded Python.
 
 - Issue #2843: Add new Tk API to Tkinter.
