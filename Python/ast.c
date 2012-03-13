@@ -1153,7 +1153,7 @@ seq_for_testlist(struct compiling *c, const node *n)
 }
 
 static arg_ty
-compiler_arg(struct compiling *c, const node *n)
+ast_for_arg(struct compiling *c, const node *n)
 {
     identifier name;
     expr_ty annotation = NULL;
@@ -1174,12 +1174,6 @@ compiler_arg(struct compiling *c, const node *n)
     }
 
     return arg(name, annotation, c->c_arena);
-#if 0
-    result = Tuple(args, Store, LINENO(n), n->n_col_offset, c->c_arena);
-    if (!set_context(c, result, Store, n))
-        return NULL;
-    return result;
-#endif
 }
 
 /* returns -1 if failed to handle keyword only arguments
@@ -1367,7 +1361,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                              "non-default argument follows default argument");
                     return NULL;
                 }
-                arg = compiler_arg(c, ch);
+                arg = ast_for_arg(c, ch);
                 if (!arg)
                     return NULL;
                 asdl_seq_SET(posargs, k++, arg);

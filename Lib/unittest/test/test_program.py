@@ -131,23 +131,6 @@ class TestCommandLineArgs(unittest.TestCase):
         FakeRunner.test = None
         FakeRunner.raiseError = False
 
-    def testHelpAndUnknown(self):
-        program = self.program
-        def usageExit(msg=None):
-            program.msg = msg
-            program.exit = True
-        program.usageExit = usageExit
-
-        for opt in '-h', '-H', '--help':
-            program.exit = False
-            program.parseArgs([None, opt])
-            self.assertTrue(program.exit)
-            self.assertIsNone(program.msg)
-
-        program.parseArgs([None, '-$'])
-        self.assertTrue(program.exit)
-        self.assertIsNotNone(program.msg)
-
     def testVerbosity(self):
         program = self.program
 

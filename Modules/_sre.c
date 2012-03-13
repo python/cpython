@@ -1596,7 +1596,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 
 /* see sre.h for object declarations */
 static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
-static PyObject*pattern_scanner(PatternObject*, PyObject*);
+static PyObject*pattern_scanner(PatternObject*, PyObject*, PyObject* kw);
 
 static int
 sre_literal_template(int charsize, char* ptr, Py_ssize_t len)
@@ -2132,13 +2132,13 @@ error:
 
 #if PY_VERSION_HEX >= 0x02020000
 static PyObject*
-pattern_finditer(PatternObject* pattern, PyObject* args)
+pattern_finditer(PatternObject* pattern, PyObject* args, PyObject* kw)
 {
     PyObject* scanner;
     PyObject* search;
     PyObject* iterator;
 
-    scanner = pattern_scanner(pattern, args);
+    scanner = pattern_scanner(pattern, args, kw);
     if (!scanner)
         return NULL;
 
@@ -2576,10 +2576,10 @@ static PyMethodDef pattern_methods[] = {
     {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS,
         pattern_findall_doc},
 #if PY_VERSION_HEX >= 0x02020000
-    {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS,
+    {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS|METH_KEYWORDS,
         pattern_finditer_doc},
 #endif
-    {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
+    {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS|METH_KEYWORDS},
     {"__copy__", (PyCFunction) pattern_copy, METH_NOARGS},
     {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_O},
     {NULL, NULL}
@@ -3822,7 +3822,7 @@ static PyTypeObject Scanner_Type = {
 };
 
 static PyObject*
-pattern_scanner(PatternObject* pattern, PyObject* args)
+pattern_scanner(PatternObject* pattern, PyObject* args, PyObject* kw)
 {
     /* create search state object */
 
@@ -3831,7 +3831,9 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
     PyObject* string;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    if (!PyArg_ParseTuple(args, "O|nn:scanner", &string, &start, &end))
+    static char* kwlist[] = { "source", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:scanner", kwlist,
+                                     &string, &start, &end))
         return NULL;
 
     /* create scanner object */
