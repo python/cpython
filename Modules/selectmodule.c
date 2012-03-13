@@ -223,10 +223,23 @@ select_select(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        long usec;
-        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &usec) == -1)
+#ifdef MS_WINDOWS
+        time_t sec;
+        if (_PyTime_ObjectToTimeval(tout, &sec, &tv.tv_usec) == -1)
             return NULL;
-        tv.tv_usec = usec;
+        assert(sizeof(tv.tv_sec) == sizeof(long));
+#if SIZEOF_TIME_T > SIZEOF_LONG
+        if (sec > LONG_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "timeout is too large");
+            return NULL;
+        }
+#endif
+        tv.tv_sec = (long)sec;
+#else
+        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv.tv_usec) == -1)
+            return NULL;
+#endif
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
             return NULL;
