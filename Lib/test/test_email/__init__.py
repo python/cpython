@@ -5,6 +5,16 @@ import test.support
 import email
 from test.test_email import __file__ as landmark
 
+# Run all tests in package for '-m unittest test.test_email'
+def load_tests(loader, standard_tests, pattern):
+    this_dir = os.path.dirname(__file__)
+    if pattern is None:
+        pattern = "test*"
+    package_tests = loader.discover(start_dir=this_dir, pattern=pattern)
+    standard_tests.addTests(package_tests)
+    return standard_tests
+
+
 # used by regrtest and __main__.
 def test_main():
     here = os.path.dirname(__file__)

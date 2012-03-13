@@ -83,6 +83,11 @@ Extension Modules
 - Issue #14259: The finditer() method of re objects did not take any
   keyword arguments, contrary to the documentation.
 
+Tests
+-----
+
+- Issue #8315: (partial fix) python -m unittest test.test_email now works.
+
 
 What's New in Python 3.3.0 Alpha 1?
 ===================================
