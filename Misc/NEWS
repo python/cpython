@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5219: Prevent event handler cascade in IDLE.
+
 - Issue #14252: Fix subprocess.Popen.terminate() to not raise an error under
   Windows when the child process has already exited.
 

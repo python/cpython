@@ -22,6 +22,7 @@ class CallTip:
         self.parenline = self.parencol = None
         self.lastline = None
         self.hideid = self.checkhideid = None
+        self.checkhide_after_id = None
 
     def position_window(self):
         """Check if needs to reposition the window, and if so - do it."""
@@ -102,7 +103,10 @@ class CallTip:
             self.hidetip()
         else:
             self.position_window()
-            self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
+            if self.checkhide_after_id is not None:
+                self.widget.after_cancel(self.checkhide_after_id)
+            self.checkhide_after_id = \
+                self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
 
     def hide_event(self, event):
         if not self.tipwindow:
