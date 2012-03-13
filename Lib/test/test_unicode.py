@@ -891,12 +891,15 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{foo._x}'.format_map({'foo': C(20)}), '20')
 
         # test various errors
-        self.assertRaises(TypeError, '{'.format_map)
-        self.assertRaises(TypeError, '}'.format_map)
-        self.assertRaises(TypeError, 'a{'.format_map)
-        self.assertRaises(TypeError, 'a}'.format_map)
-        self.assertRaises(TypeError, '{a'.format_map)
-        self.assertRaises(TypeError, '}a'.format_map)
+        self.assertRaises(TypeError, ''.format_map)
+        self.assertRaises(TypeError, 'a'.format_map)
+
+        self.assertRaises(ValueError, '{'.format_map, {})
+        self.assertRaises(ValueError, '}'.format_map, {})
+        self.assertRaises(ValueError, 'a{'.format_map, {})
+        self.assertRaises(ValueError, 'a}'.format_map, {})
+        self.assertRaises(ValueError, '{a'.format_map, {})
+        self.assertRaises(ValueError, '}a'.format_map, {})
 
         # issue #12579: can't supply positional params to format_map
         self.assertRaises(ValueError, '{}'.format_map, {'a' : 2})
