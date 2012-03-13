@@ -2443,22 +2443,25 @@ date_local_from_object(PyObject *cls, PyObject *obj)
 {
     struct tm *tm;
     time_t t;
-    PyObject *result = NULL;
 
     if (_PyTime_ObjectToTime_t(obj, &t) == -1)
         return NULL;
 
     tm = localtime(&t);
-    if (tm)
-        result = PyObject_CallFunction(cls, "iii",
-                                       tm->tm_year + 1900,
-                                       tm->tm_mon + 1,
-                                       tm->tm_mday);
-    else
-        PyErr_SetString(PyExc_ValueError,
-                        "timestamp out of range for "
-                        "platform localtime() function");
-    return result;
+    if (tm == NULL) {
+        /* unconvertible time */
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    return PyObject_CallFunction(cls, "iii",
+                                 tm->tm_year + 1900,
+                                 tm->tm_mon + 1,
+                                 tm->tm_mday);
 }
 
 /* Return new date from current time.
@@ -4057,33 +4060,33 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
                            PyObject *tzinfo)
 {
     struct tm *tm;
-    PyObject *result = NULL;
 
     tm = f(&timet);
-    if (tm) {
-        /* The platform localtime/gmtime may insert leap seconds,
-         * indicated by tm->tm_sec > 59.  We don't care about them,
-         * except to the extent that passing them on to the datetime
-         * constructor would raise ValueError for a reason that
-         * made no sense to the user.
-         */
-        if (tm->tm_sec > 59)
-            tm->tm_sec = 59;
-        result = PyObject_CallFunction(cls, "iiiiiiiO",
-                                       tm->tm_year + 1900,
-                                       tm->tm_mon + 1,
-                                       tm->tm_mday,
-                                       tm->tm_hour,
-                                       tm->tm_min,
-                                       tm->tm_sec,
-                                       us,
-                                       tzinfo);
+    if (tm == NULL) {
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
-    else
-        PyErr_SetString(PyExc_ValueError,
-                        "timestamp out of range for "
-                        "platform localtime()/gmtime() function");
-    return result;
+
+    /* The platform localtime/gmtime may insert leap seconds,
+     * indicated by tm->tm_sec > 59.  We don't care about them,
+     * except to the extent that passing them on to the datetime
+     * constructor would raise ValueError for a reason that
+     * made no sense to the user.
+     */
+    if (tm->tm_sec > 59)
+        tm->tm_sec = 59;
+    return PyObject_CallFunction(cls, "iiiiiiiO",
+                                 tm->tm_year + 1900,
+                                 tm->tm_mon + 1,
+                                 tm->tm_mday,
+                                 tm->tm_hour,
+                                 tm->tm_min,
+                                 tm->tm_sec,
+                                 us,
+                                 tzinfo);
 }
 
 /* Internal helper.
@@ -4102,7 +4105,7 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 
     if (_PyTime_ObjectToTimeval(timestamp, &timet, &us) == -1)
         return NULL;
-    return datetime_from_timet_and_us(cls, f, timet, us, tzinfo);
+    return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);
 }
 
 /* Internal helper.

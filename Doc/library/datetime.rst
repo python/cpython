@@ -404,7 +404,8 @@ Other constructors, all class methods:
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
       is out of the range of values supported by the platform C
-      :c:func:`localtime` function.
+      :c:func:`localtime` function. Raise :exc:`OSError` instead of
+      :exc:`ValueError` on :c:func:`localtime` failure.
 
 
 .. classmethod:: date.fromordinal(ordinal)
@@ -720,7 +721,9 @@ Other constructors, all class methods:
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
       is out of the range of values supported by the platform C
-      :c:func:`localtime` or :c:func:`gmtime` functions
+      :c:func:`localtime` or :c:func:`gmtime` functions. Raise :exc:`OSError`
+      instead of :exc:`ValueError` on :c:func:`localtime` or :c:func:`gmtime`
+      failure.
 
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
@@ -750,7 +753,8 @@ Other constructors, all class methods:
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
       is out of the range of values supported by the platform C
-      :c:func:`gmtime` function.
+      :c:func:`gmtime` function. Raise :exc:`OSError` instead of
+      :exc:`ValueError` on :c:func:`gmtime` failure.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
