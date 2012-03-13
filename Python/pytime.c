@@ -137,8 +137,6 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec)
     if (PyFloat_Check(obj)) {
         double d, intpart, err;
 
-        /*whent = _PyTime_DoubleToTimet(d);*/
-
         d = PyFloat_AsDouble(obj);
         (void)modf(d, &intpart);
 
