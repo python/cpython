@@ -40,6 +40,10 @@
 #include <sys/time.h>
 #endif
 
+#if defined(__APPLE__)
+#include <mach/mach_time.h>
+#endif
+
 /* Forward declarations */
 static int floatsleep(double);
 static double floattime(void);
@@ -816,7 +820,8 @@ of the returned value is undefined so only the difference of consecutive\n\
 calls is valid.");
 
 #if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) \
-    || (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC))
+    || (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) \
+    || (defined(__APPLE__))
 #  define HAVE_PYTIME_MONOTONIC
 #endif
 
@@ -826,6 +831,17 @@ time_monotonic(PyObject *self, PyObject *unused)
 {
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
     return win32_clock(0);
+#elif defined(__APPLE__)
+    uint64_t time = mach_absolute_time();
+    double secs;
+
+    static mach_timebase_info_data_t timebase;
+    if (timebase.denom == 0)
+      mach_timebase_info(&timebase);
+
+    secs = (double)time * timebase.numer / timebase.denom * 1e-9;
+
+    return PyFloat_FromDouble(secs);
 #else
     static int clk_index = 0;
     clockid_t clk_ids[] = {

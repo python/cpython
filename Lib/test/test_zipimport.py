@@ -205,6 +205,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             mod = zi.load_module(TESTPACK)
             self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
 
+            existing_pack_path = __import__(TESTPACK).__path__[0]
+            expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
+            self.assertEqual(existing_pack_path, expected_path_path)
+
             self.assertEqual(zi.is_package(packdir + '__init__'), False)
             self.assertEqual(zi.is_package(packdir + TESTPACK2), True)
             self.assertEqual(zi.is_package(packdir2 + TESTMOD), False)
