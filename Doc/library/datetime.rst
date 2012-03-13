@@ -396,7 +396,8 @@ Other constructors, all class methods:
 
    Return the local date corresponding to the POSIX timestamp, such as is returned
    by :func:`time.time`.  This may raise :exc:`OverflowError`, if the timestamp is out
-   of the range of values supported by the platform C :c:func:`localtime` function.
+   of the range of values supported by the platform C :c:func:`localtime` function,
+   and :exc:`OSError` on :c:func:`localtime` failure.
    It's common for this to be restricted to years from 1970 through 2038.  Note
    that on non-POSIX systems that include leap seconds in their notion of a
    timestamp, leap seconds are ignored by :meth:`fromtimestamp`.
@@ -710,9 +711,11 @@ Other constructors, all class methods:
    equivalent to
    ``tz.fromutc(datetime.utcfromtimestamp(timestamp).replace(tzinfo=tz))``.
 
-   :meth:`fromtimestamp` may raise :exc:`ValueError`, if the timestamp is out of
+   :meth:`fromtimestamp` may raise :exc:`OverflowError`, if the timestamp is out of
    the range of values supported by the platform C :c:func:`localtime` or
-   :c:func:`gmtime` functions.  It's common for this to be restricted to years in
+   :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
+   :c:func:`gmtime` failure.
+   It's common for this to be restricted to years in
    1970 through 2038. Note that on non-POSIX systems that include leap seconds in
    their notion of a timestamp, leap seconds are ignored by :meth:`fromtimestamp`,
    and then it's possible to have two timestamps differing by a second that yield
@@ -729,8 +732,9 @@ Other constructors, all class methods:
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
    Return the UTC :class:`.datetime` corresponding to the POSIX timestamp, with
-   :attr:`tzinfo` ``None``. This may raise :exc:`ValueError`, if the timestamp is
-   out of the range of values supported by the platform C :c:func:`gmtime` function.
+   :attr:`tzinfo` ``None``. This may raise :exc:`OverflowError`, if the timestamp is
+   out of the range of values supported by the platform C :c:func:`gmtime` function,
+   and :exc:`OSError` on :c:func:`gmtime` failure.
    It's common for this to be restricted to years in 1970 through 2038. See also
    :meth:`fromtimestamp`.
 
