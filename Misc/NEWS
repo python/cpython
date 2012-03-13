@@ -56,6 +56,9 @@ Extension Modules
 - Issue #14212: The re module didn't retain a reference to buffers it was
   scanning, resulting in segfaults.
 
+- Issue #14259: The finditer() method of re objects did not take any
+  keyword arguments, contrary to the documentation.
+
 
 What's New in Python 3.3.0 Alpha 1?
 ===================================
