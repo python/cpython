@@ -1,7 +1,6 @@
 /* Time module */
 
 #include "Python.h"
-#include "_time.h"
 
 #include <ctype.h>
 
@@ -288,11 +287,7 @@ parse_time_t_args(PyObject *args, char *format, time_t *pwhen)
         whent = time(NULL);
     }
     else {
-        double d = PyFloat_AsDouble(ot);
-        if (PyErr_Occurred())
-            return 0;
-        whent = _PyTime_DoubleToTimet(d);
-        if (whent == (time_t)-1 && PyErr_Occurred())
+        if (_PyTime_ObjectToTime_t(ot, &whent) == -1)
             return 0;
     }
     *pwhen = whent;

@@ -3540,31 +3540,6 @@ posix_uname(PyObject *self, PyObject *noargs)
 #endif /* HAVE_UNAME */
 
 
-static int
-extract_time(PyObject *t, time_t* sec, long* nsec)
-{
-    time_t intval;
-    if (PyFloat_Check(t)) {
-        double d = PyFloat_AsDouble(t);
-        double mod;
-        *sec = (time_t)d;
-        mod = fmod(d, 1.0);
-        mod *= 1e9;
-        *nsec = (long)mod;
-        return 0;
-    }
-#if SIZEOF_TIME_T > SIZEOF_LONG
-    intval = PyLong_AsUnsignedLongLongMask(t);
-#else
-    intval = PyLong_AsLong(t);
-#endif
-    if (intval == -1 && PyErr_Occurred())
-        return -1;
-    *sec = intval;
-    *nsec = 0;
-    return 0;
-}
-
 PyDoc_STRVAR(posix_utime__doc__,
 "utime(path[, (atime, mtime)])\n\
 Set the access and modified time of the file to the given values.\n\
@@ -3633,12 +3608,12 @@ posix_utime(PyObject *self, PyObject *args)
         goto done;
     }
     else {
-        if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atimesec, &ansec) == -1)
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
+                                     &atimesec, &ansec) == -1)
             goto done;
         time_t_to_FILE_TIME(atimesec, ansec, &atime);
-        if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtimesec, &mnsec) == -1)
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
+                                     &mtimesec, &mnsec) == -1)
             goto done;
         time_t_to_FILE_TIME(mtimesec, mnsec, &mtime);
     }
@@ -3681,13 +3656,13 @@ done:
         return NULL;
     }
     else {
-        if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atime, &ansec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
+                                     &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
-        if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtime, &mnsec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
+                                     &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
@@ -3763,12 +3738,12 @@ posix_futimes(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                &atime, &ansec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
+                                     &atime, &ansec) == -1) {
             return NULL;
         }
-        if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                &mtime, &mnsec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
+                                     &mtime, &mnsec) == -1) {
             return NULL;
         }
         Py_BEGIN_ALLOW_THREADS
@@ -3829,13 +3804,13 @@ posix_lutimes(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                &atime, &ansec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
+                                     &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
-        if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                &mtime, &mnsec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
+                                     &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
@@ -9610,13 +9585,13 @@ posix_futimesat(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        if (extract_time(PyTuple_GET_ITEM(arg, 0),
-                         &atime, &ansec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
+                                     &atime, &ansec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }
-        if (extract_time(PyTuple_GET_ITEM(arg, 1),
-                         &mtime, &mnsec) == -1) {
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
+                                     &mtime, &mnsec) == -1) {
             Py_DECREF(opath);
             return NULL;
         }

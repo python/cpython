@@ -24,6 +24,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #14180: time.ctime(), gmtime(), time.localtime(),
+  datetime.date.fromtimestamp(), datetime.datetime.fromtimestamp() and
+  datetime.datetime.utcfromtimestamp() now raises an OverflowError, instead of
+  a ValueError, if the timestamp does not fit in time_t.
+
+- Issue #14180: datetime.datetime.fromtimestamp() and
+  datetime.datetime.utcfromtimestamp() now round microseconds towards zero
+  instead of rounding to nearest with ties going away from zero.
+
 - Issue #10543: Fix unittest test discovery with Jython bytecode files.
 
 - Issue #1178863: Separate initialisation from setting when initializing

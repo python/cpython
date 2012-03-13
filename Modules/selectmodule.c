@@ -206,9 +206,7 @@ select_select(PyObject *self, PyObject *args)
     PyObject *ret = NULL;
     PyObject *tout = Py_None;
     fd_set ifdset, ofdset, efdset;
-    double timeout;
     struct timeval tv, *tvp;
-    long seconds;
     int imax, omax, emax, max;
     int n;
 
@@ -225,23 +223,12 @@ select_select(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-        timeout = PyFloat_AsDouble(tout);
-        if (timeout == -1 && PyErr_Occurred())
+        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv.tv_usec) == -1)
             return NULL;
-        if (timeout > (double)LONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "timeout period too long");
+        if (tv.tv_sec < 0) {
+            PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
             return NULL;
         }
-        if (timeout < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                        "timeout must be non-negative");
-            return NULL;
-        }
-        seconds = (long)timeout;
-        timeout = timeout - (double)seconds;
-        tv.tv_sec = seconds;
-        tv.tv_usec = (long)(timeout * 1E6);
         tvp = &tv;
     }
 
@@ -1870,27 +1857,15 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         ptimeoutspec = NULL;
     }
     else if (PyNumber_Check(otimeout)) {
-        double timeout;
-        long seconds;
+        if (_PyTime_ObjectToTimespec(otimeout,
+                                     &timeout.tv_sec, &timeout.tv_nsec) == -1)
+            return NULL;
 
-        timeout = PyFloat_AsDouble(otimeout);
-        if (timeout == -1 && PyErr_Occurred())
-            return NULL;
-        if (timeout > (double)LONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "timeout period too long");
-            return NULL;
-        }
-        if (timeout < 0) {
+        if (timeout.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "timeout must be positive or None");
             return NULL;
         }
-
-        seconds = (long)timeout;
-        timeout = timeout - (double)seconds;
-        timeoutspec.tv_sec = seconds;
-        timeoutspec.tv_nsec = (long)(timeout * 1E9);
         ptimeoutspec = &timeoutspec;
     }
     else {

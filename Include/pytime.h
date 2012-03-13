@@ -39,9 +39,22 @@ do { \
      (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
 
 #ifndef Py_LIMITED_API
+/* Convert a number of seconds, int or float, to time_t. */
+PyAPI_FUNC(int) _PyTime_ObjectToTime_t(
+    PyObject *obj,
+    time_t *sec);
+
+/* Convert a number of seconds, int or float, to a timeval structure.
+   usec is in the range [0; 999999] and rounded towards zero.
+   For example, -1.2 is converted to (-2, 800000). */
+PyAPI_FUNC(int) _PyTime_ObjectToTimeval(
+    PyObject *obj,
+    time_t *sec,
+    long *usec);
+
 /* Convert a number of seconds, int or float, to a timespec structure.
-   nsec is always in the range [0; 999999999]. For example, -1.2 is converted
-   to (-2, 800000000). */
+   nsec is in the range [0; 999999999] and rounded towards zero.
+   For example, -1.2 is converted to (-2, 800000000). */
 PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     PyObject *obj,
     time_t *sec,
