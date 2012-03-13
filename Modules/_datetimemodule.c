@@ -7,8 +7,6 @@
 
 #include <time.h>
 
-#include "_time.h"
-
 /* Differentiate between building the core module and building extension
  * modules.
  */
@@ -2441,15 +2439,15 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 /* Return new date from localtime(t). */
 static PyObject *
-date_local_from_time_t(PyObject *cls, double ts)
+date_local_from_object(PyObject *cls, PyObject *obj)
 {
     struct tm *tm;
     time_t t;
     PyObject *result = NULL;
 
-    t = _PyTime_DoubleToTimet(ts);
-    if (t == (time_t)-1 && PyErr_Occurred())
+    if (_PyTime_ObjectToTime_t(obj, &t) == -1)
         return NULL;
+
     tm = localtime(&t);
     if (tm)
         result = PyObject_CallFunction(cls, "iii",
@@ -2494,11 +2492,11 @@ date_today(PyObject *cls, PyObject *dummy)
 static PyObject *
 date_fromtimestamp(PyObject *cls, PyObject *args)
 {
-    double timestamp;
+    PyObject *timestamp;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "d:fromtimestamp", &timestamp))
-        result = date_local_from_time_t(cls, timestamp);
+    if (PyArg_ParseTuple(args, "O:fromtimestamp", &timestamp))
+        result = date_local_from_object(cls, timestamp);
     return result;
 }
 
@@ -4096,31 +4094,14 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
  * to get that much precision (e.g., C time() isn't good enough).
  */
 static PyObject *
-datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp,
+datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
                         PyObject *tzinfo)
 {
     time_t timet;
-    double fraction;
-    int us;
+    long us;
 
-    timet = _PyTime_DoubleToTimet(timestamp);
-    if (timet == (time_t)-1 && PyErr_Occurred())
+    if (_PyTime_ObjectToTimeval(timestamp, &timet, &us) == -1)
         return NULL;
-    fraction = timestamp - (double)timet;
-    us = (int)round_to_long(fraction * 1e6);
-    if (us < 0) {
-        /* Truncation towards zero is not what we wanted
-           for negative numbers (Python's mod semantics) */
-        timet -= 1;
-        us += 1000000;
-    }
-    /* If timestamp is less than one microsecond smaller than a
-     * full second, round up. Otherwise, ValueErrors are raised
-     * for some floats. */
-    if (us == 1000000) {
-        timet += 1;
-        us = 0;
-    }
     return datetime_from_timet_and_us(cls, f, timet, us, tzinfo);
 }
 
@@ -4181,11 +4162,11 @@ static PyObject *
 datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 {
     PyObject *self;
-    double timestamp;
+    PyObject *timestamp;
     PyObject *tzinfo = Py_None;
     static char *keywords[] = {"timestamp", "tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "d|O:fromtimestamp",
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
                                       keywords, &timestamp, &tzinfo))
         return NULL;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -4210,10 +4191,10 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
-    double timestamp;
+    PyObject *timestamp;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "d:utcfromtimestamp", &timestamp))
+    if (PyArg_ParseTuple(args, "O:utcfromtimestamp", &timestamp))
         result = datetime_from_timestamp(cls, gmtime, timestamp,
                                          Py_None);
     return result;

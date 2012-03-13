@@ -395,11 +395,16 @@ Other constructors, all class methods:
 .. classmethod:: date.fromtimestamp(timestamp)
 
    Return the local date corresponding to the POSIX timestamp, such as is returned
-   by :func:`time.time`.  This may raise :exc:`ValueError`, if the timestamp is out
+   by :func:`time.time`.  This may raise :exc:`OverflowError`, if the timestamp is out
    of the range of values supported by the platform C :c:func:`localtime` function.
    It's common for this to be restricted to years from 1970 through 2038.  Note
    that on non-POSIX systems that include leap seconds in their notion of a
    timestamp, leap seconds are ignored by :meth:`fromtimestamp`.
+
+   .. versionchanged:: 3.3
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      is out of the range of values supported by the platform C
+      :c:func:`localtime` function.
 
 
 .. classmethod:: date.fromordinal(ordinal)
@@ -712,6 +717,11 @@ Other constructors, all class methods:
    and then it's possible to have two timestamps differing by a second that yield
    identical :class:`.datetime` objects. See also :meth:`utcfromtimestamp`.
 
+   .. versionchanged:: 3.3
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      is out of the range of values supported by the platform C
+      :c:func:`localtime` or :c:func:`gmtime` functions
+
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
@@ -736,6 +746,11 @@ Other constructors, all class methods:
    And for an aware ``dt``::
 
       timestamp = (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)) / timedelta(seconds=1)
+
+   .. versionchanged:: 3.3
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      is out of the range of values supported by the platform C
+      :c:func:`gmtime` function.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)

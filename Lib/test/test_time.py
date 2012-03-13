@@ -281,7 +281,7 @@ class TimeTestCase(unittest.TestCase):
         # results!).
         for func in time.ctime, time.gmtime, time.localtime:
             for unreasonable in -1e200, 1e200:
-                self.assertRaises(ValueError, func, unreasonable)
+                self.assertRaises(OverflowError, func, unreasonable)
 
     def test_ctime_without_arg(self):
         # Not sure how to check the values, since the clock could tick
@@ -365,11 +365,8 @@ class TimeTestCase(unittest.TestCase):
         for time_t in (-1, 2**30, 2**33, 2**60):
             try:
                 time.localtime(time_t)
-            except ValueError as err:
-                if str(err) == "timestamp out of range for platform time_t":
-                    self.skipTest("need 64-bit time_t")
-                else:
-                    raise
+            except OverflowError:
+                self.skipTest("need 64-bit time_t")
             except OSError:
                 invalid_time_t = time_t
                 break
@@ -498,19 +495,63 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
 
 
 class TestPytime(unittest.TestCase):
+    def setUp(self):
+        self.invalid_values = (
+            -(2 ** 100), 2 ** 100,
+            -(2.0 ** 100.0), 2.0 ** 100.0,
+        )
+
+    def test_time_t(self):
+        from _testcapi import pytime_object_to_time_t
+        for obj, time_t in (
+            (0, 0),
+            (-1, -1),
+            (-1.0, -1),
+            (-1.9, -1),
+            (1.0, 1),
+            (1.9, 1),
+        ):
+            self.assertEqual(pytime_object_to_time_t(obj), time_t)
+
+        for invalid in self.invalid_values:
+            self.assertRaises(OverflowError, pytime_object_to_time_t, invalid)
+
+    def test_timeval(self):
+        from _testcapi import pytime_object_to_timeval
+        for obj, timeval in (
+            (0, (0, 0)),
+            (-1, (-1, 0)),
+            (-1.0, (-1, 0)),
+            (1e-6, (0, 1)),
+            (-1e-6, (-1, 999999)),
+            (-1.2, (-2, 800000)),
+            (1.1234560, (1, 123456)),
+            (1.1234569, (1, 123456)),
+            (-1.1234560, (-2, 876544)),
+            (-1.1234561, (-2, 876543)),
+        ):
+            self.assertEqual(pytime_object_to_timeval(obj), timeval)
+
+        for invalid in self.invalid_values:
+            self.assertRaises(OverflowError, pytime_object_to_timeval, invalid)
+
     def test_timespec(self):
         from _testcapi import pytime_object_to_timespec
         for obj, timespec in (
             (0, (0, 0)),
             (-1, (-1, 0)),
             (-1.0, (-1, 0)),
+            (1e-9, (0, 1)),
             (-1e-9, (-1, 999999999)),
             (-1.2, (-2, 800000000)),
-            (1.123456789, (1, 123456789)),
+            (1.1234567890, (1, 123456789)),
+            (1.1234567899, (1, 123456789)),
+            (-1.1234567890, (-2, 876543211)),
+            (-1.1234567891, (-2, 876543210)),
         ):
             self.assertEqual(pytime_object_to_timespec(obj), timespec)
 
-        for invalid in (-(2 ** 100), -(2.0 ** 100.0), 2 ** 100, 2.0 ** 100.0):
+        for invalid in self.invalid_values:
             self.assertRaises(OverflowError, pytime_object_to_timespec, invalid)
 
 
