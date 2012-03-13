@@ -456,7 +456,7 @@ static char *withitem_fields[]={
 
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     PyObject *dict;
 } AST_object;
 

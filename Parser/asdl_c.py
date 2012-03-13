@@ -604,7 +604,7 @@ class PyTypesVisitor(PickleVisitor):
     def visitModule(self, mod):
         self.emit("""
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     PyObject *dict;
 } AST_object;
 
