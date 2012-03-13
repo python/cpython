@@ -70,9 +70,37 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
 #endif /* MS_WINDOWS */
 }
 
-int
-_PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec)
+static void
+error_time_t_overflow(void)
 {
+    PyErr_SetString(PyExc_OverflowError,
+                    "timestamp out of range for platform time_t");
+}
+
+static time_t
+_PyLong_AsTime_t(PyObject *obj)
+{
+#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+    PY_LONG_LONG val;
+    val = PyLong_AsLongLong(obj);
+#else
+    long val;
+    assert(sizeof(time_t) <= sizeof(long));
+    val = PyLong_AsLong(obj);
+#endif
+    if (val == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            error_time_t_overflow();
+        return -1;
+    }
+    return (time_t)val;
+}
+
+static int
+_PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
+                            double denominator)
+{
+    assert(denominator <= LONG_MAX);
     if (PyFloat_Check(obj)) {
         double d, intpart, floatpart, err;
 
@@ -85,34 +113,61 @@ _PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec)
 
         *sec = (time_t)intpart;
         err = intpart - (double)*sec;
-        if (err <= -1.0 || err >= 1.0)
-            goto overflow;
+        if (err <= -1.0 || err >= 1.0) {
+            error_time_t_overflow();
+            return -1;
+        }
 
-        floatpart *= 1e9;
-        *nsec = (long)floatpart;
+        floatpart *= denominator;
+        *numerator = (long)floatpart;
         return 0;
     }
     else {
-#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
-        *sec = PyLong_AsLongLong(obj);
-#else
-        assert(sizeof(time_t) <= sizeof(long));
-        *sec = PyLong_AsLong(obj);
-#endif
-        if (*sec == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
-                goto overflow;
-            else
-                return -1;
-        }
-        *nsec = 0;
+        *sec = _PyLong_AsTime_t(obj);
+        if (*sec == (time_t)-1 && PyErr_Occurred())
+            return -1;
+        *numerator = 0;
         return 0;
     }
+}
 
-overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "timestamp out of range for platform time_t");
-    return -1;
+int
+_PyTime_ObjectToTime_t(PyObject *obj, time_t *sec)
+{
+    if (PyFloat_Check(obj)) {
+        double d, intpart, err;
+
+        /*whent = _PyTime_DoubleToTimet(d);*/
+
+        d = PyFloat_AsDouble(obj);
+        (void)modf(d, &intpart);
+
+        *sec = (time_t)intpart;
+        err = intpart - (double)*sec;
+        if (err <= -1.0 || err >= 1.0) {
+            error_time_t_overflow();
+            return -1;
+        }
+        return 0;
+    }
+    else {
+        *sec = _PyLong_AsTime_t(obj);
+        if (*sec == (time_t)-1 && PyErr_Occurred())
+            return -1;
+        return 0;
+    }
+}
+
+int
+_PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec)
+{
+    return _PyTime_ObjectToDenominator(obj, sec, nsec, 1e9);
+}
+
+int
+_PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec)
+{
+    return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6);
 }
 
 void

@@ -2323,6 +2323,42 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
+static PyObject*
+_PyLong_FromTime_t(time_t value)
+{
+#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+    return PyLong_FromLongLong(value);
+#else
+    assert(sizeof(time_t) <= sizeof(long));
+    return PyLong_FromLong(value);
+#endif
+}
+
+static PyObject *
+test_pytime_object_to_time_t(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    time_t sec;
+    if (!PyArg_ParseTuple(args, "O:pytime_object_to_time_t", &obj))
+        return NULL;
+    if (_PyTime_ObjectToTime_t(obj, &sec) == -1)
+        return NULL;
+    return _PyLong_FromTime_t(sec);
+}
+
+static PyObject *
+test_pytime_object_to_timeval(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    time_t sec;
+    long usec;
+    if (!PyArg_ParseTuple(args, "O:pytime_object_to_timeval", &obj))
+        return NULL;
+    if (_PyTime_ObjectToTimeval(obj, &sec, &usec) == -1)
+        return NULL;
+    return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), usec);
+}
+
 static PyObject *
 test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 {
@@ -2333,12 +2369,7 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
         return NULL;
     if (_PyTime_ObjectToTimespec(obj, &sec, &nsec) == -1)
         return NULL;
-#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    return Py_BuildValue("Ll", (PY_LONG_LONG)sec, nsec);
-#else
-    assert(sizeof(time_t) <= sizeof(long));
-    return Py_BuildValue("ll", (long)sec, nsec);
-#endif
+    return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
 
 
@@ -2430,6 +2461,8 @@ static PyMethodDef TestMethods[] = {
      METH_NOARGS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
+    {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
+    {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };

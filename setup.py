@@ -512,9 +512,9 @@ class PyBuildExt(build_ext):
             time_libs.append(lib)
 
         # time operations and variables
-        exts.append( Extension('time', ['timemodule.c', '_time.c'],
+        exts.append( Extension('time', ['timemodule.c'],
                                libraries=time_libs) )
-        exts.append( Extension('_datetime', ['_datetimemodule.c', '_time.c']) )
+        exts.append( Extension('_datetime', ['_datetimemodule.c']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
