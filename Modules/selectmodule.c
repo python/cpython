@@ -1868,7 +1868,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
                             "timeout must be positive or None");
             return NULL;
         }
-        ptimeoutspec = &timeoutspec;
+        ptimeoutspec = &timeout;
     }
     else {
         PyErr_Format(PyExc_TypeError,
