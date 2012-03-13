@@ -1123,6 +1123,11 @@ Porting Python code
   with sys.platform.startswith('linux'), or directly sys.platform == 'linux' if
   you don't need to support older Python versions.
 
+* :issue:`13847`, :issue:`14180`: :mod:`time` and :mod:`datetime`:
+  :exc:`OverflowError` is now raised instead of :exc:`ValueError` if a
+  timestamp is out of range. :exc:`OSError` is now raised if C functions
+  :c:func:`gmtime` or :c:func:`localtime` failed.
+
 Porting C code
 --------------
 
