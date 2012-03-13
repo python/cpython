@@ -652,6 +652,26 @@ class ReTests(unittest.TestCase):
         self.assertEqual([item.group(0) for item in iter],
                          [":", "::", ":::"])
 
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", 1, 10)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", pos=1, endpos=10)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", endpos=10, pos=1)
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
+
+        pat = re.compile(r":+")
+        iter = pat.finditer("a:b::c:::d", pos=3, endpos=8)
+        self.assertEqual([item.group(0) for item in iter],
+                         ["::", "::"])
+
     def test_bug_926075(self):
         self.assertTrue(re.compile('bug_926075') is not
                      re.compile(b'bug_926075'))
