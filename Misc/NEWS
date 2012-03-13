@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10543: Fix unittest test discovery with Jython bytecode files.
+
 - Issue #14252: Fix subprocess.Popen.terminate() to not raise an error under
   Windows when the child process has already exited.
 
