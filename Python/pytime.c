@@ -102,7 +102,9 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 {
     assert(denominator <= LONG_MAX);
     if (PyFloat_Check(obj)) {
-        double d, intpart, floatpart, err;
+        double d, intpart, err;
+        /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+        volatile double floatpart;
 
         d = PyFloat_AsDouble(obj);
         floatpart = modf(d, &intpart);
