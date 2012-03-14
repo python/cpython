@@ -15,6 +15,11 @@ Core and Builtins
   service attacks due to hash collisions within the dict and set types.  Patch
   by David Malcolm, based on work by Victor Stinner.
 
+- Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
+  table internal to the pyexpat module's copy of the expat library to avoid a
+  denial of service due to hash collisions.  Patch by David Malcolm with some
+  modifications by the expat project.
+
 Library
 -------
 
