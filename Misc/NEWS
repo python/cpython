@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12818: format address no longer needlessly \ escapes ()s in names when
+  the name ends up being quoted.
+
 - Issue #14062: BytesGenerator now correctly folds Header objects,
   including using linesep when folding.
 

@@ -2702,7 +2702,10 @@ class TestMiscellaneous(TestEmailBase):
     def test_escape_dump(self):
         self.assertEqual(
             utils.formataddr(('A (Very) Silly Person', 'person@dom.ain')),
-            r'"A \(Very\) Silly Person" <person@dom.ain>')
+            r'"A (Very) Silly Person" <person@dom.ain>')
+        self.assertEqual(
+            utils.parseaddr(r'"A \(Very\) Silly Person" <person@dom.ain>'),
+            ('A (Very) Silly Person', 'person@dom.ain'))
         a = r'A \(Special\) Person'
         b = 'person@dom.ain'
         self.assertEqual(utils.parseaddr(utils.formataddr((a, b))), (a, b))
@@ -2799,6 +2802,15 @@ class TestMiscellaneous(TestEmailBase):
             utils.parseaddr('merwok"wok"  wok@xample.com'))
         self.assertEqual(('', 'merwok.wok.wok@xample.com'),
             utils.parseaddr('merwok. wok .  wok@xample.com'))
+
+    def test_formataddr_does_not_quote_parens_in_quoted_string(self):
+        addr = ("'foo@example.com' (foo@example.com)",
+                'foo@example.com')
+        addrstr = ('"\'foo@example.com\' '
+                            '(foo@example.com)" <foo@example.com>')
+        self.assertEqual(utils.parseaddr(addrstr), addr)
+        self.assertEqual(utils.formataddr(addr), addrstr)
+
 
     def test_multiline_from_comment(self):
         x = """\
