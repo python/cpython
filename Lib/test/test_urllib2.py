@@ -553,10 +553,6 @@ class OpenerDirectorTests(unittest.TestCase):
         self.assertRaises(urllib.error.URLError, o.open, req)
         self.assertEqual(o.calls, [(handlers[0], "http_open", (req,), {})])
 
-##     def test_error(self):
-##         # XXX this doesn't actually seem to be used in standard library,
-##         #  but should really be tested anyway...
-
     def test_http_error(self):
         # XXX http_error_default
         # http errors are a special case
@@ -583,6 +579,7 @@ class OpenerDirectorTests(unittest.TestCase):
             handler, method_name, args = expected
             self.assertEqual((handler, method_name), got[:2])
             self.assertEqual(args, got[2])
+
 
     def test_processors(self):
         # *_request / *_response methods get called appropriately
@@ -619,6 +616,24 @@ class OpenerDirectorTests(unittest.TestCase):
                 self.assertTrue(args[1] is None or
                              isinstance(args[1], MockResponse))
 
+    def test_method_deprecations(self):
+        req = Request("http://www.example.com")
+        with support.check_warnings(('', DeprecationWarning)):
+            req.add_data("data")
+        with support.check_warnings(('', DeprecationWarning)):
+            req.has_data()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.get_data()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.get_full_url()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.get_host()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.get_selector()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.is_unverifiable()
+        with support.check_warnings(('', DeprecationWarning)):
+            req.get_origin_req_host()
 
 def sanepathname2url(path):
     try:
