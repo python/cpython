@@ -625,8 +625,6 @@ class OpenerDirectorTests(unittest.TestCase):
         with support.check_warnings(('', DeprecationWarning)):
             req.get_data()
         with support.check_warnings(('', DeprecationWarning)):
-            req.get_full_url()
-        with support.check_warnings(('', DeprecationWarning)):
             req.get_host()
         with support.check_warnings(('', DeprecationWarning)):
             req.get_selector()
