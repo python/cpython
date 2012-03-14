@@ -143,13 +143,10 @@ def _instance_callable(obj):
         # already an instance
         return getattr(obj, '__call__', None) is not None
 
-    klass = obj
-    # uses __bases__ instead of __mro__ so that we work with old style classes
-    if klass.__dict__.get('__call__') is not None:
-        return True
-
-    for base in klass.__bases__:
-        if _instance_callable(base):
+    # *could* be broken by a class overriding __mro__ or __dict__ via
+    # a metaclass
+    for base in (obj,) + obj.__mro__:
+        if base.__dict__.get('__call__') is not None:
             return True
     return False
 
@@ -622,9 +619,7 @@ class NonCallableMock(Base):
 
 
     def __dir__(self):
-        """Filter the output of `dir(mock)` to only useful members.
-        XXXX
-        """
+        """Filter the output of `dir(mock)` to only useful members."""
         extras = self._mock_methods or []
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
@@ -1060,31 +1055,28 @@ class _patch(object):
 
         @wraps(func)
         def patched(*args, **keywargs):
-            # could use with statement here
             extra_args = []
             entered_patchers = []
 
-            # could use try..except...finally here
             try:
-                try:
-                    for patching in patched.patchings:
-                        arg = patching.__enter__()
-                        entered_patchers.append(patching)
-                        if patching.attribute_name is not None:
-                            keywargs.update(arg)
-                        elif patching.new is DEFAULT:
-                            extra_args.append(arg)
+                for patching in patched.patchings:
+                    arg = patching.__enter__()
+                    entered_patchers.append(patching)
+                    if patching.attribute_name is not None:
+                        keywargs.update(arg)
+                    elif patching.new is DEFAULT:
+                        extra_args.append(arg)
 
-                    args += tuple(extra_args)
-                    return func(*args, **keywargs)
-                except:
-                    if (patching not in entered_patchers and
-                        _is_started(patching)):
-                        # the patcher may have been started, but an exception
-                        # raised whilst entering one of its additional_patchers
-                        entered_patchers.append(patching)
-                    # re-raise the exception
-                    raise
+                args += tuple(extra_args)
+                return func(*args, **keywargs)
+            except:
+                if (patching not in entered_patchers and
+                    _is_started(patching)):
+                    # the patcher may have been started, but an exception
+                    # raised whilst entering one of its additional_patchers
+                    entered_patchers.append(patching)
+                # re-raise the exception
+                raise
             finally:
                 for patching in reversed(entered_patchers):
                     patching.__exit__()
@@ -2064,11 +2056,7 @@ def _must_skip(spec, entry, is_type):
         if entry in getattr(spec, '__dict__', {}):
             # instance attribute - shouldn't skip
             return False
-        # can't use type because of old style classes
         spec = spec.__class__
-    if not hasattr(spec, '__mro__'):
-        # old style class: can't have descriptors anyway
-        return is_type
 
     for klass in spec.__mro__:
         result = klass.__dict__.get(entry, DEFAULT)
