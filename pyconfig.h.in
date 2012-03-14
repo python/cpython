@@ -1,4 +1,4 @@
-/* pyconfig.h.in.  Generated from configure.in by autoheader.  */
+/* pyconfig.h.in.  Generated from configure.ac by autoheader.  */
 
 
 #ifndef Py_PYCONFIG_H
