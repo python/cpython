@@ -619,6 +619,19 @@ class TestMessageAPI(TestEmailBase):
         msg['Dummy'] = 'dummy\nX-Injected-Header: test'
         self.assertRaises(errors.HeaderParseError, msg.as_string)
 
+    def test_unicode_header_defaults_to_utf8_encoding(self):
+        # Issue 14291
+        m = MIMEText('abc\n')
+        m['Subject'] = 'É test'
+        self.assertEqual(str(m),textwrap.dedent("""\
+            Content-Type: text/plain; charset="us-ascii"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 7bit
+            Subject: =?utf-8?q?=C3=89_test?=
+
+            abc
+            """))
+
 # Test the email.encoders module
 class TestEncoders(unittest.TestCase):
 
@@ -1060,9 +1073,13 @@ Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Offshore-W
                          'f\xfcr Offshore-Windkraftprojekte '
                          '<a-very-long-address@example.com>')
         msg['Reply-To'] = header_string
-        self.assertRaises(UnicodeEncodeError, msg.as_string)
+        eq(msg.as_string(maxheaderlen=78), """\
+Reply-To: =?utf-8?q?Britische_Regierung_gibt_gr=C3=BCnes_Licht_f=C3=BCr_Offs?=
+ =?utf-8?q?hore-Windkraftprojekte_=3Ca-very-long-address=40example=2Ecom=3E?=
+
+""")
         msg = Message()
-        msg['Reply-To'] = Header(header_string, 'utf-8',
+        msg['Reply-To'] = Header(header_string,
                                  header_name='Reply-To')
         eq(msg.as_string(maxheaderlen=78), """\
 Reply-To: =?utf-8?q?Britische_Regierung_gibt_gr=C3=BCnes_Licht_f=C3=BCr_Offs?=
