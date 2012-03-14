@@ -619,9 +619,7 @@ class NonCallableMock(Base):
 
 
     def __dir__(self):
-        """Filter the output of `dir(mock)` to only useful members.
-        XXXX
-        """
+        """Filter the output of `dir(mock)` to only useful members."""
         extras = self._mock_methods or []
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
@@ -1057,31 +1055,28 @@ class _patch(object):
 
         @wraps(func)
         def patched(*args, **keywargs):
-            # could use with statement here
             extra_args = []
             entered_patchers = []
 
-            # could use try..except...finally here
             try:
-                try:
-                    for patching in patched.patchings:
-                        arg = patching.__enter__()
-                        entered_patchers.append(patching)
-                        if patching.attribute_name is not None:
-                            keywargs.update(arg)
-                        elif patching.new is DEFAULT:
-                            extra_args.append(arg)
+                for patching in patched.patchings:
+                    arg = patching.__enter__()
+                    entered_patchers.append(patching)
+                    if patching.attribute_name is not None:
+                        keywargs.update(arg)
+                    elif patching.new is DEFAULT:
+                        extra_args.append(arg)
 
-                    args += tuple(extra_args)
-                    return func(*args, **keywargs)
-                except:
-                    if (patching not in entered_patchers and
-                        _is_started(patching)):
-                        # the patcher may have been started, but an exception
-                        # raised whilst entering one of its additional_patchers
-                        entered_patchers.append(patching)
-                    # re-raise the exception
-                    raise
+                args += tuple(extra_args)
+                return func(*args, **keywargs)
+            except:
+                if (patching not in entered_patchers and
+                    _is_started(patching)):
+                    # the patcher may have been started, but an exception
+                    # raised whilst entering one of its additional_patchers
+                    entered_patchers.append(patching)
+                # re-raise the exception
+                raise
             finally:
                 for patching in reversed(entered_patchers):
                     patching.__exit__()
