@@ -331,29 +331,10 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic()')
-    def test_monotonic(self):
-        t1 = time.monotonic()
-        t2 = time.monotonic()
-        self.assertGreaterEqual(t2, t1)
-
-        t1 = time.monotonic()
+    def test_steady(self):
+        t1 = time.steady()
         time.sleep(0.1)
-        t2 = time.monotonic()
-        dt = t2 - t1
-        self.assertGreater(t2, t1)
-        self.assertAlmostEqual(dt, 0.1, delta=0.2)
-
-    def test_wallclock(self):
-        t1 = time.wallclock()
-        t2 = time.wallclock()
-        # may fail if the system clock was changed
-        self.assertGreaterEqual(t2, t1)
-
-        t1 = time.wallclock()
-        time.sleep(0.1)
-        t2 = time.wallclock()
+        t2 = time.steady()
         dt = t2 - t1
         # may fail if the system clock was changed
         self.assertGreater(t2, t1)
