@@ -1,5 +1,8 @@
 # mock.py
 # Test tools for mocking and patching.
+# Maintained by Michael Foord
+# Backport for other versions of Python available from
+# http://pypi.python.org/pypi/mock
 
 __all__ = (
     'Mock',
@@ -257,11 +260,6 @@ sentinel = _Sentinel()
 DEFAULT = sentinel.DEFAULT
 _missing = sentinel.MISSING
 _deleted = sentinel.DELETED
-
-
-class OldStyleClass:
-    pass
-ClassType = type(OldStyleClass)
 
 
 def _copy(value):

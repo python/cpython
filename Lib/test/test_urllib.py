@@ -298,6 +298,10 @@ Content-Type: text/html; charset=iso-8859-1
         finally:
             self.unfakehttp()
 
+    def test_URLopener_deprecation(self):
+        with support.check_warnings(('',DeprecationWarning)):
+            warn = urllib.request.URLopener()
+
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
 
