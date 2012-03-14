@@ -794,9 +794,9 @@ My program is too slow. How do I speed it up?
 That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
-* Performance characteristics vary accross Python implementations.  This FAQ
+* Performance characteristics vary across Python implementations.  This FAQ
   focusses on :term:`CPython`.
-* Behaviour can vary accross operating systems, especially when talking about
+* Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to
   optimize any code (see the :mod:`profile` module).
