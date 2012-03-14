@@ -46,8 +46,8 @@ The :mod:`urllib.request` module defines the following functions:
       If neither *cafile* nor *capath* is specified, an HTTPS request
       will not do any verification of the server's certificate.
 
-   This function returns a file-like object with two additional methods from
-   the :mod:`urllib.response` module
+   This function returns a file-like object that works as a :term:`context manager`,
+   with two additional methods from the :mod:`urllib.response` module
 
    * :meth:`geturl` --- return the URL of the resource retrieved,
      commonly used to determine if a redirect was followed
@@ -967,15 +967,23 @@ The following W3C document, http://www.w3.org/International/O-charset  , lists
 the various ways in which a (X)HTML or a XML document could have specified its
 encoding information.
 
-As python.org website uses *utf-8* encoding as specified in it's meta tag, we
-will use same for decoding the bytes object. ::
+As the python.org website uses *utf-8* encoding as specified in it's meta tag, we
+will use the same for decoding the bytes object. ::
+
+   >>> with urllib.request.urlopen('http://www.python.org/') as f:
+   ...     print(f.read(100).decode('utf-8'))
+   ...
+   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+
+It is also possible to achieve the same result without using the
+:term:`context manager` approach. ::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
    >>> print(f.read(100).decode('utf-8'))
    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtm
-
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
