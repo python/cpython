@@ -111,10 +111,10 @@ class TestMailbox(TestBase):
         self.assertMailboxEmpty()
 
     def test_add_that_raises_leaves_mailbox_empty(self):
-        # XXX This test will start failing when Message learns to handle
-        # non-ASCII string headers, and a different internal failure will
-        # need to be found or manufactured.
-        with self.assertRaises(ValueError):
+        def raiser(*args, **kw):
+            raise Exception("a fake error")
+        support.patch(self, email.generator.BytesGenerator, 'flatten', raiser)
+        with self.assertRaises(Exception):
             self._box.add(email.message_from_string("From: Alphöso"))
         self.assertEqual(len(self._box), 0)
         self._box.close()

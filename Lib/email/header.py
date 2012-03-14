@@ -283,7 +283,12 @@ class Header:
         # character set, otherwise an early error is thrown.
         output_charset = charset.output_codec or 'us-ascii'
         if output_charset != _charset.UNKNOWN8BIT:
-            s.encode(output_charset, errors)
+            try:
+                s.encode(output_charset, errors)
+            except UnicodeEncodeError:
+                if output_charset!='us-ascii':
+                    raise
+                charset = UTF8
         self._chunks.append((s, charset))
 
     def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):
