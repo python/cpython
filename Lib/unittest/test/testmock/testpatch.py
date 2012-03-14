@@ -9,7 +9,7 @@ import unittest
 from unittest.test.testmock import support
 from unittest.test.testmock.support import SomeClass, is_instance
 
-from mock import (
+from unittest.mock import (
     NonCallableMock, CallableMixin, patch, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch,
     DEFAULT, call
