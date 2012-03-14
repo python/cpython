@@ -1535,7 +1535,7 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(foo.fish, 'tasty')
 
 
-    @patch('mock.patch.TEST_PREFIX', 'foo')
+    @patch('unittest.mock.patch.TEST_PREFIX', 'foo')
     def test_patch_test_prefix(self):
         class Foo(object):
             thing = 'original'
@@ -1558,7 +1558,7 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(foo.test_two(), 'original')
 
 
-    @patch('mock.patch.TEST_PREFIX', 'bar')
+    @patch('unittest.mock.patch.TEST_PREFIX', 'bar')
     def test_patch_dict_test_prefix(self):
         class Foo(object):
             def bar_one(self):
