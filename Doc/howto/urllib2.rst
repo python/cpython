@@ -56,6 +56,13 @@ The simplest way to use urllib.request is as follows::
     response = urllib.request.urlopen('http://python.org/')
     html = response.read()
 
+If you wish to retrieve a resource via URL and store it in a temporary location,
+you can do so via the :func:`urlretrieve` function::
+
+    import urllib.request
+    local_filename, headers = urllib.request.urlretrieve('http://python.org/')
+    html = open(local_filename)
+
 Many uses of urllib will be that simple (note that instead of an 'http:' URL we
 could have used an URL starting with 'ftp:', 'file:', etc.).  However, it's the
 purpose of this tutorial to explain the more complicated cases, concentrating on
