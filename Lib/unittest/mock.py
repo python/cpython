@@ -143,13 +143,10 @@ def _instance_callable(obj):
         # already an instance
         return getattr(obj, '__call__', None) is not None
 
-    klass = obj
-    # uses __bases__ instead of __mro__ so that we work with old style classes
-    if klass.__dict__.get('__call__') is not None:
-        return True
-
-    for base in klass.__bases__:
-        if _instance_callable(base):
+    # *could* be broken by a class overriding __mro__ or __dict__ via
+    # a metaclass
+    for base in (obj,) + obj.__mro__:
+        if base.__dict__.get('__call__') is not None:
             return True
     return False
 
@@ -2064,11 +2061,7 @@ def _must_skip(spec, entry, is_type):
         if entry in getattr(spec, '__dict__', {}):
             # instance attribute - shouldn't skip
             return False
-        # can't use type because of old style classes
         spec = spec.__class__
-    if not hasattr(spec, '__mro__'):
-        # old style class: can't have descriptors anyway
-        return is_type
 
     for klass in spec.__mro__:
         result = klass.__dict__.get(entry, DEFAULT)
