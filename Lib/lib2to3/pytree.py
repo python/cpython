@@ -109,26 +109,6 @@ class Base(object):
         """
         raise NotImplementedError
 
-    def set_prefix(self, prefix):
-        """
-        Set the prefix for the node (see Leaf class).
-
-        DEPRECATED; use the prefix property directly.
-        """
-        warnings.warn("set_prefix() is deprecated; use the prefix property",
-                      DeprecationWarning, stacklevel=2)
-        self.prefix = prefix
-
-    def get_prefix(self):
-        """
-        Return the prefix for the node (see Leaf class).
-
-        DEPRECATED; use the prefix property directly.
-        """
-        warnings.warn("get_prefix() is deprecated; use the prefix property",
-                      DeprecationWarning, stacklevel=2)
-        return self.prefix
-
     def replace(self, new):
         """Replace this node with a new one in the parent."""
         assert self.parent is not None, str(self)
