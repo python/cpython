@@ -2702,7 +2702,10 @@ class TestMiscellaneous(TestEmailBase):
     def test_escape_dump(self):
         self.assertEqual(
             utils.formataddr(('A (Very) Silly Person', 'person@dom.ain')),
-            r'"A \(Very\) Silly Person" <person@dom.ain>')
+            r'"A (Very) Silly Person" <person@dom.ain>')
+        self.assertEqual(
+            utils.parseaddr(r'"A \(Very\) Silly Person" <person@dom.ain>'),
+            ('A (Very) Silly Person', 'person@dom.ain'))
         a = r'A \(Special\) Person'
         b = 'person@dom.ain'
         self.assertEqual(utils.parseaddr(utils.formataddr((a, b))), (a, b))
@@ -2799,6 +2802,15 @@ class TestMiscellaneous(TestEmailBase):
             utils.parseaddr('merwok"wok"  wok@xample.com'))
         self.assertEqual(('', 'merwok.wok.wok@xample.com'),
             utils.parseaddr('merwok. wok .  wok@xample.com'))
+
+    def test_formataddr_does_not_quote_parens_in_quoted_string(self):
+        addr = ("'foo@example.com' (foo@example.com)",
+                'foo@example.com')
+        addrstr = ('"\'foo@example.com\' '
+                            '(foo@example.com)" <foo@example.com>')
+        self.assertEqual(utils.parseaddr(addrstr), addr)
+        self.assertEqual(utils.formataddr(addr), addrstr)
+
 
     def test_multiline_from_comment(self):
         x = """\
@@ -3600,6 +3612,30 @@ class Test8BitBytesHandling(unittest.TestCase):
         g = email.generator.BytesGenerator(s)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), source)
+
+    def test_bytes_generator_b_encoding_linesep(self):
+        # Issue 14062: b encoding was tacking on an extra \n.
+        m = Message()
+        # This has enough non-ascii that it should always end up b encoded.
+        m['Subject'] = Header('žluťoučký kůň')
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(m, linesep='\r\n')
+        self.assertEqual(
+            s.getvalue(),
+            b'Subject: =?utf-8?b?xb5sdcWlb3XEjWvDvSBrxa/FiA==?=\r\n\r\n')
+
+    def test_generator_b_encoding_linesep(self):
+        # Since this broke in ByteGenerator, test Generator for completeness.
+        m = Message()
+        # This has enough non-ascii that it should always end up b encoded.
+        m['Subject'] = Header('žluťoučký kůň')
+        s = StringIO()
+        g = email.generator.Generator(s)
+        g.flatten(m, linesep='\r\n')
+        self.assertEqual(
+            s.getvalue(),
+            'Subject: =?utf-8?b?xb5sdcWlb3XEjWvDvSBrxa/FiA==?=\r\n\r\n')
 
     def test_crlf_control_via_policy(self):
         # msg_26 is crlf terminated

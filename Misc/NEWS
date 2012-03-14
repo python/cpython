@@ -26,6 +26,16 @@ Library
 
 - Issue #14200: Idle shell crash on printing non-BMP unicode character.
 
+- Issue #12818: format address no longer needlessly \ escapes ()s in names when
+  the name ends up being quoted.
+
+- Issue #14062: BytesGenerator now correctly folds Header objects,
+  including using linesep when folding.
+
+- Issue #13839: When invoked on the command-line, the pstats module now
+  accepts several filenames of profile stat files and merges them all.
+  Patch by Matt Joiner.
+
 - Issue #14291: Email now defaults to utf-8 for non-ASCII unicode headers
   instead of raising an error.  This fixes a regression relative to 2.7.
 
