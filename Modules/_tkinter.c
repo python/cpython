@@ -613,13 +613,6 @@ Tkapp_New(char *screenName, char *className,
     }
 #endif
 #ifdef WITH_THREAD
-    if (!(v->threaded)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Tcl/Tk was not compiled with --enable-threads but "
-                        "Python has threads enabled");
-        Py_DECREF(v);
-        return 0;
-    }
     if (v->threaded && tcl_lock) {
         /* If Tcl is threaded, we don't need the lock. */
         PyThread_free_lock(tcl_lock);
