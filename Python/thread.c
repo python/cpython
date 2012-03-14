@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #ifdef __sgi
-#ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.in */
+#ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.ac */
 #undef _POSIX_THREADS
 #endif
 #endif
