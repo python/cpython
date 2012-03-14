@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14200: Idle shell crash on printing non-BMP unicode character.
+
 - Issue #12818: format address no longer needlessly \ escapes ()s in names when
   the name ends up being quoted.
 
