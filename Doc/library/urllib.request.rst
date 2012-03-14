@@ -1124,16 +1124,14 @@ The following functions and classes are ported from the Python 2 module
 ``urllib`` (as opposed to ``urllib2``).  They might become deprecated at
 some point in the future.
 
-
 .. function:: urlretrieve(url, filename=None, reporthook=None, data=None)
 
-   Copy a network object denoted by a URL to a local file, if necessary. If the URL
-   points to a local file, or a valid cached copy of the object exists, the object
-   is not copied.  Return a tuple ``(filename, headers)`` where *filename* is the
+   Copy a network object denoted by a URL to a local file. If the URL
+   points to a local file, the object will not be copied unless filename is supplied.
+   Return a tuple ``(filename, headers)`` where *filename* is the
    local file name under which the object can be found, and *headers* is whatever
    the :meth:`info` method of the object returned by :func:`urlopen` returned (for
-   a remote object, possibly cached). Exceptions are the same as for
-   :func:`urlopen`.
+   a remote object). Exceptions are the same as for :func:`urlopen`.
 
    The second argument, if present, specifies the file location to copy to (if
    absent, the location will be a tempfile with a generated name). The third
@@ -1144,11 +1142,18 @@ some point in the future.
    third argument may be ``-1`` on older FTP servers which do not return a file
    size in response to a retrieval request.
 
+   The following example illustrates the most common usage scenario::
+
+      >>> import urllib.request
+      >>> local_filename, headers = urllib.request.urlretrieve('http://python.org/')
+      >>> html = open(local_filename)
+      >>> html.close()
+
    If the *url* uses the :file:`http:` scheme identifier, the optional *data*
-   argument may be given to specify a ``POST`` request (normally the request type
-   is ``GET``).  The *data* argument must in standard
-   :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
-   function below.
+   argument may be given to specify a ``POST`` request (normally the request
+   type is ``GET``).  The *data* argument must in standard
+   :mimetype:`application/x-www-form-urlencoded` format; see the
+   :func:`urlencode` function below.
 
    :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
    the amount of data available  was less than the expected amount (which is the
@@ -1156,20 +1161,20 @@ some point in the future.
    the  download is interrupted.
 
    The *Content-Length* is treated as a lower bound: if there's more data  to read,
-   :func:`urlretrieve` reads more data, but if less data is available,  it raises
-   the exception.
+   urlretrieve reads more data, but if less data is available,  it raises the
+   exception.
 
    You can still retrieve the downloaded data in this case, it is stored  in the
    :attr:`content` attribute of the exception instance.
 
-   If no *Content-Length* header was supplied, :func:`urlretrieve` can not check
-   the size of the data it has downloaded, and just returns it.  In this case
-   you just have to assume that the download was successful.
+   If no *Content-Length* header was supplied, urlretrieve can not check the size
+   of the data it has downloaded, and just returns it.  In this case you just have
+   to assume that the download was successful.
 
 .. function:: urlcleanup()
 
-   Clear the cache that may have been built up by previous calls to
-   :func:`urlretrieve`.
+   Cleans up temporary files that may have been left behind by previous
+   calls to :func:`urlretrieve`.
 
 .. class:: URLopener(proxies=None, **x509)
 
