@@ -944,16 +944,15 @@ support the following methods and attributes:
 .. attribute:: match.pos
 
    The value of *pos* which was passed to the :meth:`~regex.search` or
-   :meth:`~regex.match` method of a :ref:`match object <match-objects>`.  This
-   is the index into the string at which the RE engine started looking for a
-   match.
+   :meth:`~regex.match` method of a :ref:`regex object <re-objects>`.  This is
+   the index into the string at which the RE engine started looking for a match.
 
 
 .. attribute:: match.endpos
 
    The value of *endpos* which was passed to the :meth:`~regex.search` or
-   :meth:`~regex.match` method of a :ref:`match object <match-objects>`.  This
-   is the index into the string beyond which the RE engine will not go.
+   :meth:`~regex.match` method of a :ref:`regex object <re-objects>`.  This is
+   the index into the string beyond which the RE engine will not go.
 
 
 .. attribute:: match.lastindex
