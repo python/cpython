@@ -196,8 +196,12 @@ class SocketIO(object):
                 return ("ERROR", "Unsupported message type: %s" % how)
         except SystemExit:
             raise
+        except KeyboardInterrupt:
+            raise
         except socket.error:
             raise
+        except Exception as ex:
+            return ("CALLEXC", ex)
         except:
             msg = "*** Internal Error: rpc.py:SocketIO.localcall()\n\n"\
                   " Object: %s \n Method: %s \n Args: %s\n"
@@ -257,6 +261,9 @@ class SocketIO(object):
         if how == "ERROR":
             self.debug("decoderesponse: Internal ERROR:", what)
             raise RuntimeError(what)
+        if how == "CALLEXC":
+            self.debug("decoderesponse: Call Exception:", what)
+            raise what
         raise SystemError(how, what)
 
     def decode_interrupthook(self):
