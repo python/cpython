@@ -152,7 +152,7 @@ SRCDIRS= 	@SRCDIRS@
 SUBDIRSTOO=	Include Lib Misc Demo
 
 # Files and directories to be distributed
-CONFIGFILES=	configure configure.in acconfig.h pyconfig.h.in Makefile.pre.in
+CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
 DISTFILES=	README ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
@@ -1165,7 +1165,7 @@ recheck:
 	$(SHELL) config.status --recheck
 	$(SHELL) config.status
 
-# Rebuild the configure script from configure.in; also rebuild pyconfig.h.in
+# Rebuild the configure script from configure.ac; also rebuild pyconfig.h.in
 autoconf:
 	(cd $(srcdir); autoconf)
 	(cd $(srcdir); autoheader)
