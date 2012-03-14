@@ -32,7 +32,7 @@ class MockTest(unittest.TestCase):
         # if __all__ is badly defined then import * will raise an error
         # We have to exec it because you can't import * inside a method
         # in Python 3
-        exec("from mock import *")
+        exec("from unittest.mock import *")
 
 
     def test_constructor(self):
