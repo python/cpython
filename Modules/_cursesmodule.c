@@ -649,7 +649,7 @@ PyCursesWindow_AddStr(PyCursesWindowObject *self, PyObject *args)
     int rtn;
     int x, y;
     int strtype;
-    PyObject *strobj, *bytesobj;
+    PyObject *strobj, *bytesobj = NULL;
 #ifdef HAVE_NCURSESW
     wchar_t *wstr = NULL;
 #endif
@@ -725,7 +725,7 @@ PyCursesWindow_AddNStr(PyCursesWindowObject *self, PyObject *args)
 {
     int rtn, x, y, n;
     int strtype;
-    PyObject *strobj, *bytesobj;
+    PyObject *strobj, *bytesobj = NULL;
 #ifdef HAVE_NCURSESW
     wchar_t *wstr = NULL;
 #endif
@@ -1413,7 +1413,7 @@ PyCursesWindow_InsStr(PyCursesWindowObject *self, PyObject *args)
     int rtn;
     int x, y;
     int strtype;
-    PyObject *strobj, *bytesobj;
+    PyObject *strobj, *bytesobj = NULL;
 #ifdef HAVE_NCURSESW
     wchar_t *wstr = NULL;
 #endif
@@ -1491,7 +1491,7 @@ PyCursesWindow_InsNStr(PyCursesWindowObject *self, PyObject *args)
 {
     int rtn, x, y, n;
     int strtype;
-    PyObject *strobj, *bytesobj;
+    PyObject *strobj, *bytesobj = NULL;
 #ifdef HAVE_NCURSESW
     wchar_t *wstr = NULL;
 #endif
