@@ -769,63 +769,10 @@ should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
 static PyObject *
-time_wallclock(PyObject *self, PyObject *unused)
+time_steady(PyObject *self, PyObject *unused)
 {
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
     return win32_clock(1);
-#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-    static int clk_index = 0;
-    clockid_t clk_ids[] = {
-#ifdef CLOCK_MONOTONIC_RAW
-        CLOCK_MONOTONIC_RAW,
-#endif
-        CLOCK_MONOTONIC
-#ifdef CLOCK_REALTIME
-          /* On Linux, CLOCK_REALTIME uses the same clock than gettimeofday(),
-             but clock_gettime() has a nanosecond resolution. */
-        , CLOCK_REALTIME
-#endif
-    };
-    int ret;
-    struct timespec tp;
-
-    while (0 <= clk_index) {
-        clockid_t clk_id = clk_ids[clk_index];
-        ret = clock_gettime(clk_id, &tp);
-        if (ret == 0)
-            return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
-
-        clk_index++;
-        if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
-            clk_index = -1;
-    }
-    return time_time(self, NULL);
-#else
-    return time_time(self, NULL);
-#endif
-}
-
-PyDoc_STRVAR(wallclock_doc,
-"wallclock() -> float\n\
-\n\
-Return the current time in fractions of a second to the system's best\n\
-ability. Use this when the most accurate representation of wall-clock is\n\
-required, i.e. when \"processor time\" is inappropriate. The reference point\n\
-of the returned value is undefined so only the difference of consecutive\n\
-calls is valid.");
-
-#if (defined(MS_WINDOWS) && !defined(__BORLANDC__)) \
-    || (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) \
-    || (defined(__APPLE__))
-#  define HAVE_PYTIME_MONOTONIC
-#endif
-
-#ifdef HAVE_PYTIME_MONOTONIC
-static PyObject *
-time_monotonic(PyObject *self, PyObject *unused)
-{
-#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return win32_clock(0);
 #elif defined(__APPLE__)
     uint64_t time = mach_absolute_time();
     double secs;
@@ -837,13 +784,14 @@ time_monotonic(PyObject *self, PyObject *unused)
     secs = (double)time * timebase.numer / timebase.denom * 1e-9;
 
     return PyFloat_FromDouble(secs);
-#else
+#elif defined(HAVE_CLOCK_GETTIME)
     static int clk_index = 0;
     clockid_t clk_ids[] = {
 #ifdef CLOCK_MONOTONIC_RAW
         CLOCK_MONOTONIC_RAW,
 #endif
-        CLOCK_MONOTONIC
+        CLOCK_MONOTONIC,
+        CLOCK_REALTIME
     };
     int ret;
     struct timespec tp;
@@ -858,17 +806,20 @@ time_monotonic(PyObject *self, PyObject *unused)
         if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
             clk_index = -1;
     }
-    PyErr_SetFromErrno(PyExc_OSError);
-    return NULL;
+    return time_time(self, NULL);
+#else
+    return time_time(self, NULL);
 #endif
 }
 
-PyDoc_STRVAR(monotonic_doc,
-"monotonic() -> float\n\
+PyDoc_STRVAR(steady_doc,
+"steady() -> float\n\
 \n\
-Monotonic clock. The reference point of the returned value is undefined so\n\
-only the difference of consecutive calls is valid.");
-#endif
+Return the current time as a floating point number expressed in seconds.\n\
+This clock advances at a steady rate relative to real time and it may not\n\
+be adjusted. The reference point of the returned value is undefined so only\n\
+the difference of consecutive calls is valid.");
+
 
 static void
 PyInit_timezone(PyObject *m) {
@@ -998,9 +949,7 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_MKTIME
     {"mktime",          time_mktime, METH_O, mktime_doc},
 #endif
-#ifdef HAVE_PYTIME_MONOTONIC
-    {"monotonic",       time_monotonic, METH_NOARGS, monotonic_doc},
-#endif
+    {"steady",          time_steady, METH_NOARGS, steady_doc},
 #ifdef HAVE_STRFTIME
     {"strftime",        time_strftime, METH_VARARGS, strftime_doc},
 #endif
@@ -1008,7 +957,6 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_WORKING_TZSET
     {"tzset",           time_tzset, METH_NOARGS, tzset_doc},
 #endif
-    {"wallclock",       time_wallclock, METH_NOARGS, wallclock_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

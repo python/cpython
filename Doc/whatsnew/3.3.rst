@@ -943,8 +943,7 @@ The :mod:`time` module has new functions:
 
 * :func:`~time.clock_getres` and :func:`~time.clock_gettime` functions and
   ``CLOCK_xxx`` constants.
-* :func:`~time.monotonic`: monotonic clock.
-* :func:`~time.wallclock`.
+* :func:`~time.steady`.
 
 (Contributed by Victor Stinner in :issue:`10278`)
 

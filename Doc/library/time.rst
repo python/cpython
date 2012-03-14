@@ -226,11 +226,15 @@ The module defines the following functions and data items:
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: steady()
 
-   Monotonic non-decreasing clock. The clock is not related to the system clock
-   and cannot go backward.  The reference point of the returned
-   value is undefined so only the difference of consecutive calls is valid.
+   .. index::
+      single: benchmarking
+
+   Return the current time as a floating point number expressed in seconds.
+   This clock advances at a steady rate relative to real time and it may not be
+   adjusted. The reference point of the returned value is undefined so only the
+   difference of consecutive calls is valid.
 
    .. versionadded:: 3.3
 
@@ -545,20 +549,6 @@ The module defines the following functions and data items:
       >>> time.tzset()
       >>> time.tzname
       ('EET', 'EEST')
-
-
-.. function:: wallclock()
-
-   .. index::
-      single: Wallclock
-      single: benchmarking
-
-   Return the current time in fractions of a second to the system's best ability.
-   Use this when the most accurate representation of wall-clock is required, i.e.
-   when "processor time" is inappropriate.  The reference point of the returned
-   value is undefined so only the difference of consecutive calls is valid.
-
-   .. versionadded:: 3.3
 
 
 .. seealso::
