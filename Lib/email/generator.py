@@ -386,6 +386,9 @@ class BytesGenerator(Generator):
                     h = Header(v, charset=_charset.UNKNOWN8BIT, header_name=h)
                 else:
                     h = Header(v, header_name=h)
+            else:
+                # Assume it is a Header-like object.
+                h = v
             self.write(h.encode(linesep=self._NL,
                                 maxlinelen=self._maxheaderlen)+self._NL)
         # A blank line always separates headers from body
