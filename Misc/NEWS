@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #989712: Support using Tk without a mainloop.
+
 - Issue #5219: Prevent event handler cascade in IDLE.
 
 - Issue #3835: Refuse to use unthreaded Tcl in threaded Python.

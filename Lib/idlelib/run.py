@@ -38,6 +38,21 @@ else:
         return s
     warnings.formatwarning = idle_formatwarning_subproc
 
+
+def handle_tk_events():
+    """Process any tk events that are ready to be dispatched if tkinter
+    has been imported, a tcl interpreter has been created and tk has been
+    loaded."""
+    tkinter = sys.modules.get('tkinter')
+    if tkinter and tkinter._default_root:
+        # tkinter has been imported, an Tcl interpreter was created and
+        # tk has been loaded.
+        root = tkinter._default_root
+        while root.tk.dooneevent(tkinter._tkinter.DONT_WAIT):
+            # Process pending events.
+            pass
+
+
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
 # completion, exit and interruptable (the main thread) flags:
@@ -93,6 +108,7 @@ def main(del_exitfunc=False):
             try:
                 seq, request = rpc.request_queue.get(block=True, timeout=0.05)
             except queue.Empty:
+                handle_tk_events()
                 continue
             method, args, kwargs = request
             ret = method(*args, **kwargs)
