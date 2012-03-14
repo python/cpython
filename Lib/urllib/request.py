@@ -96,6 +96,7 @@ import time
 import collections
 import tempfile
 import contextlib
+import warnings
 
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
@@ -291,36 +292,52 @@ class Request:
         else:
             return "GET"
 
-    # Begin deprecated methods
-
-    def add_data(self, data):
-        self.data = data
-
-    def has_data(self):
-        return self.data is not None
-
-    def get_data(self):
-        return self.data
-
     def get_full_url(self):
         if self.fragment:
             return '%s#%s' % (self.full_url, self.fragment)
         else:
             return self.full_url
 
+    # Begin deprecated methods
+
+    def add_data(self, data):
+        msg = "Request.add_data method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
+        self.data = data
+
+    def has_data(self):
+        msg = "Request.has_data method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
+        return self.data is not None
+
+    def get_data(self):
+        msg = "Request.get_data method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
+        return self.data
+
     def get_type(self):
+        msg = "Request.get_type method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
         return self.type
 
     def get_host(self):
+        msg = "Request.get_host method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
         return self.host
 
     def get_selector(self):
+        msg = "Request.get_selector method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
         return self.selector
 
     def is_unverifiable(self):
+        msg = "Request.is_unverifiable method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
         return self.unverifiable
 
     def get_origin_req_host(self):
+        msg = "Request.get_origin_req_host method is deprecated."
+        warnings.warn(msg, DeprecationWarning, stacklevel=1)
         return self.origin_req_host
 
     # End deprecated methods
@@ -1552,6 +1569,9 @@ class URLopener:
 
     # Constructor
     def __init__(self, proxies=None, **x509):
+        msg = "%(class)s style of invoking requests is deprecated."\
+              "Use newer urlopen functions/methods" % {'class': self.__class__.__name__}
+        warnings.warn(msg, DeprecationWarning, stacklevel=3)
         if proxies is None:
             proxies = getproxies()
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
@@ -1753,7 +1773,6 @@ class URLopener:
                 if proxy_bypass(realhost):
                     host = realhost
 
-            #print "proxy via http:", host, selector
         if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
@@ -2554,7 +2573,6 @@ elif os.name == 'nt':
             test = test.replace("*", r".*")     # change glob sequence
             test = test.replace("?", r".")      # change glob char
             for val in host:
-                # print "%s <--> %s" %( test, val )
                 if re.match(test, val, re.I):
                     return 1
         return 0
