@@ -135,7 +135,7 @@ def reported_news(file_paths):
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
     """Check if configure has been regenerated."""
-    if 'configure.in' in file_paths:
+    if 'configure.ac' in file_paths:
         return "yes" if 'configure' in file_paths else "no"
     else:
         return "not needed"
@@ -143,7 +143,7 @@ def regenerated_configure(file_paths):
 @status("pyconfig.h.in regenerated", modal=True, info=str)
 def regenerated_pyconfig_h_in(file_paths):
     """Check if pyconfig.h.in has been regenerated."""
-    if 'configure.in' in file_paths:
+    if 'configure.ac' in file_paths:
         return "yes" if 'pyconfig.h.in' in file_paths else "no"
     else:
         return "not needed"
