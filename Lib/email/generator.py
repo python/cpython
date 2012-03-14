@@ -360,7 +360,7 @@ class BytesGenerator(Generator):
         for h, v in msg._headers:
             self.write('%s: ' % h)
             if isinstance(v, Header):
-                self.write(v.encode(maxlinelen=self._maxheaderlen)+NL)
+                self.write(v.encode(maxlinelen=self._maxheaderlen)+self._NL)
             elif _has_surrogates(v):
                 # If we have raw 8bit data in a byte string, we have no idea
                 # what the encoding is.  There is no safe way to split this

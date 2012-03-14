@@ -1243,7 +1243,6 @@ List: List-Unsubscribe:
              =?utf-8?q?_folding_white_space_works?=""")+'\n')
 
 
-
 # Test mangling of "From " lines in the body of a message
 class TestFromMangling(unittest.TestCase):
     def setUp(self):
@@ -3440,6 +3439,30 @@ class Test8BitBytesHandling(unittest.TestCase):
         g = email.generator.BytesGenerator(s)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), source)
+
+    def test_bytes_generator_b_encoding_linesep(self):
+        # Issue 14062: b encoding was tacking on an extra \n.
+        m = Message()
+        # This has enough non-ascii that it should always end up b encoded.
+        m['Subject'] = Header('žluťoučký kůň')
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(m, linesep='\r\n')
+        self.assertEqual(
+            s.getvalue(),
+            b'Subject: =?utf-8?b?xb5sdcWlb3XEjWvDvSBrxa/FiA==?=\r\n\r\n')
+
+    def test_generator_b_encoding_linesep(self):
+        # Since this broke in ByteGenerator, test Generator for completeness.
+        m = Message()
+        # This has enough non-ascii that it should always end up b encoded.
+        m['Subject'] = Header('žluťoučký kůň')
+        s = StringIO()
+        g = email.generator.Generator(s)
+        g.flatten(m, linesep='\r\n')
+        self.assertEqual(
+            s.getvalue(),
+            'Subject: =?utf-8?b?xb5sdcWlb3XEjWvDvSBrxa/FiA==?=\r\n\r\n')
 
     maxDiff = None
 
