@@ -55,7 +55,7 @@ CRLF = '\r\n'
 TICK = "'"
 
 specialsre = re.compile(r'[][\\()<>@,:;".]')
-escapesre = re.compile(r'[][\\()"]')
+escapesre = re.compile(r'[\\"]')
 
 
 
