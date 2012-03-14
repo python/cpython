@@ -1221,6 +1221,16 @@ class PyShell(OutputWindow):
         self.set_line_and_column()
 
     def write(self, s, tags=()):
+        if isinstance(s, str) and len(s) and max(s) > '\uffff':
+            # Tk doesn't support outputting non-BMP characters
+            # Let's assume what printed string is not very long,
+            # find first non-BMP character and construct informative
+            # UnicodeEncodeError exception.
+            for start, char in enumerate(s):
+                if char > '\uffff':
+                    break
+            raise UnicodeEncodeError("UCS-2", char, start, start+1,
+                                     'Non-BMP character not supported in Tk')
         try:
             self.text.mark_gravity("iomark", "right")
             OutputWindow.write(self, s, tags, "iomark")

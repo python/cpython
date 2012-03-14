@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14200: Idle shell crash on printing non-BMP unicode character.
+
 - Issue #14291: Email now defaults to utf-8 for non-ASCII unicode headers
   instead of raising an error.  This fixes a regression relative to 2.7.
 
