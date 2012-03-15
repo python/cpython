@@ -33,6 +33,8 @@ fi
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
+AC_CANONICAL_HOST
+
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
 dnl can cause trouble.
