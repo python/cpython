@@ -14022,49 +14022,6 @@ $as_echo "#define HAVE_BROKEN_MBSTOWCS 1" >>confdefs.h
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports computed gotos" >&5
-$as_echo_n "checking whether $CC supports computed gotos... " >&6; }
-if ${ac_cv_computed_gotos+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  ac_cv_computed_gotos=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int main(int argc, char **argv)
-{
-    static void *targets[1] = { &&LABEL1 };
-    goto LABEL2;
-LABEL1:
-    return 0;
-LABEL2:
-    goto *targets[0];
-    return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_computed_gotos=yes
-else
-  ac_cv_computed_gotos=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_computed_gotos" >&5
-$as_echo "$ac_cv_computed_gotos" >&6; }
-if test "$ac_cv_computed_gotos" = yes
-then
-
-$as_echo "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
-
-fi
-
 # Check for --with-computed-gotos
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-computed-gotos" >&5
 $as_echo_n "checking for --with-computed-gotos... " >&6; }
@@ -14094,6 +14051,52 @@ else
 $as_echo "no value specified" >&6; }
 fi
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports computed gotos" >&5
+$as_echo_n "checking whether $CC supports computed gotos... " >&6; }
+if ${ac_cv_computed_gotos+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  if test "${with_computed_gotos+set}" = set; then
+   ac_cv_computed_gotos="$with_computed_gotos -- configured --with(out)-computed-gotos"
+ else
+   ac_cv_computed_gotos=no
+ fi
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main(int argc, char **argv)
+{
+    static void *targets[1] = { &&LABEL1 };
+    goto LABEL2;
+LABEL1:
+    return 0;
+LABEL2:
+    goto *targets[0];
+    return 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_computed_gotos=yes
+else
+  ac_cv_computed_gotos=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_computed_gotos" >&5
+$as_echo "$ac_cv_computed_gotos" >&6; }
+case "$ac_cv_computed_gotos" in yes*)
+
+$as_echo "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
+
+esac
 
 case $ac_sys_system in
 AIX*)
