@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11199: Fix the with urllib which hangs on particular ftp urls.
+
 - Issue #14062: Header objects now correctly respect the 'linesep' setting
   when processed by BytesParser (which smtplib.SMTP.send_message uses).
 
