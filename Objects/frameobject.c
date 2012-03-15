@@ -444,7 +444,6 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_exc_type);
     Py_CLEAR(f->f_exc_value);
     Py_CLEAR(f->f_exc_traceback);
-    Py_CLEAR(f->f_yieldfrom);
 
     co = f->f_code;
     if (co->co_zombieframe == NULL)
@@ -476,7 +475,6 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_exc_type);
     Py_VISIT(f->f_exc_value);
     Py_VISIT(f->f_exc_traceback);
-    Py_VISIT(f->f_yieldfrom);
 
     /* locals */
     slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
@@ -510,7 +508,6 @@ frame_clear(PyFrameObject *f)
     Py_CLEAR(f->f_exc_value);
     Py_CLEAR(f->f_exc_traceback);
     Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_yieldfrom);
 
     /* locals */
     slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
@@ -714,7 +711,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     f->f_lasti = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
-    f->f_yieldfrom = NULL;
 
     _PyObject_GC_TRACK(f);
     return f;

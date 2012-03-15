@@ -10,7 +10,7 @@ see <http://www.cosc.canterbury.ac.nz/greg.ewing/python/yield-from/YieldFrom-Pyt
 import unittest
 import io
 import sys
-import traceback
+import inspect
 import parser
 
 from test.support import captured_stderr
@@ -918,6 +918,27 @@ class TestPEP380Operation(unittest.TestCase):
         g1 = one()
         next(g1)
         g1.close()
+
+    def test_delegator_is_visible_to_debugger(self):
+        def call_stack():
+            return [f[3] for f in inspect.stack()]
+
+        def gen():
+            yield call_stack()
+            yield call_stack()
+            yield call_stack()
+
+        def spam(g):
+            yield from g
+
+        def eggs(g):
+            yield from g
+
+        for stack in spam(gen()):
+            self.assertTrue('spam' in stack)
+
+        for stack in spam(eggs(gen())):
+            self.assertTrue('spam' in stack and 'eggs' in stack)
 
 
 def test_main():
