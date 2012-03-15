@@ -13805,7 +13805,36 @@ $as_echo_n "checking for %lld and %llu printf() format support... " >&6; }
   $as_echo_n "(cached) " >&6
 else
   if test "$cross_compiling" = yes; then :
-  ac_cv_have_long_long_format=no
+  ac_cv_have_long_long_format="cross -- assuming no"
+   if test x$GCC = xyes; then
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -Werror -Wformat"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include <stdio.h>
+        #include <stddef.h>
+
+int
+main ()
+{
+
+      char *buffer;
+      sprintf(buffer, "%lld", (long long)123);
+      sprintf(buffer, "%lld", (long long)-123);
+      sprintf(buffer, "%llu", (unsigned long long)123);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_have_long_long_format=yes
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$save_CFLAGS
+   fi
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */

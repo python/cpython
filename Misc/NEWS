@@ -111,6 +111,8 @@ Build
 
 - Issue #14321: Do not run pgen during the build if files are up to date.
 
+- Issue #14324: Fix configure tests for cross builds.
+
 Extension Modules
 -----------------
 
