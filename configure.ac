@@ -292,6 +292,25 @@ AC_SUBST(MACHDEP)
 AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
+    # avoid using uname for cross builds
+    if test "$cross_compiling" = yes; then
+       # ac_sys_system and ac_sys_release are only used for setting
+       # `define_xopen_source' in the case statement below. For the
+       # current supported cross builds, this macro is not adjusted.
+	case "$host" in
+	*-*-linux*)
+		ac_sys_system=Linux
+		;;
+	*-*-cygwin*)
+		ac_sys_system=Cygwin
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		AC_MSG_ERROR([cross build not supported for $host])
+	esac
+	ac_sys_release=
+    else
 	ac_sys_system=`uname -s`
 	if test "$ac_sys_system" = "AIX" \
 	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
@@ -299,19 +318,20 @@ then
 	else
 		ac_sys_release=`uname -r`
 	fi
-	ac_md_system=`echo $ac_sys_system |
-			   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
-	ac_md_release=`echo $ac_sys_release |
-			   tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
-	MACHDEP="$ac_md_system$ac_md_release"
+    fi
+    ac_md_system=`echo $ac_sys_system |
+			tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
+    ac_md_release=`echo $ac_sys_release |
+			tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
+    MACHDEP="$ac_md_system$ac_md_release"
 
-	case $MACHDEP in
+    case $MACHDEP in
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
         irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
-	esac
+    esac
 fi
 	
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -438,10 +458,6 @@ AC_SUBST(CONFIGURE_MACOSX_DEPLOYMENT_TARGET)
 AC_SUBST(EXPORT_MACOSX_DEPLOYMENT_TARGET)
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
-
-AC_MSG_CHECKING(machine type as reported by uname -m)
-ac_sys_machine=`uname -m`
-AC_MSG_RESULT($ac_sys_machine)
 
 # checks for alternative programs
 
@@ -1010,7 +1026,7 @@ yes)
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
-    case $ac_sys_machine in
+    case $host in
          alpha*)
                 BASECFLAGS="$BASECFLAGS -mieee"
                 ;;
