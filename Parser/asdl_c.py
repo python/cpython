@@ -608,6 +608,12 @@ typedef struct {
     PyObject *dict;
 } AST_object;
 
+static void
+ast_dealloc(AST_object *self)
+{
+    Py_CLEAR(self->dict);
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -696,7 +702,7 @@ static PyTypeObject AST_type = {
     "_ast.AST",
     sizeof(AST_object),
     0,
-    0,                       /* tp_dealloc */
+    (destructor)ast_dealloc, /* tp_dealloc */
     0,                       /* tp_print */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
