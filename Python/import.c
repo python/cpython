@@ -104,8 +104,8 @@ typedef unsigned short mode_t;
        Python 3.2a2  3180 (add DELETE_DEREF)
        Python 3.3a0  3190 __class__ super closure changed
        Python 3.3a0  3200 (__qualname__ added)
-       Python 3.3a1  3210 (added size modulo 2**32 to the pyc header)
-                     3220 (changed PEP 380 implementation)
+                     3210 (added size modulo 2**32 to the pyc header)
+       Python 3.3a1  3220 (changed PEP 380 implementation)
 */
 
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
