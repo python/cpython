@@ -892,6 +892,8 @@ XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser,
                 unsigned long hash_salt);
 
+#define XML_HAS_SET_HASH_SALT  /* Python Only: Defined for pyexpat.c. */
+
 /* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
    XML_GetErrorCode returns information about the error.
 */
