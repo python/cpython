@@ -29,7 +29,7 @@ script to disable certain options.  Search for a line that looks like:
 
 If your version is not in that list, e.g., 3.9, add the version
 number.  In this case, you would just need to add a 9 after the 8.
-If you modify configure.in, you will need to regenerate configure
+If you modify configure.ac, you will need to regenerate configure
 with autoconf.
 
 If your version is already in the list, this is not a known problem.
