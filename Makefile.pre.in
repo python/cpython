@@ -58,6 +58,8 @@ INSTALL_DATA=	@INSTALL_DATA@
 # Also, making them read-only seems to be a good idea...
 INSTALL_SHARED= ${INSTALL} -m 555
 
+MKDIR_P=	@MKDIR_P@
+
 MAKESETUP=      $(srcdir)/Modules/makesetup
 
 # Compiler options
@@ -233,6 +235,18 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 # Parser
 PGEN=		Parser/pgen$(EXE)
 
+PSRCS=		\
+		Parser/acceler.c \
+		Parser/grammar1.c \
+		Parser/listnode.c \
+		Parser/node.c \
+		Parser/parser.c \
+		Parser/bitset.c \
+		Parser/metagrammar.c \
+		Parser/firstsets.c \
+		Parser/grammar.c \
+		Parser/pgen.c
+
 POBJS=		\
 		Parser/acceler.o \
 		Parser/grammar1.o \
@@ -246,6 +260,16 @@ POBJS=		\
 		Parser/pgen.o
 
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
+
+PGSRCS=		\
+		Objects/obmalloc.c \
+		Python/dynamic_annotations.c \
+		Python/mysnprintf.c \
+		Python/pyctype.c \
+		Parser/tokenizer_pgen.c \
+		Parser/printgrammar.c \
+		Parser/parsetok_pgen.c \
+		Parser/pgenmain.c
 
 PGOBJS=		\
 		Objects/obmalloc.o \
@@ -262,7 +286,8 @@ PARSER_HEADERS= \
 		$(srcdir)/Include/parsetok.h \
 		$(srcdir)/Parser/tokenizer.h
 
-PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
+PGENSRCS=	$(PSRCS) $(PGSRCS)
+PGENOBJS=	$(POBJS) $(PGOBJS)
 
 ##########################################################################
 # AST
@@ -591,12 +616,13 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 
 $(IO_OBJS): $(IO_H)
 
-# Use a stamp file to prevent make -j invoking pgen twice
-$(GRAMMAR_H) $(GRAMMAR_C): Parser/pgen.stamp
-Parser/pgen.stamp: $(PGEN) $(GRAMMAR_INPUT)
-		-@$(INSTALL) -d Include
+$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGENSRCS)
+		@$(MKDIR_P) Include
+		$(MAKE) $(PGEN)
 		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
-		-touch Parser/pgen.stamp
+$(GRAMMAR_C): $(GRAMMAR_H) $(GRAMMAR_INPUT) $(PGENSRCS)
+		$(MAKE) $(GRAMMAR_H)
+		touch $(GRAMMAR_C)
 
 $(PGEN):	$(PGENOBJS)
 		$(CC) $(OPT) $(PY_LDFLAGS) $(PGENOBJS) $(LIBS) -o $(PGEN)
