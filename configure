@@ -10854,7 +10854,12 @@ $as_echo_n "checking getaddrinfo bug... " >&6; }
   $as_echo_n "(cached) " >&6
 else
   if test "$cross_compiling" = yes; then :
+
+if test "${enable_ipv6+set}" = set; then
+  ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
+else
   ac_cv_buggy_getaddrinfo=yes
+fi
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
