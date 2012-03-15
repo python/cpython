@@ -115,6 +115,7 @@ library. ::
               'language' : 'Python' }
 
     data = urllib.parse.urlencode(values)
+    data = data.encode('utf-8') # data should be bytes
     req = urllib.request.Request(url, data)
     response = urllib.request.urlopen(req)
     the_page = response.read()
@@ -179,7 +180,8 @@ Explorer [#]_. ::
               'language' : 'Python' }
     headers = { 'User-Agent' : user_agent }
 
-    data = urllib.parse.urlencode(values)
+    data  = urllib.parse.urlencode(values)
+    data = data.encode('utf-8')
     req = urllib.request.Request(url, data, headers)
     response = urllib.request.urlopen(req)
     the_page = response.read()
