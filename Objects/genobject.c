@@ -53,7 +53,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
                         "generator already executing");
         return NULL;
     }
-    if (f==NULL || f->f_stacktop == NULL) {
+    if (f == NULL || f->f_stacktop == NULL) {
         /* Only set exception if called from send() */
         if (arg && !exc)
             PyErr_SetNone(PyExc_StopIteration);
