@@ -452,8 +452,8 @@ The module defines the following functions and data items:
 
 .. function:: time()
 
-   Return the time as a floating point number expressed in seconds since the epoch,
-   in UTC.  Note that even though the time is always returned as a floating point
+   Return the time in seconds since the epoch as a floating point number.
+   Note that even though the time is always returned as a floating point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back between
