@@ -936,8 +936,9 @@ class SMTPHandlerTest(BaseTest):
         r = logging.makeLogRecord({'msg': 'Hello'})
         self.handled = threading.Event()
         h.handle(r)
-        self.handled.wait()
+        self.handled.wait(5.0)  # 14314: don't wait forever
         server.stop()
+        self.assertTrue(self.handled.is_set())
         self.assertEqual(len(self.messages), 1)
         peer, mailfrom, rcpttos, data = self.messages[0]
         self.assertEqual(mailfrom, 'me')
