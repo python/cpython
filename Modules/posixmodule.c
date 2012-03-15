@@ -107,6 +107,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sched.h>
 #endif
 
+#if defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
+#undef HAVE_SCHED_SETAFFINITY
+#endif
+
 #if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__)
 #define USE_XATTRS
 #endif
