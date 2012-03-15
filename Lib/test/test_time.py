@@ -340,6 +340,16 @@ class TimeTestCase(unittest.TestCase):
         self.assertGreater(t2, t1)
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
+    def test_steady_strict(self):
+        try:
+            t1 = time.steady(strict=True)
+        except OSError as err:
+            self.skipTest("the monotonic clock failed: %s" % err)
+        except NotImplementedError:
+            self.skipTest("no monotonic clock available")
+        t2 = time.steady(strict=True)
+        self.assertGreaterEqual(t2, t1)
+
     def test_localtime_failure(self):
         # Issue #13847: check for localtime() failure
         invalid_time_t = None

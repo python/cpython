@@ -226,7 +226,7 @@ The module defines the following functions and data items:
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: steady()
+.. function:: steady(strict=False)
 
    .. index::
       single: benchmarking
@@ -235,6 +235,11 @@ The module defines the following functions and data items:
    This clock advances at a steady rate relative to real time and it may not be
    adjusted. The reference point of the returned value is undefined so only the
    difference of consecutive calls is valid.
+
+   If available, a monotonic clock is used. By default, if *strict* is False,
+   the function falls back to another clock if the monotonic clock failed or is
+   not available. If *strict* is True, raise an :exc:`OSError` on error or
+   :exc:`NotImplementedError` if no monotonic clock is available.
 
    .. versionadded:: 3.3
 

@@ -45,18 +45,12 @@
 
 /* Forward declarations */
 static int floatsleep(double);
-static double floattime(void);
+static PyObject* floattime(void);
 
 static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
-    double secs;
-    secs = floattime();
-    if (secs == 0.0) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        return NULL;
-    }
-    return PyFloat_FromDouble(secs);
+    return floattime();
 }
 
 PyDoc_STRVAR(time_doc,
@@ -768,11 +762,11 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
-static PyObject *
-time_steady(PyObject *self, PyObject *unused)
+static PyObject*
+steady_clock(int strict)
 {
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
-    return win32_clock(1);
+    return win32_clock(!strict);
 #elif defined(__APPLE__)
     uint64_t time = mach_absolute_time();
     double secs;
@@ -806,14 +800,37 @@ time_steady(PyObject *self, PyObject *unused)
         if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
             clk_index = -1;
     }
-    return time_time(self, NULL);
+    if (strict) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return floattime();
 #else
-    return time_time(self, NULL);
+    if (strict) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "no steady clock available on your platform");
+        return NULL;
+    }
+    return floattime();
 #endif
 }
 
+static PyObject *
+time_steady(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"strict", NULL};
+    int strict = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, "|i:steady", kwlist,
+            &strict))
+        return NULL;
+
+    return steady_clock(strict);
+}
+
 PyDoc_STRVAR(steady_doc,
-"steady() -> float\n\
+"steady(strict=False) -> float\n\
 \n\
 Return the current time as a floating point number expressed in seconds.\n\
 This clock advances at a steady rate relative to real time and it may not\n\
@@ -949,7 +966,8 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_MKTIME
     {"mktime",          time_mktime, METH_O, mktime_doc},
 #endif
-    {"steady",          time_steady, METH_NOARGS, steady_doc},
+    {"steady",          (PyCFunction)time_steady, METH_VARARGS|METH_KEYWORDS,
+                        steady_doc},
 #ifdef HAVE_STRFTIME
     {"strftime",        time_strftime, METH_VARARGS, strftime_doc},
 #endif
@@ -1041,12 +1059,18 @@ PyInit_time(void)
     return m;
 }
 
-static double
+static PyObject*
 floattime(void)
 {
     _PyTime_timeval t;
+    double secs;
     _PyTime_gettimeofday(&t);
-    return (double)t.tv_sec + t.tv_usec*0.000001;
+    secs = (double)t.tv_sec + t.tv_usec*0.000001;
+    if (secs == 0.0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyFloat_FromDouble(secs);
 }
 
 
