@@ -18,6 +18,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
+  table internal to the pyexpat module's copy of the expat library to avoid a
+  denial of service due to hash collisions.  Patch by David Malcolm with some
+  modifications by the expat project.
+
 - Issue #14001: CVE-2012-0845: xmlrpc: Fix an endless loop in
   SimpleXMLRPCServer upon malformed POST request.
 
