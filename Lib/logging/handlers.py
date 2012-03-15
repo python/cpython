@@ -867,7 +867,7 @@ class SMTPHandler(logging.Handler):
     A handler class which sends an SMTP email for each logging event.
     """
     def __init__(self, mailhost, fromaddr, toaddrs, subject,
-                 credentials=None, secure=None):
+                 credentials=None, secure=None, timeout=1.0):
         """
         Initialize the handler.
 
@@ -881,6 +881,8 @@ class SMTPHandler(logging.Handler):
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
         certificate file. (This tuple is passed to the `starttls` method).
+        A timeout in seconds can be specified for the SMTP connection (the
+        default is one second).
         """
         logging.Handler.__init__(self)
         if isinstance(mailhost, tuple):
@@ -897,6 +899,7 @@ class SMTPHandler(logging.Handler):
         self.toaddrs = toaddrs
         self.subject = subject
         self.secure = secure
+        self.timeout = timeout
 
     def getSubject(self, record):
         """
@@ -919,7 +922,7 @@ class SMTPHandler(logging.Handler):
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port)
+            smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
             msg = self.format(record)
             msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
                             self.fromaddr,
