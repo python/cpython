@@ -116,7 +116,7 @@ Build
 - Issue #14324: Fix configure tests for cross builds.
 
 - Issue #14327: Call AC_CANONICAL_HOST in configure.ac and check in
-  config.{guess,sub}.
+  config.{guess,sub}. Don't use uname calls for cross builds.
 
 Extension Modules
 -----------------
