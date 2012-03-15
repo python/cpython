@@ -27,7 +27,6 @@ typedef struct _frame {
        to the current stack top. */
     PyObject **f_stacktop;
     PyObject *f_trace;          /* Trace function */
-    PyObject *f_yieldfrom;      /* Iterator being delegated to by yield from */
 
         /* In a generator, we need to be able to swap between the exception
            state inside the generator and the exception state of the calling

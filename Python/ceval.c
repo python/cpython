@@ -1170,6 +1170,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
        f->f_lasti to -1 (i.e. the index *before* the first instruction)
        and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
        does work.  Promise.
+       YIELD_FROM sets f_lasti to itself, in order to repeated yield
+       multiple values.
 
        When the PREDICT() macros are enabled, some opcode pairs follow in
        direct succession without updating f->f_lasti.  A successful
@@ -1830,49 +1832,35 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(YIELD_FROM)
             u = POP();
-            x = PyObject_GetIter(u);
+            x = TOP();
+            /* send u to x */
+            if (PyGen_CheckExact(x)) {
+                retval = _PyGen_Send((PyGenObject *)x, u);
+            } else {
+                if (u == Py_None)
+                    retval = PyIter_Next(x);
+                else
+                    retval = PyObject_CallMethod(x, "send", "O", u);
+            }
             Py_DECREF(u);
-            if (x == NULL)
-                break;
-            /* x is now the iterator, make the first next() call */
-            retval = (*Py_TYPE(x)->tp_iternext)(x);
             if (!retval) {
-                PyObject *et, *ev, *tb;
-                /* iter may be exhausted */
-                Py_CLEAR(x);
-                if (PyErr_Occurred() &&
-                    !PyErr_ExceptionMatches(PyExc_StopIteration)) {
-                    /* some other exception */
+                PyObject *val;
+                x = POP(); /* Remove iter from stack */
+                Py_DECREF(x);
+                err = PyGen_FetchStopIterationValue(&val);
+                if (err < 0) {
+                    x = NULL;
                     break;
                 }
-                /* try to get return value from exception */
-                PyErr_Fetch(&et, &ev, &tb);
-                Py_XDECREF(et);
-                Py_XDECREF(tb);
-                /* u is return value */
-                u = NULL;
-                if (ev) {
-                    u = PyObject_GetAttrString(ev, "value");
-                    Py_DECREF(ev);
-                    if (u == NULL) {
-                        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                            /* some other exception */
-                            break;
-                        }
-                        PyErr_Clear();
-                    }
-                }
-                if (u == NULL) {
-                    u = Py_None;
-                    Py_INCREF(u);
-                }
-                PUSH(u);
+                x = val;
+                PUSH(x);
                 continue;
             }
-            /* x is iterator, retval is value to be yielded */
-            f->f_yieldfrom = x;
+            /* x remains on stack, retval is value to be yielded */
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
+            /* and repeat... */
+            f->f_lasti--;
             goto fast_yield;
 
         TARGET(YIELD_VALUE)
