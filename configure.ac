@@ -4239,30 +4239,6 @@ then
    wide chars that would be converted.])
 fi
 
-AC_MSG_CHECKING(whether $CC supports computed gotos)
-AC_CACHE_VAL(ac_cv_computed_gotos,
-AC_RUN_IFELSE([AC_LANG_SOURCE([[[
-int main(int argc, char **argv)
-{
-    static void *targets[1] = { &&LABEL1 };
-    goto LABEL2;
-LABEL1:
-    return 0;
-LABEL2:
-    goto *targets[0];
-    return 1;
-}
-]]])],
-[ac_cv_computed_gotos=yes],
-[ac_cv_computed_gotos=no],
-[ac_cv_computed_gotos=no]))
-AC_MSG_RESULT($ac_cv_computed_gotos)
-if test "$ac_cv_computed_gotos" = yes
-then
-  AC_DEFINE(HAVE_COMPUTED_GOTOS, 1,
-  [Define if the C compiler supports computed gotos.])
-fi
-
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
@@ -4283,6 +4259,33 @@ then
 fi
 ],
 [AC_MSG_RESULT(no value specified)])
+
+AC_MSG_CHECKING(whether $CC supports computed gotos)
+AC_CACHE_VAL(ac_cv_computed_gotos,
+AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+int main(int argc, char **argv)
+{
+    static void *targets[1] = { &&LABEL1 };
+    goto LABEL2;
+LABEL1:
+    return 0;
+LABEL2:
+    goto *targets[0];
+    return 1;
+}
+]]])],
+[ac_cv_computed_gotos=yes],
+[ac_cv_computed_gotos=no],
+[if test "${with_computed_gotos+set}" = set; then
+   ac_cv_computed_gotos="$with_computed_gotos -- configured --with(out)-computed-gotos"
+ else
+   ac_cv_computed_gotos=no
+ fi]))
+AC_MSG_RESULT($ac_cv_computed_gotos)
+case "$ac_cv_computed_gotos" in yes*)
+  AC_DEFINE(HAVE_COMPUTED_GOTOS, 1,
+  [Define if the C compiler supports computed gotos.])
+esac
 
 case $ac_sys_system in
 AIX*)   
