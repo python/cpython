@@ -106,6 +106,11 @@ Library
 - Issue #14210: pdb now has tab-completion not only for command names, but
   also for their arguments, wherever possible.
 
+Build
+-----
+
+- Issue #14321: Do not run pgen during the build if files are up to date.
+
 Extension Modules
 -----------------
 
