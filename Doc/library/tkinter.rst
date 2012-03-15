@@ -179,35 +179,30 @@ A Simple Hello World Program
 
 ::
 
-   from tkinter import *
+    import tkinter as tk
 
-   class Application(Frame):
-       def say_hi(self):
-           print("hi there, everyone!")
+    class Application(tk.Frame):
+        def __init__(self, master=None):
+            tk.Frame.__init__(self, master)
+            self.pack()
+            self.createWidgets()
 
-       def createWidgets(self):
-           self.QUIT = Button(self)
-           self.QUIT["text"] = "QUIT"
-           self.QUIT["fg"] = "red"
-           self.QUIT["command"] = self.quit
+        def createWidgets(self):
+            self.hi_there = tk.Button(self)
+            self.hi_there["text"] = "Hello World\n(click me)"
+            self.hi_there["command"] = self.say_hi
+            self.hi_there.pack(side="top")
 
-           self.QUIT.pack({"side": "left"})
+            self.QUIT = tk.Button(self, text = "QUIT", fg = "red",
+                                                command = root.destroy)
+            self.QUIT.pack(side = "bottom")
 
-           self.hi_there = Button(self)
-           self.hi_there["text"] = "Hello",
-           self.hi_there["command"] = self.say_hi
+        def say_hi(self):
+            print("hi there, everyone!")
 
-           self.hi_there.pack({"side": "left"})
-
-       def __init__(self, master=None):
-           Frame.__init__(self, master)
-           self.pack()
-           self.createWidgets()
-
-   root = Tk()
-   app = Application(master=root)
-   app.mainloop()
-   root.destroy()
+    root = tk.Tk()
+    app = Application(master=root)
+    app.mainloop()
 
 
 A (Very) Quick Look at Tcl/Tk
