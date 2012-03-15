@@ -138,14 +138,13 @@ The following classes are provided:
 
    *url* should be a string containing a valid URL.
 
-   *data* may be a string specifying additional data to send to the
-   server, or ``None`` if no such data is needed.  Currently HTTP
-   requests are the only ones that use *data*, in order to choose between
-   ``'GET'`` and ``'POST'`` when *method* is not specified.
-   *data* should be a buffer in the standard
-   :mimetype:`application/x-www-form-urlencoded` format.  The
-   :func:`urllib.parse.urlencode` function takes a mapping or sequence
-   of 2-tuples and returns a string in this format.
+   *data* may be a bytes object specifying additional data to send to the
+   server, or ``None`` if no such data is needed.  Currently HTTP requests are
+   the only ones that use *data*; the HTTP request will be a POST instead of a
+   GET when the *data* parameter is provided.  *data* should be a buffer in the
+   standard :mimetype:`application/x-www-form-urlencoded` format.  The
+   :func:`urllib.parse.urlencode` function takes a mapping or sequence of
+   2-tuples and returns a string in this format.
 
    *headers* should be a dictionary, and will be treated as if
    :meth:`add_header` was called with each key and value as arguments.
@@ -1183,7 +1182,7 @@ some point in the future.
 
    If the *url* uses the :file:`http:` scheme identifier, the optional *data*
    argument may be given to specify a ``POST`` request (normally the request
-   type is ``GET``).  The *data* argument must in standard
+   type is ``GET``).  The *data* argument must be a bytes object in standard
    :mimetype:`application/x-www-form-urlencoded` format; see the
    :func:`urlencode` function below.
 
