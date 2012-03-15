@@ -61,11 +61,11 @@ class addclosehook(addbase):
         self.hookargs = hookargs
 
     def close(self):
-        addbase.close(self)
         if self.closehook:
             self.closehook(*self.hookargs)
             self.closehook = None
             self.hookargs = None
+        addbase.close(self)
 
 class addinfo(addbase):
     """class to add an info() method to an open file."""
