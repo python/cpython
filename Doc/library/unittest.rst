@@ -1175,21 +1175,6 @@ Test cases
          :meth:`.assertNotRegex`.
 
 
-   .. method:: assertDictContainsSubset(subset, dictionary, msg=None)
-
-      Tests whether the key/value pairs in *dictionary* are a superset of
-      those in *subset*.  If not, an error message listing the missing keys
-      and mismatched values is generated.
-
-      Note, the arguments are in the opposite order of what the method name
-      dictates.  Instead, consider using the set-methods on :ref:`dictionary
-      views <dict-views>`, for example: ``d.keys() <= e.keys()`` or
-      ``d.items() <= d.items()``.
-
-      .. versionadded:: 3.1
-      .. deprecated:: 3.2
-
-
    .. method:: assertCountEqual(first, second, msg=None)
 
       Test that sequence *first* contains the same elements as *second*,
@@ -1203,21 +1188,6 @@ Test cases
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
-
-   .. method:: assertSameElements(first, second, msg=None)
-
-      Test that sequence *first* contains the same elements as *second*,
-      regardless of their order. When they don't, an error message listing
-      the differences between the sequences will be generated.
-
-      Duplicate elements are ignored when comparing *first* and *second*.
-      It is the equivalent of ``assertEqual(set(first), set(second))``
-      but it works with sequences of unhashable objects as well. Because
-      duplicates are ignored, this method has been deprecated in favour of
-      :meth:`assertCountEqual`.
-
-      .. versionadded:: 3.1
-      .. deprecated:: 3.2
 
 
    .. _type-specific-methods:
