@@ -6,7 +6,6 @@
 #include "opcode.h"
 
 static PyObject *gen_close(PyGenObject *gen, PyObject *args);
-static void gen_undelegate(PyGenObject *gen);
 
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
@@ -41,15 +40,6 @@ gen_dealloc(PyGenObject *gen)
     PyObject_GC_Del(gen);
 }
 
-static int
-gen_running(PyGenObject *gen)
-{
-    if (gen->gi_running) {
-        PyErr_SetString(PyExc_ValueError, "generator already executing");
-        return 1;
-    }
-    return 0;
-}
 
 static PyObject *
 gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
@@ -58,7 +48,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
 
-    assert(!gen->gi_running);
+    if (gen->gi_running) {
+        PyErr_SetString(PyExc_ValueError,
+                        "generator already executing");
+        return NULL;
+    }
     if (f==NULL || f->f_stacktop == NULL) {
         /* Only set exception if called from send() */
         if (arg && !exc)
@@ -136,45 +130,10 @@ PyDoc_STRVAR(send_doc,
 "send(arg) -> send 'arg' into generator,\n\
 return next yielded value or raise StopIteration.");
 
-static PyObject *
-gen_send(PyGenObject *gen, PyObject *arg)
+PyObject *
+_PyGen_Send(PyGenObject *gen, PyObject *arg)
 {
-    int exc = 0;
-    PyObject *ret;
-    PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
-    if (gen_running(gen))
-        return NULL;
-    /* XXX (ncoghlan): Are the incref/decref on arg and yf strictly needed?
-     *                 Or would it be valid to rely on borrowed references?
-     */
-    Py_INCREF(arg);
-    if (yf) {
-        Py_INCREF(yf);
-        gen->gi_running = 1;
-        if (PyGen_CheckExact(yf)) {
-            ret = gen_send((PyGenObject *)yf, arg);
-        } else {
-            if (arg == Py_None)
-                ret = PyIter_Next(yf);
-            else
-                ret = PyObject_CallMethod(yf, "send", "O", arg);
-        }
-        gen->gi_running = 0;
-        if (ret) {
-            Py_DECREF(yf);
-            goto done;
-        }
-        gen_undelegate(gen);
-        Py_CLEAR(arg);
-        if (PyGen_FetchStopIterationValue(&arg) < 0) {
-            exc = 1;
-        }
-        Py_DECREF(yf);
-    }
-    ret = gen_send_ex(gen, arg, exc);
-done:
-    Py_XDECREF(arg);
-    return ret;
+    return gen_send_ex(gen, arg, 0);
 }
 
 PyDoc_STRVAR(close_doc,
@@ -186,49 +145,61 @@ PyDoc_STRVAR(close_doc,
  */
 
 static int
-gen_close_iter(PyGenObject *gen, PyObject *yf)
+gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
-    int err = 0;
-    
+
     if (PyGen_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
-        if (!retval)
-            err = -1;
+        if (retval == NULL)
+            return -1;
     } else {
-        PyObject *meth;
-        gen->gi_running = 1;
-        meth = PyObject_GetAttrString(yf, "close");
+        PyObject *meth = PyObject_GetAttrString(yf, "close");
         if (meth == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_WriteUnraisable(yf);
-            }
             PyErr_Clear();
         } else {
             retval = PyObject_CallFunction(meth, "");
             Py_DECREF(meth);
-            if (!retval)
-                err = -1;
+            if (retval == NULL)
+                return -1;
         }
-        gen->gi_running = 0;
     }
     Py_XDECREF(retval);
-    return err;
-}       
+    return 0;
+}
+
+static PyObject *
+gen_yf(PyGenObject *gen)
+{
+    PyObject *yf = NULL;
+    PyFrameObject *f = gen->gi_frame;
+
+    if (f) {
+        PyObject *bytecode = f->f_code->co_code;
+        unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+
+        if (code[f->f_lasti + 1] != YIELD_FROM)
+            return NULL;
+        yf = f->f_stacktop[-1];
+        Py_INCREF(yf);
+    }
+
+    return yf;
+}
 
 static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
-    PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
+    PyObject *yf = gen_yf(gen);
     int err = 0;
 
-    if (gen_running(gen))
-        return NULL;
     if (yf) {
-        Py_INCREF(yf);
-        err = gen_close_iter(gen, yf);
-        gen_undelegate(gen);
+        gen->gi_running = 1;
+        err = gen_close_iter(yf);
+        gen->gi_running = 0;
         Py_DECREF(yf);
     }
     if (err == 0)
@@ -241,8 +212,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         return NULL;
     }
     if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit))
-    {
+        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
         PyErr_Clear();          /* ignore these errors */
         Py_INCREF(Py_None);
         return Py_None;
@@ -323,29 +293,27 @@ gen_throw(PyGenObject *gen, PyObject *args)
     PyObject *typ;
     PyObject *tb = NULL;
     PyObject *val = NULL;
-    PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
+    PyObject *yf = gen_yf(gen);
 
     if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
-        return NULL;
-
-    if (gen_running(gen))
         return NULL;
 
     if (yf) {
         PyObject *ret;
         int err;
-        Py_INCREF(yf);
         if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
-            err = gen_close_iter(gen, yf);
+            gen->gi_running = 1;
+            err = gen_close_iter(yf);
+            gen->gi_running = 0;
             Py_DECREF(yf);
-            gen_undelegate(gen);
             if (err < 0)
                 return gen_send_ex(gen, Py_None, 1);
             goto throw_here;
         }
-        gen->gi_running = 1;
         if (PyGen_CheckExact(yf)) {
+            gen->gi_running = 1;
             ret = gen_throw((PyGenObject *)yf, args);
+            gen->gi_running = 0;
         } else {
             PyObject *meth = PyObject_GetAttrString(yf, "throw");
             if (meth == NULL) {
@@ -355,18 +323,22 @@ gen_throw(PyGenObject *gen, PyObject *args)
                 }
                 PyErr_Clear();
                 Py_DECREF(yf);
-                gen_undelegate(gen);
-                gen->gi_running = 0;
                 goto throw_here;
             }
+            gen->gi_running = 1;
             ret = PyObject_CallObject(meth, args);
+            gen->gi_running = 0;
             Py_DECREF(meth);
         }
-        gen->gi_running = 0;
         Py_DECREF(yf);
         if (!ret) {
             PyObject *val;
-            gen_undelegate(gen);
+            /* Pop subiterator from stack */
+            ret = *(--gen->gi_frame->f_stacktop);
+            assert(ret == yf);
+            Py_DECREF(ret);
+            /* Termination repetition of YIELD_FROM */
+            gen->gi_frame->f_lasti++;
             if (PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send_ex(gen, val, 0);
                 Py_DECREF(val);
@@ -441,42 +413,9 @@ gen_iternext(PyGenObject *gen)
 {
     PyObject *val = NULL;
     PyObject *ret;
-    int exc = 0;
-    PyObject *yf = gen->gi_frame ? gen->gi_frame->f_yieldfrom : NULL;
-    if (gen_running(gen))
-        return NULL;
-    if (yf) {
-        Py_INCREF(yf);
-        /* ceval.c ensures that yf is an iterator */
-        gen->gi_running = 1;
-        ret = Py_TYPE(yf)->tp_iternext(yf);
-        gen->gi_running = 0;
-        if (ret) {
-            Py_DECREF(yf);
-            return ret;
-        }
-        gen_undelegate(gen);
-        if (PyGen_FetchStopIterationValue(&val) < 0)
-            exc = 1;
-        Py_DECREF(yf);
-    }
-    ret = gen_send_ex(gen, val, exc);
+    ret = gen_send_ex(gen, val, 0);
     Py_XDECREF(val);
     return ret;
-}
-
-/*
- *   In certain recursive situations, a generator may lose its frame
- *   before we get a chance to clear f_yieldfrom, so we use this
- *   helper function.
- */
-
-static void
-gen_undelegate(PyGenObject *gen) {
-    if (gen->gi_frame) {
-        Py_XDECREF(gen->gi_frame->f_yieldfrom);
-        gen->gi_frame->f_yieldfrom = NULL;
-    }
 }
 
 /*
@@ -492,7 +431,7 @@ int
 PyGen_FetchStopIterationValue(PyObject **pvalue) {
     PyObject *et, *ev, *tb;
     PyObject *value = NULL;
-    
+
     if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
         PyErr_Fetch(&et, &ev, &tb);
         Py_XDECREF(et);
@@ -548,7 +487,7 @@ static PyMemberDef gen_memberlist[] = {
 };
 
 static PyMethodDef gen_methods[] = {
-    {"send",(PyCFunction)gen_send, METH_O, send_doc},
+    {"send",(PyCFunction)_PyGen_Send, METH_O, send_doc},
     {"throw",(PyCFunction)gen_throw, METH_VARARGS, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
