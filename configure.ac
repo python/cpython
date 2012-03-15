@@ -4128,7 +4128,23 @@ then
   ]]])],
   [ac_cv_have_long_long_format=yes],
   [ac_cv_have_long_long_format=no],
-  [ac_cv_have_long_long_format=no])
+  [ac_cv_have_long_long_format="cross -- assuming no"
+   if test x$GCC = xyes; then
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -Werror -Wformat"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #include <stdio.h>
+        #include <stddef.h>
+      ]], [[
+      char *buffer;
+      sprintf(buffer, "%lld", (long long)123);
+      sprintf(buffer, "%lld", (long long)-123);
+      sprintf(buffer, "%llu", (unsigned long long)123);
+      ]])],
+      ac_cv_have_long_long_format=yes
+    )
+    CFLAGS=$save_CFLAGS
+   fi])
   )
   AC_MSG_RESULT($ac_cv_have_long_long_format)
 fi
