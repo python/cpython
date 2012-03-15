@@ -7,11 +7,19 @@ What's New in Python 3.2.3?
 
 *Release date: XX-XXX-2012*
 
-Core and Builtins
------------------
+
+What's New in Python 3.2.3 release candidate 2?
+===============================================
+
+*Release date: XX-Mar-2012*
 
 Library
 -------
+
+- Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
+  table internal to the pyexpat module's copy of the expat library to avoid a
+  denial of service due to hash collisions.  Patch by David Malcolm with some
+  modifications by the expat project.
 
 - Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
   on Windows.
