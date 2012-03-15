@@ -2,6 +2,20 @@
 Python News
 +++++++++++
 
+What's New in Python 2.6.8 rc 2?
+================================
+
+*Release date: 2012-XX-XX*
+
+Library
+-------
+
+- Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
+  table internal to the pyexpat module's copy of the expat library to avoid a
+  denial of service due to hash collisions.  Patch by David Malcolm with some
+  modifications by the expat project.
+
+
 What's New in Python 2.6.8 rc 1?
 ================================
 
@@ -10,10 +24,11 @@ What's New in Python 2.6.8 rc 1?
 Core and Builtins
 -----------------
 
-- Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
-  environment variable, to provide an opt-in way to protect against denial of
-  service attacks due to hash collisions within the dict and set types.  Patch
-  by David Malcolm, based on work by Victor Stinner.
+- Issue #13703: oCERT-2011-003 CVE-2012-1150: add -R command-line
+  option and PYTHONHASHSEED environment variable, to provide an opt-in
+  way to protect against denial of service attacks due to hash
+  collisions within the dict and set types.  Patch by David Malcolm,
+  based on work by Victor Stinner.
 
 Library
 -------
