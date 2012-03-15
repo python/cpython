@@ -3009,7 +3009,12 @@ int main()
 ]]])],
 [ac_cv_buggy_getaddrinfo=no],
 [ac_cv_buggy_getaddrinfo=yes],
-[ac_cv_buggy_getaddrinfo=yes]))
+[
+if test "${enable_ipv6+set}" = set; then
+  ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
+else
+  ac_cv_buggy_getaddrinfo=yes
+fi]))
 fi
 
 AC_MSG_RESULT($ac_cv_buggy_getaddrinfo)
