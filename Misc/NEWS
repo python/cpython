@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14222: Use the new time.steady() function instead of time.time() for
+  timeout in queue and threading modules to not be affected of system time
+  update.
+
 - Issue #13248: Remove lib2to3.pytree.Base.get_prefix/set_prefix.
 
 - Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
