@@ -109,7 +109,8 @@ Scheduler Objects
    on until there are no more scheduled events.
 
    If *blocking* is False executes the scheduled events due to expire soonest
-   (if any) and then return.
+   (if any) and then return the deadline of the next scheduled call in the
+   scheduler (if any).
 
    Either *action* or *delayfunc* can raise an exception.  In either case, the
    scheduler will maintain a consistent state and propagate the exception.  If an
