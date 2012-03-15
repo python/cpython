@@ -3,7 +3,7 @@
 import sys as _sys
 import _thread
 
-from time import time as _time, sleep as _sleep
+from time import steady as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
 
