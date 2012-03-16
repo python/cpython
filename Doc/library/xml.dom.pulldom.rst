@@ -44,11 +44,12 @@ Example::
 
 Since the document is treated as a "flat" stream of events, the document "tree"
 is implicitly traversed and the desired elements are found regardless of their
-depth in the tree. In other words, one does not need to consider hierarchical issues
-such as recursive searching of the document nodes, although if the context of
-elements were important, one would either need to maintain some context-related
-state (ie. remembering where one is in the document at any given point) or to
-make use of the :func:`DOMEventStream.expandNode` method and switch to DOM-related processing.
+depth in the tree. In other words, one does not need to consider hierarchical
+issues such as recursive searching of the document nodes, although if the
+context of elements were important, one would either need to maintain some
+context-related state (i.e. remembering where one is in the document at any
+given point) or to make use of the :func:`DOMEventStream.expandNode` method
+and switch to DOM-related processing.
 
 
 .. class:: PullDom(documentFactory=None)
@@ -71,11 +72,9 @@ make use of the :func:`DOMEventStream.expandNode` method and switch to DOM-relat
 
 If you have XML in a string, you can use the :func:`parseString` function instead:
 
-
 .. function:: parseString(string, parser=None)
 
-   Return a :class:`DOMEventStream` that represents the (unicode) *string*.
-
+   Return a :class:`DOMEventStream` that represents the (Unicode) *string*.
 
 .. data:: default_bufsize
 
@@ -83,7 +82,6 @@ If you have XML in a string, you can use the :func:`parseString` function instea
 
    The value of this variable can be changed before calling :func:`parse` and
    the new value will take effect.
-
 
 .. _domeventstream-objects:
 
@@ -93,16 +91,17 @@ DOMEventStream Objects
 .. class:: DOMEventStream(stream, parser, bufsize)
 
 
-   .. method:: DOMEventStream.getEvent()
+   .. method:: getEvent()
 
       Return a tuple containing *event* and the current *node* as
-      :class:`xml.dom.minidom.Document` if event equals START_DOCUMENT,
-      :class:`xml.dom.minidom.Element` if event equals START_ELEMENT or
-      END_ELEMENT or :class:`xml.dom.minidom.Text` if event equals CHARACTERS.
+      :class:`xml.dom.minidom.Document` if event equals :data:`START_DOCUMENT`,
+      :class:`xml.dom.minidom.Element` if event equals :data:`START_ELEMENT` or
+      :data:`END_ELEMENT` or :class:`xml.dom.minidom.Text` if event equals
+      :data:`CHARACTERS`.
       The current node does not contain informations about its children, unless
       :func:`expandNode` is called.
 
-   .. method:: DOMEventStream.expandNode(node)
+   .. method:: expandNode(node)
 
       Expands all children of *node* into *node*. Example::
 
