@@ -156,6 +156,7 @@ def lru_cache(maxsize=100, typed=False):
         lock = Lock()                   # needed because linkedlist isn't threadsafe
         root = []                       # root of circular doubly linked list
         root[:] = [root, root, None, None]      # initialize by pointing to self
+        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3    # names of link fields
 
         if maxsize is None:
             @wraps(user_function)
@@ -191,8 +192,6 @@ def lru_cache(maxsize=100, typed=False):
                     key += tuple(map(type, args))
                     if kwds:
                         key += tuple(type(v) for k, v in sorted_items)
-                PREV = 0                        # names of link fields
-                NEXT = 1
                 with lock:
                     link = cache_get(key)
                     if link is not None:
