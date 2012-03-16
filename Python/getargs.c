@@ -1445,7 +1445,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                      len,
                      (len == 1) ? "" : "s",
                      nargs + nkeywords);
-        return 0;
+        return cleanreturn(0, &freelist);
     }
 
     /* convert tuple args and keyword args in same loop, using kwlist to drive process */
