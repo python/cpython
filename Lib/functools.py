@@ -191,11 +191,11 @@ def lru_cache(maxsize=100, typed=False):
                     key += tuple(map(type, args))
                     if kwds:
                         key += tuple(type(v) for k, v in sorted_items)
-                PREV, NEXT = 0, 1               # names of link fields
+                PREV = 0                        # names of link fields
+                NEXT = 1
                 with lock:
                     link = cache_get(key)
                     if link is not None:
-                        link = cache[key]
                         # record recent use of the key by moving it to the front of the list
                         link_prev, link_next, key, result = link
                         link_prev[NEXT] = link_next
