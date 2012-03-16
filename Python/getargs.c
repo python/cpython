@@ -191,7 +191,7 @@ cleanreturn(int retval, freelist_t *freelist)
                                               freelist->entries[index].item);
       }
     }
-    PyMem_Free(freelist->entries);
+    PyMem_FREE(freelist->entries);
     return retval;
 }
 
@@ -266,7 +266,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 
     format = formatsave;
 
-    freelist.entries = PyMem_New(freelistentry_t, max);
+    freelist.entries = PyMem_NEW(freelistentry_t, max);
     if (freelist.entries == NULL) {
         PyErr_NoMemory();
         return 0;
@@ -1433,7 +1433,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     for (len=0; kwlist[len]; len++)
         continue;
 
-    freelist.entries = PyMem_New(freelistentry_t, len);
+    freelist.entries = PyMem_NEW(freelistentry_t, len);
     if (freelist.entries == NULL) {
         PyErr_NoMemory();
         return 0;
