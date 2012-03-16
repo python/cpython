@@ -146,31 +146,35 @@ def lru_cache(maxsize=100, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
-    def decorating_function(user_function,
-            *, tuple=tuple, sorted=sorted, map=map, len=len, type=type):
+    def decorating_function(user_function):
 
         cache = dict()
         hits = misses = 0
-        cache_get = cache.get           # bound method for fast lookup
-        kwd_mark = (object(),)          # separates positional and keyword args
-        lock = Lock()                   # needed because linkedlist isn't threadsafe
-        root = []                       # root of circular doubly linked list
+        cache_get = cache.get           # bound method to lookup key or return None
+        _len = len                      # localize the global len() function
+        kwd_mark = (object(),)          # separate positional and keyword args
+        lock = Lock()                   # because linkedlist updates aren't threadsafe
+        root = []                       # root of the circular doubly linked list
         root[:] = [root, root, None, None]      # initialize by pointing to self
-        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3    # names of link fields
+        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3    # names for the link fields
+
+        def make_key(args, kwds, typed, tuple=tuple, sorted=sorted, type=type):
+            key = args
+            if kwds:
+                sorted_items = tuple(sorted(kwds.items()))
+                key += kwd_mark + sorted_items
+            if typed:
+                key += tuple(type(v) for v in args)
+                if kwds:
+                    key += tuple(type(v) for k, v in sorted_items)
+            return key
 
         if maxsize is None:
             @wraps(user_function)
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
                 nonlocal hits, misses
-                key = args
-                if kwds:
-                    sorted_items = tuple(sorted(kwds.items()))
-                    key += kwd_mark + sorted_items
-                if typed:
-                    key += tuple(map(type, args))
-                    if kwds:
-                        key += tuple(type(v) for k, v in sorted_items)
+                key = make_key(args, kwds, typed) if kwds or typed else args
                 result = cache_get(key)
                 if result is not None:
                     hits += 1
@@ -184,14 +188,7 @@ def lru_cache(maxsize=100, typed=False):
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
                 nonlocal hits, misses
-                key = args
-                if kwds:
-                    sorted_items = tuple(sorted(kwds.items()))
-                    key += kwd_mark + sorted_items
-                if typed:
-                    key += tuple(map(type, args))
-                    if kwds:
-                        key += tuple(type(v) for k, v in sorted_items)
+                key = make_key(args, kwds, typed) if kwds or typed else args
                 with lock:
                     link = cache_get(key)
                     if link is not None:
@@ -210,7 +207,7 @@ def lru_cache(maxsize=100, typed=False):
                     last = root[PREV]
                     link = [last, root, key, result]
                     cache[key] = last[NEXT] = root[PREV] = link
-                    if len(cache) > maxsize:
+                    if _len(cache) > maxsize:
                         # purge least recently used cache entry
                         old_prev, old_next, old_key, old_result = root[NEXT]
                         root[NEXT] = old_next
@@ -229,7 +226,6 @@ def lru_cache(maxsize=100, typed=False):
             nonlocal hits, misses, root
             with lock:
                 cache.clear()
-                root = []
                 root[:] = [root, root, None, None]
                 hits = misses = 0
 
