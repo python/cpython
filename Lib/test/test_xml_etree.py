@@ -1907,7 +1907,7 @@ class TreeBuilderTest(unittest.TestCase):
 
     # XXX in _elementtree, the constructor of TreeBuilder expects no
     # arguments
-    @unittest.expectedFailure 
+    @unittest.expectedFailure
     def test_element_factory(self):
         tb = ET.TreeBuilder(element_factory=lambda: ET.Element())
 
