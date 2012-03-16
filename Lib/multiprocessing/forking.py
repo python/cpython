@@ -55,18 +55,18 @@ def assert_spawning(self):
 # Try making some callable types picklable
 #
 
-from pickle import _Pickler as Pickler
+from pickle import Pickler
+from copyreg import dispatch_table
+
 class ForkingPickler(Pickler):
-    dispatch = Pickler.dispatch.copy()
+    _extra_reducers = {}
+    def __init__(self, *args):
+        Pickler.__init__(self, *args)
+        self.dispatch_table = dispatch_table.copy()
+        self.dispatch_table.update(self._extra_reducers)
     @classmethod
     def register(cls, type, reduce):
-        def dispatcher(self, obj):
-            rv = reduce(obj)
-            if isinstance(rv, str):
-                self.save_global(obj, rv)
-            else:
-                self.save_reduce(obj=obj, *rv)
-        cls.dispatch[type] = dispatcher
+        cls._extra_reducers[type] = reduce
 
 def _reduce_method(m):
     if m.__self__ is None:
