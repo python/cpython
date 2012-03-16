@@ -1905,6 +1905,11 @@ class TreeBuilderTest(unittest.TestCase):
         parser.feed(self.sample1)
         self.assertIsNone(parser.close())
 
+    # XXX in _elementtree, the constructor of TreeBuilder expects no
+    # arguments
+    @unittest.expectedFailure 
+    def test_element_factory(self):
+        tb = ET.TreeBuilder(element_factory=lambda: ET.Element())
 
     @unittest.expectedFailure   # XXX issue 14007 with C ElementTree
     def test_doctype(self):
