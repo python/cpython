@@ -628,6 +628,13 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f.im_func)^(-1))
         hash(a.f)
 
+    def testAttrSlots(self):
+        class C:
+            pass
+        for c in C, C():
+            self.assertRaises(TypeError, type(c).__getattribute__, c, [])
+            self.assertRaises(TypeError, type(c).__setattr__, c, [], [])
+
 def test_main():
     with test_support.check_py3k_warnings(
             (".+__(get|set|del)slice__ has been removed", DeprecationWarning),
