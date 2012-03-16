@@ -26,6 +26,8 @@ Library
 
 - Issue #11199: Fix the with urllib which hangs on particular ftp urls.
 
+- Improve the memory utilization and speed of functools.lru_cache.
+
 - Issue #14222: Use the new time.steady() function instead of time.time() for
   timeout in queue and threading modules to not be affected of system time
   update.
