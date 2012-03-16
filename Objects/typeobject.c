@@ -2462,6 +2462,13 @@ type_getattro(PyTypeObject *type, PyObject *name)
     PyObject *meta_attribute, *attribute;
     descrgetfunc meta_get;
 
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     name->ob_type->tp_name);
+        return NULL;
+    }
+
     /* Initialize this type (we'll assume the metatype is initialized) */
     if (type->tp_dict == NULL) {
         if (PyType_Ready(type) < 0)
