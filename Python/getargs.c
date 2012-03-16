@@ -140,10 +140,6 @@ _PyArg_VaParse_SizeT(PyObject *args, char *format, va_list va)
 
 /* Handle cleanup of allocated memory in case of exception */
 
-#define GETARGS_CAPSULE_NAME_CLEANUP_PTR "getargs.cleanup_ptr"
-#define GETARGS_CAPSULE_NAME_CLEANUP_BUFFER "getargs.cleanup_buffer"
-#define GETARGS_CAPSULE_NAME_CLEANUP_CONVERT "getargs.cleanup_convert"
-
 static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
