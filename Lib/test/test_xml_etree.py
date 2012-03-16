@@ -16,6 +16,7 @@
 
 import sys
 import html
+import io
 import unittest
 
 from test import support
@@ -2026,6 +2027,18 @@ class ElementSlicingTest(unittest.TestCase):
         del e[::2]
         self.assertEqual(self._subelem_tags(e), ['a1'])
 
+
+class StringIOTest(unittest.TestCase):
+    def test_read_from_stringio(self):
+        tree = ET.ElementTree()
+        stream = io.StringIO()
+        stream.write('''<?xml version="1.0"?><site></site>''')
+        stream.seek(0)
+        tree.parse(stream)
+
+        self.assertEqual(tree.getroot().tag, 'site')
+
+
 # --------------------------------------------------------------------
 
 
@@ -2077,6 +2090,7 @@ def test_main(module=pyET):
 
     test_classes = [
         ElementSlicingTest,
+        StringIOTest,
         ElementTreeTest,
         TreeBuilderTest]
     if module is pyET:

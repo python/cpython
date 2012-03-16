@@ -2682,6 +2682,7 @@ xmlparser_parse(XMLParserObject* self, PyObject* args)
 
     PyObject* reader;
     PyObject* buffer;
+    PyObject* temp;
     PyObject* res;
 
     PyObject* fileobj;
@@ -2703,7 +2704,27 @@ xmlparser_parse(XMLParserObject* self, PyObject* args)
             return NULL;
         }
 
-        if (!PyBytes_CheckExact(buffer) || PyBytes_GET_SIZE(buffer) == 0) {
+        if (PyUnicode_CheckExact(buffer)) {
+            /* A unicode object is encoded into bytes using UTF-8 */
+            if (PyUnicode_GET_SIZE(buffer) == 0) {
+                Py_DECREF(buffer);
+                break;
+            }
+            temp = PyUnicode_AsEncodedString(buffer, "utf-8", "surrogatepass");
+            if (!temp) {
+                /* Propagate exception from PyUnicode_AsEncodedString */
+                Py_DECREF(buffer);
+                Py_DECREF(reader);
+                return NULL;
+            }
+
+            /* Here we no longer need the original buffer since it contains
+             * unicode. Make it point to the encoded bytes object.
+            */
+            Py_DECREF(buffer);
+            buffer = temp;
+        }
+        else if (!PyBytes_CheckExact(buffer) || PyBytes_GET_SIZE(buffer) == 0) {
             Py_DECREF(buffer);
             break;
         }
