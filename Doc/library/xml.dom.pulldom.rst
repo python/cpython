@@ -9,33 +9,72 @@
 
 --------------
 
-:mod:`xml.dom.pulldom` allows building only selected portions of a Document
-Object Model representation of a document from SAX events.
+The :mod:`xml.dom.pulldom` module provides a "pull parser" which can also be
+asked to produce DOM-accessible fragments of the document where necessary. The
+basic concept involves pulling "events" from a stream of incoming XML and
+processing them. In contrast to SAX which also employs an event-driven
+processing model together with callbacks, the user of a pull parser is
+responsible for explicitly pulling events from the stream, looping over those
+events until either processing is finished or an error condition occurs.
+
+Example::
+
+   from xml.dom import pulldom
+
+   doc = pulldom.parse('sales_items.xml')
+   for event, node in doc:
+       if event == pulldom.START_ELEMENT and node.tagName == 'item':
+           if int(node.getAttribute('price')) > 50:
+               doc.expandNode(node)
+               print(node.toxml())
+
+``event`` is a constant and can be one of:
+
+* :data:`START_ELEMENT`
+* :data:`END_ELEMENT`
+* :data:`COMMENT`
+* :data:`START_DOCUMENT`
+* :data:`END_DOCUMENT`
+* :data:`CHARACTERS`
+* :data:`PROCESSING_INSTRUCTION`
+* :data:`IGNORABLE_WHITESPACE`
+
+``node`` is a object of type :class:`xml.dom.minidom.Document`,
+:class:`xml.dom.minidom.Element` or :class:`xml.dom.minidom.Text`.
+
+Since the document is treated as a "flat" stream of events, the document "tree"
+is implicitly traversed and the desired elements are found regardless of their
+depth in the tree. In other words, one does not need to consider hierarchical issues
+such as recursive searching of the document nodes, although if the context of
+elements were important, one would either need to maintain some context-related
+state (ie. remembering where one is in the document at any given point) or to
+make use of the :func:`DOMEventStream.expandNode` method and switch to DOM-related processing.
 
 
-.. class:: PullDOM(documentFactory=None)
+.. class:: PullDom(documentFactory=None)
 
-   :class:`xml.sax.handler.ContentHandler` implementation that ...
-
-
-.. class:: DOMEventStream(stream, parser, bufsize)
-
-   ...
+   Subclass of :class:`xml.sax.handler.ContentHandler`.
 
 
 .. class:: SAX2DOM(documentFactory=None)
 
-   :class:`xml.sax.handler.ContentHandler` implementation that ...
+   Subclass of :class:`xml.sax.handler.ContentHandler`.
 
 
 .. function:: parse(stream_or_string, parser=None, bufsize=None)
 
-   ...
+   Return a :class:`DOMEventStream` from the given input. *stream_or_string* may be
+   either a file name, or a file-like object. *parser*, if given, must be a
+   :class:`XmlReader` object. This function will change the document handler of the
+   parser and activate namespace support; other parser configuration (like
+   setting an entity resolver) must have been done in advance.
+
+If you have XML in a string, you can use the :func:`parseString` function instead:
 
 
 .. function:: parseString(string, parser=None)
 
-   ...
+   Return a :class:`DOMEventStream` that represents the (unicode) *string*.
 
 
 .. data:: default_bufsize
@@ -51,18 +90,31 @@ Object Model representation of a document from SAX events.
 DOMEventStream Objects
 ----------------------
 
-
-.. method:: DOMEventStream.getEvent()
-
-   ...
+.. class:: DOMEventStream(stream, parser, bufsize)
 
 
-.. method:: DOMEventStream.expandNode(node)
+   .. method:: DOMEventStream.getEvent()
 
-   ...
+      Return a tuple containing *event* and the current *node* as
+      :class:`xml.dom.minidom.Document` if event equals START_DOCUMENT,
+      :class:`xml.dom.minidom.Element` if event equals START_ELEMENT or
+      END_ELEMENT or :class:`xml.dom.minidom.Text` if event equals CHARACTERS.
+      The current node does not contain informations about its children, unless
+      :func:`expandNode` is called.
 
+   .. method:: DOMEventStream.expandNode(node)
 
-.. method:: DOMEventStream.reset()
+      Expands all children of *node* into *node*. Example::
 
-   ...
+          xml = '<html><title>Foo</title> <p>Some text <div>and more</div></p> </html>'
+          doc = pulldom.parseString(xml)
+          for event, node in doc:
+              if event == pulldom.START_ELEMENT and node.tagName == 'p':
+                  # Following statement only prints '<p/>'
+                  print(node.toxml())
+                  doc.exandNode(node)
+                  # Following statement prints node with all its children '<p>Some text <div>and more</div></p>'
+                  print(node.toxml())
+
+   .. method:: DOMEventStream.reset()
 
