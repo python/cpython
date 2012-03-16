@@ -2177,13 +2177,18 @@ makeuniversal(XMLParserObject* self, const char* string)
     return value;
 }
 
+/* Set the ParseError exception with the given parameters.
+ * If message is not NULL, it's used as the error string. Otherwise, the
+ * message string is the default for the given error_code.
+*/
 static void
-expat_set_error(const char* message, int line, int column)
+expat_set_error(enum XML_Error error_code, int line, int column, char *message)
 {
-    PyObject *errmsg, *error, *position;
+    PyObject *errmsg, *error, *position, *code;
 
     errmsg = PyUnicode_FromFormat("%s: line %d, column %d",
-                                  message, line, column);
+                message ? message : EXPAT(ErrorString)(error_code),
+                line, column);
     if (errmsg == NULL)
         return;
 
@@ -2192,7 +2197,19 @@ expat_set_error(const char* message, int line, int column)
     if (!error)
         return;
 
-    /* add position attribute */
+    /* Add code and position attributes */
+    code = PyLong_FromLong((long)error_code);
+    if (!code) {
+        Py_DECREF(error);
+        return;
+    }
+    if (PyObject_SetAttrString(error, "code", code) == -1) {
+        Py_DECREF(error);
+        Py_DECREF(code);
+        return;
+    }
+    Py_DECREF(code);
+
     position = Py_BuildValue("(ii)", line, column);
     if (!position) {
         Py_DECREF(error);
@@ -2244,9 +2261,10 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         char message[128] = "undefined entity ";
         strncat(message, data_in, data_len < 100?data_len:100);
         expat_set_error(
-            message,
+            XML_ERROR_UNDEFINED_ENTITY,
             EXPAT(GetErrorLineNumber)(self->parser),
-            EXPAT(GetErrorColumnNumber)(self->parser)
+            EXPAT(GetErrorColumnNumber)(self->parser),
+            message
             );
     }
 
@@ -2629,9 +2647,10 @@ expat_parse(XMLParserObject* self, char* data, int data_len, int final)
 
     if (!ok) {
         expat_set_error(
-            EXPAT(ErrorString)(EXPAT(GetErrorCode)(self->parser)),
+            EXPAT(GetErrorCode)(self->parser),
             EXPAT(GetErrorLineNumber)(self->parser),
-            EXPAT(GetErrorColumnNumber)(self->parser)
+            EXPAT(GetErrorColumnNumber)(self->parser),
+            NULL
             );
         return NULL;
     }

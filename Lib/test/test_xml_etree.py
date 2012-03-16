@@ -1055,26 +1055,6 @@ def entity():
     '<document>text</document>'
     """
 
-def error(xml):
-    """
-
-    Test error handling.
-
-    >>> issubclass(ET.ParseError, SyntaxError)
-    True
-    >>> error("foo").position
-    (1, 0)
-    >>> error("<tag>&foo;</tag>").position
-    (1, 5)
-    >>> error("foobar<").position
-    (1, 6)
-
-    """
-    try:
-        ET.XML(xml)
-    except ET.ParseError:
-        return sys.exc_info()[1]
-
 def namespace():
     """
     Test namespace issues.
@@ -2039,6 +2019,27 @@ class StringIOTest(unittest.TestCase):
         self.assertEqual(tree.getroot().tag, 'site')
 
 
+class ParseErrorTest(unittest.TestCase):
+    def test_subclass(self):
+        self.assertIsInstance(ET.ParseError(), SyntaxError)
+
+    def _get_error(self, s):
+        try:
+            ET.fromstring(s)
+        except ET.ParseError as e:
+            return e
+
+    def test_error_position(self):
+        self.assertEqual(self._get_error('foo').position, (1, 0))
+        self.assertEqual(self._get_error('<tag>&foo;</tag>').position, (1, 5))
+        self.assertEqual(self._get_error('foobar<').position, (1, 6))
+
+    def test_error_code(self):
+        import xml.parsers.expat.errors as ERRORS
+        self.assertEqual(self._get_error('foo').code,
+                ERRORS.codes[ERRORS.XML_ERROR_SYNTAX])
+
+
 # --------------------------------------------------------------------
 
 
@@ -2091,6 +2092,7 @@ def test_main(module=pyET):
     test_classes = [
         ElementSlicingTest,
         StringIOTest,
+        ParseErrorTest,
         ElementTreeTest,
         TreeBuilderTest]
     if module is pyET:
