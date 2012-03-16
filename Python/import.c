@@ -118,7 +118,7 @@ typedef unsigned short mode_t;
 #define STRIFY(name) QUOTE(name)
 #define MAJOR STRIFY(PY_MAJOR_VERSION)
 #define MINOR STRIFY(PY_MINOR_VERSION)
-#define MAGIC (3210 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3220 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */
