@@ -107,7 +107,7 @@ corresponding Unix manual entries for more information on calls.");
 #include <sched.h>
 #endif
 
-#if defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
+#if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
 #undef HAVE_SCHED_SETAFFINITY
 #endif
 
