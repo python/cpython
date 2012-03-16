@@ -267,6 +267,10 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     format = formatsave;
 
     freelist.entries = PyMem_New(freelistentry_t, max);
+    if (freelist.entries == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
 
     if (compat) {
         if (max == 0) {
@@ -1430,6 +1434,10 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
         continue;
 
     freelist.entries = PyMem_New(freelistentry_t, len);
+    if (freelist.entries == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
 
     nargs = PyTuple_GET_SIZE(args);
     nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
