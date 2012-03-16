@@ -198,7 +198,6 @@ Functions
 Element Objects
 ---------------
 
-
 .. class:: Element(tag, attrib={}, **extra)
 
    Element class.  This class defines the Element interface, and provides a
@@ -643,6 +642,24 @@ This is an example of counting the maximum depth of an XML file::
     >>> parser.close()
     4
 
+Exceptions
+----------
+
+.. class:: ParseError
+
+   XML parse error, raised by the various parsing methods in this module when
+   parsing fails.  The string representation of an instance of this exception
+   will contain a user-friendly error message.  In addition, it will have
+   the following attributes available:
+
+   .. attribute:: code
+
+      A numeric error code from the expat parser. See the documentation of
+      :mod:`xml.parsers.expat` for the list of error codes and their meanings.
+
+   .. attribute:: position
+
+      A tuple of *line*, *column* numbers, specifying where the error occurred.
 
 .. rubric:: Footnotes
 
