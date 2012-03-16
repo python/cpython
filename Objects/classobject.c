@@ -225,10 +225,16 @@ static PyObject *
 class_getattr(register PyClassObject *op, PyObject *name)
 {
     register PyObject *v;
-    register char *sname = PyString_AsString(name);
+    register char *sname;
     PyClassObject *klass;
     descrgetfunc f;
 
+    if (!PyString_Check(name)) {
+        PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+        return NULL;
+    }
+
+    sname = PyString_AsString(name);
     if (sname[0] == '_' && sname[1] == '_') {
         if (strcmp(sname, "__dict__") == 0) {
             if (PyEval_GetRestricted()) {
@@ -334,6 +340,10 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
     if (PyEval_GetRestricted()) {
         PyErr_SetString(PyExc_RuntimeError,
                    "classes are read-only in restricted mode");
+        return -1;
+    }
+    if (!PyString_Check(name)) {
+        PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
         return -1;
     }
     sname = PyString_AsString(name);
@@ -699,7 +709,14 @@ static PyObject *
 instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 {
     register PyObject *v;
-    register char *sname = PyString_AsString(name);
+    register char *sname;
+
+    if (!PyString_Check(name)) {
+        PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+        return NULL;
+    }
+
+    sname = PyString_AsString(name);
     if (sname[0] == '_' && sname[1] == '_') {
         if (strcmp(sname, "__dict__") == 0) {
             if (PyEval_GetRestricted()) {
@@ -810,7 +827,14 @@ static int
 instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
     PyObject *func, *args, *res, *tmp;
-    char *sname = PyString_AsString(name);
+    char *sname;
+
+    if (!PyString_Check(name)) {
+        PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+        return -1;
+    }
+
+    sname = PyString_AsString(name);
     if (sname[0] == '_' && sname[1] == '_') {
         Py_ssize_t n = PyString_Size(name);
         if (sname[n-1] == '_' && sname[n-2] == '_') {

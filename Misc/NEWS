@@ -10,7 +10,8 @@ Core and Builtins
 -----------------
 
 - Issue #14334: Prevent in a segfault in type.__getattribute__ when it was not
-  passed strings.
+  passed strings. Also fix segfaults in the __getattribute__ and __setattr__
+  methods of old-style classes.
 
 - Issue #14161: fix the __repr__ of file objects to escape the file name.
 
