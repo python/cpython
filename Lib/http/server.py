@@ -850,7 +850,14 @@ def _url_collapse_path_split(path):
     # Filter out blank non trailing parts before consuming the '..'.
     path_parts = [part for part in path_parts[:-1] if part] + path_parts[-1:]
     if path_parts:
-        tail_part = path_parts.pop()
+        # Special case for CGI's for PATH_INFO
+        if path.startswith('/cgi-bin') or path.startswith('/htbin'):
+            tail_part = []
+            while path_parts[-1] not in ('cgi-bin','htbin'):
+                tail_part.insert(0,path_parts.pop())
+            tail_part = "/".join(tail_part)
+        else:
+            tail_part = path_parts.pop()
     else:
         tail_part = ''
     head_parts = []
