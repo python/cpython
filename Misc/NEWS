@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14334: Prevent in a segfault in type.__getattribute__ when it was not
+  passed strings.
+
 - Issue #14161: fix the __repr__ of file objects to escape the file name.
 
 - Issue #1469629: Allow cycles through an object's __dict__ slot to be

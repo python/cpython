@@ -4554,6 +4554,9 @@ order (MRO) for bases """
 
         self.assertRaises(AttributeError, getattr, EvilGetattribute(), "attr")
 
+    def test_type___getattribute__(self):
+        self.assertRaises(TypeError, type.__getattribute__, list, type)
+
     def test_abstractmethods(self):
         # type pretends not to have __abstractmethods__.
         self.assertRaises(AttributeError, getattr, type, "__abstractmethods__")
