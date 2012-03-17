@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14344: fixed the repr of email.policy objects.
+
 - Issue #11686: Added missing entries to email package __all__ lists
   (mostly the new Bytes classes).
 
