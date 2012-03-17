@@ -118,7 +118,9 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(foo.defects, [defect1, defect2])
 
     class MyPolicy(email.policy.Policy):
-        defects = []
+        defects = None
+        def __init__(self, *args, **kw):
+            super().__init__(*args, defects=[], **kw)
         def register_defect(self, obj, defect):
             self.defects.append(defect)
 
