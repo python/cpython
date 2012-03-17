@@ -766,8 +766,8 @@ Regular Expression Objects
 
    .. attribute:: RegexObject.flags
 
-      The flags argument used when the RE object was compiled, or ``0`` if no flags
-      were provided.
+      The regex matching flags.  This is a combination of the flags given to
+      :func:`.compile` and any ``(?...)`` inline flags in the pattern.
 
 
    .. attribute:: RegexObject.groups
