@@ -223,7 +223,7 @@ def lru_cache(maxsize=100, typed=False):
 
         def cache_clear():
             """Clear the cache and cache statistics"""
-            nonlocal hits, misses, root
+            nonlocal hits, misses
             with lock:
                 cache.clear()
                 root[:] = [root, root, None, None]
