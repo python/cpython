@@ -18,6 +18,11 @@ try:
 except:
     from _dummy_thread import allocate_lock as Lock
 
+
+################################################################################
+### update_wrapper() and wraps() decorator
+################################################################################
+
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
 
@@ -66,6 +71,11 @@ def wraps(wrapped,
     return partial(update_wrapper, wrapped=wrapped,
                    assigned=assigned, updated=updated)
 
+
+################################################################################
+### total_ordering class decorator
+################################################################################
+
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
     convert = {
@@ -94,6 +104,11 @@ def total_ordering(cls):
             setattr(cls, opname, opfunc)
     return cls
 
+
+################################################################################
+### cmp_to_key() function converter
+################################################################################
+
 def cmp_to_key(mycmp):
     """Convert a cmp= function into a key= function"""
     class K(object):
@@ -119,6 +134,11 @@ try:
     from _functools import cmp_to_key
 except ImportError:
     pass
+
+
+################################################################################
+### LRU Cache function decorator
+################################################################################
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
@@ -170,6 +190,7 @@ def lru_cache(maxsize=100, typed=False):
             return key
 
         if maxsize is None:
+
             @wraps(user_function)
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
@@ -183,7 +204,9 @@ def lru_cache(maxsize=100, typed=False):
                 cache[key] = result
                 misses += 1
                 return result
+
         else:
+
             @wraps(user_function)
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
