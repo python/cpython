@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11686: Added missing entries to email package __all__ lists
+  (mostly the new Bytes classes).
+
 - Issue #14335: multiprocessing's custom Pickler subclass now inherits from
   the C-accelerated implementation.  Patch by sbt.
 
