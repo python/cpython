@@ -2949,13 +2949,13 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) {
-        static PyObject *comma = NULL;
         PyObject *abstract_methods = NULL;
         PyObject *builtins;
         PyObject *sorted;
         PyObject *sorted_methods = NULL;
         PyObject *joined = NULL;
-        _Py_IDENTIFIER(join);
+        PyObject *comma;
+        _Py_static_string(comma_id, ", ");
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
            into joined. */
@@ -2973,13 +2973,10 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                                                       NULL);
         if (sorted_methods == NULL)
             goto error;
-        if (comma == NULL) {
-            comma = PyUnicode_InternFromString(", ");
-            if (comma == NULL)
-                goto error;
-        }
-        joined = _PyObject_CallMethodId(comma, &PyId_join,
-                                     "O",  sorted_methods);
+        comma = _PyUnicode_FromId(&comma_id);
+        if (comma == NULL)
+            goto error;
+        joined = PyUnicode_Join(comma, sorted_methods);
         if (joined == NULL)
             goto error;
 
