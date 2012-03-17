@@ -66,7 +66,7 @@ flag to configure::
   $ make
   $ make install
 
-This flag can be used a framework build of python, but also with a classic
+This flag can be used with a framework build of python, but also with a classic
 unix build. Either way you will have to build python on Mac OS X 10.4 (or later)
 with Xcode 2.1 (or later). You also have to install the 10.4u SDK when 
 installing Xcode.
@@ -214,8 +214,8 @@ How do I create a binary distribution?
 
 Go to the directory "Mac/OSX/BuildScript". There you'll find a script 
 "build-installer.py" that does all the work. This will download and build
-a number of 3th-party libaries, configures and builds a framework Python,
-installs it, creates the installer pacakge files and then packs this in a 
+a number of 3rd-party libaries, configures and builds a framework Python,
+installs it, creates the installer package files and then packs this in a
 DMG image.
 
 The script will build a universal binary, you'll therefore have to run this
@@ -251,8 +251,8 @@ architectures. Temporarily move ``/usr/local`` aside to finish the build.
 Uninstalling a framework install, including the binary installer
 ================================================================
 
-Uninstalling a framework can be done by manually removing all bits that got installed,
-that's true for both installations from source and installations using the binary installer.
+Uninstalling a framework can be done by manually removing all bits that got installed.
+That's true for both installations from source and installations using the binary installer.
 Sadly enough OSX does not have a central uninstaller.
 
 The main bit of a framework install is the framework itself, installed in
