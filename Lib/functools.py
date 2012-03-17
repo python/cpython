@@ -175,7 +175,7 @@ def lru_cache(maxsize=100, typed=False):
                 # simple caching without ordering or size limit
                 nonlocal hits, misses
                 key = make_key(args, kwds, typed) if kwds or typed else args
-                result = cache_get(key, root)   # root used here as a unique not-found sentinel        
+                result = cache_get(key, root)   # root used here as a unique not-found sentinel
                 if result is not root:
                     hits += 1
                     return result
