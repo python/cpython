@@ -170,15 +170,16 @@ def lru_cache(maxsize=100, typed=False):
 
         cache = dict()
         hits = misses = 0
+        kwd_mark = (object(),)          # separate positional and keyword args
         cache_get = cache.get           # bound method to lookup key or return None
         _len = len                      # localize the global len() function
-        kwd_mark = (object(),)          # separate positional and keyword args
         lock = Lock()                   # because linkedlist updates aren't threadsafe
         root = []                       # root of the circular doubly linked list
         root[:] = [root, root, None, None]      # initialize by pointing to self
         PREV, NEXT, KEY, RESULT = 0, 1, 2, 3    # names for the link fields
 
         def make_key(args, kwds, typed, tuple=tuple, sorted=sorted, type=type):
+            # helper function to build a cache key from positional and keyword args
             key = args
             if kwds:
                 sorted_items = tuple(sorted(kwds.items()))
@@ -189,7 +190,17 @@ def lru_cache(maxsize=100, typed=False):
                     key += tuple(type(v) for k, v in sorted_items)
             return key
 
-        if maxsize is None:
+        if maxsize == 0:
+
+            @wraps(user_function)
+            def wrapper(*args, **kwds):
+                # no caching, just do a statistics update after a successful call
+                nonlocal misses
+                result = user_function(*args, **kwds) 
+                misses += 1
+                return result
+
+        elif maxsize is None:
 
             @wraps(user_function)
             def wrapper(*args, **kwds):
