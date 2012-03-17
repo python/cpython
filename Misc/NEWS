@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #1683368: object.__new__ and object.__init__ raise a TypeError if they
+  are passed arguments and their complementary method is not overridden.
+
 - Give the ast.AST class a __dict__.
 
 - Issue #14334: Prevent in a segfault in type.__getattribute__ when it was not
