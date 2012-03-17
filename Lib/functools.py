@@ -196,7 +196,7 @@ def lru_cache(maxsize=100, typed=False):
             def wrapper(*args, **kwds):
                 # no caching, just do a statistics update after a successful call
                 nonlocal misses
-                result = user_function(*args, **kwds) 
+                result = user_function(*args, **kwds)
                 misses += 1
                 return result
 
