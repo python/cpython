@@ -1090,28 +1090,6 @@ The equivalent regular expression would be ::
    (\S+) - (\d+) errors, (\d+) warnings
 
 
-Avoiding recursion
-^^^^^^^^^^^^^^^^^^
-
-If you create regular expressions that require the engine to perform a lot of
-recursion, you may encounter a :exc:`RuntimeError` exception with the message
-``maximum recursion limit exceeded``. For example, ::
-
-   >>> s = 'Begin ' + 1000*'a very long string ' + 'end'
-   >>> re.match('Begin (\w| )*? end', s).end()
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-     File "/usr/local/lib/python3.2/re.py", line 132, in match
-       return _compile(pattern, flags).match(string)
-   RuntimeError: maximum recursion limit exceeded
-
-You can often restructure your regular expression to avoid recursion.
-
-Simple uses of the ``*?`` pattern are special-cased to avoid recursion.  Thus,
-the above regular expression can avoid recursion by being recast as ``Begin
-[a-zA-Z0-9_ ]*?end``.  As a further benefit, such regular expressions will run
-faster than their recursive equivalents.
-
 .. _search-vs-match:
 
 search() vs. match()
