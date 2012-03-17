@@ -1093,28 +1093,6 @@ The equivalent regular expression would be ::
    (\S+) - (\d+) errors, (\d+) warnings
 
 
-Avoiding recursion
-^^^^^^^^^^^^^^^^^^
-
-If you create regular expressions that require the engine to perform a lot of
-recursion, you may encounter a :exc:`RuntimeError` exception with the message
-``maximum recursion limit exceeded``. For example, ::
-
-   >>> s = 'Begin ' + 1000*'a very long string ' + 'end'
-   >>> re.match('Begin (\w| )*? end', s).end()
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-     File "/usr/local/lib/python3.2/re.py", line 132, in match
-       return _compile(pattern, flags).match(string)
-   RuntimeError: maximum recursion limit exceeded
-
-You can often restructure your regular expression to avoid recursion.
-
-Simple uses of the ``*?`` pattern are special-cased to avoid recursion.  Thus,
-the above regular expression can avoid recursion by being recast as ``Begin
-[a-zA-Z0-9_ ]*?end``.  As a further benefit, such regular expressions will run
-faster than their recursive equivalents.
-
 .. _search-vs-match:
 
 search() vs. match()
@@ -1161,7 +1139,7 @@ creates a phonebook.
 First, here is the input.  Normally it may come from a file, here we are using
 triple-quoted string syntax:
 
-   >>> input = """Ross McFluff: 834.345.1254 155 Elm Street
+   >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
    ...
    ... Ronald Heathmore: 892.345.3428 436 Finley Avenue
    ... Frank Burger: 925.541.7625 662 South Dogwood Way
@@ -1175,7 +1153,7 @@ into a list with each nonempty line having its own entry:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> entries = re.split("\n+", input)
+   >>> entries = re.split("\n+", text)
    >>> entries
    ['Ross McFluff: 834.345.1254 155 Elm Street',
    'Ronald Heathmore: 892.345.3428 436 Finley Avenue',
