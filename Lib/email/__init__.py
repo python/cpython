@@ -11,6 +11,7 @@ __all__ = [
     'charset',
     'encoders',
     'errors',
+    'feedparser',
     'generator',
     'header',
     'iterators',

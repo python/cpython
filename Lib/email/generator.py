@@ -4,7 +4,7 @@
 
 """Classes to generate plain text from a message object tree."""
 
-__all__ = ['Generator', 'DecodedGenerator']
+__all__ = ['Generator', 'DecodedGenerator', 'BytesGenerator']
 
 import re
 import sys
