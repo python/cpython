@@ -481,6 +481,10 @@ Some smaller changes made to the core Python language are:
 
   (:issue:`14205`)
 
+* New methods have been added to :class:`list` and :class:`bytearray`:
+  ``copy()`` and ``clear()``.
+
+  (:issue:`10516`)
 
 New and Improved Modules
 ========================
