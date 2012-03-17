@@ -19,7 +19,7 @@ payload, encode it, and reset the payload to this newly encoded value.  They
 should also set the :mailheader:`Content-Transfer-Encoding` header as appropriate.
 
 Note that these functions are not meaningful for a multipart message.  They
-must be applied to individual subparts instead, and will throw a
+must be applied to individual subparts instead, and will raise a
 :exc:`TypeError` if passed a message whose type is multipart.
 
 Here are the encoding functions provided:
