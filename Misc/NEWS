@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11686: Added missing entries to email package __all__ lists
+  (mostly the new Bytes classes).
+
 - Issue #10484: Fix the CGIHTTPServer's PATH_INFO handling problem.
 
 - Issue #11199: Fix the with urllib which hangs on particular ftp urls.
