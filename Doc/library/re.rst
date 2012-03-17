@@ -784,8 +784,9 @@ attributes:
 
 .. attribute:: regex.flags
 
-   The flags argument used when the RE object was compiled, or ``0`` if no flags
-   were provided.
+   The regex matching flags.  This is a combination of the flags given to
+   :func:`.compile`, any ``(?...)`` inline flags in the pattern, and implicit
+   flags such as :data:`UNICODE` if the pattern is a Unicode string.
 
 
 .. attribute:: regex.groups
