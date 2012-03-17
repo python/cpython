@@ -168,6 +168,14 @@ Basic Usage
       so trying to serialize multiple objects with repeated calls to
       :func:`dump` using the same *fp* will result in an invalid JSON file.
 
+   .. note::
+
+      Keys in key/value pairs of JSON are always of the type :class:`str`. When
+      a dictionary is converted into JSON, all the keys of the dictionary are
+      coerced to strings. As a result of this, if a dictionary is convered
+      into JSON and then back into a dictionary, the dictionary may not equal
+      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
+      keys.
 
 .. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
