@@ -2600,14 +2600,11 @@ class TestMiscellaneous(TestEmailBase):
 
     def test__all__(self):
         module = __import__('email')
-        # Can't use sorted() here due to Python 2.3 compatibility
-        all = module.__all__[:]
-        all.sort()
-        self.assertEqual(all, [
-            'base64mime', 'charset', 'encoders', 'errors', 'generator',
-            'header', 'iterators', 'message', 'message_from_binary_file',
-            'message_from_bytes', 'message_from_file',
-            'message_from_string', 'mime', 'parser',
+        self.assertEqual(sorted(module.__all__), [
+            'base64mime', 'charset', 'encoders', 'errors', 'feedparser',
+            'generator', 'header', 'iterators', 'message',
+            'message_from_binary_file', 'message_from_bytes',
+            'message_from_file', 'message_from_string', 'mime', 'parser',
             'quoprimime', 'utils',
             ])
 

@@ -19,7 +19,7 @@ the current message.  Defects are just instances that live on the message
 object's .defects attribute.
 """
 
-__all__ = ['FeedParser']
+__all__ = ['FeedParser', 'BytesFeedParser']
 
 import re
 
