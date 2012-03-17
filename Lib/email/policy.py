@@ -52,7 +52,7 @@ class _PolicyBase:
     def __repr__(self):
         args = [ "{}={!r}".format(name, value)
                  for name, value in self.__dict__.items() ]
-        return "{}({})".format(self.__class__.__name__, args if args else '')
+        return "{}({})".format(self.__class__.__name__, ', '.join(args))
 
     def clone(self, **kw):
         """Return a new instance with specified attributes changed.
