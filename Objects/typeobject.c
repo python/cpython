@@ -2905,22 +2905,11 @@ static int
 object_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     int err = 0;
-    if (excess_args(args, kwds)) {
-        PyTypeObject *type = Py_TYPE(self);
-        if (type->tp_init != object_init &&
-            type->tp_new != object_new)
-        {
-            err = PyErr_WarnEx(PyExc_DeprecationWarning,
-                       "object.__init__() takes no parameters",
-                       1);
-        }
-        else if (type->tp_init != object_init ||
-                 type->tp_new == object_new)
-        {
-            PyErr_SetString(PyExc_TypeError,
-                "object.__init__() takes no parameters");
-            err = -1;
-        }
+    PyTypeObject *type = Py_TYPE(self);
+    if (excess_args(args, kwds) &&
+        (type->tp_new == object_new || type->tp_init != object_init)) {
+        PyErr_SetString(PyExc_TypeError, "object.__init__() takes no parameters");
+        err = -1;
     }
     return err;
 }
@@ -2928,26 +2917,12 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    int err = 0;
-    if (excess_args(args, kwds)) {
-        if (type->tp_new != object_new &&
-            type->tp_init != object_init)
-        {
-            err = PyErr_WarnEx(PyExc_DeprecationWarning,
-                       "object.__new__() takes no parameters",
-                       1);
-        }
-        else if (type->tp_new != object_new ||
-                 type->tp_init == object_init)
-        {
-            PyErr_SetString(PyExc_TypeError,
-                "object.__new__() takes no parameters");
-            err = -1;
-        }
-    }
-    if (err < 0)
+    if (excess_args(args, kwds) &&
+        (type->tp_init == object_init || type->tp_new != object_new)) {
+        PyErr_SetString(PyExc_TypeError, "object.__new__() takes no parameters");
         return NULL;
-
+    }
+ 
     if (type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) {
         PyObject *abstract_methods = NULL;
         PyObject *builtins;

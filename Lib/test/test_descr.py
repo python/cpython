@@ -4502,6 +4502,26 @@ order (MRO) for bases """
         for o in gc.get_objects():
             self.assertIsNot(type(o), X)
 
+    def test_object_new_and_init_with_parameters(self):
+        # See issue #1683368
+        class OverrideNeither:
+            pass
+        self.assertRaises(TypeError, OverrideNeither, 1)
+        self.assertRaises(TypeError, OverrideNeither, kw=1)
+        class OverrideNew:
+            def __new__(cls, foo, kw=0, *args, **kwds):
+                return object.__new__(cls, *args, **kwds)
+        class OverrideInit:
+            def __init__(self, foo, kw=0, *args, **kwargs):
+                return object.__init__(self, *args, **kwargs)
+        class OverrideBoth(OverrideNew, OverrideInit):
+            pass
+        for case in OverrideNew, OverrideInit, OverrideBoth:
+            case(1)
+            case(1, kw=2)
+            self.assertRaises(TypeError, case, 1, 2, 3)
+            self.assertRaises(TypeError, case, 1, 2, foo=3)
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
