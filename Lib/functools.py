@@ -120,7 +120,7 @@ try:
 except ImportError:
     pass
 
-_CacheInfo = namedtuple("CacheInfo", "hits misses maxsize currsize")
+_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 def lru_cache(maxsize=100, typed=False):
     """Least-recently-used cache decorator.
