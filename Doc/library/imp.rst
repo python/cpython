@@ -256,7 +256,7 @@ to indicate the search result of :func:`find_module`.
 
 .. data:: PY_FROZEN
 
-   The module was found as a frozen module (see :func:`init_frozen`).
+   The module was found as a frozen module.
 
 
 .. class:: NullImporter(path_string)
