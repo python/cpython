@@ -129,6 +129,9 @@ Library
 Build
 -----
 
+- Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
+  Based on patch from Hervé Coatanhay.
+
 - Issue #14321: Do not run pgen during the build if files are up to date.
 
 - Issue #14324: Fix configure tests for cross builds.
