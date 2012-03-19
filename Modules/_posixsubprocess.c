@@ -202,7 +202,18 @@ _close_open_fd_range_safe(int start_fd, int end_fd, PyObject* py_fds_to_keep)
     int fd_dir_fd;
     if (start_fd >= end_fd)
         return;
-        fd_dir_fd = open(FD_DIR, O_RDONLY | O_CLOEXEC, 0);
+#ifdef O_CLOEXEC
+    fd_dir_fd = open(FD_DIR, O_RDONLY | O_CLOEXEC, 0);
+#else
+    fd_dir_fd = open(FD_DIR, O_RDONLY, 0);
+#ifdef FD_CLOEXEC
+    {
+        int old = fcntl(fd_dir_fd, F_GETFD);
+        if (old != -1)
+            fcntl(fd_dir_fd, F_SETFD, old | FD_CLOEXEC);
+    }
+#endif
+#endif
     if (fd_dir_fd == -1) {
         /* No way to get a list of open fds. */
         _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
