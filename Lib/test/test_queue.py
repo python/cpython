@@ -79,7 +79,7 @@ class BlockingTestMixin:
                 self.fail("trigger thread ended but event never set")
 
 
-class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
+class BaseQueueTest(BlockingTestMixin):
     def setUp(self):
         self.cum = 0
         self.cumlock = threading.Lock()
@@ -191,13 +191,13 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
         self.simple_queue_test(q)
 
 
-class QueueTest(BaseQueueTest):
+class QueueTest(BaseQueueTest, unittest.TestCase):
     type2test = Queue.Queue
 
-class LifoQueueTest(BaseQueueTest):
+class LifoQueueTest(BaseQueueTest, unittest.TestCase):
     type2test = Queue.LifoQueue
 
-class PriorityQueueTest(BaseQueueTest):
+class PriorityQueueTest(BaseQueueTest, unittest.TestCase):
     type2test = Queue.PriorityQueue
 
 
