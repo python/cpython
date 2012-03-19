@@ -78,6 +78,12 @@ Extension Modules
 - Issue #14212: The re module didn't retain a reference to buffers it was
   scanning, resulting in segfaults.
 
+Build
+-----
+
+- Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
+  Based on patch from Hervé Coatanhay.
+
 
 What's New in Python 3.2.3 release candidate 2?
 ===============================================
