@@ -236,7 +236,7 @@ The module defines the following functions and data items:
    adjusted. The reference point of the returned value is undefined so only the
    difference of consecutive calls is valid.
 
-   If available, a monotonic clock is used. By default, if *strict* is False,
+   If available, a monotonic clock is used. By default,
    the function falls back to another clock if the monotonic clock failed or is
    not available. If *strict* is True, raise an :exc:`OSError` on error or
    :exc:`NotImplementedError` if no monotonic clock is available.
