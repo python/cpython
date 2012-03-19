@@ -1752,9 +1752,7 @@ def supports_extended_attributes():
         with open(support.TESTFN, "wb") as fp:
             try:
                 os.fsetxattr(fp.fileno(), b"user.test", b"")
-            except OSError as e:
-                if e.errno != errno.ENOTSUP:
-                    raise
+            except OSError:
                 return False
     finally:
         support.unlink(support.TESTFN)
