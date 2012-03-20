@@ -10,6 +10,11 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #3573: IDLE hangs when passing invalid command line args
+  (directory(ies) instead of file(s))
+
+  Thanks to Guilherme Polo for patch and to Roger Serwy for review.
+
 - Issue #1683368: object.__new__ and object.__init__ raise a TypeError if they
   are passed arguments and their complementary method is not overridden.
 
