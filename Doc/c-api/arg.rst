@@ -338,6 +338,15 @@ inside nested parentheses.  They are:
    :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding C
    variable(s).
 
+``$``
+   :c:func:`PyArg_ParseTupleAndKeywords` only:
+   Indicates that the remaining arguments in the Python argument list are
+   keyword-only.  Currently, all keyword-only arguments must also be optional
+   arguments, so ``|`` must always be specified before ``$`` in the format
+   string.
+
+   .. versionadded:: 3.3
+
 ``:``
    The list of format units ends here; the string after the colon is used as the
    function name in error messages (the "associated value" of the exception that

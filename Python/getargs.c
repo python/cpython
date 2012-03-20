@@ -1403,6 +1403,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     int levels[32];
     const char *fname, *msg, *custom_msg, *keyword;
     int min = INT_MAX;
+    int max = INT_MAX;
     int i, len, nargs, nkeywords;
     PyObject *current_arg;
     freelist_t freelist = {0, NULL};
@@ -1452,8 +1453,39 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     for (i = 0; i < len; i++) {
         keyword = kwlist[i];
         if (*format == '|') {
+            if (min != INT_MAX) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "Invalid format string (| specified twice)");
+                return cleanreturn(0, &freelist);
+            }
+
             min = i;
             format++;
+
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "Invalid format string ($ before |)");
+                return cleanreturn(0, &freelist);
+            }
+        }
+        if (*format == '$') {
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "Invalid format string ($ specified twice)");
+                return cleanreturn(0, &freelist);
+            }
+
+            max = i;
+            format++;
+
+            if (max < nargs) {
+                PyErr_Format(PyExc_TypeError,
+                             "Function takes %s %d positional arguments"
+                             " (%d given)",
+                             (min != INT_MAX) ? "at most" : "exactly",
+                             max, nargs);
+                return cleanreturn(0, &freelist);
+            }
         }
         if (IS_END_OF_FORMAT(*format)) {
             PyErr_Format(PyExc_RuntimeError,
@@ -1514,7 +1546,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
         }
     }
 
-    if (!IS_END_OF_FORMAT(*format) && *format != '|') {
+    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
         PyErr_Format(PyExc_RuntimeError,
             "more argument specifiers than keyword list entries "
             "(remaining format:'%s')", format);
