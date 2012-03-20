@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13694: asynchronous connect in asyncore.dispatcher does not set addr
+  attribute.
+
 - Issue #11686: Added missing entries to email package __all__ lists
   (mostly the new Bytes classes).
 
