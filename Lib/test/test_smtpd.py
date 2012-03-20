@@ -39,6 +39,7 @@ class SMTPDServerTest(TestCase):
             channel.socket.queue_recv(line)
             channel.handle_read()
 
+        write_line(b'HELO test.example')
         write_line(b'MAIL From:eggs@example')
         write_line(b'RCPT To:spam@example')
         write_line(b'DATA')
@@ -104,6 +105,11 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'NOOP')
         self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
 
+    def test_HELO_NOOP(self):
+        self.write_line(b'HELO example')
+        self.write_line(b'NOOP')
+        self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
+
     def test_NOOP_bad_syntax(self):
         self.write_line(b'NOOP hi')
         self.assertEqual(self.channel.socket.last,
@@ -113,17 +119,23 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'QUIT')
         self.assertEqual(self.channel.socket.last, b'221 Bye\r\n')
 
+    def test_HELO_QUIT(self):
+        self.write_line(b'HELO example')
+        self.write_line(b'QUIT')
+        self.assertEqual(self.channel.socket.last, b'221 Bye\r\n')
+
     def test_QUIT_arg_ignored(self):
         self.write_line(b'QUIT bye bye')
         self.assertEqual(self.channel.socket.last, b'221 Bye\r\n')
 
     def test_bad_state(self):
         self.channel.smtp_state = 'BAD STATE'
-        self.write_line(b'HELO')
+        self.write_line(b'HELO example')
         self.assertEqual(self.channel.socket.last,
                          b'451 Internal confusion\r\n')
 
     def test_command_too_long(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL from ' +
                         b'a' * self.channel.command_size_limit +
                         b'@example')
@@ -133,6 +145,7 @@ class SMTPDChannelTest(TestCase):
     def test_data_too_long(self):
         # Small hack. Setting limit to 2K octets here will save us some time.
         self.channel.data_size_limit = 2048
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA')
@@ -142,43 +155,61 @@ class SMTPDChannelTest(TestCase):
                          b'552 Error: Too much mail data\r\n')
 
     def test_need_MAIL(self):
+        self.write_line(b'HELO example')
         self.write_line(b'RCPT to:spam@example')
         self.assertEqual(self.channel.socket.last,
             b'503 Error: need MAIL command\r\n')
 
     def test_MAIL_syntax(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL from eggs@example')
         self.assertEqual(self.channel.socket.last,
             b'501 Syntax: MAIL FROM:<address>\r\n')
 
     def test_MAIL_missing_from(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL from:')
         self.assertEqual(self.channel.socket.last,
             b'501 Syntax: MAIL FROM:<address>\r\n')
 
     def test_MAIL_chevrons(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL from:<eggs@example>')
         self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
 
     def test_nested_MAIL(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL from:eggs@example')
         self.write_line(b'MAIL from:spam@example')
         self.assertEqual(self.channel.socket.last,
             b'503 Error: nested MAIL command\r\n')
 
+    def test_no_HELO_MAIL(self):
+        self.write_line(b'MAIL from:<foo@example.com>')
+        self.assertEqual(self.channel.socket.last,
+                         b'503 Error: send HELO first\r\n')
+
     def test_need_RCPT(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'DATA')
         self.assertEqual(self.channel.socket.last,
             b'503 Error: need RCPT command\r\n')
 
     def test_RCPT_syntax(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT to eggs@example')
         self.assertEqual(self.channel.socket.last,
             b'501 Syntax: RCPT TO: <address>\r\n')
 
+    def test_no_HELO_RCPT(self):
+        self.write_line(b'RCPT to eggs@example')
+        self.assertEqual(self.channel.socket.last,
+                         b'503 Error: send HELO first\r\n')
+
     def test_data_dialog(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
         self.write_line(b'RCPT To:spam@example')
@@ -193,12 +224,19 @@ class SMTPDChannelTest(TestCase):
             [('peer', 'eggs@example', ['spam@example'], 'data\nmore')])
 
     def test_DATA_syntax(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA spam')
         self.assertEqual(self.channel.socket.last, b'501 Syntax: DATA\r\n')
 
+    def test_no_HELO_DATA(self):
+        self.write_line(b'DATA spam')
+        self.assertEqual(self.channel.socket.last,
+                         b'503 Error: send HELO first\r\n')
+
     def test_data_transparency_section_4_5_2(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA')
@@ -206,6 +244,7 @@ class SMTPDChannelTest(TestCase):
         self.assertEqual(self.channel.received_data, '.')
 
     def test_multiple_RCPT(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'RCPT To:ham@example')
@@ -216,6 +255,7 @@ class SMTPDChannelTest(TestCase):
 
     def test_manual_status(self):
         # checks that the Channel is able to return a custom status message
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA')
@@ -223,6 +263,7 @@ class SMTPDChannelTest(TestCase):
         self.assertEqual(self.channel.socket.last, b'250 Okish\r\n')
 
     def test_RSET(self):
+        self.write_line(b'HELO example')
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'RSET')
@@ -233,6 +274,11 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'data\r\n.')
         self.assertEqual(self.server.messages,
             [('peer', 'foo@example', ['eggs@example'], 'data')])
+
+    def test_HELO_RSET(self):
+        self.write_line(b'HELO example')
+        self.write_line(b'RSET')
+        self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
 
     def test_RSET_syntax(self):
         self.write_line(b'RSET hi')
