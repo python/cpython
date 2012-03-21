@@ -1483,6 +1483,8 @@ AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 AC_CHECK_TYPE(ssize_t,
   AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
+AC_CHECK_TYPE(__uint128_t,
+  AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
 
 # Sizes of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
@@ -3329,6 +3331,21 @@ else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT(default LIBC="$LIBC")])
 
+# **************************************
+# * Check for gcc x64 inline assembler *
+# **************************************
+
+AC_MSG_CHECKING(for x64 gcc inline assembler)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  __asm__ __volatile__ ("movq %rcx, %rax");
+]])],[have_gcc_asm_for_x64=yes],[have_gcc_asm_for_x64=no])
+AC_MSG_RESULT($have_gcc_asm_for_x64)
+if test "$have_gcc_asm_for_x64" = yes
+then
+    AC_DEFINE(HAVE_GCC_ASM_FOR_X64, 1,
+    [Define if we can use x64 gcc inline assembler])
+fi
+
 # **************************************************
 # * Check for various properties of floating point *
 # **************************************************
@@ -4332,6 +4349,89 @@ for dir in $SRCDIRS; do
     fi
 done
 AC_MSG_RESULT(done)
+
+# Availability of -O2:
+AC_MSG_CHECKING(for -O2)
+saved_cflags="$CFLAGS"
+CFLAGS="-O2"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+]])],[have_O2=yes],[have_O2=no])
+AC_MSG_RESULT($have_O2)
+CFLAGS="$saved_cflags"
+
+# _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+# http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+AC_MSG_CHECKING(for glibc _FORTIFY_SOURCE/memmove bug)
+saved_cflags="$CFLAGS"
+CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
+if test "$have_O2" = no; then
+    CFLAGS=""
+fi
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void foo(void *p, void *q) { memmove(p, q, 19); }
+int main() {
+  char a[32] = "123456789000000000";
+  foo(&a[9], a);
+  if (strcmp(a, "123456789123456789000000000") != 0)
+    return 1;
+  foo(a, &a[9]);
+  if (strcmp(a, "123456789000000000") != 0)
+    return 1;
+  return 0;
+}
+]])],
+[have_glibc_memmove_bug=no],
+[have_glibc_memmove_bug=yes],
+[have_glibc_memmove_bug=undefined])
+CFLAGS="$saved_cflags"
+AC_MSG_RESULT($have_glibc_memmove_bug)
+if test "$have_glibc_memmove_bug" = yes; then
+    AC_DEFINE(HAVE_GLIBC_MEMMOVE_BUG, 1,
+    [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
+     for memmove and bcopy.])
+fi
+
+if test "$have_gcc_asm_for_x87" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    case $CC in
+        *gcc*)
+            AC_MSG_CHECKING(for gcc ipa-pure-const bug)
+            saved_cflags="$CFLAGS"
+            CFLAGS="-O2"
+            AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            __attribute__((noinline)) int
+            foo(int *p) {
+              int r;
+              asm ( "movl \$6, (%1)\n\t"
+                    "xorl %0, %0\n\t"
+                    : "=r" (r) : "r" (p) : "memory"
+              );
+              return r;
+            }
+            int main() {
+              int p = 8;
+              if ((foo(&p) ? : p) != 6)
+                return 1;
+              return 0;
+            }
+            ]])],
+            [have_ipa_pure_const_bug=no],
+            [have_ipa_pure_const_bug=yes],
+            [have_ipa_pure_const_bug=undefined])
+            CFLAGS="$saved_cflags"
+            AC_MSG_RESULT($have_ipa_pure_const_bug)
+            if test "$have_ipa_pure_const_bug" = yes; then
+                AC_DEFINE(HAVE_IPA_PURE_CONST_BUG, 1,
+                          [Define if gcc has the ipa-pure-const bug.])
+            fi
+        ;;
+    esac
+fi
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc)

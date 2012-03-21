@@ -1416,7 +1416,7 @@ def run_unittest(*classes):
 #=======================================================================
 # doctest driver.
 
-def run_doctest(module, verbosity=None):
+def run_doctest(module, verbosity=None, optionflags=0):
     """Run doctest on the given module.  Return (#failures, #tests).
 
     If optional argument verbosity is not specified (or is None), pass
@@ -1431,7 +1431,7 @@ def run_doctest(module, verbosity=None):
     else:
         verbosity = None
 
-    f, t = doctest.testmod(module, verbose=verbosity)
+    f, t = doctest.testmod(module, verbose=verbosity, optionflags=optionflags)
     if f:
         raise TestFailed("%d of %d doctests failed" % (f, t))
     if verbose:

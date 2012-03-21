@@ -374,6 +374,10 @@ class SMTPChannel(asynchat.async_chat):
         return address
 
     def smtp_MAIL(self, arg):
+        if not self.seen_greeting:
+            self.push('503 Error: send HELO first');
+            return
+
         print('===> MAIL', arg, file=DEBUGSTREAM)
         address = self.__getaddr('FROM:', arg) if arg else None
         if not address:
@@ -387,6 +391,10 @@ class SMTPChannel(asynchat.async_chat):
         self.push('250 Ok')
 
     def smtp_RCPT(self, arg):
+        if not self.seen_greeting:
+            self.push('503 Error: send HELO first');
+            return
+
         print('===> RCPT', arg, file=DEBUGSTREAM)
         if not self.mailfrom:
             self.push('503 Error: need MAIL command')
@@ -411,6 +419,10 @@ class SMTPChannel(asynchat.async_chat):
         self.push('250 Ok')
 
     def smtp_DATA(self, arg):
+        if not self.seen_greeting:
+            self.push('503 Error: send HELO first');
+            return
+
         if not self.rcpttos:
             self.push('503 Error: need RCPT command')
             return

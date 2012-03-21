@@ -9,6 +9,7 @@
 .. moduleauthor:: Raymond Hettinger <python at rcn.com>
 .. moduleauthor:: Aahz <aahz at pobox.com>
 .. moduleauthor:: Tim Peters <tim.one at comcast.net>
+.. moduleauthor:: Stefan Krah <skrah at bytereef.org>
 .. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
 
 .. import modules for testing inline doctests with the Sphinx doctest builder
@@ -20,8 +21,9 @@
    # make sure each group gets a fresh context
    setcontext(Context())
 
-The :mod:`decimal` module provides support for decimal floating point
-arithmetic.  It offers several advantages over the :class:`float` datatype:
+The :mod:`decimal` module provides support for fast correctly-rounded
+decimal floating point arithmetic. It offers several advantages over the
+:class:`float` datatype:
 
 * Decimal "is based on a floating-point model which was designed with people
   in mind, and necessarily has a paramount guiding principle -- computers must
@@ -92,7 +94,7 @@ computation.  Depending on the needs of the application, signals may be ignored,
 considered as informational, or treated as exceptions. The signals in the
 decimal module are: :const:`Clamped`, :const:`InvalidOperation`,
 :const:`DivisionByZero`, :const:`Inexact`, :const:`Rounded`, :const:`Subnormal`,
-:const:`Overflow`, and :const:`Underflow`.
+:const:`Overflow`, :const:`Underflow` and :const:`FloatOperation`.
 
 For each signal there is a flag and a trap enabler.  When a signal is
 encountered, its flag is set to one, then, if the trap enabler is
@@ -122,7 +124,7 @@ precision, rounding, or enabled traps::
 
    >>> from decimal import *
    >>> getcontext()
-   Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+   Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
            capitals=1, clamp=0, flags=[], traps=[Overflow, DivisionByZero,
            InvalidOperation])
 
@@ -132,7 +134,7 @@ Decimal instances can be constructed from integers, strings, floats, or tuples.
 Construction from an integer or a float performs an exact conversion of the
 value of that integer or float.  Decimal numbers include special values such as
 :const:`NaN` which stands for "Not a number", positive and negative
-:const:`Infinity`, and :const:`-0`.
+:const:`Infinity`, and :const:`-0`::
 
    >>> getcontext().prec = 28
    >>> Decimal(10)
@@ -152,6 +154,25 @@ value of that integer or float.  Decimal numbers include special values such as
    >>> Decimal('-Infinity')
    Decimal('-Infinity')
 
+If the :exc:`FloatOperation` signal is trapped, accidental mixing of
+decimals and floats in constructors or ordering comparisons raises
+an exception::
+
+   >>> c = getcontext()
+   >>> c.traps[FloatOperation] = True
+   >>> Decimal(3.14)
+   Traceback (most recent call last):
+   File "<stdin>", line 1, in <module>
+   decimal.FloatOperation: [<class 'decimal.FloatOperation'>]
+   >>> Decimal('3.5') < 3.7
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   decimal.FloatOperation: [<class 'decimal.FloatOperation'>]
+   >>> Decimal('3.5') == 3.5
+   True
+
+.. versionadded:: 3.3
+
 The significance of a new Decimal is determined solely by the number of digits
 input.  Context precision and rounding only come into play during arithmetic
 operations.
@@ -168,6 +189,16 @@ operations.
    >>> getcontext().rounding = ROUND_UP
    >>> Decimal('3.1415926535') + Decimal('2.7182818285')
    Decimal('5.85988')
+
+If the internal limits of the C version are exceeded, constructing
+a decimal raises :class:`InvalidOperation`::
+
+   >>> Decimal("1e9999999999999999999")
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   decimal.InvalidOperation: [<class 'decimal.InvalidOperation'>]
+
+.. versionchanged:: 3.3
 
 Decimals interact well with much of the rest of Python.  Here is a small decimal
 floating point flying circus:
@@ -244,7 +275,7 @@ enabled:
    Decimal('0.142857142857142857142857142857142857142857142857142857142857')
 
    >>> ExtendedContext
-   Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+   Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
            capitals=1, clamp=0, flags=[], traps=[])
    >>> setcontext(ExtendedContext)
    >>> Decimal(1) / Decimal(7)
@@ -269,7 +300,7 @@ using the :meth:`clear_flags` method. ::
    >>> Decimal(355) / Decimal(113)
    Decimal('3.14159292')
    >>> getcontext()
-   Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
+   Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
            capitals=1, clamp=0, flags=[Inexact, Rounded], traps=[])
 
 The *flags* entry shows that the rational approximation to :const:`Pi` was
@@ -357,6 +388,10 @@ Decimal objects
    .. versionchanged:: 3.2
       The argument to the constructor is now permitted to be a :class:`float`
       instance.
+
+   .. versionchanged:: 3.3
+      :class:`float` arguments raise an exception if the :exc:`FloatOperation`
+      trap is set. By default the trap is off.
 
    Decimal floating point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
@@ -880,39 +915,33 @@ described below. In addition, the module provides three pre-made contexts:
    In single threaded environments, it is preferable to not use this context at
    all.  Instead, simply create contexts explicitly as described below.
 
-   The default values are precision=28, rounding=ROUND_HALF_EVEN, and enabled traps
-   for Overflow, InvalidOperation, and DivisionByZero.
+   The default values are :attr:`prec`\ =\ :const:`28`,
+   :attr:`rounding`\ =\ :const:`ROUND_HALF_EVEN`,
+   and enabled traps for :class:`Overflow`, :class:`InvalidOperation`, and
+   :class:`DivisionByZero`.
 
 In addition to the three supplied contexts, new contexts can be created with the
 :class:`Context` constructor.
 
 
-.. class:: Context(prec=None, rounding=None, traps=None, flags=None, Emin=None, Emax=None, capitals=None, clamp=None)
+.. class:: Context(prec=None, rounding=None, Emin=None, Emax=None, capitals=None, clamp=None, flags=None, traps=None)
 
    Creates a new context.  If a field is not specified or is :const:`None`, the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   The *prec* field is a positive integer that sets the precision for arithmetic
-   operations in the context.
+   *prec* is an integer in the range [:const:`1`, :const:`MAX_PREC`] that sets
+   the precision for arithmetic operations in the context.
 
-   The *rounding* option is one of:
-
-   * :const:`ROUND_CEILING` (towards :const:`Infinity`),
-   * :const:`ROUND_DOWN` (towards zero),
-   * :const:`ROUND_FLOOR` (towards :const:`-Infinity`),
-   * :const:`ROUND_HALF_DOWN` (to nearest with ties going towards zero),
-   * :const:`ROUND_HALF_EVEN` (to nearest with ties going to nearest even integer),
-   * :const:`ROUND_HALF_UP` (to nearest with ties going away from zero), or
-   * :const:`ROUND_UP` (away from zero).
-   * :const:`ROUND_05UP` (away from zero if last digit after rounding towards zero
-     would have been 0 or 5; otherwise towards zero)
+   The *rounding* option is one of the constants listed in the section
+   `Rounding Modes`_.
 
    The *traps* and *flags* fields list any signals to be set. Generally, new
    contexts should only set traps and leave the flags clear.
 
    The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents.
+   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, :const:`0`],
+   *Emax* in the range [:const:`0`, :const:`MAX_EMAX`].
 
    The *capitals* field is either :const:`0` or :const:`1` (the default). If set to
    :const:`1`, exponents are printed with a capital :const:`E`; otherwise, a
@@ -950,6 +979,12 @@ In addition to the three supplied contexts, new contexts can be created with the
    .. method:: clear_flags()
 
       Resets all of the flags to :const:`0`.
+
+   .. method:: clear_traps()
+
+      Resets all of the traps to :const:`0`.
+
+      .. versionadded:: 3.3
 
    .. method:: copy()
 
@@ -1250,8 +1285,13 @@ In addition to the three supplied contexts, new contexts can be created with the
       With two arguments, compute ``x**y``.  If ``x`` is negative then ``y``
       must be integral.  The result will be inexact unless ``y`` is integral and
       the result is finite and can be expressed exactly in 'precision' digits.
-      The result should always be correctly rounded, using the rounding mode of
-      the current thread's context.
+      The rounding mode of the context is used. Results are always correctly-rounded
+      in the Python version.
+
+      .. versionchanged:: 3.3
+         The C module computes :meth:`power` in terms of the correctly-rounded
+         :meth:`exp` and :meth:`ln` functions. The result is well-defined but
+         only "almost always correctly-rounded".
 
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
@@ -1339,6 +1379,69 @@ In addition to the three supplied contexts, new contexts can be created with the
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+.. _decimal-rounding-modes:
+
+Constants
+---------
+
+The constants in this section are only relevant for the C module. They
+are also included in the pure Python version for compatibility.
+
++---------------------+---------------------+-------------------------------+
+|                     |       32-bit        |            64-bit             |
++=====================+=====================+===============================+
+| .. data:: MAX_PREC  | :const:`425000000`  | :const:`999999999999999999`   |
++---------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX  | :const:`425000000`  | :const:`999999999999999999`   |
++---------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN  | :const:`-425000000` | :const:`-999999999999999999`  |
++---------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY | :const:`-849999999` | :const:`-1999999999999999997` |
++---------------------+---------------------+-------------------------------+
+
+
+.. data:: HAVE_THREADS
+
+   The default value is True. If Python is compiled without threads, the
+   C version automatically disables the expensive thread local context
+   machinery. In this case, the value is False.
+
+Rounding modes
+--------------
+
+.. data:: ROUND_CEILING
+
+   Round towards :const:`Infinity`.
+
+.. data:: ROUND_DOWN
+
+   Round towards zero.
+
+.. data:: ROUND_FLOOR
+
+   Round towards :const:`-Infinity`.
+
+.. data:: ROUND_HALF_DOWN
+
+   Round to nearest with ties going towards zero.
+
+.. data:: ROUND_HALF_EVEN
+
+   Round to nearest with ties going to nearest even integer.
+
+.. data:: ROUND_HALF_UP
+
+   Round to nearest with ties going away from zero.
+
+.. data:: ROUND_UP
+
+   Round away from zero.
+
+.. data:: ROUND_05UP
+
+   Round away from zero if last digit after rounding towards zero would have
+   been 0 or 5; otherwise round towards zero.
+
 
 .. _decimal-signals:
 
@@ -1403,7 +1506,6 @@ condition.
       Infinity / Infinity
       x % 0
       Infinity % x
-      x._rescale( non-integer )
       sqrt(-x) and x > 0
       0 ** 0
       x ** (non-integer)
@@ -1446,6 +1548,23 @@ condition.
    Occurs when a subnormal result is pushed to zero by rounding. :class:`Inexact`
    and :class:`Subnormal` are also signaled.
 
+
+.. class:: FloatOperation
+
+    Enable stricter semantics for mixing floats and Decimals.
+
+    If the signal is not trapped (default), mixing floats and Decimals is
+    permitted in the :class:`~decimal.Decimal` constructor,
+    :meth:`~decimal.Context.create_decimal` and all comparison operators.
+    Both conversion and comparisons are exact. Any occurrence of a mixed
+    operation is silently recorded by setting :exc:`FloatOperation` in the
+    context flags. Explicit conversions with :meth:`~decimal.Decimal.from_float`
+    or :meth:`~decimal.Context.create_decimal_from_float` do not set the flag.
+
+    Otherwise (the signal is trapped), only equality comparisons and explicit
+    conversions are silent. All other mixed operations raise :exc:`FloatOperation`.
+
+
 The following table summarizes the hierarchy of signals::
 
    exceptions.ArithmeticError(exceptions.Exception)
@@ -1458,8 +1577,10 @@ The following table summarizes the hierarchy of signals::
            InvalidOperation
            Rounded
            Subnormal
+           FloatOperation
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 .. _decimal-notes:
@@ -1571,7 +1692,7 @@ normalized floating point representations, it is not immediately obvious that
 the following calculation returns a value equal to zero:
 
    >>> 1 / Decimal('Infinity')
-   Decimal('0E-1000000026')
+   Decimal('0E-1000026')
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1583,7 +1704,7 @@ Working with threads
 
 The :func:`getcontext` function accesses a different :class:`Context` object for
 each thread.  Having separate thread contexts means that threads may make
-changes (such as ``getcontext.prec=10``) without interfering with other threads.
+changes (such as ``getcontext().prec=10``) without interfering with other threads.
 
 Likewise, the :func:`setcontext` function automatically assigns its target to
 the current thread.
