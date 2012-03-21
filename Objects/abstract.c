@@ -1350,7 +1350,7 @@ PyNumber_Long(PyObject *o)
     }
     if (PyLong_Check(o)) /* An int subclass without nb_int */
         return _PyLong_Copy((PyLongObject *)o);
-    trunc_func = _PyObject_GetAttrId(o, &PyId___trunc__);
+    trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
         PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
         PyObject *int_instance;
@@ -1362,7 +1362,8 @@ PyNumber_Long(PyObject *o)
             "__trunc__ returned non-Integral (type %.200s)");
         return int_instance;
     }
-    PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
+    if (PyErr_Occurred())
+        return NULL;
 
     if (PyBytes_Check(o))
         /* need to do extra error checking that PyLong_FromString()
