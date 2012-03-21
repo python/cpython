@@ -1268,37 +1268,32 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 }
 
 
-PyObject *
-_PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
+/*
+  Returns the Integral instance converted to an int. The instance is expected
+  to be an int or have an __int__ method. Steals integral's
+  reference. error_format will be used to create the TypeError if integral
+  isn't actually an Integral instance. error_format should be a format string
+  that can accept a char* naming integral's type. 
+*/
+static PyObject *
+convert_integral_to_int(PyObject *integral, const char *error_format)
 {
-    static PyObject *int_name = NULL;
-    if (int_name == NULL) {
-        int_name = PyUnicode_InternFromString("__int__");
-        if (int_name == NULL)
-            return NULL;
-    }
-
-    if (integral && !PyLong_Check(integral)) {
-        /* Don't go through tp_as_number->nb_int to avoid
-           hitting the classic class fallback to __trunc__. */
-        PyObject *int_func = PyObject_GetAttr(integral, int_name);
-        if (int_func == NULL) {
-            PyErr_Clear(); /* Raise a different error. */
-            goto non_integral_error;
-        }
+    PyNumberMethods *nb;
+    if (PyLong_Check(integral))
+        return integral;
+    nb = Py_TYPE(integral)->tp_as_number;
+    if (nb->nb_int) {
+        PyObject *as_int = nb->nb_int(integral);
         Py_DECREF(integral);
-        integral = PyEval_CallObject(int_func, NULL);
-        Py_DECREF(int_func);
-        if (integral && !PyLong_Check(integral)) {
-            goto non_integral_error;
-        }
+        if (!as_int)
+            return NULL;
+        if (PyLong_Check(as_int))
+            return as_int;
+        Py_DECREF(as_int);
     }
-    return integral;
-
-non_integral_error:
     PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
     Py_DECREF(integral);
-    return NULL;
+    return NULL;    
 }
 
 
@@ -1325,16 +1320,10 @@ PyObject *
 PyNumber_Long(PyObject *o)
 {
     PyNumberMethods *m;
-    static PyObject *trunc_name = NULL;
     PyObject *trunc_func;
     const char *buffer;
     Py_ssize_t buffer_len;
-
-    if (trunc_name == NULL) {
-        trunc_name = PyUnicode_InternFromString("__trunc__");
-        if (trunc_name == NULL)
-            return NULL;
-    }
+    _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL)
         return null_error();
@@ -1356,23 +1345,23 @@ PyNumber_Long(PyObject *o)
     }
     if (PyLong_Check(o)) /* An int subclass without nb_int */
         return _PyLong_Copy((PyLongObject *)o);
-    trunc_func = PyObject_GetAttr(o, trunc_name);
+    trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
         PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
         PyObject *int_instance;
         Py_DECREF(trunc_func);
         /* __trunc__ is specified to return an Integral type,
-           but long() needs to return a long. */
-        int_instance = _PyNumber_ConvertIntegralToInt(
-            truncated,
+           but int() needs to return a int. */
+        int_instance = convert_integral_to_int(truncated,
             "__trunc__ returned non-Integral (type %.200s)");
         return int_instance;
     }
-    PyErr_Clear();  /* It's not an error if  o.__trunc__ doesn't exist. */
+    if (PyErr_Occurred())
+        return NULL;
 
     if (PyBytes_Check(o))
         /* need to do extra error checking that PyLong_FromString()
-         * doesn't do.  In particular long('9.5') must raise an
+         * doesn't do.  In particular int('9.5') must raise an
          * exception, not truncate the float.
          */
         return long_from_string(PyBytes_AS_STRING(o),
@@ -2411,10 +2400,8 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* isinstance(), issubclass() */
 
-/* abstract_get_bases() has logically 4 return states, with a sort of 0th
- * state that will almost never happen.
+/* abstract_get_bases() has logically 4 return states:
  *
- * 0. creating the __bases__ static string could get a MemoryError
  * 1. getattr(cls, '__bases__') could raise an AttributeError
  * 2. getattr(cls, '__bases__') could raise some other exception
  * 3. getattr(cls, '__bases__') could return a tuple
@@ -2440,16 +2427,11 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
-    static PyObject *__bases__ = NULL;
+    _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    if (__bases__ == NULL) {
-        __bases__ = PyUnicode_InternFromString("__bases__");
-        if (__bases__ == NULL)
-            return NULL;
-    }
     Py_ALLOW_RECURSION
-    bases = PyObject_GetAttr(cls, __bases__);
+    bases = _PyObject_GetAttrId(cls, &PyId___bases__);
     Py_END_ALLOW_RECURSION
     if (bases == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -2519,19 +2501,13 @@ static int
 recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
-    static PyObject *__class__ = NULL;
     int retval = 0;
-
-    if (__class__ == NULL) {
-        __class__ = PyUnicode_InternFromString("__class__");
-        if (__class__ == NULL)
-            return -1;
-    }
+    _Py_IDENTIFIER(__class__);
 
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            PyObject *c = PyObject_GetAttr(inst, __class__);
+            PyObject *c = _PyObject_GetAttrId(inst, &PyId___class__);
             if (c == NULL) {
                 if (PyErr_ExceptionMatches(PyExc_AttributeError))
                     PyErr_Clear();
@@ -2552,7 +2528,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type or tuple of types"))
             return -1;
-        icls = PyObject_GetAttr(inst, __class__);
+        icls = _PyObject_GetAttrId(inst, &PyId___class__);
         if (icls == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_Clear();
