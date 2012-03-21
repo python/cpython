@@ -1412,8 +1412,10 @@ def main():
 
     if enable_edit:
         if not (cmd or script):
-            for filename in args:
-                flist.open(filename)
+            for filename in args[:]:
+                if flist.open(filename) is None:
+                    # filename is a directory actually, disconsider it
+                    args.remove(filename)
             if not args:
                 flist.new()
     if enable_shell:

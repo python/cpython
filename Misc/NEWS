@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3573: IDLE hangs when passing invalid command line args
+  (directory(ies) instead of file(s)) (Patch by Guilherme Polo)
+
 - Issue #13694: asynchronous connect in asyncore.dispatcher does not set addr
   attribute.
 
