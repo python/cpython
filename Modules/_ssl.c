@@ -159,6 +159,10 @@ static unsigned int _ssl_locks_count = 0;
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
+#ifdef OPENSSL_NPN_NEGOTIATED
+    char *npn_protocols;
+    int npn_protocols_len;
+#endif
 } PySSLContext;
 
 typedef struct {
@@ -1015,6 +1019,20 @@ static PyObject *PySSL_cipher (PySSLSocket *self) {
     return NULL;
 }
 
+#ifdef OPENSSL_NPN_NEGOTIATED
+static PyObject *PySSL_selected_npn_protocol(PySSLSocket *self) {
+    const unsigned char *out;
+    unsigned int outlen;
+
+    SSL_get0_next_proto_negotiated(self->ssl, 
+                                   &out, &outlen);
+
+    if (out == NULL)
+        Py_RETURN_NONE;
+    return PyUnicode_FromStringAndSize((char *) out, outlen);
+}
+#endif
+
 static PyObject *PySSL_compression(PySSLSocket *self) {
 #ifdef OPENSSL_NO_COMP
     Py_RETURN_NONE;
@@ -1487,6 +1505,9 @@ static PyMethodDef PySSLMethods[] = {
     {"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
      PySSL_peercert_doc},
     {"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
+#ifdef OPENSSL_NPN_NEGOTIATED
+    {"selected_npn_protocol", (PyCFunction)PySSL_selected_npn_protocol, METH_NOARGS},
+#endif
     {"compression", (PyCFunction)PySSL_compression, METH_NOARGS},
     {"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
      PySSL_SSLshutdown_doc},
@@ -1597,6 +1618,9 @@ static void
 context_dealloc(PySSLContext *self)
 {
     SSL_CTX_free(self->ctx);
+#ifdef OPENSSL_NPN_NEGOTIATED
+    PyMem_Free(self->npn_protocols);
+#endif
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -1619,6 +1643,87 @@ set_ciphers(PySSLContext *self, PyObject *args)
         return NULL;
     }
     Py_RETURN_NONE;
+}
+
+#ifdef OPENSSL_NPN_NEGOTIATED
+/* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
+static int
+_advertiseNPN_cb(SSL *s, 
+                 const unsigned char **data, unsigned int *len, 
+                 void *args)
+{
+    PySSLContext *ssl_ctx = (PySSLContext *) args;
+
+    if (ssl_ctx->npn_protocols == NULL) {
+        *data = (unsigned char *) "";
+        *len = 0;
+    } else {
+        *data = (unsigned char *) ssl_ctx->npn_protocols;
+        *len = ssl_ctx->npn_protocols_len;
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+/* this callback gets passed to SSL_CTX_set_next_proto_select_cb */
+static int
+_selectNPN_cb(SSL *s, 
+              unsigned char **out, unsigned char *outlen,
+              const unsigned char *server, unsigned int server_len,
+              void *args)
+{
+    PySSLContext *ssl_ctx = (PySSLContext *) args;
+
+    unsigned char *client = (unsigned char *) ssl_ctx->npn_protocols;
+    int client_len;
+
+    if (client == NULL) {
+        client = (unsigned char *) "";
+        client_len = 0;
+    } else {
+        client_len = ssl_ctx->npn_protocols_len;
+    }
+
+    SSL_select_next_proto(out, outlen,
+                          server, server_len,
+                          client, client_len);
+
+    return SSL_TLSEXT_ERR_OK;
+}
+#endif
+
+static PyObject *
+_set_npn_protocols(PySSLContext *self, PyObject *args)
+{
+#ifdef OPENSSL_NPN_NEGOTIATED
+    Py_buffer protos;
+
+    if (!PyArg_ParseTuple(args, "y*:set_npn_protocols", &protos))
+        return NULL;
+
+    self->npn_protocols = PyMem_Malloc(protos.len);
+    if (self->npn_protocols == NULL) {
+        PyBuffer_Release(&protos);
+        return PyErr_NoMemory();
+    }
+    memcpy(self->npn_protocols, protos.buf, protos.len);
+    self->npn_protocols_len = (int) protos.len;
+
+    /* set both server and client callbacks, because the context can
+     * be used to create both types of sockets */
+    SSL_CTX_set_next_protos_advertised_cb(self->ctx,
+                                          _advertiseNPN_cb,
+                                          self);
+    SSL_CTX_set_next_proto_select_cb(self->ctx,
+                                     _selectNPN_cb,
+                                     self);
+
+    PyBuffer_Release(&protos);
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "The NPN extension requires OpenSSL 1.0.1 or later.");
+    return NULL;
+#endif
 }
 
 static PyObject *
@@ -2097,6 +2202,8 @@ static struct PyMethodDef context_methods[] = {
                        METH_VARARGS | METH_KEYWORDS, NULL},
     {"set_ciphers", (PyCFunction) set_ciphers,
                     METH_VARARGS, NULL},
+    {"_set_npn_protocols", (PyCFunction) _set_npn_protocols,
+                           METH_VARARGS, NULL},
     {"load_cert_chain", (PyCFunction) load_cert_chain,
                         METH_VARARGS | METH_KEYWORDS, NULL},
     {"load_dh_params", (PyCFunction) load_dh_params,
@@ -2589,6 +2696,14 @@ PyInit__ssl(void)
 #endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_ECDH", r);
+
+#ifdef OPENSSL_NPN_NEGOTIATED
+    r = Py_True;
+#else
+    r = Py_False;
+#endif
+    Py_INCREF(r);
+    PyModule_AddObject(m, "HAS_NPN", r);
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,

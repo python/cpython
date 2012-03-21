@@ -470,6 +470,16 @@ Constants
 
    .. versionadded:: 3.2
 
+.. data:: HAS_NPN
+
+   Whether the OpenSSL library has built-in support for *Next Protocol
+   Negotiation* as described in the `NPN draft specification
+   <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. When true,
+   you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
+   which protocols you want to support.
+
+   .. versionadded:: 3.3
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -609,6 +619,15 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+.. method:: SSLSocket.selected_npn_protocol()
+
+   Returns the protocol that was selected during the TLS/SSL handshake. If
+   :meth:`SSLContext.set_npn_protocols` was not called, or if the other party
+   does not support NPN, or if the handshake has not yet happened, this will
+   return ``None``.
+
+   .. versionadded:: 3.3
+
 .. method:: SSLSocket.unwrap()
 
    Performs the SSL shutdown handshake, which removes the TLS layer from the
@@ -616,7 +635,6 @@ SSL sockets also have the following additional methods and attributes:
    used to go from encrypted operation over a connection to unencrypted.  The
    returned socket should always be used for further communication with the
    other side of the connection, rather than the original socket.
-
 
 .. attribute:: SSLSocket.context
 
@@ -714,6 +732,21 @@ to speed up repeated connections from the same clients.
    .. note::
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
+
+.. method:: SSLContext.set_npn_protocols(protocols)
+
+   Specify which protocols the socket should avertise during the SSL/TLS
+   handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
+   ordered by preference. The selection of a protocol will happen during the
+   handshake, and will play out according to the `NPN draft specification
+   <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. After a
+   successful handshake, the :meth:`SSLSocket.selected_npn_protocol` method will
+   return the agreed-upon protocol.
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_NPN` is
+   False.
+
+   .. versionadded:: 3.3
 
 .. method:: SSLContext.load_dh_params(dhfile)
 
