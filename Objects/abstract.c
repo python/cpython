@@ -1325,16 +1325,10 @@ PyObject *
 PyNumber_Long(PyObject *o)
 {
     PyNumberMethods *m;
-    static PyObject *trunc_name = NULL;
     PyObject *trunc_func;
     const char *buffer;
     Py_ssize_t buffer_len;
-
-    if (trunc_name == NULL) {
-        trunc_name = PyUnicode_InternFromString("__trunc__");
-        if (trunc_name == NULL)
-            return NULL;
-    }
+    _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL)
         return null_error();
@@ -1356,7 +1350,7 @@ PyNumber_Long(PyObject *o)
     }
     if (PyLong_Check(o)) /* An int subclass without nb_int */
         return _PyLong_Copy((PyLongObject *)o);
-    trunc_func = PyObject_GetAttr(o, trunc_name);
+    trunc_func = _PyObject_GetAttrId(o, &PyId___trunc__);
     if (trunc_func) {
         PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
         PyObject *int_instance;
@@ -2411,10 +2405,8 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* isinstance(), issubclass() */
 
-/* abstract_get_bases() has logically 4 return states, with a sort of 0th
- * state that will almost never happen.
+/* abstract_get_bases() has logically 4 return states:
  *
- * 0. creating the __bases__ static string could get a MemoryError
  * 1. getattr(cls, '__bases__') could raise an AttributeError
  * 2. getattr(cls, '__bases__') could raise some other exception
  * 3. getattr(cls, '__bases__') could return a tuple
@@ -2440,16 +2432,11 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
-    static PyObject *__bases__ = NULL;
+    _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    if (__bases__ == NULL) {
-        __bases__ = PyUnicode_InternFromString("__bases__");
-        if (__bases__ == NULL)
-            return NULL;
-    }
     Py_ALLOW_RECURSION
-    bases = PyObject_GetAttr(cls, __bases__);
+    bases = _PyObject_GetAttrId(cls, &PyId___bases__);
     Py_END_ALLOW_RECURSION
     if (bases == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -2519,19 +2506,13 @@ static int
 recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
-    static PyObject *__class__ = NULL;
     int retval = 0;
-
-    if (__class__ == NULL) {
-        __class__ = PyUnicode_InternFromString("__class__");
-        if (__class__ == NULL)
-            return -1;
-    }
+    _Py_IDENTIFIER(__class__);
 
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            PyObject *c = PyObject_GetAttr(inst, __class__);
+            PyObject *c = _PyObject_GetAttrId(inst, &PyId___class__);
             if (c == NULL) {
                 if (PyErr_ExceptionMatches(PyExc_AttributeError))
                     PyErr_Clear();
@@ -2552,7 +2533,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type or tuple of types"))
             return -1;
-        icls = PyObject_GetAttr(inst, __class__);
+        icls = _PyObject_GetAttrId(inst, &PyId___class__);
         if (icls == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_Clear();
