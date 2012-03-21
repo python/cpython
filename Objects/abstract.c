@@ -1351,7 +1351,7 @@ PyNumber_Long(PyObject *o)
         PyObject *int_instance;
         Py_DECREF(trunc_func);
         /* __trunc__ is specified to return an Integral type,
-           but long() needs to return a long. */
+           but int() needs to return a int. */
         int_instance = convert_integral_to_int(truncated,
             "__trunc__ returned non-Integral (type %.200s)");
         return int_instance;
@@ -1361,7 +1361,7 @@ PyNumber_Long(PyObject *o)
 
     if (PyBytes_Check(o))
         /* need to do extra error checking that PyLong_FromString()
-         * doesn't do.  In particular long('9.5') must raise an
+         * doesn't do.  In particular int('9.5') must raise an
          * exception, not truncate the float.
          */
         return long_from_string(PyBytes_AS_STRING(o),
