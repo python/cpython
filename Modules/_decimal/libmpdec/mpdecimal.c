@@ -6192,7 +6192,7 @@ mpd_qpowmod(mpd_t *result, const mpd_t *base, const mpd_t *exp,
         mpd_qdivint(&texp, &texp, &two, &maxcontext, status);
     }
     if (mpd_isspecial(&texp) || mpd_isspecial(&tbase) ||
-            mpd_isspecial(&tmod) || mpd_isspecial(result)) {
+        mpd_isspecial(&tmod) || mpd_isspecial(result)) {
         /* MPD_Malloc_error */
         goto mpd_errors;
     }

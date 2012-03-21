@@ -328,33 +328,33 @@ conversion_error:
 static inline char *
 word_to_string(char *s, mpd_uint_t x, int n, char *dot)
 {
-        switch(n) {
+    switch(n) {
 #ifdef CONFIG_64
-        case 20: EXTRACT_DIGIT(s, x, 10000000000000000000ULL, dot); /* GCOV_NOT_REACHED */
-        case 19: EXTRACT_DIGIT(s, x, 1000000000000000000ULL, dot);
-        case 18: EXTRACT_DIGIT(s, x, 100000000000000000ULL, dot);
-        case 17: EXTRACT_DIGIT(s, x, 10000000000000000ULL, dot);
-        case 16: EXTRACT_DIGIT(s, x, 1000000000000000ULL, dot);
-        case 15: EXTRACT_DIGIT(s, x, 100000000000000ULL, dot);
-        case 14: EXTRACT_DIGIT(s, x, 10000000000000ULL, dot);
-        case 13: EXTRACT_DIGIT(s, x, 1000000000000ULL, dot);
-        case 12: EXTRACT_DIGIT(s, x, 100000000000ULL, dot);
-        case 11: EXTRACT_DIGIT(s, x, 10000000000ULL, dot);
+    case 20: EXTRACT_DIGIT(s, x, 10000000000000000000ULL, dot); /* GCOV_NOT_REACHED */
+    case 19: EXTRACT_DIGIT(s, x, 1000000000000000000ULL, dot);
+    case 18: EXTRACT_DIGIT(s, x, 100000000000000000ULL, dot);
+    case 17: EXTRACT_DIGIT(s, x, 10000000000000000ULL, dot);
+    case 16: EXTRACT_DIGIT(s, x, 1000000000000000ULL, dot);
+    case 15: EXTRACT_DIGIT(s, x, 100000000000000ULL, dot);
+    case 14: EXTRACT_DIGIT(s, x, 10000000000000ULL, dot);
+    case 13: EXTRACT_DIGIT(s, x, 1000000000000ULL, dot);
+    case 12: EXTRACT_DIGIT(s, x, 100000000000ULL, dot);
+    case 11: EXTRACT_DIGIT(s, x, 10000000000ULL, dot);
 #endif
-        case 10: EXTRACT_DIGIT(s, x, 1000000000UL, dot);
-        case 9:  EXTRACT_DIGIT(s, x, 100000000UL, dot);
-        case 8:  EXTRACT_DIGIT(s, x, 10000000UL, dot);
-        case 7:  EXTRACT_DIGIT(s, x, 1000000UL, dot);
-        case 6:  EXTRACT_DIGIT(s, x, 100000UL, dot);
-        case 5:  EXTRACT_DIGIT(s, x, 10000UL, dot);
-        case 4:  EXTRACT_DIGIT(s, x, 1000UL, dot);
-        case 3:  EXTRACT_DIGIT(s, x, 100UL, dot);
-        case 2:  EXTRACT_DIGIT(s, x, 10UL, dot);
-        default: if (s == dot) *s++ = '.'; *s++ = '0' + (char)x;
-        }
+    case 10: EXTRACT_DIGIT(s, x, 1000000000UL, dot);
+    case 9:  EXTRACT_DIGIT(s, x, 100000000UL, dot);
+    case 8:  EXTRACT_DIGIT(s, x, 10000000UL, dot);
+    case 7:  EXTRACT_DIGIT(s, x, 1000000UL, dot);
+    case 6:  EXTRACT_DIGIT(s, x, 100000UL, dot);
+    case 5:  EXTRACT_DIGIT(s, x, 10000UL, dot);
+    case 4:  EXTRACT_DIGIT(s, x, 1000UL, dot);
+    case 3:  EXTRACT_DIGIT(s, x, 100UL, dot);
+    case 2:  EXTRACT_DIGIT(s, x, 10UL, dot);
+    default: if (s == dot) *s++ = '.'; *s++ = '0' + (char)x;
+    }
  
-        *s = '\0';
-        return s;
+    *s = '\0';
+    return s;
 }
 
 /* Print exponent x to string s. Undefined for MPD_SSIZE_MIN. */
