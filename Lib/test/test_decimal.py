@@ -16,7 +16,7 @@ test the pythonic behaviour according to PEP 327.
 
 Cowlishaw's tests can be downloaded from:
 
-   www2.hursley.ibm.com/decimal/dectest.zip
+   http://speleotrove.com/decimal/dectest.zip
 
 This test module can be called from command line with one parameter (Arithmetic
 or Behaviour) to test each part, or without parameter to test both parts. If
@@ -30,37 +30,74 @@ import operator
 import warnings
 import pickle, copy
 import unittest
-from decimal import *
 import numbers
+import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754)
-from test.support import check_warnings
+from test.support import check_warnings, import_fresh_module, TestFailed
 import random
+import time
+import warnings
 try:
     import threading
 except ImportError:
     threading = None
 
-# Useful Test Constant
-Signals = tuple(getcontext().flags.keys())
 
+C = import_fresh_module('decimal', fresh=['_decimal'])
+P = import_fresh_module('decimal', blocked=['_decimal'])
+orig_sys_decimal = sys.modules['decimal']
+
+# fractions module must import the correct decimal module.
+cfractions = import_fresh_module('fractions', fresh=['fractions'])
+sys.modules['decimal'] = P
+pfractions = import_fresh_module('fractions', fresh=['fractions'])
+sys.modules['decimal'] = C
+fractions = {C:cfractions, P:pfractions}
+sys.modules['decimal'] = orig_sys_decimal
+
+
+# Useful Test Constant
+Signals = {
+  C: tuple(C.getcontext().flags.keys()) if C else None,
+  P: tuple(P.getcontext().flags.keys())
+}
 # Signals ordered with respect to precedence: when an operation
 # produces multiple signals, signals occurring later in the list
 # should be handled before those occurring earlier in the list.
-OrderedSignals = (Clamped, Rounded, Inexact, Subnormal,
-                  Underflow, Overflow, DivisionByZero, InvalidOperation)
+OrderedSignals = {
+  C: [C.Clamped, C.Rounded, C.Inexact, C.Subnormal, C.Underflow,
+      C.Overflow, C.DivisionByZero, C.InvalidOperation,
+      C.FloatOperation] if C else None,
+  P: [P.Clamped, P.Rounded, P.Inexact, P.Subnormal, P.Underflow,
+      P.Overflow, P.DivisionByZero, P.InvalidOperation,
+      P.FloatOperation]
+}
+def assert_signals(cls, context, attr, expected):
+    d = getattr(context, attr)
+    cls.assertTrue(all(d[s] if s in expected else not d[s] for s in d))
+
+RoundingModes = {
+  C: (C.ROUND_UP, C.ROUND_DOWN, C.ROUND_CEILING, C.ROUND_FLOOR,
+      C.ROUND_HALF_UP, C.ROUND_HALF_DOWN, C.ROUND_HALF_EVEN,
+      C.ROUND_05UP) if C else None,
+  P: (P.ROUND_UP, P.ROUND_DOWN, P.ROUND_CEILING, P.ROUND_FLOOR,
+      P.ROUND_HALF_UP, P.ROUND_HALF_DOWN, P.ROUND_HALF_EVEN,
+      P.ROUND_05UP)
+}
 
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
-def init():
-    global ORIGINAL_CONTEXT
-    ORIGINAL_CONTEXT = getcontext().copy()
-    DefaultTestContext = Context(
-        prec = 9,
-        rounding = ROUND_HALF_EVEN,
-        traps = dict.fromkeys(Signals, 0)
-        )
-    setcontext(DefaultTestContext)
+ORIGINAL_CONTEXT = {
+  C: C.getcontext().copy() if C else None,
+  P: P.getcontext().copy()
+}
+def init(m):
+    if not m: return
+    DefaultTestContext = m.Context(
+       prec=9, rounding=m.ROUND_HALF_EVEN, traps=dict.fromkeys(Signals[m], 0)
+    )
+    m.setcontext(DefaultTestContext)
 
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
@@ -72,149 +109,175 @@ directory = testdir + os.sep + TESTDATADIR + os.sep
 
 skip_expected = not os.path.isdir(directory)
 
-# list of individual .decTest test ids that correspond to tests that
-# we're skipping for one reason or another.
-skipped_test_ids = set([
-    # Skip implementation-specific scaleb tests.
-    'scbx164',
-    'scbx165',
-
-    # For some operations (currently exp, ln, log10, power), the decNumber
-    # reference implementation imposes additional restrictions on the context
-    # and operands.  These restrictions are not part of the specification;
-    # however, the effect of these restrictions does show up in some of the
-    # testcases.  We skip testcases that violate these restrictions, since
-    # Decimal behaves differently from decNumber for these testcases so these
-    # testcases would otherwise fail.
-    'expx901',
-    'expx902',
-    'expx903',
-    'expx905',
-    'lnx901',
-    'lnx902',
-    'lnx903',
-    'lnx905',
-    'logx901',
-    'logx902',
-    'logx903',
-    'logx905',
-    'powx1183',
-    'powx1184',
-    'powx4001',
-    'powx4002',
-    'powx4003',
-    'powx4005',
-    'powx4008',
-    'powx4010',
-    'powx4012',
-    'powx4014',
-    ])
-
 # Make sure it actually raises errors when not expected and caught in flags
 # Slower, since it runs some things several times.
 EXTENDEDERRORTEST = False
 
-#Map the test cases' error names to the actual errors
-ErrorNames = {'clamped' : Clamped,
-              'conversion_syntax' : InvalidOperation,
-              'division_by_zero' : DivisionByZero,
-              'division_impossible' : InvalidOperation,
-              'division_undefined' : InvalidOperation,
-              'inexact' : Inexact,
-              'invalid_context' : InvalidOperation,
-              'invalid_operation' : InvalidOperation,
-              'overflow' : Overflow,
-              'rounded' : Rounded,
-              'subnormal' : Subnormal,
-              'underflow' : Underflow}
+# Test extra functionality in the C version (-DEXTRA_FUNCTIONALITY).
+EXTRA_FUNCTIONALITY = True if hasattr(C, 'DecClamped') else False
+requires_extra_functionality = unittest.skipUnless(
+  EXTRA_FUNCTIONALITY, "test requires build with -DEXTRA_FUNCTIONALITY")
+skip_if_extra_functionality = unittest.skipIf(
+  EXTRA_FUNCTIONALITY, "test requires regular build")
 
 
-def Nonfunction(*args):
-    """Doesn't do anything."""
-    return None
+class IBMTestCases(unittest.TestCase):
+    """Class which tests the Decimal class against the IBM test cases."""
 
-RoundingDict = {'ceiling' : ROUND_CEILING, #Maps test-case names to roundings.
-                'down' : ROUND_DOWN,
-                'floor' : ROUND_FLOOR,
-                'half_down' : ROUND_HALF_DOWN,
-                'half_even' : ROUND_HALF_EVEN,
-                'half_up' : ROUND_HALF_UP,
-                'up' : ROUND_UP,
-                '05up' : ROUND_05UP}
-
-# Name adapter to be able to change the Decimal and Context
-# interface without changing the test files from Cowlishaw
-nameAdapter = {'and':'logical_and',
-               'apply':'_apply',
-               'class':'number_class',
-               'comparesig':'compare_signal',
-               'comparetotal':'compare_total',
-               'comparetotmag':'compare_total_mag',
-               'copy':'copy_decimal',
-               'copyabs':'copy_abs',
-               'copynegate':'copy_negate',
-               'copysign':'copy_sign',
-               'divideint':'divide_int',
-               'invert':'logical_invert',
-               'iscanonical':'is_canonical',
-               'isfinite':'is_finite',
-               'isinfinite':'is_infinite',
-               'isnan':'is_nan',
-               'isnormal':'is_normal',
-               'isqnan':'is_qnan',
-               'issigned':'is_signed',
-               'issnan':'is_snan',
-               'issubnormal':'is_subnormal',
-               'iszero':'is_zero',
-               'maxmag':'max_mag',
-               'minmag':'min_mag',
-               'nextminus':'next_minus',
-               'nextplus':'next_plus',
-               'nexttoward':'next_toward',
-               'or':'logical_or',
-               'reduce':'normalize',
-               'remaindernear':'remainder_near',
-               'samequantum':'same_quantum',
-               'squareroot':'sqrt',
-               'toeng':'to_eng_string',
-               'tointegral':'to_integral_value',
-               'tointegralx':'to_integral_exact',
-               'tosci':'to_sci_string',
-               'xor':'logical_xor',
-              }
-
-# The following functions return True/False rather than a Decimal instance
-
-LOGICAL_FUNCTIONS = (
-    'is_canonical',
-    'is_finite',
-    'is_infinite',
-    'is_nan',
-    'is_normal',
-    'is_qnan',
-    'is_signed',
-    'is_snan',
-    'is_subnormal',
-    'is_zero',
-    'same_quantum',
-    )
-
-class DecimalTest(unittest.TestCase):
-    """Class which tests the Decimal class against the test cases.
-
-    Changed for unittest.
-    """
     def setUp(self):
-        self.context = Context()
+        self.context = self.decimal.Context()
+        self.readcontext = self.decimal.Context()
         self.ignore_list = ['#']
-        # Basically, a # means return NaN InvalidOperation.
-        # Different from a sNaN in trim
 
+        # List of individual .decTest test ids that correspond to tests that
+        # we're skipping for one reason or another.
+        self.skipped_test_ids = set([
+            # Skip implementation-specific scaleb tests.
+            'scbx164',
+            'scbx165',
+
+            # For some operations (currently exp, ln, log10, power), the decNumber
+            # reference implementation imposes additional restrictions on the context
+            # and operands.  These restrictions are not part of the specification;
+            # however, the effect of these restrictions does show up in some of the
+            # testcases.  We skip testcases that violate these restrictions, since
+            # Decimal behaves differently from decNumber for these testcases so these
+            # testcases would otherwise fail.
+            'expx901',
+            'expx902',
+            'expx903',
+            'expx905',
+            'lnx901',
+            'lnx902',
+            'lnx903',
+            'lnx905',
+            'logx901',
+            'logx902',
+            'logx903',
+            'logx905',
+            'powx1183',
+            'powx1184',
+            'powx4001',
+            'powx4002',
+            'powx4003',
+            'powx4005',
+            'powx4008',
+            'powx4010',
+            'powx4012',
+            'powx4014',
+            ])
+
+        if self.decimal == C:
+            # status has additional Subnormal, Underflow
+            self.skipped_test_ids.add('pwsx803')
+            self.skipped_test_ids.add('pwsx805')
+            # Correct rounding (skipped for decNumber, too)
+            self.skipped_test_ids.add('powx4302')
+            self.skipped_test_ids.add('powx4303')
+            self.skipped_test_ids.add('powx4342')
+            self.skipped_test_ids.add('powx4343')
+            # http://bugs.python.org/issue7049
+            self.skipped_test_ids.add('pwmx325')
+            self.skipped_test_ids.add('pwmx326')
+
+        # Map test directives to setter functions.
         self.ChangeDict = {'precision' : self.change_precision,
-                      'rounding' : self.change_rounding_method,
-                      'maxexponent' : self.change_max_exponent,
-                      'minexponent' : self.change_min_exponent,
-                      'clamp' : self.change_clamp}
+                           'rounding' : self.change_rounding_method,
+                           'maxexponent' : self.change_max_exponent,
+                           'minexponent' : self.change_min_exponent,
+                           'clamp' : self.change_clamp}
+
+        # Name adapter to be able to change the Decimal and Context
+        # interface without changing the test files from Cowlishaw.
+        self.NameAdapter = {'and':'logical_and',
+                            'apply':'_apply',
+                            'class':'number_class',
+                            'comparesig':'compare_signal',
+                            'comparetotal':'compare_total',
+                            'comparetotmag':'compare_total_mag',
+                            'copy':'copy_decimal',
+                            'copyabs':'copy_abs',
+                            'copynegate':'copy_negate',
+                            'copysign':'copy_sign',
+                            'divideint':'divide_int',
+                            'invert':'logical_invert',
+                            'iscanonical':'is_canonical',
+                            'isfinite':'is_finite',
+                            'isinfinite':'is_infinite',
+                            'isnan':'is_nan',
+                            'isnormal':'is_normal',
+                            'isqnan':'is_qnan',
+                            'issigned':'is_signed',
+                            'issnan':'is_snan',
+                            'issubnormal':'is_subnormal',
+                            'iszero':'is_zero',
+                            'maxmag':'max_mag',
+                            'minmag':'min_mag',
+                            'nextminus':'next_minus',
+                            'nextplus':'next_plus',
+                            'nexttoward':'next_toward',
+                            'or':'logical_or',
+                            'reduce':'normalize',
+                            'remaindernear':'remainder_near',
+                            'samequantum':'same_quantum',
+                            'squareroot':'sqrt',
+                            'toeng':'to_eng_string',
+                            'tointegral':'to_integral_value',
+                            'tointegralx':'to_integral_exact',
+                            'tosci':'to_sci_string',
+                            'xor':'logical_xor'}
+
+        # Map test-case names to roundings.
+        self.RoundingDict = {'ceiling' : self.decimal.ROUND_CEILING,
+                             'down' : self.decimal.ROUND_DOWN,
+                             'floor' : self.decimal.ROUND_FLOOR,
+                             'half_down' : self.decimal.ROUND_HALF_DOWN,
+                             'half_even' : self.decimal.ROUND_HALF_EVEN,
+                             'half_up' : self.decimal.ROUND_HALF_UP,
+                             'up' : self.decimal.ROUND_UP,
+                             '05up' : self.decimal.ROUND_05UP}
+
+        # Map the test cases' error names to the actual errors.
+        self.ErrorNames = {'clamped' : self.decimal.Clamped,
+                           'conversion_syntax' : self.decimal.InvalidOperation,
+                           'division_by_zero' : self.decimal.DivisionByZero,
+                           'division_impossible' : self.decimal.InvalidOperation,
+                           'division_undefined' : self.decimal.InvalidOperation,
+                           'inexact' : self.decimal.Inexact,
+                           'invalid_context' : self.decimal.InvalidOperation,
+                           'invalid_operation' : self.decimal.InvalidOperation,
+                           'overflow' : self.decimal.Overflow,
+                           'rounded' : self.decimal.Rounded,
+                           'subnormal' : self.decimal.Subnormal,
+                           'underflow' : self.decimal.Underflow}
+
+        # The following functions return True/False rather than a
+        # Decimal instance.
+        self.LogicalFunctions = ('is_canonical',
+                                 'is_finite',
+                                 'is_infinite',
+                                 'is_nan',
+                                 'is_normal',
+                                 'is_qnan',
+                                 'is_signed',
+                                 'is_snan',
+                                 'is_subnormal',
+                                 'is_zero',
+                                 'same_quantum')
+
+    def read_unlimited(self, v, context):
+        """Work around the limitations of the 32-bit _decimal version. The
+           guaranteed maximum values for prec, Emax etc. are 425000000,
+           but higher values usually work, except for rare corner cases.
+           In particular, all of the IBM tests pass with maximum values
+           of 1070000000."""
+        if self.decimal == C and self.decimal.MAX_EMAX == 425000000:
+            self.readcontext._unsafe_setprec(1070000000)
+            self.readcontext._unsafe_setemax(1070000000)
+            self.readcontext._unsafe_setemin(-1070000000)
+            return self.readcontext.create_decimal(v)
+        else:
+            return self.decimal.Decimal(v, context)
 
     def eval_file(self, file):
         global skip_expected
@@ -227,7 +290,7 @@ class DecimalTest(unittest.TestCase):
                 #print line
                 try:
                     t = self.eval_line(line)
-                except DecimalException as exception:
+                except self.decimal.DecimalException as exception:
                     #Exception raised where there shouldn't have been one.
                     self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
@@ -254,22 +317,22 @@ class DecimalTest(unittest.TestCase):
     def eval_directive(self, s):
         funct, value = (x.strip().lower() for x in s.split(':'))
         if funct == 'rounding':
-            value = RoundingDict[value]
+            value = self.RoundingDict[value]
         else:
             try:
                 value = int(value)
             except ValueError:
                 pass
 
-        funct = self.ChangeDict.get(funct, Nonfunction)
+        funct = self.ChangeDict.get(funct, (lambda *args: None))
         funct(value)
 
     def eval_equation(self, s):
-        #global DEFAULT_PRECISION
-        #print DEFAULT_PRECISION
 
         if not TEST_ALL and random.random() < 0.90:
             return
+
+        self.context.clear_flags()
 
         try:
             Sides = s.split('->')
@@ -283,26 +346,26 @@ class DecimalTest(unittest.TestCase):
             ans = L[0]
             exceptions = L[1:]
         except (TypeError, AttributeError, IndexError):
-            raise InvalidOperation
+            raise self.decimal.InvalidOperation
         def FixQuotes(val):
             val = val.replace("''", 'SingleQuote').replace('""', 'DoubleQuote')
             val = val.replace("'", '').replace('"', '')
             val = val.replace('SingleQuote', "'").replace('DoubleQuote', '"')
             return val
 
-        if id in skipped_test_ids:
+        if id in self.skipped_test_ids:
             return
 
-        fname = nameAdapter.get(funct, funct)
+        fname = self.NameAdapter.get(funct, funct)
         if fname == 'rescale':
             return
         funct = getattr(self.context, fname)
         vals = []
         conglomerate = ''
         quote = 0
-        theirexceptions = [ErrorNames[x.lower()] for x in exceptions]
+        theirexceptions = [self.ErrorNames[x.lower()] for x in exceptions]
 
-        for exception in Signals:
+        for exception in Signals[self.decimal]:
             self.context.traps[exception] = 1 #Catch these bugs...
         for exception in theirexceptions:
             self.context.traps[exception] = 0
@@ -324,7 +387,7 @@ class DecimalTest(unittest.TestCase):
                             funct(self.context.create_decimal(v))
                         except error:
                             pass
-                        except Signals as e:
+                        except Signals[self.decimal] as e:
                             self.fail("Raised %s in %s when %s disabled" % \
                                       (e, s, error))
                         else:
@@ -332,7 +395,7 @@ class DecimalTest(unittest.TestCase):
                         self.context.traps[error] = 0
                 v = self.context.create_decimal(v)
             else:
-                v = Decimal(v, self.context)
+                v = self.read_unlimited(v, self.context)
             vals.append(v)
 
         ans = FixQuotes(ans)
@@ -344,7 +407,7 @@ class DecimalTest(unittest.TestCase):
                     funct(*vals)
                 except error:
                     pass
-                except Signals as e:
+                except Signals[self.decimal] as e:
                     self.fail("Raised %s in %s when %s disabled" % \
                               (e, s, error))
                 else:
@@ -352,14 +415,14 @@ class DecimalTest(unittest.TestCase):
                 self.context.traps[error] = 0
 
             # as above, but add traps cumulatively, to check precedence
-            ordered_errors = [e for e in OrderedSignals if e in theirexceptions]
+            ordered_errors = [e for e in OrderedSignals[self.decimal] if e in theirexceptions]
             for error in ordered_errors:
                 self.context.traps[error] = 1
                 try:
                     funct(*vals)
                 except error:
                     pass
-                except Signals as e:
+                except Signals[self.decimal] as e:
                     self.fail("Raised %s in %s; expected %s" %
                               (type(e), s, error))
                 else:
@@ -373,54 +436,69 @@ class DecimalTest(unittest.TestCase):
             print("--", self.context)
         try:
             result = str(funct(*vals))
-            if fname in LOGICAL_FUNCTIONS:
+            if fname in self.LogicalFunctions:
                 result = str(int(eval(result))) # 'True', 'False' -> '1', '0'
-        except Signals as error:
+        except Signals[self.decimal] as error:
             self.fail("Raised %s in %s" % (error, s))
         except: #Catch any error long enough to state the test case.
             print("ERROR:", s)
             raise
 
         myexceptions = self.getexceptions()
-        self.context.clear_flags()
 
         myexceptions.sort(key=repr)
         theirexceptions.sort(key=repr)
 
         self.assertEqual(result, ans,
                          'Incorrect answer for ' + s + ' -- got ' + result)
+
         self.assertEqual(myexceptions, theirexceptions,
               'Incorrect flags set in ' + s + ' -- got ' + str(myexceptions))
         return
 
     def getexceptions(self):
-        return [e for e in Signals if self.context.flags[e]]
+        return [e for e in Signals[self.decimal] if self.context.flags[e]]
 
     def change_precision(self, prec):
-        self.context.prec = prec
+        if self.decimal == C and self.decimal.MAX_PREC == 425000000:
+            self.context._unsafe_setprec(prec)
+        else:
+            self.context.prec = prec
     def change_rounding_method(self, rounding):
         self.context.rounding = rounding
     def change_min_exponent(self, exp):
-        self.context.Emin = exp
+        if self.decimal == C and self.decimal.MAX_PREC == 425000000:
+            self.context._unsafe_setemin(exp)
+        else:
+            self.context.Emin = exp
     def change_max_exponent(self, exp):
-        self.context.Emax = exp
+        if self.decimal == C and self.decimal.MAX_PREC == 425000000:
+            self.context._unsafe_setemax(exp)
+        else:
+            self.context.Emax = exp
     def change_clamp(self, clamp):
         self.context.clamp = clamp
 
-
+class CIBMTestCases(IBMTestCases):
+    decimal = C
+class PyIBMTestCases(IBMTestCases):
+    decimal = P
 
 # The following classes test the behaviour of Decimal according to PEP 327
 
-class DecimalExplicitConstructionTest(unittest.TestCase):
+class ExplicitConstructionTest(unittest.TestCase):
     '''Unit tests for Explicit Construction cases of Decimal.'''
 
     def test_explicit_empty(self):
+        Decimal = self.decimal.Decimal
         self.assertEqual(Decimal(), Decimal("0"))
 
     def test_explicit_from_None(self):
+        Decimal = self.decimal.Decimal
         self.assertRaises(TypeError, Decimal, None)
 
     def test_explicit_from_int(self):
+        Decimal = self.decimal.Decimal
 
         #positive
         d = Decimal(45)
@@ -438,7 +516,18 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         d = Decimal(0)
         self.assertEqual(str(d), '0')
 
+        # single word longs
+        for n in range(0, 32):
+            for sign in (-1, 1):
+                for x in range(-5, 5):
+                    i = sign * (2**n + x)
+                    d = Decimal(i)
+                    self.assertEqual(str(d), str(i))
+
     def test_explicit_from_string(self):
+        Decimal = self.decimal.Decimal
+        InvalidOperation = self.decimal.InvalidOperation
+        localcontext = self.decimal.localcontext
 
         #empty
         self.assertEqual(str(Decimal('')), 'NaN')
@@ -458,8 +547,35 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         #leading and trailing whitespace permitted
         self.assertEqual(str(Decimal('1.3E4 \n')), '1.3E+4')
         self.assertEqual(str(Decimal('  -7.89')), '-7.89')
+        self.assertEqual(str(Decimal("  3.45679  ")), '3.45679')
+
+        # unicode whitespace
+        for lead in ["", ' ', '\u00a0', '\u205f']:
+            for trail in ["", ' ', '\u00a0', '\u205f']:
+                self.assertEqual(str(Decimal(lead + '9.311E+28' + trail)),
+                                 '9.311E+28')
+
+        with localcontext() as c:
+            c.traps[InvalidOperation] = True
+            # Invalid string
+            self.assertRaises(InvalidOperation, Decimal, "xyz")
+            # Two arguments max
+            self.assertRaises(TypeError, Decimal, "1234", "x", "y")
+
+            # space within the numeric part
+            self.assertRaises(InvalidOperation, Decimal, "1\u00a02\u00a03")
+            self.assertRaises(InvalidOperation, Decimal, "\u00a01\u00a02\u00a0")
+
+            # unicode whitespace
+            self.assertRaises(InvalidOperation, Decimal, "\u00a0")
+            self.assertRaises(InvalidOperation, Decimal, "\u00a0\u00a0")
+
+            # embedded NUL
+            self.assertRaises(InvalidOperation, Decimal, "12\u00003")
+
 
     def test_explicit_from_tuples(self):
+        Decimal = self.decimal.Decimal
 
         #zero
         d = Decimal( (0, (0,), 0) )
@@ -477,6 +593,10 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         d = Decimal( (1, (4, 3, 4, 9, 1, 3, 5, 3, 4), -25) )
         self.assertEqual(str(d), '-4.34913534E-17')
 
+        #inf
+        d = Decimal( (0, (), "F") )
+        self.assertEqual(str(d), 'Infinity')
+
         #wrong number of items
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1)) )
 
@@ -491,45 +611,63 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), '1') )
 
         #bad coefficients
+        self.assertRaises(ValueError, Decimal, (1, "xyz", 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, None, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, -3, 4, 9, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, 10, 4, 9, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 'a', 1), 2) )
 
+    def test_explicit_from_list(self):
+        Decimal = self.decimal.Decimal
+
+        d = Decimal([0, [0], 0])
+        self.assertEqual(str(d), '0')
+
+        d = Decimal([1, [4, 3, 4, 9, 1, 3, 5, 3, 4], -25])
+        self.assertEqual(str(d), '-4.34913534E-17')
+
+        d = Decimal([1, (4, 3, 4, 9, 1, 3, 5, 3, 4), -25])
+        self.assertEqual(str(d), '-4.34913534E-17')
+
+        d = Decimal((1, [4, 3, 4, 9, 1, 3, 5, 3, 4], -25))
+        self.assertEqual(str(d), '-4.34913534E-17')
+
     def test_explicit_from_bool(self):
+        Decimal = self.decimal.Decimal
+
         self.assertIs(bool(Decimal(0)), False)
         self.assertIs(bool(Decimal(1)), True)
         self.assertEqual(Decimal(False), Decimal(0))
         self.assertEqual(Decimal(True), Decimal(1))
 
     def test_explicit_from_Decimal(self):
+        Decimal = self.decimal.Decimal
 
         #positive
         d = Decimal(45)
         e = Decimal(d)
         self.assertEqual(str(e), '45')
-        self.assertNotEqual(id(d), id(e))
 
         #very large positive
         d = Decimal(500000123)
         e = Decimal(d)
         self.assertEqual(str(e), '500000123')
-        self.assertNotEqual(id(d), id(e))
 
         #negative
         d = Decimal(-45)
         e = Decimal(d)
         self.assertEqual(str(e), '-45')
-        self.assertNotEqual(id(d), id(e))
 
         #zero
         d = Decimal(0)
         e = Decimal(d)
         self.assertEqual(str(e), '0')
-        self.assertNotEqual(id(d), id(e))
 
     @requires_IEEE_754
     def test_explicit_from_float(self):
+
+        Decimal = self.decimal.Decimal
+
         r = Decimal(0.1)
         self.assertEqual(type(r), Decimal)
         self.assertEqual(str(r),
@@ -550,8 +688,11 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
             self.assertEqual(x, float(Decimal(x))) # roundtrip
 
     def test_explicit_context_create_decimal(self):
+        Decimal = self.decimal.Decimal
+        InvalidOperation = self.decimal.InvalidOperation
+        Rounded = self.decimal.Rounded
 
-        nc = copy.copy(getcontext())
+        nc = copy.copy(self.decimal.getcontext())
         nc.prec = 3
 
         # empty
@@ -592,7 +733,73 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         d = nc.create_decimal(prevdec)
         self.assertEqual(str(d), '5.00E+8')
 
+        # more integers
+        nc.prec = 28
+        nc.traps[InvalidOperation] = True
+
+        for v in [-2**63-1, -2**63, -2**31-1, -2**31, 0,
+                   2**31-1, 2**31, 2**63-1, 2**63]:
+            d = nc.create_decimal(v)
+            self.assertTrue(isinstance(d, Decimal))
+            self.assertEqual(int(d), v)
+
+        nc.prec = 3
+        nc.traps[Rounded] = True
+        self.assertRaises(Rounded, nc.create_decimal, 1234)
+
+        # from string
+        nc.prec = 28
+        self.assertEqual(str(nc.create_decimal('0E-017')), '0E-17')
+        self.assertEqual(str(nc.create_decimal('45')), '45')
+        self.assertEqual(str(nc.create_decimal('-Inf')), '-Infinity')
+        self.assertEqual(str(nc.create_decimal('NaN123')), 'NaN123')
+
+        # invalid arguments
+        self.assertRaises(InvalidOperation, nc.create_decimal, "xyz")
+        self.assertRaises(ValueError, nc.create_decimal, (1, "xyz", -25))
+        self.assertRaises(TypeError, nc.create_decimal, "1234", "5678")
+
+        # too many NaN payload digits
+        nc.prec = 3
+        self.assertRaises(InvalidOperation, nc.create_decimal, 'NaN12345')
+        self.assertRaises(InvalidOperation, nc.create_decimal,
+                          Decimal('NaN12345'))
+
+        nc.traps[InvalidOperation] = False
+        self.assertEqual(str(nc.create_decimal('NaN12345')), 'NaN')
+        self.assertTrue(nc.flags[InvalidOperation])
+
+        nc.flags[InvalidOperation] = False
+        self.assertEqual(str(nc.create_decimal(Decimal('NaN12345'))), 'NaN')
+        self.assertTrue(nc.flags[InvalidOperation])
+
+    def test_explicit_context_create_from_float(self):
+
+        Decimal = self.decimal.Decimal
+
+        nc = self.decimal.Context()
+        r = nc.create_decimal(0.1)
+        self.assertEqual(type(r), Decimal)
+        self.assertEqual(str(r), '0.1000000000000000055511151231')
+        self.assertTrue(nc.create_decimal(float('nan')).is_qnan())
+        self.assertTrue(nc.create_decimal(float('inf')).is_infinite())
+        self.assertTrue(nc.create_decimal(float('-inf')).is_infinite())
+        self.assertEqual(str(nc.create_decimal(float('nan'))),
+                         str(nc.create_decimal('NaN')))
+        self.assertEqual(str(nc.create_decimal(float('inf'))),
+                         str(nc.create_decimal('Infinity')))
+        self.assertEqual(str(nc.create_decimal(float('-inf'))),
+                         str(nc.create_decimal('-Infinity')))
+        self.assertEqual(str(nc.create_decimal(float('-0.0'))),
+                         str(nc.create_decimal('-0')))
+        nc.prec = 100
+        for i in range(200):
+            x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
+            self.assertEqual(x, float(nc.create_decimal(x))) # roundtrip
+
     def test_unicode_digits(self):
+        Decimal = self.decimal.Decimal
+
         test_values = {
             '\uff11': '1',
             '\u0660.\u0660\u0663\u0667\u0662e-\u0663' : '0.0000372',
@@ -601,29 +808,41 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         for input, expected in test_values.items():
             self.assertEqual(str(Decimal(input)), expected)
 
+class CExplicitConstructionTest(ExplicitConstructionTest):
+    decimal = C
+class PyExplicitConstructionTest(ExplicitConstructionTest):
+    decimal = P
 
-class DecimalImplicitConstructionTest(unittest.TestCase):
+class ImplicitConstructionTest(unittest.TestCase):
     '''Unit tests for Implicit Construction cases of Decimal.'''
 
     def test_implicit_from_None(self):
-        self.assertRaises(TypeError, eval, 'Decimal(5) + None', globals())
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, eval, 'Decimal(5) + None', locals())
 
     def test_implicit_from_int(self):
+        Decimal = self.decimal.Decimal
+
         #normal
         self.assertEqual(str(Decimal(5) + 45), '50')
         #exceeding precision
         self.assertEqual(Decimal(5) + 123456789000, Decimal(123456789000))
 
     def test_implicit_from_string(self):
-        self.assertRaises(TypeError, eval, 'Decimal(5) + "3"', globals())
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, eval, 'Decimal(5) + "3"', locals())
 
     def test_implicit_from_float(self):
-        self.assertRaises(TypeError, eval, 'Decimal(5) + 2.2', globals())
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, eval, 'Decimal(5) + 2.2', locals())
 
     def test_implicit_from_Decimal(self):
+        Decimal = self.decimal.Decimal
         self.assertEqual(Decimal(5) + Decimal(45), Decimal(50))
 
     def test_rop(self):
+        Decimal = self.decimal.Decimal
+
         # Allow other classes to be trained to interact with Decimals
         class E:
             def __divmod__(self, other):
@@ -671,10 +890,16 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
             self.assertEqual(eval('Decimal(10)' + sym + 'E()'),
                              '10' + rop + 'str')
 
+class CImplicitConstructionTest(ImplicitConstructionTest):
+    decimal = C
+class PyImplicitConstructionTest(ImplicitConstructionTest):
+    decimal = P
 
-class DecimalFormatTest(unittest.TestCase):
+class FormatTest(unittest.TestCase):
     '''Unit tests for the format function.'''
     def test_formatting(self):
+        Decimal = self.decimal.Decimal
+
         # triples giving a format, a Decimal, and the expected result
         test_values = [
             ('e', '0E-15', '0e-15'),
@@ -730,6 +955,7 @@ class DecimalFormatTest(unittest.TestCase):
             ('g', '0E-7', '0e-7'),
             ('g', '-0E2', '-0e+2'),
             ('.0g', '3.14159265', '3'),  # 0 sig fig -> 1 sig fig
+            ('.0n', '3.14159265', '3'),  # same for 'n'
             ('.1g', '3.14159265', '3'),
             ('.2g', '3.14159265', '3.1'),
             ('.5g', '3.14159265', '3.1416'),
@@ -814,56 +1040,60 @@ class DecimalFormatTest(unittest.TestCase):
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
-
-            # Issue 7094: Alternate formatting (specified by #)
-            ('.0e', '1.0', '1e+0'),
-            ('#.0e', '1.0', '1.e+0'),
-            ('.0f', '1.0', '1'),
-            ('#.0f', '1.0', '1.'),
-            ('g', '1.1', '1.1'),
-            ('#g', '1.1', '1.1'),
-            ('.0g', '1', '1'),
-            ('#.0g', '1', '1.'),
-            ('.0%', '1.0', '100%'),
-            ('#.0%', '1.0', '100.%'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)
 
+        # bytes format argument
+        self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
     def test_n_format(self):
+        Decimal = self.decimal.Decimal
+
         try:
             from locale import CHAR_MAX
         except ImportError:
             return
 
+        def make_grouping(lst):
+            return ''.join([chr(x) for x in lst]) if self.decimal == C else lst
+
+        def get_fmt(x, override=None, fmt='n'):
+            if self.decimal == C:
+                return Decimal(x).__format__(fmt, override)
+            else:
+                return Decimal(x).__format__(fmt, _localeconv=override)
+
         # Set up some localeconv-like dictionaries
         en_US = {
             'decimal_point' : '.',
-            'grouping' : [3, 3, 0],
-            'thousands_sep': ','
+            'grouping' : make_grouping([3, 3, 0]),
+            'thousands_sep' : ','
             }
 
         fr_FR = {
             'decimal_point' : ',',
-            'grouping' : [CHAR_MAX],
+            'grouping' : make_grouping([CHAR_MAX]),
             'thousands_sep' : ''
             }
 
         ru_RU = {
             'decimal_point' : ',',
-            'grouping' : [3, 3, 0],
+            'grouping': make_grouping([3, 3, 0]),
             'thousands_sep' : ' '
             }
 
         crazy = {
             'decimal_point' : '&',
-            'grouping' : [1, 4, 2, CHAR_MAX],
+            'grouping': make_grouping([1, 4, 2, CHAR_MAX]),
             'thousands_sep' : '-'
             }
 
-
-        def get_fmt(x, locale, fmt='n'):
-            return Decimal.__format__(Decimal(x), fmt, _localeconv=locale)
+        dotsep_wide = {
+            'decimal_point' : b'\xc2\xbf'.decode('utf-8'),
+            'grouping': make_grouping([3, 3, 0]),
+            'thousands_sep' : b'\xc2\xb4'.decode('utf-8')
+            }
 
         self.assertEqual(get_fmt(Decimal('12.7'), en_US), '12.7')
         self.assertEqual(get_fmt(Decimal('12.7'), fr_FR), '12,7')
@@ -902,11 +1132,33 @@ class DecimalFormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(123456, crazy, '012n'), '00-01-2345-6')
         self.assertEqual(get_fmt(123456, crazy, '013n'), '000-01-2345-6')
 
+        # wide char separator and decimal point
+        self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
+                         '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
 
-class DecimalArithmeticOperatorsTest(unittest.TestCase):
+    def test_wide_char_separator_decimal_point(self):
+        # locale with wide char separator and decimal point
+        Decimal = self.decimal.Decimal
+
+        try:
+            locale.setlocale(locale.LC_ALL, 'ps_AF')
+        except locale.Error:
+            return
+
+        self.assertEqual(format(Decimal('100000000.123'), 'n'),
+                         '100\u066c000\u066c000\u066b123')
+        locale.resetlocale()
+
+class CFormatTest(FormatTest):
+    decimal = C
+class PyFormatTest(FormatTest):
+    decimal = P
+
+class ArithmeticOperatorsTest(unittest.TestCase):
     '''Unit tests for all arithmetic operators, binary and unary.'''
 
     def test_addition(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('-11.1')
         d2 = Decimal('22.2')
@@ -934,6 +1186,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('16.1'))
 
     def test_subtraction(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('-11.1')
         d2 = Decimal('22.2')
@@ -961,6 +1214,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('-38.3'))
 
     def test_multiplication(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('-5')
         d2 = Decimal('3')
@@ -988,6 +1242,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('-75'))
 
     def test_division(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('-5')
         d2 = Decimal('2')
@@ -1015,6 +1270,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('-0.625'))
 
     def test_floor_division(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('5')
         d2 = Decimal('2')
@@ -1042,6 +1298,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('1'))
 
     def test_powering(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('5')
         d2 = Decimal('2')
@@ -1069,6 +1326,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('390625'))
 
     def test_module(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('5')
         d2 = Decimal('2')
@@ -1096,6 +1354,7 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('1'))
 
     def test_floor_div_module(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('5')
         d2 = Decimal('2')
@@ -1122,6 +1381,8 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(type(q), type(d1))
 
     def test_unary_operators(self):
+        Decimal = self.decimal.Decimal
+
         self.assertEqual(+Decimal(45), Decimal(+45))           #  +
         self.assertEqual(-Decimal(45), Decimal(-45))           #  -
         self.assertEqual(abs(Decimal(45)), abs(Decimal(-45)))  # abs
@@ -1134,6 +1395,9 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
 
         # equality comparisons (==, !=) involving only quiet nans
         # don't signal, but return False or True respectively.
+        Decimal = self.decimal.Decimal
+        InvalidOperation = self.decimal.InvalidOperation
+        localcontext = self.decimal.localcontext
 
         n = Decimal('NaN')
         s = Decimal('sNaN')
@@ -1179,53 +1443,124 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
                     self.assertRaises(InvalidOperation, op, x, y)
 
     def test_copy_sign(self):
-        d = Decimal(1).copy_sign(Decimal(-2))
+        Decimal = self.decimal.Decimal
 
+        d = Decimal(1).copy_sign(Decimal(-2))
         self.assertEqual(Decimal(1).copy_sign(-2), d)
         self.assertRaises(TypeError, Decimal(1).copy_sign, '-2')
+
+class CArithmeticOperatorsTest(ArithmeticOperatorsTest):
+    decimal = C
+class PyArithmeticOperatorsTest(ArithmeticOperatorsTest):
+    decimal = P
 
 # The following are two functions used to test threading in the next class
 
 def thfunc1(cls):
+    Decimal = cls.decimal.Decimal
+    InvalidOperation = cls.decimal.InvalidOperation
+    DivisionByZero = cls.decimal.DivisionByZero
+    Overflow = cls.decimal.Overflow
+    Underflow = cls.decimal.Underflow
+    Inexact = cls.decimal.Inexact
+    getcontext = cls.decimal.getcontext
+    localcontext = cls.decimal.localcontext
+
     d1 = Decimal(1)
     d3 = Decimal(3)
     test1 = d1/d3
-    cls.synchro.wait()
-    test2 = d1/d3
-    cls.finish1.set()
 
-    cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
-    cls.assertEqual(test2, Decimal('0.3333333333333333333333333333'))
+    cls.finish1.set()
+    cls.synchro.wait()
+
+    test2 = d1/d3
+    with localcontext() as c2:
+        cls.assertTrue(c2.flags[Inexact])
+        cls.assertRaises(DivisionByZero, c2.divide, d1, 0)
+        cls.assertTrue(c2.flags[DivisionByZero])
+        with localcontext() as c3:
+            cls.assertTrue(c3.flags[Inexact])
+            cls.assertTrue(c3.flags[DivisionByZero])
+            cls.assertRaises(InvalidOperation, c3.compare, d1, Decimal('sNaN'))
+            cls.assertTrue(c3.flags[InvalidOperation])
+            del c3
+        cls.assertFalse(c2.flags[InvalidOperation])
+        del c2
+
+    cls.assertEqual(test1, Decimal('0.333333333333333333333333'))
+    cls.assertEqual(test2, Decimal('0.333333333333333333333333'))
+
+    c1 = getcontext()
+    cls.assertTrue(c1.flags[Inexact])
+    for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
+        cls.assertFalse(c1.flags[sig])
     return
 
 def thfunc2(cls):
+    Decimal = cls.decimal.Decimal
+    InvalidOperation = cls.decimal.InvalidOperation
+    DivisionByZero = cls.decimal.DivisionByZero
+    Overflow = cls.decimal.Overflow
+    Underflow = cls.decimal.Underflow
+    Inexact = cls.decimal.Inexact
+    getcontext = cls.decimal.getcontext
+    localcontext = cls.decimal.localcontext
+
     d1 = Decimal(1)
     d3 = Decimal(3)
     test1 = d1/d3
+
     thiscontext = getcontext()
     thiscontext.prec = 18
     test2 = d1/d3
+
+    with localcontext() as c2:
+        cls.assertTrue(c2.flags[Inexact])
+        cls.assertRaises(Overflow, c2.multiply, Decimal('1e425000000'), 999)
+        cls.assertTrue(c2.flags[Overflow])
+        with localcontext(thiscontext) as c3:
+            cls.assertTrue(c3.flags[Inexact])
+            cls.assertFalse(c3.flags[Overflow])
+            c3.traps[Underflow] = True
+            cls.assertRaises(Underflow, c3.divide, Decimal('1e-425000000'), 999)
+            cls.assertTrue(c3.flags[Underflow])
+            del c3
+        cls.assertFalse(c2.flags[Underflow])
+        cls.assertFalse(c2.traps[Underflow])
+        del c2
+
     cls.synchro.set()
     cls.finish2.set()
 
-    cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
+    cls.assertEqual(test1, Decimal('0.333333333333333333333333'))
     cls.assertEqual(test2, Decimal('0.333333333333333333'))
+
+    cls.assertFalse(thiscontext.traps[Underflow])
+    cls.assertTrue(thiscontext.flags[Inexact])
+    for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
+        cls.assertFalse(thiscontext.flags[sig])
     return
 
-
-class DecimalUseOfContextTest(unittest.TestCase):
-    '''Unit tests for Use of Context cases in Decimal.'''
-
-    try:
-        import threading
-    except ImportError:
-        threading = None
+class ThreadingTest(unittest.TestCase):
+    '''Unit tests for thread local contexts in Decimal.'''
 
     # Take care executing this test from IDLE, there's an issue in threading
     # that hangs IDLE and I couldn't find it
 
     def test_threading(self):
-        #Test the "threading isolation" of a Context.
+        DefaultContext = self.decimal.DefaultContext
+
+        if self.decimal == C and not self.decimal.HAVE_THREADS:
+            self.skipTest("compiled without threading")
+        # Test the "threading isolation" of a Context. Also test changing
+        # the DefaultContext, which acts as a template for the thread-local
+        # contexts.
+        save_prec = DefaultContext.prec
+        save_emax = DefaultContext.Emax
+        save_emin = DefaultContext.Emin
+        DefaultContext.prec = 24
+        DefaultContext.Emax = 425000000
+        DefaultContext.Emin = -425000000
 
         self.synchro = threading.Event()
         self.finish1 = threading.Event()
@@ -1239,16 +1574,28 @@ class DecimalUseOfContextTest(unittest.TestCase):
 
         self.finish1.wait()
         self.finish2.wait()
+
+        for sig in Signals[self.decimal]:
+            self.assertFalse(DefaultContext.flags[sig])
+
+        DefaultContext.prec = save_prec
+        DefaultContext.Emax = save_emax
+        DefaultContext.Emin = save_emin
         return
 
-    if threading is None:
-        del test_threading
+@unittest.skipUnless(threading, 'threading required')
+class CThreadingTest(ThreadingTest):
+    decimal = C
+@unittest.skipUnless(threading, 'threading required')
+class PyThreadingTest(ThreadingTest):
+    decimal = P
 
-
-class DecimalUsabilityTest(unittest.TestCase):
+class UsabilityTest(unittest.TestCase):
     '''Unit tests for Usability cases of Decimal.'''
 
     def test_comparison_operators(self):
+
+        Decimal = self.decimal.Decimal
 
         da = Decimal('23.42')
         db = Decimal('23.42')
@@ -1283,6 +1630,8 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_decimal_float_comparison(self):
+        Decimal = self.decimal.Decimal
+
         da = Decimal('0.25')
         db = Decimal('3.0')
         self.assertLess(da, 3.0)
@@ -1299,7 +1648,71 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(3.0, db)
         self.assertNotEqual(0.1, Decimal('0.1'))
 
+    def test_decimal_complex_comparison(self):
+        Decimal = self.decimal.Decimal
+
+        da = Decimal('0.25')
+        db = Decimal('3.0')
+        self.assertNotEqual(da, (1.5+0j))
+        self.assertNotEqual((1.5+0j), da)
+        self.assertEqual(da, (0.25+0j))
+        self.assertEqual((0.25+0j), da)
+        self.assertEqual((3.0+0j), db)
+        self.assertEqual(db, (3.0+0j))
+
+        self.assertNotEqual(db, (3.0+1j))
+        self.assertNotEqual((3.0+1j), db)
+
+        self.assertIs(db.__lt__(3.0+0j), NotImplemented)
+        self.assertIs(db.__le__(3.0+0j), NotImplemented)
+        self.assertIs(db.__gt__(3.0+0j), NotImplemented)
+        self.assertIs(db.__le__(3.0+0j), NotImplemented)
+
+    def test_decimal_fraction_comparison(self):
+        D = self.decimal.Decimal
+        F = fractions[self.decimal].Fraction
+        Context = self.decimal.Context
+        localcontext = self.decimal.localcontext
+        InvalidOperation = self.decimal.InvalidOperation
+
+
+        emax = C.MAX_EMAX if C else 999999999
+        emin = C.MIN_EMIN if C else -999999999
+        etiny = C.MIN_ETINY if C else -1999999997
+        c = Context(Emax=emax, Emin=emin)
+
+        with localcontext(c):
+            c.prec = emax
+            self.assertLess(D(0), F(1,9999999999999999999999999999999999999))
+            self.assertLess(F(-1,9999999999999999999999999999999999999), D(0))
+            self.assertLess(F(0,1), D("1e" + str(etiny)))
+            self.assertLess(D("-1e" + str(etiny)), F(0,1))
+            self.assertLess(F(0,9999999999999999999999999), D("1e" + str(etiny)))
+            self.assertLess(D("-1e" + str(etiny)), F(0,9999999999999999999999999))
+
+            self.assertEqual(D("0.1"), F(1,10))
+            self.assertEqual(F(1,10), D("0.1"))
+
+            c.prec = 300
+            self.assertNotEqual(D(1)/3, F(1,3))
+            self.assertNotEqual(F(1,3), D(1)/3)
+
+            self.assertLessEqual(F(120984237, 9999999999), D("9e" + str(emax)))
+            self.assertGreaterEqual(D("9e" + str(emax)), F(120984237, 9999999999))
+
+            self.assertGreater(D('inf'), F(99999999999,123))
+            self.assertGreater(D('inf'), F(-99999999999,123))
+            self.assertLess(D('-inf'), F(99999999999,123))
+            self.assertLess(D('-inf'), F(-99999999999,123))
+
+            self.assertRaises(InvalidOperation, D('nan').__gt__, F(-9,123))
+            self.assertIs(NotImplemented, F(-9,123).__lt__(D('nan')))
+            self.assertNotEqual(D('nan'), F(-9,123))
+            self.assertNotEqual(F(-9,123), D('nan'))
+
     def test_copy_and_deepcopy_methods(self):
+        Decimal = self.decimal.Decimal
+
         d = Decimal('43.24')
         c = copy.copy(d)
         self.assertEqual(id(c), id(d))
@@ -1307,6 +1720,10 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(id(dc), id(d))
 
     def test_hash_method(self):
+
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+
         def hashit(d):
             a = hash(d)
             b = d.__hash__()
@@ -1367,24 +1784,27 @@ class DecimalUsabilityTest(unittest.TestCase):
             d = Decimal(s)
             self.assertEqual(hashit(f), hashit(d))
 
-        # check that the value of the hash doesn't depend on the
-        # current context (issue #1757)
-        c = getcontext()
-        old_precision = c.prec
-        x = Decimal("123456789.1")
+        with localcontext() as c:
+            # check that the value of the hash doesn't depend on the
+            # current context (issue #1757)
+            x = Decimal("123456789.1")
 
-        c.prec = 6
-        h1 = hashit(x)
-        c.prec = 10
-        h2 = hashit(x)
-        c.prec = 16
-        h3 = hashit(x)
+            c.prec = 6
+            h1 = hashit(x)
+            c.prec = 10
+            h2 = hashit(x)
+            c.prec = 16
+            h3 = hashit(x)
 
-        self.assertEqual(h1, h2)
-        self.assertEqual(h1, h3)
-        c.prec = old_precision
+            self.assertEqual(h1, h2)
+            self.assertEqual(h1, h3)
+
+            c.prec = 10000
+            x = 1100 ** 1248
+            self.assertEqual(hashit(Decimal(x)), hashit(x))
 
     def test_min_and_max_methods(self):
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('15.32')
         d2 = Decimal('28.5')
@@ -1404,6 +1824,8 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertIs(max(d2,l1), d2)
 
     def test_as_nonzero(self):
+        Decimal = self.decimal.Decimal
+
         #as false
         self.assertFalse(Decimal(0))
         #as true
@@ -1411,6 +1833,7 @@ class DecimalUsabilityTest(unittest.TestCase):
 
     def test_tostring_methods(self):
         #Test str and repr methods.
+        Decimal = self.decimal.Decimal
 
         d = Decimal('15.32')
         self.assertEqual(str(d), '15.32')               # str
@@ -1418,6 +1841,7 @@ class DecimalUsabilityTest(unittest.TestCase):
 
     def test_tonum_methods(self):
         #Test float and int methods.
+        Decimal = self.decimal.Decimal
 
         d1 = Decimal('66')
         d2 = Decimal('15.32')
@@ -1440,6 +1864,7 @@ class DecimalUsabilityTest(unittest.TestCase):
             ('-11.0', -11),
             ('0.0', 0),
             ('-0E3', 0),
+            ('89891211712379812736.1', 89891211712379812736),
             ]
         for d, i in test_pairs:
             self.assertEqual(math.floor(Decimal(d)), i)
@@ -1459,6 +1884,7 @@ class DecimalUsabilityTest(unittest.TestCase):
             ('-11.0', -11),
             ('0.0', 0),
             ('-0E3', 0),
+            ('89891211712379812736.1', 89891211712379812737),
             ]
         for d, i in test_pairs:
             self.assertEqual(math.ceil(Decimal(d)), i)
@@ -1516,9 +1942,8 @@ class DecimalUsabilityTest(unittest.TestCase):
         for d, n, r in test_triples:
             self.assertEqual(str(round(Decimal(d), n)), r)
 
-
-
     def test_eval_round_trip(self):
+        Decimal = self.decimal.Decimal
 
         #with zero
         d = Decimal( (0, (0,), 0) )
@@ -1537,6 +1962,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(d, eval(repr(d)))
 
     def test_as_tuple(self):
+        Decimal = self.decimal.Decimal
 
         #with zero
         d = Decimal(0)
@@ -1550,7 +1976,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         d = Decimal("-4.34913534E-17")
         self.assertEqual(d.as_tuple(), (1, (4, 3, 4, 9, 1, 3, 5, 3, 4), -25) )
 
-        #inf
+        # XXX non-compliant infinity payload.
         d = Decimal("Infinity")
         self.assertEqual(d.as_tuple(), (0, (0,), 'F') )
 
@@ -1570,14 +1996,2158 @@ class DecimalUsabilityTest(unittest.TestCase):
         d = Decimal( (1, (), 'n') )
         self.assertEqual(d.as_tuple(), (1, (), 'n') )
 
-        #coefficient in infinity should be ignored
-        d = Decimal( (0, (4, 5, 3, 4), 'F') )
-        self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
-        d = Decimal( (1, (0, 2, 7, 1), 'F') )
-        self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
+        # XXX coefficient in infinity should raise an error
+        if self.decimal == P:
+            d = Decimal( (0, (4, 5, 3, 4), 'F') )
+            self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
+            d = Decimal( (1, (0, 2, 7, 1), 'F') )
+            self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
 
-    def test_immutability_operations(self):
+    def test_subclassing(self):
+        # Different behaviours when subclassing Decimal
+        Decimal = self.decimal.Decimal
+
+        class MyDecimal(Decimal):
+            pass
+
+        d1 = MyDecimal(1)
+        d2 = MyDecimal(2)
+        d = d1 + d2
+        self.assertIs(type(d), Decimal)
+
+        d = d1.max(d2)
+        self.assertIs(type(d), Decimal)
+
+        d = copy.copy(d1)
+        self.assertIs(type(d), MyDecimal)
+        self.assertEqual(d, d1)
+
+        d = copy.deepcopy(d1)
+        self.assertIs(type(d), MyDecimal)
+        self.assertEqual(d, d1)
+
+    def test_implicit_context(self):
+        Decimal = self.decimal.Decimal
+        getcontext = self.decimal.getcontext
+
+        # Check results when context given implicitly.  (Issue 2478)
+        c = getcontext()
+        self.assertEqual(str(Decimal(0).sqrt()),
+                         str(c.sqrt(Decimal(0))))
+
+    def test_conversions_from_int(self):
+        # Check that methods taking a second Decimal argument will
+        # always accept an integer in place of a Decimal.
+        Decimal = self.decimal.Decimal
+
+        self.assertEqual(Decimal(4).compare(3),
+                         Decimal(4).compare(Decimal(3)))
+        self.assertEqual(Decimal(4).compare_signal(3),
+                         Decimal(4).compare_signal(Decimal(3)))
+        self.assertEqual(Decimal(4).compare_total(3),
+                         Decimal(4).compare_total(Decimal(3)))
+        self.assertEqual(Decimal(4).compare_total_mag(3),
+                         Decimal(4).compare_total_mag(Decimal(3)))
+        self.assertEqual(Decimal(10101).logical_and(1001),
+                         Decimal(10101).logical_and(Decimal(1001)))
+        self.assertEqual(Decimal(10101).logical_or(1001),
+                         Decimal(10101).logical_or(Decimal(1001)))
+        self.assertEqual(Decimal(10101).logical_xor(1001),
+                         Decimal(10101).logical_xor(Decimal(1001)))
+        self.assertEqual(Decimal(567).max(123),
+                         Decimal(567).max(Decimal(123)))
+        self.assertEqual(Decimal(567).max_mag(123),
+                         Decimal(567).max_mag(Decimal(123)))
+        self.assertEqual(Decimal(567).min(123),
+                         Decimal(567).min(Decimal(123)))
+        self.assertEqual(Decimal(567).min_mag(123),
+                         Decimal(567).min_mag(Decimal(123)))
+        self.assertEqual(Decimal(567).next_toward(123),
+                         Decimal(567).next_toward(Decimal(123)))
+        self.assertEqual(Decimal(1234).quantize(100),
+                         Decimal(1234).quantize(Decimal(100)))
+        self.assertEqual(Decimal(768).remainder_near(1234),
+                         Decimal(768).remainder_near(Decimal(1234)))
+        self.assertEqual(Decimal(123).rotate(1),
+                         Decimal(123).rotate(Decimal(1)))
+        self.assertEqual(Decimal(1234).same_quantum(1000),
+                         Decimal(1234).same_quantum(Decimal(1000)))
+        self.assertEqual(Decimal('9.123').scaleb(-100),
+                         Decimal('9.123').scaleb(Decimal(-100)))
+        self.assertEqual(Decimal(456).shift(-1),
+                         Decimal(456).shift(Decimal(-1)))
+
+        self.assertEqual(Decimal(-12).fma(Decimal(45), 67),
+                         Decimal(-12).fma(Decimal(45), Decimal(67)))
+        self.assertEqual(Decimal(-12).fma(45, 67),
+                         Decimal(-12).fma(Decimal(45), Decimal(67)))
+        self.assertEqual(Decimal(-12).fma(45, Decimal(67)),
+                         Decimal(-12).fma(Decimal(45), Decimal(67)))
+
+class CUsabilityTest(UsabilityTest):
+    decimal = C
+class PyUsabilityTest(UsabilityTest):
+    decimal = P
+
+class PythonAPItests(unittest.TestCase):
+
+    def test_abc(self):
+        Decimal = self.decimal.Decimal
+
+        self.assertTrue(issubclass(Decimal, numbers.Number))
+        self.assertFalse(issubclass(Decimal, numbers.Real))
+        self.assertIsInstance(Decimal(0), numbers.Number)
+        self.assertNotIsInstance(Decimal(0), numbers.Real)
+
+    def test_pickle(self):
+        Decimal = self.decimal.Decimal
+
+        savedecimal = sys.modules['decimal']
+
+        # Round trip
+        sys.modules['decimal'] = self.decimal
+        d = Decimal('-3.141590000')
+        p = pickle.dumps(d)
+        e = pickle.loads(p)
+        self.assertEqual(d, e)
+
+        if C:
+            # Test interchangeability
+            x = C.Decimal('-3.123e81723')
+            y = P.Decimal('-3.123e81723')
+
+            sys.modules['decimal'] = C
+            sx = pickle.dumps(x)
+            sys.modules['decimal'] = P
+            r = pickle.loads(sx)
+            self.assertIsInstance(r, P.Decimal)
+            self.assertEqual(r, y)
+
+            sys.modules['decimal'] = P
+            sy = pickle.dumps(y)
+            sys.modules['decimal'] = C
+            r = pickle.loads(sy)
+            self.assertIsInstance(r, C.Decimal)
+            self.assertEqual(r, x)
+
+        sys.modules['decimal'] = savedecimal
+
+    def test_int(self):
+        Decimal = self.decimal.Decimal
+        ROUND_DOWN = self.decimal.ROUND_DOWN
+
+        for x in range(-250, 250):
+            s = '%0.2f' % (x / 100.0)
+            # should work the same as for floats
+            self.assertEqual(int(Decimal(s)), int(float(s)))
+            # should work the same as to_integral in the ROUND_DOWN mode
+            d = Decimal(s)
+            r = d.to_integral(ROUND_DOWN)
+            self.assertEqual(Decimal(int(d)), r)
+
+        self.assertRaises(ValueError, int, Decimal('-nan'))
+        self.assertRaises(ValueError, int, Decimal('snan'))
+        self.assertRaises(OverflowError, int, Decimal('inf'))
+        self.assertRaises(OverflowError, int, Decimal('-inf'))
+
+    def test_trunc(self):
+        Decimal = self.decimal.Decimal
+        ROUND_DOWN = self.decimal.ROUND_DOWN
+
+        for x in range(-250, 250):
+            s = '%0.2f' % (x / 100.0)
+            # should work the same as for floats
+            self.assertEqual(int(Decimal(s)), int(float(s)))
+            # should work the same as to_integral in the ROUND_DOWN mode
+            d = Decimal(s)
+            r = d.to_integral(ROUND_DOWN)
+            self.assertEqual(Decimal(math.trunc(d)), r)
+
+    def test_from_float(self):
+
+        Decimal = self.decimal.Decimal
+
+        class MyDecimal(Decimal):
+            pass
+
+        self.assertTrue(issubclass(MyDecimal, Decimal))
+
+        r = MyDecimal.from_float(0.1)
+        self.assertEqual(type(r), MyDecimal)
+        self.assertEqual(str(r),
+                '0.1000000000000000055511151231257827021181583404541015625')
+        bigint = 12345678901234567890123456789
+        self.assertEqual(MyDecimal.from_float(bigint), MyDecimal(bigint))
+        self.assertTrue(MyDecimal.from_float(float('nan')).is_qnan())
+        self.assertTrue(MyDecimal.from_float(float('inf')).is_infinite())
+        self.assertTrue(MyDecimal.from_float(float('-inf')).is_infinite())
+        self.assertEqual(str(MyDecimal.from_float(float('nan'))),
+                         str(Decimal('NaN')))
+        self.assertEqual(str(MyDecimal.from_float(float('inf'))),
+                         str(Decimal('Infinity')))
+        self.assertEqual(str(MyDecimal.from_float(float('-inf'))),
+                         str(Decimal('-Infinity')))
+        self.assertRaises(TypeError, MyDecimal.from_float, 'abc')
+        for i in range(200):
+            x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
+            self.assertEqual(x, float(MyDecimal.from_float(x))) # roundtrip
+
+    def test_create_decimal_from_float(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        ROUND_DOWN = self.decimal.ROUND_DOWN
+        ROUND_UP = self.decimal.ROUND_UP
+        Inexact = self.decimal.Inexact
+
+        context = Context(prec=5, rounding=ROUND_DOWN)
+        self.assertEqual(
+            context.create_decimal_from_float(math.pi),
+            Decimal('3.1415')
+        )
+        context = Context(prec=5, rounding=ROUND_UP)
+        self.assertEqual(
+            context.create_decimal_from_float(math.pi),
+            Decimal('3.1416')
+        )
+        context = Context(prec=5, traps=[Inexact])
+        self.assertRaises(
+            Inexact,
+            context.create_decimal_from_float,
+            math.pi
+        )
+        self.assertEqual(repr(context.create_decimal_from_float(-0.0)),
+                         "Decimal('-0')")
+        self.assertEqual(repr(context.create_decimal_from_float(1.0)),
+                         "Decimal('1')")
+        self.assertEqual(repr(context.create_decimal_from_float(10)),
+                         "Decimal('10')")
+
+    def test_quantize(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        InvalidOperation = self.decimal.InvalidOperation
+        ROUND_DOWN = self.decimal.ROUND_DOWN
+
+        c = Context(Emax=99999, Emin=-99999)
+        self.assertEqual(
+            Decimal('7.335').quantize(Decimal('.01')),
+            Decimal('7.34')
+        )
+        self.assertEqual(
+            Decimal('7.335').quantize(Decimal('.01'), rounding=ROUND_DOWN),
+            Decimal('7.33')
+        )
+        self.assertRaises(
+            InvalidOperation,
+            Decimal("10e99999").quantize, Decimal('1e100000'), context=c
+        )
+
+        c = Context()
+        d = Decimal("0.871831e800")
+        x = d.quantize(context=c, exp=Decimal("1e797"), rounding=ROUND_DOWN)
+        self.assertEqual(x, Decimal('8.71E+799'))
+
+    def test_complex(self):
+        Decimal = self.decimal.Decimal
+
+        x = Decimal("9.8182731e181273")
+        self.assertEqual(x.real, x)
+        self.assertEqual(x.imag, 0)
+        self.assertEqual(x.conjugate(), x)
+
+        x = Decimal("1")
+        self.assertEqual(complex(x), complex(float(1)))
+
+        self.assertRaises(AttributeError, setattr, x, 'real', 100)
+        self.assertRaises(AttributeError, setattr, x, 'imag', 100)
+        self.assertRaises(AttributeError, setattr, x, 'conjugate', 100)
+        self.assertRaises(AttributeError, setattr, x, '__complex__', 100)
+
+    def test_named_parameters(self):
+        D = self.decimal.Decimal
+        Context = self.decimal.Context
+        localcontext = self.decimal.localcontext
+        InvalidOperation = self.decimal.InvalidOperation
+        Overflow = self.decimal.Overflow
+
+        xc = Context()
+        xc.prec = 1
+        xc.Emax = 1
+        xc.Emin = -1
+
+        with localcontext() as c:
+            c.clear_flags()
+
+            self.assertEqual(D(9, xc), 9)
+            self.assertEqual(D(9, context=xc), 9)
+            self.assertEqual(D(context=xc, value=9), 9)
+            self.assertEqual(D(context=xc), 0)
+            xc.clear_flags()
+            self.assertRaises(InvalidOperation, D, "xyz", context=xc)
+            self.assertTrue(xc.flags[InvalidOperation])
+            self.assertFalse(c.flags[InvalidOperation])
+
+            xc.clear_flags()
+            self.assertEqual(D(2).exp(context=xc), 7)
+            self.assertRaises(Overflow, D(8).exp, context=xc)
+            self.assertTrue(xc.flags[Overflow])
+            self.assertFalse(c.flags[Overflow])
+
+            xc.clear_flags()
+            self.assertEqual(D(2).ln(context=xc), D('0.7'))
+            self.assertRaises(InvalidOperation, D(-1).ln, context=xc)
+            self.assertTrue(xc.flags[InvalidOperation])
+            self.assertFalse(c.flags[InvalidOperation])
+
+            self.assertEqual(D(0).log10(context=xc), D('-inf'))
+            self.assertEqual(D(-1).next_minus(context=xc), -2)
+            self.assertEqual(D(-1).next_plus(context=xc), D('-0.9'))
+            self.assertEqual(D("9.73").normalize(context=xc), D('1E+1'))
+            self.assertEqual(D("9999").to_integral(context=xc), 9999)
+            self.assertEqual(D("-2000").to_integral_exact(context=xc), -2000)
+            self.assertEqual(D("123").to_integral_value(context=xc), 123)
+            self.assertEqual(D("0.0625").sqrt(context=xc), D('0.2'))
+
+            self.assertEqual(D("0.0625").compare(context=xc, other=3), -1)
+            xc.clear_flags()
+            self.assertRaises(InvalidOperation,
+                              D("0").compare_signal, D('nan'), context=xc)
+            self.assertTrue(xc.flags[InvalidOperation])
+            self.assertFalse(c.flags[InvalidOperation])
+            self.assertEqual(D("0.01").max(D('0.0101'), context=xc), D('0.0'))
+            self.assertEqual(D("0.01").max(D('0.0101'), context=xc), D('0.0'))
+            self.assertEqual(D("0.2").max_mag(D('-0.3'), context=xc),
+                             D('-0.3'))
+            self.assertEqual(D("0.02").min(D('-0.03'), context=xc), D('-0.0'))
+            self.assertEqual(D("0.02").min_mag(D('-0.03'), context=xc),
+                             D('0.0'))
+            self.assertEqual(D("0.2").next_toward(D('-1'), context=xc), D('0.1'))
+            xc.clear_flags()
+            self.assertRaises(InvalidOperation,
+                              D("0.2").quantize, D('1e10'), context=xc)
+            self.assertTrue(xc.flags[InvalidOperation])
+            self.assertFalse(c.flags[InvalidOperation])
+            self.assertEqual(D("9.99").remainder_near(D('1.5'), context=xc),
+                             D('-0.5'))
+
+            self.assertEqual(D("9.9").fma(third=D('0.9'), context=xc, other=7),
+                             D('7E+1'))
+
+            self.assertRaises(TypeError, D(1).is_canonical, context=xc)
+            self.assertRaises(TypeError, D(1).is_finite, context=xc)
+            self.assertRaises(TypeError, D(1).is_infinite, context=xc)
+            self.assertRaises(TypeError, D(1).is_nan, context=xc)
+            self.assertRaises(TypeError, D(1).is_qnan, context=xc)
+            self.assertRaises(TypeError, D(1).is_snan, context=xc)
+            self.assertRaises(TypeError, D(1).is_signed, context=xc)
+            self.assertRaises(TypeError, D(1).is_zero, context=xc)
+
+            self.assertFalse(D("0.01").is_normal(context=xc))
+            self.assertTrue(D("0.01").is_subnormal(context=xc))
+
+            self.assertRaises(TypeError, D(1).adjusted, context=xc)
+            self.assertRaises(TypeError, D(1).conjugate, context=xc)
+            self.assertRaises(TypeError, D(1).radix, context=xc)
+
+            self.assertEqual(D(-111).logb(context=xc), 2)
+            self.assertEqual(D(0).logical_invert(context=xc), 1)
+            self.assertEqual(D('0.01').number_class(context=xc), '+Subnormal')
+            self.assertEqual(D('0.21').to_eng_string(context=xc), '0.21')
+
+            self.assertEqual(D('11').logical_and(D('10'), context=xc), 0)
+            self.assertEqual(D('11').logical_or(D('10'), context=xc), 1)
+            self.assertEqual(D('01').logical_xor(D('10'), context=xc), 1)
+            self.assertEqual(D('23').rotate(1, context=xc), 3)
+            self.assertEqual(D('23').rotate(1, context=xc), 3)
+            xc.clear_flags()
+            self.assertRaises(Overflow,
+                              D('23').scaleb, 1, context=xc)
+            self.assertTrue(xc.flags[Overflow])
+            self.assertFalse(c.flags[Overflow])
+            self.assertEqual(D('23').shift(-1, context=xc), 0)
+
+            self.assertRaises(TypeError, D.from_float, 1.1, context=xc)
+            self.assertRaises(TypeError, D(0).as_tuple, context=xc)
+
+            if (self.decimal == C):
+                self.assertRaises(TypeError, D(1).canonical, context=xc)
+                self.assertEqual(D("-1").copy_abs(context=xc), 1)
+                self.assertEqual(D("1").copy_negate(context=xc), -1)
+            else:
+                self.assertEqual(D(1).canonical(context=xc), 1)
+                self.assertRaises(TypeError, D("-1").copy_abs, context=xc)
+                self.assertRaises(TypeError, D("-1").copy_negate, context=xc)
+
+class CPythonAPItests(PythonAPItests):
+    decimal = C
+class PyPythonAPItests(PythonAPItests):
+    decimal = P
+
+class ContextAPItests(unittest.TestCase):
+
+    def test_pickle(self):
+
+        Context = self.decimal.Context
+
+        savedecimal = sys.modules['decimal']
+
+        # Round trip
+        sys.modules['decimal'] = self.decimal
+        c = Context()
+        e = pickle.loads(pickle.dumps(c))
+
+        self.assertEqual(c.prec, e.prec)
+        self.assertEqual(c.Emin, e.Emin)
+        self.assertEqual(c.Emax, e.Emax)
+        self.assertEqual(c.rounding, e.rounding)
+        self.assertEqual(c.capitals, e.capitals)
+        self.assertEqual(c.clamp, e.clamp)
+        self.assertEqual(c.flags, e.flags)
+        self.assertEqual(c.traps, e.traps)
+
+        # Test interchangeability
+        combinations = [(C, P), (P, C)] if C else [(P, P)]
+        for dumper, loader in combinations:
+            for ri, _ in enumerate(RoundingModes[dumper]):
+                for fi, _ in enumerate(OrderedSignals[dumper]):
+                    for ti, _ in enumerate(OrderedSignals[dumper]):
+
+                        prec = random.randrange(1, 100)
+                        emin = random.randrange(-100, 0)
+                        emax = random.randrange(1, 100)
+                        caps = random.randrange(2)
+                        clamp = random.randrange(2)
+
+                        # One module dumps
+                        sys.modules['decimal'] = dumper
+                        c = dumper.Context(
+                              prec=prec, Emin=emin, Emax=emax,
+                              rounding=RoundingModes[dumper][ri],
+                              capitals=caps, clamp=clamp,
+                              flags=OrderedSignals[dumper][:fi],
+                              traps=OrderedSignals[dumper][:ti]
+                        )
+                        s = pickle.dumps(c)
+
+                        # The other module loads
+                        sys.modules['decimal'] = loader
+                        d = pickle.loads(s)
+                        self.assertIsInstance(d, loader.Context)
+
+                        self.assertEqual(d.prec, prec)
+                        self.assertEqual(d.Emin, emin)
+                        self.assertEqual(d.Emax, emax)
+                        self.assertEqual(d.rounding, RoundingModes[loader][ri])
+                        self.assertEqual(d.capitals, caps)
+                        self.assertEqual(d.clamp, clamp)
+                        assert_signals(self, d, 'flags', OrderedSignals[loader][:fi])
+                        assert_signals(self, d, 'traps', OrderedSignals[loader][:ti])
+
+        sys.modules['decimal'] = savedecimal
+
+    def test_equality_with_other_types(self):
+        Decimal = self.decimal.Decimal
+
+        self.assertIn(Decimal(10), ['a', 1.0, Decimal(10), (1,2), {}])
+        self.assertNotIn(Decimal(10), ['a', 1.0, (1,2), {}])
+
+    def test_copy(self):
+        # All copies should be deep
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.copy()
+        self.assertNotEqual(id(c), id(d))
+        self.assertNotEqual(id(c.flags), id(d.flags))
+        self.assertNotEqual(id(c.traps), id(d.traps))
+        k1 = set(c.flags.keys())
+        k2 = set(d.flags.keys())
+        self.assertEqual(k1, k2)
+        self.assertEqual(c.flags, d.flags)
+
+    def test__clamp(self):
+        # In Python 3.2, the private attribute `_clamp` was made
+        # public (issue 8540), with the old `_clamp` becoming a
+        # property wrapping `clamp`.  For the duration of Python 3.2
+        # only, the attribute should be gettable/settable via both
+        # `clamp` and `_clamp`; in Python 3.3, `_clamp` should be
+        # removed.
+        Context = self.decimal.Context
+        c = Context()
+        self.assertRaises(AttributeError, getattr, c, '_clamp')
+
+    def test_abs(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.abs(Decimal(-1))
+        self.assertEqual(c.abs(-1), d)
+        self.assertRaises(TypeError, c.abs, '-1')
+
+    def test_add(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.add(Decimal(1), Decimal(1))
+        self.assertEqual(c.add(1, 1), d)
+        self.assertEqual(c.add(Decimal(1), 1), d)
+        self.assertEqual(c.add(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.add, '1', 1)
+        self.assertRaises(TypeError, c.add, 1, '1')
+
+    def test_compare(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.compare(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare(1, 1), d)
+        self.assertEqual(c.compare(Decimal(1), 1), d)
+        self.assertEqual(c.compare(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare, '1', 1)
+        self.assertRaises(TypeError, c.compare, 1, '1')
+
+    def test_compare_signal(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.compare_signal(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_signal(1, 1), d)
+        self.assertEqual(c.compare_signal(Decimal(1), 1), d)
+        self.assertEqual(c.compare_signal(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_signal, '1', 1)
+        self.assertRaises(TypeError, c.compare_signal, 1, '1')
+
+    def test_compare_total(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.compare_total(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_total(1, 1), d)
+        self.assertEqual(c.compare_total(Decimal(1), 1), d)
+        self.assertEqual(c.compare_total(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_total, '1', 1)
+        self.assertRaises(TypeError, c.compare_total, 1, '1')
+
+    def test_compare_total_mag(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.compare_total_mag(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_total_mag(1, 1), d)
+        self.assertEqual(c.compare_total_mag(Decimal(1), 1), d)
+        self.assertEqual(c.compare_total_mag(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_total_mag, '1', 1)
+        self.assertRaises(TypeError, c.compare_total_mag, 1, '1')
+
+    def test_copy_abs(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.copy_abs(Decimal(-1))
+        self.assertEqual(c.copy_abs(-1), d)
+        self.assertRaises(TypeError, c.copy_abs, '-1')
+
+    def test_copy_decimal(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.copy_decimal(Decimal(-1))
+        self.assertEqual(c.copy_decimal(-1), d)
+        self.assertRaises(TypeError, c.copy_decimal, '-1')
+
+    def test_copy_negate(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.copy_negate(Decimal(-1))
+        self.assertEqual(c.copy_negate(-1), d)
+        self.assertRaises(TypeError, c.copy_negate, '-1')
+
+    def test_copy_sign(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.copy_sign(Decimal(1), Decimal(-2))
+        self.assertEqual(c.copy_sign(1, -2), d)
+        self.assertEqual(c.copy_sign(Decimal(1), -2), d)
+        self.assertEqual(c.copy_sign(1, Decimal(-2)), d)
+        self.assertRaises(TypeError, c.copy_sign, '1', -2)
+        self.assertRaises(TypeError, c.copy_sign, 1, '-2')
+
+    def test_divide(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.divide(Decimal(1), Decimal(2))
+        self.assertEqual(c.divide(1, 2), d)
+        self.assertEqual(c.divide(Decimal(1), 2), d)
+        self.assertEqual(c.divide(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divide, '1', 2)
+        self.assertRaises(TypeError, c.divide, 1, '2')
+
+    def test_divide_int(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.divide_int(Decimal(1), Decimal(2))
+        self.assertEqual(c.divide_int(1, 2), d)
+        self.assertEqual(c.divide_int(Decimal(1), 2), d)
+        self.assertEqual(c.divide_int(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divide_int, '1', 2)
+        self.assertRaises(TypeError, c.divide_int, 1, '2')
+
+    def test_divmod(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.divmod(Decimal(1), Decimal(2))
+        self.assertEqual(c.divmod(1, 2), d)
+        self.assertEqual(c.divmod(Decimal(1), 2), d)
+        self.assertEqual(c.divmod(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divmod, '1', 2)
+        self.assertRaises(TypeError, c.divmod, 1, '2')
+
+    def test_exp(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.exp(Decimal(10))
+        self.assertEqual(c.exp(10), d)
+        self.assertRaises(TypeError, c.exp, '10')
+
+    def test_fma(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.fma(Decimal(2), Decimal(3), Decimal(4))
+        self.assertEqual(c.fma(2, 3, 4), d)
+        self.assertEqual(c.fma(Decimal(2), 3, 4), d)
+        self.assertEqual(c.fma(2, Decimal(3), 4), d)
+        self.assertEqual(c.fma(2, 3, Decimal(4)), d)
+        self.assertEqual(c.fma(Decimal(2), Decimal(3), 4), d)
+        self.assertRaises(TypeError, c.fma, '2', 3, 4)
+        self.assertRaises(TypeError, c.fma, 2, '3', 4)
+        self.assertRaises(TypeError, c.fma, 2, 3, '4')
+
+        # Issue 12079 for Context.fma ...
+        self.assertRaises(TypeError, c.fma,
+                          Decimal('Infinity'), Decimal(0), "not a decimal")
+        self.assertRaises(TypeError, c.fma,
+                          Decimal(1), Decimal('snan'), 1.222)
+        # ... and for Decimal.fma.
+        self.assertRaises(TypeError, Decimal('Infinity').fma,
+                          Decimal(0), "not a decimal")
+        self.assertRaises(TypeError, Decimal(1).fma,
+                          Decimal('snan'), 1.222)
+
+    def test_is_finite(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_finite(Decimal(10))
+        self.assertEqual(c.is_finite(10), d)
+        self.assertRaises(TypeError, c.is_finite, '10')
+
+    def test_is_infinite(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_infinite(Decimal(10))
+        self.assertEqual(c.is_infinite(10), d)
+        self.assertRaises(TypeError, c.is_infinite, '10')
+
+    def test_is_nan(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_nan(Decimal(10))
+        self.assertEqual(c.is_nan(10), d)
+        self.assertRaises(TypeError, c.is_nan, '10')
+
+    def test_is_normal(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_normal(Decimal(10))
+        self.assertEqual(c.is_normal(10), d)
+        self.assertRaises(TypeError, c.is_normal, '10')
+
+    def test_is_qnan(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_qnan(Decimal(10))
+        self.assertEqual(c.is_qnan(10), d)
+        self.assertRaises(TypeError, c.is_qnan, '10')
+
+    def test_is_signed(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_signed(Decimal(10))
+        self.assertEqual(c.is_signed(10), d)
+        self.assertRaises(TypeError, c.is_signed, '10')
+
+    def test_is_snan(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_snan(Decimal(10))
+        self.assertEqual(c.is_snan(10), d)
+        self.assertRaises(TypeError, c.is_snan, '10')
+
+    def test_is_subnormal(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_subnormal(Decimal(10))
+        self.assertEqual(c.is_subnormal(10), d)
+        self.assertRaises(TypeError, c.is_subnormal, '10')
+
+    def test_is_zero(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.is_zero(Decimal(10))
+        self.assertEqual(c.is_zero(10), d)
+        self.assertRaises(TypeError, c.is_zero, '10')
+
+    def test_ln(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.ln(Decimal(10))
+        self.assertEqual(c.ln(10), d)
+        self.assertRaises(TypeError, c.ln, '10')
+
+    def test_log10(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.log10(Decimal(10))
+        self.assertEqual(c.log10(10), d)
+        self.assertRaises(TypeError, c.log10, '10')
+
+    def test_logb(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.logb(Decimal(10))
+        self.assertEqual(c.logb(10), d)
+        self.assertRaises(TypeError, c.logb, '10')
+
+    def test_logical_and(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.logical_and(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_and(1, 1), d)
+        self.assertEqual(c.logical_and(Decimal(1), 1), d)
+        self.assertEqual(c.logical_and(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_and, '1', 1)
+        self.assertRaises(TypeError, c.logical_and, 1, '1')
+
+    def test_logical_invert(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.logical_invert(Decimal(1000))
+        self.assertEqual(c.logical_invert(1000), d)
+        self.assertRaises(TypeError, c.logical_invert, '1000')
+
+    def test_logical_or(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.logical_or(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_or(1, 1), d)
+        self.assertEqual(c.logical_or(Decimal(1), 1), d)
+        self.assertEqual(c.logical_or(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_or, '1', 1)
+        self.assertRaises(TypeError, c.logical_or, 1, '1')
+
+    def test_logical_xor(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.logical_xor(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_xor(1, 1), d)
+        self.assertEqual(c.logical_xor(Decimal(1), 1), d)
+        self.assertEqual(c.logical_xor(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_xor, '1', 1)
+        self.assertRaises(TypeError, c.logical_xor, 1, '1')
+
+    def test_max(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.max(Decimal(1), Decimal(2))
+        self.assertEqual(c.max(1, 2), d)
+        self.assertEqual(c.max(Decimal(1), 2), d)
+        self.assertEqual(c.max(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.max, '1', 2)
+        self.assertRaises(TypeError, c.max, 1, '2')
+
+    def test_max_mag(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.max_mag(Decimal(1), Decimal(2))
+        self.assertEqual(c.max_mag(1, 2), d)
+        self.assertEqual(c.max_mag(Decimal(1), 2), d)
+        self.assertEqual(c.max_mag(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.max_mag, '1', 2)
+        self.assertRaises(TypeError, c.max_mag, 1, '2')
+
+    def test_min(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.min(Decimal(1), Decimal(2))
+        self.assertEqual(c.min(1, 2), d)
+        self.assertEqual(c.min(Decimal(1), 2), d)
+        self.assertEqual(c.min(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.min, '1', 2)
+        self.assertRaises(TypeError, c.min, 1, '2')
+
+    def test_min_mag(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.min_mag(Decimal(1), Decimal(2))
+        self.assertEqual(c.min_mag(1, 2), d)
+        self.assertEqual(c.min_mag(Decimal(1), 2), d)
+        self.assertEqual(c.min_mag(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.min_mag, '1', 2)
+        self.assertRaises(TypeError, c.min_mag, 1, '2')
+
+    def test_minus(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.minus(Decimal(10))
+        self.assertEqual(c.minus(10), d)
+        self.assertRaises(TypeError, c.minus, '10')
+
+    def test_multiply(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.multiply(Decimal(1), Decimal(2))
+        self.assertEqual(c.multiply(1, 2), d)
+        self.assertEqual(c.multiply(Decimal(1), 2), d)
+        self.assertEqual(c.multiply(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.multiply, '1', 2)
+        self.assertRaises(TypeError, c.multiply, 1, '2')
+
+    def test_next_minus(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.next_minus(Decimal(10))
+        self.assertEqual(c.next_minus(10), d)
+        self.assertRaises(TypeError, c.next_minus, '10')
+
+    def test_next_plus(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.next_plus(Decimal(10))
+        self.assertEqual(c.next_plus(10), d)
+        self.assertRaises(TypeError, c.next_plus, '10')
+
+    def test_next_toward(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.next_toward(Decimal(1), Decimal(2))
+        self.assertEqual(c.next_toward(1, 2), d)
+        self.assertEqual(c.next_toward(Decimal(1), 2), d)
+        self.assertEqual(c.next_toward(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.next_toward, '1', 2)
+        self.assertRaises(TypeError, c.next_toward, 1, '2')
+
+    def test_normalize(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.normalize(Decimal(10))
+        self.assertEqual(c.normalize(10), d)
+        self.assertRaises(TypeError, c.normalize, '10')
+
+    def test_number_class(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        self.assertEqual(c.number_class(123), c.number_class(Decimal(123)))
+        self.assertEqual(c.number_class(0), c.number_class(Decimal(0)))
+        self.assertEqual(c.number_class(-45), c.number_class(Decimal(-45)))
+
+    def test_plus(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.plus(Decimal(10))
+        self.assertEqual(c.plus(10), d)
+        self.assertRaises(TypeError, c.plus, '10')
+
+    def test_power(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.power(Decimal(1), Decimal(4))
+        self.assertEqual(c.power(1, 4), d)
+        self.assertEqual(c.power(Decimal(1), 4), d)
+        self.assertEqual(c.power(1, Decimal(4)), d)
+        self.assertEqual(c.power(Decimal(1), Decimal(4)), d)
+        self.assertRaises(TypeError, c.power, '1', 4)
+        self.assertRaises(TypeError, c.power, 1, '4')
+        self.assertEqual(c.power(modulo=5, b=8, a=2), 1)
+
+    def test_quantize(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.quantize(Decimal(1), Decimal(2))
+        self.assertEqual(c.quantize(1, 2), d)
+        self.assertEqual(c.quantize(Decimal(1), 2), d)
+        self.assertEqual(c.quantize(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.quantize, '1', 2)
+        self.assertRaises(TypeError, c.quantize, 1, '2')
+
+    def test_remainder(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.remainder(Decimal(1), Decimal(2))
+        self.assertEqual(c.remainder(1, 2), d)
+        self.assertEqual(c.remainder(Decimal(1), 2), d)
+        self.assertEqual(c.remainder(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.remainder, '1', 2)
+        self.assertRaises(TypeError, c.remainder, 1, '2')
+
+    def test_remainder_near(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.remainder_near(Decimal(1), Decimal(2))
+        self.assertEqual(c.remainder_near(1, 2), d)
+        self.assertEqual(c.remainder_near(Decimal(1), 2), d)
+        self.assertEqual(c.remainder_near(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.remainder_near, '1', 2)
+        self.assertRaises(TypeError, c.remainder_near, 1, '2')
+
+    def test_rotate(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.rotate(Decimal(1), Decimal(2))
+        self.assertEqual(c.rotate(1, 2), d)
+        self.assertEqual(c.rotate(Decimal(1), 2), d)
+        self.assertEqual(c.rotate(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.rotate, '1', 2)
+        self.assertRaises(TypeError, c.rotate, 1, '2')
+
+    def test_sqrt(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.sqrt(Decimal(10))
+        self.assertEqual(c.sqrt(10), d)
+        self.assertRaises(TypeError, c.sqrt, '10')
+
+    def test_same_quantum(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.same_quantum(Decimal(1), Decimal(2))
+        self.assertEqual(c.same_quantum(1, 2), d)
+        self.assertEqual(c.same_quantum(Decimal(1), 2), d)
+        self.assertEqual(c.same_quantum(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.same_quantum, '1', 2)
+        self.assertRaises(TypeError, c.same_quantum, 1, '2')
+
+    def test_scaleb(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.scaleb(Decimal(1), Decimal(2))
+        self.assertEqual(c.scaleb(1, 2), d)
+        self.assertEqual(c.scaleb(Decimal(1), 2), d)
+        self.assertEqual(c.scaleb(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.scaleb, '1', 2)
+        self.assertRaises(TypeError, c.scaleb, 1, '2')
+
+    def test_shift(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.shift(Decimal(1), Decimal(2))
+        self.assertEqual(c.shift(1, 2), d)
+        self.assertEqual(c.shift(Decimal(1), 2), d)
+        self.assertEqual(c.shift(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.shift, '1', 2)
+        self.assertRaises(TypeError, c.shift, 1, '2')
+
+    def test_subtract(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.subtract(Decimal(1), Decimal(2))
+        self.assertEqual(c.subtract(1, 2), d)
+        self.assertEqual(c.subtract(Decimal(1), 2), d)
+        self.assertEqual(c.subtract(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.subtract, '1', 2)
+        self.assertRaises(TypeError, c.subtract, 1, '2')
+
+    def test_to_eng_string(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.to_eng_string(Decimal(10))
+        self.assertEqual(c.to_eng_string(10), d)
+        self.assertRaises(TypeError, c.to_eng_string, '10')
+
+    def test_to_sci_string(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.to_sci_string(Decimal(10))
+        self.assertEqual(c.to_sci_string(10), d)
+        self.assertRaises(TypeError, c.to_sci_string, '10')
+
+    def test_to_integral_exact(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.to_integral_exact(Decimal(10))
+        self.assertEqual(c.to_integral_exact(10), d)
+        self.assertRaises(TypeError, c.to_integral_exact, '10')
+
+    def test_to_integral_value(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+
+        c = Context()
+        d = c.to_integral_value(Decimal(10))
+        self.assertEqual(c.to_integral_value(10), d)
+        self.assertRaises(TypeError, c.to_integral_value, '10')
+        self.assertRaises(TypeError, c.to_integral_value, 10, 'x')
+
+class CContextAPItests(ContextAPItests):
+    decimal = C
+class PyContextAPItests(ContextAPItests):
+    decimal = P
+
+class ContextWithStatement(unittest.TestCase):
+    # Can't do these as docstrings until Python 2.6
+    # as doctest can't handle __future__ statements
+
+    def test_localcontext(self):
+        # Use a copy of the current context in the block
+        getcontext = self.decimal.getcontext
+        localcontext = self.decimal.localcontext
+
+        orig_ctx = getcontext()
+        with localcontext() as enter_ctx:
+            set_ctx = getcontext()
+        final_ctx = getcontext()
+        self.assertIs(orig_ctx, final_ctx, 'did not restore context correctly')
+        self.assertIsNot(orig_ctx, set_ctx, 'did not copy the context')
+        self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
+
+    def test_localcontextarg(self):
+        # Use a copy of the supplied context in the block
+        Context = self.decimal.Context
+        getcontext = self.decimal.getcontext
+        localcontext = self.decimal.localcontext
+
+        localcontext = self.decimal.localcontext
+        orig_ctx = getcontext()
+        new_ctx = Context(prec=42)
+        with localcontext(new_ctx) as enter_ctx:
+            set_ctx = getcontext()
+        final_ctx = getcontext()
+        self.assertIs(orig_ctx, final_ctx, 'did not restore context correctly')
+        self.assertEqual(set_ctx.prec, new_ctx.prec, 'did not set correct context')
+        self.assertIsNot(new_ctx, set_ctx, 'did not copy the context')
+        self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
+
+    def test_nested_with_statements(self):
+        # Use a copy of the supplied context in the block
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        getcontext = self.decimal.getcontext
+        localcontext = self.decimal.localcontext
+        Clamped = self.decimal.Clamped
+        Overflow = self.decimal.Overflow
+
+        orig_ctx = getcontext()
+        orig_ctx.clear_flags()
+        new_ctx = Context(Emax=384)
+        with localcontext() as c1:
+            self.assertEqual(c1.flags, orig_ctx.flags)
+            self.assertEqual(c1.traps, orig_ctx.traps)
+            c1.traps[Clamped] = True
+            c1.Emin = -383
+            self.assertNotEqual(orig_ctx.Emin, -383)
+            self.assertRaises(Clamped, c1.create_decimal, '0e-999')
+            self.assertTrue(c1.flags[Clamped])
+            with localcontext(new_ctx) as c2:
+                self.assertEqual(c2.flags, new_ctx.flags)
+                self.assertEqual(c2.traps, new_ctx.traps)
+                self.assertRaises(Overflow, c2.power, Decimal('3.4e200'), 2)
+                self.assertFalse(c2.flags[Clamped])
+                self.assertTrue(c2.flags[Overflow])
+                del c2
+            self.assertFalse(c1.flags[Overflow])
+            del c1
+        self.assertNotEqual(orig_ctx.Emin, -383)
+        self.assertFalse(orig_ctx.flags[Clamped])
+        self.assertFalse(orig_ctx.flags[Overflow])
+        self.assertFalse(new_ctx.flags[Clamped])
+        self.assertFalse(new_ctx.flags[Overflow])
+
+    def test_with_statements_gc1(self):
+        localcontext = self.decimal.localcontext
+
+        with localcontext() as c1:
+            del c1
+            with localcontext() as c2:
+                del c2
+                with localcontext() as c3:
+                    del c3
+                    with localcontext() as c4:
+                        del c4
+
+    def test_with_statements_gc2(self):
+        localcontext = self.decimal.localcontext
+
+        with localcontext() as c1:
+            with localcontext(c1) as c2:
+                del c1
+                with localcontext(c2) as c3:
+                    del c2
+                    with localcontext(c3) as c4:
+                        del c3
+                        del c4
+
+    def test_with_statements_gc3(self):
+        Context = self.decimal.Context
+        localcontext = self.decimal.localcontext
+        getcontext = self.decimal.getcontext
+        setcontext = self.decimal.setcontext
+
+        with localcontext() as c1:
+            del c1
+            n1 = Context(prec=1)
+            setcontext(n1)
+            with localcontext(n1) as c2:
+                del n1
+                self.assertEqual(c2.prec, 1)
+                del c2
+                n2 = Context(prec=2)
+                setcontext(n2)
+                del n2
+                self.assertEqual(getcontext().prec, 2)
+                n3 = Context(prec=3)
+                setcontext(n3)
+                self.assertEqual(getcontext().prec, 3)
+                with localcontext(n3) as c3:
+                    del n3
+                    self.assertEqual(c3.prec, 3)
+                    del c3
+                    n4 = Context(prec=4)
+                    setcontext(n4)
+                    del n4
+                    self.assertEqual(getcontext().prec, 4)
+                    with localcontext() as c4:
+                        self.assertEqual(c4.prec, 4)
+                        del c4
+
+class CContextWithStatement(ContextWithStatement):
+    decimal = C
+class PyContextWithStatement(ContextWithStatement):
+    decimal = P
+
+class ContextFlags(unittest.TestCase):
+
+    def test_flags_irrelevant(self):
+        # check that the result (numeric result + flags raised) of an
+        # arithmetic operation doesn't depend on the current flags
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        Rounded = self.decimal.Rounded
+        Underflow = self.decimal.Underflow
+        Clamped = self.decimal.Clamped
+        Subnormal = self.decimal.Subnormal
+        ROUND_HALF_EVEN = self.decimal.ROUND_HALF_EVEN
+
+        def raise_error(context, flag):
+            if self.decimal == C:
+                context.flags[flag] = True
+                if context.traps[flag]:
+                    raise flag
+            else:
+                context._raise_error(flag)
+
+        context = Context(prec=9, Emin = -425000000, Emax = 425000000,
+                          rounding=ROUND_HALF_EVEN, traps=[], flags=[])
+
+        # operations that raise various flags, in the form (function, arglist)
+        operations = [
+            (context._apply, [Decimal("100E-425000010")]),
+            (context.sqrt, [Decimal(2)]),
+            (context.add, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            (context.multiply, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            (context.subtract, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            ]
+
+        # try various flags individually, then a whole lot at once
+        flagsets = [[Inexact], [Rounded], [Underflow], [Clamped], [Subnormal],
+                    [Inexact, Rounded, Underflow, Clamped, Subnormal]]
+
+        for fn, args in operations:
+            # find answer and flags raised using a clean context
+            context.clear_flags()
+            ans = fn(*args)
+            flags = [k for k, v in context.flags.items() if v]
+
+            for extra_flags in flagsets:
+                # set flags, before calling operation
+                context.clear_flags()
+                for flag in extra_flags:
+                    raise_error(context, flag)
+                new_ans = fn(*args)
+
+                # flags that we expect to be set after the operation
+                expected_flags = list(flags)
+                for flag in extra_flags:
+                    if flag not in expected_flags:
+                        expected_flags.append(flag)
+                expected_flags.sort(key=id)
+
+                # flags we actually got
+                new_flags = [k for k,v in context.flags.items() if v]
+                new_flags.sort(key=id)
+
+                self.assertEqual(ans, new_ans,
+                                 "operation produces different answers depending on flags set: " +
+                                 "expected %s, got %s." % (ans, new_ans))
+                self.assertEqual(new_flags, expected_flags,
+                                  "operation raises different flags depending on flags set: " +
+                                  "expected %s, got %s" % (expected_flags, new_flags))
+
+    def test_flag_comparisons(self):
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        Rounded = self.decimal.Rounded
+
+        c = Context()
+
+        # Valid SignalDict
+        self.assertNotEqual(c.flags, c.traps)
+        self.assertNotEqual(c.traps, c.flags)
+
+        c.flags = c.traps
+        self.assertEqual(c.flags, c.traps)
+        self.assertEqual(c.traps, c.flags)
+
+        c.flags[Rounded] = True
+        c.traps = c.flags
+        self.assertEqual(c.flags, c.traps)
+        self.assertEqual(c.traps, c.flags)
+
+        d = {}
+        d.update(c.flags)
+        self.assertEqual(d, c.flags)
+        self.assertEqual(c.flags, d)
+
+        d[Inexact] = True
+        self.assertNotEqual(d, c.flags)
+        self.assertNotEqual(c.flags, d)
+
+        # Invalid SignalDict
+        d = {Inexact:False}
+        self.assertNotEqual(d, c.flags)
+        self.assertNotEqual(c.flags, d)
+
+        d = ["xyz"]
+        self.assertNotEqual(d, c.flags)
+        self.assertNotEqual(c.flags, d)
+
+    @requires_IEEE_754
+    def test_float_operation(self):
+        Decimal = self.decimal.Decimal
+        FloatOperation = self.decimal.FloatOperation
+        localcontext = self.decimal.localcontext
+
+        with localcontext() as c:
+            ##### trap is off by default
+            self.assertFalse(c.traps[FloatOperation])
+
+            # implicit conversion sets the flag
+            c.clear_flags()
+            self.assertEqual(Decimal(7.5), 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            self.assertEqual(c.create_decimal(7.5), 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            # explicit conversion does not set the flag
+            c.clear_flags()
+            x = Decimal.from_float(7.5)
+            self.assertFalse(c.flags[FloatOperation])
+            # comparison sets the flag
+            self.assertEqual(x, 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            x = c.create_decimal_from_float(7.5)
+            self.assertFalse(c.flags[FloatOperation])
+            self.assertEqual(x, 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            ##### set the trap
+            c.traps[FloatOperation] = True
+
+            # implicit conversion raises
+            c.clear_flags()
+            self.assertRaises(FloatOperation, Decimal, 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            self.assertRaises(FloatOperation, c.create_decimal, 7.5)
+            self.assertTrue(c.flags[FloatOperation])
+
+            # explicit conversion is silent
+            c.clear_flags()
+            x = Decimal.from_float(7.5)
+            self.assertFalse(c.flags[FloatOperation])
+
+            c.clear_flags()
+            x = c.create_decimal_from_float(7.5)
+            self.assertFalse(c.flags[FloatOperation])
+
+    def test_float_comparison(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        FloatOperation = self.decimal.FloatOperation
+        localcontext = self.decimal.localcontext
+
+        def assert_attr(a, b, attr, context, signal=None):
+            context.clear_flags()
+            f = getattr(a, attr)
+            if signal == FloatOperation:
+                self.assertRaises(signal, f, b)
+            else:
+                self.assertIs(f(b), True)
+            self.assertTrue(context.flags[FloatOperation])
+
+        small_d = Decimal('0.25')
+        big_d = Decimal('3.0')
+        small_f = 0.25
+        big_f = 3.0
+
+        zero_d = Decimal('0.0')
+        neg_zero_d = Decimal('-0.0')
+        zero_f = 0.0
+        neg_zero_f = -0.0
+
+        inf_d = Decimal('Infinity')
+        neg_inf_d = Decimal('-Infinity')
+        inf_f = float('inf')
+        neg_inf_f = float('-inf')
+
+        def doit(c, signal=None):
+            # Order
+            for attr in '__lt__', '__le__':
+                assert_attr(small_d, big_f, attr, c, signal)
+
+            for attr in '__gt__', '__ge__':
+                assert_attr(big_d, small_f, attr, c, signal)
+
+            # Equality
+            assert_attr(small_d, small_f, '__eq__', c, None)
+
+            assert_attr(neg_zero_d, neg_zero_f, '__eq__', c, None)
+            assert_attr(neg_zero_d, zero_f, '__eq__', c, None)
+
+            assert_attr(zero_d, neg_zero_f, '__eq__', c, None)
+            assert_attr(zero_d, zero_f, '__eq__', c, None)
+
+            assert_attr(neg_inf_d, neg_inf_f, '__eq__', c, None)
+            assert_attr(inf_d, inf_f, '__eq__', c, None)
+
+            # Inequality
+            assert_attr(small_d, big_f, '__ne__', c, None)
+
+            assert_attr(Decimal('0.1'), 0.1, '__ne__', c, None)
+
+            assert_attr(neg_inf_d, inf_f, '__ne__', c, None)
+            assert_attr(inf_d, neg_inf_f, '__ne__', c, None)
+
+            assert_attr(Decimal('NaN'), float('nan'), '__ne__', c, None)
+
+        def test_containers(c, signal=None):
+            c.clear_flags()
+            s = set([100.0, Decimal('100.0')])
+            self.assertEqual(len(s), 1)
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            if signal:
+                self.assertRaises(signal, sorted, [1.0, Decimal('10.0')])
+            else:
+                s = sorted([10.0, Decimal('10.0')])
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            b = 10.0 in [Decimal('10.0'), 1.0]
+            self.assertTrue(c.flags[FloatOperation])
+
+            c.clear_flags()
+            b = 10.0 in {Decimal('10.0'):'a', 1.0:'b'}
+            self.assertTrue(c.flags[FloatOperation])
+
+        nc = Context()
+        with localcontext(nc) as c:
+            self.assertFalse(c.traps[FloatOperation])
+            doit(c, signal=None)
+            test_containers(c, signal=None)
+
+            c.traps[FloatOperation] = True
+            doit(c, signal=FloatOperation)
+            test_containers(c, signal=FloatOperation)
+
+    def test_float_operation_default(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        FloatOperation= self.decimal.FloatOperation
+
+        context = Context()
+        self.assertFalse(context.flags[FloatOperation])
+        self.assertFalse(context.traps[FloatOperation])
+
+        context.clear_traps()
+        context.traps[Inexact] = True
+        context.traps[FloatOperation] = True
+        self.assertTrue(context.traps[FloatOperation])
+        self.assertTrue(context.traps[Inexact])
+
+class CContextFlags(ContextFlags):
+    decimal = C
+class PyContextFlags(ContextFlags):
+    decimal = P
+
+class SpecialContexts(unittest.TestCase):
+    """Test the context templates."""
+
+    def test_context_templates(self):
+        BasicContext = self.decimal.BasicContext
+        ExtendedContext = self.decimal.ExtendedContext
+        getcontext = self.decimal.getcontext
+        setcontext = self.decimal.setcontext
+        InvalidOperation = self.decimal.InvalidOperation
+        DivisionByZero = self.decimal.DivisionByZero
+        Overflow = self.decimal.Overflow
+        Underflow = self.decimal.Underflow
+        Clamped = self.decimal.Clamped
+
+        assert_signals(self, BasicContext, 'traps',
+            [InvalidOperation, DivisionByZero, Overflow, Underflow, Clamped]
+        )
+
+        savecontext = getcontext().copy()
+        basic_context_prec = BasicContext.prec
+        extended_context_prec = ExtendedContext.prec
+
+        ex = None
+        try:
+            BasicContext.prec = ExtendedContext.prec = 441
+            for template in BasicContext, ExtendedContext:
+                setcontext(template)
+                c = getcontext()
+                self.assertIsNot(c, template)
+                self.assertEqual(c.prec, 441)
+        except Exception as e:
+            ex = e.__class__
+        finally:
+            BasicContext.prec = basic_context_prec
+            ExtendedContext.prec = extended_context_prec
+            setcontext(savecontext)
+            if ex:
+                raise ex
+
+    def test_default_context(self):
+        DefaultContext = self.decimal.DefaultContext
+        BasicContext = self.decimal.BasicContext
+        ExtendedContext = self.decimal.ExtendedContext
+        getcontext = self.decimal.getcontext
+        setcontext = self.decimal.setcontext
+        InvalidOperation = self.decimal.InvalidOperation
+        DivisionByZero = self.decimal.DivisionByZero
+        Overflow = self.decimal.Overflow
+
+        self.assertEqual(BasicContext.prec, 9)
+        self.assertEqual(ExtendedContext.prec, 9)
+
+        assert_signals(self, DefaultContext, 'traps',
+            [InvalidOperation, DivisionByZero, Overflow]
+        )
+
+        savecontext = getcontext().copy()
+        default_context_prec = DefaultContext.prec
+
+        ex = None
+        try:
+            c = getcontext()
+            saveprec = c.prec
+
+            DefaultContext.prec = 961
+            c = getcontext()
+            self.assertEqual(c.prec, saveprec)
+
+            setcontext(DefaultContext)
+            c = getcontext()
+            self.assertIsNot(c, DefaultContext)
+            self.assertEqual(c.prec, 961)
+        except Exception as e:
+            ex = e.__class__
+        finally:
+            DefaultContext.prec = default_context_prec
+            setcontext(savecontext)
+            if ex:
+                raise ex
+
+class CSpecialContexts(SpecialContexts):
+    decimal = C
+class PySpecialContexts(SpecialContexts):
+    decimal = P
+
+class ContextInputValidation(unittest.TestCase):
+
+    def test_invalid_context(self):
+        Context = self.decimal.Context
+        DefaultContext = self.decimal.DefaultContext
+
+        c = DefaultContext.copy()
+
+        # prec, Emax
+        for attr in ['prec', 'Emax']:
+            setattr(c, attr, 999999)
+            self.assertEqual(getattr(c, attr), 999999)
+            self.assertRaises(ValueError, setattr, c, attr, -1)
+            self.assertRaises(TypeError, setattr, c, attr, 'xyz')
+
+        # Emin
+        setattr(c, 'Emin', -999999)
+        self.assertEqual(getattr(c, 'Emin'), -999999)
+        self.assertRaises(ValueError, setattr, c, 'Emin', 1)
+        self.assertRaises(TypeError, setattr, c, 'Emin', (1,2,3))
+
+        # rounding: always raise TypeError in order to get consistent
+        # exceptions across implementations. In decimal, rounding
+        # modes are strings, in _decimal they are integers. The idea
+        # is to view rounding as an abstract type and not mind the
+        # implementation details.
+        # Hence, a user should view the rounding modes as if they
+        # had been defined in a language that supports abstract
+        # data types, e.g. ocaml:
+        #
+        #   type rounding = ROUND_DOWN | ROUND_HALF_UP | ... ;;
+        #
+        self.assertRaises(TypeError, setattr, c, 'rounding', -1)
+        self.assertRaises(TypeError, setattr, c, 'rounding', 9)
+        self.assertRaises(TypeError, setattr, c, 'rounding', 1.0)
+        self.assertRaises(TypeError, setattr, c, 'rounding', 'xyz')
+
+        # capitals, clamp
+        for attr in ['capitals', 'clamp']:
+            self.assertRaises(ValueError, setattr, c, attr, -1)
+            self.assertRaises(ValueError, setattr, c, attr, 2)
+            self.assertRaises(TypeError, setattr, c, attr, [1,2,3])
+
+        # Invalid attribute
+        self.assertRaises(AttributeError, setattr, c, 'emax', 100)
+
+        # Invalid signal dict
+        self.assertRaises(TypeError, setattr, c, 'flags', [])
+        self.assertRaises(KeyError, setattr, c, 'flags', {})
+        self.assertRaises(KeyError, setattr, c, 'traps',
+                          {'InvalidOperation':0})
+
+        # Attributes cannot be deleted
+        for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp',
+                     'flags', 'traps']:
+            self.assertRaises(AttributeError, c.__delattr__, attr)
+
+        # Invalid attributes
+        self.assertRaises(TypeError, getattr, c, 9)
+        self.assertRaises(TypeError, setattr, c, 9)
+
+        # Invalid values in constructor
+        self.assertRaises(TypeError, Context, rounding=999999)
+        self.assertRaises(TypeError, Context, rounding='xyz')
+        self.assertRaises(ValueError, Context, clamp=2)
+        self.assertRaises(ValueError, Context, capitals=-1)
+        self.assertRaises(KeyError, Context, flags=["P"])
+        self.assertRaises(KeyError, Context, traps=["Q"])
+
+        # Type error in conversion
+        self.assertRaises(TypeError, Context, flags=(0,1))
+        self.assertRaises(TypeError, Context, traps=(1,0))
+
+class CContextInputValidation(ContextInputValidation):
+    decimal = C
+class PyContextInputValidation(ContextInputValidation):
+    decimal = P
+
+class ContextSubclassing(unittest.TestCase):
+
+    def test_context_subclassing(self):
+        decimal = self.decimal
+        Decimal = decimal.Decimal
+        Context = decimal.Context
+        ROUND_HALF_EVEN = decimal.ROUND_HALF_EVEN
+        ROUND_DOWN = decimal.ROUND_DOWN
+        Clamped = decimal.Clamped
+        DivisionByZero = decimal.DivisionByZero
+        Inexact = decimal.Inexact
+        Overflow = decimal.Overflow
+        Rounded = decimal.Rounded
+        Subnormal = decimal.Subnormal
+        Underflow = decimal.Underflow
+        InvalidOperation = decimal.InvalidOperation
+
+        class MyContext(Context):
+            def __init__(self, prec=None, rounding=None, Emin=None, Emax=None,
+                               capitals=None, clamp=None, flags=None,
+                               traps=None):
+                Context.__init__(self)
+                if prec is not None:
+                    self.prec = prec
+                if rounding is not None:
+                    self.rounding = rounding
+                if Emin is not None:
+                    self.Emin = Emin
+                if Emax is not None:
+                    self.Emax = Emax
+                if capitals is not None:
+                    self.capitals = capitals
+                if clamp is not None:
+                    self.clamp = clamp
+                if flags is not None:
+                    if isinstance(flags, list):
+                        flags = {v:(v in flags) for v in OrderedSignals[decimal] + flags}
+                    self.flags = flags
+                if traps is not None:
+                    if isinstance(traps, list):
+                        traps = {v:(v in traps) for v in OrderedSignals[decimal] + traps}
+                    self.traps = traps
+
+        c = Context()
+        d = MyContext()
+        for attr in ('prec', 'rounding', 'Emin', 'Emax', 'capitals', 'clamp',
+                     'flags', 'traps'):
+            self.assertEqual(getattr(c, attr), getattr(d, attr))
+
+        # prec
+        self.assertRaises(ValueError, MyContext, **{'prec':-1})
+        c = MyContext(prec=1)
+        self.assertEqual(c.prec, 1)
+        self.assertRaises(InvalidOperation, c.quantize, Decimal('9e2'), 0)
+
+        # rounding
+        self.assertRaises(TypeError, MyContext, **{'rounding':'XYZ'})
+        c = MyContext(rounding=ROUND_DOWN, prec=1)
+        self.assertEqual(c.rounding, ROUND_DOWN)
+        self.assertEqual(c.plus(Decimal('9.9')), 9)
+
+        # Emin
+        self.assertRaises(ValueError, MyContext, **{'Emin':5})
+        c = MyContext(Emin=-1, prec=1)
+        self.assertEqual(c.Emin, -1)
+        x = c.add(Decimal('1e-99'), Decimal('2.234e-2000'))
+        self.assertEqual(x, Decimal('0.0'))
+        for signal in (Inexact, Underflow, Subnormal, Rounded, Clamped):
+            self.assertTrue(c.flags[signal])
+
+        # Emax
+        self.assertRaises(ValueError, MyContext, **{'Emax':-1})
+        c = MyContext(Emax=1, prec=1)
+        self.assertEqual(c.Emax, 1)
+        self.assertRaises(Overflow, c.add, Decimal('1e99'), Decimal('2.234e2000'))
+        if self.decimal == C:
+            for signal in (Inexact, Overflow, Rounded):
+                self.assertTrue(c.flags[signal])
+
+        # capitals
+        self.assertRaises(ValueError, MyContext, **{'capitals':-1})
+        c = MyContext(capitals=0)
+        self.assertEqual(c.capitals, 0)
+        x = c.create_decimal('1E222')
+        self.assertEqual(c.to_sci_string(x), '1e+222')
+
+        # clamp
+        self.assertRaises(ValueError, MyContext, **{'clamp':2})
+        c = MyContext(clamp=1, Emax=99)
+        self.assertEqual(c.clamp, 1)
+        x = c.plus(Decimal('1e99'))
+        self.assertEqual(str(x), '1.000000000000000000000000000E+99')
+
+        # flags
+        self.assertRaises(TypeError, MyContext, **{'flags':'XYZ'})
+        c = MyContext(flags=[Rounded, DivisionByZero])
+        for signal in (Rounded, DivisionByZero):
+            self.assertTrue(c.flags[signal])
+        c.clear_flags()
+        for signal in OrderedSignals[decimal]:
+            self.assertFalse(c.flags[signal])
+
+        # traps
+        self.assertRaises(TypeError, MyContext, **{'traps':'XYZ'})
+        c = MyContext(traps=[Rounded, DivisionByZero])
+        for signal in (Rounded, DivisionByZero):
+            self.assertTrue(c.traps[signal])
+        c.clear_traps()
+        for signal in OrderedSignals[decimal]:
+            self.assertFalse(c.traps[signal])
+
+class CContextSubclassing(ContextSubclassing):
+    decimal = C
+class PyContextSubclassing(ContextSubclassing):
+    decimal = P
+
+@skip_if_extra_functionality
+class CheckAttributes(unittest.TestCase):
+
+    def test_module_attributes(self):
+
+        # Architecture dependent context limits
+        self.assertEqual(C.MAX_PREC, P.MAX_PREC)
+        self.assertEqual(C.MAX_EMAX, P.MAX_EMAX)
+        self.assertEqual(C.MIN_EMIN, P.MIN_EMIN)
+        self.assertEqual(C.MIN_ETINY, P.MIN_ETINY)
+
+        self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
+        self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
+
+        self.assertEqual(C.__version__, P.__version__)
+
+        x = dir(C)
+        y = [s for s in dir(P) if '__' in s or not s.startswith('_')]
+        self.assertEqual(set(x) - set(y), {'MallocError'})
+
+    def test_context_attributes(self):
+
+        x = [s for s in dir(C.Context()) if '__' in s or not s.startswith('_')]
+        y = [s for s in dir(P.Context()) if '__' in s or not s.startswith('_')]
+        self.assertEqual(set(x) - set(y), set())
+
+    def test_decimal_attributes(self):
+
+        x = [s for s in dir(C.Decimal(9)) if '__' in s or not s.startswith('_')]
+        y = [s for s in dir(C.Decimal(9)) if '__' in s or not s.startswith('_')]
+        self.assertEqual(set(x) - set(y), set())
+
+class Coverage(unittest.TestCase):
+
+    def test_adjusted(self):
+        Decimal = self.decimal.Decimal
+
+        self.assertEqual(Decimal('1234e9999').adjusted(), 10002)
+        # XXX raise?
+        self.assertEqual(Decimal('nan').adjusted(), 0)
+        self.assertEqual(Decimal('inf').adjusted(), 0)
+
+    def test_canonical(self):
+        Decimal = self.decimal.Decimal
+        getcontext = self.decimal.getcontext
+
+        x = Decimal(9).canonical()
+        self.assertEqual(x, 9)
+
+        c = getcontext()
+        x = c.canonical(Decimal(9))
+        self.assertEqual(x, 9)
+
+    def test_context_repr(self):
+        c = self.decimal.DefaultContext.copy()
+
+        c.prec = 425000000
+        c.Emax = 425000000
+        c.Emin = -425000000
+        c.rounding = self.decimal.ROUND_HALF_DOWN
+        c.capitals = 0
+        c.clamp = 1
+        for sig in OrderedSignals[self.decimal]:
+            c.flags[sig] = False
+            c.traps[sig] = False
+
+        s = c.__repr__()
+        t = "Context(prec=425000000, rounding=ROUND_HALF_DOWN, " \
+            "Emin=-425000000, Emax=425000000, capitals=0, clamp=1, " \
+            "flags=[], traps=[])"
+        self.assertEqual(s, t)
+
+    def test_implicit_context(self):
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+
+        with localcontext() as c:
+            c.prec = 1
+            c.Emax = 1
+            c.Emin = -1
+
+            # abs
+            self.assertEqual(abs(Decimal("-10")), 10)
+            # add
+            self.assertEqual(Decimal("7") + 1, 8)
+            # divide
+            self.assertEqual(Decimal("10") / 5, 2)
+            # divide_int
+            self.assertEqual(Decimal("10") // 7, 1)
+            # fma
+            self.assertEqual(Decimal("1.2").fma(Decimal("0.01"), 1), 1)
+            self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
+            # three arg power
+            self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            # exp
+            self.assertEqual(Decimal("1.01").exp(), 3)
+            # is_normal
+            self.assertIs(Decimal("0.01").is_normal(), False)
+            # is_subnormal
+            self.assertIs(Decimal("0.01").is_subnormal(), True)
+            # ln
+            self.assertEqual(Decimal("20").ln(), 3)
+            # log10
+            self.assertEqual(Decimal("20").log10(), 1)
+            # logb
+            self.assertEqual(Decimal("580").logb(), 2)
+            # logical_invert
+            self.assertEqual(Decimal("10").logical_invert(), 1)
+            # minus
+            self.assertEqual(-Decimal("-10"), 10)
+            # multiply
+            self.assertEqual(Decimal("2") * 4, 8)
+            # next_minus
+            self.assertEqual(Decimal("10").next_minus(), 9)
+            # next_plus
+            self.assertEqual(Decimal("10").next_plus(), Decimal('2E+1'))
+            # normalize
+            self.assertEqual(Decimal("-10").normalize(), Decimal('-1E+1'))
+            # number_class
+            self.assertEqual(Decimal("10").number_class(), '+Normal')
+            # plus
+            self.assertEqual(+Decimal("-1"), -1)
+            # remainder
+            self.assertEqual(Decimal("10") % 7, 3)
+            # subtract
+            self.assertEqual(Decimal("10") - 7, 3)
+            # to_integral_exact
+            self.assertEqual(Decimal("1.12345").to_integral_exact(), 1)
+
+            # Boolean functions
+            self.assertTrue(Decimal("1").is_canonical())
+            self.assertTrue(Decimal("1").is_finite())
+            self.assertTrue(Decimal("1").is_finite())
+            self.assertTrue(Decimal("snan").is_snan())
+            self.assertTrue(Decimal("-1").is_signed())
+            self.assertTrue(Decimal("0").is_zero())
+            self.assertTrue(Decimal("0").is_zero())
+
+        # Copy
+        with localcontext() as c:
+            c.prec = 10000
+            x = 1228 ** 1523
+            y = -Decimal(x)
+
+            z = y.copy_abs()
+            self.assertEqual(z, x)
+
+            z = y.copy_negate()
+            self.assertEqual(z, x)
+
+            z = y.copy_sign(Decimal(1))
+            self.assertEqual(z, x)
+
+    def test_divmod(self):
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+        InvalidOperation = self.decimal.InvalidOperation
+        DivisionByZero = self.decimal.DivisionByZero
+
+        with localcontext() as c:
+            q, r = divmod(Decimal("10912837129"), 1001)
+            self.assertEqual(q, Decimal('10901935'))
+            self.assertEqual(r, Decimal('194'))
+
+            q, r = divmod(Decimal("NaN"), 7)
+            self.assertTrue(q.is_nan() and r.is_nan())
+
+            c.traps[InvalidOperation] = False
+            q, r = divmod(Decimal("NaN"), 7)
+            self.assertTrue(q.is_nan() and r.is_nan())
+
+            c.traps[InvalidOperation] = False
+            c.clear_flags()
+            q, r = divmod(Decimal("inf"), Decimal("inf"))
+            self.assertTrue(q.is_nan() and r.is_nan())
+            self.assertTrue(c.flags[InvalidOperation])
+
+            c.clear_flags()
+            q, r = divmod(Decimal("inf"), 101)
+            self.assertTrue(q.is_infinite() and r.is_nan())
+            self.assertTrue(c.flags[InvalidOperation])
+
+            c.clear_flags()
+            q, r = divmod(Decimal(0), 0)
+            self.assertTrue(q.is_nan() and r.is_nan())
+            self.assertTrue(c.flags[InvalidOperation])
+
+            c.traps[DivisionByZero] = False
+            c.clear_flags()
+            q, r = divmod(Decimal(11), 0)
+            self.assertTrue(q.is_infinite() and r.is_nan())
+            self.assertTrue(c.flags[InvalidOperation] and
+                            c.flags[DivisionByZero])
+
+    def test_power(self):
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+        Overflow = self.decimal.Overflow
+        Rounded = self.decimal.Rounded
+
+        with localcontext() as c:
+            c.prec = 3
+            c.clear_flags()
+            self.assertEqual(Decimal("1.0") ** 100, Decimal('1.00'))
+            self.assertTrue(c.flags[Rounded])
+
+            c.prec = 1
+            c.Emax = 1
+            c.Emin = -1
+            c.clear_flags()
+            c.traps[Overflow] = False
+            self.assertEqual(Decimal(10000) ** Decimal("0.5"), Decimal('inf'))
+            self.assertTrue(c.flags[Overflow])
+
+    def test_quantize(self):
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+        InvalidOperation = self.decimal.InvalidOperation
+
+        with localcontext() as c:
+            c.prec = 1
+            c.Emax = 1
+            c.Emin = -1
+            c.traps[InvalidOperation] = False
+            x = Decimal(99).quantize(Decimal("1e1"))
+            self.assertTrue(x.is_nan())
+
+    def test_radix(self):
+        Decimal = self.decimal.Decimal
+        getcontext = self.decimal.getcontext
+
+        c = getcontext()
+        self.assertEqual(Decimal("1").radix(), 10)
+        self.assertEqual(c.radix(), 10)
+
+    def test_rop(self):
+        Decimal = self.decimal.Decimal
+
+        for attr in ('__radd__', '__rsub__', '__rmul__', '__rtruediv__',
+                     '__rdivmod__', '__rmod__', '__rfloordiv__', '__rpow__'):
+            self.assertIs(getattr(Decimal("1"), attr)("xyz"), NotImplemented)
+
+    def test_round(self):
+        # Python3 behavior: round() returns Decimal
+        Decimal = self.decimal.Decimal
+        getcontext = self.decimal.getcontext
+
+        c = getcontext()
+        c.prec = 28
+
+        self.assertEqual(str(Decimal("9.99").__round__()), "10")
+        self.assertEqual(str(Decimal("9.99e-5").__round__()), "0")
+        self.assertEqual(str(Decimal("1.23456789").__round__(5)), "1.23457")
+        self.assertEqual(str(Decimal("1.2345").__round__(10)), "1.2345000000")
+        self.assertEqual(str(Decimal("1.2345").__round__(-10)), "0E+10")
+
+        self.assertRaises(TypeError, Decimal("1.23").__round__, "5")
+        self.assertRaises(TypeError, Decimal("1.23").__round__, 5, 8)
+
+    def test_create_decimal(self):
+        c = self.decimal.Context()
+        self.assertRaises(ValueError, c.create_decimal, ["%"])
+
+    def test_int(self):
+        Decimal = self.decimal.Decimal
+        localcontext = self.decimal.localcontext
+
+        with localcontext() as c:
+            c.prec = 9999
+            x = Decimal(1221**1271) / 10**3923
+            self.assertEqual(int(x), 1)
+            self.assertEqual(x.to_integral(), 2)
+
+    def test_copy(self):
+        Context = self.decimal.Context
+
+        c = Context()
+        c.prec = 10000
+        x = -(1172 ** 1712)
+
+        y = c.copy_abs(x)
+        self.assertEqual(y, -x)
+
+        y = c.copy_negate(x)
+        self.assertEqual(y, -x)
+
+        y = c.copy_sign(x, 1)
+        self.assertEqual(y, -x)
+
+class CCoverage(Coverage):
+    decimal = C
+class PyCoverage(Coverage):
+    decimal = P
+
+class PyFunctionality(unittest.TestCase):
+    """Extra functionality in decimal.py"""
+
+    def test_py_quantize_watchexp(self):
+        # watchexp functionality
+        Decimal = P.Decimal
+        localcontext = P.localcontext
+
+        with localcontext() as c:
+            c.prec = 1
+            c.Emax = 1
+            c.Emin = -1
+            x = Decimal(99999).quantize(Decimal("1e3"), watchexp=False)
+            self.assertEqual(x, Decimal('1.00E+5'))
+
+    def test_py_alternate_formatting(self):
+        # triples giving a format, a Decimal, and the expected result
+        Decimal = P.Decimal
+        localcontext = P.localcontext
+
+        test_values = [
+            # Issue 7094: Alternate formatting (specified by #)
+            ('.0e', '1.0', '1e+0'),
+            ('#.0e', '1.0', '1.e+0'),
+            ('.0f', '1.0', '1'),
+            ('#.0f', '1.0', '1.'),
+            ('g', '1.1', '1.1'),
+            ('#g', '1.1', '1.1'),
+            ('.0g', '1', '1'),
+            ('#.0g', '1', '1.'),
+            ('.0%', '1.0', '100%'),
+            ('#.0%', '1.0', '100.%'),
+            ]
+        for fmt, d, result in test_values:
+            self.assertEqual(format(Decimal(d), fmt), result)
+
+class PyWhitebox(unittest.TestCase):
+    """White box testing for decimal.py"""
+
+    def test_py_exact_power(self):
+        # Rarely exercised lines in _power_exact.
+        Decimal = P.Decimal
+        localcontext = P.localcontext
+
+        with localcontext() as c:
+            c.prec = 8
+            x = Decimal(2**16) ** Decimal("-0.5")
+            self.assertEqual(x, Decimal('0.00390625'))
+
+            x = Decimal(2**16) ** Decimal("-0.6")
+            self.assertEqual(x, Decimal('0.0012885819'))
+
+            x = Decimal("256e7") ** Decimal("-0.5")
+
+            x = Decimal(152587890625) ** Decimal('-0.0625')
+            self.assertEqual(x, Decimal("0.2"))
+
+            x = Decimal("152587890625e7") ** Decimal('-0.0625')
+
+            x = Decimal(5**2659) ** Decimal('-0.0625')
+
+            c.prec = 1
+            x = Decimal("152587890625") ** Decimal('-0.5')
+            c.prec = 201
+            x = Decimal(2**578) ** Decimal("-0.5")
+
+    def test_py_immutability_operations(self):
         # Do operations and check that it didn't change change internal objects.
+        Decimal = P.Decimal
+        DefaultContext = P.DefaultContext
+        setcontext = P.setcontext
+
+        c = DefaultContext.copy()
+        c.traps = dict((s, 0) for s in OrderedSignals[P])
+        setcontext(c)
 
         d1 = Decimal('-25e55')
         b1 = Decimal('-25e55')
@@ -1649,715 +4219,727 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("to_eng_string")
         checkSameDec("to_integral")
 
-    def test_subclassing(self):
-        # Different behaviours when subclassing Decimal
+    def test_py_decimal_id(self):
+        Decimal = P.Decimal
 
-        class MyDecimal(Decimal):
-            pass
+        d = Decimal(45)
+        e = Decimal(d)
+        self.assertEqual(str(e), '45')
+        self.assertNotEqual(id(d), id(e))
 
-        d1 = MyDecimal(1)
-        d2 = MyDecimal(2)
-        d = d1 + d2
-        self.assertIs(type(d), Decimal)
+    def test_py_rescale(self):
+        # Coverage
+        Decimal = P.Decimal
+        ROUND_UP = P.ROUND_UP
+        localcontext = P.localcontext
 
-        d = d1.max(d2)
-        self.assertIs(type(d), Decimal)
+        with localcontext() as c:
+            x = Decimal("NaN")._rescale(3, ROUND_UP)
+            self.assertTrue(x.is_nan())
 
-    def test_implicit_context(self):
-        # Check results when context given implicitly.  (Issue 2478)
-        c = getcontext()
-        self.assertEqual(str(Decimal(0).sqrt()),
-                         str(c.sqrt(Decimal(0))))
+    def test_py__round(self):
+        # Coverage
+        Decimal = P.Decimal
+        ROUND_UP = P.ROUND_UP
 
-    def test_conversions_from_int(self):
-        # Check that methods taking a second Decimal argument will
-        # always accept an integer in place of a Decimal.
-        self.assertEqual(Decimal(4).compare(3),
-                         Decimal(4).compare(Decimal(3)))
-        self.assertEqual(Decimal(4).compare_signal(3),
-                         Decimal(4).compare_signal(Decimal(3)))
-        self.assertEqual(Decimal(4).compare_total(3),
-                         Decimal(4).compare_total(Decimal(3)))
-        self.assertEqual(Decimal(4).compare_total_mag(3),
-                         Decimal(4).compare_total_mag(Decimal(3)))
-        self.assertEqual(Decimal(10101).logical_and(1001),
-                         Decimal(10101).logical_and(Decimal(1001)))
-        self.assertEqual(Decimal(10101).logical_or(1001),
-                         Decimal(10101).logical_or(Decimal(1001)))
-        self.assertEqual(Decimal(10101).logical_xor(1001),
-                         Decimal(10101).logical_xor(Decimal(1001)))
-        self.assertEqual(Decimal(567).max(123),
-                         Decimal(567).max(Decimal(123)))
-        self.assertEqual(Decimal(567).max_mag(123),
-                         Decimal(567).max_mag(Decimal(123)))
-        self.assertEqual(Decimal(567).min(123),
-                         Decimal(567).min(Decimal(123)))
-        self.assertEqual(Decimal(567).min_mag(123),
-                         Decimal(567).min_mag(Decimal(123)))
-        self.assertEqual(Decimal(567).next_toward(123),
-                         Decimal(567).next_toward(Decimal(123)))
-        self.assertEqual(Decimal(1234).quantize(100),
-                         Decimal(1234).quantize(Decimal(100)))
-        self.assertEqual(Decimal(768).remainder_near(1234),
-                         Decimal(768).remainder_near(Decimal(1234)))
-        self.assertEqual(Decimal(123).rotate(1),
-                         Decimal(123).rotate(Decimal(1)))
-        self.assertEqual(Decimal(1234).same_quantum(1000),
-                         Decimal(1234).same_quantum(Decimal(1000)))
-        self.assertEqual(Decimal('9.123').scaleb(-100),
-                         Decimal('9.123').scaleb(Decimal(-100)))
-        self.assertEqual(Decimal(456).shift(-1),
-                         Decimal(456).shift(Decimal(-1)))
+        self.assertRaises(ValueError, Decimal("3.1234")._round, 0, ROUND_UP)
 
-        self.assertEqual(Decimal(-12).fma(Decimal(45), 67),
-                         Decimal(-12).fma(Decimal(45), Decimal(67)))
-        self.assertEqual(Decimal(-12).fma(45, 67),
-                         Decimal(-12).fma(Decimal(45), Decimal(67)))
-        self.assertEqual(Decimal(-12).fma(45, Decimal(67)),
-                         Decimal(-12).fma(Decimal(45), Decimal(67)))
+class CFunctionality(unittest.TestCase):
+    """Extra functionality in _decimal"""
 
+    @requires_extra_functionality
+    def test_c_ieee_context(self):
+        # issue 8786: Add support for IEEE 754 contexts to decimal module.
+        IEEEContext = C.IEEEContext
+        DECIMAL32 = C.DECIMAL32
+        DECIMAL64 = C.DECIMAL64
+        DECIMAL128 = C.DECIMAL128
 
-class DecimalPythonAPItests(unittest.TestCase):
+        def assert_rest(self, context):
+            self.assertEqual(context.clamp, 1)
+            assert_signals(self, context, 'traps', [])
+            assert_signals(self, context, 'flags', [])
 
-    def test_abc(self):
-        self.assertTrue(issubclass(Decimal, numbers.Number))
-        self.assertFalse(issubclass(Decimal, numbers.Real))
-        self.assertIsInstance(Decimal(0), numbers.Number)
-        self.assertNotIsInstance(Decimal(0), numbers.Real)
+        c = IEEEContext(DECIMAL32)
+        self.assertEqual(c.prec, 7)
+        self.assertEqual(c.Emax, 96)
+        self.assertEqual(c.Emin, -95)
+        assert_rest(self, c)
 
-    def test_pickle(self):
-        d = Decimal('-3.141590000')
-        p = pickle.dumps(d)
-        e = pickle.loads(p)
-        self.assertEqual(d, e)
+        c = IEEEContext(DECIMAL64)
+        self.assertEqual(c.prec, 16)
+        self.assertEqual(c.Emax, 384)
+        self.assertEqual(c.Emin, -383)
+        assert_rest(self, c)
 
-    def test_int(self):
-        for x in range(-250, 250):
-            s = '%0.2f' % (x / 100.0)
-            # should work the same as for floats
-            self.assertEqual(int(Decimal(s)), int(float(s)))
-            # should work the same as to_integral in the ROUND_DOWN mode
-            d = Decimal(s)
-            r = d.to_integral(ROUND_DOWN)
-            self.assertEqual(Decimal(int(d)), r)
+        c = IEEEContext(DECIMAL128)
+        self.assertEqual(c.prec, 34)
+        self.assertEqual(c.Emax, 6144)
+        self.assertEqual(c.Emin, -6143)
+        assert_rest(self, c)
 
-        self.assertRaises(ValueError, int, Decimal('-nan'))
-        self.assertRaises(ValueError, int, Decimal('snan'))
-        self.assertRaises(OverflowError, int, Decimal('inf'))
-        self.assertRaises(OverflowError, int, Decimal('-inf'))
+        # Invalid values
+        self.assertRaises(OverflowError, IEEEContext, 2**63)
+        self.assertRaises(ValueError, IEEEContext, -1)
+        self.assertRaises(ValueError, IEEEContext, 1024)
 
-    def test_trunc(self):
-        for x in range(-250, 250):
-            s = '%0.2f' % (x / 100.0)
-            # should work the same as for floats
-            self.assertEqual(int(Decimal(s)), int(float(s)))
-            # should work the same as to_integral in the ROUND_DOWN mode
-            d = Decimal(s)
-            r = d.to_integral(ROUND_DOWN)
-            self.assertEqual(Decimal(math.trunc(d)), r)
+    @requires_extra_functionality
+    def test_c_context(self):
+        Context = C.Context
 
-    def test_from_float(self):
+        c = Context(flags=C.DecClamped, traps=C.DecRounded)
+        self.assertEqual(c._flags, C.DecClamped)
+        self.assertEqual(c._traps, C.DecRounded)
 
-        class  MyDecimal(Decimal):
-            pass
-
-        r = MyDecimal.from_float(0.1)
-        self.assertEqual(type(r), MyDecimal)
-        self.assertEqual(str(r),
-                '0.1000000000000000055511151231257827021181583404541015625')
-        bigint = 12345678901234567890123456789
-        self.assertEqual(MyDecimal.from_float(bigint), MyDecimal(bigint))
-        self.assertTrue(MyDecimal.from_float(float('nan')).is_qnan())
-        self.assertTrue(MyDecimal.from_float(float('inf')).is_infinite())
-        self.assertTrue(MyDecimal.from_float(float('-inf')).is_infinite())
-        self.assertEqual(str(MyDecimal.from_float(float('nan'))),
-                         str(Decimal('NaN')))
-        self.assertEqual(str(MyDecimal.from_float(float('inf'))),
-                         str(Decimal('Infinity')))
-        self.assertEqual(str(MyDecimal.from_float(float('-inf'))),
-                         str(Decimal('-Infinity')))
-        self.assertRaises(TypeError, MyDecimal.from_float, 'abc')
-        for i in range(200):
-            x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
-            self.assertEqual(x, float(MyDecimal.from_float(x))) # roundtrip
-
-    def test_create_decimal_from_float(self):
-        context = Context(prec=5, rounding=ROUND_DOWN)
-        self.assertEqual(
-            context.create_decimal_from_float(math.pi),
-            Decimal('3.1415')
+    @requires_extra_functionality
+    def test_constants(self):
+        # Condition flags
+        cond = (
+            C.DecClamped, C.DecConversionSyntax, C.DecDivisionByZero,
+            C.DecDivisionImpossible, C.DecDivisionUndefined,
+            C.DecFpuError, C.DecInexact, C.DecInvalidContext,
+            C.DecInvalidOperation, C.DecMallocError,
+            C.DecFloatOperation, C.DecOverflow, C.DecRounded,
+            C.DecSubnormal, C.DecUnderflow
         )
-        context = Context(prec=5, rounding=ROUND_UP)
-        self.assertEqual(
-            context.create_decimal_from_float(math.pi),
-            Decimal('3.1416')
-        )
-        context = Context(prec=5, traps=[Inexact])
+
+        # IEEEContext
+        self.assertEqual(C.DECIMAL32, 32)
+        self.assertEqual(C.DECIMAL64, 64)
+        self.assertEqual(C.DECIMAL128, 128)
+        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, 512)
+
+        # Rounding modes
+        for i, v in enumerate(RoundingModes[C]):
+            self.assertEqual(v, i)
+        self.assertEqual(C.ROUND_TRUNC, 8)
+
+        # Conditions
+        for i, v in enumerate(cond):
+            self.assertEqual(v, 1<<i)
+
+        self.assertEqual(C.DecIEEEInvalidOperation,
+                         C.DecConversionSyntax|
+                         C.DecDivisionImpossible|
+                         C.DecDivisionUndefined|
+                         C.DecFpuError|
+                         C.DecInvalidContext|
+                         C.DecInvalidOperation|
+                         C.DecMallocError)
+
+        self.assertEqual(C.DecErrors,
+                         C.DecIEEEInvalidOperation|
+                         C.DecDivisionByZero)
+
+        self.assertEqual(C.DecTraps,
+                         C.DecErrors|C.DecOverflow|C.DecUnderflow)
+
+class CWhitebox(unittest.TestCase):
+    """Whitebox testing for _decimal"""
+
+    def test_bignum(self):
+        # Not exactly whitebox, but too slow with pydecimal.
+
+        Decimal = C.Decimal
+        localcontext = C.localcontext
+
+        b1 = 10**35
+        b2 = 10**36
+        with localcontext() as c:
+            c.prec = 1000000
+            for i in range(5):
+                a = random.randrange(b1, b2)
+                b = random.randrange(1000, 1200)
+                x = a ** b
+                y = Decimal(a) ** Decimal(b)
+                self.assertEqual(x, y)
+
+    def test_invalid_construction(self):
+        self.assertRaises(TypeError, C.Decimal, 9, "xyz")
+
+    def test_c_input_restriction(self):
+        # Too large for _decimal to be converted exactly
+        Decimal = C.Decimal
+        InvalidOperation = C.InvalidOperation
+        Context = C.Context
+        localcontext = C.localcontext
+
+        with localcontext(Context()):
+            self.assertRaises(InvalidOperation, Decimal,
+                              "1e9999999999999999999")
+
+    def test_c_context_repr(self):
+        # This test is _decimal-only because flags are not printed
+        # in the same order.
+        DefaultContext = C.DefaultContext
+        FloatOperation = C.FloatOperation
+        ROUND_HALF_DOWN = C.ROUND_HALF_DOWN
+
+        c = DefaultContext.copy()
+
+        c.prec = 425000000
+        c.Emax = 425000000
+        c.Emin = -425000000
+        c.rounding = ROUND_HALF_DOWN
+        c.capitals = 0
+        c.clamp = 1
+        for sig in OrderedSignals[C]:
+            c.flags[sig] = True
+            c.traps[sig] = True
+        c.flags[FloatOperation] = True
+        c.traps[FloatOperation] = True
+
+        s = c.__repr__()
+        t = "Context(prec=425000000, rounding=ROUND_HALF_DOWN, " \
+            "Emin=-425000000, Emax=425000000, capitals=0, clamp=1, " \
+            "flags=[Clamped, InvalidOperation, DivisionByZero, Inexact, " \
+                   "FloatOperation, Overflow, Rounded, Subnormal, Underflow], " \
+            "traps=[Clamped, InvalidOperation, DivisionByZero, Inexact, " \
+                   "FloatOperation, Overflow, Rounded, Subnormal, Underflow])"
+        self.assertEqual(s, t)
+
+    def test_c_context_errors(self):
+        Context = C.Context
+        InvalidOperation = C.InvalidOperation
+        Overflow = C.Overflow
+        FloatOperation = C.FloatOperation
+        localcontext = C.localcontext
+        getcontext = C.getcontext
+        setcontext = C.setcontext
+        HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
+
+        c = Context()
+
+        # SignalDict: input validation
+        self.assertRaises(KeyError, c.flags.__setitem__, 801, 0)
+        self.assertRaises(KeyError, c.traps.__setitem__, 801, 0)
+        self.assertRaises(ValueError, c.flags.__delitem__, Overflow)
+        self.assertRaises(ValueError, c.traps.__delitem__, InvalidOperation)
+        self.assertRaises(TypeError, setattr, c, 'flags', ['x'])
+        self.assertRaises(TypeError, setattr, c,'traps', ['y'])
+        self.assertRaises(KeyError, setattr, c, 'flags', {0:1})
+        self.assertRaises(KeyError, setattr, c, 'traps', {0:1})
+
+        # Test assignment from a signal dict with the correct length but
+        # one invalid key.
+        d = c.flags.copy()
+        del d[FloatOperation]
+        d["XYZ"] = 91283719
+        self.assertRaises(KeyError, setattr, c, 'flags', d)
+        self.assertRaises(KeyError, setattr, c, 'traps', d)
+
+        # Input corner cases
+        int_max = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
+        gt_max_emax = 10**18 if HAVE_CONFIG_64 else 10**9
+
+        # prec, Emax, Emin
+        for attr in ['prec', 'Emax']:
+            self.assertRaises(ValueError, setattr, c, attr, gt_max_emax)
+        self.assertRaises(ValueError, setattr, c, 'Emin', -gt_max_emax)
+
+        # prec, Emax, Emin in context constructor
+        self.assertRaises(ValueError, Context, prec=gt_max_emax)
+        self.assertRaises(ValueError, Context, Emax=gt_max_emax)
+        self.assertRaises(ValueError, Context, Emin=-gt_max_emax)
+
+        # Overflow in conversion
+        self.assertRaises(OverflowError, Context, prec=int_max+1)
+        self.assertRaises(OverflowError, Context, Emax=int_max+1)
+        self.assertRaises(OverflowError, Context, Emin=-int_max-2)
+        self.assertRaises(OverflowError, Context, rounding=int_max+1)
+        self.assertRaises(OverflowError, Context, clamp=int_max+1)
+        self.assertRaises(OverflowError, Context, capitals=int_max+1)
+
+        # OverflowError, general ValueError
+        for attr in ('prec', 'Emin', 'Emax', 'capitals', 'clamp'):
+            self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
+            self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
+            if sys.platform != 'win32':
+                self.assertRaises(ValueError, setattr, c, attr, int_max)
+                self.assertRaises(ValueError, setattr, c, attr, -int_max-1)
+
+        # OverflowError, general TypeError
+        for attr in ('rounding',):
+            self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
+            self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
+            if sys.platform != 'win32':
+                self.assertRaises(TypeError, setattr, c, attr, int_max)
+                self.assertRaises(TypeError, setattr, c, attr, -int_max-1)
+
+        # OverflowError: _unsafe_setprec, _unsafe_setemin, _unsafe_setemax
+        if C.MAX_PREC == 425000000:
+            self.assertRaises(OverflowError, getattr(c, '_unsafe_setprec'),
+                              int_max+1)
+            self.assertRaises(OverflowError, getattr(c, '_unsafe_setemax'),
+                              int_max+1)
+            self.assertRaises(OverflowError, getattr(c, '_unsafe_setemin'),
+                              -int_max-2)
+
+        # ValueError: _unsafe_setprec, _unsafe_setemin, _unsafe_setemax
+        if C.MAX_PREC == 425000000:
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setprec'), 0)
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setprec'),
+                              1070000001)
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setemax'), -1)
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setemax'),
+                              1070000001)
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setemin'),
+                              -1070000001)
+            self.assertRaises(ValueError, getattr(c, '_unsafe_setemin'), 1)
+
+        # capitals, clamp
+        for attr in ['capitals', 'clamp']:
+            self.assertRaises(ValueError, setattr, c, attr, -1)
+            self.assertRaises(ValueError, setattr, c, attr, 2)
+            self.assertRaises(TypeError, setattr, c, attr, [1,2,3])
+            if HAVE_CONFIG_64:
+                self.assertRaises(ValueError, setattr, c, attr, 2**32)
+                self.assertRaises(ValueError, setattr, c, attr, 2**32+1)
+
+        # Invalid local context
+        self.assertRaises(TypeError, exec, 'with localcontext("xyz"): pass',
+                          locals())
+
+        # setcontext
+        saved_context = getcontext()
+        self.assertRaises(TypeError, setcontext, "xyz")
+        setcontext(saved_context)
+
+    @requires_extra_functionality
+    def test_c_context_errors_extra(self):
+        Context = C.Context
+        InvalidOperation = C.InvalidOperation
+        Overflow = C.Overflow
+        localcontext = C.localcontext
+        getcontext = C.getcontext
+        setcontext = C.setcontext
+        HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
+
+        c = Context()
+
+        # Input corner cases
+        int_max = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
+
+        # OverflowError, general ValueError
+        self.assertRaises(OverflowError, setattr, c, '_allcr', int_max+1)
+        self.assertRaises(OverflowError, setattr, c, '_allcr', -int_max-2)
+        if sys.platform != 'win32':
+            self.assertRaises(ValueError, setattr, c, '_allcr', int_max)
+            self.assertRaises(ValueError, setattr, c, '_allcr', -int_max-1)
+
+        # OverflowError, general TypeError
+        for attr in ('_flags', '_traps'):
+            self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
+            self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
+            if sys.platform != 'win32':
+                self.assertRaises(TypeError, setattr, c, attr, int_max)
+                self.assertRaises(TypeError, setattr, c, attr, -int_max-1)
+
+        # _allcr
+        self.assertRaises(ValueError, setattr, c, '_allcr', -1)
+        self.assertRaises(ValueError, setattr, c, '_allcr', 2)
+        self.assertRaises(TypeError, setattr, c, '_allcr', [1,2,3])
+        if HAVE_CONFIG_64:
+            self.assertRaises(ValueError, setattr, c, '_allcr', 2**32)
+            self.assertRaises(ValueError, setattr, c, '_allcr', 2**32+1)
+
+        # _flags, _traps
+        for attr in ['_flags', '_traps']:
+            self.assertRaises(TypeError, setattr, c, attr, 999999)
+            self.assertRaises(TypeError, setattr, c, attr, 'x')
+
+    def test_c_valid_context(self):
+        # These tests are for code coverage in _decimal.
+        DefaultContext = C.DefaultContext
+        ROUND_HALF_UP = C.ROUND_HALF_UP
+        Clamped = C.Clamped
+        Underflow = C.Underflow
+        Inexact = C.Inexact
+        Rounded = C.Rounded
+        Subnormal = C.Subnormal
+
+        c = DefaultContext.copy()
+
+        # Exercise all getters and setters
+        c.prec = 34
+        c.rounding = ROUND_HALF_UP
+        c.Emax = 3000
+        c.Emin = -3000
+        c.capitals = 1
+        c.clamp = 0
+
+        self.assertEqual(c.prec, 34)
+        self.assertEqual(c.rounding, ROUND_HALF_UP)
+        self.assertEqual(c.Emin, -3000)
+        self.assertEqual(c.Emax, 3000)
+        self.assertEqual(c.capitals, 1)
+        self.assertEqual(c.clamp, 0)
+
+        self.assertEqual(c.Etiny(), -3033)
+        self.assertEqual(c.Etop(), 2967)
+
+        # Exercise all unsafe setters
+        if C.MAX_PREC == 425000000:
+            c._unsafe_setprec(999999999)
+            c._unsafe_setemax(999999999)
+            c._unsafe_setemin(-999999999)
+            self.assertEqual(c.prec, 999999999)
+            self.assertEqual(c.Emax, 999999999)
+            self.assertEqual(c.Emin, -999999999)
+
+    @requires_extra_functionality
+    def test_c_valid_context_extra(self):
+        DefaultContext = C.DefaultContext
+
+        c = DefaultContext.copy()
+        self.assertEqual(c._allcr, 1)
+        c._allcr = 0
+        self.assertEqual(c._allcr, 0)
+
+    def test_c_round(self):
+        # Restricted input.
+        Decimal = C.Decimal
+        InvalidOperation = C.InvalidOperation
+        localcontext = C.localcontext
+        MAX_EMAX = C.MAX_EMAX
+        MIN_ETINY = C.MIN_ETINY
+        int_max = 2**63-1 if C.MAX_PREC > 425000000 else 2**31-1
+
+        with localcontext() as c:
+            c.traps[InvalidOperation] = True
+            self.assertRaises(InvalidOperation, Decimal("1.23").__round__,
+                              -int_max-1)
+            self.assertRaises(InvalidOperation, Decimal("1.23").__round__,
+                              int_max)
+            self.assertRaises(InvalidOperation, Decimal("1").__round__,
+                              int(MAX_EMAX+1))
+            self.assertRaises(C.InvalidOperation, Decimal("1").__round__,
+                              -int(MIN_ETINY-1))
+            self.assertRaises(OverflowError, Decimal("1.23").__round__,
+                              -int_max-2)
+            self.assertRaises(OverflowError, Decimal("1.23").__round__,
+                              int_max+1)
+
+    def test_c_format(self):
+        # Restricted input
+        Decimal = C.Decimal
+        InvalidOperation = C.InvalidOperation
+        Rounded = C.Rounded
+        localcontext = C.localcontext
+        HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
+
+        self.assertRaises(TypeError, Decimal(1).__format__, "=10.10", [], 9)
+        self.assertRaises(TypeError, Decimal(1).__format__, "=10.10", 9)
+        self.assertRaises(TypeError, Decimal(1).__format__, [])
+
+        with localcontext() as c:
+            c.traps[InvalidOperation] = True
+            c.traps[Rounded] = True
+            self.assertRaises(ValueError, Decimal(1).__format__, "<>=10.10")
+            maxsize = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
+            self.assertRaises(InvalidOperation, Decimal("1.23456789").__format__,
+                              "=%d.1" % maxsize)
+
+    def test_c_integral(self):
+        Decimal = C.Decimal
+        Inexact = C.Inexact
+        ROUND_UP = C.ROUND_UP
+        localcontext = C.localcontext
+
+        x = Decimal(10)
+        self.assertEqual(x.to_integral(), 10)
+        self.assertRaises(TypeError, x.to_integral, '10')
+        self.assertRaises(TypeError, x.to_integral, 10, 'x')
+        self.assertRaises(TypeError, x.to_integral, 10)
+
+        self.assertEqual(x.to_integral_value(), 10)
+        self.assertRaises(TypeError, x.to_integral_value, '10')
+        self.assertRaises(TypeError, x.to_integral_value, 10, 'x')
+        self.assertRaises(TypeError, x.to_integral_value, 10)
+
+        self.assertEqual(x.to_integral_exact(), 10)
+        self.assertRaises(TypeError, x.to_integral_exact, '10')
+        self.assertRaises(TypeError, x.to_integral_exact, 10, 'x')
+        self.assertRaises(TypeError, x.to_integral_exact, 10)
+
+        with localcontext() as c:
+            x = Decimal("99999999999999999999999999.9").to_integral_value(ROUND_UP)
+            self.assertEqual(x, Decimal('100000000000000000000000000'))
+
+            x = Decimal("99999999999999999999999999.9").to_integral_exact(ROUND_UP)
+            self.assertEqual(x, Decimal('100000000000000000000000000'))
+
+            c.traps[Inexact] = True
+            self.assertRaises(Inexact, Decimal("999.9").to_integral_exact, ROUND_UP)
+
+    def test_c_funcs(self):
+        # Invalid arguments
+        Decimal = C.Decimal
+        InvalidOperation = C.InvalidOperation
+        DivisionByZero = C.DivisionByZero
+        ROUND_UP = C.ROUND_UP
+        getcontext = C.getcontext
+        localcontext = C.localcontext
+
+        self.assertEqual(Decimal('9.99e10').to_eng_string(), '99.9E+9')
+
+        self.assertRaises(TypeError, pow, Decimal(1), 2, "3")
+        self.assertRaises(TypeError, Decimal(9).number_class, "x", "y")
+        self.assertRaises(TypeError, Decimal(9).same_quantum, 3, "x", "y")
+
         self.assertRaises(
-            Inexact,
-            context.create_decimal_from_float,
-            math.pi
+            TypeError,
+            Decimal("1.23456789").quantize, Decimal('1e-100000'), []
         )
-        self.assertEqual(repr(context.create_decimal_from_float(-0.0)),
-                         "Decimal('-0')")
-        self.assertEqual(repr(context.create_decimal_from_float(1.0)),
-                         "Decimal('1')")
-        self.assertEqual(repr(context.create_decimal_from_float(10)),
-                         "Decimal('10')")
-
-class ContextAPItests(unittest.TestCase):
-
-    def test_pickle(self):
-        c = Context()
-        e = pickle.loads(pickle.dumps(c))
-        for k in vars(c):
-            v1 = vars(c)[k]
-            v2 = vars(e)[k]
-            self.assertEqual(v1, v2)
-
-    def test_equality_with_other_types(self):
-        self.assertIn(Decimal(10), ['a', 1.0, Decimal(10), (1,2), {}])
-        self.assertNotIn(Decimal(10), ['a', 1.0, (1,2), {}])
-
-    def test_copy(self):
-        # All copies should be deep
-        c = Context()
-        d = c.copy()
-        self.assertNotEqual(id(c), id(d))
-        self.assertNotEqual(id(c.flags), id(d.flags))
-        self.assertNotEqual(id(c.traps), id(d.traps))
-
-    def test__clamp(self):
-        # In Python 3.2, the private attribute `_clamp` was made
-        # public (issue 8540), with the old `_clamp` becoming a
-        # property wrapping `clamp`.  For the duration of Python 3.2
-        # only, the attribute should be gettable/settable via both
-        # `clamp` and `_clamp`; in Python 3.3, `_clamp` should be
-        # removed.
-        c = Context()
-        with self.assertRaises(AttributeError):
-            clamp_value = c._clamp
-
-    def test_abs(self):
-        c = Context()
-        d = c.abs(Decimal(-1))
-        self.assertEqual(c.abs(-1), d)
-        self.assertRaises(TypeError, c.abs, '-1')
-
-    def test_add(self):
-        c = Context()
-        d = c.add(Decimal(1), Decimal(1))
-        self.assertEqual(c.add(1, 1), d)
-        self.assertEqual(c.add(Decimal(1), 1), d)
-        self.assertEqual(c.add(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.add, '1', 1)
-        self.assertRaises(TypeError, c.add, 1, '1')
-
-    def test_compare(self):
-        c = Context()
-        d = c.compare(Decimal(1), Decimal(1))
-        self.assertEqual(c.compare(1, 1), d)
-        self.assertEqual(c.compare(Decimal(1), 1), d)
-        self.assertEqual(c.compare(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.compare, '1', 1)
-        self.assertRaises(TypeError, c.compare, 1, '1')
-
-    def test_compare_signal(self):
-        c = Context()
-        d = c.compare_signal(Decimal(1), Decimal(1))
-        self.assertEqual(c.compare_signal(1, 1), d)
-        self.assertEqual(c.compare_signal(Decimal(1), 1), d)
-        self.assertEqual(c.compare_signal(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.compare_signal, '1', 1)
-        self.assertRaises(TypeError, c.compare_signal, 1, '1')
-
-    def test_compare_total(self):
-        c = Context()
-        d = c.compare_total(Decimal(1), Decimal(1))
-        self.assertEqual(c.compare_total(1, 1), d)
-        self.assertEqual(c.compare_total(Decimal(1), 1), d)
-        self.assertEqual(c.compare_total(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.compare_total, '1', 1)
-        self.assertRaises(TypeError, c.compare_total, 1, '1')
-
-    def test_compare_total_mag(self):
-        c = Context()
-        d = c.compare_total_mag(Decimal(1), Decimal(1))
-        self.assertEqual(c.compare_total_mag(1, 1), d)
-        self.assertEqual(c.compare_total_mag(Decimal(1), 1), d)
-        self.assertEqual(c.compare_total_mag(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.compare_total_mag, '1', 1)
-        self.assertRaises(TypeError, c.compare_total_mag, 1, '1')
-
-    def test_copy_abs(self):
-        c = Context()
-        d = c.copy_abs(Decimal(-1))
-        self.assertEqual(c.copy_abs(-1), d)
-        self.assertRaises(TypeError, c.copy_abs, '-1')
-
-    def test_copy_decimal(self):
-        c = Context()
-        d = c.copy_decimal(Decimal(-1))
-        self.assertEqual(c.copy_decimal(-1), d)
-        self.assertRaises(TypeError, c.copy_decimal, '-1')
-
-    def test_copy_negate(self):
-        c = Context()
-        d = c.copy_negate(Decimal(-1))
-        self.assertEqual(c.copy_negate(-1), d)
-        self.assertRaises(TypeError, c.copy_negate, '-1')
-
-    def test_copy_sign(self):
-        c = Context()
-        d = c.copy_sign(Decimal(1), Decimal(-2))
-        self.assertEqual(c.copy_sign(1, -2), d)
-        self.assertEqual(c.copy_sign(Decimal(1), -2), d)
-        self.assertEqual(c.copy_sign(1, Decimal(-2)), d)
-        self.assertRaises(TypeError, c.copy_sign, '1', -2)
-        self.assertRaises(TypeError, c.copy_sign, 1, '-2')
-
-    def test_divide(self):
-        c = Context()
-        d = c.divide(Decimal(1), Decimal(2))
-        self.assertEqual(c.divide(1, 2), d)
-        self.assertEqual(c.divide(Decimal(1), 2), d)
-        self.assertEqual(c.divide(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.divide, '1', 2)
-        self.assertRaises(TypeError, c.divide, 1, '2')
-
-    def test_divide_int(self):
-        c = Context()
-        d = c.divide_int(Decimal(1), Decimal(2))
-        self.assertEqual(c.divide_int(1, 2), d)
-        self.assertEqual(c.divide_int(Decimal(1), 2), d)
-        self.assertEqual(c.divide_int(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.divide_int, '1', 2)
-        self.assertRaises(TypeError, c.divide_int, 1, '2')
-
-    def test_divmod(self):
-        c = Context()
-        d = c.divmod(Decimal(1), Decimal(2))
-        self.assertEqual(c.divmod(1, 2), d)
-        self.assertEqual(c.divmod(Decimal(1), 2), d)
-        self.assertEqual(c.divmod(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.divmod, '1', 2)
-        self.assertRaises(TypeError, c.divmod, 1, '2')
-
-    def test_exp(self):
-        c = Context()
-        d = c.exp(Decimal(10))
-        self.assertEqual(c.exp(10), d)
-        self.assertRaises(TypeError, c.exp, '10')
-
-    def test_fma(self):
-        c = Context()
-        d = c.fma(Decimal(2), Decimal(3), Decimal(4))
-        self.assertEqual(c.fma(2, 3, 4), d)
-        self.assertEqual(c.fma(Decimal(2), 3, 4), d)
-        self.assertEqual(c.fma(2, Decimal(3), 4), d)
-        self.assertEqual(c.fma(2, 3, Decimal(4)), d)
-        self.assertEqual(c.fma(Decimal(2), Decimal(3), 4), d)
-        self.assertRaises(TypeError, c.fma, '2', 3, 4)
-        self.assertRaises(TypeError, c.fma, 2, '3', 4)
-        self.assertRaises(TypeError, c.fma, 2, 3, '4')
-
-        # Issue 12079 for Context.fma ...
-        self.assertRaises(TypeError, c.fma,
-                          Decimal('Infinity'), Decimal(0), "not a decimal")
-        self.assertRaises(TypeError, c.fma,
-                          Decimal(1), Decimal('snan'), 1.222)
-        # ... and for Decimal.fma.
-        self.assertRaises(TypeError, Decimal('Infinity').fma,
-                          Decimal(0), "not a decimal")
-        self.assertRaises(TypeError, Decimal(1).fma,
-                          Decimal('snan'), 1.222)
-
-    def test_is_finite(self):
-        c = Context()
-        d = c.is_finite(Decimal(10))
-        self.assertEqual(c.is_finite(10), d)
-        self.assertRaises(TypeError, c.is_finite, '10')
-
-    def test_is_infinite(self):
-        c = Context()
-        d = c.is_infinite(Decimal(10))
-        self.assertEqual(c.is_infinite(10), d)
-        self.assertRaises(TypeError, c.is_infinite, '10')
-
-    def test_is_nan(self):
-        c = Context()
-        d = c.is_nan(Decimal(10))
-        self.assertEqual(c.is_nan(10), d)
-        self.assertRaises(TypeError, c.is_nan, '10')
-
-    def test_is_normal(self):
-        c = Context()
-        d = c.is_normal(Decimal(10))
-        self.assertEqual(c.is_normal(10), d)
-        self.assertRaises(TypeError, c.is_normal, '10')
-
-    def test_is_qnan(self):
-        c = Context()
-        d = c.is_qnan(Decimal(10))
-        self.assertEqual(c.is_qnan(10), d)
-        self.assertRaises(TypeError, c.is_qnan, '10')
-
-    def test_is_signed(self):
-        c = Context()
-        d = c.is_signed(Decimal(10))
-        self.assertEqual(c.is_signed(10), d)
-        self.assertRaises(TypeError, c.is_signed, '10')
-
-    def test_is_snan(self):
-        c = Context()
-        d = c.is_snan(Decimal(10))
-        self.assertEqual(c.is_snan(10), d)
-        self.assertRaises(TypeError, c.is_snan, '10')
-
-    def test_is_subnormal(self):
-        c = Context()
-        d = c.is_subnormal(Decimal(10))
-        self.assertEqual(c.is_subnormal(10), d)
-        self.assertRaises(TypeError, c.is_subnormal, '10')
-
-    def test_is_zero(self):
-        c = Context()
-        d = c.is_zero(Decimal(10))
-        self.assertEqual(c.is_zero(10), d)
-        self.assertRaises(TypeError, c.is_zero, '10')
-
-    def test_ln(self):
-        c = Context()
-        d = c.ln(Decimal(10))
-        self.assertEqual(c.ln(10), d)
-        self.assertRaises(TypeError, c.ln, '10')
-
-    def test_log10(self):
-        c = Context()
-        d = c.log10(Decimal(10))
-        self.assertEqual(c.log10(10), d)
-        self.assertRaises(TypeError, c.log10, '10')
-
-    def test_logb(self):
-        c = Context()
-        d = c.logb(Decimal(10))
-        self.assertEqual(c.logb(10), d)
-        self.assertRaises(TypeError, c.logb, '10')
-
-    def test_logical_and(self):
-        c = Context()
-        d = c.logical_and(Decimal(1), Decimal(1))
-        self.assertEqual(c.logical_and(1, 1), d)
-        self.assertEqual(c.logical_and(Decimal(1), 1), d)
-        self.assertEqual(c.logical_and(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.logical_and, '1', 1)
-        self.assertRaises(TypeError, c.logical_and, 1, '1')
-
-    def test_logical_invert(self):
-        c = Context()
-        d = c.logical_invert(Decimal(1000))
-        self.assertEqual(c.logical_invert(1000), d)
-        self.assertRaises(TypeError, c.logical_invert, '1000')
-
-    def test_logical_or(self):
-        c = Context()
-        d = c.logical_or(Decimal(1), Decimal(1))
-        self.assertEqual(c.logical_or(1, 1), d)
-        self.assertEqual(c.logical_or(Decimal(1), 1), d)
-        self.assertEqual(c.logical_or(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.logical_or, '1', 1)
-        self.assertRaises(TypeError, c.logical_or, 1, '1')
-
-    def test_logical_xor(self):
-        c = Context()
-        d = c.logical_xor(Decimal(1), Decimal(1))
-        self.assertEqual(c.logical_xor(1, 1), d)
-        self.assertEqual(c.logical_xor(Decimal(1), 1), d)
-        self.assertEqual(c.logical_xor(1, Decimal(1)), d)
-        self.assertRaises(TypeError, c.logical_xor, '1', 1)
-        self.assertRaises(TypeError, c.logical_xor, 1, '1')
-
-    def test_max(self):
-        c = Context()
-        d = c.max(Decimal(1), Decimal(2))
-        self.assertEqual(c.max(1, 2), d)
-        self.assertEqual(c.max(Decimal(1), 2), d)
-        self.assertEqual(c.max(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.max, '1', 2)
-        self.assertRaises(TypeError, c.max, 1, '2')
-
-    def test_max_mag(self):
-        c = Context()
-        d = c.max_mag(Decimal(1), Decimal(2))
-        self.assertEqual(c.max_mag(1, 2), d)
-        self.assertEqual(c.max_mag(Decimal(1), 2), d)
-        self.assertEqual(c.max_mag(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.max_mag, '1', 2)
-        self.assertRaises(TypeError, c.max_mag, 1, '2')
-
-    def test_min(self):
-        c = Context()
-        d = c.min(Decimal(1), Decimal(2))
-        self.assertEqual(c.min(1, 2), d)
-        self.assertEqual(c.min(Decimal(1), 2), d)
-        self.assertEqual(c.min(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.min, '1', 2)
-        self.assertRaises(TypeError, c.min, 1, '2')
-
-    def test_min_mag(self):
-        c = Context()
-        d = c.min_mag(Decimal(1), Decimal(2))
-        self.assertEqual(c.min_mag(1, 2), d)
-        self.assertEqual(c.min_mag(Decimal(1), 2), d)
-        self.assertEqual(c.min_mag(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.min_mag, '1', 2)
-        self.assertRaises(TypeError, c.min_mag, 1, '2')
-
-    def test_minus(self):
-        c = Context()
-        d = c.minus(Decimal(10))
-        self.assertEqual(c.minus(10), d)
-        self.assertRaises(TypeError, c.minus, '10')
-
-    def test_multiply(self):
-        c = Context()
-        d = c.multiply(Decimal(1), Decimal(2))
-        self.assertEqual(c.multiply(1, 2), d)
-        self.assertEqual(c.multiply(Decimal(1), 2), d)
-        self.assertEqual(c.multiply(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.multiply, '1', 2)
-        self.assertRaises(TypeError, c.multiply, 1, '2')
-
-    def test_next_minus(self):
-        c = Context()
-        d = c.next_minus(Decimal(10))
-        self.assertEqual(c.next_minus(10), d)
-        self.assertRaises(TypeError, c.next_minus, '10')
-
-    def test_next_plus(self):
-        c = Context()
-        d = c.next_plus(Decimal(10))
-        self.assertEqual(c.next_plus(10), d)
-        self.assertRaises(TypeError, c.next_plus, '10')
-
-    def test_next_toward(self):
-        c = Context()
-        d = c.next_toward(Decimal(1), Decimal(2))
-        self.assertEqual(c.next_toward(1, 2), d)
-        self.assertEqual(c.next_toward(Decimal(1), 2), d)
-        self.assertEqual(c.next_toward(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.next_toward, '1', 2)
-        self.assertRaises(TypeError, c.next_toward, 1, '2')
-
-    def test_normalize(self):
-        c = Context()
-        d = c.normalize(Decimal(10))
-        self.assertEqual(c.normalize(10), d)
-        self.assertRaises(TypeError, c.normalize, '10')
-
-    def test_number_class(self):
-        c = Context()
-        self.assertEqual(c.number_class(123), c.number_class(Decimal(123)))
-        self.assertEqual(c.number_class(0), c.number_class(Decimal(0)))
-        self.assertEqual(c.number_class(-45), c.number_class(Decimal(-45)))
-
-    def test_power(self):
-        c = Context()
-        d = c.power(Decimal(1), Decimal(4), Decimal(2))
-        self.assertEqual(c.power(1, 4, 2), d)
-        self.assertEqual(c.power(Decimal(1), 4, 2), d)
-        self.assertEqual(c.power(1, Decimal(4), 2), d)
-        self.assertEqual(c.power(1, 4, Decimal(2)), d)
-        self.assertEqual(c.power(Decimal(1), Decimal(4), 2), d)
-        self.assertRaises(TypeError, c.power, '1', 4, 2)
-        self.assertRaises(TypeError, c.power, 1, '4', 2)
-        self.assertRaises(TypeError, c.power, 1, 4, '2')
-
-    def test_plus(self):
-        c = Context()
-        d = c.plus(Decimal(10))
-        self.assertEqual(c.plus(10), d)
-        self.assertRaises(TypeError, c.plus, '10')
-
-    def test_quantize(self):
-        c = Context()
-        d = c.quantize(Decimal(1), Decimal(2))
-        self.assertEqual(c.quantize(1, 2), d)
-        self.assertEqual(c.quantize(Decimal(1), 2), d)
-        self.assertEqual(c.quantize(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.quantize, '1', 2)
-        self.assertRaises(TypeError, c.quantize, 1, '2')
-
-    def test_remainder(self):
-        c = Context()
-        d = c.remainder(Decimal(1), Decimal(2))
-        self.assertEqual(c.remainder(1, 2), d)
-        self.assertEqual(c.remainder(Decimal(1), 2), d)
-        self.assertEqual(c.remainder(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.remainder, '1', 2)
-        self.assertRaises(TypeError, c.remainder, 1, '2')
-
-    def test_remainder_near(self):
-        c = Context()
-        d = c.remainder_near(Decimal(1), Decimal(2))
-        self.assertEqual(c.remainder_near(1, 2), d)
-        self.assertEqual(c.remainder_near(Decimal(1), 2), d)
-        self.assertEqual(c.remainder_near(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.remainder_near, '1', 2)
-        self.assertRaises(TypeError, c.remainder_near, 1, '2')
-
-    def test_rotate(self):
-        c = Context()
-        d = c.rotate(Decimal(1), Decimal(2))
-        self.assertEqual(c.rotate(1, 2), d)
-        self.assertEqual(c.rotate(Decimal(1), 2), d)
-        self.assertEqual(c.rotate(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.rotate, '1', 2)
-        self.assertRaises(TypeError, c.rotate, 1, '2')
-
-    def test_sqrt(self):
-        c = Context()
-        d = c.sqrt(Decimal(10))
-        self.assertEqual(c.sqrt(10), d)
-        self.assertRaises(TypeError, c.sqrt, '10')
-
-    def test_same_quantum(self):
-        c = Context()
-        d = c.same_quantum(Decimal(1), Decimal(2))
-        self.assertEqual(c.same_quantum(1, 2), d)
-        self.assertEqual(c.same_quantum(Decimal(1), 2), d)
-        self.assertEqual(c.same_quantum(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.same_quantum, '1', 2)
-        self.assertRaises(TypeError, c.same_quantum, 1, '2')
-
-    def test_scaleb(self):
-        c = Context()
-        d = c.scaleb(Decimal(1), Decimal(2))
-        self.assertEqual(c.scaleb(1, 2), d)
-        self.assertEqual(c.scaleb(Decimal(1), 2), d)
-        self.assertEqual(c.scaleb(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.scaleb, '1', 2)
-        self.assertRaises(TypeError, c.scaleb, 1, '2')
-
-    def test_shift(self):
-        c = Context()
-        d = c.shift(Decimal(1), Decimal(2))
-        self.assertEqual(c.shift(1, 2), d)
-        self.assertEqual(c.shift(Decimal(1), 2), d)
-        self.assertEqual(c.shift(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.shift, '1', 2)
-        self.assertRaises(TypeError, c.shift, 1, '2')
-
-    def test_subtract(self):
-        c = Context()
-        d = c.subtract(Decimal(1), Decimal(2))
-        self.assertEqual(c.subtract(1, 2), d)
-        self.assertEqual(c.subtract(Decimal(1), 2), d)
-        self.assertEqual(c.subtract(1, Decimal(2)), d)
-        self.assertRaises(TypeError, c.subtract, '1', 2)
-        self.assertRaises(TypeError, c.subtract, 1, '2')
-
-    def test_to_eng_string(self):
-        c = Context()
-        d = c.to_eng_string(Decimal(10))
-        self.assertEqual(c.to_eng_string(10), d)
-        self.assertRaises(TypeError, c.to_eng_string, '10')
-
-    def test_to_sci_string(self):
-        c = Context()
-        d = c.to_sci_string(Decimal(10))
-        self.assertEqual(c.to_sci_string(10), d)
-        self.assertRaises(TypeError, c.to_sci_string, '10')
-
-    def test_to_integral_exact(self):
-        c = Context()
-        d = c.to_integral_exact(Decimal(10))
-        self.assertEqual(c.to_integral_exact(10), d)
-        self.assertRaises(TypeError, c.to_integral_exact, '10')
-
-    def test_to_integral_value(self):
-        c = Context()
-        d = c.to_integral_value(Decimal(10))
-        self.assertEqual(c.to_integral_value(10), d)
-        self.assertRaises(TypeError, c.to_integral_value, '10')
-
-class WithStatementTest(unittest.TestCase):
-    # Can't do these as docstrings until Python 2.6
-    # as doctest can't handle __future__ statements
-
-    def test_localcontext(self):
-        # Use a copy of the current context in the block
-        orig_ctx = getcontext()
-        with localcontext() as enter_ctx:
-            set_ctx = getcontext()
-        final_ctx = getcontext()
-        self.assertIs(orig_ctx, final_ctx, 'did not restore context correctly')
-        self.assertIsNot(orig_ctx, set_ctx, 'did not copy the context')
-        self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
-
-    def test_localcontextarg(self):
-        # Use a copy of the supplied context in the block
-        orig_ctx = getcontext()
-        new_ctx = Context(prec=42)
-        with localcontext(new_ctx) as enter_ctx:
-            set_ctx = getcontext()
-        final_ctx = getcontext()
-        self.assertIs(orig_ctx, final_ctx, 'did not restore context correctly')
-        self.assertEqual(set_ctx.prec, new_ctx.prec, 'did not set correct context')
-        self.assertIsNot(new_ctx, set_ctx, 'did not copy the context')
-        self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
-
-class ContextFlags(unittest.TestCase):
-    def test_flags_irrelevant(self):
-        # check that the result (numeric result + flags raised) of an
-        # arithmetic operation doesn't depend on the current flags
-
-        context = Context(prec=9, Emin = -999999999, Emax = 999999999,
-                    rounding=ROUND_HALF_EVEN, traps=[], flags=[])
-
-        # operations that raise various flags, in the form (function, arglist)
-        operations = [
-            (context._apply, [Decimal("100E-1000000009")]),
-            (context.sqrt, [Decimal(2)]),
-            (context.add, [Decimal("1.23456789"), Decimal("9.87654321")]),
-            (context.multiply, [Decimal("1.23456789"), Decimal("9.87654321")]),
-            (context.subtract, [Decimal("1.23456789"), Decimal("9.87654321")]),
-            ]
-
-        # try various flags individually, then a whole lot at once
-        flagsets = [[Inexact], [Rounded], [Underflow], [Clamped], [Subnormal],
-                    [Inexact, Rounded, Underflow, Clamped, Subnormal]]
-
-        for fn, args in operations:
-            # find answer and flags raised using a clean context
-            context.clear_flags()
-            ans = fn(*args)
-            flags = [k for k, v in context.flags.items() if v]
-
-            for extra_flags in flagsets:
-                # set flags, before calling operation
-                context.clear_flags()
-                for flag in extra_flags:
-                    context._raise_error(flag)
-                new_ans = fn(*args)
-
-                # flags that we expect to be set after the operation
-                expected_flags = list(flags)
-                for flag in extra_flags:
-                    if flag not in expected_flags:
-                        expected_flags.append(flag)
-                expected_flags.sort(key=id)
-
-                # flags we actually got
-                new_flags = [k for k,v in context.flags.items() if v]
-                new_flags.sort(key=id)
-
-                self.assertEqual(ans, new_ans,
-                                 "operation produces different answers depending on flags set: " +
-                                 "expected %s, got %s." % (ans, new_ans))
-                self.assertEqual(new_flags, expected_flags,
-                                  "operation raises different flags depending on flags set: " +
-                                  "expected %s, got %s" % (expected_flags, new_flags))
+        self.assertRaises(
+            TypeError,
+            Decimal("1.23456789").quantize, Decimal('1e-100000'), getcontext()
+        )
+        self.assertRaises(
+            TypeError,
+            Decimal("1.23456789").quantize, Decimal('1e-100000'), 10
+        )
+        self.assertRaises(
+            TypeError,
+            Decimal("1.23456789").quantize, Decimal('1e-100000'), ROUND_UP, 1000
+        )
+
+        with localcontext() as c:
+            c.clear_traps()
+
+            # Invalid arguments
+            self.assertRaises(TypeError, c.copy_sign, Decimal(1), "x", "y")
+            self.assertRaises(TypeError, c.canonical, 200)
+            self.assertRaises(TypeError, c.is_canonical, 200)
+            self.assertRaises(TypeError, c.divmod, 9, 8, "x", "y")
+            self.assertRaises(TypeError, c.same_quantum, 9, 3, "x", "y")
+
+            self.assertEqual(str(c.canonical(Decimal(200))), '200')
+            self.assertEqual(c.radix(), 10)
+
+            c.traps[DivisionByZero] = True
+            self.assertRaises(DivisionByZero, Decimal(9).__divmod__, 0)
+            self.assertRaises(DivisionByZero, c.divmod, 9, 0)
+            self.assertTrue(c.flags[InvalidOperation])
+
+            c.clear_flags()
+            c.traps[InvalidOperation] = True
+            self.assertRaises(InvalidOperation, Decimal(9).__divmod__, 0)
+            self.assertRaises(InvalidOperation, c.divmod, 9, 0)
+            self.assertTrue(c.flags[DivisionByZero])
+
+            c.traps[InvalidOperation] = True
+            c.prec = 2
+            self.assertRaises(InvalidOperation, pow, Decimal(1000), 1, 501)
+
+    @requires_extra_functionality
+    def test_c_context_templates(self):
+        self.assertEqual(
+            C.BasicContext._traps,
+            C.DecIEEEInvalidOperation|C.DecDivisionByZero|C.DecOverflow|
+            C.DecUnderflow|C.DecClamped
+        )
+        self.assertEqual(
+            C.DefaultContext._traps,
+            C.DecIEEEInvalidOperation|C.DecDivisionByZero|C.DecOverflow
+        )
+
+    @requires_extra_functionality
+    def test_c_signal_dict(self):
+
+        # SignalDict coverage
+        Context = C.Context
+        DefaultContext = C.DefaultContext
+
+        InvalidOperation = C.InvalidOperation
+        DivisionByZero = C.DivisionByZero
+        Overflow = C.Overflow
+        Subnormal = C.Subnormal
+        Underflow = C.Underflow
+        Rounded = C.Rounded
+        Inexact = C.Inexact
+        Clamped = C.Clamped
+
+        DecClamped = C.DecClamped
+        DecInvalidOperation = C.DecInvalidOperation
+        DecIEEEInvalidOperation = C.DecIEEEInvalidOperation
+
+        def assertIsExclusivelySet(signal, signal_dict):
+            for sig in signal_dict:
+                if sig == signal:
+                    self.assertTrue(signal_dict[sig])
+                else:
+                    self.assertFalse(signal_dict[sig])
+
+        c = DefaultContext.copy()
+
+        # Signal dict methods
+        self.assertTrue(Overflow in c.traps)
+        c.clear_traps()
+        for k in c.traps.keys():
+            c.traps[k] = True
+        for v in c.traps.values():
+            self.assertTrue(v)
+        c.clear_traps()
+        for k, v in c.traps.items():
+            self.assertFalse(v)
+
+        self.assertFalse(c.flags.get(Overflow))
+        self.assertIs(c.flags.get("x"), None)
+        self.assertEqual(c.flags.get("x", "y"), "y")
+        self.assertRaises(TypeError, c.flags.get, "x", "y", "z")
+
+        self.assertEqual(len(c.flags), len(c.traps))
+        s = sys.getsizeof(c.flags)
+        s = sys.getsizeof(c.traps)
+        s = c.flags.__repr__()
+
+        # Set flags/traps.
+        c.clear_flags()
+        c._flags = DecClamped
+        self.assertTrue(c.flags[Clamped])
+
+        c.clear_traps()
+        c._traps = DecInvalidOperation
+        self.assertTrue(c.traps[InvalidOperation])
+
+        # Set flags/traps from dictionary.
+        c.clear_flags()
+        d = c.flags.copy()
+        d[DivisionByZero] = True
+        c.flags = d
+        assertIsExclusivelySet(DivisionByZero, c.flags)
+
+        c.clear_traps()
+        d = c.traps.copy()
+        d[Underflow] = True
+        c.traps = d
+        assertIsExclusivelySet(Underflow, c.traps)
+
+        # Random constructors
+        IntSignals = {
+          Clamped: C.DecClamped,
+          Rounded: C.DecRounded,
+          Inexact: C.DecInexact,
+          Subnormal: C.DecSubnormal,
+          Underflow: C.DecUnderflow,
+          Overflow: C.DecOverflow,
+          DivisionByZero: C.DecDivisionByZero,
+          InvalidOperation: C.DecIEEEInvalidOperation
+        }
+        IntCond = [
+          C.DecDivisionImpossible, C.DecDivisionUndefined, C.DecFpuError,
+          C.DecInvalidContext, C.DecInvalidOperation, C.DecMallocError,
+          C.DecConversionSyntax,
+        ]
+
+        lim = len(OrderedSignals[C])
+        for r in range(lim):
+            for t in range(lim):
+                for round in RoundingModes[C]:
+                    flags = random.sample(OrderedSignals[C], r)
+                    traps = random.sample(OrderedSignals[C], t)
+                    prec = random.randrange(1, 10000)
+                    emin = random.randrange(-10000, 0)
+                    emax = random.randrange(0, 10000)
+                    clamp = random.randrange(0, 2)
+                    caps = random.randrange(0, 2)
+                    cr = random.randrange(0, 2)
+                    c = Context(prec=prec, rounding=round, Emin=emin, Emax=emax,
+                                capitals=caps, clamp=clamp, flags=list(flags),
+                                traps=list(traps))
+
+                    self.assertEqual(c.prec, prec)
+                    self.assertEqual(c.rounding, round)
+                    self.assertEqual(c.Emin, emin)
+                    self.assertEqual(c.Emax, emax)
+                    self.assertEqual(c.capitals, caps)
+                    self.assertEqual(c.clamp, clamp)
+
+                    f = 0
+                    for x in flags:
+                        f |= IntSignals[x]
+                    self.assertEqual(c._flags, f)
+
+                    f = 0
+                    for x in traps:
+                        f |= IntSignals[x]
+                    self.assertEqual(c._traps, f)
+
+        for cond in IntCond:
+            c._flags = cond
+            self.assertTrue(c._flags&DecIEEEInvalidOperation)
+            assertIsExclusivelySet(InvalidOperation, c.flags)
+
+        for cond in IntCond:
+            c._traps = cond
+            self.assertTrue(c._traps&DecIEEEInvalidOperation)
+            assertIsExclusivelySet(InvalidOperation, c.traps)
+
+    def test_invalid_override(self):
+        Decimal = C.Decimal
+
+        try:
+            from locale import CHAR_MAX
+        except ImportError:
+            return
+
+        def make_grouping(lst):
+            return ''.join([chr(x) for x in lst])
+
+        def get_fmt(x, override=None, fmt='n'):
+            return Decimal(x).__format__(fmt, override)
+
+        invalid_grouping = {
+            'decimal_point' : ',',
+            'grouping' : make_grouping([255, 255, 0]),
+            'thousands_sep' : ','
+        }
+        invalid_dot = {
+            'decimal_point' : 'xxxxx',
+            'grouping' : make_grouping([3, 3, 0]),
+            'thousands_sep' : ','
+        }
+        invalid_sep = {
+            'decimal_point' : '.',
+            'grouping' : make_grouping([3, 3, 0]),
+            'thousands_sep' : 'yyyyy'
+        }
+
+        if CHAR_MAX == 127: # negative grouping in override
+            self.assertRaises(ValueError, get_fmt, 12345,
+                              invalid_grouping, 'g')
+
+        self.assertRaises(ValueError, get_fmt, 12345, invalid_dot, 'g')
+        self.assertRaises(ValueError, get_fmt, 12345, invalid_sep, 'g')
+
+
+all_tests = [
+  CExplicitConstructionTest, PyExplicitConstructionTest,
+  CImplicitConstructionTest, PyImplicitConstructionTest,
+  CFormatTest,               PyFormatTest,
+  CArithmeticOperatorsTest,  PyArithmeticOperatorsTest,
+  CThreadingTest,            PyThreadingTest,
+  CUsabilityTest,            PyUsabilityTest,
+  CPythonAPItests,           PyPythonAPItests,
+  CContextAPItests,          PyContextAPItests,
+  CContextWithStatement,     PyContextWithStatement,
+  CContextFlags,             PyContextFlags,
+  CSpecialContexts,          PySpecialContexts,
+  CContextInputValidation,   PyContextInputValidation,
+  CContextSubclassing,       PyContextSubclassing,
+  CCoverage,                 PyCoverage,
+  CFunctionality,            PyFunctionality,
+  CWhitebox,                 PyWhitebox,
+  CIBMTestCases,             PyIBMTestCases,
+]
+
+# Delete C tests if _decimal.so is not present.
+if not C:
+    all_tests = all_tests[1::2]
+else:
+    all_tests.insert(0, CheckAttributes)
+
 
 def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
     """ Execute the tests.
@@ -2366,27 +4948,16 @@ def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
     is enabled in regrtest.py
     """
 
-    init()
+    init(C)
+    init(P)
     global TEST_ALL, DEBUG
     TEST_ALL = arith or is_resource_enabled('decimal')
     DEBUG = debug
 
     if todo_tests is None:
-        test_classes = [
-            DecimalExplicitConstructionTest,
-            DecimalImplicitConstructionTest,
-            DecimalArithmeticOperatorsTest,
-            DecimalFormatTest,
-            DecimalUseOfContextTest,
-            DecimalUsabilityTest,
-            DecimalPythonAPItests,
-            ContextAPItests,
-            DecimalTest,
-            WithStatementTest,
-            ContextFlags
-        ]
+        test_classes = all_tests
     else:
-        test_classes = [DecimalTest]
+        test_classes = [CIBMTestCases, PyIBMTestCases]
 
     # Dynamically build custom test definition for each file in the test
     # directory and add the definitions to the DecimalTest class.  This
@@ -2398,17 +4969,32 @@ def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
         if todo_tests is not None and head not in todo_tests:
             continue
         tester = lambda self, f=filename: self.eval_file(directory + f)
-        setattr(DecimalTest, 'test_' + head, tester)
+        setattr(CIBMTestCases, 'test_' + head, tester)
+        setattr(PyIBMTestCases, 'test_' + head, tester)
         del filename, head, tail, tester
 
 
     try:
         run_unittest(*test_classes)
         if todo_tests is None:
-            import decimal as DecimalModule
-            run_doctest(DecimalModule, verbose)
+            from doctest import IGNORE_EXCEPTION_DETAIL
+            savedecimal = sys.modules['decimal']
+            if C:
+                sys.modules['decimal'] = C
+                run_doctest(C, verbose, optionflags=IGNORE_EXCEPTION_DETAIL)
+            sys.modules['decimal'] = P
+            run_doctest(P, verbose)
+            sys.modules['decimal'] = savedecimal
     finally:
-        setcontext(ORIGINAL_CONTEXT)
+        if C: C.setcontext(ORIGINAL_CONTEXT[C])
+        P.setcontext(ORIGINAL_CONTEXT[P])
+        if not C:
+            warnings.warn('C tests skipped: no module named _decimal.',
+                          UserWarning)
+        if not orig_sys_decimal is sys.modules['decimal']:
+            raise TestFailed("Internal error: unbalanced number of changes to "
+                             "sys.modules['decimal'].")
+
 
 if __name__ == '__main__':
     import optparse
