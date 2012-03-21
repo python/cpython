@@ -1585,14 +1585,14 @@ current_context(void)
 #define CURRENT_CONTEXT(ctxobj) \
     ctxobj = current_context(); \
     if (ctxobj == NULL) {       \
-            return NULL;        \
+        return NULL;            \
     }
 
 /* ctx := pointer to the mpd_context_t struct of the current context */
 #define CURRENT_CONTEXT_ADDR(ctx) { \
     PyObject *_c_t_x_o_b_j = current_context(); \
     if (_c_t_x_o_b_j == NULL) {                 \
-            return NULL;                        \
+        return NULL;                            \
     }                                           \
     ctx = CTX(_c_t_x_o_b_j);                    \
 }
