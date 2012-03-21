@@ -735,10 +735,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Include\formatter_unicode.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Include\frameobject.h"
 				>
 			</File>
