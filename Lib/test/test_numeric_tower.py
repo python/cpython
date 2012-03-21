@@ -150,7 +150,7 @@ class ComparisonTest(unittest.TestCase):
         # int, float, Fraction, Decimal
         test_values = [
             float('-inf'),
-            D('-1e999999999'),
+            D('-1e425000000'),
             -1e308,
             F(-22, 7),
             -3.14,

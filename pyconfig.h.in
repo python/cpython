@@ -304,9 +304,15 @@
 /* Define to 1 if you have the `gamma' function. */
 #undef HAVE_GAMMA
 
+/* Define if we can use x64 gcc inline assembler */
+#undef HAVE_GCC_ASM_FOR_X64
+
 /* Define if we can use gcc inline assembler to get and set x87 control word
    */
 #undef HAVE_GCC_ASM_FOR_X87
+
+/* Define if your compiler provides __uint128_t */
+#undef HAVE_GCC_UINT128_T
 
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
@@ -392,6 +398,10 @@
 /* Define to 1 if you have the `getwd' function. */
 #undef HAVE_GETWD
 
+/* Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and
+   bcopy. */
+#undef HAVE_GLIBC_MEMMOVE_BUG
+
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
@@ -421,6 +431,9 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
+
+/* Define if gcc has the ipa-pure-const bug. */
+#undef HAVE_IPA_PURE_CONST_BUG
 
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
