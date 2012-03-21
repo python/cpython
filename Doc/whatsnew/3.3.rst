@@ -596,6 +596,93 @@ curses
 
 (Contributed by Iñigo Serna in :issue:`6755`)
 
+decimal
+-------
+
+:issue:`7652` - integrate fast native decimal arithmetic.
+   C-module and libmpdec written by Stefan Krah.
+
+The new C version of the decimal module integrates the high speed libmpdec
+library for arbitrary precision correctly-rounded decimal arithmetic.
+libmpdec conforms to IBM's General Decimal Arithmetic Specification.
+
+Performance gains range from 12x for database applications to 80x for
+numerically intensive applications:
+
+   +---------+-------------+--------------+-------------+
+   |         |  decimal.py |   _decimal   |   speedup   |
+   +=========+=============+==============+=============+
+   |   pi    |    42.75s   |    0.58s     |     74x     |
+   +---------+-------------+--------------+-------------+
+   | telco   |   172.19s   |    5.68s     |     30x     |
+   +---------+-------------+--------------+-------------+
+   | psycopg |     3.57s   |    0.29s     |     12x     |
+   +---------+-------------+--------------+-------------+
+
+Features
+~~~~~~~~
+
+* The :exc:`~decimal.FloatOperation` signal optionally enables stricter
+  semantics for mixing floats and Decimals.
+
+* If Python is compiled without threads, the C version automatically
+  disables the expensive thread local context machinery. In this case,
+  the variable :data:`~decimal.HAVE_THREADS` is set to False.
+
+API changes
+~~~~~~~~~~~
+
+* The C module has the following context limits, depending on the machine
+  architecture:
+
+   +-------------------+---------------------+------------------------------+
+   |                   |       32-bit        |            64-bit            |
+   +===================+=====================+==============================+
+   | :const:`MAX_PREC` | :const:`425000000`  | :const:`999999999999999999`  |
+   +-------------------+---------------------+------------------------------+
+   | :const:`MAX_EMAX` | :const:`425000000`  | :const:`999999999999999999`  |
+   +-------------------+---------------------+------------------------------+
+   | :const:`MIN_EMIN` | :const:`-425000000` | :const:`-999999999999999999` |
+   +-------------------+---------------------+------------------------------+
+
+* In the context templates (:class:`~decimal.DefaultContext`,
+  :class:`~decimal.BasicContext` and :class:`~decimal.ExtendedContext`)
+  the magnitude of :attr:`~decimal.Context.Emax` and
+  :attr:`~decimal.Context.Emin` has changed to :const:`999999`.
+
+* The :class:`~decimal.Decimal` constructor in decimal.py does not observe
+  the context limits and converts values with arbitrary exponents or precision
+  exactly. Since the C version has internal limits, the following scheme is
+  used: If possible, values are converted exactly, otherwise
+  :exc:`~decimal.InvalidOperation` is raised and the result is NaN. In the
+  latter case it is always possible to use :meth:`~decimal.Context.create_decimal`
+  in order to obtain a rounded or inexact value.
+
+
+* The power function in decimal.py is always correctly-rounded. In the
+  C version, it is defined in terms of the correctly-rounded
+  :meth:`~decimal.Decimal.exp` and :meth:`~decimal.Decimal.ln` functions,
+  but the final result is only "almost always correctly rounded".
+
+
+* In the C version, the context dictionary containing the signals is a
+  :class:`~collections.abc.MutableMapping`.  For speed reasons,
+  :attr:`~decimal.Context.flags` and :attr:`~decimal.Context.traps` always
+  refer to the same :class:`~collections.abc.MutableMapping` that the context
+  was initialized with. If a new signal dictionary is assigned,
+  :attr:`~decimal.Context.flags` and :attr:`~decimal.Context.traps`
+  are updated with the new values, but they do not reference the RHS
+  dictionary.
+
+
+* Pickling a :class:`~decimal.Context` produces a different output in order
+  to have a common interchange format for the Python and C versions.
+
+
+* The order of arguments in the :class:`~decimal.Context` constructor has been
+  changed to match the order displayed by :func:`repr`.
+
+
 faulthandler
 ------------
 
