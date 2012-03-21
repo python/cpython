@@ -1271,34 +1271,22 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 PyObject *
 _PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
 {
-    static PyObject *int_name = NULL;
-    if (int_name == NULL) {
-        int_name = PyUnicode_InternFromString("__int__");
-        if (int_name == NULL)
-            return NULL;
-    }
-
-    if (integral && !PyLong_Check(integral)) {
-        /* Don't go through tp_as_number->nb_int to avoid
-           hitting the classic class fallback to __trunc__. */
-        PyObject *int_func = PyObject_GetAttr(integral, int_name);
-        if (int_func == NULL) {
-            PyErr_Clear(); /* Raise a different error. */
-            goto non_integral_error;
-        }
+    PyNumberMethods *nb;
+    if (PyLong_Check(integral))
+        return integral;
+    nb = Py_TYPE(integral)->tp_as_number;
+    if (nb->nb_int) {
+        PyObject *as_int = nb->nb_int(integral);
         Py_DECREF(integral);
-        integral = PyEval_CallObject(int_func, NULL);
-        Py_DECREF(int_func);
-        if (integral && !PyLong_Check(integral)) {
-            goto non_integral_error;
-        }
+        if (!as_int)
+            return NULL;
+        if (PyLong_Check(as_int))
+            return as_int;
+        Py_DECREF(as_int);
     }
-    return integral;
-
-non_integral_error:
     PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
     Py_DECREF(integral);
-    return NULL;
+    return NULL;    
 }
 
 
