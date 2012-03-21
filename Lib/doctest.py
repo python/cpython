@@ -2314,7 +2314,8 @@ class DocTestCase(unittest.TestCase):
         return "Doctest: " + self._dt_test.name
 
 class SkipDocTestCase(DocTestCase):
-    def __init__(self):
+    def __init__(self, module):
+        self.module = module
         DocTestCase.__init__(self, None)
 
     def setUp(self):
@@ -2324,7 +2325,10 @@ class SkipDocTestCase(DocTestCase):
         pass
 
     def shortDescription(self):
-        return "Skipping tests from %s" % module.__name__
+        return "Skipping tests from %s" % self.module.__name__
+
+    __str__ = shortDescription
+
 
 def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
                  **options):
@@ -2372,7 +2376,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
     if not tests and sys.flags.optimize >=2:
         # Skip doctests when running with -O2
         suite = unittest.TestSuite()
-        suite.addTest(SkipDocTestCase())
+        suite.addTest(SkipDocTestCase(module))
         return suite
     elif not tests:
         # Why do we want to do this? Because it reveals a bug that might

@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12757: Fix the skipping of doctests when python is run with -OO so
+  that it works in unittest's verbose mode as well as non-verbose mode.
+
 - Issue #3573: IDLE hangs when passing invalid command line args
   (directory(ies) instead of file(s)) (Patch by Guilherme Polo)
 
