@@ -1268,8 +1268,15 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 }
 
 
-PyObject *
-_PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
+/*
+  Returns the Integral instance converted to an int. The instance is expected
+  to be an int or have an __int__ method. Steals integral's
+  reference. error_format will be used to create the TypeError if integral
+  isn't actually an Integral instance. error_format should be a format string
+  that can accept a char* naming integral's type. 
+*/
+static PyObject *
+convert_integral_to_int(PyObject *integral, const char *error_format)
 {
     PyNumberMethods *nb;
     if (PyLong_Check(integral))
@@ -1345,8 +1352,7 @@ PyNumber_Long(PyObject *o)
         Py_DECREF(trunc_func);
         /* __trunc__ is specified to return an Integral type,
            but long() needs to return a long. */
-        int_instance = _PyNumber_ConvertIntegralToInt(
-            truncated,
+        int_instance = convert_integral_to_int(truncated,
             "__trunc__ returned non-Integral (type %.200s)");
         return int_instance;
     }
