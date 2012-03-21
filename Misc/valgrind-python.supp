@@ -456,3 +456,16 @@
    fun:PyUnicode_FSConverter
 }
 
+# Additional suppressions for the unified decimal tests:
+{
+   test_decimal
+   Memcheck:Addr4
+   fun:PyUnicodeUCS2_FSConverter
+}
+
+{
+   test_decimal2
+   Memcheck:Addr4
+   fun:PyUnicode_FSConverter
+}
+
