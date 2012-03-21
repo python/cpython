@@ -90,7 +90,7 @@ from _ssl import (
     SSL_ERROR_EOF,
     SSL_ERROR_INVALID_ERROR_CODE,
     )
-from _ssl import HAS_SNI, HAS_ECDH
+from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
 from _ssl import (PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
 from _ssl import _OPENSSL_API_VERSION
@@ -209,6 +209,17 @@ class SSLContext(_SSLContext):
                          server_hostname=server_hostname,
                          _context=self)
 
+    def set_npn_protocols(self, npn_protocols):
+        protos = bytearray()
+        for protocol in npn_protocols:
+            b = bytes(protocol, 'ascii')
+            if len(b) == 0 or len(b) > 255:
+                raise SSLError('NPN protocols must be 1 to 255 in length')
+            protos.append(len(b))
+            protos.extend(b)
+
+        self._set_npn_protocols(protos)
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -220,7 +231,7 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                  do_handshake_on_connect=True,
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
-                 suppress_ragged_eofs=True, ciphers=None,
+                 suppress_ragged_eofs=True, npn_protocols=None, ciphers=None,
                  server_hostname=None,
                  _context=None):
 
@@ -240,6 +251,8 @@ class SSLSocket(socket):
                 self.context.load_verify_locations(ca_certs)
             if certfile:
                 self.context.load_cert_chain(certfile, keyfile)
+            if npn_protocols:
+                self.context.set_npn_protocols(npn_protocols)
             if ciphers:
                 self.context.set_ciphers(ciphers)
             self.keyfile = keyfile
@@ -339,6 +352,13 @@ class SSLSocket(socket):
 
         self._checkClosed()
         return self._sslobj.peer_certificate(binary_form)
+
+    def selected_npn_protocol(self):
+        self._checkClosed()
+        if not self._sslobj or not _ssl.HAS_NPN:
+            return None
+        else:
+            return self._sslobj.selected_npn_protocol()
 
     def cipher(self):
         self._checkClosed()
@@ -568,7 +588,8 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
                 ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                 do_handshake_on_connect=True,
-                suppress_ragged_eofs=True, ciphers=None):
+                suppress_ragged_eofs=True,
+                ciphers=None):
 
     return SSLSocket(sock=sock, keyfile=keyfile, certfile=certfile,
                      server_side=server_side, cert_reqs=cert_reqs,

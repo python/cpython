@@ -30,6 +30,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14204: The ssl module now has support for the Next Protocol
+  Negotiation extension, if available in the underlying OpenSSL library.
+  Patch by Colin Marc.
+
 - Issue #3035: Unused functions from tkinter are marked as pending peprecated.
 
 - Issue #12757: Fix the skipping of doctests when python is run with -OO so
