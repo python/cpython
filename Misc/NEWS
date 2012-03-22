@@ -30,6 +30,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #12757: Fix the skipping of doctests when python is run with -OO so
+  that it works in unittest's verbose mode as well as non-verbose mode.
+
+- Issue #3573: IDLE hangs when passing invalid command line args
+  (directory(ies) instead of file(s)) (Patch by Guilherme Polo)
+
+- Issue #13694: asynchronous connect in asyncore.dispatcher does not set addr
+  attribute.
+
 - Issue #10484: Fix the CGIHTTPServer's PATH_INFO handling problem.
 
 - Issue #11199: Fix the with urllib which hangs on particular ftp urls.

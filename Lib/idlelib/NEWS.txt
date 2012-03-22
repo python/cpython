@@ -1,3 +1,10 @@
+What's New in IDLE 2.7.3?
+=======================
+
+- Issue #3573: IDLE hangs when passing invalid command line args
+  (directory(ies) instead of file(s)).
+
+
 What's New in IDLE 2.7.2?
 =======================
 
