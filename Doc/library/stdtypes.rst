@@ -1663,14 +1663,15 @@ iteration, the :func:`len` function, and the following methods:
 
    Return the number of *i*'s for which ``s[i] == x``.
 
-    .. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 .. method:: range.index(x)
 
    Return the smallest *i* such that ``s[i] == x``.  Raises
    :exc:`ValueError` when *x* is not in the range.
 
-    .. versionadded:: 3.2
+   .. versionadded:: 3.2
+
 
 .. _typesseq-mutable:
 
