@@ -7,6 +7,7 @@ import sys
 import time
 import warnings
 import errno
+import struct
 
 from test import test_support
 from test.test_support import TESTFN, run_unittest, unlink
@@ -702,6 +703,21 @@ class BaseTestAPI(unittest.TestCase):
                                                  socket.SO_REUSEADDR))
         finally:
             sock.close()
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @test_support.reap_threads
+    def test_quick_connect(self):
+        # see: http://bugs.python.org/issue10340
+        server = TCPServer()
+        t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1, count=500))
+        t.start()
+
+        for x in xrange(20):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                         struct.pack('ii', 1, 0))
+            s.connect(server.address)
+            s.close()
 
 
 class TestAPI_UseSelect(BaseTestAPI):
