@@ -86,7 +86,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 
         if (s->kind == ImportFrom_kind) {
             PyObject *modname = s->v.ImportFrom.module;
-            if (PyString_GET_SIZE(modname) == 10 &&
+            if (modname && PyString_GET_SIZE(modname) == 10 &&
                 !strcmp(PyString_AS_STRING(modname), "__future__")) {
                 if (done) {
                     PyErr_SetString(PyExc_SyntaxError,
