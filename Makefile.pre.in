@@ -1019,7 +1019,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		packaging/tests/pypiserver/with_real_externals/simple/foobar \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
-		unittest unittest/test \
+		unittest unittest/test unittest/test/testmock \
 		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
