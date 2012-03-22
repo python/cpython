@@ -93,6 +93,8 @@ Extension Modules
 Build
 -----
 
+- Issue #14387: Do not include accu.h from Python.h.
+
 - Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
   Based on patch from Hervé Coatanhay.
 

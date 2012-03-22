@@ -1,6 +1,7 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "accu.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
