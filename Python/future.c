@@ -87,7 +87,8 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 
         if (s->kind == ImportFrom_kind) {
             PyObject *modname = s->v.ImportFrom.module;
-            if (!PyUnicode_CompareWithASCIIString(modname, "__future__")) {
+            if (modname &&
+                !PyUnicode_CompareWithASCIIString(modname, "__future__")) {
                 if (done) {
                     PyErr_SetString(PyExc_SyntaxError,
                                     ERR_LATE_FUTURE);
