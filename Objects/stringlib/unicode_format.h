@@ -2,6 +2,7 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "accu.h"
 
 /* Defines for more efficiently reallocating the string buffer */
 #define INITIAL_SIZE_INCREMENT 100
