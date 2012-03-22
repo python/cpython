@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "structmember.h"
+#include "accu.h"
+
 #if PY_VERSION_HEX < 0x02060000 && !defined(Py_TYPE)
 #define Py_TYPE(ob)     (((PyObject*)(ob))->ob_type)
 #endif
