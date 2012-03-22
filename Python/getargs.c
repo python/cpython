@@ -1410,7 +1410,7 @@ getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
         *errmsg = "convertible to a buffer";
         return count;
     }
-    PyBuffer_FillInfo(view, NULL, buf, count, 1, 0);
+    PyBuffer_FillInfo(view, arg, buf, count, 1, 0);
     return 0;
 }
 
