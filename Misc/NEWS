@@ -27,6 +27,11 @@ Core and Builtins
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
 
+- Issue #10538: When using the "s*" code with PyArg_ParseTuple() to fill a
+  Py_buffer structure with data from an object supporting only the old
+  PyBuffer interface, a reference to the source objects is now properly added
+  to the Py_buffer.obj member.
+
 Library
 -------
 
