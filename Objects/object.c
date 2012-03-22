@@ -820,7 +820,7 @@ PyObject_GetAttrString(PyObject *v, const char *name)
     if (w == NULL)
         return NULL;
     res = PyObject_GetAttr(v, w);
-    Py_XDECREF(w);
+    Py_DECREF(w);
     return res;
 }
 
