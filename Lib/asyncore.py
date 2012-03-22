@@ -345,6 +345,7 @@ class dispatcher:
         err = self.socket.connect_ex(address)
         if err in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
         or err == EINVAL and os.name in ('nt', 'ce'):
+            self.addr = address
             return
         if err in (0, EISCONN):
             self.addr = address
