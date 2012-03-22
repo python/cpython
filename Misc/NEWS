@@ -34,7 +34,7 @@ Library
   Negotiation extension, if available in the underlying OpenSSL library.
   Patch by Colin Marc.
 
-- Issue #3035: Unused functions from tkinter are marked as pending peprecated.
+- Issue #3035: Unused functions from tkinter are marked as pending deprecated.
 
 - Issue #12757: Fix the skipping of doctests when python is run with -OO so
   that it works in unittest's verbose mode as well as non-verbose mode.
