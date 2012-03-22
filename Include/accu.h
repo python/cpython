@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+#undef small /* defined by some Windows headers */
+
 typedef struct {
     PyObject *large;  /* A list of previously accumulated large strings */
     PyObject *small;  /* Pending small strings */
