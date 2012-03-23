@@ -281,14 +281,15 @@ Element Objects
 
    .. method:: append(subelement)
 
-      Adds the element *subelement* to the end of this elements internal list
-      of subelements.
+      Adds the element *subelement* to the end of this element's internal list
+      of subelements.  Raises :exc:`TypeError` if *subelement* is not an
+      :class:`Element`.
 
 
    .. method:: extend(subelements)
 
       Appends *subelements* from a sequence object with zero or more elements.
-      Raises :exc:`AssertionError` if a subelement is not a valid object.
+      Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
 
@@ -325,9 +326,10 @@ Element Objects
          Use method :meth:`Element.iter` instead.
 
 
-   .. method:: insert(index, element)
+   .. method:: insert(index, subelement)
 
-      Inserts a subelement at the given position in this element.
+      Inserts *subelement* at the given position in this element.  Raises
+      :exc:`TypeError` if *subelement* is not an :class:`Element`.
 
 
    .. method:: iter(tag=None)
