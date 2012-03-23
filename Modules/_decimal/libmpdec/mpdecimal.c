@@ -5849,7 +5849,7 @@ _lower_bound_zeta(const mpd_t *x, uint32_t *status)
 
     t = mpd_adjexp(x);
     if (t > 0) {
-                /* x >= 10 -> floor(log10(floor(abs(log10(x))))) */
+        /* x >= 10 -> floor(log10(floor(abs(log10(x))))) */
         return mpd_exp_digits(t) - 1;
     }
     else if (t < -1) {
@@ -5907,7 +5907,7 @@ _qcheck_pow_bounds(mpd_t *result, const mpd_t *x, const mpd_t *y,
         }
     }
     else {
-                /* (0 < |x| < 1 and y > 0) or (|x| > 1 and y < 0). */
+        /* (0 < |x| < 1 and y > 0) or (|x| > 1 and y < 0). */
         ub_omega = mpd_exp_digits(mpd_etiny(ctx));
         if (ub_omega < lb_zeta + lb_theta) {
             _settriple(result, resultsign, 1, mpd_etiny(ctx)-1);
@@ -6637,7 +6637,7 @@ mpd_same_quantum(const mpd_t *a, const mpd_t *b)
 {
     if (mpd_isspecial(a) || mpd_isspecial(b)) {
         return ((mpd_isnan(a) && mpd_isnan(b)) ||
-            (mpd_isinfinite(a) && mpd_isinfinite(b)));
+                (mpd_isinfinite(a) && mpd_isinfinite(b)));
     }
 
     return a->exp == b->exp;
@@ -7055,10 +7055,10 @@ _mpd_fix_sqrt(mpd_t *result, const mpd_t *a, mpd_t *tmp,
     u.exp = u.digits - ctx->prec + result->exp - 1;
 
     _mpd_qsub(tmp, result, &u, &maxctx, status);
-    if (*status&MPD_Errors)    goto nanresult;
+    if (*status&MPD_Errors) goto nanresult;
 
     _mpd_qmul(tmp, tmp, tmp, &maxctx, status);
-    if (*status&MPD_Errors)    goto nanresult;
+    if (*status&MPD_Errors) goto nanresult;
 
     if (_mpd_cmp(tmp, a) == 1) {
         u.exp += 1;
@@ -7067,10 +7067,10 @@ _mpd_fix_sqrt(mpd_t *result, const mpd_t *a, mpd_t *tmp,
     }
     else {
         _mpd_qadd(tmp, result, &u, &maxctx, status);
-        if (*status&MPD_Errors)    goto nanresult;
+        if (*status&MPD_Errors) goto nanresult;
 
         _mpd_qmul(tmp, tmp, tmp, &maxctx, status);
-        if (*status&MPD_Errors)    goto nanresult;
+        if (*status&MPD_Errors) goto nanresult;
 
         if (_mpd_cmp(tmp, a) == -1) {
             u.exp += 1;
