@@ -857,6 +857,7 @@ class SMTPHandler(logging.Handler):
         self.toaddrs = toaddrs
         self.subject = subject
         self.secure = secure
+        self._timeout = 5.0
 
     def getSubject(self, record):
         """
@@ -879,7 +880,7 @@ class SMTPHandler(logging.Handler):
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port)
+            smtp = smtplib.SMTP(self.mailhost, port, timeout=self._timeout)
             msg = self.format(record)
             msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
                             self.fromaddr,
