@@ -803,6 +803,15 @@ element_extend(ElementObject* self, PyObject* args)
     seqlen = PySequence_Size(seq);
     for (i = 0; i < seqlen; i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
+        if (!PyObject_IsInstance(element, (PyObject *)&Element_Type)) {
+            Py_DECREF(seq);
+            PyErr_Format(
+                PyExc_TypeError,
+                "expected an Element, not \"%.200s\"",
+                Py_TYPE(element)->tp_name);
+            return NULL;
+        }
+
         if (element_add_subelement(self, element) < 0) {
             Py_DECREF(seq);
             return NULL;
