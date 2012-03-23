@@ -2378,6 +2378,46 @@ class PythonAPItests(unittest.TestCase):
                 self.assertRaises(TypeError, D("-1").copy_abs, context=xc)
                 self.assertRaises(TypeError, D("-1").copy_negate, context=xc)
 
+    def test_exception_hierarchy(self):
+
+        decimal = self.decimal
+        DecimalException = decimal.DecimalException
+        InvalidOperation = decimal.InvalidOperation
+        FloatOperation = decimal.FloatOperation
+        DivisionByZero = decimal.DivisionByZero
+        Overflow = decimal.Overflow
+        Underflow = decimal.Underflow
+        Subnormal = decimal.Subnormal
+        Inexact = decimal.Inexact
+        Rounded = decimal.Rounded
+        Clamped = decimal.Clamped
+
+        self.assertTrue(issubclass(DecimalException, ArithmeticError))
+
+        self.assertTrue(issubclass(InvalidOperation, DecimalException))
+        self.assertTrue(issubclass(FloatOperation, DecimalException))
+        self.assertTrue(issubclass(FloatOperation, TypeError))
+        self.assertTrue(issubclass(DivisionByZero, DecimalException))
+        self.assertTrue(issubclass(DivisionByZero, ZeroDivisionError))
+        self.assertTrue(issubclass(Overflow, Rounded))
+        self.assertTrue(issubclass(Overflow, Inexact))
+        self.assertTrue(issubclass(Overflow, DecimalException))
+        self.assertTrue(issubclass(Underflow, Inexact))
+        self.assertTrue(issubclass(Underflow, Rounded))
+        self.assertTrue(issubclass(Underflow, Subnormal))
+        self.assertTrue(issubclass(Underflow, DecimalException))
+
+        self.assertTrue(issubclass(Subnormal, DecimalException))
+        self.assertTrue(issubclass(Inexact, DecimalException))
+        self.assertTrue(issubclass(Rounded, DecimalException))
+        self.assertTrue(issubclass(Clamped, DecimalException))
+
+        self.assertTrue(issubclass(decimal.ConversionSyntax, InvalidOperation))
+        self.assertTrue(issubclass(decimal.DivisionImpossible, InvalidOperation))
+        self.assertTrue(issubclass(decimal.DivisionUndefined, InvalidOperation))
+        self.assertTrue(issubclass(decimal.DivisionUndefined, ZeroDivisionError))
+        self.assertTrue(issubclass(decimal.InvalidContext, InvalidOperation))
+
 class CPythonAPItests(PythonAPItests):
     decimal = C
 class PyPythonAPItests(PythonAPItests):
