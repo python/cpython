@@ -783,16 +783,18 @@ class BaseTestAPI(unittest.TestCase):
     @support.reap_threads
     def test_quick_connect(self):
         # see: http://bugs.python.org/issue10340
-        server = TCPServer()
-        t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1, count=500))
-        t.start()
+        if self.family in (socket.AF_INET, getattr(socket, "AF_INET6", object())):
+            server = BaseServer(self.family, self.addr)
+            t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
+                                                              count=500))
+            t.start()
 
-        for x in range(20):
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-                         struct.pack('ii', 1, 0))
-            s.connect(server.address)
-            s.close()
+            for x in range(20):
+                s = socket.socket(self.family, socket.SOCK_STREAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                             struct.pack('ii', 1, 0))
+                s.connect(server.address)
+                s.close()
 
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
