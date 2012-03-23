@@ -298,7 +298,7 @@ class Element:
     # @param element The element to add.
 
     def append(self, element):
-        # assert iselement(element)
+        self._assert_is_element(element)
         self._children.append(element)
 
     ##
@@ -308,8 +308,8 @@ class Element:
     # @since 1.3
 
     def extend(self, elements):
-        # for element in elements:
-        #     assert iselement(element)
+        for element in elements:
+            self._assert_is_element(element)
         self._children.extend(elements)
 
     ##
@@ -318,8 +318,12 @@ class Element:
     # @param index Where to insert the new subelement.
 
     def insert(self, index, element):
-        # assert iselement(element)
+        self._assert_is_element(element)
         self._children.insert(index, element)
+
+    def _assert_is_element(self, e):
+        if not isinstance(e, Element):
+            raise TypeError('expected an Element, not %s' % type(e).__name__)
 
     ##
     # Removes a matching subelement.  Unlike the <b>find</b> methods,
