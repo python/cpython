@@ -1577,7 +1577,7 @@ The following table summarizes the hierarchy of signals::
            InvalidOperation
            Rounded
            Subnormal
-           FloatOperation
+           FloatOperation(DecimalException, exceptions.TypeError)
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
