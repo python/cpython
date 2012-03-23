@@ -2048,6 +2048,15 @@ AC_SUBST(LIBFFI_INCLUDEDIR)
 
 AC_MSG_RESULT($with_system_ffi)
 
+# Check for use of the system libmpdec library
+AC_MSG_CHECKING(for --with-system-libmpdec)
+AC_ARG_WITH(system_libmpdec,
+            AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library]),
+            [],
+            [with_system_libmpdec="no"])
+
+AC_MSG_RESULT($with_system_libmpdec)
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,

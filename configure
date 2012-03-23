@@ -762,6 +762,7 @@ with_pydebug
 with_libs
 with_system_expat
 with_system_ffi
+with_system_libmpdec
 enable_loadable_sqlite_extensions
 with_dbmliborder
 with_signal_module
@@ -1434,6 +1435,8 @@ Optional Packages:
   --with-system-expat     build pyexpat module using an installed expat
                           library
   --with-system-ffi       build _ctypes module using an installed ffi library
+  --with-system-libmpdec  build _decimal module using an installed libmpdec
+                          library
   --with-dbmliborder=db1:db2:...
                           order to check db backends for dbm. Valid value is a
                           colon separated string with the backend names
@@ -8500,6 +8503,21 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_ffi" >&5
 $as_echo "$with_system_ffi" >&6; }
+
+# Check for use of the system libmpdec library
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
+$as_echo_n "checking for --with-system-libmpdec... " >&6; }
+
+# Check whether --with-system_libmpdec was given.
+if test "${with_system_libmpdec+set}" = set; then :
+  withval=$with_system_libmpdec;
+else
+  with_system_libmpdec="no"
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
+$as_echo "$with_system_libmpdec" >&6; }
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5

@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7652: Add --with-system-libmpdec option to configure for linking
+  the _decimal module against an installed libmpdec.
+
 - Issue #14380: MIMEText now defaults to utf-8 when passed non-ASCII unicode
   with no charset specified.
 

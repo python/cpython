@@ -1796,42 +1796,53 @@ class PyBuildExt(build_ext):
             self.use_system_libffi = True
 
     def _decimal_ext(self):
-        sources = [
-          '_decimal/_decimal.c',
-          '_decimal/libmpdec/basearith.c',
-          '_decimal/libmpdec/constants.c',
-          '_decimal/libmpdec/context.c',
-          '_decimal/libmpdec/convolute.c',
-          '_decimal/libmpdec/crt.c',
-          '_decimal/libmpdec/difradix2.c',
-          '_decimal/libmpdec/fnt.c',
-          '_decimal/libmpdec/fourstep.c',
-          '_decimal/libmpdec/io.c',
-          '_decimal/libmpdec/memory.c',
-          '_decimal/libmpdec/mpdecimal.c',
-          '_decimal/libmpdec/numbertheory.c',
-          '_decimal/libmpdec/sixstep.c',
-          '_decimal/libmpdec/transpose.c',
-        ]
-        depends = [
-          '_decimal/docstrings.h',
-          '_decimal/libmpdec/basearith.h',
-          '_decimal/libmpdec/bits.h',
-          '_decimal/libmpdec/constants.h',
-          '_decimal/libmpdec/convolute.h',
-          '_decimal/libmpdec/crt.h',
-          '_decimal/libmpdec/difradix2.h',
-          '_decimal/libmpdec/fnt.h',
-          '_decimal/libmpdec/fourstep.h',
-          '_decimal/libmpdec/io.h',
-          '_decimal/libmpdec/memory.h',
-          '_decimal/libmpdec/mpdecimal.h',
-          '_decimal/libmpdec/numbertheory.h',
-          '_decimal/libmpdec/sixstep.h',
-          '_decimal/libmpdec/transpose.h',
-          '_decimal/libmpdec/typearith.h',
-          '_decimal/libmpdec/umodarith.h',
-        ]
+        extra_compile_args = []
+        undef_macros=['NDEBUG']
+        if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
+            include_dirs = []
+            libraries = ['mpdec']
+            sources = ['_decimal/_decimal.c']
+            depends = ['_decimal/docstrings.h']
+        else:
+            include_dirs = ['./Modules/_decimal/libmpdec']
+            libraries = []
+            sources = [
+              '_decimal/_decimal.c',
+              '_decimal/libmpdec/basearith.c',
+              '_decimal/libmpdec/constants.c',
+              '_decimal/libmpdec/context.c',
+              '_decimal/libmpdec/convolute.c',
+              '_decimal/libmpdec/crt.c',
+              '_decimal/libmpdec/difradix2.c',
+              '_decimal/libmpdec/fnt.c',
+              '_decimal/libmpdec/fourstep.c',
+              '_decimal/libmpdec/io.c',
+              '_decimal/libmpdec/memory.c',
+              '_decimal/libmpdec/mpdecimal.c',
+              '_decimal/libmpdec/numbertheory.c',
+              '_decimal/libmpdec/sixstep.c',
+              '_decimal/libmpdec/transpose.c',
+              ]
+            depends = [
+              '_decimal/docstrings.h',
+              '_decimal/libmpdec/basearith.h',
+              '_decimal/libmpdec/bits.h',
+              '_decimal/libmpdec/constants.h',
+              '_decimal/libmpdec/convolute.h',
+              '_decimal/libmpdec/crt.h',
+              '_decimal/libmpdec/difradix2.h',
+              '_decimal/libmpdec/fnt.h',
+              '_decimal/libmpdec/fourstep.h',
+              '_decimal/libmpdec/io.h',
+              '_decimal/libmpdec/memory.h',
+              '_decimal/libmpdec/mpdecimal.h',
+              '_decimal/libmpdec/numbertheory.h',
+              '_decimal/libmpdec/sixstep.h',
+              '_decimal/libmpdec/transpose.h',
+              '_decimal/libmpdec/typearith.h',
+              '_decimal/libmpdec/umodarith.h',
+              ]
+
         config = {
           'x64':     [('CONFIG_64','1'), ('ASM','1')],
           'uint128': [('CONFIG_64','1'), ('ANSI','1'), ('HAVE_UINT128_T','1')],
@@ -1842,10 +1853,6 @@ class PyBuildExt(build_ext):
                           ('LEGACY_COMPILER','1')],
           'universal':   [('UNIVERSAL','1')]
         }
-
-        include_dirs = ['./Modules/_decimal/libmpdec']
-        extra_compile_args = []
-        undef_macros=['NDEBUG']
 
         platform = self.get_platform()
         cc = sysconfig.get_config_var('CC')
@@ -1898,6 +1905,7 @@ class PyBuildExt(build_ext):
         ext = Extension (
             '_decimal',
             include_dirs=include_dirs,
+            libraries=libraries,
             define_macros=define_macros,
             undef_macros=undef_macros,
             extra_compile_args=extra_compile_args,
