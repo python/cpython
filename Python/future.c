@@ -86,7 +86,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
         */
 
         if (s->kind == ImportFrom_kind) {
-            identifier *modname = s->v.ImportFrom.module;
+            identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 !PyUnicode_CompareWithASCIIString(modname, "__future__")) {
                 if (done) {
