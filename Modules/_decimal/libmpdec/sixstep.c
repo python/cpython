@@ -115,7 +115,8 @@ six_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum)
     }
     mpd_free(tparams);
 
-#if 0    /* An unordered transform is sufficient for convolution. */
+#if 0
+    /* An unordered transform is sufficient for convolution. */
     /* Transpose the matrix. */
     if (!transpose_pow2(a, R, C)) {
         return 0;
@@ -151,7 +152,8 @@ inv_six_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum)
     R = ((mpd_size_t)1) << (log2n - (log2n / 2)); /* number of rows */
 
 
-#if 0    /* An unordered transform is sufficient for convolution. */
+#if 0
+    /* An unordered transform is sufficient for convolution. */
     /* Transpose the matrix, producing an R*C matrix. */
     if (!transpose_pow2(a, C, R)) {
         return 0;
