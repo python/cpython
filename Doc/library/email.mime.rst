@@ -175,7 +175,7 @@ Here are the classes:
 
 .. currentmodule:: email.mime.text
 
-.. class:: MIMEText(_text, _subtype='plain', _charset='us-ascii')
+.. class:: MIMEText(_text, _subtype='plain', _charset=None)
 
    Module: :mod:`email.mime.text`
 
@@ -185,5 +185,5 @@ Here are the classes:
    minor type and defaults to :mimetype:`plain`.  *_charset* is the character
    set of the text and is passed as a parameter to the
    :class:`~email.mime.nonmultipart.MIMENonMultipart` constructor; it defaults
-   to ``us-ascii``.  No guessing or encoding is performed on the text data.
-
+   to ``us-ascii`` if the string contains only ``ascii`` codepoints, and
+   ``utf-8`` otherwise.

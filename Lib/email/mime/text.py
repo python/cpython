@@ -27,4 +27,14 @@ class MIMEText(MIMENonMultipart):
         """
         MIMENonMultipart.__init__(self, 'text', _subtype,
                                   **{'charset': _charset})
+
+        # If _charset was defualted, check to see see if there are non-ascii
+        # characters present. Default to utf-8 if there are.
+        # XXX: This can be removed once #7304 is fixed.
+        if _charset =='us-ascii':
+            try:
+                _text.encode(_charset)
+            except UnicodeEncodeError:
+                _charset = 'utf-8'
+
         self.set_payload(_text, _charset)

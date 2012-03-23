@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14380: MIMEText now defaults to utf-8 when passed non-ASCII unicode
+  with no charset specified.
+
 - Issue #10340: asyncore - properly handle EINVAL in dispatcher constructor on
   OSX; avoid to call handle_connect in case of a disconnected socket which
   was not meant to connect.
