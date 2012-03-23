@@ -617,6 +617,19 @@ class TestMessageAPI(TestEmailBase):
             abc
             """))
 
+    def test_unicode_body_defaults_to_utf8_encoding(self):
+        # Issue 14291
+        m = MIMEText('É testabc\n')
+        self.assertEqual(str(m),textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: base64
+
+            w4kgdGVzdGFiYwo=
+            """))
+
+
+
 # Test the email.encoders module
 class TestEncoders(unittest.TestCase):
 
@@ -642,7 +655,7 @@ class TestEncoders(unittest.TestCase):
         eq(msg['content-transfer-encoding'], '7bit')
         # Similar, but with 8bit data
         msg = MIMEText('hello \xf8 world')
-        eq(msg['content-transfer-encoding'], '8bit')
+        eq(msg['content-transfer-encoding'], 'base64')
         # And now with a different charset
         msg = MIMEText('hello \xf8 world', _charset='iso-8859-1')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
