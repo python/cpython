@@ -1,6 +1,17 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.3 final?
+=================================
+
+*Release date: 2012-XX-XX*
+
+Library
+-------
+
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
 
 What's New in Python 2.7.3 release candidate 2?
 ===============================================
@@ -112,9 +123,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
-  on Windows.
 
 - Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
   on 32-bit architectures. Initial patch by Philippe Devalkeneer.
