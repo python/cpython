@@ -1839,8 +1839,15 @@ def check_issue10777():
 # --------------------------------------------------------------------
 
 
-class ElementTreeTest(unittest.TestCase):
+class BasicElementTest(unittest.TestCase):
+    def test_augmentation_type_errors(self):
+        e = ET.Element('joe')
+        self.assertRaises(TypeError, e.append, 'b')
+        self.assertRaises(TypeError, e.extend, [ET.Element('bar'), 'foo'])
+        self.assertRaises(TypeError, e.insert, 0, 'foo')
 
+
+class ElementTreeTest(unittest.TestCase):
     def test_istype(self):
         self.assertIsInstance(ET.ParseError, type)
         self.assertIsInstance(ET.QName, type)
@@ -1879,7 +1886,6 @@ class ElementTreeTest(unittest.TestCase):
 
 
 class TreeBuilderTest(unittest.TestCase):
-
     sample1 = ('<!DOCTYPE html PUBLIC'
         ' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
         ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
@@ -1931,7 +1937,6 @@ class TreeBuilderTest(unittest.TestCase):
 
 
 class NoAcceleratorTest(unittest.TestCase):
-
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
         self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
@@ -2096,6 +2101,7 @@ def test_main(module=pyET):
 
     test_classes = [
         ElementSlicingTest,
+        BasicElementTest,
         StringIOTest,
         ParseErrorTest,
         ElementTreeTest,
