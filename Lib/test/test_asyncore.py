@@ -741,11 +741,15 @@ class BaseTestAPI(unittest.TestCase):
 
         for x in range(20):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(.2)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                          struct.pack('ii', 1, 0))
-            s.connect(server.address)
-            s.close()
-
+            try:
+                s.connect(server.address)
+            except socket.error:
+                pass
+            finally:
+                s.close()
 
 class TestAPI_UseSelect(BaseTestAPI):
     use_poll = False
