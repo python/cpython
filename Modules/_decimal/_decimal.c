@@ -143,7 +143,10 @@ typedef struct {
 /* Top level Exception; inherits from ArithmeticError */
 static PyObject *DecimalException = NULL;
 
-/* Exceptions that correspond to IEEE signals; inherit from DecimalException */
+/* Exceptions that correspond to IEEE signals */
+#define SUBNORMAL 5
+#define INEXACT 6
+#define ROUNDED 7
 #define SIGNAL_MAP_LEN 9
 static DecCondMap signal_map[] = {
   {"InvalidOperation", "decimal.InvalidOperation", MPD_IEEE_Invalid_operation, NULL},
@@ -5403,9 +5406,38 @@ PyInit__decimal(void)
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
 
     /* Add exceptions that correspond to IEEE signals */
-    for (cm=signal_map, i=0; cm->name != NULL; cm++, i++) {
-        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname,
-                                              DecimalException, NULL));
+    for (i = SIGNAL_MAP_LEN-1; i >= 0; i--) {
+        PyObject *base;
+
+        cm = signal_map + i;
+
+        switch (cm->flag) {
+        case MPD_Float_operation:
+            base = PyTuple_Pack(2, DecimalException, PyExc_TypeError);
+            break;
+        case MPD_Division_by_zero:
+            base = PyTuple_Pack(2, DecimalException, PyExc_ZeroDivisionError);
+            break;
+        case MPD_Overflow:
+            base = PyTuple_Pack(2, signal_map[INEXACT].ex,
+                                   signal_map[ROUNDED].ex);
+            break;
+        case MPD_Underflow:
+            base = PyTuple_Pack(3, signal_map[INEXACT].ex,
+                                   signal_map[ROUNDED].ex,
+                                   signal_map[SUBNORMAL].ex);
+            break;
+        default:
+            base = PyTuple_Pack(1, DecimalException);
+            break;
+        }
+
+        if (base == NULL) {
+            goto error;
+        }
+
+        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
+        Py_DECREF(base);
 
         /* add to module */
         Py_INCREF(cm->ex);
@@ -5425,8 +5457,20 @@ PyInit__decimal(void)
 
     /* Add remaining exceptions, inherit from InvalidOperation */
     for (cm = cond_map+1; cm->name != NULL; cm++) {
-        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname,
-                                              signal_map[0].ex, NULL));
+        PyObject *base;
+        if (cm->flag == MPD_Division_undefined) {
+            base = PyTuple_Pack(2, signal_map[0].ex, PyExc_ZeroDivisionError);
+        }
+        else {
+            base = PyTuple_Pack(1, signal_map[0].ex);
+        }
+        if (base == NULL) {
+            goto error;
+        }
+
+        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
+        Py_DECREF(base);
+
         Py_INCREF(cm->ex);
         CHECK_INT(PyModule_AddObject(m, cm->name, cm->ex));
     }
@@ -5472,6 +5516,7 @@ PyInit__decimal(void)
     for (ssize_cm = ssize_constants; ssize_cm->name != NULL; ssize_cm++) {
         ASSIGN_PTR(obj, PyLong_FromSsize_t(ssize_cm->val));
         CHECK_INT(PyModule_AddObject(m, ssize_cm->name, obj));
+        obj = NULL;
     }
 
     /* Init int constants */
@@ -5488,23 +5533,23 @@ PyInit__decimal(void)
 
 
 error:
-    Py_XDECREF(obj); /* GCOV_NOT_REACHED */
-    Py_XDECREF(numbers); /* GCOV_NOT_REACHED */
-    Py_XDECREF(Number); /* GCOV_NOT_REACHED */
-    Py_XDECREF(Rational); /* GCOV_NOT_REACHED */
-    Py_XDECREF(collections); /* GCOV_NOT_REACHED */
-    Py_XDECREF(MutableMapping); /* GCOV_NOT_REACHED */
-    Py_XDECREF(SignalTuple); /* GCOV_NOT_REACHED */
-    Py_XDECREF(DecimalTuple); /* GCOV_NOT_REACHED */
+    Py_CLEAR(obj); /* GCOV_NOT_REACHED */
+    Py_CLEAR(numbers); /* GCOV_NOT_REACHED */
+    Py_CLEAR(Number); /* GCOV_NOT_REACHED */
+    Py_CLEAR(Rational); /* GCOV_NOT_REACHED */
+    Py_CLEAR(collections); /* GCOV_NOT_REACHED */
+    Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
+    Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
+    Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */
 #ifdef WITHOUT_THREADS
-    Py_XDECREF(module_context); /* GCOV_NOT_REACHED */
+    Py_CLEAR(module_context); /* GCOV_NOT_REACHED */
 #else
-    Py_XDECREF(default_context_template); /* GCOV_NOT_REACHED */
-    Py_XDECREF(tls_context_key); /* GCOV_NOT_REACHED */
+    Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */
 #endif
-    Py_XDECREF(basic_context_template); /* GCOV_NOT_REACHED */
-    Py_XDECREF(extended_context_template); /* GCOV_NOT_REACHED */
-    Py_XDECREF(m); /* GCOV_NOT_REACHED */
+    Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return NULL; /* GCOV_NOT_REACHED */
 }

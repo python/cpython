@@ -391,7 +391,7 @@ class Underflow(Inexact, Rounded, Subnormal):
     In all cases, Inexact, Rounded, and Subnormal will also be raised.
     """
 
-class FloatOperation(DecimalException):
+class FloatOperation(DecimalException, TypeError):
     """Enable stricter semantics for mixing floats and Decimals.
 
     If the signal is not trapped (default), mixing floats and Decimals is
