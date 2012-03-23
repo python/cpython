@@ -621,13 +621,12 @@ class TestMessageAPI(TestEmailBase):
         # Issue 14291
         m = MIMEText('É testabc\n')
         self.assertEqual(str(m),textwrap.dedent("""\
-            MIME-Version: 1.0
             Content-Type: text/plain; charset="utf-8"
+            MIME-Version: 1.0
             Content-Transfer-Encoding: base64
 
             w4kgdGVzdGFiYwo=
             """))
-
 
 
 # Test the email.encoders module
