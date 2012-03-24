@@ -257,7 +257,7 @@ behave slightly differently from real Capsules.  Specifically:
     returns failure.  (Since there's no way to store a name
     in a CObject, noisy failure of :c:func:`PyCapsule_SetName`
     was deemed preferable to silent failure here.  If this is
-    inconveient, feel free to modify your local
+    inconvenient, feel free to modify your local
     copy as you see fit.)
 
 You can find :file:`capsulethunk.h` in the Python source distribution
