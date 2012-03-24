@@ -645,30 +645,30 @@ made available to Python as the :attr:`modulus` attribute of
 
 Here are the rules in detail:
 
- - If ``x = m / n`` is a nonnegative rational number and ``n`` is not divisible
-   by ``P``, define ``hash(x)`` as ``m * invmod(n, P) % P``, where ``invmod(n,
-   P)`` gives the inverse of ``n`` modulo ``P``.
+- If ``x = m / n`` is a nonnegative rational number and ``n`` is not divisible
+  by ``P``, define ``hash(x)`` as ``m * invmod(n, P) % P``, where ``invmod(n,
+  P)`` gives the inverse of ``n`` modulo ``P``.
 
- - If ``x = m / n`` is a nonnegative rational number and ``n`` is
-   divisible by ``P`` (but ``m`` is not) then ``n`` has no inverse
-   modulo ``P`` and the rule above doesn't apply; in this case define
-   ``hash(x)`` to be the constant value ``sys.hash_info.inf``.
+- If ``x = m / n`` is a nonnegative rational number and ``n`` is
+  divisible by ``P`` (but ``m`` is not) then ``n`` has no inverse
+  modulo ``P`` and the rule above doesn't apply; in this case define
+  ``hash(x)`` to be the constant value ``sys.hash_info.inf``.
 
- - If ``x = m / n`` is a negative rational number define ``hash(x)``
-   as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
-   ``-2``.
+- If ``x = m / n`` is a negative rational number define ``hash(x)``
+  as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
+  ``-2``.
 
- - The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
-   and ``sys.hash_info.nan`` are used as hash values for positive
-   infinity, negative infinity, or nans (respectively).  (All hashable
-   nans have the same hash value.)
+- The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
+  and ``sys.hash_info.nan`` are used as hash values for positive
+  infinity, negative infinity, or nans (respectively).  (All hashable
+  nans have the same hash value.)
 
- - For a :class:`complex` number ``z``, the hash values of the real
-   and imaginary parts are combined by computing ``hash(z.real) +
-   sys.hash_info.imag * hash(z.imag)``, reduced modulo
-   ``2**sys.hash_info.width`` so that it lies in
-   ``range(-2**(sys.hash_info.width - 1), 2**(sys.hash_info.width -
-   1))``.  Again, if the result is ``-1``, it's replaced with ``-2``.
+- For a :class:`complex` number ``z``, the hash values of the real
+  and imaginary parts are combined by computing ``hash(z.real) +
+  sys.hash_info.imag * hash(z.imag)``, reduced modulo
+  ``2**sys.hash_info.width`` so that it lies in
+  ``range(-2**(sys.hash_info.width - 1), 2**(sys.hash_info.width -
+  1))``.  Again, if the result is ``-1``, it's replaced with ``-2``.
 
 
 To clarify the above rules, here's some example Python code,
