@@ -36,19 +36,9 @@ except ImportError:
     multiprocessing = None
 
 try:
-    import faulthandler
-except ImportError:
-    faulthandler = None
-
-try:
     import zlib
 except ImportError:
     zlib = None
-
-try:
-    import fcntl
-except ImportError:
-    fcntl = None
 
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
@@ -1151,62 +1141,26 @@ class _MemoryWatchdog:
     def __init__(self):
         self.procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
         self.started = False
-        self.thread = None
-        try:
-            self.page_size = os.sysconf('SC_PAGESIZE')
-        except (ValueError, AttributeError):
-            try:
-                self.page_size = os.sysconf('SC_PAGE_SIZE')
-            except (ValueError, AttributeError):
-                self.page_size = 4096
-
-    def consumer(self, fd):
-        HEADER = "l"
-        header_size = struct.calcsize(HEADER)
-        try:
-            while True:
-                header = os.read(fd, header_size)
-                if len(header) < header_size:
-                    # Pipe closed on other end
-                    break
-                data_len, = struct.unpack(HEADER, header)
-                data = os.read(fd, data_len)
-                statm = data.decode('ascii')
-                data = int(statm.split()[5])
-                print(" ... process data size: {data:.1f}G"
-                       .format(data=data * self.page_size / (1024 ** 3)))
-        finally:
-            os.close(fd)
 
     def start(self):
-        if not faulthandler or not hasattr(faulthandler, '_file_watchdog'):
-            return
         try:
-            rfd = os.open(self.procfile, os.O_RDONLY)
+            f = open(self.procfile, 'r')
         except OSError as e:
             warnings.warn('/proc not available for stats: {}'.format(e),
                           RuntimeWarning)
             sys.stderr.flush()
             return
-        pipe_fd, wfd = os.pipe()
-        # set the write end of the pipe non-blocking to avoid blocking the
-        # watchdog thread when the consumer doesn't drain the pipe fast enough
-        if fcntl:
-            flags = fcntl.fcntl(wfd, fcntl.F_GETFL)
-            fcntl.fcntl(wfd, fcntl.F_SETFL, flags|os.O_NONBLOCK)
-        # _file_watchdog() doesn't take the GIL in its child thread, and
-        # therefore collects statistics timely
-        faulthandler._file_watchdog(rfd, wfd, 1.0)
+
+        watchdog_script = findfile("memory_watchdog.py")
+        self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
+                                             stdin=f, stderr=subprocess.DEVNULL)
+        f.close()
         self.started = True
-        self.thread = threading.Thread(target=self.consumer, args=(pipe_fd,))
-        self.thread.daemon = True
-        self.thread.start()
 
     def stop(self):
-        if not self.started:
-            return
-        faulthandler._cancel_file_watchdog()
-        self.thread.join()
+        if self.started:
+            self.mem_watchdog.terminate()
+            self.mem_watchdog.wait()
 
 
 def bigmemtest(size, memuse, dry_run=True):
@@ -1234,7 +1188,7 @@ def bigmemtest(size, memuse, dry_run=True):
                     "not enough memory: %.1fG minimum needed"
                     % (size * memuse / (1024 ** 3)))
 
-            if real_max_memuse and verbose and faulthandler and threading:
+            if real_max_memuse and verbose:
                 print()
                 print(" ... expected peak memory use: {peak:.1f}G"
                       .format(peak=size * memuse / (1024 ** 3)))
