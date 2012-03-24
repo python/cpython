@@ -754,9 +754,10 @@ the more significant byte last.
 
 .. opcode:: MAKE_FUNCTION (argc)
 
-   Pushes a new function object on the stack.  TOS is the code associated with the
-   function.  The function object is defined to have *argc* default parameters,
-   which are found below TOS.
+   Pushes a new function object on the stack.  TOS is the
+   :term:`qualified name` of the function; TOS1 is the code associated with
+   the function.  The function object is defined to have *argc* default parameters,
+   which are found below TOS1.
 
 
 .. opcode:: MAKE_CLOSURE (argc)
