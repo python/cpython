@@ -1086,12 +1086,6 @@ class _patch(object):
                     patching.__exit__(*exc_info)
 
         patched.patchings = [self]
-        if hasattr(func, 'func_code'):
-            # not in Python 3
-            patched.compat_co_firstlineno = getattr(
-                func, "compat_co_firstlineno",
-                func.func_code.co_firstlineno
-            )
         return patched
 
 
