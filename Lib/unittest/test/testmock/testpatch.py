@@ -11,14 +11,15 @@ from unittest.test.testmock.support import SomeClass, is_instance
 
 from unittest.mock import (
     NonCallableMock, CallableMixin, patch, sentinel,
-    MagicMock, Mock, NonCallableMagicMock, patch,
-    DEFAULT, call
+    MagicMock, Mock, NonCallableMagicMock, patch, _patch,
+    DEFAULT, call, _get_target
 )
 
 
 builtin_string = 'builtins'
 
 PTModule = sys.modules[__name__]
+MODNAME = '%s.PTModule' % __name__
 
 
 def _get_proxy(obj, get_only=True):
@@ -724,8 +725,8 @@ class PatchTest(unittest.TestCase):
         patcher = patch('%s.something' % __name__)
         self.assertIs(something, original)
         mock = patcher.start()
-        self.assertIsNot(mock, original)
         try:
+            self.assertIsNot(mock, original)
             self.assertIs(something, mock)
         finally:
             patcher.stop()
@@ -744,8 +745,8 @@ class PatchTest(unittest.TestCase):
         patcher = patch.object(PTModule, 'something', 'foo')
         self.assertIs(something, original)
         replaced = patcher.start()
-        self.assertEqual(replaced, 'foo')
         try:
+            self.assertEqual(replaced, 'foo')
             self.assertIs(something, replaced)
         finally:
             patcher.stop()
@@ -759,9 +760,10 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(d, original)
 
         patcher.start()
-        self.assertEqual(d, {'spam': 'eggs'})
-
-        patcher.stop()
+        try:
+            self.assertEqual(d, {'spam': 'eggs'})
+        finally:
+            patcher.stop()
         self.assertEqual(d, original)
 
 
@@ -1645,6 +1647,99 @@ class PatchTest(unittest.TestCase):
         p1.start()
         p1.stop()
         self.assertEqual(squizz.squozz, 3)
+
+
+    def test_patch_propogrates_exc_on_exit(self):
+        class holder:
+            exc_info = None, None, None
+
+        class custom_patch(_patch):
+            def __exit__(self, etype=None, val=None, tb=None):
+                _patch.__exit__(self, etype, val, tb)
+                holder.exc_info = etype, val, tb
+            stop = __exit__
+
+        def with_custom_patch(target):
+            getter, attribute = _get_target(target)
+            return custom_patch(
+                getter, attribute, DEFAULT, None, False, None,
+                None, None, {}
+            )
+
+        @with_custom_patch('squizz.squozz')
+        def test(mock):
+            raise RuntimeError
+
+        self.assertRaises(RuntimeError, test)
+        self.assertIs(holder.exc_info[0], RuntimeError)
+        self.assertIsNotNone(holder.exc_info[1],
+                            'exception value not propgated')
+        self.assertIsNotNone(holder.exc_info[2],
+                            'exception traceback not propgated')
+
+
+    def test_create_and_specs(self):
+        for kwarg in ('spec', 'spec_set', 'autospec'):
+            p = patch('%s.doesnotexist' % __name__, create=True,
+                      **{kwarg: True})
+            self.assertRaises(TypeError, p.start)
+            self.assertRaises(NameError, lambda: doesnotexist)
+
+            # check that spec with create is innocuous if the original exists
+            p = patch(MODNAME, create=True, **{kwarg: True})
+            p.start()
+            p.stop()
+
+
+    def test_multiple_specs(self):
+        original = PTModule
+        for kwarg in ('spec', 'spec_set'):
+            p = patch(MODNAME, autospec=0, **{kwarg: 0})
+            self.assertRaises(TypeError, p.start)
+            self.assertIs(PTModule, original)
+
+        for kwarg in ('spec', 'autospec'):
+            p = patch(MODNAME, spec_set=0, **{kwarg: 0})
+            self.assertRaises(TypeError, p.start)
+            self.assertIs(PTModule, original)
+
+        for kwarg in ('spec_set', 'autospec'):
+            p = patch(MODNAME, spec=0, **{kwarg: 0})
+            self.assertRaises(TypeError, p.start)
+            self.assertIs(PTModule, original)
+
+
+    def test_specs_false_instead_of_none(self):
+        p = patch(MODNAME, spec=False, spec_set=False, autospec=False)
+        mock = p.start()
+        try:
+            # no spec should have been set, so attribute access should not fail
+            mock.does_not_exist
+            mock.does_not_exist = 3
+        finally:
+            p.stop()
+
+
+    def test_falsey_spec(self):
+        for kwarg in ('spec', 'autospec', 'spec_set'):
+            p = patch(MODNAME, **{kwarg: 0})
+            m = p.start()
+            try:
+                self.assertRaises(AttributeError, getattr, m, 'doesnotexit')
+            finally:
+                p.stop()
+
+
+    def test_spec_set_true(self):
+        for kwarg in ('spec', 'autospec'):
+            p = patch(MODNAME, spec_set=True, **{kwarg: True})
+            m = p.start()
+            try:
+                self.assertRaises(AttributeError, setattr, m,
+                                  'doesnotexist', 'something')
+                self.assertRaises(AttributeError, getattr, m, 'doesnotexist')
+            finally:
+                p.stop()
 
 
 

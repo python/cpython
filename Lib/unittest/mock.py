@@ -998,7 +998,7 @@ class _patch(object):
                 raise ValueError(
                     "Cannot use 'new' and 'new_callable' together"
                 )
-            if autospec is not False:
+            if autospec is not None:
                 raise ValueError(
                     "Cannot use 'autospec' and 'new_callable' together"
                 )
@@ -1059,6 +1059,7 @@ class _patch(object):
             extra_args = []
             entered_patchers = []
 
+            exc_info = tuple()
             try:
                 for patching in patched.patchings:
                     arg = patching.__enter__()
@@ -1076,11 +1077,13 @@ class _patch(object):
                     # the patcher may have been started, but an exception
                     # raised whilst entering one of its additional_patchers
                     entered_patchers.append(patching)
+                # Pass the exception to __exit__
+                exc_info = sys.exc_info()
                 # re-raise the exception
                 raise
             finally:
                 for patching in reversed(entered_patchers):
-                    patching.__exit__()
+                    patching.__exit__(*exc_info)
 
         patched.patchings = [self]
         if hasattr(func, 'func_code'):
@@ -1120,17 +1123,40 @@ class _patch(object):
         new_callable = self.new_callable
         self.target = self.getter()
 
+        # normalise False to None
+        if spec is False:
+            spec = None
+        if spec_set is False:
+            spec_set = None
+        if autospec is False:
+            autospec = None
+
+        if spec is not None and autospec is not None:
+            raise TypeError("Can't specify spec and autospec")
+        if ((spec is not None or autospec is not None) and
+            spec_set not in (True, None)):
+            raise TypeError("Can't provide explicit spec_set *and* spec or autospec")
+
         original, local = self.get_original()
 
-        if new is DEFAULT and autospec is False:
+        if new is DEFAULT and autospec is None:
             inherit = False
-            if spec_set == True:
-                spec_set = original
-            elif spec == True:
+            if spec is True:
                 # set spec to the object we are replacing
                 spec = original
+                if spec_set is True:
+                    spec_set = original
+                    spec = None
+            elif spec is not None:
+                if spec_set is True:
+                    spec_set = spec
+                    spec = None
+            elif spec_set is True:
+                spec_set = original
 
-            if (spec or spec_set) is not None:
+            if spec is not None or spec_set is not None:
+                if original is DEFAULT:
+                    raise TypeError("Can't use 'spec' with create=True")
                 if isinstance(original, type):
                     # If we're patching out a class and there is a spec
                     inherit = True
@@ -1139,7 +1165,7 @@ class _patch(object):
             _kwargs = {}
             if new_callable is not None:
                 Klass = new_callable
-            elif (spec or spec_set) is not None:
+            elif spec is not None or spec_set is not None:
                 if not _callable(spec or spec_set):
                     Klass = NonCallableMagicMock
 
@@ -1159,14 +1185,17 @@ class _patch(object):
             if inherit and _is_instance_mock(new):
                 # we can only tell if the instance should be callable if the
                 # spec is not a list
-                if (not _is_list(spec or spec_set) and not
-                    _instance_callable(spec or spec_set)):
+                this_spec = spec
+                if spec_set is not None:
+                    this_spec = spec_set
+                if (not _is_list(this_spec) and not
+                    _instance_callable(this_spec)):
                     Klass = NonCallableMagicMock
 
                 _kwargs.pop('name')
                 new.return_value = Klass(_new_parent=new, _new_name='()',
                                          **_kwargs)
-        elif autospec is not False:
+        elif autospec is not None:
             # spec is ignored, new *must* be default, spec_set is treated
             # as a boolean. Should we check spec is not None and that spec_set
             # is a bool?
@@ -1175,6 +1204,8 @@ class _patch(object):
                     "autospec creates the mock for you. Can't specify "
                     "autospec and new."
                 )
+            if original is DEFAULT:
+                raise TypeError("Can't use 'spec' with create=True")
             spec_set = bool(spec_set)
             if autospec is True:
                 autospec = original
@@ -1204,7 +1235,7 @@ class _patch(object):
         return new
 
 
-    def __exit__(self, *_):
+    def __exit__(self, *exc_info):
         """Undo the patch."""
         if not _is_started(self):
             raise RuntimeError('stop called on unstarted patcher')
@@ -1222,7 +1253,7 @@ class _patch(object):
         del self.target
         for patcher in reversed(self.additional_patchers):
             if _is_started(patcher):
-                patcher.__exit__()
+                patcher.__exit__(*exc_info)
 
     start = __enter__
     stop = __exit__
@@ -1241,14 +1272,10 @@ def _get_target(target):
 
 def _patch_object(
         target, attribute, new=DEFAULT, spec=None,
-        create=False, spec_set=None, autospec=False,
+        create=False, spec_set=None, autospec=None,
         new_callable=None, **kwargs
     ):
     """
-    patch.object(target, attribute, new=DEFAULT, spec=None, create=False,
-                 spec_set=None, autospec=False,
-                 new_callable=None, **kwargs)
-
     patch the named member (`attribute`) on an object (`target`) with a mock
     object.
 
@@ -1268,10 +1295,8 @@ def _patch_object(
     )
 
 
-def _patch_multiple(target, spec=None, create=False,
-        spec_set=None, autospec=False,
-        new_callable=None, **kwargs
-    ):
+def _patch_multiple(target, spec=None, create=False, spec_set=None,
+                    autospec=None, new_callable=None, **kwargs):
     """Perform multiple patches in a single call. It takes the object to be
     patched (either as an object or a string to fetch the object by importing)
     and keyword arguments for the patches::
@@ -1321,8 +1346,7 @@ def _patch_multiple(target, spec=None, create=False,
 
 def patch(
         target, new=DEFAULT, spec=None, create=False,
-        spec_set=None, autospec=False,
-        new_callable=None, **kwargs
+        spec_set=None, autospec=None, new_callable=None, **kwargs
     ):
     """
     `patch` acts as a function decorator, class decorator or a context
@@ -2079,7 +2103,7 @@ def _get_class(obj):
     try:
         return obj.__class__
     except AttributeError:
-        # in Python 2, _sre.SRE_Pattern objects have no __class__
+        # it is possible for objects to have no __class__
         return type(obj)
 
 
