@@ -1,0 +1,170 @@
+@import url("default.css");
+
+body {
+    background-color: white;
+    margin-left: 1em;
+    margin-right: 1em;
+}
+
+div.related {
+    margin-bottom: 1.2em;
+    padding: 0.5em 0;
+    border-top: 1px solid #ccc;
+    margin-top: 0.5em;
+}
+
+div.related a:hover {
+    color: #0095C4;
+}
+
+div.related:first-child {
+    border-top: 0;
+    border-bottom: 1px solid #ccc;
+}
+
+div.sphinxsidebar {
+    background-color: #eeeeee;
+    border-radius: 5px;
+    line-height: 130%;
+    font-size: smaller;
+}
+
+div.sphinxsidebar h3, div.sphinxsidebar h4 {
+    margin-top: 1.5em;
+}
+
+div.sphinxsidebarwrapper > h3:first-child {
+    margin-top: 0.2em;
+}
+
+div.sphinxsidebarwrapper > ul > li > ul > li {
+    margin-bottom: 0.4em;
+}
+
+div.sphinxsidebar a:hover {
+    color: #0095C4;
+}
+
+div.sphinxsidebar input {
+    font-family: 'Lucida Grande',Arial,sans-serif;
+    border: 1px solid #999999;
+    font-size: smaller;
+    border-radius: 3px;
+}
+
+div.sphinxsidebar input[type=text] {
+    max-width: 150px;
+}
+
+div.body {
+    padding: 0 0 0 1.2em;
+}
+
+div.body p {
+    line-height: 140%;
+}
+
+div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6 {
+    margin: 0;
+    border: 0;
+    padding: 0.3em 0;
+}
+
+div.body hr {
+    border: 0;
+    background-color: #ccc;
+    height: 1px;
+}
+
+div.body pre {
+    border-radius: 3px;
+    border: 1px solid #ac9;
+}
+
+div.body div.admonition, div.body div.impl-detail {
+    border-radius: 3px;
+}
+
+div.body div.impl-detail > p {
+    margin: 0;
+}
+
+div.body div.seealso {
+    border: 1px solid #dddd66;
+}
+
+div.body a {
+    color: #00608f;
+}
+
+div.body a:visited {
+    color: #30306f;
+}
+
+div.body a:hover {
+    color: #00B0E4;
+}
+
+tt, pre {
+    font-family: monospace, sans-serif;
+    font-size: 96.5%;
+}
+
+div.body tt {
+    border-radius: 3px;
+}
+
+div.body tt.descname {
+    font-size: 120%;
+}
+
+div.body tt.xref, div.body a tt {
+    font-weight: normal;
+}
+
+p.deprecated {
+    border-radius: 3px;
+}
+
+table.docutils {
+    border: 1px solid #ddd;
+    min-width: 20%;
+    border-radius: 3px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+table.docutils td, table.docutils th {
+    border: 1px solid #ddd !important;
+    border-radius: 3px;
+}
+
+table p, table li {
+    text-align: left !important;
+}
+
+table.docutils th {
+    background-color: #eee;
+    padding: 0.3em 0.5em;
+}
+
+table.docutils td {
+    background-color: white;
+    padding: 0.3em 0.5em;
+}
+
+table.footnote, table.footnote td {
+    border: 0 !important;
+}
+
+div.footer {
+    line-height: 150%;
+    margin-top: -2em;
+    text-align: right;
+    width: auto;
+    margin-right: 10px;
+}
+
+div.footer a:hover {
+    color: #0095C4;
+}
