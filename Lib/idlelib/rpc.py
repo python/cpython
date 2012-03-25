@@ -40,6 +40,7 @@ import traceback
 import copyreg
 import types
 import marshal
+import builtins
 
 
 def unpickle_code(ms):
@@ -603,3 +604,21 @@ class MethodProxy(object):
 
 # XXX KBK 09Sep03  We need a proper unit test for this module.  Previously
 #                  existing test code was removed at Rev 1.27 (r34098).
+
+def displayhook(value):
+    """Override standard display hook to use non-locale encoding"""
+    if value is None:
+        return
+    # Set '_' to None to avoid recursion
+    builtins._ = None
+    text = repr(value)
+    try:
+        sys.stdout.write(text)
+    except UnicodeEncodeError:
+        # let's use ascii while utf8-bmp codec doesn't present
+        encoding = 'ascii'
+        bytes = text.encode(encoding, 'backslashreplace')
+        text = bytes.decode(encoding, 'strict')
+        sys.stdout.write(text)
+    sys.stdout.write("\n")
+    builtins._ = value
