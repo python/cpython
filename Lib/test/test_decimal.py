@@ -3837,7 +3837,7 @@ class CheckAttributes(unittest.TestCase):
 
         x = dir(C)
         y = [s for s in dir(P) if '__' in s or not s.startswith('_')]
-        self.assertEqual(set(x) - set(y), {'MallocError'})
+        self.assertEqual(set(x) - set(y), set())
 
     def test_context_attributes(self):
 
