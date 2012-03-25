@@ -2141,7 +2141,8 @@ FunctionAttributes = set([
 
 file_spec = None
 
-def mock_open(mock=None, read_data=None):
+
+def mock_open(mock=None, read_data=''):
     """
     A helper function to create a mock to replace the use of `open`. It works
     for `open` called directly or used as a context manager.
@@ -2159,14 +2160,12 @@ def mock_open(mock=None, read_data=None):
         file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
     if mock is None:
-        mock = MagicMock(spec=file_spec)
+        mock = MagicMock(name='open', spec=open)
 
     handle = MagicMock(spec=file_spec)
     handle.write.return_value = None
     handle.__enter__.return_value = handle
-
-    if read_data is not None:
-        handle.read.return_value = read_data
+    handle.read.return_value = read_data
 
     mock.return_value = handle
     return mock
