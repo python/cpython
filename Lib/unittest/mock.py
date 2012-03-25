@@ -1205,7 +1205,7 @@ class _patch(object):
                     "autospec and new."
                 )
             if original is DEFAULT:
-                raise TypeError("Can't use 'spec' with create=True")
+                raise TypeError("Can't use 'autospec' with create=True")
             spec_set = bool(spec_set)
             if autospec is True:
                 autospec = original
@@ -2142,6 +2142,17 @@ FunctionAttributes = set([
 file_spec = None
 
 def mock_open(mock=None, read_data=None):
+    """
+    A helper function to create a mock to replace the use of `open`. It works
+    for `open` called directly or used as a context manager.
+
+    The `mock` argument is the mock object to configure. If `None` (the
+    default) then a `MagicMock` will be created for you, with the API limited
+    to methods or attributes available on standard file handles.
+
+    `read_data` is a string for the `read` method of the file handle to return.
+    This is an empty string by default.
+    """
     global file_spec
     if file_spec is None:
         import _io
@@ -2162,7 +2173,14 @@ def mock_open(mock=None, read_data=None):
 
 
 class PropertyMock(Mock):
-    """A Mock variant with __get__ and __set__ methods to act as a property"""
+    """
+    A mock intended to be used as a property, or other descriptor, on a class.
+    `PropertyMock` provides `__get__` and `__set__` methods so you can specify
+    a return value when it is fetched.
+
+    Fetching a `PropertyMock` instance from an object calls the mock, with
+    no args. Setting it calls the mock with the value being set.
+    """
     def __get__(self, obj, obj_type):
         return self()
     def __set__(self, obj, val):
