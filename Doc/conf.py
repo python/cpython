@@ -65,8 +65,11 @@ highlight_language = 'python3'
 # Options for HTML output
 # -----------------------
 
-html_theme = 'default'
+html_theme = 'pydoctheme'
+html_theme_path = ['tools/sphinxext']
 html_theme_options = {'collapsiblesidebar': True}
+
+html_short_title = '%s Documentation' % release
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
