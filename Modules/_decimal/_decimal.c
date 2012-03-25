@@ -168,7 +168,9 @@ static DecCondMap cond_map[] = {
   {"DivisionImpossible", "decimal.DivisionImpossible", MPD_Division_impossible, NULL},
   {"DivisionUndefined", "decimal.DivisionUndefined", MPD_Division_undefined, NULL},
   {"InvalidContext", "decimal.InvalidContext", MPD_Invalid_context, NULL},
+#ifdef EXTRA_FUNCTIONALITY
   {"MallocError", "decimal.MallocError", MPD_Malloc_error, NULL},
+#endif
   {NULL}
 };
 
@@ -466,8 +468,13 @@ dec_addstatus(PyObject *context, uint32_t status)
     mpd_context_t *ctx = CTX(context);
 
     ctx->status |= status;
-    if (ctx->traps&status) {
+    if (status & (ctx->traps|MPD_Malloc_error)) {
         PyObject *ex, *siglist;
+
+        if (status & MPD_Malloc_error) {
+            PyErr_NoMemory();
+            return 1;
+        }
 
         ex = flags_as_exception(ctx->traps&status);
         if (ex == NULL) {
