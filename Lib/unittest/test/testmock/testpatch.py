@@ -1742,6 +1742,26 @@ class PatchTest(unittest.TestCase):
                 p.stop()
 
 
+    def test_callable_spec_as_list(self):
+        spec = ('__call__',)
+        p = patch(MODNAME, spec=spec)
+        m = p.start()
+        try:
+            self.assertTrue(callable(m))
+        finally:
+            p.stop()
+
+
+    def test_not_callable_spec_as_list(self):
+        spec = ('foo', 'bar')
+        p = patch(MODNAME, spec=spec)
+        m = p.start()
+        try:
+            self.assertFalse(callable(m))
+        finally:
+            p.stop()
+
+
 
 if __name__ == '__main__':
     unittest.main()
