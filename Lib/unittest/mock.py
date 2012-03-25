@@ -1577,11 +1577,9 @@ right = ' '.join('r%s' % n for n in numerics.split())
 # __del__ is not supported at all as it causes problems if it exists
 
 _non_defaults = set('__%s__' % method for method in [
-    'cmp', 'getslice', 'setslice', 'coerce', 'subclasses',
-    'format', 'get', 'set', 'delete', 'reversed',
-    'missing', 'reduce', 'reduce_ex', 'getinitargs',
-    'getnewargs', 'getstate', 'setstate', 'getformat',
-    'setformat', 'repr', 'dir'
+    'get', 'set', 'delete', 'reversed', 'missing', 'reduce', 'reduce_ex',
+    'getinitargs', 'getnewargs', 'getstate', 'setstate', 'getformat',
+    'setformat', 'repr', 'dir', 'subclasses', 'format',
 ])
 
 
