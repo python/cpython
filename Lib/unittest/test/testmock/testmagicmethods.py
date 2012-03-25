@@ -156,6 +156,19 @@ class TestMockingMagicMethods(unittest.TestCase):
         self. assertTrue(mock <= 3)
         self. assertTrue(mock >= 3)
 
+        self.assertRaises(TypeError, lambda: MagicMock() < object())
+        self.assertRaises(TypeError, lambda: object() < MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() < MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() > object())
+        self.assertRaises(TypeError, lambda: object() > MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() > MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() <= object())
+        self.assertRaises(TypeError, lambda: object() <= MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() <= MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() >= object())
+        self.assertRaises(TypeError, lambda: object() >= MagicMock())
+        self.assertRaises(TypeError, lambda: MagicMock() >= MagicMock())
+
 
     def test_equality(self):
         for mock in Mock(), MagicMock():

@@ -167,16 +167,15 @@ def _set_signature(mock, original, instance=False):
     signature, func = result
 
     src = "lambda %s: None" % signature
-    context = {'_mock_': mock}
-    checksig = eval(src, context)
+    checksig = eval(src, {})
     _copy_func_details(func, checksig)
 
     name = original.__name__
     if not name.isidentifier():
         name = 'funcopy'
-    context = {'checksig': checksig, 'mock': mock}
+    context = {'_checksig_': checksig, 'mock': mock}
     src = """def %s(*args, **kwargs):
-    checksig(*args, **kwargs)
+    _checksig_(*args, **kwargs)
     return mock(*args, **kwargs)""" % name
     exec (src, context)
     funcopy = context[name]
@@ -620,14 +619,16 @@ class NonCallableMock(Base):
 
     def __dir__(self):
         """Filter the output of `dir(mock)` to only useful members."""
+        if not FILTER_DIR:
+            return object.__dir__(self)
+
         extras = self._mock_methods or []
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
 
-        if FILTER_DIR:
-            from_type = [e for e in from_type if not e.startswith('_')]
-            from_dict = [e for e in from_dict if not e.startswith('_') or
-                         _is_magic(e)]
+        from_type = [e for e in from_type if not e.startswith('_')]
+        from_dict = [e for e in from_dict if not e.startswith('_') or
+                     _is_magic(e)]
         return sorted(set(extras + from_type + from_dict +
                           list(self._mock_children)))
 
@@ -1582,6 +1583,10 @@ _calculate_return_value = {
 }
 
 _return_values = {
+    '__lt__': NotImplemented,
+    '__gt__': NotImplemented,
+    '__le__': NotImplemented,
+    '__ge__': NotImplemented,
     '__int__': 1,
     '__contains__': False,
     '__len__': 0,
@@ -2000,7 +2005,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _parent._mock_children[_name] = mock
 
     if is_type and not instance and 'return_value' not in kwargs:
-        # XXXX could give a name to the return_value mock?
         mock.return_value = create_autospec(spec, spec_set, instance=True,
                                             _name='()', _parent=mock)
 
