@@ -2037,10 +2037,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             # MagicMock already does the useful magic methods for us
             continue
 
-        if isinstance(spec, FunctionTypes) and entry in FunctionAttributes:
-            # allow a mock to actually be a function
-            continue
-
         # XXXX do we need a better way of getting attributes without
         # triggering code execution (?) Probably not - we need the actual
         # object to mock it so we would rather trigger a property than mock
@@ -2127,16 +2123,6 @@ FunctionTypes = (
     # unbound method
     type(_ANY.__eq__),
 )
-
-FunctionAttributes = set([
-    'func_closure',
-    'func_code',
-    'func_defaults',
-    'func_dict',
-    'func_doc',
-    'func_globals',
-    'func_name',
-])
 
 
 file_spec = None
