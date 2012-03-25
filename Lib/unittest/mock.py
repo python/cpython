@@ -1166,7 +1166,14 @@ class _patch(object):
             if new_callable is not None:
                 Klass = new_callable
             elif spec is not None or spec_set is not None:
-                if not _callable(spec or spec_set):
+                this_spec = spec
+                if spec_set is not None:
+                    this_spec = spec_set
+                if _is_list(this_spec):
+                    not_callable = '__call__' not in this_spec
+                else:
+                    not_callable = not callable(this_spec)
+                if not_callable:
                     Klass = NonCallableMagicMock
 
             if spec is not None:
