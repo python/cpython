@@ -19,5 +19,11 @@ The list of modules described in this chapter is:
    pydoc.rst
    doctest.rst
    unittest.rst
+   unittest.mock.rst
+   unittest.mock-patch.rst
+   unittest.mock-magicmethods.rst
+   unittest.mock-helpers.rst
+   unittest.mock-getting-started.rst
+   unittest.mock-examples.rst
    2to3.rst
    test.rst
