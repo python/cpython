@@ -2120,8 +2120,6 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
-    # unbound method
-    type(_ANY.__eq__),
 )
 
 
