@@ -6,7 +6,6 @@ import traceback
 import _thread as thread
 import threading
 import queue
-import builtins
 
 from idlelib import CallTips
 from idlelib import AutoComplete
@@ -262,25 +261,6 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
 
 
-def displayhook(value):
-    """Override standard display hook to use non-locale encoding"""
-    if value is None:
-        return
-    # Set '_' to None to avoid recursion
-    builtins._ = None
-    text = repr(value)
-    try:
-        sys.stdout.write(text)
-    except UnicodeEncodeError:
-        # let's use ascii while utf8-bmp codec doesn't present
-        encoding = 'ascii'
-        bytes = text.encode(encoding, 'backslashreplace')
-        text = bytes.decode(encoding, 'strict')
-        sys.stdout.write(text)
-    sys.stdout.write("\n")
-    builtins._ = value
-
-
 class MyHandler(rpc.RPCHandler):
 
     def handle(self):
@@ -290,7 +270,7 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
-        sys.displayhook = displayhook
+        sys.displayhook = rpc.displayhook
         # page help() text to shell.
         import pydoc # import must be done here to capture i/o binding
         pydoc.pager = pydoc.plainpager
