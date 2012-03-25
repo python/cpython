@@ -2138,11 +2138,15 @@ FunctionAttributes = set([
     'func_name',
 ])
 
-import _io
-file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
+file_spec = None
 
 def mock_open(mock=None, read_data=None):
+    global file_spec
+    if file_spec is None:
+        import _io
+        file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
+
     if mock is None:
         mock = MagicMock(spec=file_spec)
 
