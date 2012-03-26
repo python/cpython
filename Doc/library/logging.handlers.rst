@@ -704,7 +704,7 @@ The :class:`SMTPHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to an email address via SMTP.
 
 
-.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None, secure=None)
+.. class:: SMTPHandler(mailhost, fromaddr, toaddrs, subject, credentials=None, secure=None, timeout=1.0)
 
    Returns a new instance of the :class:`SMTPHandler` class. The instance is
    initialized with the from and to addresses and subject line of the email. The
@@ -719,6 +719,12 @@ supports sending logging messages to an email address via SMTP.
    with the name of a keyfile, or a 2-value tuple with the names of the keyfile
    and certificate file. (This tuple is passed to the
    :meth:`smtplib.SMTP.starttls` method.)
+
+   A timeout can be specified for communication with the SMTP server using the
+   *timeout* argument.
+
+   .. versionadded:: 3.3
+      The *timeout* argument was added.
 
    .. method:: emit(record)
 
@@ -744,7 +750,7 @@ event of a certain severity or greater is seen.
 :class:`BufferingHandler`, which is an abstract class. This buffers logging
 records in memory. Whenever each record is added to the buffer, a check is made
 by calling :meth:`shouldFlush` to see if the buffer should be flushed.  If it
-should, then :meth:`flush` is expected to do the needful.
+should, then :meth:`flush` is expected to do the flushing.
 
 
 .. class:: BufferingHandler(capacity)
