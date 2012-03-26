@@ -822,6 +822,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     PyObject *names;
     PyObject *consts;
 
+    _Py_IDENTIFIER(__ltrace__);
+
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
    using gcc's labels-as-values extension
@@ -1198,7 +1200,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     }
 
 #ifdef LLTRACE
-    lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
+    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
 #endif
 
     why = WHY_NOT;
@@ -1926,8 +1928,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             break;
 
         TARGET(LOAD_BUILD_CLASS)
-            x = PyDict_GetItemString(f->f_builtins,
-                                     "__build_class__");
+        {
+            _Py_IDENTIFIER(__build_class__);
+            x = _PyDict_GetItemId(f->f_builtins, &PyId___build_class__);
             if (x == NULL) {
                 PyErr_SetString(PyExc_ImportError,
                                 "__build_class__ not found");
@@ -1936,6 +1939,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             Py_INCREF(x);
             PUSH(x);
             break;
+        }
 
         TARGET(STORE_NAME)
             w = GETITEM(names, oparg);
@@ -2283,8 +2287,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
 
         TARGET(IMPORT_NAME)
+        {
+            _Py_IDENTIFIER(__import__);
             w = GETITEM(names, oparg);
-            x = PyDict_GetItemString(f->f_builtins, "__import__");
+            x = _PyDict_GetItemId(f->f_builtins, &PyId___import__);
             if (x == NULL) {
                 PyErr_SetString(PyExc_ImportError,
                                 "__import__ not found");
@@ -2325,6 +2331,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             SET_TOP(x);
             if (x != NULL) DISPATCH();
             break;
+        }
 
         TARGET(IMPORT_STAR)
             v = POP();
