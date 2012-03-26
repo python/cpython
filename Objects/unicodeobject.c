@@ -1820,7 +1820,7 @@ _PyUnicode_ClearStaticStrings()
     }
 }
 
-/* Internal function, don't check maximum character */
+/* Internal function, doesn't check maximum character */
 
 static PyObject*
 unicode_fromascii(const unsigned char* s, Py_ssize_t size)
