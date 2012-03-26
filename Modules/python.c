@@ -22,9 +22,9 @@ extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
 int
 main(int argc, char **argv)
 {
-    wchar_t **argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*argc);
+    wchar_t **argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
     /* We need a second copies, as Python might modify the first one. */
-    wchar_t **argv_copy2 = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*argc);
+    wchar_t **argv_copy2 = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
     int i, res;
     char *oldloc;
     /* 754 requires that FP exceptions run in "no stop" mode by default,
@@ -58,6 +58,8 @@ main(int argc, char **argv)
         }
         argv_copy2[i] = argv_copy[i];
     }
+    argv_copy2[argc] = argv_copy[argc] = NULL;
+
     setlocale(LC_ALL, oldloc);
     free(oldloc);
     res = Py_Main(argc, argv_copy);
