@@ -155,7 +155,9 @@ PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
                                            int override);
 
 PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
+PyAPI_FUNC(PyObject *) _PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
+PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, struct _Py_Identifier *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
 
 #ifdef __cplusplus

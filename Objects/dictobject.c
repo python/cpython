@@ -2198,6 +2198,16 @@ PyTypeObject PyDict_Type = {
     PyObject_GC_Del,                            /* tp_free */
 };
 
+PyObject *
+_PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *key)
+{
+    PyObject *kv;
+    kv = _PyUnicode_FromId(key); /* borrowed */
+    if (kv == NULL)
+        return NULL;
+    return PyDict_GetItem(dp, kv);
+}
+
 /* For backward compatibility with old dictionary interface */
 
 PyObject *
@@ -2210,6 +2220,16 @@ PyDict_GetItemString(PyObject *v, const char *key)
     rv = PyDict_GetItem(v, kv);
     Py_DECREF(kv);
     return rv;
+}
+
+int
+_PyDict_SetItemId(PyObject *v, struct _Py_Identifier *key, PyObject *item)
+{
+    PyObject *kv;
+    kv = _PyUnicode_FromId(key); /* borrowed */
+    if (kv == NULL)
+        return -1;
+    return PyDict_SetItem(v, kv, item);
 }
 
 int
