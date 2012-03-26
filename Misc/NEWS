@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- IDLE can be launched as python -m ildelib
+
 - Issue #14295: Add unittest.mock
 
 - Issue #7652: Add --with-system-libmpdec option to configure for linking
