@@ -1661,8 +1661,8 @@ Argument groups
 
        --bar BAR  bar help
 
-   Note that any arguments not your user defined groups will end up back in the
-   usual "positional arguments" and "optional arguments" sections.
+   Note that any arguments not in your user-defined groups will end up back
+   in the usual "positional arguments" and "optional arguments" sections.
 
 
 Mutual exclusion
