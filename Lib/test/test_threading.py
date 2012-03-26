@@ -624,6 +624,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         output = "end of worker thread\nend of main thread\n"
         self.assertScriptHasOutput(script, output)
 
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_6_daemon_threads(self):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
