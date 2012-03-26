@@ -27,10 +27,10 @@ def new_visit_versionmodified(self, node):
     self.body.append(self.starttag(node, 'p', CLASS=node['type']))
     text = versionlabels[node['type']] % node['version']
     if len(node):
-        text += ': '
+        text += ':'
     else:
         text += '.'
-    self.body.append('<span class="versionmodified">%s</span>' % text)
+    self.body.append('<span class="versionmodified">%s</span> ' % text)
 
 from sphinx.writers.html import HTMLTranslator
 from sphinx.locale import versionlabels

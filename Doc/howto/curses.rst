@@ -118,7 +118,7 @@ function to restore the terminal to its original operating mode. ::
 A common problem when debugging a curses application is to get your terminal
 messed up when the application dies without restoring the terminal to its
 previous state.  In Python this commonly happens when your code is buggy and
-raises an uncaught exception.  Keys are no longer be echoed to the screen when
+raises an uncaught exception.  Keys are no longer echoed to the screen when
 you type them, for example, which makes using the shell difficult.
 
 In Python you can avoid these complications and make debugging much easier by
@@ -271,7 +271,7 @@ application are commonly shown in reverse video; a text viewer may need to
 highlight certain words.  curses supports this by allowing you to specify an
 attribute for each cell on the screen.
 
-An attribute is a integer, each bit representing a different attribute.  You can
+An attribute is an integer, each bit representing a different attribute.  You can
 try to display text with multiple attribute bits set, but curses doesn't
 guarantee that all the possible combinations are available, or that they're all
 visually distinct.  That depends on the ability of the terminal being used, so
@@ -300,7 +300,7 @@ could code::
                  curses.A_REVERSE)
    stdscr.refresh()
 
-The curses library also supports color on those terminals that provide it, The
+The curses library also supports color on those terminals that provide it. The
 most common such terminal is probably the Linux console, followed by color
 xterms.
 
