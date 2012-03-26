@@ -1118,7 +1118,8 @@ are no longer supported due to maintenance burden.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* The :mod:`packaging` module replaces the :mod:`distutils` module
+* The :mod:`distutils` modules has been deprecated.  Use the new
+  :mod:`packaging` module instead.
 * The ``unicode_internal`` codec has been deprecated because of the
   :pep:`393`, use UTF-8, UTF-16 (``utf-16-le`` or ``utf-16-be``), or UTF-32
   (``utf-32-le`` or ``utf-32-be``)
