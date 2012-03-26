@@ -13173,10 +13173,6 @@ unicode_getnewargs(PyObject *v)
 }
 
 static PyMethodDef unicode_methods[] = {
-
-    /* Order is according to common usage: often used methods should
-       appear first, since lookup is done sequentially. */
-
     {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS | METH_KEYWORDS, split__doc__},
