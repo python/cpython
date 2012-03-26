@@ -779,26 +779,47 @@ steady_clock(int strict)
 
     return PyFloat_FromDouble(secs);
 #elif defined(HAVE_CLOCK_GETTIME)
-    static int clk_index = 0;
-    clockid_t clk_ids[] = {
+    static int steady_clk_index = 0;
+    static int monotonic_clk_index = 0;
+    int *clk_index;
+    clockid_t steady_clk_ids[] = {
 #ifdef CLOCK_MONOTONIC_RAW
         CLOCK_MONOTONIC_RAW,
 #endif
         CLOCK_MONOTONIC,
         CLOCK_REALTIME
     };
+    clockid_t monotonic_clk_ids[] = {
+#ifdef CLOCK_MONOTONIC_RAW
+        CLOCK_MONOTONIC_RAW,
+#endif
+        CLOCK_MONOTONIC
+    };
+    clockid_t *clk_ids;
+    int clk_ids_len;
     int ret;
     struct timespec tp;
 
-    while (0 <= clk_index) {
-        clockid_t clk_id = clk_ids[clk_index];
+    if (strict) {
+        clk_index = &monotonic_clk_index;
+        clk_ids = monotonic_clk_ids;
+        clk_ids_len = Py_ARRAY_LENGTH(monotonic_clk_ids);
+    }
+    else {
+        clk_index = &steady_clk_index;
+        clk_ids = steady_clk_ids;
+        clk_ids_len = Py_ARRAY_LENGTH(steady_clk_ids);
+    }
+
+    while (0 <= *clk_index) {
+        clockid_t clk_id = clk_ids[*clk_index];
         ret = clock_gettime(clk_id, &tp);
         if (ret == 0)
             return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 
-        clk_index++;
-        if (Py_ARRAY_LENGTH(clk_ids) <= clk_index)
-            clk_index = -1;
+        (*clk_index)++;
+        if (clk_ids_len <= *clk_index)
+            (*clk_index) = -1;
     }
     if (strict) {
         PyErr_SetFromErrno(PyExc_OSError);
