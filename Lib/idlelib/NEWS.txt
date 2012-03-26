@@ -1,5 +1,7 @@
-What's New in IDLE 3.2.3?
+What's New in IDLE 3.3?
 =========================
+
+- IDLE can be launched as `python -m ildelib`
 
 - Issue #3573: IDLE hangs when passing invalid command line args
   (directory(ies) instead of file(s)).
