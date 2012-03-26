@@ -6,6 +6,7 @@ import traceback
 import _thread as thread
 import threading
 import queue
+import tkinter
 
 from idlelib import CallTips
 from idlelib import AutoComplete
@@ -39,18 +40,14 @@ else:
     warnings.formatwarning = idle_formatwarning_subproc
 
 
-def handle_tk_events():
+tcl = tkinter.Tcl()
+
+
+def handle_tk_events(tcl=tcl):
     """Process any tk events that are ready to be dispatched if tkinter
     has been imported, a tcl interpreter has been created and tk has been
     loaded."""
-    tkinter = sys.modules.get('tkinter')
-    if tkinter and tkinter._default_root:
-        # tkinter has been imported, an Tcl interpreter was created and
-        # tk has been loaded.
-        root = tkinter._default_root
-        while root.tk.dooneevent(tkinter._tkinter.DONT_WAIT):
-            # Process pending events.
-            pass
+    tcl.eval("update")
 
 
 # Thread shared globals: Establish a queue between a subthread (which handles
