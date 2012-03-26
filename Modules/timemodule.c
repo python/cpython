@@ -1063,14 +1063,8 @@ static PyObject*
 floattime(void)
 {
     _PyTime_timeval t;
-    double secs;
     _PyTime_gettimeofday(&t);
-    secs = (double)t.tv_sec + t.tv_usec*0.000001;
-    if (secs == 0.0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-    return PyFloat_FromDouble(secs);
+    return PyFloat_FromDouble((double)t.tv_sec + t.tv_usec * 1e-6);
 }
 
 
