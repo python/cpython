@@ -650,7 +650,7 @@ event of a certain severity or greater is seen.
 :class:`BufferingHandler`, which is an abstract class. This buffers logging
 records in memory. Whenever each record is added to the buffer, a check is made
 by calling :meth:`shouldFlush` to see if the buffer should be flushed.  If it
-should, then :meth:`flush` is expected to do the needful.
+should, then :meth:`flush` is expected to do the flushing.
 
 
 .. class:: BufferingHandler(capacity)
