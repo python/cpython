@@ -45,10 +45,119 @@ docs.
    The :mod:`xml.etree.cElementTree` module is deprecated.
 
 
+.. _elementtree-xpath:
+
+XPath support
+-------------
+
+This module provides limited support for
+`XPath expressions <http://www.w3.org/TR/xpath>`_ for locating elements in a
+tree.  The goal is to support a small subset of the abbreviated syntax; a full
+XPath engine is outside the scope of the module.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates some of the XPath capabilities of the
+module::
+
+   import xml.etree.ElementTree as ET
+
+   xml = r'''<?xml version="1.0"?>
+   <data>
+       <country name="Liechtenshtein">
+           <rank>1</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank>4</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+       <country name="Panama">
+           <rank>68</rank>
+           <year>2011</year>
+           <gdppc>13600</gdppc>
+           <neighbor name="Costa Rica" direction="W"/>
+           <neighbor name="Colombia" direction="E"/>
+       </country>
+   </data>
+   '''
+
+   tree = ET.fromstring(xml)
+
+   # Top-level elements
+   tree.findall(".")
+
+   # All 'neighbor' grand-children of 'country' children of the top-level
+   # elements
+   tree.findall("./country/neighbor")
+
+   # Nodes with name='Singapore' that have a 'year' child
+   tree.findall(".//year/..[@name='Singapore']")
+
+   # 'year' nodes that are children of nodes with name='Singapore'
+   tree.findall(".//*[@name='Singapore']/year")
+
+   # All 'neighbor' nodes that are the second child of their parent
+   tree.findall(".//neighbor[2]")
+
+Supported XPath syntax
+^^^^^^^^^^^^^^^^^^^^^^
+
++-----------------------+------------------------------------------------------+
+| Syntax                | Meaning                                              |
++=======================+======================================================+
+| ``tag``               | Selects all child elements with the given tag.       |
+|                       | For example, ``spam`` selects all child elements     |
+|                       | named ``spam``, ``spam/egg`` selects all             |
+|                       | grandchildren named ``egg`` in all children named    |
+|                       | ``spam``.                                            |
++-----------------------+------------------------------------------------------+
+| ``*``                 | Selects all child elements.  For example, ``*/egg``  |
+|                       | selects all grandchildren named ``egg``.             |
++-----------------------+------------------------------------------------------+
+| ``.``                 | Selects the current node.  This is mostly useful     |
+|                       | at the beginning of the path, to indicate that it's  |
+|                       | a relative path.                                     |
++-----------------------+------------------------------------------------------+
+| ``//``                | Selects all subelements, on all levels beneath the   |
+|                       | current  element.  For example, ``./egg`` selects    |
+|                       | all ``egg`` elements in the entire tree.             |
++-----------------------+------------------------------------------------------+
+| ``..``                | Selects the parent element.                          |
++-----------------------+------------------------------------------------------+
+| ``[@attrib]``         | Selects all elements that have the given attribute.  |
++-----------------------+------------------------------------------------------+
+| ``[@attrib='value']`` | Selects all elements for which the given attribute   |
+|                       | has the given value.  The value cannot contain       |
+|                       | quotes.                                              |
++-----------------------+------------------------------------------------------+
+| ``[tag]``             | Selects all elements that have a child named         |
+|                       | ``tag``.  Only immediate children are supported.     |
++-----------------------+------------------------------------------------------+
+| ``[position]``        | Selects all elements that are located at the given   |
+|                       | position.  The position can be either an integer     |
+|                       | (1 is the first position), the expression ``last()`` |
+|                       | (for the last position), or a position relative to   |
+|                       | the last position (e.g. ``last()-1``).               |
++-----------------------+------------------------------------------------------+
+
+Predicates (expressions within square brackets) must be preceded by a tag
+name, an asterisk, or another predicate.  ``position`` predicates must be
+preceded by a tag name.
+
+Reference
+---------
+
 .. _elementtree-functions:
 
 Functions
----------
+^^^^^^^^^
 
 
 .. function:: Comment(text=None)
@@ -199,7 +308,7 @@ Functions
 .. _elementtree-element-objects:
 
 Element Objects
----------------
+^^^^^^^^^^^^^^^
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -297,21 +406,24 @@ Element Objects
    .. method:: find(match)
 
       Finds the first subelement matching *match*.  *match* may be a tag name
-      or path.  Returns an element instance or ``None``.
+      or a :ref:`path <elementtree-xpath>`.  Returns an element instance
+      or ``None``.
 
 
    .. method:: findall(match)
 
-      Finds all matching subelements, by tag name or path.  Returns a list
-      containing all matching elements in document order.
+      Finds all matching subelements, by tag name or
+      :ref:`path <elementtree-xpath>`.  Returns a list containing all matching
+      elements in document order.
 
 
    .. method:: findtext(match, default=None)
 
       Finds text for the first subelement matching *match*.  *match* may be
-      a tag name or path.  Returns the text content of the first matching
-      element, or *default* if no element was found.  Note that if the matching
-      element has no text content an empty string is returned.
+      a tag name or a :ref:`path <elementtree-xpath>`.  Returns the text content
+      of the first matching element, or *default* if no element was found.
+      Note that if the matching element has no text content an empty string
+      is returned.
 
 
    .. method:: getchildren()
@@ -345,8 +457,9 @@ Element Objects
 
    .. method:: iterfind(match)
 
-      Finds all matching subelements, by tag name or path.  Returns an iterable
-      yielding all matching elements in document order.
+      Finds all matching subelements, by tag name or
+      :ref:`path <elementtree-xpath>`.  Returns an iterable yielding all
+      matching elements in document order.
 
       .. versionadded:: 3.2
 
@@ -391,7 +504,7 @@ Element Objects
 .. _elementtree-elementtree-objects:
 
 ElementTree Objects
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: ElementTree(element=None, file=None)
@@ -413,26 +526,17 @@ ElementTree Objects
 
    .. method:: find(match)
 
-      Finds the first toplevel element matching *match*.  *match* may be a tag
-      name or path.  Same as getroot().find(match).  Returns the first matching
-      element, or ``None`` if no element was found.
+      Same as :meth:`Element.find`, starting at the root of the tree.
 
 
    .. method:: findall(match)
 
-      Finds all matching subelements, by tag name or path.  Same as
-      getroot().findall(match).  *match* may be a tag name or path.  Returns a
-      list containing all matching elements, in document order.
+      Same as :meth:`Element.findall`, starting at the root of the tree.
 
 
    .. method:: findtext(match, default=None)
 
-      Finds the element text for the first toplevel element with given tag.
-      Same as getroot().findtext(match).  *match* may be a tag name or path.
-      *default* is the value to return if the element was not found.  Returns
-      the text content of the first matching element, or the default value no
-      element was found.  Note that if the element is found, but has no text
-      content, this method returns an empty string.
+      Same as :meth:`Element.findtext`, starting at the root of the tree.
 
 
    .. method:: getiterator(tag=None)
@@ -455,9 +559,7 @@ ElementTree Objects
 
    .. method:: iterfind(match)
 
-      Finds all matching subelements, by tag name or path.  Same as
-      getroot().iterfind(match). Returns an iterable yielding all matching
-      elements in document order.
+      Same as :meth:`Element.iterfind`, starting at the root of the tree.
 
       .. versionadded:: 3.2
 
@@ -512,7 +614,7 @@ Example of changing the attribute "target" of every link in first paragraph::
 .. _elementtree-qname-objects:
 
 QName Objects
--------------
+^^^^^^^^^^^^^
 
 
 .. class:: QName(text_or_uri, tag=None)
@@ -528,7 +630,7 @@ QName Objects
 .. _elementtree-treebuilder-objects:
 
 TreeBuilder Objects
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: TreeBuilder(element_factory=None)
@@ -579,7 +681,7 @@ TreeBuilder Objects
 .. _elementtree-xmlparser-objects:
 
 XMLParser Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 
 .. class:: XMLParser(html=0, target=None, encoding=None)
@@ -648,7 +750,7 @@ This is an example of counting the maximum depth of an XML file::
     4
 
 Exceptions
-----------
+^^^^^^^^^^
 
 .. class:: ParseError
 
