@@ -211,6 +211,14 @@ atexit_clear(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static void
+atexit_free(PyObject *m)
+{
+    atexitmodule_state *modstate;
+    modstate = GET_ATEXIT_STATE(m);
+    PyMem_Free(modstate->atexit_callbacks);
+}
+
 PyDoc_STRVAR(atexit_unregister__doc__,
 "unregister(func) -> None\n\
 \n\
@@ -275,7 +283,7 @@ static struct PyModuleDef atexitmodule = {
 	NULL,
 	NULL,
 	NULL,
-	NULL
+	(freefunc)atexit_free
 };
 
 PyMODINIT_FUNC
