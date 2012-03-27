@@ -432,6 +432,7 @@ def _default_mime_types():
         '.hdf'    : 'application/x-hdf',
         '.htm'    : 'text/html',
         '.html'   : 'text/html',
+        '.ico'    : 'image/vnd.microsoft.icon',
         '.ief'    : 'image/ief',
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
