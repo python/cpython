@@ -126,7 +126,7 @@ Supported XPath syntax
 |                       | a relative path.                                     |
 +-----------------------+------------------------------------------------------+
 | ``//``                | Selects all subelements, on all levels beneath the   |
-|                       | current  element.  For example, ``./egg`` selects    |
+|                       | current  element.  For example, ``.//egg`` selects   |
 |                       | all ``egg`` elements in the entire tree.             |
 +-----------------------+------------------------------------------------------+
 | ``..``                | Selects the parent element.                          |
