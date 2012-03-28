@@ -768,13 +768,17 @@ steady_clock(int strict)
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
     return win32_clock(!strict);
 #elif defined(__APPLE__)
-    uint64_t time = mach_absolute_time();
+    static mach_timebase_info_data_t timebase;
+    uint64_t time;
     double secs;
 
-    static mach_timebase_info_data_t timebase;
-    if (timebase.denom == 0)
-      mach_timebase_info(&timebase);
+    if (timebase.denom == 0) {
+        /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
+           fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
+        (void)mach_timebase_info(&timebase);
+    }
 
+    time = mach_absolute_time();
     secs = (double)time * timebase.numer / timebase.denom * 1e-9;
 
     return PyFloat_FromDouble(secs);
