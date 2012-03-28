@@ -920,17 +920,20 @@ patch
 
     `patch` acts as a function decorator, class decorator or a context
     manager. Inside the body of the function or with statement, the `target`
-    (specified in the form `'package.module.ClassName'`) is patched
-    with a `new` object. When the function/with statement exits the patch is
-    undone.
+    is patched with a `new` object. When the function/with statement exits
+    the patch is undone.
 
-    The `target` is imported and the specified attribute patched with the new
-    object, so it must be importable from the environment you are calling the
-    decorator from. The target is imported when the decorated function is
-    executed, not at decoration time.
+    If `new` is omitted, then the target is replaced with a
+    :class:`MagicMock`. If `patch` is used as a decorator and `new` is
+    omitted, the created mock is passed in as an extra argument to the
+    decorated function. If `patch` is used as a context manager the created
+    mock is returned by the context manager.
 
-    If `new` is omitted, then a new `MagicMock` is created and passed in as an
-    extra argument to the decorated function.
+    `target` should be a string in the form `'package.module.ClassName'`. The
+    `target` is imported and the specified object replaced with the `new`
+    object, so the `target` must be importable from the environment you are
+    calling `patch` from. The target is imported when the decorated function
+    is executed, not at decoration time.
 
     The `spec` and `spec_set` keyword arguments are passed to the `MagicMock`
     if patch is creating one for you.
