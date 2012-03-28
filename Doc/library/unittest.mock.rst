@@ -984,6 +984,15 @@ patch
     `patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are
     available for alternate use-cases.
 
+`patch` as function decorator, creating the mock for you and passing it into
+the decorated function:
+
+    >>> @patch('__main__.SomeClass')
+    ... def function(mock_class):
+    ...     print(mock_class is SomeClass)
+    ...
+    >>> function()
+    True
 
 Patching a class replaces the class with a `MagicMock` *instance*. If the
 class is instantiated in the code under test then it will be the
