@@ -988,10 +988,10 @@ patch
 the decorated function:
 
     >>> @patch('__main__.SomeClass')
-    ... def function(mock_class):
+    ... def function(normal_argument, mock_class):
     ...     print(mock_class is SomeClass)
     ...
-    >>> function()
+    >>> function(None)
     True
 
 Patching a class replaces the class with a `MagicMock` *instance*. If the
