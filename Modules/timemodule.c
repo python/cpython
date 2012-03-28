@@ -1088,6 +1088,17 @@ static PyObject*
 floattime(void)
 {
     _PyTime_timeval t;
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec tp;
+    int ret;
+
+    /* _PyTime_gettimeofday() does not use clock_gettime()
+       because it would require to link Python to the rt (real-time)
+       library, at least on Linux */
+    ret = clock_gettime(CLOCK_REALTIME, &tp);
+    if (ret == 0)
+        return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+#endif
     _PyTime_gettimeofday(&t);
     return PyFloat_FromDouble((double)t.tv_sec + t.tv_usec * 1e-6);
 }
