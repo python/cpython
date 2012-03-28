@@ -1351,8 +1351,6 @@ def patch(
     ):
     """
     `patch` acts as a function decorator, class decorator or a context
-
-    `patch` acts as a function decorator, class decorator or a context
     manager. Inside the body of the function or with statement, the `target`
     is patched with a `new` object. When the function/with statement exits
     the patch is undone.
