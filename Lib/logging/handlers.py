@@ -519,11 +519,16 @@ class SocketHandler(logging.Handler):
         """
         ei = record.exc_info
         if ei:
-            dummy = self.format(record) # just to get traceback text into record.exc_text
-            record.exc_info = None  # to avoid Unpickleable error
-        s = pickle.dumps(record.__dict__, 1)
-        if ei:
-            record.exc_info = ei  # for next handler
+            # just to get traceback text into record.exc_text ...
+            dummy = self.format(record)
+        # See issue #14436: If msg or args are objects, they may not be
+        # available on the receiving end. So we convert the msg % args
+        # to a string, save it as msg and zap the args.
+        d = dict(record.__dict__)
+        d['msg'] = record.getMessage()
+        d['args'] = None
+        d['exc_info'] = None
+        s = pickle.dumps(d, 1)
         slen = struct.pack(">L", len(s))
         return slen + s
 
