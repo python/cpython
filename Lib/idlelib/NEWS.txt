@@ -1,6 +1,9 @@
 What's New in IDLE 2.7.3?
 =======================
 
+- Issue #14409: IDLE doesn't not execute commands from shell,
+  error with default keybinding for Return. (Patch by Roger Serwy)
+
 - Issue #3573: IDLE hangs when passing invalid command line args
   (directory(ies) instead of file(s)).
 
