@@ -1714,7 +1714,7 @@ call
 
     `call` is a helper object for making simpler assertions, for comparing
     with :attr:`~Mock.call_args`, :attr:`~Mock.call_args_list`,
-    :attr:`~Mock.mock_calls` and:attr: `~Mock.method_calls`. `call` can also be
+    :attr:`~Mock.mock_calls` and :attr: `~Mock.method_calls`. `call` can also be
     used with :meth:`~Mock.assert_has_calls`.
 
         >>> m = MagicMock(return_value=None)
