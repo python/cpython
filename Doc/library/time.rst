@@ -143,11 +143,13 @@ The module defines the following functions and data items:
 
    .. versionadded:: 3.3
 
+
 .. function:: clock_gettime(clk_id)
 
    Return the time of the specified clock *clk_id*.
 
    .. versionadded:: 3.3
+
 
 .. data:: CLOCK_REALTIME
 
@@ -156,12 +158,14 @@ The module defines the following functions and data items:
 
    .. versionadded:: 3.3
 
+
 .. data:: CLOCK_MONOTONIC
 
    Clock that cannot be set and represents monotonic time since some
    unspecified starting point.
 
    .. versionadded:: 3.3
+
 
 .. data:: CLOCK_MONOTONIC_RAW
 
@@ -172,17 +176,20 @@ The module defines the following functions and data items:
 
    .. versionadded:: 3.3
 
+
 .. data:: CLOCK_PROCESS_CPUTIME_ID
 
    High-resolution per-process timer from the CPU.
 
    .. versionadded:: 3.3
 
+
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
    Thread-specific CPU-time clock.
 
    .. versionadded:: 3.3
+
 
 .. function:: ctime([secs])
 
