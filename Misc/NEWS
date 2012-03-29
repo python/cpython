@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14416: syslog now defines the LOG_ODELAY and LOG_AUTHPRIV constants
+  if they are defined in <syslog.h>.
+
 - IDLE can be launched as python -m idlelib
 
 - Issue #14295: Add unittest.mock

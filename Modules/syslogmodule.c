@@ -291,6 +291,9 @@ PyInit_syslog(void)
     PyModule_AddIntConstant(m, "LOG_PID",         LOG_PID);
     PyModule_AddIntConstant(m, "LOG_CONS",        LOG_CONS);
     PyModule_AddIntConstant(m, "LOG_NDELAY",  LOG_NDELAY);
+#ifdef LOG_ODELAY
+    PyModule_AddIntConstant(m, "LOG_ODELAY",  LOG_ODELAY);
+#endif
 #ifdef LOG_NOWAIT
     PyModule_AddIntConstant(m, "LOG_NOWAIT",  LOG_NOWAIT);
 #endif
@@ -331,5 +334,10 @@ PyInit_syslog(void)
     PyModule_AddIntConstant(m, "LOG_CRON",        LOG_CRON);
     PyModule_AddIntConstant(m, "LOG_UUCP",        LOG_UUCP);
     PyModule_AddIntConstant(m, "LOG_NEWS",        LOG_NEWS);
+
+#ifdef LOG_AUTHPRIV
+    PyModule_AddIntConstant(m, "LOG_AUTHPRIV",    LOG_AUTHPRIV);
+#endif
+
     return m;
 }
