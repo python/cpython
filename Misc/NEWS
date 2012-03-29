@@ -196,6 +196,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #14442: Add missing errno import in test_smtplib.
+
 - Issue #8315: (partial fix) python -m unittest test.test_email now works.
 
 
