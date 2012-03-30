@@ -14,9 +14,10 @@
 # Don't re-import "xml.etree.ElementTree" module in the docstring,
 # except if the test is specific to the Python implementation.
 
-import sys
+import gc
 import html
 import io
+import sys
 import unittest
 
 from test import support
@@ -1845,6 +1846,30 @@ class BasicElementTest(unittest.TestCase):
         self.assertRaises(TypeError, e.append, 'b')
         self.assertRaises(TypeError, e.extend, [ET.Element('bar'), 'foo'])
         self.assertRaises(TypeError, e.insert, 0, 'foo')
+
+    def test_cyclic_gc(self):
+        class ShowGC:
+            def __init__(self, flaglist):
+                self.flaglist = flaglist
+            def __del__(self):
+                self.flaglist.append(1)
+
+        # Test the shortest cycle: lst->element->lst
+        fl = []
+        lst = [ShowGC(fl)]
+        lst.append(ET.Element('joe', attr=lst))
+        del lst
+        gc.collect()
+        self.assertEqual(fl, [1])
+
+        # A longer cycle: lst->e->e2->lst
+        fl = []
+        e = ET.Element('joe')
+        lst = [ShowGC(fl), e]
+        e2 = ET.SubElement(e, 'foo', attr=lst)
+        del lst, e, e2
+        gc.collect()
+        self.assertEqual(fl, [1])
 
 
 class ElementTreeTest(unittest.TestCase):
