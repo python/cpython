@@ -34,6 +34,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #14409: IDLE doesn't not execute commands from shell,
+  error with default keybinding for Return. (Patch by Roger Serwy)
+
+- Issue #14416: syslog now defines the LOG_ODELAY and LOG_AUTHPRIV constants
+  if they are defined in <syslog.h>.
+
 - IDLE can be launched as python -m idlelib
 
 - Issue #14295: Add unittest.mock
@@ -192,6 +198,8 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #14442: Add missing errno import in test_smtplib.
 
 - Issue #8315: (partial fix) python -m unittest test.test_email now works.
 

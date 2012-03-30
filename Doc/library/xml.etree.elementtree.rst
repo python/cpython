@@ -5,65 +5,40 @@
    :synopsis: Implementation of the ElementTree API.
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 
-**Source code:** :source:`Lib/xml/etree/ElementTree.py`
-
---------------
-
-The :class:`Element` type is a flexible container object, designed to store
-hierarchical data structures in memory.  The type can be described as a cross
-between a list and a dictionary.
-
-Each element has a number of properties associated with it:
-
-* a tag which is a string identifying what kind of data this element represents
-  (the element type, in other words).
-
-* a number of attributes, stored in a Python dictionary.
-
-* a text string.
-
-* an optional tail string.
-
-* a number of child elements, stored in a Python sequence
-
-To create an element instance, use the :class:`Element` constructor or the
-:func:`SubElement` factory function.
-
-The :class:`ElementTree` class can be used to wrap an element structure, and
-convert it from and to XML.
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
-
-.. versionchanged:: 3.2
-   The ElementTree API is updated to 1.3.  For more information, see
-   `Introducing ElementTree 1.3
-   <http://effbot.org/zone/elementtree-13-intro.htm>`_.
+The :mod:`xml.etree.ElementTree` module implements a simple and efficient API
+for parsing and creating XML data.
 
 .. versionchanged:: 3.3
    This module will use a fast implementation whenever available.
    The :mod:`xml.etree.cElementTree` module is deprecated.
 
+Tutorial
+--------
 
-.. _elementtree-xpath:
+This is a short tutorial for using :mod:`xml.etree.ElementTree` (``ET`` in
+short).  The goal is to demonstrate some of the building blocks and basic
+concepts of the module.
 
-XPath support
--------------
+XML tree and elements
+^^^^^^^^^^^^^^^^^^^^^
 
-This module provides limited support for
-`XPath expressions <http://www.w3.org/TR/xpath>`_ for locating elements in a
-tree.  The goal is to support a small subset of the abbreviated syntax; a full
-XPath engine is outside the scope of the module.
+XML is an inherently hierarchical data format, and the most natural way to
+represent it is with a tree.  ``ET`` has two classes for this purpose -
+:class:`ElementTree` represents the whole XML document as a tree, and
+:class:`Element` represents a single node in this tree.  Interactions with
+the whole document (reading and writing to/from files) are usually done
+on the :class:`ElementTree` level.  Interactions with a single XML element
+and its sub-elements are done on the :class:`Element` level.
 
-Example
-^^^^^^^
+.. _elementtree-parsing-xml:
 
-Here's an example that demonstrates some of the XPath capabilities of the
-module::
+Parsing XML
+^^^^^^^^^^^
 
-   import xml.etree.ElementTree as ET
+We'll be using the following XML document contained in a Python string as the
+sample data for this section::
 
-   xml = r'''<?xml version="1.0"?>
+   countrydata = r'''<?xml version="1.0"?>
    <data>
        <country name="Liechtenshtein">
            <rank>1</rank>
@@ -88,23 +63,121 @@ module::
    </data>
    '''
 
-   tree = ET.fromstring(xml)
+First, import the module and parse the data::
+
+   import xml.etree.ElementTree as ET
+
+   root = ET.fromstring(countrydata)
+
+:func:`fromstring` parses XML from a string directly into an :class:`Element`,
+which is the root element of the parsed tree.  Other parsing functions may
+create an :class:`ElementTree`.  Make sure to check the documentation to be
+sure.
+
+As an :class:`Element`, ``root`` has a tag and a dictionary of attributes::
+
+   >>> root.tag
+   'data'
+   >>> root.attrib
+   {}
+
+It also has children nodes over which we can iterate::
+
+   >>> for child in root:
+   ...   print(child.tag, child.attrib)
+   ...
+   country {'name': 'Liechtenshtein'}
+   country {'name': 'Singapore'}
+   country {'name': 'Panama'}
+
+Children are nested, and we can access specific child nodes by index::
+
+   >>> root[0][1].text
+   '2008'
+
+Finding interesting elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:class:`Element` has some useful methods that help iterate recursively over all
+the sub-tree below it (its children, their children, and so on).  For example,
+:meth:`Element.iter`::
+
+   >>> for neighbor in root.iter('neighbor'):
+   ...   print(neighbor.attrib)
+   ...
+   {'name': 'Austria', 'direction': 'E'}
+   {'name': 'Switzerland', 'direction': 'W'}
+   {'name': 'Malaysia', 'direction': 'N'}
+   {'name': 'Costa Rica', 'direction': 'W'}
+   {'name': 'Colombia', 'direction': 'E'}
+
+More sophisticated specification of which elements to look for is possible by
+using :ref:`XPath <elementtree-xpath>`.
+
+Building XML documents
+^^^^^^^^^^^^^^^^^^^^^^
+
+``ET`` provides a simple way to build XML documents and write them to files.
+The :meth:`ElementTree.write` method serves this purpose.
+
+Once created, an :class:`Element` object may be manipulated by directly changing
+its fields (such as :attr:`Element.text`), adding and modifying attributes
+(:meth:`Element.set` method), as well as adding new children (for example
+with :meth:`Element.append`).
+
+The :func:`SubElement` function also provides a convenient way to create new
+sub-elements for a given element::
+
+   >>> a = ET.Element('a')
+   >>> b = ET.SubElement(a, 'b')
+   >>> c = ET.SubElement(a, 'c')
+   >>> d = ET.SubElement(c, 'd')
+   >>> ET.dump(a)
+   <a><b /><c><d /></c></a>
+
+Additional resources
+^^^^^^^^^^^^^^^^^^^^
+
+See http://effbot.org/zone/element-index.htm for tutorials and links to other
+docs.
+
+
+.. _elementtree-xpath:
+
+XPath support
+-------------
+
+This module provides limited support for
+`XPath expressions <http://www.w3.org/TR/xpath>`_ for locating elements in a
+tree.  The goal is to support a small subset of the abbreviated syntax; a full
+XPath engine is outside the scope of the module.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates some of the XPath capabilities of the
+module.  We'll be using the ``countrydata`` XML document from the
+:ref:`Parsing XML <elementtree-parsing-xml>` section::
+
+   import xml.etree.ElementTree as ET
+
+   root = ET.fromstring(countrydata)
 
    # Top-level elements
-   tree.findall(".")
+   root.findall(".")
 
    # All 'neighbor' grand-children of 'country' children of the top-level
    # elements
-   tree.findall("./country/neighbor")
+   root.findall("./country/neighbor")
 
    # Nodes with name='Singapore' that have a 'year' child
-   tree.findall(".//year/..[@name='Singapore']")
+   root.findall(".//year/..[@name='Singapore']")
 
    # 'year' nodes that are children of nodes with name='Singapore'
-   tree.findall(".//*[@name='Singapore']/year")
+   root.findall(".//*[@name='Singapore']/year")
 
    # All 'neighbor' nodes that are the second child of their parent
-   tree.findall(".//neighbor[2]")
+   root.findall(".//neighbor[2]")
 
 Supported XPath syntax
 ^^^^^^^^^^^^^^^^^^^^^^
