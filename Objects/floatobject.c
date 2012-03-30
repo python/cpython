@@ -16,52 +16,15 @@
 
 
 /* Special free list
-
-   Since some Python programs can spend much of their time allocating
-   and deallocating floats, these operations should be very fast.
-   Therefore we use a dedicated allocation scheme with a much lower
-   overhead (in space and time) than straight malloc(): a simple
-   dedicated free list, filled when necessary with memory from malloc().
-
-   block_list is a singly-linked list of all PyFloatBlocks ever allocated,
-   linked via their next members.  PyFloatBlocks are never returned to the
-   system before shutdown (PyFloat_Fini).
-
    free_list is a singly-linked list of available PyFloatObjects, linked
    via abuse of their ob_type members.
 */
 
-#define BLOCK_SIZE      1000    /* 1K less typical malloc overhead */
-#define BHEAD_SIZE      8       /* Enough for a 64-bit pointer */
-#define N_FLOATOBJECTS  ((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyFloatObject))
-
-struct _floatblock {
-    struct _floatblock *next;
-    PyFloatObject objects[N_FLOATOBJECTS];
-};
-
-typedef struct _floatblock PyFloatBlock;
-
-static PyFloatBlock *block_list = NULL;
+#ifndef PyFloat_MAXFREELIST
+#define PyFloat_MAXFREELIST    100
+#endif
+static int numfree = 0;
 static PyFloatObject *free_list = NULL;
-
-static PyFloatObject *
-fill_free_list(void)
-{
-    PyFloatObject *p, *q;
-    /* XXX Float blocks escape the object heap. Use PyObject_MALLOC ??? */
-    p = (PyFloatObject *) PyMem_MALLOC(sizeof(PyFloatBlock));
-    if (p == NULL)
-        return (PyFloatObject *) PyErr_NoMemory();
-    ((PyFloatBlock *)p)->next = block_list;
-    block_list = (PyFloatBlock *)p;
-    p = &((PyFloatBlock *)p)->objects[0];
-    q = p + N_FLOATOBJECTS;
-    while (--q > p)
-        Py_TYPE(q) = (struct _typeobject *)(q-1);
-    Py_TYPE(q) = NULL;
-    return p + N_FLOATOBJECTS - 1;
-}
 
 double
 PyFloat_GetMax(void)
@@ -151,14 +114,16 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    register PyFloatObject *op;
-    if (free_list == NULL) {
-        if ((free_list = fill_free_list()) == NULL)
-            return NULL;
+    register PyFloatObject *op = free_list;
+    if (op != NULL) {
+        free_list = (PyFloatObject *) Py_TYPE(op);
+        numfree--;
+    } else {
+        op = (PyFloatObject*) PyObject_MALLOC(sizeof(PyFloatObject));
+        if (!op)
+            return PyErr_NoMemory();
     }
     /* Inline PyObject_New */
-    op = free_list;
-    free_list = (PyFloatObject *)Py_TYPE(op);
     PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
@@ -217,6 +182,11 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
+        if (numfree >= PyFloat_MAXFREELIST)  {
+            PyObject_FREE(op);
+            return;
+        }
+        numfree++;
         Py_TYPE(op) = (struct _typeobject *)free_list;
         free_list = op;
     }
@@ -1932,96 +1902,22 @@ _PyFloat_Init(void)
 int
 PyFloat_ClearFreeList(void)
 {
-    PyFloatObject *p;
-    PyFloatBlock *list, *next;
-    int i;
-    int u;                      /* remaining unfreed floats per block */
-    int freelist_size = 0;
-
-    list = block_list;
-    block_list = NULL;
-    free_list = NULL;
-    while (list != NULL) {
-        u = 0;
-        for (i = 0, p = &list->objects[0];
-             i < N_FLOATOBJECTS;
-             i++, p++) {
-            if (PyFloat_CheckExact(p) && Py_REFCNT(p) != 0)
-                u++;
-        }
-        next = list->next;
-        if (u) {
-            list->next = block_list;
-            block_list = list;
-            for (i = 0, p = &list->objects[0];
-                 i < N_FLOATOBJECTS;
-                 i++, p++) {
-                if (!PyFloat_CheckExact(p) ||
-                    Py_REFCNT(p) == 0) {
-                    Py_TYPE(p) = (struct _typeobject *)
-                        free_list;
-                    free_list = p;
-                }
-            }
-        }
-        else {
-            PyMem_FREE(list);
-        }
-        freelist_size += u;
-        list = next;
+    PyFloatObject *f = free_list, *next;
+    int i = numfree;
+    while (f) {
+        next = (PyFloatObject*) Py_TYPE(f);
+        PyObject_FREE(f);
+        f = next;
     }
-    return freelist_size;
+    free_list = NULL;
+    numfree = 0;
+    return i;
 }
 
 void
 PyFloat_Fini(void)
 {
-    PyFloatObject *p;
-    PyFloatBlock *list;
-    int i;
-    int u;                      /* total unfreed floats per block */
-
-    u = PyFloat_ClearFreeList();
-
-    if (!Py_VerboseFlag)
-        return;
-    fprintf(stderr, "# cleanup floats");
-    if (!u) {
-        fprintf(stderr, "\n");
-    }
-    else {
-        fprintf(stderr,
-            ": %d unfreed float%s\n",
-            u, u == 1 ? "" : "s");
-    }
-    if (Py_VerboseFlag > 1) {
-        list = block_list;
-        while (list != NULL) {
-            for (i = 0, p = &list->objects[0];
-                 i < N_FLOATOBJECTS;
-                 i++, p++) {
-                if (PyFloat_CheckExact(p) &&
-                    Py_REFCNT(p) != 0) {
-                    char *buf = PyOS_double_to_string(
-                        PyFloat_AS_DOUBLE(p), 'r',
-                        0, 0, NULL);
-                    if (buf) {
-                        /* XXX(twouters) cast
-                           refcount to long
-                           until %zd is
-                           universally
-                           available
-                        */
-                        fprintf(stderr,
-                 "#   <float at %p, refcnt=%ld, val=%s>\n",
-                                    p, (long)Py_REFCNT(p), buf);
-                                    PyMem_Free(buf);
-                            }
-                }
-            }
-            list = list->next;
-        }
-    }
+    (void)PyFloat_ClearFreeList();
 }
 
 /*----------------------------------------------------------------------------
