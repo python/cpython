@@ -751,7 +751,7 @@ EXTINLINE void mpd_copy_flags(mpd_t *result, const mpd_t *a);
 #define mpd_err_fatal(...) \
     do {fprintf(stderr, "%s:%d: error: ", __FILE__, __LINE__); \
         fprintf(stderr, __VA_ARGS__);  fputc('\n', stderr);    \
-        exit(1);                                               \
+        abort();                                               \
     } while (0)
 #define mpd_err_warn(...) \
     do {fprintf(stderr, "%s:%d: warning: ", __FILE__, __LINE__); \
