@@ -282,7 +282,7 @@ create_new_element(PyObject* tag, PyObject* attrib)
 {
     ElementObject* self;
 
-    self = PyObject_New(ElementObject, &Element_Type);
+    self = PyObject_GC_New(ElementObject, &Element_Type);
     if (self == NULL)
         return NULL;
 
@@ -309,7 +309,7 @@ create_new_element(PyObject* tag, PyObject* attrib)
     self->tail = Py_None;
 
     ALLOC(sizeof(ElementObject), "create element");
-
+    PyObject_GC_Track(self);
     return (PyObject*) self;
 }
 
@@ -556,19 +556,51 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
     return elem;
 }
 
+static int
+element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->tag);
+    Py_VISIT(JOIN_OBJ(self->text));
+    Py_VISIT(JOIN_OBJ(self->tail));
+
+    if (self->extra) {
+        int i;
+        Py_VISIT(self->extra->attrib);
+
+        for (i = 0; i < self->extra->length; ++i)
+            Py_VISIT(self->extra->children[i]);
+    }
+    return 0;
+}
+
+static int
+element_gc_clear(ElementObject *self)
+{
+    PyObject *text = JOIN_OBJ(self->text);
+    PyObject *tail = JOIN_OBJ(self->tail);
+    Py_CLEAR(self->tag);
+    Py_CLEAR(text);
+    Py_CLEAR(tail);
+
+    /* After dropping all references from extra, it's no longer valid anyway,
+    ** so fully deallocate it (see also element_clearmethod)
+    */
+    if (self->extra) {
+        dealloc_extra(self);
+        self->extra = NULL;
+    }
+    return 0;
+}
+
 static void
 element_dealloc(ElementObject* self)
 {
-    if (self->extra)
-        dealloc_extra(self);
-
-    /* discard attributes */
-    Py_DECREF(self->tag);
-    Py_DECREF(JOIN_OBJ(self->text));
-    Py_DECREF(JOIN_OBJ(self->tail));
+    PyObject_GC_UnTrack(self);
+    /* element_gc_clear clears all references and deallocates extra
+    */
+    element_gc_clear(self);
 
     RELEASE(sizeof(ElementObject), "destroy element");
-
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -589,7 +621,7 @@ element_append(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_clear(ElementObject* self, PyObject* args)
+element_clearmethod(ElementObject* self, PyObject* args)
 {
     if (!PyArg_ParseTuple(args, ":clear"))
         return NULL;
@@ -1505,7 +1537,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 
 static PyMethodDef element_methods[] = {
 
-    {"clear", (PyCFunction) element_clear, METH_VARARGS},
+    {"clear", (PyCFunction) element_clearmethod, METH_VARARGS},
 
     {"get", (PyCFunction) element_get, METH_VARARGS},
     {"set", (PyCFunction) element_set, METH_VARARGS},
@@ -1655,10 +1687,11 @@ static PyTypeObject Element_Type = {
     (getattrofunc)element_getattro,                 /* tp_getattro */
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+                                                    /* tp_flags */
     0,                                              /* tp_doc */
-    0,                                              /* tp_traverse */
-    0,                                              /* tp_clear */
+    (traverseproc)element_gc_traverse,              /* tp_traverse */
+    (inquiry)element_gc_clear,                      /* tp_clear */
     0,                                              /* tp_richcompare */
     0,                                              /* tp_weaklistoffset */
     0,                                              /* tp_iter */
