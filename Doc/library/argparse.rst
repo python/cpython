@@ -1833,9 +1833,10 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 * Replace all :meth:`optparse.OptionParser.add_option` calls with
   :meth:`ArgumentParser.add_argument` calls.
 
-* Replace ``options, args = parser.parse_args()`` with ``args =
+* Replace ``(options, args) = parser.parse_args()`` with ``args =
   parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument`
-  calls for the positional arguments.
+  calls for the positional arguments. Keep in mind that what was previously
+  called ``options``, now in :mod:`argparse` context is called ``args``.
 
 * Replace callback actions and the ``callback_*`` keyword arguments with
   ``type`` or ``action`` arguments.
