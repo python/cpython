@@ -194,7 +194,7 @@ Glossary
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
       on the way it was created, a file object can mediate access to a real
-      on-disk file or to another other type of storage or communication device
+      on-disk file or to another type of storage or communication device
       (for example standard input/output, in-memory buffers, sockets, pipes,
       etc.).  File objects are also called :dfn:`file-like objects` or
       :dfn:`streams`.
