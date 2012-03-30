@@ -194,7 +194,7 @@ Glossary
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
       on the way it was created, a file object can mediate access to a real
-      on-disk file or to another other type of storage or communication device
+      on-disk file or to another type of storage or communication device
       (for example standard input/output, in-memory buffers, sockets, pipes,
       etc.).  File objects are also called :dfn:`file-like objects` or
       :dfn:`streams`.
@@ -522,6 +522,20 @@ Glossary
       used to either accept multiple positional arguments (when in the
       definition), or pass several arguments as a list to a function.  See
       :term:`argument`.
+
+   provisional package
+      A provisional package is one which has been deliberately excluded from the
+      standard library's backwards compatibility guarantees.  While major
+      changes to such packages are not expected, as long as they are marked
+      provisional, backwards incompatible changes (up to and including removal
+      of the package) may occur if deemed necessary by core developers.  Such
+      changes will not be made gratuitously -- they will occur only if serious
+      flaws are uncovered that were missed prior to the inclusion of the
+      package.
+
+      This process allows the standard library to continue to evolve over time,
+      without locking in problematic design errors for extended periods of time.
+      See :pep:`411` for more details.
 
    Python 3000
       Nickname for the Python 3.x release line (coined long ago when the release

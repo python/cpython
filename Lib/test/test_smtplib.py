@@ -9,6 +9,7 @@ import re
 import sys
 import time
 import select
+import errno
 
 import unittest
 from test import support, mock_socket
