@@ -161,6 +161,7 @@ def lru_cache(maxsize=100, typed=False):
     See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
+
     # Users should only access the lru_cache through its public API:
     #       cache_info, cache_clear, and f.__wrapped__
     # The internals of the lru_cache are encapsulated for thread safety and
@@ -192,7 +193,6 @@ def lru_cache(maxsize=100, typed=False):
 
         if maxsize == 0:
 
-            @wraps(user_function)
             def wrapper(*args, **kwds):
                 # no caching, just do a statistics update after a successful call
                 nonlocal misses
@@ -202,7 +202,6 @@ def lru_cache(maxsize=100, typed=False):
 
         elif maxsize is None:
 
-            @wraps(user_function)
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
                 nonlocal hits, misses
@@ -218,7 +217,6 @@ def lru_cache(maxsize=100, typed=False):
 
         else:
 
-            @wraps(user_function)
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
                 nonlocal hits, misses
@@ -238,11 +236,12 @@ def lru_cache(maxsize=100, typed=False):
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
+                    # put result in a new link at the front of the list
                     last = root[PREV]
                     link = [last, root, key, result]
                     cache[key] = last[NEXT] = root[PREV] = link
                     if _len(cache) > maxsize:
-                        # purge least recently used cache entry
+                        # purge the least recently used cache entry
                         old_prev, old_next, old_key, old_result = root[NEXT]
                         root[NEXT] = old_next
                         old_next[PREV] = root
@@ -265,6 +264,6 @@ def lru_cache(maxsize=100, typed=False):
 
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
-        return wrapper
+        return update_wrapper(wrapper, user_function)
 
     return decorating_function
