@@ -640,7 +640,7 @@ This is the output of running the example above in verbose mode: ::
 
 Classes can be skipped just like methods: ::
 
-   @skip("showing class skipping")
+   @unittest.skip("showing class skipping")
    class MySkippedTestCase(unittest.TestCase):
        def test_not_run(self):
            pass
