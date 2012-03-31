@@ -381,7 +381,7 @@ dup_socket(SOCKET handle)
         return INVALID_SOCKET;
 
     return WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-                     FROM_PROTOCOL_INFO, &info, 0, 0);
+                     FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
 }
 #define SOCKETCLOSE closesocket
 #else
