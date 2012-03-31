@@ -1343,6 +1343,11 @@ Tkapp_GlobalCall(PyObject *self, PyObject *args)
     char *cmd;
     PyObject *res = NULL;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "globalcall is deprecated and will be removed in 3.4",
+                     1) < 0)
+        return 0;
+
     CHECK_TCL_APPARTMENT;
 
     cmd  = Merge(args);
@@ -1391,6 +1396,11 @@ Tkapp_GlobalEval(PyObject *self, PyObject *args)
     char *script;
     PyObject *res = NULL;
     int err;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "globaleval is deprecated and will be removed in 3.4",
+                     1) < 0)
+        return 0;
 
     if (!PyArg_ParseTuple(args, "s:globaleval", &script))
         return NULL;
@@ -1954,8 +1964,15 @@ Tkapp_Split(PyObject *self, PyObject *args)
 static PyObject *
 Tkapp_Merge(PyObject *self, PyObject *args)
 {
-    char *s = Merge(args);
+    char *s;
     PyObject *res = NULL;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "merge is deprecated and will be removed in 3.4",
+                     1) < 0)
+        return 0;
+
+    s = Merge(args);
 
     if (s) {
         res = PyUnicode_FromString(s);
