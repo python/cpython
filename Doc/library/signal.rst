@@ -238,13 +238,13 @@ The :mod:`signal` module defines the following functions:
 
    The behavior of the call is dependent on the value of *how*, as follows.
 
-    * :data:`SIG_BLOCK`: The set of blocked signals is the union of the current
-      set and the *mask* argument.
-    * :data:`SIG_UNBLOCK`: The signals in *mask* are removed from the current
-      set of blocked signals.  It is permissible to attempt to unblock a
-      signal which is not blocked.
-    * :data:`SIG_SETMASK`: The set of blocked signals is set to the *mask*
-      argument.
+   * :data:`SIG_BLOCK`: The set of blocked signals is the union of the current
+     set and the *mask* argument.
+   * :data:`SIG_UNBLOCK`: The signals in *mask* are removed from the current
+     set of blocked signals.  It is permissible to attempt to unblock a
+     signal which is not blocked.
+   * :data:`SIG_SETMASK`: The set of blocked signals is set to the *mask*
+     argument.
 
    *mask* is a set of signal numbers (e.g. {:const:`signal.SIGINT`,
    :const:`signal.SIGTERM`}). Use ``range(1, signal.NSIG)`` for a full mask
