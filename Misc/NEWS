@@ -31,6 +31,9 @@ Core and Builtins
 - Issue #14220: When a generator is delegating to another iterator with the
   yield from syntax, it needs to have its ``gi_running`` flag set to True.
 
+- Issue #14435: Remove dedicated block allocator from floatobject.c and rely
+  on the PyObject_Malloc() api like all other objects.
+
 Library
 -------
 
