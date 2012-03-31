@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14406: Fix a race condition when using ``concurrent.futures.wait(
+  return_when=ALL_COMPLETED)``.  Patch by Matt Joiner.
+
 - Issue #14409: IDLE now properly executes commands in the Shell window
   when it cannot read the normal config files on startup and
   has to use the built-in default key bindings.
