@@ -390,6 +390,7 @@ dup_socket(SOCKET handle)
 #endif
 
 #ifdef MS_WIN32
+#undef EAFNOSUPPORT
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
 #define snprintf _snprintf
 #endif
