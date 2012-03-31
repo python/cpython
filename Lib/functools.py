@@ -172,7 +172,7 @@ def lru_cache(maxsize=100, typed=False):
         cache = {}
         hits = misses = 0
         kwd_mark = (object(),)   # separate positional and keyword args
-        cache_get = cache.get    # bound method to lookup key or return None
+        cache_get = cache.get    # bound method to lookup a key or return None
         sentinel = object()      # unique object used with cache_get
         _len = len               # localize the global len() function
         lock = Lock()            # because linkedlist updates aren't threadsafe
@@ -250,8 +250,7 @@ def lru_cache(maxsize=100, typed=False):
                         # empty the oldest link and make it the new root
                         root = root[NEXT]
                         del cache[root[KEY]]
-                        root[KEY] = None
-                        root[RESULT] = None
+                        root[KEY] = root[RESULT] = None
                     misses += 1
                 return result
 
