@@ -35,8 +35,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #14409: IDLE doesn't not execute commands from shell,
-  error with default keybinding for Return. (Patch by Roger Serwy)
+- Issue #14409: IDLE now properly executes commands in the Shell window
+  when it cannot read the normal config files on startup and
+  has to use the built-in default key bindings.
+  There was previously a bug in one of the defaults.
 
 - Issue #10340: asyncore - properly handle EINVAL in dispatcher constructor on
   OSX; avoid to call handle_connect in case of a disconnected socket which
