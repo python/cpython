@@ -111,12 +111,14 @@ class _AllCompletedWaiter(_Waiter):
     def __init__(self, num_pending_calls, stop_on_exception):
         self.num_pending_calls = num_pending_calls
         self.stop_on_exception = stop_on_exception
+        self.lock = threading.Lock()
         super().__init__()
 
     def _decrement_pending_calls(self):
-        self.num_pending_calls -= 1
-        if not self.num_pending_calls:
-            self.event.set()
+        with self.lock:
+            self.num_pending_calls -= 1
+            if not self.num_pending_calls:
+                self.event.set()
 
     def add_result(self, future):
         super().add_result(future)
