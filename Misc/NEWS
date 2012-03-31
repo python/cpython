@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14406: Fix a race condition when using ``concurrent.futures.wait(
+  return_when=ALL_COMPLETED)``.  Patch by Matt Joiner.
+
 - Issue #5136: deprecate old, unused functions from tkinter.
 
 - Issue #14409: IDLE now properly executes commands in the Shell window
