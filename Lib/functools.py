@@ -154,8 +154,8 @@ def lru_cache(maxsize=100, typed=False):
 
     Arguments to the cached function must be hashable.
 
-    View the cache statistics named tuple (hits, misses, maxsize, currsize) with
-    f.cache_info().  Clear the cache and statistics with f.cache_clear().
+    View the cache statistics named tuple (hits, misses, maxsize, currsize)
+    with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
     See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
@@ -169,18 +169,19 @@ def lru_cache(maxsize=100, typed=False):
 
     def decorating_function(user_function):
 
-        cache = dict()
+        cache = {}
         hits = misses = 0
-        kwd_mark = (object(),)          # separate positional and keyword args
-        cache_get = cache.get           # bound method to lookup key or return None
-        _len = len                      # localize the global len() function
-        lock = Lock()                   # because linkedlist updates aren't threadsafe
-        root = []                       # root of the circular doubly linked list
-        root[:] = [root, root, None, None]      # initialize by pointing to self
-        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3    # names for the link fields
+        kwd_mark = (object(),)   # separate positional and keyword args
+        cache_get = cache.get    # bound method to lookup key or return None
+        sentinel = object()      # unique object used with cache_get
+        _len = len               # localize the global len() function
+        lock = Lock()            # because linkedlist updates aren't threadsafe
+        root = []                # root of the circular doubly linked list
+        root[:] = [root, root, None, None]     # initialize by pointing to self
+        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
 
         def make_key(args, kwds, typed, tuple=tuple, sorted=sorted, type=type):
-            # helper function to build a cache key from positional and keyword args
+            # build a cache key from positional and keyword args
             key = args
             if kwds:
                 sorted_items = tuple(sorted(kwds.items()))
@@ -194,7 +195,7 @@ def lru_cache(maxsize=100, typed=False):
         if maxsize == 0:
 
             def wrapper(*args, **kwds):
-                # no caching, just do a statistics update after a successful call
+                # no caching, just a statistics update after a successful call
                 nonlocal misses
                 result = user_function(*args, **kwds)
                 misses += 1
@@ -206,8 +207,8 @@ def lru_cache(maxsize=100, typed=False):
                 # simple caching without ordering or size limit
                 nonlocal hits, misses
                 key = make_key(args, kwds, typed) if kwds or typed else args
-                result = cache_get(key, root)   # root used here as a unique not-found sentinel
-                if result is not root:
+                result = cache_get(key, sentinel)
+                if result is not sentinel:
                     hits += 1
                     return result
                 result = user_function(*args, **kwds)
@@ -224,7 +225,7 @@ def lru_cache(maxsize=100, typed=False):
                 with lock:
                     link = cache_get(key)
                     if link is not None:
-                        # record recent use of the key by moving it to the front of the list
+                        # move the link to the front of the circular queue
                         link_prev, link_next, key, result = link
                         link_prev[NEXT] = link_next
                         link_next[PREV] = link_prev
@@ -237,7 +238,7 @@ def lru_cache(maxsize=100, typed=False):
                 result = user_function(*args, **kwds)
                 with lock:
                     if _len(cache) < maxsize:
-                        # put result in a new link at the front of the list
+                        # put result in a new link at the front of the queue
                         last = root[PREV]
                         link = [last, root, key, result]
                         cache[key] = last[NEXT] = root[PREV] = link
