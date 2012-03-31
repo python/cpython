@@ -2126,14 +2126,14 @@ class Button(Widget):
 # Indices:
 # XXX I don't like these -- take them away
 def AtEnd():
-    warnings.warn("tkinter.AtEnd will be removed in 3.5",
-                  PendingDeprecationWarning, stacklevel=2)
+    warnings.warn("tkinter.AtEnd will be removed in 3.4",
+                  DeprecationWarning, stacklevel=2)
     return 'end'
 
 
 def AtInsert(*args):
-    warnings.warn("tkinter.AtInsert will be removed in 3.5",
-                  PendingDeprecationWarning, stacklevel=2)
+    warnings.warn("tkinter.AtInsert will be removed in 3.4",
+                  DeprecationWarning, stacklevel=2)
     s = 'insert'
     for a in args:
         if a: s = s + (' ' + a)
@@ -2141,20 +2141,20 @@ def AtInsert(*args):
 
 
 def AtSelFirst():
-    warnings.warn("tkinter.AtSelFirst will be removed in 3.5",
-                  PendingDeprecationWarning, stacklevel=2)
+    warnings.warn("tkinter.AtSelFirst will be removed in 3.4",
+                  DeprecationWarning, stacklevel=2)
     return 'sel.first'
 
 
 def AtSelLast():
-    warnings.warn("tkinter.AtSelLast will be removed in 3.5",
-                  PendingDeprecationWarning, stacklevel=2)
+    warnings.warn("tkinter.AtSelLast will be removed in 3.4",
+                  DeprecationWarning, stacklevel=2)
     return 'sel.last'
 
 
 def At(x, y=None):
-    warnings.warn("tkinter.At will be removed in 3.5",
-                  PendingDeprecationWarning, stacklevel=2)
+    warnings.warn("tkinter.At will be removed in 3.4",
+                  DeprecationWarning, stacklevel=2)
     if y is None:
         return '@%r' % (x,)
     else:
