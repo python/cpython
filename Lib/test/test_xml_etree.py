@@ -14,14 +14,14 @@
 # Don't re-import "xml.etree.ElementTree" module in the docstring,
 # except if the test is specific to the Python implementation.
 
-import gc
 import html
 import io
 import sys
 import unittest
+import weakref
 
 from test import support
-from test.support import findfile, import_fresh_module
+from test.support import findfile, import_fresh_module, gc_collect
 
 pyET = import_fresh_module('xml.etree.ElementTree', blocked=['_elementtree'])
 
@@ -1848,28 +1848,26 @@ class BasicElementTest(unittest.TestCase):
         self.assertRaises(TypeError, e.insert, 0, 'foo')
 
     def test_cyclic_gc(self):
-        class ShowGC:
-            def __init__(self, flaglist):
-                self.flaglist = flaglist
-            def __del__(self):
-                self.flaglist.append(1)
+        class Dummy:
+            pass
 
-        # Test the shortest cycle: lst->element->lst
-        fl = []
-        lst = [ShowGC(fl)]
-        lst.append(ET.Element('joe', attr=lst))
-        del lst
-        gc.collect()
-        self.assertEqual(fl, [1])
+        # Test the shortest cycle: d->element->d
+        d = Dummy()
+        d.dummyref = ET.Element('joe', attr=d)
+        wref = weakref.ref(d)
+        del d
+        gc_collect()
+        self.assertIsNone(wref())
 
-        # A longer cycle: lst->e->e2->lst
-        fl = []
+        # A longer cycle: d->e->e2->d
         e = ET.Element('joe')
-        lst = [ShowGC(fl), e]
-        e2 = ET.SubElement(e, 'foo', attr=lst)
-        del lst, e, e2
-        gc.collect()
-        self.assertEqual(fl, [1])
+        d = Dummy()
+        d.dummyref = e
+        wref = weakref.ref(d)
+        e2 = ET.SubElement(e, 'foo', attr=d)
+        del d, e, e2
+        gc_collect()
+        self.assertIsNone(wref())
 
 
 class ElementTreeTest(unittest.TestCase):
