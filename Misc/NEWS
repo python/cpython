@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5136: deprecated old, unused functions from tkinter.
+
 - Issue #14409: IDLE now properly executes commands in the Shell window
   when it cannot read the normal config files on startup and
   has to use the built-in default key bindings.
