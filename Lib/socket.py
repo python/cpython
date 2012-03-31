@@ -199,6 +199,17 @@ class socket(_socket.socket):
         if self._io_refs <= 0:
             self._real_close()
 
+    def detach(self):
+        """detach() -> file descriptor
+
+        Close the socket object without closing the underlying file descriptor.
+        The object cannot be used after this call, but the file descriptor
+        can be reused for other purposes.  The file descriptor is returned.
+        """
+        self._closed = True
+        return super().detach()
+
+
 def fromfd(fd, family, type, proto=0):
     """ fromfd(fd, family, type[, proto]) -> socket object
 

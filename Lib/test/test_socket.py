@@ -1574,6 +1574,7 @@ class BasicTCPTest(SocketConnectedTest):
         f = self.cli_conn.detach()
         self.assertEqual(f, fileno)
         # cli_conn cannot be used anymore...
+        self.assertTrue(self.cli_conn._closed)
         self.assertRaises(socket.error, self.cli_conn.recv, 1024)
         self.cli_conn.close()
         # ...but we can create another socket using the (still open)
