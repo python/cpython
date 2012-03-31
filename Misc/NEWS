@@ -78,6 +78,11 @@ Library
 - Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
   on Windows.
 
+Build
+-----
+
+- Issue #14437: Fix building the _io module under Cygwin.
+
 
 What's New in Python 2.7.3 release candidate 2?
 ===============================================
