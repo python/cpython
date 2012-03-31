@@ -219,7 +219,7 @@ def lru_cache(maxsize=100, typed=False):
 
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
-                nonlocal hits, misses
+                nonlocal root, hits, misses
                 key = make_key(args, kwds, typed) if kwds or typed else args
                 with lock:
                     link = cache_get(key)
@@ -236,16 +236,21 @@ def lru_cache(maxsize=100, typed=False):
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
-                    # put result in a new link at the front of the list
-                    last = root[PREV]
-                    link = [last, root, key, result]
-                    cache[key] = last[NEXT] = root[PREV] = link
-                    if _len(cache) > maxsize:
-                        # purge the least recently used cache entry
-                        old_prev, old_next, old_key, old_result = root[NEXT]
-                        root[NEXT] = old_next
-                        old_next[PREV] = root
-                        del cache[old_key]
+                    if _len(cache) < maxsize:
+                        # put result in a new link at the front of the list
+                        last = root[PREV]
+                        link = [last, root, key, result]
+                        cache[key] = last[NEXT] = root[PREV] = link
+                    else:
+                        # use root to store the new key and result
+                        root[KEY] = key
+                        root[RESULT] = result
+                        cache[key] = root
+                        # empty the oldest link and make it the new root
+                        root = root[NEXT]
+                        del cache[root[KEY]]
+                        root[KEY] = None
+                        root[RESULT] = None
                     misses += 1
                 return result
 
