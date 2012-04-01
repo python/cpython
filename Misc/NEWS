@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
+  by Suman Saha.
+
 - Issue #1683368: object.__new__ and object.__init__ raise a TypeError if they
   are passed arguments and their complementary method is not overridden.
 
