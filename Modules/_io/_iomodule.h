@@ -67,7 +67,7 @@ typedef struct {
     PyObject *filename; /* Not used, but part of the IOError object */
     Py_ssize_t written;
 } PyBlockingIOErrorObject;
-PyAPI_DATA(PyObject *) PyExc_BlockingIOError;
+extern PyObject *PyExc_BlockingIOError;
 
 /*
  * Offset type for positioning.
