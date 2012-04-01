@@ -39,7 +39,7 @@ and attributes that allow you to make assertions about how it has been used.
 
 Once the mock has been called its :attr:`~Mock.called` attribute is set to
 `True`. More importantly we can use the :meth:`~Mock.assert_called_with` or
-:meth`~Mock.assert_called_once_with` method to check that it was called with
+:meth:`~Mock.assert_called_once_with` method to check that it was called with
 the correct arguments.
 
 This example tests that calling `ProductionClass().method` results in a call to
