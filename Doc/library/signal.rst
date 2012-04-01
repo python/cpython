@@ -5,46 +5,58 @@
    :synopsis: Set handlers for asynchronous events.
 
 
-This module provides mechanisms to use signal handlers in Python. Some general
-rules for working with signals and their handlers:
+This module provides mechanisms to use signal handlers in Python.
 
-* A handler for a particular signal, once set, remains installed until it is
-  explicitly reset (Python emulates the BSD style interface regardless of the
-  underlying implementation), with the exception of the handler for
-  :const:`SIGCHLD`, which follows the underlying implementation.
 
-* There is no way to "block" signals temporarily from critical sections (since
-  this is not supported by all Unix flavors).
+General rules
+-------------
 
-* Although Python signal handlers are called asynchronously as far as the Python
-  user is concerned, they can only occur between the "atomic" instructions of the
-  Python interpreter.  This means that signals arriving during long calculations
-  implemented purely in C (such as regular expression matches on large bodies of
-  text) may be delayed for an arbitrary amount of time.
+The :func:`signal.signal` function allows to define custom handlers to be
+executed when a signal is received.  A small number of default handlers are
+installed: :const:`SIGPIPE` is ignored (so write errors on pipes and sockets
+can be reported as ordinary Python exceptions) and :const:`SIGINT` is
+translated into a :exc:`KeyboardInterrupt` exception.
 
-* When a signal arrives during an I/O operation, it is possible that the I/O
-  operation raises an exception after the signal handler returns. This is
-  dependent on the underlying Unix system's semantics regarding interrupted system
-  calls.
+A handler for a particular signal, once set, remains installed until it is
+explicitly reset (Python emulates the BSD style interface regardless of the
+underlying implementation), with the exception of the handler for
+:const:`SIGCHLD`, which follows the underlying implementation.
 
-* Because the C signal handler always returns, it makes little sense to catch
-  synchronous errors like :const:`SIGFPE` or :const:`SIGSEGV`.
+There is no way to "block" signals temporarily from critical sections (since
+this is not supported by all Unix flavors).
 
-* Python installs a small number of signal handlers by default: :const:`SIGPIPE`
-  is ignored (so write errors on pipes and sockets can be reported as ordinary
-  Python exceptions) and :const:`SIGINT` is translated into a
-  :exc:`KeyboardInterrupt` exception.  All of these can be overridden.
 
-* Some care must be taken if both signals and threads are used in the same
-  program.  The fundamental thing to remember in using signals and threads
-  simultaneously is: always perform :func:`signal` operations in the main thread
-  of execution.  Any thread can perform an :func:`alarm`, :func:`getsignal`,
-  :func:`pause`, :func:`setitimer` or :func:`getitimer`; only the main thread
-  can set a new signal handler, and the main thread will be the only one to
-  receive signals (this is enforced by the Python :mod:`signal` module, even
-  if the underlying thread implementation supports sending signals to
-  individual threads).  This means that signals can't be used as a means of
-  inter-thread communication.  Use locks instead.
+Execution of Python signal handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A Python signal handler does not get executed inside the low-level (C) signal
+handler.  Instead, the low-level signal handler sets a flag which tells the
+:term:`virtual machine` to execute the corresponding Python signal handler
+at a later point(for example at the next :term:`bytecode` instruction).
+This has consequences:
+
+* It makes little sense to catch synchronous errors like :const:`SIGFPE` or
+  :const:`SIGSEGV`.
+
+* A long-running calculation implemented purely in C (such as regular
+  expression matching on a large body of text) may run uninterrupted for an
+  arbitrary amount of time, regardless of any signals received.  The Python
+  signal handlers will be called when the calculation finishes.
+
+
+Signals and threads
+^^^^^^^^^^^^^^^^^^^
+
+Python signal handlers are always executed in the main Python thread,
+even if the signal was received in another thread.  This means that signals
+can't be used as a means of inter-thread communication.  You can use
+the synchronization primitives from the :mod:`threading` module instead.
+
+Besides, only the main thread is allowed to set a new signal handler.
+
+
+Module contents
+---------------
 
 The variables defined in the :mod:`signal` module are:
 

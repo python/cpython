@@ -385,7 +385,7 @@ Glossary
       :meth:`str.lower` method can serve as a key function for case insensitive
       sorts.  Alternatively, an ad-hoc key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
-      the :mod:`operator` module provides three key function constuctors:
+      the :mod:`operator` module provides three key function constructors:
       :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
       :func:`~operator.methodcaller`.  See the :ref:`Sorting HOW TO
       <sortinghowto>` for examples of how to create and use key functions.
