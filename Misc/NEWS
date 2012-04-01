@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14151: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_PIPE type address under
+  non-Windows platforms.  Patch by Popa Claudiu.
+
 - Issue #14300: Under Windows, sockets created using socket.dup() now allow
   overlapped I/O.  Patch by sbt.
 
