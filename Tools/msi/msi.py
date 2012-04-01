@@ -97,7 +97,9 @@ extensions = [
     '_sqlite3.pyd',
     '_hashlib.pyd',
     '_multiprocessing.pyd',
-    '_lzma.pyd'
+    '_lzma.pyd',
+    '_decimal.pyd',
+    '_testbuffer.pyd'
 ]
 
 # Well-known component UUIDs
