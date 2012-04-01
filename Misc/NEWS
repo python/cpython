@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
+  by Suman Saha.
+
 - Issue #14378: Fix compiling ast.ImportFrom nodes with a "__future__" string as
   the module name that was not interned.
 
@@ -30,6 +33,21 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14151: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_PIPE type address under
+  non-Windows platforms.  Patch by Popa Claudiu.
+
+- Issue #13872: socket.detach() now marks the socket closed (as mirrored
+  in the socket repr()).  Patch by Matt Joiner.
+
+- Issue #14406: Fix a race condition when using ``concurrent.futures.wait(
+  return_when=ALL_COMPLETED)``.  Patch by Matt Joiner.
+
+- Issue #14409: IDLE now properly executes commands in the Shell window
+  when it cannot read the normal config files on startup and
+  has to use the built-in default key bindings.
+  There was previously a bug in one of the defaults.
 
 - Issue #10340: asyncore - properly handle EINVAL in dispatcher constructor on
   OSX; avoid to call handle_connect in case of a disconnected socket which
@@ -96,6 +114,8 @@ Extension Modules
 
 Build
 -----
+
+- Issue #14437: Fix building the _io module under Cygwin.
 
 - Issue #14387: Do not include accu.h from Python.h.
 
