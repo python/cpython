@@ -1804,7 +1804,11 @@ class PyBuildExt(build_ext):
             sources = ['_decimal/_decimal.c']
             depends = ['_decimal/docstrings.h']
         else:
-            include_dirs = ['./Modules/_decimal/libmpdec']
+            srcdir = sysconfig.get_config_var('srcdir')
+            include_dirs = [os.path.abspath(os.path.join(srcdir,
+                                                         'Modules',
+                                                         '_decimal',
+                                                         'libmpdec'))]
             libraries = []
             sources = [
               '_decimal/_decimal.c',
