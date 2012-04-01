@@ -84,7 +84,10 @@ print("\n# =====================================================================
 print("#                               Factorial")
 print("# ======================================================================\n")
 
-C.getcontext().prec = C.MAX_PREC
+c = C.getcontext()
+c.prec = C.MAX_PREC
+c.Emax = C.MAX_EMAX
+c.Emin = C.MIN_EMIN
 
 for n in [100000, 1000000]:
 
