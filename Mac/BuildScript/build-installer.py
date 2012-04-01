@@ -143,6 +143,17 @@ USAGE = textwrap.dedent("""\
 def library_recipes():
     result = []
 
+    result.extend([
+          dict(
+              name="XZ 5.0.3",
+              url="http://tukaani.org/xz/xz-5.0.3.tar.gz",
+              checksum='fefe52f9ecd521de2a8ce38c21a27574',
+              configure_pre=[
+                    '--disable-dependency-tracking',
+              ]
+              )
+          ])
+
     if DEPTARGET < '10.5':
         result.extend([
           dict(
