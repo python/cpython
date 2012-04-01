@@ -475,9 +475,8 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 
     new_base = best_base(value);
 
-    if (!new_base) {
+    if (!new_base)
         return -1;
-    }
 
     if (!compatible_for_assignment(type->tp_base, new_base, "__bases__"))
         return -1;
