@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
+  by Suman Saha.
+
 - Issue #14378: Fix compiling ast.ImportFrom nodes with a "__future__" string as
   the module name that was not interned.
 
