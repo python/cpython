@@ -603,11 +603,17 @@ decimal
    C-module and libmpdec written by Stefan Krah.
 
 The new C version of the decimal module integrates the high speed libmpdec
-library for arbitrary precision correctly-rounded decimal arithmetic.
-libmpdec conforms to IBM's General Decimal Arithmetic Specification.
+library for arbitrary precision correctly-rounded decimal floating point
+arithmetic. libmpdec conforms to IBM's General Decimal Arithmetic Specification.
 
-Performance gains range from 12x for database applications to 80x for
-numerically intensive applications:
+Performance gains range from 10x for database applications to 80x for
+numerically intensive applications. These numbers are expected gains
+for standard precisions used in decimal floating point arithmetic. Since
+the precision is user configurable, the exact figures may vary. For example,
+in integer bignum arithmetic the differences can be significantly higher.
+
+The following table is meant as an illustration. Benchmarks are available
+at (http://www.bytereef.org/mpdecimal/quickstart.html).
 
    +---------+-------------+--------------+-------------+
    |         |  decimal.py |   _decimal   |   speedup   |
