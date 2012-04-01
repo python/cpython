@@ -104,6 +104,13 @@ def arbitrary_address(family):
     else:
         raise ValueError('unrecognized family')
 
+def _validate_family(family):
+    '''
+    Checks if the family is valid for the current environment.
+    '''
+    if sys.platform != 'win32' and family == 'AF_PIPE':
+        raise ValueError('Family %s is not recognized.' % family)
+
 
 def address_type(address):
     '''
@@ -436,6 +443,7 @@ class Listener(object):
                  or default_family
         address = address or arbitrary_address(family)
 
+        _validate_family(family)
         if family == 'AF_PIPE':
             self._listener = PipeListener(address, backlog)
         else:
@@ -473,6 +481,7 @@ def Client(address, family=None, authkey=None):
     Returns a connection to the address of a `Listener`
     '''
     family = family or address_type(address)
+    _validate_family(family)
     if family == 'AF_PIPE':
         c = PipeClient(address)
     else:
