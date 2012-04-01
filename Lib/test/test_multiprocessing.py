@@ -2319,8 +2319,20 @@ class TestStdinBadfiledescriptor(unittest.TestCase):
         flike.flush()
         assert sio.getvalue() == 'foo'
 
+
+#
+# Issue 14151: Test invalid family on invalid environment
+#
+
+class TestInvalidFamily(unittest.TestCase):
+
+    @unittest.skipIf(WIN32, "skipped on Windows")
+    def test_invalid_family(self):
+        with self.assertRaises(ValueError):
+            multiprocessing.connection.Listener(r'\\.\test')
+
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
-                   TestStdinBadfiledescriptor]
+                   TestStdinBadfiledescriptor, TestInvalidFamily]
 
 #
 #
