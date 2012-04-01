@@ -464,12 +464,10 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
                             type->tp_name, Py_TYPE(ob)->tp_name);
                     return -1;
         }
-        if (PyType_Check(ob)) {
-            if (PyType_IsSubtype((PyTypeObject*)ob, type)) {
-                PyErr_SetString(PyExc_TypeError,
-            "a __bases__ item causes an inheritance cycle");
-                return -1;
-            }
+        if (PyType_IsSubtype((PyTypeObject*)ob, type)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "a __bases__ item causes an inheritance cycle");
+            return -1;
         }
     }
 
