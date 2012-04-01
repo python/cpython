@@ -2234,8 +2234,10 @@ bytearray_extend(PyByteArrayObject *self, PyObject *arg)
     }
 
     bytearray_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
-    if (bytearray_obj == NULL)
+    if (bytearray_obj == NULL) {
+        Py_DECREF(it);
         return NULL;
+    }
     buf = PyByteArray_AS_STRING(bytearray_obj);
 
     while ((item = PyIter_Next(it)) != NULL) {
@@ -2268,8 +2270,10 @@ bytearray_extend(PyByteArrayObject *self, PyObject *arg)
         return NULL;
     }
 
-    if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), bytearray_obj) == -1)
+    if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), bytearray_obj) == -1) {
+        Py_DECREF(bytearray_obj);
         return NULL;
+    }
     Py_DECREF(bytearray_obj);
 
     Py_RETURN_NONE;
