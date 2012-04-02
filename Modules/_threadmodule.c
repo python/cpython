@@ -1001,14 +1001,17 @@ t_bootstrap(void *boot_raw)
             PyErr_Clear();
         else {
             PyObject *file;
+            PyObject *exc, *value, *tb;
             PySys_WriteStderr(
                 "Unhandled exception in thread started by ");
+            PyErr_Fetch(&exc, &value, &tb);
             file = PySys_GetObject("stderr");
             if (file != NULL && file != Py_None)
                 PyFile_WriteObject(boot->func, file, 0);
             else
                 PyObject_Print(boot->func, stderr, 0);
             PySys_WriteStderr("\n");
+            PyErr_Restore(exc, value, tb);
             PyErr_PrintEx(0);
         }
     }
