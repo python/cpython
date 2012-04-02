@@ -1494,6 +1494,10 @@ current_context(void)
     }
 
     *CTX(module_context) = *CTX(default_context_template);
+    CTX(module_context)->status = 0;
+    CTX(module_context)->newtrap = 0;
+    CtxCaps(module_context) = CtxCaps(default_context_template);
+
     module_context_set = 1;
     return module_context;
 }
@@ -1533,6 +1537,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         if (v == NULL) {
             return NULL;
         }
+        CTX(v)->status = 0;
     }
     else {
         Py_INCREF(v);
@@ -1581,6 +1586,8 @@ current_context(void)
     if (tl_context == NULL) {
         return NULL;
     }
+    CTX(tl_context)->status = 0;
+
     if (PyDict_SetItem(dict, tls_context_key, tl_context) < 0) {
         Py_DECREF(tl_context);
         return NULL;
@@ -1646,6 +1653,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         if (v == NULL) {
             return NULL;
         }
+        CTX(v)->status = 0;
     }
     else {
         Py_INCREF(v);
