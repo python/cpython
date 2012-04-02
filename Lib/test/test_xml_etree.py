@@ -1859,16 +1859,6 @@ class BasicElementTest(unittest.TestCase):
         gc_collect()
         self.assertIsNone(wref())
 
-        # A longer cycle: d->e->e2->d
-        e = ET.Element('joe')
-        d = Dummy()
-        d.dummyref = e
-        wref = weakref.ref(d)
-        e2 = ET.SubElement(e, 'foo', attr=d)
-        del d, e, e2
-        gc_collect()
-        self.assertIsNone(wref())
-
 
 class ElementTreeTest(unittest.TestCase):
     def test_istype(self):
