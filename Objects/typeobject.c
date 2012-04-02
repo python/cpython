@@ -490,26 +490,22 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
     for (i = 0; i < PyTuple_GET_SIZE(value); i++) {
         ob = PyTuple_GET_ITEM(value, i);
         if (!PyType_Check(ob)) {
-            PyErr_Format(
-                PyExc_TypeError,
-    "%s.__bases__ must be tuple of classes, not '%s'",
-                            type->tp_name, Py_TYPE(ob)->tp_name);
-                    return -1;
+            PyErr_Format(PyExc_TypeError,
+                         "%s.__bases__ must be tuple of classes, not '%s'",
+                         type->tp_name, Py_TYPE(ob)->tp_name);
+            return -1;
         }
-        if (PyType_Check(ob)) {
-            if (PyType_IsSubtype((PyTypeObject*)ob, type)) {
-                PyErr_SetString(PyExc_TypeError,
-            "a __bases__ item causes an inheritance cycle");
-                return -1;
-            }
+        if (PyType_IsSubtype((PyTypeObject*)ob, type)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "a __bases__ item causes an inheritance cycle");
+            return -1;
         }
     }
 
     new_base = best_base(value);
 
-    if (!new_base) {
+    if (!new_base)
         return -1;
-    }
 
     if (!compatible_for_assignment(type->tp_base, new_base, "__bases__"))
         return -1;
