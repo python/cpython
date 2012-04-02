@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14474: Save and restore exception state in thread.start_new_thread()
+  while writing error message if the thread leaves a unhandled exception.
+
 - Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
   by Suman Saha.
 
