@@ -1122,7 +1122,7 @@ PyEnumKey(PyObject *self, PyObject *args)
      * nul.  RegEnumKeyEx requires a 257 character buffer to
      * retrieve such a key name. */
     wchar_t tmpbuf[257];
-    DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
+    DWORD len = sizeof(tmpbuf)/sizeof(wchar_t); /* includes NULL terminator */
 
     if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
         return NULL;
