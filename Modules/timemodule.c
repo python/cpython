@@ -962,6 +962,9 @@ PyInit_timezone(PyObject *m) {
 #ifdef CLOCK_MONOTONIC_RAW
     PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
 #endif
+#ifdef CLOCK_HIGHRES
+    PyModule_AddIntMacro(m, CLOCK_HIGHRES);
+#endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
     PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
 #endif
