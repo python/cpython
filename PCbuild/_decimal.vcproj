@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="_decimal"
 	ProjectGUID="{0E9791DB-593A-465F-98BC-681011311617}"
 	RootNamespace="_decimal"
@@ -42,8 +42,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
+				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -104,8 +104,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
+				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -166,8 +166,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
+				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -230,8 +230,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
+				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -293,8 +293,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
 				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
-				AdditionalOptions="/DCONFIG_32 /DPPRO /D_CRT_SECURE_NO_WARNINGS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -357,8 +357,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
 				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
-				AdditionalOptions="/DCONFIG_64 /D_CRT_SECURE_NO_WARNINGS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -421,8 +421,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
 				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
-				AdditionalOptions="/DCONFIG_32 /DPPRO /D_CRT_SECURE_NO_WARNINGS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -485,8 +485,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
 				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
-				AdditionalOptions="/DCONFIG_64 /D_CRT_SECURE_NO_WARNINGS"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -533,10 +533,6 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\_decimal\docstrings.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\_decimal\libmpdec\basearith.h"
 				>
 			</File>
@@ -558,6 +554,10 @@
 			</File>
 			<File
 				RelativePath="..\Modules\_decimal\libmpdec\difradix2.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_decimal\docstrings.h"
 				>
 			</File>
 			<File
