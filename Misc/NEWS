@@ -34,6 +34,8 @@ Core and Builtins
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
 
+- Issue #14471: Fix a possible buffer overrun in the winreg module.
+
 Library
 -------
 
