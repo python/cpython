@@ -822,7 +822,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     PyObject *names;
     PyObject *consts;
 
+#ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
+#endif
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
