@@ -2,6 +2,25 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.0 Alpha 3?
+===================================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
+  by Suman Saha.
+
+Library
+-------
+
+- Issue #14151: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_PIPE type address under
+  non-Windows platforms.  Patch by Popa Claudiu.
+
+
 What's New in Python 3.3.0 Alpha 2?
 ===================================
 
@@ -9,9 +28,6 @@ What's New in Python 3.3.0 Alpha 2?
 
 Core and Builtins
 -----------------
-
-- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
-  by Suman Saha.
 
 - Issue #1683368: object.__new__ and object.__init__ raise a TypeError if they
   are passed arguments and their complementary method is not overridden.
@@ -39,10 +55,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #14151: Raise a ValueError, not a NameError, when trying to create
-  a multiprocessing Client or Listener with an AF_PIPE type address under
-  non-Windows platforms.  Patch by Popa Claudiu.
 
 - Issue #14300: Under Windows, sockets created using socket.dup() now allow
   overlapped I/O.  Patch by sbt.
