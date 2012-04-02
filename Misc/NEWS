@@ -56,6 +56,8 @@ Core and Builtins
 - Issue #14435: Remove dedicated block allocator from floatobject.c and rely
   on the PyObject_Malloc() api like all other objects.
 
+- Issue #14471: Fix a possible buffer overrun in the winreg module.
+
 Library
 -------
 
