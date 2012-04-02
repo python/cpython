@@ -134,7 +134,6 @@ class ThreadRunningTests(BasicThreadTest):
         # See issue #14474
         def task():
             started.release()
-            sys.stderr = stderr
             raise SyntaxError
         def mywrite(self, *args):
             try:
