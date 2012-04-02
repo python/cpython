@@ -151,6 +151,13 @@ The module defines the following functions and data items:
    .. versionadded:: 3.3
 
 
+.. function:: clock_settime(clk_id, time)
+
+   Set the time of the specified clock *clk_id*.
+
+   .. versionadded:: 3.3
+
+
 .. data:: CLOCK_REALTIME
 
    System-wide real-time clock. Setting this clock requires appropriate

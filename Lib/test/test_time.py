@@ -47,6 +47,17 @@ class TimeTestCase(unittest.TestCase):
         self.assertGreater(res, 0.0)
         self.assertLessEqual(res, 1.0)
 
+    @unittest.skipUnless(hasattr(time, 'clock_settime'),
+                         'need time.clock_settime()')
+    def test_clock_settime(self):
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        try:
+            time.clock_settime(time.CLOCK_REALTIME, t)
+        except PermissionError:
+            pass
+
+        self.assertRaises(OSError, time.clock_settime, time.CLOCK_MONOTONIC, 0)
+
     def test_conversions(self):
         self.assertEqual(time.ctime(self.t),
                          time.asctime(time.localtime(self.t)))
