@@ -128,6 +128,30 @@ class ThreadRunningTests(BasicThreadTest):
             time.sleep(0.01)
         self.assertEqual(thread._count(), orig)
 
+    def test_save_exception_state_on_error(self):
+        # See issue #14474
+        def task():
+            started.release()
+            sys.stderr = stderr
+            raise SyntaxError
+        def mywrite(self, *args):
+            try:
+                raise ValueError
+            except ValueError:
+                pass
+            real_write(self, *args)
+        c = thread._count()
+        started = thread.allocate_lock()
+        with support.captured_output("stderr") as stderr:
+            real_write = stderr.write
+            stderr.write = mywrite
+            started.acquire()
+            thread.start_new_thread(task, ())
+            started.acquire()
+            while thread._count() > c:
+                pass
+        self.assertIn("Traceback", stderr.getvalue())
+
 
 class Barrier:
     def __init__(self, num_threads):
