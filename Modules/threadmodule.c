@@ -627,8 +627,8 @@ t_bootstrap(void *boot_raw)
                 PyFile_WriteObject(boot->func, file, 0);
             else
                 PyObject_Print(boot->func, stderr, 0);
-            PyErr_Restore(exc, value, tb);
             PySys_WriteStderr("\n");
+            PyErr_Restore(exc, value, tb);
             PyErr_PrintEx(0);
         }
     }
