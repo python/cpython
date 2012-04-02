@@ -10,8 +10,15 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
+  by Suman Saha.
+
 Library
 -------
+
+- Issue #14151: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_PIPE type address under
+  non-Windows platforms.  Patch by Popa Claudiu.
 
 
 What's New in Python 3.3.0 Alpha 2?

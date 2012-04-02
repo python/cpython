@@ -2638,8 +2638,20 @@ class TestWait(unittest.TestCase):
         p.join()
 
 
+#
+# Issue 14151: Test invalid family on invalid environment
+#
+
+class TestInvalidFamily(unittest.TestCase):
+
+    @unittest.skipIf(WIN32, "skipped on Windows")
+    def test_invalid_family(self):
+        with self.assertRaises(ValueError):
+            multiprocessing.connection.Listener(r'\\.\test')
+
+
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
-                   TestStdinBadfiledescriptor, TestWait]
+                   TestStdinBadfiledescriptor, TestWait, TestInvalidFamily]
 
 #
 #
