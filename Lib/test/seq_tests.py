@@ -4,6 +4,7 @@ Tests common to tuple, list and UserList.UserList
 
 import unittest
 import sys
+import pickle
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -388,3 +389,9 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a.index(0, -4*sys.maxsize, 4*sys.maxsize), 2)
         self.assertRaises(ValueError, a.index, 0, 4*sys.maxsize,-4*sys.maxsize)
         self.assertRaises(ValueError, a.index, 2, 0, -10)
+
+    def test_pickle(self):
+        lst = self.type2test([4, 5, 6, 7])
+        lst2 = pickle.loads(pickle.dumps(lst))
+        self.assertEqual(lst2, lst)
+        self.assertNotEqual(id(lst2), id(lst))
