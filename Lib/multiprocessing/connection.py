@@ -111,6 +111,10 @@ def _validate_family(family):
     if sys.platform != 'win32' and family == 'AF_PIPE':
         raise ValueError('Family %s is not recognized.' % family)
 
+    if sys.platform == 'win32' and family == 'AF_UNIX':
+        # double check
+        if not hasattr(socket, family):
+            raise ValueError('Family %s is not recognized.' % family)
 
 def address_type(address):
     '''
