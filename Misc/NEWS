@@ -39,6 +39,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14482: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_UNIX type address under
+  Windows.  Patch by Popa Claudiu.
+
 - Issue #14151: Raise a ValueError, not a NameError, when trying to create
   a multiprocessing Client or Listener with an AF_PIPE type address under
   non-Windows platforms.  Patch by Popa Claudiu.
