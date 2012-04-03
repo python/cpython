@@ -1510,7 +1510,7 @@ current_context(void)
 #define CURRENT_CONTEXT_ADDR(ctx) \
     ctx = CTX(current_context())
 
-/* Return current context, increment reference */
+/* Return a new reference to the current context */
 static PyObject *
 PyDec_GetCurrentContext(void)
 {
@@ -1614,7 +1614,7 @@ current_context(void)
     ctx = CTX(_c_t_x_o_b_j);                    \
 }
 
-/* Return current context, increment reference */
+/* Return a new reference to the current context */
 static PyObject *
 PyDec_GetCurrentContext(void)
 {
@@ -1759,7 +1759,7 @@ static PyTypeObject PyDecContextManager_Type =
     0,                                      /* tp_print */
     (getattrfunc) 0,                        /* tp_getattr */
     (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_reserved */
     (reprfunc) 0,                           /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -2699,7 +2699,7 @@ ctx_create_decimal(PyObject *context, PyObject *args)
 
 
 /******************************************************************************/
-/*                        Implicit conversions to Decimal                     */ 
+/*                        Implicit conversions to Decimal                     */
 /******************************************************************************/
 
 /* Try to convert PyObject v to a new PyDecObject conv. If the conversion
@@ -2796,7 +2796,7 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 
 
 /******************************************************************************/
-/*              Implicit conversions to Decimal for comparison                */ 
+/*              Implicit conversions to Decimal for comparison                */
 /******************************************************************************/
 
 /* Convert rationals for comparison */
