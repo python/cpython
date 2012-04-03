@@ -1335,56 +1335,67 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         return PyArg_ParseTuple(err, "O(ziiz)", message, filename,
                                 lineno, offset, text);
 
+    *message = NULL;
+
     /* new style errors.  `err' is an instance */
-
-    if (! (v = PyObject_GetAttrString(err, "msg")))
+    *message = PyObject_GetAttrString(err, "msg");
+    if (!*message)
         goto finally;
-    *message = v;
 
-    if (!(v = PyObject_GetAttrString(err, "filename")))
+    v = PyObject_GetAttrString(err, "filename");
+    if (!v)
         goto finally;
-    if (v == Py_None)
+    if (v == Py_None) {
+        Py_DECREF(v);
         *filename = NULL;
-    else if (! (*filename = _PyUnicode_AsString(v)))
-        goto finally;
+    }
+    else {
+        *filename = _PyUnicode_AsString(v);
+        Py_DECREF(v);
+        if (!*filename)
+            goto finally;
+    }
 
-    Py_DECREF(v);
-    if (!(v = PyObject_GetAttrString(err, "lineno")))
+    v = PyObject_GetAttrString(err, "lineno");
+    if (!v)
         goto finally;
     hold = PyLong_AsLong(v);
     Py_DECREF(v);
-    v = NULL;
     if (hold < 0 && PyErr_Occurred())
         goto finally;
     *lineno = (int)hold;
 
-    if (!(v = PyObject_GetAttrString(err, "offset")))
+    v = PyObject_GetAttrString(err, "offset");
+    if (!v)
         goto finally;
     if (v == Py_None) {
         *offset = -1;
         Py_DECREF(v);
-        v = NULL;
     } else {
         hold = PyLong_AsLong(v);
         Py_DECREF(v);
-        v = NULL;
         if (hold < 0 && PyErr_Occurred())
             goto finally;
         *offset = (int)hold;
     }
 
-    if (!(v = PyObject_GetAttrString(err, "text")))
+    v = PyObject_GetAttrString(err, "text");
+    if (!v)
         goto finally;
-    if (v == Py_None)
+    if (v == Py_None) {
+        Py_DECREF(v);
         *text = NULL;
-    else if (!PyUnicode_Check(v) ||
-             !(*text = _PyUnicode_AsString(v)))
-        goto finally;
-    Py_DECREF(v);
+    }
+    else {
+        *text = _PyUnicode_AsString(v);
+        Py_DECREF(v);
+        if (!*text)
+            goto finally;
+    }
     return 1;
 
 finally:
-    Py_XDECREF(v);
+    Py_XDECREF(*message);
     return 0;
 }
 
