@@ -438,6 +438,19 @@ filter_next(filterobject *lz)
     }
 }
 
+static PyObject *
+filter_reduce(filterobject *lz)
+{
+    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyMethodDef filter_methods[] = {
+    {"__reduce__",   (PyCFunction)filter_reduce,   METH_NOARGS, reduce_doc},
+    {NULL,           NULL}           /* sentinel */
+};
+
 PyDoc_STRVAR(filter_doc,
 "filter(function or None, iterable) --> filter object\n\
 \n\
@@ -474,7 +487,7 @@ PyTypeObject PyFilter_Type = {
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)filter_next,          /* tp_iternext */
-    0,                                  /* tp_methods */
+    filter_methods,                     /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
@@ -1054,6 +1067,31 @@ map_next(mapobject *lz)
     return result;
 }
 
+static PyObject *
+map_reduce(mapobject *lz)
+{
+    Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
+    PyObject *args = PyTuple_New(numargs+1);
+    Py_ssize_t i;
+    if (args == NULL)
+        return NULL;
+    Py_INCREF(lz->func);
+    PyTuple_SET_ITEM(args, 0, lz->func);
+    for (i = 0; i<numargs; i++){
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        Py_INCREF(it);
+        PyTuple_SET_ITEM(args, i+1, it);
+    }
+
+    return Py_BuildValue("ON", Py_TYPE(lz), args);
+}
+
+static PyMethodDef map_methods[] = {
+    {"__reduce__",   (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
+    {NULL,           NULL}           /* sentinel */
+};
+
+
 PyDoc_STRVAR(map_doc,
 "map(func, *iterables) --> map object\n\
 \n\
@@ -1090,7 +1128,7 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)map_next,     /* tp_iternext */
-    0,                                  /* tp_methods */
+    map_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
@@ -2238,6 +2276,18 @@ zip_next(zipobject *lz)
     return result;
 }
 
+static PyObject *
+zip_reduce(zipobject *lz)
+{
+    /* Just recreate the zip with the internal iterator tuple */
+    return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);
+}
+
+static PyMethodDef zip_methods[] = {
+    {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
+    {NULL,           NULL}           /* sentinel */
+};
+
 PyDoc_STRVAR(zip_doc,
 "zip(iter1 [,iter2 [...]]) --> zip object\n\
 \n\
@@ -2276,7 +2326,7 @@ PyTypeObject PyZip_Type = {
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)zip_next,     /* tp_iternext */
-    0,                                  /* tp_methods */
+    zip_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */

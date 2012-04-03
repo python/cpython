@@ -3074,9 +3074,43 @@ striter_len(striterobject *it)
 PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+striter_reduce(striterobject *it)
+{
+    if (it->it_seq != NULL) {
+        return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    } else {
+        PyObject *u = PyUnicode_FromUnicode(NULL, 0);
+        if (u == NULL)
+            return NULL;
+        return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), u);
+    }
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+striter_setstate(striterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (index < 0)
+        index = 0;
+    it->it_index = index;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef striter_methods[] = {
     {"__length_hint__", (PyCFunction)striter_len, METH_NOARGS,
      length_hint_doc},
+    {"__reduce__",      (PyCFunction)striter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"__setstate__",    (PyCFunction)striter_setstate, METH_O,
+     setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

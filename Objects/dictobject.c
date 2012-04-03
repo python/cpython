@@ -2323,9 +2323,16 @@ dictiter_len(dictiterobject *di)
 PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+dictiter_reduce(dictiterobject *di);
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
 static PyMethodDef dictiter_methods[] = {
     {"__length_hint__", (PyCFunction)dictiter_len, METH_NOARGS,
      length_hint_doc},
+     {"__reduce__", (PyCFunction)dictiter_reduce, METH_NOARGS,
+     reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2559,6 +2566,52 @@ PyTypeObject PyDictIterItem_Type = {
     0,
 };
 
+
+static PyObject *
+dictiter_reduce(dictiterobject *di)
+{
+    PyObject *list;
+    dictiterobject tmp;
+
+    list = PyList_New(0);
+    if (!list)
+        return NULL;
+
+    /* copy the itertor state */
+    tmp = *di;
+    Py_XINCREF(tmp.di_dict);
+    
+    /* iterate the temporary into a list */
+    for(;;) {
+        PyObject *element = 0;
+        if (Py_TYPE(di) == &PyDictIterItem_Type)
+            element = dictiter_iternextitem(&tmp);
+        else if (Py_TYPE(di) == &PyDictIterKey_Type)
+            element = dictiter_iternextkey(&tmp);
+        else if (Py_TYPE(di) == &PyDictIterValue_Type)
+            element = dictiter_iternextvalue(&tmp);
+        else
+            assert(0);
+        if (element) {
+            if (PyList_Append(list, element)) {
+                Py_DECREF(element);
+                Py_DECREF(list);
+                Py_XDECREF(tmp.di_dict);
+                return NULL;
+            }
+            Py_DECREF(element);
+        } else
+            break;
+    }
+    Py_XDECREF(tmp.di_dict);
+    /* check for error */
+    if (tmp.di_dict != NULL) {
+        /* we have an error */
+        Py_DECREF(list);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), list);
+}
 
 /***********************************************/
 /* View objects for keys(), items(), values(). */

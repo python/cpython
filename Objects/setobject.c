@@ -819,8 +819,51 @@ setiter_len(setiterobject *si)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyObject *setiter_iternext(setiterobject *si);
+
+static PyObject *
+setiter_reduce(setiterobject *si)
+{
+    PyObject *list;
+    setiterobject tmp;
+
+    list = PyList_New(0);
+    if (!list)
+        return NULL;
+
+    /* copy the itertor state */
+    tmp = *si;
+    Py_XINCREF(tmp.si_set);
+    
+    /* iterate the temporary into a list */
+    for(;;) {
+        PyObject *element = setiter_iternext(&tmp);
+        if (element) {
+            if (PyList_Append(list, element)) {
+                Py_DECREF(element);
+                Py_DECREF(list);
+                Py_XDECREF(tmp.si_set);
+                return NULL;
+            }
+            Py_DECREF(element);
+        } else
+            break;
+    }
+    Py_XDECREF(tmp.si_set);
+    /* check for error */
+    if (tmp.si_set != NULL) {
+        /* we have an error */
+        Py_DECREF(list);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), list);
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
 static PyMethodDef setiter_methods[] = {
     {"__length_hint__", (PyCFunction)setiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)setiter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1963,8 +2006,6 @@ done:
     Py_XDECREF(dict);
     return result;
 }
-
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
 set_sizeof(PySetObject *so)
