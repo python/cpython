@@ -685,7 +685,7 @@ The p1.stdout.close() call after starting the p2 is important in order for p1
 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
-be used directly:
+be used directly::
 
    output=`dmesg | grep hda`
    # becomes
