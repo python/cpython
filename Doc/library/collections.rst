@@ -41,6 +41,8 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`ChainMap` objects
 -------------------------
 
+.. versionadded:: 3.3
+
 A :class:`ChainMap` class is provided for quickly linking a number of mappings
 so they can be treated as a single unit.  It is often much faster than creating
 a new dictionary and running multiple :meth:`~dict.update` calls.
@@ -90,8 +92,6 @@ The class can be used to simulate nested scopes and is useful in templating.
       :keyword:`nonlocal` keyword used in :term:`nested scopes <nested scope>`.
       The use-cases also parallel those for the builtin :func:`super` function.
       A reference to  ``d.parents`` is equivalent to: ``ChainMap(*d.maps[1:])``.
-
-   .. versionadded:: 3.3
 
    Example of simulating Python's internal lookup chain::
 
