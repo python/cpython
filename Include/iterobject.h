@@ -18,6 +18,8 @@ PyAPI_FUNC(PyObject *) PySeqIter_New(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyCallIter_New(PyObject *, PyObject *);
 
+PyAPI_FUNC(PyObject *) _PyIter_GetBuiltin(const char *iter);
+
 #ifdef __cplusplus
 }
 #endif

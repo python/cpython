@@ -2753,6 +2753,34 @@ arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+arrayiter_reduce(arrayiterobject *it)
+{
+    return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("iter"),
+                         it->ao, it->index);
+}
+
+static PyObject *
+arrayiter_setstate(arrayiterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (index < 0)
+        index = 0;
+    it->index = index;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+static PyMethodDef arrayiter_methods[] = {
+    {"__reduce__",      (PyCFunction)arrayiter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"__setstate__",    (PyCFunction)arrayiter_setstate, METH_O,
+     setstate_doc},
+    {NULL, NULL} /* sentinel */
+};
+
 static PyTypeObject PyArrayIter_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "arrayiterator",                        /* tp_name */
@@ -2782,7 +2810,7 @@ static PyTypeObject PyArrayIter_Type = {
     0,                                      /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)arrayiter_next,               /* tp_iternext */
-    0,                                          /* tp_methods */
+    arrayiter_methods,                      /* tp_methods */
 };
 
 

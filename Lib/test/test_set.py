@@ -9,6 +9,7 @@ from random import randrange, shuffle
 import sys
 import warnings
 import collections
+import collections.abc
 
 class PassThru(Exception):
     pass
@@ -233,6 +234,26 @@ class TestJointOps(unittest.TestCase):
                 p = pickle.dumps(self.s)
                 dup = pickle.loads(p)
                 self.assertEqual(self.s.x, dup.x)
+
+    def test_iterator_pickling(self):
+        itorg = iter(self.s)
+        data = self.thetype(self.s)
+        d = pickle.dumps(itorg)
+        it = pickle.loads(d)
+        # Set iterators unpickle as list iterators due to the
+        # undefined order of set items.
+        # self.assertEqual(type(itorg), type(it))
+        self.assertTrue(isinstance(it, collections.abc.Iterator))
+        self.assertEqual(self.thetype(it), data)
+
+        it = pickle.loads(d)
+        try:
+            drop = next(it)
+        except StopIteration:
+            return
+        d = pickle.dumps(it)
+        it = pickle.loads(d)
+        self.assertEqual(self.thetype(it), data - self.thetype((drop,)))
 
     def test_deepcopy(self):
         class Tracer:

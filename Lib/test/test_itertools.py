@@ -37,6 +37,13 @@ def isOdd(x):
     'Test predicate'
     return x%2==1
 
+def tupleize(*args):
+    return args
+
+def irange(n):
+    for i in range(n):
+        yield i
+
 class StopNow:
     'Class emulating an empty iterable.'
     def __iter__(self):
@@ -55,7 +62,58 @@ def fact(n):
     'Factorial'
     return prod(range(1, n+1))
 
+# root level methods for pickling ability
+def testR(r):
+    return r[0]
+
+def testR2(r):
+    return r[2]
+
+def underten(x):
+    return x<10
+
 class TestBasicOps(unittest.TestCase):
+
+    def pickletest(self, it, stop=4, take=1, compare=None):
+        """Test that an iterator is the same after pickling, also when part-consumed"""
+        def expand(it, i=0):
+            # Recursively expand iterables, within sensible bounds
+            if i > 10:
+                raise RuntimeError("infinite recursion encountered")
+            if isinstance(it, str):
+                return it
+            try:
+                l = list(islice(it, stop))
+            except TypeError:
+                return it # can't expand it
+            return [expand(e, i+1) for e in l]
+
+        # Test the initial copy against the original
+        dump = pickle.dumps(it)
+        i2 = pickle.loads(dump)
+        self.assertEqual(type(it), type(i2))
+        a, b = expand(it), expand(i2)
+        self.assertEqual(a, b)
+        if compare:
+            c = expand(compare)
+            self.assertEqual(a, c)
+
+        # Take from the copy, and create another copy and compare them.
+        i3 = pickle.loads(dump)
+        took = 0
+        try:
+            for i in range(take):
+                next(i3)
+                took += 1
+        except StopIteration:
+            pass #in case there is less data than 'take'
+        dump = pickle.dumps(i3)
+        i4 = pickle.loads(dump)
+        a, b = expand(i3), expand(i4)
+        self.assertEqual(a, b)
+        if compare:
+            c = expand(compare[took:])
+            self.assertEqual(a, c);
 
     def test_accumulate(self):
         self.assertEqual(list(accumulate(range(10))),               # one positional arg
@@ -83,6 +141,7 @@ class TestBasicOps(unittest.TestCase):
                          [2, 16, 144, 720, 5040, 0, 0, 0, 0, 0])
         with self.assertRaises(TypeError):
             list(accumulate(s, chr))                                # unary-operation
+        self.pickletest(accumulate(range(10)))                      # test pickling
 
     def test_chain(self):
 
@@ -106,14 +165,43 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
         self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
 
+    def test_chain_reducible(self):
+        operators = [copy.deepcopy,
+                     lambda s: pickle.loads(pickle.dumps(s))]
+        for oper in operators:
+            it = chain('abc', 'def')
+            self.assertEqual(list(oper(it)), list('abcdef'))
+            self.assertEqual(next(it), 'a')
+            self.assertEqual(list(oper(it)), list('bcdef'))
+
+            self.assertEqual(list(oper(chain(''))), [])
+            self.assertEqual(take(4, oper(chain('abc', 'def'))), list('abcd'))
+            self.assertRaises(TypeError, list, oper(chain(2, 3)))
+        self.pickletest(chain('abc', 'def'), compare=list('abcdef'))
+
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')       # missing r argument
         self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
         self.assertRaises(TypeError, combinations, None)        # pool is not iterable
         self.assertRaises(ValueError, combinations, 'abc', -2)  # r is negative
-        self.assertEqual(list(combinations('abc', 32)), [])     # r > n
-        self.assertEqual(list(combinations(range(4), 3)),
-                                           [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
+
+        for op in (lambda a:a, lambda a:pickle.loads(pickle.dumps(a))):
+            self.assertEqual(list(op(combinations('abc', 32))), [])     # r > n
+
+            self.assertEqual(list(op(combinations('ABCD', 2))),
+                             [('A','B'), ('A','C'), ('A','D'), ('B','C'), ('B','D'), ('C','D')])
+            testIntermediate = combinations('ABCD', 2)
+            next(testIntermediate)
+            self.assertEqual(list(op(testIntermediate)),
+                             [('A','C'), ('A','D'), ('B','C'), ('B','D'), ('C','D')])
+
+            self.assertEqual(list(op(combinations(range(4), 3))),
+                             [(0,1,2), (0,1,3), (0,2,3), (1,2,3)])
+            testIntermediate = combinations(range(4), 3)
+            next(testIntermediate)
+            self.assertEqual(list(op(testIntermediate)),
+                             [(0,1,3), (0,2,3), (1,2,3)])
+
 
         def combinations1(iterable, r):
             'Pure python version shown in the docs'
@@ -168,6 +256,9 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(result, list(combinations2(values, r))) # matches second pure python version
                 self.assertEqual(result, list(combinations3(values, r))) # matches second pure python version
 
+                self.pickletest(combinations(values, r))                 # test pickling
+
+        # Test implementation detail:  tuple re-use
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, combinations('abcde', 3)))), 1)
@@ -179,8 +270,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cwr, 'abc', 2, 1) # too many arguments
         self.assertRaises(TypeError, cwr, None)        # pool is not iterable
         self.assertRaises(ValueError, cwr, 'abc', -2)  # r is negative
-        self.assertEqual(list(cwr('ABC', 2)),
-                         [('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')])
+
+        for op in (lambda a:a, lambda a:pickle.loads(pickle.dumps(a))):
+            self.assertEqual(list(op(cwr('ABC', 2))),
+                             [('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')])
+            testIntermediate = cwr('ABC', 2)
+            next(testIntermediate)
+            self.assertEqual(list(op(testIntermediate)),
+                             [('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')])
+
 
         def cwr1(iterable, r):
             'Pure python version shown in the docs'
@@ -238,6 +336,10 @@ class TestBasicOps(unittest.TestCase):
                                      [e for e in values if e in c])     # comb is a subsequence of the input iterable
                 self.assertEqual(result, list(cwr1(values, r)))         # matches first pure python version
                 self.assertEqual(result, list(cwr2(values, r)))         # matches second pure python version
+
+                self.pickletest(cwr(values,r))                          # test pickling
+
+        # Test implementation detail:  tuple re-use
 
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_with_replacement_tuple_reuse(self):
@@ -305,6 +407,8 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(result, list(permutations(values, None))) # test r as None
                     self.assertEqual(result, list(permutations(values)))       # test default r
 
+                self.pickletest(permutations(values, r))                # test pickling
+
     @support.impl_detail("tuple resuse is CPython specific")
     def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
@@ -359,6 +463,24 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, compress, range(6))            # too few args
         self.assertRaises(TypeError, compress, range(6), None)      # too many args
 
+        # check copy, deepcopy, pickle
+        for op in (lambda a:copy.copy(a), lambda a:copy.deepcopy(a), lambda a:pickle.loads(pickle.dumps(a))):
+            for data, selectors, result1, result2 in [
+                ('ABCDEF', [1,0,1,0,1,1], 'ACEF', 'CEF'),
+                ('ABCDEF', [0,0,0,0,0,0], '', ''),
+                ('ABCDEF', [1,1,1,1,1,1], 'ABCDEF', 'BCDEF'),
+                ('ABCDEF', [1,0,1], 'AC', 'C'),
+                ('ABC', [0,1,1,1,1,1], 'BC', 'C'),
+                ]:
+
+                self.assertEqual(list(op(compress(data=data, selectors=selectors))), list(result1))
+                self.assertEqual(list(op(compress(data, selectors))), list(result1))
+                testIntermediate = compress(data, selectors)
+                if result1:
+                    next(testIntermediate)
+                    self.assertEqual(list(op(testIntermediate)), list(result2))
+
+
     def test_count(self):
         self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
@@ -393,7 +515,7 @@ class TestBasicOps(unittest.TestCase):
             c = count(value)
             self.assertEqual(next(copy.copy(c)), value)
             self.assertEqual(next(copy.deepcopy(c)), value)
-            self.assertEqual(next(pickle.loads(pickle.dumps(c))), value)
+            self.pickletest(count(value))
 
         #check proper internal error handling for large "step' sizes
         count(1, maxsize+5); sys.exc_info()
@@ -440,6 +562,7 @@ class TestBasicOps(unittest.TestCase):
                 else:
                     r2 = ('count(%r, %r)' % (i, j)).replace('L', '')
                 self.assertEqual(r1, r2)
+                self.pickletest(count(i, j))
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
@@ -447,6 +570,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle)
         self.assertRaises(TypeError, cycle, 5)
         self.assertEqual(list(islice(cycle(gen3()),10)), [0,1,2,0,1,2,0,1,2,0])
+
+        # check copy, deepcopy, pickle
+        c = cycle('abc')
+        self.assertEqual(next(c), 'a')
+        #simple copy currently not supported, because __reduce__ returns
+        #an internal iterator
+        #self.assertEqual(take(10, copy.copy(c)), list('bcabcabcab'))
+        self.assertEqual(take(10, copy.deepcopy(c)), list('bcabcabcab'))
+        self.assertEqual(take(10, pickle.loads(pickle.dumps(c))), list('bcabcabcab'))
+        next(c)
+        self.assertEqual(take(10, pickle.loads(pickle.dumps(c))), list('cabcabcabc'))
+        self.pickletest(cycle('abc'))
 
     def test_groupby(self):
         # Check whether it accepts arguments correctly
@@ -466,18 +601,37 @@ class TestBasicOps(unittest.TestCase):
                 dup.append(elem)
         self.assertEqual(s, dup)
 
+        # Check normal pickled
+        dup = []
+        for k, g in pickle.loads(pickle.dumps(groupby(s, testR))):
+            for elem in g:
+                self.assertEqual(k, elem[0])
+                dup.append(elem)
+        self.assertEqual(s, dup)
+
         # Check nested case
         dup = []
-        for k, g in groupby(s, lambda r:r[0]):
-            for ik, ig in groupby(g, lambda r:r[2]):
+        for k, g in groupby(s, testR):
+            for ik, ig in groupby(g, testR2):
                 for elem in ig:
                     self.assertEqual(k, elem[0])
                     self.assertEqual(ik, elem[2])
                     dup.append(elem)
         self.assertEqual(s, dup)
 
+        # Check nested and pickled
+        dup = []
+        for k, g in pickle.loads(pickle.dumps(groupby(s, testR))):
+            for ik, ig in pickle.loads(pickle.dumps(groupby(g, testR2))):
+                for elem in ig:
+                    self.assertEqual(k, elem[0])
+                    self.assertEqual(ik, elem[2])
+                    dup.append(elem)
+        self.assertEqual(s, dup)
+
+
         # Check case where inner iterator is not used
-        keys = [k for k, g in groupby(s, lambda r:r[0])]
+        keys = [k for k, g in groupby(s, testR)]
         expectedkeys = set([r[0] for r in s])
         self.assertEqual(set(keys), expectedkeys)
         self.assertEqual(len(keys), len(expectedkeys))
@@ -548,6 +702,20 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, filter, isEven, 3)
         self.assertRaises(TypeError, next, filter(range(6), range(6)))
 
+        # check copy, deepcopy, pickle
+        ans = [0,2,4]
+
+        c = filter(isEven, range(6))
+        self.assertEqual(list(copy.copy(c)), ans)
+        c = filter(isEven, range(6))
+        self.assertEqual(list(copy.deepcopy(c)), ans)
+        c = filter(isEven, range(6))
+        self.assertEqual(list(pickle.loads(pickle.dumps(c))), ans)
+        next(c)
+        self.assertEqual(list(pickle.loads(pickle.dumps(c))), ans[1:])
+        c = filter(isEven, range(6))
+        self.pickletest(c)
+
     def test_filterfalse(self):
         self.assertEqual(list(filterfalse(isEven, range(6))), [1,3,5])
         self.assertEqual(list(filterfalse(None, [0,1,0,2,0])), [0,0,0])
@@ -558,6 +726,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, filterfalse, lambda x:x, range(6), 7)
         self.assertRaises(TypeError, filterfalse, isEven, 3)
         self.assertRaises(TypeError, next, filterfalse(range(6), range(6)))
+        self.pickletest(filterfalse(isEven, range(6)))
 
     def test_zip(self):
         # XXX This is rather silly now that builtin zip() calls zip()...
@@ -581,6 +750,23 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(min(ids), max(ids))
         ids = list(map(id, list(zip('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
+
+        # check copy, deepcopy, pickle
+        ans = [(x,y) for x, y in copy.copy(zip('abc',count()))]
+        self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
+
+        ans = [(x,y) for x, y in copy.deepcopy(zip('abc',count()))]
+        self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
+
+        ans = [(x,y) for x, y in pickle.loads(pickle.dumps(zip('abc',count())))]
+        self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
+
+        testIntermediate = zip('abc',count())
+        next(testIntermediate)
+        ans = [(x,y) for x, y in pickle.loads(pickle.dumps(testIntermediate))]
+        self.assertEqual(ans, [('b', 1), ('c', 2)])
+
+        self.pickletest(zip('abc', count()))
 
     def test_ziplongest(self):
         for args in [
@@ -630,6 +816,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(min(ids), max(ids))
         ids = list(map(id, list(zip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
+
+    def test_zip_longest_pickling(self):
+        self.pickletest(zip_longest("abc", "def"))
+        self.pickletest(zip_longest("abc", "defgh"))
+        self.pickletest(zip_longest("abc", "defgh", fillvalue=1))
+        self.pickletest(zip_longest("", "defgh"))
 
     def test_bug_7244(self):
 
@@ -734,6 +926,20 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, product('abc', 'def')))), 1)
         self.assertNotEqual(len(set(map(id, list(product('abc', 'def'))))), 1)
 
+    def test_product_pickling(self):
+        # check copy, deepcopy, pickle
+        for args, result in [
+            ([], [()]),                     # zero iterables
+            (['ab'], [('a',), ('b',)]),     # one iterable
+            ([range(2), range(3)], [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]),     # two iterables
+            ([range(0), range(2), range(3)], []),           # first iterable with zero length
+            ([range(2), range(0), range(3)], []),           # middle iterable with zero length
+            ([range(2), range(3), range(0)], []),           # last iterable with zero length
+            ]:
+            self.assertEqual(list(copy.copy(product(*args))), result)
+            self.assertEqual(list(copy.deepcopy(product(*args))), result)
+            self.pickletest(product(*args))
+
     def test_repeat(self):
         self.assertEqual(list(repeat(object='a', times=3)), ['a', 'a', 'a'])
         self.assertEqual(lzip(range(3),repeat('a')),
@@ -752,11 +958,16 @@ class TestBasicOps(unittest.TestCase):
         list(r)
         self.assertEqual(repr(r), 'repeat((1+0j), 0)')
 
+        # check copy, deepcopy, pickle
+        c = repeat(object='a', times=10)
+        self.assertEqual(next(c), 'a')
+        self.assertEqual(take(2, copy.copy(c)), list('a' * 2))
+        self.assertEqual(take(2, copy.deepcopy(c)), list('a' * 2))
+        self.pickletest(repeat(object='a', times=10))
+
     def test_map(self):
         self.assertEqual(list(map(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])
-        def tupleize(*args):
-            return args
         self.assertEqual(list(map(tupleize, 'abc', range(5))),
                          [('a',0),('b',1),('c',2)])
         self.assertEqual(list(map(tupleize, 'abc', count())),
@@ -771,6 +982,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, next, map(errfunc, [4], [5]))
         self.assertRaises(TypeError, next, map(onearg, [4], [5]))
 
+        # check copy, deepcopy, pickle
+        ans = [('a',0),('b',1),('c',2)]
+
+        c = map(tupleize, 'abc', count())
+        self.assertEqual(list(copy.copy(c)), ans)
+
+        c = map(tupleize, 'abc', count())
+        self.assertEqual(list(copy.deepcopy(c)), ans)
+
+        c = map(tupleize, 'abc', count())
+        self.pickletest(c)
+
     def test_starmap(self):
         self.assertEqual(list(starmap(operator.pow, zip(range(3), range(1,7)))),
                          [0**1, 1**2, 2**3])
@@ -784,6 +1007,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, next, starmap(10, [(4,5)]))
         self.assertRaises(ValueError, next, starmap(errfunc, [(4,5)]))
         self.assertRaises(TypeError, next, starmap(onearg, [(4,5)]))
+
+        # check copy, deepcopy, pickle
+        ans = [0**1, 1**2, 2**3]
+
+        c = starmap(operator.pow, zip(range(3), range(1,7)))
+        self.assertEqual(list(copy.copy(c)), ans)
+
+        c = starmap(operator.pow, zip(range(3), range(1,7)))
+        self.assertEqual(list(copy.deepcopy(c)), ans)
+
+        c = starmap(operator.pow, zip(range(3), range(1,7)))
+        self.pickletest(c)
 
     def test_islice(self):
         for args in [          # islice(args) should agree with range(args)
@@ -817,17 +1052,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(it), list(range(3, 10)))
 
         # Test invalid arguments
-        self.assertRaises(TypeError, islice, range(10))
-        self.assertRaises(TypeError, islice, range(10), 1, 2, 3, 4)
-        self.assertRaises(ValueError, islice, range(10), -5, 10, 1)
-        self.assertRaises(ValueError, islice, range(10), 1, -5, -1)
-        self.assertRaises(ValueError, islice, range(10), 1, 10, -1)
-        self.assertRaises(ValueError, islice, range(10), 1, 10, 0)
-        self.assertRaises(ValueError, islice, range(10), 'a')
-        self.assertRaises(ValueError, islice, range(10), 'a', 1)
-        self.assertRaises(ValueError, islice, range(10), 1, 'a')
-        self.assertRaises(ValueError, islice, range(10), 'a', 1, 1)
-        self.assertRaises(ValueError, islice, range(10), 1, 'a', 1)
+        ra = range(10)
+        self.assertRaises(TypeError, islice, ra)
+        self.assertRaises(TypeError, islice, ra, 1, 2, 3, 4)
+        self.assertRaises(ValueError, islice, ra, -5, 10, 1)
+        self.assertRaises(ValueError, islice, ra, 1, -5, -1)
+        self.assertRaises(ValueError, islice, ra, 1, 10, -1)
+        self.assertRaises(ValueError, islice, ra, 1, 10, 0)
+        self.assertRaises(ValueError, islice, ra, 'a')
+        self.assertRaises(ValueError, islice, ra, 'a', 1)
+        self.assertRaises(ValueError, islice, ra, 1, 'a')
+        self.assertRaises(ValueError, islice, ra, 'a', 1, 1)
+        self.assertRaises(ValueError, islice, ra, 1, 'a', 1)
         self.assertEqual(len(list(islice(count(), 1, 10, maxsize))), 1)
 
         # Issue #10323:  Less islice in a predictable state
@@ -835,9 +1071,22 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(c, 1, 3, 50)), [1])
         self.assertEqual(next(c), 3)
 
+        # check copy, deepcopy, pickle
+        for args in [          # islice(args) should agree with range(args)
+                (10, 20, 3),
+                (10, 3, 20),
+                (10, 20),
+                (10, 3),
+                (20,)
+                ]:
+            self.assertEqual(list(copy.copy(islice(range(100), *args))),
+                             list(range(*args)))
+            self.assertEqual(list(copy.deepcopy(islice(range(100), *args))),
+                             list(range(*args)))
+            self.pickletest(islice(range(100), *args))
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
-        underten = lambda x: x<10
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
         self.assertEqual(list(takewhile(underten, [])), [])
         self.assertRaises(TypeError, takewhile)
@@ -849,9 +1098,14 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(t), [1, 1, 1])
         self.assertRaises(StopIteration, next, t)
 
+        # check copy, deepcopy, pickle
+        self.assertEqual(list(copy.copy(takewhile(underten, data))), [1, 3, 5])
+        self.assertEqual(list(copy.deepcopy(takewhile(underten, data))),
+                        [1, 3, 5])
+        self.pickletest(takewhile(underten, data))
+
     def test_dropwhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
-        underten = lambda x: x<10
         self.assertEqual(list(dropwhile(underten, data)), [20, 2, 4, 6, 8])
         self.assertEqual(list(dropwhile(underten, [])), [])
         self.assertRaises(TypeError, dropwhile)
@@ -860,11 +1114,14 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, next, dropwhile(10, [(4,5)]))
         self.assertRaises(ValueError, next, dropwhile(errfunc, [(4,5)]))
 
+        # check copy, deepcopy, pickle
+        self.assertEqual(list(copy.copy(dropwhile(underten, data))), [20, 2, 4, 6, 8])
+        self.assertEqual(list(copy.deepcopy(dropwhile(underten, data))),
+                        [20, 2, 4, 6, 8])
+        self.pickletest(dropwhile(underten, data))
+
     def test_tee(self):
         n = 200
-        def irange(n):
-            for i in range(n):
-                yield i
 
         a, b = tee([])        # test empty iterator
         self.assertEqual(list(a), [])
@@ -949,6 +1206,67 @@ class TestBasicOps(unittest.TestCase):
         del a
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
+        ans = list('abc')
+        long_ans = list(range(10000))
+
+        # check copy
+        a, b = tee('abc')
+        self.assertEqual(list(copy.copy(a)), ans)
+        self.assertEqual(list(copy.copy(b)), ans)
+        a, b = tee(list(range(10000)))
+        self.assertEqual(list(copy.copy(a)), long_ans)
+        self.assertEqual(list(copy.copy(b)), long_ans)
+
+        # check partially consumed copy
+        a, b = tee('abc')
+        take(2, a)
+        take(1, b)
+        self.assertEqual(list(copy.copy(a)), ans[2:])
+        self.assertEqual(list(copy.copy(b)), ans[1:])
+        self.assertEqual(list(a), ans[2:])
+        self.assertEqual(list(b), ans[1:])
+        a, b = tee(range(10000))
+        take(100, a)
+        take(60, b)
+        self.assertEqual(list(copy.copy(a)), long_ans[100:])
+        self.assertEqual(list(copy.copy(b)), long_ans[60:])
+        self.assertEqual(list(a), long_ans[100:])
+        self.assertEqual(list(b), long_ans[60:])
+
+        # check deepcopy
+        a, b = tee('abc')
+        self.assertEqual(list(copy.deepcopy(a)), ans)
+        self.assertEqual(list(copy.deepcopy(b)), ans)
+        self.assertEqual(list(a), ans)
+        self.assertEqual(list(b), ans)
+        a, b = tee(range(10000))
+        self.assertEqual(list(copy.deepcopy(a)), long_ans)
+        self.assertEqual(list(copy.deepcopy(b)), long_ans)
+        self.assertEqual(list(a), long_ans)
+        self.assertEqual(list(b), long_ans)
+
+        # check partially consumed deepcopy
+        a, b = tee('abc')
+        take(2, a)
+        take(1, b)
+        self.assertEqual(list(copy.deepcopy(a)), ans[2:])
+        self.assertEqual(list(copy.deepcopy(b)), ans[1:])
+        self.assertEqual(list(a), ans[2:])
+        self.assertEqual(list(b), ans[1:])
+        a, b = tee(range(10000))
+        take(100, a)
+        take(60, b)
+        self.assertEqual(list(copy.deepcopy(a)), long_ans[100:])
+        self.assertEqual(list(copy.deepcopy(b)), long_ans[60:])
+        self.assertEqual(list(a), long_ans[100:])
+        self.assertEqual(list(b), long_ans[60:])
+
+        # check pickle
+        self.pickletest(iter(tee('abc')))
+        a, b = tee('abc')
+        self.pickletest(a, compare=ans)
+        self.pickletest(b, compare=ans)
+
     def test_StopIteration(self):
         self.assertRaises(StopIteration, next, zip())
 
@@ -974,8 +1292,20 @@ class TestBasicOps(unittest.TestCase):
 
 class TestExamples(unittest.TestCase):
 
-    def test_accumlate(self):
+    def test_accumulate(self):
         self.assertEqual(list(accumulate([1,2,3,4,5])), [1, 3, 6, 10, 15])
+
+    def test_accumulate_reducible(self):
+        # check copy, deepcopy, pickle
+        data = [1, 2, 3, 4, 5]
+        accumulated = [1, 3, 6, 10, 15]
+        it = accumulate(data)
+
+        self.assertEqual(list(pickle.loads(pickle.dumps(it))), accumulated[:])
+        self.assertEqual(next(it), 1)
+        self.assertEqual(list(pickle.loads(pickle.dumps(it))), accumulated[1:])
+        self.assertEqual(list(copy.deepcopy(it)), accumulated[1:])
+        self.assertEqual(list(copy.copy(it)), accumulated[1:])
 
     def test_chain(self):
         self.assertEqual(''.join(chain('ABC', 'DEF')), 'ABCDEF')

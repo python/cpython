@@ -964,9 +964,59 @@ rangeiter_len(rangeiterobject *r)
 PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+rangeiter_reduce(rangeiterobject *r)
+{
+    PyObject *start=NULL, *stop=NULL, *step=NULL;
+    PyObject *range;
+    
+    /* create a range object for pickling */
+    start = PyLong_FromLong(r->start);
+    if (start == NULL)
+        goto err;
+    stop = PyLong_FromLong(r->start + r->len * r->step);
+    if (stop == NULL)
+        goto err;
+    step = PyLong_FromLong(r->step);
+    if (step == NULL)
+        goto err;
+    range = (PyObject*)make_range_object(&PyRange_Type,
+                               start, stop, step);
+    if (range == NULL)
+        goto err;
+    /* return the result */
+    return Py_BuildValue("N(N)i", _PyIter_GetBuiltin("iter"), range, r->index);
+err:
+    Py_XDECREF(start);
+    Py_XDECREF(stop);
+    Py_XDECREF(step);
+    return NULL;
+}
+
+static PyObject *
+rangeiter_setstate(rangeiterobject *r, PyObject *state)
+{
+    long index = PyLong_AsLong(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (index < 0 || index >= r->len) {
+        PyErr_SetString(PyExc_ValueError, "index out of range");
+        return NULL;
+    }
+    r->index = index;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef rangeiter_methods[] = {
     {"__length_hint__", (PyCFunction)rangeiter_len, METH_NOARGS,
         length_hint_doc},
+    {"__reduce__", (PyCFunction)rangeiter_reduce, METH_NOARGS,
+        reduce_doc},
+    {"__setstate__", (PyCFunction)rangeiter_setstate, METH_O,
+        setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1095,9 +1145,51 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
     return PyNumber_Subtract(r->len, r->index);
 }
 
+static PyObject *
+longrangeiter_reduce(longrangeiterobject *r)
+{
+    PyObject *product, *stop=NULL;
+    PyObject *range;
+
+    /* create a range object for pickling.  Must calculate the "stop" value */
+    product = PyNumber_Multiply(r->len, r->step);
+    if (product == NULL)
+        return NULL;
+    stop = PyNumber_Add(r->start, product);
+    Py_DECREF(product);
+    if (stop ==  NULL)
+        return NULL;
+    Py_INCREF(r->start);
+    Py_INCREF(r->step);
+    range =  (PyObject*)make_range_object(&PyRange_Type,
+                               r->start, stop, r->step);
+    if (range == NULL) {
+        Py_DECREF(r->start);
+        Py_DECREF(stop);
+        Py_DECREF(r->step);
+        return NULL;
+    }
+
+    /* return the result */
+    return Py_BuildValue("N(N)O", _PyIter_GetBuiltin("iter"), range, r->index);
+}
+
+static PyObject *
+longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
+{
+    Py_CLEAR(r->index);
+    r->index = state;
+    Py_INCREF(r->index);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef longrangeiter_methods[] = {
     {"__length_hint__", (PyCFunction)longrangeiter_len, METH_NOARGS,
         length_hint_doc},
+    {"__reduce__", (PyCFunction)longrangeiter_reduce, METH_NOARGS,
+        reduce_doc},
+    {"__setstate__", (PyCFunction)longrangeiter_setstate, METH_O,
+        setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

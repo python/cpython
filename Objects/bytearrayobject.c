@@ -3003,7 +3003,7 @@ bytearrayiter_next(bytesiterobject *it)
 }
 
 static PyObject *
-bytesarrayiter_length_hint(bytesiterobject *it)
+bytearrayiter_length_hint(bytesiterobject *it)
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -3014,9 +3014,41 @@ bytesarrayiter_length_hint(bytesiterobject *it)
 PyDoc_STRVAR(length_hint_doc,
     "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+bytearrayiter_reduce(bytesiterobject *it)
+{
+    if (it->it_seq != NULL) {
+        return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    } else {
+        PyObject *u = PyUnicode_FromUnicode(NULL, 0);
+        if (u == NULL)
+            return NULL;
+        return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), u);
+    }
+}
+
+static PyObject *
+bytearrayiter_setstate(bytesiterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (index < 0)
+        index = 0;
+    it->it_index = index;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef bytearrayiter_methods[] = {
-    {"__length_hint__", (PyCFunction)bytesarrayiter_length_hint, METH_NOARGS,
+    {"__length_hint__", (PyCFunction)bytearrayiter_length_hint, METH_NOARGS,
      length_hint_doc},
+     {"__reduce__",      (PyCFunction)bytearrayiter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"__setstate__",    (PyCFunction)bytearrayiter_setstate, METH_O,
+     setstate_doc},
     {NULL, NULL} /* sentinel */
 };
 

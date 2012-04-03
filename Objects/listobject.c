@@ -2660,11 +2660,18 @@ static void listiter_dealloc(listiterobject *);
 static int listiter_traverse(listiterobject *, visitproc, void *);
 static PyObject *listiter_next(listiterobject *);
 static PyObject *listiter_len(listiterobject *);
+static PyObject *listiter_reduce_general(void *_it, int forward);
+static PyObject *listiter_reduce(listiterobject *);
+static PyObject *listiter_setstate(listiterobject *, PyObject *state);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef listiter_methods[] = {
     {"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)listiter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)listiter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2771,6 +2778,27 @@ listiter_len(listiterobject *it)
     }
     return PyLong_FromLong(0);
 }
+
+static PyObject *
+listiter_reduce(listiterobject *it)
+{
+    return listiter_reduce_general(it, 1);
+}
+
+static PyObject *
+listiter_setstate(listiterobject *it, PyObject *state)
+{
+    long index = PyLong_AsLong(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (it->it_seq != NULL) {
+        if (index < 0)
+            index = 0;
+        it->it_index = index;
+    }
+    Py_RETURN_NONE;
+}
+
 /*********************** List Reverse Iterator **************************/
 
 typedef struct {
@@ -2784,9 +2812,13 @@ static void listreviter_dealloc(listreviterobject *);
 static int listreviter_traverse(listreviterobject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
 static PyObject *listreviter_len(listreviterobject *);
+static PyObject *listreviter_reduce(listreviterobject *);
+static PyObject *listreviter_setstate(listreviterobject *, PyObject *);
 
 static PyMethodDef listreviter_methods[] = {
     {"__length_hint__", (PyCFunction)listreviter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)listreviter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)listreviter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2882,4 +2914,52 @@ listreviter_len(listreviterobject *it)
     if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
         len = 0;
     return PyLong_FromSsize_t(len);
+}
+
+static PyObject *
+listreviter_reduce(listreviterobject *it)
+{
+    return listiter_reduce_general(it, 0);
+}
+
+static PyObject *
+listreviter_setstate(listreviterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (it->it_seq != NULL) {
+        if (index < -1)
+            index = -1;
+        else if (index > PyList_GET_SIZE(it->it_seq) - 1)
+            index = PyList_GET_SIZE(it->it_seq) - 1;
+        it->it_index = index;
+    }
+    Py_RETURN_NONE;
+}
+
+/* common pickling support */
+
+static PyObject *
+listiter_reduce_general(void *_it, int forward)
+{
+    PyObject *list;
+
+    /* the objects are not the same, index is of different types! */
+    if (forward) {
+        listiterobject *it = (listiterobject *)_it;
+        if (it->it_seq)
+            return Py_BuildValue("N(O)l", _PyIter_GetBuiltin("iter"),
+                                 it->it_seq, it->it_index);
+    } else {
+        listreviterobject *it = (listreviterobject *)_it;
+        if (it->it_seq)
+            return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("reversed"),
+                                 it->it_seq, it->it_index);
+    }
+    /* empty iterator, create an empty list */
+    list = PyList_New(0);
+    if (list == NULL)
+        return NULL;
+    return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), list);
 }

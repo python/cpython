@@ -967,8 +967,39 @@ tupleiter_len(tupleiterobject *it)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+tupleiter_reduce(tupleiterobject *it)
+{
+    if (it->it_seq)
+        return Py_BuildValue("N(O)l", _PyIter_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    else
+        return Py_BuildValue("N(())", _PyIter_GetBuiltin("iter"));
+}
+
+static PyObject *
+tupleiter_setstate(tupleiterobject *it, PyObject *state)
+{
+    long index = PyLong_AsLong(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (it->it_seq != NULL) {
+        if (index < 0)
+            index = 0;
+        else if (it->it_seq != NULL && index > PyTuple_GET_SIZE(it->it_seq))
+            index = PyTuple_GET_SIZE(it->it_seq);
+        it->it_index = index;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef tupleiter_methods[] = {
     {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)tupleiter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)tupleiter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
