@@ -27,6 +27,19 @@ class ParentModuleTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             import_util.import_('sys.no_submodules_here')
 
+    def test_module_not_package_but_side_effects(self):
+        # If a module injects something into sys.modules as a side-effect, then
+        # pick up on that fact.
+        name = 'mod'
+        subname = name + '.b'
+        def module_injection():
+            sys.modules[subname] = 'total bunk'
+        mock_modules = util.mock_modules('mod',
+                                         module_code={'mod': module_injection})
+        with mock_modules as mock:
+            with util.import_state(meta_path=[mock]):
+                submodule = import_util.import_(subname)
+
 
 def test_main():
     from test.support import run_unittest
