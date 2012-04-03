@@ -48,6 +48,7 @@
 /* See http://www.python.org/psf/license for licensing details. */
 
 #include "Python.h"
+#include "structmember.h"
 
 #define VERSION "1.0.6"
 
@@ -229,6 +230,8 @@ typedef struct {
 
     ElementObjectExtra* extra;
 
+    PyObject *weakreflist; /* For tp_weaklistoffset */
+
 } ElementObject;
 
 static PyTypeObject Element_Type;
@@ -261,17 +264,24 @@ create_extra(ElementObject* self, PyObject* attrib)
 LOCAL(void)
 dealloc_extra(ElementObject* self)
 {
+    if (!self->extra)
+        return;
+
+    /* Avoid DECREFs calling into this code again (cycles, etc.)
+    */
+    ElementObjectExtra *myextra = self->extra;
+    self->extra = NULL;
+
+    Py_DECREF(myextra->attrib);
+
     int i;
+    for (i = 0; i < myextra->length; i++)
+        Py_DECREF(myextra->children[i]);
 
-    Py_DECREF(self->extra->attrib);
+    if (myextra->children != myextra->_children)
+        PyObject_Free(myextra->children);
 
-    for (i = 0; i < self->extra->length; i++)
-        Py_DECREF(self->extra->children[i]);
-
-    if (self->extra->children != self->extra->_children)
-        PyObject_Free(self->extra->children);
-
-    PyObject_Free(self->extra);
+    PyObject_Free(myextra);
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -308,6 +318,8 @@ create_new_element(PyObject* tag, PyObject* attrib)
     Py_INCREF(Py_None);
     self->tail = Py_None;
 
+    self->weakreflist = NULL;
+
     ALLOC(sizeof(ElementObject), "create element");
     PyObject_GC_Track(self);
     return (PyObject*) self;
@@ -328,6 +340,7 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         e->tail = Py_None;
 
         e->extra = NULL;
+        e->weakreflist = NULL;
     }
     return (PyObject *)e;
 }
@@ -576,19 +589,28 @@ element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
 static int
 element_gc_clear(ElementObject *self)
 {
-    PyObject *text = JOIN_OBJ(self->text);
-    PyObject *tail = JOIN_OBJ(self->tail);
     Py_CLEAR(self->tag);
-    Py_CLEAR(text);
-    Py_CLEAR(tail);
+
+    /* The following is like Py_CLEAR for self->text and self->tail, but
+     * written explicitily because the real pointers hide behind access
+     * macros.
+    */
+    if (self->text) {
+        PyObject *tmp = JOIN_OBJ(self->text);
+        self->text = NULL;
+        Py_DECREF(tmp);
+    }
+
+    if (self->tail) {
+        PyObject *tmp = JOIN_OBJ(self->tail);
+        self->tail = NULL;
+        Py_DECREF(tmp);
+    }
 
     /* After dropping all references from extra, it's no longer valid anyway,
-    ** so fully deallocate it (see also element_clearmethod)
+     * so fully deallocate it.
     */
-    if (self->extra) {
-        dealloc_extra(self);
-        self->extra = NULL;
-    }
+    dealloc_extra(self);
     return 0;
 }
 
@@ -596,6 +618,10 @@ static void
 element_dealloc(ElementObject* self)
 {
     PyObject_GC_UnTrack(self);
+
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
+
     /* element_gc_clear clears all references and deallocates extra
     */
     element_gc_clear(self);
@@ -626,10 +652,7 @@ element_clearmethod(ElementObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, ":clear"))
         return NULL;
 
-    if (self->extra) {
-        dealloc_extra(self);
-        self->extra = NULL;
-    }
+    dealloc_extra(self);
 
     Py_INCREF(Py_None);
     Py_DECREF(JOIN_OBJ(self->text));
@@ -1693,7 +1716,7 @@ static PyTypeObject Element_Type = {
     (traverseproc)element_gc_traverse,              /* tp_traverse */
     (inquiry)element_gc_clear,                      /* tp_clear */
     0,                                              /* tp_richcompare */
-    0,                                              /* tp_weaklistoffset */
+    offsetof(ElementObject, weakreflist),           /* tp_weaklistoffset */
     0,                                              /* tp_iter */
     0,                                              /* tp_iternext */
     element_methods,                                /* tp_methods */

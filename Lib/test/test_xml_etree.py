@@ -1859,6 +1859,41 @@ class BasicElementTest(unittest.TestCase):
         gc_collect()
         self.assertIsNone(wref())
 
+        # A longer cycle: d->e->e2->d
+        e = ET.Element('joe')
+        d = Dummy()
+        d.dummyref = e
+        wref = weakref.ref(d)
+        e2 = ET.SubElement(e, 'foo', attr=d)
+        del d, e, e2
+        gc_collect()
+        self.assertIsNone(wref())
+
+        # A cycle between Element objects as children of one another
+        # e1->e2->e3->e1
+        e1 = ET.Element('e1')
+        e2 = ET.Element('e2')
+        e3 = ET.Element('e3')
+        e1.append(e2)
+        e2.append(e2)
+        e3.append(e1)
+        wref = weakref.ref(e1)
+        del e1, e2, e3
+        gc_collect()
+        self.assertIsNone(wref())
+
+    def test_weakref(self):
+        flag = False
+        def wref_cb(w):
+            nonlocal flag
+            flag = True
+        e = ET.Element('e')
+        wref = weakref.ref(e, wref_cb)
+        self.assertEqual(wref().tag, 'e')
+        del e
+        self.assertEqual(flag, True)
+        self.assertEqual(wref(), None)
+
 
 class ElementTreeTest(unittest.TestCase):
     def test_istype(self):
