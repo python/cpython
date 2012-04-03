@@ -8,6 +8,7 @@
 
 __version__ = "0.9"
 
+import itertools
 import tkinter
 
 
@@ -46,6 +47,8 @@ class Font:
 
     """
 
+    counter = itertools.count(1)
+
     def _set(self, kw):
         options = []
         for k, v in kw.items():
@@ -75,7 +78,7 @@ class Font:
         else:
             font = self._set(options)
         if not name:
-            name = "font" + str(id(self))
+            name = "font" + str(next(self.counter))
         self.name = name
 
         if exists:
