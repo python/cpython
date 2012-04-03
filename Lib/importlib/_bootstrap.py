@@ -927,6 +927,9 @@ def _find_and_load(name, import_):
     if parent:
         if parent not in sys.modules:
             import_(parent)
+        # Crazy side-effects!
+        if name in sys.modules:
+            return sys.modules[name]
         # Backwards-compatibility; be nicer to skip the dict lookup.
         parent_module = sys.modules[parent]
         try:
