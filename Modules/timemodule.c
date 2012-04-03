@@ -158,6 +158,33 @@ PyDoc_STRVAR(clock_gettime_doc,
 "clock_gettime(clk_id) -> floating point number\n\
 \n\
 Return the time of the specified clock clk_id.");
+
+static PyObject *
+time_clock_settime(PyObject *self, PyObject *args)
+{
+    clockid_t clk_id;
+    PyObject *obj;
+    struct timespec tp;
+    int ret;
+
+    if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
+        return NULL;
+
+    if (_PyTime_ObjectToTimespec(obj, &tp.tv_sec, &tp.tv_nsec) == -1)
+        return NULL;
+
+    ret = clock_settime((clockid_t)clk_id, &tp);
+    if (ret != 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(clock_settime_doc,
+"clock_settime(clk_id, time)\n\
+\n\
+Set the time of the specified clock clk_id.");
 #endif
 
 #ifdef HAVE_CLOCK_GETRES
@@ -962,6 +989,9 @@ PyInit_timezone(PyObject *m) {
 #ifdef CLOCK_MONOTONIC_RAW
     PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
 #endif
+#ifdef CLOCK_HIGHRES
+    PyModule_AddIntMacro(m, CLOCK_HIGHRES);
+#endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
     PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
 #endif
@@ -979,6 +1009,9 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
+#endif
+#ifdef HAVE_CLOCK_GETTIME
+    {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
 #endif
 #ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
