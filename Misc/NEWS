@@ -60,6 +60,8 @@ Core and Builtins
 
 - Issue #14471: Fix a possible buffer overrun in the winreg module.
 
+- Issue #14288: Allow the serialization of builtin iterators
+
 Library
 -------
 
