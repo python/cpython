@@ -486,6 +486,8 @@ Some smaller changes made to the core Python language are:
 
   (:issue:`10516`)
 
+.. XXX mention new error messages for passing wrong number of arguments to functions
+
 New and Improved Modules
 ========================
 
