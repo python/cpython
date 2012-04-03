@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14482: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_UNIX type address under
+  Windows.  Patch by Popa Claudiu.
+
 - Issue #802310: Generate always unique tkinter font names if not directly passed.
 
 - Issue #14151: Raise a ValueError, not a NameError, when trying to create
