@@ -29,6 +29,8 @@ Library
   a multiprocessing Client or Listener with an AF_PIPE type address under
   non-Windows platforms.  Patch by Popa Claudiu.
 
+- Issue #14493: Use gvfs-open/xdg-open in Lib/webbrowser.py.
+
 
 What's New in Python 3.3.0 Alpha 2?
 ===================================
