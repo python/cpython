@@ -985,7 +985,7 @@ rangeiter_reduce(rangeiterobject *r)
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)i", _PyIter_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)i", _PyObject_GetBuiltin("iter"), range, r->index);
 err:
     Py_XDECREF(start);
     Py_XDECREF(stop);
@@ -1171,7 +1171,7 @@ longrangeiter_reduce(longrangeiterobject *r)
     }
 
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyIter_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)O", _PyObject_GetBuiltin("iter"), range, r->index);
 }
 
 static PyObject *

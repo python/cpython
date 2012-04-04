@@ -2610,7 +2610,7 @@ dictiter_reduce(dictiterobject *di)
         Py_DECREF(list);
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
 }
 
 /***********************************************/
