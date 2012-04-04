@@ -1253,7 +1253,7 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
 
 
     def exists(self, item):
-        """Returns True if the specified item is present in the three,
+        """Returns True if the specified item is present in the tree,
         False otherwise."""
         return bool(self.tk.call(self._w, "exists", item))
 
