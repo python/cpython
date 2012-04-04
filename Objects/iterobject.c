@@ -2,19 +2,6 @@
 
 #include "Python.h"
 
-/* Convenience function to get builtins.iter or builtins.reversed */
-PyObject *
-_PyIter_GetBuiltin(const char *iter)
-{
-    PyObject *mod, *attr;
-    mod = PyImport_ImportModule("builtins");
-    if (mod ==  NULL)
-        return NULL;
-    attr = PyObject_GetAttrString(mod, iter);
-    Py_DECREF(mod);
-    return attr;
-}
-
 typedef struct {
     PyObject_HEAD
     long      it_index;
@@ -105,10 +92,10 @@ static PyObject *
 iter_reduce(seqiterobject *it)
 {
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyIter_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -242,10 +229,10 @@ static PyObject *
 calliter_reduce(calliterobject *it)
 {
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyIter_GetBuiltin("iter"),
+        return Py_BuildValue("N(OO)", _PyObject_GetBuiltin("iter"),
                              it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyIter_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
 }
 
 static PyMethodDef calliter_methods[] = {

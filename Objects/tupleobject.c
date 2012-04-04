@@ -971,10 +971,10 @@ static PyObject *
 tupleiter_reduce(tupleiterobject *it)
 {
     if (it->it_seq)
-        return Py_BuildValue("N(O)l", _PyIter_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)l", _PyObject_GetBuiltin("iter"),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyIter_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
 }
 
 static PyObject *
