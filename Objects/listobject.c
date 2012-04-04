@@ -2949,17 +2949,17 @@ listiter_reduce_general(void *_it, int forward)
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)l", _PyIter_GetBuiltin("iter"),
+            return Py_BuildValue("N(O)l", _PyObject_GetBuiltin("iter"),
                                  it->it_seq, it->it_index);
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("reversed"),
+            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("reversed"),
                                  it->it_seq, it->it_index);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyIter_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
 }

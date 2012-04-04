@@ -535,6 +535,11 @@ PyAPI_FUNC(int)
 _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
                                  PyObject *, PyObject *);
 
+/* Helper to look up a builtin object */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *)
+_PyObject_GetBuiltin(const char *name);
+#endif
 
 /* PyObject_Dir(obj) acts like Python builtins.dir(obj), returning a
    list of strings.  PyObject_Dir(NULL) is like builtins.dir(),

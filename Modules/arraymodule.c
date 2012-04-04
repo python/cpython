@@ -2756,7 +2756,7 @@ arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 static PyObject *
 arrayiter_reduce(arrayiterobject *it)
 {
-    return Py_BuildValue("N(O)n", _PyIter_GetBuiltin("iter"),
+    return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
                          it->ao, it->index);
 }
 
