@@ -264,17 +264,19 @@ create_extra(ElementObject* self, PyObject* attrib)
 LOCAL(void)
 dealloc_extra(ElementObject* self)
 {
+    ElementObjectExtra *myextra;
+    int i;
+
     if (!self->extra)
         return;
 
     /* Avoid DECREFs calling into this code again (cycles, etc.)
     */
-    ElementObjectExtra *myextra = self->extra;
+    myextra = self->extra;
     self->extra = NULL;
 
     Py_DECREF(myextra->attrib);
 
-    int i;
     for (i = 0; i < myextra->length; i++)
         Py_DECREF(myextra->children[i]);
 
