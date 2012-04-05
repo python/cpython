@@ -94,7 +94,7 @@ It defines the following constants and functions:
    *size* argument specifies the stack size to be used for subsequently created
    threads, and must be 0 (use platform or configured default) or a positive
    integer value of at least 32,768 (32kB). If changing the thread stack size is
-   unsupported, a :exc:`ThreadError` is raised.  If the specified stack size is
+   unsupported, a :exc:`RuntimeError` is raised.  If the specified stack size is
    invalid, a :exc:`ValueError` is raised and the stack size is unmodified.  32kB
    is currently the minimum supported stack size value to guarantee sufficient
    stack space for the interpreter itself.  Note that some platforms may have
