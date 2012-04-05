@@ -4215,7 +4215,7 @@ dec_hash(PyObject *v)
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
     /* Inverse of 10 modulo p */
-    mpd_uint_t inv10_p_data[2] = {2075258708292324556ULL};
+    mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
 #elif defined(CONFIG_32) && _PyHASH_BITS == 31
