@@ -4977,6 +4977,54 @@ class CWhitebox(unittest.TestCase):
             x = "1e%d" % (-sys.maxsize-1)
             self.assertRaises(InvalidOperation, Decimal, x)
 
+    def test_from_tuple(self):
+        Decimal = C.Decimal
+        localcontext = C.localcontext
+        InvalidOperation = C.InvalidOperation
+        Overflow = C.Overflow
+        Underflow = C.Underflow
+
+        with localcontext() as c:
+
+            c.traps[InvalidOperation] = True
+            c.traps[Overflow] = True
+            c.traps[Underflow] = True
+
+            # SSIZE_MAX
+            x = (1, (), sys.maxsize)
+            self.assertEqual(str(c.create_decimal(x)), '-0E+999999')
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            x = (1, (0, 1, 2), sys.maxsize)
+            self.assertRaises(Overflow, c.create_decimal, x)
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            # SSIZE_MIN
+            x = (1, (), -sys.maxsize-1)
+            self.assertEqual(str(c.create_decimal(x)), '-0E-1000026')
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            x = (1, (0, 1, 2), -sys.maxsize-1)
+            self.assertRaises(Underflow, c.create_decimal, x)
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            # OverflowError
+            x = (1, (), sys.maxsize+1)
+            self.assertRaises(OverflowError, c.create_decimal, x)
+            self.assertRaises(OverflowError, Decimal, x)
+
+            x = (1, (), -sys.maxsize-2)
+            self.assertRaises(OverflowError, c.create_decimal, x)
+            self.assertRaises(OverflowError, Decimal, x)
+
+            # Specials
+            x = (1, (), "N")
+            self.assertEqual(str(Decimal(x)), '-sNaN')
+            x = (1, (0,), "N")
+            self.assertEqual(str(Decimal(x)), '-sNaN')
+            x = (1, (0, 1), "N")
+            self.assertEqual(str(Decimal(x)), '-sNaN1')
+
 
 all_tests = [
   CExplicitConstructionTest, PyExplicitConstructionTest,
