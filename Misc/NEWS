@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14496: Fix wrong name in idlelib/tabbedpages.py.
+  Patch by Popa Claudiu.
+
 - Issue #3033: Add displayof parameter to tkinter font. Patch by Guilherme Polo.
 
 - Issue #14482: Raise a ValueError, not a NameError, when trying to create
