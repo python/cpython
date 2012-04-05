@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14496: Fix wrong name in idlelib/tabbedpages.py.
+  Patch by Popa Claudiu.
+
 - Issue #14482: Raise a ValueError, not a NameError, when trying to create
   a multiprocessing Client or Listener with an AF_UNIX type address under
   Windows.  Patch by Popa Claudiu.
