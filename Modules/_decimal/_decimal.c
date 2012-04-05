@@ -4934,7 +4934,7 @@ ctx_copy_decimal(PyObject *context, PyObject *v)
     PyObject *result;
 
     CONVERT_OP_RAISE(&result, v, context);
-    return  result;
+    return result;
 }
 
 static PyObject *
