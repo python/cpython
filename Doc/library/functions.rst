@@ -19,7 +19,7 @@ available.  They are listed here in alphabetical order.
 :func:`bytearray`    :func:`float`      :func:`list`        :func:`raw_input`  :func:`unichr`
 :func:`callable`     :func:`format`     :func:`locals`      :func:`reduce`     :func:`unicode`
 :func:`chr`          :func:`frozenset`  :func:`long`        :func:`reload`     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`map`         :func:`repr`       :func:`xrange`
+:func:`classmethod`  :func:`getattr`    :func:`map`         :func:`.repr`      :func:`xrange`
 :func:`cmp`          :func:`globals`    :func:`max`         :func:`reversed`   :func:`zip`
 :func:`compile`      :func:`hasattr`    :func:`memoryview`  :func:`round`      :func:`__import__`
 :func:`complex`      :func:`hash`       :func:`min`         :func:`set`        :func:`apply`
