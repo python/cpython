@@ -3034,8 +3034,7 @@ static struct PyModuleDef _elementtreemodule = {
 PyMODINIT_FUNC
 PyInit__elementtree(void)
 {
-    PyObject* m;
-    PyObject* g;
+    PyObject *m, *g, *temp;
     char* bootstrap;
 
     /* Initialize object types */
@@ -3067,10 +3066,6 @@ PyInit__elementtree(void)
     PyDict_SetItemString(g, "__builtins__", PyEval_GetBuiltins());
 
     bootstrap = (
-
-        "from copy import deepcopy\n"
-        "from xml.etree import ElementPath\n"
-
         "def iter(node, tag=None):\n" /* helper */
         "  if tag == '*':\n"
         "    tag = None\n"
@@ -3094,8 +3089,14 @@ PyInit__elementtree(void)
     if (!PyRun_String(bootstrap, Py_file_input, g, NULL))
         return NULL;
 
-    elementpath_obj = PyDict_GetItemString(g, "ElementPath");
-    elementtree_deepcopy_obj = PyDict_GetItemString(g, "deepcopy");
+    if (!(temp = PyImport_ImportModule("copy")))
+        return NULL;
+    elementtree_deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
+    Py_XDECREF(temp);
+
+    if (!(elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
+        return NULL;
+
     elementtree_iter_obj = PyDict_GetItemString(g, "iter");
     elementtree_itertext_obj = PyDict_GetItemString(g, "itertext");
 
