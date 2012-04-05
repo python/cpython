@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14505: Fix file descriptor leak when deallocating file objects
+  created with PyFile_FromString().
+
 - Issue #14474: Save and restore exception state in thread.start_new_thread()
   while writing error message if the thread leaves a unhandled exception.
 
