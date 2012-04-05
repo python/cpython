@@ -1935,7 +1935,7 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
     mpd_maxcontext(&maxctx);
 
     mpd_qset_string(MPD(dec), s, &maxctx, &status);
-    if (status & (MPD_Inexact|MPD_Rounded)) {
+    if (status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
         /* we want exact results */
         mpd_seterror(MPD(dec), MPD_Invalid_operation, &status);
     }
@@ -2139,7 +2139,7 @@ PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
         return NULL;
     }
 
-    if (status & (MPD_Inexact|MPD_Rounded)) {
+    if (status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
         /* we want exact results */
         mpd_seterror(MPD(dec), MPD_Invalid_operation, &status);
     }
