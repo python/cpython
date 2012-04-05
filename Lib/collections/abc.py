@@ -18,9 +18,13 @@ __all__ = ["Hashable", "Iterable", "Iterator",
            "ByteString",
            ]
 
-
-### collection related types which are not exposed through builtin ###
-## iterators ##
+# Private list of types that we want to register with the various ABCs
+# so that they will pass tests like:
+#       it = iter(somebytearray)
+#       assert isinstance(it, Iterable)
+# Note:  in other implementations, these types many not be distinct
+# and they make have their own implementation specific types that
+# are not included on this list.
 bytes_iterator = type(iter(b''))
 bytearray_iterator = type(iter(bytearray()))
 #callable_iterator = ???
