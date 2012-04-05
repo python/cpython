@@ -302,6 +302,7 @@ def RestrictedDecimal(value):
     dec = maxcontext.create_decimal(value)
     if maxcontext.flags[P.Inexact] or \
        maxcontext.flags[P.Rounded] or \
+       maxcontext.flags[P.Clamped] or \
        maxcontext.flags[P.InvalidOperation]:
         return context.p._raise_error(P.InvalidOperation)
     if maxcontext.flags[P.FloatOperation]:
