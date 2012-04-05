@@ -78,7 +78,7 @@ class TabSet(Frame):
     def remove_tab(self, tab_name):
         """Remove the tab named <tab_name>"""
         if not tab_name in self._tab_names:
-            raise KeyError("No such Tab: '%s" % page_name)
+            raise KeyError("No such Tab: '%s" % tab_name)
 
         self._tab_names.remove(tab_name)
         self._arrange_tabs()
@@ -88,7 +88,7 @@ class TabSet(Frame):
         if tab_name == self._selected_tab:
             return
         if tab_name is not None and tab_name not in self._tabs:
-            raise KeyError("No such Tab: '%s" % page_name)
+            raise KeyError("No such Tab: '%s" % tab_name)
 
         # deselect the current selected tab
         if self._selected_tab is not None:
