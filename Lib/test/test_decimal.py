@@ -4953,6 +4953,30 @@ class CWhitebox(unittest.TestCase):
         self.assertRaises(ValueError, get_fmt, 12345, invalid_dot, 'g')
         self.assertRaises(ValueError, get_fmt, 12345, invalid_sep, 'g')
 
+    def test_exact_conversion(self):
+        Decimal = C.Decimal
+        localcontext = C.localcontext
+        InvalidOperation = C.InvalidOperation
+
+        with localcontext() as c:
+
+            c.traps[InvalidOperation] = True
+
+            # Clamped
+            x = "0e%d" % sys.maxsize
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            x = "0e%d" % (-sys.maxsize-1)
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            # Overflow
+            x = "1e%d" % sys.maxsize
+            self.assertRaises(InvalidOperation, Decimal, x)
+
+            # Underflow
+            x = "1e%d" % (-sys.maxsize-1)
+            self.assertRaises(InvalidOperation, Decimal, x)
+
 
 all_tests = [
   CExplicitConstructionTest, PyExplicitConstructionTest,
