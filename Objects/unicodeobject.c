@@ -5496,33 +5496,39 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             int kind = PyUnicode_KIND(unicode);
             void *data = PyUnicode_DATA(unicode);
             while (_q < aligned_end) {
-                unsigned long block = * (unsigned long *) _q;
-                unsigned short *pblock = (unsigned short*)&block;
+                union {
+                    unsigned long as_long;
+                    unsigned short units[sizeof(long) / sizeof(short)];
+                    unsigned char bytes[sizeof(long)];
+                } block, block_copy;
                 Py_UCS4 maxch;
+
+                block.as_long = *(unsigned long *) _q;
                 if (native_ordering) {
                     /* Can use buffer directly */
-                    if (block & FAST_CHAR_MASK)
+                    if (block.as_long & FAST_CHAR_MASK)
                         break;
                 }
                 else {
                     /* Need to byte-swap */
-                    unsigned char *_p = (unsigned char*)pblock;
-                    if (block & SWAPPED_FAST_CHAR_MASK)
+                    block_copy = block;
+
+                    if (block.as_long & SWAPPED_FAST_CHAR_MASK)
                         break;
-                    _p[0] = _q[1];
-                    _p[1] = _q[0];
-                    _p[2] = _q[3];
-                    _p[3] = _q[2];
+                    block.bytes[0] = block_copy.bytes[1];
+                    block.bytes[1] = block_copy.bytes[0];
+                    block.bytes[2] = block_copy.bytes[3];
+                    block.bytes[3] = block_copy.bytes[2];
 #if (SIZEOF_LONG == 8)
-                    _p[4] = _q[5];
-                    _p[5] = _q[4];
-                    _p[6] = _q[7];
-                    _p[7] = _q[6];
+                    block.bytes[4] = block_copy.bytes[5];
+                    block.bytes[5] = block_copy.bytes[4];
+                    block.bytes[6] = block_copy.bytes[7];
+                    block.bytes[7] = block_copy.bytes[6];
 #endif
                 }
-                maxch = Py_MAX(pblock[0], pblock[1]);
+                maxch = Py_MAX(block.units[0], block.units[1]);
 #if SIZEOF_LONG == 8
-                maxch = Py_MAX(maxch, Py_MAX(pblock[2], pblock[3]));
+                maxch = Py_MAX(maxch, Py_MAX(block.units[2], block.units[3]));
 #endif
                 if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
                     if (unicode_widen(&unicode, maxch) < 0)
@@ -5530,11 +5536,11 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                     kind = PyUnicode_KIND(unicode);
                     data = PyUnicode_DATA(unicode);
                 }
-                PyUnicode_WRITE(kind, data, outpos++, pblock[0]);
-                PyUnicode_WRITE(kind, data, outpos++, pblock[1]);
+                PyUnicode_WRITE(kind, data, outpos++, block.units[0]);
+                PyUnicode_WRITE(kind, data, outpos++, block.units[1]);
 #if SIZEOF_LONG == 8
-                PyUnicode_WRITE(kind, data, outpos++, pblock[2]);
-                PyUnicode_WRITE(kind, data, outpos++, pblock[3]);
+                PyUnicode_WRITE(kind, data, outpos++, block.units[2]);
+                PyUnicode_WRITE(kind, data, outpos++, block.units[3]);
 #endif
                 _q += SIZEOF_LONG;
             }
