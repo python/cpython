@@ -63,6 +63,7 @@ class TestSundryScripts(unittest.TestCase):
         for fn in self.windows_only:
             __import__(fn[:-3])
 
+    @unittest.skipIf(not support.threading, "test requires _thread module")
     def test_analyze_dxp_import(self):
         if hasattr(sys, 'getdxp'):
             import analyze_dxp
