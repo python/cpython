@@ -5393,9 +5393,11 @@ PyUnicode_DecodeUTF16(const char *s,
 #if (SIZEOF_LONG == 8)
 # define FAST_CHAR_MASK         0x8000800080008000L
 # define SWAPPED_FAST_CHAR_MASK 0x0080008000800080L
+# define STRIPPED_MASK          0x00FF00FF00FF00FFL
 #elif (SIZEOF_LONG == 4)
 # define FAST_CHAR_MASK         0x80008000L
 # define SWAPPED_FAST_CHAR_MASK 0x00800080L
+# define STRIPPED_MASK          0x00FF00FFL
 #else
 # error C 'long' size should be either 4 or 8!
 #endif
@@ -5496,39 +5498,31 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             int kind = PyUnicode_KIND(unicode);
             void *data = PyUnicode_DATA(unicode);
             while (_q < aligned_end) {
-                union {
-                    unsigned long as_long;
-                    unsigned short units[sizeof(long) / sizeof(short)];
-                    unsigned char bytes[sizeof(long)];
-                } block, block_copy;
+                unsigned long block = * (unsigned long *) _q;
                 Py_UCS4 maxch;
-
-                block.as_long = *(unsigned long *) _q;
                 if (native_ordering) {
                     /* Can use buffer directly */
-                    if (block.as_long & FAST_CHAR_MASK)
+                    if (block & FAST_CHAR_MASK)
                         break;
                 }
                 else {
                     /* Need to byte-swap */
-                    block_copy = block;
-
-                    if (block.as_long & SWAPPED_FAST_CHAR_MASK)
+                    if (block & SWAPPED_FAST_CHAR_MASK)
                         break;
-                    block.bytes[0] = block_copy.bytes[1];
-                    block.bytes[1] = block_copy.bytes[0];
-                    block.bytes[2] = block_copy.bytes[3];
-                    block.bytes[3] = block_copy.bytes[2];
-#if (SIZEOF_LONG == 8)
-                    block.bytes[4] = block_copy.bytes[5];
-                    block.bytes[5] = block_copy.bytes[4];
-                    block.bytes[6] = block_copy.bytes[7];
-                    block.bytes[7] = block_copy.bytes[6];
-#endif
+                    block = ((block >> 8) & STRIPPED_MASK) |
+                            ((block & STRIPPED_MASK) << 8);
                 }
-                maxch = Py_MAX(block.units[0], block.units[1]);
+                maxch = (Py_UCS2)(block & 0xFFFF);
 #if SIZEOF_LONG == 8
-                maxch = Py_MAX(maxch, Py_MAX(block.units[2], block.units[3]));
+                ch = (Py_UCS2)((block >> 16) & 0xFFFF);
+                maxch = Py_MAX(maxch, ch);
+                ch = (Py_UCS2)((block >> 32) & 0xFFFF);
+                maxch = Py_MAX(maxch, ch);
+                ch = (Py_UCS2)(block >> 48);
+                maxch = Py_MAX(maxch, ch);
+#else
+                ch = (Py_UCS2)(block >> 16);
+                maxch = Py_MAX(maxch, ch);
 #endif
                 if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
                     if (unicode_widen(&unicode, maxch) < 0)
@@ -5536,11 +5530,24 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                     kind = PyUnicode_KIND(unicode);
                     data = PyUnicode_DATA(unicode);
                 }
-                PyUnicode_WRITE(kind, data, outpos++, block.units[0]);
-                PyUnicode_WRITE(kind, data, outpos++, block.units[1]);
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
 #if SIZEOF_LONG == 8
-                PyUnicode_WRITE(kind, data, outpos++, block.units[2]);
-                PyUnicode_WRITE(kind, data, outpos++, block.units[3]);
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
+#else
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
+#endif
+#else
+#if SIZEOF_LONG == 8
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
+#else
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
+#endif
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
 #endif
                 _q += SIZEOF_LONG;
             }
