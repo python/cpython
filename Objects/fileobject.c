@@ -493,9 +493,10 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 PyObject *
 PyFile_FromString(char *name, char *mode)
 {
+    extern int fclose(FILE *);
     PyFileObject *f;
 
-    f = (PyFileObject *)PyFile_FromFile((FILE *)NULL, name, mode, NULL);
+    f = (PyFileObject *)PyFile_FromFile((FILE *)NULL, name, mode, fclose);
     if (f != NULL) {
         if (open_the_file(f, name, mode) == NULL) {
             Py_DECREF(f);
