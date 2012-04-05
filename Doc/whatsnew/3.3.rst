@@ -574,6 +574,26 @@ versions.
 
 The ``unicode_internal`` codec has been deprecated.
 
+
+collections
+-----------
+
+Addition of a new :class:`~collections.ChainMap` class to allow treating a
+number of mappings as a single unit.
+
+(Written by Raymond Hettinger for :issue:`11089`, made public in
+:issue:`11297`)
+
+The abstract base classes have been moved in a new :mod:`collections.abc`
+module, to better differentiate between the abstract and the concrete
+collections classes.  Aliases for ABCs are still present in the
+:mod:`collections` module to preserve existing imports.
+
+(:issue:`11085`)
+
+.. XXX addition of __slots__ to ABCs not recorded here: internal detail
+
+
 crypt
 -----
 
@@ -867,11 +887,12 @@ packaging
 ---------
 
 :mod:`distutils` has undergone additions and refactoring under a new name,
-:mod:`packaging`, to allow developers to break backward compatibility.
+:mod:`packaging`, to allow developers to make far-reaching changes without
+being constrained by backward compatibility.
 :mod:`distutils` is still provided in the standard library, but users are
 encouraged to transition to :mod:`packaging`.  For older versions of Python, a
-backport compatible with 2.4+ and 3.1+ will be made available on PyPI under the
-name :mod:`distutils2`.
+backport compatible with Python 2.5 and newer and 3.2 is available on PyPI
+under the name `distutils2 <http://pypi.python.org/pypi/Distutils2>`_.
 
 .. TODO add examples and howto to the packaging docs and link to them
 
@@ -1059,12 +1080,24 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 (:issue:`1673007`)
 
 
+webbrowser
+----------
+
+The :mod:`webbrowser` module supports more browsers: Google Chrome (named
+:program:`chrome`, :program:`chromium`, :program:`chrome-browser` or
+:program:`chromium-browser` depending on the version and operating system) as
+well as the the generic launchers :program:`xdg-open` from the FreeDesktop.org
+project and :program:`gvfs-open` which is the default URI handler for GNOME 3.
+
+(:issue:`13620` and :issue:`14493`)
+
+
 Optimizations
 =============
 
 Major performance enhancements have been added:
 
-* Thanks to the :pep:`393`, some operations on Unicode strings has been optimized:
+* Thanks to :pep:`393`, some operations on Unicode strings have been optimized:
 
   * the memory footprint is divided by 2 to 4 depending on the text
   * encode an ASCII string to UTF-8 doesn't need to encode characters anymore,
@@ -1083,7 +1116,7 @@ Changes to Python's build process and to the C API include:
 
   * :c:func:`PyMemoryView_FromMemory`
 
-* The :pep:`393` added new Unicode types, macros and functions:
+* :pep:`393` added new Unicode types, macros and functions:
 
   * High-level API:
 
@@ -1126,7 +1159,7 @@ are no longer supported due to maintenance burden.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* The :mod:`distutils` modules has been deprecated.  Use the new
+* The :mod:`distutils` module has been deprecated.  Use the new
   :mod:`packaging` module instead.
 * The ``unicode_internal`` codec has been deprecated because of the
   :pep:`393`, use UTF-8, UTF-16 (``utf-16-le`` or ``utf-16-be``), or UTF-32
@@ -1145,7 +1178,7 @@ Deprecated Python modules, functions and methods
 Deprecated functions and types of the C API
 -------------------------------------------
 
-The :c:type:`Py_UNICODE` has been deprecated by the :pep:`393` and will be
+The :c:type:`Py_UNICODE` has been deprecated by :pep:`393` and will be
 removed in Python 4. All functions using this type are deprecated:
 
 Unicode functions and methods using :c:type:`Py_UNICODE` and
@@ -1247,7 +1280,7 @@ Porting C code
   functions using this type are deprecated (but will stay available for
   at least five years).  If you were using low-level Unicode APIs to
   construct and access unicode objects and you want to benefit of the
-  memory footprint reduction provided by the PEP 393, you have to convert
+  memory footprint reduction provided by PEP 393, you have to convert
   your code to the new :doc:`Unicode API <../c-api/unicode>`.
 
   However, if you only have been using high-level functions such as
