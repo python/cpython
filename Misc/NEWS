@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8515: Set __file__ when run file in IDLE.
+  Initial patch by Bruce Frederiksen.
+
 - Issue #14496: Fix wrong name in idlelib/tabbedpages.py.
   Patch by Popa Claudiu.
 
