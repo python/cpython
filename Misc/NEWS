@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3033: Add displayof parameter to tkinter font. Patch by Guilherme Polo.
+
 - Issue #14482: Raise a ValueError, not a NameError, when trying to create
   a multiprocessing Client or Listener with an AF_UNIX type address under
   Windows.  Patch by Popa Claudiu.
