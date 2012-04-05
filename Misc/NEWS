@@ -29,7 +29,7 @@ Library
   a multiprocessing Client or Listener with an AF_PIPE type address under
   non-Windows platforms.  Patch by Popa Claudiu.
 
-- Issue #14493: Use gvfs-open/xdg-open in Lib/webbrowser.py.
+- Issue #14493: Use gvfs-open or xdg-open in webbrowser.
 
 
 What's New in Python 3.3.0 Alpha 2?
@@ -1007,7 +1007,7 @@ Library
 
 - Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
 
-- Issue #13620: Support for Chrome browser in webbrowser.py Patch contributed
+- Issue #13620: Support for Chrome browser in webbrowser.  Patch contributed
   by Arnaud Calmettes.
 
 - Issue #11829: Fix code execution holes in inspect.getattr_static for
