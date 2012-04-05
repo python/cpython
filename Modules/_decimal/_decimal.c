@@ -2385,8 +2385,8 @@ dectuple_as_str(PyObject *dectuple)
     }
 
     /* coefficient */
-    digits = sequence_as_tuple(PyTuple_GET_ITEM(dectuple, 1),
-                               PyExc_ValueError, "coefficient must be a tuple of digits");
+    digits = sequence_as_tuple(PyTuple_GET_ITEM(dectuple, 1), PyExc_ValueError,
+                               "coefficient must be a tuple of digits");
     if (digits == NULL) {
         goto error;
     }
