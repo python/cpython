@@ -3,34 +3,6 @@
 # Usage: abitype.py < old_code > new_code
 import re, sys
 
-############ Simplistic C scanner ##################################
-tokenizer = re.compile(
-    r"(?P<preproc>#.*\n)"
-    r"|(?P<comment>/\*.*?\*/)"
-    r"|(?P<ident>[a-zA-Z_][a-zA-Z0-9_]*)"
-    r"|(?P<ws>[ \t\n]+)"
-    r"|(?P<other>.)",
-    re.MULTILINE)
-
-tokens = []
-source = sys.stdin.read()
-pos = 0
-while pos != len(source):
-    m = tokenizer.match(source, pos)
-    tokens.append([m.lastgroup, m.group()])
-    pos += len(tokens[-1][1])
-    if tokens[-1][0] == 'preproc':
-        # continuation lines are considered
-        # only in preprocess statements
-        while tokens[-1][1].endswith('\\\n'):
-            nl = source.find('\n', pos)
-            if nl == -1:
-                line = source[pos:]
-            else:
-                line = source[pos:nl+1]
-            tokens[-1][1] += line
-            pos += len(line)
-
 ###### Replacement of PyTypeObject static instances ##############
 
 # classify each token, giving it a one-letter code:
@@ -79,7 +51,7 @@ def get_fields(start, real_end):
     while tokens[pos][0] in ('ws', 'comment'):
         pos += 1
     if tokens[pos][1] != 'PyVarObject_HEAD_INIT':
-        raise Exception, '%s has no PyVarObject_HEAD_INIT' % name
+        raise Exception('%s has no PyVarObject_HEAD_INIT' % name)
     while tokens[pos][1] != ')':
         pos += 1
     pos += 1
@@ -183,18 +155,48 @@ def make_slots(name, fields):
     return '\n'.join(res)
 
 
-# Main loop: replace all static PyTypeObjects until
-# there are none left.
-while 1:
-    c = classify()
-    m = re.search('(SW)?TWIW?=W?{.*?};', c)
-    if not m:
-        break
-    start = m.start()
-    end = m.end()
-    name, fields = get_fields(start, m)
-    tokens[start:end] = [('',make_slots(name, fields))]
+if __name__ == '__main__':
 
-# Output result to stdout
-for t, v in tokens:
-    sys.stdout.write(v)
+    ############ Simplistic C scanner ##################################
+    tokenizer = re.compile(
+        r"(?P<preproc>#.*\n)"
+        r"|(?P<comment>/\*.*?\*/)"
+        r"|(?P<ident>[a-zA-Z_][a-zA-Z0-9_]*)"
+        r"|(?P<ws>[ \t\n]+)"
+        r"|(?P<other>.)",
+        re.MULTILINE)
+
+    tokens = []
+    source = sys.stdin.read()
+    pos = 0
+    while pos != len(source):
+        m = tokenizer.match(source, pos)
+        tokens.append([m.lastgroup, m.group()])
+        pos += len(tokens[-1][1])
+        if tokens[-1][0] == 'preproc':
+            # continuation lines are considered
+            # only in preprocess statements
+            while tokens[-1][1].endswith('\\\n'):
+                nl = source.find('\n', pos)
+                if nl == -1:
+                    line = source[pos:]
+                else:
+                    line = source[pos:nl+1]
+                tokens[-1][1] += line
+                pos += len(line)
+
+    # Main loop: replace all static PyTypeObjects until
+    # there are none left.
+    while 1:
+        c = classify()
+        m = re.search('(SW)?TWIW?=W?{.*?};', c)
+        if not m:
+            break
+        start = m.start()
+        end = m.end()
+        name, fields = get_fields(start, m)
+        tokens[start:end] = [('',make_slots(name, fields))]
+
+    # Output result to stdout
+    for t, v in tokens:
+        sys.stdout.write(v)
