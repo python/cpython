@@ -471,6 +471,19 @@ class TestBasic(unittest.TestCase):
 ##            self.assertNotEqual(id(d), id(e))
 ##            self.assertEqual(id(e), id(e[-1]))
 
+    def test_iterator_pickle(self):
+        data = deque(range(200))
+        it = itorg = iter(data)
+        d = pickle.dumps(it)
+        it = pickle.loads(d)
+        self.assertEqual(type(itorg), type(it))
+        self.assertEqual(list(it), list(data))
+
+        it = pickle.loads(d)
+        next(it)
+        d = pickle.dumps(it)
+        self.assertEqual(list(it), list(data)[1:])
+
     def test_deepcopy(self):
         mut = [10]
         d = deque([mut])

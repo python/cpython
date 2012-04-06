@@ -1,6 +1,9 @@
 What's New in IDLE 3.3?
 =========================
 
+- Issue #8515: Set __file__ when run file in IDLE.
+  Initial patch by Bruce Frederiksen.
+
 - IDLE can be launched as `python -m idlelib`
 
 - Issue #14409: IDLE now properly executes commands in the Shell window

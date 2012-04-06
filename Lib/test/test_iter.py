@@ -2,6 +2,8 @@
 
 import unittest
 from test.support import run_unittest, TESTFN, unlink, cpython_only
+import pickle
+import collections.abc
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -28,6 +30,8 @@ class BasicIterClass:
             raise StopIteration
         self.i = res + 1
         return res
+    def __iter__(self):
+        return self
 
 class IteratingSequenceClass:
     def __init__(self, n):
@@ -49,7 +53,9 @@ class SequenceClass:
 class TestCase(unittest.TestCase):
 
     # Helper to check that an iterator returns a given sequence
-    def check_iterator(self, it, seq):
+    def check_iterator(self, it, seq, pickle=True):
+        if pickle:
+            self.check_pickle(it, seq)
         res = []
         while 1:
             try:
@@ -60,11 +66,32 @@ class TestCase(unittest.TestCase):
         self.assertEqual(res, seq)
 
     # Helper to check that a for loop generates a given sequence
-    def check_for_loop(self, expr, seq):
+    def check_for_loop(self, expr, seq, pickle=True):
+        if pickle:
+            self.check_pickle(iter(expr), seq)
         res = []
         for val in expr:
             res.append(val)
         self.assertEqual(res, seq)
+
+    # Helper to check picklability
+    def check_pickle(self, itorg, seq):
+        d = pickle.dumps(itorg)
+        it = pickle.loads(d)
+        # Cannot assert type equality because dict iterators unpickle as list
+        # iterators.
+        # self.assertEqual(type(itorg), type(it))
+        self.assertTrue(isinstance(it, collections.abc.Iterator))
+        self.assertEqual(list(it), seq)
+
+        it = pickle.loads(d)
+        try:
+            next(it)
+        except StopIteration:
+            return
+        d = pickle.dumps(it)
+        it = pickle.loads(d)
+        self.assertEqual(list(it), seq[1:])
 
     # Test basic use of iter() function
     def test_iter_basic(self):
@@ -138,7 +165,7 @@ class TestCase(unittest.TestCase):
                 if i > 100:
                     raise IndexError # Emergency stop
                 return i
-        self.check_iterator(iter(C(), 10), list(range(10)))
+        self.check_iterator(iter(C(), 10), list(range(10)), pickle=False)
 
     # Test two-argument iter() with function
     def test_iter_function(self):
@@ -146,7 +173,7 @@ class TestCase(unittest.TestCase):
             i = state[0]
             state[0] = i+1
             return i
-        self.check_iterator(iter(spam, 10), list(range(10)))
+        self.check_iterator(iter(spam, 10), list(range(10)), pickle=False)
 
     # Test two-argument iter() with function that raises StopIteration
     def test_iter_function_stop(self):
@@ -156,7 +183,7 @@ class TestCase(unittest.TestCase):
                 raise StopIteration
             state[0] = i+1
             return i
-        self.check_iterator(iter(spam, 20), list(range(10)))
+        self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
@@ -198,7 +225,7 @@ class TestCase(unittest.TestCase):
                 if i == 10:
                     raise StopIteration
                 return SequenceClass.__getitem__(self, i)
-        self.check_for_loop(MySequenceClass(20), list(range(10)))
+        self.check_for_loop(MySequenceClass(20), list(range(10)), pickle=False)
 
     # Test a big range
     def test_iter_big_range(self):
@@ -237,8 +264,8 @@ class TestCase(unittest.TestCase):
             f.close()
         f = open(TESTFN, "r")
         try:
-            self.check_for_loop(f, ["0\n", "1\n", "2\n", "3\n", "4\n"])
-            self.check_for_loop(f, [])
+            self.check_for_loop(f, ["0\n", "1\n", "2\n", "3\n", "4\n"], pickle=False)
+            self.check_for_loop(f, [], pickle=False)
         finally:
             f.close()
             try:

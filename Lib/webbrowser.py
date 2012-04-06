@@ -448,6 +448,14 @@ class Grail(BaseBrowser):
 
 def register_X_browsers():
 
+    # use xdg-open if around
+    if _iscommand("xdg-open"):
+        register("xdg-open", None, BackgroundBrowser("xdg-open"))
+
+    # The default GNOME3 browser
+    if "GNOME_DESKTOP_SESSION_ID" in os.environ and _iscommand("gvfs-open"):
+        register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
+
     # The default GNOME browser
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and _iscommand("gnome-open"):
         register("gnome-open", None, BackgroundBrowser("gnome-open"))
