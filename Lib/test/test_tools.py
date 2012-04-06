@@ -6,8 +6,10 @@ Tools directory of a Python checkout or tarball, such as reindent.py.
 
 import os
 import sys
+import imp
 import unittest
 import sysconfig
+import tempfile
 from test import support
 from test.script_helper import assert_python_ok
 
@@ -70,6 +72,31 @@ class TestSundryScripts(unittest.TestCase):
         else:
             with self.assertRaises(RuntimeError):
                 import analyze_dxp
+
+
+class PdepsTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        path = os.path.join(scriptsdir, 'pdeps.py')
+        self.pdeps = imp.load_source('pdeps', path)
+
+    @classmethod
+    def tearDownClass(self):
+        if 'pdeps' in sys.modules:
+            del sys.modules['pdeps']
+
+    def test_process_errors(self):
+        # Issue #14492: m_import.match(line) can be None.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fn = os.path.join(tmpdir, 'foo')
+            with open(fn, 'w') as stream:
+                stream.write("#!/this/will/fail")
+            self.pdeps.process(fn, {})
+
+    def test_inverse_attribute_error(self):
+        # Issue #14492: this used to fail with an AttributeError.
+        self.pdeps.inverse({'a': []})
 
 
 def test_main():
