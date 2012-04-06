@@ -76,10 +76,9 @@ def process(filename, table):
             nextline = fp.readline()
             if not nextline: break
             line = line[:-1] + nextline
-        if m_import.match(line) >= 0:
-            (a, b), (a1, b1) = m_import.regs[:2]
-        elif m_from.match(line) >= 0:
-            (a, b), (a1, b1) = m_from.regs[:2]
+        m_found = m_import.match(line) or m_from.match(line)
+        if m_found:
+            (a, b), (a1, b1) = m_found.regs[:2]
         else: continue
         words = line[a1:b1].split(',')
         # print '#', line, words
@@ -87,6 +86,7 @@ def process(filename, table):
             word = word.strip()
             if word not in list:
                 list.append(word)
+    fp.close()
 
 
 # Compute closure (this is in fact totally general)
@@ -123,7 +123,7 @@ def closure(table):
 def inverse(table):
     inv = {}
     for key in table.keys():
-        if not inv.has_key(key):
+        if key not in inv:
             inv[key] = []
         for item in table[key]:
             store(inv, item, key)
