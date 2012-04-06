@@ -106,14 +106,16 @@ def check_limit(n, test_func_name):
     else:
         print("Yikes!")
 
-limit = 1000
-while 1:
-    check_limit(limit, "test_recurse")
-    check_limit(limit, "test_add")
-    check_limit(limit, "test_repr")
-    check_limit(limit, "test_init")
-    check_limit(limit, "test_getattr")
-    check_limit(limit, "test_getitem")
-    check_limit(limit, "test_cpickle")
-    print("Limit of %d is fine" % limit)
-    limit = limit + 100
+if __name__ == '__main__':
+
+    limit = 1000
+    while 1:
+        check_limit(limit, "test_recurse")
+        check_limit(limit, "test_add")
+        check_limit(limit, "test_repr")
+        check_limit(limit, "test_init")
+        check_limit(limit, "test_getattr")
+        check_limit(limit, "test_getitem")
+        check_limit(limit, "test_cpickle")
+        print("Limit of %d is fine" % limit)
+        limit = limit + 100
