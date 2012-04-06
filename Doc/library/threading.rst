@@ -174,7 +174,7 @@ This module defines the following functions and objects:
    *size* argument specifies the stack size to be used for subsequently created
    threads, and must be 0 (use platform or configured default) or a positive
    integer value of at least 32,768 (32kB). If changing the thread stack size is
-   unsupported, a :exc:`ThreadError` is raised.  If the specified stack size is
+   unsupported, a :exc:`RuntimeError` is raised.  If the specified stack size is
    invalid, a :exc:`ValueError` is raised and the stack size is unmodified.  32kB
    is currently the minimum supported stack size value to guarantee sufficient
    stack space for the interpreter itself.  Note that some platforms may have
@@ -452,7 +452,7 @@ All methods are executed atomically.
    are blocked waiting for the lock to become unlocked, allow exactly one of them
    to proceed.
 
-   Do not call this method when the lock is unlocked.
+   When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
 
    There is no return value.
 

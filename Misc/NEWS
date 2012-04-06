@@ -19,9 +19,25 @@ Core and Builtins
 Library
 -------
 
+- Issue #8515: Set __file__ when run file in IDLE.
+  Initial patch by Bruce Frederiksen.
+
+- Issue #14496: Fix wrong name in idlelib/tabbedpages.py.
+  Patch by Popa Claudiu.
+
+- Issue #3033: Add displayof parameter to tkinter font. Patch by Guilherme Polo.
+
+- Issue #14482: Raise a ValueError, not a NameError, when trying to create
+  a multiprocessing Client or Listener with an AF_UNIX type address under
+  Windows.  Patch by Popa Claudiu.
+
+- Issue #802310: Generate always unique tkinter font names if not directly passed.
+
 - Issue #14151: Raise a ValueError, not a NameError, when trying to create
   a multiprocessing Client or Listener with an AF_PIPE type address under
   non-Windows platforms.  Patch by Popa Claudiu.
+
+- Issue #14493: Use gvfs-open or xdg-open in webbrowser.
 
 
 What's New in Python 3.3.0 Alpha 2?
@@ -57,6 +73,8 @@ Core and Builtins
   on the PyObject_Malloc() api like all other objects.
 
 - Issue #14471: Fix a possible buffer overrun in the winreg module.
+
+- Issue #14288: Allow the serialization of builtin iterators
 
 Library
 -------
@@ -997,7 +1015,7 @@ Library
 
 - Issue #11006: Don't issue low level warning in subprocess when pipe2() fails.
 
-- Issue #13620: Support for Chrome browser in webbrowser.py Patch contributed
+- Issue #13620: Support for Chrome browser in webbrowser.  Patch contributed
   by Arnaud Calmettes.
 
 - Issue #11829: Fix code execution holes in inspect.getattr_static for

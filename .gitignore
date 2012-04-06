@@ -32,7 +32,6 @@ PCbuild/*.o
 PCbuild/*.pdb
 PCbuild/Win32-temp-*
 Parser/pgen
-Parser/pgen.stamp
 __pycache__
 autom4te.cache
 build/

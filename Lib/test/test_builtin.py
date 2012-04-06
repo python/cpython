@@ -14,6 +14,7 @@ import random
 import traceback
 from test.support import TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
+import pickle
 try:
     import pty, signal
 except ImportError:
@@ -110,7 +111,30 @@ class TestFailingIter:
     def __iter__(self):
         raise RuntimeError
 
+def filter_char(arg):
+    return ord(arg) > ord("d")
+
+def map_char(arg):
+    return chr(ord(arg)+1)
+
 class BuiltinTest(unittest.TestCase):
+    # Helper to check picklability
+    def check_iter_pickle(self, it, seq):
+        itorg = it
+        d = pickle.dumps(it)
+        it = pickle.loads(d)
+        self.assertEqual(type(itorg), type(it))
+        self.assertEqual(list(it), seq)
+
+        #test the iterator after dropping one from it
+        it = pickle.loads(d)
+        try:
+            next(it)
+        except StopIteration:
+            return
+        d = pickle.dumps(it)
+        it = pickle.loads(d)
+        self.assertEqual(list(it), seq[1:])
 
     def test_import(self):
         __import__('sys')
@@ -566,6 +590,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(filter(lambda x: x>=3, (1, 2, 3, 4))), [3, 4])
         self.assertRaises(TypeError, list, filter(42, (1, 2)))
 
+    def test_filter_pickle(self):
+        f1 = filter(filter_char, "abcdeabcde")
+        f2 = filter(filter_char, "abcdeabcde")
+        self.check_iter_pickle(f1, list(f2))
+
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr, sys, 1)
@@ -758,6 +787,11 @@ class BuiltinTest(unittest.TestCase):
         def badfunc(x):
             raise RuntimeError
         self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
+
+    def test_map_pickle(self):
+        m1 = map(map_char, "Is this the real life?")
+        m2 = map(map_char, "Is this the real life?")
+        self.check_iter_pickle(m1, list(m2))
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')
@@ -1299,6 +1333,13 @@ class BuiltinTest(unittest.TestCase):
                 else:
                     return i
         self.assertRaises(ValueError, list, zip(BadSeq(), BadSeq()))
+
+    def test_zip_pickle(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        z1 = zip(a, b)
+        self.check_iter_pickle(z1, t)
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
