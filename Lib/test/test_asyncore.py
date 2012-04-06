@@ -74,15 +74,16 @@ def capture_server(evt, buf, serv):
         pass
     else:
         n = 200
-        while n > 0:
-            r, w, e = select.select([conn], [], [])
+        start = time.time()
+        while n > 0 and time.time() - start < 3.0:
+            r, w, e = select.select([conn], [], [], 0.1)
             if r:
+                n -= 1
                 data = conn.recv(10)
                 # keep everything except for the newline terminator
                 buf.write(data.replace(b'\n', b''))
                 if b'\n' in data:
                     break
-            n -= 1
             time.sleep(0.01)
 
         conn.close()
