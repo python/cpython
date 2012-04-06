@@ -1,6 +1,7 @@
 from test import support, seq_tests
 
 import gc
+import pickle
 
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
@@ -163,6 +164,34 @@ class TupleTest(seq_tests.CommonTest):
                 '(' + ', '.join(['0'] * n) + ')')
         check(10)       # check our checking code
         check(1000000)
+
+    def test_iterator_pickle(self):
+        # Userlist iterators don't support pickling yet since
+        # they are based on generators.
+        data = self.type2test([4, 5, 6, 7])
+        itorg = iter(data)
+        d = pickle.dumps(itorg)
+        it = pickle.loads(d)
+        self.assertEqual(type(itorg), type(it))
+        self.assertEqual(self.type2test(it), self.type2test(data))
+
+        it = pickle.loads(d)
+        next(it)
+        d = pickle.dumps(it)
+        self.assertEqual(self.type2test(it), self.type2test(data)[1:])
+
+    def test_reversed_pickle(self):
+        data = self.type2test([4, 5, 6, 7])
+        itorg = reversed(data)
+        d = pickle.dumps(itorg)
+        it = pickle.loads(d)
+        self.assertEqual(type(itorg), type(it))
+        self.assertEqual(self.type2test(it), self.type2test(reversed(data)))
+
+        it = pickle.loads(d)
+        next(it)
+        d = pickle.dumps(it)
+        self.assertEqual(self.type2test(it), self.type2test(reversed(data))[1:])
 
 def test_main():
     support.run_unittest(TupleTest)

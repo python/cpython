@@ -5393,9 +5393,11 @@ PyUnicode_DecodeUTF16(const char *s,
 #if (SIZEOF_LONG == 8)
 # define FAST_CHAR_MASK         0x8000800080008000L
 # define SWAPPED_FAST_CHAR_MASK 0x0080008000800080L
+# define STRIPPED_MASK          0x00FF00FF00FF00FFL
 #elif (SIZEOF_LONG == 4)
 # define FAST_CHAR_MASK         0x80008000L
 # define SWAPPED_FAST_CHAR_MASK 0x00800080L
+# define STRIPPED_MASK          0x00FF00FFL
 #else
 # error C 'long' size should be either 4 or 8!
 #endif
@@ -5497,7 +5499,6 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             void *data = PyUnicode_DATA(unicode);
             while (_q < aligned_end) {
                 unsigned long block = * (unsigned long *) _q;
-                unsigned short *pblock = (unsigned short*)&block;
                 Py_UCS4 maxch;
                 if (native_ordering) {
                     /* Can use buffer directly */
@@ -5506,23 +5507,22 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                 }
                 else {
                     /* Need to byte-swap */
-                    unsigned char *_p = (unsigned char*)pblock;
                     if (block & SWAPPED_FAST_CHAR_MASK)
                         break;
-                    _p[0] = _q[1];
-                    _p[1] = _q[0];
-                    _p[2] = _q[3];
-                    _p[3] = _q[2];
-#if (SIZEOF_LONG == 8)
-                    _p[4] = _q[5];
-                    _p[5] = _q[4];
-                    _p[6] = _q[7];
-                    _p[7] = _q[6];
-#endif
+                    block = ((block >> 8) & STRIPPED_MASK) |
+                            ((block & STRIPPED_MASK) << 8);
                 }
-                maxch = Py_MAX(pblock[0], pblock[1]);
+                maxch = (Py_UCS2)(block & 0xFFFF);
 #if SIZEOF_LONG == 8
-                maxch = Py_MAX(maxch, Py_MAX(pblock[2], pblock[3]));
+                ch = (Py_UCS2)((block >> 16) & 0xFFFF);
+                maxch = Py_MAX(maxch, ch);
+                ch = (Py_UCS2)((block >> 32) & 0xFFFF);
+                maxch = Py_MAX(maxch, ch);
+                ch = (Py_UCS2)(block >> 48);
+                maxch = Py_MAX(maxch, ch);
+#else
+                ch = (Py_UCS2)(block >> 16);
+                maxch = Py_MAX(maxch, ch);
 #endif
                 if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
                     if (unicode_widen(&unicode, maxch) < 0)
@@ -5530,11 +5530,24 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                     kind = PyUnicode_KIND(unicode);
                     data = PyUnicode_DATA(unicode);
                 }
-                PyUnicode_WRITE(kind, data, outpos++, pblock[0]);
-                PyUnicode_WRITE(kind, data, outpos++, pblock[1]);
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
 #if SIZEOF_LONG == 8
-                PyUnicode_WRITE(kind, data, outpos++, pblock[2]);
-                PyUnicode_WRITE(kind, data, outpos++, pblock[3]);
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
+#else
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
+#endif
+#else
+#if SIZEOF_LONG == 8
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
+#else
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
+#endif
+                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
 #endif
                 _q += SIZEOF_LONG;
             }
@@ -14382,9 +14395,43 @@ unicodeiter_len(unicodeiterobject *it)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+unicodeiter_reduce(unicodeiterobject *it)
+{
+    if (it->it_seq != NULL) {
+        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    } else {
+        PyObject *u = PyUnicode_FromUnicode(NULL, 0);
+        if (u == NULL)
+            return NULL;
+        return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), u);
+    }
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+unicodeiter_setstate(unicodeiterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (index < 0)
+        index = 0;
+    it->it_index = index;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef unicodeiter_methods[] = {
     {"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS,
      length_hint_doc},
+    {"__reduce__",      (PyCFunction)unicodeiter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"__setstate__",    (PyCFunction)unicodeiter_setstate, METH_O,
+     setstate_doc},
     {NULL,      NULL}       /* sentinel */
 };
 

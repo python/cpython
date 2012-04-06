@@ -1935,7 +1935,7 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
     mpd_maxcontext(&maxctx);
 
     mpd_qset_string(MPD(dec), s, &maxctx, &status);
-    if (status & (MPD_Inexact|MPD_Rounded)) {
+    if (status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
         /* we want exact results */
         mpd_seterror(MPD(dec), MPD_Invalid_operation, &status);
     }
@@ -2139,7 +2139,7 @@ PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
         return NULL;
     }
 
-    if (status & (MPD_Inexact|MPD_Rounded)) {
+    if (status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
         /* we want exact results */
         mpd_seterror(MPD(dec), MPD_Invalid_operation, &status);
     }
@@ -2385,8 +2385,8 @@ dectuple_as_str(PyObject *dectuple)
     }
 
     /* coefficient */
-    digits = sequence_as_tuple(PyTuple_GET_ITEM(dectuple, 1),
-                               PyExc_ValueError, "coefficient must be a tuple of digits");
+    digits = sequence_as_tuple(PyTuple_GET_ITEM(dectuple, 1), PyExc_ValueError,
+                               "coefficient must be a tuple of digits");
     if (digits == NULL) {
         goto error;
     }
@@ -2435,8 +2435,8 @@ dectuple_as_str(PyObject *dectuple)
     if (sign_special[1] == '\0') {
         /* not a special number */
         *cp++ = 'E';
-        n = snprintf(cp, MPD_EXPDIGITS+1, "%" PRI_mpd_ssize_t, exp);
-        if (n < 0 || n >= MPD_EXPDIGITS+1) {
+        n = snprintf(cp, MPD_EXPDIGITS+2, "%" PRI_mpd_ssize_t, exp);
+        if (n < 0 || n >= MPD_EXPDIGITS+2) {
             PyErr_SetString(PyExc_RuntimeError,
                 "internal error in dec_sequence_as_str");
             goto error;
@@ -4215,7 +4215,7 @@ dec_hash(PyObject *v)
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
     /* Inverse of 10 modulo p */
-    mpd_uint_t inv10_p_data[2] = {2075258708292324556ULL};
+    mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
 #elif defined(CONFIG_32) && _PyHASH_BITS == 31
@@ -4934,7 +4934,7 @@ ctx_copy_decimal(PyObject *context, PyObject *v)
     PyObject *result;
 
     CONVERT_OP_RAISE(&result, v, context);
-    return  result;
+    return result;
 }
 
 static PyObject *

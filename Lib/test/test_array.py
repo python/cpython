@@ -285,6 +285,20 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(a.x, b.x)
             self.assertEqual(type(a), type(b))
 
+    def test_iterator_pickle(self):
+        data = array.array(self.typecode, self.example)
+        orgit = iter(data)
+        d = pickle.dumps(orgit)
+        it = pickle.loads(d)
+        self.assertEqual(type(orgit), type(it))
+        self.assertEqual(list(it), list(data))
+
+        if len(data):
+            it = pickle.loads(d)
+            next(it)
+            d = pickle.dumps(it)
+            self.assertEqual(list(it), list(data)[1:])
+
     def test_insert(self):
         a = array.array(self.typecode, self.example)
         a.insert(0, self.example[0])

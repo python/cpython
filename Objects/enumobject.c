@@ -158,6 +158,22 @@ enum_next(enumobject *en)
     return result;
 }
 
+static PyObject *
+enum_reduce(enumobject *en)
+{
+    if (en->en_longindex != NULL)
+        return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
+    else
+        return Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyMethodDef enum_methods[] = {
+    {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
 PyDoc_STRVAR(enum_doc,
 "enumerate(iterable[, start]) -> iterator for index, value of iterable\n"
 "\n"
@@ -197,7 +213,7 @@ PyTypeObject PyEnum_Type = {
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)enum_next,        /* tp_iternext */
-    0,                              /* tp_methods */
+    enum_methods,                   /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
     0,                              /* tp_base */
@@ -319,8 +335,40 @@ reversed_len(reversedobject *ro)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+reversed_reduce(reversedobject *ro)
+{
+    if (ro->seq)
+        return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
+    else
+        return Py_BuildValue("O(())", Py_TYPE(ro));
+}
+
+static PyObject *
+reversed_setstate(reversedobject *ro, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (ro->seq != 0) {
+        Py_ssize_t n = PySequence_Size(ro->seq);
+        if (n < 0)
+            return NULL;
+        if (index < -1)
+            index = -1;
+        else if (index > n-1)
+            index = n-1;
+        ro->index = index;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef reversediter_methods[] = {
     {"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)reversed_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)reversed_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 

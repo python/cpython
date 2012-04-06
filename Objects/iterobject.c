@@ -88,8 +88,38 @@ iter_len(seqiterobject *it)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyObject *
+iter_reduce(seqiterobject *it)
+{
+    if (it->it_seq != NULL)
+        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    else
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+iter_setstate(seqiterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (it->it_seq != NULL) {
+        if (index < 0)
+            index = 0;
+        it->it_index = index;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 static PyMethodDef seqiter_methods[] = {
     {"__length_hint__", (PyCFunction)iter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", (PyCFunction)iter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)iter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -195,6 +225,21 @@ calliter_iternext(calliterobject *it)
     return NULL;
 }
 
+static PyObject *
+calliter_reduce(calliterobject *it)
+{
+    if (it->it_callable != NULL && it->it_sentinel != NULL)
+        return Py_BuildValue("N(OO)", _PyObject_GetBuiltin("iter"),
+                             it->it_callable, it->it_sentinel);
+    else
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+}
+
+static PyMethodDef calliter_methods[] = {
+    {"__reduce__", (PyCFunction)calliter_reduce, METH_NOARGS, reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
 PyTypeObject PyCallIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "callable_iterator",                        /* tp_name */
@@ -224,7 +269,7 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)calliter_iternext,            /* tp_iternext */
-    0,                                          /* tp_methods */
+    calliter_methods,                           /* tp_methods */
 };
 
 

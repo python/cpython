@@ -17,7 +17,7 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
-					     PyObject *);
+                                             PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
@@ -33,22 +33,22 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
         (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
          NULL : ((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
-	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
-    const char	*ml_name;	/* The name of the built-in function/method */
-    PyCFunction  ml_meth;	/* The C function that implements it */
-    int		 ml_flags;	/* Combination of METH_xxx flags, which mostly
-				   describe the args expected by the C func */
-    const char	*ml_doc;	/* The __doc__ attribute, or NULL */
+    const char  *ml_name;   /* The name of the built-in function/method */
+    PyCFunction ml_meth;    /* The C function that implements it */
+    int         ml_flags;   /* Combination of METH_xxx flags, which mostly
+                               describe the args expected by the C func */
+    const char  *ml_doc;    /* The __doc__ attribute, or NULL */
 };
 typedef struct PyMethodDef PyMethodDef;
 
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
-					 PyObject *);
+                                         PyObject *);
 
 /* Flag passed to newmethodobject */
 /* #define METH_OLDARGS  0x0000   -- unsupported now */
