@@ -452,7 +452,7 @@ All methods are executed atomically.
    are blocked waiting for the lock to become unlocked, allow exactly one of them
    to proceed.
 
-   When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
+   When invoked on an unlocked lock, a :exc:`ThreadError` is raised.
 
    There is no return value.
 
