@@ -591,10 +591,7 @@ class SocketListener(object):
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
-        fd = duplicate(s.fileno())
-        conn = Connection(fd)
-        s.close()
-        return conn
+        return Connection(s.detach())
 
     def close(self):
         self._socket.close()
@@ -609,9 +606,7 @@ def SocketClient(address):
     family = address_type(address)
     with socket.socket( getattr(socket, family) ) as s:
         s.connect(address)
-        fd = duplicate(s.fileno())
-    conn = Connection(fd)
-    return conn
+        return Connection(s.detach())
 
 #
 # Definitions for connections based on named pipes
@@ -665,7 +660,7 @@ if sys.platform == 'win32':
         def _finalize_pipe_listener(queue, address):
             sub_debug('closing listener with address=%r', address)
             for handle in queue:
-                close(handle)
+                win32.CloseHandle(handle)
 
     def PipeClient(address):
         '''
@@ -885,7 +880,3 @@ else:
                     raise
             if timeout is not None:
                 timeout = deadline - time.time()
-
-
-# Late import because of circular import
-from multiprocessing.forking import duplicate, close
