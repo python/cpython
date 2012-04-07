@@ -4735,7 +4735,10 @@ class TestSocketSharing(SocketTCPTest):
         types = [socket.SOCK_STREAM, socket.SOCK_DGRAM]
         for f in families:
             for t in types:
-                source = socket.socket(f, t)
+                try:
+                    source = socket.socket(f, t)
+                except OSError:
+                    continue # This combination is not supported
                 try:
                     data = source.share(os.getpid())
                     shared = socket.fromshare(data)
