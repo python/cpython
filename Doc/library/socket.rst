@@ -680,6 +680,16 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionadded:: 3.3
 
 
+.. function:: fromshare(data)
+
+   Instantiate a socket from data obtained from :meth:`~socket.share`.
+   The socket is assumed to be in blocking mode.
+
+   Availability: Windows.
+
+   .. versionadded:: 3.3
+
+
 .. data:: SocketType
 
    This is a Python type object that represents the socket object type. It is the
@@ -1081,6 +1091,21 @@ correspond to Unix system calls applicable to sockets.
    further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
    disallowed.
+
+
+.. method:: socket.share(process_id)
+
+    :platform: Windows
+
+    Duplacet a socket and prepare it for sharing with a target process.  The
+    target process must be provided with *process_id*.  The resulting bytes object
+    can then be passed to the target process using some form of interprocess
+    communication and the socket can be recreated there using :func:`fromshare`.
+    Once this method has been called, it is safe to close the socket since
+    the operating system has already duplicated it for the target process.
+
+   .. versionadded:: 3.3
+
 
 Note that there are no methods :meth:`read` or :meth:`write`; use
 :meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
