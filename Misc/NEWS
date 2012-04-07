@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Don't Py_DECREF NULL variable in io.IncrementalNewlineDecoder.
+
 - Issue #8515: Set __file__ when run file in IDLE.
   Initial patch by Bruce Frederiksen.
 
