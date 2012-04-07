@@ -232,6 +232,9 @@ Library
 - Issue #14210: pdb now has tab-completion not only for command names, but
   also for their arguments, wherever possible.
 
+- Issue #14310: Sockets can now be with other processes on Windows using
+  the api socket.socket.share() and socket.fromshare().
+
 Build
 -----
 
