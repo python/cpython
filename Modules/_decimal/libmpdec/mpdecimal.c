@@ -2251,6 +2251,7 @@ mpd_qshiftl(mpd_t *result, const mpd_t *a, mpd_ssize_t n, uint32_t *status)
 {
     mpd_ssize_t size;
 
+    assert(!mpd_isspecial(a));
     assert(n >= 0);
 
     if (mpd_iszerocoeff(a) || n == 0) {
@@ -2265,9 +2266,9 @@ mpd_qshiftl(mpd_t *result, const mpd_t *a, mpd_ssize_t n, uint32_t *status)
     _mpd_baseshiftl(result->data, a->data, size, a->len, n);
 
     mpd_copy_flags(result, a);
-    result->len = size;
     result->exp = a->exp;
     result->digits = a->digits+n;
+    result->len = size;
 
     return 1;
 }
@@ -2295,9 +2296,9 @@ _mpd_get_rnd(const mpd_uint_t *data, mpd_ssize_t len, int use_msd)
 }
 
 /*
- * Same as mpd_qshiftr(), but 'result' is a static array. It is the
- * caller's responsibility to make sure that the array is big enough.
- * The function cannot fail.
+ * Same as mpd_qshiftr(), but 'result' is an mpd_t with a static coefficient.
+ * It is the caller's responsibility to ensure that the coefficient is big
+ * enough. The function cannot fail.
  */
 mpd_uint_t
 mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n)
@@ -2305,6 +2306,7 @@ mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n)
     mpd_uint_t rnd;
     mpd_ssize_t size;
 
+    assert(!mpd_isspecial(a));
     assert(n >= 0);
 
     if (mpd_iszerocoeff(a) || n == 0) {
@@ -2315,18 +2317,16 @@ mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n)
     if (n >= a->digits) {
         rnd = _mpd_get_rnd(a->data, a->len, (n==a->digits));
         mpd_zerocoeff(result);
-        result->digits = 1;
-        size = 1;
     }
     else {
         result->digits = a->digits-n;
         size = mpd_digits_to_size(result->digits);
         rnd = _mpd_baseshiftr(result->data, a->data, a->len, n);
+        result->len = size;
     }
 
     mpd_copy_flags(result, a);
     result->exp = a->exp;
-    result->len = size;
 
     return rnd;
 }
@@ -2343,6 +2343,7 @@ mpd_qshiftr_inplace(mpd_t *result, mpd_ssize_t n)
     mpd_uint_t rnd;
     mpd_ssize_t size;
 
+    assert(!mpd_isspecial(result));
     assert(n >= 0);
 
     if (mpd_iszerocoeff(result) || n == 0) {
@@ -2352,8 +2353,6 @@ mpd_qshiftr_inplace(mpd_t *result, mpd_ssize_t n)
     if (n >= result->digits) {
         rnd = _mpd_get_rnd(result->data, result->len, (n==result->digits));
         mpd_zerocoeff(result);
-        result->digits = 1;
-        size = 1;
     }
     else {
         rnd = _mpd_baseshiftr(result->data, result->data, result->len, n);
@@ -2361,9 +2360,8 @@ mpd_qshiftr_inplace(mpd_t *result, mpd_ssize_t n)
         size = mpd_digits_to_size(result->digits);
         /* reducing the size cannot fail */
         mpd_qresize(result, size, &dummy);
+        result->len = size;
     }
-
-    result->len = size;
 
     return rnd;
 }
@@ -2381,6 +2379,7 @@ mpd_qshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n, uint32_t *status)
     mpd_uint_t rnd;
     mpd_ssize_t size;
 
+    assert(!mpd_isspecial(a));
     assert(n >= 0);
 
     if (mpd_iszerocoeff(a) || n == 0) {
@@ -2393,8 +2392,6 @@ mpd_qshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n, uint32_t *status)
     if (n >= a->digits) {
         rnd = _mpd_get_rnd(a->data, a->len, (n==a->digits));
         mpd_zerocoeff(result);
-        result->digits = 1;
-        size = 1;
     }
     else {
         result->digits = a->digits-n;
@@ -2410,11 +2407,11 @@ mpd_qshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n, uint32_t *status)
             }
             rnd = _mpd_baseshiftr(result->data, a->data, a->len, n);
         }
+        result->len = size;
     }
 
     mpd_copy_flags(result, a);
     result->exp = a->exp;
-    result->len = size;
 
     return rnd;
 }
@@ -3485,6 +3482,7 @@ _mpd_qdiv(int action, mpd_t *q, const mpd_t *a, const mpd_t *b,
     newsize = _mpd_real_size(q->data, newsize);
     /* resize to smaller cannot fail */
     mpd_qresize(q, newsize, status);
+    mpd_set_flags(q, sign_a^sign_b);
     q->len = newsize;
     mpd_setdigits(q);
 
@@ -3502,7 +3500,6 @@ _mpd_qdiv(int action, mpd_t *q, const mpd_t *a, const mpd_t *b,
         exp += shift;
     }
 
-    mpd_set_flags(q, sign_a^sign_b);
     q->exp = exp;
 
 
