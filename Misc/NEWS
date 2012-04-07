@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Don't Py_DECREF NULL variable in io.IncrementalNewlineDecoder.
+
 - Issue #8515: Set __file__ when run file in IDLE.
   Initial patch by Bruce Frederiksen.
 
@@ -229,6 +231,9 @@ Library
 
 - Issue #14210: pdb now has tab-completion not only for command names, but
   also for their arguments, wherever possible.
+
+- Issue #14310: Sockets can now be with other processes on Windows using
+  the api socket.socket.share() and socket.fromshare().
 
 Build
 -----
