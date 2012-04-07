@@ -3771,6 +3771,34 @@ PyDoc_STRVAR(sock_ioctl_doc,
 Control the socket with WSAIoctl syscall. Currently supported 'cmd' values are\n\
 SIO_RCVALL:  'option' must be one of the socket.RCVALL_* constants.\n\
 SIO_KEEPALIVE_VALS:  'option' is a tuple of (onoff, timeout, interval).");
+#endif
+
+#if defined(MS_WINDOWS)
+static PyObject*
+sock_share(PySocketSockObject *s, PyObject *arg)
+{
+    WSAPROTOCOL_INFO info;
+    DWORD processId;
+    int result;
+
+    if (!PyArg_ParseTuple(arg, "I", &processId))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    result = WSADuplicateSocket(s->sock_fd, processId, &info);
+    Py_END_ALLOW_THREADS
+    if (result == SOCKET_ERROR)
+        return set_error();
+    return PyBytes_FromStringAndSize((const char*)&info, sizeof(info));
+}
+PyDoc_STRVAR(sock_share_doc,
+"share(process_id) -> bytes\n\
+\n\
+Share the socket with another process.  The target process id\n\
+must be provided and the resulting bytes object passed to the target\n\
+process.  There the shared socket can be instantiated by calling\n\
+socket.fromshare().");
+
 
 #endif
 
@@ -3802,6 +3830,10 @@ static PyMethodDef sock_methods[] = {
 #if defined(MS_WINDOWS) && defined(SIO_RCVALL)
     {"ioctl",             (PyCFunction)sock_ioctl, METH_VARARGS,
                       sock_ioctl_doc},
+#endif
+#if defined(MS_WINDOWS)
+    {"share",         (PyCFunction)sock_share, METH_VARARGS,
+                      sock_share_doc},
 #endif
     {"listen",            (PyCFunction)sock_listen, METH_O,
                       listen_doc},
@@ -3930,13 +3962,40 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (fdobj != NULL && fdobj != Py_None) {
-        fd = PyLong_AsSocket_t(fdobj);
-        if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
-            return -1;
-        if (fd == INVALID_SOCKET) {
-            PyErr_SetString(PyExc_ValueError,
-                            "can't use invalid socket value");
-            return -1;
+#ifdef MS_WINDOWS
+        /* recreate a socket that was duplicated */
+        if (PyBytes_Check(fdobj)) {
+            WSAPROTOCOL_INFO info;
+            if (PyBytes_GET_SIZE(fdobj) != sizeof(info)) {
+                PyErr_Format(PyExc_ValueError,
+                    "socket descriptor string has wrong size, "
+                    "should be %zu bytes.", sizeof(info));
+                return -1;
+            }
+            memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
+            Py_BEGIN_ALLOW_THREADS
+            fd = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+                     FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
+            Py_END_ALLOW_THREADS
+            if (fd == INVALID_SOCKET) {
+                set_error();
+                return -1;
+            }
+            family = info.iAddressFamily;
+            type = info.iSocketType;
+            proto = info.iProtocol;
+        }
+        else
+#endif
+        {
+            fd = PyLong_AsSocket_t(fdobj);
+            if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+                return -1;
+            if (fd == INVALID_SOCKET) {
+                PyErr_SetString(PyExc_ValueError,
+                                "can't use invalid socket value");
+                return -1;
+            }
         }
     }
     else {
