@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14522: Avoid duplicating socket handles in multiprocessing.connection.
+  Patch by sbt.
+
 - Don't Py_DECREF NULL variable in io.IncrementalNewlineDecoder.
 
 - Issue #8515: Set __file__ when run file in IDLE.
