@@ -243,7 +243,7 @@ class SocketServerTest(unittest.TestCase):
                 self.called += 1
                 if self.called == 1:
                     # raise the exception on first call
-                    raise OSError(errno.EINTR, os.strerror(errno.EINTR))
+                    raise select.error(errno.EINTR, os.strerror(errno.EINTR))
                 else:
                     # Return real select value for consecutive calls
                     return old_select(*args)
