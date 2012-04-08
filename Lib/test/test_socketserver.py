@@ -34,8 +34,11 @@ def signal_alarm(n):
     if hasattr(signal, 'alarm'):
         signal.alarm(n)
 
+# Remember real select() to avoid interferences with mocking
+_real_select = select.select
+
 def receive(sock, n, timeout=20):
-    r, w, x = select.select([sock], [], [], timeout)
+    r, w, x = _real_select([sock], [], [], timeout)
     if sock in r:
         return sock.recv(n)
     else:
