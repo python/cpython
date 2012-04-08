@@ -20,7 +20,7 @@ except ImportError:
     pass
 
 
-class TestBase(unittest.TestCase):
+class TestBase:
 
     def _check_sample(self, msg):
         # Inspect a mailbox.Message representation of the sample message
@@ -545,7 +545,7 @@ class TestMailbox(TestBase):
         return self._path + '.lock'
 
 
-class TestMailboxSuperclass(TestBase):
+class TestMailboxSuperclass(TestBase, unittest.TestCase):
 
     def test_notimplemented(self):
         # Test that all Mailbox methods raise NotImplementedException.
@@ -581,7 +581,7 @@ class TestMailboxSuperclass(TestBase):
         self.assertRaises(NotImplementedError, lambda: box.close())
 
 
-class TestMaildir(TestMailbox):
+class TestMaildir(TestMailbox, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.Maildir(path, factory)
 
@@ -1043,7 +1043,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
 
 
-class TestMbox(_TestMboxMMDF):
+class TestMbox(_TestMboxMMDF, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
@@ -1066,12 +1066,12 @@ class TestMbox(_TestMboxMMDF):
             perms = st.st_mode
             self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
-class TestMMDF(_TestMboxMMDF):
+class TestMMDF(_TestMboxMMDF, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.MMDF(path, factory)
 
 
-class TestMH(TestMailbox):
+class TestMH(TestMailbox, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.MH(path, factory)
 
@@ -1206,7 +1206,7 @@ class TestMH(TestMailbox):
         return os.path.join(self._path, '.mh_sequences.lock')
 
 
-class TestBabyl(TestMailbox):
+class TestBabyl(TestMailbox, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
@@ -1271,7 +1271,7 @@ class TestFakeMailBox(unittest.TestCase):
             self.assertTrue(box.files[i].closed)
 
 
-class TestMessage(TestBase):
+class TestMessage(TestBase, unittest.TestCase):
 
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
 
@@ -1351,7 +1351,7 @@ class TestMessage(TestBase):
         pass
 
 
-class TestMaildirMessage(TestMessage):
+class TestMaildirMessage(TestMessage, unittest.TestCase):
 
     _factory = mailbox.MaildirMessage
 
@@ -1425,7 +1425,7 @@ class TestMaildirMessage(TestMessage):
         self._check_sample(msg)
 
 
-class _TestMboxMMDFMessage(TestMessage):
+class _TestMboxMMDFMessage:
 
     _factory = mailbox._mboxMMDFMessage
 
@@ -1472,12 +1472,12 @@ class _TestMboxMMDFMessage(TestMessage):
                               r"\d{2} \d{4}", msg.get_from()) is not None)
 
 
-class TestMboxMessage(_TestMboxMMDFMessage):
+class TestMboxMessage(_TestMboxMMDFMessage, TestMessage):
 
     _factory = mailbox.mboxMessage
 
 
-class TestMHMessage(TestMessage):
+class TestMHMessage(TestMessage, unittest.TestCase):
 
     _factory = mailbox.MHMessage
 
@@ -1508,7 +1508,7 @@ class TestMHMessage(TestMessage):
         self.assertEqual(msg.get_sequences(), ['foobar', 'replied'])
 
 
-class TestBabylMessage(TestMessage):
+class TestBabylMessage(TestMessage, unittest.TestCase):
 
     _factory = mailbox.BabylMessage
 
@@ -1563,12 +1563,12 @@ class TestBabylMessage(TestMessage):
             self.assertEqual(visible[header], msg[header])
 
 
-class TestMMDFMessage(_TestMboxMMDFMessage):
+class TestMMDFMessage(_TestMboxMMDFMessage, TestMessage):
 
     _factory = mailbox.MMDFMessage
 
 
-class TestMessageConversion(TestBase):
+class TestMessageConversion(TestBase, unittest.TestCase):
 
     def test_plain_to_x(self):
         # Convert Message to all formats
@@ -1909,7 +1909,7 @@ class TestProxyFileBase(TestBase):
         self.assertTrue(proxy.closed)
 
 
-class TestProxyFile(TestProxyFileBase):
+class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
         self._path = support.TESTFN
@@ -1958,7 +1958,7 @@ class TestProxyFile(TestProxyFileBase):
         self._test_close(mailbox._ProxyFile(self._file))
 
 
-class TestPartialFile(TestProxyFileBase):
+class TestPartialFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
         self._path = support.TESTFN
