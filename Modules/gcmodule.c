@@ -65,9 +65,6 @@ static PyObject *garbage = NULL;
 /* Python string to use if unhandled exception occurs */
 static PyObject *gc_str = NULL;
 
-/* Python string used to look for __del__ attribute. */
-static PyObject *delstr = NULL;
-
 /* This is the number of objects who survived the last full collection. It
    approximates the number of long lived objects tracked by the GC.
 
@@ -801,12 +798,6 @@ collect(int generation)
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc;
     double t1 = 0.0;
-
-    if (delstr == NULL) {
-        delstr = PyUnicode_InternFromString("__del__");
-        if (delstr == NULL)
-            Py_FatalError("gc couldn't allocate \"__del__\"");
-    }
 
     if (debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n",
