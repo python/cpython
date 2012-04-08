@@ -133,6 +133,7 @@ import socket
 import select
 import sys
 import os
+import errno
 try:
     import threading
 except ImportError:
@@ -146,6 +147,15 @@ if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
                     "ThreadingUnixDatagramServer"])
+
+def _eintr_retry(func, *args):
+    """restart a system call interrupted by EINTR"""
+    while True:
+        try:
+            return func(*args)
+        except OSError as e:
+            if e.errno != errno.EINTR:
+                raise
 
 class BaseServer:
 
@@ -222,7 +232,8 @@ class BaseServer:
                 # connecting to the socket to wake this up instead of
                 # polling. Polling reduces our responsiveness to a
                 # shutdown request and wastes cpu at all other times.
-                r, w, e = select.select([self], [], [], poll_interval)
+                r, w, e = _eintr_retry(select.select, [self], [], [],
+                                       poll_interval)
                 if self in r:
                     self._handle_request_noblock()
         finally:
@@ -262,7 +273,7 @@ class BaseServer:
             timeout = self.timeout
         elif self.timeout is not None:
             timeout = min(timeout, self.timeout)
-        fd_sets = select.select([self], [], [], timeout)
+        fd_sets = _eintr_retry(select.select, [self], [], [], timeout)
         if not fd_sets[0]:
             self.handle_timeout()
             return
