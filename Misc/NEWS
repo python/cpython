@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7978: SocketServer now restarts the select() call when EINTR is
+  returned.  This avoids crashing the server loop when a signal is received.
+  Patch by Jerzy Kozera.
+
 - Issue #14409: IDLE now properly executes commands in the Shell window
   when it cannot read the normal config files on startup and
   has to use the built-in default key bindings.
