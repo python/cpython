@@ -39,6 +39,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7978: socketserver now restarts the select() call when EINTR is
+  returned.  This avoids crashing the server loop when a signal is received.
+  Patch by Jerzy Kozera.
+
 - Issue #14496: Fix wrong name in idlelib/tabbedpages.py.
   Patch by Popa Claudiu.
 
