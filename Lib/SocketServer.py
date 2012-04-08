@@ -153,8 +153,8 @@ def _eintr_retry(func, *args):
     while True:
         try:
             return func(*args)
-        except OSError as e:
-            if e.errno != errno.EINTR:
+        except (OSError, select.error) as e:
+            if e.args[0] != errno.EINTR:
                 raise
 
 class BaseServer:
