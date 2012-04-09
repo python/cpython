@@ -4,12 +4,12 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class Test_CP932(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_CP932(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'cp932'
-    tstring = test_multibytecodec_support.load_teststring('shift_jis')
+    tstring = multibytecodec_support.load_teststring('shift_jis')
     codectests = (
         # invalid bytes
         ("abc\x81\x00\x81\x00\x82\x84", "strict",  None),
@@ -22,10 +22,10 @@ class Test_CP932(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("\x81\x5f\x81\x61\x81\x7c", "replace", u"\uff3c\u2225\uff0d"),
     )
 
-class Test_EUC_JISX0213(test_multibytecodec_support.TestBase,
+class Test_EUC_JISX0213(multibytecodec_support.TestBase,
                         unittest.TestCase):
     encoding = 'euc_jisx0213'
-    tstring = test_multibytecodec_support.load_teststring('euc_jisx0213')
+    tstring = multibytecodec_support.load_teststring('euc_jisx0213')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
@@ -52,10 +52,10 @@ eucjp_commontests = (
     ("\xc1\x64", "strict", None),
 )
 
-class Test_EUC_JP_COMPAT(test_multibytecodec_support.TestBase,
+class Test_EUC_JP_COMPAT(multibytecodec_support.TestBase,
                          unittest.TestCase):
     encoding = 'euc_jp'
-    tstring = test_multibytecodec_support.load_teststring('euc_jp')
+    tstring = multibytecodec_support.load_teststring('euc_jp')
     codectests = eucjp_commontests + (
         ("\xa1\xc0\\", "strict", u"\uff3c\\"),
         (u"\xa5", "strict", "\x5c"),
@@ -70,17 +70,17 @@ shiftjis_commonenctests = (
     ("abc\x80\x80\x82\x84def", "ignore",  u"abc\uff44def"),
 )
 
-class Test_SJIS_COMPAT(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_SJIS_COMPAT(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'shift_jis'
-    tstring = test_multibytecodec_support.load_teststring('shift_jis')
+    tstring = multibytecodec_support.load_teststring('shift_jis')
     codectests = shiftjis_commonenctests + (
         ("\\\x7e", "strict", u"\\\x7e"),
         ("\x81\x5f\x81\x61\x81\x7c", "strict", u"\uff3c\u2016\u2212"),
     )
 
-class Test_SJISX0213(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_SJISX0213(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'shift_jisx0213'
-    tstring = test_multibytecodec_support.load_teststring('shift_jisx0213')
+    tstring = multibytecodec_support.load_teststring('shift_jisx0213')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\x82\x84", "strict",  None),
