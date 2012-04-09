@@ -5,17 +5,17 @@
 #
 
 from test import support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class TestCP949Map(test_multibytecodec_support.TestBase_Mapping,
+class TestCP949Map(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp949'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT' \
                  '/WINDOWS/CP949.TXT'
 
 
-class TestEUCKRMap(test_multibytecodec_support.TestBase_Mapping,
+class TestEUCKRMap(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'euc_kr'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-KR.TXT'
@@ -25,7 +25,7 @@ class TestEUCKRMap(test_multibytecodec_support.TestBase_Mapping,
     pass_dectest = [(b'\xa4\xd4', '\u3164')]
 
 
-class TestJOHABMap(test_multibytecodec_support.TestBase_Mapping,
+class TestJOHABMap(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'johab'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/' \
