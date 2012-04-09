@@ -147,7 +147,7 @@ Library
 
 - Issue #7652: Integrate the decimal floating point libmpdec library to speed
   up the decimal module. Performance gains of the new C implementation are
-  between 12x and 80x, depending on the application.
+  between 10x and 100x, depending on the application.
 
 - Issue #3573: IDLE hangs when passing invalid command line args
   (directory(ies) instead of file(s)) (Patch by Guilherme Polo)

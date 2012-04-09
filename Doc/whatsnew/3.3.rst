@@ -628,7 +628,7 @@ The new C version of the decimal module integrates the high speed libmpdec
 library for arbitrary precision correctly-rounded decimal floating point
 arithmetic. libmpdec conforms to IBM's General Decimal Arithmetic Specification.
 
-Performance gains range from 10x for database applications to 80x for
+Performance gains range from 10x for database applications to 100x for
 numerically intensive applications. These numbers are expected gains
 for standard precisions used in decimal floating point arithmetic. Since
 the precision is user configurable, the exact figures may vary. For example,
@@ -640,7 +640,7 @@ at http://www.bytereef.org/mpdecimal/quickstart.html.
    +---------+-------------+--------------+-------------+
    |         |  decimal.py |   _decimal   |   speedup   |
    +=========+=============+==============+=============+
-   |   pi    |    42.75s   |    0.58s     |     74x     |
+   |   pi    |    38.89s   |    0.38s     |    100x     |
    +---------+-------------+--------------+-------------+
    | telco   |   172.19s   |    5.68s     |     30x     |
    +---------+-------------+--------------+-------------+
