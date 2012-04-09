@@ -51,6 +51,12 @@ Library
 
 - Issue #14493: Use gvfs-open or xdg-open in webbrowser.
 
+Tests
+-----
+
+- Issue #14355: Regrtest now supports the standard unittest test loading, and
+  will use it if a test file contains no `test_main` method.
+
 
 What's New in Python 3.3.0 Alpha 2?
 ===================================
