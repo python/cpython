@@ -22,6 +22,10 @@ except ImportError:
 
 class TestBase:
 
+    all_mailbox_types = (mailbox.Message, mailbox.MaildirMessage,
+                         mailbox.mboxMessage, mailbox.MHMessage,
+                         mailbox.BabylMessage, mailbox.MMDFMessage)
+
     def _check_sample(self, msg):
         # Inspect a mailbox.Message representation of the sample message
         self.assertIsInstance(msg, email.message.Message)
@@ -1337,9 +1341,7 @@ class TestMessage(TestBase, unittest.TestCase):
         # Copy self's format-specific data to other message formats.
         # This test is superficial; better ones are in TestMessageConversion.
         msg = self._factory()
-        for class_ in (mailbox.Message, mailbox.MaildirMessage,
-                       mailbox.mboxMessage, mailbox.MHMessage,
-                       mailbox.BabylMessage, mailbox.MMDFMessage):
+        for class_ in self.all_mailbox_types:
             other_msg = class_()
             msg._explain_to(other_msg)
         other_msg = email.message.Message()
@@ -1571,35 +1573,27 @@ class TestMessageConversion(TestBase, unittest.TestCase):
 
     def test_plain_to_x(self):
         # Convert Message to all formats
-        for class_ in (mailbox.Message, mailbox.MaildirMessage,
-                       mailbox.mboxMessage, mailbox.MHMessage,
-                       mailbox.BabylMessage, mailbox.MMDFMessage):
+        for class_ in self.all_mailbox_types:
             msg_plain = mailbox.Message(_sample_message)
             msg = class_(msg_plain)
             self._check_sample(msg)
 
     def test_x_to_plain(self):
         # Convert all formats to Message
-        for class_ in (mailbox.Message, mailbox.MaildirMessage,
-                       mailbox.mboxMessage, mailbox.MHMessage,
-                       mailbox.BabylMessage, mailbox.MMDFMessage):
+        for class_ in self.all_mailbox_types:
             msg = class_(_sample_message)
             msg_plain = mailbox.Message(msg)
             self._check_sample(msg_plain)
 
     def test_x_from_bytes(self):
         # Convert all formats to Message
-        for class_ in (mailbox.Message, mailbox.MaildirMessage,
-                       mailbox.mboxMessage, mailbox.MHMessage,
-                       mailbox.BabylMessage, mailbox.MMDFMessage):
+        for class_ in self.all_mailbox_types:
             msg = class_(_bytes_sample_message)
             self._check_sample(msg)
 
     def test_x_to_invalid(self):
         # Convert all formats to an invalid format
-        for class_ in (mailbox.Message, mailbox.MaildirMessage,
-                       mailbox.mboxMessage, mailbox.MHMessage,
-                       mailbox.BabylMessage, mailbox.MMDFMessage):
+        for class_ in self.all_mailbox_types:
             self.assertRaises(TypeError, lambda: class_(False))
 
     def test_maildir_to_maildir(self):
