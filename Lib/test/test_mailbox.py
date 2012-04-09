@@ -1330,6 +1330,14 @@ class TestMessage(TestBase, unittest.TestCase):
         # Initialize with invalid argument
         self.assertRaises(TypeError, lambda: self._factory(object()))
 
+    def test_all_eMM_attribues_exist(self):
+        # Issue 12537
+        eMM = email.message_from_string(_sample_message)
+        msg = self._factory(_sample_message)
+        for attr in eMM.__dict__:
+            self.assertTrue(attr in msg.__dict__,
+                '{} attribute does not exist'.format(attr))
+
     def test_become_message(self):
         # Take on the state of another message
         eMM = email.message_from_string(_sample_message)
@@ -1595,6 +1603,21 @@ class TestMessageConversion(TestBase, unittest.TestCase):
         # Convert all formats to an invalid format
         for class_ in self.all_mailbox_types:
             self.assertRaises(TypeError, lambda: class_(False))
+
+    def test_type_specific_attributes_removed_on_conversion(self):
+        reference = {class_: class_(_sample_message).__dict__
+                        for class_ in self.all_mailbox_types}
+        for class1 in self.all_mailbox_types:
+            for class2 in self.all_mailbox_types:
+                if class1 is class2:
+                    continue
+                source = class1(_sample_message)
+                target = class2(source)
+                type_specific = [a for a in reference[class1]
+                                   if a not in reference[class2]]
+                for attr in type_specific:
+                    self.assertNotIn(attr, target.__dict__,
+                        "while converting {} to {}".format(class1, class2))
 
     def test_maildir_to_maildir(self):
         # Convert MaildirMessage to MaildirMessage
