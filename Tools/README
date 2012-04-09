@@ -32,6 +32,9 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 tabs and spaces, and 2to3, which converts Python 2 code
                 to Python 3 code.
 
+stringbench     A suite of micro-benchmarks for various operations on
+                strings (both 8-bit and unicode).
+
 test2to3        A demonstration of how to use 2to3 transparently in setup.py.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org

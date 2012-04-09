@@ -57,6 +57,12 @@ Tests
 - Issue #14355: Regrtest now supports the standard unittest test loading, and
   will use it if a test file contains no `test_main` method.
 
+Tools / Demos
+-------------
+
+- Issue #13165: stringbench is now available in the Tools/stringbench folder.
+  It used to live in its own SVN project.
+
 
 What's New in Python 3.3.0 Alpha 2?
 ===================================
