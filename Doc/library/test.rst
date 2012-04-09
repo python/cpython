@@ -80,17 +80,12 @@ A basic boilerplate is often used::
 
    ... more test classes ...
 
-   def test_main():
-       support.run_unittest(MyTestCase1,
-                                 MyTestCase2,
-                                 ... list other tests ...
-                                )
-
    if __name__ == '__main__':
-       test_main()
+       unittest.main()
 
-This boilerplate code allows the testing suite to be run by :mod:`test.regrtest`
-as well as on its own as a script.
+This code pattern allows the testing suite to be run by :mod:`test.regrtest`,
+on its own as a script that supports the :mod:`unittest` CLI, or via the
+`python -m unittest` CLI.
 
 The goal for regression testing is to try to break code. This leads to a few
 guidelines to be followed:
@@ -129,21 +124,26 @@ guidelines to be followed:
   as what type of input is used. Minimize code duplication by subclassing a
   basic test class with a class that specifies the input::
 
-     class TestFuncAcceptsSequences(unittest.TestCase):
+     class TestFuncAcceptsSequencesMixin:
 
          func = mySuperWhammyFunction
 
          def test_func(self):
              self.func(self.arg)
 
-     class AcceptLists(TestFuncAcceptsSequences):
+     class AcceptLists(TestFuncAcceptsSequencesMixin, unittest.TestCase):
          arg = [1, 2, 3]
 
-     class AcceptStrings(TestFuncAcceptsSequences):
+     class AcceptStrings(TestFuncAcceptsSequencesMixin, unittest.TestCase):
          arg = 'abc'
 
-     class AcceptTuples(TestFuncAcceptsSequences):
+     class AcceptTuples(TestFuncAcceptsSequencesMixin, unittest.TestCase):
          arg = (1, 2, 3)
+
+  When using this pattern, remember that all classes that inherit from
+  `unittest.TestCase` are run as tests.  The `Mixin` class in the example above
+  does not have any data and so can't be run by itself, thus it does not
+  inherit from `unittest.TestCase`.
 
 
 .. seealso::
@@ -164,10 +164,12 @@ test.regrtest` used in previous Python versions still works).
 Running the script by itself automatically starts running all regression
 tests in the :mod:`test` package. It does this by finding all modules in the
 package whose name starts with ``test_``, importing them, and executing the
-function :func:`test_main` if present. The names of tests to execute may also
+function :func:`test_main` if present or loading the tests via
+unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.
+The names of tests to execute may also
 be passed to the script. Specifying a single regression test (:program:`python
 -m test test_spam`) will minimize output and only print
-whether the test passed or failed and thus minimize output.
+whether the test passed or failed.
 
 Running :mod:`test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
