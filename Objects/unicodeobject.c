@@ -11335,7 +11335,9 @@ unicode_hash(PyObject *self)
     Py_ssize_t len;
     Py_uhash_t x;
 
+#ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
+#endif
     if (_PyUnicode_HASH(self) != -1)
         return _PyUnicode_HASH(self);
     if (PyUnicode_READY(self) == -1)
