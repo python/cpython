@@ -3,7 +3,7 @@ while building or extending Python.
 
 buildbot        Batchfiles for running on Windows buildslaves.
 
-ccbench         A Python concurrency benchmark.
+ccbench         A Python threads-based concurrency benchmark. (*)
 
 demo            Several Python programming demos.
 
@@ -17,13 +17,13 @@ i18n            Tools for internationalization. pygettext.py
                 and msgfmt.py generates a binary message catalog
                 from a catalog in text format.
 
-iobench         Benchmark for the new Python I/O system.
+iobench         Benchmark for the new Python I/O system. (*)
 
 msi             Support for packaging Python as an MSI package on Windows.
 
 parser          Un-parsing tool to generate code from an AST.
 
-pybench         Comprehensive Python benchmarking suite.
+pybench         Low-level benchmarking for the Python evaluation loop. (*)
 
 pynche          A Tkinter-based color editor.
 
@@ -33,7 +33,7 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 to Python 3 code.
 
 stringbench     A suite of micro-benchmarks for various operations on
-                strings (both 8-bit and unicode).
+                strings (both 8-bit and unicode). (*)
 
 test2to3        A demonstration of how to use 2to3 transparently in setup.py.
 
@@ -43,3 +43,6 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
+
+
+(*) A generic benchmark suite is maintained separately at http://hg.python.org/benchmarks/
