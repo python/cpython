@@ -4340,6 +4340,19 @@ dec_reduce(PyObject *self, PyObject *dummy UNUSED)
     return result;
 }
 
+/* __sizeof__ */
+static PyObject *
+dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
+{
+    Py_ssize_t res;
+
+    res = sizeof(PyDecObject);
+    if (mpd_isdynamic_data(MPD(v))) {
+        res += MPD(v)->alloc * sizeof(mpd_uint_t);
+    }
+    return PyLong_FromSsize_t(res);
+}
+
 /* __trunc__ */
 static PyObject *
 dec_trunc(PyObject *self, PyObject *dummy UNUSED)
@@ -4503,6 +4516,7 @@ static PyMethodDef dec_methods [] =
   { "__floor__", dec_floor, METH_NOARGS, NULL },
   { "__trunc__", dec_trunc, METH_NOARGS, NULL },
   { "__complex__", dec_complex, METH_NOARGS, NULL },
+  { "__sizeof__", dec_sizeof, METH_NOARGS, NULL },
 
   { NULL, NULL, 1 }
 };
