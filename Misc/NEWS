@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12537: The mailbox module no longer depends on knowledge of internal
+  implementation details of the email package Message object.
+
 - Issue #7978: socketserver now restarts the select() call when EINTR is
   returned.  This avoids crashing the server loop when a signal is received.
   Patch by Jerzy Kozera.

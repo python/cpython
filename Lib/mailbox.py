@@ -1462,9 +1462,10 @@ class Message(email.message.Message):
 
     def _become_message(self, message):
         """Assume the non-format-specific state of message."""
-        for name in ('_headers', '_unixfrom', '_payload', '_charset',
-                     'preamble', 'epilogue', 'defects', '_default_type'):
-            self.__dict__[name] = message.__dict__[name]
+        type_specific = getattr(message, '_type_specific_attributes', [])
+        for name in message.__dict__:
+            if name not in type_specific:
+                self.__dict__[name] = message.__dict__[name]
 
     def _explain_to(self, message):
         """Copy format-specific state to message insofar as possible."""
@@ -1476,6 +1477,8 @@ class Message(email.message.Message):
 
 class MaildirMessage(Message):
     """Message with Maildir-specific properties."""
+
+    _type_specific_attributes = ['_subdir', '_info', '_date']
 
     def __init__(self, message=None):
         """Initialize a MaildirMessage instance."""
@@ -1583,6 +1586,8 @@ class MaildirMessage(Message):
 
 class _mboxMMDFMessage(Message):
     """Message with mbox- or MMDF-specific properties."""
+
+    _type_specific_attributes = ['_from']
 
     def __init__(self, message=None):
         """Initialize an mboxMMDFMessage instance."""
@@ -1699,6 +1704,8 @@ class mboxMessage(_mboxMMDFMessage):
 class MHMessage(Message):
     """Message with MH-specific properties."""
 
+    _type_specific_attributes = ['_sequences']
+
     def __init__(self, message=None):
         """Initialize an MHMessage instance."""
         self._sequences = []
@@ -1768,6 +1775,8 @@ class MHMessage(Message):
 
 class BabylMessage(Message):
     """Message with Babyl-specific properties."""
+
+    _type_specific_attributes = ['_labels', '_visible']
 
     def __init__(self, message=None):
         """Initialize an BabylMessage instance."""
