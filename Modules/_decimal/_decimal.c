@@ -3745,9 +3745,9 @@ nm_dec_as_long(PyObject *dec)
 }
 
 static int
-nm_nonzero(PyDecObject *v)
+nm_nonzero(PyObject *v)
 {
-    return !mpd_iszero(v->dec);
+    return !mpd_iszero(MPD(v));
 }
 
 static PyObject *
