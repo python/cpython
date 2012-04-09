@@ -5,10 +5,10 @@
 #
 
 from test import support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
+class TestCP932Map(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp932'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
@@ -24,14 +24,14 @@ class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
         supmaps.append((bytes([i]), chr(i+0xfec0)))
 
 
-class TestEUCJPCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
+class TestEUCJPCOMPATMap(multibytecodec_support.TestBase_Mapping,
                          unittest.TestCase):
     encoding = 'euc_jp'
     mapfilename = 'EUC-JP.TXT'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-JP.TXT'
 
 
-class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
+class TestSJISCOMPATMap(multibytecodec_support.TestBase_Mapping,
                         unittest.TestCase):
     encoding = 'shift_jis'
     mapfilename = 'SHIFTJIS.TXT'
@@ -46,14 +46,14 @@ class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
         (b'\x81_', '\\'),
     ]
 
-class TestEUCJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
+class TestEUCJISX0213Map(multibytecodec_support.TestBase_Mapping,
                          unittest.TestCase):
     encoding = 'euc_jisx0213'
     mapfilename = 'EUC-JISX0213.TXT'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-JISX0213.TXT'
 
 
-class TestSJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
+class TestSJISX0213Map(multibytecodec_support.TestBase_Mapping,
                        unittest.TestCase):
     encoding = 'shift_jisx0213'
     mapfilename = 'SHIFT_JISX0213.TXT'
