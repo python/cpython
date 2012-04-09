@@ -1350,7 +1350,7 @@ works::
         A simple handler for logging events. It runs in the listener process and
         dispatches events to loggers based on the name in the received record,
         which then get dispatched, by the logging system, to the handlers
-        configured for those records.
+        configured for those loggers.
         """
         def handle(self, record):
             logger = logging.getLogger(record.name)
