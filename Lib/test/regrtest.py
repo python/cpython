@@ -1228,14 +1228,15 @@ def runtest_inner(test, verbose, quiet,
             start_time = time.time()
             the_package = __import__(abstest, globals(), locals(), [])
             the_module = getattr(the_package, test)
-            # Old tests run to completion simply as a side-effect of
-            # being imported.  For tests based on unittest or doctest,
-            # explicitly invoke their test_main() function (if it exists).
-            indirect_test = getattr(the_module, "test_main", None)
-            if indirect_test is not None:
-                indirect_test()
+            # If the test has a test_main, that will run the appropriate
+            # tests.  If not, use normal unittest test loading.
+            test_runner = getattr(the_module, "test_main", None)
+            if test_runner is None:
+                tests = unittest.TestLoader().loadTestsFromModule(the_module)
+                test_runner = lambda: support.run_unittest(tests)
+            test_runner()
             if huntrleaks:
-                refleak = dash_R(the_module, test, indirect_test,
+                refleak = dash_R(the_module, test, test_runner,
                     huntrleaks)
             test_time = time.time() - start_time
     except support.ResourceDenied as msg:
