@@ -55,9 +55,13 @@
 #define BOUNDS_CHECK(x, MIN, MAX) x = (x < MIN || MAX < x) ? MAX : x
 
 
+/* _Py_DEC_MINALLOC >= MPD_MINALLOC */
+#define _Py_DEC_MINALLOC 4
+
 typedef struct {
     PyObject_HEAD
-    mpd_t *dec;
+    mpd_t dec;
+    mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
 
 typedef struct {
@@ -90,7 +94,7 @@ static PyTypeObject PyDecContextManager_Type;
 #define PyDec_Check(v) PyObject_TypeCheck(v, &PyDec_Type)
 #define PyDecSignalDict_Check(v) (Py_TYPE(v) == PyDecSignalDict_Type)
 #define PyDecContext_Check(v) PyObject_TypeCheck(v, &PyDecContext_Type)
-#define MPD(v) (((PyDecObject *)v)->dec)
+#define MPD(v) (&((PyDecObject *)v)->dec)
 #define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
 #define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
 #define CTX(v) (&((PyDecContextObject *)v)->ctx)
@@ -1789,35 +1793,33 @@ static PyTypeObject PyDecContextManager_Type =
 static PyObject *
 PyDecType_New(PyTypeObject *type)
 {
-    PyObject *dec;
+    PyDecObject *dec;
 
     if (type == &PyDec_Type) {
-        dec = (PyObject *)PyObject_New(PyDecObject, &PyDec_Type);
+        dec = PyObject_New(PyDecObject, &PyDec_Type);
     }
     else {
-        dec = type->tp_alloc(type, 0);
+        dec = (PyDecObject *)type->tp_alloc(type, 0);
     }
     if (dec == NULL) {
         return NULL;
     }
 
-    MPD(dec) = mpd_qnew();
-    if (MPD(dec) == NULL) {
-        Py_DECREF(dec);
-        PyErr_NoMemory();
-        return NULL;
-    }
+    MPD(dec)->flags = MPD_STATIC|MPD_STATIC_DATA;
+    MPD(dec)->exp = 0;
+    MPD(dec)->digits = 0;
+    MPD(dec)->len = 0;
+    MPD(dec)->alloc = _Py_DEC_MINALLOC;
+    MPD(dec)->data = dec->data;
 
-    return dec;
+    return (PyObject *)dec;
 }
 #define dec_alloc() PyDecType_New(&PyDec_Type)
 
 static void
 dec_dealloc(PyObject *dec)
 {
-    if (MPD(dec)) {
-        mpd_del(MPD(dec));
-    }
+    mpd_del(MPD(dec));
     Py_TYPE(dec)->tp_free(dec);
 }
 
@@ -5342,7 +5344,7 @@ PyInit__decimal(void)
     mpd_reallocfunc = PyMem_Realloc;
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
-    mpd_setminalloc(4);
+    mpd_setminalloc(_Py_DEC_MINALLOC);
 
 
     /* Init types */
