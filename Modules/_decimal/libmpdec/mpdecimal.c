@@ -480,17 +480,20 @@ mpd_qresize(mpd_t *result, mpd_ssize_t nwords, uint32_t *status)
 {
     assert(!mpd_isconst_data(result)); /* illegal operation for a const */
     assert(!mpd_isshared_data(result)); /* illegal operation for a shared */
+    assert(MPD_MINALLOC <= result->alloc);
 
+    nwords = (nwords <= MPD_MINALLOC) ? MPD_MINALLOC : nwords;
+    if (nwords == result->alloc) {
+        return 1;
+    }
     if (mpd_isstatic_data(result)) {
         if (nwords > result->alloc) {
             return mpd_switch_to_dyn(result, nwords, status);
         }
-    }
-    else if (nwords != result->alloc && nwords >= MPD_MINALLOC) {
-        return mpd_realloc_dyn(result, nwords, status);
+        return 1;
     }
 
-    return 1;
+    return mpd_realloc_dyn(result, nwords, status);
 }
 
 /* Same as mpd_qresize, but the complete coefficient (including the old
@@ -500,20 +503,21 @@ mpd_qresize_zero(mpd_t *result, mpd_ssize_t nwords, uint32_t *status)
 {
     assert(!mpd_isconst_data(result)); /* illegal operation for a const */
     assert(!mpd_isshared_data(result)); /* illegal operation for a shared */
+    assert(MPD_MINALLOC <= result->alloc);
 
-    if (mpd_isstatic_data(result)) {
-        if (nwords > result->alloc) {
-            return mpd_switch_to_dyn_zero(result, nwords, status);
+    nwords = (nwords <= MPD_MINALLOC) ? MPD_MINALLOC : nwords;
+    if (nwords != result->alloc) {
+        if (mpd_isstatic_data(result)) {
+            if (nwords > result->alloc) {
+                return mpd_switch_to_dyn_zero(result, nwords, status);
+            }
         }
-    }
-    else if (nwords != result->alloc && nwords >= MPD_MINALLOC) {
-        if (!mpd_realloc_dyn(result, nwords, status)) {
+        else if (!mpd_realloc_dyn(result, nwords, status)) {
             return 0;
         }
     }
 
     mpd_uint_zero(result->data, nwords);
-
     return 1;
 }
 
