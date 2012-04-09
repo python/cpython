@@ -875,7 +875,9 @@ bytes_hash(PyBytesObject *a)
     register unsigned char *p;
     register Py_hash_t x;
 
+#ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
+#endif
     if (a->ob_shash != -1)
         return a->ob_shash;
     len = Py_SIZE(a);
