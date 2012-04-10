@@ -138,6 +138,11 @@ Build
 - Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
   Based on patch from Hervé Coatanhay.
 
+Documentation
+-------------
+
+- Issue #8799: Fix and improve the threading.Condition documentation.
+
 
 What's New in Python 3.2.3 release candidate 2?
 ===============================================
