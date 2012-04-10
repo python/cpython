@@ -222,7 +222,7 @@ mpd_switch_to_dyn(mpd_t *result, mpd_ssize_t nwords, uint32_t *status)
         return 0;
     }
 
-    memcpy(result->data, p, result->len * (sizeof *result->data));
+    memcpy(result->data, p, result->alloc * (sizeof *result->data));
     result->alloc = nwords;
     mpd_set_dynamic_data(result);
     return 1;
