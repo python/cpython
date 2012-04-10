@@ -353,20 +353,20 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    character  properties database.
 
 ``\s``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
-   any whitespace character; this is equivalent to the set ``[ \t\n\r\f\v]``. With
-   :const:`LOCALE`, it will match this set plus whatever characters are defined as
-   space for the current locale. If :const:`UNICODE` is set, this will match the
-   characters ``[ \t\n\r\f\v]`` plus whatever is classified as space in the Unicode
-   character properties database.
+   When the :const:`UNICODE` flag is not specified, it matches any whitespace
+   character, this is equivalent to the set ``[ \t\n\r\f\v]``. The
+   :const:`LOCALE` flag has no extra effect on matching of the space.
+   If :const:`UNICODE` is set, this will match the characters ``[ \t\n\r\f\v]``
+   plus whatever is classified as space in the Unicode character properties
+   database.
 
 ``\S``
-   When the :const:`LOCALE` and :const:`UNICODE` flags are not specified,
-   matches any non-whitespace character; this is equivalent to the set ``[^
-   \t\n\r\f\v]`` With :const:`LOCALE`, it will match the above set plus any
-   non-space character in the current locale. If :const:`UNICODE` is set, the
-   above set ``[^ \t\n\r\f\v]`` plus the characters not marked as space in the
-   Unicode character properties database.
+   When the :const:`UNICODE` flags is not specified, matches any non-whitespace
+   character; this is equivalent to the set ``[^ \t\n\r\f\v]`` The
+   :const:`LOCALE` flag has no extra effect on non-whitespace match.  If
+   :const:`UNICODE` is set, then any character not marked as space in the
+   Unicode character properties database is matched.
+
 
 ``\w``
    When the :const:`LOCALE` and :const:`UNICODE` flags are not specified, matches
