@@ -642,6 +642,21 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+.. warning:: The :func:`fileConfig` function takes a default parameter,
+   ``disable_existing_loggers``, which defaults to ``True`` for reasons of
+   backward compatibility. This may or may not be what you want, since it
+   will cause any loggers existing before the :func:`fileConfig` call to
+   be disabled unless they (or an ancestor) are explicitly named in the
+   configuration.  Please refer to the reference documentation for more
+   information, and specify ``False`` for this parameter if you wish.
+
+   The dictionary passed to :func:`dictConfig` can also specify a Boolean
+   value with key ``disable_existing_loggers``, which if not specified
+   explicitly in the dictionary also defaults to being interpreted as
+   ``True``.  This leads to the logger-disabling behaviour described above,
+   which may not be what you want - in which case, provide the key
+   explicitly with a value of ``False``.
+
 .. currentmodule:: logging
 
 Note that the class names referenced in config files need to be either relative
