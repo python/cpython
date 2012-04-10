@@ -503,62 +503,73 @@ Condition Objects
 -----------------
 
 A condition variable is always associated with some kind of lock; this can be
-passed in or one will be created by default.  (Passing one in is useful when
-several condition variables must share the same lock.)
+passed in or one will be created by default.  Passing one in is useful when
+several condition variables must share the same lock.  The lock is part of
+the condition object: you don't have to track it separately.
 
-A condition variable has :meth:`acquire` and :meth:`release` methods that call
-the corresponding methods of the associated lock. It also has a :meth:`wait`
-method, and :meth:`notify` and :meth:`notify_all` methods.  These three must only
-be called when the calling thread has acquired the lock, otherwise a
-:exc:`RuntimeError` is raised.
+A condition variable obeys the :term:`context manager` protocol: using the
+``with`` statement acquires the associated lock for the duration of the
+enclosed block.  The :meth:`~Condition.acquire` and :meth:`~Condition.release`
+methods also call the corresponding methods of the associated lock.
 
-The :meth:`wait` method releases the lock, and then blocks until it is awakened
-by a :meth:`notify` or :meth:`notify_all` call for the same condition variable in
-another thread.  Once awakened, it re-acquires the lock and returns.  It is also
-possible to specify a timeout.
+Other methods must be called with the associated lock held.  The
+:meth:`~Condition.wait` method releases the lock, and then blocks until
+another thread awakens it by calling :meth:`~Condition.notify` or
+:meth:`~Condition.notify_all`.  Once awakened, :meth:`~Condition.wait`
+re-acquires the lock and returns.  It is also possible to specify a timeout.
 
-The :meth:`notify` method wakes up one of the threads waiting for the condition
-variable, if any are waiting.  The :meth:`notify_all` method wakes up all threads
-waiting for the condition variable.
+The :meth:`~Condition.notify` method wakes up one of the threads waiting for
+the condition variable, if any are waiting.  The :meth:`~Condition.notify_all`
+method wakes up all threads waiting for the condition variable.
 
-Note: the :meth:`notify` and :meth:`notify_all` methods don't release the lock;
-this means that the thread or threads awakened will not return from their
-:meth:`wait` call immediately, but only when the thread that called
-:meth:`notify` or :meth:`notify_all` finally relinquishes ownership of the lock.
+Note: the :meth:`~Condition.notify` and :meth:`~Condition.notify_all` methods
+don't release the lock; this means that the thread or threads awakened will
+not return from their :meth:`~Condition.wait` call immediately, but only when
+the thread that called :meth:`~Condition.notify` or :meth:`~Condition.notify_all`
+finally relinquishes ownership of the lock.
 
-Tip: the typical programming style using condition variables uses the lock to
+
+Usage
+^^^^^
+
+The typical programming style using condition variables uses the lock to
 synchronize access to some shared state; threads that are interested in a
-particular change of state call :meth:`wait` repeatedly until they see the
-desired state, while threads that modify the state call :meth:`notify` or
-:meth:`notify_all` when they change the state in such a way that it could
-possibly be a desired state for one of the waiters.  For example, the following
-code is a generic producer-consumer situation with unlimited buffer capacity::
+particular change of state call :meth:`~Condition.wait` repeatedly until they
+see the desired state, while threads that modify the state call
+:meth:`~Condition.notify` or :meth:`~Condition.notify_all` when they change
+the state in such a way that it could possibly be a desired state for one
+of the waiters.  For example, the following code is a generic
+producer-consumer situation with unlimited buffer capacity::
 
    # Consume one item
-   cv.acquire()
-   while not an_item_is_available():
-       cv.wait()
-   get_an_available_item()
-   cv.release()
+   with cv:
+       while not an_item_is_available():
+           cv.wait()
+       get_an_available_item()
 
    # Produce one item
-   cv.acquire()
-   make_an_item_available()
-   cv.notify()
-   cv.release()
+   with cv:
+       make_an_item_available()
 
-To choose between :meth:`notify` and :meth:`notify_all`, consider whether one
-state change can be interesting for only one or several waiting threads.  E.g.
-in a typical producer-consumer situation, adding one item to the buffer only
-needs to wake up one consumer thread.
+The ``while`` loop checking for the application's condition is necessary
+because :meth:`~Condition.wait` can return after an arbitrary long time,
+and other threads may have exhausted the available items in between.  This
+is inherent to multi-threaded programming.  The :meth:`~Condition.wait_for`
+method can be used to automate the condition checking::
 
-Note:  Condition variables can be, depending on the implementation, subject
-to both spurious wakeups (when :meth:`wait` returns without a :meth:`notify`
-call) and stolen wakeups (when another thread acquires the lock before the
-awoken thread.)  For this reason, it is always necessary to verify the state
-the thread is waiting for when :meth:`wait` returns and optionally repeat
-the call as often as necessary.
+   # Consume an item
+   with cv:
+       cv.wait_for(an_item_is_available)
+       get_an_available_item()
 
+To choose between :meth:`~Condition.notify` and :meth:`~Condition.notify_all`,
+consider whether one state change can be interesting for only one or several
+waiting threads.  E.g. in a typical producer-consumer situation, adding one
+item to the buffer only needs to wake up one consumer thread.
+
+
+Interface
+^^^^^^^^^
 
 .. class:: Condition(lock=None)
 
@@ -625,12 +636,6 @@ the call as often as necessary.
       Therefore, the same rules apply as with :meth:`wait`: The lock must be
       held when called and is re-aquired on return.  The predicate is evaluated
       with the lock held.
-
-      Using this method, the consumer example above can be written thus::
-
-         with cv:
-             cv.wait_for(an_item_is_available)
-             get_an_available_item()
 
       .. versionadded:: 3.2
 
