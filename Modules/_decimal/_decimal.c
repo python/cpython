@@ -60,6 +60,7 @@
 
 typedef struct {
     PyObject_HEAD
+    Py_hash_t hash;
     mpd_t dec;
     mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
@@ -1804,6 +1805,8 @@ PyDecType_New(PyTypeObject *type)
     if (dec == NULL) {
         return NULL;
     }
+
+    dec->hash = -1;
 
     MPD(dec)->flags = MPD_STATIC|MPD_STATIC_DATA;
     MPD(dec)->exp = 0;
@@ -4210,7 +4213,7 @@ dec_floor(PyObject *self, PyObject *dummy UNUSED)
 
 /* Always uses the module context */
 static Py_hash_t
-dec_hash(PyObject *v)
+_dec_hash(PyDecObject *v)
 {
 #if defined(CONFIG_64) && _PyHASH_BITS == 61
     /* 2**61 - 1 */
@@ -4321,6 +4324,16 @@ malloc_error:
     PyErr_NoMemory();
     result = -1;
     goto finish;
+}
+
+static Py_hash_t
+dec_hash(PyDecObject *self)
+{
+    if (self->hash == -1) {
+        self->hash = _dec_hash(self);
+    }
+
+    return self->hash;
 }
 
 /* __reduce__ */
