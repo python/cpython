@@ -850,14 +850,7 @@ def _url_collapse_path_split(path):
     # Filter out blank non trailing parts before consuming the '..'.
     path_parts = [part for part in path_parts[:-1] if part] + path_parts[-1:]
     if path_parts:
-        # Special case for CGI's for PATH_INFO
-        if path.startswith('/cgi-bin') or path.startswith('/htbin'):
-            tail_part = []
-            while path_parts[-1] not in ('cgi-bin','htbin'):
-                tail_part.insert(0,path_parts.pop())
-            tail_part = "/".join(tail_part)
-        else:
-            tail_part = path_parts.pop()
+        tail_part = path_parts.pop()
     else:
         tail_part = ''
     head_parts = []
@@ -952,8 +945,11 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         """
 
         splitpath = _url_collapse_path_split(self.path)
-        if splitpath[0] in self.cgi_directories:
-            self.cgi_info = splitpath
+        joined_path = '/'.join(splitpath)
+        dir_sep = joined_path.find('/',1)
+        head, tail = joined_path[:dir_sep], joined_path[dir_sep+1:]
+        if head in self.cgi_directories:
+            self.cgi_info = head, tail
             return True
         return False
 
