@@ -419,6 +419,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             BaseTestCase.tearDown(self)
 
     def test_url_collapse_path_split(self):
+        # verify tail is the last portion and head is the rest on proper urls
         test_vectors = {
             '': ('/', ''),
             '..': IndexError,
@@ -429,7 +430,6 @@ class CGIHTTPServerTestCase(BaseTestCase):
             '/.//': ('/', ''),
             'cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
             '/cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
-            '/cgi-bin/file1.py/PATH-INFO': ('/cgi-bin', 'file1.py/PATH-INFO'),
             'a': ('/', 'a'),
             '/a': ('/', 'a'),
             '//a': ('/', 'a'),
