@@ -377,7 +377,6 @@ class CGIHTTPServerTestCase(BaseTestCase):
             '/.//': ('/', ''),
             'cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
             '/cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
-            '/cgi-bin/file1.py/PATH-INFO': ('/cgi-bin', 'file1.py/PATH-INFO'),
             'a': ('/', 'a'),
             '/a': ('/', 'a'),
             '//a': ('/', 'a'),
