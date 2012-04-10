@@ -5,13 +5,13 @@ Python News
 What's New in Python 3.2.3?
 ===========================
 
-*Release date: XX-Mar-2012*
+*Release date: 10-Apr-2012*
 
-Core and Builtins
------------------
+Build
+-----
 
-Library
--------
+- Issue #14387: Work around a problem building extension modules under Windows
+  by undefining ``small`` before use in the Python headers.
 
 
 What's New in Python 3.2.3 release candidate 2?
