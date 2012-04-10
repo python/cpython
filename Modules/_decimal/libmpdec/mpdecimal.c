@@ -458,6 +458,9 @@ mpd_del(mpd_t *dec)
  *     1) MPD_MINALLOC <= result->alloc.
  *     2) 0 <= result->len <= result->alloc.
  *
+ * Case nwords == result->alloc:
+ *     'result' is unchanged. Return 1.
+ *
  * Case nwords > result->alloc:
  *   Case realloc success:
  *     The value of 'result' does not change. Return 1.
@@ -465,13 +468,11 @@ mpd_del(mpd_t *dec)
  *     'result' is NaN, status is updated with MPD_Malloc_error. Return 0.
  *
  * Case nwords < result->alloc:
- *   Case is_static_data or nwords < MPD_MINALLOC or realloc failure [1]:
+ *   Case is_static_data or realloc failure [1]:
  *     'result' is unchanged. Return 1.
  *   Case realloc success:
  *     The value of result is undefined (expected). Return 1.
  *
- * Case nwords == result->alloc:
- *     'result' is unchanged. Return 1.
  *
  * [1] In that case the old (now oversized) area is still valid.
  */
