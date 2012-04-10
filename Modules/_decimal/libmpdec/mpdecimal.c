@@ -454,9 +454,7 @@ mpd_del(mpd_t *dec)
  * Resize the coefficient. Existing data up to 'nwords' is left untouched.
  * Return 1 on success, 0 otherwise.
  *
- * Input invariants:
- *     1) MPD_MINALLOC <= result->alloc.
- *     2) 0 <= result->len <= result->alloc.
+ * Input invariant: MPD_MINALLOC <= result->alloc.
  *
  * Case nwords == result->alloc:
  *     'result' is unchanged. Return 1.
