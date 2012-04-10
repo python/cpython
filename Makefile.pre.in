@@ -952,7 +952,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata test/xmltestdata \
-		test/subprocessdata \
+		test/subprocessdata test/sndhdrdata \
 		test/tracedmodules test/encoded_modules \
 		collections concurrent concurrent/futures encodings \
 		email email/mime test/test_email test/test_email/data \
