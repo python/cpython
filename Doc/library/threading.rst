@@ -218,30 +218,31 @@ Thread Objects
 
 This class represents an activity that is run in a separate thread of control.
 There are two ways to specify the activity: by passing a callable object to the
-constructor, or by overriding the :meth:`run` method in a subclass.  No other
-methods (except for the constructor) should be overridden in a subclass.  In
-other words,  *only*  override the :meth:`__init__` and :meth:`run` methods of
-this class.
+constructor, or by overriding the :meth:`~Thread.run` method in a subclass.
+No other methods (except for the constructor) should be overridden in a
+subclass.  In other words,  *only*  override the :meth:`~Thread.__init__`
+and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
-thread's :meth:`start` method.  This invokes the :meth:`run` method in a
-separate thread of control.
+thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
+method in a separate thread of control.
 
 Once the thread's activity is started, the thread is considered 'alive'. It
-stops being alive when its :meth:`run` method terminates -- either normally, or
-by raising an unhandled exception.  The :meth:`is_alive` method tests whether the
-thread is alive.
+stops being alive when its :meth:`~Thread.run` method terminates -- either
+normally, or by raising an unhandled exception.  The :meth:`~Thread.is_alive`
+method tests whether the thread is alive.
 
-Other threads can call a thread's :meth:`join` method.  This blocks the calling
-thread until the thread whose :meth:`join` method is called is terminated.
+Other threads can call a thread's :meth:`~Thread.join` method.  This blocks
+the calling thread until the thread whose :meth:`~Thread.join` method is
+called is terminated.
 
 A thread has a name.  The name can be passed to the constructor, and read or
-changed through the :attr:`name` attribute.
+changed through the :attr:`~Thread.name` attribute.
 
-A thread can be flagged as a "daemon thread".  The significance of this flag is
-that the entire Python program exits when only daemon threads are left.  The
-initial value is inherited from the creating thread.  The flag can be set
-through the :attr:`daemon` property.
+A thread can be flagged as a "daemon thread".  The significance of this flag
+is that the entire Python program exits when only daemon threads are left.
+The initial value is inherited from the creating thread.  The flag can be
+set through the :attr:`~Thread.daemon` property.
 
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
@@ -250,8 +251,8 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`join`\ ed.  They are never deleted, since it is
-impossible to detect the termination of alien threads.
+daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+since it is impossible to detect the termination of alien threads.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={})
@@ -282,7 +283,8 @@ impossible to detect the termination of alien threads.
       Start the thread's activity.
 
       It must be called at most once per thread object.  It arranges for the
-      object's :meth:`run` method to be invoked in a separate thread of control.
+      object's :meth:`~Thread.run` method to be invoked in a separate thread
+      of control.
 
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
@@ -298,25 +300,27 @@ impossible to detect the termination of alien threads.
 
    .. method:: join(timeout=None)
 
-      Wait until the thread terminates. This blocks the calling thread until the
-      thread whose :meth:`join` method is called terminates -- either normally
-      or through an unhandled exception -- or until the optional timeout occurs.
+      Wait until the thread terminates. This blocks the calling thread until
+      the thread whose :meth:`~Thread.join` method is called terminates -- either
+      normally or through an unhandled exception --, or until the optional
+      timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
       floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof). As :meth:`join` always returns ``None``, you must
-      call :meth:`is_alive` after :meth:`join` to decide whether a timeout
-      happened -- if the thread is still alive, the :meth:`join` call timed out.
+      (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
+      you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
+      decide whether a timeout happened -- if the thread is still alive, the
+      :meth:`~Thread.join` call timed out.
 
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`join`\ ed many times.
+      A thread can be :meth:`~Thread.join`\ ed many times.
 
-      :meth:`join` raises a :exc:`RuntimeError` if an attempt is made to join
-      the current thread as that would cause a deadlock. It is also an error to
-      :meth:`join` a thread before it has been started and attempts to do so
-      raises the same exception.
+      :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
+      to join the current thread as that would cause a deadlock. It is also
+      an error to :meth:`~Thread.join` a thread before it has been started
+      and attempts to do so raise the same exception.
 
    .. attribute:: name
 
@@ -334,7 +338,7 @@ impossible to detect the termination of alien threads.
 
       The 'thread identifier' of this thread or ``None`` if the thread has not
       been started.  This is a nonzero integer.  See the
-      :func:`thread.get_ident()` function.  Thread identifiers may be recycled
+      :func:`_thread.get_ident()` function.  Thread identifiers may be recycled
       when a thread exits and another thread is created.  The identifier is
       available even after the thread has exited.
 
@@ -342,18 +346,18 @@ impossible to detect the termination of alien threads.
 
       Return whether the thread is alive.
 
-      This method returns ``True`` just before the :meth:`run` method starts
-      until just after the :meth:`run` method terminates.  The module function
-      :func:`.enumerate` returns a list of all alive threads.
+      This method returns ``True`` just before the :meth:`~Thread.run` method
+      starts until just after the :meth:`~Thread.run` method terminates.  The
+      module function :func:`.enumerate` returns a list of all alive threads.
 
    .. attribute:: daemon
 
       A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`start` is called,
+      or not (False).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
-      therefore all threads created in the main thread default to :attr:`daemon`
-      = ``False``.
+      therefore all threads created in the main thread default to
+      :attr:`~Thread.daemon` = ``False``.
 
       The entire Python program exits when no alive non-daemon threads are left.
 
@@ -375,19 +379,20 @@ synchronization primitive available, implemented directly by the :mod:`_thread`
 extension module.
 
 A primitive lock is in one of two states, "locked" or "unlocked". It is created
-in the unlocked state.  It has two basic methods, :meth:`acquire` and
-:meth:`release`.  When the state is unlocked, :meth:`acquire` changes the state
-to locked and returns immediately.  When the state is locked, :meth:`acquire`
-blocks until a call to :meth:`release` in another thread changes it to unlocked,
-then the :meth:`acquire` call resets it to locked and returns.  The
-:meth:`release` method should only be called in the locked state; it changes the
-state to unlocked and returns immediately. If an attempt is made to release an
-unlocked lock, a :exc:`RuntimeError` will be raised.
+in the unlocked state.  It has two basic methods, :meth:`~Lock.acquire` and
+:meth:`~Lock.release`.  When the state is unlocked, :meth:`~Lock.acquire`
+changes the state to locked and returns immediately.  When the state is locked,
+:meth:`~Lock.acquire` blocks until a call to :meth:`~Lock.release` in another
+thread changes it to unlocked, then the :meth:`~Lock.acquire` call resets it
+to locked and returns.  The :meth:`~Lock.release` method should only be
+called in the locked state; it changes the state to unlocked and returns
+immediately. If an attempt is made to release an unlocked lock, a
+:exc:`RuntimeError` will be raised.
 
-When more than one thread is blocked in :meth:`acquire` waiting for the state to
-turn to unlocked, only one thread proceeds when a :meth:`release` call resets
-the state to unlocked; which one of the waiting threads proceeds is not defined,
-and may vary across implementations.
+When more than one thread is blocked in :meth:`~Lock.acquire` waiting for the
+state to turn to unlocked, only one thread proceeds when a :meth:`~Lock.release`
+call resets the state to unlocked; which one of the waiting threads proceeds
+is not defined, and may vary across implementations.
 
 All methods are executed atomically.
 
@@ -446,12 +451,12 @@ and "recursion level" in addition to the locked/unlocked state used by primitive
 locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
-To lock the lock, a thread calls its :meth:`acquire` method; this returns once
-the thread owns the lock.  To unlock the lock, a thread calls its
-:meth:`release` method. :meth:`acquire`/:meth:`release` call pairs may be
-nested; only the final :meth:`release` (the :meth:`release` of the outermost
-pair) resets the lock to unlocked and allows another thread blocked in
-:meth:`acquire` to proceed.
+To lock the lock, a thread calls its :meth:`~RLock.acquire` method; this
+returns once the thread owns the lock.  To unlock the lock, a thread calls
+its :meth:`~Lock.release` method. :meth:`~Lock.acquire`/:meth:`~Lock.release`
+call pairs may be nested; only the final :meth:`~Lock.release` (the
+:meth:`~Lock.release` of the outermost pair) resets the lock to unlocked and
+allows another thread blocked in :meth:`~Lock.acquire` to proceed.
 
 
 .. method:: RLock.acquire(blocking=True, timeout=-1)
@@ -672,12 +677,14 @@ Semaphore Objects
 
 This is one of the oldest synchronization primitives in the history of computer
 science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he
-used :meth:`P` and :meth:`V` instead of :meth:`acquire` and :meth:`release`).
+used the names ``P()`` and ``V()`` instead of :meth:`~Semaphore.acquire` and
+:meth:`~Semaphore.release`).
 
 A semaphore manages an internal counter which is decremented by each
-:meth:`acquire` call and incremented by each :meth:`release` call.  The counter
-can never go below zero; when :meth:`acquire` finds that it is zero, it blocks,
-waiting until some other thread calls :meth:`release`.
+:meth:`~Semaphore.acquire` call and incremented by each :meth:`~Semaphore.release`
+call.  The counter can never go below zero; when :meth:`~Semaphore.acquire`
+finds that it is zero, it blocks, waiting until some other thread calls
+:meth:`~Semaphore.release`.
 
 
 .. class:: Semaphore(value=1)
@@ -693,11 +700,12 @@ waiting until some other thread calls :meth:`release`.
       When invoked without arguments: if the internal counter is larger than
       zero on entry, decrement it by one and return immediately.  If it is zero
       on entry, block, waiting until some other thread has called
-      :meth:`release` to make it larger than zero.  This is done with proper
-      interlocking so that if multiple :meth:`acquire` calls are blocked,
-      :meth:`release` will wake exactly one of them up.  The implementation may
-      pick one at random, so the order in which blocked threads are awakened
-      should not be relied on.  Returns true (or blocks indefinitely).
+      :meth:`~Semaphore.release` to make it larger than zero.  This is done
+      with proper interlocking so that if multiple :meth:`acquire` calls are
+      blocked, :meth:`~Semaphore.release` will wake exactly one of them up.
+      The implementation may pick one at random, so the order in which
+      blocked threads are awakened should not be relied on.  Returns
+      true (or blocks indefinitely).
 
       When invoked with *blocking* set to false, do not block.  If a call
       without an argument would block, return false immediately; otherwise,
@@ -753,8 +761,8 @@ This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
 
 An event object manages an internal flag that can be set to true with the
-:meth:`~Event.set` method and reset to false with the :meth:`clear` method.  The
-:meth:`wait` method blocks until the flag is true.
+:meth:`~Event.set` method and reset to false with the :meth:`~Event.clear`
+method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
 
 .. class:: Event()
@@ -781,7 +789,7 @@ An event object manages an internal flag that can be set to true with the
 
       Block until the internal flag is true.  If the internal flag is true on
       entry, return immediately.  Otherwise, block until another thread calls
-      :meth:`set` to set the flag to true, or until the optional timeout occurs.
+      :meth:`.set` to set the flag to true, or until the optional timeout occurs.
 
       When the timeout argument is present and not ``None``, it should be a
       floating point number specifying a timeout for the operation in seconds
@@ -837,8 +845,8 @@ Barrier Objects
 
 This class provides a simple synchronization primitive for use by a fixed number
 of threads that need to wait for each other.  Each of the threads tries to pass
-the barrier by calling the :meth:`wait` method and will block until all of the
-threads have made the call.  At this points, the threads are released
+the barrier by calling the :meth:`~Barrier.wait` method and will block until
+all of the threads have made the call.  At this points, the threads are released
 simultanously.
 
 The barrier can be reused any number of times for the same number of threads.
