@@ -389,6 +389,8 @@ called in the locked state; it changes the state to unlocked and returns
 immediately. If an attempt is made to release an unlocked lock, a
 :exc:`RuntimeError` will be raised.
 
+Locks also support the :ref:`context manager protocol <with-locks>`.
+
 When more than one thread is blocked in :meth:`~Lock.acquire` waiting for the
 state to turn to unlocked, only one thread proceeds when a :meth:`~Lock.release`
 call resets the state to unlocked; which one of the waiting threads proceeds
@@ -429,7 +431,8 @@ All methods are executed atomically.
 
 .. method:: Lock.release()
 
-   Release a lock.
+   Release a lock.  This can be called from any thread, not only the thread
+   which has acquired the lock.
 
    When the lock is locked, reset it to unlocked, and return.  If any other threads
    are blocked waiting for the lock to become unlocked, allow exactly one of them
@@ -457,6 +460,8 @@ its :meth:`~Lock.release` method. :meth:`~Lock.acquire`/:meth:`~Lock.release`
 call pairs may be nested; only the final :meth:`~Lock.release` (the
 :meth:`~Lock.release` of the outermost pair) resets the lock to unlocked and
 allows another thread blocked in :meth:`~Lock.acquire` to proceed.
+
+Reentrant locks also support the :ref:`context manager protocol <with-locks>`.
 
 
 .. method:: RLock.acquire(blocking=True, timeout=-1)
@@ -512,10 +517,11 @@ passed in or one will be created by default.  Passing one in is useful when
 several condition variables must share the same lock.  The lock is part of
 the condition object: you don't have to track it separately.
 
-A condition variable obeys the :term:`context manager` protocol: using the
-``with`` statement acquires the associated lock for the duration of the
-enclosed block.  The :meth:`~Condition.acquire` and :meth:`~Condition.release`
-methods also call the corresponding methods of the associated lock.
+A condition variable obeys the :ref:`context manager protocol <with-locks>`:
+using the ``with`` statement acquires the associated lock for the duration of
+the enclosed block.  The :meth:`~Condition.acquire` and
+:meth:`~Condition.release` methods also call the corresponding methods of
+the associated lock.
 
 Other methods must be called with the associated lock held.  The
 :meth:`~Condition.wait` method releases the lock, and then blocks until
@@ -686,6 +692,8 @@ call.  The counter can never go below zero; when :meth:`~Semaphore.acquire`
 finds that it is zero, it blocks, waiting until some other thread calls
 :meth:`~Semaphore.release`.
 
+Semaphores also support the :ref:`context manager protocol <with-locks>`.
+
 
 .. class:: Semaphore(value=1)
 
@@ -742,11 +750,12 @@ main thread would initialize the semaphore::
 Once spawned, worker threads call the semaphore's acquire and release methods
 when they need to connect to the server::
 
-   pool_sema.acquire()
-   conn = connectdb()
-   ... use connection ...
-   conn.close()
-   pool_sema.release()
+   with pool_sema:
+       conn = connectdb()
+       try:
+           ... use connection ...
+       finally:
+           conn.close()
 
 The use of a bounded semaphore reduces the chance that a programming error which
 causes the semaphore to be released more than it's acquired will go undetected.
@@ -947,19 +956,24 @@ Using locks, conditions, and semaphores in the :keyword:`with` statement
 
 All of the objects provided by this module that have :meth:`acquire` and
 :meth:`release` methods can be used as context managers for a :keyword:`with`
-statement.  The :meth:`acquire` method will be called when the block is entered,
-and :meth:`release` will be called when the block is exited.
+statement.  The :meth:`acquire` method will be called when the block is
+entered, and :meth:`release` will be called when the block is exited.  Hence,
+the following snippet::
+
+   with some_lock:
+       # do something...
+
+is equivalent to::
+
+   some_lock.acquire()
+   try:
+       # do something...
+   finally:
+       some_lock.release()
 
 Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
 :class:`Semaphore`, and :class:`BoundedSemaphore` objects may be used as
-:keyword:`with` statement context managers.  For example::
-
-   import threading
-
-   some_rlock = threading.RLock()
-
-   with some_rlock:
-       print("some_rlock is locked while this executes")
+:keyword:`with` statement context managers.
 
 
 .. _threaded-imports:
