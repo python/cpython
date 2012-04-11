@@ -561,12 +561,14 @@ producer-consumer situation with unlimited buffer capacity::
    # Produce one item
    with cv:
        make_an_item_available()
+       cv.notify()
 
 The ``while`` loop checking for the application's condition is necessary
 because :meth:`~Condition.wait` can return after an arbitrary long time,
-and other threads may have exhausted the available items in between.  This
-is inherent to multi-threaded programming.  The :meth:`~Condition.wait_for`
-method can be used to automate the condition checking::
+and the condition which prompted the :meth:`~Condition.notify` call may
+no longer hold true.  This is inherent to multi-threaded programming.  The
+:meth:`~Condition.wait_for` method can be used to automate the condition
+checking, and eases the computation of timeouts::
 
    # Consume an item
    with cv:
