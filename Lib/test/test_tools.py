@@ -8,6 +8,7 @@ import os
 import sys
 import imp
 import unittest
+from unittest import mock
 import sysconfig
 import tempfile
 from test import support
@@ -40,7 +41,7 @@ class TestSundryScripts(unittest.TestCase):
     # added for a script it should be added to the whitelist below.
 
     # scripts that have independent tests.
-    whitelist = ['reindent.py']
+    whitelist = ['reindent.py', 'pdeps.py', 'gprof2html']
     # scripts that can't be imported without running
     blacklist = ['make_ctype.py']
     # scripts that use windows-only modules
@@ -97,6 +98,28 @@ class PdepsTests(unittest.TestCase):
     def test_inverse_attribute_error(self):
         # Issue #14492: this used to fail with an AttributeError.
         self.pdeps.inverse({'a': []})
+
+
+class Gprof2htmlTests(unittest.TestCase):
+
+    def setUp(self):
+        path = os.path.join(scriptsdir, 'gprof2html.py')
+        self.gprof = imp.load_source('gprof2html', path)
+        oldargv = sys.argv
+        def fixup():
+            sys.argv = oldargv
+        self.addCleanup(fixup)
+        sys.argv = []
+
+    def test_gprof(self):
+        # Issue #14508: this used to fail with an NameError.
+        with mock.patch.object(self.gprof, 'webbrowser') as wmock, \
+                tempfile.TemporaryDirectory() as tmpdir:
+            fn = os.path.join(tmpdir, 'abc')
+            open(fn, 'w').close()
+            sys.argv = ['gprof2html', fn]
+            self.gprof.main()
+        self.assertTrue(wmock.open.called)
 
 
 def test_main():
