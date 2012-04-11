@@ -366,41 +366,44 @@ class CGIHTTPServerTestCase(BaseTestCase):
         finally:
             BaseTestCase.tearDown(self)
 
-    def test_url_collapse_path_split(self):
+    def test_url_collapse_path(self):
+        # verify tail is the last portion and head is the rest on proper urls
         test_vectors = {
-            '': ('/', ''),
+            '': '//',
             '..': IndexError,
             '/.//..': IndexError,
-            '/': ('/', ''),
-            '//': ('/', ''),
-            '/\\': ('/', '\\'),
-            '/.//': ('/', ''),
-            'cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
-            '/cgi-bin/file1.py': ('/cgi-bin', 'file1.py'),
-            'a': ('/', 'a'),
-            '/a': ('/', 'a'),
-            '//a': ('/', 'a'),
-            './a': ('/', 'a'),
-            './C:/': ('/C:', ''),
-            '/a/b': ('/a', 'b'),
-            '/a/b/': ('/a/b', ''),
-            '/a/b/c/..': ('/a/b', ''),
-            '/a/b/c/../d': ('/a/b', 'd'),
-            '/a/b/c/../d/e/../f': ('/a/b/d', 'f'),
-            '/a/b/c/../d/e/../../f': ('/a/b', 'f'),
-            '/a/b/c/../d/e/.././././..//f': ('/a/b', 'f'),
+            '/': '//',
+            '//': '//',
+            '/\\': '//\\',
+            '/.//': '//',
+            'cgi-bin/file1.py': '/cgi-bin/file1.py',
+            '/cgi-bin/file1.py': '/cgi-bin/file1.py',
+            'a': '//a',
+            '/a': '//a',
+            '//a': '//a',
+            './a': '//a',
+            './C:/': '/C:/',
+            '/a/b': '/a/b',
+            '/a/b/': '/a/b/',
+            '/a/b/.': '/a/b/',
+            '/a/b/c/..': '/a/b/',
+            '/a/b/c/../d': '/a/b/d',
+            '/a/b/c/../d/e/../f': '/a/b/d/f',
+            '/a/b/c/../d/e/../../f': '/a/b/f',
+            '/a/b/c/../d/e/.././././..//f': '/a/b/f',
             '../a/b/c/../d/e/.././././..//f': IndexError,
-            '/a/b/c/../d/e/../../../f': ('/a', 'f'),
-            '/a/b/c/../d/e/../../../../f': ('/', 'f'),
+            '/a/b/c/../d/e/../../../f': '/a/f',
+            '/a/b/c/../d/e/../../../../f': '//f',
             '/a/b/c/../d/e/../../../../../f': IndexError,
-            '/a/b/c/../d/e/../../../../f/..': ('/', ''),
+            '/a/b/c/../d/e/../../../../f/..': '//',
+            '/a/b/c/../d/e/../../../../f/../.': '//',
         }
         for path, expected in test_vectors.items():
             if isinstance(expected, type) and issubclass(expected, Exception):
                 self.assertRaises(expected,
-                                  server._url_collapse_path_split, path)
+                                  server._url_collapse_path, path)
             else:
-                actual = server._url_collapse_path_split(path)
+                actual = server._url_collapse_path(path)
                 self.assertEqual(expected, actual,
                                  msg='path = %r\nGot:    %r\nWanted: %r' %
                                  (path, actual, expected))
