@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- trace.CoverageResults.is_ignored_filename() now ignores any name that starts
+  with "<" and ends with ">" instead of special-casing "<string>" and
+  "<doctest ".
+
 - Issue #12537: The mailbox module no longer depends on knowledge of internal
   implementation details of the email package Message object.
 

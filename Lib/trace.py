@@ -244,8 +244,7 @@ class CoverageResults:
         """Return True if the filename does not refer to a file
         we want to have reported.
         """
-        return (filename == "<string>" or
-                filename.startswith("<doctest "))
+        return filename.startswith('<') and filename.endswith('>')
 
     def update(self, other):
         """Merge in the data from another CoverageResults"""
