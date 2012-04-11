@@ -618,20 +618,22 @@ class OpenerDirectorTests(unittest.TestCase):
 
     def test_method_deprecations(self):
         req = Request("http://www.example.com")
-        with support.check_warnings(('', DeprecationWarning)):
+
+        with self.assertWarns(DeprecationWarning) as cm:
             req.add_data("data")
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.has_data()
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.get_data()
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.get_host()
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.get_selector()
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.is_unverifiable()
-        with support.check_warnings(('', DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning) as cm:
             req.get_origin_req_host()
+
 
 def sanepathname2url(path):
     try:
