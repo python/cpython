@@ -65,7 +65,7 @@ This module provides an interface to the mechanisms used to implement the
    path and the last item in the *description* tuple is :const:`PKG_DIRECTORY`.
 
    This function does not handle hierarchical module names (names containing
-   dots).  In order to find *P*.*M*, that is, submodule *M* of package *P*, use
+   dots).  In order to find *P.M*, that is, submodule *M* of package *P*, use
    :func:`find_module` and :func:`load_module` to find and load package *P*, and
    then use :func:`find_module` with the *path* argument set to ``P.__path__``.
    When *P* itself has a dotted name, apply this recipe recursively.
