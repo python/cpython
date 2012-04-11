@@ -4,8 +4,6 @@
 .. module:: html
    :synopsis: Helpers for manipulating HTML.
 
-.. versionadded:: 3.2
-
 **Source code:** :source:`Lib/html/__init__.py`
 
 --------------
@@ -19,3 +17,5 @@ This module defines utilities to manipulate HTML.
    characters in HTML.  If the optional flag *quote* is true, the characters
    (``"``) and (``'``) are also translated; this helps for inclusion in an HTML
    attribute value delimited by quotes, as in ``<a href="...">``.
+
+   .. versionadded:: 3.2
