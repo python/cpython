@@ -451,6 +451,10 @@ class PyBuildExt(build_ext):
         if platform in ['osf1', 'unixware7', 'openunix8']:
             lib_dirs += ['/usr/ccs/lib']
 
+        # HP-UX11iv3 keeps files in lib/hpux folders.
+        if platform == 'hp-ux11':
+            lib_dirs += ['/usr/lib/hpux64', '/usr/lib/hpux32']
+
         if platform == 'darwin':
             # This should work on any unixy platform ;-)
             # If the user has bothered specifying additional -I and -L flags
