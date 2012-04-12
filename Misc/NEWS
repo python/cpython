@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14399: zipfile now correctly adds a comment even when the zipfile
+  being created is otherwise empty.  As a consequence of this fix, ZipFile is
+  now a new style class.
+
 - Issue #7978: SocketServer now restarts the select() call when EINTR is
   returned.  This avoids crashing the server loop when a signal is received.
   Patch by Jerzy Kozera.
