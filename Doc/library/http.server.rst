@@ -333,7 +333,7 @@ the current directory. ::
    httpd.serve_forever()
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter a with ``port number`` argument.  Similar to
+switch of the interpreter with a ``port number`` argument.  Similar to
 the previous example, this serves files relative to the current directory. ::
 
         python -m http.server 8000
