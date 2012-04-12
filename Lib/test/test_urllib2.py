@@ -619,19 +619,19 @@ class OpenerDirectorTests(unittest.TestCase):
     def test_method_deprecations(self):
         req = Request("http://www.example.com")
 
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.add_data("data")
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.has_data()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.get_data()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.get_host()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.get_selector()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.is_unverifiable()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             req.get_origin_req_host()
 
 
