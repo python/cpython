@@ -264,6 +264,8 @@ Library
 Build
 -----
 
+- Issue #14557: Fix extensions build on HP-UX. Patch by Adi Roiban.
+
 - Issue #14387: Do not include accu.h from Python.h.
 
 - Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
