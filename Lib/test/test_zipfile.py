@@ -972,6 +972,28 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="r") as zipfr:
             self.assertEqual(zipfr.comment, comment2)
 
+    def test_unicode_comment(self):
+        with zipfile.ZipFile(TESTFN, "w", zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+            with self.assertRaises(TypeError):
+                zipf.comment = "this is an error"
+
+    def test_change_comment_in_empty_archive(self):
+        with zipfile.ZipFile(TESTFN, "a", zipfile.ZIP_STORED) as zipf:
+            self.assertFalse(zipf.filelist)
+            zipf.comment = b"this is a comment"
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            self.assertEqual(zipf.comment, b"this is a comment")
+
+    def test_change_comment_in_nonempty_archive(self):
+        with zipfile.ZipFile(TESTFN, "w", zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        with zipfile.ZipFile(TESTFN, "a", zipfile.ZIP_STORED) as zipf:
+            self.assertTrue(zipf.filelist)
+            zipf.comment = b"this is a comment"
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            self.assertEqual(zipf.comment, b"this is a comment")
+
     def check_testzip_with_bad_crc(self, compression):
         """Tests that files with bad CRCs return their name from testzip."""
         zipdata = self.zips_with_bad_crc[compression]
