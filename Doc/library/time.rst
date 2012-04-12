@@ -158,14 +158,6 @@ The module defines the following functions and data items:
    .. versionadded:: 3.3
 
 
-.. data:: CLOCK_REALTIME
-
-   System-wide real-time clock. Setting this clock requires appropriate
-   privileges.
-
-   .. versionadded:: 3.3
-
-
 .. data:: CLOCK_HIGHRES
 
    The Solaris OS has a CLOCK_HIGHRES timer that attempts to use an optimal
@@ -196,6 +188,14 @@ The module defines the following functions and data items:
 .. data:: CLOCK_PROCESS_CPUTIME_ID
 
    High-resolution per-process timer from the CPU.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_REALTIME
+
+   System-wide real-time clock. Setting this clock requires appropriate
+   privileges.
 
    .. versionadded:: 3.3
 
