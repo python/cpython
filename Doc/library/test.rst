@@ -171,9 +171,9 @@ whether the test passed or failed and thus minimize output.
 
 Running :mod:`test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
-option. Run :program:`python -m test -uall` to turn on all
-resources; specifying ``all`` as an option for ``-u`` enables all
-possible resources. If all but one resource is desired (a more common case), a
+option. Specifying ``all`` as the value for the ``-u`` option enables all
+possible resources: :program:`python -m test -uall`.
+If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
 ``all``. The command :program:`python -m test -uall,-audio,-largefile`
 will run :mod:`test` with all resources except the ``audio`` and
