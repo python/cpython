@@ -39,6 +39,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14399: zipfile now correctly adds a comment even when the zipfile
+  being created is otherwise empty.  In addition, the TypeError that results
+  from trying to set a non-binary value as a comment is now now raised at the
+  time the comment is set rather than at the time the zipfile is written.
+
 - Issue #7978: socketserver now restarts the select() call when EINTR is
   returned.  This avoids crashing the server loop when a signal is received.
   Patch by Jerzy Kozera.
