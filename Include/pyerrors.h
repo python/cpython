@@ -231,6 +231,13 @@ PyAPI_FUNC(PyObject *) PyErr_Format(
     ...
     );
 
+typedef struct {
+    PyException_HEAD
+    PyObject *msg;
+    PyObject *name;
+    PyObject *path;
+} PyImportErrorObject;
+
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
@@ -255,6 +262,12 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
 #endif
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 #endif /* MS_WINDOWS */
+
+PyAPI_FUNC(PyObject *) PyErr_SetExcWithArgsKwargs(PyObject *, PyObject *,
+    PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromImportErrorWithNameAndPath(PyObject *,
+        PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromImportErrorWithName(PyObject *, PyObject *);
 
 /* Export the old function so that the existing API remains available: */
 PyAPI_FUNC(void) PyErr_BadInternalCall(void);
