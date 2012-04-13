@@ -22,6 +22,9 @@ the expense of doing their own locking).
 #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -29,10 +32,6 @@ static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 #define HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))
 #define HEAD_LOCK() PyThread_acquire_lock(head_mutex, WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(head_mutex)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* The single PyInterpreterState used by this process'
    GILState implementation
