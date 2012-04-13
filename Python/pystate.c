@@ -726,10 +726,10 @@ PyGILState_Release(PyGILState_STATE oldstate)
         PyEval_SaveThread();
 }
 
+#endif /* WITH_THREAD */
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* WITH_THREAD */
 
 
