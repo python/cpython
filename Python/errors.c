@@ -585,6 +585,53 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 }
 #endif /* MS_WINDOWS */
 
+PyObject *
+PyErr_SetExcWithArgsKwargs(PyObject *exc, PyObject *args, PyObject *kwargs)
+{
+    PyObject *val;
+
+    /* args must at least be an empty tuple */
+    if (args == NULL)
+        args = PyTuple_New(0);
+
+    val = PyObject_Call(exc, args, kwargs);
+    if (val != NULL) {
+        PyErr_SetObject((PyObject *) Py_TYPE(val), val);
+        Py_DECREF(val);
+    }
+
+    return NULL;
+}
+
+PyObject *
+PyErr_SetFromImportErrorWithNameAndPath(PyObject *msg,
+                                        PyObject *name, PyObject *path)
+{
+    PyObject *args = PyTuple_New(1);
+    PyObject *kwargs = PyDict_New();
+    PyObject *result;
+
+    if (path == NULL)
+        path = Py_None;
+
+    PyTuple_SetItem(args, 0, msg);
+    PyDict_SetItemString(kwargs, "name", name);
+    PyDict_SetItemString(kwargs, "path", path);
+
+    result = PyErr_SetExcWithArgsKwargs(PyExc_ImportError, args, kwargs);
+
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+
+    return result;
+}
+
+PyObject *
+PyErr_SetFromImportErrorWithName(PyObject *msg, PyObject *name)
+{
+    return PyErr_SetFromImportErrorWithNameAndPath(msg, name, NULL);
+}
+
 void
 _PyErr_BadInternalCall(const char *filename, int lineno)
 {

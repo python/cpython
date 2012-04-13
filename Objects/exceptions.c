@@ -605,9 +605,104 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
 /*
  *    ImportError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, ImportError,
-          "Import can't find module, or can't find name in module.");
 
+static int
+ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *msg = NULL;
+    PyObject *name = NULL;
+    PyObject *path = NULL;
+
+/* Macro replacement doesn't allow ## to start the first line of a macro,
+   so we move the assignment and NULL check into the if-statement. */
+#define GET_KWD(kwd) { \
+    kwd = PyDict_GetItemString(kwds, #kwd); \
+    if (kwd) { \
+        Py_CLEAR(self->kwd); \
+        self->kwd = kwd;   \
+        Py_INCREF(self->kwd);\
+        if (PyDict_DelItemString(kwds, #kwd)) \
+            return -1; \
+    } \
+    }
+
+    if (kwds) {
+        GET_KWD(name);
+        GET_KWD(path);
+    }
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+        return -1;
+    if (PyTuple_GET_SIZE(args) != 1)
+        return 0;
+    if (!PyArg_UnpackTuple(args, "ImportError", 1, 1, &msg))
+        return -1;
+
+    Py_CLEAR(self->msg);          /* replacing */
+    self->msg = msg;
+    Py_INCREF(self->msg);
+
+    return 0;
+}
+
+static int
+ImportError_clear(PyImportErrorObject *self)
+{
+    Py_CLEAR(self->msg);
+    Py_CLEAR(self->name);
+    Py_CLEAR(self->path);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+ImportError_dealloc(PyImportErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    ImportError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+ImportError_traverse(PyImportErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->msg);
+    Py_VISIT(self->name);
+    Py_VISIT(self->path);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyObject *
+ImportError_str(PyImportErrorObject *self)
+{
+    if (self->msg) {
+        Py_INCREF(self->msg);
+        return self->msg;
+    }
+    else {
+        return BaseException_str((PyBaseExceptionObject *)self);
+    }
+}
+
+static PyMemberDef ImportError_members[] = {
+    {"msg", T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
+        PyDoc_STR("exception message")},
+    {"name", T_OBJECT, offsetof(PyImportErrorObject, name), 0,
+        PyDoc_STR("module name")},
+    {"path", T_OBJECT, offsetof(PyImportErrorObject, path), 0,
+        PyDoc_STR("module path")},
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef ImportError_methods[] = {
+    {NULL}
+};
+
+ComplexExtendsException(PyExc_Exception, ImportError,
+                        ImportError, 0 /* new */,
+                        ImportError_methods, ImportError_members,
+                        0 /* getset */, ImportError_str,
+                        "Import can't find module, or can't find name in "
+                        "module.");
 
 /*
  *    OSError extends Exception

@@ -159,6 +159,14 @@ The following exceptions are the exceptions that are usually raised.
    Raised when an :keyword:`import` statement fails to find the module definition
    or when a ``from ... import`` fails to find a name that is to be imported.
 
+   The :attr:`name` and :attr:`path` attributes can be set using keyword-only
+   arguments to the constructor. When set they represent the name of the module
+   that was attempted to be imported and the path to any file which triggered
+   the exception, respectively.
+
+   .. versionchanged:: 3.3
+      Added the :attr:`name` and :attr:`path` attributes.
+
 
 .. exception:: IndexError
 
