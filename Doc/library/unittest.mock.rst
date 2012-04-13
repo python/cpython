@@ -712,6 +712,17 @@ have to create a dictionary and unpack it using `**`:
         >>> mock_foo.mock_calls
         [call(), call(6)]
 
+Because of the way mock attributes are stored you can't directly attach a
+`PropertyMock` to a mock object. Instead you can attach it to the mock type
+object::
+
+    >>> m = MagicMock()
+    >>> p = PropertyMock(return_value=3)
+    >>> type(m).foo = p
+    >>> m.foo
+    3
+    >>> p.assert_called_once_with()
+
 
 Calling
 ~~~~~~~

@@ -831,5 +831,16 @@ class TestCallList(unittest.TestCase):
             p.stop()
 
 
+    def test_propertymock_returnvalue(self):
+        m = MagicMock()
+        p = PropertyMock()
+        type(m).foo = p
+
+        returned = m.foo
+        p.assert_called_once_with()
+        self.assertIsInstance(returned, MagicMock)
+        self.assertNotIsInstance(returned, PropertyMock)
+
+
 if __name__ == '__main__':
     unittest.main()
