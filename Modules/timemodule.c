@@ -139,7 +139,7 @@ static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
     int ret;
-    clockid_t clk_id;
+    int clk_id;
     struct timespec tp;
 
     if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id))
@@ -162,7 +162,7 @@ Return the time of the specified clock clk_id.");
 static PyObject *
 time_clock_settime(PyObject *self, PyObject *args)
 {
-    clockid_t clk_id;
+    int clk_id;
     PyObject *obj;
     struct timespec tp;
     int ret;
@@ -185,14 +185,12 @@ PyDoc_STRVAR(clock_settime_doc,
 "clock_settime(clk_id, time)\n\
 \n\
 Set the time of the specified clock clk_id.");
-#endif
 
-#ifdef HAVE_CLOCK_GETRES
 static PyObject *
 time_clock_getres(PyObject *self, PyObject *args)
 {
     int ret;
-    clockid_t clk_id;
+    int clk_id;
     struct timespec tp;
 
     if (!PyArg_ParseTuple(args, "i:clock_getres", &clk_id))
@@ -211,7 +209,7 @@ PyDoc_STRVAR(clock_getres_doc,
 "clock_getres(clk_id) -> floating point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
-#endif
+#endif   /* HAVE_CLOCK_GETTIME */
 
 static PyObject *
 time_sleep(PyObject *self, PyObject *args)
@@ -1009,11 +1007,7 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
-#endif
-#ifdef HAVE_CLOCK_GETTIME
     {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
-#endif
-#ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
 #endif
     {"sleep",           time_sleep, METH_VARARGS, sleep_doc},
