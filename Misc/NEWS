@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Have importlib take advantage of ImportError's new 'name' and 'path'
+  attributes.
+
 - Issue #14399: zipfile now correctly adds a comment even when the zipfile
   being created is otherwise empty.  In addition, the TypeError that results
   from trying to set a non-binary value as a comment is now now raised at the
