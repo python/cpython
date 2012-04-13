@@ -99,7 +99,7 @@ by looking at the return value of the mocked class.
 In the example below we have a function `some_function` that instantiates `Foo`
 and calls a method on it. The call to `patch` replaces the class `Foo` with a
 mock. The `Foo` instance is the result of calling the mock, so it is configured
-by modify the mock :attr:`~Mock.return_value`.
+by modifying the mock :attr:`~Mock.return_value`.
 
     >>> def some_function():
     ...     instance = module.Foo()
