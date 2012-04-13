@@ -471,8 +471,9 @@ class BadBytecodeFailureTests(unittest.TestCase):
                 {'path': os.path.join('path', 'to', 'mod'),
                  'magic': bad_magic}}
         mock = PyPycLoaderMock({name: None}, bc)
-        with util.uncache(name), self.assertRaises(ImportError):
+        with util.uncache(name), self.assertRaises(ImportError) as cm:
             mock.load_module(name)
+        self.assertEqual(cm.exception.name, name)
 
     def test_no_bytecode(self):
         # Missing code object bytecode should lead to an EOFError.
@@ -516,8 +517,9 @@ class MissingPathsTests(unittest.TestCase):
         # If all *_path methods return None, raise ImportError.
         name = 'mod'
         mock = PyPycLoaderMock({name: None})
-        with util.uncache(name), self.assertRaises(ImportError):
+        with util.uncache(name), self.assertRaises(ImportError) as cm:
             mock.load_module(name)
+        self.assertEqual(cm.exception.name, name)
 
     def test_source_path_ImportError(self):
         # An ImportError from source_path should trigger an ImportError.
@@ -533,7 +535,7 @@ class MissingPathsTests(unittest.TestCase):
         mock = PyPycLoaderMock({name: os.path.join('path', 'to', 'mod')})
         bad_meth = types.MethodType(raise_ImportError, mock)
         mock.bytecode_path = bad_meth
-        with util.uncache(name), self.assertRaises(ImportError):
+        with util.uncache(name), self.assertRaises(ImportError) as cm:
             mock.load_module(name)
 
 
@@ -594,8 +596,9 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         def raise_IOError(path):
             raise IOError
         self.loader.get_data = raise_IOError
-        with self.assertRaises(ImportError):
+        with self.assertRaises(ImportError) as cm:
             self.loader.get_source(self.name)
+        self.assertEqual(cm.exception.name, self.name)
 
     def test_is_package(self):
         # Properly detect when loading a package.

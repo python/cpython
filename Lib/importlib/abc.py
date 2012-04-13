@@ -207,7 +207,7 @@ class PyLoader(SourceLoader):
                         DeprecationWarning)
         path = self.source_path(fullname)
         if path is None:
-            raise ImportError
+            raise ImportError(name=fullname)
         else:
             return path
 
@@ -235,7 +235,7 @@ class PyPycLoader(PyLoader):
         if path is not None:
             return path
         raise ImportError("no source or bytecode path available for "
-                            "{0!r}".format(fullname))
+                            "{0!r}".format(fullname), name=fullname)
 
     def get_code(self, fullname):
         """Get a code object from source or bytecode."""
@@ -253,7 +253,8 @@ class PyPycLoader(PyLoader):
                 magic = data[:4]
                 if len(magic) < 4:
                     raise ImportError(
-                        "bad magic number in {}".format(fullname))
+                        "bad magic number in {}".format(fullname),
+                        name=fullname, path=bytecode_path)
                 raw_timestamp = data[4:8]
                 if len(raw_timestamp) < 4:
                     raise EOFError("bad timestamp in {}".format(fullname))
@@ -262,12 +263,14 @@ class PyPycLoader(PyLoader):
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
                     raise ImportError(
-                        "bad magic number in {}".format(fullname))
+                        "bad magic number in {}".format(fullname),
+                        name=fullname, path=bytecode_path)
                 # Verify that the bytecode is not stale (only matters when
                 # there is source to fall back on.
                 if source_timestamp:
                     if pyc_timestamp < source_timestamp:
-                        raise ImportError("bytecode is stale")
+                        raise ImportError("bytecode is stale", name=fullname,
+                                          path=bytecode_path)
             except (ImportError, EOFError):
                 # If source is available give it a shot.
                 if source_timestamp is not None:
@@ -279,12 +282,13 @@ class PyPycLoader(PyLoader):
                 return marshal.loads(bytecode)
         elif source_timestamp is None:
             raise ImportError("no source or bytecode available to create code "
-                                "object for {0!r}".format(fullname))
+                              "object for {0!r}".format(fullname),
+                              name=fullname)
         # Use the source.
         source_path = self.source_path(fullname)
         if source_path is None:
             message = "a source path must exist to load {0}".format(fullname)
-            raise ImportError(message)
+            raise ImportError(message, name=fullname)
         source = self.get_data(source_path)
         code_object = compile(source, source_path, 'exec', dont_inherit=True)
         # Generate bytecode and write it out.

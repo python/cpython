@@ -232,8 +232,10 @@ class BadBytecodeTest(unittest.TestCase):
                                     lambda bc: bc[:12] + marshal.dumps(b'abcd'),
                                     del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 self.import_(file_path, '_temp')
+            self.assertEqual(cm.exception.name, '_temp')
+            self.assertEqual(cm.exception.path, bytecode_path)
 
     def _test_bad_marshal(self, *, del_source=False):
         with source_util.create_modules('_temp') as mapping:
@@ -381,15 +383,19 @@ class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
 
     def test_empty_file(self):
         def test(name, mapping, bytecode_path):
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 self.import_(bytecode_path, name)
+            self.assertEqual(cm.exception.name, name)
+            self.assertEqual(cm.exception.path, bytecode_path)
 
         self._test_empty_file(test, del_source=True)
 
     def test_partial_magic(self):
         def test(name, mapping, bytecode_path):
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 self.import_(bytecode_path, name)
+            self.assertEqual(cm.exception.name, name)
+            self.assertEqual(cm.exception.path, bytecode_path)
         self._test_partial_magic(test, del_source=True)
 
     def test_magic_only(self):
@@ -401,8 +407,10 @@ class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
 
     def test_bad_magic(self):
         def test(name, mapping, bytecode_path):
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 self.import_(bytecode_path, name)
+            self.assertEqual(cm.exception.name, name)
+            self.assertEqual(cm.exception.path, bytecode_path)
 
         self._test_bad_magic(test, del_source=True)
 

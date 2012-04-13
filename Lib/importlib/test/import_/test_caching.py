@@ -34,8 +34,9 @@ class UseCache(unittest.TestCase):
         name = 'using_None'
         with util.uncache(name):
             sys.modules[name] = None
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 import_util.import_(name)
+            self.assertEqual(cm.exception.name, name)
 
     def create_mock(self, *names, return_=None):
         mock = util.mock_modules(*names)

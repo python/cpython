@@ -19,14 +19,16 @@ class ParentModuleTests(unittest.TestCase):
     def test_bad_parent(self):
         with util.mock_modules('pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
-                with self.assertRaises(ImportError):
+                with self.assertRaises(ImportError) as cm:
                     import_util.import_('pkg.module')
+                self.assertEqual(cm.exception.name, 'pkg')
 
     def test_module_not_package(self):
         # Try to import a submodule from a non-package should raise ImportError.
         assert not hasattr(sys, '__path__')
-        with self.assertRaises(ImportError):
+        with self.assertRaises(ImportError) as cm:
             import_util.import_('sys.no_submodules_here')
+        self.assertEqual(cm.exception.name, 'sys.no_submodules_here')
 
     def test_module_not_package_but_side_effects(self):
         # If a module injects something into sys.modules as a side-effect, then
