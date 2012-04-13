@@ -767,6 +767,9 @@
 			RelativePath="..\..\Python\pythonrun.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\random.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\rangeobject.c">
 		</File>
 		<File
