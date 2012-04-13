@@ -28,6 +28,13 @@ typedef struct {
 
 typedef struct {
     PyException_HEAD
+    PyObject *msg;
+    PyObject *name;
+    PyObject *path;
+} PyImportErrorObject;
+
+typedef struct {
+    PyException_HEAD
     PyObject *encoding;
     PyObject *object;
     Py_ssize_t start;
@@ -230,13 +237,6 @@ PyAPI_FUNC(PyObject *) PyErr_Format(
     const char *format,   /* ASCII-encoded string  */
     ...
     );
-
-typedef struct {
-    PyException_HEAD
-    PyObject *msg;
-    PyObject *name;
-    PyObject *path;
-} PyImportErrorObject;
 
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
