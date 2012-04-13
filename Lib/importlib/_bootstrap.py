@@ -227,7 +227,7 @@ def _check_name(method):
     """
     def _check_name_wrapper(self, name, *args, **kwargs):
         if self._name != name:
-            raise ImportError("loader cannot handle %s" % name)
+            raise ImportError("loader cannot handle %s" % name, name=name)
         return method(self, name, *args, **kwargs)
     _wrap(_check_name_wrapper, method)
     return _check_name_wrapper
@@ -237,7 +237,8 @@ def _requires_builtin(fxn):
     """Decorator to verify the named module is built-in."""
     def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
-            raise ImportError("{0} is not a built-in module".format(fullname))
+            raise ImportError("{0} is not a built-in module".format(fullname),
+                              name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_builtin_wrapper, fxn)
     return _requires_builtin_wrapper
@@ -247,7 +248,8 @@ def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
         if not imp.is_frozen(fullname):
-            raise ImportError("{0} is not a frozen module".format(fullname))
+            raise ImportError("{0} is not a frozen module".format(fullname),
+                              name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_frozen_wrapper, fxn)
     return _requires_frozen_wrapper
@@ -372,7 +374,7 @@ class _LoaderBasics:
         filename = self.get_filename(fullname).rpartition(path_sep)[2]
         return filename.rsplit('.', 1)[0] == '__init__'
 
-    def _bytes_from_bytecode(self, fullname, data, source_stats):
+    def _bytes_from_bytecode(self, fullname, data, bytecode_path, source_stats):
         """Return the marshalled bytes from bytecode, verifying the magic
         number, timestamp and source size along the way.
 
@@ -383,7 +385,8 @@ class _LoaderBasics:
         raw_timestamp = data[4:8]
         raw_size = data[8:12]
         if len(magic) != 4 or magic != imp.get_magic():
-            raise ImportError("bad magic number in {}".format(fullname))
+            raise ImportError("bad magic number in {}".format(fullname),
+                              name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
             raise EOFError("bad timestamp in {}".format(fullname))
         elif len(raw_size) != 4:
@@ -396,7 +399,8 @@ class _LoaderBasics:
             else:
                 if _r_long(raw_timestamp) != source_mtime:
                     raise ImportError(
-                        "bytecode is stale for {}".format(fullname))
+                        "bytecode is stale for {}".format(fullname),
+                        name=fullname, path=bytecode_path)
             try:
                 source_size = source_stats['size'] & 0xFFFFFFFF
             except KeyError:
@@ -404,7 +408,8 @@ class _LoaderBasics:
             else:
                 if _r_long(raw_size) != source_size:
                     raise ImportError(
-                        "bytecode is stale for {}".format(fullname))
+                        "bytecode is stale for {}".format(fullname),
+                        name=fullname, path=bytecode_path)
         # Can't return the code object as errors from marshal loading need to
         # propagate even when source is available.
         return data[12:]
@@ -466,7 +471,8 @@ class SourceLoader(_LoaderBasics):
         try:
             source_bytes = self.get_data(path)
         except IOError:
-            raise ImportError("source not available through get_data()")
+            raise ImportError("source not available through get_data()",
+                              name=fullname)
         encoding = tokenize.detect_encoding(_io.BytesIO(source_bytes).readline)
         newline_decoder = _io.IncrementalNewlineDecoder(None, True)
         return newline_decoder.decode(source_bytes.decode(encoding[0]))
@@ -495,6 +501,7 @@ class SourceLoader(_LoaderBasics):
                 else:
                     try:
                         bytes_data = self._bytes_from_bytecode(fullname, data,
+                                                               bytecode_path,
                                                                st)
                     except (ImportError, EOFError):
                         pass
@@ -505,7 +512,8 @@ class SourceLoader(_LoaderBasics):
                             return found
                         else:
                             msg = "Non-code object in {}"
-                            raise ImportError(msg.format(bytecode_path))
+                            raise ImportError(msg.format(bytecode_path),
+                                              name=fullname, path=bytecode_path)
         source_bytes = self.get_data(source_path)
         code_object = compile(source_bytes, source_path, 'exec',
                                 dont_inherit=True)
@@ -604,12 +612,13 @@ class _SourcelessFileLoader(_FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         data = self.get_data(path)
-        bytes_data = self._bytes_from_bytecode(fullname, data, None)
+        bytes_data = self._bytes_from_bytecode(fullname, data, path, None)
         found = marshal.loads(bytes_data)
         if isinstance(found, code_type):
             return found
         else:
-            raise ImportError("Non-code object in {}".format(path))
+            raise ImportError("Non-code object in {}".format(path),
+                              name=fullname, path=path)
 
     def get_source(self, fullname):
         """Return None as there is no source code."""
@@ -678,7 +687,8 @@ class PathFinder:
             except ImportError:
                 continue
         else:
-            raise ImportError("no path hook found for {0}".format(path))
+            raise ImportError("no path hook found for {0}".format(path),
+                              path=path)
 
     @classmethod
     def _path_importer_cache(cls, path, default=None):
@@ -836,7 +846,7 @@ def _file_path_hook(path):
                            _SourceFinderDetails(),
                            _SourcelessFinderDetails())
     else:
-        raise ImportError("only directories are supported")
+        raise ImportError("only directories are supported", path=path)
 
 
 _DEFAULT_PATH_HOOK = _file_path_hook
@@ -936,10 +946,10 @@ def _find_and_load(name, import_):
             path = parent_module.__path__
         except AttributeError:
             msg = (_ERR_MSG + '; {} is not a package').format(name, parent)
-            raise ImportError(msg)
+            raise ImportError(msg, name=name)
     loader = _find_module(name, path)
     if loader is None:
-        raise ImportError(_ERR_MSG.format(name))
+        raise ImportError(_ERR_MSG.format(name), name=name)
     elif name not in sys.modules:
         # The parent import may have already imported this module.
         loader.load_module(name)
@@ -978,7 +988,7 @@ def _gcd_import(name, package=None, level=0):
             if module is None:
                 message = ("import of {} halted; "
                             "None in sys.modules".format(name))
-                raise ImportError(message)
+                raise ImportError(message, name=name)
             return module
         except KeyError:
             pass  # Don't want to chain the exception

@@ -57,8 +57,9 @@ class LoaderTests(abc.LoaderTests):
 
     def test_unloadable(self):
         assert machinery.FrozenImporter.find_module('_not_real') is None
-        with self.assertRaises(ImportError):
+        with self.assertRaises(ImportError) as cm:
             machinery.FrozenImporter.load_module('_not_real')
+        self.assertEqual(cm.exception.name, '_not_real')
 
 
 class InspectLoaderTests(unittest.TestCase):
@@ -92,8 +93,9 @@ class InspectLoaderTests(unittest.TestCase):
         # Raise ImportError for modules that are not frozen.
         for meth_name in ('get_code', 'get_source', 'is_package'):
             method = getattr(machinery.FrozenImporter, meth_name)
-            with self.assertRaises(ImportError):
+            with self.assertRaises(ImportError) as cm:
                 method('importlib')
+            self.assertEqual(cm.exception.name, 'importlib')
 
 
 def test_main():
