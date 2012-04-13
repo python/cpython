@@ -236,10 +236,10 @@ the `new_callable` argument to `patch`.
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
-      (returning the real result and ignoring `return_value`). Attribute access
-      on the mock will return a Mock object that wraps the corresponding
-      attribute of the wrapped object (so attempting to access an attribute
-      that doesn't exist will raise an `AttributeError`).
+      (returning the real result). Attribute access on the mock will return a
+      Mock object that wraps the corresponding attribute of the wrapped
+      object (so attempting to access an attribute that doesn't exist will
+      raise an `AttributeError`).
 
       If the mock has an explicit `return_value` set then calls are not passed
       to the wrapped object and the `return_value` is returned instead.
