@@ -655,6 +655,10 @@ SOURCE=..\..\Python\pytime.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\random.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Objects\rangeobject.c
 # End Source File
 # Begin Source File
