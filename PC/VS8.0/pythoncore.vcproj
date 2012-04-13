@@ -1883,6 +1883,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Python\random.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Python\structmember.c"
 				>
 			</File>
