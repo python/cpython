@@ -902,8 +902,30 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.ENOTDIR, cm.exception)
 
 
+class ImportErrorTests(unittest.TestCase):
+
+    def test_attributes(self):
+        # Setting 'name' and 'path' should not be a problem.
+        exc = ImportError('test')
+        self.assertIsNone(exc.name)
+        self.assertIsNone(exc.path)
+
+        exc = ImportError('test', name='somemodule')
+        self.assertEqual(exc.name, 'somemodule')
+        self.assertIsNone(exc.path)
+
+        exc = ImportError('test', path='somepath')
+        self.assertEqual(exc.path, 'somepath')
+        self.assertIsNone(exc.name)
+
+        exc = ImportError('test', path='somepath', name='somename')
+        self.assertEqual(exc.name, 'somename')
+        self.assertEqual(exc.path, 'somepath')
+
+
+
 def test_main():
-    run_unittest(ExceptionTests)
+    run_unittest(ExceptionTests, ImportErrorTests)
 
 if __name__ == '__main__':
     unittest.main()
