@@ -1142,7 +1142,7 @@ The results printed are ::
     HELLO WORLD
     [(3.515625, 39.0625), (33.0625, 4.0), (5.640625, 90.25)]
 
-.. highlight:: python
+.. highlight:: python3
 
 
 .. _multiprocessing-managers:
@@ -2370,16 +2370,19 @@ Examples
 Demonstration of how to create and use customized managers and proxies:
 
 .. literalinclude:: ../includes/mp_newtype.py
+   :language: python3
 
 
 Using :class:`Pool`:
 
 .. literalinclude:: ../includes/mp_pool.py
+   :language: python3
 
 
 Synchronization types like locks, conditions and queues:
 
 .. literalinclude:: ../includes/mp_synchronize.py
+   :language: python3
 
 
 An example showing how to use queues to feed tasks to a collection of worker
