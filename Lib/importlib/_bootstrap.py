@@ -805,6 +805,7 @@ class _FileFinder:
         else:
             cache = self._path_cache
             cache_module = tail_module
+        # Check if the module is the name of a directory (and thus a package).
         if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
             if _path_isdir(base_path):
@@ -816,6 +817,7 @@ class _FileFinder:
                 else:
                     msg = "Not importing directory {}: missing __init__"
                     _warnings.warn(msg.format(base_path), ImportWarning)
+        # Check for a file w/ a proper suffix exists.
         for suffix, loader in self.modules:
             if cache_module + suffix in cache:
                 full_path = _path_join(self.path, tail_module + suffix)
