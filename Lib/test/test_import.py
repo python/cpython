@@ -172,6 +172,7 @@ class ImportTests(unittest.TestCase):
 
         # Need to be able to load from current dir.
         sys.path.append('')
+        importlib.invalidate_caches()
 
         try:
             make_legacy_pyc(filename)
