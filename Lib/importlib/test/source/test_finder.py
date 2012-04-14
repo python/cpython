@@ -1,10 +1,11 @@
-from importlib import _bootstrap
 from .. import abc
 from . import util as source_util
-from test.support import make_legacy_pyc
-import os
+
+from importlib import _bootstrap
 import errno
+import os
 import py_compile
+from test.support import make_legacy_pyc
 import unittest
 import warnings
 

@@ -1,5 +1,6 @@
-from importlib import _bootstrap
 from . import util as source_util
+
+from importlib import _bootstrap
 import unittest
 
 

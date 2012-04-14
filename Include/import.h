@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(void) _PyImportZip_Init(void);
+
+PyMODINIT_FUNC PyInit_imp(void);
 PyAPI_FUNC(long) PyImport_GetMagicNumber(void);
 PyAPI_FUNC(const char *) PyImport_GetMagicTag(void);
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModule(

@@ -106,10 +106,6 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
 
     if (_PyImport_FixupExtensionObject(m, name, path) < 0)
         goto error;
-    if (Py_VerboseFlag)
-        PySys_FormatStderr(
-            "import %U # dynamically loaded from %R\n",
-            name, path);
     Py_DECREF(nameascii);
     return m;
 

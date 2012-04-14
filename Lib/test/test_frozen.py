@@ -5,6 +5,12 @@ import unittest
 import sys
 
 class FrozenTests(unittest.TestCase):
+
+    module_attrs = frozenset(['__builtins__', '__cached__', '__doc__',
+                              '__file__', '__loader__', '__name__',
+                              '__package__'])
+    package_attrs = frozenset(list(module_attrs) + ['__path__'])
+
     def test_frozen(self):
         with captured_stdout() as stdout:
             try:
@@ -12,7 +18,9 @@ class FrozenTests(unittest.TestCase):
             except ImportError as x:
                 self.fail("import __hello__ failed:" + str(x))
             self.assertEqual(__hello__.initialized, True)
-            self.assertEqual(len(dir(__hello__)), 7, dir(__hello__))
+            expect = set(self.module_attrs)
+            expect.add('initialized')
+            self.assertEqual(set(dir(__hello__)), expect)
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
         with captured_stdout() as stdout:
@@ -21,10 +29,13 @@ class FrozenTests(unittest.TestCase):
             except ImportError as x:
                 self.fail("import __phello__ failed:" + str(x))
             self.assertEqual(__phello__.initialized, True)
+            expect = set(self.package_attrs)
+            expect.add('initialized')
             if not "__phello__.spam" in sys.modules:
-                self.assertEqual(len(dir(__phello__)), 8, dir(__phello__))
+                self.assertEqual(set(dir(__phello__)), expect)
             else:
-                self.assertEqual(len(dir(__phello__)), 9, dir(__phello__))
+                expect.add('spam')
+                self.assertEqual(set(dir(__phello__)), expect)
             self.assertEqual(__phello__.__path__, [__phello__.__name__])
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
@@ -34,8 +45,13 @@ class FrozenTests(unittest.TestCase):
             except ImportError as x:
                 self.fail("import __phello__.spam failed:" + str(x))
             self.assertEqual(__phello__.spam.initialized, True)
-            self.assertEqual(len(dir(__phello__.spam)), 7)
-            self.assertEqual(len(dir(__phello__)), 9)
+            spam_expect = set(self.module_attrs)
+            spam_expect.add('initialized')
+            self.assertEqual(set(dir(__phello__.spam)), spam_expect)
+            phello_expect = set(self.package_attrs)
+            phello_expect.add('initialized')
+            phello_expect.add('spam')
+            self.assertEqual(set(dir(__phello__)), phello_expect)
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
         try:

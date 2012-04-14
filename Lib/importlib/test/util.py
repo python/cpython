@@ -35,7 +35,7 @@ def uncache(*names):
     for name in names:
         if name in ('sys', 'marshal', 'imp'):
             raise ValueError(
-                "cannot uncache {0} as it will break _importlib".format(name))
+                "cannot uncache {0}".format(name))
         try:
             del sys.modules[name]
         except KeyError:

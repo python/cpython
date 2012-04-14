@@ -13,16 +13,4 @@ from test import regrtest
 if __name__ == '__main__':
     __builtins__.__import__ = importlib.__import__
 
-    exclude = ['--exclude',
-                'test_frozen', # Does not expect __loader__ attribute
-                'test_pkg',  # Does not expect __loader__ attribute
-                'test_pydoc', # Does not expect __loader__ attribute
-              ]
-
-    # Switching on --exclude implies running all test but the ones listed, so
-    # only use it when one is not running an explicit test
-    if len(sys.argv) == 1:
-        # No programmatic way to specify tests to exclude
-        sys.argv.extend(exclude)
-
     regrtest.main(quiet=True, verbose2=True)

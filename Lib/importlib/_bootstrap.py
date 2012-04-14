@@ -160,6 +160,13 @@ code_type = type(_wrap.__code__)
 
 # Finder/loader utility code ##################################################
 
+def verbose_message(message, *args):
+    """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
+    if sys.flags.verbose:
+        if not message.startswith('#') and not message.startswith('import '):
+            message = '# ' + message
+        print(message.format(*args), file=sys.stderr)
+
 
 def set_package(fxn):
     """Set __package__ on the returned module."""
@@ -388,9 +395,13 @@ class _LoaderBasics:
             raise ImportError("bad magic number in {}".format(fullname),
                               name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
-            raise EOFError("bad timestamp in {}".format(fullname))
+            message = 'bad timestamp in {}'.format(fullname)
+            verbose_message(message)
+            raise EOFError(message)
         elif len(raw_size) != 4:
-            raise EOFError("bad size in {}".format(fullname))
+            message = 'bad size in {}'.format(fullname)
+            verbose_message(message)
+            raise EOFError(message)
         if source_stats is not None:
             try:
                 source_mtime = int(source_stats['mtime'])
@@ -398,9 +409,10 @@ class _LoaderBasics:
                 pass
             else:
                 if _r_long(raw_timestamp) != source_mtime:
-                    raise ImportError(
-                        "bytecode is stale for {}".format(fullname),
-                        name=fullname, path=bytecode_path)
+                    message = 'bytecode is stale for {}'.format(fullname)
+                    verbose_message(message)
+                    raise ImportError(message, name=fullname,
+                                      path=bytecode_path)
             try:
                 source_size = source_stats['size'] & 0xFFFFFFFF
             except KeyError:
@@ -506,9 +518,13 @@ class SourceLoader(_LoaderBasics):
                     except (ImportError, EOFError):
                         pass
                     else:
+                        verbose_message('{} matches {}', bytecode_path,
+                                        source_path)
                         found = marshal.loads(bytes_data)
                         if isinstance(found, code_type):
                             imp._fix_co_filename(found, source_path)
+                            verbose_message('code object from {}',
+                                            bytecode_path)
                             return found
                         else:
                             msg = "Non-code object in {}"
@@ -517,6 +533,7 @@ class SourceLoader(_LoaderBasics):
         source_bytes = self.get_data(source_path)
         code_object = compile(source_bytes, source_path, 'exec',
                                 dont_inherit=True)
+        verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
             source_mtime is not None):
             # If e.g. Jython ever implements imp.cache_from_source to have
@@ -528,6 +545,7 @@ class SourceLoader(_LoaderBasics):
             data.extend(marshal.dumps(code_object))
             try:
                 self.set_data(bytecode_path, data)
+                verbose_message('wrote {!r}', bytecode_path)
             except NotImplementedError:
                 pass
         return code_object
@@ -596,6 +614,7 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data)
+            verbose_message('created {!r}', path)
         except (PermissionError, FileExistsError):
             # Don't worry if you can't write bytecode or someone is writing
             # it at the same time.
@@ -615,6 +634,7 @@ class _SourcelessFileLoader(_FileLoader, _LoaderBasics):
         bytes_data = self._bytes_from_bytecode(fullname, data, path, None)
         found = marshal.loads(bytes_data)
         if isinstance(found, code_type):
+            verbose_message('code object from {!r}', path)
             return found
         else:
             raise ImportError("Non-code object in {}".format(path),
@@ -644,7 +664,9 @@ class _ExtensionFileLoader:
         """Load an extension module."""
         is_reload = fullname in sys.modules
         try:
-            return imp.load_dynamic(fullname, self._path)
+            module = imp.load_dynamic(fullname, self._path)
+            verbose_message('extension module loaded from {!r}', self._path)
+            return module
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
@@ -953,6 +975,7 @@ def _find_and_load(name, import_):
     elif name not in sys.modules:
         # The parent import may have already imported this module.
         loader.load_module(name)
+        verbose_message('import {!r} # {!r}', name, loader)
     # Backwards-compatibility; be nicer to skip the dict lookup.
     module = sys.modules[name]
     if parent:

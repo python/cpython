@@ -299,9 +299,8 @@ def safeimport(path, forceload=0, cache={}):
         elif exc is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
             raise ErrorDuringImport(value.filename, info)
-        elif exc is ImportError and extract_tb(tb)[-1][2]=='safeimport':
-            # The import error occurred directly in this function,
-            # which means there is no such module in the path.
+        elif exc is ImportError and value.name == path:
+            # No such module in the path.
             return None
         else:
             # Some other error occurred during the importing process.

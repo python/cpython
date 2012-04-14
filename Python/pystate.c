@@ -79,6 +79,7 @@ PyInterpreterState_New(void)
         interp->codec_error_registry = NULL;
         interp->codecs_initialized = 0;
         interp->fscodec_initialized = 0;
+        interp->importlib = NULL;
 #ifdef HAVE_DLOPEN
 #ifdef RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
@@ -116,6 +117,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->modules_reloading);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+    Py_CLEAR(interp->importlib);
 }
 
 

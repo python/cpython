@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #2377: Make importlib the implementation of __import__().
+
 - Issue #1559549: ImportError now has 'name' and 'path' attributes that are set
   using keyword arguments to its constructor. They are currently not set by
   import as they are meant for use by importlib.

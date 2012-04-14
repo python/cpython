@@ -788,6 +788,16 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     return ep->me_value;
 }
 
+PyObject *
+_PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
+{
+    PyObject *kv;
+    kv = _PyUnicode_FromId(key); /* borrowed */
+    if (kv == NULL)
+        return NULL;
+    return PyDict_GetItemWithError(dp, kv);
+}
+
 static int
 dict_set_item_by_hash_or_entry(register PyObject *op, PyObject *key,
                                Py_hash_t hash, PyDictEntry *ep, PyObject *value)
