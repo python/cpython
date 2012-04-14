@@ -90,7 +90,7 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-.. highlight:: none
+.. highlight:: bash
 
 Using json.tool from the shell to validate and pretty-print::
 
@@ -98,10 +98,10 @@ Using json.tool from the shell to validate and pretty-print::
     {
         "json": "obj"
     }
-    $ echo '{ 1.2:3.4}' | python -mjson.tool
-    Expecting property name: line 1 column 2 (char 2)
+    $ echo '{1.2:3.4}' | python -mjson.tool
+    Expecting property name: line 1 column 1 (char 1)
 
-.. highlight:: python
+.. highlight:: python3
 
 .. note::
 
