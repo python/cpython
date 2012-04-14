@@ -2344,9 +2344,9 @@ PyObject *PyExc_RecursionErrorInst = NULL;
 #endif /* MS_WINDOWS */
 
 void
-_PyExc_Init(void)
+_PyExc_Init(PyObject *bltinmod)
 {
-    PyObject *bltinmod, *bdict;
+    PyObject *bdict;
 
     PRE_INIT(BaseException)
     PRE_INIT(Exception)
@@ -2414,9 +2414,6 @@ _PyExc_Init(void)
     PRE_INIT(ProcessLookupError);
     PRE_INIT(TimeoutError);
 
-    bltinmod = PyImport_ImportModule("builtins");
-    if (bltinmod == NULL)
-        Py_FatalError("exceptions bootstrapping error.");
     bdict = PyModule_GetDict(bltinmod);
     if (bdict == NULL)
         Py_FatalError("exceptions bootstrapping error.");
@@ -2546,7 +2543,6 @@ _PyExc_Init(void)
             Py_DECREF(args_tuple);
         }
     }
-    Py_DECREF(bltinmod);
 }
 
 void

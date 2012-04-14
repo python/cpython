@@ -1,6 +1,5 @@
 import functools
 import importlib
-import importlib._bootstrap
 import unittest
 
 

@@ -187,7 +187,7 @@ builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"name", "globals", "locals", "fromlist",
                              "level", 0};
     PyObject *name, *globals = NULL, *locals = NULL, *fromlist = NULL;
-    int level = -1;
+    int level = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "U|OOOi:__import__",
                     kwlist, &name, &globals, &locals, &fromlist, &level))

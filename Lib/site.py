@@ -81,7 +81,8 @@ def makepath(*paths):
 def abs_paths():
     """Set all module __file__ and __cached__ attributes to an absolute path"""
     for m in set(sys.modules.values()):
-        if hasattr(m, '__loader__'):
+        if (getattr(getattr(m, '__loader__', None), '__module__', None) !=
+                '_frozen_importlib'):
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)

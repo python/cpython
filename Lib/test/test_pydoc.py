@@ -383,11 +383,10 @@ class PydocImportTest(unittest.TestCase):
         modname = 'testmod_xyzzy'
         testpairs = (
             ('i_am_not_here', 'i_am_not_here'),
-            ('test.i_am_not_here_either', 'i_am_not_here_either'),
-            ('test.i_am_not_here.neither_am_i', 'i_am_not_here.neither_am_i'),
-            ('i_am_not_here.{}'.format(modname),
-             'i_am_not_here.{}'.format(modname)),
-            ('test.{}'.format(modname), modname),
+            ('test.i_am_not_here_either', 'test.i_am_not_here_either'),
+            ('test.i_am_not_here.neither_am_i', 'test.i_am_not_here'),
+            ('i_am_not_here.{}'.format(modname), 'i_am_not_here'),
+            ('test.{}'.format(modname), 'test.{}'.format(modname)),
             )
 
         sourcefn = os.path.join(TESTFN, modname) + os.extsep + "py"

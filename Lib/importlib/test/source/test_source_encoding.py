@@ -1,6 +1,6 @@
-from importlib import _bootstrap
 from . import util as source_util
 
+from importlib import _bootstrap
 import codecs
 import re
 import sys
@@ -36,7 +36,7 @@ class EncodingTest(unittest.TestCase):
             with open(mapping[self.module_name], 'wb') as file:
                 file.write(source)
             loader = _bootstrap._SourceFileLoader(self.module_name,
-                                       mapping[self.module_name])
+                                                  mapping[self.module_name])
             return loader.load_module(self.module_name)
 
     def create_source(self, encoding):

@@ -190,6 +190,58 @@ get_locale_encoding(void)
 #endif
 }
 
+static void
+import_init(PyInterpreterState *interp, PyObject *sysmod)
+{
+    PyObject *importlib;
+    PyObject *impmod;
+    PyObject *sys_modules;
+    PyObject *value;
+
+    /* Import _importlib through its frozen version, _frozen_importlib. */
+    /* XXX(bcannon): The file path for _frozen_importlib is completely off
+     */
+    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+        Py_FatalError("Py_Initialize: can't import _frozen_importlib");
+    }
+    else if (Py_VerboseFlag) {
+        PySys_FormatStderr("import _frozen_importlib # frozen\n");
+    }
+    importlib = PyImport_AddModule("_frozen_importlib");
+    if (importlib == NULL) {
+        Py_FatalError("Py_Initialize: couldn't get _frozen_importlib from "
+                      "sys.modules");
+    }
+    interp->importlib = importlib;
+    Py_INCREF(interp->importlib);
+
+    /* Install _importlib as __import__ */
+    impmod = PyInit_imp();
+    if (impmod == NULL) {
+        Py_FatalError("Py_Initialize: can't import imp");
+    }
+    else if (Py_VerboseFlag) {
+        PySys_FormatStderr("import imp # builtin\n");
+    }
+    sys_modules = PyImport_GetModuleDict();
+    if (Py_VerboseFlag) {
+        PySys_FormatStderr("import sys # builtin\n");
+    }
+    if (PyDict_SetItemString(sys_modules, "imp", impmod) < 0) {
+        Py_FatalError("Py_Initialize: can't save imp to sys.modules");
+    }
+
+    value = PyObject_CallMethod(importlib, "_setup", "OO", sysmod, impmod);
+    if (value == NULL) {
+        PyErr_Print();
+        Py_FatalError("Py_Initialize: importlib install failed");
+    }
+    Py_DECREF(value);
+
+    _PyImportZip_Init();
+}
+
+
 void
 Py_InitializeEx(int install_sigs)
 {
@@ -281,7 +333,7 @@ Py_InitializeEx(int install_sigs)
     Py_INCREF(interp->builtins);
 
     /* initialize builtin exceptions */
-    _PyExc_Init();
+    _PyExc_Init(bimod);
 
     sysmod = _PySys_Init();
     if (sysmod == NULL)
@@ -314,6 +366,8 @@ Py_InitializeEx(int install_sigs)
 
     /* Initialize _warnings. */
     _PyWarnings_Init();
+
+    import_init(interp, sysmod);
 
     _PyTime_Init();
 
@@ -638,11 +692,12 @@ Py_NewInterpreter(void)
     }
 
     /* initialize builtin exceptions */
-    _PyExc_Init();
+    _PyExc_Init(bimod);
 
     sysmod = _PyImport_FindBuiltin("sys");
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
+
         interp->sysdict = PyModule_GetDict(sysmod);
         if (interp->sysdict == NULL)
             goto handle_error;
@@ -660,6 +715,8 @@ Py_NewInterpreter(void)
         Py_DECREF(pstderr);
 
         _PyImportHooks_Init();
+
+        import_init(interp, sysmod);
 
         if (initfsencoding(interp) < 0)
             goto handle_error;

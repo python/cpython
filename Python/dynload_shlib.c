@@ -115,10 +115,6 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
     dlopenflags = PyThreadState_GET()->interp->dlopenflags;
 #endif
 
-    if (Py_VerboseFlag)
-        PySys_WriteStderr("dlopen(\"%s\", %x);\n", pathname,
-                          dlopenflags);
-
 #ifdef __VMS
     /* VMS currently don't allow a pathname, use a logical name instead */
     /* Concatenate 'python_module_' and shortname */
