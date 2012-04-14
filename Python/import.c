@@ -2889,12 +2889,12 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             Py_INCREF(package);
 
             if (_PyDict_GetItemId(globals, &PyId___path__) == NULL) {
+                PyObject *partition = NULL;
                 PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
                 if (borrowed_dot == NULL) {
                     goto error;
                 }
-                PyObject *partition = PyUnicode_RPartition(package,
-                                                           borrowed_dot);
+                partition = PyUnicode_RPartition(package, borrowed_dot);
                 Py_DECREF(package);
                 if (partition == NULL) {
                     goto error;
