@@ -1,7 +1,6 @@
-
 import test.support, unittest
 from test.support import TESTFN, unlink, unload
-import os, sys
+import importlib, os, sys
 
 class CodingTest(unittest.TestCase):
     def test_bad_coding(self):
@@ -40,6 +39,7 @@ class CodingTest(unittest.TestCase):
             f.write("'A very long string %s'\n" % ("X" * 1000))
             f.close()
 
+            importlib.invalidate_caches()
             __import__(TESTFN)
         finally:
             f.close()
