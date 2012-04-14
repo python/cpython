@@ -2963,7 +2963,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         Py_INCREF(abs_name);
     }
 
-#if WITH_THREAD
+#ifdef WITH_THREAD
     _PyImport_AcquireLock();
 #endif
    /* From this point forward, goto error_with_unlock! */
@@ -2999,13 +2999,14 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     if (PyObject_Not(fromlist)) {
         if (level == 0 || PyUnicode_GET_LENGTH(name) > 0) {
             PyObject *front = NULL;
+            PyObject *partition = NULL;
             PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
 
             if (borrowed_dot == NULL) {
                 goto error_with_unlock;
             }
 
-            PyObject *partition = PyUnicode_Partition(name, borrowed_dot);
+            partition = PyUnicode_Partition(name, borrowed_dot);
             if (partition == NULL) {
                 goto error_with_unlock;
             }
@@ -3043,7 +3044,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                                   NULL);
     }
   error_with_unlock:
-#if WITH_THREAD
+#ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
         PyErr_SetString(PyExc_RuntimeError, "not holding the import lock");
     }
