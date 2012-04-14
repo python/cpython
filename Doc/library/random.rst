@@ -315,7 +315,7 @@ Basic usage::
    >>> random.sample([1, 2, 3, 4, 5],  3)   # Three samples without replacement
    [4, 1, 5]
 
-A common task is to make a :func:`random.choice` with weighted probababilites.
+A common task is to make a :func:`random.choice` with weighted probabilities.
 
 If the weights are small integer ratios, a simple technique is to build a sample
 population with repeats::
