@@ -25,6 +25,7 @@ typedef struct _is {
     PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
+    PyObject *importlib;
     PyObject *modules_reloading;
 
     PyObject *codec_search_path;
@@ -32,6 +33,7 @@ typedef struct _is {
     PyObject *codec_error_registry;
     int codecs_initialized;
     int fscodec_initialized;
+
 
 #ifdef HAVE_DLOPEN
     int dlopenflags;

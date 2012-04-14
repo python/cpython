@@ -322,7 +322,7 @@ class TestCoverage(unittest.TestCase):
             self._coverage(tracer)
         if os.path.exists(TESTFN):
             files = os.listdir(TESTFN)
-            self.assertEqual(files, [])
+            self.assertEqual(files, ['_importlib.cover'])  # Ignore __import__
 
     def test_issue9936(self):
         tracer = trace.Trace(trace=0, count=1)

@@ -1,5 +1,5 @@
+from ... import _bootstrap
 import importlib
-from importlib import _bootstrap
 from .. import abc
 from .. import util
 from . import util as source_util

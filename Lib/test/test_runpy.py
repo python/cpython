@@ -5,6 +5,7 @@ import os.path
 import sys
 import re
 import tempfile
+import importlib
 import py_compile
 from test.support import (
     forget, make_legacy_pyc, run_unittest, unload, verbose, no_tracing,
@@ -172,11 +173,13 @@ class RunModuleTest(unittest.TestCase):
             self.assertIn("x", d1)
             self.assertEqual(d1["x"], 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
+            importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
             unload(mod_name)  # In case loader caches paths
             if verbose: print("Running from compiled:", mod_name)
+            importlib.invalidate_caches()
             d2 = run_module(mod_name) # Read from bytecode
             self.assertIn("x", d2)
             self.assertEqual(d2["x"], 1)
@@ -196,11 +199,13 @@ class RunModuleTest(unittest.TestCase):
             self.assertIn("x", d1)
             self.assertTrue(d1["x"] == 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
+            importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
             unload(mod_name)  # In case loader caches paths
             if verbose: print("Running from compiled:", pkg_name)
+            importlib.invalidate_caches()
             d2 = run_module(pkg_name) # Read from bytecode
             self.assertIn("x", d2)
             self.assertTrue(d2["x"] == 1)
@@ -250,11 +255,13 @@ from ..uncle.cousin import nephew
             self.assertIn("sibling", d1)
             self.assertIn("nephew", d1)
             del d1 # Ensure __loader__ entry doesn't keep file open
+            importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
             unload(mod_name)  # In case the loader caches paths
             if verbose: print("Running from compiled:", mod_name)
+            importlib.invalidate_caches()
             d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
             self.assertIn("__package__", d2)
             self.assertTrue(d2["__package__"] == pkg_name)

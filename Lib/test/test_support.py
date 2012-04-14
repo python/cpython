@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import importlib
 import sys
 import os
 import unittest
@@ -59,6 +60,7 @@ class TestSupport(unittest.TestCase):
         with open(mod_filename, 'w') as f:
             print('foo = 1', file=f)
         sys.path.insert(0, os.curdir)
+        importlib.invalidate_caches()
         try:
             mod = __import__(TESTFN)
             self.assertIn(TESTFN, sys.modules)

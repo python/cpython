@@ -42,6 +42,8 @@ def _get_exports_list(module):
     except AttributeError:
         return [n for n in dir(module) if n[0] != '_']
 
+# Any new dependencies of the os module and/or changes in path separator
+# requires updating importlib as well.
 if 'posix' in _names:
     name = 'posix'
     linesep = '\n'

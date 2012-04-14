@@ -87,7 +87,7 @@ class FinderTests(unittest.TestCase):
 
 class DefaultPathFinderTests(unittest.TestCase):
 
-    """Test importlib._bootstrap._DefaultPathFinder."""
+    """Test _bootstrap._DefaultPathFinder."""
 
     def test_implicit_hooks(self):
         # Test that the implicit path hooks are used.

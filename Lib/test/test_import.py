@@ -73,6 +73,7 @@ class ImportTests(unittest.TestCase):
 
             if TESTFN in sys.modules:
                 del sys.modules[TESTFN]
+            importlib.invalidate_caches()
             try:
                 try:
                     mod = __import__(TESTFN)
@@ -402,6 +403,7 @@ func_filename = func.__code__.co_filename
         py_compile.compile(self.file_name, dfile=target)
         os.remove(self.file_name)
         pyc_file = make_legacy_pyc(self.file_name)
+        importlib.invalidate_caches()
         mod = self.import_module()
         self.assertEqual(mod.module_filename, pyc_file)
         self.assertEqual(mod.code_filename, target)
@@ -509,7 +511,7 @@ class RelativeImportTests(unittest.TestCase):
 
         # Check relative import fails with package set to a non-string
         ns = dict(__package__=object())
-        self.assertRaises(ValueError, check_relative)
+        self.assertRaises(TypeError, check_relative)
 
     def test_absolute_import_without_future(self):
         # If explicit relative import syntax is used, then do not try
@@ -644,6 +646,7 @@ class PycacheTests(unittest.TestCase):
             pass
         unload('pep3147.foo')
         unload('pep3147')
+        importlib.invalidate_caches()
         m = __import__('pep3147.foo')
         init_pyc = imp.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
@@ -666,9 +669,11 @@ class PycacheTests(unittest.TestCase):
             pass
         with open(os.path.join('pep3147', 'foo.py'), 'w'):
             pass
+        importlib.invalidate_caches()
         m = __import__('pep3147.foo')
         unload('pep3147.foo')
         unload('pep3147')
+        importlib.invalidate_caches()
         m = __import__('pep3147.foo')
         init_pyc = imp.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
