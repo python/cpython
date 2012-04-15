@@ -24,9 +24,6 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         /* The (size_t)cast ensures that the addition and subsequent division
            are performed as unsigned operations, avoiding difficulties from
            signed overflow.  (See issue 13496.) */
-        printf("lo: %d\n", lo);
-        printf("hi: %d\n", hi);
-        printf("mid: %d\n", mid);
         mid = ((size_t)lo + hi) / 2;
         litem = PySequence_GetItem(list, mid);
         if (litem == NULL)
