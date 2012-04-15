@@ -85,3 +85,55 @@ The module defines the following names:
 
       In other implementations of Python, this type may be identical to
       ``GetSetDescriptorType``.
+
+.. class:: MappingProxyType(mapping)
+
+   Read-only proxy of a mapping. It provides a dynamic view on the mapping's
+   entries, which means that when the mapping changes, the view reflects these
+   changes.
+
+   .. versionadded:: 3.3
+
+   .. describe:: key in proxy
+
+      Return ``True`` if the underlying mapping has a key *key*, else
+      ``False``.
+
+   .. describe:: proxy[key]
+
+      Return the item of the underlying mapping with key *key*.  Raises a
+      :exc:`KeyError` if *key* is not in the underlying mapping.
+
+   .. describe:: iter(proxy)
+
+      Return an iterator over the keys of the underlying mapping.  This is a
+      shortcut for ``iter(proxy.keys())``.
+
+   .. describe:: len(proxy)
+
+      Return the number of items in the underlying mapping.
+
+   .. method:: copy()
+
+      Return a shallow copy of the underlying mapping.
+
+   .. method:: get(key[, default])
+
+      Return the value for *key* if *key* is in the underlying mapping, else
+      *default*.  If *default* is not given, it defaults to ``None``, so that
+      this method never raises a :exc:`KeyError`.
+
+   .. method:: items()
+
+      Return a new view of the underlying mapping's items (``(key, value)``
+      pairs).
+
+   .. method:: keys()
+
+      Return a new view of the underlying mapping's keys.
+
+   .. method:: values()
+
+      Return a new view of the underlying mapping's values.
+
+

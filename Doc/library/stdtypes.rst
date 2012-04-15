@@ -2258,13 +2258,13 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: items()
 
-      Return a new view of the dictionary's items (``(key, value)`` pairs).  See
-      below for documentation of view objects.
+      Return a new view of the dictionary's items (``(key, value)`` pairs).
+      See the :ref:`documentation of view objects <dict-views>`.
 
    .. method:: keys()
 
-      Return a new view of the dictionary's keys.  See below for documentation of
-      view objects.
+      Return a new view of the dictionary's keys.  See the :ref:`documentation
+      of view objects <dict-views>`.
 
    .. method:: pop(key[, default])
 
@@ -2298,8 +2298,12 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: values()
 
-      Return a new view of the dictionary's values.  See below for documentation of
-      view objects.
+      Return a new view of the dictionary's values.  See the
+      :ref:`documentation of view objects <dict-views>`.
+
+.. seealso::
+   :class:`types.MappingProxyType` can be used to create a read-only view
+   of a :class:`dict`.
 
 
 .. _dict-views:

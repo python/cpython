@@ -12,6 +12,7 @@ def _f(): pass
 FunctionType = type(_f)
 LambdaType = type(lambda: None)         # Same as FunctionType
 CodeType = type(_f.__code__)
+MappingProxyType = type(type.__dict__)
 
 def _g():
     yield 1
