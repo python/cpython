@@ -974,12 +974,12 @@ def _find_and_load(name, import_):
     loader = _find_module(name, path)
     if loader is None:
         raise ImportError(_ERR_MSG.format(name), name=name)
-    elif name not in sys.modules:
-        # The parent import may have already imported this module.
-        loader.load_module(name)
+    elif name in sys.modules:
+        # The parent module already imported this module.
+        module = sys.modules[name]
+    else:
+        module = loader.load_module(name)
         verbose_message('import {!r} # {!r}', name, loader)
-    # Backwards-compatibility; be nicer to skip the dict lookup.
-    module = sys.modules[name]
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
@@ -1078,7 +1078,11 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         # Return up to the first dot in 'name'. This is complicated by the fact
         # that 'name' may be relative.
         if level == 0:
-            return sys.modules[name.partition('.')[0]]
+            index = name.find('.')
+            if index == -1:
+                return module
+            else:
+                return sys.modules[name[:index]]
         elif not name:
             return module
         else:

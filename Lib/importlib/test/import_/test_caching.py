@@ -47,36 +47,12 @@ class UseCache(unittest.TestCase):
         mock.load_module = MethodType(load_module, mock)
         return mock
 
-    # __import__ inconsistent between loaders and built-in import when it comes
-    #   to when to use the module in sys.modules and when not to.
-    @import_util.importlib_only
-    def test_using_cache_after_loader(self):
-        # [from cache on return]
-        with self.create_mock('module') as mock:
+    def test_using_loader_return(self):
+        loader_return = 'hi there!'
+        with self.create_mock('module', return_=loader_return) as mock:
             with util.import_state(meta_path=[mock]):
                 module = import_util.import_('module')
-                self.assertEqual(id(module), id(sys.modules['module']))
-
-    # See test_using_cache_after_loader() for reasoning.
-    @import_util.importlib_only
-    def test_using_cache_for_assigning_to_attribute(self):
-        # [from cache to attribute]
-        with self.create_mock('pkg.__init__', 'pkg.module') as importer:
-            with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg.module')
-                self.assertTrue(hasattr(module, 'module'))
-                self.assertTrue(id(module.module), id(sys.modules['pkg.module']))
-
-    # See test_using_cache_after_loader() for reasoning.
-    @import_util.importlib_only
-    def test_using_cache_for_fromlist(self):
-        # [from cache for fromlist]
-        with self.create_mock('pkg.__init__', 'pkg.module') as importer:
-            with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg', fromlist=['module'])
-                self.assertTrue(hasattr(module, 'module'))
-                self.assertEqual(id(module.module),
-                                 id(sys.modules['pkg.module']))
+                self.assertEqual(module, loader_return)
 
 
 def test_main():
