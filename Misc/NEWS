@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13496: Fix potential overflow in bisect.bisect algorithm when applied
+  to a collection of size > sys.maxsize / 2.
+
 - Issue #14399: zipfile now recognizes that the archive has been modified even
   if only the comment is changed.  In addition, the TypeError that results from
   trying to set a non-binary value as a comment is now now raised at the time
