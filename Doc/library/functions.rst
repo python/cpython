@@ -1447,8 +1447,9 @@ are always available.  They are listed here in alphabetical order.
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
    :keyword:`import` statement, but nowadays it is usually simpler to use import
-   hooks (see :pep:`302`).  Direct use of :func:`__import__` is rare, except in
-   cases where you want to import a module whose name is only known at runtime.
+   hooks (see :pep:`302`) to attain the same goals.  Direct use of
+   :func:`__import__` is entirely discouraged in favor of
+   :func:`importlib.import_module`.
 
    The function imports the module *name*, potentially using the given *globals*
    and *locals* to determine how to interpret the name in a package context.
@@ -1460,7 +1461,8 @@ are always available.  They are listed here in alphabetical order.
    *level* specifies whether to use absolute or relative imports. ``0`` (the
    default) means only perform absolute imports.  Positive values for
    *level* indicate the number of parent directories to search relative to the
-   directory of the module calling :func:`__import__`.
+   directory of the module calling :func:`__import__` (see :pep:`328` for the
+   details).
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the
