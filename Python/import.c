@@ -2980,8 +2980,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
 
     mod = PyDict_GetItem(interp->modules, abs_name);
     if (mod == Py_None) {
-        PyErr_Format(PyExc_ImportError,
-                     "import of %R halted; None in sys.modules", abs_name);
+        PyObject *msg = PyUnicode_FromFormat("import of %R halted; "
+                                             "None in sys.modules", abs_name);
+        if (msg != NULL) {
+            PyErr_SetFromImportErrorWithName(msg, abs_name);
+        }
         goto error_with_unlock;
     }
     else if (mod != NULL) {
