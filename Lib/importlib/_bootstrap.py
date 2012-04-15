@@ -23,7 +23,7 @@ CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
 
 def _make_relax_case():
-    if any(map(sys.platform.startswith, CASE_INSENSITIVE_PLATFORMS)):
+    if sys.platform.startswith(CASE_INSENSITIVE_PLATFORMS):
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
             return b'PYTHONCASEOK' in _os.environ
@@ -163,7 +163,7 @@ code_type = type(_wrap.__code__)
 def verbose_message(message, *args):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose:
-        if not message.startswith('#') and not message.startswith('import '):
+        if not message.startswith(('#', 'import ')):
             message = '# ' + message
         print(message.format(*args), file=sys.stderr)
 
