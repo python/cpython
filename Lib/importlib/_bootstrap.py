@@ -1083,7 +1083,7 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
             return module
         else:
             cut_off = len(name) - len(name.partition('.')[0])
-            return sys.modules[module.__name__[:-cut_off]]
+            return sys.modules[module.__name__[:len(module.__name__)-cut_off]]
     else:
         return _handle_fromlist(module, fromlist, _gcd_import)
 
