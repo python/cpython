@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 			/>
@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 			/>
@@ -182,7 +182,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 			/>
@@ -245,7 +245,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 				TargetMachine="17"
@@ -309,7 +309,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 			/>
@@ -372,7 +372,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				IgnoreDefaultLibraryNames="libc"
 				BaseAddress="0x1D110000"
 				TargetMachine="17"
