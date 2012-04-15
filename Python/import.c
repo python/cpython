@@ -3685,15 +3685,6 @@ imp_load_package(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_new_module(PyObject *self, PyObject *args)
-{
-    PyObject *name;
-    if (!PyArg_ParseTuple(args, "U:new_module", &name))
-        return NULL;
-    return PyModule_NewObject(name);
-}
-
-static PyObject *
 imp_reload(PyObject *self, PyObject *v)
 {
     return PyImport_ReloadModule(v);
@@ -3781,8 +3772,7 @@ does not conform to PEP 3147 format, ValueError will be raised.");
 /* Doc strings */
 
 PyDoc_STRVAR(doc_imp,
-"This module provides the components needed to build your own\n\
-__import__ function.  Undocumented functions are obsolete.");
+"(Extremely) low-level import machinery bits as used by importlib and imp.");
 
 PyDoc_STRVAR(doc_find_module,
 "find_module(name, [path]) -> (file, filename, (suffix, mode, type))\n\
@@ -3809,11 +3799,6 @@ PyDoc_STRVAR(doc_get_suffixes,
 Return a list of (suffix, mode, type) tuples describing the files\n\
 that find_module() looks for.");
 
-PyDoc_STRVAR(doc_new_module,
-"new_module(name) -> module\n\
-Create a new module.  Do not enter it in sys.modules.\n\
-The module name must include the full package name, if any.");
-
 PyDoc_STRVAR(doc_lock_held,
 "lock_held() -> boolean\n\
 Return True if the import lock is currently held, else False.\n\
@@ -3837,7 +3822,6 @@ static PyMethodDef imp_methods[] = {
     {"get_tag",          imp_get_tag,      METH_NOARGS,  doc_get_tag},
     {"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
     {"load_module",      imp_load_module,  METH_VARARGS, doc_load_module},
-    {"new_module",       imp_new_module,   METH_VARARGS, doc_new_module},
     {"lock_held",        imp_lock_held,    METH_NOARGS,  doc_lock_held},
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
@@ -4005,7 +3989,7 @@ PyTypeObject PyNullImporter_Type = {
 
 static struct PyModuleDef impmodule = {
     PyModuleDef_HEAD_INIT,
-    "imp",
+    "_imp",
     doc_imp,
     0,
     imp_methods,

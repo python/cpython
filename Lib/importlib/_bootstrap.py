@@ -7,7 +7,7 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 
-# Injected modules are '_warnings', 'imp', 'sys', 'marshal', '_io',
+# Injected modules are '_warnings', '_imp', 'sys', 'marshal', '_io',
 # and '_os' (a.k.a. 'posix', 'nt' or 'os2').
 # Injected attribute is path_sep.
 # Most injection is handled by _setup().
@@ -158,6 +158,16 @@ def _wrap(new, old):
 
 code_type = type(_wrap.__code__)
 
+
+def _new_module(name):
+    """Create a new module.
+
+    The module is not entered into sys.modules.
+
+    """
+    return type(sys)(name)
+
+
 # Finder/loader utility code ##################################################
 
 def verbose_message(message, *args):
@@ -212,7 +222,7 @@ def module_for_loader(fxn):
             # This must be done before open() is called as the 'io' module
             # implicitly imports 'locale' and would otherwise trigger an
             # infinite loop.
-            module = imp.new_module(fullname)
+            module = _new_module(fullname)
             sys.modules[fullname] = module
         try:
             return fxn(self, module, *args, **kwargs)
@@ -254,7 +264,7 @@ def _requires_builtin(fxn):
 def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
-        if not imp.is_frozen(fullname):
+        if not _imp.is_frozen(fullname):
             raise ImportError("{0} is not a frozen module".format(fullname),
                               name=fullname)
         return fxn(self, fullname)
@@ -264,7 +274,7 @@ def _requires_frozen(fxn):
 
 def _suffix_list(suffix_type):
     """Return a list of file suffixes based on the imp file type."""
-    return [suffix[0] for suffix in imp.get_suffixes()
+    return [suffix[0] for suffix in _imp.get_suffixes()
             if suffix[2] == suffix_type]
 
 
@@ -288,7 +298,7 @@ class BuiltinImporter:
         """
         if path is not None:
             return None
-        return cls if imp.is_builtin(fullname) else None
+        return cls if _imp.is_builtin(fullname) else None
 
     @classmethod
     @set_package
@@ -298,7 +308,7 @@ class BuiltinImporter:
         """Load a built-in module."""
         is_reload = fullname in sys.modules
         try:
-            return imp.init_builtin(fullname)
+            return _imp.init_builtin(fullname)
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
@@ -335,7 +345,7 @@ class FrozenImporter:
     @classmethod
     def find_module(cls, fullname, path=None):
         """Find a frozen module."""
-        return cls if imp.is_frozen(fullname) else None
+        return cls if _imp.is_frozen(fullname) else None
 
     @classmethod
     @set_package
@@ -345,7 +355,7 @@ class FrozenImporter:
         """Load a frozen module."""
         is_reload = fullname in sys.modules
         try:
-            return imp.init_frozen(fullname)
+            return _imp.init_frozen(fullname)
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
@@ -355,7 +365,7 @@ class FrozenImporter:
     @_requires_frozen
     def get_code(cls, fullname):
         """Return the code object for the frozen module."""
-        return imp.get_frozen_object(fullname)
+        return _imp.get_frozen_object(fullname)
 
     @classmethod
     @_requires_frozen
@@ -367,7 +377,7 @@ class FrozenImporter:
     @_requires_frozen
     def is_package(cls, fullname):
         """Return if the frozen module is a package."""
-        return imp.is_frozen_package(fullname)
+        return _imp.is_frozen_package(fullname)
 
 
 class _LoaderBasics:
@@ -391,7 +401,7 @@ class _LoaderBasics:
         magic = data[:4]
         raw_timestamp = data[4:8]
         raw_size = data[8:12]
-        if len(magic) != 4 or magic != imp.get_magic():
+        if len(magic) != 4 or magic != _imp.get_magic():
             raise ImportError("bad magic number in {}".format(fullname),
                               name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
@@ -434,7 +444,7 @@ class _LoaderBasics:
         code_object = self.get_code(name)
         module.__file__ = self.get_filename(name)
         if not sourceless:
-            module.__cached__ = imp.cache_from_source(module.__file__)
+            module.__cached__ = _imp.cache_from_source(module.__file__)
         else:
             module.__cached__ = module.__file__
         module.__package__ = name
@@ -497,7 +507,7 @@ class SourceLoader(_LoaderBasics):
 
         """
         source_path = self.get_filename(fullname)
-        bytecode_path = imp.cache_from_source(source_path)
+        bytecode_path = _imp.cache_from_source(source_path)
         source_mtime = None
         if bytecode_path is not None:
             try:
@@ -522,7 +532,7 @@ class SourceLoader(_LoaderBasics):
                                         source_path)
                         found = marshal.loads(bytes_data)
                         if isinstance(found, code_type):
-                            imp._fix_co_filename(found, source_path)
+                            _imp._fix_co_filename(found, source_path)
                             verbose_message('code object from {}',
                                             bytecode_path)
                             return found
@@ -539,7 +549,7 @@ class SourceLoader(_LoaderBasics):
             # If e.g. Jython ever implements imp.cache_from_source to have
             # their own cached file format, this block of code will most likely
             # throw an exception.
-            data = bytearray(imp.get_magic())
+            data = bytearray(_imp.get_magic())
             data.extend(_w_long(source_mtime))
             data.extend(_w_long(len(source_bytes)))
             data.extend(marshal.dumps(code_object))
@@ -664,7 +674,7 @@ class _ExtensionFileLoader:
         """Load an extension module."""
         is_reload = fullname in sys.modules
         try:
-            module = imp.load_dynamic(fullname, self._path)
+            module = _imp.load_dynamic(fullname, self._path)
             verbose_message('extension module loaded from {!r}', self._path)
             return module
         except:
@@ -841,7 +851,7 @@ class _SourceFinderDetails:
     supports_packages = True
 
     def __init__(self):
-        self.suffixes = _suffix_list(imp.PY_SOURCE)
+        self.suffixes = _suffix_list(_imp.PY_SOURCE)
 
 class _SourcelessFinderDetails:
 
@@ -849,7 +859,7 @@ class _SourcelessFinderDetails:
     supports_packages = True
 
     def __init__(self):
-        self.suffixes = _suffix_list(imp.PY_COMPILED)
+        self.suffixes = _suffix_list(_imp.PY_COMPILED)
 
 
 class _ExtensionFinderDetails:
@@ -858,7 +868,7 @@ class _ExtensionFinderDetails:
     supports_packages = False
 
     def __init__(self):
-        self.suffixes = _suffix_list(imp.C_EXTENSION)
+        self.suffixes = _suffix_list(_imp.C_EXTENSION)
 
 
 # Import itself ###############################################################
@@ -886,7 +896,7 @@ class _DefaultPathFinder(PathFinder):
         try:
             return super()._path_hooks(path)
         except ImportError:
-            implicit_hooks = [_DEFAULT_PATH_HOOK, imp.NullImporter]
+            implicit_hooks = [_DEFAULT_PATH_HOOK, _imp.NullImporter]
             return super()._path_hooks(path, implicit_hooks)
 
     @classmethod
@@ -902,11 +912,11 @@ class _ImportLockContext:
 
     def __enter__(self):
         """Acquire the import lock."""
-        imp.acquire_lock()
+        _imp.acquire_lock()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Release the import lock regardless of any raised exceptions."""
-        imp.release_lock()
+        _imp.release_lock()
 
 
 def _resolve_name(name, package, level):
@@ -1092,19 +1102,19 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         return _handle_fromlist(module, fromlist, _gcd_import)
 
 
-def _setup(sys_module, imp_module):
+def _setup(sys_module, _imp_module):
     """Setup importlib by importing needed built-in modules and injecting them
     into the global namespace.
 
-    As sys is needed for sys.modules access and imp is needed to load built-in
+    As sys is needed for sys.modules access and _imp is needed to load built-in
     modules, those two modules must be explicitly passed in.
 
     """
-    global imp, sys
-    imp = imp_module
+    global _imp, sys
+    _imp = _imp_module
     sys = sys_module
 
-    for module in (imp, sys):
+    for module in (_imp, sys):
         if not hasattr(module, '__loader__'):
             module.__loader__ = BuiltinImporter
 
@@ -1137,14 +1147,14 @@ def _setup(sys_module, imp_module):
     setattr(self_module, '_relax_case', _make_relax_case())
 
 
-def _install(sys_module, imp_module):
+def _install(sys_module, _imp_module):
     """Install importlib as the implementation of import.
 
-    It is assumed that imp and sys have been imported and injected into the
+    It is assumed that _imp and sys have been imported and injected into the
     global namespace for the module prior to calling this function.
 
     """
-    _setup(sys_module, imp_module)
+    _setup(sys_module, _imp_module)
     orig_import = builtins.__import__
     builtins.__import__ = __import__
     builtins.__original_import__ = orig_import
