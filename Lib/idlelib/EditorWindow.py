@@ -1,8 +1,9 @@
-import sys
+import imp
+import importlib
 import os
 import re
 import string
-import imp
+import sys
 from tkinter import *
 import tkinter.simpledialog as tkSimpleDialog
 import tkinter.messagebox as tkMessageBox
@@ -1005,7 +1006,10 @@ class EditorWindow(object):
 
     def load_extension(self, name):
         try:
-            mod = __import__(name, globals(), locals(), [])
+            try:
+                mod = importlib.import_module('.' + name, package=__package__)
+            except ImportError:
+                mod = importlib.import_module(name)
         except ImportError:
             print("\nFailed to import extension: ", name)
             raise
