@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13496: Fix potential overflow in bisect.bisect algorithm when applied
+  to a collection of size > sys.maxsize / 2.
+
 - Have importlib take advantage of ImportError's new 'name' and 'path'
   attributes.
 
