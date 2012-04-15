@@ -143,7 +143,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives it with import.c */
-    {"imp", PyInit_imp},
+    {"_imp", PyInit_imp},
 
     /* These entries are here for sys.builtin_module_names */
     {"__main__", NULL},
