@@ -24,6 +24,7 @@ def main(input_path, output_path):
     lines.append('};\n')
     with open(output_path, 'w') as output_file:
         output_file.write('\n'.join(lines))
+        output_file.write('\u0000')
 
 
 if __name__ == '__main__':
