@@ -1072,6 +1072,7 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_sqlite3')
 
+        dbm_setup_debug = False   # verbose debug prints from this script?
         dbm_order = ['gdbm']
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
@@ -1093,7 +1094,7 @@ class PyBuildExt(build_ext):
                             ndbm_libs = ['ndbm']
                         else:
                             ndbm_libs = []
-                        print("building dbm using ndbm")
+                        if dbm_setup_debug: print("building dbm using ndbm")
                         dbmext = Extension('_dbm', ['_dbmmodule.c'],
                                            define_macros=[
                                                ('HAVE_NDBM_H',None),
@@ -1108,7 +1109,7 @@ class PyBuildExt(build_ext):
                                                                'gdbm_compat'):
                             gdbm_libs.append('gdbm_compat')
                         if find_file("gdbm/ndbm.h", inc_dirs, []) is not None:
-                            print("building dbm using gdbm")
+                            if dbm_setup_debug: print("building dbm using gdbm")
                             dbmext = Extension(
                                 '_dbm', ['_dbmmodule.c'],
                                 define_macros=[
@@ -1117,7 +1118,7 @@ class PyBuildExt(build_ext):
                                 libraries = gdbm_libs)
                             break
                         if find_file("gdbm-ndbm.h", inc_dirs, []) is not None:
-                            print("building dbm using gdbm")
+                            if dbm_setup_debug: print("building dbm using gdbm")
                             dbmext = Extension(
                                 '_dbm', ['_dbmmodule.c'],
                                 define_macros=[
@@ -1127,7 +1128,7 @@ class PyBuildExt(build_ext):
                             break
                 elif cand == "bdb":
                     if db_incs is not None:
-                        print("building dbm using bdb")
+                        if dbm_setup_debug: print("building dbm using bdb")
                         dbmext = Extension('_dbm', ['_dbmmodule.c'],
                                            library_dirs=dblib_dir,
                                            runtime_library_dirs=dblib_dir,
