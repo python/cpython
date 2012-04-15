@@ -153,8 +153,8 @@ The :mod:`gc` module provides the following functions:
    .. versionadded:: 3.1
 
 
-The following variable is provided for read-only access (you can mutate its
-value but should not rebind it):
+The following variables are provided for read-only access (you can mutate the
+values but should not rebind them):
 
 .. data:: garbage
 
@@ -182,6 +182,41 @@ value but should not rebind it):
       :exc:`ResourceWarning` is emitted, which is silent by default.  If
       :const:`DEBUG_UNCOLLECTABLE` is set, in addition all uncollectable objects
       are printed.
+
+.. data:: callbacks
+
+   A list of callbacks that will be invoked by the garbage collector before and
+   after collection.  The callbacks will be called with two arguments,
+   :arg:`phase` and :arg:`info`.
+
+   :arg:`phase` can one of two values:
+
+      "start": The garbage collection is about to start.
+
+      "stop": The garbage collection has finished.
+
+   :arg:`info` provides more information for the callback.  The following
+   keys are currently defined:
+
+      "generation": The oldest generation being collected.
+
+      "collected": When :arg:`phase` is "stop", the number of objects
+      successfully collected.
+
+      "uncollectable": when :arg:`phase` is "stop", the number of objects
+      that could not be collected and were put in :data:`garbage`.
+
+   Applications can add their own callbacks to this list.  The primary
+   use cases are:
+
+      Gathering statistics about garbage collection, such as how often
+      various generations are collected, and how long the collection
+      takes.
+
+      Allowing applications to identify and clear their own uncollectable
+      types when they appear in :data:`garbage`.
+
+   .. versionadded:: 3.3
 
 
 The following constants are provided for use with :func:`set_debug`:
