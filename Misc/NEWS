@@ -275,6 +275,9 @@ Library
 - Issue #14310: Sockets can now be with other processes on Windows using
   the api socket.socket.share() and socket.fromshare().
 
+- Issue #10576: The gc module now has a 'callbacks' member that will get
+  called when garbage collection takes place.
+
 Build
 -----
 
