@@ -153,7 +153,6 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 
 static PyObject *initstr = NULL;
-_Py_IDENTIFIER(__path__);
 
 /* Initialize things */
 
@@ -3106,12 +3105,12 @@ PyImport_ReloadModule(PyObject *m)
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     PyObject *modules_reloading = interp->modules_reloading;
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *path_list = NULL, *loader = NULL, *existing_m = NULL;
-    PyObject *name, *bufobj, *subname;
+    PyObject *loader = NULL, *existing_m = NULL;
+    PyObject *name;
     Py_ssize_t subname_start;
-    struct filedescr *fdp;
-    FILE *fp = NULL;
     PyObject *newm = NULL;
+    _Py_IDENTIFIER(__loader__);
+    _Py_IDENTIFIER(load_module);
 
     if (modules_reloading == NULL) {
         Py_FatalError("PyImport_ReloadModule: "
@@ -3149,51 +3148,28 @@ PyImport_ReloadModule(PyObject *m)
 
     subname_start = PyUnicode_FindChar(name, '.', 0,
                                        PyUnicode_GET_LENGTH(name), -1);
-    if (subname_start == -1) {
-        Py_INCREF(name);
-        subname = name;
-    }
-    else {
+    if (subname_start != -1) {
         PyObject *parentname, *parent;
-        Py_ssize_t len;
         parentname = PyUnicode_Substring(name, 0, subname_start);
         if (parentname == NULL) {
             goto error;
         }
         parent = PyDict_GetItem(modules, parentname);
+        Py_XDECREF(parent);
         if (parent == NULL) {
             PyErr_Format(PyExc_ImportError,
                 "reload(): parent %R not in sys.modules",
                  parentname);
-            Py_DECREF(parentname);
             goto error;
         }
-        Py_DECREF(parentname);
-        path_list = _PyObject_GetAttrId(parent, &PyId___path__);
-        if (path_list == NULL)
-            PyErr_Clear();
-        subname_start++;
-        len = PyUnicode_GET_LENGTH(name) - (subname_start + 1);
-        subname = PyUnicode_Substring(name, subname_start, len);
-    }
-    if (subname == NULL)
-        goto error;
-    fdp = find_module(name, subname, path_list,
-                      &bufobj, &fp, &loader);
-    Py_DECREF(subname);
-    Py_XDECREF(path_list);
-
-    if (fdp == NULL) {
-        Py_XDECREF(loader);
-        goto error;
     }
 
-    newm = load_module(name, fp, bufobj, fdp->type, loader);
-    Py_XDECREF(bufobj);
-    Py_XDECREF(loader);
-
-    if (fp)
-        fclose(fp);
+    loader = _PyObject_GetAttrId(m, &PyId___loader__);
+    if (loader == NULL) {
+        goto error;
+    }
+    newm = _PyObject_CallMethodId(loader, &PyId_load_module, "O", name);
+    Py_DECREF(loader);
     if (newm == NULL) {
         /* load_module probably removed name from modules because of
          * the error.  Put back the original module object.  We're
