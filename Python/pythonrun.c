@@ -199,8 +199,6 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *value;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
-    /* XXX(bcannon): The file path for _frozen_importlib is completely off
-     */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
         Py_FatalError("Py_Initialize: can't import _frozen_importlib");
     }
@@ -237,6 +235,7 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
         Py_FatalError("Py_Initialize: importlib install failed");
     }
     Py_DECREF(value);
+    Py_DECREF(impmod);
 
     _PyImportZip_Init();
 }
