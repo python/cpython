@@ -225,8 +225,8 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
     if (Py_VerboseFlag) {
         PySys_FormatStderr("import sys # builtin\n");
     }
-    if (PyDict_SetItemString(sys_modules, "imp", impmod) < 0) {
-        Py_FatalError("Py_Initialize: can't save imp to sys.modules");
+    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
+        Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
     value = PyObject_CallMethod(importlib, "_setup", "OO", sysmod, impmod);
