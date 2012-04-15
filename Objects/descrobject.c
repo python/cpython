@@ -698,41 +698,44 @@ PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 }
 
 
-/* --- Readonly proxy for dictionaries (actually any mapping) --- */
+/* --- mappingproxy: read-only proxy for mappings --- */
 
 /* This has no reason to be in this file except that adding new files is a
    bit of a pain */
 
 typedef struct {
     PyObject_HEAD
-    PyObject *dict;
-} proxyobject;
+    PyObject *mapping;
+} mappingproxyobject;
 
 static Py_ssize_t
-proxy_len(proxyobject *pp)
+mappingproxy_len(mappingproxyobject *pp)
 {
-    return PyObject_Size(pp->dict);
+    return PyObject_Size(pp->mapping);
 }
 
 static PyObject *
-proxy_getitem(proxyobject *pp, PyObject *key)
+mappingproxy_getitem(mappingproxyobject *pp, PyObject *key)
 {
-    return PyObject_GetItem(pp->dict, key);
+    return PyObject_GetItem(pp->mapping, key);
 }
 
-static PyMappingMethods proxy_as_mapping = {
-    (lenfunc)proxy_len,                         /* mp_length */
-    (binaryfunc)proxy_getitem,                  /* mp_subscript */
+static PyMappingMethods mappingproxy_as_mapping = {
+    (lenfunc)mappingproxy_len,                  /* mp_length */
+    (binaryfunc)mappingproxy_getitem,           /* mp_subscript */
     0,                                          /* mp_ass_subscript */
 };
 
 static int
-proxy_contains(proxyobject *pp, PyObject *key)
+mappingproxy_contains(mappingproxyobject *pp, PyObject *key)
 {
-    return PyDict_Contains(pp->dict, key);
+    if (PyDict_CheckExact(pp->mapping))
+        return PyDict_Contains(pp->mapping, key);
+    else
+        return PySequence_Contains(pp->mapping, key);
 }
 
-static PySequenceMethods proxy_as_sequence = {
+static PySequenceMethods mappingproxy_as_sequence = {
     0,                                          /* sq_length */
     0,                                          /* sq_concat */
     0,                                          /* sq_repeat */
@@ -740,152 +743,199 @@ static PySequenceMethods proxy_as_sequence = {
     0,                                          /* sq_slice */
     0,                                          /* sq_ass_item */
     0,                                          /* sq_ass_slice */
-    (objobjproc)proxy_contains,                 /* sq_contains */
+    (objobjproc)mappingproxy_contains,                 /* sq_contains */
     0,                                          /* sq_inplace_concat */
     0,                                          /* sq_inplace_repeat */
 };
 
 static PyObject *
-proxy_get(proxyobject *pp, PyObject *args)
+mappingproxy_get(mappingproxyobject *pp, PyObject *args)
 {
     PyObject *key, *def = Py_None;
     _Py_IDENTIFIER(get);
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
-    return _PyObject_CallMethodId(pp->dict, &PyId_get, "(OO)", key, def);
+    return _PyObject_CallMethodId(pp->mapping, &PyId_get, "(OO)", key, def);
 }
 
 static PyObject *
-proxy_keys(proxyobject *pp)
+mappingproxy_keys(mappingproxyobject *pp)
 {
     _Py_IDENTIFIER(keys);
-    return _PyObject_CallMethodId(pp->dict, &PyId_keys, NULL);
+    return _PyObject_CallMethodId(pp->mapping, &PyId_keys, NULL);
 }
 
 static PyObject *
-proxy_values(proxyobject *pp)
+mappingproxy_values(mappingproxyobject *pp)
 {
     _Py_IDENTIFIER(values);
-    return _PyObject_CallMethodId(pp->dict, &PyId_values, NULL);
+    return _PyObject_CallMethodId(pp->mapping, &PyId_values, NULL);
 }
 
 static PyObject *
-proxy_items(proxyobject *pp)
+mappingproxy_items(mappingproxyobject *pp)
 {
     _Py_IDENTIFIER(items);
-    return _PyObject_CallMethodId(pp->dict, &PyId_items, NULL);
+    return _PyObject_CallMethodId(pp->mapping, &PyId_items, NULL);
 }
 
 static PyObject *
-proxy_copy(proxyobject *pp)
+mappingproxy_copy(mappingproxyobject *pp)
 {
     _Py_IDENTIFIER(copy);
-    return _PyObject_CallMethodId(pp->dict, &PyId_copy, NULL);
+    return _PyObject_CallMethodId(pp->mapping, &PyId_copy, NULL);
 }
 
-static PyMethodDef proxy_methods[] = {
-    {"get",       (PyCFunction)proxy_get,        METH_VARARGS,
+/* WARNING: mappingproxy methods must not give access
+            to the underlying mapping */
+
+static PyMethodDef mappingproxy_methods[] = {
+    {"get",       (PyCFunction)mappingproxy_get,        METH_VARARGS,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
-                                    "  d defaults to None.")},
-    {"keys",      (PyCFunction)proxy_keys,       METH_NOARGS,
+               "  d defaults to None.")},
+    {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
      PyDoc_STR("D.keys() -> list of D's keys")},
-    {"values",    (PyCFunction)proxy_values,     METH_NOARGS,
+    {"values",    (PyCFunction)mappingproxy_values,     METH_NOARGS,
      PyDoc_STR("D.values() -> list of D's values")},
-    {"items",     (PyCFunction)proxy_items,      METH_NOARGS,
+    {"items",     (PyCFunction)mappingproxy_items,      METH_NOARGS,
      PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
-    {"copy",      (PyCFunction)proxy_copy,       METH_NOARGS,
+    {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {0}
 };
 
 static void
-proxy_dealloc(proxyobject *pp)
+mappingproxy_dealloc(mappingproxyobject *pp)
 {
     _PyObject_GC_UNTRACK(pp);
-    Py_DECREF(pp->dict);
+    Py_DECREF(pp->mapping);
     PyObject_GC_Del(pp);
 }
 
 static PyObject *
-proxy_getiter(proxyobject *pp)
+mappingproxy_getiter(mappingproxyobject *pp)
 {
-    return PyObject_GetIter(pp->dict);
+    return PyObject_GetIter(pp->mapping);
 }
 
 static PyObject *
-proxy_str(proxyobject *pp)
+mappingproxy_str(mappingproxyobject *pp)
 {
-    return PyObject_Str(pp->dict);
+    return PyObject_Str(pp->mapping);
 }
 
 static PyObject *
-proxy_repr(proxyobject *pp)
+mappingproxy_repr(mappingproxyobject *pp)
 {
-    return PyUnicode_FromFormat("dict_proxy(%R)", pp->dict);
+    return PyUnicode_FromFormat("mappingproxy(%R)", pp->mapping);
 }
 
 static int
-proxy_traverse(PyObject *self, visitproc visit, void *arg)
+mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    proxyobject *pp = (proxyobject *)self;
-    Py_VISIT(pp->dict);
+    mappingproxyobject *pp = (mappingproxyobject *)self;
+    Py_VISIT(pp->mapping);
     return 0;
 }
 
 static PyObject *
-proxy_richcompare(proxyobject *v, PyObject *w, int op)
+mappingproxy_richcompare(mappingproxyobject *v, PyObject *w, int op)
 {
-    return PyObject_RichCompare(v->dict, w, op);
+    return PyObject_RichCompare(v->mapping, w, op);
+}
+
+static int
+mappingproxy_check_mapping(PyObject *mapping)
+{
+    if (!PyMapping_Check(mapping)
+        || PyList_Check(mapping)
+        || PyTuple_Check(mapping)) {
+        PyErr_Format(PyExc_TypeError,
+                    "mappingproxy() argument must be a mapping, not %s",
+                    Py_TYPE(mapping)->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject*
+mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"mapping", NULL};
+    PyObject *mapping;
+    mappingproxyobject *mappingproxy;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:mappingproxy",
+                                     kwlist, &mapping))
+        return NULL;
+
+    if (mappingproxy_check_mapping(mapping) == -1)
+        return NULL;
+
+    mappingproxy = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
+    if (mappingproxy == NULL)
+        return NULL;
+    Py_INCREF(mapping);
+    mappingproxy->mapping = mapping;
+    _PyObject_GC_TRACK(mappingproxy);
+    return (PyObject *)mappingproxy;
 }
 
 PyTypeObject PyDictProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "dict_proxy",                               /* tp_name */
-    sizeof(proxyobject),                        /* tp_basicsize */
+    "mappingproxy",                             /* tp_name */
+    sizeof(mappingproxyobject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)proxy_dealloc,                  /* tp_dealloc */
+    (destructor)mappingproxy_dealloc,           /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
-    (reprfunc)proxy_repr,                       /* tp_repr */
+    (reprfunc)mappingproxy_repr,                /* tp_repr */
     0,                                          /* tp_as_number */
-    &proxy_as_sequence,                         /* tp_as_sequence */
-    &proxy_as_mapping,                          /* tp_as_mapping */
+    &mappingproxy_as_sequence,                  /* tp_as_sequence */
+    &mappingproxy_as_mapping,                   /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)proxy_str,                        /* tp_str */
+    (reprfunc)mappingproxy_str,                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                          /* tp_doc */
-    proxy_traverse,                             /* tp_traverse */
+    mappingproxy_traverse,                      /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)proxy_richcompare,             /* tp_richcompare */
+    (richcmpfunc)mappingproxy_richcompare,      /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    (getiterfunc)proxy_getiter,                 /* tp_iter */
+    (getiterfunc)mappingproxy_getiter,          /* tp_iter */
     0,                                          /* tp_iternext */
-    proxy_methods,                              /* tp_methods */
+    mappingproxy_methods,                       /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    mappingproxy_new,                           /* tp_new */
 };
 
 PyObject *
-PyDictProxy_New(PyObject *dict)
+PyDictProxy_New(PyObject *mapping)
 {
-    proxyobject *pp;
+    mappingproxyobject *pp;
 
-    pp = PyObject_GC_New(proxyobject, &PyDictProxy_Type);
+    if (mappingproxy_check_mapping(mapping) == -1)
+        return NULL;
+
+    pp = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
     if (pp != NULL) {
-        Py_INCREF(dict);
-        pp->dict = dict;
+        Py_INCREF(mapping);
+        pp->mapping = mapping;
         _PyObject_GC_TRACK(pp);
     }
     return (PyObject *)pp;
