@@ -36,11 +36,11 @@ Dictionary Objects
    Return a new empty dictionary, or *NULL* on failure.
 
 
-.. c:function:: PyObject* PyDictProxy_New(PyObject *dict)
+.. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
 
-   Return a proxy object for a mapping which enforces read-only behavior.
-   This is normally used to create a proxy to prevent modification of the
-   dictionary for non-dynamic class types.
+   Return a :class:`types.MappingProxyType` object for a mapping which
+   enforces read-only behavior.  This is normally used to create a view to
+   prevent modification of the dictionary for non-dynamic class types.
 
 
 .. c:function:: void PyDict_Clear(PyObject *p)
