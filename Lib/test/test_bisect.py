@@ -122,6 +122,13 @@ class TestBisect(unittest.TestCase):
         self.assertRaises(ValueError, mod.insort_left, [1, 2, 3], 5, -1, 3),
         self.assertRaises(ValueError, mod.insort_right, [1, 2, 3], 5, -1, 3),
 
+    def test_large_range(self):
+        # Issue 13496
+        mod = self.module
+        data = xrange(sys.maxsize-1)
+        self.assertEqual(mod.bisect_left(data, sys.maxsize-3), sys.maxsize-3)
+        self.assertEqual(mod.bisect_right(data, sys.maxsize-3), sys.maxsize-2)
+
     def test_random(self, n=25):
         from random import randrange
         for i in xrange(n):
