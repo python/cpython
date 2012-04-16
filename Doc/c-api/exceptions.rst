@@ -235,11 +235,15 @@ in various ways.  There is a separate error indicator for each thread.
    *kwargs* values. If *args* is ``NULL``, an empty :func:`tuple` will be
    created when *exc* is created via :c:func:`PyObject_Call`.
 
+   .. versionadded:: 3.3
+
 .. c:function:: PyObject* PyErr_SetFromImportErrorWithName(PyObject *msg, PyObject *name)
 
    This is a convenience function to raise :exc:`ImportError`. *msg* will be
    set as the exception's message string, and *name* will be set as the
    :exc:`ImportError`'s ``name`` attribute.
+
+   .. versionadded:: 3.3
 
 .. c:function:: PyObject* PyErr_SetFromImportErrorWithNameAndPath(PyObject *msg, PyObject *name, PyObject *path)
 
@@ -247,6 +251,7 @@ in various ways.  There is a separate error indicator for each thread.
    set as the exception's message string. Both *name* and *path* will be set
    as the :exc:`ImportError`'s respective ``name`` and ``path`` attributes.
 
+   .. versionadded:: 3.3
 
 .. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
 
