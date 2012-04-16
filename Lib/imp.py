@@ -14,13 +14,28 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
 from _imp import (get_magic, get_tag, get_suffixes, cache_from_source,
                   source_from_cache)
 # Should be re-implemented here (and mostly deprecated)
-from _imp import (find_module, load_compiled,
-                  load_package, load_source, NullImporter,
+from _imp import (find_module, load_compiled, load_source, NullImporter,
                   SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
                   PY_RESOURCE, PKG_DIRECTORY, C_BUILTIN, PY_FROZEN,
                   PY_CODERESOURCE, IMP_HOOK)
 
 from importlib._bootstrap import _new_module as new_module
+
+from importlib import _bootstrap
+import os
+
+
+def load_package(name, path):
+    if os.path.isdir(path):
+        extensions = _bootstrap._suffix_list(PY_SOURCE)
+        extensions += _bootstrap._suffix_list(PY_COMPILED)
+        for extension in extensions:
+            path = os.path.join(path, '__init__'+extension)
+            if os.path.exists(path):
+                break
+        else:
+            raise ValueError('{!r} is not a package'.format(path))
+    return _bootstrap._SourceFileLoader(name, path).load_module(name)
 
 
 def load_module(name, file, filename, details):
