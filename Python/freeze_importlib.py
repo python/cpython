@@ -22,9 +22,9 @@ def main(input_path, output_path):
             line.append('%d,' % c)
         lines.append(''.join(line))
     lines.append('};\n')
-    with open(output_path, 'w') as output_file:
+    with open(output_path, 'w', encoding='utf-8') as output_file:
         output_file.write('\n'.join(lines))
-        output_file.write('\u0000')
+        output_file.write('/* Mercurial binary marker: \x00 */')
 
 
 if __name__ == '__main__':
