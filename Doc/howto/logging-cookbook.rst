@@ -1581,14 +1581,14 @@ following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
 Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
 section of the specification <http://tools.ietf.org/html/rfc5424#section-6>`_.)
 
-In Python 2.6 and 2.7, code was added to
+In Python 3.1, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
 unfortunately, it was implemented incorrectly, with the BOM appearing at the
 beginning of the message and hence not allowing any pure-ASCII component to
 appear before it.
 
 As this behaviour is broken, the incorrect BOM insertion code is being removed
-from Python 2.7.4 and later. However, it is not being replaced, and if you
+from Python 3.2.4 and later. However, it is not being replaced, and if you
 want to produce RFC 5424-compliant messages which includes a BOM, an optional
 pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
 UTF-8, then you need to do the following:
