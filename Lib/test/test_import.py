@@ -337,6 +337,24 @@ class ImportTests(unittest.TestCase):
             del sys.path[0]
             remove_files(TESTFN)
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    def test_extension_import_fail(self):
+        # Issue 1559549 added `name` and `path` attributes to ImportError
+        # in order to provide better detail. Issue 10854 implemented those
+        # attributes on import failures of extensions on Windows.
+        debug = True if sys.executable[-6:] == "_d.exe" else False
+        pkg_name = "extension"
+        pkg_file = pkg_name + "{}".format("_d.pyd" if debug else ".pyd")
+        with open(pkg_file, "w"): pass
+        try:
+            with self.assertRaises(ImportError) as err:
+                import extension
+            self.assertEqual(err.exception.name, pkg_name)
+            # The path we get back has the dot-slash, e.g., ".\\extension.pyd"
+            self.assertEqual(os.path.relpath(err.exception.path), pkg_file)
+        finally:
+            unlink(pkg_file)
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points

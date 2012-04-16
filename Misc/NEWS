@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #10854: The ImportError raised when an extension module on Windows
+  fails to import now uses the new path and name attributes from
+  Issue #1559549.
+
 - Issue #14582: Import directly returns the module as returned by a loader when
   possible instead of fetching it from sys.modules.
 
