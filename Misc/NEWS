@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14452: SysLogHandler no longer inserts a UTF-8 BOM into the message.
+
 - Issue #13496: Fix potential overflow in bisect.bisect algorithm when applied
   to a collection of size > sys.maxsize / 2.
 

@@ -808,8 +808,6 @@ class SysLogHandler(logging.Handler):
         prio = prio.encode('utf-8')
         # Message is a string. Convert to bytes as required by RFC 5424
         msg = msg.encode('utf-8')
-        if codecs:
-            msg = codecs.BOM_UTF8 + msg
         msg = prio + msg
         try:
             if self.unixsocket:
