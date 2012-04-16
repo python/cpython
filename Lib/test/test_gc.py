@@ -551,6 +551,7 @@ class GCCallbackTests(unittest.TestCase):
         gc.set_debug(0)
         gc.callbacks.append(self.cb1)
         gc.callbacks.append(self.cb2)
+        self.othergarbage = []
 
     def tearDown(self):
         # Restore gc state
@@ -566,9 +567,9 @@ class GCCallbackTests(unittest.TestCase):
             if isinstance(obj, Uncollectable):
                 obj.partner = None
         del gc.garbage[:]
+        del self.othergarbage
         gc.collect()
 
-    othergarbage = []
     def preclean(self):
         # Remove all fluff from the system.  Invoke this function
         # manually rather than through self.setUp() for maximum
