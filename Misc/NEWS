@@ -90,6 +90,9 @@ Library
 Tests
 -----
 
+- Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
+  a test failure in test_ssl.
+
 - Issue #14355: Regrtest now supports the standard unittest test loading, and
   will use it if a test file contains no `test_main` method.
 
