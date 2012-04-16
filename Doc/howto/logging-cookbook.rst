@@ -1570,10 +1570,10 @@ UTF-8, then you need to do the following:
    :class:`~logging.handlers.SysLogHandler` instance, with a format string
    such as::
 
-      u"ASCII section\ufeffUnicode section"
+      'ASCII section\ufeffUnicode section'
 
-   The Unicode code point ``u'\feff```, when encoded using UTF-8, will be
-   encoded as a UTF-8 BOM -- the bytestring ``'\xef\xbb\bf'``.
+   The Unicode code point ``'\feff```, when encoded using UTF-8, will be
+   encoded as a UTF-8 BOM -- the byte-string ``b'\xef\xbb\xbf'``.
 
 #. Replace the ASCII section with whatever placeholders you like, but make sure
    that the data that appears in there after substitution is always ASCII (that
@@ -1583,8 +1583,8 @@ UTF-8, then you need to do the following:
    which appears there after substitution is Unicode, that's fine -- it will be
    encoded using UTF-8.
 
-If the formatted message is Unicode, it *will* be encoded using UTF-8 encoding
-by ``SysLogHandler``. If you follow these rules, you should be able to produce
+The formatted message *will* be encoded using UTF-8 encoding by
+``SysLogHandler``. If you follow the above rules, you should be able to produce
 RFC 5424-compliant messages. If you don't, logging may not complain, but your
 messages will not be RFC 5424-compliant, and your syslog daemon may complain.
 
