@@ -2827,6 +2827,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         if (msg != NULL) {
             PyErr_SetFromImportErrorWithName(msg, abs_name);
         }
+        mod = NULL;
         goto error_with_unlock;
     }
     else if (mod != NULL) {
