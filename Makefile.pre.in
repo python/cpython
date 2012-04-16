@@ -702,6 +702,8 @@ Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS)
 
+Python/frozen.o: $(srcdir)/Python/importlib.h
+
 Objects/typeobject.o: $(srcdir)/Objects/typeslots.inc
 $(srcdir)/Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
 	$(PYTHON) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h > $(srcdir)/Objects/typeslots.inc
@@ -792,7 +794,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
-		$(srcdir)/Python/importlib.h \
 		pyconfig.h \
 		$(PARSER_HEADERS)
 
