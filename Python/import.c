@@ -2782,10 +2782,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         }
         base = PyUnicode_Substring(package, 0, last_dot);
         if (PyUnicode_GET_LENGTH(name) > 0) {
-            PyObject *borrowed_dot = NULL;
-            PyObject *seq = PyTuple_Pack(2, base, name);
+            PyObject *borrowed_dot, *seq = NULL;
 
             borrowed_dot = _PyUnicode_FromId(&single_dot);
+            seq = PyTuple_Pack(2, base, name);
+            Py_DECREF(base);
             if (borrowed_dot == NULL || seq == NULL) {
                 goto error;
             }
