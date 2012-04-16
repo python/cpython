@@ -1602,64 +1602,9 @@ unchanged:
 }
 
 /* Forward */
-static PyObject *load_module(PyObject *, FILE *, PyObject *, int, PyObject *);
 static struct filedescr *find_module(PyObject *, PyObject *, PyObject *,
                                      PyObject **, FILE **, PyObject **);
 static struct _frozen * find_frozen(PyObject *);
-
-/* Load a package and return its module object WITH INCREMENTED
-   REFERENCE COUNT */
-
-static PyObject *
-load_package(PyObject *name, PyObject *pathname)
-{
-    PyObject *m, *d, *bufobj;
-    PyObject *file = NULL, *path_list = NULL;
-    int err;
-    FILE *fp = NULL;
-    struct filedescr *fdp;
-
-    m = PyImport_AddModuleObject(name);
-    if (m == NULL)
-        return NULL;
-    if (Py_VerboseFlag)
-        PySys_FormatStderr("import %U # directory %R\n",
-                           name, pathname);
-    file = get_sourcefile(pathname);
-    if (file == NULL)
-        return NULL;
-    path_list = Py_BuildValue("[O]", file);
-    if (path_list == NULL) {
-        Py_DECREF(file);
-        return NULL;
-    }
-    d = PyModule_GetDict(m);
-    err = PyDict_SetItemString(d, "__file__", file);
-    Py_DECREF(file);
-    if (err == 0)
-        err = PyDict_SetItemString(d, "__path__", path_list);
-    if (err != 0) {
-        Py_DECREF(path_list);
-        return NULL;
-    }
-    fdp = find_module(name, initstr, path_list,
-                      &bufobj, &fp, NULL);
-    Py_DECREF(path_list);
-    if (fdp == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-            PyErr_Clear();
-            Py_INCREF(m);
-            return m;
-        }
-        else
-            return NULL;
-    }
-    m = load_module(name, fp, bufobj, fdp->type, NULL);
-    Py_XDECREF(bufobj);
-    if (fp != NULL)
-        fclose(fp);
-    return m;
-}
 
 
 /* Helper to test for built-in module */
@@ -2433,108 +2378,6 @@ find_init_module(PyObject *directory)
 
 
 static int init_builtin(PyObject *); /* Forward */
-
-static PyObject*
-load_builtin(PyObject *name, int type)
-{
-    PyObject *m, *modules;
-    int err;
-
-    if (type == C_BUILTIN)
-        err = init_builtin(name);
-    else
-        err = PyImport_ImportFrozenModuleObject(name);
-    if (err < 0)
-        return NULL;
-    if (err == 0) {
-        PyErr_Format(PyExc_ImportError,
-                "Purported %s module %R not found",
-                type == C_BUILTIN ? "builtin" : "frozen",
-                name);
-        return NULL;
-    }
-
-    modules = PyImport_GetModuleDict();
-    m = PyDict_GetItem(modules, name);
-    if (m == NULL) {
-        PyErr_Format(
-                PyExc_ImportError,
-                "%s module %R not properly initialized",
-                type == C_BUILTIN ? "builtin" : "frozen",
-                name);
-        return NULL;
-    }
-    Py_INCREF(m);
-    return m;
-}
-
-/* Load an external module using the default search path and return
-   its module object WITH INCREMENTED REFERENCE COUNT */
-
-static PyObject *
-load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *loader)
-{
-    PyObject *m;
-
-    /* First check that there's an open file (if we need one)  */
-    switch (type) {
-    case PY_SOURCE:
-    case PY_COMPILED:
-        if (fp == NULL) {
-            PyErr_Format(PyExc_ValueError,
-                         "file object required for import (type code %d)",
-                         type);
-            return NULL;
-        }
-    }
-
-    switch (type) {
-
-    case PY_SOURCE:
-        m = load_source_module(name, pathname, fp);
-        break;
-
-    case PY_COMPILED:
-        m = load_compiled_module(name, pathname, fp);
-        break;
-
-#ifdef HAVE_DYNAMIC_LOADING
-    case C_EXTENSION:
-        m = _PyImport_LoadDynamicModule(name, pathname, fp);
-        break;
-#endif
-
-    case PKG_DIRECTORY:
-        m = load_package(name, pathname);
-        break;
-
-    case C_BUILTIN:
-    case PY_FROZEN:
-        m = load_builtin(name, type);
-        break;
-
-    case IMP_HOOK: {
-        _Py_IDENTIFIER(load_module);
-        if (loader == NULL) {
-            PyErr_SetString(PyExc_ImportError,
-                            "import hook without loader");
-            return NULL;
-        }
-        m = _PyObject_CallMethodId(loader, &PyId_load_module, "O", name);
-        break;
-    }
-
-    default:
-        PyErr_Format(PyExc_ImportError,
-                     "Don't know how to import %R (type code %d)",
-                      name, type);
-        m = NULL;
-
-    }
-
-    return m;
-}
-
 
 /* Initialize a built-in module.
    Return 1 for success, 0 if the module is not found, and -1 with
@@ -3601,19 +3444,6 @@ imp_load_source(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_load_package(PyObject *self, PyObject *args)
-{
-    PyObject *name, *pathname;
-    PyObject * ret;
-    if (!PyArg_ParseTuple(args, "UO&:load_package",
-                          &name, PyUnicode_FSDecoder, &pathname))
-        return NULL;
-    ret = load_package(name, pathname);
-    Py_DECREF(pathname);
-    return ret;
-}
-
-static PyObject *
 imp_reload(PyObject *self, PyObject *v)
 {
     return PyImport_ReloadModule(v);
@@ -3764,7 +3594,6 @@ static PyMethodDef imp_methods[] = {
 #ifdef HAVE_DYNAMIC_LOADING
     {"load_dynamic",            imp_load_dynamic,       METH_VARARGS},
 #endif
-    {"load_package",            imp_load_package,       METH_VARARGS},
     {"load_source",             imp_load_source,        METH_VARARGS},
     {"_fix_co_filename",        imp_fix_co_filename,    METH_VARARGS},
     {NULL,                      NULL}           /* sentinel */
