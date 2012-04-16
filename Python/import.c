@@ -2881,11 +2881,15 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 Py_INCREF(final_mod);
             }
             else {
-                Py_ssize_t cut_off = PyUnicode_GetLength(name) -
-                                        PyUnicode_GetLength(front);
-                Py_ssize_t abs_name_len = PyUnicode_GetLength(abs_name);
+                Py_ssize_t cut_off = PyUnicode_GET_LENGTH(name) -
+                                        PyUnicode_GET_LENGTH(front);
+                Py_ssize_t abs_name_len = PyUnicode_GET_LENGTH(abs_name);
                 PyObject *to_return = PyUnicode_Substring(abs_name, 0,
                                                         abs_name_len - cut_off);
+                Py_DECREF(front);
+                if (to_return == NULL) {
+                    goto error_with_unlock;
+                }
 
                 final_mod = PyDict_GetItem(interp->modules, to_return);
                 Py_DECREF(to_return);
