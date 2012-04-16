@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14452: SysLogHandler no longer inserts a UTF-8 BOM into the message.
+
 - Issue #14386: Expose the dict_proxy internal type as types.MappingProxyType.
 
 - Issue #13959: Make imp.reload() always use a module's __loader__ to perform
