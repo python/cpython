@@ -1544,3 +1544,47 @@ works::
     if __name__ == '__main__':
         main()
 
+
+Inserting a BOM into messages sent to a SysLogHandler
+-----------------------------------------------------
+
+`RFC 5424 <http://tools.ietf.org/html/rfc5424>`_ requires that a
+Unicode message be sent to a syslog daemon as a set of bytes which have the
+following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
+Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
+section of the specification <http://tools.ietf.org/html/rfc5424#section-6>`_.)
+
+In Python 2.6 and 2.7, code was added to
+:class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
+unfortunately, it was implemented incorrectly, with the BOM appearing at the
+beginning of the message and hence not allowing any pure-ASCII component to
+appear before it.
+
+As this behaviour is broken, the incorrect BOM insertion code is being removed
+from Python 2.7.4 and later. However, it is not being replaced, and if you
+want to produce RFC 5424-compliant messages which includes a BOM, an optional
+pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
+UTF-8, then you need to do the following:
+
+#. Attach a :class:`~logging.Formatter` instance to your
+   :class:`~logging.handlers.SysLogHandler` instance, with a format string
+   such as::
+
+      u"ASCII section\ufeffUnicode section"
+
+   The Unicode code point ``u'\feff```, when encoded using UTF-8, will be
+   encoded as a UTF-8 BOM -- the bytestring ``'\xef\xbb\bf'``.
+
+#. Replace the ASCII section with whatever placeholders you like, but make sure
+   that the data that appears in there after substitution is always ASCII (that
+   way, it will remain unchanged after UTF-8 encoding).
+
+#. Replace the Unicode section with whatever placeholders you like; if the data
+   which appears there after substitution is Unicode, that's fine -- it will be
+   encoded using UTF-8.
+
+If the formatted message is Unicode, it *will* be encoded using UTF-8 encoding
+by ``SysLogHandler``. If you follow these rules, you should be able to produce
+RFC 5424-compliant messages. If you don't, logging may not complain, but your
+messages will not be RFC 5424-compliant, and your syslog daemon may complain.
+
