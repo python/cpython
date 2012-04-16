@@ -102,6 +102,12 @@ Library
 - Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
   on Windows.
 
+Tests
+-----
+
+- Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
+  a test failure in test_ssl.
+
 Build
 -----
 
