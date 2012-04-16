@@ -140,6 +140,12 @@ Extension Modules
 - Issue #14212: The re module didn't retain a reference to buffers it was
   scanning, resulting in segfaults.
 
+Tests
+-----
+
+- Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
+  a test failure in test_ssl.
+
 Build
 -----
 
