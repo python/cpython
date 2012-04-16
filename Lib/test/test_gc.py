@@ -593,7 +593,7 @@ class GCCallbackTests(unittest.TestCase):
             for e in uc:
                 e.partner = None
 
-    def testCollect(self):
+    def test_collect(self):
         self.preclean()
         gc.collect()
         # Algorithmically verify the contents of self.visit
@@ -620,14 +620,14 @@ class GCCallbackTests(unittest.TestCase):
             self.assertTrue("collected" in info)
             self.assertTrue("uncollectable" in info)
 
-    def testCollectGen(self):
+    def test_collect_generation(self):
         self.preclean()
         gc.collect(2)
         for v in self.visit:
             info = v[2]
             self.assertEqual(info["generation"], 2)
 
-    def testCollectGarbage(self):
+    def test_collect_garbage(self):
         self.preclean()
         # Each of these cause four objects to be garbage: Two
         # Uncolectables and their instance dicts.
