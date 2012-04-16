@@ -21,6 +21,9 @@ Core and Builtins
   any of the dtoa.c string <-> float conversion functions, on MSVC builds of
   Python.  This fixes issues when embedding Python in a Delphi app.
 
+- __import__() now matches PEP 328 and documentation by defaulting 'index' to 0
+  instead of -1 and removing support for negative values.
+
 - Issue #2377: Make importlib the implementation of __import__().
 
 - Issue #1559549: ImportError now has 'name' and 'path' attributes that are set
