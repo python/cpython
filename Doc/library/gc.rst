@@ -187,23 +187,23 @@ values but should not rebind them):
 
    A list of callbacks that will be invoked by the garbage collector before and
    after collection.  The callbacks will be called with two arguments,
-   :arg:`phase` and :arg:`info`.
+   *phase* and *info*.
 
-   :arg:`phase` can one of two values:
+   *phase* can one of two values:
 
       "start": The garbage collection is about to start.
 
       "stop": The garbage collection has finished.
 
-   :arg:`info` provides more information for the callback.  The following
+   *info* provides more information for the callback.  The following
    keys are currently defined:
 
       "generation": The oldest generation being collected.
 
-      "collected": When :arg:`phase` is "stop", the number of objects
+      "collected": When *phase* is "stop", the number of objects
       successfully collected.
 
-      "uncollectable": when :arg:`phase` is "stop", the number of objects
+      "uncollectable": when *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
    Applications can add their own callbacks to this list.  The primary
