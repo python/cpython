@@ -3601,53 +3601,6 @@ imp_load_source(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_load_module(PyObject *self, PyObject *args)
-{
-    PyObject *name, *fob, *pathname, *pathname_obj, *ret;
-    char *suffix; /* Unused */
-    char *mode;
-    int type;
-    FILE *fp;
-
-    if (!PyArg_ParseTuple(args, "UOO(ssi):load_module",
-                          &name, &fob, &pathname_obj, &suffix, &mode, &type))
-        return NULL;
-    if (pathname_obj != Py_None) {
-        if (!PyUnicode_FSDecoder(pathname_obj, &pathname))
-            return NULL;
-    }
-    else
-        pathname = NULL;
-
-    if (*mode) {
-        /* Mode must start with 'r' or 'U' and must not contain '+'.
-           Implicit in this test is the assumption that the mode
-           may contain other modifiers like 'b' or 't'. */
-
-        if (!(*mode == 'r' || *mode == 'U') || strchr(mode, '+')) {
-            PyErr_Format(PyExc_ValueError,
-                         "invalid file open mode %.200s", mode);
-            Py_XDECREF(pathname);
-            return NULL;
-        }
-    }
-    if (fob == Py_None)
-        fp = NULL;
-    else {
-        fp = get_file(NULL, fob, mode);
-        if (fp == NULL) {
-            Py_XDECREF(pathname);
-            return NULL;
-        }
-    }
-    ret = load_module(name, fp, pathname, type, NULL);
-    Py_XDECREF(pathname);
-    if (fp)
-        fclose(fp);
-    return ret;
-}
-
-static PyObject *
 imp_load_package(PyObject *self, PyObject *args)
 {
     PyObject *name, *pathname;
@@ -3757,11 +3710,6 @@ built-in, frozen or special module and continue search in sys.path.\n\
 The module name cannot contain '.'; to search for a submodule of a\n\
 package, pass the submodule name and the package's __path__.");
 
-PyDoc_STRVAR(doc_load_module,
-"load_module(name, file, filename, (suffix, mode, type)) -> module\n\
-Load a module, given information returned by find_module().\n\
-The module name must include the full package name, if any.");
-
 PyDoc_STRVAR(doc_get_magic,
 "get_magic() -> string\n\
 Return the magic number for .pyc or .pyo files.");
@@ -3797,7 +3745,6 @@ static PyMethodDef imp_methods[] = {
     {"get_magic",        imp_get_magic,    METH_NOARGS,  doc_get_magic},
     {"get_tag",          imp_get_tag,      METH_NOARGS,  doc_get_tag},
     {"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
-    {"load_module",      imp_load_module,  METH_VARARGS, doc_load_module},
     {"lock_held",        imp_lock_held,    METH_NOARGS,  doc_lock_held},
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
