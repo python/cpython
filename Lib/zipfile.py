@@ -836,10 +836,7 @@ class ZipFile:
 
     def namelist(self):
         """Return a list of file names in the archive."""
-        l = []
-        for data in self.filelist:
-            l.append(data.filename)
-        return l
+        return [data.filename for data in self.filelist]
 
     def infolist(self):
         """Return a list of class ZipInfo instances for files in the
