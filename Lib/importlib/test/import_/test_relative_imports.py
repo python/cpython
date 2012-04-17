@@ -203,6 +203,11 @@ class RelativeImports(unittest.TestCase):
             self.assertEqual(mod.__name__, 'crash.mod')
         self.relative_import_test(create, globals_, callback)
 
+    def test_relative_import_no_globals(self):
+        # No globals for a relative import is an error.
+        with self.assertRaises(KeyError):
+            import_util.import_('sys', level=1)
+
 
 def test_main():
     from test.support import run_unittest

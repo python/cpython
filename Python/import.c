@@ -2355,8 +2355,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             }
         }
         else {
-            package = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+            package = _PyDict_GetItemId(globals, &PyId___name__);
             if (package == NULL) {
+                PyErr_SetString(PyExc_KeyError, "'__name__' not in globals");
                 goto error;
             }
             else if (!PyUnicode_Check(package)) {
