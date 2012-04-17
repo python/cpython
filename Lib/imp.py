@@ -14,7 +14,7 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
 from _imp import (get_magic, get_tag, get_suffixes, cache_from_source,
                   source_from_cache)
 # Should be re-implemented here (and mostly deprecated)
-from _imp import (find_module, load_compiled, load_source, NullImporter,
+from _imp import (find_module, load_compiled, NullImporter,
                   SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
                   PY_RESOURCE, PKG_DIRECTORY, C_BUILTIN, PY_FROZEN,
                   PY_CODERESOURCE, IMP_HOOK)
@@ -23,6 +23,33 @@ from importlib._bootstrap import _new_module as new_module
 
 from importlib import _bootstrap
 import os
+
+
+class _LoadSourceCompatibility(_bootstrap._SourceFileLoader):
+
+    """Compatibility support for implementing load_source()."""
+
+    def __init__(self, fullname, path, file=None):
+        super().__init__(fullname, path)
+        self.file = file
+
+    def get_data(self, path):
+        """Gross hack to contort SourceFileLoader to deal w/ load_source()'s bad
+        API."""
+        if path == self._path:
+            with self.file:
+                # Technically should be returning bytes, but
+                # SourceLoader.get_code() just passed what is returned to
+                # compile() which can handle str. And converting to bytes would
+                # require figuring out the encoding to decode to and
+                # tokenize.detect_encoding() only accepts bytes.
+                return self.file.read()
+        else:
+            return super().get_data(path)
+
+
+def load_source(name, pathname, file=None):
+    return _LoadSourceCompatibility(name, pathname, file).load_module(name)
 
 
 def load_package(name, path):
