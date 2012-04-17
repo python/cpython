@@ -51,6 +51,12 @@ Usually your SQL operations will need to use values from Python variables.  You
 shouldn't assemble your query using Python's string operations because doing so
 is insecure; it makes your program vulnerable to an SQL injection attack.
 
+The data you've saved is persistent and is available in subsequent sessions::
+
+   import sqlite3
+   conn = sqlite3.connect('/tmp/example')
+   c = conn.cursor()
+
 Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
 wherever you want to use a value, and then provide a tuple of values as the
 second argument to the cursor's :meth:`~Cursor.execute` method.  (Other database
