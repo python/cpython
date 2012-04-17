@@ -9,6 +9,7 @@ import errno
 import sys
 import time
 import os
+import platform
 import pwd
 import shutil
 import stat
@@ -229,6 +230,9 @@ class PosixTester(unittest.TestCase):
 
     def _test_all_chown_common(self, chown_func, first_param):
         """Common code for chown, fchown and lchown tests."""
+        # test a successful chown call
+        chown_func(first_param, os.getuid(), os.getgid())
+
         if os.getuid() == 0:
             try:
                 # Many linux distros have a nfsnobody user as MAX_UID-2
@@ -240,12 +244,15 @@ class PosixTester(unittest.TestCase):
                 chown_func(first_param, ent.pw_uid, ent.pw_gid)
             except KeyError:
                 pass
+        elif platform.system() in ('HP-UX', 'SunOS'):
+            # HP-UX and Solaris can allow a non-root user to chown() to root
+            # (issue #5113)
+            raise unittest.SkipTest("Skipping because of non-standard chown() "
+                                    "behavior")
         else:
             # non-root cannot chown to root, raises OSError
             self.assertRaises(OSError, chown_func,
                               first_param, 0, 0)
-        # test a successful chown call
-        chown_func(first_param, os.getuid(), os.getgid())
 
     @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
     def test_chown(self):
