@@ -2460,7 +2460,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         PyObject *msg = PyUnicode_FromFormat("import of %R halted; "
                                              "None in sys.modules", abs_name);
         if (msg != NULL) {
-            PyErr_SetFromImportErrorWithName(msg, abs_name);
+            PyErr_SetImportError(msg, abs_name, NULL);
+            Py_DECREF(msg);
         }
         mod = NULL;
         goto error_with_unlock;
