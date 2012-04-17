@@ -213,6 +213,8 @@ class LongReprTest(unittest.TestCase):
         # Remember where we are
         self.here = os.getcwd()
         sys.path.insert(0, self.here)
+        # When regrtest is run with its -j option, this command alone is not
+        # enough.
         importlib.invalidate_caches()
 
     def tearDown(self):
@@ -233,6 +235,7 @@ class LongReprTest(unittest.TestCase):
     def test_module(self):
         eq = self.assertEqual
         create_empty_file(os.path.join(self.subpkgname, self.pkgname + '.py'))
+        importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         eq(repr(areallylongpackageandmodulenametotestreprtruncation),
            "<module %r from %r>" % (areallylongpackageandmodulenametotestreprtruncation.__name__, areallylongpackageandmodulenametotestreprtruncation.__file__))
@@ -244,6 +247,7 @@ class LongReprTest(unittest.TestCase):
 class foo(object):
     pass
 ''')
+        importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import foo
         eq(repr(foo.foo),
                "<class '%s.foo'>" % foo.__name__)
@@ -258,6 +262,7 @@ class foo(object):
 class bar:
     pass
 ''')
+        importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
         # Module name may be prefixed with "test.", depending on how run.
         self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
@@ -267,6 +272,7 @@ class bar:
 class baz:
     pass
 ''')
+        importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
         self.assertTrue(repr(ibaz).startswith(
@@ -278,6 +284,7 @@ class baz:
 class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
     def amethod(self): pass
 ''')
+        importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
         # Unbound methods first
         r = repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod)
