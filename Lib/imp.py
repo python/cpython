@@ -14,7 +14,7 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
 from _imp import (get_magic, get_tag, get_suffixes, cache_from_source,
                   source_from_cache)
 # Should be re-implemented here (and mostly deprecated)
-from _imp import (find_module, load_compiled, NullImporter,
+from _imp import (find_module, NullImporter,
                   SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
                   PY_RESOURCE, PKG_DIRECTORY, C_BUILTIN, PY_FROZEN,
                   PY_CODERESOURCE, IMP_HOOK)
@@ -25,17 +25,17 @@ from importlib import _bootstrap
 import os
 
 
-class _LoadSourceCompatibility(_bootstrap._SourceFileLoader):
+class _HackedGetData:
 
-    """Compatibility support for implementing load_source()."""
+    """Compatibiilty support for 'file' arguments of various load_*()
+    functions."""
 
     def __init__(self, fullname, path, file=None):
         super().__init__(fullname, path)
         self.file = file
 
     def get_data(self, path):
-        """Gross hack to contort SourceFileLoader to deal w/ load_source()'s bad
-        API."""
+        """Gross hack to contort loader to deal w/ load_*()'s bad API."""
         if self.file and path == self._path:
             with self.file:
                 # Technically should be returning bytes, but
@@ -48,8 +48,23 @@ class _LoadSourceCompatibility(_bootstrap._SourceFileLoader):
             return super().get_data(path)
 
 
+class _LoadSourceCompatibility(_HackedGetData, _bootstrap._SourceFileLoader):
+
+    """Compatibility support for implementing load_source()."""
+
+
 def load_source(name, pathname, file=None):
     return _LoadSourceCompatibility(name, pathname, file).load_module(name)
+
+
+class _LoadCompiledCompatibility(_HackedGetData,
+        _bootstrap._SourcelessFileLoader):
+
+    """Compatibility support for implementing load_compiled()."""
+
+
+def load_compiled(name, pathname, file=None):
+    return _LoadCompiledCompatibility(name, pathname, file).load_module(name)
 
 
 def load_package(name, path):
