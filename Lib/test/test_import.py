@@ -346,6 +346,7 @@ class ImportTests(unittest.TestCase):
         pkg_name = "extension"
         pkg_file = pkg_name + "{}".format("_d.pyd" if debug else ".pyd")
         with open(pkg_file, "w"): pass
+        importlib.invalidate_caches()
         try:
             with self.assertRaises(ImportError) as err:
                 import extension
