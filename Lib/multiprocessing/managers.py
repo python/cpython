@@ -48,6 +48,7 @@ from traceback import format_exc
 from multiprocessing import Process, current_process, active_children, Pool, util, connection
 from multiprocessing.process import AuthenticationString
 from multiprocessing.forking import exit, Popen, ForkingPickler
+from time import time as _time
 
 #
 # Register some things for pickling
@@ -996,6 +997,24 @@ class ConditionProxy(AcquirerProxy):
         return self._callmethod('notify')
     def notify_all(self):
         return self._callmethod('notify_all')
+    def wait_for(self, predicate, timeout=None):
+        result = predicate()
+        if result:
+            return result
+        if timeout is not None:
+            endtime = _time() + timeout
+        else:
+            endtime = None
+            waittime = None
+        while not result:
+            if endtime is not None:
+                waittime = endtime - _time()
+                if waittime <= 0:
+                    break
+            self.wait(waittime)
+            result = predicate()
+        return result
+
 
 class EventProxy(BaseProxy):
     _exposed_ = ('is_set', 'set', 'clear', 'wait')
