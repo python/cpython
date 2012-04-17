@@ -572,6 +572,7 @@ new_buffersize(fileio *self, size_t currentsize
 #endif
                )
 {
+    size_t addend;
 #ifdef HAVE_FSTAT
     if (end != (Py_off_t)-1) {
         /* Files claiming a size smaller than SMALLCHUNK may
@@ -589,9 +590,16 @@ new_buffersize(fileio *self, size_t currentsize
     }
 #endif
     /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior. Use a less-than-double
-       growth factor to avoid excessive allocation. */
-    return currentsize + (currentsize >> 3) + 6;
+       giving us amortized linear-time behavior.  For bigger sizes, use a
+       less-than-double growth factor to avoid excessive allocation. */
+    if (currentsize > 65536)
+        addend = currentsize >> 3;
+    else
+        addend = 256 + currentsize;
+    if (addend < SMALLCHUNK)
+        /* Avoid tiny read() calls. */
+        addend = SMALLCHUNK;
+    return addend + currentsize;
 }
 
 static PyObject *
