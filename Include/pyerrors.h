@@ -265,9 +265,8 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 
 PyAPI_FUNC(PyObject *) PyErr_SetExcWithArgsKwargs(PyObject *, PyObject *,
     PyObject *);
-PyAPI_FUNC(PyObject *) PyErr_SetFromImportErrorWithNameAndPath(PyObject *,
-        PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyErr_SetFromImportErrorWithName(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_SetImportError(PyObject *, PyObject *,
+    PyObject *);
 
 /* Export the old function so that the existing API remains available: */
 PyAPI_FUNC(void) PyErr_BadInternalCall(void);
