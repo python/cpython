@@ -897,6 +897,9 @@ object -- see :ref:`multiprocessing-managers`.
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
 
+   .. versionchanged:: 3.3
+      The :meth:`wait_for` method was added.
+
 .. class:: Event()
 
    A clone of :class:`threading.Event`.
@@ -1280,6 +1283,9 @@ their parent process exits.  The manager classes are defined in the
 
       If *lock* is supplied then it should be a proxy for a
       :class:`threading.Lock` or :class:`threading.RLock` object.
+
+      .. versionchanged:: 3.3
+         The :meth:`wait_for` method was added.
 
    .. method:: Event()
 

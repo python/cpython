@@ -43,6 +43,7 @@ import _multiprocessing
 from multiprocessing.process import current_process
 from multiprocessing.util import register_after_fork, debug
 from multiprocessing.forking import assert_spawning, Popen
+from time import time as _time
 
 # Try to import the mp.synchronize module cleanly, if it fails
 # raise ImportError for platforms lacking a working sem_open implementation.
@@ -289,6 +290,24 @@ class Condition(object):
             # rezero wait_semaphore in case some timeouts just happened
             while self._wait_semaphore.acquire(False):
                 pass
+
+    def wait_for(self, predicate, timeout=None):
+        result = predicate()
+        if result:
+            return result
+        if timeout is not None:
+            endtime = _time() + timeout
+        else:
+            endtime = None
+            waittime = None
+        while not result:
+            if endtime is not None:
+                waittime = endtime - _time()
+                if waittime <= 0:
+                    break
+            self.wait(waittime)
+            result = predicate()
+        return result
 
 #
 # Event
