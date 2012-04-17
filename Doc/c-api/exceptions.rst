@@ -229,27 +229,12 @@ in various ways.  There is a separate error indicator for each thread.
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised. Availability: Windows.
 
-.. c:function:: PyObject* PyErr_SetExcWithArgsKwargs(PyObject *exc, PyObject *args, PyObject *kwargs)
-
-   This is a convenience function to set an *exc* with the given *args* and
-   *kwargs* values. If *args* is ``NULL``, an empty :func:`tuple` will be
-   created when *exc* is created via :c:func:`PyObject_Call`.
-
-   .. versionadded:: 3.3
-
-.. c:function:: PyObject* PyErr_SetFromImportErrorWithName(PyObject *msg, PyObject *name)
+.. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 
    This is a convenience function to raise :exc:`ImportError`. *msg* will be
-   set as the exception's message string, and *name* will be set as the
-   :exc:`ImportError`'s ``name`` attribute.
-
-   .. versionadded:: 3.3
-
-.. c:function:: PyObject* PyErr_SetFromImportErrorWithNameAndPath(PyObject *msg, PyObject *name, PyObject *path)
-
-   This is a convenience function to raise :exc:`ImportError`. *msg* will be
-   set as the exception's message string. Both *name* and *path* will be set
-   as the :exc:`ImportError`'s respective ``name`` and ``path`` attributes.
+   set as the exception's message string. *name* and *path*, both of which can
+   be ``NULL``, will be set as the :exc:`ImportError`'s respective ``name``
+   and ``path`` attributes.
 
    .. versionadded:: 3.3
 

@@ -254,9 +254,9 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
                         theLength));
             }
             if (message != NULL) {
-                PyErr_SetFromImportErrorWithNameAndPath(message,
-                                        PyUnicode_FromString(shortname),
-                                        pathname);
+                PyErr_SetImportError(message, PyUnicode_FromString(shortname),
+                                     pathname);
+                Py_DECREF(message);
             }
             return NULL;
         } else {
