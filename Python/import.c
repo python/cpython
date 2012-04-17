@@ -1062,58 +1062,6 @@ make_source_pathname(PyObject *path)
 }
 
 
-/* Read a code object from a file and check it for validity */
-
-static PyCodeObject *
-read_compiled_module(PyObject *cpathname, FILE *fp)
-{
-    PyObject *co;
-
-    co = PyMarshal_ReadLastObjectFromFile(fp);
-    if (co == NULL)
-        return NULL;
-    if (!PyCode_Check(co)) {
-        PyErr_Format(PyExc_ImportError,
-                     "Non-code object in %R", cpathname);
-        Py_DECREF(co);
-        return NULL;
-    }
-    return (PyCodeObject *)co;
-}
-
-
-/* Load a module from a compiled file, execute it, and return its
-   module object WITH INCREMENTED REFERENCE COUNT */
-
-static PyObject *
-load_compiled_module(PyObject *name, PyObject *cpathname, FILE *fp)
-{
-    long magic;
-    PyCodeObject *co;
-    PyObject *m;
-
-    magic = PyMarshal_ReadLongFromFile(fp);
-    if (magic != pyc_magic) {
-        PyErr_Format(PyExc_ImportError,
-                     "Bad magic number in %R", cpathname);
-        return NULL;
-    }
-    /* Skip mtime and size */
-    (void) PyMarshal_ReadLongFromFile(fp);
-    (void) PyMarshal_ReadLongFromFile(fp);
-    co = read_compiled_module(cpathname, fp);
-    if (co == NULL)
-        return NULL;
-    if (Py_VerboseFlag)
-        PySys_FormatStderr("import %U # precompiled from %R\n",
-                           name, cpathname);
-    m = PyImport_ExecCodeModuleObject(name, (PyObject *)co,
-                                      cpathname, cpathname);
-    Py_DECREF(co);
-
-    return m;
-}
-
 static void
 update_code_filenames(PyCodeObject *co, PyObject *oldname, PyObject *newname)
 {
@@ -3010,29 +2958,6 @@ get_file(PyObject *pathname, PyObject *fob, char *mode)
     }
 }
 
-static PyObject *
-imp_load_compiled(PyObject *self, PyObject *args)
-{
-    PyObject *name, *pathname;
-    PyObject *fob = NULL;
-    PyObject *m;
-    FILE *fp;
-    if (!PyArg_ParseTuple(args, "UO&|O:load_compiled",
-                          &name,
-                          PyUnicode_FSDecoder, &pathname,
-                          &fob))
-        return NULL;
-    fp = get_file(pathname, fob, "rb");
-    if (fp == NULL) {
-        Py_DECREF(pathname);
-        return NULL;
-    }
-    m = load_compiled_module(name, pathname, fp);
-    fclose(fp);
-    Py_DECREF(pathname);
-    return m;
-}
-
 #ifdef HAVE_DYNAMIC_LOADING
 
 static PyObject *
@@ -3209,7 +3134,6 @@ static PyMethodDef imp_methods[] = {
     {"init_frozen",             imp_init_frozen,        METH_VARARGS},
     {"is_builtin",              imp_is_builtin,         METH_VARARGS},
     {"is_frozen",               imp_is_frozen,          METH_VARARGS},
-    {"load_compiled",           imp_load_compiled,      METH_VARARGS},
 #ifdef HAVE_DYNAMIC_LOADING
     {"load_dynamic",            imp_load_dynamic,       METH_VARARGS},
 #endif
