@@ -36,7 +36,7 @@ class _LoadSourceCompatibility(_bootstrap._SourceFileLoader):
     def get_data(self, path):
         """Gross hack to contort SourceFileLoader to deal w/ load_source()'s bad
         API."""
-        if path == self._path:
+        if self.file and path == self._path:
             with self.file:
                 # Technically should be returning bytes, but
                 # SourceLoader.get_code() just passed what is returned to
