@@ -842,7 +842,8 @@ class _FileFinder:
         # We store two cached versions, to handle runtime changes of the
         # PYTHONCASEOK environment variable.
         self._path_cache = set(contents)
-        self._relaxed_path_cache = set(fn.lower() for fn in contents)
+        if sys.platform.startswith(CASE_INSENSITIVE_PLATFORMS):
+            self._relaxed_path_cache = set(fn.lower() for fn in contents)
 
 
 class _SourceFinderDetails:
