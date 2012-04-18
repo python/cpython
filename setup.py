@@ -1387,7 +1387,6 @@ class PyBuildExt(build_ext):
         if platform == 'win32':
             multiprocessing_srcs = [ '_multiprocessing/multiprocessing.c',
                                      '_multiprocessing/semaphore.c',
-                                     '_multiprocessing/win32_functions.c'
                                    ]
 
         else:

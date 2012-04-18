@@ -385,7 +385,7 @@ class TimeoutExpired(SubprocessError):
 if mswindows:
     import threading
     import msvcrt
-    import _subprocess
+    import _winapi
     class STARTUPINFO:
         dwFlags = 0
         hStdInput = None
@@ -410,15 +410,36 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "CalledProcessError", "DEVNULL"]
 
 if mswindows:
-    from _subprocess import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
-                             STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
-                             STD_ERROR_HANDLE, SW_HIDE,
-                             STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW)
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+                         STD_ERROR_HANDLE, SW_HIDE,
+                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW)
 
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW"])
+
+    class Handle(int):
+        closed = False
+
+        def Close(self, CloseHandle=_winapi.CloseHandle):
+            if not self.closed:
+                self.closed = True
+                CloseHandle(self)
+
+        def Detach(self):
+            if not self.closed:
+                self.closed = True
+                return int(self)
+            raise ValueError("already closed")
+
+        def __repr__(self):
+            return "Handle(%d)" % int(self)
+
+        __del__ = Close
+        __str__ = __repr__
+
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
@@ -892,11 +913,14 @@ class Popen(object):
             errread, errwrite = -1, -1
 
             if stdin is None:
-                p2cread = _subprocess.GetStdHandle(_subprocess.STD_INPUT_HANDLE)
+                p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                 if p2cread is None:
-                    p2cread, _ = _subprocess.CreatePipe(None, 0)
+                    p2cread, _ = _winapi.CreatePipe(None, 0)
+                    p2cread = Handle(p2cread)
+                    _winapi.CloseHandle(_)
             elif stdin == PIPE:
-                p2cread, p2cwrite = _subprocess.CreatePipe(None, 0)
+                p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
+                p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
             elif stdin == DEVNULL:
                 p2cread = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdin, int):
@@ -907,11 +931,14 @@ class Popen(object):
             p2cread = self._make_inheritable(p2cread)
 
             if stdout is None:
-                c2pwrite = _subprocess.GetStdHandle(_subprocess.STD_OUTPUT_HANDLE)
+                c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
-                    _, c2pwrite = _subprocess.CreatePipe(None, 0)
+                    _, c2pwrite = _winapi.CreatePipe(None, 0)
+                    c2pwrite = Handle(c2pwrite)
+                    _winapi.CloseHandle(_)
             elif stdout == PIPE:
-                c2pread, c2pwrite = _subprocess.CreatePipe(None, 0)
+                c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
+                c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
             elif stdout == DEVNULL:
                 c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
             elif isinstance(stdout, int):
@@ -922,11 +949,14 @@ class Popen(object):
             c2pwrite = self._make_inheritable(c2pwrite)
 
             if stderr is None:
-                errwrite = _subprocess.GetStdHandle(_subprocess.STD_ERROR_HANDLE)
+                errwrite = _winapi.GetStdHandle(_winapi.STD_ERROR_HANDLE)
                 if errwrite is None:
-                    _, errwrite = _subprocess.CreatePipe(None, 0)
+                    _, errwrite = _winapi.CreatePipe(None, 0)
+                    errwrite = Handle(errwrite)
+                    _winapi.CloseHandle(_)
             elif stderr == PIPE:
-                errread, errwrite = _subprocess.CreatePipe(None, 0)
+                errread, errwrite = _winapi.CreatePipe(None, 0)
+                errread, errwrite = Handle(errread), Handle(errwrite)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
             elif stderr == DEVNULL:
@@ -945,15 +975,17 @@ class Popen(object):
 
         def _make_inheritable(self, handle):
             """Return a duplicate of handle, which is inheritable"""
-            return _subprocess.DuplicateHandle(_subprocess.GetCurrentProcess(),
-                                handle, _subprocess.GetCurrentProcess(), 0, 1,
-                                _subprocess.DUPLICATE_SAME_ACCESS)
+            h = _winapi.DuplicateHandle(
+                _winapi.GetCurrentProcess(), handle,
+                _winapi.GetCurrentProcess(), 0, 1,
+                _winapi.DUPLICATE_SAME_ACCESS)
+            return Handle(h)
 
 
         def _find_w9xpopen(self):
             """Find and return absolut path to w9xpopen.exe"""
             w9xpopen = os.path.join(
-                            os.path.dirname(_subprocess.GetModuleFileName(0)),
+                            os.path.dirname(_winapi.GetModuleFileName(0)),
                                     "w9xpopen.exe")
             if not os.path.exists(w9xpopen):
                 # Eeek - file-not-found - possibly an embedding
@@ -985,17 +1017,17 @@ class Popen(object):
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
             if -1 not in (p2cread, c2pwrite, errwrite):
-                startupinfo.dwFlags |= _subprocess.STARTF_USESTDHANDLES
+                startupinfo.dwFlags |= _winapi.STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
 
             if shell:
-                startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _subprocess.SW_HIDE
+                startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = _winapi.SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
-                if (_subprocess.GetVersion() >= 0x80000000 or
+                if (_winapi.GetVersion() >= 0x80000000 or
                         os.path.basename(comspec).lower() == "command.com"):
                     # Win9x, or using command.com on NT. We need to
                     # use the w9xpopen intermediate program. For more
@@ -1009,11 +1041,11 @@ class Popen(object):
                     # use at xxx" and a hopeful warning about the
                     # stability of your system.  Cost is Ctrl+C won't
                     # kill children.
-                    creationflags |= _subprocess.CREATE_NEW_CONSOLE
+                    creationflags |= _winapi.CREATE_NEW_CONSOLE
 
             # Start the process
             try:
-                hp, ht, pid, tid = _subprocess.CreateProcess(executable, args,
+                hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
                                          # no special security
                                          None, None,
                                          int(not close_fds),
@@ -1045,14 +1077,14 @@ class Popen(object):
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
-            self._handle = hp
+            self._handle = Handle(hp)
             self.pid = pid
-            ht.Close()
+            _winapi.CloseHandle(ht)
 
         def _internal_poll(self, _deadstate=None,
-                _WaitForSingleObject=_subprocess.WaitForSingleObject,
-                _WAIT_OBJECT_0=_subprocess.WAIT_OBJECT_0,
-                _GetExitCodeProcess=_subprocess.GetExitCodeProcess):
+                _WaitForSingleObject=_winapi.WaitForSingleObject,
+                _WAIT_OBJECT_0=_winapi.WAIT_OBJECT_0,
+                _GetExitCodeProcess=_winapi.GetExitCodeProcess):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
@@ -1072,15 +1104,15 @@ class Popen(object):
             if endtime is not None:
                 timeout = self._remaining_time(endtime)
             if timeout is None:
-                timeout_millis = _subprocess.INFINITE
+                timeout_millis = _winapi.INFINITE
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
-                result = _subprocess.WaitForSingleObject(self._handle,
-                                                         timeout_millis)
-                if result == _subprocess.WAIT_TIMEOUT:
+                result = _winapi.WaitForSingleObject(self._handle,
+                                                    timeout_millis)
+                if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
-                self.returncode = _subprocess.GetExitCodeProcess(self._handle)
+                self.returncode = _winapi.GetExitCodeProcess(self._handle)
             return self.returncode
 
 
@@ -1163,12 +1195,12 @@ class Popen(object):
             """Terminates the process
             """
             try:
-                _subprocess.TerminateProcess(self._handle, 1)
+                _winapi.TerminateProcess(self._handle, 1)
             except PermissionError:
                 # ERROR_ACCESS_DENIED (winerror 5) is received when the
                 # process already died.
-                rc = _subprocess.GetExitCodeProcess(self._handle)
-                if rc == _subprocess.STILL_ACTIVE:
+                rc = _winapi.GetExitCodeProcess(self._handle)
+                if rc == _winapi.STILL_ACTIVE:
                     raise
                 self.returncode = rc
 

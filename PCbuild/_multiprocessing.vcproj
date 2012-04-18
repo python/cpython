@@ -534,10 +534,6 @@
 				RelativePath="..\Modules\_multiprocessing\semaphore.c"
 				>
 			</File>
-			<File
-				RelativePath="..\Modules\_multiprocessing\win32_functions.c"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>
