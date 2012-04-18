@@ -10,6 +10,11 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14385: It is now possible to use a custom type for the __builtins__
+  namespace, instead of a dict. It can be used for sandboxing for example.
+  Raise also a NameError instead of ImportError if __build_class__ name if not
+  found in __builtins__.
+
 - Issue #12599: Be more strict in accepting None compared to a false-like
   object for importlib.util.module_for_loader and
   importlib.machinery.PathFinder.
