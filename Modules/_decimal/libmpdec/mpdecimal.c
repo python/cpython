@@ -3054,8 +3054,6 @@ mpd_qabs(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     else {
         mpd_qplus(result, a, ctx, status);
     }
-
-    mpd_qfinalize(result, ctx, status);
 }
 
 static inline void
