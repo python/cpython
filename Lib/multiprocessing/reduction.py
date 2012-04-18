@@ -60,11 +60,11 @@ if not(sys.platform == 'win32' or (hasattr(socket, 'CMSG_LEN') and
 #
 
 if sys.platform == 'win32':
-    from _multiprocessing import win32
+    import _winapi
 
     def send_handle(conn, handle, destination_pid):
-        process_handle = win32.OpenProcess(
-            win32.PROCESS_ALL_ACCESS, False, destination_pid
+        process_handle = _winapi.OpenProcess(
+            _winapi.PROCESS_ALL_ACCESS, False, destination_pid
             )
         try:
             new_handle = duplicate(handle, process_handle)

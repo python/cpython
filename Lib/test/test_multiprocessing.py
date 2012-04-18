@@ -84,7 +84,7 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
 
 WIN32 = (sys.platform == "win32")
 if WIN32:
-    from _subprocess import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
+    from _winapi import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
 
     def wait_for_handle(handle, timeout):
         if timeout is None or timeout < 0.0:

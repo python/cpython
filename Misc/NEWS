@@ -47,6 +47,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11750: The Windows API functions scattered in the _subprocess and
+  _multiprocessing.win32 modules now live in a single module "_winapi".
+  Patch by sbt.
+
 - Issue #14087: multiprocessing: add Condition.wait_for(). Patch by sbt.
 
 - Issue #14452: SysLogHandler no longer inserts a UTF-8 BOM into the message.
