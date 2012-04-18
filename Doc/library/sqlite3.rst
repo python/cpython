@@ -15,12 +15,12 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-sqlite3 was written by Gerhard Häring and provides a SQL interface compliant
-with the DB-API 2.0 specification described by :pep:`249`.
+The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
+compliant with the DB-API 2.0 specification described by :pep:`249`.
 
 To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
-:file:`/tmp/example` file::
+:file:`example.db` file::
 
    import sqlite3
    conn = sqlite3.connect('example.db')
@@ -473,7 +473,7 @@ Cursor Objects
 
 .. method:: Cursor.execute(sql, [parameters])
 
-   Executes an SQL statement. The SQL statement may be parametrized (i. e.
+   Executes an SQL statement. The SQL statement may be parameterized (i. e.
    placeholders instead of SQL literals). The :mod:`sqlite3` module supports two
    kinds of placeholders: question marks (qmark style) and named placeholders
    (named style).
