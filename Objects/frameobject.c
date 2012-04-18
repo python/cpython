@@ -614,10 +614,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
         if (builtins) {
             if (PyModule_Check(builtins)) {
                 builtins = PyModule_GetDict(builtins);
-                assert(!builtins || PyDict_Check(builtins));
+                assert(builtins != NULL);
             }
-            else if (!PyDict_Check(builtins))
-                builtins = NULL;
         }
         if (builtins == NULL) {
             /* No builtins!              Make up a minimal one
@@ -636,7 +634,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
         /* If we share the globals, we share the builtins.
            Save a lookup and a call. */
         builtins = back->f_builtins;
-        assert(builtins != NULL && PyDict_Check(builtins));
+        assert(builtins != NULL);
         Py_INCREF(builtins);
     }
     if (code->co_zombieframe != NULL) {
