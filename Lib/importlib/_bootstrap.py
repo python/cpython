@@ -217,7 +217,7 @@ def module_for_loader(fxn):
     """
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):
         module = sys.modules.get(fullname)
-        is_reload = bool(module)
+        is_reload = module is not None
         if not is_reload:
             # This must be done before open() is called as the 'io' module
             # implicitly imports 'locale' and would otherwise trigger an
@@ -711,7 +711,7 @@ class PathFinder:
         If 'hooks' is false then use sys.path_hooks.
 
         """
-        if not hooks:
+        if hooks is None:
             hooks = sys.path_hooks
         for hook in hooks:
             try:
@@ -753,7 +753,7 @@ class PathFinder:
     def find_module(cls, fullname, path=None):
         """Find the module on sys.path or 'path' based on sys.path_hooks and
         sys.path_importer_cache."""
-        if not path:
+        if path is None:
             path = sys.path
         for entry in path:
             try:

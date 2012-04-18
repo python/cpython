@@ -65,8 +65,22 @@ class ModuleForLoaderTests(unittest.TestCase):
         self.assertEqual(wrapped.__name__, fxn.__name__)
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
-class SetPackageTests(unittest.TestCase):
+    def test_false_module(self):
+        # If for some odd reason a module is considered false, still return it
+        # from sys.modules.
+        class FalseModule(types.ModuleType):
+            def __bool__(self): return False
 
+        name = 'mod'
+        module = FalseModule(name)
+        with test_util.uncache(name):
+            self.assertFalse(module)
+            sys.modules[name] = module
+            given = self.return_module(name)
+            self.assertTrue(given is module)
+
+
+class SetPackageTests(unittest.TestCase):
 
     """Tests for importlib.util.set_package."""
 
