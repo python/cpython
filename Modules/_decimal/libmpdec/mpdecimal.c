@@ -3089,7 +3089,7 @@ _mpd_qaddsub(mpd_t *result, const mpd_t *a, const mpd_t *b, uint8_t sign_b,
 {
     mpd_t *big, *small;
     MPD_NEW_STATIC(big_aligned,0,0,0,0);
-    MPD_NEW_CONST(tiny,0,0,0,1,1,1);
+    MPD_NEW_CONST(tiny,0,0,1,1,1,1);
     mpd_uint_t carry;
     mpd_ssize_t newsize, shift;
     mpd_ssize_t exp, i;
