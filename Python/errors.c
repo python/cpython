@@ -593,7 +593,7 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     if (msg == NULL)
         return NULL;
 
-    args = PyTuple_New(0);
+    args = PyTuple_New(1);
     if (args == NULL)
         return NULL;
 
@@ -604,12 +604,10 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     }
 
     if (name == NULL) {
-        Py_INCREF(Py_None);
         name = Py_None;
     }
 
     if (path == NULL) {
-        Py_INCREF(Py_None);
         path = Py_None;
     }
 
