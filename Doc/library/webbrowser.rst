@@ -133,11 +133,9 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'windows-default'``  | :class:`WindowsDefault`                 | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'internet-config'``  | :class:`InternetConfig`                 | \(3)  |
+| ``'macosx'``           | :class:`MacOSX('default')`              | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | :class:`MacOSX('default')`              | \(4)  |
-+------------------------+-----------------------------------------+-------+
-| ``'safari'``           | :class:`MacOSX('safari')`               | \(4)  |
+| ``'safari'``           | :class:`MacOSX('safari')`               | \(3)  |
 +------------------------+-----------------------------------------+-------+
 | ``'google-chrome'``    | :class:`Chrome('google-chrome')`        |       |
 +------------------------+-----------------------------------------+-------+
@@ -161,9 +159,6 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on Mac OS platforms; requires the standard MacPython :mod:`ic` module.
-
-(4)
    Only on Mac OS X platform.
 
 .. versionadded:: 3.3
