@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14612: Fix jumping around with blocks by setting f_lineno.
+
 - Issue #13889: Check and (if necessary) set FPU control word before calling
   any of the dtoa.c string <-> float conversion functions, on MSVC builds of
   Python.  This fixes issues when embedding Python in a Delphi app.
