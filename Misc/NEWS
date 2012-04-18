@@ -14,6 +14,8 @@ Core and Builtins
   object for importlib.util.module_for_loader and
   importlib.machinery.PathFinder.
 
+- Issue #14612: Fix jumping around with blocks by setting f_lineno.
+
 - Issue #14592: Attempting a relative import w/o __package__ or __name__ set in
   globals raises a KeyError.
 
