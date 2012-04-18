@@ -17,6 +17,8 @@ Core and Builtins
 - Issue #14592: Attempting a relative import w/o __package__ or __name__ set in
   globals raises a KeyError.
 
+- Issue #14607: Fix defaults keyword-only arguments which started with ``__``.
+
 - Issue #10854: The ImportError raised when an extension module on Windows
   fails to import now uses the new path and name attributes from
   Issue #1559549.

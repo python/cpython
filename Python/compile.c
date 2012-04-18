@@ -1409,7 +1409,11 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            ADDOP_O(c, LOAD_CONST, arg->arg, consts);
+            PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
+            if (!mangled)
+                return -1;
+            ADDOP_O(c, LOAD_CONST, mangled, consts);
+            Py_DECREF(mangled);
             if (!compiler_visit_expr(c, default_)) {
                 return -1;
             }
