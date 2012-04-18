@@ -1280,7 +1280,8 @@ _mpd_qget_uint(int use_sign, const mpd_t *a, uint32_t *status)
         /* At this point a->digits+a->exp <= MPD_RDIGITS+1,
          * so the shift fits. */
         tmp.data = tmp_data;
-        tmp.flags = MPD_STATIC|MPD_CONST_DATA;
+        tmp.flags = MPD_STATIC|MPD_STATIC_DATA;
+        tmp.alloc = 2;
         mpd_qsshiftr(&tmp, a, -a->exp);
         tmp.exp = 0;
         a = &tmp;
