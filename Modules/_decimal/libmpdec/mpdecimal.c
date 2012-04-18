@@ -6691,16 +6691,15 @@ recpr_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2],
     return i-1;
 }
 
-/*
- * Initial approximation for the reciprocal. Result has MPD_RDIGITS-2
- * significant digits.
- */
+/* Initial approximation for the reciprocal. */
 static void
 _mpd_qreciprocal_approx(mpd_t *z, const mpd_t *v, uint32_t *status)
 {
     mpd_uint_t p10data[2] = {0, mpd_pow10[MPD_RDIGITS-2]}; /* 10**(2*MPD_RDIGITS-2) */
     mpd_uint_t dummy, word;
     int n;
+
+    assert(v->exp == -v->digits);
 
     _mpd_get_msdigits(&dummy, &word, v, MPD_RDIGITS);
     n = mpd_word_digits(word);
@@ -6710,7 +6709,7 @@ _mpd_qreciprocal_approx(mpd_t *z, const mpd_t *v, uint32_t *status)
     (void)_mpd_shortdiv(z->data, p10data, 2, word);
 
     mpd_clear_flags(z);
-    z->exp = -(v->exp + v->digits) - (MPD_RDIGITS-2);
+    z->exp = -(MPD_RDIGITS-2);
     z->len = (z->data[1] == 0) ? 1 : 2;
     mpd_setdigits(z);
 }
@@ -6723,7 +6722,7 @@ _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     mpd_context_t varcontext, maxcontext;
     mpd_t *z = result;         /* current approximation */
     mpd_t *v;                  /* a, normalized to a number between 0.1 and 1 */
-    MPD_NEW_SHARED(vtmp, a);   /* by default v will share data with a */
+    MPD_NEW_SHARED(vtmp, a);   /* v shares data with a */
     MPD_NEW_STATIC(s,0,0,0,0); /* temporary variable */
     MPD_NEW_STATIC(t,0,0,0,0); /* temporary variable */
     MPD_NEW_CONST(two,0,0,1,1,1,2); /* const 2 */
@@ -6732,9 +6731,9 @@ _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     uint8_t sign = mpd_sign(a);
     int i;
 
-    v = &vtmp;
     assert(result != a);
 
+    v = &vtmp;
     mpd_clear_flags(v);
     adj = v->digits + v->exp;
     v->exp = -v->digits;
