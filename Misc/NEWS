@@ -12,7 +12,7 @@ Core and Builtins
 
 - Issue #14612: Fix jumping around with blocks by setting f_lineno.
 
-- Issue #14607: Fix defaults keyword-only arguments which started with ``__``.
+- Issue #14607: Fix keyword-only arguments which started with ``__``.
 
 - Issue #13889: Check and (if necessary) set FPU control word before calling
   any of the dtoa.c string <-> float conversion functions, on MSVC builds of
