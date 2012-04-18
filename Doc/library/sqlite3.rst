@@ -23,7 +23,7 @@ represents the database.  Here the data will be stored in the
 :file:`/tmp/example` file::
 
    import sqlite3
-   conn = sqlite3.connect('/tmp/example')
+   conn = sqlite3.connect('example.db')
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
 
@@ -33,13 +33,11 @@ and call its :meth:`~Cursor.execute` method to perform SQL commands::
    c = conn.cursor()
 
    # Create table
-   c.execute('''create table stocks
-   (date text, trans text, symbol text,
-    qty real, price real)''')
+   c.execute('''CREATE TABLE stocks
+                (date text, trans text, symbol text, qty real, price real)''')
 
    # Insert a row of data
-   c.execute("""insert into stocks
-             values ('2006-01-05','BUY','RHAT',100,35.14)""")
+   c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
    # Save (commit) the changes
    conn.commit()
@@ -47,15 +45,16 @@ and call its :meth:`~Cursor.execute` method to perform SQL commands::
    # We can also close the cursor if we are done with it
    c.close()
 
-Usually your SQL operations will need to use values from Python variables.  You
-shouldn't assemble your query using Python's string operations because doing so
-is insecure; it makes your program vulnerable to an SQL injection attack.
-
 The data you've saved is persistent and is available in subsequent sessions::
 
    import sqlite3
-   conn = sqlite3.connect('/tmp/example')
+   conn = sqlite3.connect('example.db')
    c = conn.cursor()
+
+Usually your SQL operations will need to use values from Python variables.  You
+shouldn't assemble your query using Python's string operations because doing so
+is insecure; it makes your program vulnerable to an SQL injection attack
+(see http://xkcd.com/327/ for humorous example of what can go wrong).
 
 Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
 wherever you want to use a value, and then provide a tuple of values as the
@@ -64,19 +63,20 @@ modules may use a different placeholder, such as ``%s`` or ``:1``.) For
 example::
 
    # Never do this -- insecure!
-   symbol = 'IBM'
-   c.execute("select * from stocks where symbol = '%s'" % symbol)
+   symbol = 'RHAT'
+   c.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
    # Do this instead
    t = (symbol,)
-   c.execute('select * from stocks where symbol=?', t)
+   c.execute('SELECT * FROM stocks WHERE symbol=?', t)
+   print c.fetchone()
 
-   # Larger example
-   for t in [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-             ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
-             ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-            ]:
-       c.execute('insert into stocks values (?,?,?,?,?)', t)
+   # Larger example that inserts many records at a time
+   purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
+                ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
+                ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
+               ]
+   c.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
 
 To retrieve data after executing a SELECT statement, you can either treat the
 cursor as an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
@@ -85,16 +85,13 @@ matching rows.
 
 This example uses the iterator form::
 
-   >>> c = conn.cursor()
-   >>> c.execute('select * from stocks order by price')
-   >>> for row in c:
-   ...     print row
-   ...
+   >>> for row in c.execute('SELECT * FROM stocks ORDER BY price'):
+           print row
+
    (u'2006-01-05', u'BUY', u'RHAT', 100, 35.14)
    (u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
    (u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
    (u'2006-04-05', u'BUY', u'MSFT', 1000, 72.0)
-   >>>
 
 
 .. seealso::
@@ -106,6 +103,9 @@ This example uses the iterator form::
    http://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
+
+   http://www.w3schools.com/sql/
+      Tutorial, reference and examples for learning SQL syntax.
 
    :pep:`249` - Database API Specification 2.0
       PEP written by Marc-André Lemburg.
