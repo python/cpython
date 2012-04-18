@@ -593,13 +593,15 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     if (msg == NULL)
         return NULL;
 
-    args = PyTuple_New(1);
+    args = PyTuple_New(0);
     if (args == NULL)
         return NULL;
 
     kwargs = PyDict_New();
-    if (kwargs == NULL)
+    if (kwargs == NULL) {
+        Py_DECREF(args);
         return NULL;
+    }
 
     if (name == NULL) {
         Py_INCREF(Py_None);
@@ -612,13 +614,13 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     }
 
     Py_INCREF(msg);
-    PyTuple_SetItem(args, 0, NULL);//msg);
+    PyTuple_SET_ITEM(args, 0, msg);
     PyDict_SetItemString(kwargs, "name", name);
     PyDict_SetItemString(kwargs, "path", path);
 
     error = PyObject_Call(PyExc_ImportError, args, kwargs);
-    if (error!= NULL) {
-        PyErr_SetObject((PyObject *) Py_TYPE(error), error);
+    if (error != NULL) {
+        PyErr_SetObject((PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
     }
 
