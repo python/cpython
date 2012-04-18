@@ -10,6 +10,8 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #14612: Fix jumping around with blocks by setting f_lineno.
+
 - Issue #14607: Fix defaults keyword-only arguments which started with ``__``.
 
 - Issue #13889: Check and (if necessary) set FPU control word before calling
