@@ -2484,7 +2484,7 @@ mpd_qand(mpd_t *result, const mpd_t *a, const mpd_t *b,
     }
     result->data[i++] = z;
 
-    /* scan the rest of y for digit > 1 */
+    /* scan the rest of y for digits > 1 */
     for (; k < MPD_RDIGITS; k++) {
         ybit = y % 10;
         y /= 10;
@@ -2492,7 +2492,7 @@ mpd_qand(mpd_t *result, const mpd_t *a, const mpd_t *b,
             goto invalid_operation;
         }
     }
-    /* scan the rest of big for digit > 1 */
+    /* scan the rest of big for digits > 1 */
     for (; i < big->len; i++) {
         y = big->data[i];
         for (k = 0; k < MPD_RDIGITS; k++) {
@@ -2571,7 +2571,7 @@ mpd_qinvert(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     }
 
     for (i = 0; i < len; i++) {
-        x = (i < a->len) ?  a->data[i] : 0;
+        x = (i < a->len) ? a->data[i] : 0;
         z = 0;
         for (k = 0; k < MPD_RDIGITS; k++) {
             xbit = x % 10;
@@ -2674,7 +2674,7 @@ mpd_qor(mpd_t *result, const mpd_t *a, const mpd_t *b,
         z += (xbit|ybit) ? mpd_pow10[k] : 0;
     }
 
-    /* scan and copy the rest of y for digit > 1 */
+    /* scan for digits > 1 and copy the rest of y */
     for (; k < MPD_RDIGITS; k++) {
         ybit = y % 10;
         y /= 10;
@@ -2684,7 +2684,7 @@ mpd_qor(mpd_t *result, const mpd_t *a, const mpd_t *b,
         z += ybit*mpd_pow10[k];
     }
     result->data[i++] = z;
-    /* scan and copy the rest of big for digit > 1 */
+    /* scan for digits > 1 and copy the rest of big */
     for (; i < big->len; i++) {
         y = big->data[i];
         for (k = 0; k < MPD_RDIGITS; k++) {
@@ -2710,7 +2710,7 @@ invalid_operation:
 }
 
 /*
- * Rotate the coefficient of a by b->data digits. b must be an integer with
+ * Rotate the coefficient of 'a' by 'b' digits. 'b' must be an integer with
  * exponent 0.
  */
 void
@@ -2993,7 +2993,7 @@ mpd_qxor(mpd_t *result, const mpd_t *a, const mpd_t *b,
         z += (xbit^ybit) ? mpd_pow10[k] : 0;
     }
 
-    /* scan and copy the rest of y for digit > 1 */
+    /* scan for digits > 1 and copy the rest of y */
     for (; k < MPD_RDIGITS; k++) {
         ybit = y % 10;
         y /= 10;
@@ -3003,7 +3003,7 @@ mpd_qxor(mpd_t *result, const mpd_t *a, const mpd_t *b,
         z += ybit*mpd_pow10[k];
     }
     result->data[i++] = z;
-    /* scan and copy the rest of big for digit > 1 */
+    /* scan for digits > 1 and copy the rest of big */
     for (; i < big->len; i++) {
         y = big->data[i];
         for (k = 0; k < MPD_RDIGITS; k++) {
