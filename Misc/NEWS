@@ -23,9 +23,6 @@ Core and Builtins
   fails to import now uses the new path and name attributes from
   Issue #1559549.
 
-- Issue #14582: Import directly returns the module as returned by a loader when
-  possible instead of fetching it from sys.modules.
-
 - Issue #13889: Check and (if necessary) set FPU control word before calling
   any of the dtoa.c string <-> float conversion functions, on MSVC builds of
   Python.  This fixes issues when embedding Python in a Delphi app.
