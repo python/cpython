@@ -56,7 +56,7 @@ extern PyObject* PyInit__codecs_iso2022(void);
 extern PyObject* PyInit__codecs_jp(void);
 extern PyObject* PyInit__codecs_kr(void);
 extern PyObject* PyInit__codecs_tw(void);
-extern PyObject* PyInit__subprocess(void);
+extern PyObject* PyInit__winapi(void);
 extern PyObject* PyInit__lsprof(void);
 extern PyObject* PyInit__ast(void);
 extern PyObject* PyInit__io(void);
@@ -101,8 +101,8 @@ struct _inittab _PyImport_Inittab[] = {
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
 #endif
-    /* XXX Should _subprocess go in a WIN32 block?  not WIN64? */
-    {"_subprocess", PyInit__subprocess},
+    /* XXX Should _winapi go in a WIN32 block?  not WIN64? */
+    {"_winapi", PyInit__winapi},
 
     {"_codecs", PyInit__codecs},
     {"_weakref", PyInit__weakref},

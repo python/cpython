@@ -1055,6 +1055,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\_winapi.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\arraymodule.c"
 				>
 			</File>
@@ -1678,10 +1682,6 @@
 		<Filter
 			Name="PC"
 			>
-			<File
-				RelativePath="..\PC\_subprocess.c"
-				>
-			</File>
 			<File
 				RelativePath="..\PC\winreg.c"
 				>

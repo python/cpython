@@ -181,10 +181,9 @@ if sys.platform != 'win32':
 else:
     import _thread
     import msvcrt
-    import _subprocess
+    import _winapi
 
     from pickle import load, HIGHEST_PROTOCOL
-    from _multiprocessing import win32
 
     def dump(obj, file, protocol=None):
         ForkingPickler(file, protocol).dump(obj)
@@ -197,8 +196,8 @@ else:
     WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
     WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
-    exit = win32.ExitProcess
-    close = win32.CloseHandle
+    exit = _winapi.ExitProcess
+    close = _winapi.CloseHandle
 
     #
     # _python_exe is the assumed path to the python executable.
@@ -220,11 +219,11 @@ else:
 
     def duplicate(handle, target_process=None, inheritable=False):
         if target_process is None:
-            target_process = _subprocess.GetCurrentProcess()
-        return _subprocess.DuplicateHandle(
-            _subprocess.GetCurrentProcess(), handle, target_process,
-            0, inheritable, _subprocess.DUPLICATE_SAME_ACCESS
-            ).Detach()
+            target_process = _winapi.GetCurrentProcess()
+        return _winapi.DuplicateHandle(
+            _winapi.GetCurrentProcess(), handle, target_process,
+            0, inheritable, _winapi.DUPLICATE_SAME_ACCESS
+            )
 
     #
     # We define a Popen class similar to the one from subprocess, but
@@ -248,10 +247,10 @@ else:
             # start process
             cmd = get_command_line() + [rhandle]
             cmd = ' '.join('"%s"' % x for x in cmd)
-            hp, ht, pid, tid = _subprocess.CreateProcess(
+            hp, ht, pid, tid = _winapi.CreateProcess(
                 _python_exe, cmd, None, None, 1, 0, None, None, None
                 )
-            ht.Close()
+            _winapi.CloseHandle(ht)
             close(rhandle)
 
             # set attributes of self
@@ -282,13 +281,13 @@ else:
         def wait(self, timeout=None):
             if self.returncode is None:
                 if timeout is None:
-                    msecs = _subprocess.INFINITE
+                    msecs = _winapi.INFINITE
                 else:
                     msecs = max(0, int(timeout * 1000 + 0.5))
 
-                res = _subprocess.WaitForSingleObject(int(self._handle), msecs)
-                if res == _subprocess.WAIT_OBJECT_0:
-                    code = _subprocess.GetExitCodeProcess(self._handle)
+                res = _winapi.WaitForSingleObject(int(self._handle), msecs)
+                if res == _winapi.WAIT_OBJECT_0:
+                    code = _winapi.GetExitCodeProcess(self._handle)
                     if code == TERMINATE:
                         code = -signal.SIGTERM
                     self.returncode = code
@@ -301,7 +300,7 @@ else:
         def terminate(self):
             if self.returncode is None:
                 try:
-                    _subprocess.TerminateProcess(int(self._handle), TERMINATE)
+                    _winapi.TerminateProcess(int(self._handle), TERMINATE)
                 except WindowsError:
                     if self.wait(timeout=0.1) is None:
                         raise

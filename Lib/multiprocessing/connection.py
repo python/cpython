@@ -51,12 +51,12 @@ from multiprocessing import current_process, AuthenticationError, BufferTooShort
 from multiprocessing.util import (
     get_temp_dir, Finalize, sub_debug, debug, _eintr_retry)
 try:
-    from _multiprocessing import win32
-    from _subprocess import WAIT_OBJECT_0, WAIT_TIMEOUT, INFINITE
+    import _winapi
+    from _winapi import WAIT_OBJECT_0, WAIT_TIMEOUT, INFINITE
 except ImportError:
     if sys.platform == 'win32':
         raise
-    win32 = None
+    _winapi = None
 
 #
 #
@@ -282,7 +282,7 @@ class _ConnectionBase:
         return self._poll(timeout)
 
 
-if win32:
+if _winapi:
 
     class PipeConnection(_ConnectionBase):
         """
@@ -292,14 +292,14 @@ if win32:
         """
         _got_empty_message = False
 
-        def _close(self, _CloseHandle=win32.CloseHandle):
+        def _close(self, _CloseHandle=_winapi.CloseHandle):
             _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
-            ov, err = win32.WriteFile(self._handle, buf, overlapped=True)
+            ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
             try:
-                if err == win32.ERROR_IO_PENDING:
-                    waitres = win32.WaitForMultipleObjects(
+                if err == _winapi.ERROR_IO_PENDING:
+                    waitres = _winapi.WaitForMultipleObjects(
                         [ov.event], False, INFINITE)
                     assert waitres == WAIT_OBJECT_0
             except:
@@ -317,11 +317,11 @@ if win32:
             else:
                 bsize = 128 if maxsize is None else min(maxsize, 128)
                 try:
-                    ov, err = win32.ReadFile(self._handle, bsize,
-                                             overlapped=True)
+                    ov, err = _winapi.ReadFile(self._handle, bsize,
+                                                overlapped=True)
                     try:
-                        if err == win32.ERROR_IO_PENDING:
-                            waitres = win32.WaitForMultipleObjects(
+                        if err == _winapi.ERROR_IO_PENDING:
+                            waitres = _winapi.WaitForMultipleObjects(
                                 [ov.event], False, INFINITE)
                             assert waitres == WAIT_OBJECT_0
                     except:
@@ -333,10 +333,10 @@ if win32:
                             f = io.BytesIO()
                             f.write(ov.getbuffer())
                             return f
-                        elif err == win32.ERROR_MORE_DATA:
+                        elif err == _winapi.ERROR_MORE_DATA:
                             return self._get_more_data(ov, maxsize)
                 except IOError as e:
-                    if e.winerror == win32.ERROR_BROKEN_PIPE:
+                    if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
                     else:
                         raise
@@ -344,7 +344,7 @@ if win32:
 
         def _poll(self, timeout):
             if (self._got_empty_message or
-                        win32.PeekNamedPipe(self._handle)[0] != 0):
+                        _winapi.PeekNamedPipe(self._handle)[0] != 0):
                 return True
             if timeout < 0:
                 timeout = None
@@ -354,11 +354,11 @@ if win32:
             buf = ov.getbuffer()
             f = io.BytesIO()
             f.write(buf)
-            left = win32.PeekNamedPipe(self._handle)[1]
+            left = _winapi.PeekNamedPipe(self._handle)[1]
             assert left > 0
             if maxsize is not None and len(buf) + left > maxsize:
                 self._bad_message_length()
-            ov, err = win32.ReadFile(self._handle, left, overlapped=True)
+            ov, err = _winapi.ReadFile(self._handle, left, overlapped=True)
             rbytes, err = ov.GetOverlappedResult(True)
             assert err == 0
             assert rbytes == left
@@ -372,11 +372,11 @@ class Connection(_ConnectionBase):
     a socket handle (Windows).
     """
 
-    if win32:
-        def _close(self, _close=win32.closesocket):
+    if _winapi:
+        def _close(self, _close=_multiprocessing.closesocket):
             _close(self._handle)
-        _write = win32.send
-        _read = win32.recv
+        _write = _multiprocessing.send
+        _read = _multiprocessing.recv
     else:
         def _close(self, _close=os.close):
             _close(self._handle)
@@ -526,30 +526,30 @@ else:
         '''
         address = arbitrary_address('AF_PIPE')
         if duplex:
-            openmode = win32.PIPE_ACCESS_DUPLEX
-            access = win32.GENERIC_READ | win32.GENERIC_WRITE
+            openmode = _winapi.PIPE_ACCESS_DUPLEX
+            access = _winapi.GENERIC_READ | _winapi.GENERIC_WRITE
             obsize, ibsize = BUFSIZE, BUFSIZE
         else:
-            openmode = win32.PIPE_ACCESS_INBOUND
-            access = win32.GENERIC_WRITE
+            openmode = _winapi.PIPE_ACCESS_INBOUND
+            access = _winapi.GENERIC_WRITE
             obsize, ibsize = 0, BUFSIZE
 
-        h1 = win32.CreateNamedPipe(
-            address, openmode | win32.FILE_FLAG_OVERLAPPED |
-            win32.FILE_FLAG_FIRST_PIPE_INSTANCE,
-            win32.PIPE_TYPE_MESSAGE | win32.PIPE_READMODE_MESSAGE |
-            win32.PIPE_WAIT,
-            1, obsize, ibsize, win32.NMPWAIT_WAIT_FOREVER, win32.NULL
+        h1 = _winapi.CreateNamedPipe(
+            address, openmode | _winapi.FILE_FLAG_OVERLAPPED |
+            _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE,
+            _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
+            _winapi.PIPE_WAIT,
+            1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL
             )
-        h2 = win32.CreateFile(
-            address, access, 0, win32.NULL, win32.OPEN_EXISTING,
-            win32.FILE_FLAG_OVERLAPPED, win32.NULL
+        h2 = _winapi.CreateFile(
+            address, access, 0, _winapi.NULL, _winapi.OPEN_EXISTING,
+            _winapi.FILE_FLAG_OVERLAPPED, _winapi.NULL
             )
-        win32.SetNamedPipeHandleState(
-            h2, win32.PIPE_READMODE_MESSAGE, None, None
+        _winapi.SetNamedPipeHandleState(
+            h2, _winapi.PIPE_READMODE_MESSAGE, None, None
             )
 
-        overlapped = win32.ConnectNamedPipe(h1, overlapped=True)
+        overlapped = _winapi.ConnectNamedPipe(h1, overlapped=True)
         _, err = overlapped.GetOverlappedResult(True)
         assert err == 0
 
@@ -630,26 +630,26 @@ if sys.platform == 'win32':
                 )
 
         def _new_handle(self, first=False):
-            flags = win32.PIPE_ACCESS_DUPLEX | win32.FILE_FLAG_OVERLAPPED
+            flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
             if first:
-                flags |= win32.FILE_FLAG_FIRST_PIPE_INSTANCE
-            return win32.CreateNamedPipe(
+                flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
+            return _winapi.CreateNamedPipe(
                 self._address, flags,
-                win32.PIPE_TYPE_MESSAGE | win32.PIPE_READMODE_MESSAGE |
-                win32.PIPE_WAIT,
-                win32.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
-                win32.NMPWAIT_WAIT_FOREVER, win32.NULL
+                _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
+                _winapi.PIPE_WAIT,
+                _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
+                _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL
                 )
 
         def accept(self):
             self._handle_queue.append(self._new_handle())
             handle = self._handle_queue.pop(0)
-            ov = win32.ConnectNamedPipe(handle, overlapped=True)
+            ov = _winapi.ConnectNamedPipe(handle, overlapped=True)
             try:
-                res = win32.WaitForMultipleObjects([ov.event], False, INFINITE)
+                res = _winapi.WaitForMultipleObjects([ov.event], False, INFINITE)
             except:
                 ov.cancel()
-                win32.CloseHandle(handle)
+                _winapi.CloseHandle(handle)
                 raise
             finally:
                 _, err = ov.GetOverlappedResult(True)
@@ -660,7 +660,7 @@ if sys.platform == 'win32':
         def _finalize_pipe_listener(queue, address):
             sub_debug('closing listener with address=%r', address)
             for handle in queue:
-                win32.CloseHandle(handle)
+                _winapi.CloseHandle(handle)
 
     def PipeClient(address):
         '''
@@ -669,23 +669,23 @@ if sys.platform == 'win32':
         t = _init_timeout()
         while 1:
             try:
-                win32.WaitNamedPipe(address, 1000)
-                h = win32.CreateFile(
-                    address, win32.GENERIC_READ | win32.GENERIC_WRITE,
-                    0, win32.NULL, win32.OPEN_EXISTING,
-                    win32.FILE_FLAG_OVERLAPPED, win32.NULL
+                _winapi.WaitNamedPipe(address, 1000)
+                h = _winapi.CreateFile(
+                    address, _winapi.GENERIC_READ | _winapi.GENERIC_WRITE,
+                    0, _winapi.NULL, _winapi.OPEN_EXISTING,
+                    _winapi.FILE_FLAG_OVERLAPPED, _winapi.NULL
                     )
             except WindowsError as e:
-                if e.winerror not in (win32.ERROR_SEM_TIMEOUT,
-                                      win32.ERROR_PIPE_BUSY) or _check_timeout(t):
+                if e.winerror not in (_winapi.ERROR_SEM_TIMEOUT,
+                                      _winapi.ERROR_PIPE_BUSY) or _check_timeout(t):
                     raise
             else:
                 break
         else:
             raise
 
-        win32.SetNamedPipeHandleState(
-            h, win32.PIPE_READMODE_MESSAGE, None, None
+        _winapi.SetNamedPipeHandleState(
+            h, _winapi.PIPE_READMODE_MESSAGE, None, None
             )
         return PipeConnection(h)
 
@@ -774,7 +774,7 @@ if sys.platform == 'win32':
         L = list(handles)
         ready = []
         while L:
-            res = win32.WaitForMultipleObjects(L, False, timeout)
+            res = _winapi.WaitForMultipleObjects(L, False, timeout)
             if res == WAIT_TIMEOUT:
                 break
             elif WAIT_OBJECT_0 <= res < WAIT_OBJECT_0 + len(L):
@@ -788,7 +788,7 @@ if sys.platform == 'win32':
             timeout = 0
         return ready
 
-    _ready_errors = {win32.ERROR_BROKEN_PIPE, win32.ERROR_NETNAME_DELETED}
+    _ready_errors = {_winapi.ERROR_BROKEN_PIPE, _winapi.ERROR_NETNAME_DELETED}
 
     def wait(object_list, timeout=None):
         '''
@@ -818,12 +818,12 @@ if sys.platform == 'win32':
                 else:
                     # start an overlapped read of length zero
                     try:
-                        ov, err = win32.ReadFile(fileno(), 0, True)
+                        ov, err = _winapi.ReadFile(fileno(), 0, True)
                     except OSError as e:
                         err = e.winerror
                         if err not in _ready_errors:
                             raise
-                    if err == win32.ERROR_IO_PENDING:
+                    if err == _winapi.ERROR_IO_PENDING:
                         ov_list.append(ov)
                         waithandle_to_obj[ov.event] = o
                     else:
@@ -847,7 +847,7 @@ if sys.platform == 'win32':
                     err = e.winerror
                     if err not in _ready_errors:
                         raise
-                if err != win32.ERROR_OPERATION_ABORTED:
+                if err != _winapi.ERROR_OPERATION_ABORTED:
                     o = waithandle_to_obj[ov.event]
                     ready_objects.add(o)
                     if err == 0:
