@@ -1340,7 +1340,7 @@ mpd_qget_ssize(const mpd_t *a, uint32_t *status)
     if (u <= MPD_SSIZE_MAX) {
         return isneg ? -((mpd_ssize_t)u) : (mpd_ssize_t)u;
     }
-    else if (isneg && u-1 == MPD_SSIZE_MAX) {
+    else if (isneg && u+(MPD_SSIZE_MIN+MPD_SSIZE_MAX) == MPD_SSIZE_MAX) {
         return MPD_SSIZE_MIN;
     }
 
