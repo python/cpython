@@ -1940,6 +1940,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                     "__build_class__ not found");
                     break;
                 }
+                Py_INCREF(x);
             }
             else {
                 PyObject *build_class_str = _PyUnicode_FromId(&PyId___build_class__);
@@ -1953,7 +1954,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     break;
                 }
             }
-            Py_INCREF(x);
             PUSH(x);
             break;
         }
@@ -2092,6 +2092,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             }
             if (x == NULL) {
                 x = PyDict_GetItem(f->f_globals, w);
+                Py_XINCREF(x);
                 if (x == NULL) {
                     if (PyDict_CheckExact(f->f_builtins)) {
                         x = PyDict_GetItem(f->f_builtins, w);
@@ -2101,6 +2102,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                         NAME_ERROR_MSG, w);
                             break;
                         }
+                        Py_INCREF(x);
                     }
                     else {
                         x = PyObject_GetItem(f->f_builtins, w);
@@ -2113,7 +2115,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                         }
                     }
                 }
-                Py_INCREF(x);
             }
             PUSH(x);
             DISPATCH();
@@ -2186,7 +2187,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     break;
                 }
             }
-            Py_INCREF(x);
             PUSH(x);
             DISPATCH();
 
