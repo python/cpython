@@ -43,7 +43,7 @@ dict_keys = type({}.keys())
 dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
-dict_proxy = type(type.__dict__)
+mappingproxy = type(type.__dict__)
 
 
 ### ONE-TRICK PONIES ###
@@ -404,6 +404,8 @@ class Mapping(Sized, Iterable, Container):
 
     def __ne__(self, other):
         return not (self == other)
+
+Mapping.register(mappingproxy)
 
 
 class MappingView(Sized):
