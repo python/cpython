@@ -2011,8 +2011,8 @@ Files and Directories
    Perform the equivalent of a :c:func:`stat` system call on the given path.
    (This function follows symlinks; to stat a symlink use :func:`lstat`.)
 
-   The return value is an object whose attributes correspond to the members
-   of the :c:type:`stat` structure, namely:
+   The return value is an object whose attributes correspond roughly
+   to the members of the :c:type:`stat` structure, namely:
 
    * :attr:`st_mode` - protection bits,
    * :attr:`st_ino` - inode number,
@@ -2021,10 +2021,18 @@ Files and Directories
    * :attr:`st_uid` - user id of owner,
    * :attr:`st_gid` - group id of owner,
    * :attr:`st_size` - size of file, in bytes,
-   * :attr:`st_atime` - time of most recent access,
-   * :attr:`st_mtime` - time of most recent content modification,
-   * :attr:`st_ctime` - platform dependent; time of most recent metadata change on
-     Unix, or the time of creation on Windows)
+   * :attr:`st_atime` - time of most recent access expressed in seconds,
+   * :attr:`st_mtime` - time of most recent content modification
+     expressed in seconds,
+   * :attr:`st_ctime` - platform dependent; time of most recent metadata
+     change on Unix, or the time of creation on Windows, expressed in seconds
+   * :attr:`st_atime_ns` - time of most recent access
+     expressed in nanoseconds as an integer,
+   * :attr:`st_mtime_ns` - time of most recent content modification
+     expressed in nanoseconds as an integer,
+   * :attr:`st_ctime_ns` - platform dependent; time of most recent metadata
+     change on Unix, or the time of creation on Windows,
+     expressed in nanoseconds as an integer
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
@@ -2054,6 +2062,14 @@ Files and Directories
       or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
       :attr:`st_atime` has only 1-day resolution.  See your operating system
       documentation for details.
+      Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
+      and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
+      systems do not provide nanosecond precision.  On systems that do
+      provide nanosecond precision, the floating-point object used to
+      store :attr:`st_atime`, :attr:`st_mtime`, and :attr:`st_ctime`
+      cannot preserve all of it, and as such will be slightly inexact.
+      If you need the exact timestamps you should always use
+      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
 
    For backward compatibility, the return value of :func:`~os.stat` is also accessible
    as a tuple of at least 10 integers giving the most important (and portable)
@@ -2080,6 +2096,10 @@ Files and Directories
       264
 
    Availability: Unix, Windows.
+
+   .. versionadded:: 3.3
+      The :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
+      and :attr:`st_ctime_ns` members.
 
 
 .. function:: stat_float_times([newvalue])

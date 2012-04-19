@@ -2362,17 +2362,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
-static PyObject*
-_PyLong_FromTime_t(time_t value)
-{
-#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    return PyLong_FromLongLong(value);
-#else
-    assert(sizeof(time_t) <= sizeof(long));
-    return PyLong_FromLong(value);
-#endif
-}
-
 static PyObject *
 test_pytime_object_to_time_t(PyObject *self, PyObject *args)
 {

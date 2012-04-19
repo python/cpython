@@ -1550,6 +1550,9 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_atime",   "time of last access"},
     {"st_mtime",   "time of last modification"},
     {"st_ctime",   "time of last change"},
+    {"st_atime_ns",   "time of last access in nanoseconds"},
+    {"st_mtime_ns",   "time of last modification in nanoseconds"},
+    {"st_ctime_ns",   "time of last change in nanoseconds"},
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     {"st_blksize", "blocksize for filesystem I/O"},
 #endif
@@ -1572,9 +1575,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 };
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-#define ST_BLKSIZE_IDX 13
+#define ST_BLKSIZE_IDX 16
 #else
-#define ST_BLKSIZE_IDX 12
+#define ST_BLKSIZE_IDX 15
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
@@ -1726,25 +1729,50 @@ stat_float_times(PyObject* self, PyObject *args)
     return Py_None;
 }
 
+static PyObject *billion = NULL;
+
 static void
 fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 {
-    PyObject *fval,*ival;
-#if SIZEOF_TIME_T > SIZEOF_LONG
-    ival = PyLong_FromLongLong((PY_LONG_LONG)sec);
-#else
-    ival = PyLong_FromLong((long)sec);
-#endif
-    if (!ival)
-        return;
+    PyObject *s = _PyLong_FromTime_t(sec);
+    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+    PyObject *s_in_ns = NULL;
+    PyObject *ns_total = NULL;
+    PyObject *float_s = NULL;
+
+    if (!(s && ns_fractional))
+        goto exit;
+
+    s_in_ns = PyNumber_Multiply(s, billion);
+    if (!s_in_ns)
+        goto exit;
+
+    ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+    if (!ns_total)
+        goto exit;
+
     if (_stat_float_times) {
-        fval = PyFloat_FromDouble(sec + 1e-9*nsec);
-    } else {
-        fval = ival;
-        Py_INCREF(fval);
+        float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
+        if (!float_s)
+            goto exit;
     }
-    PyStructSequence_SET_ITEM(v, index, ival);
-    PyStructSequence_SET_ITEM(v, index+3, fval);
+    else {
+        float_s = s;
+        Py_INCREF(float_s);
+    }
+
+    PyStructSequence_SET_ITEM(v, index, s);
+    PyStructSequence_SET_ITEM(v, index+3, float_s);
+    PyStructSequence_SET_ITEM(v, index+6, ns_total);
+    s = NULL;
+    float_s = NULL;
+    ns_total = NULL;
+exit:
+    Py_XDECREF(s);
+    Py_XDECREF(ns_fractional);
+    Py_XDECREF(s_in_ns);
+    Py_XDECREF(ns_total);
+    Py_XDECREF(float_s);
 }
 
 /* pack a system stat C structure into the Python stat tuple
@@ -11626,6 +11654,10 @@ INITFUNC(void)
 #endif /* __APPLE__ */
 
     PyModule_AddObject(m, "terminal_size", (PyObject*) &TerminalSizeType);
+
+    billion = PyLong_FromLong(1000000000);
+    if (!billion)
+        return NULL;
 
     return m;
 
