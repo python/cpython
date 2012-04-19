@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14538: HTMLParser can now parse correctly start tags that contain
+  a bare '/'.
+
 - Issue #14452: SysLogHandler no longer inserts a UTF-8 BOM into the message.
 
 - Issue #13496: Fix potential overflow in bisect.bisect algorithm when applied
