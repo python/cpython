@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14098: New functions PyErr_GetExcInfo and PyErr_SetExcInfo.
+  Patch by Stefan Behnel.
+
 - Issue #14385: It is now possible to use a custom type for the __builtins__
   namespace, instead of a dict. It can be used for sandboxing for example.
   Raise also a NameError instead of ImportError if __build_class__ name if not

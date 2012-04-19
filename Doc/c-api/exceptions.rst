@@ -129,6 +129,41 @@ in various ways.  There is a separate error indicator for each thread.
       exception state.
 
 
+.. c:function:: void PyErr_GetExcInfo(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+
+   Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
+   to an exception that was already caught, not to an exception that was
+   freshly raised.  Returns new references for the three objects, any of which
+   may be *NULL*.  Does not modify the exception info state.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_SetExcInfo` to restore or clear the
+      exception state.
+
+.. versionadded:: 3.3
+
+
+.. c:function:: void PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
+
+   Set the exception info, as known from ``sys.exc_info()``.  This refers
+   to an exception that was already caught, not to an exception that was
+   freshly raised.  This function steals the references of the arguments.
+   To clear the exception state, pass *NULL* for all three arguments.
+   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_GetExcInfo` to read the exception
+      state.
+
+.. versionadded:: 3.3
+
+
 .. c:function:: void PyErr_SetString(PyObject *type, const char *message)
 
    This is the most common way to set the error indicator.  The first argument

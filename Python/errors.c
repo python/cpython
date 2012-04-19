@@ -320,6 +320,39 @@ PyErr_Clear(void)
     PyErr_Restore(NULL, NULL, NULL);
 }
 
+void
+PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+
+    *p_type = tstate->exc_type;
+    *p_value = tstate->exc_value;
+    *p_traceback = tstate->exc_traceback;
+
+    Py_XINCREF(*p_type);
+    Py_XINCREF(*p_value);
+    Py_XINCREF(*p_traceback);
+}
+
+void
+PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
+{
+    PyObject *oldtype, *oldvalue, *oldtraceback;
+    PyThreadState *tstate = PyThreadState_GET();
+
+    oldtype = tstate->exc_type;
+    oldvalue = tstate->exc_value;
+    oldtraceback = tstate->exc_traceback;
+
+    tstate->exc_type = p_type;
+    tstate->exc_value = p_value;
+    tstate->exc_traceback = p_traceback;
+
+    Py_XDECREF(oldtype);
+    Py_XDECREF(oldvalue);
+    Py_XDECREF(oldtraceback);
+}
+
 /* Convenience functions to set a type error exception and return 0 */
 
 int
