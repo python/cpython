@@ -2,6 +2,8 @@
 
 import test.support
 from test.support import verbose, strip_python_stderr, import_module
+from test.script_helper import assert_python_ok
+
 import random
 import re
 import sys
@@ -406,6 +408,33 @@ class ThreadTests(BaseTestCase):
         self.assertFalse('daemon' in repr(t))
         t.daemon = True
         self.assertTrue('daemon' in repr(t))
+
+    @unittest.skipUnless(hasattr(os, 'fork'), 'test needs fork()')
+    def test_dummy_thread_after_fork(self):
+        # Issue #14308: a dummy thread in the active list doesn't mess up
+        # the after-fork mechanism.
+        code = """if 1:
+            import _thread, threading, os, time
+
+            def background_thread(evt):
+                # Creates and registers the _DummyThread instance
+                threading.current_thread()
+                evt.set()
+                time.sleep(10)
+
+            evt = threading.Event()
+            _thread.start_new_thread(background_thread, (evt,))
+            evt.wait()
+            assert threading.active_count() == 2, threading.active_count()
+            if os.fork() == 0:
+                assert threading.active_count() == 1, threading.active_count()
+                os._exit(0)
+            else:
+                os.wait()
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
