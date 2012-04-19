@@ -242,7 +242,7 @@ class CmdLineTest(unittest.TestCase):
                 script_name = _make_test_script(pkg_dir, 'script')
                 rc, out, err = assert_python_ok('-m', 'test_pkg.script')
                 if verbose > 1:
-                    print(data)
+                    print(out)
                 expected = "init_argv0==%r" % '-m'
                 self.assertIn(expected.encode('utf-8'), out)
                 self._check_output(script_name, rc, out,
