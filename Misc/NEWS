@@ -152,6 +152,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #14032: Fix incorrect variable name in test_cmd_line_script debugging
+  message (Patch by Jason Yeo)
+
 - Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
   a test failure in test_ssl.
 
