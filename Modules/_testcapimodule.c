@@ -1639,6 +1639,29 @@ raise_exception(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *
+test_set_exc_info(PyObject *self, PyObject *args)
+{
+    PyObject *orig_exc;
+    PyObject *new_type, *new_value, *new_tb;
+    PyObject *type, *value, *tb;
+    if (!PyArg_ParseTuple(args, "OOO:test_set_exc_info",
+                          &new_type, &new_value, &new_tb))
+        return NULL;
+
+    PyErr_GetExcInfo(&type, &value, &tb);
+
+    Py_INCREF(new_type);
+    Py_INCREF(new_value);
+    Py_INCREF(new_tb);
+    PyErr_SetExcInfo(new_type, new_value, new_tb);
+
+    orig_exc = PyTuple_Pack(3, type ? type : Py_None, value ? value : Py_None, tb ? tb : Py_None);
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(tb);
+    return orig_exc;
+}
 
 static int test_run_counter = 0;
 
@@ -2471,6 +2494,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"traceback_print",         traceback_print,                 METH_VARARGS},
     {"exception_print",         exception_print,                 METH_VARARGS},
+    {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
