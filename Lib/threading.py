@@ -871,6 +871,9 @@ class _DummyThread(Thread):
         with _active_limbo_lock:
             _active[self._ident] = self
 
+    def _stop(self):
+        pass
+
     def join(self, timeout=None):
         assert False, "cannot join a dummy thread"
 
