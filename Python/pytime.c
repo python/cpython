@@ -96,6 +96,17 @@ _PyLong_AsTime_t(PyObject *obj)
     return (time_t)val;
 }
 
+PyObject *
+_PyLong_FromTime_t(time_t t)
+{
+#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+    return PyLong_FromLongLong((PY_LONG_LONG)t);
+#else
+    assert(sizeof(time_t) <= sizeof(long));
+    return PyLong_FromLong((long)t);
+#endif
+}
+
 static int
 _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
                             double denominator)

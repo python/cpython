@@ -191,6 +191,13 @@ class StatAttributeTests(unittest.TestCase):
                                   result[getattr(stat, name)])
                 self.assertIn(attr, members)
 
+        # Make sure that the st_?time and st_?time_ns fields roughly agree
+        # (they should always agree up to the tens-of-microseconds magnitude)
+        for name in 'st_atime st_mtime st_ctime'.split():
+            floaty = int(getattr(result, name) * 100000)
+            nanosecondy = getattr(result, name + "_ns") // 10000
+            self.assertEqual(floaty, nanosecondy)
+
         try:
             result[200]
             self.fail("No exception thrown")
