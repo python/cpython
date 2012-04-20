@@ -776,7 +776,8 @@ within the package being imported. :data:`__package__` is optional but should
 be set to the name of package that contains the module or package (the empty
 string is used for module not contained in a package). :data:`__loader__` is
 also optional but should be set to the loader object that is loading the
-module.
+module. While loaders are required to return the module they loaded, import
+itself always retrieves any modules it returns from :data:`sys.modules`.
 
 .. index::
     exception: ImportError
