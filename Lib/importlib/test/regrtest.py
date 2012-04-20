@@ -12,5 +12,6 @@ from test import regrtest
 
 if __name__ == '__main__':
     __builtins__.__import__ = importlib.__import__
+    sys.path_importer_cache.clear()
 
     regrtest.main(quiet=True, verbose2=True)
