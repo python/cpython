@@ -353,6 +353,10 @@ def detect_encoding(readline):
 
     If no encoding is specified, then the default of 'utf-8' will be returned.
     """
+    try:
+        filename = readline.__self__.name
+    except AttributeError:
+        filename = None
     bom_found = False
     encoding = None
     default = 'utf-8'
@@ -369,7 +373,10 @@ def detect_encoding(readline):
             # per default encoding.
             line_string = line.decode('utf-8')
         except UnicodeDecodeError:
-            raise SyntaxError("invalid or missing encoding declaration")
+            msg = "invalid or missing encoding declaration"
+            if filename is not None:
+                msg = '{} for {!r}'.format(msg, filename)
+            raise SyntaxError(msg)
 
         matches = cookie_re.findall(line_string)
         if not matches:
@@ -379,12 +386,21 @@ def detect_encoding(readline):
             codec = lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
-            raise SyntaxError("unknown encoding: " + encoding)
+            if filename is None:
+                msg = "unknown encoding: " + encoding
+            else:
+                msg = "unknown encoding for {!r}: {}".format(filename,
+                        encoding)
+            raise SyntaxError(msg)
 
         if bom_found:
             if codec.name != 'utf-8':
                 # This behaviour mimics the Python interpreter
-                raise SyntaxError('encoding problem: utf-8')
+                if filename is None:
+                    msg = 'encoding problem: utf-8'
+                else:
+                    msg = 'encoding problem for {!r}: utf-8'.format(filename)
+                raise SyntaxError(msg)
             encoding += '-sig'
         return encoding
 

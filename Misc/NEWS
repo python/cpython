@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14629: tokenizer.detect_encoding will specify the filename in the
+  SyntaxError exception if found at readline.__self__.name.
+
 - Issue #14629: Raise SyntaxError in tokenizer.detect_encoding if the
   first two lines have non-UTF-8 characters without an encoding declaration.
 
