@@ -59,10 +59,8 @@ class ImportTests(unittest.TestCase):
                 self.assertEqual(fd.encoding, encoding)
 
         path = [os.path.dirname(__file__)]
-        self.assertRaisesRegex(SyntaxError,
-            r"Non-UTF-8 code starting with '\\xf6'"
-            r" in file .*badsyntax_pep3120.py",
-            imp.find_module, 'badsyntax_pep3120', path)
+        with self.assertRaises(SyntaxError):
+            imp.find_module('badsyntax_pep3120', path)
 
     def test_issue1267(self):
         for mod, encoding, _ in self.test_strings:
