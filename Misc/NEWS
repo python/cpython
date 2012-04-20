@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14629: Raise SyntaxError in tokenizer.detect_encoding if the
+  first two lines have non-UTF-8 characters without an encoding declaration.
+
 - Issue #14308: Fix an exception when a "dummy" thread is in the threading
   module's active list after a fork().
 
