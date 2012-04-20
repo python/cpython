@@ -1,6 +1,6 @@
 import builtins
 import imp
-from importlib.test.import_ import test_relative_imports
+from importlib.test.import_ import test_suite as importlib_import_test_suite
 from importlib.test.import_ import util as importlib_util
 import importlib
 import marshal
@@ -694,21 +694,16 @@ class PycacheTests(unittest.TestCase):
         self.assertEqual(m.x, 5)
 
 
-class RelativeImportFromImportlibTests(test_relative_imports.RelativeImports):
-
-    def setUp(self):
-        self._importlib_util_flag = importlib_util.using___import__
-        importlib_util.using___import__ = True
-
-    def tearDown(self):
-        importlib_util.using___import__ = self._importlib_util_flag
-
-
 def test_main(verbose=None):
-    run_unittest(ImportTests, PycacheTests,
-                 PycRewritingTests, PathsTests, RelativeImportTests,
-                 OverridingImportBuiltinTests,
-                 RelativeImportFromImportlibTests)
+    flag = importlib_util.using___import__
+    try:
+        importlib_util.using___import__ = True
+        run_unittest(ImportTests, PycacheTests,
+                     PycRewritingTests, PathsTests, RelativeImportTests,
+                     OverridingImportBuiltinTests,
+                     importlib_import_test_suite())
+    finally:
+        importlib_util.using___import__ = flag
 
 
 if __name__ == '__main__':
