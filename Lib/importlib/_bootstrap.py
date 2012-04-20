@@ -401,9 +401,9 @@ class _LoaderBasics:
         magic = data[:4]
         raw_timestamp = data[4:8]
         raw_size = data[8:12]
-        if len(magic) != 4 or magic != _imp.get_magic():
-            raise ImportError("bad magic number in {}".format(fullname),
-                              name=fullname, path=bytecode_path)
+        if magic != _MAGIC_NUMBER:
+            msg = 'bad magic number in {!r}: {!r}'.format(fullname, magic)
+            raise ImportError(msg, name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
             message = 'bad timestamp in {}'.format(fullname)
             verbose_message(message)
@@ -549,7 +549,7 @@ class SourceLoader(_LoaderBasics):
             # If e.g. Jython ever implements imp.cache_from_source to have
             # their own cached file format, this block of code will most likely
             # throw an exception.
-            data = bytearray(_imp.get_magic())
+            data = bytearray(_MAGIC_NUMBER)
             data.extend(_w_long(source_mtime))
             data.extend(_w_long(len(source_bytes)))
             data.extend(marshal.dumps(code_object))
@@ -1115,6 +1115,9 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         return _handle_fromlist(module, fromlist, _gcd_import)
 
 
+_MAGIC_NUMBER = None  # Set in _setup()
+
+
 def _setup(sys_module, _imp_module):
     """Setup importlib by importing needed built-in modules and injecting them
     into the global namespace.
@@ -1158,6 +1161,7 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, 'path_sep', path_sep)
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
+    setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
 
 
 def _install(sys_module, _imp_module):
