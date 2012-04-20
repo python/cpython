@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14630: Fix a memory access bug for instances of a subclass of int
+  with value 0.
+
 - Issue #14339: Speed improvements to bin, oct and hex functions.  Patch by
   Serhiy Storchaka.
 
