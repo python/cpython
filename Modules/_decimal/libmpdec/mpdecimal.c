@@ -105,8 +105,8 @@ static void _mpd_qadd(mpd_t *result, const mpd_t *a, const mpd_t *b,
                       const mpd_context_t *ctx, uint32_t *status);
 static inline void _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
                              const mpd_context_t *ctx, uint32_t *status);
-static void _mpd_qbarrett_divmod(mpd_t *q, mpd_t *r, const mpd_t *a,
-                                 const mpd_t *b, uint32_t *status);
+static void _mpd_base_ndivmod(mpd_t *q, mpd_t *r, const mpd_t *a,
+                              const mpd_t *b, uint32_t *status);
 static inline void _mpd_qpow_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp,
                 uint8_t resultsign, const mpd_context_t *ctx, uint32_t *status);
 
@@ -3256,6 +3256,20 @@ mpd_qadd(mpd_t *result, const mpd_t *a, const mpd_t *b,
     mpd_qfinalize(result, ctx, status);
 }
 
+/* Add a and b. Set NaN/Invalid_operation if the result is inexact. */
+static void
+_mpd_qadd_exact(mpd_t *result, const mpd_t *a, const mpd_t *b,
+                const mpd_context_t *ctx, uint32_t *status)
+{
+    uint32_t workstatus = 0;
+
+    mpd_qadd(result, a, b, ctx, &workstatus);
+    *status |= workstatus;
+    if (workstatus & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
+        mpd_seterror(result, MPD_Invalid_operation, status);
+    }
+}
+
 /* Subtract b from a. */
 void
 mpd_qsub(mpd_t *result, const mpd_t *a, const mpd_t *b,
@@ -3271,6 +3285,20 @@ mpd_qsub(mpd_t *result, const mpd_t *a, const mpd_t *b,
 
     _mpd_qaddsub(result, a, b, !mpd_sign(b), ctx, status);
     mpd_qfinalize(result, ctx, status);
+}
+
+/* Subtract b from a. Set NaN/Invalid_operation if the result is inexact. */
+static void
+_mpd_qsub_exact(mpd_t *result, const mpd_t *a, const mpd_t *b,
+                const mpd_context_t *ctx, uint32_t *status)
+{
+    uint32_t workstatus = 0;
+
+    mpd_qsub(result, a, b, ctx, &workstatus);
+    *status |= workstatus;
+    if (workstatus & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
+        mpd_seterror(result, MPD_Invalid_operation, status);
+    }
 }
 
 /* Add decimal and mpd_ssize_t. */
@@ -3500,7 +3528,7 @@ _mpd_qdiv(int action, mpd_t *q, const mpd_t *a, const mpd_t *b,
     }
     else {
         MPD_NEW_STATIC(r,0,0,0,0);
-        _mpd_qbarrett_divmod(q, &r, a, b, status);
+        _mpd_base_ndivmod(q, &r, a, b, status);
         if (mpd_isspecial(q) || mpd_isspecial(&r)) {
             mpd_del(&r);
             goto finish;
@@ -3652,12 +3680,8 @@ _mpd_qdivmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
         }
     }
     else {
-        _mpd_qbarrett_divmod(q, r, a, b, status);
+        _mpd_base_ndivmod(q, r, a, b, status);
         if (mpd_isspecial(q) || mpd_isspecial(r)) {
-            goto nanresult;
-        }
-        if (mpd_isinfinite(q) || q->digits > ctx->prec) {
-            *status |= MPD_Division_impossible;
             goto nanresult;
         }
         qsize = q->len;
@@ -5369,6 +5393,20 @@ mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
     mpd_qfinalize(result, ctx, status);
 }
 
+/* Multiply a and b. Set NaN/Invalid_operation if the result is inexact. */
+static void
+_mpd_qmul_exact(mpd_t *result, const mpd_t *a, const mpd_t *b,
+                const mpd_context_t *ctx, uint32_t *status)
+{
+    uint32_t workstatus = 0;
+
+    mpd_qmul(result, a, b, ctx, &workstatus);
+    *status |= workstatus;
+    if (workstatus & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
+        mpd_seterror(result, MPD_Invalid_operation, status);
+    }
+}
+
 /* Multiply decimal and mpd_ssize_t. */
 void
 mpd_qmul_ssize(mpd_t *result, const mpd_t *a, mpd_ssize_t b,
@@ -6691,11 +6729,18 @@ recpr_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2],
     return i-1;
 }
 
-/* Initial approximation for the reciprocal. */
+/*
+ * Initial approximation for the reciprocal:
+ *    k_0 := MPD_RDIGITS-2
+ *    z_0 := 10**(-k_0) * floor(10**(2*k_0 + 2) / floor(v * 10**(k_0 + 2)))
+ * Absolute error:
+ *    |1/v - z_0| < 10**(-k_0)
+ * ACL2 proof: maxerror-inverse-approx
+ */
 static void
 _mpd_qreciprocal_approx(mpd_t *z, const mpd_t *v, uint32_t *status)
 {
-    mpd_uint_t p10data[2] = {0, mpd_pow10[MPD_RDIGITS-2]}; /* 10**(2*MPD_RDIGITS-2) */
+    mpd_uint_t p10data[2] = {0, mpd_pow10[MPD_RDIGITS-2]};
     mpd_uint_t dummy, word;
     int n;
 
@@ -6714,7 +6759,12 @@ _mpd_qreciprocal_approx(mpd_t *z, const mpd_t *v, uint32_t *status)
     mpd_setdigits(z);
 }
 
-/* Reciprocal, calculated with Newton's Method. Assumption: result != a. */
+/*
+ * Reciprocal, calculated with Newton's Method. Assumption: result != a.
+ * NOTE: The comments in the function show that certain operations are
+ * exact. The proof for the maximum error is too long to fit in here.
+ * ACL2 proof: maxerror-inverse-complete
+ */
 static void
 _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
                  uint32_t *status)
@@ -6738,32 +6788,43 @@ _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     adj = v->digits + v->exp;
     v->exp = -v->digits;
 
-    /* initial approximation */
+    /* Initial approximation */
     _mpd_qreciprocal_approx(z, v, status);
 
     mpd_maxcontext(&varcontext);
     mpd_maxcontext(&maxcontext);
-    varcontext.round = MPD_ROUND_TRUNC;
-    maxcontext.round = MPD_ROUND_TRUNC;
+    varcontext.round = maxcontext.round = MPD_ROUND_TRUNC;
+    varcontext.emax = maxcontext.emax = MPD_MAX_EMAX + 100;
+    varcontext.emin = maxcontext.emin = MPD_MIN_EMIN - 100;
+    maxcontext.prec = MPD_MAX_PREC + 100;
 
-    maxprec = (v->digits > ctx->prec) ? v->digits : ctx->prec;
+    maxprec = ctx->prec;
     maxprec += 2;
     initprec = MPD_RDIGITS-3;
 
     i = recpr_schedule_prec(klist, maxprec, initprec);
     for (; i >= 0; i--) {
-        mpd_qmul(&s, z, z, &maxcontext, status);
+         /* Loop invariant: z->digits <= klist[i]+7 */
+         /* Let s := z**2, exact result */
+        _mpd_qmul_exact(&s, z, z, &maxcontext, status);
         varcontext.prec = 2*klist[i] + 5;
         if (v->digits > varcontext.prec) {
+            /* Let t := v, truncated to n >= 2*k+5 fraction digits */
             mpd_qshiftr(&t, v, v->digits-varcontext.prec, status);
             t.exp = -varcontext.prec;
+            /* Let t := trunc(v)*s, truncated to n >= 2*k+1 fraction digits */
             mpd_qmul(&t, &t, &s, &varcontext, status);
         }
-        else {
+        else { /* v->digits <= 2*k+5 */
+            /* Let t := v*s, truncated to n >= 2*k+1 fraction digits */
             mpd_qmul(&t, v, &s, &varcontext, status);
         }
-        mpd_qmul(&s, z, &two, &maxcontext, status);
-        mpd_qsub(z, &s, &t, &maxcontext, status);
+        /* Let s := 2*z, exact result */
+        _mpd_qmul_exact(&s, z, &two, &maxcontext, status);
+        /* s.digits < t.digits <= 2*k+5, |adjexp(s)-adjexp(t)| <= 1,
+         * so the subtraction generates at most 2*k+6 <= klist[i+1]+7
+         * digits. The loop invariant is preserved. */
+        _mpd_qsub_exact(z, &s, &t, &maxcontext, status);
     }
 
     if (!mpd_isspecial(z)) {
@@ -6777,22 +6838,29 @@ _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
 }
 
 /*
- * Integer division with remainder of the coefficients: coeff(a) / coeff(b).
- * This function is for large numbers where it is faster to divide by
- * multiplying the dividend by the reciprocal of the divisor.
- * The inexact result is fixed by a small loop, which should not take
- * more than 2 iterations.
+ * Internal function for large numbers:
+ *
+ *     q, r = divmod(coeff(a), coeff(b))
+ *
+ * Strategy: Multiply the dividend by the reciprocal of the divisor. The
+ * inexact result is fixed by a small loop, using at most 2 iterations.
+ *
+ * ACL2 proofs:
+ * ------------
+ *    1) q is a natural number.  (ndivmod-quotient-natp)
+ *    2) r is a natural number.  (ndivmod-remainder-natp)
+ *    3) a = q * b + r           (ndivmod-q*b+r==a)
+ *    4) r < b                   (ndivmod-remainder-<-b)
  */
 static void
-_mpd_qbarrett_divmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
-                     uint32_t *status)
+_mpd_base_ndivmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
+                  uint32_t *status)
 {
     mpd_context_t workctx;
     mpd_t *qq = q, *rr = r;
     mpd_t aa, bb;
     int k;
 
-    mpd_maxcontext(&workctx);
     _mpd_copy_shared(&aa, a);
     _mpd_copy_shared(&bb, b);
 
@@ -6814,41 +6882,68 @@ _mpd_qbarrett_divmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
         }
     }
 
-    /* maximum length of q + 3 digits */
-    workctx.prec = aa.digits - bb.digits + 1 + 3;
-    /* we get the reciprocal with precision maxlen(q) + 3 */
+    mpd_maxcontext(&workctx);
+
+    /* Let prec := adigits - bdigits + 4 */
+    workctx.prec = a->digits - b->digits + 1 + 3;
+    if (a->digits > MPD_MAX_PREC || workctx.prec > MPD_MAX_PREC) {
+        *status |= MPD_Division_impossible;
+        goto nanresult;
+    }
+
+    /* Let x := _mpd_qreciprocal(b, prec) 
+     * Then x is bounded by:
+     *    1) 1/b - 10**(-prec - bdigits) < x < 1/b + 10**(-prec - bdigits)
+     *    2) 1/b - 10**(-adigits - 4) < x < 1/b + 10**(-adigits - 4)
+     */
     _mpd_qreciprocal(rr, &bb, &workctx, &workctx.status);
 
-    mpd_qmul(qq, &aa, rr, &workctx, &workctx.status);
+    /* Get an estimate for the quotient. Let q := a * x
+     * Then q is bounded by:
+     *    3) a/b - 10**-4 < q < a/b + 10**-4
+     */
+    _mpd_qmul(qq, &aa, rr, &workctx, &workctx.status);
+    /* Truncate q to an integer:
+     *    4) a/b - 2 < trunc(q) < a/b + 1
+     */
     mpd_qtrunc(qq, qq, &workctx, &workctx.status);
 
     workctx.prec = aa.digits + 3;
-    /* get the remainder */
-    mpd_qmul(rr, &bb, qq, &workctx, &workctx.status);
-    mpd_qsub(rr, &aa, rr, &workctx, &workctx.status);
+    workctx.emax = MPD_MAX_EMAX + 3;
+    workctx.emin = MPD_MIN_EMIN - 3;
+    /* Multiply the estimate for q by b:
+     *    5) a - 2 * b < trunc(q) * b < a + b
+     */
+    _mpd_qmul(rr, &bb, qq, &workctx, &workctx.status);
+    /* Get the estimate for r such that a = q * b + r. */
+    _mpd_qsub_exact(rr, &aa, rr, &workctx, &workctx.status);
 
-    /* Fix the result. Algorithm from: Karl Hasselstrom, Fast Division of Large Integers */
+    /* Fix the result. At this point -b < r < 2*b, so the correction loop
+       takes at most one iteration. */
     for (k = 0;; k++) {
-        if (mpd_isspecial(rr)) {
+        if (mpd_isspecial(qq) || mpd_isspecial(rr)) {
             *status |= (workctx.status&MPD_Errors);
             goto nanresult;
         }
-        if (k > 2) {
-            mpd_err_warn("libmpdec: internal error in "          /* GCOV_NOT_REACHED */
-                         "_mpd_qbarrett_divmod: please report"); /* GCOV_NOT_REACHED */
-            *status |= MPD_Invalid_operation;                    /* GCOV_NOT_REACHED */
-            goto nanresult;                                      /* GCOV_NOT_REACHED */
+        if (k > 2) { /* Allow two iterations despite the proof. */
+            mpd_err_warn("libmpdec: internal error in "       /* GCOV_NOT_REACHED */
+                         "_mpd_base_ndivmod: please report"); /* GCOV_NOT_REACHED */
+            *status |= MPD_Invalid_operation;                 /* GCOV_NOT_REACHED */
+            goto nanresult;                                   /* GCOV_NOT_REACHED */
         }
+        /* r < 0 */
         else if (_mpd_cmp(&zero, rr) == 1) {
-            mpd_qadd(rr, rr, &bb, &workctx, &workctx.status);
-            mpd_qadd(qq, qq, &minus_one, &workctx, &workctx.status);
+            _mpd_qadd_exact(rr, rr, &bb, &workctx, &workctx.status);
+            _mpd_qadd_exact(qq, qq, &minus_one, &workctx, &workctx.status);
         }
+        /* 0 <= r < b */
         else if (_mpd_cmp(rr, &bb) == -1) {
             break;
         }
+        /* r >= b */
         else {
-            mpd_qsub(rr, rr, &bb, &workctx, &workctx.status);
-            mpd_qadd(qq, qq, &one, &workctx, &workctx.status);
+            _mpd_qsub_exact(rr, rr, &bb, &workctx, &workctx.status);
+            _mpd_qadd_exact(qq, qq, &one, &workctx, &workctx.status);
         }
     }
 
