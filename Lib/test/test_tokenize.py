@@ -904,6 +904,35 @@ class TestDetectEncoding(TestCase):
             self.assertEqual(fp.encoding, 'utf-8-sig')
             self.assertEqual(fp.mode, 'r')
 
+    def test_filename_in_exception(self):
+        # When possible, include the file name in the exception.
+        path = 'some_file_path'
+        lines = (
+            b'print("\xdf")', # Latin-1: LATIN SMALL LETTER SHARP S
+            )
+        class Bunk:
+            def __init__(self, lines, path):
+                self.name = path
+                self._lines = lines
+                self._index = 0
+
+            def readline(self):
+                if self._index == len(lines):
+                    raise StopIteration
+                line = lines[self._index]
+                self._index += 1
+                return line
+
+        with self.assertRaises(SyntaxError):
+            ins = Bunk(lines, path)
+            # Make sure lacking a name isn't an issue.
+            del ins.name
+            detect_encoding(ins.readline)
+        with self.assertRaisesRegex(SyntaxError, '.*{}'.format(path)):
+            ins = Bunk(lines, path)
+            detect_encoding(ins.readline)
+
+
 class TestTokenize(TestCase):
 
     def test_tokenize(self):
