@@ -108,6 +108,8 @@ aix_loaderror(const char *pathname)
 {
 
     char *message[1024], errbuf[1024];
+    PyObject *pathname_ob = NULL;
+    PyObject *errbuf_ob = NULL;
     register int i,j;
 
     struct errtab {
@@ -147,7 +149,11 @@ aix_loaderror(const char *pathname)
         ERRBUF_APPEND("\n");
     }
     errbuf[strlen(errbuf)-1] = '\0';            /* trim off last newline */
-    PyErr_SetString(PyExc_ImportError, errbuf);
+    pathname_ob = PyUnicode_FromString(pathname);
+    errbuf_ob = PyUnicode_FromString(errbuf);
+    PyErr_SetImportError(errbuf_ob, NULL, pathname);
+    Py_DECREF(pathname_ob);
+    Py_DECREF(errbuf_ob);
     return;
 }
 
