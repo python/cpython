@@ -455,6 +455,7 @@ class PathsTests(unittest.TestCase):
         unload("test_trailing_slash")
 
     # Regression test for http://bugs.python.org/issue3677.
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific')
     def _test_UNC_path(self):
         with open(os.path.join(self.path, 'test_trailing_slash.py'), 'w') as f:
             f.write("testdata = 'test_trailing_slash'")
@@ -469,9 +470,6 @@ class PathsTests(unittest.TestCase):
         mod = __import__("test_trailing_slash")
         self.assertEqual(mod.testdata, 'test_trailing_slash')
         unload("test_trailing_slash")
-
-    if sys.platform == "win32":
-        test_UNC_path = _test_UNC_path
 
 
 class RelativeImportTests(unittest.TestCase):
