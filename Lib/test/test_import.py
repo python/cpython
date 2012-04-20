@@ -337,7 +337,7 @@ class ImportTests(unittest.TestCase):
             del sys.path[0]
             remove_files(TESTFN)
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
     def test_extension_import_fail(self):
         # Issue 1559549 added `name` and `path` attributes to ImportError
         # in order to provide better detail. Issue 10854 implemented those
@@ -352,6 +352,9 @@ class ImportTests(unittest.TestCase):
                 import extension
             self.assertEqual(err.exception.name, pkg_name)
             # The path we get back has the dot-slash, e.g., ".\\extension.pyd"
+            self.assertIsNotNone(err.exception.path,
+                'unexpected None for ImportError.path: '
+                '{!r}'.format(err.exception))
             self.assertEqual(os.path.relpath(err.exception.path), pkg_file)
         finally:
             unlink(pkg_file)
