@@ -36,11 +36,21 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
     /* XXX Chuck Blake once wrote that 0 should be BIND_NOSTART? */
     if (lib == NULL) {
         char buf[256];
+        PyObject *pathname_ob = NULL;
+        PyObject *buf_ob = NULL;
+        PyObject *shortname_ob = NULL;
+
         if (Py_VerboseFlag)
             perror(pathname);
         PyOS_snprintf(buf, sizeof(buf), "Failed to load %.200s",
                       pathname);
-        PyErr_SetString(PyExc_ImportError, buf);
+        buf_ob = PyUnicode_FromString(buf);
+        shortname_ob = PyUnicode_FromString(shortname);
+        pathname_ob = PyUnicode_FromString(pathname);
+        PyErr_SetImportError(buf_ob, shortname_ob, pathname_ob);
+        Py_DECREF(buf_ob);
+        Py_DECREF(shortname_ob);
+        Py_DECREF(pathname_ob);
         return NULL;
     }
     PyOS_snprintf(funcname, sizeof(funcname), FUNCNAME_PATTERN, shortname);
