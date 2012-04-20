@@ -179,6 +179,17 @@ class ImportTests(unittest.TestCase):
         self.assertRaises(SyntaxError,
                           imp.find_module, "badsyntax_pep3120", [path])
 
+    def test_load_dynamic_ImportError_path(self):
+        # Issue #1559549 added `name` and `path` attributes to ImportError
+        # in order to provide better detail. Issue #10854 implemented those
+        # attributes on import failures of extensions on Windows.
+        path = 'bogus file path'
+        name = 'extension'
+        with self.assertRaises(ImportError) as err:
+            imp.load_dynamic(name, path)
+        self.assertIn(path, err.exception.path)
+        self.assertEqual(name, err.exception.name)
+
 
 class ReloadTests(unittest.TestCase):
 

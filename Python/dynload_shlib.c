@@ -129,10 +129,19 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
     handle = dlopen(pathname, dlopenflags);
 
     if (handle == NULL) {
+        PyObject *mod_name = NULL;
+        PyObject *path = NULL;
+        PyObject *error_ob = NULL;
         const char *error = dlerror();
         if (error == NULL)
             error = "unknown dlopen() error";
-        PyErr_SetString(PyExc_ImportError, error);
+        error_ob = PyUnicode_FromString(error);
+        path = PyUnicode_FromString(pathname);
+        mod_name = PyUnicode_FromString(shortname);
+        PyErr_SetImportError(error_ob, mod_name, path);
+        Py_DECREF(error_ob);
+        Py_DECREF(path);
+        Py_DECREF(mod_name);
         return NULL;
     }
     if (fp != NULL && nhandles < 128)
