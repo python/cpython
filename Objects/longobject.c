@@ -156,9 +156,7 @@ _PyLong_Copy(PyLongObject *src)
     if (i < 0)
         i = -(i);
     if (i < 2) {
-        sdigit ival = src->ob_digit[0];
-        if (Py_SIZE(src) < 0)
-            ival = -ival;
+        sdigit ival = MEDIUM_VALUE(src);
         CHECK_SMALL_INT(ival);
     }
     result = _PyLong_New(i);
