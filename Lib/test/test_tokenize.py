@@ -825,6 +825,16 @@ class TestDetectEncoding(TestCase):
                 found, consumed_lines = detect_encoding(rl)
                 self.assertEqual(found, "iso-8859-1")
 
+    def test_syntaxerror_latin1(self):
+        # Issue 14629: need to raise SyntaxError if the first
+        # line(s) have non-UTF-8 characters
+        lines = (
+            b'print("\xdf")', # Latin-1: LATIN SMALL LETTER SHARP S
+            )
+        readline = self.get_readline(lines)
+        self.assertRaises(SyntaxError, detect_encoding, readline)
+
+
     def test_utf8_normalization(self):
         # See get_normal_name() in tokenizer.c.
         encodings = ("utf-8", "utf-8-mac", "utf-8-unix")
