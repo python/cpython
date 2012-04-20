@@ -74,10 +74,11 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
     if (PyErr_Occurred())
         goto error;
     if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "dynamic module does not define init function"
-                     " (PyInit_%s)",
-                     shortname);
+        PyObject *msg = PyUnicode_FromFormat("dynamic module does not define "
+                                             "init function (PyInit_%s)",
+                                             shortname);
+        PyErr_SetImportError(msg, name, path);
+        Py_DECREF(msg);
         goto error;
     }
     oldcontext = _Py_PackageContext;
