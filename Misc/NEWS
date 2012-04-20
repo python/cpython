@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14339: Speed improvements to bin, oct and hex functions.  Patch by
+  Serhiy Storchaka.
+
 - Issue #14098: New functions PyErr_GetExcInfo and PyErr_SetExcInfo.
   Patch by Stefan Behnel.
 

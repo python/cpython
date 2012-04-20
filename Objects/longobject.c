@@ -1672,11 +1672,10 @@ _PyLong_Format(PyObject *aa, int base)
 {
     register PyLongObject *a = (PyLongObject *)aa;
     PyObject *v;
-    Py_ssize_t i, sz;
+    Py_ssize_t sz;
     Py_ssize_t size_a;
-    char *p;
-    char sign = '\0';
-    char *buffer;
+    Py_UCS1 *p;
+    int negative;
     int bits;
 
     assert(base == 2 || base == 8 || base == 10 || base == 16);
@@ -1688,6 +1687,7 @@ _PyLong_Format(PyObject *aa, int base)
         return NULL;
     }
     size_a = ABS(Py_SIZE(a));
+    negative = Py_SIZE(a) < 0;
 
     /* Compute a rough upper bound for the length of the string */
     switch (base) {
@@ -1704,33 +1704,40 @@ _PyLong_Format(PyObject *aa, int base)
         assert(0); /* shouldn't ever get here */
         bits = 0; /* to silence gcc warning */
     }
-    /* compute length of output string: allow 2 characters for prefix and
-       1 for possible '-' sign. */
-    if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT / sizeof(Py_UCS4)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "int is too large to format");
-        return NULL;
-    }
-    /* now size_a * PyLong_SHIFT + 3 <= PY_SSIZE_T_MAX, so the RHS below
-       is safe from overflow */
-    sz = 3 + (size_a * PyLong_SHIFT + (bits - 1)) / bits;
-    assert(sz >= 0);
-    buffer = PyMem_Malloc(sz);
-    if (buffer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    p = &buffer[sz];
-    if (Py_SIZE(a) < 0)
-        sign = '-';
 
-    if (Py_SIZE(a) == 0) {
+    /* Compute exact length 'sz' of output string. */
+    if (size_a == 0) {
+        sz = 3;
+    }
+    else {
+        Py_ssize_t size_a_in_bits;
+        /* Ensure overflow doesn't occur during computation of sz. */
+        if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "int is too large to format");
+            return NULL;
+        }
+        size_a_in_bits = (size_a - 1) * PyLong_SHIFT +
+                         bits_in_digit(a->ob_digit[size_a - 1]);
+        /* Allow 2 characters for prefix and 1 for a '-' sign. */
+        sz = 2 + negative + (size_a_in_bits + (bits - 1)) / bits;
+    }
+
+    v = PyUnicode_New(sz, 'x');
+    if (v == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
+
+    p = PyUnicode_1BYTE_DATA(v) + sz;
+    if (size_a == 0) {
         *--p = '0';
     }
     else {
         /* JRH: special case for power-of-2 bases */
         twodigits accum = 0;
         int accumbits = 0;              /* # of bits in accum */
+        Py_ssize_t i;
         for (i = 0; i < size_a; ++i) {
             accum |= (twodigits)a->ob_digit[i] << accumbits;
             accumbits += PyLong_SHIFT;
@@ -1739,7 +1746,6 @@ _PyLong_Format(PyObject *aa, int base)
                 char cdigit;
                 cdigit = (char)(accum & (base - 1));
                 cdigit += (cdigit < 10) ? '0' : 'a'-10;
-                assert(p > buffer);
                 *--p = cdigit;
                 accumbits -= bits;
                 accum >>= bits;
@@ -1754,10 +1760,9 @@ _PyLong_Format(PyObject *aa, int base)
     else /* (base == 2) */
         *--p = 'b';
     *--p = '0';
-    if (sign)
-        *--p = sign;
-    v = PyUnicode_DecodeASCII(p, &buffer[sz] - p, NULL);
-    PyMem_Free(buffer);
+    if (negative)
+        *--p = '-';
+    assert(p == PyUnicode_1BYTE_DATA(v));
     return v;
 }
 
