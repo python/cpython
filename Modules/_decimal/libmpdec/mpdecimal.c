@@ -3530,6 +3530,7 @@ _mpd_qdiv(int action, mpd_t *q, const mpd_t *a, const mpd_t *b,
         MPD_NEW_STATIC(r,0,0,0,0);
         _mpd_base_ndivmod(q, &r, a, b, status);
         if (mpd_isspecial(q) || mpd_isspecial(&r)) {
+            mpd_setspecial(q, MPD_POS, MPD_NAN);
             mpd_del(&r);
             goto finish;
         }
