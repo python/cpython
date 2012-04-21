@@ -367,7 +367,7 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_create_autospec_unbound_methods(self):
-        # see issue 128
+        # see mock issue 128
         # this is expected to fail until the issue is fixed
         return
         class Foo(object):
@@ -389,6 +389,19 @@ class SpecSignatureTest(unittest.TestCase):
             a = 3
         m = create_autospec(Foo, a='3')
         self.assertEqual(m.a, '3')
+
+
+    def test_create_autospec_keyword_only_arguments(self):
+        def foo(a, *, b=None):
+            pass
+
+        m = create_autospec(foo)
+        m(1)
+        m.assert_called_with(1)
+        self.assertRaises(TypeError, m, 1, 2)
+
+        m(2, b=3)
+        m.assert_called_with(2, b=3)
 
 
     def test_function_as_instance_attribute(self):
