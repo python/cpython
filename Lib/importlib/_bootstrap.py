@@ -178,6 +178,31 @@ def _new_module(name):
 
 # Finder/loader utility code ##################################################
 
+PYCACHE = '__pycache__'
+
+DEBUG_BYTECODE_SUFFIX = '.pyc'
+OPT_BYTECODE_SUFFIX = '.pyo'
+BYTECODE_SUFFIX = DEBUG_BYTECODE_SUFFIX if __debug__ else OPT_BYTECODE_SUFFIX
+
+def _cache_from_source(path, debug_override=None):
+    """Given the path to a .py file, return the path to its .pyc/.pyo file.
+
+    The .py file does not need to exist; this simply returns the path to the
+    .pyc/.pyo file calculated as if the .py file were imported.  The extension
+    will be .pyc unless __debug__ is not defined, then it will be .pyo.
+
+    If debug_override is not None, then it must be a boolean and is taken as
+    the value of __debug__ instead.
+
+    """
+    debug = __debug__ if debug_override is None else debug_override
+    suffix = DEBUG_BYTECODE_SUFFIX if debug else OPT_BYTECODE_SUFFIX
+    head, tail = _path_split(path)
+    base_filename, sep, _ = tail.partition('.')
+    filename = '{}{}{}{}'.format(base_filename, sep, _imp.get_tag(), suffix)
+    return _path_join(head, PYCACHE, filename)
+
+
 def verbose_message(message, *args):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose:
@@ -452,7 +477,7 @@ class _LoaderBasics:
         code_object = self.get_code(name)
         module.__file__ = self.get_filename(name)
         if not sourceless:
-            module.__cached__ = _imp.cache_from_source(module.__file__)
+            module.__cached__ = _cache_from_source(module.__file__)
         else:
             module.__cached__ = module.__file__
         module.__package__ = name
@@ -515,7 +540,7 @@ class SourceLoader(_LoaderBasics):
 
         """
         source_path = self.get_filename(fullname)
-        bytecode_path = _imp.cache_from_source(source_path)
+        bytecode_path = _cache_from_source(source_path)
         source_mtime = None
         if bytecode_path is not None:
             try:
@@ -554,9 +579,6 @@ class SourceLoader(_LoaderBasics):
         verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
             source_mtime is not None):
-            # If e.g. Jython ever implements imp.cache_from_source to have
-            # their own cached file format, this block of code will most likely
-            # throw an exception.
             data = bytearray(_MAGIC_NUMBER)
             data.extend(_w_long(source_mtime))
             data.extend(_w_long(len(source_bytes)))
