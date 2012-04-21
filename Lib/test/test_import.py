@@ -459,6 +459,7 @@ class PathsTests(unittest.TestCase):
     def test_UNC_path(self):
         with open(os.path.join(self.path, 'test_trailing_slash.py'), 'w') as f:
             f.write("testdata = 'test_trailing_slash'")
+        importlib.invalidate_caches()
         # Create the UNC path, like \\myhost\c$\foo\bar.
         path = os.path.abspath(self.path)
         import socket
@@ -466,10 +467,13 @@ class PathsTests(unittest.TestCase):
         drive = path[0]
         unc = "\\\\%s\\%s$"%(hn, drive)
         unc += path[2:]
-        sys.path.append(path)
-        mod = __import__("test_trailing_slash")
-        self.assertEqual(mod.testdata, 'test_trailing_slash')
-        unload("test_trailing_slash")
+        sys.path.append(unc)
+        try:
+            mod = __import__("test_trailing_slash")
+            self.assertEqual(mod.testdata, 'test_trailing_slash')
+            unload("test_trailing_slash")
+        finally:
+            sys.path.remove(unc)
 
 
 class RelativeImportTests(unittest.TestCase):
