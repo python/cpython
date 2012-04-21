@@ -783,7 +783,6 @@ remove_module(PyObject *name)
 
 static PyObject * get_sourcefile(PyObject *filename);
 static PyObject *make_source_pathname(PyObject *pathname);
-static PyObject* make_compiled_pathname(PyObject *pathname, int debug);
 
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
@@ -922,71 +921,6 @@ rightmost_sep_obj(PyObject* o, Py_ssize_t start, Py_ssize_t end)
         }
     }
     return found;
-}
-
-/* Given a pathname for a Python source file, fill a buffer with the
-   pathname for the corresponding compiled file.  Return the pathname
-   for the compiled file, or NULL if there's no space in the buffer.
-   Doesn't set an exception.
-
-   foo.py -> __pycache__/foo.<tag>.pyc
-
-   pathstr is assumed to be "ready".
-*/
-
-static PyObject*
-make_compiled_pathname(PyObject *pathstr, int debug)
-{
-    PyObject *result;
-    Py_ssize_t fname, ext, len, i, pos, taglen;
-    Py_ssize_t pycache_len = sizeof(CACHEDIR) - 1;
-    int kind;
-    void *data;
-    Py_UCS4 lastsep;
-
-    /* Compute the output string size. */
-    len = PyUnicode_GET_LENGTH(pathstr);
-    /* If there is no separator, this returns -1, so
-       fname will be 0. */
-    fname = rightmost_sep_obj(pathstr, 0, len) + 1;
-    /* Windows: re-use the last separator character (/ or \\) when
-       appending the __pycache__ path. */
-    if (fname > 0)
-        lastsep = PyUnicode_READ_CHAR(pathstr, fname -1);
-    else
-        lastsep = SEP;
-    ext = fname - 1;
-    for(i = fname; i < len; i++)
-        if (PyUnicode_READ_CHAR(pathstr, i) == '.')
-            ext = i + 1;
-    if (ext < fname)
-        /* No dot in filename; use entire filename */
-        ext = len;
-
-    /* result = pathstr[:fname] + "__pycache__" + SEP +
-                pathstr[fname:ext] + tag + ".py[co]" */
-    taglen = strlen(pyc_tag);
-    result = PyUnicode_New(ext + pycache_len + 1 + taglen + 4,
-                           PyUnicode_MAX_CHAR_VALUE(pathstr));
-    if (!result)
-        return NULL;
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
-    PyUnicode_CopyCharacters(result, 0, pathstr, 0, fname);
-    pos = fname;
-    for (i = 0; i < pycache_len; i++)
-        PyUnicode_WRITE(kind, data, pos++, CACHEDIR[i]);
-    PyUnicode_WRITE(kind, data, pos++, lastsep);
-    PyUnicode_CopyCharacters(result, pos, pathstr,
-                             fname, ext - fname);
-    pos += ext - fname;
-    for (i = 0; pyc_tag[i]; i++)
-        PyUnicode_WRITE(kind, data, pos++, pyc_tag[i]);
-    PyUnicode_WRITE(kind, data, pos++, '.');
-    PyUnicode_WRITE(kind, data, pos++, 'p');
-    PyUnicode_WRITE(kind, data, pos++, 'y');
-    PyUnicode_WRITE(kind, data, pos++, debug ? 'c' : 'o');
-    return result;
 }
 
 
@@ -2991,49 +2925,6 @@ PyDoc_STRVAR(doc_reload,
 \n\
 Reload the module.  The module must have been successfully imported before.");
 
-static PyObject *
-imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
-{
-    static char *kwlist[] = {"path", "debug_override", NULL};
-
-    PyObject *pathname, *cpathname;
-    PyObject *debug_override = NULL;
-    int debug = !Py_OptimizeFlag;
-
-    if (!PyArg_ParseTupleAndKeywords(
-                args, kws, "O&|O", kwlist,
-                PyUnicode_FSDecoder, &pathname, &debug_override))
-        return NULL;
-
-    if (debug_override != NULL &&
-        (debug = PyObject_IsTrue(debug_override)) < 0) {
-        Py_DECREF(pathname);
-        return NULL;
-    }
-
-    if (PyUnicode_READY(pathname) < 0)
-        return NULL;
-
-    cpathname = make_compiled_pathname(pathname, debug);
-    Py_DECREF(pathname);
-
-    if (cpathname == NULL) {
-        PyErr_Format(PyExc_SystemError, "path buffer too short");
-        return NULL;
-    }
-    return cpathname;
-}
-
-PyDoc_STRVAR(doc_cache_from_source,
-"cache_from_source(path, [debug_override]) -> path\n\
-Given the path to a .py file, return the path to its .pyc/.pyo file.\n\
-\n\
-The .py file does not need to exist; this simply returns the path to the\n\
-.pyc/.pyo file calculated as if the .py file were imported.  The extension\n\
-will be .pyc unless __debug__ is not defined, then it will be .pyo.\n\
-\n\
-If debug_override is not None, then it must be a boolean and is taken as\n\
-the value of __debug__ instead.");
 
 static PyObject *
 imp_source_from_cache(PyObject *self, PyObject *args, PyObject *kws)
@@ -3116,8 +3007,6 @@ static PyMethodDef imp_methods[] = {
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
     {"reload",       imp_reload,       METH_O,       doc_reload},
-    {"cache_from_source", (PyCFunction)imp_cache_from_source,
-     METH_VARARGS | METH_KEYWORDS, doc_cache_from_source},
     {"source_from_cache", (PyCFunction)imp_source_from_cache,
      METH_VARARGS | METH_KEYWORDS, doc_source_from_cache},
     /* The rest are obsolete */
