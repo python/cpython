@@ -2926,36 +2926,6 @@ PyDoc_STRVAR(doc_reload,
 Reload the module.  The module must have been successfully imported before.");
 
 
-static PyObject *
-imp_source_from_cache(PyObject *self, PyObject *args, PyObject *kws)
-{
-    static char *kwlist[] = {"path", NULL};
-    PyObject *pathname, *source;
-
-    if (!PyArg_ParseTupleAndKeywords(
-                args, kws, "O&", kwlist,
-                PyUnicode_FSDecoder, &pathname))
-        return NULL;
-
-    source = make_source_pathname(pathname);
-    if (source == NULL) {
-        PyErr_Format(PyExc_ValueError, "Not a PEP 3147 pyc path: %R",
-                     pathname);
-        Py_DECREF(pathname);
-        return NULL;
-    }
-    Py_DECREF(pathname);
-    return source;
-}
-
-PyDoc_STRVAR(doc_source_from_cache,
-"source_from_cache(path) -> path\n\
-Given the path to a .pyc./.pyo file, return the path to its .py file.\n\
-\n\
-The .pyc/.pyo file does not need to exist; this simply returns the path to\n\
-the .py file calculated to correspond to the .pyc/.pyo file.  If path\n\
-does not conform to PEP 3147 format, ValueError will be raised.");
-
 /* Doc strings */
 
 PyDoc_STRVAR(doc_imp,
@@ -3007,9 +2977,6 @@ static PyMethodDef imp_methods[] = {
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
     {"reload",       imp_reload,       METH_O,       doc_reload},
-    {"source_from_cache", (PyCFunction)imp_source_from_cache,
-     METH_VARARGS | METH_KEYWORDS, doc_source_from_cache},
-    /* The rest are obsolete */
     {"get_frozen_object",       imp_get_frozen_object,  METH_VARARGS},
     {"is_frozen_package",   imp_is_frozen_package,  METH_VARARGS},
     {"init_builtin",            imp_init_builtin,       METH_VARARGS},
