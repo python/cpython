@@ -10,11 +10,10 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
                   load_dynamic, get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
                   _fix_co_filename)
-# Can (probably) move to importlib
-from _imp import (get_tag, get_suffixes, cache_from_source,
-                  source_from_cache)
 # Could move out of _imp, but not worth the code
 from _imp import get_magic
+# Can (probably) move to importlib
+from _imp import (get_tag, get_suffixes, source_from_cache)
 # Should be re-implemented here (and mostly deprecated)
 from _imp import (find_module, NullImporter,
                   SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
@@ -22,6 +21,7 @@ from _imp import (find_module, NullImporter,
                   PY_CODERESOURCE, IMP_HOOK)
 
 from importlib._bootstrap import _new_module as new_module
+from importlib._bootstrap import _cache_from_source as cache_from_source
 
 from importlib import _bootstrap
 import os
