@@ -78,10 +78,14 @@ def _getsignature(func, skipfirst, instance=False):
             return
 
     try:
-        regargs, varargs, varkwargs, defaults = inspect.getargspec(func)
+        argspec = inspect.getfullargspec(func)
     except TypeError:
         # C function / method, possibly inherited object().__init__
         return
+
+    # not using annotations
+    regargs, varargs, varkw, defaults, kwonly, kwonlydef, ann = argspec
+
 
     # instance methods and classmethods need to lose the self argument
     if getattr(func, '__self__', None) is not None:
@@ -90,8 +94,9 @@ def _getsignature(func, skipfirst, instance=False):
         # this condition and the above one are never both True - why?
         regargs = regargs[1:]
 
-    signature = inspect.formatargspec(regargs, varargs, varkwargs, defaults,
-                                      formatvalue=lambda value: "")
+    signature = inspect.formatargspec(
+        regargs, varargs, varkw, defaults,
+        kwonly, kwonlydef, ann, formatvalue=lambda value: "")
     return signature[1:-1], func
 
 
