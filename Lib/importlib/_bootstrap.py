@@ -201,7 +201,7 @@ def _cache_from_source(path, debug_override=None):
     suffix = DEBUG_BYTECODE_SUFFIX if debug else OPT_BYTECODE_SUFFIX
     head, tail = _path_split(path)
     base_filename, sep, _ = tail.partition('.')
-    filename = ''.join([base_filename, sep, _imp.get_tag(), suffix])
+    filename = ''.join([base_filename, sep, _TAG, suffix])
     return _path_join(head, PYCACHE, filename)
 
 
@@ -1148,6 +1148,7 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
 
 
 _MAGIC_NUMBER = None  # Set in _setup()
+_TAG = None  # Set in _setup()
 
 
 def _setup(sys_module, _imp_module):
@@ -1197,6 +1198,7 @@ def _setup(sys_module, _imp_module):
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
+    setattr(self_module, '_TAG', _imp.get_tag())
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
 
