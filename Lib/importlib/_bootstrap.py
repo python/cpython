@@ -180,6 +180,8 @@ def _new_module(name):
 
 PYCACHE = '__pycache__'
 
+SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
+
 DEBUG_BYTECODE_SUFFIX = '.pyc'
 OPT_BYTECODE_SUFFIX = '.pyo'
 BYTECODE_SUFFIX = DEBUG_BYTECODE_SUFFIX if __debug__ else OPT_BYTECODE_SUFFIX
@@ -199,7 +201,7 @@ def _cache_from_source(path, debug_override=None):
     suffix = DEBUG_BYTECODE_SUFFIX if debug else OPT_BYTECODE_SUFFIX
     head, tail = _path_split(path)
     base_filename, sep, _ = tail.partition('.')
-    filename = '{}{}{}{}'.format(base_filename, sep, _imp.get_tag(), suffix)
+    filename = ''.join([base_filename, sep, _imp.get_tag(), suffix])
     return _path_join(head, PYCACHE, filename)
 
 
@@ -1195,6 +1197,8 @@ def _setup(sys_module, _imp_module):
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
+    if builtin_os == 'nt':
+        SOURCE_SUFFIXES.append('.pyw')
 
 
 def _install(sys_module, _imp_module):
