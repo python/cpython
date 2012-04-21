@@ -83,7 +83,6 @@ def _getsignature(func, skipfirst, instance=False):
         # C function / method, possibly inherited object().__init__
         return
 
-    # not using annotations
     regargs, varargs, varkw, defaults, kwonly, kwonlydef, ann = argspec
 
 
