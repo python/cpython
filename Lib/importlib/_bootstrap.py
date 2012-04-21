@@ -7,11 +7,8 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 
-# Injected modules are '_warnings', '_imp', 'sys', 'marshal', '_io',
-# and '_os' (a.k.a. 'posix', 'nt' or 'os2').
-# Injected attribute is path_sep.
-# Most injection is handled by _setup().
-#
+# See importlib._setup() for what is injected into the global namespace.
+
 # When editing this code be aware that code executed at import time CANNOT
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
@@ -64,12 +61,23 @@ def _r_long(int_bytes):
     return x
 
 
-
-# XXX Could also expose Modules/getpath.c:joinpath()
 def _path_join(*args):
-    """Replacement for os.path.join."""
-    return path_sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
-                         for x in args if x)
+    """Replacement for os.path.join()."""
+    sep = path_sep if args[0][-1:] not in path_separators else args[0][-1]
+    return sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
+                    for x in args if x)
+
+
+def _path_split(path):
+    """Replacement for os.path.split()."""
+    for x in reversed(path):
+        if x in path_separators:
+            sep = x
+            break
+    else:
+        sep = path_sep
+    front, _, tail = path.rpartition(sep)
+    return front, tail
 
 
 def _path_exists(path):
@@ -388,7 +396,7 @@ class _LoaderBasics:
     def is_package(self, fullname):
         """Concrete implementation of InspectLoader.is_package by checking if
         the path returned by get_filename has a filename of '__init__.py'."""
-        filename = self.get_filename(fullname).rpartition(path_sep)[2]
+        filename = _path_split(self.get_filename(fullname))[1]
         return filename.rsplit('.', 1)[0] == '__init__'
 
     def _bytes_from_bytecode(self, fullname, data, bytecode_path, source_stats):
@@ -449,7 +457,7 @@ class _LoaderBasics:
             module.__cached__ = module.__file__
         module.__package__ = name
         if self.is_package(name):
-            module.__path__ = [module.__file__.rsplit(path_sep, 1)[0]]
+            module.__path__ = [_path_split(module.__file__)[0]]
         else:
             module.__package__ = module.__package__.rpartition('.')[0]
         module.__loader__ = self
@@ -604,11 +612,11 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
 
     def set_data(self, path, data):
         """Write bytes data to a file."""
-        parent, _, filename = path.rpartition(path_sep)
+        parent, filename = _path_split(path)
         path_parts = []
         # Figure out what directories are missing.
         while parent and not _path_isdir(parent):
-            parent, _, part = parent.rpartition(path_sep)
+            parent, part = _path_split(parent)
             path_parts.append(part)
         # Create needed directories.
         for part in reversed(path_parts):
@@ -1142,7 +1150,9 @@ def _setup(sys_module, _imp_module):
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
 
-    for builtin_os, path_sep in [('posix', '/'), ('nt', '\\'), ('os2', '\\')]:
+    os_details = ('posix', ['/']), ('nt', ['\\', '/']), ('os2', ['\\', '/'])
+    for builtin_os, path_separators in os_details:
+        path_sep = path_separators[0]
         if builtin_os in sys.modules:
             os_module = sys.modules[builtin_os]
             break
@@ -1151,7 +1161,7 @@ def _setup(sys_module, _imp_module):
                 os_module = BuiltinImporter.load_module(builtin_os)
                 # TODO: rip out os2 code after 3.3 is released as per PEP 11
                 if builtin_os == 'os2' and 'EMX GCC' in sys.version:
-                    path_sep = '/'
+                    path_sep = path_separators[1]
                 break
             except ImportError:
                 continue
@@ -1159,6 +1169,7 @@ def _setup(sys_module, _imp_module):
         raise ImportError('importlib requires posix or nt')
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
+    setattr(self_module, 'path_separators', set(path_separators))
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
