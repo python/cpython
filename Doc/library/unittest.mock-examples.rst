@@ -838,56 +838,6 @@ and the `return_value` will use your subclass automatically. That means all
 children of a `CopyingMock` will also have the type `CopyingMock`.
 
 
-Multiple calls with different effects
--------------------------------------
-
-Handling code that needs to behave differently on subsequent calls during the
-test can be tricky. For example you may have a function that needs to raise
-an exception the first time it is called but returns a response on the second
-call (testing retry behaviour).
-
-One approach is to use a :attr:`side_effect` function that replaces itself. The
-first time it is called the `side_effect` sets a new `side_effect` that will
-be used for the second call. It then raises an exception:
-
-    >>> def side_effect(*args):
-    ...   def second_call(*args):
-    ...     return 'response'
-    ...   mock.side_effect = second_call
-    ...   raise Exception('boom')
-    ...
-    >>> mock = Mock(side_effect=side_effect)
-    >>> mock('first')
-    Traceback (most recent call last):
-        ...
-    Exception: boom
-    >>> mock('second')
-    'response'
-    >>> mock.assert_called_with('second')
-
-Another perfectly valid way would be to pop return values from a list. If the
-return value is an exception, raise it instead of returning it:
-
-    >>> returns = [Exception('boom'), 'response']
-    >>> def side_effect(*args):
-    ...   result = returns.pop(0)
-    ...   if isinstance(result, Exception):
-    ...     raise result
-    ...   return result
-    ...
-    >>> mock = Mock(side_effect=side_effect)
-    >>> mock('first')
-    Traceback (most recent call last):
-        ...
-    Exception: boom
-    >>> mock('second')
-    'response'
-    >>> mock.assert_called_with('second')
-
-Which approach you prefer is a matter of taste. The first approach is actually
-a line shorter but maybe the second approach is more readable.
-
-
 Nesting Patches
 ---------------
 
