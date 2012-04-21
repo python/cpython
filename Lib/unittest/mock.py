@@ -78,10 +78,13 @@ def _getsignature(func, skipfirst, instance=False):
             return
 
     try:
-        regargs, varargs, varkwargs, defaults = inspect.getargspec(func)
+        argspec = inspect.getfullargspec(func)
     except TypeError:
         # C function / method, possibly inherited object().__init__
         return
+
+    regargs, varargs, varkw, defaults, kwonly, kwonlydef, ann = argspec
+
 
     # instance methods and classmethods need to lose the self argument
     if getattr(func, '__self__', None) is not None:
@@ -90,8 +93,9 @@ def _getsignature(func, skipfirst, instance=False):
         # this condition and the above one are never both True - why?
         regargs = regargs[1:]
 
-    signature = inspect.formatargspec(regargs, varargs, varkwargs, defaults,
-                                      formatvalue=lambda value: "")
+    signature = inspect.formatargspec(
+        regargs, varargs, varkw, defaults,
+        kwonly, kwonlydef, ann, formatvalue=lambda value: "")
     return signature[1:-1], func
 
 
@@ -891,7 +895,10 @@ class CallableMixin(Base):
                 raise effect
 
             if not _callable(effect):
-                return next(effect)
+                result = next(effect)
+                if _is_exception(result):
+                    raise result
+                return result
 
             ret_val = effect(*args, **kwargs)
             if ret_val is DEFAULT:
@@ -931,8 +938,9 @@ class Mock(CallableMixin, NonCallableMock):
       arguments as the mock, and unless it returns `DEFAULT`, the return
       value of this function is used as the return value.
 
-      Alternatively `side_effect` can be an exception class or instance. In
-      this case the exception will be raised when the mock is called.
+      If `side_effect` is an iterable then each call to the mock will return
+      the next value from the iterable. If any of the members of the iterable
+      are exceptions they will be raised instead of returned.
 
       If `side_effect` is an iterable then each call to the mock will return
       the next value from the iterable.

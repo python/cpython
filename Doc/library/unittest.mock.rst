@@ -823,6 +823,20 @@ a `StopIteration` is raised):
           ...
         StopIteration
 
+If any members of the iterable are exceptions they will be raised instead of
+returned::
+
+        >>> iterable = (33, ValueError, 66)
+        >>> m = MagicMock(side_effect=iterable)
+        >>> m()
+        33
+        >>> m()
+        Traceback (most recent call last):
+         ...
+        ValueError
+        >>> m()
+        66
+
 
 .. _deleting-attributes:
 
