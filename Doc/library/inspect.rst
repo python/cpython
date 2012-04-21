@@ -440,11 +440,16 @@ Classes and functions
    locals dictionary of the given frame.
 
 
-.. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue])
+.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations])
 
-   Format a pretty argument spec from the four values returned by
-   :func:`getargspec`.  The format\* arguments are the corresponding optional
-   formatting functions that are called to turn names and values into strings.
+   Format a pretty argument spec from the values returned by
+   :func:`getargspec` or :func:`getfullargspec`.
+
+   The first seven arguments are (``args``, ``varargs``, ``varkw``,
+   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``). The
+   other five arguments are the corresponding optional formatting functions
+   that are called to turn names and values into strings. The last argument
+   is an optional function to format the sequence of arguments.
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
