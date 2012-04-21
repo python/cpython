@@ -13,7 +13,7 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
 # Could move out of _imp, but not worth the code
 from _imp import get_magic
 # Can (probably) move to importlib
-from _imp import (get_tag, get_suffixes, source_from_cache)
+from _imp import (get_tag, get_suffixes)
 # Should be re-implemented here (and mostly deprecated)
 from _imp import (find_module, NullImporter,
                   SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
@@ -25,6 +25,26 @@ from importlib._bootstrap import _cache_from_source as cache_from_source
 
 from importlib import _bootstrap
 import os
+
+
+def source_from_cache(path):
+    """Given the path to a .pyc./.pyo file, return the path to its .py file.
+
+    The .pyc/.pyo file does not need to exist; this simply returns the path to
+    the .py file calculated to correspond to the .pyc/.pyo file.  If path does
+    not conform to PEP 3147 format, ValueError will be raised.
+
+    """
+    head, pycache_filename = os.path.split(path)
+    head, pycache = os.path.split(head)
+    if pycache != _bootstrap.PYCACHE:
+        raise ValueError('{} not bottom-level directory in '
+                         '{!r}'.format(_bootstrap.PYCACHE, path))
+    if pycache_filename.count('.') != 2:
+        raise ValueError('expected only 2 dots in '
+                         '{!r}'.format(pycache_filename))
+    base_filename = pycache_filename.partition('.')[0]
+    return os.path.join(head, base_filename + _bootstrap.SOURCE_SUFFIXES[0])
 
 
 class _HackedGetData:
@@ -55,6 +75,7 @@ class _LoadSourceCompatibility(_HackedGetData, _bootstrap._SourceFileLoader):
     """Compatibility support for implementing load_source()."""
 
 
+# XXX deprecate after better API exposed in importlib
 def load_source(name, pathname, file=None):
     return _LoadSourceCompatibility(name, pathname, file).load_module(name)
 
@@ -65,10 +86,12 @@ class _LoadCompiledCompatibility(_HackedGetData,
     """Compatibility support for implementing load_compiled()."""
 
 
+# XXX deprecate
 def load_compiled(name, pathname, file=None):
     return _LoadCompiledCompatibility(name, pathname, file).load_module(name)
 
 
+# XXX deprecate
 def load_package(name, path):
     if os.path.isdir(path):
         extensions = _bootstrap._suffix_list(PY_SOURCE)
@@ -82,6 +105,7 @@ def load_package(name, path):
     return _bootstrap._SourceFileLoader(name, path).load_module(name)
 
 
+# XXX deprecate
 def load_module(name, file, filename, details):
     """Load a module, given information returned by find_module().
 
