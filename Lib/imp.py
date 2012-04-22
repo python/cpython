@@ -15,16 +15,29 @@ from _imp import get_magic, get_tag
 # Can (probably) move to importlib
 from _imp import get_suffixes
 # Should be re-implemented here (and mostly deprecated)
-from _imp import (find_module, NullImporter,
-                  SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION,
-                  PY_RESOURCE, PKG_DIRECTORY, C_BUILTIN, PY_FROZEN,
-                  PY_CODERESOURCE, IMP_HOOK)
+from _imp import NullImporter
 
 from importlib._bootstrap import _new_module as new_module
 from importlib._bootstrap import _cache_from_source as cache_from_source
 
 from importlib import _bootstrap
 import os
+import sys
+import tokenize
+
+
+# XXX "deprecate" once find_module(), load_module(), and get_suffixes() are
+#     deprecated.
+SEARCH_ERROR = 0
+PY_SOURCE = 1
+PY_COMPILED = 2
+C_EXTENSION = 3
+PY_RESOURCE = 4
+PKG_DIRECTORY = 5
+C_BUILTIN = 6
+PY_FROZEN = 7
+PY_CODERESOURCE = 8
+IMP_HOOK = 9
 
 
 def source_from_cache(path):
@@ -131,3 +144,54 @@ def load_module(name, file, filename, details):
     else:
         msg =  "Don't know how to import {} (type code {}".format(name, type_)
         raise ImportError(msg, name=name)
+
+
+def find_module(name, path=None):
+    """Search for a module.
+
+    If path is omitted or None, search for a built-in, frozen or special
+    module and continue search in sys.path. The module name cannot
+    contain '.'; to search for a submodule of a package, pass the
+    submodule name and the package's __path__.
+
+    """
+    if not isinstance(name, str):
+        raise TypeError("'name' must be a str, not {}".format(type(name)))
+    elif not isinstance(path, (type(None), list)):
+        # Backwards-compatibility
+        raise RuntimeError("'list' must be None or a list, "
+                           "not {}".format(type(name)))
+
+    if path is None:
+        if is_builtin(name):
+            return None, None, ('', '', C_BUILTIN)
+        elif is_frozen(name):
+            return None, None, ('', '', PY_FROZEN)
+        else:
+            path = sys.path
+
+    for entry in path:
+        package_directory = os.path.join(entry, name)
+        for suffix in ['.py', _bootstrap.BYTECODE_SUFFIX]:
+            package_file_name = '__init__' + suffix
+            file_path = os.path.join(package_directory, package_file_name)
+            if os.path.isfile(file_path):
+                return None, package_directory, ('', '', PKG_DIRECTORY)
+        for suffix, mode, type_ in get_suffixes():
+            file_name = name + suffix
+            file_path = os.path.join(entry, file_name)
+            if os.path.isfile(file_path):
+                break
+        else:
+            continue
+        break  # Break out of outer loop when breaking out of inner loop.
+    else:
+        raise ImportError('No module name {!r}'.format(name), name=name)
+
+    encoding = None
+    if mode == 'U':
+        with open(file_path, 'rb') as file:
+            encoding = tokenize.detect_encoding(file.readline)[0]
+    file = open(file_path, mode, encoding=encoding)
+    return file, file_path, (suffix, mode, type_)
+
