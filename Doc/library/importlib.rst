@@ -237,6 +237,34 @@ are also provided to help in implementing the core ABCs.
         module.
 
 
+.. class:: FileLoader(fullname, path)
+
+   An abstract base class which inherits from :class:`ResourceLoader` and
+   :class:`ExecutionLoader`, providing concreate implementations of
+   :meth:`ResourceLoader.get_data` and :meth:`ExecutionLoader.get_filename`.
+
+   The *fullname* argument is a fully resolved name of the module the loader is
+   to handle. The *path* argument is the path to the file for the module.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: name
+
+      The name of the module the loader can handle.
+
+   .. attribute:: path
+
+      Path to the file of the module.
+
+   .. method:: get_filename(fullname)
+
+      Returns :attr:`path`.
+
+   .. method:: get_data(path)
+
+      Returns the open, binary file for *path*.
+
+
 .. class:: SourceLoader
 
     An abstract base class for implementing source (and optionally bytecode)
@@ -496,6 +524,163 @@ find and load modules.
         searched for a finder for the path entry and, if found, is stored in
         :data:`sys.path_importer_cache` along with being queried about the
         module. If no finder is ever found then ``None`` is returned.
+
+
+.. class:: FileFinder(path, \*loader_details)
+
+   A concrete implementation of :class:`importlib.abc.Finder` which caches
+   results from the file system.
+
+   The *path* argument is the directory for which the finder is in charge of
+   searching.
+
+   The *loader_details* argument is a variable number of 3-item tuples each
+   containing a loader, file suffixes the loader recognizes, and a boolean
+   representing whether the loader handles packages.
+
+   The finder will cache the directory contents as necessary, making stat calls
+   for each module search to verify the cache is not outdated. Because cache
+   staleness relies upon the granularity of the operating system's state
+   information of the file system, there is a potential race condition of
+   searching for a module, creating a new file, and then searching for the
+   module the new file represents. If the operations happen fast enough to fit
+   within the granularity of stat calls, then the module search will fail. To
+   prevent this from happening, when you create a module dynamically, make sure
+   to call :func:`importlib.invalidate_caches`.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: path
+
+      The path the finder will search in.
+
+   .. method:: find_module(fullname)
+
+      Attempt to find the loader to handle *fullname* within :attr:`path`.
+
+   .. method:: invalidate_caches()
+
+      Clear out the internal cache.
+
+   .. classmethod:: path_hook(\*loader_details)
+
+      A class method which returns a closure for use on :attr:`sys.path_hooks`.
+      An instance of :class:`FileFinder` is returned by the closure using the
+      path argument given to the closure directly and *loader_details*
+      indirectly.
+
+      If the argument to the closure is not an existing directory,
+      :exc:`ImportError` is raised.
+
+
+.. class:: SourceFileLoader(fullname, path)
+
+   A concrete implementation of :class:`importlib.abc.SourceLoader` by
+   subclassing :class:`importlib.abc.FileLoader` and providing some concrete
+   implementations of other methods.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: name
+
+      The name of the module that this loader will handle.
+
+   .. attribute:: path
+
+      The path to the source file.
+
+   .. method:: is_package(fullname)
+
+      Return true if :attr:`path` appears to be for a package.
+
+   .. method:: path_stats(path)
+
+      Concrete implementation of :meth:`importlib.abc.SourceLoader.path_stats`.
+
+   .. method:: set_data(path, data)
+
+      Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
+
+   .. method:: load_module(fullname)
+
+      Load the specified module if it is the same as :attr:`name`.
+
+
+.. class:: _SourcelessFileLoader(fullname, path)
+
+   A concrete implementation of :class:`importlib.abc.FileLoader` which can
+   import bytecode files (i.e. no source code files exist).
+
+   It is **strongly** suggested you do not rely on this loader (hence the
+   leading underscore of the class). Direct use of bytecode files (and thus not
+   source code files) inhibits your modules from being usable by all Python
+   implementations. It also runs the risk of your bytecode files not being
+   usable by new versions of Python which change the bytecode format. This
+   class is only documented as it is directly used by import and thus can
+   potentially have instances show up as a module's ``__loader__`` attribute.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: name
+
+      The name of the module the loader will handle.
+
+   .. attribute:: path
+
+      The path to the bytecode file.
+
+   .. method:: is_package(fullname)
+
+      Determines if the module is a package based on :attr:`path`.
+
+   .. method:: get_code(fullname)
+
+      Returns the code object for :attr:`name` created from :attr:`path`.
+
+   .. method:: get_source(fullname)
+
+      Returns ``None`` as bytecode files have no source when this loader is
+      used.
+
+   .. method:: load_module(fullname)
+
+      Loads the specified module if it is the same as :attr:`name`.
+
+
+.. class:: ExtensionFileLoader(fullname, path)
+
+   A concrete implementation of :class:`importlib.abc.InspectLoader` for
+   extension modules.
+
+   The *fullname* argument specifies the name of the module the loader is to
+   support. The *path* argument is the path to the extension module's file.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: name
+
+      Name of the module the loader supports.
+
+   .. attribute:: path
+
+      Path to the extension module.
+
+   .. method:: load_module(fullname)
+
+      Loads the extension module if and only if *fullname** is the same as
+      :attr:`name`.
+
+   .. method:: is_package(fullname)
+
+      Returns ``False`` as extension modules can never be packages.
+
+   .. method:: get_code(fullname)
+
+      Returns ``None`` as extension modules lack a code object.
+
+   .. method:: get_source(fullname)
+
+      Returns ``None`` as extension modules do not have source code.
 
 
 :mod:`importlib.util` -- Utility code for importers

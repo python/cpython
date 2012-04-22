@@ -1,3 +1,4 @@
+import imp
 import sys
 from test import support
 import unittest
@@ -13,8 +14,10 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         good_name = ext_util.NAME
         bad_name = good_name.upper()
         assert good_name != bad_name
-        finder = _bootstrap._FileFinder(ext_util.PATH,
-                                        _bootstrap._ExtensionFinderDetails())
+        finder = _bootstrap.FileFinder(ext_util.PATH,
+                                        (_bootstrap.ExtensionFileLoader,
+                                            _bootstrap._suffix_list(imp.C_EXTENSION),
+                                            False))
         return finder.find_module(bad_name)
 
     def test_case_sensitive(self):

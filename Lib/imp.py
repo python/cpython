@@ -71,7 +71,7 @@ class _HackedGetData:
 
     def get_data(self, path):
         """Gross hack to contort loader to deal w/ load_*()'s bad API."""
-        if self.file and path == self._path:
+        if self.file and path == self.path:
             with self.file:
                 # Technically should be returning bytes, but
                 # SourceLoader.get_code() just passed what is returned to
@@ -83,7 +83,7 @@ class _HackedGetData:
             return super().get_data(path)
 
 
-class _LoadSourceCompatibility(_HackedGetData, _bootstrap._SourceFileLoader):
+class _LoadSourceCompatibility(_HackedGetData, _bootstrap.SourceFileLoader):
 
     """Compatibility support for implementing load_source()."""
 
@@ -115,7 +115,7 @@ def load_package(name, path):
                 break
         else:
             raise ValueError('{!r} is not a package'.format(path))
-    return _bootstrap._SourceFileLoader(name, path).load_module(name)
+    return _bootstrap.SourceFileLoader(name, path).load_module(name)
 
 
 # XXX deprecate
