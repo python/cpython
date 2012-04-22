@@ -50,7 +50,7 @@ class InspectLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.Loader]
     subclasses = [abc.PyLoader, machinery.BuiltinImporter,
-                    machinery.FrozenImporter]
+                    machinery.FrozenImporter, machinery.ExtensionFileLoader]
 
 
 class ExecutionLoader(InheritanceTests, unittest.TestCase):
@@ -59,9 +59,16 @@ class ExecutionLoader(InheritanceTests, unittest.TestCase):
     subclasses = [abc.PyLoader]
 
 
+class FileLoader(InheritanceTests, unittest.TestCase):
+
+    superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
+    subclasses = [machinery.SourceFileLoader, machinery._SourcelessFileLoader]
+
+
 class SourceLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
+    subclasses = [machinery.SourceFileLoader]
 
 
 class PyLoader(InheritanceTests, unittest.TestCase):

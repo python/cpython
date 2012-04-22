@@ -2,6 +2,7 @@ from importlib import _bootstrap
 from .. import abc
 from . import util
 
+import imp
 import unittest
 
 class FinderTests(abc.FinderTests):
@@ -9,8 +10,10 @@ class FinderTests(abc.FinderTests):
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = _bootstrap._FileFinder(util.PATH,
-                                          _bootstrap._ExtensionFinderDetails())
+        importer = _bootstrap.FileFinder(util.PATH,
+                                          (_bootstrap.ExtensionFileLoader,
+                                              _bootstrap._suffix_list(imp.C_EXTENSION),
+                                              False))
         return importer.find_module(fullname)
 
     def test_module(self):

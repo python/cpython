@@ -1,12 +1,26 @@
 """Abstract base classes related to import."""
 from . import _bootstrap
 from . import machinery
+try:
+    import _frozen_importlib
+except ImportError as exc:
+    if exc.name != '_frozen_importlib':
+        raise
+    _frozen_importlib = None
 import abc
 import imp
 import marshal
 import sys
 import tokenize
 import warnings
+
+
+def _register(abstract_cls, *classes):
+    for cls in classes:
+        abstract_cls.register(cls)
+        if _frozen_importlib is not None:
+            frozen_cls = getattr(_frozen_importlib, cls.__name__)
+            abstract_cls.register(frozen_cls)
 
 
 class Loader(metaclass=abc.ABCMeta):
@@ -32,9 +46,8 @@ class Finder(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-Finder.register(machinery.BuiltinImporter)
-Finder.register(machinery.FrozenImporter)
-Finder.register(machinery.PathFinder)
+_register(Finder, machinery.BuiltinImporter, machinery.FrozenImporter,
+          machinery.PathFinder, machinery.FileFinder)
 
 
 class ResourceLoader(Loader):
@@ -80,8 +93,8 @@ class InspectLoader(Loader):
         module.  The fullname is a str.  Returns a str."""
         raise NotImplementedError
 
-InspectLoader.register(machinery.BuiltinImporter)
-InspectLoader.register(machinery.FrozenImporter)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
+            machinery.ExtensionFileLoader)
 
 
 class ExecutionLoader(InspectLoader):
@@ -98,6 +111,15 @@ class ExecutionLoader(InspectLoader):
         """Abstract method which should return the value that __file__ is to be
         set to."""
         raise NotImplementedError
+
+
+class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
+
+    """Abstract base class partially implementing the ResourceLoader and
+    ExecutionLoader ABCs."""
+
+_register(FileLoader, machinery.SourceFileLoader,
+            machinery._SourcelessFileLoader)
 
 
 class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
@@ -146,6 +168,7 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
         """
         raise NotImplementedError
 
+_register(SourceLoader, machinery.SourceFileLoader)
 
 class PyLoader(SourceLoader):
 

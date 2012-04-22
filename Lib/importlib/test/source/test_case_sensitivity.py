@@ -2,6 +2,7 @@
 from importlib import _bootstrap
 from .. import util
 from . import util as source_util
+import imp
 import os
 import sys
 from test import support as test_support
@@ -19,9 +20,13 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = _bootstrap._FileFinder(path,
-                                        _bootstrap._SourceFinderDetails(),
-                                        _bootstrap._SourcelessFinderDetails())
+        finder = _bootstrap.FileFinder(path,
+                                        (_bootstrap.SourceFileLoader,
+                                            _bootstrap._suffix_list(imp.PY_SOURCE),
+                                            True),
+                                        (_bootstrap._SourcelessFileLoader,
+                                            _bootstrap._suffix_list(imp.PY_COMPILED),
+                                            True))
         return finder.find_module(self.name)
 
     def sensitivity_test(self):
