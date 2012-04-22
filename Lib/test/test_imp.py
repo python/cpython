@@ -227,73 +227,62 @@ class PEP3147Tests(unittest.TestCase):
     def test_cache_from_source(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
-        self.assertEqual(
-            imp.cache_from_source('/foo/bar/baz/qux.py', True),
-            '/foo/bar/baz/__pycache__/qux.{}.pyc'.format(self.tag))
-        # Directory with a dot, filename without dot
-        self.assertEqual(
-            imp.cache_from_source('/foo.bar/file', True),
-            '/foo.bar/__pycache__/file{}.pyc'.format(self.tag))
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                              'qux.{}.pyc'.format(self.tag))
+        self.assertEqual(imp.cache_from_source(path, True), expect)
+
+    def test_cache_from_source_no_dot(self):
+        # Directory with a dot, filename without dot.
+        path = os.path.join('foo.bar', 'file')
+        expect = os.path.join('foo.bar', '__pycache__',
+                              'file{}.pyc'.format(self.tag))
+        self.assertEqual(imp.cache_from_source(path, True), expect)
 
     def test_cache_from_source_optimized(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyo file (i.e. under __pycache__).
-        self.assertEqual(
-            imp.cache_from_source('/foo/bar/baz/qux.py', False),
-            '/foo/bar/baz/__pycache__/qux.{}.pyo'.format(self.tag))
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                              'qux.{}.pyo'.format(self.tag))
+        self.assertEqual(imp.cache_from_source(path, False), expect)
 
     def test_cache_from_source_cwd(self):
-        self.assertEqual(imp.cache_from_source('foo.py', True),
-                         os.sep.join(('__pycache__',
-                                      'foo.{}.pyc'.format(self.tag))))
+        path = 'foo.py'
+        expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
+        self.assertEqual(imp.cache_from_source(path, True), expect)
 
     def test_cache_from_source_override(self):
         # When debug_override is not None, it can be any true-ish or false-ish
         # value.
-        self.assertEqual(
-            imp.cache_from_source('/foo/bar/baz.py', []),
-            '/foo/bar/__pycache__/baz.{}.pyo'.format(self.tag))
-        self.assertEqual(
-            imp.cache_from_source('/foo/bar/baz.py', [17]),
-            '/foo/bar/__pycache__/baz.{}.pyc'.format(self.tag))
+        path = os.path.join('foo', 'bar', 'baz.py')
+        partial_expect = os.path.join('foo', 'bar', '__pycache__',
+                                      'baz.{}.py'.format(self.tag))
+        self.assertEqual(imp.cache_from_source(path, []), partial_expect + 'o')
+        self.assertEqual(imp.cache_from_source(path, [17]),
+                         partial_expect + 'c')
         # However if the bool-ishness can't be determined, the exception
         # propagates.
         class Bearish:
             def __bool__(self): raise RuntimeError
-        self.assertRaises(
-            RuntimeError,
-            imp.cache_from_source, '/foo/bar/baz.py', Bearish())
+        with self.assertRaises(RuntimeError):
+            imp.cache_from_source('/foo/bar/baz.py', Bearish())
 
-    @unittest.skipIf(os.altsep is None,
-                     'test meaningful only where os.altsep is defined')
-    def test_altsep_cache_from_source(self):
-        # Windows path and PEP 3147.
-        self.assertEqual(
-            imp.cache_from_source('\\foo\\bar\\baz\\qux.py', True),
-            '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
-
-    @unittest.skipIf(os.altsep is None,
-                     'test meaningful only where os.altsep is defined')
-    def test_altsep_and_sep_cache_from_source(self):
-        # Windows path and PEP 3147 where altsep is right of sep.
-        self.assertEqual(
-            imp.cache_from_source('\\foo\\bar/baz\\qux.py', True),
-            '\\foo\\bar/baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
-
-    @unittest.skipIf(os.altsep is None,
+    @unittest.skipUnless(os.sep == '\\' and os.altsep == '/',
                      'test meaningful only where os.altsep is defined')
     def test_sep_altsep_and_sep_cache_from_source(self):
         # Windows path and PEP 3147 where sep is right of altsep.
         self.assertEqual(
             imp.cache_from_source('\\foo\\bar\\baz/qux.py', True),
-            '\\foo\\bar\\baz/__pycache__/qux.{}.pyc'.format(self.tag))
+            '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
     def test_source_from_cache(self):
         # Given the path to a PEP 3147 defined .pyc file, return the path to
         # its source.  This tests the good path.
-        self.assertEqual(imp.source_from_cache(
-            '/foo/bar/baz/__pycache__/qux.{}.pyc'.format(self.tag)),
-            '/foo/bar/baz/qux.py')
+        path = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                            'qux.{}.pyc'.format(self.tag))
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        self.assertEqual(imp.source_from_cache(path), expect)
 
     def test_source_from_cache_bad_path(self):
         # When the path to a pyc file is not in PEP 3147 format, a ValueError
