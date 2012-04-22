@@ -13,6 +13,9 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
+# XXX Make sure all public names have no single leading underscore and all
+#     others do.
+
 
 # Bootstrap-related code ######################################################
 
@@ -283,7 +286,7 @@ def _check_name(method):
 
     """
     def _check_name_wrapper(self, name, *args, **kwargs):
-        if self._name != name:
+        if self.name != name:
             raise ImportError("loader cannot handle %s" % name, name=name)
         return method(self, name, *args, **kwargs)
     _wrap(_check_name_wrapper, method)
@@ -423,7 +426,7 @@ class FrozenImporter:
 class _LoaderBasics:
 
     """Base class of common code needed by both SourceLoader and
-    _SourcelessFileLoader."""
+    SourcelessFileLoader."""
 
     def is_package(self, fullname):
         """Concrete implementation of InspectLoader.is_package by checking if
@@ -608,7 +611,7 @@ class SourceLoader(_LoaderBasics):
         return self._load_module(fullname)
 
 
-class _FileLoader:
+class FileLoader:
 
     """Base file loader class which implements the loader protocol methods that
     require file system usage."""
@@ -616,13 +619,13 @@ class _FileLoader:
     def __init__(self, fullname, path):
         """Cache the module name and the path to the file found by the
         finder."""
-        self._name = fullname
-        self._path = path
+        self.name = fullname
+        self.path = path
 
     @_check_name
     def get_filename(self, fullname):
         """Return the path to the source file as found by the finder."""
-        return self._path
+        return self.path
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
@@ -630,7 +633,7 @@ class _FileLoader:
             return file.read()
 
 
-class _SourceFileLoader(_FileLoader, SourceLoader):
+class SourceFileLoader(FileLoader, SourceLoader):
 
     """Concrete implementation of SourceLoader using the file system."""
 
@@ -668,7 +671,7 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
             pass
 
 
-class _SourcelessFileLoader(_FileLoader, _LoaderBasics):
+class _SourcelessFileLoader(FileLoader, _LoaderBasics):
 
     """Loader which handles sourceless file imports."""
 
@@ -692,7 +695,7 @@ class _SourcelessFileLoader(_FileLoader, _LoaderBasics):
         return None
 
 
-class _ExtensionFileLoader:
+class ExtensionFileLoader:
 
     """Loader for extension modules.
 
@@ -701,8 +704,8 @@ class _ExtensionFileLoader:
     """
 
     def __init__(self, name, path):
-        self._name = name
-        self._path = path
+        self.name = name
+        self.path = path
 
     @_check_name
     @set_package
@@ -711,8 +714,8 @@ class _ExtensionFileLoader:
         """Load an extension module."""
         is_reload = fullname in sys.modules
         try:
-            module = _imp.load_dynamic(fullname, self._path)
-            verbose_message('extension module loaded from {!r}', self._path)
+            module = _imp.load_dynamic(fullname, self.path)
+            verbose_message('extension module loaded from {!r}', self.path)
             return module
         except:
             if not is_reload and fullname in sys.modules:
@@ -805,24 +808,25 @@ class PathFinder:
             return None
 
 
-class _FileFinder:
+class FileFinder:
 
     """File-based finder.
 
-    Constructor takes a list of objects detailing what file extensions their
-    loader supports along with whether it can be used for a package.
+    Interactions with the file system are cached for performance, being
+    refreshed when the directory the finder is handling has been modified.
 
     """
 
     def __init__(self, path, *details):
-        """Initialize with finder details."""
+        """Initialize with the path to search on and a variable number of
+        3-tuples containing the loader, file suffixes the loader recognizes, and
+        a boolean of whether the loader handles packages."""
         packages = []
         modules = []
-        for detail in details:
-            modules.extend((suffix, detail.loader) for suffix in detail.suffixes)
-            if detail.supports_packages:
-                packages.extend((suffix, detail.loader)
-                                for suffix in detail.suffixes)
+        for loader, suffixes, supports_packages in details:
+            modules.extend((suffix, loader) for suffix in suffixes)
+            if supports_packages:
+                packages.extend((suffix, loader) for suffix in suffixes)
         self.packages = packages
         self.modules = modules
         # Base (directory) path
@@ -898,46 +902,29 @@ class _FileFinder:
         if sys.platform.startswith(CASE_INSENSITIVE_PLATFORMS):
             self._relaxed_path_cache = set(fn.lower() for fn in contents)
 
+    @classmethod
+    def path_hook(cls, *loader_details):
+        """A class method which returns a closure to use on sys.path_hook
+        which will return an instance using the specified loaders and the path
+        called on the closure.
 
-class _SourceFinderDetails:
+        If the path called on the closure is not a directory, ImportError is
+        raised.
 
-    loader = _SourceFileLoader
-    supports_packages = True
+        """
+        def path_hook_for_FileFinder(path):
+            """Path hook for importlib.machinery.FileFinder."""
+            if not _path_isdir(path):
+                raise ImportError("only directories are supported", path=path)
+            return cls(path, *loader_details)
 
-    def __init__(self):
-        self.suffixes = _suffix_list(_imp.PY_SOURCE)
+        return path_hook_for_FileFinder
 
-class _SourcelessFinderDetails:
-
-    loader = _SourcelessFileLoader
-    supports_packages = True
-
-    def __init__(self):
-        self.suffixes = _suffix_list(_imp.PY_COMPILED)
-
-
-class _ExtensionFinderDetails:
-
-    loader = _ExtensionFileLoader
-    supports_packages = False
-
-    def __init__(self):
-        self.suffixes = _suffix_list(_imp.C_EXTENSION)
 
 
 # Import itself ###############################################################
 
-def _file_path_hook(path):
-    """If the path is a directory, return a file-based finder."""
-    if _path_isdir(path):
-        return _FileFinder(path, _ExtensionFinderDetails(),
-                           _SourceFinderDetails(),
-                           _SourcelessFinderDetails())
-    else:
-        raise ImportError("only directories are supported", path=path)
-
-
-_DEFAULT_PATH_HOOK = _file_path_hook
+_DEFAULT_PATH_HOOK = None  # Set in _setup()
 
 class _DefaultPathFinder(PathFinder):
 
@@ -1208,6 +1195,12 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, '_TAG', _imp.get_tag())
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
+
+    supported_loaders = [(ExtensionFileLoader, _suffix_list(3), False),
+                         (SourceFileLoader, _suffix_list(1), True),
+                         (_SourcelessFileLoader, _suffix_list(2), True)]
+    setattr(self_module, '_DEFAULT_PATH_HOOK',
+            FileFinder.path_hook(*supported_loaders))
 
 
 def _install(sys_module, _imp_module):

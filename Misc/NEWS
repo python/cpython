@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14605: Add importlib.abc.FileLoader, importlib.machinery.(FileFinder,
+  SourceFileLoader, _SourcelessFileLoader, ExtensionFileLoader).
+
 - Issue #13959: imp.cache_from_source()/source_from_cache() now follow
   os.path.join()/split() semantics for path manipulation instead of its prior,
   custom semantics of caring the right-most path separator forward in path

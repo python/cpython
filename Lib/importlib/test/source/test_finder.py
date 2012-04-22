@@ -3,6 +3,7 @@ from . import util as source_util
 
 from importlib import _bootstrap
 import errno
+import imp
 import os
 import py_compile
 from test.support import make_legacy_pyc
@@ -35,9 +36,11 @@ class FinderTests(abc.FinderTests):
     """
 
     def import_(self, root, module):
-        finder = _bootstrap._FileFinder(root,
-                                        _bootstrap._SourceFinderDetails(),
-                                        _bootstrap._SourcelessFinderDetails())
+        loader_details = [(_bootstrap.SourceFileLoader,
+                            _bootstrap._suffix_list(imp.PY_SOURCE), True),
+                          (_bootstrap._SourcelessFileLoader,
+                            _bootstrap._suffix_list(imp.PY_COMPILED), True)]
+        finder = _bootstrap.FileFinder(root, *loader_details)
         return finder.find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
@@ -135,7 +138,8 @@ class FinderTests(abc.FinderTests):
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.
-        finder = _bootstrap._FileFinder('', _bootstrap._SourceFinderDetails())
+        finder = _bootstrap.FileFinder('', (_bootstrap.SourceFileLoader,
+            _bootstrap._suffix_list(imp.PY_SOURCE), True))
         with open('mod.py', 'w') as file:
             file.write("# test file for importlib")
         try:
@@ -146,7 +150,8 @@ class FinderTests(abc.FinderTests):
 
     def test_invalidate_caches(self):
         # invalidate_caches() should reset the mtime.
-        finder = _bootstrap._FileFinder('', _bootstrap._SourceFinderDetails())
+        finder = _bootstrap.FileFinder('', (_bootstrap.SourceFileLoader,
+            _bootstrap._suffix_list(imp.PY_SOURCE), True))
         finder._path_mtime = 42
         finder.invalidate_caches()
         self.assertEqual(finder._path_mtime, -1)

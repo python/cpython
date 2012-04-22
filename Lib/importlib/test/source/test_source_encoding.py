@@ -35,7 +35,7 @@ class EncodingTest(unittest.TestCase):
         with source_util.create_modules(self.module_name) as mapping:
             with open(mapping[self.module_name], 'wb') as file:
                 file.write(source)
-            loader = _bootstrap._SourceFileLoader(self.module_name,
+            loader = _bootstrap.SourceFileLoader(self.module_name,
                                                   mapping[self.module_name])
             return loader.load_module(self.module_name)
 
@@ -97,7 +97,7 @@ class LineEndingTest(unittest.TestCase):
         with source_util.create_modules(module_name) as mapping:
             with open(mapping[module_name], 'wb') as file:
                 file.write(source)
-            loader = _bootstrap._SourceFileLoader(module_name,
+            loader = _bootstrap.SourceFileLoader(module_name,
                                                  mapping[module_name])
             return loader.load_module(module_name)
 
