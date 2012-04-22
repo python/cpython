@@ -930,7 +930,7 @@ class SMTPHandlerTest(BaseTest):
                                 sockmap)
         server.start()
         addr = ('localhost', server.port)
-        h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log')
+        h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log', timeout=5.0)
         self.assertEqual(h.toaddrs, ['you'])
         self.messages = []
         r = logging.makeLogRecord({'msg': 'Hello'})
