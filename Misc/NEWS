@@ -161,6 +161,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #14026: In test_cmd_line_script, check that sys.argv is populated
+  correctly for the various invocation approaches (Patch by Jason Yeo)
+
 - Issue #14032: Fix incorrect variable name in test_cmd_line_script debugging
   message (Patch by Jason Yeo)
 
