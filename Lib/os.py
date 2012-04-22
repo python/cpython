@@ -126,13 +126,6 @@ def _get_masked_mode(mode):
     umask(mask)
     return mode & ~mask
 
-def _are_same_file(stat1, stat2):
-    """Helper function that checks whether two stat results refer to the same
-    file.
-    """
-    return (stat1.st_ino == stat2.st_ino and stat1.st_dev == stat2.st_dev)
-#
-
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
@@ -345,7 +338,7 @@ if _exists("openat"):
         topfd = open(top, O_RDONLY)
         try:
             if (followlinks or (st.S_ISDIR(orig_st.st_mode) and
-                               _are_same_file(orig_st, fstat(topfd)))):
+                                path.samestat(orig_st, fstat(topfd)))):
                 for x in _fwalk(topfd, top, topdown, onerror, followlinks):
                     yield x
         finally:
@@ -382,7 +375,7 @@ if _exists("openat"):
                     onerror(err)
                 return
             try:
-                if followlinks or _are_same_file(orig_st, fstat(dirfd)):
+                if followlinks or path.samestat(orig_st, fstat(dirfd)):
                     dirpath = path.join(toppath, name)
                     for x in _fwalk(dirfd, dirpath, topdown, onerror, followlinks):
                         yield x
