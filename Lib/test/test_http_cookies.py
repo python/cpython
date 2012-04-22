@@ -34,6 +34,15 @@ class CookieTests(unittest.TestCase):
              'dict': {'keebler' : 'E=mc2'},
              'repr': "<SimpleCookie: keebler='E=mc2'>",
              'output': 'Set-Cookie: keebler=E=mc2'},
+
+            # Cookies with ':' character in their name. Though not mentioned in
+            # RFC, servers / browsers allow it.
+
+             {'data': 'key:term=value:term',
+             'dict': {'key:term' : 'value:term'},
+             'repr': "<SimpleCookie: key:term='value:term'>",
+             'output': 'Set-Cookie: key:term=value:term'},
+
         ]
 
         for case in cases:
