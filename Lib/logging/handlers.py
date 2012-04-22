@@ -872,7 +872,7 @@ class SMTPHandler(logging.Handler):
     A handler class which sends an SMTP email for each logging event.
     """
     def __init__(self, mailhost, fromaddr, toaddrs, subject,
-                 credentials=None, secure=None, timeout=1.0):
+                 credentials=None, secure=None, timeout=5.0):
         """
         Initialize the handler.
 
