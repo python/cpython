@@ -61,6 +61,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #13959: imp.cache_from_source()/source_from_cache() now follow
+  os.path.join()/split() semantics for path manipulation instead of its prior,
+  custom semantics of caring the right-most path separator forward in path
+  joining.
+
 - Issue #2193: Allow ":" character in Cookie NAME values.
 
 - Issue #14629: tokenizer.detect_encoding will specify the filename in the
