@@ -61,6 +61,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2193: Allow ":" character in Cookie NAME values.
+
 - Issue #14629: tokenizer.detect_encoding will specify the filename in the
   SyntaxError exception if found at readline.__self__.name.
 
