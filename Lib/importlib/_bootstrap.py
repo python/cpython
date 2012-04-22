@@ -61,12 +61,16 @@ def _r_long(int_bytes):
     return x
 
 
-# XXX Optimize for single-separator OSs by having two versions of this function
-#     and choosing in _setup().
-def _path_join(*args):
+def _path_join(*path_parts):
     """Replacement for os.path.join()."""
-    return path_sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
-                         for x in args if x)
+    new_parts = []
+    for part in path_parts:
+        if not part:
+            continue
+        new_parts.append(part)
+        if part[-1] not in path_separators:
+            new_parts.append(path_sep)
+    return ''.join(new_parts[:-1])  # Drop superfluous path separator.
 
 
 def _path_split(path):
@@ -1178,6 +1182,8 @@ def _setup(sys_module, _imp_module):
 
     os_details = ('posix', ['/']), ('nt', ['\\', '/']), ('os2', ['\\', '/'])
     for builtin_os, path_separators in os_details:
+        # Assumption made in _path_join()
+        assert all(len(sep) == 1 for sep in path_separators)
         path_sep = path_separators[0]
         if builtin_os in sys.modules:
             os_module = sys.modules[builtin_os]
