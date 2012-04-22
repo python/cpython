@@ -194,4 +194,3 @@ def find_module(name, path=None):
             encoding = tokenize.detect_encoding(file.readline)[0]
     file = open(file_path, mode, encoding=encoding)
     return file, file_path, (suffix, mode, type_)
-
