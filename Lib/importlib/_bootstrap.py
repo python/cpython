@@ -61,12 +61,14 @@ def _r_long(int_bytes):
     return x
 
 
+# XXX Optimize for single-separator OSs by having two versions of this function
+#     and choosing in _setup().
 def _path_join(*args):
     """Replacement for os.path.join()."""
     if len(path_separators) == 1:
         sep = path_sep
     else:
-        for c in reversed(args[0]):
+        for x in reversed(args[0]):
             if x in path_separators:
                 sep = x
                 break
