@@ -63,8 +63,16 @@ def _r_long(int_bytes):
 
 def _path_join(*args):
     """Replacement for os.path.join()."""
-    sep = path_sep if args[0][-1:] not in path_separators else args[0][-1]
-    return sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
+    if len(path_separators) == 1:
+        sep = path_sep
+    else:
+        for c in reversed(args[0]):
+            if x in path_separators:
+                sep = x
+                break
+        else:
+            sep = path_sep
+    return sep.join(x[:-len(sep)] if x.endswith(sep) else x
                     for x in args if x)
 
 
