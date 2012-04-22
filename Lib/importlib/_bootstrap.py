@@ -65,17 +65,8 @@ def _r_long(int_bytes):
 #     and choosing in _setup().
 def _path_join(*args):
     """Replacement for os.path.join()."""
-    if len(path_separators) == 1:
-        sep = path_sep
-    else:
-        for x in reversed(args[0]):
-            if x in path_separators:
-                sep = x
-                break
-        else:
-            sep = path_sep
-    return sep.join(x[:-len(sep)] if x.endswith(sep) else x
-                    for x in args if x)
+    return path_sep.join(x[:-len(path_sep)] if x.endswith(path_sep) else x
+                         for x in args if x)
 
 
 def _path_split(path):
