@@ -822,7 +822,7 @@ if hasattr(os, 'statvfs'):
     def disk_usage(path):
         """Return disk usage statistics about the given path.
 
-        Returned valus is a named tuple with attributes 'total', 'used' and
+        Returned value is a named tuple with attributes 'total', 'used' and
         'free', which are the amount of total, used and free space, in bytes.
         """
         st = os.statvfs(path)
