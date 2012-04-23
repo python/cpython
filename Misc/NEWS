@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14638: pydoc now treats non-string __name__ values as if they
+  were missing, instead of raising an error.
+
 - Issue #13684: Fix httplib tunnel issue of infinite loops for certain sites
   which send EOF without trailing \r\n.
 
