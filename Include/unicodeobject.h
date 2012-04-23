@@ -710,6 +710,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_Substring(
     Py_ssize_t start,
     Py_ssize_t end);
 
+#ifndef Py_LIMITED_API
+/* Compute the maximum character of the substring unicode[start:end].
+   Return 127 for an empty string. */
+PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
+    PyObject *unicode,
+    Py_ssize_t start,
+    Py_ssize_t end);
+#endif
+
 /* Copy the string into a UCS4 buffer including the null character if copy_null
    is set. Return NULL and raise an exception on error. Raise a ValueError if
    the buffer is smaller than the string. Return buffer on success.
