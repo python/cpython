@@ -14,7 +14,7 @@
    MCACHE_MAX_ATTR_SIZE, since it might be a problem if very large
    strings are used as attribute names. */
 #define MCACHE_MAX_ATTR_SIZE    100
-#define MCACHE_SIZE_EXP         10
+#define MCACHE_SIZE_EXP         9
 #define MCACHE_HASH(version, name_hash)                                 \
         (((unsigned int)(version) * (unsigned int)(name_hash))          \
          >> (8*sizeof(unsigned int) - MCACHE_SIZE_EXP))
@@ -2306,6 +2306,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             type->tp_dictoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
     }
+    if (type->tp_dictoffset) {
+        et->ht_cached_keys = _PyDict_NewKeysForClass();
+    }
     if (add_weak) {
         assert(!base->tp_itemsize);
         type->tp_weaklistoffset = slotoffset;
@@ -2410,6 +2413,9 @@ PyType_FromSpec(PyType_Spec *spec)
             memcpy(tp_doc, slot->pfunc, len);
             res->ht_type.tp_doc = tp_doc;
         }
+    }
+    if (res->ht_type.tp_dictoffset) {
+        res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
 
     if (PyType_Ready(&res->ht_type) < 0)
@@ -2767,9 +2773,13 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
     return 0;
 }
 
+extern void
+_PyDictKeys_DecRef(PyDictKeysObject *keys);
+
 static int
 type_clear(PyTypeObject *type)
 {
+    PyDictKeysObject *cached_keys;
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
     assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -2801,6 +2811,11 @@ type_clear(PyTypeObject *type)
     */
 
     PyType_Modified(type);
+    cached_keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+    if (cached_keys != NULL) {
+        ((PyHeapTypeObject *)type)->ht_cached_keys = NULL;
+        _PyDictKeys_DecRef(cached_keys);
+    }
     if (type->tp_dict)
         PyDict_Clear(type->tp_dict);
     Py_CLEAR(type->tp_mro);

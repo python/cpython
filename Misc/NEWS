@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #13903: Implement PEP 412. Individual dictionary instances can now share
+  their keys with other dictionaries. Classes take advantage of this to share
+  their instance dictionary keys for improved memory and performance.
+
 - Issue #14630: Fix a memory access bug for instances of a subclass of int
   with value 0.
 

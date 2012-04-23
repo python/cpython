@@ -1188,13 +1188,10 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict == NULL) {
         dictptr = _PyObject_GetDictPtr(obj);
         if (dictptr != NULL) {
-            dict = *dictptr;
-            if (dict == NULL && value != NULL) {
-                dict = PyDict_New();
-                if (dict == NULL)
-                    goto done;
-                *dictptr = dict;
-            }
+            res = _PyObjectDict_SetItem(Py_TYPE(obj), dictptr, name, value);
+            if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+                PyErr_SetObject(PyExc_AttributeError, name);
+            goto done;
         }
     }
     if (dict != NULL) {
@@ -1234,22 +1231,6 @@ int
 PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 {
     return _PyObject_GenericSetAttrWithDict(obj, name, value, NULL);
-}
-
-PyObject *
-PyObject_GenericGetDict(PyObject *obj, void *context)
-{
-    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return NULL;
-    }
-    dict = *dictptr;
-    if (dict == NULL)
-        *dictptr = dict = PyDict_New();
-    Py_XINCREF(dict);
-    return dict;
 }
 
 int
