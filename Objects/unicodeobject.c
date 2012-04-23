@@ -1975,16 +1975,18 @@ _PyUnicode_FindMaxChar(PyObject *unicode, Py_ssize_t start, Py_ssize_t end)
         return 127;
 
     kind = PyUnicode_KIND(unicode);
-    startptr = PyUnicode_DATA(unicode);
-    endptr = (char*)startptr + end * kind;
-    if (start)
-        startptr = (char*)startptr + start * kind;
-    switch(kind)
-    {
-    case PyUnicode_1BYTE_KIND: return ucs1lib_find_max_char(startptr, endptr);
-    case PyUnicode_2BYTE_KIND: return ucs2lib_find_max_char(startptr, endptr);
+    startptr = PyUnicode_DATA(unicode) + start * kind;
+    endptr = startptr + end * kind;
+    switch(kind) {
+    case PyUnicode_1BYTE_KIND:
+        return ucs1lib_find_max_char(startptr, endptr);
+    case PyUnicode_2BYTE_KIND:
+        return ucs2lib_find_max_char(startptr, endptr);
+    case PyUnicode_4BYTE_KIND:
+        return ucs4lib_find_max_char(startptr, endptr);
     default:
-    case PyUnicode_4BYTE_KIND: return ucs4lib_find_max_char(startptr, endptr);
+        assert(0);
+        return 0;
     }
 }
 
