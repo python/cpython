@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13684: Fix httplib tunnel issue of infinite loops for certain sites
+  which send EOF without trailing \r\n.
+
 - Issue #14605: Add importlib.abc.FileLoader, importlib.machinery.(FileFinder,
   SourceFileLoader, _SourcelessFileLoader, ExtensionFileLoader).
 
