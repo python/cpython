@@ -670,6 +670,14 @@ def no_jump_to_non_integers(output):
 no_jump_to_non_integers.jump = (2, "Spam")
 no_jump_to_non_integers.output = [True]
 
+def jump_across_with(output):
+    with open(test_support.TESTFN, "wb") as fp:
+        pass
+    with open(test_support.TESTFN, "wb") as fp:
+        pass
+jump_across_with.jump = (1, 3)
+jump_across_with.output = []
+
 # This verifies that you can't set f_lineno via _getframe or similar
 # trickery.
 def no_jump_without_trace_function():
@@ -739,6 +747,9 @@ class JumpTestCase(unittest.TestCase):
         self.run_test(no_jump_to_non_integers)
     def test_19_no_jump_without_trace_function(self):
         no_jump_without_trace_function()
+    def test_jump_across_with(self):
+        self.addCleanup(test_support.unlink, test_support.TESTFN)
+        self.run_test(jump_across_with)
 
     def test_20_large_function(self):
         d = {}
