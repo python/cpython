@@ -924,6 +924,14 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, format, '', '#')
         self.assertRaises(ValueError, format, '', '#20')
 
+        # Non-ASCII
+        self.assertEqual("{0:s}{1:s}".format("ABC", "\u0410\u0411\u0412"),
+                         'ABC\u0410\u0411\u0412')
+        self.assertEqual("{0:.3s}".format("ABC\u0410\u0411\u0412"),
+                         'ABC')
+        self.assertEqual("{0:.0s}".format("ABC\u0410\u0411\u0412"),
+                         '')
+
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
         self.assertEqual('a'.format_map({}), 'a')
@@ -1055,8 +1063,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%F' % NAN, 'NAN')
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
-
-        self.assertEqual(format("\u0410\u0411\u0412", "s"), "АБВ")
 
     def test_startswith_endswith_errors(self):
         for meth in ('foo'.startswith, 'foo'.endswith):
