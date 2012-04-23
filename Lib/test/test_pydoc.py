@@ -286,6 +286,17 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_non_str_name(self):
+        # issue14638
+        # Treat illegal (non-str) name like no name
+        class A:
+            __name__ = 42
+        class B:
+            pass
+        adoc = pydoc.render_doc(A())
+        bdoc = pydoc.render_doc(B())
+        self.assertEqual(adoc.replace("A", "B"), bdoc)
+
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
         result = str(run_pydoc(missing_module), 'ascii')
