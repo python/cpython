@@ -1056,6 +1056,8 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
 
+        self.assertEqual(format("\u0410\u0411\u0412", "s"), "АБВ")
+
     def test_startswith_endswith_errors(self):
         for meth in ('foo'.startswith, 'foo'.endswith):
             with self.assertRaises(TypeError) as cm:

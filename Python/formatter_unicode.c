@@ -747,6 +747,9 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
         len = format->precision;
     }
 
+    if (len)
+        maxchar = PyUnicode_MAX_CHAR_VALUE(value);
+
     calc_padding(len, format->width, format->align, &lpad, &rpad, &total);
 
     if (lpad != 0 || rpad != 0)
