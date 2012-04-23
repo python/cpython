@@ -1,6 +1,5 @@
-NOTES ON OPTIMIZING DICTIONARIES
+NOTES ON DICTIONARIES
 ================================
-
 
 Principal Use Cases for Dictionaries
 ------------------------------------
@@ -21,7 +20,7 @@ Instance attribute lookup and Global variables
 
 Builtins
     Frequent reads.  Almost never written.
-    Size 126 interned strings (as of Py2.3b1).
+    About 150 interned strings (as of Py3.3).
     A few keys are accessed much more frequently than others.
 
 Uniquification
@@ -59,44 +58,43 @@ Dynamic Mappings
     Characterized by deletions interspersed with adds and replacements.
     Performance benefits greatly from the re-use of dummy entries.
 
+Data Layout
+-----------
 
-Data Layout (assuming a 32-bit box with 64 bytes per cache line)
-----------------------------------------------------------------
-
-Smalldicts (8 entries) are attached to the dictobject structure
-and the whole group nearly fills two consecutive cache lines.
-
-Larger dicts use the first half of the dictobject structure (one cache
-line) and a separate, continuous block of entries (at 12 bytes each
-for a total of 5.333 entries per cache line).
+Dictionaries are composed of 3 components:
+The dictobject struct itself
+A dict-keys object (keys & hashes)
+A values array
 
 
 Tunable Dictionary Parameters
 -----------------------------
 
-* PyDict_MINSIZE.  Currently set to 8.
-    Must be a power of two.  New dicts have to zero-out every cell.
-    Each additional 8 consumes 1.5 cache lines.  Increasing improves
-    the sparseness of small dictionaries but costs time to read in
-    the additional cache lines if they are not already in cache.
-    That case is common when keyword arguments are passed.
+* PyDict_STARTSIZE. Starting size of dict (unless an instance dict).
+    Currently set to 8. Must be a power of two.
+    New dicts have to zero-out every cell.
+    Increasing improves the sparseness of small dictionaries but costs
+    time to read in the additional cache lines if they are not already
+    in cache. That case is common when keyword arguments are passed.
+    Prior to version 3.3, PyDict_MINSIZE was used as the starting size
+    of a new dict.
 
-* Maximum dictionary load in PyDict_SetItem.  Currently set to 2/3.
-    Increasing this ratio makes dictionaries more dense resulting
-    in more collisions.  Decreasing it improves sparseness at the
-    expense of spreading entries over more cache lines and at the
+* PyDict_MINSIZE. Minimum size of a dict.
+    Currently set to 4 (to keep instance dicts small).
+    Must be a power of two. Prior to version 3.3, PyDict_MINSIZE was
+    set to 8.
+
+* USABLE_FRACTION. Maximum dictionary load in PyDict_SetItem.
+    Currently set to 2/3. Increasing this ratio makes dictionaries more
+    dense resulting in more collisions.  Decreasing it improves sparseness
+    at the expense of spreading entries over more cache lines and at the
     cost of total memory consumed.
 
-    The load test occurs in highly time sensitive code.  Efforts
-    to make the test more complex (for example, varying the load
-    for different sizes) have degraded performance.
-
 * Growth rate upon hitting maximum load.  Currently set to *2.
-    Raising this to *4 results in half the number of resizes,
-    less effort to resize, better sparseness for some (but not
-    all dict sizes), and potentially doubles memory consumption
-    depending on the size of the dictionary.  Setting to *4
-    eliminates every other resize step.
+    Raising this to *4 results in half the number of resizes, less
+    effort to resize, better sparseness for some (but not all dict sizes),
+    and potentially doubles memory consumption depending on the size of
+    the dictionary.  Setting to *4 eliminates every other resize step.
 
 * Maximum sparseness (minimum dictionary load).  What percentage
     of entries can be unused before the dictionary shrinks to
@@ -126,8 +124,8 @@ __iter__(), iterkeys(), iteritems(), itervalues(), and update().
 Also, every dictionary iterates at least twice, once for the memset()
 when it is created and once by dealloc().
 
-Dictionary operations involving only a single key can be O(1) unless 
-resizing is possible.  By checking for a resize only when the 
+Dictionary operations involving only a single key can be O(1) unless
+resizing is possible.  By checking for a resize only when the
 dictionary can grow (and may *require* resizing), other operations
 remain O(1), and the odds of resize thrashing or memory fragmentation
 are reduced. In particular, an algorithm that empties a dictionary
@@ -135,136 +133,51 @@ by repeatedly invoking .pop will see no resizing, which might
 not be necessary at all because the dictionary is eventually
 discarded entirely.
 
+The key differences between this implementation and earlier versions are:
+    1. The table can be split into two parts, the keys and the values.
+
+    2. There is an additional key-value combination: (key, NULL).
+       Unlike (<dummy>, NULL) which represents a deleted value, (key, NULL)
+       represented a yet to be inserted value. This combination can only occur
+       when the table is split.
+
+    3. No small table embedded in the dict,
+       as this would make sharing of key-tables impossible.
+
+
+These changes have the following consequences.
+   1. General dictionaries are slightly larger.
+
+   2. All object dictionaries of a single class can share a single key-table,
+      saving about 60% memory for such cases.
 
 Results of Cache Locality Experiments
--------------------------------------
+--------------------------------------
 
-When an entry is retrieved from memory, 4.333 adjacent entries are also
-retrieved into a cache line.  Since accessing items in cache is *much*
-cheaper than a cache miss, an enticing idea is to probe the adjacent
-entries as a first step in collision resolution.  Unfortunately, the
-introduction of any regularity into collision searches results in more
-collisions than the current random chaining approach.
+Experiments on an earlier design of dictionary, in which all tables were
+combined, showed the following:
 
-Exploiting cache locality at the expense of additional collisions fails
-to payoff when the entries are already loaded in cache (the expense
-is paid with no compensating benefit).  This occurs in small dictionaries
-where the whole dictionary fits into a pair of cache lines.  It also
-occurs frequently in large dictionaries which have a common access pattern
-where some keys are accessed much more frequently than others.  The
-more popular entries *and* their collision chains tend to remain in cache.
+  When an entry is retrieved from memory, several adjacent entries are also
+  retrieved into a cache line.  Since accessing items in cache is *much*
+  cheaper than a cache miss, an enticing idea is to probe the adjacent
+  entries as a first step in collision resolution.  Unfortunately, the
+  introduction of any regularity into collision searches results in more
+  collisions than the current random chaining approach.
 
-To exploit cache locality, change the collision resolution section
-in lookdict() and lookdict_string().  Set i^=1 at the top of the
-loop and move the  i = (i << 2) + i + perturb + 1 to an unrolled
-version of the loop.
+  Exploiting cache locality at the expense of additional collisions fails
+  to payoff when the entries are already loaded in cache (the expense
+  is paid with no compensating benefit).  This occurs in small dictionaries
+  where the whole dictionary fits into a pair of cache lines.  It also
+  occurs frequently in large dictionaries which have a common access pattern
+  where some keys are accessed much more frequently than others.  The
+  more popular entries *and* their collision chains tend to remain in cache.
 
-This optimization strategy can be leveraged in several ways:
+  To exploit cache locality, change the collision resolution section
+  in lookdict() and lookdict_string().  Set i^=1 at the top of the
+  loop and move the  i = (i << 2) + i + perturb + 1 to an unrolled
+  version of the loop.
 
-* If the dictionary is kept sparse (through the tunable parameters),
-then the occurrence of additional collisions is lessened.
-
-* If lookdict() and lookdict_string() are specialized for small dicts
-and for largedicts, then the versions for large_dicts can be given
-an alternate search strategy without increasing collisions in small dicts
-which already have the maximum benefit of cache locality.
-
-* If the use case for a dictionary is known to have a random key
-access pattern (as opposed to a more common pattern with a Zipf's law
-distribution), then there will be more benefit for large dictionaries
-because any given key is no more likely than another to already be
-in cache.
-
-* In use cases with paired accesses to the same key, the second access
-is always in cache and gets no benefit from efforts to further improve
-cache locality.
-
-Optimizing the Search of Small Dictionaries
--------------------------------------------
-
-If lookdict() and lookdict_string() are specialized for smaller dictionaries,
-then a custom search approach can be implemented that exploits the small
-search space and cache locality.
-
-* The simplest example is a linear search of contiguous entries.  This is
-  simple to implement, guaranteed to terminate rapidly, never searches
-  the same entry twice, and precludes the need to check for dummy entries.
-
-* A more advanced example is a self-organizing search so that the most
-  frequently accessed entries get probed first.  The organization
-  adapts if the access pattern changes over time.  Treaps are ideally
-  suited for self-organization with the most common entries at the
-  top of the heap and a rapid binary search pattern.  Most probes and
-  results are all located at the top of the tree allowing them all to
-  be located in one or two cache lines.
-
-* Also, small dictionaries may be made more dense, perhaps filling all
-  eight cells to take the maximum advantage of two cache lines.
+For split tables, the above will apply to the keys, but the value will
+always be in a different cache line from the key.
 
 
-Strategy Pattern
-----------------
-
-Consider allowing the user to set the tunable parameters or to select a
-particular search method.  Since some dictionary use cases have known
-sizes and access patterns, the user may be able to provide useful hints.
-
-1) For example, if membership testing or lookups dominate runtime and memory
-   is not at a premium, the user may benefit from setting the maximum load
-   ratio at 5% or 10% instead of the usual 66.7%.  This will sharply
-   curtail the number of collisions but will increase iteration time.
-   The builtin namespace is a prime example of a dictionary that can
-   benefit from being highly sparse.
-
-2) Dictionary creation time can be shortened in cases where the ultimate
-   size of the dictionary is known in advance.  The dictionary can be
-   pre-sized so that no resize operations are required during creation.
-   Not only does this save resizes, but the key insertion will go
-   more quickly because the first half of the keys will be inserted into
-   a more sparse environment than before.  The preconditions for this
-   strategy arise whenever a dictionary is created from a key or item
-   sequence and the number of *unique* keys is known.
-
-3) If the key space is large and the access pattern is known to be random,
-   then search strategies exploiting cache locality can be fruitful.
-   The preconditions for this strategy arise in simulations and
-   numerical analysis.
-
-4) If the keys are fixed and the access pattern strongly favors some of
-   the keys, then the entries can be stored contiguously and accessed
-   with a linear search or treap.  This exploits knowledge of the data,
-   cache locality, and a simplified search routine.  It also eliminates
-   the need to test for dummy entries on each probe.  The preconditions
-   for this strategy arise in symbol tables and in the builtin dictionary.
-
-
-Readonly Dictionaries
----------------------
-Some dictionary use cases pass through a build stage and then move to a
-more heavily exercised lookup stage with no further changes to the
-dictionary.
-
-An idea that emerged on python-dev is to be able to convert a dictionary
-to a read-only state.  This can help prevent programming errors and also
-provide knowledge that can be exploited for lookup optimization.
-
-The dictionary can be immediately rebuilt (eliminating dummy entries),
-resized (to an appropriate level of sparseness), and the keys can be
-jostled (to minimize collisions).  The lookdict() routine can then
-eliminate the test for dummy entries (saving about 1/4 of the time
-spent in the collision resolution loop).
-
-An additional possibility is to insert links into the empty spaces
-so that dictionary iteration can proceed in len(d) steps instead of
-(mp->mask + 1) steps.  Alternatively, a separate tuple of keys can be
-kept just for iteration.
-
-
-Caching Lookups
----------------
-The idea is to exploit key access patterns by anticipating future lookups
-based on previous lookups.
-
-The simplest incarnation is to save the most recently accessed entry.
-This gives optimal performance for use cases where every get is followed
-by a set or del to the same key.

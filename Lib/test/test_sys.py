@@ -687,9 +687,9 @@ class SizeofTest(unittest.TestCase):
         # method-wrapper (descriptor object)
         check({}.__iter__, size(h + '2P'))
         # dict
-        check({}, size(h + '3P2P' + 8*'P2P'))
+        check({}, size(h + '3P' + '4P' + 8*'P2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size(h + '3P2P' + 8*'P2P') + 16*size('P2P'))
+        check(longdict, size(h + '3P' + '4P') + 16*size('P2P'))
         # dictionary-keyiterator
         check({}.keys(), size(h + 'P'))
         # dictionary-valueiterator
@@ -831,7 +831,7 @@ class SizeofTest(unittest.TestCase):
         # type
         # (PyTypeObject + PyNumberMethods + PyMappingMethods +
         #  PySequenceMethods + PyBufferProcs)
-        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('16Pi17P 3P 10P 2P 3P')
+        s = size(vh + 'P2P15Pl4PP9PP11PIP') + size('16Pi17P 3P 10P 2P 3P')
         check(int, s)
         # class
         class newstyleclass(object): pass
