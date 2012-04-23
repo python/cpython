@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13684: Fix httplib tunnel issue of infinite loops for certain sites
+  which send EOF without trailing \r\n.
+
 - Issue #14629: Raise SyntaxError in tokenizer.detect_encoding if the
   first two lines have non-UTF-8 characters without an encoding declaration.
 
