@@ -605,6 +605,10 @@ class Thread(_Verbose):
                     pass
 
     def __stop(self):
+        # DummyThreads delete self.__block, but they have no waiters to
+        # notify anyway (join() is forbidden on them).
+        if not hasattr(self, '_Thread__block'):
+            return
         self.__block.acquire()
         self.__stopped = True
         self.__block.notify_all()
