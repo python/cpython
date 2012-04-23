@@ -786,6 +786,9 @@ class HTTPConnection:
             line = response.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:
                 raise LineTooLong("header line")
+            if not line:
+                # for sites which EOF without sending a trailer
+                break
             if line == b'\r\n':
                 break
 
