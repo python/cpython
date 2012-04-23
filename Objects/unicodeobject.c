@@ -1957,6 +1957,37 @@ PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
     }
 }
 
+Py_UCS4
+_PyUnicode_FindMaxChar(PyObject *unicode, Py_ssize_t start, Py_ssize_t end)
+{
+    enum PyUnicode_Kind kind;
+    void *startptr, *endptr;
+
+    assert(PyUnicode_IS_READY(unicode));
+    assert(0 <= start);
+    assert(end <= PyUnicode_GET_LENGTH(unicode));
+    assert(start <= end);
+
+    if (start == 0 && end == PyUnicode_GET_LENGTH(unicode))
+        return PyUnicode_MAX_CHAR_VALUE(unicode);
+
+    if (start == end)
+        return 127;
+
+    kind = PyUnicode_KIND(unicode);
+    startptr = PyUnicode_DATA(unicode);
+    endptr = (char*)startptr + end * kind;
+    if (start)
+        startptr = (char*)startptr + start * kind;
+    switch(kind)
+    {
+    case PyUnicode_1BYTE_KIND: return ucs1lib_find_max_char(startptr, endptr);
+    case PyUnicode_2BYTE_KIND: return ucs2lib_find_max_char(startptr, endptr);
+    default:
+    case PyUnicode_4BYTE_KIND: return ucs4lib_find_max_char(startptr, endptr);
+    }
+}
+
 /* Ensure that a string uses the most efficient storage, if it is not the
    case: create a new string with of the right kind. Write NULL into *p_unicode
    on error. */

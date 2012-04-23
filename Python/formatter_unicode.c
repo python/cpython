@@ -716,7 +716,7 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
     Py_ssize_t pos;
     Py_ssize_t len = PyUnicode_GET_LENGTH(value);
     PyObject *result = NULL;
-    Py_UCS4 maxchar = 127;
+    Py_UCS4 maxchar;
 
     /* sign is not allowed on strings */
     if (format->sign != '\0') {
@@ -747,11 +747,9 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
         len = format->precision;
     }
 
-    if (len)
-        maxchar = PyUnicode_MAX_CHAR_VALUE(value);
-
     calc_padding(len, format->width, format->align, &lpad, &rpad, &total);
 
+    maxchar = _PyUnicode_FindMaxChar(value, 0, len);
     if (lpad != 0 || rpad != 0)
         maxchar = Py_MAX(maxchar, format->fill_char);
 
