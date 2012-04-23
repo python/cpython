@@ -641,7 +641,11 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     register PyDictKeyEntry *ep;
 
     if (!PyUnicode_CheckExact(key)) {
-        return lookdict(mp, key, hash, value_addr);
+        ep = lookdict(mp, key, hash, value_addr);
+        /* lookdict expects a combined-table, so fix value_addr */
+        i = ep - ep0;
+        *value_addr = &mp->ma_values[i];
+        return ep;
     }
     i = (size_t)hash & mask;
     ep = &ep0[i];
