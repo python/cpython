@@ -1525,7 +1525,8 @@ def resolve(thing, forceload=0):
             raise ImportError('no Python documentation found for %r' % thing)
         return object, thing
     else:
-        return thing, getattr(thing, '__name__', None)
+        name = getattr(thing, '__name__', None)
+        return thing, name if isinstance(name, str) else None
 
 def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
         renderer=None):
