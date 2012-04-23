@@ -39,7 +39,7 @@ code, it does mean you keep a rapid development process for you, the developer.
 Finally, you do have the option of :ref:`using 2to3 <use_2to3>` to translate
 Python 2 code into Python 3 code (with some manual help). This can take the
 form of branching your code and using 2to3 to start a Python 3 branch. You can
-also have users perform the translation as installation time automatically so
+also have users perform the translation at installation time automatically so
 that you only have to maintain a Python 2 codebase.
 
 Regardless of which approach you choose, porting is not as hard or
@@ -234,7 +234,7 @@ You can avoid this disparity by always slicing at the size of a single element:
 ``b'py'[1:2]`` is ``'y'`` in Python 2 and ``b'y'`` in Python 3 (i.e., close
 enough).
 
-You cannot concatenate bytes and strings in Python 3. But since in Python
+You cannot concatenate bytes and strings in Python 3. But since Python
 2 has bytes aliased to ``str``, it will succeed: ``b'a' + u'b'`` works in
 Python 2, but ``b'a' + 'b'`` in Python 3 is a :exc:`TypeError`. A similar issue
 also comes about when doing comparisons between bytes and strings.
@@ -328,7 +328,7 @@ the bytes/string dichotomy. Because Python 2 allowed the ``str`` type to hold
 textual data, people have over the years been rather loose in their delineation
 of what ``str`` instances held text compared to bytes. In Python 3 you cannot
 be so care-free anymore and need to properly handle the difference. The key
-handling this issue to make sure that **every** string literal in your
+handling this issue is to make sure that **every** string literal in your
 Python 2 code is either syntactically of functionally marked as either bytes or
 text data. After this is done you then need to make sure your APIs are designed
 to either handle a specific type or made to be properly polymorphic.
@@ -343,7 +343,7 @@ newer, this can be accomplished by marking bytes literals with a ``b`` prefix
 and then designating textual data with a ``u`` prefix or using the
 ``unicode_literals`` future statement.
 
-If your project supports versions of Python pre-dating 2.6, then you should use
+If your project supports versions of Python predating 2.6, then you should use
 the six_ project and its ``b()`` function to denote bytes literals. For text
 literals you can either use six's ``u()`` function or use a ``u`` prefix.
 
@@ -439,7 +439,7 @@ happen to use the ``unicode(self).encode('utf8')`` idiom as the body of your
 There are two ways to solve this issue. One is to use a custom 2to3 fixer. The
 blog post at http://lucumr.pocoo.org/2011/1/22/forwards-compatible-python/
 specifies how to do this. That will allow 2to3 to change all instances of ``def
-__unicode(self): ...`` to ``def __str__(self): ...``. This does require you
+__unicode(self): ...`` to ``def __str__(self): ...``. This does require that you
 define your ``__str__()`` method in Python 2 before your ``__unicode__()``
 method.
 
