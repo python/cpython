@@ -1267,7 +1267,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     }
     name = PyMem_MALLOC(MAXPATHLEN+1);
     if (name == NULL) {
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        return NULL;
     }
     strcpy(name, subname);
 

@@ -260,6 +260,16 @@ text
             ('starttag', 'a', [('foo', None), ('=', None), ('bar', None)])
         ]
         self._run_check(html, expected)
+        #see issue #14538
+        html = ('<meta><meta / ><meta // ><meta / / >'
+                '<meta/><meta /><meta //><meta//>')
+        expected = [
+            ('starttag', 'meta', []), ('starttag', 'meta', []),
+            ('starttag', 'meta', []), ('starttag', 'meta', []),
+            ('startendtag', 'meta', []), ('startendtag', 'meta', []),
+            ('startendtag', 'meta', []), ('startendtag', 'meta', []),
+        ]
+        self._run_check(html, expected)
 
     def test_declaration_junk_chars(self):
         self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
