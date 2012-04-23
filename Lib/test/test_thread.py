@@ -150,7 +150,7 @@ class ThreadRunningTests(BasicThreadTest):
             thread.start_new_thread(task, ())
             started.acquire()
             while thread._count() > c:
-                pass
+                time.sleep(0.01)
         self.assertIn("Traceback", stderr.getvalue())
 
 
