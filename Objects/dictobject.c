@@ -3686,7 +3686,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
             res = PyDict_SetItem(dict, key, value);
             if (cached != ((PyDictObject *)dict)->ma_keys) {
                 /* Either update tp->ht_cached_keys or delete it */
-                if (cached->dk_refcnt == 1) {
+                if (cached->dk_refcnt == 1 && PyDict_CheckExact(dict)) {
                     CACHED_KEYS(tp) = make_keys_shared(dict);
                     if (CACHED_KEYS(tp) == NULL)
                         return -1;
