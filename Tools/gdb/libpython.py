@@ -634,9 +634,14 @@ class PyDictObjectPtr(PyObjectPtr):
         Yields a sequence of (PyObjectPtr key, PyObjectPtr value) pairs,
         analagous to dict.iteritems()
         '''
-        for i in safe_range(self.field('ma_mask') + 1):
-            ep = self.field('ma_table') + i
-            pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])
+        keys = self.field('ma_keys')
+        values = self.field('ma_values')
+        for i in safe_range(keys['dk_size']):
+            ep = keys['dk_entries'].address + i
+            if long(values):
+                pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
+            else:
+                pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])
             if not pyop_value.is_null():
                 pyop_key = PyObjectPtr.from_pyobject_ptr(ep['me_key'])
                 yield (pyop_key, pyop_value)

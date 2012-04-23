@@ -449,6 +449,7 @@ typedef struct _heaptypeobject {
                                       see add_operators() in typeobject.c . */
     PyBufferProcs as_buffer;
     PyObject *ht_name, *ht_slots, *ht_qualname;
+    struct _dictkeysobject *ht_cached_keys;
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -517,7 +518,6 @@ PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *,
                                               PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
 PyAPI_FUNC(int) PyObject_GenericSetDict(PyObject *, PyObject *, void *);
 PyAPI_FUNC(Py_hash_t) PyObject_Hash(PyObject *);
 PyAPI_FUNC(Py_hash_t) PyObject_HashNotImplemented(PyObject *);

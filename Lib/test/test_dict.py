@@ -321,6 +321,27 @@ class DictTest(unittest.TestCase):
         self.assertEqual(hashed2.hash_count, 1)
         self.assertEqual(hashed1.eq_count + hashed2.eq_count, 1)
 
+    def test_setitem_atomic_at_resize(self):
+        class Hashed(object):
+            def __init__(self):
+                self.hash_count = 0
+                self.eq_count = 0
+            def __hash__(self):
+                self.hash_count += 1
+                return 42
+            def __eq__(self, other):
+                self.eq_count += 1
+                return id(self) == id(other)
+        hashed1 = Hashed()
+        # 5 items
+        y = {hashed1: 5, 0: 0, 1: 1, 2: 2, 3: 3}
+        hashed2 = Hashed()
+        # 6th item forces a resize
+        y[hashed2] = []
+        self.assertEqual(hashed1.hash_count, 1)
+        self.assertEqual(hashed2.hash_count, 1)
+        self.assertEqual(hashed1.eq_count + hashed2.eq_count, 1)
+
     def test_popitem(self):
         # dict.popitem()
         for copymode in -1, +1:

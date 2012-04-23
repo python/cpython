@@ -2123,70 +2123,31 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             w = GETITEM(names, oparg);
             if (PyDict_CheckExact(f->f_globals)
                 && PyDict_CheckExact(f->f_builtins)) {
-                if (PyUnicode_CheckExact(w)) {
-                    /* Inline the PyDict_GetItem() calls.
-                       WARNING: this is an extreme speed hack.
-                       Do not try this at home. */
-                    Py_hash_t hash = ((PyASCIIObject *)w)->hash;
-                    if (hash != -1) {
-                        PyDictObject *d;
-                        PyDictEntry *e;
-                        d = (PyDictObject *)(f->f_globals);
-                        e = d->ma_lookup(d, w, hash);
-                        if (e == NULL) {
-                            x = NULL;
-                            break;
-                        }
-                        x = e->me_value;
-                        if (x != NULL) {
-                            Py_INCREF(x);
-                            PUSH(x);
-                            DISPATCH();
-                        }
-                        d = (PyDictObject *)(f->f_builtins);
-                        e = d->ma_lookup(d, w, hash);
-                        if (e == NULL) {
-                            x = NULL;
-                            break;
-                        }
-                        x = e->me_value;
-                        if (x != NULL) {
-                            Py_INCREF(x);
-                            PUSH(x);
-                            DISPATCH();
-                        }
-                        goto load_global_error;
-                    }
-                }
-                /* This is the un-inlined version of the code above */
-                x = PyDict_GetItem(f->f_globals, w);
+                x = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
+                                       (PyDictObject *)f->f_builtins,
+                                       w);
                 if (x == NULL) {
-                    x = PyDict_GetItem(f->f_builtins, w);
-                    if (x == NULL) {
-                      load_global_error:
-                        format_exc_check_arg(
-                                    PyExc_NameError,
-                                    GLOBAL_NAME_ERROR_MSG, w);
-                        break;
-                    }
-                }
-                Py_INCREF(x);
-                PUSH(x);
-                DISPATCH();
-            }
-
-            /* Slow-path if globals or builtins is not a dict */
-            x = PyObject_GetItem(f->f_globals, w);
-            if (x == NULL) {
-                x = PyObject_GetItem(f->f_builtins, w);
-                if (x == NULL) {
-                    if (PyErr_ExceptionMatches(PyExc_KeyError))
-                        format_exc_check_arg(
-                                    PyExc_NameError,
-                                    GLOBAL_NAME_ERROR_MSG, w);
+                    if (!PyErr_Occurred())
+                        format_exc_check_arg(PyExc_NameError,
+                                             GLOBAL_NAME_ERROR_MSG, w);
                     break;
                 }
             }
+            else {
+                /* Slow-path if globals or builtins is not a dict */
+                x = PyObject_GetItem(f->f_globals, w);
+                if (x == NULL) {
+                    x = PyObject_GetItem(f->f_builtins, w);
+                    if (x == NULL) {
+                        if (PyErr_ExceptionMatches(PyExc_KeyError))
+                            format_exc_check_arg(
+                                        PyExc_NameError,
+                                        GLOBAL_NAME_ERROR_MSG, w);
+                        break;
+                    }
+                }
+            }
+            Py_INCREF(x);
             PUSH(x);
             DISPATCH();
 

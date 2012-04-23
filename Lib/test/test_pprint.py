@@ -219,6 +219,8 @@ class QueryTestCase(unittest.TestCase):
  others.should.not.be: like.this}"""
         self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
 
+    @unittest.expectedFailure
+    #See http://bugs.python.org/issue13907
     @test.support.cpython_only
     def test_set_reprs(self):
         # This test creates a complex arrangement of frozensets and
@@ -241,10 +243,12 @@ class QueryTestCase(unittest.TestCase):
         # Consequently, this test is fragile and
         # implementation-dependent.  Small changes to Python's sort
         # algorithm cause the test to fail when it should pass.
+        # XXX Or changes to the dictionary implmentation...
 
         self.assertEqual(pprint.pformat(set()), 'set()')
         self.assertEqual(pprint.pformat(set(range(3))), '{0, 1, 2}')
         self.assertEqual(pprint.pformat(frozenset()), 'frozenset()')
+
         self.assertEqual(pprint.pformat(frozenset(range(3))), 'frozenset({0, 1, 2})')
         cube_repr_tgt = """\
 {frozenset(): frozenset({frozenset({2}), frozenset({0}), frozenset({1})}),
