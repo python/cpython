@@ -1976,8 +1976,8 @@ _PyUnicode_FindMaxChar(PyObject *unicode, Py_ssize_t start, Py_ssize_t end)
 
     kind = PyUnicode_KIND(unicode);
     startptr = PyUnicode_DATA(unicode);
-    endptr = startptr + end * kind;
-    startptr += start * kind;
+    endptr = (char *)startptr + end * kind;
+    startptr = (char *)startptr + start * kind;
     switch(kind) {
     case PyUnicode_1BYTE_KIND:
         return ucs1lib_find_max_char(startptr, endptr);
