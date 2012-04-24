@@ -534,8 +534,8 @@ http://www.python.org/download/releases/2.3/mro/.
 
 .. _tut-private:
 
-Private Variables
-=================
+Private Variables and Class-local References
+============================================
 
 "Private" instance variables that cannot be accessed except from inside an
 object don't exist in Python.  However, there is a convention that is followed
