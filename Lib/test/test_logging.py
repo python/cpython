@@ -31,6 +31,7 @@ import cStringIO
 import gc
 import json
 import os
+import random
 import re
 import select
 import socket
@@ -40,6 +41,7 @@ import sys
 import tempfile
 from test.test_support import captured_stdout, run_with_locale, run_unittest
 import textwrap
+import time
 import unittest
 import warnings
 import weakref
@@ -1873,6 +1875,43 @@ class ChildLoggerTest(BaseTest):
         self.assertTrue(c2 is c3)
 
 
+class HandlerTest(BaseTest):
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def test_race(self):
+        # Issue #14632 refers.
+        def remove_loop(fname, tries):
+            for _ in range(tries):
+                try:
+                    os.unlink(fname)
+                except OSError:
+                    pass
+                time.sleep(0.004 * random.randint(0, 4))
+
+        def cleanup(remover, fn, handler):
+            handler.close()
+            remover.join()
+            if os.path.exists(fn):
+                os.unlink(fn)
+
+        fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
+        os.close(fd)
+        del_count = 1000
+        log_count = 1000
+        remover = threading.Thread(target=remove_loop, args=(fn, del_count))
+        remover.daemon = True
+        remover.start()
+        for delay in (False, True):
+            h = logging.handlers.WatchedFileHandler(fn, delay=delay)
+            self.addCleanup(cleanup, remover, fn, h)
+            f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
+            h.setFormatter(f)
+            for _ in range(log_count):
+                time.sleep(0.005)
+                r = logging.makeLogRecord({'msg': 'testing' })
+                h.handle(r)
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -1882,7 +1921,7 @@ def test_main():
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 ChildLoggerTest)
+                 ChildLoggerTest, HandlerTest)
 
 if __name__ == "__main__":
     test_main()

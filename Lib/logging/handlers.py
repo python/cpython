@@ -23,7 +23,7 @@ Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import logging, socket, os, cPickle, struct, time, re
+import errno, logging, socket, os, cPickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 
 try:
@@ -392,11 +392,13 @@ class WatchedFileHandler(logging.FileHandler):
     """
     def __init__(self, filename, mode='a', encoding=None, delay=0):
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
-        if not os.path.exists(self.baseFilename):
-            self.dev, self.ino = -1, -1
-        else:
-            stat = os.stat(self.baseFilename)
-            self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
+        self.dev, self.ino = -1, -1
+        self._statstream()
+
+    def _statstream(self):
+        if self.stream:
+            sres = os.fstat(self.stream.fileno())
+            self.dev, self.ino = sres[ST_DEV], sres[ST_INO]
 
     def emit(self, record):
         """
@@ -406,19 +408,27 @@ class WatchedFileHandler(logging.FileHandler):
         has, close the old stream and reopen the file to get the
         current stream.
         """
-        if not os.path.exists(self.baseFilename):
-            stat = None
-            changed = 1
-        else:
-            stat = os.stat(self.baseFilename)
-            changed = (stat[ST_DEV] != self.dev) or (stat[ST_INO] != self.ino)
-        if changed and self.stream is not None:
-            self.stream.flush()
-            self.stream.close()
-            self.stream = self._open()
-            if stat is None:
-                stat = os.stat(self.baseFilename)
-            self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
+        # Reduce the chance of race conditions by stat'ing by path only
+        # once and then fstat'ing our new fd if we opened a new log stream.
+        # See issue #14632: Thanks to John Mulligan for the problem report
+        # and patch.
+        try:
+            # stat the file by path, checking for existence
+            sres = os.stat(self.baseFilename)
+        except OSError as err:
+            if err.errno == errno.ENOENT:
+                sres = None
+            else:
+                raise
+        # compare file system stat with that of our stream file handle
+        if not sres or sres[ST_DEV] != self.dev or sres[ST_INO] != self.ino:
+            if self.stream is not None:
+                # we have an open file handle, clean it up
+                self.stream.flush()
+                self.stream.close()
+                # open a new file handle and get new stat info from that fd
+                self.stream = self._open()
+                self._statstream()
         logging.FileHandler.emit(self, record)
 
 class SocketHandler(logging.Handler):
