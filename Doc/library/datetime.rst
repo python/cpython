@@ -1518,7 +1518,6 @@ Example :class:`tzinfo` classes:
 
 .. literalinclude:: ../includes/tzinfo-examples.py
 
-
 Note that there are unavoidable subtleties twice per year in a :class:`tzinfo`
 subclass accounting for both standard and daylight time, at the DST transition
 points.  For concreteness, consider US Eastern (UTC -0500), where EDT begins the
@@ -1557,6 +1556,15 @@ Applications that can't bear such ambiguities should avoid using hybrid
 :class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
 or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
 only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
+
+.. seealso::
+
+   `pytz <http://pypi.python.org/pypi/pytz/>`_
+      The Standard Library has no :class:`tzinfo` instances except for UTC, but
+      it exists a third-party library which brings Olson timezone database to
+      Python: `pytz`.
+
+      `pytz` contains up-to-date information and its usage is recommended.
 
 
 .. _datetime-timezone:
