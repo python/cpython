@@ -407,25 +407,6 @@ else:
 
         return d
 
-    #
-    # Make (Pipe)Connection picklable
-    #
-
-    # Late import because of circular import
-    from .connection import Connection, PipeConnection
-
-    def reduce_connection(conn):
-        if not Popen.thread_is_spawning():
-            raise RuntimeError(
-                'By default %s objects can only be shared between processes\n'
-                'using inheritance' % type(conn).__name__
-                )
-        return type(conn), (Popen.duplicate_for_child(conn.fileno()),
-                            conn.readable, conn.writable)
-
-    ForkingPickler.register(Connection, reduce_connection)
-    ForkingPickler.register(PipeConnection, reduce_connection)
-
 #
 # Prepare current process
 #
