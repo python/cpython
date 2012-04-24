@@ -2928,7 +2928,7 @@ object_str(PyObject *self)
     unaryfunc f;
 
     f = Py_TYPE(self)->tp_repr;
-    if (f == NULL || f == object_str)
+    if (f == NULL)
         f = object_repr;
     return f(self);
 }
@@ -5757,7 +5757,8 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             }
             continue;
         }
-        if (Py_TYPE(descr) == &PyWrapperDescr_Type) {
+        if (Py_TYPE(descr) == &PyWrapperDescr_Type &&
+            ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr = resolve_slotdups(type, p->name_strobj);
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
