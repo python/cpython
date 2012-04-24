@@ -577,16 +577,6 @@ keyword arguments::
 Looping Techniques
 ==================
 
-When looping through dictionaries, the key and corresponding value can be
-retrieved at the same time using the :meth:`iteritems` method. ::
-
-   >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
-   >>> for k, v in knights.iteritems():
-   ...     print k, v
-   ...
-   gallahad the pure
-   robin the brave
-
 When looping through a sequence, the position index and corresponding value can
 be retrieved at the same time using the :func:`enumerate` function. ::
 
@@ -632,6 +622,16 @@ returns a new sorted list while leaving the source unaltered. ::
    banana
    orange
    pear
+
+When looping through dictionaries, the key and corresponding value can be
+retrieved at the same time using the :meth:`iteritems` method. ::
+
+   >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
+   >>> for k, v in knights.iteritems():
+   ...     print k, v
+   ...
+   gallahad the pure
+   robin the brave
 
 
 .. _tut-conditions:
