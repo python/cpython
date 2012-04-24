@@ -372,7 +372,7 @@ The :mod:`test.support` module defines the following functions:
 
       with captured_stdout() as s:
           print("hello")
-      assert s.getvalue() == "hello"
+      assert s.getvalue() == "hello\n"
 
 
 .. function:: temp_cwd(name='tempcwd', quiet=False, path=None)
