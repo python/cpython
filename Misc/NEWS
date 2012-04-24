@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14160: TarFile.extractfile() failed to resolve symbolic links when
+  the links were not located in an archive subdirectory.
+
 - Issue #14638: pydoc now treats non-string __name__ values as if they
   were missing, instead of raising an error.
 
