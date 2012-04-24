@@ -889,6 +889,13 @@ class DictTest(unittest.TestCase):
         self.assertEqual(f.msg, getattr(f, _str('msg')))
         self.assertEqual(f.msg, f.__dict__[_str('msg')])
 
+    def test_object_set_item_single_instance_non_str_key(self):
+        class Foo: pass
+        f = Foo()
+        f.__dict__[1] = 1
+        f.a = 'a'
+        self.assertEqual(f.__dict__, {1:1, 'a':'a'})
+
 from test import mapping_tests
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
