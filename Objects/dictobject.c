@@ -966,6 +966,8 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
     return 0;
 }
 
+/* Returns NULL if unable to split table.
+ * A NULL return does not necessarily indicate an error */
 static PyDictKeysObject *
 make_keys_shared(PyObject *op)
 {
@@ -973,7 +975,8 @@ make_keys_shared(PyObject *op)
     Py_ssize_t size;
     PyDictObject *mp = (PyDictObject *)op;
 
-    assert(PyDict_CheckExact(op));
+    if (!PyDict_CheckExact(op))
+        return NULL;
     if (!_PyDict_HasSplitTable(mp)) {
         PyDictKeyEntry *ep0;
         PyObject **values;
@@ -3694,14 +3697,14 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
             res = PyDict_SetItem(dict, key, value);
             if (cached != ((PyDictObject *)dict)->ma_keys) {
                 /* Either update tp->ht_cached_keys or delete it */
-                if (cached->dk_refcnt == 1 && PyDict_CheckExact(dict)) {
+                if (cached->dk_refcnt == 1) {
                     CACHED_KEYS(tp) = make_keys_shared(dict);
-                    if (CACHED_KEYS(tp) == NULL)
-                        return -1;
                 } else {
                     CACHED_KEYS(tp) = NULL;
                 }
                 DK_DECREF(cached);
+                if (CACHED_KEYS(tp) == NULL && PyErr_Occurred())
+                    return -1;
             }
         }
     } else {
