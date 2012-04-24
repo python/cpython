@@ -2022,6 +2022,8 @@ PyDict_Copy(PyObject *o)
             Py_XINCREF(value);
             split_copy->ma_values[i] = value;
         }
+        if (_PyObject_GC_IS_TRACKED(mp))
+            _PyObject_GC_TRACK(split_copy);
         return (PyObject *)split_copy;
     }
     copy = PyDict_New();
@@ -2220,6 +2222,7 @@ dict_setdefault(register PyDictObject *mp, PyObject *args)
                 return NULL;
             ep = find_empty_slot(mp, key, hash, &value_addr);
         }
+        MAINTAIN_TRACKING(mp, key, failobj);
         ep->me_key = key;
         ep->me_hash = hash;
         *value_addr = failobj;
