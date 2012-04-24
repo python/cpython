@@ -143,7 +143,7 @@ in various ways.  There is a separate error indicator for each thread.
       state temporarily.  Use :c:func:`PyErr_SetExcInfo` to restore or clear the
       exception state.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 
 .. c:function:: void PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
@@ -161,7 +161,7 @@ in various ways.  There is a separate error indicator for each thread.
       state temporarily.  Use :c:func:`PyErr_GetExcInfo` to read the exception
       state.
 
-.. versionadded:: 3.3
+   .. versionadded:: 3.3
 
 
 .. c:function:: void PyErr_SetString(PyObject *type, const char *message)
@@ -264,6 +264,7 @@ in various ways.  There is a separate error indicator for each thread.
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised. Availability: Windows.
 
+
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 
    This is a convenience function to raise :exc:`ImportError`. *msg* will be
@@ -273,6 +274,7 @@ in various ways.  There is a separate error indicator for each thread.
 
    .. versionadded:: 3.3
 
+
 .. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
 
    Set file, line, and offset information for the current exception.  If the
@@ -281,7 +283,7 @@ in various ways.  There is a separate error indicator for each thread.
    is a :exc:`SyntaxError`. *filename* is decoded from the filesystem encoding
    (:func:`sys.getfilesystemencoding`).
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 
 .. c:function:: void PyErr_SyntaxLocation(char *filename, int lineno)
@@ -353,6 +355,7 @@ in various ways.  There is a separate error indicator for each thread.
    an ASCII-encoded string.
 
    .. versionadded:: 3.2
+
 
 .. c:function:: int PyErr_CheckSignals()
 
