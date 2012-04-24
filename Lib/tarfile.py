@@ -2397,7 +2397,7 @@ class TarFile(object):
         """
         if tarinfo.issym():
             # Always search the entire archive.
-            linkname = os.path.dirname(tarinfo.name) + "/" + tarinfo.linkname
+            linkname = "/".join(filter(None, (os.path.dirname(tarinfo.name), tarinfo.linkname)))
             limit = None
         else:
             # Search the archive before the link, because a hard link is

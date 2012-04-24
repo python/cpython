@@ -154,6 +154,9 @@ class UstarReadTest(ReadTest):
     def test_fileobj_symlink2(self):
         self._test_fileobj_link("./ustar/linktest2/symtype", "ustar/linktest1/regtype")
 
+    def test_issue14160(self):
+        self._test_fileobj_link("symtype2", "ustar/regtype")
+
 
 class CommonReadTest(ReadTest):
 
