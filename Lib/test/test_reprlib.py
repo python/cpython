@@ -3,6 +3,7 @@
   Nick Mathewson
 """
 
+import imp
 import sys
 import os
 import shutil
@@ -199,10 +200,11 @@ def write_file(path, text):
         fp.write(text)
 
 class LongReprTest(unittest.TestCase):
+    longname = 'areallylongpackageandmodulenametotestreprtruncation'
+
     def setUp(self):
-        longname = 'areallylongpackageandmodulenametotestreprtruncation'
-        self.pkgname = os.path.join(longname)
-        self.subpkgname = os.path.join(longname, longname)
+        self.pkgname = os.path.join(self.longname)
+        self.subpkgname = os.path.join(self.longname, self.longname)
         # Make the package and subpackage
         shutil.rmtree(self.pkgname, ignore_errors=True)
         os.mkdir(self.pkgname)
@@ -232,7 +234,23 @@ class LongReprTest(unittest.TestCase):
                 os.remove(p)
         del sys.path[0]
 
+    def _check_path_limitations(self, module_name):
+        # base directory
+        source_path_len = len(self.here)
+        # a path separator + `longname` (twice)
+        source_path_len += 2 * (len(self.longname) + 1)
+        # a path separator + `module_name` + ".py"
+        source_path_len += len(module_name) + 1 + len(".py")
+        cached_path_len = source_path_len + len(imp.cache_from_source("x.py")) - len("x.py")
+        if os.name == 'nt' and cached_path_len >= 259:
+            # Under Windows, the max path len is 260 including C's terminating
+            # NUL character.
+            # (see http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath)
+            self.skipTest("test paths too long (%d characters) for Windows' 260 character limit"
+                          % cached_path_len)
+
     def test_module(self):
+        self._check_path_limitations(self.pkgname)
         eq = self.assertEqual
         create_empty_file(os.path.join(self.subpkgname, self.pkgname + '.py'))
         importlib.invalidate_caches()
@@ -242,6 +260,7 @@ class LongReprTest(unittest.TestCase):
         eq(repr(sys), "<module 'sys' (built-in)>")
 
     def test_type(self):
+        self._check_path_limitations('foo')
         eq = self.assertEqual
         write_file(os.path.join(self.subpkgname, 'foo.py'), '''\
 class foo(object):
@@ -258,6 +277,7 @@ class foo(object):
         pass
 
     def test_class(self):
+        self._check_path_limitations('bar')
         write_file(os.path.join(self.subpkgname, 'bar.py'), '''\
 class bar:
     pass
@@ -268,6 +288,7 @@ class bar:
         self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
 
     def test_instance(self):
+        self._check_path_limitations('baz')
         write_file(os.path.join(self.subpkgname, 'baz.py'), '''\
 class baz:
     pass
@@ -279,6 +300,7 @@ class baz:
             "<%s.baz object at 0x" % baz.__name__))
 
     def test_method(self):
+        self._check_path_limitations('qux')
         eq = self.assertEqual
         write_file(os.path.join(self.subpkgname, 'qux.py'), '''\
 class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
