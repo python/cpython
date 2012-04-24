@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2001-2011 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2011 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -33,6 +33,7 @@ import gc
 import json
 import os
 import queue
+import random
 import re
 import select
 import socket
@@ -43,6 +44,7 @@ import tempfile
 from test.support import captured_stdout, run_with_locale, run_unittest
 from test.support import TestHandler, Matcher
 import textwrap
+import time
 import unittest
 import warnings
 import weakref
@@ -2301,7 +2303,6 @@ for when, exp in (('S', 1),
             # Failures occur on some systems for MIDNIGHT and W0.
             # Print detailed calculation for MIDNIGHT so we can try to see
             # what's going on
-            import time
             if when == 'MIDNIGHT':
                 try:
                     if rh.utc:
@@ -2328,6 +2329,43 @@ for when, exp in (('S', 1),
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 
+class HandlerTest(BaseTest):
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def test_race(self):
+        # Issue #14632 refers.
+        def remove_loop(fname, tries):
+            for _ in range(tries):
+                try:
+                    os.unlink(fname)
+                except OSError:
+                    pass
+                time.sleep(0.004 * random.randint(0, 4))
+
+        def cleanup(remover, fn, handler):
+            handler.close()
+            remover.join()
+            if os.path.exists(fn):
+                os.unlink(fn)
+
+        fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
+        os.close(fd)
+        del_count = 1000
+        log_count = 1000
+        remover = threading.Thread(target=remove_loop, args=(fn, del_count))
+        remover.daemon = True
+        remover.start()
+        for delay in (False, True):
+            h = logging.handlers.WatchedFileHandler(fn, delay=delay)
+            self.addCleanup(cleanup, remover, fn, h)
+            f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
+            h.setFormatter(f)
+            for _ in range(log_count):
+                time.sleep(0.005)
+                r = logging.makeLogRecord({'msg': 'testing' })
+                h.handle(r)
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -2341,7 +2379,7 @@ def test_main():
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  LastResortTest,
-                 TimedRotatingFileHandlerTest
+                 TimedRotatingFileHandlerTest, HandlerTest,
                 )
 
 if __name__ == "__main__":
