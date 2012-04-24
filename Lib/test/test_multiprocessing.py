@@ -1959,49 +1959,49 @@ class _TestPoll(unittest.TestCase):
 #
 # Test of sending connection and socket objects between processes
 #
-"""
+
+@unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
 class _TestPicklingConnections(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
-    def _listener(self, conn, families):
+    @classmethod
+    def _listener(cls, conn, families):
         for fam in families:
-            l = self.connection.Listener(family=fam)
+            l = cls.connection.Listener(family=fam)
             conn.send(l.address)
             new_conn = l.accept()
             conn.send(new_conn)
+            new_conn.close()
+            l.close()
 
-        if self.TYPE == 'processes':
-            l = socket.socket()
-            l.bind(('localhost', 0))
-            conn.send(l.getsockname())
-            l.listen(1)
-            new_conn, addr = l.accept()
-            conn.send(new_conn)
+        l = socket.socket()
+        l.bind(('localhost', 0))
+        conn.send(l.getsockname())
+        l.listen(1)
+        new_conn, addr = l.accept()
+        conn.send(new_conn)
+        new_conn.close()
+        l.close()
 
         conn.recv()
 
-    def _remote(self, conn):
+    @classmethod
+    def _remote(cls, conn):
         for (address, msg) in iter(conn.recv, None):
-            client = self.connection.Client(address)
+            client = cls.connection.Client(address)
             client.send(msg.upper())
             client.close()
 
-        if self.TYPE == 'processes':
-            address, msg = conn.recv()
-            client = socket.socket()
-            client.connect(address)
-            client.sendall(msg.upper())
-            client.close()
+        address, msg = conn.recv()
+        client = socket.socket()
+        client.connect(address)
+        client.sendall(msg.upper())
+        client.close()
 
         conn.close()
 
     def test_pickling(self):
-        try:
-            multiprocessing.allow_connection_pickling()
-        except ImportError:
-            return
-
         families = self.connection.families
 
         lconn, lconn0 = self.Pipe()
@@ -2025,16 +2025,12 @@ class _TestPicklingConnections(BaseTestCase):
 
         rconn.send(None)
 
-        if self.TYPE == 'processes':
-            msg = latin('This connection uses a normal socket')
-            address = lconn.recv()
-            rconn.send((address, msg))
-            if hasattr(socket, 'fromfd'):
-                new_conn = lconn.recv()
-                self.assertEqual(new_conn.recv(100), msg.upper())
-            else:
-                # XXX On Windows with Py2.6 need to backport fromfd()
-                discard = lconn.recv_bytes()
+        msg = latin('This connection uses a normal socket')
+        address = lconn.recv()
+        rconn.send((address, msg))
+        new_conn = lconn.recv()
+        self.assertEqual(new_conn.recv(100), msg.upper())
+        new_conn.close()
 
         lconn.send(None)
 
@@ -2043,7 +2039,46 @@ class _TestPicklingConnections(BaseTestCase):
 
         lp.join()
         rp.join()
-"""
+
+    @classmethod
+    def child_access(cls, conn):
+        w = conn.recv()
+        w.send('all is well')
+        w.close()
+
+        r = conn.recv()
+        msg = r.recv()
+        conn.send(msg*2)
+
+        conn.close()
+
+    def test_access(self):
+        # On Windows, if we do not specify a destination pid when
+        # using DupHandle then we need to be careful to use the
+        # correct access flags for DuplicateHandle(), or else
+        # DupHandle.detach() will raise PermissionError.  For example,
+        # for a read only pipe handle we should use
+        # access=FILE_GENERIC_READ.  (Unfortunately
+        # DUPLICATE_SAME_ACCESS does not work.)
+        conn, child_conn = self.Pipe()
+        p = self.Process(target=self.child_access, args=(child_conn,))
+        p.daemon = True
+        p.start()
+        child_conn.close()
+
+        r, w = self.Pipe(duplex=False)
+        conn.send(w)
+        w.close()
+        self.assertEqual(r.recv(), 'all is well')
+        r.close()
+
+        r, w = self.Pipe(duplex=False)
+        conn.send(r)
+        r.close()
+        w.send('foobar')
+        w.close()
+        self.assertEqual(conn.recv(), 'foobar'*2)
+
 #
 #
 #

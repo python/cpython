@@ -832,6 +832,10 @@ Connection objects are usually created using :func:`Pipe` -- see also
       raised and the complete message is available as ``e.args[0]`` where ``e``
       is the exception instance.
 
+   .. versionchanged:: 3.3
+      Connection objects themselves can now be transferred between processes
+      using :meth:`Connection.send` and :meth:`Connection.recv`.
+
 
 For example:
 
