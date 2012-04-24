@@ -11176,6 +11176,15 @@ all_ins(PyObject *d)
 #ifdef O_EXLOCK
     if (ins(d, "O_EXLOCK", (long)O_EXLOCK)) return -1;
 #endif
+#ifdef O_EXEC
+    if (ins(d, "O_EXEC", (long)O_EXEC)) return -1;
+#endif
+#ifdef O_SEARCH
+    if (ins(d, "O_SEARCH", (long)O_SEARCH)) return -1;
+#endif
+#ifdef O_TTY_INIT
+    if (ins(d, "O_TTY_INIT", (long)O_TTY_INIT)) return -1;
+#endif
 #ifdef PRIO_PROCESS
     if (ins(d, "PRIO_PROCESS", (long)PRIO_PROCESS)) return -1;
 #endif
