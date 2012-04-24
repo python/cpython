@@ -119,7 +119,7 @@ class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
     ExecutionLoader ABCs."""
 
 _register(FileLoader, machinery.SourceFileLoader,
-            machinery._SourcelessFileLoader)
+            machinery.SourcelessFileLoader)
 
 
 class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
