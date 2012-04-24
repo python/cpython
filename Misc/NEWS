@@ -14,6 +14,12 @@ Core and Builtins
   their keys with other dictionaries. Classes take advantage of this to share
   their instance dictionary keys for improved memory and performance.
 
+- Issue #11603 (again): Setting __repr__ to __str__ now raises a RuntimeError
+  when repr() or str() is called on such an object.
+
+- Issue #14658: Fix binding a special method to a builtin implementation of a
+  special method with a different name.
+
 - Issue #14630: Fix a memory access bug for instances of a subclass of int
   with value 0.
 
