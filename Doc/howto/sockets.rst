@@ -156,7 +156,7 @@ I'm not going to talk about it here, except to warn you that you need to use
 there, you may wait forever for the reply, because the request may still be in
 your output buffer.
 
-Now we come the major stumbling block of sockets - ``send`` and ``recv`` operate
+Now we come to the major stumbling block of sockets - ``send`` and ``recv`` operate
 on the network buffers. They do not necessarily handle all the bytes you hand
 them (or expect from them), because their major focus is handling the network
 buffers. In general, they return when the associated network buffers have been
@@ -167,7 +167,7 @@ been completely dealt with.
 When a ``recv`` returns 0 bytes, it means the other side has closed (or is in
 the process of closing) the connection.  You will not receive any more data on
 this connection. Ever.  You may be able to send data successfully; I'll talk
-about that some on the next page.
+more about this later.
 
 A protocol like HTTP uses a socket for only one transfer. The client sends a
 request, then reads a reply.  That's it. The socket is discarded. This means that
