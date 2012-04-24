@@ -829,13 +829,19 @@ class SizeofTest(unittest.TestCase):
         check((), size(vh))
         check((1,2,3), size(vh) + 3*self.P)
         # type
-        # (PyTypeObject + PyNumberMethods + PyMappingMethods +
-        #  PySequenceMethods + PyBufferProcs)
-        s = size(vh + 'P2P15Pl4PP9PP11PIP') + size('16Pi17P 3P 10P 2P 3P')
+        # static type: PyTypeObject
+        s = size(vh + 'P2P15Pl4PP9PP11PI')
         check(int, s)
+        # (PyTypeObject + PyNumberMethods + PyMappingMethods +
+        #  PySequenceMethods + PyBufferProcs + 4P)
+        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('34P 3P 10P 2P 4P')
+        # Separate block for PyDictKeysObject with 4 entries
+        s += size("PPPP") + 4*size("PPP")
         # class
         class newstyleclass(object): pass
         check(newstyleclass, s)
+        # dict with shared keys
+        check(newstyleclass().__dict__, size(h+"PPP4P"))
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain

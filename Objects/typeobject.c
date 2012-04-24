@@ -2730,6 +2730,22 @@ type_dir(PyObject *self, PyObject *args)
     return result;
 }
 
+static PyObject*
+type_sizeof(PyObject *self, PyObject *args_unused)
+{
+    Py_ssize_t size;
+    PyTypeObject *type = (PyTypeObject*)self;
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+        size = sizeof(PyHeapTypeObject);
+        if (et->ht_cached_keys)
+            size += _PyDict_KeysSize(et->ht_cached_keys);
+    }
+    else
+        size = sizeof(PyTypeObject);
+    return PyLong_FromSsize_t(size);
+}
+
 static PyMethodDef type_methods[] = {
     {"mro", (PyCFunction)mro_external, METH_NOARGS,
      PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
@@ -2745,6 +2761,8 @@ static PyMethodDef type_methods[] = {
      PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
     {"__dir__", type_dir, METH_NOARGS,
      PyDoc_STR("__dir__() -> list\nspecialized __dir__ implementation for types")},
+    {"__sizeof__",      type_sizeof,       METH_NOARGS,
+     "__sizeof__() -> int\nreturn memory consumption of the type object"},
     {0}
 };
 
