@@ -439,12 +439,12 @@ Authentication Tutorial
 
 When authentication is required, the server sends a header (as well as the 401
 error code) requesting authentication.  This specifies the authentication scheme
-and a 'realm'. The header looks like : ``Www-authenticate: SCHEME
+and a 'realm'. The header looks like : ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
 e.g. ::
 
-    Www-authenticate: Basic realm="cPanel Users"
+    WWW-Authenticate: Basic realm="cPanel Users"
 
 
 The client should then retry the request with the appropriate name and password
