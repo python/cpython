@@ -4430,7 +4430,15 @@ order (MRO) for bases """
             pass
         Foo.__repr__ = Foo.__str__
         foo = Foo()
-        str(foo)
+        self.assertRaises(RuntimeError, str, foo)
+        self.assertRaises(RuntimeError, repr, foo)
+
+    def test_mixing_slot_wrappers(self):
+        class X(dict):
+            __setattr__ = dict.__setitem__
+        x = X()
+        x.y = 42
+        self.assertEqual(x["y"], 42)
 
     def test_cycle_through_dict(self):
         # See bug #1469629
