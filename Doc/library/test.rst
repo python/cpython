@@ -362,7 +362,7 @@ The :mod:`test.support` module defines the following functions:
 
       with captured_stdout() as s:
           print("hello")
-      assert s.getvalue() == "hello"
+      assert s.getvalue() == "hello\n"
 
 
 .. function:: import_module(name, deprecated=False)
