@@ -99,7 +99,19 @@ The module defines the following public class:
          timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-The module also defines two convenience functions:
+The module also defines three convenience functions:
+
+
+.. function:: default_timer()
+
+   Define a default timer, in a platform specific manner. On Windows,
+   :func:`time.clock` has microsecond granularity but :func:`time.time`'s
+   granularity is 1/60th of a second; on Unix, :func:`time.clock` has 1/100th of
+   a second granularity and :func:`time.time` is much more precise.  On either
+   platform, :func:`default_timer` measures wall clock time, not the CPU
+   time.  This means that other processes running on the same computer may
+   interfere with the timing.
+
 
 .. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
 
@@ -161,13 +173,9 @@ similarly.
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
 successive powers of 10 until the total time is at least 0.2 seconds.
 
-The default timer function is platform dependent.  On Windows,
-:func:`time.clock` has microsecond granularity but :func:`time.time`'s
-granularity is 1/60th of a second; on Unix, :func:`time.clock` has 1/100th of a
-second granularity and :func:`time.time` is much more precise.  On either
-platform, the default timer functions measure wall clock time, not the CPU time.
-This means that other processes running on the same computer may interfere with
-the timing.  The best thing to do when accurate timing is necessary is to repeat
+:func:`default_timer` measurations can be affected by other programs running on
+the same machine, so
+the best thing to do when accurate timing is necessary is to repeat
 the timing a few times and use the best time.  The :option:`-r` option is good
 for this; the default of 3 repetitions is probably enough in most cases.  On
 Unix, you can use :func:`time.clock` to measure CPU time.
