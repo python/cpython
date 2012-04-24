@@ -2398,22 +2398,23 @@ static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 static PyObject *
 dict_sizeof(PyDictObject *mp)
 {
-    Py_ssize_t size;
-    double res, keys_size;
+    Py_ssize_t size, res;
 
     size = DK_SIZE(mp->ma_keys);
     res = sizeof(PyDictObject);
     if (mp->ma_values)
         res += size * sizeof(PyObject*);
-    /* Count our share of the keys object -- with rounding errors. */
-    keys_size = sizeof(PyDictKeysObject) + (size-1) * sizeof(PyDictKeyEntry);
-    /* If refcnt > 1, then one count is (probably) held by a type */
-    /* XXX  This is somewhat approximate :) */
-    if (mp->ma_keys->dk_refcnt < 3)
-        res += keys_size;
-    else
-        res += keys_size / (mp->ma_keys->dk_refcnt - 1);
-    return PyFloat_FromDouble(res);
+    /* If the dictionary is split, the keys portion is accounted-for
+       in the type object. */
+    if (mp->ma_keys->dk_refcnt == 1)
+        res += sizeof(PyDictKeysObject) + (size-1) * sizeof(PyDictKeyEntry);
+    return PyLong_FromSsize_t(res);
+}
+
+Py_ssize_t
+_PyDict_KeysSize(PyDictKeysObject *keys)
+{
+    return sizeof(PyDictKeysObject) + (DK_SIZE(keys)-1) * sizeof(PyDictKeyEntry);
 }
 
 PyDoc_STRVAR(contains__doc__,
