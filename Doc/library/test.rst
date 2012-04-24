@@ -380,7 +380,7 @@ The :mod:`test.test_support` module defines the following functions:
 
       with captured_stdout() as s:
           print "hello"
-      assert s.getvalue() == "hello"
+      assert s.getvalue() == "hello\n"
 
    .. versionadded:: 2.6
 
