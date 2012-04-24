@@ -71,6 +71,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4892: multiprocessing Connections can now be transferred over
+  multiprocessing Connections.  Patch by Richard Oudkerk (sbt).
+
 - Issue #14160: TarFile.extractfile() failed to resolve symbolic links when
   the links were not located in an archive subdirectory.
 

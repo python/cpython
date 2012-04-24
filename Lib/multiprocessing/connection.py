@@ -50,6 +50,7 @@ import _multiprocessing
 from multiprocessing import current_process, AuthenticationError, BufferTooShort
 from multiprocessing.util import (
     get_temp_dir, Finalize, sub_debug, debug, _eintr_retry)
+from multiprocessing.forking import ForkingPickler
 try:
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_TIMEOUT, INFINITE
@@ -227,8 +228,9 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        buf = pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
-        self._send_bytes(memoryview(buf))
+        buf = io.BytesIO()
+        ForkingPickler(buf, pickle.HIGHEST_PROTOCOL).dump(obj)
+        self._send_bytes(buf.getbuffer())
 
     def recv_bytes(self, maxlength=None):
         """
@@ -880,3 +882,21 @@ else:
                     raise
             if timeout is not None:
                 timeout = deadline - time.time()
+
+#
+# Make connection and socket objects sharable if possible
+#
+
+if sys.platform == 'win32':
+    from . import reduction
+    ForkingPickler.register(socket.socket, reduction.reduce_socket)
+    ForkingPickler.register(Connection, reduction.reduce_connection)
+    ForkingPickler.register(PipeConnection, reduction.reduce_pipe_connection)
+else:
+    try:
+        from . import reduction
+    except ImportError:
+        pass
+    else:
+        ForkingPickler.register(socket.socket, reduction.reduce_socket)
+        ForkingPickler.register(Connection, reduction.reduce_connection)

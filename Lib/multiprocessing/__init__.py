@@ -161,7 +161,9 @@ def allow_connection_pickling():
     '''
     Install support for sending connections and sockets between processes
     '''
-    from multiprocessing import reduction
+    # This is undocumented.  In previous versions of multiprocessing
+    # its only effect was to make socket objects inheritable on Windows.
+    import multiprocessing.connection
 
 #
 # Definitions depending on native semaphores
