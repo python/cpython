@@ -38,7 +38,7 @@ class FinderTests(abc.FinderTests):
     def import_(self, root, module):
         loader_details = [(_bootstrap.SourceFileLoader,
                             _bootstrap._suffix_list(imp.PY_SOURCE), True),
-                          (_bootstrap._SourcelessFileLoader,
+                          (_bootstrap.SourcelessFileLoader,
                             _bootstrap._suffix_list(imp.PY_COMPILED), True)]
         finder = _bootstrap.FileFinder(root, *loader_details)
         return finder.find_module(module)
