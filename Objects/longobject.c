@@ -1657,6 +1657,7 @@ long_to_decimal_string(PyObject *aa)
 
     /* check we've counted correctly */
     assert(p == PyUnicode_1BYTE_DATA(str));
+    assert(_PyUnicode_CheckConsistency(str, 1));
     Py_DECREF(scratch);
     return (PyObject *)str;
 }
@@ -1761,6 +1762,7 @@ _PyLong_Format(PyObject *aa, int base)
     if (negative)
         *--p = '-';
     assert(p == PyUnicode_1BYTE_DATA(v));
+    assert(_PyUnicode_CheckConsistency(v, 1));
     return v;
 }
 
