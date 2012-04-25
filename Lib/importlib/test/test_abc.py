@@ -62,7 +62,7 @@ class ExecutionLoader(InheritanceTests, unittest.TestCase):
 class FileLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
-    subclasses = [machinery.SourceFileLoader, machinery.SourcelessFileLoader]
+    subclasses = [machinery.SourceFileLoader, machinery._SourcelessFileLoader]
 
 
 class SourceLoader(InheritanceTests, unittest.TestCase):

@@ -379,7 +379,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
 
 class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
 
-    loader = _bootstrap.SourcelessFileLoader
+    loader = _bootstrap._SourcelessFileLoader
 
     def test_empty_file(self):
         def test(name, mapping, bytecode_path):
