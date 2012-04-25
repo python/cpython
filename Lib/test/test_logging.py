@@ -1888,28 +1888,28 @@ class HandlerTest(BaseTest):
                     pass
                 time.sleep(0.004 * random.randint(0, 4))
 
-        def cleanup(remover, fn, handler):
-            handler.close()
-            remover.join()
-            if os.path.exists(fn):
-                os.unlink(fn)
+        del_count = 500
+        log_count = 500
 
-        fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
-        os.close(fd)
-        del_count = 1000
-        log_count = 1000
-        remover = threading.Thread(target=remove_loop, args=(fn, del_count))
-        remover.daemon = True
-        remover.start()
         for delay in (False, True):
+            fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
+            os.close(fd)
+            remover = threading.Thread(target=remove_loop, args=(fn, del_count))
+            remover.daemon = True
+            remover.start()
             h = logging.handlers.WatchedFileHandler(fn, delay=delay)
-            self.addCleanup(cleanup, remover, fn, h)
             f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
             h.setFormatter(f)
-            for _ in range(log_count):
-                time.sleep(0.005)
-                r = logging.makeLogRecord({'msg': 'testing' })
-                h.handle(r)
+            try:
+                for _ in range(log_count):
+                    time.sleep(0.005)
+                    r = logging.makeLogRecord({'msg': 'testing' })
+                    h.handle(r)
+            finally:
+                h.close()
+                remover.join()
+                if os.path.exists(fn):
+                    os.unlink(fn)
 
 
 # Set the locale to the platform-dependent default.  I have no idea
