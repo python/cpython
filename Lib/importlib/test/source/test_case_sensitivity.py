@@ -24,7 +24,7 @@ class CaseSensitivityTest(unittest.TestCase):
                                         (_bootstrap.SourceFileLoader,
                                             _bootstrap._suffix_list(imp.PY_SOURCE),
                                             True),
-                                        (_bootstrap._SourcelessFileLoader,
+                                        (_bootstrap.SourcelessFileLoader,
                                             _bootstrap._suffix_list(imp.PY_COMPILED),
                                             True))
         return finder.find_module(self.name)
