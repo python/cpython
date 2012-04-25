@@ -606,15 +606,18 @@ find and load modules.
       Load the specified module if it is the same as :attr:`name`.
 
 
-.. class:: SourcelessFileLoader(fullname, path)
+.. class:: _SourcelessFileLoader(fullname, path)
 
    A concrete implementation of :class:`importlib.abc.FileLoader` which can
    import bytecode files (i.e. no source code files exist).
 
-   Please note that direct use of bytecode files (and thus not source code
-   files) inhibits your modules from being usable by all Python
-   implementations or new versions of Python which change the bytecode
-   format.
+   It is **strongly** suggested you do not rely on this loader (hence the
+   leading underscore of the class). Direct use of bytecode files (and thus not
+   source code files) inhibits your modules from being usable by all Python
+   implementations. It also runs the risk of your bytecode files not being
+   usable by new versions of Python which change the bytecode format. This
+   class is only documented as it is directly used by import and thus can
+   potentially have instances show up as a module's ``__loader__`` attribute.
 
    .. versionadded:: 3.3
 
