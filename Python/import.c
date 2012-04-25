@@ -268,8 +268,8 @@ _PyImportZip_Init(void)
                     "# can't import zipimport.zipimporter\n");
         }
         else {
-            /* sys.path_hooks.append(zipimporter) */
-            err = PyList_Append(path_hooks, zipimporter);
+            /* sys.path_hooks.insert(0, zipimporter) */
+            err = PyList_Insert(path_hooks, 0, zipimporter);
             Py_DECREF(zipimporter);
             if (err < 0) {
                 goto error;
