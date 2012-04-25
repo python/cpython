@@ -215,7 +215,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         self.doTestImports(i)
 
     def testPathHook(self):
-        sys.path_hooks.append(PathImporter)
+        sys.path_hooks.insert(0, PathImporter)
         sys.path.append(test_path)
         self.doTestImports()
 
@@ -228,7 +228,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
     def testImpWrapper(self):
         i = ImpWrapper()
         sys.meta_path.append(i)
-        sys.path_hooks.append(ImpWrapper)
+        sys.path_hooks.insert(0, ImpWrapper)
         mnames = (
             "colorsys", "urllib.parse", "distutils.core", "sys",
         )
