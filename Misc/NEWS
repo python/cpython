@@ -189,6 +189,9 @@ Tests
 Tools / Demos
 -------------
 
+- Issue #3561: The Windows installer now has an option, off by default, for
+  placing the Python installation into the system "Path" environment variable.
+
 - Issue #13165: stringbench is now available in the Tools/stringbench folder.
   It used to live in its own SVN project.
 
