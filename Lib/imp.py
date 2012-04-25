@@ -94,7 +94,7 @@ def load_source(name, pathname, file=None):
 
 
 class _LoadCompiledCompatibility(_HackedGetData,
-        _bootstrap._SourcelessFileLoader):
+        _bootstrap.SourcelessFileLoader):
 
     """Compatibility support for implementing load_compiled()."""
 

@@ -671,7 +671,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
             pass
 
 
-class _SourcelessFileLoader(FileLoader, _LoaderBasics):
+class SourcelessFileLoader(FileLoader, _LoaderBasics):
 
     """Loader which handles sourceless file imports."""
 
@@ -1198,7 +1198,7 @@ def _setup(sys_module, _imp_module):
 
     supported_loaders = [(ExtensionFileLoader, _suffix_list(3), False),
                          (SourceFileLoader, _suffix_list(1), True),
-                         (_SourcelessFileLoader, _suffix_list(2), True)]
+                         (SourcelessFileLoader, _suffix_list(2), True)]
     setattr(self_module, '_DEFAULT_PATH_HOOK',
             FileFinder.path_hook(*supported_loaders))
 
