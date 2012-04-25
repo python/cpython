@@ -6,6 +6,7 @@ import functools
 import difflib
 import pprint
 import re
+import types
 import warnings
 
 from . import result
@@ -55,7 +56,7 @@ def skip(reason):
     Unconditionally skip a test.
     """
     def decorator(test_item):
-        if not (isinstance(test_item, type) and issubclass(test_item, TestCase)):
+        if not isinstance(test_item, (type, types.ClassType)):
             @functools.wraps(test_item)
             def skip_wrapper(*args, **kwargs):
                 raise SkipTest(reason)
