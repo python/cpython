@@ -375,10 +375,13 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     {
         Py_ssize_t i;
         Py_UCS4 maxchar = 0;
-        void *data = PyUnicode_DATA(ascii);
+        void *data;
+        Py_UCS4 ch;
+
+        data = PyUnicode_DATA(ascii);
         for (i=0; i < ascii->length; i++)
         {
-            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            ch = PyUnicode_READ(kind, data, i);
             if (ch > maxchar)
                 maxchar = ch;
         }
@@ -398,6 +401,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             assert(maxchar >= 0x10000);
             assert(maxchar <= MAX_UNICODE);
         }
+        assert(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
     return 1;
 }
