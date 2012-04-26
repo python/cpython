@@ -1,5 +1,6 @@
 # tests command line execution of scripts
 
+import importlib
 import unittest
 import sys
 import os
@@ -49,12 +50,16 @@ print('cwd==%a' % os.getcwd())
 """
 
 def _make_test_script(script_dir, script_basename, source=test_source):
-    return make_script(script_dir, script_basename, source)
+    to_return = make_script(script_dir, script_basename, source)
+    importlib.invalidate_caches()
+    return to_return
 
 def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                        source=test_source, depth=1):
-    return make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
-                        source, depth)
+    to_return = make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
+                             source, depth)
+    importlib.invalidate_caches()
+    return to_return
 
 # There's no easy way to pass the script directory in to get
 # -m to work (avoiding that is the whole point of making
@@ -72,7 +77,9 @@ def _make_launch_script(script_dir, script_basename, module_name, path=None):
     else:
         path = repr(path)
     source = launch_source % (path, module_name)
-    return make_script(script_dir, script_basename, source)
+    to_return = make_script(script_dir, script_basename, source)
+    importlib.invalidate_caches()
+    return to_return
 
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
