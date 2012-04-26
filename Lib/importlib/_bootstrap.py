@@ -752,15 +752,15 @@ class PathFinder:
     """Meta path finder for sys.(path|path_hooks|path_importer_cache)."""
 
     @classmethod
-    def _path_hooks(cls, path, hooks=None):
+    def _path_hooks(cls, path):
         """Search sequence of hooks for a finder for 'path'.
 
         If 'hooks' is false then use sys.path_hooks.
 
         """
-        if hooks is None:
-            hooks = sys.path_hooks
-        for hook in hooks:
+        if not sys.path_hooks:
+            _warnings.warn('sys.path_hooks is empty', ImportWarning)
+        for hook in sys.path_hooks:
             try:
                 return hook(path)
             except ImportError:
@@ -770,14 +770,11 @@ class PathFinder:
                               path=path)
 
     @classmethod
-    def _path_importer_cache(cls, path, default=None):
+    def _path_importer_cache(cls, path):
         """Get the finder for the path from sys.path_importer_cache.
 
         If the path is not in the cache, find the appropriate finder and cache
-        it. If None is cached, get the default finder and cache that
-        (if applicable).
-
-        Because of NullImporter, some finder should be returned. The only
+        it. Because of NullImporter, some finder should be returned. The only
         explicit fail case is if None is cached but the path cannot be used for
         the default hook, for which ImportError is raised.
 
@@ -790,9 +787,13 @@ class PathFinder:
             finder = cls._path_hooks(path)
             sys.path_importer_cache[path] = finder
         else:
-            if finder is None and default:
-                # Raises ImportError on failure.
-                finder = default(path)
+            if finder is None:
+                msg = ("'None' in sys.path_importer_cache[{!r}], so retrying "
+                       "finder search; in future versions of Python 'None' "
+                       "will represent no finder".format(path))
+                _warnings.warn(msg, ImportWarning)
+                del sys.path_importer_cache[path]
+                finder = cls._path_hooks(path)
                 sys.path_importer_cache[path] = finder
         return finder
 
@@ -931,29 +932,6 @@ class FileFinder:
 
 # Import itself ###############################################################
 
-_DEFAULT_PATH_HOOK = None  # Set in _setup()
-
-class _DefaultPathFinder(PathFinder):
-
-    """Subclass of PathFinder that implements implicit semantics for
-    __import__."""
-
-    @classmethod
-    def _path_hooks(cls, path):
-        """Search sys.path_hooks as well as implicit path hooks."""
-        try:
-            return super()._path_hooks(path)
-        except ImportError:
-            implicit_hooks = [_DEFAULT_PATH_HOOK, _imp.NullImporter]
-            return super()._path_hooks(path, implicit_hooks)
-
-    @classmethod
-    def _path_importer_cache(cls, path):
-        """Use the default path hook when None is stored in
-        sys.path_importer_cache."""
-        return super()._path_importer_cache(path, _DEFAULT_PATH_HOOK)
-
-
 class _ImportLockContext:
 
     """Context manager for the import lock."""
@@ -1008,7 +986,7 @@ def _sanity_check(name, package, level):
         raise ValueError("Empty module name")
 
 
-_IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
+_IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, PathFinder]
 
 _ERR_MSG = 'No module named {!r}'
 
@@ -1203,12 +1181,6 @@ def _setup(sys_module, _imp_module):
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
 
-    supported_loaders = [(ExtensionFileLoader, _suffix_list(3), False),
-                         (SourceFileLoader, _suffix_list(1), True),
-                         (SourcelessFileLoader, _suffix_list(2), True)]
-    setattr(self_module, '_DEFAULT_PATH_HOOK',
-            FileFinder.path_hook(*supported_loaders))
-
 
 def _install(sys_module, _imp_module):
     """Install importlib as the implementation of import.
@@ -1218,6 +1190,8 @@ def _install(sys_module, _imp_module):
 
     """
     _setup(sys_module, _imp_module)
-    orig_import = builtins.__import__
-    builtins.__import__ = __import__
-    builtins.__original_import__ = orig_import
+    supported_loaders = [(ExtensionFileLoader, _suffix_list(3), False),
+                         (SourceFileLoader, _suffix_list(1), True),
+                         (SourcelessFileLoader, _suffix_list(2), True)]
+    sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders),
+                           _imp.NullImporter])

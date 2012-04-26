@@ -145,7 +145,7 @@ class ThreadedImportTests(unittest.TestCase):
         def path_hook(path):
             finder.find_module('')
             raise ImportError
-        sys.path_hooks.append(path_hook)
+        sys.path_hooks.insert(0, path_hook)
         sys.meta_path.append(flushing_finder)
         try:
             # Flush the cache a first time
