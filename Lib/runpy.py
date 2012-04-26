@@ -9,6 +9,7 @@ importers when locating support scripts as well as when importing modules.
 # Written by Nick Coghlan <ncoghlan at gmail.com>
 #    to implement PEP 338 (Executing Modules as Scripts)
 
+import os
 import sys
 import imp
 from pkgutil import read_code
@@ -94,7 +95,7 @@ def _get_filename(loader, mod_name):
     for attr in ("get_filename", "_get_filename"):
         meth = getattr(loader, attr, None)
         if meth is not None:
-            return meth(mod_name)
+            return os.path.abspath(meth(mod_name))
     return None
 
 # Helper to get the loader, code and filename for a module
@@ -198,10 +199,6 @@ def _get_importer(path_name):
     try:
         importer = cache[path_name]
     except KeyError:
-        # Not yet cached. Flag as using the
-        # standard machinery until we finish
-        # checking the hooks
-        cache[path_name] = None
         for hook in sys.path_hooks:
             try:
                 importer = hook(path_name)
@@ -213,10 +210,7 @@ def _get_importer(path_name):
             # NullImporter throws ImportError if the supplied path is a
             # *valid* directory entry (and hence able to be handled
             # by the standard import machinery)
-            try:
-                importer = imp.NullImporter(path_name)
-            except ImportError:
-                return None
+            importer = imp.NullImporter(path_name)
         cache[path_name] = importer
     return importer
 
