@@ -306,7 +306,6 @@ class IOBase(metaclass=abc.ABCMeta):
         * 0 -- start of stream (the default); offset should be zero or positive
         * 1 -- current stream position; offset may be negative
         * 2 -- end of stream; offset is usually negative
-        Some operating systems / file systems could provide additional values.
 
         Return an int indicating the new absolute position.
         """
@@ -867,7 +866,7 @@ class BytesIO(BufferedIOBase):
         elif whence == 2:
             self._pos = max(0, len(self._buffer) + pos)
         else:
-            raise ValueError("unsupported whence value")
+            raise ValueError("invalid whence value")
         return self._pos
 
     def tell(self):
@@ -1042,6 +1041,8 @@ class BufferedReader(_BufferedIOMixin):
         return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
 
     def seek(self, pos, whence=0):
+        if not (0 <= whence <= 2):
+            raise ValueError("invalid whence value")
         with self._read_lock:
             if whence == 1:
                 pos -= len(self._read_buf) - self._read_pos
@@ -1137,6 +1138,8 @@ class BufferedWriter(_BufferedIOMixin):
         return _BufferedIOMixin.tell(self) + len(self._write_buf)
 
     def seek(self, pos, whence=0):
+        if not (0 <= whence <= 2):
+            raise ValueError("invalid whence")
         with self._write_lock:
             self._flush_unlocked()
             return _BufferedIOMixin.seek(self, pos, whence)
@@ -1232,6 +1235,8 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
 
     def seek(self, pos, whence=0):
+        if not (0 <= whence <= 2):
+            raise ValueError("invalid whence")
         self.flush()
         if self._read_buf:
             # Undo read ahead.
@@ -1847,7 +1852,8 @@ class TextIOWrapper(TextIOBase):
                 self._decoder.reset()
             return position
         if whence != 0:
-            raise ValueError("unsupported whence (%r)" % (whence,))
+            raise ValueError("invalid whence (%r, should be 0, 1 or 2)" %
+                             (whence,))
         if cookie < 0:
             raise ValueError("negative seek position %r" % (cookie,))
         self.flush()
