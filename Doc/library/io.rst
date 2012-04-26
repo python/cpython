@@ -291,6 +291,11 @@ I/O Base Classes
       .. versionadded:: 3.1
          The ``SEEK_*`` constants.
 
+      .. versionadded:: 3.3
+         Some operating systems could support additional values, like
+         :data:`os.SEEK_HOLE` or :data:`os.SEEK_DATA`. The valid values
+         for a file could depend on it being open in text or binary mode.
+
    .. method:: seekable()
 
       Return ``True`` if the stream supports random access.  If ``False``,
