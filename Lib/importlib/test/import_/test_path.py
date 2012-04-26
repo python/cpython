@@ -9,6 +9,7 @@ import tempfile
 from test import support
 from types import MethodType
 import unittest
+import warnings
 
 
 class FinderTests(unittest.TestCase):
@@ -64,12 +65,18 @@ class FinderTests(unittest.TestCase):
             self.assertTrue(path in sys.path_importer_cache)
             self.assertTrue(sys.path_importer_cache[path] is importer)
 
-    def test_path_importer_cache_has_None(self):
-        # Test that if sys.path_importer_cache has None that None is returned.
-        clear_cache = {path: None for path in sys.path}
-        with util.import_state(path_importer_cache=clear_cache):
-            for name in ('asynchat', 'sys', '<test module>'):
-                self.assertTrue(machinery.PathFinder.find_module(name) is None)
+    def test_empty_path_hooks(self):
+        # Test that if sys.path_hooks is empty a warning is raised and
+        # PathFinder returns None.
+        # tried again (with a warning).
+        with util.import_state(path_importer_cache={}, path_hooks=[],
+                               path=['bogus_path']):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                self.assertIsNone(machinery.PathFinder.find_module('os'))
+                self.assertNotIn('os', sys.path_importer_cache)
+                self.assertEqual(len(w), 1)
+                self.assertTrue(issubclass(w[-1].category, ImportWarning))
 
     def test_path_importer_cache_has_None_continues(self):
         # Test that having None in sys.path_importer_cache causes the search to
@@ -78,9 +85,16 @@ class FinderTests(unittest.TestCase):
         module = '<test module>'
         importer = util.mock_modules(module)
         with util.import_state(path=['1', '2'],
-                            path_importer_cache={'1': None, '2': importer}):
-            loader = machinery.PathFinder.find_module(module)
-            self.assertTrue(loader is importer)
+                            path_importer_cache={'1': None, '2': importer},
+                            path_hooks=[imp.NullImporter]):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                loader = machinery.PathFinder.find_module(module)
+                self.assertTrue(loader is importer)
+                self.assertEqual(len(w), 1)
+                warned = w[0]
+                self.assertTrue(issubclass(warned.category, ImportWarning))
+                self.assertIn(repr(None), str(warned.message))
 
     def test_path_importer_cache_empty_string(self):
         # The empty string should create a finder using the cwd.
@@ -94,57 +108,9 @@ class FinderTests(unittest.TestCase):
             self.assertIn(os.curdir, sys.path_importer_cache)
 
 
-class DefaultPathFinderTests(unittest.TestCase):
-
-    """Test _bootstrap._DefaultPathFinder."""
-
-    def test_implicit_hooks(self):
-        # Test that the implicit path hooks are used.
-        bad_path = '<path>'
-        module = '<module>'
-        assert not os.path.exists(bad_path)
-        existing_path = tempfile.mkdtemp()
-        try:
-            with util.import_state():
-                nothing = _bootstrap._DefaultPathFinder.find_module(module,
-                                                        path=[existing_path])
-                self.assertTrue(nothing is None)
-                self.assertTrue(existing_path in sys.path_importer_cache)
-                result = isinstance(sys.path_importer_cache[existing_path],
-                                    imp.NullImporter)
-                self.assertFalse(result)
-                nothing = _bootstrap._DefaultPathFinder.find_module(module,
-                                                            path=[bad_path])
-                self.assertTrue(nothing is None)
-                self.assertTrue(bad_path in sys.path_importer_cache)
-                self.assertTrue(isinstance(sys.path_importer_cache[bad_path],
-                                           imp.NullImporter))
-        finally:
-            os.rmdir(existing_path)
-
-
-    def test_path_importer_cache_has_None(self):
-        # Test that the default hook is used when sys.path_importer_cache
-        # contains None for a path.
-        module = '<test module>'
-        importer = util.mock_modules(module)
-        path = '<test path>'
-        # XXX Not blackbox.
-        original_hook = _bootstrap._DEFAULT_PATH_HOOK
-        mock_hook = import_util.mock_path_hook(path, importer=importer)
-        _bootstrap._DEFAULT_PATH_HOOK = mock_hook
-        try:
-            with util.import_state(path_importer_cache={path: None}):
-                loader = _bootstrap._DefaultPathFinder.find_module(module,
-                                                                    path=[path])
-                self.assertTrue(loader is importer)
-        finally:
-            _bootstrap._DEFAULT_PATH_HOOK = original_hook
-
-
 def test_main():
     from test.support import run_unittest
-    run_unittest(FinderTests, DefaultPathFinderTests)
+    run_unittest(FinderTests)
 
 if __name__ == '__main__':
     test_main()

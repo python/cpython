@@ -1,6 +1,7 @@
 """Test that the semantics relating to the 'fromlist' argument are correct."""
 from .. import util
 from . import util as import_util
+import imp
 import unittest
 
 class ReturnValue(unittest.TestCase):
@@ -73,7 +74,8 @@ class HandlingFromlist(unittest.TestCase):
     def test_no_module_from_package(self):
         # [no module]
         with util.mock_modules('pkg.__init__') as importer:
-            with util.import_state(meta_path=[importer]):
+            with util.import_state(meta_path=[importer],
+                                   path_hooks=[imp.NullImporter]):
                 module = import_util.import_('pkg', fromlist='non_existent')
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(not hasattr(module, 'non_existent'))
