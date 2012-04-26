@@ -859,7 +859,7 @@ def add_features(db):
     htmlfiles = Feature(db, "Documentation", "Documentation",
                         "Python HTMLHelp File", 7, parent = default_feature)
     tools = Feature(db, "Tools", "Utility Scripts",
-                    "Python utility scripts (Tools/", 9,
+                    "Python utility scripts (Tools/)", 9,
                     parent = default_feature, attributes=2)
     testsuite = Feature(db, "Testsuite", "Test suite",
                         "Python test suite (Lib/test/)", 11,
