@@ -1157,20 +1157,9 @@ buffered_seek(buffered *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|i:seek", &targetobj, &whence)) {
         return NULL;
     }
-
-    /* Do some error checking instead of trusting OS 'seek()'
-    ** error detection, just in case.
-    */
-    if ((whence < 0 || whence >2)
-#ifdef SEEK_HOLE
-        && (whence != SEEK_HOLE)
-#endif
-#ifdef SEEK_DATA
-        && (whence != SEEK_DATA)
-#endif
-        ) {
+    if (whence < 0 || whence > 2) {
         PyErr_Format(PyExc_ValueError,
-                     "whence value %d unsupported", whence);
+                     "whence must be between 0 and 2, not %d", whence);
         return NULL;
     }
 
@@ -1183,11 +1172,7 @@ buffered_seek(buffered *self, PyObject *args)
     if (target == -1 && PyErr_Occurred())
         return NULL;
 
-    /* SEEK_SET and SEEK_CUR are special because we could seek inside the
-       buffer. Other whence values must be managed without this optimization.
-       Some Operating Systems can provide additional values, like
-       SEEK_HOLE/SEEK_DATA. */
-    if (((whence == 0) || (whence == 1)) && self->readable) {
+    if (whence != 2 && self->readable) {
         Py_off_t current, avail;
         /* Check if seeking leaves us inside the current buffer,
            so as to return quickly if possible. Also, we needn't take the
