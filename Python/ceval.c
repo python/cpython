@@ -2132,6 +2132,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                              GLOBAL_NAME_ERROR_MSG, w);
                     break;
                 }
+                Py_INCREF(x);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
@@ -2147,7 +2148,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     }
                 }
             }
-            Py_INCREF(x);
             PUSH(x);
             DISPATCH();
 
