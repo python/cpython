@@ -379,18 +379,15 @@ def get_importer(path_item):
         for path_hook in sys.path_hooks:
             try:
                 importer = path_hook(path_item)
+                sys.path_importer_cache.setdefault(path_item, importer)
                 break
             except ImportError:
                 pass
         else:
-            importer = None
-        sys.path_importer_cache.setdefault(path_item, importer)
-
-    if importer is None:
-        try:
-            importer = ImpImporter(path_item)
-        except ImportError:
-            importer = None
+            try:
+                importer = ImpImporter(path_item)
+            except ImportError:
+                importer = None
     return importer
 
 
