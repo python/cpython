@@ -229,7 +229,7 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
-    value = PyObject_CallMethod(importlib, "_setup", "OO", sysmod, impmod);
+    value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
     if (value == NULL) {
         PyErr_Print();
         Py_FatalError("Py_Initialize: importlib install failed");

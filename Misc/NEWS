@@ -10,6 +10,11 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14605: No longer have implicit entries in sys.path_hooks. If
+  sys.path_hooks is found to be empty, a warning will be raised. If None is
+  found in sys.path_importer_cache, a warning is raised and a search on
+  sys.path_hooks is attempted.
+
 - Issue #13903: Implement PEP 412. Individual dictionary instances can now share
   their keys with other dictionaries. Classes take advantage of this to share
   their instance dictionary keys for improved memory and performance.
