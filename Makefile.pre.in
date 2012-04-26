@@ -573,12 +573,23 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 
 Modules/_testembed: Modules/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
+
 ############################################################################
 # Importlib
 
 Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py $(srcdir)/Python/freeze_importlib.py
-	./$(BUILDPYTHON) $(srcdir)/Python/freeze_importlib.py \
-	    $(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
+	@if test -f ./$(BUILDPYTHON); then \
+	    ./$(BUILDPYTHON) $(srcdir)/Python/freeze_importlib.py \
+		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h; \
+	else \
+	    echo "----------------------------------------------------------"; \
+	    echo "Python/importlib.h needs to be rebuilt, but no interpreter"; \
+	    echo "is available to do so. Leaving the previous version in"; \
+	    echo "place. You may want to run ''make'' a second time after"; \
+	    echo "this build is complete."; \
+	    echo "----------------------------------------------------------"; \
+	fi
+
 ############################################################################
 # Special rules for object files
 
