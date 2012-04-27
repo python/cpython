@@ -466,6 +466,8 @@ def find_loader(fullname):
     platform-specific special import locations such as the Windows registry.
     """
     for importer in iter_importers(fullname):
+        if importer is None:
+            continue
         loader = importer.find_module(fullname)
         if loader is not None:
             return loader
