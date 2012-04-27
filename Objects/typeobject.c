@@ -2593,6 +2593,9 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     return update_slot(type, name);
 }
 
+extern void
+_PyDictKeys_DecRef(PyDictKeysObject *keys);
+
 static void
 type_dealloc(PyTypeObject *type)
 {
@@ -2616,6 +2619,8 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(et->ht_name);
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
+    if (et->ht_cached_keys)
+        _PyDictKeys_DecRef(et->ht_cached_keys);
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -2790,9 +2795,6 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 
     return 0;
 }
-
-extern void
-_PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 static int
 type_clear(PyTypeObject *type)
