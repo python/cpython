@@ -176,6 +176,12 @@ Library
 
 - Issue #14493: Use gvfs-open or xdg-open in webbrowser.
 
+Build
+-----
+
+- "make touch" will now touch generated files that are checked into Mercurial,
+  after a "hg update" which failed to bring the timestamps into the right order.
+
 Tests
 -----
 
