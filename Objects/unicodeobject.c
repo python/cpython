@@ -13481,7 +13481,10 @@ formatlong(PyObject *val, int flags, int prec, int type)
     case 'd':
     case 'u':
         /* Special-case boolean: we want 0/1 */
-        result = Py_TYPE(val)->tp_str(val);
+        if (PyBool_Check(val))
+            result = PyNumber_ToBase(val, 10);
+        else
+            result = Py_TYPE(val)->tp_str(val);
         break;
     case 'o':
         numnondigits = 2;
