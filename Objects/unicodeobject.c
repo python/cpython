@@ -13438,19 +13438,140 @@ formatfloat(PyObject *v, int flags, int prec, int type)
     return result;
 }
 
+/* formatlong() emulates the format codes d, u, o, x and X, and
+ * the F_ALT flag, for Python's long (unbounded) ints.  It's not used for
+ * Python's regular ints.
+ * Return value:  a new PyUnicodeObject*, or NULL if error.
+ *     The output string is of the form
+ *         "-"? ("0x" | "0X")? digit+
+ *     "0x"/"0X" are present only for x and X conversions, with F_ALT
+ *         set in flags.  The case of hex digits will be correct,
+ *     There will be at least prec digits, zero-filled on the left if
+ *         necessary to get that many.
+ * val          object to be converted
+ * flags        bitmask of format flags; only F_ALT is looked at
+ * prec         minimum number of digits; 0-fill on left if needed
+ * type         a character in [duoxX]; u acts the same as d
+ *
+ * CAUTION:  o, x and X conversions on regular ints can never
+ * produce a '-' sign, but can for Python's unbounded ints.
+ */
 static PyObject*
 formatlong(PyObject *val, int flags, int prec, int type)
 {
+    PyObject *result = NULL;
     char *buf;
-    int len;
-    PyObject *str; /* temporary string object. */
-    PyObject *result;
+    Py_ssize_t i;
+    int sign;           /* 1 if '-', else 0 */
+    int len;            /* number of characters */
+    Py_ssize_t llen;
+    int numdigits;      /* len == numnondigits + numdigits */
+    int numnondigits = 0;
 
-    str = _PyBytes_FormatLong(val, flags, prec, type, &buf, &len);
-    if (!str)
+    /* Avoid exceeding SSIZE_T_MAX */
+    if (prec > INT_MAX-3) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "precision too large");
         return NULL;
-    result = PyUnicode_DecodeASCII(buf, len, NULL);
-    Py_DECREF(str);
+    }
+
+    assert(PyLong_Check(val));
+
+    switch (type) {
+    case 'd':
+    case 'u':
+        /* Special-case boolean: we want 0/1 */
+        result = Py_TYPE(val)->tp_str(val);
+        break;
+    case 'o':
+        numnondigits = 2;
+        result = PyNumber_ToBase(val, 8);
+        break;
+    case 'x':
+    case 'X':
+        numnondigits = 2;
+        result = PyNumber_ToBase(val, 16);
+        break;
+    default:
+        assert(!"'type' not in [duoxX]");
+    }
+    if (!result)
+        return NULL;
+
+    assert(unicode_modifiable(result));
+    assert(PyUnicode_IS_READY(result));
+    assert(PyUnicode_IS_ASCII(result));
+
+    /* To modify the string in-place, there can only be one reference. */
+    if (Py_REFCNT(result) != 1) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    buf = PyUnicode_DATA(result);
+    llen = PyUnicode_GET_LENGTH(result);
+    if (llen > INT_MAX) {
+        PyErr_SetString(PyExc_ValueError,
+                        "string too large in _PyBytes_FormatLong");
+        return NULL;
+    }
+    len = (int)llen;
+    sign = buf[0] == '-';
+    numnondigits += sign;
+    numdigits = len - numnondigits;
+    assert(numdigits > 0);
+
+    /* Get rid of base marker unless F_ALT */
+    if (((flags & F_ALT) == 0 &&
+        (type == 'o' || type == 'x' || type == 'X'))) {
+        assert(buf[sign] == '0');
+        assert(buf[sign+1] == 'x' || buf[sign+1] == 'X' ||
+               buf[sign+1] == 'o');
+        numnondigits -= 2;
+        buf += 2;
+        len -= 2;
+        if (sign)
+            buf[0] = '-';
+        assert(len == numnondigits + numdigits);
+        assert(numdigits > 0);
+    }
+
+    /* Fill with leading zeroes to meet minimum width. */
+    if (prec > numdigits) {
+        PyObject *r1 = PyBytes_FromStringAndSize(NULL,
+                                numnondigits + prec);
+        char *b1;
+        if (!r1) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        b1 = PyBytes_AS_STRING(r1);
+        for (i = 0; i < numnondigits; ++i)
+            *b1++ = *buf++;
+        for (i = 0; i < prec - numdigits; i++)
+            *b1++ = '0';
+        for (i = 0; i < numdigits; i++)
+            *b1++ = *buf++;
+        *b1 = '\0';
+        Py_DECREF(result);
+        result = r1;
+        buf = PyBytes_AS_STRING(result);
+        len = numnondigits + prec;
+    }
+
+    /* Fix up case for hex conversions. */
+    if (type == 'X') {
+        /* Need to convert all lower case letters to upper case.
+           and need to convert 0x to 0X (and -0x to -0X). */
+        for (i = 0; i < len; i++)
+            if (buf[i] >= 'a' && buf[i] <= 'x')
+                buf[i] -= 'a'-'A';
+    }
+    if (!PyUnicode_Check(result) || len != PyUnicode_GET_LENGTH(result)) {
+        PyObject *unicode;
+        unicode = unicode_fromascii((unsigned char *)buf, len);
+        Py_DECREF(result);
+        result = unicode;
+    }
     return result;
 }
 
