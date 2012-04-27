@@ -79,6 +79,34 @@ class ModuleForLoaderTests(unittest.TestCase):
             given = self.return_module(name)
             self.assertTrue(given is module)
 
+    def test_attributes_set(self):
+        # __name__, __loader__, and __package__ should be set (when
+        # is_package() is defined; undefined implicitly tested elsewhere).
+        class FakeLoader:
+            def __init__(self, is_package):
+                self._pkg = is_package
+            def is_package(self, name):
+                return self._pkg
+            @util.module_for_loader
+            def load_module(self, module):
+                return module
+
+        name = 'pkg.mod'
+        with test_util.uncache(name):
+            loader = FakeLoader(False)
+            module = loader.load_module(name)
+            self.assertEqual(module.__name__, name)
+            self.assertIs(module.__loader__, loader)
+            self.assertEqual(module.__package__, 'pkg')
+
+        name = 'pkg.sub'
+        with test_util.uncache(name):
+            loader = FakeLoader(True)
+            module = loader.load_module(name)
+            self.assertEqual(module.__name__, name)
+            self.assertIs(module.__loader__, loader)
+            self.assertEqual(module.__package__, name)
+
 
 class SetPackageTests(unittest.TestCase):
 

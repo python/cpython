@@ -257,9 +257,14 @@ def module_for_loader(fxn):
 
     The decorated function is passed the module to use instead of the module
     name. The module passed in to the function is either from sys.modules if
-    it already exists or is a new module which has __name__ set and is inserted
-    into sys.modules. If an exception is raised and the decorator created the
-    module it is subsequently removed from sys.modules.
+    it already exists or is a new module. If the module is new, then __name__
+    is set the first argument to the method, __loader__ is set to self, and
+    __package__ is set accordingly (if self.is_package() is defined) will be set
+    before it is passed to the decorated function (if self.is_package() does
+    not work for the module it will be set post-load).
+
+    If an exception is raised and the decorator created the module it is
+    subsequently removed from sys.modules.
 
     The decorator assumes that the decorated function takes the module name as
     the second argument.
@@ -274,7 +279,18 @@ def module_for_loader(fxn):
             # infinite loop.
             module = _new_module(fullname)
             sys.modules[fullname] = module
+            module.__loader__ = self
+            try:
+                is_package = self.is_package(fullname)
+            except (ImportError, AttributeError):
+                pass
+            else:
+                if is_package:
+                    module.__package__ = fullname
+                else:
+                    module.__package__ = fullname.rpartition('.')[0]
         try:
+            # If __package__ was not set above, __import__() will do it later.
             return fxn(self, module, *args, **kwargs)
         except:
             if not is_reload:
@@ -1010,6 +1026,12 @@ def _find_and_load(name, import_):
             module.__package__ = module.__name__
             if not hasattr(module, '__path__'):
                 module.__package__ = module.__package__.rpartition('.')[0]
+        except AttributeError:
+            pass
+    # Set loader if need be.
+    if not hasattr(module, '__loader__'):
+        try:
+            module.__loader__ = loader
         except AttributeError:
             pass
     return module
