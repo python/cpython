@@ -956,8 +956,9 @@ def _resolve_name(name, package, level):
 
 def _find_module(name, path):
     """Find a module's loader."""
-    meta_path = sys.meta_path + _IMPLICIT_META_PATH
-    for finder in meta_path:
+    if not sys.meta_path:
+        _warnings.warn('sys.meta_path is empty', ImportWarning)
+    for finder in sys.meta_path:
         loader = finder.find_module(name, path)
         if loader is not None:
             # The parent import may have already imported this module.
@@ -985,8 +986,6 @@ def _sanity_check(name, package, level):
     if not name and level == 0:
         raise ValueError("Empty module name")
 
-
-_IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, PathFinder]
 
 _ERR_MSG = 'No module named {!r}'
 
@@ -1195,3 +1194,4 @@ def _install(sys_module, _imp_module):
                          (SourcelessFileLoader, _suffix_list(2), True)]
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders),
                            _imp.NullImporter])
+    sys.meta_path.extend([BuiltinImporter, FrozenImporter, PathFinder])
