@@ -224,7 +224,7 @@ RunMainFromImporter(wchar_t *filename)
     if (importer == NULL)
         goto error;
 
-    if (importer->ob_type == &PyNullImporter_Type) {
+    if (importer == Py_None) {
         Py_DECREF(argv0);
         Py_DECREF(importer);
         return -1;
