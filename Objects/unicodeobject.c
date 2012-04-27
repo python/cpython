@@ -1985,6 +1985,9 @@ _PyUnicode_FindMaxChar(PyObject *unicode, Py_ssize_t start, Py_ssize_t end)
     if (start == end)
         return 127;
 
+    if (PyUnicode_IS_ASCII(unicode))
+        return 127;
+
     kind = PyUnicode_KIND(unicode);
     startptr = PyUnicode_DATA(unicode);
     endptr = (char *)startptr + end * kind;
