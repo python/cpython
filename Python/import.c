@@ -992,6 +992,7 @@ make_source_pathname(PyObject *path)
                              (j = dot0-right));
     PyUnicode_WRITE(kind, data, i+j,   'p');
     PyUnicode_WRITE(kind, data, i+j+1, 'y');
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 

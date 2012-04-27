@@ -263,6 +263,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
         Py_DECREF(result);
         return NULL;
     }
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
