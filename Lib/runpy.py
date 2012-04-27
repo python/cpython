@@ -9,6 +9,7 @@ importers when locating support scripts as well as when importing modules.
 # Written by Nick Coghlan <ncoghlan at gmail.com>
 #    to implement PEP 338 (Executing Modules as Scripts)
 
+
 import os
 import sys
 import imp
@@ -206,11 +207,7 @@ def _get_importer(path_name):
             except ImportError:
                 pass
         else:
-            # The following check looks a bit odd. The trick is that
-            # NullImporter throws ImportError if the supplied path is a
-            # *valid* directory entry (and hence able to be handled
-            # by the standard import machinery)
-            importer = imp.NullImporter(path_name)
+            importer = None
         cache[path_name] = importer
     return importer
 
@@ -237,7 +234,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     if run_name is None:
         run_name = "<run_path>"
     importer = _get_importer(path_name)
-    if isinstance(importer, imp.NullImporter):
+    if isinstance(importer, (type(None), imp.NullImporter)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
         code = _get_code_from_file(path_name)

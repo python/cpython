@@ -1186,15 +1186,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
         PyErr_Clear();
     }
     if (importer == NULL) {
-        importer = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyNullImporter_Type, p, NULL
-        );
-        if (importer == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-                PyErr_Clear();
-                return Py_None;
-            }
-        }
+        return Py_None;
     }
     if (importer != NULL) {
         int err = PyDict_SetItem(path_importer_cache, p, importer);

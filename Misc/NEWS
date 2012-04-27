@@ -14,9 +14,9 @@ Core and Builtins
   sys.meta_path is found to be empty, raise ImportWarning.
 
 - Issue #14605: No longer have implicit entries in sys.path_hooks. If
-  sys.path_hooks is found to be empty, a warning will be raised. If None is
-  found in sys.path_importer_cache, a warning is raised and a search on
-  sys.path_hooks is attempted.
+  sys.path_hooks is found to be empty, a warning will be raised. None is now
+  inserted into sys.path_importer_cache if no finder was discovered. This also
+  means imp.NullImporter is no longer implicitly used.
 
 - Issue #13903: Implement PEP 412. Individual dictionary instances can now share
   their keys with other dictionaries. Classes take advantage of this to share
