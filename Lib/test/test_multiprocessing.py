@@ -1966,6 +1966,11 @@ class _TestPicklingConnections(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     @classmethod
+    def tearDownClass(cls):
+        from multiprocessing.reduction import resource_sharer
+        resource_sharer.stop(timeout=5)
+
+    @classmethod
     def _listener(cls, conn, families):
         for fam in families:
             l = cls.connection.Listener(family=fam)
