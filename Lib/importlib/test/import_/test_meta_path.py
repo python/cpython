@@ -1,7 +1,10 @@
 from .. import util
 from . import util as import_util
+import importlib._bootstrap
+import sys
 from types import MethodType
 import unittest
+import warnings
 
 
 class CallingOrder(unittest.TestCase):
@@ -32,6 +35,21 @@ class CallingOrder(unittest.TestCase):
             second.modules[mod_name] = 42
             with util.import_state(meta_path=[first, second]):
                 self.assertEqual(import_util.import_(mod_name), 42)
+
+    def test_empty(self):
+        # Raise an ImportWarning if sys.meta_path is empty.
+        module_name = 'nothing'
+        try:
+            del sys.modules[module_name]
+        except KeyError:
+            pass
+        with util.import_state(meta_path=[]):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                self.assertIsNone(importlib._bootstrap._find_module('nothing',
+                                                                    None))
+                self.assertEqual(len(w), 1)
+                self.assertTrue(issubclass(w[-1].category, ImportWarning))
 
 
 class CallSignature(unittest.TestCase):

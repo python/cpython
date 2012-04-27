@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14605: No longer have implicit entries in sys.meta_path. If
+  sys.meta_path is found to be empty, raise ImportWarning.
+
 - Issue #14605: No longer have implicit entries in sys.path_hooks. If
   sys.path_hooks is found to be empty, a warning will be raised. If None is
   found in sys.path_importer_cache, a warning is raised and a search on
