@@ -7,15 +7,19 @@ syntax of make rules.
 
 In addition to the dependency syntax, #-comments are supported.
 """
+import errno
 import os
 
 def parse_config(repo):
-    configfile = repo.wjoin(".hgtouch")
-    if not os.path.exists(configfile):
+    try:
+        fp = repo.wfile(".hgtouch")
+    except IOError, e:
+        if e.errno != errno.ENOENT:
+            raise
         return {}
     result = {}
-    with open(configfile) as f:
-        for line in f:
+    with fp:
+        for line in fp:
             # strip comments
             line = line.split('#')[0].strip()
             if ':' not in line:
