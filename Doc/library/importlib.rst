@@ -697,22 +697,30 @@ an :term:`importer`.
     signature taking two positional arguments
     (e.g. ``load_module(self, module)``) for which the second argument
     will be the module **object** to be used by the loader.
-    Note that the decorator
-    will not work on static methods because of the assumption of two
-    arguments.
+    Note that the decorator will not work on static methods because of the
+    assumption of two arguments.
 
     The decorated method will take in the **name** of the module to be loaded
     as expected for a :term:`loader`. If the module is not found in
     :data:`sys.modules` then a new one is constructed with its
-    :attr:`__name__` attribute set. Otherwise the module found in
-    :data:`sys.modules` will be passed into the method. If an
-    exception is raised by the decorated method and a module was added to
+    :attr:`__name__` attribute set to **name**, :attr:`__loader__` set to
+    **self**, and :attr:`__package__` set if
+    :meth:`importlib.abc.InspectLoader.is_package` is defined for **self** and
+    does not raise :exc:`ImportError` for **name**. If a new module is not
+    needed then the module found in :data:`sys.modules` will be passed into the
+    method.
+
+    If an exception is raised by the decorated method and a module was added to
     :data:`sys.modules` it will be removed to prevent a partially initialized
     module from being in left in :data:`sys.modules`. If the module was already
     in :data:`sys.modules` then it is left alone.
 
     Use of this decorator handles all the details of which module object a
-    loader should initialize as specified by :pep:`302`.
+    loader should initialize as specified by :pep:`302` as best as possible.
+
+    .. versionchanged:: 3.3
+      :attr:`__loader__` and :attr:`__package__` are automatically set
+      (when possible).
 
 .. decorator:: set_loader
 
@@ -721,6 +729,12 @@ an :term:`importer`.
     attribute on loaded modules. If the attribute is already set the decorator
     does nothing. It is assumed that the first positional argument to the
     wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set to.
+
+   .. note::
+
+      It is recommended that :func:`module_for_loader` be used over this
+      decorator as it subsumes this functionality.
+
 
 .. decorator:: set_package
 
@@ -736,3 +750,7 @@ an :term:`importer`.
     attribute set and thus can be used by global level code during
     initialization.
 
+   .. note::
+
+      It is recommended that :func:`module_for_loader` be used over this
+      decorator as it subsumes this functionality.
