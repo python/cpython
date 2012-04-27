@@ -126,7 +126,7 @@ class ThreadedImportTests(unittest.TestCase):
 
     def test_parallel_meta_path(self):
         finder = Finder()
-        sys.meta_path.append(finder)
+        sys.meta_path.insert(0, finder)
         try:
             self.check_parallel_module_init()
             self.assertGreater(finder.numcalls, 0)
