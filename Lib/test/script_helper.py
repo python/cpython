@@ -1,6 +1,7 @@
 # Common utility functions used by various script execution tests
 #  e.g. test_cmd_line, test_cmd_line_script and test_runpy
 
+import importlib
 import sys
 import os
 import os.path
@@ -93,6 +94,7 @@ def make_script(script_dir, script_basename, source):
     script_file = open(script_name, 'w', encoding='utf-8')
     script_file.write(source)
     script_file.close()
+    importlib.invalidate_caches()
     return script_name
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
