@@ -532,6 +532,7 @@ SHA512_hexdigest(SHAobject *self, PyObject *unused)
         c = (digest[i] & 0xf);
         hex_digest[j++] = Py_hexdigits[c];
     }
+    assert(_PyUnicode_CheckConsistency(retval, 1));
     return retval;
 }
 

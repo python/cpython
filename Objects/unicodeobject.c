@@ -967,7 +967,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     PyObject *obj;
     PyCompactUnicodeObject *unicode;
     void *data;
-    int kind_state;
+    enum PyUnicode_Kind kind;
     int is_sharing, is_ascii;
     Py_ssize_t char_size;
     Py_ssize_t struct_size;
@@ -986,17 +986,17 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     is_sharing = 0;
     struct_size = sizeof(PyCompactUnicodeObject);
     if (maxchar < 128) {
-        kind_state = PyUnicode_1BYTE_KIND;
+        kind = PyUnicode_1BYTE_KIND;
         char_size = 1;
         is_ascii = 1;
         struct_size = sizeof(PyASCIIObject);
     }
     else if (maxchar < 256) {
-        kind_state = PyUnicode_1BYTE_KIND;
+        kind = PyUnicode_1BYTE_KIND;
         char_size = 1;
     }
     else if (maxchar < 65536) {
-        kind_state = PyUnicode_2BYTE_KIND;
+        kind = PyUnicode_2BYTE_KIND;
         char_size = 2;
         if (sizeof(wchar_t) == 2)
             is_sharing = 1;
@@ -1007,7 +1007,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
                             "invalid maximum character passed to PyUnicode_New");
             return NULL;
         }
-        kind_state = PyUnicode_4BYTE_KIND;
+        kind = PyUnicode_4BYTE_KIND;
         char_size = 4;
         if (sizeof(wchar_t) == 4)
             is_sharing = 1;
@@ -1041,7 +1041,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     _PyUnicode_LENGTH(unicode) = size;
     _PyUnicode_HASH(unicode) = -1;
     _PyUnicode_STATE(unicode).interned = 0;
-    _PyUnicode_STATE(unicode).kind = kind_state;
+    _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ready = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
@@ -1049,19 +1049,19 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         ((char*)data)[size] = 0;
         _PyUnicode_WSTR(unicode) = NULL;
     }
-    else if (kind_state == PyUnicode_1BYTE_KIND) {
+    else if (kind == PyUnicode_1BYTE_KIND) {
         ((char*)data)[size] = 0;
         _PyUnicode_WSTR(unicode) = NULL;
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
         unicode->utf8 = NULL;
         unicode->utf8_length = 0;
-        }
+    }
     else {
         unicode->utf8 = NULL;
         unicode->utf8_length = 0;
-        if (kind_state == PyUnicode_2BYTE_KIND)
+        if (kind == PyUnicode_2BYTE_KIND)
             ((Py_UCS2*)data)[size] = 0;
-        else /* kind_state == PyUnicode_4BYTE_KIND */
+        else /* kind == PyUnicode_4BYTE_KIND */
             ((Py_UCS4*)data)[size] = 0;
         if (is_sharing) {
             _PyUnicode_WSTR_LENGTH(unicode) = size;
@@ -1072,6 +1072,13 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
             _PyUnicode_WSTR(unicode) = NULL;
         }
     }
+#ifdef Py_DEBUG
+    /* Fill the data with invalid characters to detect bugs earlier.
+       _PyUnicode_CheckConsistency(str, 1) detects invalid characters,
+       at least for ASCII and UCS-4 strings. U+00FF is invalid in ASCII
+       and U+FFFFFFFF is an invalid character in Unicode 6.0. */
+    memset(data, 0xff, size * kind);
+#endif
     assert(_PyUnicode_CheckConsistency((PyObject*)unicode, 0));
     return obj;
 }
