@@ -1337,6 +1337,10 @@ TAGS::
 	etags Include/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
 
+# Touch generated files
+touch:
+	hg --config extensions.touch=Tools/hg/hgtouch.py touch -v
+
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes as well
 pycremoval:
@@ -1445,7 +1449,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean
-.PHONY: smelly funny patchcheck
+.PHONY: smelly funny patchcheck touch
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
