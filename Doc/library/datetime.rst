@@ -1524,11 +1524,18 @@ EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 .. seealso::
 
    `pytz <http://pypi.python.org/pypi/pytz/>`_
-      The Standard Library has no :class:`tzinfo` instances except for UTC, but
-      it exists a third-party library which brings Olson timezone database to
-      Python: `pytz`.
+      The standard library has no :class:`tzinfo` instances except for UTC, but
+      there exists a third-party library which brings the *IANA timezone
+      database* (also known as the Olson database) to Python: *pytz*.
 
-      `pytz` contains up-to-date information and its usage is recommended.
+      *pytz* contains up-to-date information and its usage is recommended.
+
+   `IANA timezone database <http://www.iana.org/time-zones>`_
+      The Time Zone Database (often called tz or zoneinfo) contains code and
+      data that represent the history of local time for many representative
+      locations around the globe. It is updated periodically to reflect changes
+      made by political bodies to time zone boundaries, UTC offsets, and
+      daylight-saving rules.
 
 .. _strftime-strptime-behavior:
 
