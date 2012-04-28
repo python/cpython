@@ -141,6 +141,8 @@ The module defines the following functions and data items:
 
    Return the resolution (precision) of the specified clock *clk_id*.
 
+   Availability: Unix.
+
    .. versionadded:: 3.3
 
 
@@ -148,12 +150,16 @@ The module defines the following functions and data items:
 
    Return the time of the specified clock *clk_id*.
 
+   Availability: Unix.
+
    .. versionadded:: 3.3
 
 
 .. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.
+
+   Availability: Unix.
 
    .. versionadded:: 3.3
 
@@ -164,6 +170,8 @@ The module defines the following functions and data items:
    hardware source, and may give close to nanosecond resolution. CLOCK_HIGHRES
    is the nonadjustable, high-resolution clock.
 
+   Availability: Solaris.
+
    .. versionadded:: 3.3
 
 
@@ -171,6 +179,8 @@ The module defines the following functions and data items:
 
    Clock that cannot be set and represents monotonic time since some
    unspecified starting point.
+
+   Availability: Unix.
 
    .. versionadded:: 3.3
 
@@ -189,6 +199,8 @@ The module defines the following functions and data items:
 
    High-resolution per-process timer from the CPU.
 
+   Availability: Unix.
+
    .. versionadded:: 3.3
 
 
@@ -197,12 +209,16 @@ The module defines the following functions and data items:
    System-wide real-time clock. Setting this clock requires appropriate
    privileges.
 
+   Availability: Unix.
+
    .. versionadded:: 3.3
 
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
    Thread-specific CPU-time clock.
+
+   Availability: Unix.
 
    .. versionadded:: 3.3
 
