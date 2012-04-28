@@ -2378,7 +2378,7 @@ Files have the following methods:
    make a :keyword:`for` loop the most efficient way of looping over the lines of a
    file (a very common operation), the :meth:`~file.next` method uses a hidden read-ahead
    buffer.  As a consequence of using a read-ahead buffer, combining :meth:`~file.next`
-   with other file methods (like :meth:`readline`) does not work right.  However,
+   with other file methods (like :meth:`~file.readline`) does not work right.  However,
    using :meth:`seek` to reposition the file to an absolute position will flush the
    read-ahead buffer.
 
@@ -2420,7 +2420,7 @@ Files have the following methods:
 
 .. method:: file.readlines([sizehint])
 
-   Read until EOF using :meth:`readline` and return a list containing the lines
+   Read until EOF using :meth:`~file.readline` and return a list containing the lines
    thus read.  If the optional *sizehint* argument is present, instead of
    reading up to EOF, whole lines totalling approximately *sizehint* bytes
    (possibly after rounding up to an internal buffer size) are read.  Objects
@@ -2500,7 +2500,7 @@ Files have the following methods:
    add line separators.)
 
 Files support the iterator protocol.  Each iteration returns the same result as
-``file.readline()``, and iteration ends when the :meth:`readline` method returns
+:meth:`~file.readline`, and iteration ends when the :meth:`~file.readline` method returns
 an empty string.
 
 File objects also offer a number of other interesting attributes. These are not
