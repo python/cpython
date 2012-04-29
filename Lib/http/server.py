@@ -518,7 +518,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         specified as subsequent arguments (it's just like
         printf!).
 
-        The client host and current date/time are prefixed to
+        The client ip and current date/time are prefixed to
         every message.
 
         """
