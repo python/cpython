@@ -167,18 +167,20 @@ def lru_cache(maxsize=100, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
+    # Constants shared by all lru cache instances:
+    kwd_mark = (object(),)   # separate positional and keyword args
+    sentinel = object()      # unique object used to signal cache misses
+    _len = len               # localize the global len() function
+    PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
+
     def decorating_function(user_function):
 
         cache = {}
         hits = misses = 0
-        kwd_mark = (object(),)   # separate positional and keyword args
         cache_get = cache.get    # bound method to lookup a key or return None
-        sentinel = object()      # unique object used with cache_get
-        _len = len               # localize the global len() function
         lock = Lock()            # because linkedlist updates aren't threadsafe
         root = []                # root of the circular doubly linked list
         root[:] = [root, root, None, None]     # initialize by pointing to self
-        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
 
         def make_key(args, kwds, typed, tuple=tuple, sorted=sorted, type=type):
             # build a cache key from positional and keyword args
