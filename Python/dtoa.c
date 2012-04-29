@@ -265,6 +265,16 @@ typedef union { double d; ULong L[2]; } U;
 #define Big0 (Frac_mask1 | Exp_msk1*(DBL_MAX_EXP+Bias-1))
 #define Big1 0xffffffff
 
+/* Standard NaN used by _Py_dg_stdnan. */
+
+#define NAN_WORD0 0x7ff80000
+#define NAN_WORD1 0
+
+/* Bits of the representation of positive infinity. */
+
+#define POSINF_WORD0 0x7ff00000
+#define POSINF_WORD1 0
+
 /* struct BCinfo is used to pass information from _Py_dg_strtod to bigcomp */
 
 typedef struct BCinfo BCinfo;
@@ -1486,6 +1496,36 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     return 0;
 }
 
+/* Return a 'standard' NaN value.
+
+   There are exactly two quiet NaNs that don't arise by 'quieting' signaling
+   NaNs (see IEEE 754-2008, section 6.2.1).  If sign == 0, return the one whose
+   sign bit is cleared.  Otherwise, return the one whose sign bit is set.
+*/
+
+double
+_Py_dg_stdnan(int sign)
+{
+    U rv;
+    word0(&rv) = NAN_WORD0;
+    word1(&rv) = NAN_WORD1;
+    if (sign)
+        word0(&rv) |= Sign_bit;
+    return dval(&rv);
+}
+
+/* Return positive or negative infinity, according to the given sign (0 for
+ * positive infinity, 1 for negative infinity). */
+
+double
+_Py_dg_infinity(int sign)
+{
+    U rv;
+    word0(&rv) = POSINF_WORD0;
+    word1(&rv) = POSINF_WORD1;
+    return sign ? -dval(&rv) : dval(&rv);
+}
+
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
@@ -1886,20 +1926,20 @@ _Py_dg_strtod(const char *s00, char **se)
         bd2++;
 
         /* At this stage bd5 - bb5 == e == bd2 - bb2 + bbe, bb2 - bs2 == 1,
-	   and bs == 1, so:
+           and bs == 1, so:
 
               tdv == bd * 10**e = bd * 2**(bbe - bb2 + bd2) * 5**(bd5 - bb5)
               srv == bb * 2**bbe = bb * 2**(bbe - bb2 + bb2)
-	      0.5 ulp(srv) == 2**(bbe-1) = bs * 2**(bbe - bb2 + bs2)
+              0.5 ulp(srv) == 2**(bbe-1) = bs * 2**(bbe - bb2 + bs2)
 
-	   It follows that:
+           It follows that:
 
               M * tdv = bd * 2**bd2 * 5**bd5
               M * srv = bb * 2**bb2 * 5**bb5
               M * 0.5 ulp(srv) = bs * 2**bs2 * 5**bb5
 
-	   for some constant M.  (Actually, M == 2**(bb2 - bbe) * 5**bb5, but
-	   this fact is not needed below.)
+           for some constant M.  (Actually, M == 2**(bb2 - bbe) * 5**bb5, but
+           this fact is not needed below.)
         */
 
         /* Remove factor of 2**i, where i = min(bb2, bd2, bs2). */

@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14521: Make result of float('nan') and float('-nan') more
+  consistent across platforms.
+
 - Issue #14646: __import__() sets __loader__ if the loader did not.
 
 - Issue #14605: No longer have implicit entries in sys.meta_path. If
