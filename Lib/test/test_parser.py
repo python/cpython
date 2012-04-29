@@ -150,6 +150,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@funcattrs()\n"
                          "def f(): pass")
 
+        # keyword-only arguments
+        self.check_suite("def f(*, a): pass")
+        self.check_suite("def f(*, a = 5): pass")
+        self.check_suite("def f(*, a = 5, b): pass")
+        self.check_suite("def f(*, a, b = 5): pass")
+        self.check_suite("def f(*, a, b = 5, **kwds): pass")
+        self.check_suite("def f(*args, a): pass")
+        self.check_suite("def f(*args, a = 5): pass")
+        self.check_suite("def f(*args, a = 5, b): pass")
+        self.check_suite("def f(*args, a, b = 5): pass")
+        self.check_suite("def f(*args, a, b = 5, **kwds): pass")
+
+        # function annotations
+        self.check_suite("def f(a: int): pass")
+        self.check_suite("def f(a: int = 5): pass")
+        self.check_suite("def f(*args: list): pass")
+        self.check_suite("def f(**kwds: dict): pass")
+        self.check_suite("def f(*, a: int): pass")
+        self.check_suite("def f(*, a: int = 5): pass")
+        self.check_suite("def f() -> int: pass")
+
     def test_class_defs(self):
         self.check_suite("class foo():pass")
         self.check_suite("class foo(object):pass")

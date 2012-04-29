@@ -84,6 +84,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9154: Fix parser module to understand function annotations.
+
 - Issue #6085: In http.server.py SimpleHTTPServer.address_string returns the
   client ip address instead client hostname. Patch by Charles-François Natali.
 
