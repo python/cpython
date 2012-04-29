@@ -57,9 +57,9 @@ def flush():
     sys.stdout.flush()
 
 def doit(L):
-    t0 = time.clock()
+    t0 = time.perf_counter()
     L.sort()
-    t1 = time.clock()
+    t1 = time.perf_counter()
     print("%6.2f" % (t1-t0), end=' ')
     flush()
 
