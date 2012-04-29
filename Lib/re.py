@@ -69,7 +69,10 @@ resulting RE will match the second character.
              In string patterns without the ASCII flag, it will match the whole
              range of Unicode digits.
     \D       Matches any non-digit character; equivalent to [^\d].
-    \s       Matches any whitespace character; equivalent to [ \t\n\r\f\v].
+    \s       Matches any whitespace character; equivalent to [ \t\n\r\f\v] in
+             bytes patterns or string patterns with the ASCII flag.
+             In string patterns without the ASCII flag, it will match the whole
+             range of Unicode whitespace characters.
     \S       Matches any non-whitespace character; equiv. to [^ \t\n\r\f\v].
     \w       Matches any alphanumeric character; equivalent to [a-zA-Z0-9_]
              in bytes patterns or string patterns with the ASCII flag.
