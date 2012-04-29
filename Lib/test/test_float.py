@@ -870,6 +870,19 @@ class InfNanTest(unittest.TestCase):
         self.assertFalse(NAN.is_inf())
         self.assertFalse((0.).is_inf())
 
+    def test_inf_signs(self):
+        self.assertEqual(copysign(1.0, float('inf')), 1.0)
+        self.assertEqual(copysign(1.0, float('-inf')), -1.0)
+
+    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
+                         "applies only when using short float repr style")
+    def test_nan_signs(self):
+        # When using the dtoa.c code, the sign of float('nan') should
+        # be predictable.
+        self.assertEqual(copysign(1.0, float('nan')), 1.0)
+        self.assertEqual(copysign(1.0, float('-nan')), -1.0)
+
+
 fromHex = float.fromhex
 toHex = float.hex
 class HexFloatTestCase(unittest.TestCase):
