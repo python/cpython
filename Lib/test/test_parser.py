@@ -57,6 +57,16 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "    if (yield):\n"
                          "        yield x\n")
 
+    def test_nonlocal_statement(self):
+        self.check_suite("def f():\n"
+                         "    x = 0\n"
+                         "    def g():\n"
+                         "        nonlocal x\n")
+        self.check_suite("def f():\n"
+                         "    x = y = 0\n"
+                         "    def g():\n"
+                         "        nonlocal x, y\n")
+
     def test_expressions(self):
         self.check_expr("foo(1)")
         self.check_expr("[1, 2, 3]")
