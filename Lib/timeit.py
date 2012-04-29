@@ -15,8 +15,8 @@ Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 3)
   -s/--setup S: statement to be executed once initially (default 'pass')
-  -t/--time: use time.time() (default on Unix)
-  -c/--clock: use time.clock() (default on Windows)
+  -t/--time: use time.time()
+  -c/--clock: use time.clock()
   -v/--verbose: print raw timing results; repeat for more digits precision
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
@@ -66,13 +66,7 @@ __all__ = ["Timer"]
 dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 3
-
-if sys.platform == "win32":
-    # On Windows, the best timer is time.clock()
-    default_timer = time.clock
-else:
-    # On most other platforms the best timer is time.time()
-    default_timer = time.time
+default_timer = time.perf_counter
 
 # Don't change the indentation of the template; the reindent() calls
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
