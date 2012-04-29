@@ -124,7 +124,7 @@ Ascending and Descending
 ========================
 
 Both :meth:`list.sort` and :func:`sorted` accept a *reverse* parameter with a
-boolean value. This is using to flag descending sorts. For example, to get the
+boolean value. This is used to flag descending sorts. For example, to get the
 student data in reverse *age* order:
 
     >>> sorted(student_tuples, key=itemgetter(2), reverse=True)
