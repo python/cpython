@@ -1426,8 +1426,8 @@ Loading and running tests
    The :class:`TestLoader` class is used to create test suites from classes and
    modules.  Normally, there is no need to create an instance of this class; the
    :mod:`unittest` module provides an instance that can be shared as
-   ``unittest.defaultTestLoader``. Using a subclass or instance, however, allows
-   customization of some configurable properties.
+   :data:`unittest.defaultTestLoader`.  Using a subclass or instance, however,
+   allows customization of some configurable properties.
 
    :class:`TestLoader` objects have the following methods:
 
