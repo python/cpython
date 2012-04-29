@@ -84,6 +84,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14696: Fix parser module to understand 'nonlocal' declarations.
+
+- Issue #10941: Fix imaplib.Internaldate2tuple to produce correct result near
+  the DST transition.  Patch by Joe Peterson.
+
 - Issue #9154: Fix parser module to understand function annotations.
 
 - Issue #6085: In http.server.py SimpleHTTPServer.address_string returns the
