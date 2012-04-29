@@ -56,6 +56,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9154: Fix parser module to understand function annotations.
+
 - Issue #14664: It is now possible to use @unittest.skip{If,Unless} on a
   test class that doesn't inherit from TestCase (i.e. a mixin).
 
