@@ -489,6 +489,15 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertRaises(client.LineTooLong, resp.read)
 
+    def test_early_eof(self):
+        # Test httpresponse with no \r\n termination,
+        body = "HTTP/1.1 200 Ok"
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.read(), b'')
+        self.assertTrue(resp.isclosed())
+
 class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEqual(client.responses[client.NOT_FOUND], "Not Found")
