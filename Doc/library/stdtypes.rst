@@ -2459,7 +2459,7 @@ copying.
       bytearray(b'z123fg')
       >>> v[2:3] = b'spam'
       Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
+        File "<stdin>", line 1, in <module>
       ValueError: memoryview assignment: lvalue and rvalue have different structures
       >>> v[2:6] = b'spam'
       >>> data
