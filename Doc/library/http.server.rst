@@ -248,7 +248,7 @@ of which this module provides three different variants:
       to create custom error logging mechanisms. The *format* argument is a
       standard printf-style format string, where the additional arguments to
       :meth:`log_message` are applied as inputs to the formatting. The client
-      address and current date and time are prefixed to every message logged.
+      ip address and current date and time are prefixed to every message logged.
 
    .. method:: version_string()
 
