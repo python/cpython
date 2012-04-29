@@ -22,10 +22,24 @@ typedef struct {
 } _PyTime_timeval;
 #endif
 
+/* Structure used by time.get_clock_info() */
+typedef struct {
+    const char *implementation;
+    int is_monotonic;
+    int is_adjusted;
+    double resolution;
+} _Py_clock_info_t;
+
 /* Similar to POSIX gettimeofday but cannot fail.  If system gettimeofday
  * fails or is not available, fall back to lower resolution clocks.
  */
 PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
+
+/* Similar to _PyTime_gettimeofday() but retrieve also information on the
+ * clock used to get the current time. */
+PyAPI_FUNC(void) _PyTime_gettimeofday_info(
+    _PyTime_timeval *tp,
+    _Py_clock_info_t *info);
 
 #define _PyTime_ADD_SECONDS(tv, interval) \
 do { \
