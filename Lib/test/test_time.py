@@ -389,58 +389,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(info.is_monotonic, True)
         self.assertEqual(info.is_adjusted, False)
 
-    @unittest.skipUnless(threading,
-                         'need threading')
-    def test_process_time_threads(self):
-        def factorial(n):
-            if n >= 2:
-                return n * factorial(n-1)
-            else:
-                return 1
-
-        def use_cpu(n, loops):
-            for loop in range(loops):
-                factorial(n)
-
-        class FactorialThread(threading.Thread):
-            def __init__(self, n, loops):
-                threading.Thread.__init__(self)
-                self.n = n
-                self.loops = loops
-
-            def run(self):
-                use_cpu(self.n, self.loops)
-
-        # Calibrate use_cpu() to use at least 1 ms of system time
-        n = 50
-        loops = 1
-        resolution = time.get_clock_info('process_time').resolution
-        min_rdt = max(resolution, 0.001)
-        while 1:
-            rt1 = time.time()
-            t1 = time.process_time()
-            use_cpu(n, loops)
-            t2 = time.process_time()
-            rt2 = time.time()
-            rdt = rt2 - rt1
-            if rdt >= min_rdt:
-                break
-            loops *= 2
-        busy = t2 - t1
-
-        # Ensure that time.process_time() includes the CPU time of all threads
-        thread = FactorialThread(n, loops)
-        t1 = time.process_time()
-        thread.start()
-        # Use sleep() instead of thread.join() because thread.join() time may
-        # be included in time.process_time() depending on its implementation
-        time.sleep(rdt * 2)
-        t2 = time.process_time()
-        thread.stop = True
-        thread.join()
-        # Use a factor of 0.75 because time.process_time() is maybe not precise
-        self.assertGreaterEqual(t2 - t1, busy * 0.75)
-
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
