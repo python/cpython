@@ -14,8 +14,6 @@ from _imp import (lock_held, acquire_lock, release_lock, reload,
 from _imp import get_magic, get_tag
 # Can (probably) move to importlib
 from _imp import get_suffixes
-# Should be re-implemented here (and mostly deprecated)
-from _imp import NullImporter
 
 from importlib._bootstrap import _new_module as new_module
 from importlib._bootstrap import _cache_from_source as cache_from_source
@@ -58,6 +56,21 @@ def source_from_cache(path):
                          '{!r}'.format(pycache_filename))
     base_filename = pycache_filename.partition('.')[0]
     return os.path.join(head, base_filename + _bootstrap.SOURCE_SUFFIXES[0])
+
+
+class NullImporter:
+
+    """Null import object."""
+
+    def __init__(self, path):
+        if path == '':
+            raise ImportError('empty pathname', path='')
+        elif os.path.isdir(path):
+            raise ImportError('existing directory', path=path)
+
+    def find_module(self, fullname):
+        """Always returns None."""
+        return None
 
 
 class _HackedGetData:

@@ -889,9 +889,6 @@ class SizeofTest(unittest.TestCase):
         # _ast.AST
         import _ast
         check(_ast.AST(), size(h + 'P'))
-        # imp.NullImporter
-        import imp
-        check(imp.NullImporter(self.file.name), size(h + ''))
         try:
             raise TypeError
         except TypeError:
