@@ -84,6 +84,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14696: Fix parser module to understand 'nonlocal' declarations.
+
 - Issue #10941: Fix imaplib.Internaldate2tuple to produce correct result near
   the DST transition.  Patch by Joe Peterson.
 
