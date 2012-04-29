@@ -269,8 +269,11 @@ of which this module provides three different variants:
 
    .. method:: address_string()
 
-      Returns the client address, formatted for logging. A name lookup is
-      performed on the client's IP address.
+      Returns the client address.
+
+      .. versionchanged:: 3.3
+         Previously, a name lookup was performed. To avoid name resolution
+         delays, it now always returns the IP address.
 
 
 .. class:: SimpleHTTPRequestHandler(request, client_address, server)
