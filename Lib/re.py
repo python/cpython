@@ -73,7 +73,7 @@ resulting RE will match the second character.
              bytes patterns or string patterns with the ASCII flag.
              In string patterns without the ASCII flag, it will match the whole
              range of Unicode whitespace characters.
-    \S       Matches any non-whitespace character; equiv. to [^ \t\n\r\f\v].
+    \S       Matches any non-whitespace character; equivalent to [^\s].
     \w       Matches any alphanumeric character; equivalent to [a-zA-Z0-9_]
              in bytes patterns or string patterns with the ASCII flag.
              In string patterns without the ASCII flag, it will match the
