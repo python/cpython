@@ -11,7 +11,7 @@ import socketserver
 import time
 import calendar
 
-from test.support import reap_threads, verbose, transient_internet
+from test.support import reap_threads, verbose, transient_internet, run_with_tz
 import unittest
 
 try:
@@ -35,6 +35,13 @@ class TestImaplib(unittest.TestCase):
         tt = imaplib.Internaldate2tuple(
             b'25 (INTERNALDATE "31-Dec-1999 12:30:00 -1130")')
         self.assertEqual(time.mktime(tt), t0)
+
+    @run_with_tz('MST+07MDT,M4.1.0,M10.5.0')
+    def test_Internaldate2tuple_issue10941(self):
+        self.assertNotEqual(imaplib.Internaldate2tuple(
+            b'25 (INTERNALDATE "02-Apr-2000 02:30:00 +0000")'),
+                            imaplib.Internaldate2tuple(
+            b'25 (INTERNALDATE "02-Apr-2000 03:30:00 +0000")'))
 
     def test_that_Time2Internaldate_returns_a_result(self):
         # We can check only that it successfully produces a result,
