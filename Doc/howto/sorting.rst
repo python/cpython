@@ -42,7 +42,7 @@ lists. In contrast, the :func:`sorted` function accepts any iterable.
 Key Functions
 =============
 
-Both :meth:`list.sort` and :func:`sorted` have *key* parameter to specify a
+Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
 function to be called on each list element prior to making comparisons.
 
 For example, here's a case-insensitive string comparison:
@@ -89,7 +89,7 @@ Operator Module Functions
 The key-function patterns shown above are very common, so Python provides
 convenience functions to make accessor functions easier and faster. The
 :mod:`operator` module has :func:`~operator.itemgetter`,
-:func:`~operator.attrgetter`, and an :func:`~operator.methodcaller` function.
+:func:`~operator.attrgetter`, and a :func:`~operator.methodcaller` function.
 
 Using those functions, the above examples become simpler and faster:
 
@@ -114,7 +114,7 @@ Ascending and Descending
 ========================
 
 Both :meth:`list.sort` and :func:`sorted` accept a *reverse* parameter with a
-boolean value. This is using to flag descending sorts. For example, to get the
+boolean value. This is used to flag descending sorts. For example, to get the
 student data in reverse *age* order:
 
     >>> sorted(student_tuples, key=itemgetter(2), reverse=True)
