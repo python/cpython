@@ -938,6 +938,7 @@ static int validate_terminal(node *terminal, int type, char *string);
 #define validate_doublestar(ch) validate_terminal(ch, DOUBLESTAR, "**")
 #define validate_dot(ch)        validate_terminal(ch,        DOT, ".")
 #define validate_at(ch)         validate_terminal(ch,         AT, "@")
+#define validate_rarrow(ch)     validate_terminal(ch,     RARROW, "->")
 #define validate_name(ch, str)  validate_terminal(ch,       NAME, str)
 
 #define VALIDATER(n)    static int validate_##n(node *tree)
@@ -1226,68 +1227,68 @@ validate_vfpdef(node *tree)
     return 0;
 }
 
-/* '*' vfpdef (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef
+/* '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef
  * ..or tfpdef in place of vfpdef. vfpdef: NAME; tfpdef: NAME [':' test]
  */
 static int
 validate_varargslist_trailer(node *tree, int start)
 {
     int nch = NCH(tree);
-    int res = 0, i;
-    int sym;
+    int res = 0;
 
     if (nch <= start) {
         err_string("expected variable argument trailer for varargslist");
         return 0;
     }
-    sym = TYPE(CHILD(tree, start));
-    if (sym == STAR) {
+    if (TYPE(CHILD(tree, start)) == STAR) {
         /*
-         * '*' vfpdef (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef
+         * '*' [vfpdef]
          */
-        if (nch-start == 2)
-            res = validate_vfpdef(CHILD(tree, start+1));
-        else if (nch-start == 5 && TYPE(CHILD(tree, start+2)) == COMMA)
-            res = (validate_vfpdef(CHILD(tree, start+1))
-                   && validate_comma(CHILD(tree, start+2))
-                   && validate_doublestar(CHILD(tree, start+3))
-                   && validate_vfpdef(CHILD(tree, start+4)));
+        res = validate_star(CHILD(tree, start++));
+        if (res && start < nch && (TYPE(CHILD(tree, start)) == vfpdef ||
+                                   TYPE(CHILD(tree, start)) == tfpdef))
+            res = validate_vfpdef(CHILD(tree, start++));
+        /*
+         * (',' vfpdef ['=' test])*
+         */
+        while (res && start + 1 < nch && (
+                   TYPE(CHILD(tree, start + 1)) == vfpdef ||
+                   TYPE(CHILD(tree, start + 1)) == tfpdef)) {
+            res = (validate_comma(CHILD(tree, start++))
+                   && validate_vfpdef(CHILD(tree, start++)));
+            if (res && start + 1 < nch && TYPE(CHILD(tree, start)) == EQUAL)
+                res = (validate_equal(CHILD(tree, start++))
+                       && validate_test(CHILD(tree, start++)));
+        }
+        /*
+         * [',' '**' vfpdef]
+         */
+        if (res && start + 2 < nch && TYPE(CHILD(tree, start+1)) == DOUBLESTAR)
+            res = (validate_comma(CHILD(tree, start++))
+                   && validate_doublestar(CHILD(tree, start++))
+                   && validate_vfpdef(CHILD(tree, start++)));
+    }
+    else if (TYPE(CHILD(tree, start)) == DOUBLESTAR) {
+        /*
+         * '**' vfpdef
+         */
+        if (start + 1 < nch)
+            res = (validate_doublestar(CHILD(tree, start++))
+                   && validate_vfpdef(CHILD(tree, start++)));
         else {
-            /* skip over vfpdef (',' vfpdef ['=' test])*  */
-            i = start + 1;
-            if (TYPE(CHILD(tree, i)) == vfpdef ||
-                TYPE(CHILD(tree, i)) == tfpdef) { /* skip over vfpdef or tfpdef */
-                i += 1;
-            }
-            while (res && i+1 < nch) { /* validate  (',' vfpdef ['=' test])* */
-                res = validate_comma(CHILD(tree, i));
-                if (TYPE(CHILD(tree, i+1)) == DOUBLESTAR)
-                    break;
-                res = res && validate_vfpdef(CHILD(tree, i+1));
-                if (res && i+2 < nch && TYPE(CHILD(tree, i+2)) == EQUAL) {
-                    res = res && (i+3 < nch)
-                          && validate_test(CHILD(tree, i+3));
-                    i += 4;
-                }
-                else {
-                    i += 2;
-                }
-            }
-            /* [',' '**' vfpdef] */
-            if (res && i+1 < nch && TYPE(CHILD(tree, i+1)) == DOUBLESTAR) {
-                res = validate_vfpdef(CHILD(tree, i+2));
-            }
+            res = 0;
+            err_string("expected vfpdef after ** in varargslist trailer");
         }
     }
-    else if (sym == DOUBLESTAR) {
-        /*
-         *  '**' NAME
-         */
-        if (nch-start == 2)
-            res = validate_vfpdef(CHILD(tree, start+1));
+    else {
+        res = 0;
+        err_string("expected * or ** in varargslist trailer");
     }
-    if (!res)
-        err_string("illegal variable argument trailer for varargslist");
+
+    if (res && start != nch) {
+        res = 0;
+        err_string("unexpected extra children in varargslist trailer");
+    }
     return res;
 }
 
@@ -2495,23 +2496,36 @@ validate_with_stmt(node *tree)
     return ok;
 }
 
-/*  funcdef:
- *
- *     -5   -4         -3  -2    -1
- *  'def' NAME parameters ':' suite
- */
+/* funcdef: 'def' NAME parameters ['->' test] ':' suite */
+
 static int
 validate_funcdef(node *tree)
 {
     int nch = NCH(tree);
-    int ok = (validate_ntype(tree, funcdef)
-               && (nch == 5)
-               && validate_name(RCHILD(tree, -5), "def")
-               && validate_ntype(RCHILD(tree, -4), NAME)
-               && validate_colon(RCHILD(tree, -2))
-               && validate_parameters(RCHILD(tree, -3))
-               && validate_suite(RCHILD(tree, -1)));
-    return ok;
+    int res = validate_ntype(tree, funcdef);
+    if (res) {
+        if (nch == 5) {
+            res = (validate_name(CHILD(tree, 0), "def")
+                   && validate_ntype(CHILD(tree, 1), NAME)
+                   && validate_parameters(CHILD(tree, 2))
+                   && validate_colon(CHILD(tree, 3))
+                   && validate_suite(CHILD(tree, 4)));
+        }
+        else if (nch == 7) {
+            res = (validate_name(CHILD(tree, 0), "def")
+                   && validate_ntype(CHILD(tree, 1), NAME)
+                   && validate_parameters(CHILD(tree, 2))
+                   && validate_rarrow(CHILD(tree, 3))
+                   && validate_test(CHILD(tree, 4))
+                   && validate_colon(CHILD(tree, 5))
+                   && validate_suite(CHILD(tree, 6)));
+        }
+        else {
+            res = 0;
+            err_string("illegal number of children for funcdef");
+        }
+    }
+    return res;
 }
 
 
