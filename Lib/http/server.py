@@ -508,13 +508,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         specified as subsequent arguments (it's just like
         printf!).
 
-        The client host and current date/time are prefixed to
+        The client ip and current date/time are prefixed to
         every message.
 
         """
 
         sys.stderr.write("%s - - [%s] %s\n" %
-                         (self.address_string(),
+                         (self.client_address[0],
                           self.log_date_time_string(),
                           format%args))
 
