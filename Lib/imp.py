@@ -6,7 +6,7 @@ functionality over this module.
 
 """
 # (Probably) need to stay in _imp
-from _imp import (lock_held, acquire_lock, release_lock, reload,
+from _imp import (lock_held, acquire_lock, release_lock,
                   load_dynamic, get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
                   _fix_co_filename)
@@ -207,3 +207,34 @@ def find_module(name, path=None):
             encoding = tokenize.detect_encoding(file.readline)[0]
     file = open(file_path, mode, encoding=encoding)
     return file, file_path, (suffix, mode, type_)
+
+
+_RELOADING = {}
+
+def reload(module):
+    """Reload the module and return it.
+
+    The module must have been successfully imported before.
+
+    """
+    if not module or type(module) != type(sys):
+        raise TypeError("reload() argument must be module")
+    name = module.__name__
+    if name not in sys.modules:
+        msg = "module {} not in sys.modules"
+        raise ImportError(msg.format(name), name=name)
+    if name in _RELOADING:
+        return _RELOADING[name]
+    _RELOADING[name] = module
+    try:
+        parent_name = name.rpartition('.')[0]
+        if parent_name and parent_name not in sys.modules:
+            msg = "parent {!r} not in sys.modules"
+            raise ImportError(msg.format(parentname), name=parent_name)
+        return module.__loader__.load_module(name)
+    finally:
+        try:
+            del _RELOADING[name]
+        except KeyError:
+            pass
+

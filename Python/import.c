@@ -410,14 +410,6 @@ _PyImport_Fini(void)
 #endif
 }
 
-static void
-imp_modules_reloading_clear(void)
-{
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    if (interp->modules_reloading != NULL)
-        PyDict_Clear(interp->modules_reloading);
-}
-
 /* Helper for sys */
 
 PyObject *
@@ -575,7 +567,6 @@ PyImport_Cleanup(void)
     PyDict_Clear(modules);
     interp->modules = NULL;
     Py_DECREF(modules);
-    Py_CLEAR(interp->modules_reloading);
 }
 
 
@@ -1783,87 +1774,23 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    PyObject *modules_reloading = interp->modules_reloading;
+    _Py_IDENTIFIER(reload);
+    PyObject *reloaded_module = NULL;
     PyObject *modules = PyImport_GetModuleDict();
-    PyObject *loader = NULL, *existing_m = NULL;
-    PyObject *name;
-    Py_ssize_t subname_start;
-    PyObject *newm = NULL;
-    _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(load_module);
-
-    if (modules_reloading == NULL) {
-        Py_FatalError("PyImport_ReloadModule: "
-                      "no modules_reloading dictionary!");
-        return NULL;
-    }
-
-    if (m == NULL || !PyModule_Check(m)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "reload() argument must be module");
-        return NULL;
-    }
-    name = PyModule_GetNameObject(m);
-    if (name == NULL || PyUnicode_READY(name) == -1)
-        return NULL;
-    if (m != PyDict_GetItem(modules, name)) {
-        PyErr_Format(PyExc_ImportError,
-                     "reload(): module %R not in sys.modules",
-                     name);
-        Py_DECREF(name);
-        return NULL;
-    }
-    existing_m = PyDict_GetItem(modules_reloading, name);
-    if (existing_m != NULL) {
-        /* Due to a recursive reload, this module is already
-           being reloaded. */
-        Py_DECREF(name);
-        Py_INCREF(existing_m);
-        return existing_m;
-    }
-    if (PyDict_SetItem(modules_reloading, name, m) < 0) {
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    subname_start = PyUnicode_FindChar(name, '.', 0,
-                                       PyUnicode_GET_LENGTH(name), -1);
-    if (subname_start != -1) {
-        PyObject *parentname, *parent;
-        parentname = PyUnicode_Substring(name, 0, subname_start);
-        if (parentname == NULL) {
-            goto error;
-        }
-        parent = PyDict_GetItem(modules, parentname);
-        Py_XDECREF(parent);
-        if (parent == NULL) {
-            PyErr_Format(PyExc_ImportError,
-                "reload(): parent %R not in sys.modules",
-                 parentname);
-            goto error;
+    PyObject *imp = PyDict_GetItemString(modules, "imp");
+    if (imp == NULL) {
+        imp = PyImport_ImportModule("imp");
+        if (imp == NULL) {
+            return NULL;
         }
     }
-
-    loader = _PyObject_GetAttrId(m, &PyId___loader__);
-    if (loader == NULL) {
-        goto error;
-    }
-    newm = _PyObject_CallMethodId(loader, &PyId_load_module, "O", name);
-    Py_DECREF(loader);
-    if (newm == NULL) {
-        /* load_module probably removed name from modules because of
-         * the error.  Put back the original module object.  We're
-         * going to return NULL in this case regardless of whether
-         * replacing name succeeds, so the return value is ignored.
-         */
-        PyDict_SetItem(modules, name, m);
+    else {
+        Py_INCREF(imp);
     }
 
-error:
-    imp_modules_reloading_clear();
-    Py_DECREF(name);
-    return newm;
+    reloaded_module = _PyObject_CallMethodId(imp, &PyId_reload, "O", m);
+    Py_DECREF(imp);
+    return reloaded_module;
 }
 
 
@@ -2160,17 +2087,6 @@ imp_load_dynamic(PyObject *self, PyObject *args)
 
 #endif /* HAVE_DYNAMIC_LOADING */
 
-static PyObject *
-imp_reload(PyObject *self, PyObject *v)
-{
-    return PyImport_ReloadModule(v);
-}
-
-PyDoc_STRVAR(doc_reload,
-"reload(module) -> module\n\
-\n\
-Reload the module.  The module must have been successfully imported before.");
-
 
 /* Doc strings */
 
@@ -2214,7 +2130,6 @@ static PyMethodDef imp_methods[] = {
     {"lock_held",        imp_lock_held,    METH_NOARGS,  doc_lock_held},
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
-    {"reload",       imp_reload,       METH_O,       doc_reload},
     {"get_frozen_object",       imp_get_frozen_object,  METH_VARARGS},
     {"is_frozen_package",   imp_is_frozen_package,  METH_VARARGS},
     {"init_builtin",            imp_init_builtin,       METH_VARARGS},
