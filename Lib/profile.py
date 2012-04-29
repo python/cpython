@@ -83,26 +83,6 @@ def runctx(statement, globals, locals, filename=None, sort=-1):
     else:
         return prof.print_stats(sort)
 
-if hasattr(os, "times"):
-    def _get_time_times(timer=os.times):
-        t = timer()
-        return t[0] + t[1]
-
-# Using getrusage(3) is better than clock(3) if available:
-# on some systems (e.g. FreeBSD), getrusage has a higher resolution
-# Furthermore, on a POSIX system, returns microseconds, which
-# wrap around after 36min.
-_has_res = 0
-try:
-    import resource
-    resgetrusage = lambda: resource.getrusage(resource.RUSAGE_SELF)
-    def _get_time_resource(timer=resgetrusage):
-        t = timer()
-        return t[0] + t[1]
-    _has_res = 1
-except ImportError:
-    pass
-
 class Profile:
     """Profiler class.
 
@@ -155,20 +135,8 @@ class Profile:
         self.bias = bias     # Materialize in local dict for lookup speed.
 
         if not timer:
-            if _has_res:
-                self.timer = resgetrusage
-                self.dispatcher = self.trace_dispatch
-                self.get_time = _get_time_resource
-            elif hasattr(time, 'clock'):
-                self.timer = self.get_time = time.clock
-                self.dispatcher = self.trace_dispatch_i
-            elif hasattr(os, 'times'):
-                self.timer = os.times
-                self.dispatcher = self.trace_dispatch
-                self.get_time = _get_time_times
-            else:
-                self.timer = self.get_time = time.time
-                self.dispatcher = self.trace_dispatch_i
+            self.timer = self.get_time = time.process_time
+            self.dispatcher = self.trace_dispatch_i
         else:
             self.timer = timer
             t = self.timer() # test out timer function

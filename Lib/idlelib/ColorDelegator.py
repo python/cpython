@@ -149,9 +149,9 @@ class ColorDelegator(Delegator):
             self.stop_colorizing = False
             self.colorizing = True
             if DEBUG: print("colorizing...")
-            t0 = time.clock()
+            t0 = time.perf_counter()
             self.recolorize_main()
-            t1 = time.clock()
+            t1 = time.perf_counter()
             if DEBUG: print("%.3f seconds" % (t1-t0))
         finally:
             self.colorizing = False

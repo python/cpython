@@ -6,16 +6,12 @@
 #
 
 import time
-import sys
 import multiprocessing
 import threading
 import queue
 import gc
 
-if sys.platform == 'win32':
-    _timer = time.clock
-else:
-    _timer = time.time
+_timer = time.perf_counter
 
 delta = 1
 
