@@ -205,9 +205,6 @@ _PyImportHooks_Init(void)
     PyObject *v, *path_hooks = NULL;
     int err = 0;
 
-    if (PyType_Ready(&PyNullImporter_Type) < 0)
-        goto error;
-
     /* adding sys.path_hooks and sys.path_importer_cache */
     v = PyList_New(0);
     if (v == NULL)
@@ -231,8 +228,7 @@ _PyImportHooks_Init(void)
   error:
     PyErr_Print();
     Py_FatalError("initializing sys.meta_path, sys.path_hooks, "
-                  "path_importer_cache, or NullImporter failed"
-                  );
+                  "or path_importer_cache");
     }
     Py_DECREF(path_hooks);
 }
@@ -284,7 +280,7 @@ _PyImportZip_Init(void)
 
   error:
     PyErr_Print();
-    Py_FatalError("initializing zipimport or NullImporter failed");
+    Py_FatalError("initializing zipimport failed");
 }
 
 /* Locking primitives to prevent parallel imports of the same module
@@ -2244,134 +2240,6 @@ setint(PyObject *d, char *name, int value)
     return err;
 }
 
-typedef struct {
-    PyObject_HEAD
-} NullImporter;
-
-static int
-NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
-{
-#ifndef MS_WINDOWS
-    PyObject *path;
-    struct stat statbuf;
-    int rv;
-
-    if (!_PyArg_NoKeywords("NullImporter()", kwds))
-        return -1;
-
-    if (!PyArg_ParseTuple(args, "O&:NullImporter",
-                          PyUnicode_FSConverter, &path))
-        return -1;
-
-    if (PyBytes_GET_SIZE(path) == 0) {
-        Py_DECREF(path);
-        PyErr_SetString(PyExc_ImportError, "empty pathname");
-        return -1;
-    }
-
-    rv = stat(PyBytes_AS_STRING(path), &statbuf);
-    Py_DECREF(path);
-    if (rv == 0) {
-        /* it exists */
-        if (S_ISDIR(statbuf.st_mode)) {
-            /* it's a directory */
-            PyErr_SetString(PyExc_ImportError, "existing directory");
-            return -1;
-        }
-    }
-#else /* MS_WINDOWS */
-    PyObject *pathobj;
-    DWORD rv;
-    wchar_t *path;
-
-    if (!_PyArg_NoKeywords("NullImporter()", kwds))
-        return -1;
-
-    if (!PyArg_ParseTuple(args, "U:NullImporter",
-                          &pathobj))
-        return -1;
-
-    if (PyUnicode_GET_LENGTH(pathobj) == 0) {
-        PyErr_SetString(PyExc_ImportError, "empty pathname");
-        return -1;
-    }
-
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (path == NULL)
-        return -1;
-    /* see issue1293 and issue3677:
-     * stat() on Windows doesn't recognise paths like
-     * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
-     */
-    rv = GetFileAttributesW(path);
-    PyMem_Free(path);
-    if (rv != INVALID_FILE_ATTRIBUTES) {
-        /* it exists */
-        if (rv & FILE_ATTRIBUTE_DIRECTORY) {
-            /* it's a directory */
-            PyErr_SetString(PyExc_ImportError, "existing directory");
-            return -1;
-        }
-    }
-#endif
-    return 0;
-}
-
-static PyObject *
-NullImporter_find_module(NullImporter *self, PyObject *args)
-{
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef NullImporter_methods[] = {
-    {"find_module", (PyCFunction)NullImporter_find_module, METH_VARARGS,
-     "Always return None"
-    },
-    {NULL}  /* Sentinel */
-};
-
-
-PyTypeObject PyNullImporter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "imp.NullImporter",        /*tp_name*/
-    sizeof(NullImporter),      /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    0,                         /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_reserved*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "Null importer object",    /* tp_doc */
-    0,                             /* tp_traverse */
-    0,                             /* tp_clear */
-    0,                             /* tp_richcompare */
-    0,                             /* tp_weaklistoffset */
-    0,                             /* tp_iter */
-    0,                             /* tp_iternext */
-    NullImporter_methods,      /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NullImporter_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    PyType_GenericNew          /* tp_new */
-};
-
 static struct PyModuleDef impmodule = {
     PyModuleDef_HEAD_INIT,
     "_imp",
@@ -2388,9 +2256,6 @@ PyMODINIT_FUNC
 PyInit_imp(void)
 {
     PyObject *m, *d;
-
-    if (PyType_Ready(&PyNullImporter_Type) < 0)
-        return NULL;
 
     m = PyModule_Create(&impmodule);
     if (m == NULL)
@@ -2410,8 +2275,6 @@ PyInit_imp(void)
     if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
     if (setint(d, "IMP_HOOK", IMP_HOOK) < 0) goto failure;
 
-    Py_INCREF(&PyNullImporter_Type);
-    PyModule_AddObject(m, "NullImporter", (PyObject *)&PyNullImporter_Type);
     return m;
   failure:
     Py_XDECREF(m);
