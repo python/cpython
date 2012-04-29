@@ -438,7 +438,8 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.process_time()
         thread.stop = True
         thread.join()
-        self.assertGreaterEqual(t2 - t1, busy)
+        # Use a factor of 0.75 because time.process_time() is maybe not precise
+        self.assertGreaterEqual(t2 - t1, busy * 0.75)
 
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
