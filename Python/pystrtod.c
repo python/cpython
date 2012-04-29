@@ -22,6 +22,43 @@ case_insensitive_match(const char *s, const char *t)
    the successfully parsed portion of the string.  On failure, return -1.0 and
    set *endptr to point to the start of the string. */
 
+#ifndef PY_NO_SHORT_FLOAT_REPR
+
+double
+_Py_parse_inf_or_nan(const char *p, char **endptr)
+{
+    double retval;
+    const char *s;
+    int negate = 0;
+
+    s = p;
+    if (*s == '-') {
+        negate = 1;
+        s++;
+    }
+    else if (*s == '+') {
+        s++;
+    }
+    if (case_insensitive_match(s, "inf")) {
+        s += 3;
+        if (case_insensitive_match(s, "inity"))
+            s += 5;
+        retval = _Py_dg_infinity(negate);
+    }
+    else if (case_insensitive_match(s, "nan")) {
+        s += 3;
+        retval = _Py_dg_stdnan(negate);
+    }
+    else {
+        s = p;
+        retval = -1.0;
+    }
+    *endptr = (char *)s;
+    return retval;
+}
+
+#else
+
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
 {
@@ -56,6 +93,8 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
     *endptr = (char *)s;
     return retval;
 }
+
+#endif
 
 /**
  * _PyOS_ascii_strtod:
