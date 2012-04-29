@@ -1027,12 +1027,16 @@ def run_with_locale(catstr, *locales):
 def run_with_tz(tz):
     def decorator(func):
         def inner(*args, **kwds):
+            try:
+                tzset = time.tzset
+            except AttributeError:
+                raise unittest.SkipTest("tzset required")
             if 'TZ' in os.environ:
                 orig_tz = os.environ['TZ']
             else:
                 orig_tz = None
             os.environ['TZ'] = tz
-            time.tzset()
+            tzset()
 
             # now run the function, resetting the tz on exceptions
             try:
