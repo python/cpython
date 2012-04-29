@@ -557,7 +557,7 @@ class HTTPResponse(io.RawIOBase):
                 # a vanishingly small number of sites EOF without
                 # sending the trailer
                 break
-            if line == b"\r\n":
+            if line in (b'\r\n', b'\n', b''):
                 break
 
     def _readall_chunked(self):
@@ -789,7 +789,7 @@ class HTTPConnection:
             if not line:
                 # for sites which EOF without sending a trailer
                 break
-            if line == b'\r\n':
+            if line in (b'\r\n', b'\n', b''):
                 break
 
     def connect(self):
