@@ -278,7 +278,7 @@ The special characters are:
    lookbehind will back up 3 characters and check if the contained pattern matches.
    The contained pattern must only match strings of some fixed length, meaning that
    ``abc`` or ``a|b`` are allowed, but ``a*`` and ``a{3,4}`` are not.  Note that
-   patterns which start with positive lookbehind assertions will never match at the
+   patterns which start with positive lookbehind assertions will not match at the
    beginning of the string being searched; you will most likely want to use the
    :func:`search` function rather than the :func:`match` function:
 
