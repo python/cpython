@@ -26,7 +26,6 @@ typedef struct _is {
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *importlib;
-    PyObject *modules_reloading;
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
