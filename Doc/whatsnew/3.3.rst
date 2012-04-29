@@ -1059,13 +1059,21 @@ sys
 time
 ----
 
-The :mod:`time` module has new functions:
+The :pep:`418` added new functions to the :mod:`time` module:
 
-* :func:`~time.clock_getres` and :func:`~time.clock_gettime` functions and
-  ``CLOCK_xxx`` constants.
-* :func:`~time.steady`.
+* :func:`~time.get_clock_info`: Get information on a clock.
+* :func:`~time.monotonic`: Monotonic clock (cannot go backward), not affected
+  by system clock updates.
+* :func:`~time.perf_counter`: Performance counter with the highest available
+  resolution to measure a short duration.
+* :func:`~time.process_time`: Sum of the system and user CPU time of the
+  current process.
 
-(Contributed by Victor Stinner in :issue:`10278`)
+Other new functions:
+
+* :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
+  :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
+  (Contributed by Victor Stinner in :issue:`10278`)
 
 
 types

@@ -18,8 +18,8 @@
 extern int ftime(struct timeb *);
 #endif
 
-void
-_PyTime_gettimeofday(_PyTime_timeval *tp)
+static void
+pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
     FILETIME system_time;
@@ -35,6 +35,20 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
     microseconds = large.QuadPart / 10 - 11644473600000000;
     tp->tv_sec = microseconds / 1000000;
     tp->tv_usec = microseconds % 1000000;
+    if (info) {
+        DWORD timeAdjustment, timeIncrement;
+        BOOL isTimeAdjustmentDisabled;
+
+        info->implementation = "GetSystemTimeAsFileTime()";
+        info->is_monotonic = 0;
+        (void) GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
+                                       &isTimeAdjustmentDisabled);
+        info->resolution = timeIncrement * 1e-7;
+        if (isTimeAdjustmentDisabled)
+            info->is_adjusted = 0;
+        else
+            info->is_adjusted = 1;
+    }
 #else
     /* There are three ways to get the time:
       (1) gettimeofday() -- resolution in microseconds
@@ -46,14 +60,22 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
       Note: clock resolution does not imply clock accuracy! */
 
 #ifdef HAVE_GETTIMEOFDAY
+    int err;
 #ifdef GETTIMEOFDAY_NO_TZ
-    if (gettimeofday(tp) == 0)
+    err = gettimeofday(tp);
+#else
+    err = gettimeofday(tp, (struct timezone *)NULL);
+#endif
+    if (err == 0) {
+        if (info) {
+            info->implementation = "gettimeofday()";
+            info->resolution = 1e-6;
+            info->is_monotonic = 0;
+            info->is_adjusted = 1;
+        }
         return;
-#else /* !GETTIMEOFDAY_NO_TZ */
-    if (gettimeofday(tp, (struct timezone *)NULL) == 0)
-        return;
-#endif /* !GETTIMEOFDAY_NO_TZ */
-#endif /* !HAVE_GETTIMEOFDAY */
+    }
+#endif   /* HAVE_GETTIMEOFDAY */
 
 #if defined(HAVE_FTIME)
     {
@@ -61,13 +83,37 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
         ftime(&t);
         tp->tv_sec = t.time;
         tp->tv_usec = t.millitm * 1000;
+        if (info) {
+            info->implementation = "ftime()";
+            info->resolution = 1e-3;
+            info->is_monotonic = 0;
+            info->is_adjusted = 1;
+        }
     }
 #else /* !HAVE_FTIME */
     tp->tv_sec = time(NULL);
     tp->tv_usec = 0;
+    if (info) {
+        info->implementation = "time()";
+        info->resolution = 1.0;
+        info->is_monotonic = 0;
+        info->is_adjusted = 1;
+    }
 #endif /* !HAVE_FTIME */
 
 #endif /* MS_WINDOWS */
+}
+
+void
+_PyTime_gettimeofday(_PyTime_timeval *tp)
+{
+    pygettimeofday(tp, NULL);
+}
+
+void
+_PyTime_gettimeofday_info(_PyTime_timeval *tp, _Py_clock_info_t *info)
+{
+    pygettimeofday(tp, info);
 }
 
 static void
