@@ -417,6 +417,9 @@ accepted by the regular expression parser::
    \r      \t      \v      \x
    \\
 
+(Note that ``\b`` is used to represent word boundaries, and means "backspace"
+only inside character classes.)
+
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
 a group reference.  As for string literals, octal escapes are always at most
