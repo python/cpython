@@ -1188,6 +1188,9 @@ Deprecated Python modules, functions and methods
   the ANSI code page anymore and to support any filename.
 * :issue:`13988`: The :mod:`xml.etree.cElementTree` module is deprecated.  The
   accelerator is used automatically whenever available.
+* The behaviour of :func:`time.clock` depends on the platform: use the new
+  :func:`time.perf_counter` or :func:`time.process_time` function instead,
+  depending on your requirements, to have a well defined behaviour.
 
 
 Deprecated functions and types of the C API

@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14309: Deprecate time.clock(), use time.perf_counter() or
+  time.process_time() instead.
+
 - Issue #14428: Implement the PEP 418. Add time.get_clock_info(),
   time.perf_counter() and time.process_time() functions, and rename
   time.steady() to time.monotonic().
