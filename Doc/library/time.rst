@@ -155,6 +155,30 @@ The module defines the following functions and data items:
    .. versionadded:: 3.3
 
 
+.. class:: clock_info
+
+   Clock information object created by :func:`get_clock_info`.
+
+   .. attribute:: implementation
+
+      name of the underlying C function used to get the clock value
+
+   .. attribute::  is_monotonic
+
+      ``True`` if the clock cannot go backward, ``False`` otherwise
+
+   .. attribute:: is_adjusted
+
+      ``True`` if the clock can be adjusted (e.g. by a NTP daemon),
+      ``False`` otherwise
+
+   .. attribute:: resolution
+
+      Resolution of the clock in seconds (:class:`float`)
+
+   .. versionadded:: 3.3
+
+
 .. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.
@@ -236,6 +260,22 @@ The module defines the following functions and data items:
    Nonzero if a DST timezone is defined.
 
 
+.. function:: get_clock_info(name)
+
+   Get information on the specified clock as a :class:`clock_info` object.
+
+   Supported clock names:
+
+
+    * ``'clock'``: :func:`time.clock`
+    * ``'monotonic'``: :func:`time.monotonic`
+    * ``'perf_counter'``: :func:`time.perf_counter`
+    * ``'process_time'``: :func:`time.process_time`
+    * ``'time'``: :func:`time.time`
+
+   .. versionadded:: 3.3
+
+
 .. function:: gmtime([secs])
 
    Convert a time expressed in seconds since the epoch to a :class:`struct_time` in
@@ -265,20 +305,43 @@ The module defines the following functions and data items:
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: steady(strict=False)
+.. function:: monotonic()
 
-   .. index::
-      single: benchmarking
+   Monotonic clock, i.e. cannot go backward.  It is not affected by system
+   clock updates.  The reference point of the returned value is undefined, so
+   that only the difference between the results of consecutive calls is valid
+   and is a number of seconds.
 
-   Return the current time as a floating point number expressed in seconds.
-   This clock advances at a steady rate relative to real time and it may not be
-   adjusted. The reference point of the returned value is undefined so only the
-   difference of consecutive calls is valid.
+   On Windows versions older than Vista, :func:`monotonic` detects
+   :c:func:`GetTickCount` integer overflow (32 bits, roll-over after 49.7
+   days).  It increases an internal epoch (reference time by) 2\ :sup:`32` each
+   time that an overflow is detected.  The epoch is stored in the process-local
+   state and so the value of :func:`monotonic` may be different in two Python
+   processes running for more than 49 days. On more recent versions of Windows
+   and on other operating systems, :func:`monotonic` is system-wide.
 
-   If available, a monotonic clock is used. By default,
-   the function falls back to another clock if the monotonic clock failed or is
-   not available. If *strict* is True, raise an :exc:`OSError` on error or
-   :exc:`NotImplementedError` if no monotonic clock is available.
+   Availability: Windows, Mac OS X, Linux, FreeBSD, OpenBSD, Solaris.
+
+   .. versionadded:: 3.3
+
+
+.. function:: perf_counter()
+
+   Performance counter with the highest available resolution to measure a short
+   duration.  It does include time elapsed during sleep and is system-wide.
+   The reference point of the returned value is undefined, so that only the
+   difference between the results of consecutive calls is valid and is a number
+   of seconds.
+
+   .. versionadded:: 3.3
+
+
+.. function:: process_time()
+
+   Sum of the system and user CPU time of the current process. It does not
+   include time elapsed during sleep. It is process-wide by definition.  The
+   reference point of the returned value is undefined, so that only the
+   difference between the results of consecutive calls is valid.
 
    .. versionadded:: 3.3
 

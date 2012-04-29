@@ -5,6 +5,10 @@ import locale
 import sysconfig
 import sys
 import platform
+try:
+    import threading
+except ImportError:
+    threading = None
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -23,8 +27,19 @@ class TimeTestCase(unittest.TestCase):
         time.timezone
         time.tzname
 
+    def test_time(self):
+        time.time()
+        info = time.get_clock_info('time')
+        self.assertEqual(info.is_monotonic, False)
+        if sys.platform != 'win32':
+            self.assertEqual(info.is_adjusted, True)
+
     def test_clock(self):
         time.clock()
+
+        info = time.get_clock_info('clock')
+        self.assertEqual(info.is_monotonic, True)
+        self.assertEqual(info.is_adjusted, False)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -56,7 +71,9 @@ class TimeTestCase(unittest.TestCase):
         except PermissionError:
             pass
 
-        self.assertRaises(OSError, time.clock_settime, time.CLOCK_MONOTONIC, 0)
+        if hasattr(time, 'CLOCK_MONOTONIC'):
+            self.assertRaises(OSError,
+                              time.clock_settime, time.CLOCK_MONOTONIC, 0)
 
     def test_conversions(self):
         self.assertEqual(time.ctime(self.t),
@@ -342,23 +359,69 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    def test_steady(self):
-        t1 = time.steady()
+    @unittest.skipUnless(hasattr(time, 'monotonic'),
+                         'need time.monotonic')
+    def test_monotonic(self):
+        t1 = time.monotonic()
         time.sleep(0.1)
-        t2 = time.steady()
+        t2 = time.monotonic()
         dt = t2 - t1
-        # may fail if the system clock was changed
         self.assertGreater(t2, t1)
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
-    def test_steady_strict(self):
+        info = time.get_clock_info('monotonic')
+        self.assertEqual(info.is_monotonic, True)
+        if sys.platform == 'linux':
+            self.assertEqual(info.is_adjusted, True)
+        else:
+            self.assertEqual(info.is_adjusted, False)
+
+    def test_perf_counter(self):
+        time.perf_counter()
+
+    def test_process_time(self):
+        start = time.process_time()
+        time.sleep(0.1)
+        stop = time.process_time()
+        self.assertLess(stop - start, 0.01)
+
+        info = time.get_clock_info('process_time')
+        self.assertEqual(info.is_monotonic, True)
+        self.assertEqual(info.is_adjusted, False)
+
+    @unittest.skipUnless(threading,
+                         'need threading')
+    def test_process_time_threads(self):
+        class BusyThread(threading.Thread):
+            def run(self):
+                while not self.stop:
+                    pass
+
+        thread = BusyThread()
+        thread.stop = False
+        t1 = time.process_time()
+        thread.start()
+        time.sleep(0.2)
+        t2 = time.process_time()
+        thread.stop = True
+        thread.join()
+        self.assertGreater(t2 - t1, 0.1)
+
+    @unittest.skipUnless(hasattr(time, 'monotonic'),
+                         'need time.monotonic')
+    @unittest.skipUnless(hasattr(time, 'clock_settime'),
+                         'need time.clock_settime')
+    def test_monotonic_settime(self):
+        t1 = time.monotonic()
+        realtime = time.clock_gettime(time.CLOCK_REALTIME)
+        # jump backward with an offset of 1 hour
         try:
-            t1 = time.steady(strict=True)
-        except OSError as err:
-            self.skipTest("the monotonic clock failed: %s" % err)
-        except NotImplementedError:
-            self.skipTest("no monotonic clock available")
-        t2 = time.steady(strict=True)
+            time.clock_settime(time.CLOCK_REALTIME, realtime - 3600)
+        except PermissionError as err:
+            self.skipTest(err)
+        t2 = time.monotonic()
+        time.clock_settime(time.CLOCK_REALTIME, realtime)
+        # monotonic must not be affected by system clock updates
         self.assertGreaterEqual(t2, t1)
 
     def test_localtime_failure(self):
@@ -377,6 +440,26 @@ class TimeTestCase(unittest.TestCase):
 
         self.assertRaises(OSError, time.localtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
+
+    def test_get_clock_info(self):
+        clocks = ['clock', 'perf_counter', 'process_time', 'time']
+        if hasattr(time, 'monotonic'):
+            clocks.append('monotonic')
+
+        for name in clocks:
+            info = time.get_clock_info(name)
+            #self.assertIsInstance(info, dict)
+            self.assertIsInstance(info.implementation, str)
+            self.assertNotEqual(info.implementation, '')
+            self.assertIsInstance(info.is_monotonic, bool)
+            self.assertIsInstance(info.resolution, float)
+            # 0.0 < resolution <= 1.0
+            self.assertGreater(info.resolution, 0.0)
+            self.assertLessEqual(info.resolution, 1.0)
+            self.assertIsInstance(info.is_adjusted, bool)
+
+        self.assertRaises(ValueError, time.get_clock_info, 'xxx')
+
 
 class TestLocale(unittest.TestCase):
     def setUp(self):
