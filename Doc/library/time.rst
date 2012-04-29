@@ -136,6 +136,11 @@ The module defines the following functions and data items:
    :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
    microsecond.
 
+   .. deprecated:: 3.3
+      The behaviour of this function depends on the platform: use
+      :func:`perf_counter` or :func:`process_time` instead, depending on your
+      requirements, to have a well defined behaviour.
+
 
 .. function:: clock_getres(clk_id)
 
