@@ -860,16 +860,6 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(str(1e300 * 1e300 * 0), "nan")
         self.assertEqual(str(-1e300 * 1e300 * 0), "nan")
 
-    def notest_float_nan(self):
-        self.assertTrue(NAN.is_nan())
-        self.assertFalse(INF.is_nan())
-        self.assertFalse((0.).is_nan())
-
-    def notest_float_inf(self):
-        self.assertTrue(INF.is_inf())
-        self.assertFalse(NAN.is_inf())
-        self.assertFalse((0.).is_inf())
-
     def test_inf_signs(self):
         self.assertEqual(copysign(1.0, float('inf')), 1.0)
         self.assertEqual(copysign(1.0, float('-inf')), -1.0)
