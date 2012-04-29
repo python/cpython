@@ -447,6 +447,17 @@ request.
    Return the selector --- the part of the URL that is sent to the server.
 
 
+.. method:: Request.get_header(header_name, default=None)
+
+   Return the value of the given header. If the header is not present, return
+   the default value.
+
+
+.. method:: Request.header_items()
+
+   Return a list of tuples (header_name, header_value) of the Request headers.
+
+
 .. method:: Request.set_proxy(host, type)
 
    Prepare the request by connecting to a proxy server. The *host* and *type* will
