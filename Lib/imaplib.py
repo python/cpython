@@ -22,7 +22,7 @@ Public functions:       Internaldate2tuple
 
 __version__ = "2.58"
 
-import binascii, errno, random, re, socket, subprocess, sys, time
+import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 
 try:
     import ssl
@@ -1340,19 +1340,9 @@ def Internaldate2tuple(resp):
         zone = -zone
 
     tt = (year, mon, day, hour, min, sec, -1, -1, -1)
+    utc = calendar.timegm(tt) - zone
 
-    utc = time.mktime(tt)
-
-    # Following is necessary because the time module has no 'mkgmtime'.
-    # 'mktime' assumes arg in local timezone, so adds timezone/altzone.
-
-    lt = time.localtime(utc)
-    if time.daylight and lt[-1]:
-        zone = zone + time.altzone
-    else:
-        zone = zone + time.timezone
-
-    return time.localtime(utc - zone)
+    return time.localtime(utc)
 
 
 
