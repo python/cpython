@@ -558,15 +558,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     def address_string(self):
-        """Return the client address formatted for logging.
+        """Return the client address."""
 
-        This version looks up the full hostname using gethostbyaddr(),
-        and tries to find a name that contains at least one dot.
-
-        """
-
-        host, port = self.client_address[:2]
-        return socket.getfqdn(host)
+        return self.client_address[0]
 
     # Essentially static class variables
 
@@ -1040,9 +1034,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         env['SCRIPT_NAME'] = scriptname
         if query:
             env['QUERY_STRING'] = query
-        host = self.address_string()
-        if host != self.client_address[0]:
-            env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
         authorization = self.headers.get("authorization")
         if authorization:
