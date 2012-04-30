@@ -42,7 +42,10 @@ my_fgets(char *buf, int len, FILE *fp)
             (void)(PyOS_InputHook)();
         errno = 0;
         clearerr(fp);
-        p = fgets(buf, len, fp);
+        if (_PyVerify_fd(fileno(fp)))
+            p = fgets(buf, len, fp);
+        else
+            p = NULL;
         if (p != NULL)
             return 0; /* No error */
         err = errno;

@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14433: Prevent msvcrt crash in interactive prompt when stdin
+  is closed.
+  
 - Issue #14521: Make result of float('nan') and float('-nan') more
   consistent across platforms.
 
