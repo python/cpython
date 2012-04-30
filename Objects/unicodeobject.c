@@ -14051,20 +14051,16 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 }
             }
             /* Copy all characters, preserving len */
-            if (temp != NULL) {
-                assert(pbuf == PyUnicode_DATA(temp));
-                v = PyUnicode_Substring(temp, pindex, pindex + len);
+            if (pindex == 0 && len == PyUnicode_GET_LENGTH(temp)) {
+                r = _PyAccu_Accumulate(&acc, temp);
             }
             else {
-                const char *p = (const char *) pbuf;
-                assert(pbuf != NULL);
-                p += kind * pindex;
-                v = PyUnicode_FromKindAndData(kind, p, len);
+                v = PyUnicode_Substring(temp, pindex, pindex + len);
+                if (v == NULL)
+                    goto onError;
+                r = _PyAccu_Accumulate(&acc, v);
+                Py_DECREF(v);
             }
-            if (v == NULL)
-                goto onError;
-            r = _PyAccu_Accumulate(&acc, v);
-            Py_DECREF(v);
             if (r)
                 goto onError;
             if (width > len && repeat_accumulate(&acc, blank, width - len))
