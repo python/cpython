@@ -6986,8 +6986,6 @@ PyUnicode_DecodeASCII(const char *s,
     v = PyUnicode_New(size, 127);
     if (v == NULL)
         goto onError;
-    if (size == 0)
-        return v;
     kind = PyUnicode_KIND(v);
     data = PyUnicode_DATA(v);
     outpos = 0;
@@ -13856,19 +13854,21 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                                 "incomplete format");
                 goto onError;
             }
-            if (c != '%') {
-                v = getnextarg(args, arglen, &argidx);
-                if (v == NULL)
-                    goto onError;
+
+            if (c == '%') {
+                _PyAccu_Accumulate(&acc, percent);
+                continue;
             }
+
+
+            v = getnextarg(args, arglen, &argidx);
+            if (v == NULL)
+                goto onError;
+
             sign = 0;
             fill = ' ';
             fillobj = blank;
             switch (c) {
-
-            case '%':
-                _PyAccu_Accumulate(&acc, percent);
-                continue;
 
             case 's':
             case 'r':
@@ -13884,26 +13884,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                         temp = PyObject_Repr(v);
                     else
                         temp = PyObject_ASCII(v);
-                    if (temp == NULL)
-                        goto onError;
-                    if (PyUnicode_Check(temp))
-                        /* nothing to do */;
-                    else {
-                        Py_DECREF(temp);
-                        PyErr_SetString(PyExc_TypeError,
-                                        "%s argument has non-string str()");
-                        goto onError;
-                    }
                 }
-                if (PyUnicode_READY(temp) == -1) {
-                    Py_CLEAR(temp);
-                    goto onError;
-                }
-                pbuf = PyUnicode_DATA(temp);
-                kind = PyUnicode_KIND(temp);
-                len = PyUnicode_GET_LENGTH(temp);
-                if (prec >= 0 && len > prec)
-                    len = prec;
                 break;
 
             case 'i':
@@ -13926,18 +13907,9 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                     if (iobj!=NULL) {
                         if (PyLong_Check(iobj)) {
                             isnumok = 1;
+                            sign = 1;
                             temp = formatlong(iobj, flags, prec, (c == 'i'? 'd': c));
                             Py_DECREF(iobj);
-                            if (!temp)
-                                goto onError;
-                            if (PyUnicode_READY(temp) == -1) {
-                                Py_CLEAR(temp);
-                                goto onError;
-                            }
-                            pbuf = PyUnicode_DATA(temp);
-                            kind = PyUnicode_KIND(temp);
-                            len = PyUnicode_GET_LENGTH(temp);
-                            sign = 1;
                         }
                         else {
                             Py_DECREF(iobj);
@@ -13962,21 +13934,12 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             case 'F':
             case 'g':
             case 'G':
-                temp = formatfloat(v, flags, prec, c);
-                if (!temp)
-                    goto onError;
-                if (PyUnicode_READY(temp) == -1) {
-                    Py_CLEAR(temp);
-                    goto onError;
-                }
-                pbuf = PyUnicode_DATA(temp);
-                kind = PyUnicode_KIND(temp);
-                len = PyUnicode_GET_LENGTH(temp);
                 sign = 1;
                 if (flags & F_ZERO) {
                     fill = '0';
                     fillobj = zero;
                 }
+                temp = formatfloat(v, flags, prec, c);
                 break;
 
             case 'c':
@@ -13985,11 +13948,6 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 if (ch == (Py_UCS4) -1)
                     goto onError;
                 temp = _PyUnicode_FromUCS4(&ch, 1);
-                if (temp == NULL)
-                    goto onError;
-                pbuf = PyUnicode_DATA(temp);
-                kind = PyUnicode_KIND(temp);
-                len = PyUnicode_GET_LENGTH(temp);
                 break;
             }
 
@@ -14002,6 +13960,22 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                              fmtpos - 1);
                 goto onError;
             }
+            if (temp == NULL)
+                goto onError;
+            assert (PyUnicode_Check(temp));
+            if (PyUnicode_READY(temp) == -1) {
+                Py_CLEAR(temp);
+                goto onError;
+            }
+            kind = PyUnicode_KIND(temp);
+            pbuf = PyUnicode_DATA(temp);
+            len = PyUnicode_GET_LENGTH(temp);
+
+            if (c == 's' || c == 'r' || c == 'a') {
+                if (prec >= 0 && len > prec)
+                    len = prec;
+            }
+
             /* pbuf is initialized here. */
             pindex = 0;
             if (sign) {
