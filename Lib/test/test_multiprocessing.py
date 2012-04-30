@@ -2034,7 +2034,14 @@ class _TestPicklingConnections(BaseTestCase):
         address = lconn.recv()
         rconn.send((address, msg))
         new_conn = lconn.recv()
-        self.assertEqual(new_conn.recv(100), msg.upper())
+        buf = []
+        while True:
+            s = new_conn.recv(100)
+            if not s:
+                break
+            buf.append(s)
+        buf = b''.join(buf)
+        self.assertEqual(buf, msg.upper())
         new_conn.close()
 
         lconn.send(None)
