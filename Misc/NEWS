@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #14433: Prevent msvcrt crash in interactive prompt when stdin
+  is closed.
+
 - Issue #11603 (again): Setting __repr__ to __str__ now raises a RuntimeError
   when repr() or str() is called on such an object.
 
