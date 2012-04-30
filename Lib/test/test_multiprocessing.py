@@ -1960,6 +1960,8 @@ class _TestPoll(unittest.TestCase):
 # Test of sending connection and socket objects between processes
 #
 
+# Intermittent fails on Mac OS X -- see Issue14669 and Issue12958
+@unittest.skipIf(sys.platform == "darwin", "fd passing unreliable on Mac OS X")
 @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
 class _TestPicklingConnections(BaseTestCase):
 
