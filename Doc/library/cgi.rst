@@ -86,11 +86,14 @@ produced by :mod:`cgitb` provide information that can save you a lot of time in
 tracking down bugs.  You can always remove the ``cgitb`` line later when you
 have tested your script and are confident that it works correctly.
 
-To get at submitted form data, use the :class:`FieldStorage` class.  Instantiate
-it exactly once, without arguments.  This reads the form contents from standard
-input or the environment (depending on the value of various environment
-variables set according to the CGI standard).  Since it may consume standard
-input, it should be instantiated only once.
+To get at submitted form data, use the :class:`FieldStorage` class. If the form
+contains non-ASCII characters, use the *encoding* keyword parameter set to the
+value of the encoding defined for the document. It is usually contained in the
+META tag in the HEAD section of the HTML document or by the
+:mailheader:`Content-Type` header).  This reads the form contents from the
+standard input or the environment (depending on the value of various
+environment variables set according to the CGI standard).  Since it may consume
+standard input, it should be instantiated only once.
 
 The :class:`FieldStorage` instance can be indexed like a Python dictionary.
 It allows membership testing with the :keyword:`in` operator, and also supports
@@ -136,10 +139,10 @@ commas::
 
 If a field represents an uploaded file, accessing the value via the
 :attr:`value` attribute or the :func:`getvalue` method reads the entire file in
-memory as a string.  This may not be what you want. You can test for an uploaded
+memory as bytes.  This may not be what you want. You can test for an uploaded
 file by testing either the :attr:`filename` attribute or the :attr:`!file`
 attribute.  You can then read the data at leisure from the :attr:`!file`
-attribute::
+attribute (the :func:`read` and :func:`readline` methods will return bytes)::
 
    fileitem = form["userfile"]
    if fileitem.file:
