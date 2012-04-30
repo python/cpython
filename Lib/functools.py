@@ -168,15 +168,14 @@ def lru_cache(maxsize=100, typed=False):
     # to allow the implementation to change (including a possible C version).
 
     # Constants shared by all lru cache instances:
-    kwd_mark = (object(),)   # separate positional and keyword args
-    sentinel = object()      # unique object used to signal cache misses
-    _len = len               # localize the global len() function
+    kwd_mark = (object(),)       # separate positional and keyword args
+    sentinel = object()          # unique object used to signal cache misses
     PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
 
     def decorating_function(user_function):
 
         cache = {}
-        hits = misses = 0
+        hits = misses = currsize = 0
         cache_get = cache.get    # bound method to lookup a key or return None
         lock = Lock()            # because linkedlist updates aren't threadsafe
         root = []                # root of the circular doubly linked list
@@ -209,7 +208,7 @@ def lru_cache(maxsize=100, typed=False):
 
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
-                nonlocal hits, misses
+                nonlocal hits, misses, currsize
                 key = make_key(args, kwds, typed) if kwds or typed else args
                 result = cache_get(key, sentinel)
                 if result is not sentinel:
@@ -218,13 +217,14 @@ def lru_cache(maxsize=100, typed=False):
                 result = user_function(*args, **kwds)
                 cache[key] = result
                 misses += 1
+                currsize += 1
                 return result
 
         else:
 
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
-                nonlocal root, hits, misses
+                nonlocal root, hits, misses, currsize
                 key = make_key(args, kwds, typed) if kwds or typed else args
                 with lock:
                     link = cache_get(key)
@@ -241,11 +241,12 @@ def lru_cache(maxsize=100, typed=False):
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
-                    if _len(cache) < maxsize:
+                    if currsize < maxsize:
                         # put result in a new link at the front of the queue
                         last = root[PREV]
                         link = [last, root, key, result]
                         cache[key] = last[NEXT] = root[PREV] = link
+                        currsize += 1
                     else:
                         # use root to store the new key and result
                         root[KEY] = key
@@ -261,15 +262,15 @@ def lru_cache(maxsize=100, typed=False):
         def cache_info():
             """Report cache statistics"""
             with lock:
-                return _CacheInfo(hits, misses, maxsize, len(cache))
+                return _CacheInfo(hits, misses, maxsize, currsize)
 
         def cache_clear():
             """Clear the cache and cache statistics"""
-            nonlocal hits, misses
+            nonlocal hits, misses, currsize
             with lock:
                 cache.clear()
                 root[:] = [root, root, None, None]
-                hits = misses = 0
+                hits = misses = currsize = 0
 
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
