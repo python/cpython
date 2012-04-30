@@ -452,6 +452,89 @@ new, more precise information::
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
 
+Using importlib as the Implementation of Import
+===============================================
+:issue:`2377` - Replace __import__ w/ importlib.__import__
+:issue:`13959` - Re-implement parts of :mod:`imp` in pure Python
+:issue:`14605` - Make import machinery explicit
+:issue:`14646` - Require loaders set __loader__ and __package__
+
+(Written by Brett Cannon)
+
+The :func:`__import__` function is now powered by :func:`importlib.__import__`.
+This work leads to the completion of "phase 2" of :pep:`302`. There are
+multiple benefits to this change. First, it has allowed for more of the
+machinery powering import to be exposed instead of being implicit and hidden
+within the C code. It also provides a single implementation for all Python VMs
+supporting Python 3.3 to use, helping to end any VM-specific deviations in
+import semantics. And finally it eases the maintenance of import, allowing for
+future growth to occur.
+
+For the common user, this change should result in no visible change in
+semantics. Any possible changes required in one's code to handle this change
+should read the `Porting Python code`_ section of this document to see what
+needs to be changed, but it will only affect those that currently manipulate
+import or try calling it programmatically.
+
+New APIs
+--------
+One of the large benefits of this work is the exposure of what goes into
+making the import statement work. That means the various importers that were
+once implicit are now fully exposed as part of the :mod:`importlib` package.
+
+In terms of finders, * :class:`importlib.machinery.FileFinder` exposes the
+mechanism used to search for source and bytecode files of a module. Previously
+this class was an implicit member of :attr:`sys.path_hooks`.
+
+For loaders, the new abstract base class :class:`importlib.abc.FileLoader` helps
+write a loader that uses the file system as the storage mechanism for a module's
+code. The loader for source files
+(:class:`importlib.machinery.SourceFileLoader`), sourceless bytecode files
+(:class:`importlib.machinery.SourcelessFileLoader`), and extension modules
+(:class:`importlib.machinery.ExtensionFileLoader`) are now available for
+direct use.
+
+:exc:`ImportError` now has ``name`` and ``path`` attributes which are set when
+there is relevant data to provide. The message for failed imports will also
+provide the full name of the module now instead of just the tail end of the
+module's name.
+
+The :func:`importlib.invalidate_caches` function will now call the method with
+the same name on all finders cached in :attr:`sys.path_importer_cache` to help
+clean up any stored state as necessary.
+
+Visible Changes
+---------------
+[For potential required changes to code, see the `Porting Python code`_
+section]
+
+Beyond the expanse of what :mod:`importlib` now exposes, there are other
+visible changes to import. The biggest is that :attr:`sys.meta_path` and
+:attr:`sys.path_hooks` now store all of the finders used by import explicitly.
+Previously the finders were implicit and hidden within the C code of import
+instead of being directly exposed. This means that one can now easily remove or
+change the order of the various finders to fit one's needs.
+
+Another change is that all modules have a ``__loader__`` attribute, storing the
+loader used to create the module. :pep:`302` has been updated to make this
+attribute mandatory for loaders to implement, so in the future once 3rd-party
+loaders have been updated people will be able to rely on the existence of the
+attribute. Until such time, though, import is setting the module post-load.
+
+Loaders are also now expected to set the ``__package__`` attribute from
+:pep:`366`. Once again, import itself is already setting this on all loaders
+from :mod:`importlib` and import itself is setting the attribute post-load.
+
+``None`` is now inserted into :attr:`sys.path_importer_cache` when no finder
+can be found on :attr:`sys.path_hooks`. Since :class:`imp.NullImporter` is not
+directly exposed on :attr:`sys.path_hooks` it could no longer be relied upon to
+always be available to use as a value representing no finder found.
+
+All other changes relate to semantic changes which should be taken into
+consideration when updating code for Python 3.3, and thus should be read about
+in the `Porting Python code`_ section of this document.
+
+
 Other Language Changes
 ======================
 
@@ -1282,6 +1365,45 @@ Porting Python code
   :exc:`OverflowError` is now raised instead of :exc:`ValueError` if a
   timestamp is out of range. :exc:`OSError` is now raised if C functions
   :c:func:`gmtime` or :c:func:`localtime` failed.
+
+* The default finders used by import now utilize a cache of what is contained
+  within a specific directory. If you create a Python source file or sourceless
+  bytecode file, make sure to call :func:`importlib.invalidate_caches` to clear
+  out the cache for the finders to notice the new file.
+
+* :exc:`ImportError` now uses the full name of the module that was attemped to
+  be imported. Doctests that check ImportErrors' message will need to be
+  updated to use the full name of the module instead of just the tail of the
+  name.
+
+* The **index** argument to :func:`__import__` now defaults to 0 instead of -1
+  and no longer support negative values. It was an oversight when :pep:`328` was
+  implemented that the default value remained -1. If you need to continue to
+  perform a relative import followed by an absolute import, then perform the
+  relative import using an index of 1, followed by another import using an
+  index of 0. It is preferred, though, that you use
+  :func:`importlib.import_module` rather than call :func:`__import__` directly.
+
+* :func:`__import__` no longer allows one to use an index value other than 0
+  for top-level modules. E.g. ``__import__('sys', level=1)`` is now an error.
+
+* Because :attr:`sys.meta_path` and :attr:`sys.path_hooks` now have finders on
+  them by default, you will most likely want to use :meth:`list.insert` instead
+  of :meth:`list.append` to add to those lists.
+
+* Because ``None`` is now inserted into :attr:`sys.path_importer_cache`, if you
+  are clearing out entries in the dictionary of paths that do not have a
+  finder, you will need to remove keys paired with values of ``None`` **and**
+  :class:`imp.NullImporter` to be backwards-compatible. This will need to extra
+  overhead on older versions of Python that re-insert ``None`` into
+  :attr:`sys.path_importer_cache` where it repesents the use of implicit
+  finders, but semantically it should not change anything.
+
+* :meth:`importlib.abc.SourceLoader.path_mtime` is now deprecated in favour of
+  :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
+  both the modification time and size of the source file the bytecode file was
+  compiled from.
+
 
 Porting C code
 --------------
