@@ -241,6 +241,12 @@ def lru_cache(maxsize=100, typed=False):
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
+                    if key in cache:
+                        # getting here means that this same key was added to the
+                        # cache while the lock was released.  since the link
+                        # update is already done, we need only return the
+                        # computed result and update the count of misses.
+                        pass
                     if currsize < maxsize:
                         # put result in a new link at the front of the queue
                         last = root[PREV]
