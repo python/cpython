@@ -157,6 +157,20 @@ process and user.
 
    Availability: Unix.
 
+   .. note:: On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      other Unix platforms. If the Python interpreter was built with a
+      deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
+      the list of effective group ids associated with the current user process;
+      this list is limited to a system-defined number of entries, typically 16,
+      and may be modified by calls to :func:`setgroups` if suitably privileged.
+      If built with a deployment target greater than :const:`10.5`,
+      :func:`getgroups` returns the current group access list for the user
+      associated with the effective user id of the process; the group access
+      list may change over the lifetime of the process, it is not affected by
+      calls to :func:`setgroups`, and its length is not limited to 16.  The
+      deployment target value, :const:`MACOSX_DEPLOYMENT_TARGET`, can be
+      obtained with :func:`sysconfig.get_config_var`.
+
 
 .. function:: initgroups(username, gid)
 
@@ -306,6 +320,10 @@ process and user.
 
    .. versionadded:: 2.2
 
+   .. note:: On Mac OS X, the length of *groups* may not exceed the
+      system-defined maximum number of effective group ids, typically 16.
+      See the documentation for :func:`getgroups` for cases where it may not
+      return the same group list set by calling setgroups().
 
 .. function:: setpgrp()
 
