@@ -3,7 +3,8 @@
  *
  * multiprocessing.c
  *
- * Copyright (c) 2006-2008, R Oudkerk --- see COPYING.txt
+ * Copyright (c) 2006-2008, R Oudkerk
+ * Licensed to PSF under a Contributor Agreement.
  */
 
 #include "multiprocessing.h"
