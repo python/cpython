@@ -775,7 +775,6 @@ insertion_resize(PyDictObject *mp)
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
-Eats a reference to key and one to value.
 Returns -1 if an error occurred, or 0 on success.
 */
 static int
@@ -793,20 +792,19 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
 
     ep = mp->ma_keys->dk_lookup(mp, key, hash, &value_addr);
     if (ep == NULL) {
-        Py_DECREF(key);
-        Py_DECREF(value);
         return -1;
     }
+    Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
     old_value = *value_addr;
     if (old_value != NULL) {
         assert(ep->me_key != NULL && ep->me_key != dummy);
         *value_addr = value;
         Py_DECREF(old_value); /* which **CAN** re-enter */
-        Py_DECREF(key);
     }
     else {
         if (ep->me_key == NULL) {
+            Py_INCREF(key);
             if (mp->ma_keys->dk_usable <= 0) {
                 /* Need to resize. */
                 if (insertion_resize(mp) < 0) {
@@ -823,11 +821,11 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         }
         else {
             if (ep->me_key == dummy) {
+                Py_INCREF(key);
                 ep->me_key = key;
                 ep->me_hash = hash;
                 Py_DECREF(dummy);
             } else {
-                Py_DECREF(key);
                 assert(_PyDict_HasSplitTable(mp));
             }
         }
@@ -1184,8 +1182,6 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
         if (hash == -1)
             return -1;
     }
-    Py_INCREF(value);
-    Py_INCREF(key);
 
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
@@ -1702,8 +1698,6 @@ dict_fromkeys(PyObject *cls, PyObject *args)
         }
 
         while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
-            Py_INCREF(key);
-            Py_INCREF(value);
             if (insertdict(mp, key, hash, value)) {
                 Py_DECREF(d);
                 return NULL;
@@ -1724,8 +1718,6 @@ dict_fromkeys(PyObject *cls, PyObject *args)
         }
 
         while (_PySet_NextEntry(seq, &pos, &key, &hash)) {
-            Py_INCREF(key);
-            Py_INCREF(value);
             if (insertdict(mp, key, hash, value)) {
                 Py_DECREF(d);
                 return NULL;
@@ -1932,8 +1924,6 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
             if (value != NULL &&
                 (override ||
                  PyDict_GetItem(a, entry->me_key) == NULL)) {
-                Py_INCREF(entry->me_key);
-                Py_INCREF(value);
                 if (insertdict(mp, entry->me_key,
                                entry->me_hash,
                                value) != 0)
