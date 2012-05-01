@@ -142,6 +142,30 @@ except ImportError:
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
+class _CacheKey(list):
+    'Make a cache key from optionally typed positional and keyword arguments'
+
+    __slots__ = 'hashvalue'
+
+    def __init__(self, args, kwds, typed,
+                 kwd_mark = (object(),),
+                 sorted=sorted, tuple=tuple, type=type, hash=hash):
+        key = args
+        if kwds:
+            sorted_items = sorted(kwds.items())
+            key += kwd_mark
+            for item in sorted_items:
+                key += item
+        if typed:
+            key += tuple(type(v) for v in args)
+            if kwds:
+                key += tuple(type(v) for k, v in sorted_items)
+        self[:] = key
+        self.hashvalue = hash(key)  # so we only have to hash just once
+
+    def __hash__(self):
+        return self.hashvalue
+
 def lru_cache(maxsize=100, typed=False):
     """Least-recently-used cache decorator.
 
@@ -168,8 +192,8 @@ def lru_cache(maxsize=100, typed=False):
     # to allow the implementation to change (including a possible C version).
 
     # Constants shared by all lru cache instances:
-    kwd_mark = (object(),)       # separate positional and keyword args
     sentinel = object()          # unique object used to signal cache misses
+    make_key = _CacheKey         # build a key from the function arguments
     PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
 
     def decorating_function(user_function):
@@ -181,20 +205,6 @@ def lru_cache(maxsize=100, typed=False):
         lock = Lock()            # because linkedlist updates aren't threadsafe
         root = []                # root of the circular doubly linked list
         root[:] = [root, root, None, None]     # initialize by pointing to self
-
-        def make_key(args, kwds, typed, tuple=tuple, sorted=sorted, type=type):
-            # build a cache key from positional and keyword args
-            key = args
-            if kwds:
-                sorted_items = tuple(sorted(kwds.items()))
-                key += kwd_mark
-                key += tuple(k for k, v in sorted_items)
-                key += tuple(v for k, v in sorted_items)
-            if typed:
-                key += tuple(type(v) for v in args)
-                if kwds:
-                    key += tuple(type(v) for k, v in sorted_items)
-            return key
 
         if maxsize == 0:
 
@@ -210,7 +220,7 @@ def lru_cache(maxsize=100, typed=False):
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
                 nonlocal hits, misses, currsize
-                key = make_key(args, kwds, typed) if kwds or typed else args
+                key = make_key(args, kwds, typed)
                 result = cache_get(key, sentinel)
                 if result is not sentinel:
                     hits += 1
@@ -226,7 +236,7 @@ def lru_cache(maxsize=100, typed=False):
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
                 nonlocal root, hits, misses, currsize, full
-                key = make_key(args, kwds, typed) if kwds or typed else args
+                key = make_key(args, kwds, typed)
                 with lock:
                     link = cache_get(key)
                     if link is not None:
