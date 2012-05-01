@@ -57,6 +57,8 @@ ZIP_BZIP2 = 12
 DEFAULT_VERSION = 20
 ZIP64_VERSION = 45
 BZIP2_VERSION = 46
+# we recognize (but not necessarily support) all features up to that version
+MAX_EXTRACT_VERSION = 46
 
 # Below are some formats and associated data for reading/writing headers using
 # the struct module.  The names and structures of headers/records are those used
@@ -920,6 +922,9 @@ class ZipFile:
             (x.create_version, x.create_system, x.extract_version, x.reserved,
                 x.flag_bits, x.compress_type, t, d,
                 x.CRC, x.compress_size, x.file_size) = centdir[1:12]
+            if x.extract_version > MAX_EXTRACT_VERSION:
+                raise NotImplementedError("zip file version %.1f" %
+                                          (x.extract_version / 10))
             x.volume, x.internal_attr, x.external_attr = centdir[15:18]
             # Convert date/time code to (year, month, day, hour, min, sec)
             x._raw_time = t
