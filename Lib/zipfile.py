@@ -1053,6 +1053,10 @@ class ZipFile:
         if fheader[_FH_EXTRA_FIELD_LENGTH]:
             zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
+        if zinfo.flag_bits & 0x20:
+            # Zip 2.7: compressed patched data
+            raise NotImplementedError("compressed patched data (flag bit 5)")
+
         if zinfo.flag_bits & 0x800:
             # UTF-8 filename
             fname_str = fname.decode("utf-8")
