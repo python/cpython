@@ -111,6 +111,11 @@ extern "C" {
 #define _PyUnicode_DATA_ANY(op)                         \
     (((PyUnicodeObject*)(op))->data.any)
 
+/* Optimized version of Py_MAX() to compute the maximum character:
+   use it when your are computing the second argument of PyUnicode_New() */
+#define MAX_MAXCHAR(maxchar1, maxchar2)                 \
+    ((maxchar1) | (maxchar2))
+
 #undef PyUnicode_READY
 #define PyUnicode_READY(op)                             \
     (assert(_PyUnicode_CHECK(op)),                      \
@@ -1867,6 +1872,19 @@ kind_maxchar_limit(unsigned int kind)
     }
 }
 
+Py_LOCAL_INLINE(Py_UCS4)
+align_maxchar(Py_UCS4 maxchar)
+{
+    if (maxchar <= 127)
+        return 127;
+    else if (maxchar <= 255)
+        return 255;
+    else if (maxchar <= 65535)
+        return 65535;
+    else
+        return MAX_UNICODE;
+}
+
 static PyObject*
 _PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
 {
@@ -2439,7 +2457,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 'c':
             {
                 Py_UCS4 ordinal = va_arg(count, int);
-                maxchar = Py_MAX(maxchar, ordinal);
+                maxchar = MAX_MAXCHAR(maxchar, ordinal);
                 n++;
                 break;
             }
@@ -2535,7 +2553,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 /* since PyUnicode_DecodeUTF8 returns already flexible
                    unicode objects, there is no need to call ready on them */
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = Py_MAX(maxchar, argmaxchar);
+                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(str);
                 /* Remember the str and switch to the next slot */
                 *callresult++ = str;
@@ -2548,7 +2566,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 if (PyUnicode_READY(obj) == -1)
                     goto fail;
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                maxchar = Py_MAX(maxchar, argmaxchar);
+                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(obj);
                 break;
             }
@@ -2563,7 +2581,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     if (PyUnicode_READY(obj) == -1)
                         goto fail;
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                    maxchar = Py_MAX(maxchar, argmaxchar);
+                    maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(obj);
                     *callresult++ = NULL;
                 }
@@ -2576,7 +2594,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                         goto fail;
                     }
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(str_obj);
-                    maxchar = Py_MAX(maxchar, argmaxchar);
+                    maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(str_obj);
                     *callresult++ = str_obj;
                 }
@@ -2595,7 +2613,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     goto fail;
                 }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = Py_MAX(maxchar, argmaxchar);
+                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(str);
                 /* Remember the str and switch to the next slot */
                 *callresult++ = str;
@@ -2614,7 +2632,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     goto fail;
                 }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(repr);
-                maxchar = Py_MAX(maxchar, argmaxchar);
+                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(repr);
                 /* Remember the repr and switch to the next slot */
                 *callresult++ = repr;
@@ -2633,7 +2651,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     goto fail;
                 }
                 argmaxchar = PyUnicode_MAX_CHAR_VALUE(ascii);
-                maxchar = Py_MAX(maxchar, argmaxchar);
+                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
                 n += PyUnicode_GET_LENGTH(ascii);
                 /* Remember the repr and switch to the next slot */
                 *callresult++ = ascii;
@@ -5563,14 +5581,14 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                 maxch = (Py_UCS2)(block & 0xFFFF);
 #if SIZEOF_LONG == 8
                 ch = (Py_UCS2)((block >> 16) & 0xFFFF);
-                maxch = Py_MAX(maxch, ch);
+                maxch = MAX_MAXCHAR(maxch, ch);
                 ch = (Py_UCS2)((block >> 32) & 0xFFFF);
-                maxch = Py_MAX(maxch, ch);
+                maxch = MAX_MAXCHAR(maxch, ch);
                 ch = (Py_UCS2)(block >> 48);
-                maxch = Py_MAX(maxch, ch);
+                maxch = MAX_MAXCHAR(maxch, ch);
 #else
                 ch = (Py_UCS2)(block >> 16);
-                maxch = Py_MAX(maxch, ch);
+                maxch = MAX_MAXCHAR(maxch, ch);
 #endif
                 if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
                     if (unicode_widen(&unicode, maxch) < 0)
@@ -8987,7 +9005,7 @@ fix_decimal_and_space_to_ascii(PyObject *self)
     const Py_ssize_t len = PyUnicode_GET_LENGTH(self);
     const int kind = PyUnicode_KIND(self);
     void *data = PyUnicode_DATA(self);
-    Py_UCS4 maxchar = 0, ch, fixed;
+    Py_UCS4 maxchar = 127, ch, fixed;
     int modified = 0;
     Py_ssize_t i;
 
@@ -9004,15 +9022,12 @@ fix_decimal_and_space_to_ascii(PyObject *self)
             }
             if (fixed != 0) {
                 modified = 1;
-                if (fixed > maxchar)
-                    maxchar = fixed;
+                maxchar = MAX_MAXCHAR(maxchar, fixed);
                 PyUnicode_WRITE(kind, data, i, fixed);
             }
-            else if (ch > maxchar)
-                maxchar = ch;
+            else
+                maxchar = MAX_MAXCHAR(maxchar, ch);
         }
-        else if (ch > maxchar)
-            maxchar = ch;
     }
 
     return (modified) ? maxchar : 0;
@@ -9052,7 +9067,7 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal >= 0)
                 ch = '0' + decimal;
-            maxchar = Py_MAX(maxchar, ch);
+            maxchar = MAX_MAXCHAR(maxchar, ch);
         }
     }
 
@@ -9293,8 +9308,8 @@ _PyUnicode_InsertThousandsGrouping(
     if (unicode == NULL) {
         *maxchar = 127;
         if (len != n_digits) {
-            *maxchar = Py_MAX(*maxchar,
-                              PyUnicode_MAX_CHAR_VALUE(thousands_sep));
+            *maxchar = MAX_MAXCHAR(*maxchar,
+                                   PyUnicode_MAX_CHAR_VALUE(thousands_sep));
         }
     }
     return len;
@@ -9591,14 +9606,7 @@ fixup(PyObject *self,
             return u;
     }
 
-    if (maxchar_new <= 127)
-        maxchar_new = 127;
-    else if (maxchar_new <= 255)
-        maxchar_new = 255;
-    else if (maxchar_new <= 65535)
-        maxchar_new = 65535;
-    else
-        maxchar_new = MAX_UNICODE;
+    maxchar_new = align_maxchar(maxchar_new);
 
     if (maxchar_new == maxchar_old)
         return u;
@@ -9695,16 +9703,14 @@ do_capitalize(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *ma
     c = PyUnicode_READ(kind, data, 0);
     n_res = _PyUnicode_ToUpperFull(c, mapped);
     for (j = 0; j < n_res; j++) {
-        if (mapped[j] > *maxchar)
-            *maxchar = mapped[j];
+        *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
         res[k++] = mapped[j];
     }
     for (i = 1; i < length; i++) {
         c = PyUnicode_READ(kind, data, i);
         n_res = lower_ucs4(kind, data, length, i, c, mapped);
         for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
+            *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
             res[k++] = mapped[j];
         }
     }
@@ -9729,8 +9735,7 @@ do_swapcase(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxc
             mapped[0] = c;
         }
         for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
+            *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
             res[k++] = mapped[j];
         }
     }
@@ -9751,8 +9756,7 @@ do_upper_or_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res,
         else
             n_res = _PyUnicode_ToUpperFull(c, mapped);
         for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
+            *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
             res[k++] = mapped[j];
         }
     }
@@ -9781,8 +9785,7 @@ do_casefold(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxc
         Py_UCS4 mapped[3];
         int j, n_res = _PyUnicode_ToFoldedFull(c, mapped);
         for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
+            *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
             res[k++] = mapped[j];
         }
     }
@@ -9807,8 +9810,7 @@ do_title(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar
             n_res = _PyUnicode_ToTitleFull(c, mapped);
 
         for (j = 0; j < n_res; j++) {
-            if (mapped[j] > *maxchar)
-                *maxchar = mapped[j];
+            *maxchar = MAX_MAXCHAR(*maxchar, mapped[j]);
             res[k++] = mapped[j];
         }
 
@@ -9965,7 +9967,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             goto onError;
         sz += PyUnicode_GET_LENGTH(item);
         item_maxchar = PyUnicode_MAX_CHAR_VALUE(item);
-        maxchar = Py_MAX(maxchar, item_maxchar);
+        maxchar = MAX_MAXCHAR(maxchar, item_maxchar);
         if (i != 0)
             sz += seplen;
         if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
@@ -10127,8 +10129,7 @@ pad(PyObject *self,
         return NULL;
     }
     maxchar = PyUnicode_MAX_CHAR_VALUE(self);
-    if (fill > maxchar)
-        maxchar = fill;
+    maxchar = MAX_MAXCHAR(maxchar, fill);
     u = PyUnicode_New(left + _PyUnicode_LENGTH(self) + right, maxchar);
     if (!u)
         return NULL;
@@ -10442,7 +10443,7 @@ replace(PyObject *self, PyObject *str1,
     /* Replacing str1 with str2 may cause a maxchar reduction in the
        result string. */
     mayshrink = (maxchar_str2 < maxchar);
-    maxchar = Py_MAX(maxchar, maxchar_str2);
+    maxchar = MAX_MAXCHAR(maxchar, maxchar_str2);
 
     if (len1 == len2) {
         /* same length */
@@ -11027,7 +11028,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(u);
     maxchar2 = PyUnicode_MAX_CHAR_VALUE(v);
-    maxchar = Py_MAX(maxchar, maxchar2);
+    maxchar = MAX_MAXCHAR(maxchar, maxchar2);
 
     /* Concat the two Unicode strings */
     w = PyUnicode_New(new_len, maxchar);
@@ -11114,7 +11115,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     else {
         maxchar = PyUnicode_MAX_CHAR_VALUE(left);
         maxchar2 = PyUnicode_MAX_CHAR_VALUE(right);
-        maxchar = Py_MAX(maxchar, maxchar2);
+        maxchar = MAX_MAXCHAR(maxchar, maxchar2);
 
         /* Concat the two Unicode strings */
         res = PyUnicode_New(new_len, maxchar);
