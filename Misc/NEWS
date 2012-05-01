@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #14699: Fix calling the classmethod descriptor directly.
+
 - Issue #14433: Prevent msvcrt crash in interactive prompt when stdin
   is closed.
   
