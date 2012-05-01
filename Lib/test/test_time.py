@@ -30,16 +30,16 @@ class TimeTestCase(unittest.TestCase):
     def test_time(self):
         time.time()
         info = time.get_clock_info('time')
-        self.assertEqual(info.monotonic, False)
+        self.assertFalse(info.monotonic)
         if sys.platform != 'win32':
-            self.assertEqual(info.adjusted, True)
+            self.assertTrue(info.adjusted)
 
     def test_clock(self):
         time.clock()
 
         info = time.get_clock_info('clock')
-        self.assertEqual(info.monotonic, True)
-        self.assertEqual(info.adjusted, False)
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjusted)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -370,11 +370,11 @@ class TimeTestCase(unittest.TestCase):
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
         info = time.get_clock_info('monotonic')
-        self.assertEqual(info.monotonic, True)
+        self.assertTrue(info.monotonic)
         if sys.platform == 'linux':
-            self.assertEqual(info.adjusted, True)
+            self.assertTrue(info.adjusted)
         else:
-            self.assertEqual(info.adjusted, False)
+            self.assertFalse(info.adjusted)
 
     def test_perf_counter(self):
         time.perf_counter()
@@ -386,8 +386,8 @@ class TimeTestCase(unittest.TestCase):
         self.assertLess(stop - start, 0.01)
 
         info = time.get_clock_info('process_time')
-        self.assertEqual(info.monotonic, True)
-        self.assertEqual(info.adjusted, False)
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjusted)
 
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
