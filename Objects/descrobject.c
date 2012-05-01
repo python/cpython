@@ -254,14 +254,52 @@ static PyObject *
 classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                       PyObject *kwds)
 {
-    PyObject *func, *result;
+    Py_ssize_t argc;
+    PyObject *self, *func, *result;
 
-    func = PyCFunction_New(descr->d_method, (PyObject *)descr->d_type);
+    /* Make sure that the first argument is acceptable as 'self' */
+    assert(PyTuple_Check(args));
+    argc = PyTuple_GET_SIZE(args);
+    if (argc < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' of '%.100s' "
+                     "object needs an argument",
+                     descr_name((PyDescrObject *)descr), "?",
+                     descr->d_type->tp_name);
+        return NULL;
+    }
+    self = PyTuple_GET_ITEM(args, 0);
+    if (!PyType_Check(self)) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' requires a type "
+                     "but received a '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     descr->d_type->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+    if (!PyType_IsSubtype((PyTypeObject *)self, descr->d_type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' "
+                     "requires a subtype of '%.100s' "
+                     "but received '%.100s",
+                     descr_name((PyDescrObject *)descr), "?",
+                     descr->d_type->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+
+    func = PyCFunction_New(descr->d_method, self);
     if (func == NULL)
         return NULL;
-
+    args = PyTuple_GetSlice(args, 1, argc);
+    if (args == NULL) {
+        Py_DECREF(func);
+        return NULL;
+    }
     result = PyEval_CallObjectWithKeywords(func, args, kwds);
     Py_DECREF(func);
+    Py_DECREF(args);
     return result;
 }
 

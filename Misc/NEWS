@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14699: Fix calling the classmethod descriptor directly.
+
 - Issue #11603 (again): Setting __repr__ to __str__ now raises a RuntimeError
   when repr() or str() is called on such an object.
 
