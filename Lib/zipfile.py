@@ -504,12 +504,29 @@ def _get_compressor(compress_type):
 
 
 def _get_decompressor(compress_type):
-    if compress_type == ZIP_DEFLATED:
+    if compress_type == ZIP_STORED:
+        return None
+    elif compress_type == ZIP_DEFLATED:
         return zlib.decompressobj(-15)
     elif compress_type == ZIP_BZIP2:
         return bz2.BZ2Decompressor()
     else:
-        return None
+        unknown_compressors = {
+            1: 'shrink',
+            2: 'reduce',
+            3: 'reduce',
+            4: 'reduce',
+            5: 'reduce',
+            6: 'implode',
+            9: 'enhanced deflate',
+            10: 'implode',
+            14: 'lzma',
+            }
+        descr = unknown_compressors.get(compress_type)
+        if descr:
+            raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
+        else:
+            raise NotImplementedError("compression type %d" % (compress_type,))
 
 
 class ZipExtFile(io.BufferedIOBase):

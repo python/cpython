@@ -992,6 +992,17 @@ class OtherTests(unittest.TestCase):
         caught."""
         self.assertRaises(RuntimeError, zipfile.ZipFile, TESTFN, "w", -1)
 
+    def test_unsupported_compression(self):
+        # data is declared as shrunk, but actually deflated
+        data = (b'PK\x03\x04.\x00\x00\x00\x01\x00\xe4C\xa1@\x00\x00\x00'
+        b'\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00x\x03\x00PK\x01'
+        b'\x02.\x03.\x00\x00\x00\x01\x00\xe4C\xa1@\x00\x00\x00\x00\x02\x00\x00'
+        b'\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x80\x01\x00\x00\x00\x00xPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00'
+        b'/\x00\x00\x00!\x00\x00\x00\x00\x00')
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertRaises(NotImplementedError, zipf.open, 'x')
+
     def test_null_byte_in_filename(self):
         """Check that a filename containing a null byte is properly
         terminated."""
