@@ -6,10 +6,64 @@ import sys
 import os
 import unittest
 import subprocess
+import textwrap
 
 from test import test_support
 # This little helper class is essential for testing pdb under doctest.
 from test_doctest import _FakeInput
+
+
+class PdbTestCase(unittest.TestCase):
+
+    def run_pdb(self, script, commands):
+        """Run 'script' lines with pdb and the pdb 'commands'."""
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        cmd = [sys.executable, '-m', 'pdb', filename]
+        stdout = stderr = None
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT,
+                                   )
+        stdout, stderr = proc.communicate(commands)
+        proc.stdout.close()
+        proc.stdin.close()
+        return stdout, stderr
+
+    def test_issue13183(self):
+        script = """
+            from bar import bar
+
+            def foo():
+                bar()
+
+            def nope():
+                pass
+
+            def foobar():
+                foo()
+                nope()
+
+            foobar()
+        """
+        commands = """
+            from bar import bar
+            break bar
+            continue
+            step
+            step
+            quit
+        """
+        bar = """
+            def bar():
+                print('1')
+        """
+        with open('bar.py', 'w') as f:
+            f.write(textwrap.dedent(bar))
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertIn('main.py(5)foo()->None', stdout.split('\n')[-3],
+                         'Fail to step into the caller after a return')
 
 
 class PdbTestInput(object):
@@ -309,7 +363,9 @@ class ModuleInitTester(unittest.TestCase):
 def test_main():
     from test import test_pdb
     test_support.run_doctest(test_pdb, verbosity=True)
-    test_support.run_unittest(ModuleInitTester)
+    test_support.run_unittest(
+        PdbTestCase,
+        ModuleInitTester)
 
 if __name__ == '__main__':
     test_main()
