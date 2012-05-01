@@ -28,8 +28,7 @@ def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
     release = '%s%s' % (major, minor)
-    if micro:
-        release += '%s' % (micro,)
+    release += '%s' % (micro,)
     if level == 'candidate':
         release += 'rc%s' % (serial,)
     elif level != 'final':
