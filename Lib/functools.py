@@ -176,6 +176,7 @@ def lru_cache(maxsize=100, typed=False):
 
         cache = {}
         hits = misses = currsize = 0
+        full = False
         cache_get = cache.get    # bound method to lookup a key or return None
         lock = Lock()            # because linkedlist updates aren't threadsafe
         root = []                # root of the circular doubly linked list
@@ -224,7 +225,7 @@ def lru_cache(maxsize=100, typed=False):
 
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
-                nonlocal root, hits, misses, currsize
+                nonlocal root, hits, misses, currsize, full
                 key = make_key(args, kwds, typed) if kwds or typed else args
                 with lock:
                     link = cache_get(key)
@@ -247,13 +248,7 @@ def lru_cache(maxsize=100, typed=False):
                         # update is already done, we need only return the
                         # computed result and update the count of misses.
                         pass
-                    if currsize < maxsize:
-                        # put result in a new link at the front of the queue
-                        last = root[PREV]
-                        link = [last, root, key, result]
-                        cache[key] = last[NEXT] = root[PREV] = link
-                        currsize += 1
-                    else:
+                    elif full:
                         # use root to store the new key and result
                         root[KEY] = key
                         root[RESULT] = result
@@ -262,6 +257,13 @@ def lru_cache(maxsize=100, typed=False):
                         root = root[NEXT]
                         del cache[root[KEY]]
                         root[KEY] = root[RESULT] = None
+                    else:
+                        # put result in a new link at the front of the queue
+                        last = root[PREV]
+                        link = [last, root, key, result]
+                        cache[key] = last[NEXT] = root[PREV] = link
+                        currsize += 1
+                        full = (currsize == maxsize)
                     misses += 1
                 return result
 
@@ -272,11 +274,12 @@ def lru_cache(maxsize=100, typed=False):
 
         def cache_clear():
             """Clear the cache and cache statistics"""
-            nonlocal hits, misses, currsize
+            nonlocal hits, misses, currsize, full
             with lock:
                 cache.clear()
                 root[:] = [root, root, None, None]
                 hits = misses = currsize = 0
+                full = False
 
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
