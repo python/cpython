@@ -104,13 +104,7 @@ The module also defines three convenience functions:
 
 .. function:: default_timer()
 
-   Define a default timer, in a platform specific manner. On Windows,
-   :func:`time.clock` has microsecond granularity but :func:`time.time`'s
-   granularity is 1/60th of a second; on Unix, :func:`time.clock` has 1/100th of
-   a second granularity and :func:`time.time` is much more precise.  On either
-   platform, :func:`default_timer` measures wall clock time, not the CPU
-   time.  This means that other processes running on the same computer may
-   interfere with the timing.
+   The default timer, which is always :func:`time.perf_counter`.
 
 
 .. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
@@ -149,13 +143,20 @@ Where the following options are understood:
 
    statement to be executed once initially (default ``pass``)
 
+.. cmdoption:: -p, --process
+
+   measure process time, not wallclock time, using :func:`time.process_time`
+   instead of :func:`time.perf_counter`, which is the default
+
+   .. versionadded:: 3.3
+
 .. cmdoption:: -t, --time
 
-   use :func:`time.time` (default on all platforms but Windows)
+   use :func:`time.time` (deprecated)
 
 .. cmdoption:: -c, --clock
 
-   use :func:`time.clock` (default on Windows)
+   use :func:`time.clock` (deprecated)
 
 .. cmdoption:: -v, --verbose
 
@@ -173,12 +174,11 @@ similarly.
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
 successive powers of 10 until the total time is at least 0.2 seconds.
 
-:func:`default_timer` measurations can be affected by other programs running on
-the same machine, so
-the best thing to do when accurate timing is necessary is to repeat
-the timing a few times and use the best time.  The :option:`-r` option is good
-for this; the default of 3 repetitions is probably enough in most cases.  On
-Unix, you can use :func:`time.clock` to measure CPU time.
+:func:`default_timer` measurements can be affected by other programs running on
+the same machine, so the best thing to do when accurate timing is necessary is
+to repeat the timing a few times and use the best time.  The :option:`-r`
+option is good for this; the default of 3 repetitions is probably enough in
+most cases.  You can use :func:`time.process_time` to measure CPU time.
 
 .. note::
 
