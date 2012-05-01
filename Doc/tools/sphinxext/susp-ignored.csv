@@ -87,6 +87,7 @@ library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
 library/hotshot,,:lineno,"ncalls  tottime  percall  cumtime  percall filename:lineno(function)"
 library/http.client,52,:port,host:port
+library/http.cookies,,`,!#$%&'*+-.^_`|~:
 library/httplib,,:port,host:port
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
 library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
