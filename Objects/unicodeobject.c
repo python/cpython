@@ -13431,7 +13431,7 @@ formatfloat(PyObject *v, int flags, int prec, int type)
                               (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
     if (p == NULL)
         return NULL;
-    result = PyUnicode_DecodeASCII(p, strlen(p), NULL);
+    result = unicode_fromascii((unsigned char*)p, strlen(p));
     PyMem_Free(p);
     return result;
 }
@@ -13947,7 +13947,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 Py_UCS4 ch = formatchar(v);
                 if (ch == (Py_UCS4) -1)
                     goto onError;
-                temp = _PyUnicode_FromUCS4(&ch, 1);
+                temp = PyUnicode_FromOrdinal(ch);
                 break;
             }
 
