@@ -828,6 +828,16 @@ class OtherTests(unittest.TestCase):
             b'\x00\x00\x00\x00'),
     }
 
+    def test_unsupported_version(self):
+        # File has an extract_version of 120
+        data = (b'PK\x03\x04x\x00\x00\x00\x00\x00!p\xa1@\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00xPK\x01\x02x\x03x\x00\x00\x00\x00'
+        b'\x00!p\xa1@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00xPK\x05\x06'
+        b'\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x1f\x00\x00\x00\x00\x00')
+        self.assertRaises(NotImplementedError, zipfile.ZipFile,
+                          io.BytesIO(data), 'r')
+
     def test_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
             zf.writestr("foo.txt", "Test for unicode filename")
