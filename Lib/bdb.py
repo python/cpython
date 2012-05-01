@@ -83,9 +83,11 @@ class Bdb:
 
     def dispatch_return(self, frame, arg):
         if self.stop_here(frame) or frame == self.returnframe:
-            self.frame_returning = frame
-            self.user_return(frame, arg)
-            self.frame_returning = None
+            try:
+                self.frame_returning = frame
+                self.user_return(frame, arg)
+            finally:
+                self.frame_returning = None
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
