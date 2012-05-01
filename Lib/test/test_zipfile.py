@@ -13,7 +13,7 @@ from tempfile import TemporaryFile
 from random import randint, random
 from unittest import skipUnless
 
-from test.support import TESTFN, run_unittest, findfile, unlink, requires_zlib
+from test.support import TESTFN, run_unittest, findfile, unlink, requires_zlib, requires_bz2
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -313,6 +313,54 @@ class TestsWithSourceFile(unittest.TestCase):
                 self.assertEqual(openobj.read(1), b'1')
                 self.assertEqual(openobj.read(1), b'2')
 
+    @requires_bz2
+    def test_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_open_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_open_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_random_open_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_random_open_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readline_read_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_readline_read_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readline_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_readline_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readlines_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_readlines_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_iterlines_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_iterlines_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_low_compression_bzip2(self):
+        """Check for cases where compressed data is larger than original."""
+        # Create the ZIP archive
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_BZIP2) as zipfp:
+            zipfp.writestr("strfile", '12')
+
+        # Get an open object for strfile
+        with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_BZIP2) as zipfp:
+            with zipfp.open("strfile") as openobj:
+                self.assertEqual(openobj.read(1), b'1')
+                self.assertEqual(openobj.read(1), b'2')
+
     def test_absolute_arcnames(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             zipfp.write(TESTFN, "/absolute")
@@ -452,6 +500,13 @@ class TestsWithSourceFile(unittest.TestCase):
         zipfp.writestr("b.txt", "hello world", compress_type=zipfile.ZIP_DEFLATED)
         info = zipfp.getinfo('b.txt')
         self.assertEqual(info.compress_type, zipfile.ZIP_DEFLATED)
+
+    @requires_bz2
+    def test_writestr_compression_bzip2(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.writestr("b.txt", "hello world", compress_type=zipfile.ZIP_BZIP2)
+        info = zipfp.getinfo('b.txt')
+        self.assertEqual(info.compress_type, zipfile.ZIP_BZIP2)
 
     def zip_test_writestr_permissions(self, f, compression):
         # Make sure that writestr creates files with mode 0600,
@@ -626,6 +681,11 @@ class TestZip64InSmallFiles(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zip_test(f, zipfile.ZIP_DEFLATED)
 
+    @requires_bz2
+    def test_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_test(f, zipfile.ZIP_BZIP2)
+
     def test_absolute_arcnames(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED,
                              allowZip64=True) as zipfp:
@@ -754,6 +814,18 @@ class OtherTests(unittest.TestCase):
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00'
             b'\x00afilePK\x05\x06\x00\x00\x00\x00\x01\x00'
             b'\x01\x003\x00\x00\x003\x00\x00\x00\x00\x00'),
+        zipfile.ZIP_BZIP2: (
+            b'PK\x03\x04\x14\x03\x00\x00\x0c\x00nu\x0c=FA'
+            b'KE8\x00\x00\x00n\x00\x00\x00\x05\x00\x00\x00af'
+            b'ileBZh91AY&SY\xd4\xa8\xca'
+            b'\x7f\x00\x00\x0f\x11\x80@\x00\x06D\x90\x80 \x00 \xa5'
+            b'P\xd9!\x03\x03\x13\x13\x13\x89\xa9\xa9\xc2u5:\x9f'
+            b'\x8b\xb9"\x9c(HjTe?\x80PK\x01\x02\x14'
+            b'\x03\x14\x03\x00\x00\x0c\x00nu\x0c=FAKE8'
+            b'\x00\x00\x00n\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00 \x80\x80\x81\x00\x00\x00\x00afilePK'
+            b'\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x00[\x00'
+            b'\x00\x00\x00\x00'),
     }
 
     def test_unicode_filenames(self):
@@ -1007,6 +1079,10 @@ class OtherTests(unittest.TestCase):
     def test_testzip_with_bad_crc_deflated(self):
         self.check_testzip_with_bad_crc(zipfile.ZIP_DEFLATED)
 
+    @requires_bz2
+    def test_testzip_with_bad_crc_bzip2(self):
+        self.check_testzip_with_bad_crc(zipfile.ZIP_BZIP2)
+
     def check_read_with_bad_crc(self, compression):
         """Tests that files with bad CRCs raise a BadZipFile exception when read."""
         zipdata = self.zips_with_bad_crc[compression]
@@ -1035,6 +1111,10 @@ class OtherTests(unittest.TestCase):
     def test_read_with_bad_crc_deflated(self):
         self.check_read_with_bad_crc(zipfile.ZIP_DEFLATED)
 
+    @requires_bz2
+    def test_read_with_bad_crc_bzip2(self):
+        self.check_read_with_bad_crc(zipfile.ZIP_BZIP2)
+
     def check_read_return_size(self, compression):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
         # than requested.
@@ -1054,6 +1134,10 @@ class OtherTests(unittest.TestCase):
     @requires_zlib
     def test_read_return_size_deflated(self):
         self.check_read_return_size(zipfile.ZIP_DEFLATED)
+
+    @requires_bz2
+    def test_read_return_size_bzip2(self):
+        self.check_read_return_size(zipfile.ZIP_BZIP2)
 
     def test_empty_zipfile(self):
         # Check that creating a file in 'w' or 'a' mode and closing without
@@ -1196,6 +1280,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zip_test(f, zipfile.ZIP_DEFLATED)
 
+    @requires_bz2
+    def test_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_test(f, zipfile.ZIP_BZIP2)
+
     def zip_open_test(self, f, compression):
         self.make_test_archive(f, compression)
 
@@ -1236,6 +1325,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zip_open_test(f, zipfile.ZIP_DEFLATED)
 
+    @requires_bz2
+    def test_open_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_open_test(f, zipfile.ZIP_BZIP2)
+
     def zip_random_open_test(self, f, compression):
         self.make_test_archive(f, compression)
 
@@ -1263,6 +1357,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
     def test_random_open_deflated(self):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.zip_random_open_test(f, zipfile.ZIP_DEFLATED)
+
+    @requires_bz2
+    def test_random_open_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_random_open_test(f, zipfile.ZIP_BZIP2)
 
 
 @requires_zlib
@@ -1482,6 +1581,31 @@ class UniversalNewlineTests(unittest.TestCase):
     def test_iterlines_deflated(self):
         for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
             self.iterlines_test(f, zipfile.ZIP_DEFLATED)
+
+    @requires_bz2
+    def test_read_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.read_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readline_read_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.readline_read_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readline_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.readline_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_readlines_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.readlines_test(f, zipfile.ZIP_BZIP2)
+
+    @requires_bz2
+    def test_iterlines_bzip2(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.iterlines_test(f, zipfile.ZIP_BZIP2)
 
     def tearDown(self):
         for sep, fn in self.arcfiles.items():

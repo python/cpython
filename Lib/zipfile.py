@@ -22,7 +22,13 @@ except ImportError:
     zlib = None
     crc32 = binascii.crc32
 
-__all__ = ["BadZipFile", "BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED",
+try:
+    import bz2 # We may need its compression method
+except ImportError:
+    bz2 = None
+
+__all__ = ["BadZipFile", "BadZipfile", "error",
+           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2"
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
 
 class BadZipFile(Exception):
@@ -45,7 +51,12 @@ ZIP_MAX_COMMENT = (1 << 16) - 1
 # constants for Zip file compression methods
 ZIP_STORED = 0
 ZIP_DEFLATED = 8
+ZIP_BZIP2 = 12
 # Other ZIP compression methods not supported
+
+DEFAULT_VERSION = 20
+ZIP64_VERSION = 45
+BZIP2_VERSION = 46
 
 # Below are some formats and associated data for reading/writing headers using
 # the struct module.  The names and structures of headers/records are those used
@@ -313,8 +324,8 @@ class ZipInfo (object):
         else:
             # Assume everything else is unix-y
             self.create_system = 3          # System which created ZIP archive
-        self.create_version = 20        # Version which created ZIP archive
-        self.extract_version = 20       # Version needed to extract archive
+        self.create_version = DEFAULT_VERSION  # Version which created ZIP archive
+        self.extract_version = DEFAULT_VERSION # Version needed to extract archive
         self.reserved = 0               # Must be zero
         self.flag_bits = 0              # ZIP flag bits
         self.volume = 0                 # Volume number of file header
@@ -341,6 +352,7 @@ class ZipInfo (object):
 
         extra = self.extra
 
+        min_version = 0
         if file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT:
             # File is larger than what fits into a 4 byte integer,
             # fall back to the ZIP64 extension
@@ -349,9 +361,13 @@ class ZipInfo (object):
                     1, struct.calcsize(fmt)-4, file_size, compress_size)
             file_size = 0xffffffff
             compress_size = 0xffffffff
-            self.extract_version = max(45, self.extract_version)
-            self.create_version = max(45, self.extract_version)
+            min_version = ZIP64_VERSION
 
+        if self.compress_type == ZIP_BZIP2:
+            min_version = max(BZIP2_VERSION, min_version)
+
+        self.extract_version = max(min_version, self.extract_version)
+        self.create_version = max(min_version, self.create_version)
         filename, flag_bits = self._encodeFilenameFlags()
         header = struct.pack(structFileHeader, stringFileHeader,
                  self.extract_version, self.reserved, flag_bits,
@@ -461,6 +477,41 @@ class _ZipDecrypter:
         self._UpdateKeys(c)
         return c
 
+
+def _check_compression(compression):
+    if compression == ZIP_STORED:
+        pass
+    elif compression == ZIP_DEFLATED:
+        if not zlib:
+            raise RuntimeError(
+                    "Compression requires the (missing) zlib module")
+    elif compression == ZIP_BZIP2:
+        if not bz2:
+            raise RuntimeError(
+                    "Compression requires the (missing) bz2 module")
+    else:
+        raise RuntimeError("That compression method is not supported")
+
+
+def _get_compressor(compress_type):
+    if compress_type == ZIP_DEFLATED:
+        return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+             zlib.DEFLATED, -15)
+    elif compress_type == ZIP_BZIP2:
+        return bz2.BZ2Compressor()
+    else:
+        return None
+
+
+def _get_decompressor(compress_type):
+    if compress_type == ZIP_DEFLATED:
+        return zlib.decompressobj(-15)
+    elif compress_type == ZIP_BZIP2:
+        return bz2.BZ2Decompressor()
+    else:
+        return None
+
+
 class ZipExtFile(io.BufferedIOBase):
     """File-like object for reading an archive member.
        Is returned by ZipFile.open().
@@ -482,13 +533,12 @@ class ZipExtFile(io.BufferedIOBase):
         self._close_fileobj = close_fileobj
 
         self._compress_type = zipinfo.compress_type
-        self._compress_size = zipinfo.compress_size
         self._compress_left = zipinfo.compress_size
+        self._left = zipinfo.file_size
 
-        if self._compress_type == ZIP_DEFLATED:
-            self._decompressor = zlib.decompressobj(-15)
-        self._unconsumed = b''
+        self._decompressor = _get_decompressor(self._compress_type)
 
+        self._eof = False
         self._readbuffer = b''
         self._offset = 0
 
@@ -563,7 +613,11 @@ class ZipExtFile(io.BufferedIOBase):
         """Returns buffered bytes without advancing the position."""
         if n > len(self._readbuffer) - self._offset:
             chunk = self.read(n)
-            self._offset -= len(chunk)
+            if len(chunk) > self._offset:
+                self._readbuffer = chunk + self._readbuffer[self._offset:]
+                self._offset = 0
+            else:
+                self._offset -= len(chunk)
 
         # Return up to 512 bytes to reduce allocation overhead for tight loops.
         return self._readbuffer[self._offset: self._offset + 512]
@@ -575,80 +629,121 @@ class ZipExtFile(io.BufferedIOBase):
         """Read and return up to n bytes.
         If the argument is omitted, None, or negative, data is read and returned until EOF is reached..
         """
-        buf = b''
-        if n is None:
-            n = -1
-        while True:
-            if n < 0:
-                data = self.read1(n)
-            elif n > len(buf):
-                data = self.read1(n - len(buf))
-            else:
-                return buf
-            if len(data) == 0:
-                return buf
-            buf += data
+        if n is None or n < 0:
+            buf = self._readbuffer[self._offset:]
+            self._readbuffer = b''
+            self._offset = 0
+            while not self._eof:
+                buf += self._read1(self.MAX_N)
+            return buf
 
-    def _update_crc(self, newdata, eof):
+        n -= len(self._readbuffer) - self._offset
+        if n < 0:
+            buf = self._readbuffer[self._offset:n]
+            self._offset += len(buf)
+            return buf
+
+        buf = self._readbuffer[self._offset:]
+        self._readbuffer = b''
+        self._offset = 0
+        while n > 0 and not self._eof:
+            data = self._read1(n)
+            if n < len(data):
+                self._readbuffer = data
+                self._offset = n
+                buf += data[:n]
+                break
+            buf += data
+            n -= len(data)
+        return buf
+
+    def _update_crc(self, newdata):
         # Update the CRC using the given data.
         if self._expected_crc is None:
             # No need to compute the CRC if we don't have a reference value
             return
         self._running_crc = crc32(newdata, self._running_crc) & 0xffffffff
         # Check the CRC if we're at the end of the file
-        if eof and self._running_crc != self._expected_crc:
+        if self._eof and self._running_crc != self._expected_crc:
             raise BadZipFile("Bad CRC-32 for file %r" % self.name)
 
     def read1(self, n):
         """Read up to n bytes with at most one read() system call."""
 
-        # Simplify algorithm (branching) by transforming negative n to large n.
-        if n < 0 or n is None:
-            n = self.MAX_N
+        if n is None or n < 0:
+            buf = self._readbuffer[self._offset:]
+            self._readbuffer = b''
+            self._offset = 0
+            data = self._read1(self.MAX_N)
+            buf += data
+            return buf
 
-        # Bytes available in read buffer.
-        len_readbuffer = len(self._readbuffer) - self._offset
+        n -= len(self._readbuffer) - self._offset
+        if n < 0:
+            buf = self._readbuffer[self._offset:n]
+            self._offset += len(buf)
+            return buf
+
+        buf = self._readbuffer[self._offset:]
+        self._readbuffer = b''
+        self._offset = 0
+        if n > 0:
+            data = self._read1(n)
+            if n < len(data):
+                self._readbuffer = data
+                self._offset = n
+                data = data[:n]
+            buf += data
+        return buf
+
+    def _read1(self, n):
+        # Read up to n compressed bytes with at most one read() system call,
+        # decrypt and decompress them.
+        if self._eof or n <= 0:
+            return b''
 
         # Read from file.
-        if self._compress_left > 0 and n > len_readbuffer + len(self._unconsumed):
-            nbytes = n - len_readbuffer - len(self._unconsumed)
-            nbytes = max(nbytes, self.MIN_READ_SIZE)
-            nbytes = min(nbytes, self._compress_left)
+        if self._compress_type == ZIP_DEFLATED:
+            ## Handle unconsumed data.
+            data = self._decompressor.unconsumed_tail
+            if n > len(data):
+                data += self._read2(n - len(data))
+        else:
+            data = self._read2(n)
 
-            data = self._fileobj.read(nbytes)
-            self._compress_left -= len(data)
-
-            if data and self._decrypter is not None:
-                data = bytes(map(self._decrypter, data))
-
-            if self._compress_type == ZIP_STORED:
-                self._update_crc(data, eof=(self._compress_left==0))
-                self._readbuffer = self._readbuffer[self._offset:] + data
-                self._offset = 0
-            else:
-                # Prepare deflated bytes for decompression.
-                self._unconsumed += data
-
-        # Handle unconsumed data.
-        if (len(self._unconsumed) > 0 and n > len_readbuffer and
-            self._compress_type == ZIP_DEFLATED):
-            data = self._decompressor.decompress(
-                self._unconsumed,
-                max(n - len_readbuffer, self.MIN_READ_SIZE)
-            )
-
-            self._unconsumed = self._decompressor.unconsumed_tail
-            eof = len(self._unconsumed) == 0 and self._compress_left == 0
-            if eof:
+        if self._compress_type == ZIP_STORED:
+            self._eof = self._compress_left <= 0
+        elif self._compress_type == ZIP_DEFLATED:
+            n = max(n, self.MIN_READ_SIZE)
+            data = self._decompressor.decompress(data, n)
+            self._eof = (self._decompressor.eof or
+                    self._compress_left <= 0 and
+                    not self._decompressor.unconsumed_tail)
+            if self._eof:
                 data += self._decompressor.flush()
+        else:
+            data = self._decompressor.decompress(data)
+            self._eof = self._decompressor.eof or self._compress_left <= 0
 
-            self._update_crc(data, eof=eof)
-            self._readbuffer = self._readbuffer[self._offset:] + data
-            self._offset = 0
+        data = data[:self._left]
+        self._left -= len(data)
+        if self._left <= 0:
+            self._eof = True
+        self._update_crc(data)
+        return data
 
-        # Read from buffer.
-        data = self._readbuffer[self._offset: self._offset + n]
-        self._offset += len(data)
+    def _read2(self, n):
+        if self._compress_left <= 0:
+            return b''
+
+        n = max(n, self.MIN_READ_SIZE)
+        n = min(n, self._compress_left)
+
+        data = self._fileobj.read(n)
+        self._compress_left -= len(data)
+
+        if self._decrypter is not None:
+            data = bytes(map(self._decrypter, data))
         return data
 
     def close(self):
@@ -667,7 +762,8 @@ class ZipFile:
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
     mode: The mode can be either read "r", write "w" or append "a".
-    compression: ZIP_STORED (no compression) or ZIP_DEFLATED (requires zlib).
+    compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib) or
+                 ZIP_BZIP2 (requires bz2).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
@@ -681,14 +777,7 @@ class ZipFile:
         if mode not in ("r", "w", "a"):
             raise RuntimeError('ZipFile() requires mode "r", "w", or "a"')
 
-        if compression == ZIP_STORED:
-            pass
-        elif compression == ZIP_DEFLATED:
-            if not zlib:
-                raise RuntimeError(
-                      "Compression requires the (missing) zlib module")
-        else:
-            raise RuntimeError("That compression method is not supported")
+        _check_compression(compression)
 
         self._allowZip64 = allowZip64
         self._didModify = False
@@ -1067,11 +1156,7 @@ class ZipFile:
         if not self.fp:
             raise RuntimeError(
                   "Attempt to write ZIP archive that was already closed")
-        if zinfo.compress_type == ZIP_DEFLATED and not zlib:
-            raise RuntimeError(
-                  "Compression requires the (missing) zlib module")
-        if zinfo.compress_type not in (ZIP_STORED, ZIP_DEFLATED):
-            raise RuntimeError("That compression method is not supported")
+        _check_compression(zinfo.compress_type)
         if zinfo.file_size > ZIP64_LIMIT:
             if not self._allowZip64:
                 raise LargeZipFile("Filesize would require ZIP64 extensions")
@@ -1122,17 +1207,13 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader())
             return
 
+        cmpr = _get_compressor(zinfo.compress_type)
         with open(filename, "rb") as fp:
             # Must overwrite CRC and sizes with correct data later
             zinfo.CRC = CRC = 0
             zinfo.compress_size = compress_size = 0
             zinfo.file_size = file_size = 0
             self.fp.write(zinfo.FileHeader())
-            if zinfo.compress_type == ZIP_DEFLATED:
-                cmpr = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                     zlib.DEFLATED, -15)
-            else:
-                cmpr = None
             while 1:
                 buf = fp.read(1024 * 8)
                 if not buf:
@@ -1189,9 +1270,8 @@ class ZipFile:
         self._writecheck(zinfo)
         self._didModify = True
         zinfo.CRC = crc32(data) & 0xffffffff       # CRC-32 checksum
-        if zinfo.compress_type == ZIP_DEFLATED:
-            co = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                 zlib.DEFLATED, -15)
+        co = _get_compressor(zinfo.compress_type)
+        if co:
             data = co.compress(data) + co.flush()
             zinfo.compress_size = len(data)    # Compressed size
         else:
@@ -1243,18 +1323,20 @@ class ZipFile:
                     header_offset = zinfo.header_offset
 
                 extra_data = zinfo.extra
+                min_version = 0
                 if extra:
                     # Append a ZIP64 field to the extra's
                     extra_data = struct.pack(
                             '<HH' + 'Q'*len(extra),
                             1, 8*len(extra), *extra) + extra_data
 
-                    extract_version = max(45, zinfo.extract_version)
-                    create_version = max(45, zinfo.create_version)
-                else:
-                    extract_version = zinfo.extract_version
-                    create_version = zinfo.create_version
+                    min_version = ZIP64_VERSION
 
+                if zinfo.compress_type == ZIP_BZIP2:
+                    min_version = max(BZIP2_VERSION, min_version)
+
+                extract_version = max(min_version, zinfo.extract_version)
+                create_version = max(min_version, zinfo.create_version)
                 try:
                     filename, flag_bits = zinfo._encodeFilenameFlags()
                     centdir = struct.pack(structCentralDir,
