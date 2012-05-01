@@ -122,9 +122,7 @@ pythondll_uuid = {
     } [major+minor]
 
 # Compute the name that Sphinx gives to the docfile
-docfile = ""
-if int(micro):
-    docfile = micro
+docfile = micro
 if level < 0xf:
     if level == 0xC:
         docfile += "rc%s" % (serial,)

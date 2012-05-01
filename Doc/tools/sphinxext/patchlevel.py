@@ -34,8 +34,7 @@ def get_header_version_info(srcdir):
 
     release = version = '%s.%s' % (d['PY_MAJOR_VERSION'], d['PY_MINOR_VERSION'])
     micro = int(d['PY_MICRO_VERSION'])
-    if micro != 0:
-        release += '.' + str(micro)
+    release += '.' + str(micro)
 
     level = d['PY_RELEASE_LEVEL']
     suffixes = {
@@ -51,8 +50,7 @@ def get_header_version_info(srcdir):
 def get_sys_version_info():
     major, minor, micro, level, serial = sys.version_info
     release = version = '%s.%s' % (major, minor)
-    if micro:
-        release += '.%s' % micro
+    release += '.%s' % micro
     if level != 'final':
         release += '%s%s' % (level[0], serial)
     return version, release
