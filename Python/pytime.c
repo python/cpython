@@ -40,14 +40,14 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
         BOOL isTimeAdjustmentDisabled;
 
         info->implementation = "GetSystemTimeAsFileTime()";
-        info->is_monotonic = 0;
+        info->monotonic = 0;
         (void) GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
                                        &isTimeAdjustmentDisabled);
         info->resolution = timeIncrement * 1e-7;
         if (isTimeAdjustmentDisabled)
-            info->is_adjusted = 0;
+            info->adjusted = 0;
         else
-            info->is_adjusted = 1;
+            info->adjusted = 1;
     }
 #else
     /* There are three ways to get the time:
@@ -70,8 +70,8 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
         if (info) {
             info->implementation = "gettimeofday()";
             info->resolution = 1e-6;
-            info->is_monotonic = 0;
-            info->is_adjusted = 1;
+            info->monotonic = 0;
+            info->adjusted = 1;
         }
         return;
     }
@@ -86,8 +86,8 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
         if (info) {
             info->implementation = "ftime()";
             info->resolution = 1e-3;
-            info->is_monotonic = 0;
-            info->is_adjusted = 1;
+            info->monotonic = 0;
+            info->adjusted = 1;
         }
     }
 #else /* !HAVE_FTIME */
@@ -96,8 +96,8 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
     if (info) {
         info->implementation = "time()";
         info->resolution = 1.0;
-        info->is_monotonic = 0;
-        info->is_adjusted = 1;
+        info->monotonic = 0;
+        info->adjusted = 1;
     }
 #endif /* !HAVE_FTIME */
 
