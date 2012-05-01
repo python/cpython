@@ -95,8 +95,8 @@ floatclock(_Py_clock_info_t *info)
     if (info) {
         info->implementation = "clock()";
         info->resolution = 1.0 / (double)CLOCKS_PER_SEC;
-        info->is_monotonic = 1;
-        info->is_adjusted = 0;
+        info->monotonic = 1;
+        info->adjusted = 0;
     }
     return PyFloat_FromDouble((double)value / CLOCKS_PER_SEC);
 }
@@ -131,8 +131,8 @@ win_perf_counter(_Py_clock_info_t *info, PyObject **result)
     if (info) {
         info->implementation = "QueryPerformanceCounter()";
         info->resolution = 1.0 / (double)cpu_frequency;
-        info->is_monotonic = 1;
-        info->is_adjusted = 0;
+        info->monotonic = 1;
+        info->adjusted = 0;
     }
     *result = PyFloat_FromDouble(diff / (double)cpu_frequency);
     return 0;
@@ -874,7 +874,7 @@ pymonotonic(_Py_clock_info_t *info)
             info->implementation = "GetTickCount64()";
         else
             info->implementation = "GetTickCount()";
-        info->is_monotonic = 1;
+        info->monotonic = 1;
         ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
                                      &isTimeAdjustmentDisabled);
         if (!ok) {
@@ -882,7 +882,7 @@ pymonotonic(_Py_clock_info_t *info)
             return NULL;
         }
         info->resolution = timeIncrement * 1e-7;
-        info->is_adjusted = 0;
+        info->adjusted = 0;
     }
     return PyFloat_FromDouble(result);
 
@@ -902,8 +902,8 @@ pymonotonic(_Py_clock_info_t *info)
     if (info) {
         info->implementation = "mach_absolute_time()";
         info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
-        info->is_monotonic = 1;
-        info->is_adjusted = 0;
+        info->monotonic = 1;
+        info->adjusted = 0;
     }
     return PyFloat_FromDouble(secs);
 
@@ -924,14 +924,14 @@ pymonotonic(_Py_clock_info_t *info)
 
     if (info) {
         struct timespec res;
-        info->is_monotonic = 1;
+        info->monotonic = 1;
         info->implementation = function;
 #if (defined(linux) || defined(__linux) || defined(__linux__)) \
     && !defined(CLOCK_HIGHRES)
         /* CLOCK_MONOTONIC is adjusted on Linux */
-        info->is_adjusted = 1;
+        info->adjusted = 1;
 #else
-        info->is_adjusted = 0;
+        info->adjusted = 0;
 #endif
         if (clock_getres(clk_id, &res) == 0)
             info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
@@ -1023,8 +1023,8 @@ py_process_time(_Py_clock_info_t *info)
     if (info) {
         info->implementation = "GetProcessTimes()";
         info->resolution = 1e-7;
-        info->is_monotonic = 1;
-        info->is_adjusted = 0;
+        info->monotonic = 1;
+        info->adjusted = 0;
     }
     return PyFloat_FromDouble(total * 1e-7);
 #else
@@ -1052,8 +1052,8 @@ py_process_time(_Py_clock_info_t *info)
         if (info) {
             struct timespec res;
             info->implementation = function;
-            info->is_monotonic = 1;
-            info->is_adjusted = 0;
+            info->monotonic = 1;
+            info->adjusted = 0;
             if (clock_getres(clk_id, &res) == 0)
                 info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
             else
@@ -1070,8 +1070,8 @@ py_process_time(_Py_clock_info_t *info)
         total += ru.ru_stime.tv_sec + ru.ru_stime.tv_usec * 1e-6;
         if (info) {
             info->implementation = "getrusage(RUSAGE_SELF)";
-            info->is_monotonic = 1;
-            info->is_adjusted = 0;
+            info->monotonic = 1;
+            info->adjusted = 0;
             info->resolution = 1e-6;
         }
         return PyFloat_FromDouble(total);
@@ -1099,8 +1099,8 @@ py_process_time(_Py_clock_info_t *info)
             total += (double)t.tms_stime / ticks_per_second;
             if (info) {
                 info->implementation = "times()";
-                info->is_monotonic = 1;
-                info->is_adjusted = 0;
+                info->monotonic = 1;
+                info->adjusted = 0;
                 info->resolution = 1.0 / ticks_per_second;
             }
             return PyFloat_FromDouble(total);
@@ -1132,8 +1132,8 @@ PyDoc_STRVAR(ClockInfo_docstring,
 static PyStructSequence_Field ClockInfo_fields[] = {
     {"implementation", "name of the underlying C function "
                        "used to get the clock value"},
-    {"is_monotonic", "True if the clock cannot go backward, False otherwise"},
-    {"is_adjusted", "True if the clock can be adjusted "
+    {"monotonic", "True if the clock cannot go backward, False otherwise"},
+    {"adjusted", "True if the clock can be adjusted "
                     "(e.g. by a NTP daemon), False otherwise"},
     {"resolution", "resolution of the clock in seconds"},
     {NULL, NULL}
@@ -1159,13 +1159,13 @@ time_get_clock_info(PyObject *self, PyObject *args)
 
 #ifdef Py_DEBUG
     info.implementation = NULL;
-    info.is_monotonic = -1;
-    info.is_adjusted = -1;
+    info.monotonic = -1;
+    info.adjusted = -1;
     info.resolution = -1.0;
 #else
     info.implementation = "";
-    info.is_monotonic = 0;
-    info.is_adjusted = 0;
+    info.monotonic = 0;
+    info.adjusted = 0;
     info.resolution = 1.0;
 #endif
 
@@ -1201,14 +1201,14 @@ time_get_clock_info(PyObject *self, PyObject *args)
         goto error;
     PyStructSequence_SET_ITEM(result, 0, obj);
 
-    assert(info.is_monotonic != -1);
-    obj = PyBool_FromLong(info.is_monotonic);
+    assert(info.monotonic != -1);
+    obj = PyBool_FromLong(info.monotonic);
     if (obj == NULL)
         goto error;
     PyStructSequence_SET_ITEM(result, 1, obj);
 
-    assert(info.is_adjusted != -1);
-    obj = PyBool_FromLong(info.is_adjusted);
+    assert(info.adjusted != -1);
+    obj = PyBool_FromLong(info.adjusted);
     if (obj == NULL)
         goto error;
     PyStructSequence_SET_ITEM(result, 2, obj);
@@ -1487,8 +1487,8 @@ floattime(_Py_clock_info_t *info)
         if (info) {
             struct timespec res;
             info->implementation = "clock_gettime(CLOCK_REALTIME)";
-            info->is_monotonic = 0;
-            info->is_adjusted = 1;
+            info->monotonic = 0;
+            info->adjusted = 1;
             if (clock_getres(CLOCK_REALTIME, &res) == 0)
                 info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
             else

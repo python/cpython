@@ -30,16 +30,16 @@ class TimeTestCase(unittest.TestCase):
     def test_time(self):
         time.time()
         info = time.get_clock_info('time')
-        self.assertEqual(info.is_monotonic, False)
+        self.assertEqual(info.monotonic, False)
         if sys.platform != 'win32':
-            self.assertEqual(info.is_adjusted, True)
+            self.assertEqual(info.adjusted, True)
 
     def test_clock(self):
         time.clock()
 
         info = time.get_clock_info('clock')
-        self.assertEqual(info.is_monotonic, True)
-        self.assertEqual(info.is_adjusted, False)
+        self.assertEqual(info.monotonic, True)
+        self.assertEqual(info.adjusted, False)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -370,11 +370,11 @@ class TimeTestCase(unittest.TestCase):
         self.assertAlmostEqual(dt, 0.1, delta=0.2)
 
         info = time.get_clock_info('monotonic')
-        self.assertEqual(info.is_monotonic, True)
+        self.assertEqual(info.monotonic, True)
         if sys.platform == 'linux':
-            self.assertEqual(info.is_adjusted, True)
+            self.assertEqual(info.adjusted, True)
         else:
-            self.assertEqual(info.is_adjusted, False)
+            self.assertEqual(info.adjusted, False)
 
     def test_perf_counter(self):
         time.perf_counter()
@@ -386,8 +386,8 @@ class TimeTestCase(unittest.TestCase):
         self.assertLess(stop - start, 0.01)
 
         info = time.get_clock_info('process_time')
-        self.assertEqual(info.is_monotonic, True)
-        self.assertEqual(info.is_adjusted, False)
+        self.assertEqual(info.monotonic, True)
+        self.assertEqual(info.adjusted, False)
 
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
@@ -433,12 +433,12 @@ class TimeTestCase(unittest.TestCase):
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
             self.assertNotEqual(info.implementation, '')
-            self.assertIsInstance(info.is_monotonic, bool)
+            self.assertIsInstance(info.monotonic, bool)
             self.assertIsInstance(info.resolution, float)
             # 0.0 < resolution <= 1.0
             self.assertGreater(info.resolution, 0.0)
             self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.is_adjusted, bool)
+            self.assertIsInstance(info.adjusted, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 

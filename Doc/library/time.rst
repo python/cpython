@@ -168,11 +168,11 @@ The module defines the following functions and data items:
 
       The name of the underlying C function used to get the clock value.
 
-   .. attribute::  is_monotonic
+   .. attribute::  monotonic
 
       ``True`` if the clock cannot go backward, ``False`` otherwise.
 
-   .. attribute:: is_adjusted
+   .. attribute:: adjusted
 
       ``True`` if the clock can be adjusted (e.g. by a NTP daemon), ``False``
       otherwise.
