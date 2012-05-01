@@ -24,6 +24,7 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
+        self.frame_returning = None
 
     def canonic(self, filename):
         if filename == "<" + filename[1:-1] + ">":
@@ -82,7 +83,9 @@ class Bdb:
 
     def dispatch_return(self, frame, arg):
         if self.stop_here(frame) or frame == self.returnframe:
+            self.frame_returning = frame
             self.user_return(frame, arg)
+            self.frame_returning = None
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
@@ -186,6 +189,14 @@ class Bdb:
 
     def set_step(self):
         """Stop after one line of code."""
+        # Issue #13183: pdb skips frames after hitting a breakpoint and running
+        # step commands.
+        # Restore the trace function in the caller (that may not have been set
+        # for performance reasons) when returning from the current frame.
+        if self.frame_returning:
+            caller_frame = self.frame_returning.f_back
+            if caller_frame and not caller_frame.f_trace:
+                caller_frame.f_trace = self.trace_dispatch
         self._set_stopinfo(None, None)
 
     def set_next(self, frame):

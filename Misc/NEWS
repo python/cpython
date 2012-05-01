@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running
+  step.  Patch by Xavier de Gaye.
+
 - Issue #14664: It is now possible to use @unittest.skip{If,Unless} on a
   test class that doesn't inherit from TestCase (i.e. a mixin).
 
