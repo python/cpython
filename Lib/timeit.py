@@ -9,14 +9,15 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-p] [-h] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 3)
   -s/--setup S: statement to be executed once initially (default 'pass')
-  -t/--time: use time.time()
-  -c/--clock: use time.clock()
+  -p/--process: use time.process_time() (default is time.perf_counter())
+  -t/--time: use time.time() (deprecated)
+  -c/--clock: use time.clock() (deprecated)
   -v/--verbose: print raw timing results; repeat for more digits precision
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
@@ -249,9 +250,10 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:s:r:tcvh",
+        opts, args = getopt.getopt(args, "n:s:r:tcpvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "verbose", "help"])
+                                    "time", "clock", "process",
+                                    "verbose", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")
@@ -276,6 +278,8 @@ def main(args=None, *, _wrap_timer=None):
             timer = time.time
         if o in ("-c", "--clock"):
             timer = time.clock
+        if o in ("-p", "--process"):
+            timer = time.process_time
         if o in ("-v", "--verbose"):
             if verbose:
                 precision += 1
