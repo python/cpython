@@ -28,7 +28,7 @@ except ImportError:
     bz2 = None
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
-           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2"
+           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2",
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
 
 class BadZipFile(Exception):
