@@ -262,28 +262,27 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     argc = PyTuple_GET_SIZE(args);
     if (argc < 1) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' of '%.100s' "
+                     "descriptor '%s' of '%.100s' "
                      "object needs an argument",
-                     descr_name((PyDescrObject *)descr), "?",
+                     descr_name((PyDescrObject *)descr),
                      descr->d_type->tp_name);
         return NULL;
     }
     self = PyTuple_GET_ITEM(args, 0);
     if (!PyType_Check(self)) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' requires a type "
+                     "descriptor '%s' requires a type "
                      "but received a '%.100s'",
-                     descr_name((PyDescrObject *)descr), "?",
-                     descr->d_type->tp_name,
+                     descr_name((PyDescrObject *)descr),
                      self->ob_type->tp_name);
         return NULL;
     }
     if (!PyType_IsSubtype((PyTypeObject *)self, descr->d_type)) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' "
+                     "descriptor '%s' "
                      "requires a subtype of '%.100s' "
                      "but received '%.100s",
-                     descr_name((PyDescrObject *)descr), "?",
+                     descr_name((PyDescrObject *)descr),
                      descr->d_type->tp_name,
                      self->ob_type->tp_name);
         return NULL;
