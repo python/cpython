@@ -5,6 +5,7 @@ import pdb
 import sys
 import unittest
 import subprocess
+import textwrap
 
 from test import support
 # This little helper class is essential for testing pdb under doctest.
@@ -595,6 +596,22 @@ def test_pdb_run_with_code_object():
 
 class PdbTestCase(unittest.TestCase):
 
+    def run_pdb(self, script, commands):
+        """Run 'script' lines with pdb and the pdb 'commands'."""
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        cmd = [sys.executable, '-m', 'pdb', filename]
+        stdout = stderr = None
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT,
+                                   ) as proc:
+            stdout, stderr = proc.communicate(str.encode(commands))
+        stdout = stdout and bytes.decode(stdout)
+        stderr = stderr and bytes.decode(stderr)
+        return stdout, stderr
+
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
         with open(support.TESTFN, 'wb') as f:
@@ -609,6 +626,40 @@ class PdbTestCase(unittest.TestCase):
         stdout, stderr = proc.communicate(b'quit\n')
         self.assertNotIn(b'SyntaxError', stdout,
                          "Got a syntax error running test script under PDB")
+
+    def test_issue13183(self):
+        script = """
+            from bar import bar
+
+            def foo():
+                bar()
+
+            def nope():
+                pass
+
+            def foobar():
+                foo()
+                nope()
+
+            foobar()
+        """
+        commands = """
+            from bar import bar
+            break bar
+            continue
+            step
+            step
+            quit
+        """
+        bar = """
+            def bar():
+                print('1')
+        """
+        with open('bar.py', 'w') as f:
+            f.write(textwrap.dedent(bar))
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertIn('main.py(5)foo()->None', stdout.split('\n')[-3],
+                         'Fail to step into the caller after a return')
 
     def tearDown(self):
         support.unlink(support.TESTFN)
