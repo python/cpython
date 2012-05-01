@@ -25,8 +25,8 @@ typedef struct {
 /* Structure used by time.get_clock_info() */
 typedef struct {
     const char *implementation;
-    int is_monotonic;
-    int is_adjusted;
+    int monotonic;
+    int adjusted;
     double resolution;
 } _Py_clock_info_t;
 
