@@ -13719,7 +13719,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             PyObject *signobj = NULL, *fillobj = NULL;
 
             fmtpos++;
-            if (PyUnicode_READ(fmtkind, fmt, fmtpos) == '(') {
+            c = PyUnicode_READ(fmtkind, fmt, fmtpos);
+            if (c == '(') {
                 Py_ssize_t keystart;
                 Py_ssize_t keylen;
                 PyObject *key;
@@ -13765,7 +13766,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 argidx = -2;
             }
             while (--fmtcnt >= 0) {
-                switch (c = PyUnicode_READ(fmtkind, fmt, fmtpos++)) {
+                c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
+                switch (c) {
                 case '-': flags |= F_LJUST; continue;
                 case '+': flags |= F_SIGN; continue;
                 case ' ': flags |= F_BLANK; continue;
