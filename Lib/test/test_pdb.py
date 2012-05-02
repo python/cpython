@@ -658,7 +658,7 @@ class PdbTestCase(unittest.TestCase):
         """
         bar = """
             def bar():
-                print('1')
+                pass
         """
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
