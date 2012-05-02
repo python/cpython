@@ -2555,6 +2555,8 @@ def _afunc(x):
 def pool_in_process():
     pool = multiprocessing.Pool(processes=4)
     x = pool.map(_afunc, [1, 2, 3, 4, 5, 6, 7])
+    pool.close()
+    pool.join()
 
 class _file_like(object):
     def __init__(self, delegate):
@@ -2808,14 +2810,17 @@ def test_main(run=None):
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
-    run(suite)
-
-    ThreadsMixin.pool.terminate()
-    ProcessesMixin.pool.terminate()
-    ManagerMixin.pool.terminate()
-    ManagerMixin.manager.shutdown()
-
-    del ProcessesMixin.pool, ThreadsMixin.pool, ManagerMixin.pool
+    try:
+        run(suite)
+    finally:
+        ThreadsMixin.pool.terminate()
+        ProcessesMixin.pool.terminate()
+        ManagerMixin.pool.terminate()
+        ManagerMixin.pool.join()
+        ManagerMixin.manager.shutdown()
+        ThreadsMixin.pool.join()
+        ProcessesMixin.pool.join()
+        del ProcessesMixin.pool, ThreadsMixin.pool, ManagerMixin.pool
 
 def main():
     test_main(unittest.TextTestRunner(verbosity=2).run)
