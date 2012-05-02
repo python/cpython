@@ -13737,9 +13737,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 keystart = fmtpos;
                 /* Skip over balanced parentheses */
                 while (pcount > 0 && --fmtcnt >= 0) {
-                    if (PyUnicode_READ(fmtkind, fmt, fmtpos) == ')')
+                    c = PyUnicode_READ(fmtkind, fmt, fmtpos);
+                    if (c == ')')
                         --pcount;
-                    else if (PyUnicode_READ(fmtkind, fmt, fmtpos) == '(')
+                    else if (c == '(')
                         ++pcount;
                     fmtpos++;
                 }
