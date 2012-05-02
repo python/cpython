@@ -107,7 +107,11 @@ class PosixTester(unittest.TestCase):
         # If a non-privileged user invokes it, it should fail with OSError
         # EPERM.
         if os.getuid() != 0:
-            name = pwd.getpwuid(posix.getuid()).pw_name
+            try:
+                name = pwd.getpwuid(posix.getuid()).pw_name
+            except KeyError:
+                # the current UID may not have a pwd entry
+                raise unittest.SkipTest("need a pwd entry")
             try:
                 posix.initgroups(name, 13)
             except OSError as e:
@@ -421,8 +425,9 @@ class PosixTester(unittest.TestCase):
     def test_getgroups(self):
         with os.popen('id -G') as idg:
             groups = idg.read().strip()
+            ret = idg.close()
 
-        if not groups:
+        if ret != 0 or not groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         # 'id -G' and 'os.getgroups()' should return the same
