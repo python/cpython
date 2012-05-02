@@ -1152,6 +1152,24 @@ class _TestPool(BaseTestCase):
         join()
         self.assertTrue(join.elapsed < 0.2)
 
+def unpickleable_result():
+    return lambda: 42
+
+class _TestPoolWorkerErrors(BaseTestCase):
+    ALLOWED_TYPES = ('processes', )
+
+    def test_unpickleable_result(self):
+        from multiprocessing.pool import MaybeEncodingError
+        p = multiprocessing.Pool(2)
+
+        # Make sure we don't lose pool processes because of encoding errors.
+        for iteration in range(20):
+            res = p.apply_async(unpickleable_result)
+            self.assertRaises(MaybeEncodingError, res.get)
+
+        p.close()
+        p.join()
+
 class _TestPoolWorkerLifetime(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', )
