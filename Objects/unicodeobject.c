@@ -12067,20 +12067,22 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
     if (PyUnicode_READY(self) == -1)
         return NULL;
 
-    end = Py_MIN(end, PyUnicode_GET_LENGTH(self));
+    length = PyUnicode_GET_LENGTH(self);
+    end = Py_MIN(end, length);
 
-    if (start == 0 && end == PyUnicode_GET_LENGTH(self))
+    if (start == 0 && end == length)
         return unicode_result_unchanged(self);
-
-    length = end - start;
-    if (length == 1)
-        return unicode_getitem(self, start);
 
     if (start < 0 || end < 0) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return NULL;
     }
+    if (start >= length || end < start) {
+        assert(end == length);
+        return PyUnicode_New(0, 0);
+    }
 
+    length = end - start;
     if (PyUnicode_IS_ASCII(self)) {
         data = PyUnicode_1BYTE_DATA(self);
         return unicode_fromascii(data + start, length);
