@@ -3572,28 +3572,194 @@ posix_uname(PyObject *self, PyObject *noargs)
 #endif /* HAVE_UNAME */
 
 
+static int
+split_py_long_to_s_and_ns(PyObject *py_long, time_t *s, long *ns)
+{
+    int result = 0;
+    PyObject *divmod;
+    divmod = PyNumber_Divmod(py_long, billion);
+    if (!divmod)
+        goto exit;
+    *s = _PyLong_AsTime_t(PyTuple_GET_ITEM(divmod, 0));
+    if ((*s == -1) && PyErr_Occurred())
+        goto exit;
+    *ns = PyLong_AsLong(PyTuple_GET_ITEM(divmod, 1));
+    if ((*s == -1) && PyErr_Occurred())
+        goto exit;
+
+    result = 1;
+exit:
+    Py_XDECREF(divmod);
+    return result;
+}
+
+
+typedef int (*parameter_converter_t)(PyObject *, void *);
+
+typedef struct {
+    /* input only */
+    char path_format;
+    parameter_converter_t converter;
+    char *function_name;
+    char *first_argument_name;
+    PyObject *args;
+    PyObject *kwargs;
+
+    /* input/output */    
+    PyObject **path;
+
+    /* output only */
+    int now;
+    time_t atime_s;
+    long   atime_ns;
+    time_t mtime_s;
+    long   mtime_ns;
+} utime_arguments;
+
+#define DECLARE_UA(ua, fname) \
+    utime_arguments ua; \
+    memset(&ua, 0, sizeof(ua)); \
+    ua.function_name = fname; \
+    ua.args = args; \
+    ua.kwargs = kwargs; \
+    ua.first_argument_name = "path"; \
+
+/* UA_TO_FILETIME doesn't declare atime and mtime for you */
+#define UA_TO_FILETIME(ua, atime, mtime) \
+    time_t_to_FILE_TIME(ua.atime_s, ua.atime_ns, &atime); \
+    time_t_to_FILE_TIME(ua.mtime_s, ua.mtime_ns, &mtime)
+
+/* the rest of these macros declare the output variable for you */
+#define UA_TO_TIMESPEC(ua, ts) \
+    struct timespec ts[2]; \
+    ts[0].tv_sec = ua.atime_s; \
+    ts[0].tv_nsec = ua.atime_ns; \
+    ts[1].tv_sec = ua.mtime_s; \
+    ts[1].tv_nsec = ua.mtime_ns
+
+#define UA_TO_TIMEVAL(ua, tv) \
+    struct timeval tv[2]; \
+    tv[0].tv_sec = ua.atime_s; \
+    tv[0].tv_usec = ua.atime_ns / 1000; \
+    tv[1].tv_sec = ua.mtime_s; \
+    tv[1].tv_usec = ua.mtime_ns / 1000
+
+#define UA_TO_UTIMBUF(ua, u) \
+    struct utimbuf u; \
+    utimbuf.actime = ua.atime_s; \
+    utimbuf.modtime = ua.mtime_s
+
+#define UA_TO_TIME_T(ua, timet) \
+    time_t timet[2]; \
+    timet[0] = ua.atime_s; \
+    timet[1] = ua.mtime_s
+
+
+/* 
+ * utime_read_time_arguments() processes arguments for the utime
+ * family of functions.
+ * returns zero on failure.
+ */
+static int
+utime_read_time_arguments(utime_arguments *ua)
+{
+    PyObject *times = NULL;
+    PyObject *ns = NULL;
+    char format[24];
+    char *kwlist[4];
+    char **kw = kwlist;
+    int return_value;
+
+    *kw++ = ua->first_argument_name;
+    *kw++ = "times";
+    *kw++ = "ns";
+    *kw = NULL;
+
+    sprintf(format, "%c%s|O$O:%s",
+            ua->path_format,
+            ua->converter ? "&" : "",
+            ua->function_name);
+
+    if (ua->converter)
+        return_value = PyArg_ParseTupleAndKeywords(ua->args, ua->kwargs,
+            format, kwlist, ua->converter, ua->path, &times, &ns);
+    else
+        return_value = PyArg_ParseTupleAndKeywords(ua->args, ua->kwargs,
+            format, kwlist, ua->path, &times, &ns);
+
+    if (!return_value)
+        return 0;
+
+    if (times && ns) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "%s: you may specify either 'times'"
+                     " or 'ns' but not both",
+                     ua->function_name);
+        return 0;
+    }
+
+    if (times && (times != Py_None)) {
+        if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%s: 'time' must be either"
+                         " a valid tuple of two ints or None",
+                         ua->function_name);
+            return 0;
+        }
+        ua->now = 0;
+        return (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
+                    &(ua->atime_s), &(ua->atime_ns)) != -1)
+            && (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
+                    &(ua->mtime_s), &(ua->mtime_ns)) != -1);
+    }
+
+    if (ns) {
+        if (!PyTuple_CheckExact(ns) || (PyTuple_Size(ns) != 2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%s: 'ns' must be a valid tuple of two ints",
+                         ua->function_name);
+            return 0;
+        }
+        ua->now = 0;
+        return (split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 0),
+                    &(ua->atime_s), &(ua->atime_ns)))
+            && (split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
+                    &(ua->mtime_s), &(ua->mtime_ns)));
+    }
+
+    /* either times=None, or neither times nor ns was specified. use "now". */
+    ua->now = 1;
+    return 1;
+}
+
+
 PyDoc_STRVAR(posix_utime__doc__,
-"utime(path[, (atime, mtime)])\n\
-Set the access and modified time of the file to the given values.\n\
-If no second argument is used, set the access and modified times to\n\
-the current time.");
+"utime(path[, times=(atime, mtime), *, ns=(atime_ns, mtime_ns)])\n\
+Set the access and modified time of the file.\n\
+If the second argument ('times') is specified,\n\
+    the values should be expressed as float seconds since the epoch.\n\
+If the keyword argument 'ns' is specified,\n\
+    the values should be expressed as integer nanoseconds since the epoch.\n\
+If neither the second nor the 'ns' argument is specified,\n\
+    utime uses the current time.\n\
+Specifying both 'times' and 'ns' is an error.");
 
 static PyObject *
-posix_utime(PyObject *self, PyObject *args)
+posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 #ifdef MS_WINDOWS
-    PyObject *arg = Py_None;
-    PyObject *obwpath;
-    wchar_t *wpath = NULL;
-    const char *apath;
+    PyObject *upath;
     HANDLE hFile;
-    time_t atimesec, mtimesec;
-    long ansec, mnsec;
-    FILETIME atime, mtime;
     PyObject *result = NULL;
+    FILETIME atime, mtime;
 
-    if (PyArg_ParseTuple(args, "U|O:utime", &obwpath, &arg)) {
-        wpath = PyUnicode_AsUnicode(obwpath);
+    DECLARE_UA(ua, "utime");
+
+    ua.path_format = 'U';
+    ua.path = &upath;
+
+    if (!utime_read_time_arguments(&ua)) {
+        wchar_t *wpath = PyUnicode_AsUnicode(upath);
         if (wpath == NULL)
             return NULL;
         Py_BEGIN_ALLOW_THREADS
@@ -3602,14 +3768,17 @@ posix_utime(PyObject *self, PyObject *args)
                             FILE_FLAG_BACKUP_SEMANTICS, NULL);
         Py_END_ALLOW_THREADS
         if (hFile == INVALID_HANDLE_VALUE)
-            return win32_error_object("utime", obwpath);
+            return win32_error_object("utime", upath);
     }
     else {
+        const char *apath;
         /* Drop the argument parsing error as narrow strings
            are also valid. */
         PyErr_Clear();
 
-        if (!PyArg_ParseTuple(args, "y|O:utime", &apath, &arg))
+        ua.path_format = 'y';
+        ua.path = (PyObject **)&apath;
+        if (!utime_read_time_arguments(&ua))
             return NULL;
         if (win32_warn_bytes_api())
             return NULL;
@@ -3625,7 +3794,7 @@ posix_utime(PyObject *self, PyObject *args)
         }
     }
 
-    if (arg == Py_None) {
+    if (ua.now) {
         SYSTEMTIME now;
         GetSystemTime(&now);
         if (!SystemTimeToFileTime(&now, &mtime) ||
@@ -3634,20 +3803,8 @@ posix_utime(PyObject *self, PyObject *args)
             goto done;
         }
     }
-    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                        "utime() arg 2 must be a tuple (atime, mtime)");
-        goto done;
-    }
     else {
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
-                                     &atimesec, &ansec) == -1)
-            goto done;
-        time_t_to_FILE_TIME(atimesec, ansec, &atime);
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
-                                     &mtimesec, &mnsec) == -1)
-            goto done;
-        time_t_to_FILE_TIME(mtimesec, mnsec, &mtime);
+        UA_TO_FILETIME(ua, atime, mtime);
     }
     if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
         /* Avoid putting the file name into the error here,
@@ -3663,136 +3820,85 @@ done:
     CloseHandle(hFile);
     return result;
 #else /* MS_WINDOWS */
-
     PyObject *opath;
     char *path;
-    time_t atime, mtime;
-    long ansec, mnsec;
     int res;
-    PyObject* arg = Py_None;
 
-    if (!PyArg_ParseTuple(args, "O&|O:utime",
-                          PyUnicode_FSConverter, &opath, &arg))
+    DECLARE_UA(ua, "utime");
+
+    ua.path_format = 'O';
+    ua.path = &opath;
+    ua.converter = PyUnicode_FSConverter;
+
+    if (!utime_read_time_arguments(&ua))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (arg == Py_None) {
-        /* optional time values not given */
+    if (ua.now) {
         Py_BEGIN_ALLOW_THREADS
         res = utime(path, NULL);
         Py_END_ALLOW_THREADS
     }
-    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                        "utime() arg 2 must be a tuple (atime, mtime)");
-        Py_DECREF(opath);
-        return NULL;
-    }
     else {
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
-                                     &atime, &ansec) == -1) {
-            Py_DECREF(opath);
-            return NULL;
-        }
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
-                                     &mtime, &mnsec) == -1) {
-            Py_DECREF(opath);
-            return NULL;
-        }
-
         Py_BEGIN_ALLOW_THREADS
-        {
 #ifdef HAVE_UTIMENSAT
-        struct timespec buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ansec;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = mnsec;
+        UA_TO_TIMESPEC(ua, buf);
         res = utimensat(AT_FDCWD, path, buf, 0);
 #elif defined(HAVE_UTIMES)
-        struct timeval buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_usec = ansec / 1000;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_usec = mnsec / 1000;
+        UA_TO_TIMEVAL(ua, buf);
         res = utimes(path, buf);
 #elif defined(HAVE_UTIME_H)
         /* XXX should define struct utimbuf instead, above */
-        struct utimbuf buf;
-        buf.actime = atime;
-        buf.modtime = mtime;
+        UA_TO_UTIMBUF(ua, buf);
         res = utime(path, &buf);
 #else
-        time_t buf[2];
-        buf[0] = atime;
-        buf[1] = mtime;
+        UA_TO_TIME_T(ua, buf);
         res = utime(path, buf);
 #endif
-        }
         Py_END_ALLOW_THREADS
     }
+
     if (res < 0) {
         return posix_error_with_allocated_filename(opath);
     }
     Py_DECREF(opath);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 #undef UTIME_EXTRACT
 #endif /* MS_WINDOWS */
 }
 
 #ifdef HAVE_FUTIMES
 PyDoc_STRVAR(posix_futimes__doc__,
-"futimes(fd[, (atime, mtime)])\n\
+"futimes(fd[, times=(atime, mtime), *, ns=(atime_ns, mtime_ns)])\n\
 Set the access and modified time of the file specified by the file\n\
-descriptor fd to the given values. If no second argument is used, set the\n\
-access and modified times to the current time.");
+descriptor fd.  See utime for the semantics of the times and ns parameters.");
 
 static PyObject *
-posix_futimes(PyObject *self, PyObject *args)
+posix_futimes(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int res, fd;
-    PyObject* arg = Py_None;
-    time_t atime, mtime;
-    long ansec, mnsec;
 
-    if (!PyArg_ParseTuple(args, "i|O:futimes", &fd, &arg))
+    DECLARE_UA(ua, "futimes");
+
+    ua.path_format = 'i';
+    ua.path = (PyObject **)&fd;
+    ua.first_argument_name = "fd";
+
+    if (!utime_read_time_arguments(&ua))
         return NULL;
 
-    if (arg == Py_None) {
-        /* optional time values not given */
+    if (ua.now) {
         Py_BEGIN_ALLOW_THREADS
         res = futimes(fd, NULL);
         Py_END_ALLOW_THREADS
     }
-    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                "futimes() arg 2 must be a tuple (atime, mtime)");
-        return NULL;
-    }
     else {
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
-                                     &atime, &ansec) == -1) {
-            return NULL;
-        }
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
-                                     &mtime, &mnsec) == -1) {
-            return NULL;
-        }
         Py_BEGIN_ALLOW_THREADS
         {
 #ifdef HAVE_FUTIMENS
-        struct timespec buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ansec;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = mnsec;
+        UA_TO_TIMESPEC(ua, buf);
         res = futimens(fd, buf);
 #else
-        struct timeval buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_usec = ansec / 1000;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_usec = mnsec / 1000;
+        UA_TO_TIMEVAL(ua, buf);
         res = futimes(fd, buf);
 #endif
         }
@@ -3806,123 +3912,46 @@ posix_futimes(PyObject *self, PyObject *args)
 
 #ifdef HAVE_LUTIMES
 PyDoc_STRVAR(posix_lutimes__doc__,
-"lutimes(path[, (atime, mtime)])\n\
+"lutimes(path[, times=(atime, mtime), *, ns=(atime_ns, mtime_ns)])\n\
 Like utime(), but if path is a symbolic link, it is not dereferenced.");
 
 static PyObject *
-posix_lutimes(PyObject *self, PyObject *args)
+posix_lutimes(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *opath;
-    PyObject *arg = Py_None;
     const char *path;
     int res;
-    time_t atime, mtime;
-    long ansec, mnsec;
 
-    if (!PyArg_ParseTuple(args, "O&|O:lutimes",
-            PyUnicode_FSConverter, &opath, &arg))
+    DECLARE_UA(ua, "lutimes");
+
+    ua.path_format = 'O';
+    ua.path = &opath;
+    ua.converter = PyUnicode_FSConverter;
+
+    if (!utime_read_time_arguments(&ua))
         return NULL;
     path = PyBytes_AsString(opath);
-    if (arg == Py_None) {
+
+    if (ua.now) {
         /* optional time values not given */
         Py_BEGIN_ALLOW_THREADS
         res = lutimes(path, NULL);
         Py_END_ALLOW_THREADS
     }
-    else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "lutimes() arg 2 must be a tuple (atime, mtime)");
-        Py_DECREF(opath);
-        return NULL;
-    }
     else {
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 0),
-                                     &atime, &ansec) == -1) {
-            Py_DECREF(opath);
-            return NULL;
-        }
-        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(arg, 1),
-                                     &mtime, &mnsec) == -1) {
-            Py_DECREF(opath);
-            return NULL;
-        }
         Py_BEGIN_ALLOW_THREADS
         {
 #ifdef HAVE_UTIMENSAT
-        struct timespec buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_nsec = ansec;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_nsec = mnsec;
+        UA_TO_TIMESPEC(ua, buf);
         res = utimensat(AT_FDCWD, path, buf, AT_SYMLINK_NOFOLLOW);
 #else
-        struct timeval buf[2];
-        buf[0].tv_sec = atime;
-        buf[0].tv_usec = ansec / 1000;
-        buf[1].tv_sec = mtime;
-        buf[1].tv_usec = mnsec / 1000;
+        UA_TO_TIMEVAL(ua, buf);
         res = lutimes(path, buf);
 #endif
         }
         Py_END_ALLOW_THREADS
     }
     Py_DECREF(opath);
-    if (res < 0)
-        return posix_error();
-    Py_RETURN_NONE;
-}
-#endif
-
-#ifdef HAVE_FUTIMENS
-PyDoc_STRVAR(posix_futimens__doc__,
-"futimens(fd[, (atime_sec, atime_nsec), (mtime_sec, mtime_nsec)])\n\
-Updates the timestamps of a file specified by the file descriptor fd, with\n\
-nanosecond precision.\n\
-If no second argument is given, set atime and mtime to the current time.\n\
-If *_nsec is specified as UTIME_NOW, the timestamp is updated to the\n\
-current time.\n\
-If *_nsec is specified as UTIME_OMIT, the timestamp is not updated.");
-
-static PyObject *
-posix_futimens(PyObject *self, PyObject *args)
-{
-    int res, fd;
-    PyObject *atime = Py_None;
-    PyObject *mtime = Py_None;
-    struct timespec buf[2];
-
-    if (!PyArg_ParseTuple(args, "i|OO:futimens",
-            &fd, &atime, &mtime))
-        return NULL;
-    if (atime == Py_None && mtime == Py_None) {
-        /* optional time values not given */
-        Py_BEGIN_ALLOW_THREADS
-        res = futimens(fd, NULL);
-        Py_END_ALLOW_THREADS
-    }
-    else if (!PyTuple_Check(atime) || PyTuple_Size(atime) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "futimens() arg 2 must be a tuple (atime_sec, atime_nsec)");
-        return NULL;
-    }
-    else if (!PyTuple_Check(mtime) || PyTuple_Size(mtime) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "futimens() arg 3 must be a tuple (mtime_sec, mtime_nsec)");
-        return NULL;
-    }
-    else {
-        if (!PyArg_ParseTuple(atime, "ll:futimens",
-                &(buf[0].tv_sec), &(buf[0].tv_nsec))) {
-            return NULL;
-        }
-        if (!PyArg_ParseTuple(mtime, "ll:futimens",
-                &(buf[1].tv_sec), &(buf[1].tv_nsec))) {
-            return NULL;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        res = futimens(fd, buf);
-        Py_END_ALLOW_THREADS
-    }
     if (res < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10619,15 +10648,15 @@ static PyMethodDef posix_methods[] = {
 #endif /* HAVE_UNAME */
     {"unlink",          posix_unlink, METH_VARARGS, posix_unlink__doc__},
     {"remove",          posix_unlink, METH_VARARGS, posix_remove__doc__},
-    {"utime",           posix_utime, METH_VARARGS, posix_utime__doc__},
+    {"utime",           (PyCFunction)posix_utime,
+                        METH_VARARGS | METH_KEYWORDS, posix_utime__doc__},
 #ifdef HAVE_FUTIMES
-    {"futimes",         posix_futimes, METH_VARARGS, posix_futimes__doc__},
+    {"futimes",         (PyCFunction)posix_futimes,
+                        METH_VARARGS | METH_KEYWORDS, posix_futimes__doc__},
 #endif
 #ifdef HAVE_LUTIMES
-    {"lutimes",         posix_lutimes, METH_VARARGS, posix_lutimes__doc__},
-#endif
-#ifdef HAVE_FUTIMENS
-    {"futimens",        posix_futimens, METH_VARARGS, posix_futimens__doc__},
+    {"lutimes",         (PyCFunction)posix_lutimes,
+                        METH_VARARGS | METH_KEYWORDS, posix_lutimes__doc__},
 #endif
 #ifdef HAVE_TIMES
     {"times",           posix_times, METH_NOARGS, posix_times__doc__},

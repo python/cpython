@@ -154,7 +154,7 @@ def copystat(src, dst, symlinks=False):
 
     st = stat_func(src)
     mode = stat.S_IMODE(st.st_mode)
-    utime_func(dst, (st.st_atime, st.st_mtime))
+    utime_func(dst, ns=(st.st_atime_ns, st.st_mtime_ns))
     chmod_func(dst, mode)
     if hasattr(st, 'st_flags'):
         try:
