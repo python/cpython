@@ -548,7 +548,10 @@ class BaseManager(object):
         '''
         Join the manager process (if it has been spawned)
         '''
-        self._process.join(timeout)
+        if self._process is not None:
+            self._process.join(timeout)
+            if not self._process.is_alive():
+                self._process = None
 
     def _debug_info(self):
         '''
