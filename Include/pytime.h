@@ -62,6 +62,10 @@ PyAPI_FUNC(int) _PyTime_ObjectToTime_t(
 PyAPI_FUNC(PyObject *) _PyLong_FromTime_t(
     time_t sec);
 
+/* Convert a PyLong to a time_t. */
+PyAPI_FUNC(time_t) _PyLong_AsTime_t(
+    PyObject *obj);
+
 /* Convert a number of seconds, int or float, to a timeval structure.
    usec is in the range [0; 999999] and rounded towards zero.
    For example, -1.2 is converted to (-2, 800000). */
