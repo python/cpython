@@ -12078,8 +12078,8 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
         return NULL;
     }
     if (start >= length || end < start) {
-        assert(end == length);
-        return PyUnicode_New(0, 0);
+        Py_INCREF(unicode_empty);
+        return unicode_empty;
     }
 
     length = end - start;
