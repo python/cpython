@@ -654,6 +654,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     Py_ssize_t new_size;
     int share_wstr;
     PyObject *new_unicode;
+    assert(unicode_modifiable(unicode));
     assert(PyUnicode_IS_READY(unicode));
     assert(PyUnicode_IS_COMPACT(unicode));
 
@@ -690,6 +691,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     }
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     length, 0);
+    assert(_PyUnicode_CheckConsistency(unicode, 0));
     return unicode;
 }
 
@@ -1603,7 +1605,6 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         if (new_unicode == NULL)
             return -1;
         *p_unicode = new_unicode;
-        assert(_PyUnicode_CheckConsistency(*p_unicode, 0));
         return 0;
     }
     return resize_inplace(unicode, length);
@@ -13690,6 +13691,7 @@ unicode_writer_prepare(struct unicode_writer_t *writer,
                        Py_ssize_t length, Py_UCS4 maxchar)
 {
     Py_ssize_t newlen;
+    PyObject *newbuffer;
 
     if (length > PY_SSIZE_T_MAX - writer->pos) {
         PyErr_NoMemory();
@@ -13697,37 +13699,31 @@ unicode_writer_prepare(struct unicode_writer_t *writer,
     }
     newlen = writer->pos + length;
 
-    if (newlen > writer->length && maxchar > writer->maxchar) {
-        PyObject *newbuffer;
-
-        /* overallocate 25% to limit the number of resize */
-        if (newlen > PY_SSIZE_T_MAX - newlen / 4)
-            writer->length = newlen;
-        else
-            writer->length = newlen + newlen / 4;
-
-        /* resize + widen */
-        newbuffer = PyUnicode_New(writer->length, maxchar);
-        if (newbuffer == NULL)
-            return -1;
-        PyUnicode_CopyCharacters(newbuffer, 0,
-                                 writer->buffer, 0, writer->pos);
-        Py_DECREF(writer->buffer);
-        writer->buffer = newbuffer;
-        unicode_writer_update(writer);
-        return 0;
-    }
     if (newlen > writer->length) {
         /* overallocate 25% to limit the number of resize */
         if (newlen > PY_SSIZE_T_MAX - newlen / 4)
             writer->length = newlen;
         else
             writer->length = newlen + newlen / 4;
-        if (PyUnicode_Resize(&writer->buffer, writer->length) < 0)
-            return -1;
+
+        if (maxchar > writer->maxchar) {
+            /* resize + widen */
+            newbuffer = PyUnicode_New(writer->length, maxchar);
+            if (newbuffer == NULL)
+                return -1;
+            PyUnicode_CopyCharacters(newbuffer, 0,
+                                     writer->buffer, 0, writer->pos);
+            Py_DECREF(writer->buffer);
+        }
+        else {
+            newbuffer = resize_compact(writer->buffer, writer->length);
+            if (newbuffer == NULL)
+                return -1;
+        }
+        writer->buffer = newbuffer;
         unicode_writer_update(writer);
     }
-    if (maxchar > writer->maxchar) {
+    else if (maxchar > writer->maxchar) {
         if (unicode_widen(&writer->buffer, writer->pos, maxchar) < 0)
             return -1;
         unicode_writer_update(writer);
