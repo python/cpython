@@ -120,7 +120,7 @@ gen_send(PyGenObject *gen, PyObject *arg)
 }
 
 PyDoc_STRVAR(close_doc,
-"close(arg) -> raise GeneratorExit inside generator.");
+"close() -> raise GeneratorExit inside generator.");
 
 static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
