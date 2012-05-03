@@ -1627,18 +1627,19 @@ PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length)
 }
 
 static int
-unicode_widen(PyObject **p_unicode, unsigned int maxchar)
+unicode_widen(PyObject **p_unicode, Py_ssize_t length,
+              unsigned int maxchar)
 {
     PyObject *result;
     assert(PyUnicode_IS_READY(*p_unicode));
+    assert(length <= PyUnicode_GET_LENGTH(*p_unicode));
     if (maxchar <= PyUnicode_MAX_CHAR_VALUE(*p_unicode))
         return 0;
     result = PyUnicode_New(PyUnicode_GET_LENGTH(*p_unicode),
                            maxchar);
     if (result == NULL)
         return -1;
-    PyUnicode_CopyCharacters(result, 0, *p_unicode, 0,
-                             PyUnicode_GET_LENGTH(*p_unicode));
+    PyUnicode_CopyCharacters(result, 0, *p_unicode, 0, length);
     Py_DECREF(*p_unicode);
     *p_unicode = result;
     return 0;
@@ -1649,7 +1650,7 @@ unicode_putchar(PyObject **p_unicode, Py_ssize_t *pos,
                 Py_UCS4 ch)
 {
     assert(ch <= MAX_UNICODE);
-    if (unicode_widen(p_unicode, ch) < 0)
+    if (unicode_widen(p_unicode, *pos, ch) < 0)
         return -1;
     PyUnicode_WRITE(PyUnicode_KIND(*p_unicode),
                     PyUnicode_DATA(*p_unicode),
@@ -4165,7 +4166,8 @@ unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler,
             if (unicode_resize(output, requiredsize) < 0)
                 goto onError;
         }
-        if (unicode_widen(output, PyUnicode_MAX_CHAR_VALUE(repunicode)) < 0)
+        if (unicode_widen(output, *outpos,
+                          PyUnicode_MAX_CHAR_VALUE(repunicode)) < 0)
             goto onError;
         copy_characters(*output, *outpos, repunicode, 0, replen);
         *outpos += replen;
@@ -5611,7 +5613,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                 maxch = MAX_MAXCHAR(maxch, ch);
 #endif
                 if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
-                    if (unicode_widen(&unicode, maxch) < 0)
+                    if (unicode_widen(&unicode, outpos, maxch) < 0)
                         goto onError;
                     kind = PyUnicode_KIND(unicode);
                     data = PyUnicode_DATA(unicode);
@@ -7993,7 +7995,7 @@ PyUnicode_DecodeCharmap(const char *s,
                             goto onError;
                         }
                     }
-                    if (unicode_widen(&v, PyUnicode_MAX_CHAR_VALUE(x)) < 0)
+                    if (unicode_widen(&v, outpos, PyUnicode_MAX_CHAR_VALUE(x)) < 0)
                         goto onError;
                     PyUnicode_CopyCharacters(v, outpos, x, 0, targetsize);
                     outpos += targetsize;
