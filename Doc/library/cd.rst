@@ -9,7 +9,7 @@
 
 
 .. deprecated:: 2.6
-    The :mod:`cd` module has been deprecated for removal in Python 3.0.
+    The :mod:`cd` module has been removed in Python 3.
 
 
 This module provides an interface to the Silicon Graphics CD library. It is

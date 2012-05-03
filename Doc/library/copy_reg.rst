@@ -5,9 +5,9 @@
    :synopsis: Register pickle support functions.
 
 .. note::
-   The :mod:`copy_reg` module has been renamed to :mod:`copyreg` in Python 3.0.
+   The :mod:`copy_reg` module has been renamed to :mod:`copyreg` in Python 3.
    The :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0.
+   sources to Python 3.
 
 .. index::
    module: pickle

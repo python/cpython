@@ -7,7 +7,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-    The :mod:`fpformat` module has been removed in Python 3.0.
+    The :mod:`fpformat` module has been removed in Python 3.
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 

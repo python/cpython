@@ -5,9 +5,9 @@
    :synopsis: Create multiple threads of control within one interpreter.
 
 .. note::
-   The :mod:`thread` module has been renamed to :mod:`_thread` in Python 3.0.
+   The :mod:`thread` module has been renamed to :mod:`_thread` in Python 3.
    The :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0; however, you should consider using the high-level
+   sources to Python 3; however, you should consider using the high-level
    :mod:`threading` module instead.
 
 

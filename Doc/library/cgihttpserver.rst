@@ -8,8 +8,8 @@
 
 .. note::
    The :mod:`CGIHTTPServer` module has been merged into :mod:`http.server` in
-   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
-   converting your sources to 3.0.
+   Python 3.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to Python 3.
 
 
 The :mod:`CGIHTTPServer` module defines a request-handler class, interface

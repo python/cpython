@@ -8,7 +8,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`sunaudiodev` module has been deprecated for removal in Python 3.0.
+   The :mod:`sunaudiodev` module has been removed in Python 3.
 
 
 
@@ -153,7 +153,7 @@ the SIGPOLL signal.  Here's an example of how you might enable this in Python::
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`SUNAUDIODEV` module has been deprecated for removal in Python 3.0.
+   The :mod:`SUNAUDIODEV` module has been removed in Python 3.
 
 
 

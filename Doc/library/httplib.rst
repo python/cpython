@@ -6,8 +6,8 @@
 
 .. note::
    The :mod:`httplib` module has been renamed to :mod:`http.client` in Python
-   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   3.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to Python 3.
 
 
 .. index::

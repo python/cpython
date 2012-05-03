@@ -6,7 +6,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-    The :mod:`sgmllib` module has been removed in Python 3.0.
+    The :mod:`sgmllib` module has been removed in Python 3.
 
 .. index:: single: SGML
 

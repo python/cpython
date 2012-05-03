@@ -8,8 +8,8 @@
 
 .. note::
    The :mod:`Cookie` module has been renamed to :mod:`http.cookies` in Python
-   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   3.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to Python 3.
 
 **Source code:** :source:`Lib/Cookie.py`
 

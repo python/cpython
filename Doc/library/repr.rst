@@ -6,9 +6,9 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 .. note::
-   The :mod:`repr` module has been renamed to :mod:`reprlib` in Python 3.0.  The
+   The :mod:`repr` module has been renamed to :mod:`reprlib` in Python 3.  The
    :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0.
+   sources to Python 3.
 
 **Source code:** :source:`Lib/repr.py`
 

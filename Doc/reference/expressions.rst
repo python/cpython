@@ -1392,7 +1392,7 @@ groups from right to left).
 
 .. [#] In Python 2.3 and later releases, a list comprehension "leaks" the control
    variables of each ``for`` it contains into the containing scope.  However, this
-   behavior is deprecated, and relying on it will not work in Python 3.0
+   behavior is deprecated, and relying on it will not work in Python 3.
 
 .. [#] While ``abs(x%y) < abs(y)`` is true mathematically, for floats it may not be
    true numerically due to roundoff.  For example, and assuming a platform on which

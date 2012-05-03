@@ -6,7 +6,7 @@ Python compiler package
 ***********************
 
 .. deprecated:: 2.6
-   The :mod:`compiler` package has been removed in Python 3.0.
+   The :mod:`compiler` package has been removed in Python 3.
 
 .. sectionauthor:: Jeremy Hylton <jeremy@zope.com>
 

@@ -6,7 +6,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`rexec` module has been removed in Python 3.0.
+   The :mod:`rexec` module has been removed in Python 3.
 
 .. versionchanged:: 2.3
    Disabled module.

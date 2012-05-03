@@ -10,7 +10,7 @@
 .. deprecated:: 2.3
    The :mod:`email` package should be used in preference to the :mod:`rfc822`
    module.  This module is present only to maintain backward compatibility, and
-   has been removed in 3.0.
+   has been removed in Python 3.
 
 This module defines a class, :class:`Message`, which represents an "email
 message" as defined by the Internet standard :rfc:`2822`. [#]_  Such messages

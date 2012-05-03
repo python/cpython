@@ -9,9 +9,9 @@
 
 .. note::
    The :mod:`urllib2` module has been split across several modules in
-   Python 3.0 named :mod:`urllib.request` and :mod:`urllib.error`.
+   Python 3 named :mod:`urllib.request` and :mod:`urllib.error`.
    The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   your sources to Python 3.
 
 
 The :mod:`urllib2` module defines functions and classes which help in opening

@@ -15,7 +15,7 @@ files, so it should not be used on UFS partitions.
 
 .. note::
 
-   This module has been removed in Python 3.0.
+   This module has been removed in Python 3.
 
 
 

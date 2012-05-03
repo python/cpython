@@ -314,7 +314,7 @@ and off individually.  They are described here in more detail.
 
    Converts ``raise E, V`` to ``raise E(V)``, and ``raise E, V, T`` to ``raise
    E(V).with_traceback(T)``.  If ``E`` is a tuple, the translation will be
-   incorrect because substituting tuples for exceptions has been removed in 3.0.
+   incorrect because substituting tuples for exceptions has been removed in Python 3.
 
 .. 2to3fixer:: raw_input
 

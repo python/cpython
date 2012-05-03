@@ -8,7 +8,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-    The :mod:`al` module has been deprecated for removal in Python 3.0.
+    The :mod:`al` module has been removed in Python 3.
 
 
 This module provides access to the audio facilities of the SGI Indy and Indigo
@@ -201,7 +201,7 @@ Port objects, as returned by :func:`openport`, have the following methods:
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`AL` module has been deprecated for removal in Python 3.0.
+   The :mod:`AL` module has been removed in Python 3.
 
 
 This module defines symbolic constants needed to use the built-in module
