@@ -2516,6 +2516,7 @@ class TestInitializers(unittest.TestCase):
 
     def tearDown(self):
         self.mgr.shutdown()
+        self.mgr.join()
 
     def test_manager_initializer(self):
         m = multiprocessing.managers.SyncManager()
@@ -2523,6 +2524,7 @@ class TestInitializers(unittest.TestCase):
         m.start(initializer, (self.ns,))
         self.assertEqual(self.ns.test, 1)
         m.shutdown()
+        m.join()
 
     def test_pool_initializer(self):
         self.assertRaises(TypeError, multiprocessing.Pool, initializer=1)
@@ -2818,6 +2820,7 @@ def test_main(run=None):
         ManagerMixin.pool.terminate()
         ManagerMixin.pool.join()
         ManagerMixin.manager.shutdown()
+        ManagerMixin.manager.join()
         ThreadsMixin.pool.join()
         ProcessesMixin.pool.join()
         del ProcessesMixin.pool, ThreadsMixin.pool, ManagerMixin.pool
