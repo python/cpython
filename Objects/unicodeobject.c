@@ -13661,7 +13661,6 @@ struct unicode_writer_t {
     void *data;
     enum PyUnicode_Kind kind;
     Py_UCS4 maxchar;
-    Py_ssize_t length;
     Py_ssize_t pos;
 };
 
@@ -13678,8 +13677,7 @@ unicode_writer_init(struct unicode_writer_t *writer,
                     Py_ssize_t length, Py_UCS4 maxchar)
 {
     writer->pos = 0;
-    writer->length = length;
-    writer->buffer = PyUnicode_New(writer->length, maxchar);
+    writer->buffer = PyUnicode_New(length, maxchar);
     if (writer->buffer == NULL)
         return -1;
     unicode_writer_update(writer);
@@ -13699,16 +13697,14 @@ unicode_writer_prepare(struct unicode_writer_t *writer,
     }
     newlen = writer->pos + length;
 
-    if (newlen > writer->length) {
+    if (newlen > PyUnicode_GET_LENGTH(writer->buffer)) {
         /* overallocate 25% to limit the number of resize */
-        if (newlen > PY_SSIZE_T_MAX - newlen / 4)
-            writer->length = newlen;
-        else
-            writer->length = newlen + newlen / 4;
+        if (newlen <= (PY_SSIZE_T_MAX - newlen / 4))
+            newlen += newlen / 4;
 
         if (maxchar > writer->maxchar) {
             /* resize + widen */
-            newbuffer = PyUnicode_New(writer->length, maxchar);
+            newbuffer = PyUnicode_New(newlen, maxchar);
             if (newbuffer == NULL)
                 return -1;
             PyUnicode_CopyCharacters(newbuffer, 0,
@@ -13716,7 +13712,7 @@ unicode_writer_prepare(struct unicode_writer_t *writer,
             Py_DECREF(writer->buffer);
         }
         else {
-            newbuffer = resize_compact(writer->buffer, writer->length);
+            newbuffer = resize_compact(writer->buffer, newlen);
             if (newbuffer == NULL)
                 return -1;
         }
@@ -13740,7 +13736,7 @@ unicode_writer_write_str(
     maxchar = _PyUnicode_FindMaxChar(str, start, start + length);
     if (unicode_writer_prepare(writer, length, maxchar) == -1)
         return -1;
-    assert((writer->pos + length) <= writer->length);
+    assert((writer->pos + length) <= PyUnicode_GET_LENGTH(writer->buffer));
     copy_characters(writer->buffer, writer->pos,
                     str, start, length);
     writer->pos += length;
@@ -13754,7 +13750,7 @@ unicode_writer_write_char(
 {
     if (unicode_writer_prepare(writer, 1, ch) == -1)
         return -1;
-    assert((writer->pos + 1) <= writer->length);
+    assert((writer->pos + 1) <= PyUnicode_GET_LENGTH(writer->buffer));
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
     writer->pos += 1;
     return 0;
