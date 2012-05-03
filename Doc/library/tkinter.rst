@@ -13,9 +13,9 @@ is maintained at ActiveState.)
 
 .. note::
 
-   :mod:`Tkinter` has been renamed to :mod:`tkinter` in Python 3.0.  The
+   :mod:`Tkinter` has been renamed to :mod:`tkinter` in Python 3.  The
    :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0.
+   sources to Python 3.
 
 .. seealso::
 
@@ -109,7 +109,7 @@ Other modules that provide Tk support include:
 :mod:`turtle`
    Turtle graphics in a Tk window.
 
-These have been renamed as well in Python 3.0; they were all made submodules of
+These have been renamed as well in Python 3; they were all made submodules of
 the new ``tkinter`` package.
 
 

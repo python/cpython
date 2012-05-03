@@ -969,7 +969,7 @@ string functions based on regular expressions.
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
 
-   This method of string formatting is the new standard in Python 3.0, and
+   This method of string formatting is the new standard in Python 3, and
    should be preferred to the ``%`` formatting described in
    :ref:`string-formatting` in new code.
 

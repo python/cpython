@@ -1227,7 +1227,7 @@ on the flag bit :const:`Py_TPFLAGS_CHECKTYPES`:
 - If the :const:`Py_TPFLAGS_CHECKTYPES` flag is set, binary and ternary
   functions must check the type of all their operands, and implement the
   necessary conversions (at least one of the operands is an instance of the
-  defined type).  This is the recommended way; with Python 3.0 coercion will
+  defined type).  This is the recommended way; with Python 3 coercion will
   disappear completely.
 
 If the operation is not defined for the given operands, binary and ternary

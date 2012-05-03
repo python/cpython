@@ -6,7 +6,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`new` module has been removed in Python 3.0.  Use the :mod:`types`
+   The :mod:`new` module has been removed in Python 3.  Use the :mod:`types`
    module's classes instead.
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>

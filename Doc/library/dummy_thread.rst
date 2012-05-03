@@ -6,8 +6,8 @@
 
 .. note::
    The :mod:`dummy_thread` module has been renamed to :mod:`_dummy_thread` in
-   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
-   converting your sources to 3.0; however, you should consider using the
+   Python 3.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to Python 3; however, you should consider using the
    high-lever :mod:`dummy_threading` module instead.
 
 **Source code:** :source:`Lib/dummy_thread.py`

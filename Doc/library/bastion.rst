@@ -7,7 +7,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`Bastion` module has been removed in Python 3.0.
+   The :mod:`Bastion` module has been removed in Python 3.
 
 .. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
 

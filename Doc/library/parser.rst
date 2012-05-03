@@ -34,7 +34,7 @@ the code forming the application.  It is also faster.
    replaced by "ast"; this is a legacy from the time when there was no other
    AST and has nothing to do with the AST found in Python 2.5.  This is also the
    reason for the functions' keyword arguments being called *ast*, not *st*.
-   The "ast" functions will be removed in Python 3.0.
+   The "ast" functions will be removed in Python 3.
 
 There are a few things to note about this module which are important to making
 use of the data structures created.  This is not a tutorial on editing the parse

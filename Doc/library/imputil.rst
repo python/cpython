@@ -7,7 +7,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`imputil` module has been removed in Python 3.0.
+   The :mod:`imputil` module has been removed in Python 3.
 
 
 .. index:: statement: import

@@ -127,7 +127,7 @@ The :mod:`binascii` module defines the following functions:
    The return value is in the range [-2**31, 2**31-1]
    regardless of platform.  In the past the value would be signed on
    some platforms and unsigned on others.  Use & 0xffffffff on the
-   value if you want it to match 3.0 behavior.
+   value if you want it to match Python 3 behavior.
 
 .. versionchanged:: 3.0
    The return value is unsigned and in the range [0, 2**32-1]
