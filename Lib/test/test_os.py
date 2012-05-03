@@ -192,11 +192,11 @@ class StatAttributeTests(unittest.TestCase):
                 self.assertIn(attr, members)
 
         # Make sure that the st_?time and st_?time_ns fields roughly agree
-        # (they should always agree up to the tens-of-microseconds magnitude)
+        # (they should always agree up to around tens-of-microseconds)
         for name in 'st_atime st_mtime st_ctime'.split():
             floaty = int(getattr(result, name) * 100000)
             nanosecondy = getattr(result, name + "_ns") // 10000
-            self.assertEqual(floaty, nanosecondy)
+            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
 
         try:
             result[200]
@@ -303,20 +303,80 @@ class StatAttributeTests(unittest.TestCase):
         st2 = os.stat(support.TESTFN)
         self.assertEqual(st2.st_mtime, int(st.st_mtime-delta))
 
-    def test_utime_noargs(self):
+    def _test_utime(self, filename, attr, utime, delta):
         # Issue #13327 removed the requirement to pass None as the
         # second argument. Check that the previous methods of passing
         # a time tuple or None work in addition to no argument.
-        st = os.stat(support.TESTFN)
+        st0 = os.stat(filename)
         # Doesn't set anything new, but sets the time tuple way
-        os.utime(support.TESTFN, (st.st_atime, st.st_mtime))
+        utime(filename, (attr(st0, "st_atime"), attr(st0, "st_mtime")))
+        # Setting the time to the time you just read, then reading again,
+        # should always return exactly the same times.
+        st1 = os.stat(filename)
+        self.assertEqual(attr(st0, "st_mtime"), attr(st1, "st_mtime"))
+        self.assertEqual(attr(st0, "st_atime"), attr(st1, "st_atime"))
         # Set to the current time in the old explicit way.
-        os.utime(support.TESTFN, None)
-        st1 = os.stat(support.TESTFN)
-        # Set to the current time in the new way
-        os.utime(support.TESTFN)
+        os.utime(filename, None)
         st2 = os.stat(support.TESTFN)
-        self.assertAlmostEqual(st1.st_mtime, st2.st_mtime, delta=10)
+        # Set to the current time in the new way
+        os.utime(filename)
+        st3 = os.stat(filename)
+        self.assertAlmostEqual(attr(st2, "st_mtime"), attr(st3, "st_mtime"), delta=delta)
+
+    def test_utime(self):
+        def utime(file, times):
+            return os.utime(file, times)
+        self._test_utime(self.fname, getattr, utime, 10)
+        self._test_utime(support.TESTFN, getattr, utime, 10)
+
+
+    def _test_utime_ns(self, set_times_ns, test_dir=True):
+        def getattr_ns(o, attr):
+            return getattr(o, attr + "_ns")
+        ten_s = 10 * 1000 * 1000 * 1000
+        self._test_utime(self.fname, getattr_ns, set_times_ns, ten_s)
+        if test_dir:
+            self._test_utime(support.TESTFN, getattr_ns, set_times_ns, ten_s)
+
+    def test_utime_ns(self):
+        def utime_ns(file, times):
+            return os.utime(file, ns=times)
+        self._test_utime_ns(utime_ns)
+
+    requires_lutimes = unittest.skipUnless(hasattr(os, 'lutimes'),
+                            "os.lutimes required for this test.")
+    requires_futimes = unittest.skipUnless(hasattr(os, 'futimes'),
+                            "os.futimes required for this test.")
+
+    @requires_lutimes
+    def test_lutimes_ns(self):
+        def lutimes_ns(file, times):
+            return os.lutimes(file, ns=times)
+        self._test_utime_ns(lutimes_ns)
+
+    @requires_futimes
+    def test_futimes_ns(self):
+        def futimes_ns(file, times):
+            with open(file, "wb") as f:
+                os.futimes(f.fileno(), ns=times)
+        self._test_utime_ns(futimes_ns, test_dir=False)
+
+    def _utime_invalid_arguments(self, name, arg):
+        with self.assertRaises(RuntimeError):
+            getattr(os, name)(arg, (5, 5), ns=(5, 5))
+
+    def test_utime_invalid_arguments(self):
+        self._utime_invalid_arguments('utime', self.fname)
+
+    @requires_lutimes
+    def test_lutimes_invalid_arguments(self):
+        self._utime_invalid_arguments('lutimes', self.fname)
+
+    @requires_futimes
+    def test_futimes_invalid_arguments(self):
+        with open(self.fname, "wb") as f:
+            self._utime_invalid_arguments('futimes', f.fileno())
+
 
     @unittest.skipUnless(stat_supports_subsecond,
                          "os.stat() doesn't has a subsecond resolution")
@@ -338,8 +398,7 @@ class StatAttributeTests(unittest.TestCase):
             os.utime(filename, (atime, mtime))
         self._test_utime_subsecond(set_time)
 
-    @unittest.skipUnless(hasattr(os, 'futimes'),
-                         "os.futimes required for this test.")
+    @requires_futimes
     def test_futimes_subsecond(self):
         def set_time(filename, atime, mtime):
             with open(filename, "wb") as f:
@@ -375,8 +434,7 @@ class StatAttributeTests(unittest.TestCase):
                 os.close(dirfd)
         self._test_utime_subsecond(set_time)
 
-    @unittest.skipUnless(hasattr(os, 'lutimes'),
-                         "os.lutimes required for this test.")
+    @requires_lutimes
     def test_lutimes_subsecond(self):
         def set_time(filename, atime, mtime):
             os.lutimes(filename, (atime, mtime))

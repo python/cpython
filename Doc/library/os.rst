@@ -934,13 +934,11 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: futimes(fd[, times])
+.. function:: futimes(fd[, times, *, ns=times])
 
    Set the access and modified time of the file specified by the file
-   descriptor *fd* to the given values.  *atimes* must be a 2-tuple of numbers,
-   of the form ``(atime, mtime)``, or None.  If no second argument is used,
-   set the access and modified times to the current time.
-
+   descriptor *fd* to the given values.  See :func:`utime` for proper
+   use of the *times* and *ns* arguments.
    Availability: Unix.
 
    .. versionadded:: 3.3
@@ -1762,12 +1760,11 @@ Files and Directories
       Added support for Windows 6.0 (Vista) symbolic links.
 
 
-.. function:: lutimes(path[, times])
+.. function:: lutimes(path[, times, *, ns=times])
 
    Like :func:`utime`, but if *path* is a symbolic link, it is not
-   dereferenced.  *times* must be a 2-tuple of numbers, of the form
-   ``(atime, mtime)``, or None.
-
+   dereferenced.  See :func:`utime` for proper use of the
+   *times* and *ns* arguments.
 
    Availability: Unix.
 
@@ -2226,21 +2223,42 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: utime(path[, times])
+.. function:: utime(path[, times, *, ns=(atime_ns, mtime_ns)])
 
-   Set the access and modified times of the file specified by *path*. If *times*
-   is ``None`` or not specified, then the file's access and modified times are
-   set to the current time. (The effect is similar to running the Unix program
-   :program:`touch` on the path.)  Otherwise, *times* must be a 2-tuple of
-   numbers, of the form ``(atime, mtime)`` which is used to set the access and
-   modified times, respectively. Whether a directory can be given for *path*
+   Set the access and modified times of the file specified by *path*.
+
+   :func:`utime` takes two optional parameters, *times* and *ns*.
+   These specify the times set on *path* and are used as follows:
+
+   - If *ns* is specified,
+     it must be a 2-tuple of the form ``(atime_ns, mtime_ns)``
+     where each member is an int expressing nanoseconds.
+   - If *times* is specified and is not ``None``,
+     it must be a 2-tuple of the form ``(atime, mtime)``
+     where each member is an int or float expressing seconds.
+   - If *times* is specified as ``None``,
+     this is equivalent to specifying an ``(atime, mtime)``
+     where both times are the current time.
+     (The effect is similar to running the Unix program
+     :program:`touch` on *path*.)
+   - If neither *ns* nor *times* is specified, this is
+     equivalent to specifying *times* as ``None``.
+
+   Specifying both *times* and *ns* simultaneously is an error.
+
+   Whether a directory can be given for *path*
    depends on whether the operating system implements directories as files
    (for example, Windows does not).  Note that the exact times you set here may
    not be returned by a subsequent :func:`~os.stat` call, depending on the
    resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.
+   times; see :func:`~os.stat`.  The best way to preserve exact times is to
+   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
+   result object with the *ns* parameter to `utime`.
 
    Availability: Unix, Windows.
+
+   .. versionadded:: 3.3
+      The :attr:`ns` keyword parameter.
 
 
 .. function:: walk(top, topdown=True, onerror=None, followlinks=False)

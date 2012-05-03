@@ -123,7 +123,7 @@ error_time_t_overflow(void)
                     "timestamp out of range for platform time_t");
 }
 
-static time_t
+time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
 #if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
