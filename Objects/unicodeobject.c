@@ -13656,16 +13656,16 @@ formatchar(PyObject *v)
     return (Py_UCS4) -1;
 }
 
-struct unicode_writer_t {
+typedef struct {
     PyObject *buffer;
     void *data;
     enum PyUnicode_Kind kind;
     Py_UCS4 maxchar;
     Py_ssize_t pos;
-};
+} unicode_writer_t;
 
 Py_LOCAL_INLINE(void)
-unicode_writer_update(struct unicode_writer_t *writer)
+unicode_writer_update(unicode_writer_t *writer)
 {
     writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
     writer->data = PyUnicode_DATA(writer->buffer);
@@ -13673,7 +13673,7 @@ unicode_writer_update(struct unicode_writer_t *writer)
 }
 
 Py_LOCAL_INLINE(int)
-unicode_writer_init(struct unicode_writer_t *writer,
+unicode_writer_init(unicode_writer_t *writer,
                     Py_ssize_t length, Py_UCS4 maxchar)
 {
     writer->pos = 0;
@@ -13685,7 +13685,7 @@ unicode_writer_init(struct unicode_writer_t *writer,
 }
 
 Py_LOCAL_INLINE(int)
-unicode_writer_prepare(struct unicode_writer_t *writer,
+unicode_writer_prepare(unicode_writer_t *writer,
                        Py_ssize_t length, Py_UCS4 maxchar)
 {
     Py_ssize_t newlen;
@@ -13729,13 +13729,26 @@ unicode_writer_prepare(struct unicode_writer_t *writer,
 
 Py_LOCAL_INLINE(int)
 unicode_writer_write_str(
-    struct unicode_writer_t *writer,
+    unicode_writer_t *writer,
     PyObject *str, Py_ssize_t start, Py_ssize_t length)
 {
     Py_UCS4 maxchar;
+
+    assert(str != NULL);
+    assert(PyUnicode_Check(str));
+    if (PyUnicode_READY(str) == -1)
+        return -1;
+
+    assert(0 <= start);
+    assert(0 <= length);
+    assert(start + length <= PyUnicode_GET_LENGTH(str));
+    if (length == 0)
+        return 0;
+
     maxchar = _PyUnicode_FindMaxChar(str, start, start + length);
     if (unicode_writer_prepare(writer, length, maxchar) == -1)
         return -1;
+
     assert((writer->pos + length) <= PyUnicode_GET_LENGTH(writer->buffer));
     copy_characters(writer->buffer, writer->pos,
                     str, start, length);
@@ -13745,7 +13758,7 @@ unicode_writer_write_str(
 
 Py_LOCAL_INLINE(int)
 unicode_writer_write_char(
-    struct unicode_writer_t *writer,
+    unicode_writer_t *writer,
     Py_UCS4 ch)
 {
     if (unicode_writer_prepare(writer, 1, ch) == -1)
@@ -13756,8 +13769,18 @@ unicode_writer_write_char(
     return 0;
 }
 
+Py_LOCAL_INLINE(PyObject *)
+unicode_writer_finish(unicode_writer_t *writer)
+{
+    if (PyUnicode_Resize(&writer->buffer, writer->pos) < 0) {
+        Py_DECREF(writer->buffer);
+        return NULL;
+    }
+    return writer->buffer;
+}
+
 Py_LOCAL_INLINE(void)
-unicode_writer_dealloc(struct unicode_writer_t *writer)
+unicode_writer_dealloc(unicode_writer_t *writer)
 {
     Py_CLEAR(writer->buffer);
 }
@@ -13773,7 +13796,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     PyObject *uformat;
     void *fmt;
     enum PyUnicode_Kind kind, fmtkind;
-    struct unicode_writer_t writer;
+    unicode_writer_t writer;
 
     if (format == NULL || args == NULL) {
         PyErr_BadInternalCall();
@@ -14185,16 +14208,13 @@ PyUnicode_Format(PyObject *format, PyObject *args)
         goto onError;
     }
 
-    if (PyUnicode_Resize(&writer.buffer, writer.pos) < 0)
-        goto onError;
-
     if (args_owned) {
         Py_DECREF(args);
     }
     Py_DECREF(uformat);
     Py_XDECREF(temp);
     Py_XDECREF(second);
-    return writer.buffer;
+    return unicode_writer_finish(&writer);
 
   onError:
     Py_DECREF(uformat);
