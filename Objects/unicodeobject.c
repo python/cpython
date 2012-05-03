@@ -11187,20 +11187,15 @@ unicode_count(PyObject *self, PyObject *args)
 
     kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
-    kind = kind1 > kind2 ? kind1 : kind2;
+    if (kind2 > kind1)
+        return PyLong_FromLong(0);
+    kind = kind1;
     buf1 = PyUnicode_DATA(self);
     buf2 = PyUnicode_DATA(substring);
-    if (kind1 != kind)
-        buf1 = _PyUnicode_AsKind(self, kind);
-    if (!buf1) {
-        Py_DECREF(substring);
-        return NULL;
-    }
     if (kind2 != kind)
         buf2 = _PyUnicode_AsKind(substring, kind);
     if (!buf2) {
         Py_DECREF(substring);
-        if (kind1 != kind) PyMem_Free(buf1);
         return NULL;
     }
     len1 = PyUnicode_GET_LENGTH(self);
@@ -11232,8 +11227,6 @@ unicode_count(PyObject *self, PyObject *args)
 
     result = PyLong_FromSsize_t(iresult);
 
-    if (kind1 != kind)
-        PyMem_Free(buf1);
     if (kind2 != kind)
         PyMem_Free(buf2);
 
