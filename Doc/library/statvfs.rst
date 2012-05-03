@@ -6,7 +6,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-   The :mod:`statvfs` module has been deprecated for removal in Python 3.0.
+   The :mod:`statvfs` module has been removed in Python 3.
 
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>

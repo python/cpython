@@ -80,7 +80,7 @@ Glossary
 
    classic class
       Any class which does not inherit from :class:`object`.  See
-      :term:`new-style class`.  Classic classes will be removed in Python 3.0.
+      :term:`new-style class`.  Classic classes have been removed in Python 3.
 
    coercion
       The implicit conversion of an instance of one type to another during an

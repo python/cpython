@@ -793,7 +793,7 @@ Deprecated string functions
 The following list of functions are also defined as methods of string and
 Unicode objects; see section :ref:`string-methods` for more information on
 those.  You should consider these functions as deprecated, although they will
-not be removed until Python 3.0.  The functions defined in this module are:
+not be removed until Python 3.  The functions defined in this module are:
 
 
 .. function:: atof(s)

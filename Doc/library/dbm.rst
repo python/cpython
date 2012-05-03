@@ -6,9 +6,9 @@
    :synopsis: The standard "database" interface, based on ndbm.
 
 .. note::
-   The :mod:`dbm` module has been renamed to :mod:`dbm.ndbm` in Python 3.0.  The
+   The :mod:`dbm` module has been renamed to :mod:`dbm.ndbm` in Python 3.  The
    :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0.
+   sources to Python 3.
 
 
 The :mod:`dbm` module provides an interface to the Unix "(n)dbm" library.  Dbm

@@ -33,7 +33,7 @@ returning data from the target object.
 Starting from version 1.6, Python has been providing Python-level buffer
 objects and a C-level buffer API so that any built-in or used-defined type can
 expose its characteristics. Both, however, have been deprecated because of
-various shortcomings, and have been officially removed in Python 3.0 in favour
+various shortcomings, and have been officially removed in Python 3 in favour
 of a new C-level buffer API and a new Python-level object named
 :class:`memoryview`.
 

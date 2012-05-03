@@ -573,7 +573,7 @@ Callable types
          :attr:`im_self` used to refer to the class that defined the method.
 
       .. versionchanged:: 2.6
-         For 3.0 forward-compatibility, :attr:`im_func` is also available as
+         For Python 3 forward-compatibility, :attr:`im_func` is also available as
          :attr:`__func__`, and :attr:`im_self` as :attr:`__self__`.
 
       .. index::
@@ -1149,7 +1149,7 @@ sources of additional information.
    single: class; classic
    single: class; old-style
 
-Old-style classes are removed in Python 3.0, leaving only the semantics of
+Old-style classes are removed in Python 3, leaving only the semantics of
 new-style classes.
 
 
@@ -2235,7 +2235,7 @@ Coercion rules
 This section used to document the rules for coercion.  As the language has
 evolved, the coercion rules have become hard to document precisely; documenting
 what one version of one particular implementation does is undesirable.  Instead,
-here are some informal guidelines regarding coercion.  In Python 3.0, coercion
+here are some informal guidelines regarding coercion.  In Python 3, coercion
 will not be supported.
 
 *

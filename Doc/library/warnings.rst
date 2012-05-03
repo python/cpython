@@ -419,7 +419,7 @@ Available Context Managers
 
     .. note::
 
-        In Python 3.0, the arguments to the constructor for
+        In Python 3, the arguments to the constructor for
         :class:`catch_warnings` are keyword-only arguments.
 
     .. versionadded:: 2.6

@@ -9,7 +9,7 @@
 
 
 .. deprecated:: 2.6
-    The :mod:`fl` module has been deprecated for removal in Python 3.0.
+    The :mod:`fl` module has been removed in Python 3.
 
 
 .. index::
@@ -487,7 +487,7 @@ FORMS objects have these data attributes; see the FORMS documentation:
 
 
 .. deprecated:: 2.6
-    The :mod:`FL` module has been deprecated for removal in Python 3.0.
+    The :mod:`FL` module has been removed in Python 3.
 
 
 This module defines symbolic constants needed to use the built-in module
@@ -509,7 +509,7 @@ source for a complete list of the defined names.  Suggested use::
 
 
 .. deprecated:: 2.6
-    The :mod:`flp` module has been deprecated for removal in Python 3.0.
+    The :mod:`flp` module has been removed in Python 3.
 
 
 This module defines functions that can read form definitions created by the

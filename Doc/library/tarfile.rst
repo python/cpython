@@ -143,7 +143,7 @@ Some facts and figures:
 
 
    .. deprecated:: 2.6
-      The :class:`TarFileCompat` class has been deprecated for removal in Python 3.0.
+      The :class:`TarFileCompat` class has been removed in Python 3.
 
 
 .. exception:: TarError

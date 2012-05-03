@@ -6,7 +6,7 @@
    :deprecated:
 
 .. deprecated:: 2.6
-    The :mod:`htmllib` module has been removed in Python 3.0.
+    The :mod:`htmllib` module has been removed in Python 3.
 
 
 .. index::
@@ -162,8 +162,8 @@ additional methods and instance variables for use within tag methods.
 .. note::
 
    The :mod:`htmlentitydefs` module has been renamed to :mod:`html.entities` in
-   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
-   converting your sources to 3.0.
+   Python 3.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to Python 3.
 
 **Source code:** :source:`Lib/htmlentitydefs.py`
 

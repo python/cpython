@@ -7,9 +7,9 @@
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
 .. note::
-   The :mod:`_winreg` module has been renamed to :mod:`winreg` in Python 3.0.
+   The :mod:`_winreg` module has been renamed to :mod:`winreg` in Python 3.
    The :term:`2to3` tool will automatically adapt imports when converting your
-   sources to 3.0.
+   sources to Python 3.
 
 
 .. versionadded:: 2.0

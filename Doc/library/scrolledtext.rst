@@ -16,8 +16,8 @@ as that of the :class:`Tkinter.Text` class.
 .. note::
 
    :mod:`ScrolledText` has been renamed to :mod:`tkinter.scrolledtext` in Python
-   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   3.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to Python 3.
 
 The text widget and scrollbar are packed together in a :class:`Frame`, and the
 methods of the :class:`Grid` and :class:`Pack` geometry managers are acquired

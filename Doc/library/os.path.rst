@@ -331,7 +331,7 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    .. note::
 
-      This function is deprecated and has been removed in 3.0 in favor of
+      This function is deprecated and has been removed in Python 3 in favor of
       :func:`os.walk`.
 
 

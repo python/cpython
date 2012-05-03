@@ -24,7 +24,7 @@ framework and Qt is in the QuickTime framework. The normal use pattern is ::
 
 .. note::
 
-   The Carbon modules have been removed in Python 3.0.
+   The Carbon modules have been removed in Python 3.
 
 
 :mod:`Carbon.AE` --- Apple Events
