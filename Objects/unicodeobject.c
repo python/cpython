@@ -13665,7 +13665,7 @@ unicode_writer_update(unicode_writer_t *writer)
     writer->kind = PyUnicode_KIND(writer->buffer);
 }
 
-Py_LOCAL_INLINE(int)
+Py_LOCAL(int)
 unicode_writer_init(unicode_writer_t *writer,
                     Py_ssize_t length, Py_UCS4 maxchar)
 {
@@ -13762,7 +13762,7 @@ unicode_writer_write_char(
     return 0;
 }
 
-Py_LOCAL_INLINE(PyObject *)
+Py_LOCAL(PyObject *)
 unicode_writer_finish(unicode_writer_t *writer)
 {
     if (PyUnicode_Resize(&writer->buffer, writer->pos) < 0) {
@@ -13772,7 +13772,7 @@ unicode_writer_finish(unicode_writer_t *writer)
     return writer->buffer;
 }
 
-Py_LOCAL_INLINE(void)
+Py_LOCAL(void)
 unicode_writer_dealloc(unicode_writer_t *writer)
 {
     Py_CLEAR(writer->buffer);
