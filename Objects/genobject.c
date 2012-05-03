@@ -137,7 +137,7 @@ _PyGen_Send(PyGenObject *gen, PyObject *arg)
 }
 
 PyDoc_STRVAR(close_doc,
-"close(arg) -> raise GeneratorExit inside generator.");
+"close() -> raise GeneratorExit inside generator.");
 
 /*
  *   This helper function is used by gen_close and gen_throw to
