@@ -1906,8 +1906,8 @@ class HandlerTest(BaseTest):
                     r = logging.makeLogRecord({'msg': 'testing' })
                     h.handle(r)
             finally:
-                h.close()
                 remover.join()
+                h.close()
                 if os.path.exists(fn):
                     os.unlink(fn)
 
