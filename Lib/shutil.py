@@ -138,7 +138,7 @@ def copystat(src, dst, symlinks=False):
     only if both `src` and `dst` are symlinks.
 
     """
-    def _nop(*args):
+    def _nop(*args, ns=None):
         pass
 
     if symlinks and os.path.islink(src) and os.path.islink(dst):
