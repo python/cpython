@@ -63,7 +63,7 @@ Additional files and subdirectories for 32-bit Windows
 
 python_nt.rc   Resource compiler input for python15.dll.
 
-dl_nt.c, import_nt.c
+dl_nt.c
                Additional sources used for 32-bit Windows features.
 
 getpathp.c     Default sys.path calculations (for all PC platforms).
