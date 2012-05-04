@@ -616,33 +616,6 @@
 			RelativePath="..\..\Python\import.c">
 		</File>
 		<File
-			RelativePath="..\..\PC\import_nt.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\..\Python"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\..\Python"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\..\Python"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseAMD64|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\..\Python"/>
-			</FileConfiguration>
-		</File>
-		<File
 			RelativePath="..\..\Python\importdl.c">
 		</File>
 		<File
