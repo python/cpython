@@ -1151,12 +1151,7 @@ def _setup(sys_module, _imp_module):
 
 
 def _install(sys_module, _imp_module):
-    """Install importlib as the implementation of import.
-
-    It is assumed that _imp and sys have been imported and injected into the
-    global namespace for the module prior to calling this function.
-
-    """
+    """Install importlib as the implementation of import."""
     _setup(sys_module, _imp_module)
     extensions = ExtensionFileLoader, _imp_module.extension_suffixes(), False
     source = SourceFileLoader, _SOURCE_SUFFIXES, True
