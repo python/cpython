@@ -9,10 +9,7 @@
 
 extern char *Py_GetProgramName(void);
 
-const struct filedescr _PyImport_DynLoadFiletab[] = {
-    {".o", "rb", C_EXTENSION},
-    {0, 0}
-};
+const char *_PyImport_DynLoadFiletab[] = {".o", NULL};
 
 
 dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,

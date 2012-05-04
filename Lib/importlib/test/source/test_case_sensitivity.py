@@ -22,10 +22,10 @@ class CaseSensitivityTest(unittest.TestCase):
     def find(self, path):
         finder = _bootstrap.FileFinder(path,
                                         (_bootstrap.SourceFileLoader,
-                                            _bootstrap._suffix_list(imp.PY_SOURCE),
+                                            _bootstrap._SOURCE_SUFFIXES,
                                             True),
                                         (_bootstrap.SourcelessFileLoader,
-                                            _bootstrap._suffix_list(imp.PY_COMPILED),
+                                            [_bootstrap._BYTECODE_SUFFIX],
                                             True))
         return finder.find_module(self.name)
 

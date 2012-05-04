@@ -9,11 +9,9 @@ functionality over this module.
 from _imp import (lock_held, acquire_lock, release_lock,
                   load_dynamic, get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
-                  _fix_co_filename)
+                  _fix_co_filename, extension_suffixes)
 # Could move out of _imp, but not worth the code
 from _imp import get_magic, get_tag
-# Can (probably) move to importlib
-from _imp import get_suffixes
 
 from importlib._bootstrap import new_module
 from importlib._bootstrap import cache_from_source
@@ -36,6 +34,14 @@ C_BUILTIN = 6
 PY_FROZEN = 7
 PY_CODERESOURCE = 8
 IMP_HOOK = 9
+
+
+def get_suffixes():
+    extensions = [(s, 'rb', C_EXTENSION) for s in extension_suffixes()]
+    source = [(s, 'U', PY_SOURCE) for s in _bootstrap._SOURCE_SUFFIXES]
+    bytecode = [(_bootstrap._BYTECODE_SUFFIX, 'rb', PY_COMPILED)]
+
+    return extensions + source + bytecode
 
 
 def source_from_cache(path):
@@ -120,8 +126,8 @@ def load_compiled(name, pathname, file=None):
 # XXX deprecate
 def load_package(name, path):
     if os.path.isdir(path):
-        extensions = _bootstrap._suffix_list(PY_SOURCE)
-        extensions += _bootstrap._suffix_list(PY_COMPILED)
+        extensions = _bootstrap._SOURCE_SUFFIXES
+        extensions += [_bootstrap._BYTECODE_SUFFIX]
         for extension in extensions:
             path = os.path.join(path, '__init__'+extension)
             if os.path.exists(path):

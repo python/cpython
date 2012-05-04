@@ -26,10 +26,7 @@ typedef struct Module {
     void          *entry;
 } Module, *ModulePtr;
 
-const struct filedescr _PyImport_DynLoadFiletab[] = {
-    {".so", "rb", C_EXTENSION},
-    {0, 0}
-};
+const char *_PyImport_DynLoadFiletab[] = {".so", NULL};
 
 static int
 aix_getoldmodules(void **modlistptr)
