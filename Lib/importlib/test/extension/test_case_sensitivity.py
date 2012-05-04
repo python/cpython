@@ -16,7 +16,7 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         assert good_name != bad_name
         finder = _bootstrap.FileFinder(ext_util.PATH,
                                         (_bootstrap.ExtensionFileLoader,
-                                            _bootstrap._suffix_list(imp.C_EXTENSION),
+                                            imp.extension_suffixes(),
                                             False))
         return finder.find_module(bad_name)
 

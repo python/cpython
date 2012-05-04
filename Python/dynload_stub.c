@@ -6,6 +6,4 @@
 #include "importdl.h"
 
 
-const struct filedescr _PyImport_DynLoadFiletab[] = {
-	{0, 0}
-};
+const char *_PyImport_DynLoadFiletab[] = {NULL};

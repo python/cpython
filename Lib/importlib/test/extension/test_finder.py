@@ -12,7 +12,7 @@ class FinderTests(abc.FinderTests):
     def find_module(self, fullname):
         importer = _bootstrap.FileFinder(util.PATH,
                                           (_bootstrap.ExtensionFileLoader,
-                                              _bootstrap._suffix_list(imp.C_EXTENSION),
+                                              imp.extension_suffixes(),
                                               False))
         return importer.find_module(fullname)
 

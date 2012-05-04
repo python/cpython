@@ -95,16 +95,6 @@ def _path_split(path):
     return front, tail
 
 
-def _path_exists(path):
-    """Replacement for os.path.exists."""
-    try:
-        _os.stat(path)
-    except OSError:
-        return False
-    else:
-        return True
-
-
 def _path_is_mode_type(path, mode):
     """Test whether the path is the specified mode type."""
     try:
@@ -126,28 +116,6 @@ def _path_isdir(path):
     if not path:
         path = _os.getcwd()
     return _path_is_mode_type(path, 0o040000)
-
-
-def _path_without_ext(path, ext_type):
-    """Replacement for os.path.splitext()[0]."""
-    for suffix in _suffix_list(ext_type):
-        if path.endswith(suffix):
-            return path[:-len(suffix)]
-    else:
-        raise ValueError("path is not of the specified type")
-
-
-def _path_absolute(path):
-    """Replacement for os.path.abspath."""
-    if not path:
-        path = _os.getcwd()
-    try:
-        return _os._getfullpathname(path)
-    except AttributeError:
-        if path.startswith('/'):
-            return path
-        else:
-            return _path_join(_os.getcwd(), path)
 
 
 def _write_atomic(path, data):
@@ -336,12 +304,6 @@ def _requires_frozen(fxn):
         return fxn(self, fullname)
     _wrap(_requires_frozen_wrapper, fxn)
     return _requires_frozen_wrapper
-
-
-def _suffix_list(suffix_type):
-    """Return a list of file suffixes based on the imp file type."""
-    return [suffix[0] for suffix in _imp.get_suffixes()
-            if suffix[2] == suffix_type]
 
 
 # Loaders #####################################################################
@@ -1196,8 +1158,9 @@ def _install(sys_module, _imp_module):
 
     """
     _setup(sys_module, _imp_module)
-    supported_loaders = [(ExtensionFileLoader, _suffix_list(3), False),
-                         (SourceFileLoader, _suffix_list(1), True),
-                         (SourcelessFileLoader, _suffix_list(2), True)]
+    extensions = ExtensionFileLoader, _imp_module.extension_suffixes(), False
+    source = SourceFileLoader, _SOURCE_SUFFIXES, True
+    bytecode = SourcelessFileLoader, [_BYTECODE_SUFFIX], True
+    supported_loaders = [extensions, source, bytecode]
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.extend([BuiltinImporter, FrozenImporter, PathFinder])
