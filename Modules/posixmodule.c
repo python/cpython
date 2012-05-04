@@ -3753,7 +3753,7 @@ utime_read_time_arguments(utime_arguments *ua)
 
   fail:
     if (ua->converter)
-        Py_DECREF(ua->path);
+        Py_DECREF(*ua->path);
     return return_value;
 }
 
