@@ -355,7 +355,8 @@ class NetworkedTests(unittest.TestCase):
         # SHA256 was added in OpenSSL 0.9.8
         if ssl.OPENSSL_VERSION_INFO < (0, 9, 8, 0, 15):
             self.skipTest("SHA256 not available on %r" % ssl.OPENSSL_VERSION)
-        # NOTE: https://sha256.tbs-internet.com is another possible test host
+        self.skipTest("remote host needs SNI, only available on Python 3.2+")
+        # NOTE: https://sha2.hboeck.de is another possible test host
         remote = ("sha256.tbs-internet.com", 443)
         sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
         with test_support.transient_internet("sha256.tbs-internet.com"):
