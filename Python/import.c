@@ -2091,17 +2091,6 @@ static PyMethodDef imp_methods[] = {
     {NULL,                      NULL}           /* sentinel */
 };
 
-static int
-setint(PyObject *d, char *name, int value)
-{
-    PyObject *v;
-    int err;
-
-    v = PyLong_FromLong((long)value);
-    err = PyDict_SetItemString(d, name, v);
-    Py_XDECREF(v);
-    return err;
-}
 
 static struct PyModuleDef impmodule = {
     PyModuleDef_HEAD_INIT,
@@ -2126,17 +2115,6 @@ PyInit_imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
-
-    if (setint(d, "SEARCH_ERROR", SEARCH_ERROR) < 0) goto failure;
-    if (setint(d, "PY_SOURCE", PY_SOURCE) < 0) goto failure;
-    if (setint(d, "PY_COMPILED", PY_COMPILED) < 0) goto failure;
-    if (setint(d, "C_EXTENSION", C_EXTENSION) < 0) goto failure;
-    if (setint(d, "PY_RESOURCE", PY_RESOURCE) < 0) goto failure;
-    if (setint(d, "PKG_DIRECTORY", PKG_DIRECTORY) < 0) goto failure;
-    if (setint(d, "C_BUILTIN", C_BUILTIN) < 0) goto failure;
-    if (setint(d, "PY_FROZEN", PY_FROZEN) < 0) goto failure;
-    if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
-    if (setint(d, "IMP_HOOK", IMP_HOOK) < 0) goto failure;
 
     return m;
   failure:
