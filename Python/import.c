@@ -1964,48 +1964,6 @@ imp_is_frozen(PyObject *self, PyObject *args)
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
-static FILE *
-get_file(PyObject *pathname, PyObject *fob, char *mode)
-{
-    FILE *fp;
-    if (mode[0] == 'U')
-        mode = "r" PY_STDIOTEXTMODE;
-    if (fob == NULL) {
-        fp = _Py_fopen(pathname, mode);
-        if (!fp) {
-            if (!PyErr_Occurred())
-                PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-        return fp;
-    }
-    else {
-        int fd = PyObject_AsFileDescriptor(fob);
-        if (fd == -1)
-            return NULL;
-        if (!_PyVerify_fd(fd)) {
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-
-        /* the FILE struct gets a new fd, so that it can be closed
-         * independently of the file descriptor given
-         */
-        fd = dup(fd);
-        if (fd == -1) {
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-
-        fp = fdopen(fd, mode);
-        if (!fp) {
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-        return fp;
-    }
-}
-
 #ifdef HAVE_DYNAMIC_LOADING
 
 static PyObject *
@@ -2018,9 +1976,11 @@ imp_load_dynamic(PyObject *self, PyObject *args)
                           &name, PyUnicode_FSDecoder, &pathname, &fob))
         return NULL;
     if (fob != NULL) {
-        fp = get_file(NULL, fob, "r");
+        fp = _Py_fopen(pathname, "r");
         if (fp == NULL) {
             Py_DECREF(pathname);
+            if (!PyErr_Occurred())
+                PyErr_SetFromErrno(PyExc_IOError);
             return NULL;
         }
     }
