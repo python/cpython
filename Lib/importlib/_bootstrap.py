@@ -156,7 +156,7 @@ def new_module(name):
     The module is not entered into sys.modules.
 
     """
-    return type(sys)(name)
+    return type(_io)(name)
 
 
 # Finder/loader utility code ##################################################
