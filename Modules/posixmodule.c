@@ -3702,7 +3702,7 @@ utime_read_time_arguments(utime_arguments *ua)
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_Format(PyExc_TypeError,
                          "%s: 'time' must be either"
-                         " a valid tuple of two ints or None",
+                         " a tuple of two ints or None",
                          ua->function_name);
             goto fail;
         }
@@ -3718,7 +3718,7 @@ utime_read_time_arguments(utime_arguments *ua)
     if (ns) {
         if (!PyTuple_CheckExact(ns) || (PyTuple_Size(ns) != 2)) {
             PyErr_Format(PyExc_TypeError,
-                         "%s: 'ns' must be a valid tuple of two ints",
+                         "%s: 'ns' must be a tuple of two ints",
                          ua->function_name);
             goto fail;
         }
