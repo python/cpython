@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <io.h>
 
 #define CMD_SIZE 500
 
@@ -61,6 +62,51 @@ int make_buildinfo2(const char *tmppath)
     return 1;
 }
 
+const char DELIMS[] = { " \n" };
+
+int get_mercurial_info(char * hgbranch, char * hgtag, char * hgrev, int size)
+{
+    int result = 0;
+    char filename[CMD_SIZE];
+    char cmdline[CMD_SIZE];
+
+    strcpy_s(filename, CMD_SIZE, "tmpXXXXXX");
+    if (_mktemp_s(filename, CMD_SIZE) == 0) {
+        int rc;
+
+        strcpy_s(cmdline, CMD_SIZE, "hg id -bit > ");
+        strcat_s(cmdline, CMD_SIZE, filename);
+        rc = system(cmdline);
+        if (rc == 0) {
+            FILE * fp;
+            
+            if (fopen_s(&fp, filename, "r") == 0) {
+                char * cp = fgets(cmdline, CMD_SIZE, fp);
+
+                if (cp) {
+                    char * context = NULL;
+                    char * tp = strtok_s(cp, DELIMS, &context);
+                    if (tp) {
+                        strcpy_s(hgrev, size, tp);
+                        tp = strtok_s(NULL, DELIMS, &context);
+                        if (tp) {
+                            strcpy_s(hgbranch, size, tp);
+                            tp = strtok_s(NULL, DELIMS, &context);
+                            if (tp) {
+                                strcpy_s(hgtag, size, tp);
+                                result = 1;
+                            }
+                        }
+                    }
+                }
+                fclose(fp);
+            }
+        }
+        _unlink(filename);
+    }
+    return result;
+}
+
 int main(int argc, char*argv[])
 {
     char command[CMD_SIZE] = "cl.exe -c -D_WIN32 -DUSE_DL_EXPORT -D_WINDOWS -DWIN32 -D_WINDLL ";
@@ -109,8 +155,27 @@ int main(int argc, char*argv[])
         strcat_s(command, CMD_SIZE, "\"");
         strcat_s(command, CMD_SIZE, tmppath);
         strcat_s(command, CMD_SIZE, "getbuildinfo2.c\" -DSUBWCREV ");
-    } else
+    }
+    else {
+        char hgtag[CMD_SIZE];
+        char hgbranch[CMD_SIZE];
+        char hgrev[CMD_SIZE];
+
+        if (get_mercurial_info(hgbranch, hgtag, hgrev, CMD_SIZE)) {
+            strcat_s(command, CMD_SIZE, "-DHGBRANCH=\\\"");
+            strcat_s(command, CMD_SIZE, hgbranch);
+            strcat_s(command, CMD_SIZE, "\\\"");
+
+            strcat_s(command, CMD_SIZE, " -DHGTAG=\\\"");
+            strcat_s(command, CMD_SIZE, hgtag);
+            strcat_s(command, CMD_SIZE, "\\\"");
+
+            strcat_s(command, CMD_SIZE, " -DHGVERSION=\\\"");
+            strcat_s(command, CMD_SIZE, hgrev);
+            strcat_s(command, CMD_SIZE, "\\\" ");
+        }
         strcat_s(command, CMD_SIZE, "..\\Modules\\getbuildinfo.c");
+    }
     strcat_s(command, CMD_SIZE, " -Fo\"");
     strcat_s(command, CMD_SIZE, tmppath);
     strcat_s(command, CMD_SIZE, "getbuildinfo.o\" -I..\\Include -I..\\PC");
