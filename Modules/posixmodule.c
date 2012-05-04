@@ -3576,7 +3576,7 @@ static int
 split_py_long_to_s_and_ns(PyObject *py_long, time_t *s, long *ns)
 {
     int result = 0;
-    PyObject *divmod;
+    PyObject *divmod = NULL;
     divmod = PyNumber_Divmod(py_long, billion);
     if (!divmod)
         goto exit;
