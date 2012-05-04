@@ -1707,10 +1707,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\PC\import_nt.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\PC\msvcrtmodule.c"
 				>
 			</File>

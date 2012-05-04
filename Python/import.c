@@ -1150,12 +1150,6 @@ PyImport_GetImporter(PyObject *path) {
 }
 
 
-#ifdef MS_COREDLL
-extern FILE *_PyWin_FindRegisteredModule(PyObject *, struct filedescr **,
-                                         PyObject **p_path);
-#endif
-
-
 static int init_builtin(PyObject *); /* Forward */
 
 /* Initialize a built-in module.
