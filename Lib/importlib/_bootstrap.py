@@ -26,11 +26,11 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
-CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
 
 
 def _make_relax_case():
-    if sys.platform.startswith(CASE_INSENSITIVE_PLATFORMS):
+    if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
             return b'PYTHONCASEOK' in _os.environ
@@ -179,10 +179,10 @@ def _wrap(new, old):
     new.__dict__.update(old.__dict__)
 
 
-code_type = type(_wrap.__code__)
+_code_type = type(_wrap.__code__)
 
 
-def _new_module(name):
+def new_module(name):
     """Create a new module.
 
     The module is not entered into sys.modules.
@@ -193,15 +193,15 @@ def _new_module(name):
 
 # Finder/loader utility code ##################################################
 
-PYCACHE = '__pycache__'
+_PYCACHE = '__pycache__'
 
-SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
+_SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
 
-DEBUG_BYTECODE_SUFFIX = '.pyc'
-OPT_BYTECODE_SUFFIX = '.pyo'
-BYTECODE_SUFFIX = DEBUG_BYTECODE_SUFFIX if __debug__ else OPT_BYTECODE_SUFFIX
+_DEBUG_BYTECODE_SUFFIX = '.pyc'
+_OPT_BYTECODE_SUFFIX = '.pyo'
+_BYTECODE_SUFFIX = _DEBUG_BYTECODE_SUFFIX if __debug__ else _OPT_BYTECODE_SUFFIX
 
-def _cache_from_source(path, debug_override=None):
+def cache_from_source(path, debug_override=None):
     """Given the path to a .py file, return the path to its .pyc/.pyo file.
 
     The .py file does not need to exist; this simply returns the path to the
@@ -213,14 +213,14 @@ def _cache_from_source(path, debug_override=None):
 
     """
     debug = __debug__ if debug_override is None else debug_override
-    suffix = DEBUG_BYTECODE_SUFFIX if debug else OPT_BYTECODE_SUFFIX
+    suffix = _DEBUG_BYTECODE_SUFFIX if debug else _OPT_BYTECODE_SUFFIX
     head, tail = _path_split(path)
     base_filename, sep, _ = tail.partition('.')
     filename = ''.join([base_filename, sep, _TAG, suffix])
-    return _path_join(head, PYCACHE, filename)
+    return _path_join(head, _PYCACHE, filename)
 
 
-def verbose_message(message, *args):
+def _verbose_message(message, *args):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose:
         if not message.startswith(('#', 'import ')):
@@ -277,7 +277,7 @@ def module_for_loader(fxn):
             # This must be done before open() is called as the 'io' module
             # implicitly imports 'locale' and would otherwise trigger an
             # infinite loop.
-            module = _new_module(fullname)
+            module = new_module(fullname)
             sys.modules[fullname] = module
             module.__loader__ = self
             try:
@@ -472,11 +472,11 @@ class _LoaderBasics:
             raise ImportError(msg, name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
             message = 'bad timestamp in {}'.format(fullname)
-            verbose_message(message)
+            _verbose_message(message)
             raise EOFError(message)
         elif len(raw_size) != 4:
             message = 'bad size in {}'.format(fullname)
-            verbose_message(message)
+            _verbose_message(message)
             raise EOFError(message)
         if source_stats is not None:
             try:
@@ -486,7 +486,7 @@ class _LoaderBasics:
             else:
                 if _r_long(raw_timestamp) != source_mtime:
                     message = 'bytecode is stale for {}'.format(fullname)
-                    verbose_message(message)
+                    _verbose_message(message)
                     raise ImportError(message, name=fullname,
                                       path=bytecode_path)
             try:
@@ -510,7 +510,7 @@ class _LoaderBasics:
         code_object = self.get_code(name)
         module.__file__ = self.get_filename(name)
         if not sourceless:
-            module.__cached__ = _cache_from_source(module.__file__)
+            module.__cached__ = cache_from_source(module.__file__)
         else:
             module.__cached__ = module.__file__
         module.__package__ = name
@@ -573,7 +573,7 @@ class SourceLoader(_LoaderBasics):
 
         """
         source_path = self.get_filename(fullname)
-        bytecode_path = _cache_from_source(source_path)
+        bytecode_path = cache_from_source(source_path)
         source_mtime = None
         if bytecode_path is not None:
             try:
@@ -594,12 +594,12 @@ class SourceLoader(_LoaderBasics):
                     except (ImportError, EOFError):
                         pass
                     else:
-                        verbose_message('{} matches {}', bytecode_path,
+                        _verbose_message('{} matches {}', bytecode_path,
                                         source_path)
                         found = marshal.loads(bytes_data)
-                        if isinstance(found, code_type):
+                        if isinstance(found, _code_type):
                             _imp._fix_co_filename(found, source_path)
-                            verbose_message('code object from {}',
+                            _verbose_message('code object from {}',
                                             bytecode_path)
                             return found
                         else:
@@ -609,7 +609,7 @@ class SourceLoader(_LoaderBasics):
         source_bytes = self.get_data(source_path)
         code_object = compile(source_bytes, source_path, 'exec',
                                 dont_inherit=True)
-        verbose_message('code object from {}', source_path)
+        _verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
             source_mtime is not None):
             data = bytearray(_MAGIC_NUMBER)
@@ -618,7 +618,7 @@ class SourceLoader(_LoaderBasics):
             data.extend(marshal.dumps(code_object))
             try:
                 self.set_data(bytecode_path, data)
-                verbose_message('wrote {!r}', bytecode_path)
+                _verbose_message('wrote {!r}', bytecode_path)
             except NotImplementedError:
                 pass
         return code_object
@@ -687,7 +687,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data)
-            verbose_message('created {!r}', path)
+            _verbose_message('created {!r}', path)
         except (PermissionError, FileExistsError):
             # Don't worry if you can't write bytecode or someone is writing
             # it at the same time.
@@ -706,8 +706,8 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
         data = self.get_data(path)
         bytes_data = self._bytes_from_bytecode(fullname, data, path, None)
         found = marshal.loads(bytes_data)
-        if isinstance(found, code_type):
-            verbose_message('code object from {!r}', path)
+        if isinstance(found, _code_type):
+            _verbose_message('code object from {!r}', path)
             return found
         else:
             raise ImportError("Non-code object in {}".format(path),
@@ -738,7 +738,7 @@ class ExtensionFileLoader:
         is_reload = fullname in sys.modules
         try:
             module = _imp.load_dynamic(fullname, self.path)
-            verbose_message('extension module loaded from {!r}', self.path)
+            _verbose_message('extension module loaded from {!r}', self.path)
             return module
         except:
             if not is_reload and fullname in sys.modules:
@@ -908,7 +908,7 @@ class FileFinder:
                     new_name = name
                 lower_suffix_contents.add(new_name)
             self._path_cache = lower_suffix_contents
-        if sys.platform.startswith(CASE_INSENSITIVE_PLATFORMS):
+        if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
             self._relaxed_path_cache = set(fn.lower() for fn in contents)
 
     @classmethod
@@ -1013,7 +1013,7 @@ def _find_and_load(name, import_):
     elif name not in sys.modules:
         # The parent import may have already imported this module.
         loader.load_module(name)
-        verbose_message('import {!r} # {!r}', name, loader)
+        _verbose_message('import {!r} # {!r}', name, loader)
     # Backwards-compatibility; be nicer to skip the dict lookup.
     module = sys.modules[name]
     if parent:
@@ -1185,7 +1185,7 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
     setattr(self_module, '_TAG', _imp.get_tag())
     if builtin_os == 'nt':
-        SOURCE_SUFFIXES.append('.pyw')
+        _SOURCE_SUFFIXES.append('.pyw')
 
 
 def _install(sys_module, _imp_module):
