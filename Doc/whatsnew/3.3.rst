@@ -569,7 +569,16 @@ Some smaller changes made to the core Python language are:
 
   (:issue:`10516`)
 
+* Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
+  (Contributed by Antoine Pitrou in :issue:`13748`.)
+
+* :meth:`dict.setdefault` now does only one lookup for the given key, making
+  it atomic when used with built-in types.
+  (Contributed by Filip Gruszczyński in :issue:`13521`.)
+
+
 .. XXX mention new error messages for passing wrong number of arguments to functions
+
 
 New and Improved Modules
 ========================
@@ -851,6 +860,18 @@ The :mod:`math` module has a new function:
     (Written by Mark Dickinson in :issue:`11888`).
 
 
+multiprocessing
+---------------
+
+The new :func:`multiprocessing.connection.wait` function allows to poll
+multiple objects (such as connections, sockets and pipes) with a timeout.
+(Contributed by Richard Oudkerk in :issue:`12328`.)
+
+:class:`multiprocessing.Connection` objects can now be transferred over
+multiprocessing connections.
+(Contributed by Richard Oudkerk in :issue:`4892`.)
+
+
 nntplib
 -------
 
@@ -896,6 +917,16 @@ os
 * The :mod:`os` module has a new :func:`~os.fwalk` function similar to
   :func:`~os.walk` except that it also yields file descriptors referring to the
   directories visited. This is especially useful to avoid symlink races.
+
+* The new :func:`os.replace` function allows cross-platform renaming of a
+  file with overwriting the destination.  With :func:`os.rename`, an existing
+  destination file is overwritten under POSIX, but raises an error under
+  Windows.
+  (Contributed by Antoine Pitrou in :issue:`8828`.)
+
+* The new :func:`os.get_terminal_size` function queries the size of the
+  terminal attached to a file descriptor.
+  (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
 
 * "at" functions (:issue:`4761`):
 
@@ -988,6 +1019,15 @@ pdb
   are completed.  (Contributed by Georg Brandl in :issue:`14210`)
 
 
+pickle
+------
+
+:class:`pickle.Pickler` objects now have an optional
+:attr:`~pickle.Pickler.dispatch_table` attribute allowing to set per-pickler
+reduction functions.
+(Contributed by Richard Oudkerk in :issue:`14166`.)
+
+
 pydoc
 -----
 
@@ -1033,6 +1073,16 @@ shutil
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
     ids. (Contributed by Sandro Tosi in :issue:`12191`)
+
+* The new :func:`shutil.get_terminal_size` function returns the size of the
+  terminal window the interpreter is attached to.
+  (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
+
+* Several functions now take an optional ``symlinks`` argument: when that
+  parameter is true, symlinks aren't dereferenced and the operation instead
+  acts on the symlink itself (or creates one, if relevant).
+  (Contributed by Hynek Schlawack in :issue:`12715`.)
+
 
 
 signal
@@ -1128,6 +1178,11 @@ ssl
   to its new :meth:`~ssl.SSLSocket.compression` method.
 
   (Contributed by Antoine Pitrou in :issue:`13634`)
+
+* Support has been added for the Next Procotol Negotiation extension using
+  the :meth:`ssl.SSLContext.set_npn_protocols` method.
+
+  (Contributed by Colin Marc in :issue:`14204`)
 
 
 sys
