@@ -15,8 +15,8 @@ from _imp import get_magic, get_tag
 # Can (probably) move to importlib
 from _imp import get_suffixes
 
-from importlib._bootstrap import _new_module as new_module
-from importlib._bootstrap import _cache_from_source as cache_from_source
+from importlib._bootstrap import new_module
+from importlib._bootstrap import cache_from_source
 
 from importlib import _bootstrap
 import os
@@ -48,14 +48,14 @@ def source_from_cache(path):
     """
     head, pycache_filename = os.path.split(path)
     head, pycache = os.path.split(head)
-    if pycache != _bootstrap.PYCACHE:
+    if pycache != _bootstrap._PYCACHE:
         raise ValueError('{} not bottom-level directory in '
-                         '{!r}'.format(_bootstrap.PYCACHE, path))
+                         '{!r}'.format(_bootstrap._PYCACHE, path))
     if pycache_filename.count('.') != 2:
         raise ValueError('expected only 2 dots in '
                          '{!r}'.format(pycache_filename))
     base_filename = pycache_filename.partition('.')[0]
-    return os.path.join(head, base_filename + _bootstrap.SOURCE_SUFFIXES[0])
+    return os.path.join(head, base_filename + _bootstrap._SOURCE_SUFFIXES[0])
 
 
 class NullImporter:
@@ -185,7 +185,7 @@ def find_module(name, path=None):
 
     for entry in path:
         package_directory = os.path.join(entry, name)
-        for suffix in ['.py', _bootstrap.BYTECODE_SUFFIX]:
+        for suffix in ['.py', _bootstrap._BYTECODE_SUFFIX]:
             package_file_name = '__init__' + suffix
             file_path = os.path.join(package_directory, package_file_name)
             if os.path.isfile(file_path):
