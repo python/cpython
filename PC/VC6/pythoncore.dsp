@@ -466,11 +466,6 @@ SOURCE=..\..\Python\import.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\import_nt.c
-# ADD CPP /I "..\..\Python"
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\importdl.c
 # End Source File
 # Begin Source File
