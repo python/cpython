@@ -2699,35 +2699,43 @@ class TestWait(unittest.TestCase):
     def test_wait_timeout(self):
         from multiprocessing.connection import wait
 
-        expected = 1
+        expected = 5
         a, b = multiprocessing.Pipe()
 
         start = time.time()
-        res = wait([a, b], 1)
+        res = wait([a, b], expected)
         delta = time.time() - start
 
         self.assertEqual(res, [])
-        self.assertLess(delta, expected + 0.5)
-        self.assertGreater(delta, expected - 0.5)
+        self.assertLess(delta, expected + 1)
+        self.assertGreater(delta, expected - 1)
 
         b.send(None)
 
         start = time.time()
-        res = wait([a, b], 1)
+        res = wait([a, b], 20)
         delta = time.time() - start
 
         self.assertEqual(res, [a])
         self.assertLess(delta, 0.4)
 
+    @classmethod
+    def signal_and_sleep(cls, sem, period):
+        sem.release()
+        time.sleep(period)
+
     def test_wait_integer(self):
         from multiprocessing.connection import wait
 
-        expected = 5
+        expected = 3
+        sem = multiprocessing.Semaphore(0)
         a, b = multiprocessing.Pipe()
-        p = multiprocessing.Process(target=time.sleep, args=(expected,))
+        p = multiprocessing.Process(target=self.signal_and_sleep,
+                                    args=(sem, expected))
 
         p.start()
         self.assertIsInstance(p.sentinel, int)
+        self.assertTrue(sem.acquire(timeout=20))
 
         start = time.time()
         res = wait([a, p.sentinel, b], expected + 20)
@@ -2755,6 +2763,7 @@ class TestWait(unittest.TestCase):
         self.assertEqual(res, [a, p.sentinel, b])
         self.assertLess(delta, 0.4)
 
+        p.terminate()
         p.join()
 
 
