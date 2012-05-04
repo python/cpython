@@ -11,7 +11,7 @@ class PathHookTest(unittest.TestCase):
 
     def path_hook(self):
         return _bootstrap.FileFinder.path_hook((_bootstrap.SourceFileLoader,
-            _bootstrap._suffix_list(imp.PY_SOURCE), True))
+            _bootstrap._SOURCE_SUFFIXES, True))
 
     def test_success(self):
         with source_util.create_modules('dummy') as mapping:

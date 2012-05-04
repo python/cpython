@@ -15,13 +15,13 @@
 extern ULONG_PTR _Py_ActivateActCtx();
 void _Py_DeactivateActCtx(ULONG_PTR cookie);
 
-const struct filedescr _PyImport_DynLoadFiletab[] = {
+const char *_PyImport_DynLoadFiletab[] = {
 #ifdef _DEBUG
-    {"_d.pyd", "rb", C_EXTENSION},
+    "_d.pyd",
 #else
-    {".pyd", "rb", C_EXTENSION},
+    ".pyd",
 #endif
-    {0, 0}
+    NULL
 };
 
 

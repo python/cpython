@@ -140,18 +140,6 @@ extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
-/* these tables define the module suffixes that Python recognizes */
-struct filedescr * _PyImport_Filetab = NULL;
-
-static const struct filedescr _PyImport_StandardFiletab[] = {
-    {".py", "U", PY_SOURCE},
-#ifdef MS_WINDOWS
-    {".pyw", "U", PY_SOURCE},
-#endif
-    {".pyc", "rb", PY_COMPILED},
-    {0, 0}
-};
-
 static PyObject *initstr = NULL;
 
 /* Initialize things */
@@ -159,44 +147,9 @@ static PyObject *initstr = NULL;
 void
 _PyImport_Init(void)
 {
-    const struct filedescr *scan;
-    struct filedescr *filetab;
-    int countD = 0;
-    int countS = 0;
-
     initstr = PyUnicode_InternFromString("__init__");
     if (initstr == NULL)
         Py_FatalError("Can't initialize import variables");
-
-    /* prepare _PyImport_Filetab: copy entries from
-       _PyImport_DynLoadFiletab and _PyImport_StandardFiletab.
-     */
-#ifdef HAVE_DYNAMIC_LOADING
-    for (scan = _PyImport_DynLoadFiletab; scan->suffix != NULL; ++scan)
-        ++countD;
-#endif
-    for (scan = _PyImport_StandardFiletab; scan->suffix != NULL; ++scan)
-        ++countS;
-    filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
-    if (filetab == NULL)
-        Py_FatalError("Can't initialize import file table.");
-#ifdef HAVE_DYNAMIC_LOADING
-    memcpy(filetab, _PyImport_DynLoadFiletab,
-           countD * sizeof(struct filedescr));
-#endif
-    memcpy(filetab + countD, _PyImport_StandardFiletab,
-           countS * sizeof(struct filedescr));
-    filetab[countD + countS].suffix = NULL;
-
-    _PyImport_Filetab = filetab;
-
-    if (Py_OptimizeFlag) {
-        /* Replace ".pyc" with ".pyo" in _PyImport_Filetab */
-        for (; filetab->suffix != NULL; filetab++) {
-            if (strcmp(filetab->suffix, ".pyc") == 0)
-                filetab->suffix = ".pyo";
-        }
-    }
 }
 
 void
@@ -400,8 +353,6 @@ _PyImport_Fini(void)
 {
     Py_XDECREF(extensions);
     extensions = NULL;
-    PyMem_DEL(_PyImport_Filetab);
-    _PyImport_Filetab = NULL;
 #ifdef WITH_THREAD
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
@@ -1911,17 +1862,18 @@ imp_get_tag(PyObject *self, PyObject *noargs)
 }
 
 static PyObject *
-imp_get_suffixes(PyObject *self, PyObject *noargs)
+imp_extension_suffixes(PyObject *self, PyObject *noargs)
 {
     PyObject *list;
-    struct filedescr *fdp;
+    const char *suffix;
+    unsigned int index = 0;
 
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
-        PyObject *item = Py_BuildValue("ssi",
-                               fdp->suffix, fdp->mode, fdp->type);
+#ifdef HAVE_DYNAMIC_LOADING
+    while ((suffix = _PyImport_DynLoadFiletab[index])) {
+        PyObject *item = PyUnicode_FromString(suffix);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -1932,7 +1884,9 @@ imp_get_suffixes(PyObject *self, PyObject *noargs)
             return NULL;
         }
         Py_DECREF(item);
+        index += 1;
     }
+#endif
     return list;
 }
 
@@ -2101,10 +2055,9 @@ PyDoc_STRVAR(doc_get_tag,
 "get_tag() -> string\n\
 Return the magic tag for .pyc or .pyo files.");
 
-PyDoc_STRVAR(doc_get_suffixes,
-"get_suffixes() -> [(suffix, mode, type), ...]\n\
-Return a list of (suffix, mode, type) tuples describing the files\n\
-that find_module() looks for.");
+PyDoc_STRVAR(doc_extension_suffixes,
+"extension_suffixes() -> list of strings\n\
+Returns the list of file suffixes used to identify extension modules.");
 
 PyDoc_STRVAR(doc_lock_held,
 "lock_held() -> boolean\n\
@@ -2126,7 +2079,8 @@ On platforms without threads, this function does nothing.");
 static PyMethodDef imp_methods[] = {
     {"get_magic",        imp_get_magic,    METH_NOARGS,  doc_get_magic},
     {"get_tag",          imp_get_tag,      METH_NOARGS,  doc_get_tag},
-    {"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
+    {"extension_suffixes", imp_extension_suffixes, METH_NOARGS,
+        doc_extension_suffixes},
     {"lock_held",        imp_lock_held,    METH_NOARGS,  doc_lock_held},
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},

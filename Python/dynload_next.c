@@ -8,10 +8,7 @@
 
 #include <mach-o/dyld.h>
 
-const struct filedescr _PyImport_DynLoadFiletab[] = {
-    {".so", "rb", C_EXTENSION},
-    {0, 0}
-};
+const char *_PyImport_DynLoadFiletab[] = {".so", NULL};
 
 /*
 ** Python modules are Mach-O MH_BUNDLE files. The best way to load these

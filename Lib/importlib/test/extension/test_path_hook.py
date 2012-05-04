@@ -15,7 +15,7 @@ class PathHookTests(unittest.TestCase):
 
     def hook(self, entry):
         return _bootstrap.FileFinder.path_hook((_bootstrap.ExtensionFileLoader,
-            _bootstrap._suffix_list(imp.C_EXTENSION), False))(entry)
+            imp.extension_suffixes(), False))(entry)
 
     def test_success(self):
         # Path hook should handle a directory where a known extension module
