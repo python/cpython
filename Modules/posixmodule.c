@@ -3695,7 +3695,7 @@ utime_read_time_arguments(utime_arguments *ua)
                      "%s: you may specify either 'times'"
                      " or 'ns' but not both",
                      ua->function_name);
-        return 0;
+        goto fail;
     }
 
     if (times && (times != Py_None)) {
@@ -3704,13 +3704,15 @@ utime_read_time_arguments(utime_arguments *ua)
                          "%s: 'time' must be either"
                          " a valid tuple of two ints or None",
                          ua->function_name);
-            return 0;
+            goto fail;
         }
         ua->now = 0;
-        return (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
-                    &(ua->atime_s), &(ua->atime_ns)) != -1)
-            && (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
-                    &(ua->mtime_s), &(ua->mtime_ns)) != -1);
+        if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
+                                     &ua->atime_s, &ua->atime_ns) == -1 ||
+            _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
+                                     &ua->mtime_s, &ua->mtime_ns) == -1)
+            goto fail;
+        return 1;
     }
 
     if (ns) {
@@ -3718,18 +3720,25 @@ utime_read_time_arguments(utime_arguments *ua)
             PyErr_Format(PyExc_TypeError,
                          "%s: 'ns' must be a valid tuple of two ints",
                          ua->function_name);
-            return 0;
+            goto fail;
         }
         ua->now = 0;
-        return (split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 0),
-                    &(ua->atime_s), &(ua->atime_ns)))
-            && (split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
-                    &(ua->mtime_s), &(ua->mtime_ns)));
+        if (!split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 0),
+                                      &ua->atime_s, &ua->atime_ns) ||
+            !split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
+                                       &ua->mtime_s, &ua->mtime_ns))
+            goto fail;
+        return 1;
     }
 
     /* either times=None, or neither times nor ns was specified. use "now". */
     ua->now = 1;
     return 1;
+
+  fail:
+    if (ua->converter)
+        Py_DECREF(ua->path);
+    return 0;
 }
 
 
