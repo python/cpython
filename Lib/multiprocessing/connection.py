@@ -621,16 +621,24 @@ if sys.platform == 'win32':
         def accept(self):
             self._handle_queue.append(self._new_handle())
             handle = self._handle_queue.pop(0)
-            ov = _winapi.ConnectNamedPipe(handle, overlapped=True)
             try:
-                res = _winapi.WaitForMultipleObjects([ov.event], False, INFINITE)
-            except:
-                ov.cancel()
-                _winapi.CloseHandle(handle)
-                raise
-            finally:
-                _, err = ov.GetOverlappedResult(True)
-            assert err == 0
+                ov = _winapi.ConnectNamedPipe(handle, overlapped=True)
+            except OSError as e:
+                if e.winerror != _winapi.ERROR_NO_DATA:
+                    raise
+                # ERROR_NO_DATA can occur if a client has already connected,
+                # written data and then disconnected -- see Issue 14725.
+            else:
+                try:
+                    res = _winapi.WaitForMultipleObjects(
+                        [ov.event], False, INFINITE)
+                except:
+                    ov.cancel()
+                    _winapi.CloseHandle(handle)
+                    raise
+                finally:
+                    _, err = ov.GetOverlappedResult(True)
+                    assert err == 0
             return PipeConnection(handle)
 
         @staticmethod
