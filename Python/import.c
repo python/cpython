@@ -181,7 +181,7 @@ _PyImportHooks_Init(void)
   error:
     PyErr_Print();
     Py_FatalError("initializing sys.meta_path, sys.path_hooks, "
-                  "or path_importer_cache");
+                  "or path_importer_cache failed");
     }
     Py_DECREF(path_hooks);
 }
