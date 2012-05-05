@@ -126,8 +126,7 @@ def load_compiled(name, pathname, file=None):
 # XXX deprecate
 def load_package(name, path):
     if os.path.isdir(path):
-        extensions = _bootstrap._SOURCE_SUFFIXES
-        extensions += [_bootstrap._BYTECODE_SUFFIX]
+        extensions = _bootstrap._SOURCE_SUFFIXES + [_bootstrap._BYTECODE_SUFFIX]
         for extension in extensions:
             path = os.path.join(path, '__init__'+extension)
             if os.path.exists(path):
