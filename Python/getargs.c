@@ -814,6 +814,18 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         break;
     }
 
+    case 'p': {/* boolean *p*redicate */
+        int *p = va_arg(*p_va, int *);
+        int val = PyObject_IsTrue(arg);
+        if (val > 0)
+            *p = 1;
+        else if (val == 0)
+            *p = 0;
+        else
+            RETURN_ERR_OCCURRED;
+        break;
+    }
+
     /* XXX WAAAAH!  's', 'y', 'z', 'u', 'Z', 'e', 'w' codes all
        need to be cleaned up! */
 
