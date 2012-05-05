@@ -1878,6 +1878,22 @@ class _TestListenerClient(BaseTestCase):
             p.join()
             l.close()
 
+    def test_issue14725(self):
+        l = self.connection.Listener()
+        p = self.Process(target=self._test, args=(l.address,))
+        p.daemon = True
+        p.start()
+        time.sleep(1)
+        # On Windows the client process should by now have connected,
+        # written data and closed the pipe handle by now.  This causes
+        # ConnectNamdedPipe() to fail with ERROR_NO_DATA.  See Issue
+        # 14725.
+        conn = l.accept()
+        self.assertEqual(conn.recv(), 'hello')
+        conn.close()
+        p.join()
+        l.close()
+
 class _TestPoll(unittest.TestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
