@@ -56,13 +56,10 @@ class UstarReadTest(ReadTest):
 
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.getmember("ustar/regtype")
-        fobj = self.tar.extractfile(tarinfo)
-        try:
+        with self.tar.extractfile(tarinfo) as fobj:
             data = fobj.read()
             self.assertTrue((len(data), md5sum(data)) == (tarinfo.size, md5_regtype),
                     "regular file extraction failed")
-        finally:
-            fobj.close()
 
     def test_fileobj_readlines(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
@@ -70,8 +67,7 @@ class UstarReadTest(ReadTest):
         with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
             lines1 = fobj1.readlines()
 
-        fobj = self.tar.extractfile(tarinfo)
-        try:
+        with self.tar.extractfile(tarinfo) as fobj:
             fobj2 = io.TextIOWrapper(fobj)
             lines2 = fobj2.readlines()
             self.assertTrue(lines1 == lines2,
@@ -81,21 +77,16 @@ class UstarReadTest(ReadTest):
             self.assertTrue(lines2[83] ==
                     "I will gladly admit that Python is not the fastest running scripting language.\n",
                     "fileobj.readlines() failed")
-        finally:
-            fobj.close()
 
     def test_fileobj_iter(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
         with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
             lines1 = fobj1.readlines()
-        fobj2 = self.tar.extractfile(tarinfo)
-        try:
+        with self.tar.extractfile(tarinfo) as fobj2:
             lines2 = list(io.TextIOWrapper(fobj2))
             self.assertTrue(lines1 == lines2,
                          "fileobj.__iter__() failed")
-        finally:
-            fobj2.close()
 
     def test_fileobj_seek(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
@@ -147,17 +138,24 @@ class UstarReadTest(ReadTest):
                      "read() after readline() failed")
         fobj.close()
 
+    def test_fileobj_text(self):
+        with self.tar.extractfile("ustar/regtype") as fobj:
+            fobj = io.TextIOWrapper(fobj)
+            data = fobj.read().encode("iso8859-1")
+            self.assertEqual(md5sum(data), md5_regtype)
+            try:
+                fobj.seek(100)
+            except AttributeError:
+                # Issue #13815: seek() complained about a missing
+                # flush() method.
+                self.fail("seeking failed in text mode")
+
     # Test if symbolic and hard links are resolved by extractfile().  The
     # test link members each point to a regular member whose data is
     # supposed to be exported.
     def _test_fileobj_link(self, lnktype, regtype):
-        a = self.tar.extractfile(lnktype)
-        b = self.tar.extractfile(regtype)
-        try:
+        with self.tar.extractfile(lnktype) as a, self.tar.extractfile(regtype) as b:
             self.assertEqual(a.name, b.name)
-        finally:
-            a.close()
-            b.close()
 
     def test_fileobj_link1(self):
         self._test_fileobj_link("ustar/lnktype", "ustar/regtype")
@@ -265,9 +263,8 @@ class MiscReadTest(CommonReadTest):
             t = tar.next()
             name = t.name
             offset = t.offset
-            f = tar.extractfile(t)
-            data = f.read()
-            f.close()
+            with tar.extractfile(t) as f:
+                data = f.read()
         finally:
             tar.close()
 
@@ -439,27 +436,26 @@ class StreamReadTest(CommonReadTest):
         for tarinfo in self.tar:
             if not tarinfo.isreg():
                 continue
-            fobj = self.tar.extractfile(tarinfo)
-            while True:
-                try:
-                    buf = fobj.read(512)
-                except tarfile.StreamError:
-                    self.fail("simple read-through using TarFile.extractfile() failed")
-                if not buf:
-                    break
-            fobj.close()
+            with self.tar.extractfile(tarinfo) as fobj:
+                while True:
+                    try:
+                        buf = fobj.read(512)
+                    except tarfile.StreamError:
+                        self.fail("simple read-through using TarFile.extractfile() failed")
+                    if not buf:
+                        break
 
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.next() # get "regtype" (can't use getmember)
-        fobj = self.tar.extractfile(tarinfo)
-        data = fobj.read()
+        with self.tar.extractfile(tarinfo) as fobj:
+            data = fobj.read()
         self.assertTrue((len(data), md5sum(data)) == (tarinfo.size, md5_regtype),
                 "regular file extraction failed")
 
     def test_provoke_stream_error(self):
         tarinfos = self.tar.getmembers()
-        f = self.tar.extractfile(tarinfos[0]) # read the first member
-        self.assertRaises(tarfile.StreamError, f.read)
+        with self.tar.extractfile(tarinfos[0]) as f: # read the first member
+            self.assertRaises(tarfile.StreamError, f.read)
 
     def test_compare_members(self):
         tar1 = tarfile.open(tarname, encoding="iso8859-1")
@@ -1484,12 +1480,9 @@ class AppendTest(unittest.TestCase):
         with tarfile.open(tarname, encoding="iso8859-1") as src:
             t = src.getmember("ustar/regtype")
             t.name = "foo"
-            f = src.extractfile(t)
-            try:
+            with src.extractfile(t) as f:
                 with tarfile.open(self.tarname, mode) as tar:
                     tar.addfile(t, f)
-            finally:
-                f.close()
 
     def _test(self, names=["bar"], fileobj=None):
         with tarfile.open(self.tarname, fileobj=fileobj) as tar:
