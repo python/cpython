@@ -89,6 +89,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
+
 - Issue #14371: Support bzip2 in zipfile module.
   Patch by Serhiy Storchaka.
 

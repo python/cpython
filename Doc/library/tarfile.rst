@@ -376,15 +376,12 @@ be finalized; only the internally used file object will be closed. See the
 .. method:: TarFile.extractfile(member)
 
    Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file, a :term:`file-like
-   object` is returned. If *member* is a link, a file-like object is constructed from
-   the link's target. If *member* is none of the above, :const:`None` is returned.
+   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
+   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
+   returned.
 
-   .. note::
-
-      The file-like object is read-only.  It provides the methods
-      :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`seek`, :meth:`tell`,
-      and :meth:`close`, and also supports iteration over its lines.
+   .. versionchanged:: 3.3
+      Return an :class:`io.BufferedReader` object.
 
 
 .. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None, *, filter=None)
