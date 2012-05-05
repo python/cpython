@@ -3711,7 +3711,7 @@ utime_read_time_arguments(utime_arguments *ua)
     if (times && (times != Py_None)) {
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_Format(PyExc_TypeError,
-                         "%s: 'time' must be either"
+                         "%s: 'times' must be either"
                          " a tuple of two ints or None",
                          ua->function_name);
             return_value = utime_times_conversion_failure;
