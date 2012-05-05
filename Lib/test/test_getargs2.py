@@ -214,6 +214,36 @@ class LongLong_TestCase(unittest.TestCase):
 
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
+class Paradox:
+    "This statement is false."
+    def __bool__(self):
+        raise NotImplementedError
+
+class Boolean_TestCase(unittest.TestCase):
+    def test_p(self):
+        from _testcapi import getargs_p
+        self.assertEqual(0, getargs_p(False))
+        self.assertEqual(0, getargs_p(None))
+        self.assertEqual(0, getargs_p(0))
+        self.assertEqual(0, getargs_p(0.0))
+        self.assertEqual(0, getargs_p(0j))
+        self.assertEqual(0, getargs_p(''))
+        self.assertEqual(0, getargs_p(()))
+        self.assertEqual(0, getargs_p([]))
+        self.assertEqual(0, getargs_p({}))
+
+        self.assertEqual(1, getargs_p(True))
+        self.assertEqual(1, getargs_p(1))
+        self.assertEqual(1, getargs_p(1.0))
+        self.assertEqual(1, getargs_p(1j))
+        self.assertEqual(1, getargs_p('x'))
+        self.assertEqual(1, getargs_p((1,)))
+        self.assertEqual(1, getargs_p([1]))
+        self.assertEqual(1, getargs_p({1:2}))
+        self.assertEqual(1, getargs_p(unittest.TestCase))
+
+        self.assertRaises(NotImplementedError, getargs_p, Paradox())
+
 
 class Tuple_TestCase(unittest.TestCase):
     def test_tuple(self):
@@ -510,6 +540,7 @@ def test_main():
     tests = [
         Signed_TestCase,
         Unsigned_TestCase,
+        Boolean_TestCase,
         Tuple_TestCase,
         Keywords_TestCase,
         KeywordOnly_TestCase,

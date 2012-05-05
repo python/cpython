@@ -916,6 +916,15 @@ getargs_n(PyObject *self, PyObject *args)
     return PyLong_FromSsize_t(value);
 }
 
+static PyObject *
+getargs_p(PyObject *self, PyObject *args)
+{
+    int value;
+    if (!PyArg_ParseTuple(args, "p", &value))
+        return NULL;
+    return PyLong_FromLong(value);
+}
+
 #ifdef HAVE_LONG_LONG
 static PyObject *
 getargs_L(PyObject *self, PyObject *args)
@@ -2439,6 +2448,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_i",               getargs_i,                       METH_VARARGS},
     {"getargs_l",               getargs_l,                       METH_VARARGS},
     {"getargs_n",               getargs_n,                       METH_VARARGS},
+    {"getargs_p",               getargs_p,                       METH_VARARGS},
 #ifdef HAVE_LONG_LONG
     {"getargs_L",               getargs_L,                       METH_VARARGS},
     {"getargs_K",               getargs_K,                       METH_VARARGS},
