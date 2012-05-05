@@ -348,7 +348,10 @@ if sys.platform == 'win32':
             try:
                 win32.ConnectNamedPipe(handle, win32.NULL)
             except WindowsError, e:
-                if e.args[0] != win32.ERROR_PIPE_CONNECTED:
+                # ERROR_NO_DATA can occur if a client has already connected,
+                # written data and then disconnected -- see Issue 14725.
+                if e.args[0] not in (win32.ERROR_PIPE_CONNECTED,
+                                     win32.ERROR_NO_DATA):
                     raise
             return _multiprocessing.PipeConnection(handle)
 
