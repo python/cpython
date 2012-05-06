@@ -137,6 +137,9 @@ grow_buffer(PyObject **buf)
       uint32_t - the "I" (unsigned int) specifier is the right size, but
       silently ignores overflows on conversion.
 
+      lzma_vli - the "K" (unsigned PY_LONG_LONG) specifier is the right
+      size, but like "I" it silently ignores overflows on conversion.
+
       lzma_mode and lzma_match_finder - these are enumeration types, and
       so the size of each is implementation-defined. Worse, different
       enum types can be of different sizes within the same program, so
@@ -147,12 +150,12 @@ grow_buffer(PyObject **buf)
     static int \
     FUNCNAME(PyObject *obj, void *ptr) \
     { \
-        unsigned long val; \
+        unsigned PY_LONG_LONG val; \
         \
-        val = PyLong_AsUnsignedLong(obj); \
+        val = PyLong_AsUnsignedLongLong(obj); \
         if (PyErr_Occurred()) \
             return 0; \
-        if ((unsigned long)(TYPE)val != val) { \
+        if ((unsigned PY_LONG_LONG)(TYPE)val != val) { \
             PyErr_SetString(PyExc_OverflowError, \
                             "Value too large for " #TYPE " type"); \
             return 0; \
@@ -162,13 +165,17 @@ grow_buffer(PyObject **buf)
     }
 
 INT_TYPE_CONVERTER_FUNC(uint32_t, uint32_converter)
+INT_TYPE_CONVERTER_FUNC(lzma_vli, lzma_vli_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_mode, lzma_mode_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_match_finder, lzma_mf_converter)
 
 #undef INT_TYPE_CONVERTER_FUNC
 
 
-/* Filter specifier parsing functions. */
+/* Filter specifier parsing.
+
+   This code handles converting filter specifiers (Python dicts) into
+   the C lzma_filter structs expected by liblzma. */
 
 static void *
 parse_filter_spec_lzma(PyObject *spec)
@@ -355,6 +362,88 @@ parse_filter_chain_spec(lzma_filter filters[], PyObject *filterspecs)
     }
     filters[num_filters].id = LZMA_VLI_UNKNOWN;
     return 0;
+}
+
+
+/* Filter specifier construction.
+
+   This code handles converting C lzma_filter structs into
+   Python-level filter specifiers (represented as dicts). */
+
+static int
+spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned PY_LONG_LONG value)
+{
+    int status;
+    PyObject *value_object;
+
+    value_object = PyLong_FromUnsignedLongLong(value);
+    if (value_object == NULL)
+        return -1;
+
+    status = _PyDict_SetItemId(spec, key, value_object);
+    Py_DECREF(value_object);
+    return status;
+}
+
+static PyObject *
+build_filter_spec(const lzma_filter *f)
+{
+    PyObject *spec;
+
+    spec = PyDict_New();
+    if (spec == NULL)
+        return NULL;
+
+#define ADD_FIELD(SOURCE, FIELD) \
+    do { \
+        _Py_IDENTIFIER(FIELD); \
+        if (spec_add_field(spec, &PyId_##FIELD, SOURCE->FIELD) == -1) \
+            goto error;\
+    } while (0)
+
+    ADD_FIELD(f, id);
+
+    switch (f->id) {
+        case LZMA_FILTER_LZMA1:
+        case LZMA_FILTER_LZMA2: {
+            lzma_options_lzma *options = f->options;
+            ADD_FIELD(options, dict_size);
+            ADD_FIELD(options, lc);
+            ADD_FIELD(options, lp);
+            ADD_FIELD(options, pb);
+            ADD_FIELD(options, mode);
+            ADD_FIELD(options, nice_len);
+            ADD_FIELD(options, mf);
+            ADD_FIELD(options, depth);
+            break;
+        }
+        case LZMA_FILTER_DELTA: {
+            lzma_options_delta *options = f->options;
+            ADD_FIELD(options, dist);
+            break;
+        }
+        case LZMA_FILTER_X86:
+        case LZMA_FILTER_POWERPC:
+        case LZMA_FILTER_IA64:
+        case LZMA_FILTER_ARM:
+        case LZMA_FILTER_ARMTHUMB:
+        case LZMA_FILTER_SPARC: {
+            lzma_options_bcj *options = f->options;
+            ADD_FIELD(options, start_offset);
+            break;
+        }
+        default:
+            PyErr_Format(PyExc_ValueError, "Invalid filter ID: %llu", f->id);
+            goto error;
+    }
+
+#undef ADD_FIELD
+
+    return spec;
+
+error:
+    Py_DECREF(spec);
+    return NULL;
 }
 
 
@@ -1005,11 +1094,100 @@ check_is_supported(PyObject *self, PyObject *args)
 }
 
 
+PyDoc_STRVAR(encode_filter_properties_doc,
+"encode_filter_properties(filter) -> bytes\n"
+"\n"
+"Return a bytes object encoding the options (properties) of the filter\n"
+"specified by *filter* (a dict).\n"
+"\n"
+"The result does not include the filter ID itself, only the options.\n"
+"\n"
+"This function is primarily of interest to users implementing custom\n"
+"file formats.\n");
+
+static PyObject *
+encode_filter_properties(PyObject *self, PyObject *args)
+{
+    PyObject *filterspec;
+    lzma_filter filter;
+    lzma_ret lzret;
+    uint32_t encoded_size;
+    PyObject *result = NULL;
+
+    if (!PyArg_ParseTuple(args, "O:encode_filter_properties", &filterspec))
+        return NULL;
+
+    if (parse_filter_spec(&filter, filterspec) == NULL)
+        return NULL;
+
+    lzret = lzma_properties_size(&encoded_size, &filter);
+    if (catch_lzma_error(lzret))
+        goto error;
+
+    result = PyBytes_FromStringAndSize(NULL, encoded_size);
+    if (result == NULL)
+        goto error;
+
+    lzret = lzma_properties_encode(
+            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    if (catch_lzma_error(lzret))
+        goto error;
+
+    PyMem_Free(filter.options);
+    return result;
+
+error:
+    Py_XDECREF(result);
+    PyMem_Free(filter.options);
+    return NULL;
+}
+
+
+PyDoc_STRVAR(decode_filter_properties_doc,
+"decode_filter_properties(filter_id, encoded_props) -> dict\n"
+"\n"
+"Return a dict describing a filter with ID *filter_id*, and options\n"
+"(properties) decoded from the bytes object *encoded_props*.\n"
+"\n"
+"This function is primarily of interest to users implementing custom\n"
+"file formats.\n");
+
+static PyObject *
+decode_filter_properties(PyObject *self, PyObject *args)
+{
+    Py_buffer encoded_props;
+    lzma_filter filter;
+    lzma_ret lzret;
+    PyObject *result = NULL;
+
+    if (!PyArg_ParseTuple(args, "O&y*:decode_filter_properties",
+                          lzma_vli_converter, &filter.id, &encoded_props))
+        return NULL;
+
+    lzret = lzma_properties_decode(
+            &filter, NULL, encoded_props.buf, encoded_props.len);
+    PyBuffer_Release(&encoded_props);
+    if (catch_lzma_error(lzret))
+        return NULL;
+
+    result = build_filter_spec(&filter);
+
+    /* We use vanilla free() here instead of PyMem_Free() - filter.options was
+       allocated by lzma_properties_decode() using the default allocator. */
+    free(filter.options);
+    return result;
+}
+
+
 /* Module initialization. */
 
 static PyMethodDef module_methods[] = {
     {"check_is_supported", (PyCFunction)check_is_supported,
      METH_VARARGS, check_is_supported_doc},
+    {"encode_filter_properties", (PyCFunction)encode_filter_properties,
+     METH_VARARGS, encode_filter_properties_doc},
+    {"decode_filter_properties", (PyCFunction)decode_filter_properties,
+     METH_VARARGS, decode_filter_properties_doc},
     {NULL}
 };
 
