@@ -93,6 +93,21 @@ finally:
     suite5
 """
 
+with_simple = """\
+with f():
+    suite1
+"""
+
+with_as = """\
+with f() as x:
+    suite1
+"""
+
+with_two_items = """\
+with f() as x, g() as y:
+    suite1
+"""
+
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
@@ -208,6 +223,22 @@ class UnparseTestCase(ASTTestCase):
 
     def test_try_except_finally(self):
         self.check_roundtrip(try_except_finally)
+
+    def test_starred_assignment(self):
+        self.check_roundtrip("a, *b, c = seq")
+        self.check_roundtrip("a, (*b, c) = seq")
+        self.check_roundtrip("a, *b[0], c = seq")
+        self.check_roundtrip("a, *(b, c) = seq")
+
+    def test_with_simple(self):
+        self.check_roundtrip(with_simple)
+
+    def test_with_as(self):
+        self.check_roundtrip(with_as)
+
+    def test_with_two_items(self):
+        self.check_roundtrip(with_two_items)
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
