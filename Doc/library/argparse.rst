@@ -12,6 +12,12 @@
 
 --------------
 
+.. sidebar:: Tutorial
+
+   This page contains the API reference information. For a more gentle
+   introduction to Python command-line parsing, have a look at the
+   :ref:`argparse tutorial <argparse-tutorial>`.
+
 The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
