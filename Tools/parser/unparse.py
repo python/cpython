@@ -472,6 +472,10 @@ class Unparser:
         self.dispatch(t.slice)
         self.write("]")
 
+    def _Starred(self, t):
+        self.write("*")
+        self.dispatch(t.value)
+
     # slice
     def _Ellipsis(self, t):
         self.write("...")
