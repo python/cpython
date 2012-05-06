@@ -147,6 +147,14 @@ class Unparser:
             self.dispatch(t.value)
         self.write(")")
 
+    def _YieldFrom(self, t):
+        self.write("(")
+        self.write("yield from")
+        if t.value:
+            self.write(" ")
+            self.dispatch(t.value)
+        self.write(")")
+
     def _Raise(self, t):
         self.fill("raise")
         if not t.exc:
@@ -158,12 +166,11 @@ class Unparser:
             self.write(" from ")
             self.dispatch(t.cause)
 
-    def _TryExcept(self, t):
+    def _Try(self, t):
         self.fill("try")
         self.enter()
         self.dispatch(t.body)
         self.leave()
-
         for ex in t.handlers:
             self.dispatch(ex)
         if t.orelse:
@@ -171,21 +178,11 @@ class Unparser:
             self.enter()
             self.dispatch(t.orelse)
             self.leave()
-
-    def _TryFinally(self, t):
-        if len(t.body) == 1 and isinstance(t.body[0], ast.TryExcept):
-            # try-except-finally
-            self.dispatch(t.body)
-        else:
-            self.fill("try")
+        if t.finalbody:
+            self.fill("finally")
             self.enter()
-            self.dispatch(t.body)
+            self.dispatch(t.finalbody)
             self.leave()
-
-        self.fill("finally")
-        self.enter()
-        self.dispatch(t.finalbody)
-        self.leave()
 
     def _ExceptHandler(self, t):
         self.fill("except")
@@ -296,10 +293,7 @@ class Unparser:
 
     def _With(self, t):
         self.fill("with ")
-        self.dispatch(t.context_expr)
-        if t.optional_vars:
-            self.write(" as ")
-            self.dispatch(t.optional_vars)
+        interleave(lambda: self.write(", "), self.dispatch, t.items)
         self.enter()
         self.dispatch(t.body)
         self.leave()
@@ -472,6 +466,10 @@ class Unparser:
         self.dispatch(t.slice)
         self.write("]")
 
+    def _Starred(self, t):
+        self.write("*")
+        self.dispatch(t.value)
+
     # slice
     def _Ellipsis(self, t):
         self.write("...")
@@ -559,6 +557,12 @@ class Unparser:
         self.write(t.name)
         if t.asname:
             self.write(" as "+t.asname)
+
+    def _withitem(self, t):
+        self.dispatch(t.context_expr)
+        if t.optional_vars:
+            self.write(" as ")
+            self.dispatch(t.optional_vars)
 
 def roundtrip(filename, output=sys.stdout):
     with open(filename, "rb") as pyfile:

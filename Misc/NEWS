@@ -28,6 +28,12 @@ Library
 - Issue #14127 and #10148: shutil.copystat now preserves exact mtime and atime
   on filesystems providing nanosecond resolution.
 
+Tools/Demos
+-----------
+
+- Issue #14965: Bring Tools/parser/unparse.py support up to date with
+  the Python 3.3 Grammar.
+
 
 What's New in Python 3.3.0 Alpha 3?
 ===================================
