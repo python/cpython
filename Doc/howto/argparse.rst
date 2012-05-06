@@ -84,7 +84,7 @@ Following is a result of running the code:
    usage: prog.py [-h]
 
    optional arguments:
-   -h, --help  show this help message and exit
+     -h, --help  show this help message and exit
    $ python3 prog.py --verbose
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: --verbose
@@ -128,10 +128,10 @@ And running the code:
    usage: prog.py [-h] echo
 
    positional arguments:
-   echo
+     echo
 
    optional arguments:
-   -h, --help  show this help message and exit
+     -h, --help  show this help message and exit
    $ python3 prog.py foo
    foo
 
@@ -170,10 +170,10 @@ And we get:
    usage: prog.py [-h] echo
 
    positional arguments:
-   echo        echo the string you use here
+     echo        echo the string you use here
 
    optional arguments:
-   -h, --help  show this help message and exit
+     -h, --help  show this help message and exit
 
 Now, how about doing something even more useful::
 
@@ -181,7 +181,7 @@ Now, how about doing something even more useful::
    parser = argparse.ArgumentParser()
    parser.add_argument("square", help="display a square of a given number")
    args = parser.parse_args()
-   print(args.square**2))
+   print(args.square**2)
 
 Following is a result of running the code:
 
@@ -189,8 +189,8 @@ Following is a result of running the code:
 
    $ python3 prog.py 4
    Traceback (most recent call last):
-   File "prog.py", line 5, in <module>
-      print(args.square**2)
+     File "prog.py", line 5, in <module>
+       print(args.square**2)
    TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
 
 That didn't go so well. That's because :mod:`argparse` treats the options we
@@ -200,7 +200,7 @@ give it as strings, unless we tell it otherwise. So, let's tell
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", help="display a square of a given number",
-                     type=int)
+                       type=int)
    args = parser.parse_args()
    print(args.square**2)
 
@@ -229,7 +229,7 @@ have a look on how to add optional ones::
    parser.add_argument("--verbosity", help="increase output verbosity")
    args = parser.parse_args()
    if args.verbosity:
-      print("verbosity turned on")
+       print("verbosity turned on")
 
 And the output:
 
@@ -242,8 +242,8 @@ And the output:
    usage: prog.py [-h] [--verbosity VERBOSITY]
 
    optional arguments:
-   -h, --help            show this help message and exit
-   --verbosity VERBOSITY
+     -h, --help            show this help message and exit
+     --verbosity VERBOSITY
                            increase output verbosity
    $ python3 prog.py --verbosity
    usage: prog.py [-h] [--verbosity VERBOSITY]
@@ -272,10 +272,10 @@ Let's modify the code accordingly::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("--verbose", help="increase output verbosity",
-                     action="store_true")
+                       action="store_true")
    args = parser.parse_args()
    if args.verbose:
-      print("verbosity turned on")
+       print("verbosity turned on")
 
 And the output:
 
@@ -283,15 +283,15 @@ And the output:
 
    $ python3 prog.py --verbose
    verbosity turned on
-   $  python3 prog.py --verbose 1
+   $ python3 prog.py --verbose 1
    usage: prog.py [-h] [--verbose]
    prog.py: error: unrecognized arguments: 1
    $ python3 prog.py --help
    usage: prog.py [-h] [--verbose]
 
    optional arguments:
-   -h, --help  show this help message and exit
-   --verbose   increase output verbosity
+     -h, --help  show this help message and exit
+     --verbose   increase output verbosity
 
 Here is what is happening:
 
@@ -318,10 +318,10 @@ versions of the options. It's quite simple::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                     action="store_true")
+                       action="store_true")
    args = parser.parse_args()
    if args.verbose:
-      print("verbosity turned on")
+       print("verbosity turned on")
 
 And here goes:
 
@@ -333,8 +333,8 @@ And here goes:
    usage: prog.py [-h] [-v]
 
    optional arguments:
-   -h, --help     show this help message and exit
-   -v, --verbose  increase output verbosity
+     -h, --help     show this help message and exit
+     -v, --verbose  increase output verbosity
 
 Note that the new ability is also reflected in the help text.
 
@@ -347,15 +347,15 @@ Our program keeps growing in complexity::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display a square of a given number")
+                       help="display a square of a given number")
    parser.add_argument("-v", "--verbose", action="store_true",
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
    if args.verbose:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 And now the output:
 
@@ -381,17 +381,17 @@ multiple verbosity values, and actually get to use them::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display a square of a given number")
+                       help="display a square of a given number")
    parser.add_argument("-v", "--verbosity", type=int,
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    elif args.verbosity == 1:
-      print("{}^2 == {}".format(args.square, answer))
+       print("{}^2 == {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 And the output:
 
@@ -415,17 +415,17 @@ Let's fix it by restricting the values the ``--verbosity`` option can accept::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display a square of a given number")
+                       help="display a square of a given number")
    parser.add_argument("-v", "--verbosity", type=int, choices=[0, 1, 2],
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    elif args.verbosity == 1:
-      print("{}^2 == {}".format(args.square, answer))
+       print("{}^2 == {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 And the output:
 
@@ -438,11 +438,11 @@ And the output:
    usage: prog.py [-h] [-v {0,1,2}] square
 
    positional arguments:
-   square                display a square of a given number
+     square                display a square of a given number
 
    optional arguments:
-   -h, --help            show this help message and exit
-   -v {0,1,2}, --verbosity {0,1,2}
+     -h, --help            show this help message and exit
+     -v {0,1,2}, --verbosity {0,1,2}
                            increase output verbosity
 
 Note that the change also reflects both in the error message as well as the
@@ -455,17 +455,17 @@ verbosity argument (check the output of ``python --help``)::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display the square of a given number")
+                       help="display the square of a given number")
    parser.add_argument("-v", "--verbosity", action="count",
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    elif args.verbosity == 1:
-      print("{}^2 == {}".format(args.square, answer))
+       print("{}^2 == {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 We have introduced another action, "count",
 to count the number of occurences of a specific optional arguments:
@@ -487,11 +487,11 @@ to count the number of occurences of a specific optional arguments:
    usage: prog.py [-h] [-v] square
 
    positional arguments:
-   square           display a square of a given number
+     square           display a square of a given number
 
    optional arguments:
-   -h, --help       show this help message and exit
-   -v, --verbosity  increase output verbosity
+     -h, --help       show this help message and exit
+     -v, --verbosity  increase output verbosity
    $ python3 prog.py 4 -vvv
    16
 
@@ -521,19 +521,19 @@ Let's fix::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display a square of a given number")
+                       help="display a square of a given number")
    parser.add_argument("-v", "--verbosity", action="count",
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
 
    # bugfix: replace == with >=
    if args.verbosity >= 2:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    elif args.verbosity >= 1:
-      print("{}^2 == {}".format(args.square, answer))
+       print("{}^2 == {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 And this is what it gives:
 
@@ -545,8 +545,8 @@ And this is what it gives:
    the square of 4 equals 16
    $ python3 prog.py 4
    Traceback (most recent call last):
-   File "prog.py", line 11, in <module>
-      if args.verbosity >= 2:
+     File "prog.py", line 11, in <module>
+       if args.verbosity >= 2:
    TypeError: unorderable types: NoneType() >= int()
 
 * First output went well, and fixes the bug we had before.
@@ -559,17 +559,17 @@ Let's fix that bug::
    import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument("square", type=int,
-                     help="display a square of a given number")
+                       help="display a square of a given number")
    parser.add_argument("-v", "--verbosity", action="count", default=0,
-                     help="increase output verbosity")
+                       help="increase output verbosity")
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity >= 2:
-      print("the square of {} equals {}".format(args.square, answer))
+       print("the square of {} equals {}".format(args.square, answer))
    elif args.verbosity >= 1:
-      print("{}^2 == {}".format(args.square, answer))
+       print("{}^2 == {}".format(args.square, answer))
    else:
-      print(answer)
+       print(answer)
 
 We've just introduced yet another keyword, ``default``.
 We've set it to ``0`` in order to make it comparable to the other int values.
@@ -605,11 +605,11 @@ not just squares::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-      print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print("{} to the power {} equals {}".format(args.x, args.y, answer))
    elif args.verbosity >= 1:
-      print("{}^{} == {}".format(args.x, args.y, answer))
+       print("{}^{} == {}".format(args.x, args.y, answer))
    else:
-      print(answer)
+       print(answer)
 
 Output:
 
@@ -622,12 +622,12 @@ Output:
    usage: prog.py [-h] [-v] x y
 
    positional arguments:
-   x                the base
-   y                the exponent
+     x                the base
+     y                the exponent
 
    optional arguments:
-   -h, --help       show this help message and exit
-   -v, --verbosity
+     -h, --help       show this help message and exit
+     -v, --verbosity
    $ python3 prog.py 4 2 -v
    4^2 == 16
 
@@ -644,9 +644,9 @@ to display *more* text instead::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-      print("Running '{}'".format(__file__))
+       print("Running '{}'".format(__file__))
    if args.verbosity >= 1:
-      print("{}^{} == ".format(args.x, args.y), end="")
+       print("{}^{} == ".format(args.x, args.y), end="")
    print(answer)
 
 Output:
@@ -685,11 +685,11 @@ which will be the opposite of the ``--verbose`` one::
    answer = args.x**args.y
 
    if args.quiet:
-      print(answer)
+       print(answer)
    elif args.verbose:
-      print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print("{} to the power {} equals {}".format(args.x, args.y, answer))
    else:
-      print("{}^{} == {}".format(args.x, args.y, answer))
+       print("{}^{} == {}".format(args.x, args.y, answer))
 
 Our program is now simpler, and we've lost some functionality for the sake of
 demonstration. Anyways, here's the output:
@@ -728,11 +728,11 @@ your program, just in case they don't know::
    answer = args.x**args.y
 
    if args.quiet:
-      print(answer)
+       print(answer)
    elif args.verbose:
-      print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print("{} to the power {} equals {}".format(args.x, args.y, answer))
    else:
-      print("{}^{} == {}".format(args.x, args.y, answer))
+       print("{}^{} == {}".format(args.x, args.y, answer))
 
 Note that slight difference in the usage text. Note the ``[-v | -q]``,
 which tells us that we can either use ``-v`` or ``-q``,
@@ -746,13 +746,13 @@ but not both at the same time:
    calculate X to the power of Y
 
    positional arguments:
-   x              the base
-   y              the exponent
+     x              the base
+     y              the exponent
 
    optional arguments:
-   -h, --help     show this help message and exit
-   -v, --verbose
-   -q, --quiet
+     -h, --help     show this help message and exit
+     -v, --verbose
+     -q, --quiet
 
 
 Conclusion
