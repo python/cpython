@@ -398,268 +398,6 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
-/*
- * De-vararg'd PyArg_ParseTupleAndKeywords()
- */
-typedef struct argument_path_s {
-    struct argument_path_s *next;
-    PyObject *object;
-    char *format;
-    wchar_t **wide;
-    char **narrow;
-    Py_ssize_t *length;
-} argument_path_t;
-
-typedef struct {
-    PyObject *args;
-    PyObject *kwargs;
-    char format[32];
-    char *format_trace;
-    char *keywords[8];
-    int keyword_count;
-    PyObject **varargs[16];
-    int vararg_count;
-    const char *function_name;
-    argument_path_t *path_head;
-} argument_parser_table_t;
-
-#define APT_DECLARE(apt, fname) \
-    argument_parser_table_t apt; \
-    memset(&apt, 0, sizeof(apt)); \
-    apt.function_name = fname; \
-    apt.args = args; \
-    apt.kwargs = kwargs; \
-    apt.format_trace = apt.format
-
-#define _APT_ARGUMENT_OBJECT(apt, name, variable, format) \
-    *apt.format_trace++ = (format); \
-    apt.keywords[apt.keyword_count++] = (name); \
-    apt.varargs[apt.vararg_count++] = (PyObject **)(variable); \
-
-#define APT_ARGUMENT_OBJECT(apt, name, variable) \
-    _APT_ARGUMENT_OBJECT(apt, name, variable, 'O')
-
-#define APT_ARGUMENT_OBJECT_WITH_CONVERTER(apt, name, variable, converter) \
-    apt.varargs[apt.vararg_count++] = (PyObject **)converter; \
-    APT_ARGUMENT_OBJECT(apt, name, variable); \
-    *apt.format_trace++ = '&'; \
-
-#define APT_ARGUMENT_UNICODE(apt, name, variable) \
-    _APT_ARGUMENT_OBJECT(apt, name, variable, 'U')
-
-#define APT_ARGUMENT_BYTES(apt, name, variable) \
-    _APT_ARGUMENT_OBJECT(apt, name, variable, 'y')
-
-#define APT_ARGUMENT_INT(apt, name, variable) \
-    _APT_ARGUMENT_OBJECT(apt, name, variable, 'i')
-
-static int
-bool_converter(PyObject *object, void *address) {
-    int *output = (int *)address;
-    int value = PyObject_IsTrue(object);
-    if (value == -1)
-        return 0;
-    *output = value;
-    return 1;
-}
-
-#define APT_ARGUMENT_BOOL(apt, name, variable) \
-    _APT_ARGUMENT_OBJECT(apt, name, variable, 'p')
-
-#if !MS_WINDOWS
-    #define _APT_DEFAULT_PATH_TYPE 'U'
-    #define _APT_PATH_BEFORE ;
-    #define _APT_PATH_AFTER ;
-#else
-    #define _APT_DEFAULT_PATH_TYPE 'O'
-    #define _APT_PATH_BEFORE apt.varargs[apt.vararg_count++] = (PyObject **)PyUnicode_FSConverter;
-    #define _APT_PATH_AFTER *apt.format_trace++ = '&';
-#endif
-
-#define APT_ARGUMENT_PATH(apt, name, w, n, l) \
-    { \
-    argument_path_t *_path_ = (argument_path_t *)alloca(sizeof(argument_path_t)); \
-    _APT_PATH_BEFORE; \
-    memset(_path_, 0, sizeof(*_path_)); \
-    _path_->wide = w; \
-    _path_->narrow = n; \
-    _path_->length = l; \
-    _path_->next = apt.path_head; \
-    apt.path_head = _path_; \
-    _APT_ARGUMENT_OBJECT(apt, name, &_path_->object, _APT_DEFAULT_PATH_TYPE); \
-    _APT_PATH_AFTER; \
-    } \
-
-#define APT_OPTIONAL(apt) \
-    *apt.format_trace++ = '|' \
-
-#define APT_KEYWORD_ONLY(apt) \
-    *apt.format_trace++ = '$' \
-
-
-static int apt_parse(argument_parser_table_t *apt) {
-    argument_path_t *trace;
-
-    *apt->format_trace++ = ':';
-    strcpy(apt->format_trace, apt->function_name);
-    apt->keywords[apt->keyword_count] = NULL;
-
-    for (;;) {
-        int result;
-
-        switch (apt->vararg_count) {
-        case 0:
-            PyErr_SetString(PyExc_RuntimeError, "suspiciously too few arguments for apt_parse");
-            return 0;
-
-        #define APT_PREAMBLE \
-            result = PyArg_ParseTupleAndKeywords(apt->args, apt->kwargs, apt->format, apt->keywords, \
-
-        #define APT_POSTSCRIPT \
-                ); \
-            break; \
-
-        case 1:
-            APT_PREAMBLE
-                apt->varargs[0]
-            APT_POSTSCRIPT
-        case 2:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1]
-            APT_POSTSCRIPT
-        case 3:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2]
-            APT_POSTSCRIPT
-        case 4:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2],
-                apt->varargs[3]
-            APT_POSTSCRIPT
-        case 5:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2],
-                apt->varargs[3],
-                apt->varargs[4]
-            APT_POSTSCRIPT
-        case 6:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2],
-                apt->varargs[3],
-                apt->varargs[4],
-                apt->varargs[5]
-            APT_POSTSCRIPT
-        case 7:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2],
-                apt->varargs[3],
-                apt->varargs[4],
-                apt->varargs[5],
-                apt->varargs[6]
-            APT_POSTSCRIPT
-        case 8:
-            APT_PREAMBLE
-                apt->varargs[0],
-                apt->varargs[1],
-                apt->varargs[2],
-                apt->varargs[3],
-                apt->varargs[4],
-                apt->varargs[5],
-                apt->varargs[6],
-                apt->varargs[7]
-            APT_POSTSCRIPT
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "too many arguments for apt_parse");
-            return 0;
-        }
-
-    if (result) {
-        for (trace = apt->path_head; trace != NULL; trace = trace->next) {
-#if MS_WINDOWS
-            switch (*trace->format) {
-            case 'U':
-                *trace->wide = PyUnicode_AsUnicode(trace->object);
-                if (trace->length)
-                    *trace->length = PyUnicode_GET_SIZE(trace->object);
-                break;
-            case 'y'
-                if (win32_warn_bytes_api())
-                    return 0;
-                *trace->narrow = trace->object;
-                if (trace->length)
-                    *trace->length = strlen((char *)trace->object);
-                break;
-            default:
-                PyErr_SetString(PyExc_RuntimeError, "unexpected format character in apt_parse");
-                return 0;
-            }
-#else
-            assert(*trace->format == 'O');
-            *trace->narrow = PyBytes_AsString(trace->object);
-            if (trace->length)
-                *trace->length = PyBytes_GET_SIZE(trace->object);
-#endif
-        }
-        return result;
-    }
-
-#if !MS_WINDOWS
-    break;
-#else
-    for (trace = apt->path_head; trace != NULL; trace = trace->next) {
-        /*
-         * try flipping paths between wide and narrow.
-         *
-         * each element always started with wide.
-         * so:
-         *   * if we see a wide, flip it to narrow and stop.
-         *   * if we see a narrow, flip it to wide and move on to the next field.
-         *   * if we run out of fields, we have exhausted all possibilities.  fail.
-         *
-         * (conceptually it helps to think of the fields as a binary number
-         *  with as many digits as there are entries in the path list.
-         *  wide is 0, narrow is 1.  we keep incrementing the number
-         *  until we wrap around to 0 again.)
-         */
-            if (*trace->format == 'U') {
-                *trace->format = 'y';
-                break;
-            }
-            if (*trace->format == 'y') {
-                *trace->format = 'U';
-                continue;
-            }
-            PyErr_SetString(PyExc_RuntimeError, "unexpected format character in apt_parse");
-            return 0;
-        }
-    if (!trace)
-        break;
-#endif
-    }
-
-    return 0;
-}
-
-static void apt_cleanup(argument_parser_table_t *apt) {
-#if !MS_WINDOWS
-    argument_path_t *trace;
-    for (trace = apt->path_head; trace != NULL; trace = trace->next) {
-        Py_XDECREF(trace->object);
-    }
-#endif
-}
-
 /* A helper used by a number of POSIX-only functions */
 #ifndef MS_WINDOWS
 static int
@@ -2204,12 +1942,6 @@ posix_do_stat(PyObject *self, PyObject *args,
 
 /* POSIX methods */
 
-#ifdef AT_FDCWD
-#define DEFAULT_DIR_FD AT_FDCWD
-#else
-#define DEFAULT_DIR_FD (-100)
-#endif
-
 PyDoc_STRVAR(posix_access__doc__,
 "access(path, mode) -> True if granted, False otherwise\n\n\
 Use the real uid/gid to test for access to a path.  Note that most\n\
@@ -2219,54 +1951,34 @@ specified access to the path.  The mode argument can be F_OK to test\n\
 existence, or the inclusive-OR of R_OK, W_OK, and X_OK.");
 
 static PyObject *
-posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
+posix_access(PyObject *self, PyObject *args)
 {
+    const char *path;
     int mode;
-    int dir_fd = DEFAULT_DIR_FD;
-    wchar_t *wide_path;
-    char *path;
-    int follow_symlinks = 1;
-    int effective_ids = 0;
 
 #ifdef MS_WINDOWS
     DWORD attr;
-#else
-    int res;
-#endif
-
-    APT_DECLARE(apt, "access");
-    APT_ARGUMENT_PATH(apt, "path", &wide_path, &path, NULL);
-    APT_ARGUMENT_INT(apt, "mode", &mode);
-    APT_OPTIONAL(apt);
-    APT_KEYWORD_ONLY(apt);
-    APT_ARGUMENT_INT(apt, "dir_fd", &dir_fd);
-    APT_ARGUMENT_BOOL(apt, "follow_symlinks", &follow_symlinks);
-    APT_ARGUMENT_BOOL(apt, "effective_ids", &effective_ids);
-
-#define ACCESS_FAIL_IF_KEYWORD_USED \
-    if (dir_fd != DEFAULT_DIR_FD) \
-        PyErr_SetString(PyExc_NotImplementedError, "access: dir_fd unavailable on this platform"); \
-    if (!follow_symlinks) \
-        PyErr_SetString(PyExc_NotImplementedError, "access: follow_symlinks unavailable on this platform"); \
-    if (effective_ids) \
-        PyErr_SetString(PyExc_NotImplementedError, "access: effective_ids unavailable on this platform")
-
-    if (!apt_parse(&apt))
+    PyObject *po;
+    if (PyArg_ParseTuple(args, "Ui:access", &po, &mode)) {
+        wchar_t* wpath = PyUnicode_AsUnicode(po);
+        if (wpath == NULL)
+            return NULL;
+        Py_BEGIN_ALLOW_THREADS
+        attr = GetFileAttributesW(wpath);
+        Py_END_ALLOW_THREADS
+        goto finish;
+    }
+    /* Drop the argument parsing error as narrow strings
+       are also valid. */
+    PyErr_Clear();
+    if (!PyArg_ParseTuple(args, "yi:access", &path, &mode))
         return NULL;
-    Py_RETURN_NONE;
-
-#ifdef MS_WINDOWS
-    ACCESS_FAIL_IF_KEYWORD_USED;
-
+    if (win32_warn_bytes_api())
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
-    if (wide != NULL)
-        attr = GetFileAttributesW(wide_path);
-    else
-        attr = GetFileAttributesA(path);
+    attr = GetFileAttributesA(path);
     Py_END_ALLOW_THREADS
-
-    apt_cleanup(&apt);
-
+finish:
     if (attr == 0xFFFFFFFF)
         /* File does not exist, or cannot read attributes */
         return PyBool_FromLong(0);
@@ -2277,28 +1989,16 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
                            || !(attr & FILE_ATTRIBUTE_READONLY)
                            || (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
-
-    if ((dir_fd != DEFAULT_DIR_FD)
-        || effective_ids || !follow_symlinks) {
-#ifdef HAVE_FACCESSAT
-        int flags = 0;
-        if (!follow_symlinks)
-            flags |= AT_SYMLINK_NOFOLLOW;
-        if (effective_ids)
-            flags |= AT_EACCESS;
-        Py_BEGIN_ALLOW_THREADS
-        res = faccessat(dir_fd, path, mode, flags);
-        Py_END_ALLOW_THREADS
-#else
-        ACCESS_FAIL_IF_KEYWORD_USED;
-#endif
-    } else {
-        Py_BEGIN_ALLOW_THREADS
-        res = access(path, mode);
-        Py_END_ALLOW_THREADS
-    }
-
-    apt_cleanup(&apt);
+    PyObject *opath;
+    int res;
+    if (!PyArg_ParseTuple(args, "O&i:access",
+                          PyUnicode_FSConverter, &opath, &mode))
+        return NULL;
+    path = PyBytes_AsString(opath);
+    Py_BEGIN_ALLOW_THREADS
+    res = access(path, mode);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
     return PyBool_FromLong(res == 0);
 #endif
 }
@@ -10896,9 +10596,7 @@ get_terminal_size(PyObject *self, PyObject *args)
 
 
 static PyMethodDef posix_methods[] = {
-    {"access",          (PyCFunction)posix_access,
-                        METH_VARARGS | METH_KEYWORDS,
-                        posix_access__doc__},
+    {"access",          posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
     {"ttyname",         posix_ttyname, METH_VARARGS, posix_ttyname__doc__},
 #endif
