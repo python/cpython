@@ -922,7 +922,8 @@ class _TestCondition(BaseTestCase):
         self.assertEqual(p.exitcode, 0)
 
     @classmethod
-    def _test_waitfor_timeout_f(cls, cond, state, success):
+    def _test_waitfor_timeout_f(cls, cond, state, success, sem):
+        sem.release()
         with cond:
             expected = 0.1
             dt = time.time()
@@ -938,11 +939,13 @@ class _TestCondition(BaseTestCase):
         cond = self.Condition()
         state = self.Value('i', 0)
         success = self.Value('i', False)
+        sem = self.Semaphore(0)
 
         p = self.Process(target=self._test_waitfor_timeout_f,
-                         args=(cond, state, success))
+                         args=(cond, state, success, sem))
         p.daemon = True
         p.start()
+        self.assertTrue(sem.acquire(timeout=10))
 
         # Only increment 3 times, so state == 4 is never reached.
         for i in range(3):
@@ -2723,8 +2726,8 @@ class TestWait(unittest.TestCase):
         delta = time.time() - start
 
         self.assertEqual(res, [])
-        self.assertLess(delta, expected + 1)
-        self.assertGreater(delta, expected - 1)
+        self.assertLess(delta, expected * 2)
+        self.assertGreater(delta, expected * 0.5)
 
         b.send(None)
 
