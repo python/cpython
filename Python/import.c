@@ -1639,7 +1639,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
 
             if (level == 0) {
                 final_mod = PyDict_GetItem(interp->modules, front);
-                Py_DECREF(front);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
                                  "%R not in sys.modules as expected", front);
@@ -1647,6 +1646,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 else {
                     Py_INCREF(final_mod);
                 }
+                Py_DECREF(front);
             }
             else {
                 Py_ssize_t cut_off = PyUnicode_GET_LENGTH(name) -
@@ -1660,7 +1660,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 }
 
                 final_mod = PyDict_GetItem(interp->modules, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
                                  "%R not in sys.modules as expected",
@@ -1669,6 +1668,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 else {
                     Py_INCREF(final_mod);
                 }
+                Py_DECREF(to_return);
             }
         }
         else {
