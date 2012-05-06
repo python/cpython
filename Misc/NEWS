@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Add support for timeouts to the acquire() methods of
+  multiprocessing's lock/semaphore/condition proxies.
+
 - Issue #13989: Add support for text mode to gzip.open().
 
 - Issue #14127: The os.stat() result object now provides three additional
