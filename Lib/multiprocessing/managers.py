@@ -957,8 +957,9 @@ class IteratorProxy(BaseProxy):
 
 class AcquirerProxy(BaseProxy):
     _exposed_ = ('acquire', 'release')
-    def acquire(self, blocking=True):
-        return self._callmethod('acquire', (blocking,))
+    def acquire(self, blocking=True, timeout=None):
+        args = (blocking,) if timeout is None else (blocking, timeout)
+        return self._callmethod('acquire', args)
     def release(self):
         return self._callmethod('release')
     def __enter__(self):
