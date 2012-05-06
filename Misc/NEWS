@@ -2,6 +2,30 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.0 Alpha 4?
+===================================
+
+*Release date: 26-May-2012*
+
+Core and Builtins
+-----------------
+
+- Issue #14705: The PyArg_Parse() family of functions now support the 'p'
+  format unit, which accepts a "boolean predicate" argument.  It converts
+  any Python value into an integer--0 if it is "false", and 1 otherwise.
+
+Library
+-------
+
+- Issue #14127: The os.stat() result object now provides three additional
+  fields: st_ctime_ns, st_mtime_ns, and st_atime_ns, providing those times
+  as an integer with nanosecond resolution.  The functions os.utime(),
+  os.lutimes(), and os.futimes() now accept a new parameter, ns, which
+  accepts mtime and atime as integers with nanosecond resolution.
+
+- Issue #14127 and #10148: shutil.copystat now preserves exact mtime
+  and atime on filesystems providing nanosecond resolution.
+
 What's New in Python 3.3.0 Alpha 3?
 ===================================
 
