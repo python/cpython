@@ -601,6 +601,7 @@ class PdbTestCase(unittest.TestCase):
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
+        self.addCleanup(support.unlink, filename)
         cmd = [sys.executable, '-m', 'pdb', filename]
         stdout = stderr = None
         with subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -657,9 +658,11 @@ class PdbTestCase(unittest.TestCase):
         """
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
+        self.addCleanup(support.unlink, 'bar.py')
         stdout, stderr = self.run_pdb(script, commands)
-        self.assertIn('main.py(5)foo()->None', stdout.split('\n')[-3],
-                         'Fail to step into the caller after a return')
+        self.assertTrue(
+            any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
+            'Fail to step into the caller after a return')
 
     def tearDown(self):
         support.unlink(support.TESTFN)
