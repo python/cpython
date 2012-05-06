@@ -10,21 +10,21 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
-- Issue #14705: The PyArg_Parse() family of functions now support the 'p'
-  format unit, which accepts a "boolean predicate" argument.  It converts
-  any Python value into an integer--0 if it is "false", and 1 otherwise.
+- Issue #14705: The PyArg_Parse() family of functions now support the 'p' format
+  unit, which accepts a "boolean predicate" argument.  It converts any Python
+  value into an integer--0 if it is "false", and 1 otherwise.
 
 Library
 -------
 
 - Issue #14127: The os.stat() result object now provides three additional
-  fields: st_ctime_ns, st_mtime_ns, and st_atime_ns, providing those times
-  as an integer with nanosecond resolution.  The functions os.utime(),
-  os.lutimes(), and os.futimes() now accept a new parameter, ns, which
-  accepts mtime and atime as integers with nanosecond resolution.
+  fields: st_ctime_ns, st_mtime_ns, and st_atime_ns, providing those times as an
+  integer with nanosecond resolution.  The functions os.utime(), os.lutimes(),
+  and os.futimes() now accept a new parameter, ns, which accepts mtime and atime
+  as integers with nanosecond resolution.
 
-- Issue #14127 and #10148: shutil.copystat now preserves exact mtime
-  and atime on filesystems providing nanosecond resolution.
+- Issue #14127 and #10148: shutil.copystat now preserves exact mtime and atime
+  on filesystems providing nanosecond resolution.
 
 
 What's New in Python 3.3.0 Alpha 3?
@@ -37,11 +37,10 @@ Core and Builtins
 
 - Issue #14699: Fix calling the classmethod descriptor directly.
 
-- Issue #14433: Prevent msvcrt crash in interactive prompt when stdin
-  is closed.
+- Issue #14433: Prevent msvcrt crash in interactive prompt when stdin is closed.
 
-- Issue #14521: Make result of float('nan') and float('-nan') more
-  consistent across platforms.
+- Issue #14521: Make result of float('nan') and float('-nan') more consistent
+  across platforms.
 
 - Issue #14646: __import__() sets __loader__ if the loader did not.
 
@@ -116,8 +115,7 @@ Library
 
 - Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
 
-- Issue #14371: Support bzip2 in zipfile module.
-  Patch by Serhiy Storchaka.
+- Issue #14371: Support bzip2 in zipfile module.  Patch by Serhiy Storchaka.
 
 - Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running
   step.  Patch by Xavier de Gaye.
@@ -673,8 +671,8 @@ Core and Builtins
 - Issue #9896: Add start, stop, and step attributes to range objects.
 
 - Issue #13343: Fix a SystemError when a lambda expression uses a global
-  variable in the default value of a keyword-only argument:
-  (lambda *, arg=GLOBAL_NAME: None)
+  variable in the default value of a keyword-only argument: ``lambda *,
+  arg=GLOBAL_NAME: None``
 
 - Issue #12797: Added custom opener parameter to builtin open() and
   FileIO.open().
@@ -696,8 +694,8 @@ Core and Builtins
   class object. These cases now behave correctly. Patch by Daniel Urban.
 
 - Issue #12753: Add support for Unicode name aliases and named sequences.
-  Both :func:`unicodedata.lookup()` and '\N{...}' now resolve aliases,
-  and :func:`unicodedata.lookup()` resolves named sequences too.
+  Both ``unicodedata.lookup()`` and '\N{...}' now resolve aliases,
+  and ``unicodedata.lookup()`` resolves named sequences too.
 
 - Issue #12170: The count(), find(), rfind(), index() and rindex() methods
   of bytes and bytearray objects now accept an integer between 0 and 255
@@ -1311,9 +1309,9 @@ Library
 - Issue #13591: A bug in importlib has been fixed that caused import_module
   to load a module twice.
 
-- Issue #4625: If IDLE cannot write to its recent file or breakpoint
-  files, display a message popup and continue rather than crash.
- (original patch by Roger Serwy)
+- Issue #4625: If IDLE cannot write to its recent file or breakpoint files,
+  display a message popup and continue rather than crash.  Original patch by
+  Roger Serwy.
 
 - Issue #13449 sched.scheduler.run() method has a new "blocking" parameter which
   when set to False makes run() execute the scheduled events due to expire
@@ -1921,8 +1919,8 @@ Library
   would reliably freeze/deadlock.
 
 - Issue #12040: Expose a new attribute ``sentinel`` on instances of
-  :class:`multiprocessing.Process`.  Also, fix Process.join() to not use
-  polling anymore, when given a timeout.
+  ``multiprocessing.Process``.  Also, fix Process.join() to not use polling
+  anymore, when given a timeout.
 
 - Issue #11893: Remove obsolete internal wrapper class ``SSLFakeFile`` in the
   smtplib module.  Patch by Catalin Iacob.
@@ -2424,8 +2422,8 @@ Library
 
 - Issue #10755: Add the posix.flistdir() function.  Patch by Ross Lagerwall.
 
-- Issue #4761: Add the *at() family of functions (openat(), etc.) to the posix
-  module.  Patch by Ross Lagerwall.
+- Issue #4761: Add the ``*at()`` family of functions (openat(), etc.) to the
+  posix module.  Patch by Ross Lagerwall.
 
 - Issue #7322: Trying to read from a socket's file-like object after a timeout
   occurred now raises an error instead of silently losing data.
@@ -2523,7 +2521,7 @@ Build
 
 - Issue #8746: Correct faulty configure checks so that os.chflags() and
   os.lchflags() are once again built on systems that support these
-  functions (*BSD and OS X).  Also add new stat file flags for OS X
+  functions (BSD and OS X).  Also add new stat file flags for OS X
   (UF_HIDDEN and UF_COMPRESSED).
 
 - Issue #10645: Installing Python does no longer create a
@@ -5738,7 +5736,7 @@ Library
   handled.  In many cases this order wasn't being followed, leading to the wrong
   Python exception being raised.
 
-- Issue #7865: The close() method of :mod:`io` objects should not swallow
+- Issue #7865: The close() method of ``io`` objects should not swallow
   exceptions raised by the implicit flush().  Also qensure that calling close()
   several times is supported.  Patch by Pascal Chambon.
 
@@ -5850,7 +5848,7 @@ Library
 
 - Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
 
-- Issue #7316: The acquire() method of lock objects in the :mod:`threading`
+- Issue #7316: The acquire() method of lock objects in the ``threading``
   module now takes an optional timeout argument in seconds.  Timeout support
   relies on the system threading library, so as to avoid a semi-busy wait loop.
 
@@ -5869,7 +5867,7 @@ Library
 - Issue #8375: test_distutils now checks if the temporary directory are still
   present before it cleans them.
 
-- Issue #8374: Update the internal alias table in the :mod:`locale` module to
+- Issue #8374: Update the internal alias table in the ``locale`` module to
   cover recent locale changes and additions.
 
 - Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
@@ -6054,9 +6052,9 @@ Library
   ftruncate() and other truncation APIs.  Patch by Pascal Chambon.
 
 - Issue #7610: Reworked implementation of the internal
-  :class:`zipfile.ZipExtFile` class used to represent files stored inside an
+  ``zipfile.ZipExtFile`` class used to represent files stored inside an
   archive.  The new implementation is significantly faster and can be wrapped in
-  a :class:`io.BufferedReader` object for more speedups.  It also solves an
+  a ``io.BufferedReader`` object for more speedups.  It also solves an
   issue where interleaved calls to `read()` and `readline()` give wrong results.
   Patch by Nir Aides.
 
@@ -6814,10 +6812,10 @@ Tests
   calling methods on the object.
 
 - Issue #7222: Make thread "reaping" more reliable so that reference
-  leak-chasing test runs give sensible results. The previous method of reaping
+  leak-chasing test runs give sensible results.  The previous method of reaping
   threads could return successfully while some Thread objects were still
-  referenced. This also introduces a new private function:
-  :func:`_thread._count()`.
+  referenced.  This also introduces a new private function:
+  ``_thread._count()``.
 
 - Issue #7151: Fixed regrtest -j so that output to stderr from a test no longer
   runs the risk of causing the worker thread to fail.
@@ -7258,7 +7256,7 @@ Library
 - Issue #5923: Update the ``turtle`` module to version 1.1, add two new
   turtle demos in Demo/turtle.
 
-- Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
+- Issue #5692: In ``zipfile.Zipfile``, fix wrong path calculation when
   extracting a file to the root directory.
 
 - Issue #5913: os.listdir() should fail for empty path on windows.
