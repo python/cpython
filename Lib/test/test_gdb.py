@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import sysconfig
 import unittest
 import locale
 
@@ -23,6 +24,9 @@ gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.", gdb_version)
 if int(gdb_version_number.group(1)) < 7:
     raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
                             " Saw:\n" + gdb_version.decode('ascii', 'replace'))
+
+if not sysconfig.is_python_build():
+    raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
 
 # Verify that "gdb" was built with the embedded python support enabled:
 cmd = "--eval-command=python import sys; print sys.version_info"
