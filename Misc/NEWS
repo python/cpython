@@ -220,6 +220,11 @@ Documentation
 
 - Issue #8799: Fix and improve the threading.Condition documentation.
 
+Documentation
+-------------
+
+- Issue #14034: added the argparse tutorial.
+
 
 What's New in Python 3.2.3 release candidate 2?
 ===============================================
