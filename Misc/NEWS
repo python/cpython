@@ -148,6 +148,11 @@ Build
 
 - Issue #14437: Fix building the _io module under Cygwin.
 
+Documentation
+-------------
+
+- Issue #14034: added the argparse tutorial.
+
 
 What's New in Python 2.7.3 release candidate 2?
 ===============================================
