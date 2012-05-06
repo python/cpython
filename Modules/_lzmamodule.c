@@ -404,17 +404,16 @@ build_filter_spec(const lzma_filter *f)
     ADD_FIELD(f, id);
 
     switch (f->id) {
-        case LZMA_FILTER_LZMA1:
-        case LZMA_FILTER_LZMA2: {
+        /* For LZMA1 filters, lzma_properties_{encode,decode}() only look at the
+           lc, lp, pb, and dict_size fields. For LZMA2 filters, only the
+           dict_size field is used. */
+        case LZMA_FILTER_LZMA1: {
             lzma_options_lzma *options = f->options;
-            ADD_FIELD(options, dict_size);
             ADD_FIELD(options, lc);
             ADD_FIELD(options, lp);
             ADD_FIELD(options, pb);
-            ADD_FIELD(options, mode);
-            ADD_FIELD(options, nice_len);
-            ADD_FIELD(options, mf);
-            ADD_FIELD(options, depth);
+        case LZMA_FILTER_LZMA2:
+            ADD_FIELD(options, dict_size);
             break;
         }
         case LZMA_FILTER_DELTA: {
