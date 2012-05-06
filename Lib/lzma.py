@@ -18,7 +18,7 @@ __all__ = [
     "MODE_FAST", "MODE_NORMAL", "PRESET_DEFAULT", "PRESET_EXTREME",
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
-    "compress", "decompress", "check_is_supported",
+    "compress", "decompress", "is_check_supported",
     "encode_filter_properties", "decode_filter_properties",
 ]
 

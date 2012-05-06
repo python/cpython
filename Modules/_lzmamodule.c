@@ -1075,19 +1075,19 @@ static PyTypeObject Decompressor_type = {
 
 /* Module-level functions. */
 
-PyDoc_STRVAR(check_is_supported_doc,
-"check_is_supported(check_id) -> bool\n"
+PyDoc_STRVAR(is_check_supported_doc,
+"is_check_supported(check_id) -> bool\n"
 "\n"
 "Test whether the given integrity check is supported.\n"
 "\n"
 "Always returns True for CHECK_NONE and CHECK_CRC32.\n");
 
 static PyObject *
-check_is_supported(PyObject *self, PyObject *args)
+is_check_supported(PyObject *self, PyObject *args)
 {
     int check_id;
 
-    if (!PyArg_ParseTuple(args, "i:check_is_supported", &check_id))
+    if (!PyArg_ParseTuple(args, "i:is_check_supported", &check_id))
         return NULL;
 
     return PyBool_FromLong(lzma_check_is_supported(check_id));
@@ -1182,8 +1182,8 @@ decode_filter_properties(PyObject *self, PyObject *args)
 /* Module initialization. */
 
 static PyMethodDef module_methods[] = {
-    {"check_is_supported", (PyCFunction)check_is_supported,
-     METH_VARARGS, check_is_supported_doc},
+    {"is_check_supported", (PyCFunction)is_check_supported,
+     METH_VARARGS, is_check_supported_doc},
     {"encode_filter_properties", (PyCFunction)encode_filter_properties,
      METH_VARARGS, encode_filter_properties_doc},
     {"decode_filter_properties", (PyCFunction)decode_filter_properties,

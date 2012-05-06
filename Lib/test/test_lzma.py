@@ -935,14 +935,14 @@ class MiscellaneousTestCase(unittest.TestCase):
     def test_is_check_supported(self):
         # CHECK_NONE and CHECK_CRC32 should always be supported,
         # regardless of the options liblzma was compiled with.
-        self.assertTrue(lzma.check_is_supported(lzma.CHECK_NONE))
-        self.assertTrue(lzma.check_is_supported(lzma.CHECK_CRC32))
+        self.assertTrue(lzma.is_check_supported(lzma.CHECK_NONE))
+        self.assertTrue(lzma.is_check_supported(lzma.CHECK_CRC32))
 
         # The .xz format spec cannot store check IDs above this value.
-        self.assertFalse(lzma.check_is_supported(lzma.CHECK_ID_MAX + 1))
+        self.assertFalse(lzma.is_check_supported(lzma.CHECK_ID_MAX + 1))
 
         # This value should not be a valid check ID.
-        self.assertFalse(lzma.check_is_supported(lzma.CHECK_UNKNOWN))
+        self.assertFalse(lzma.is_check_supported(lzma.CHECK_UNKNOWN))
 
     def test_encode_filter_properties(self):
         with self.assertRaises(TypeError):
