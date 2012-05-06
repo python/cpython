@@ -225,7 +225,7 @@ Compressing and decompressing data in memory
 Miscellaneous
 -------------
 
-.. function:: check_is_supported(check)
+.. function:: is_check_supported(check)
 
    Returns true if the given integrity check is supported on this system.
 
