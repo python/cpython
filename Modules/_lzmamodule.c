@@ -203,7 +203,7 @@ parse_filter_spec_lzma(PyObject *spec)
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
-        PyErr_Format(Error, "lzma_lzma_preset() failed for preset %#x", preset);
+        PyErr_Format(Error, "Invalid compression preset: %d", preset);
         return NULL;
     }
 
@@ -485,7 +485,7 @@ Compressor_init_alone(lzma_stream *lzs, uint32_t preset, PyObject *filterspecs)
         lzma_options_lzma options;
 
         if (lzma_lzma_preset(&options, preset)) {
-            PyErr_Format(Error, "Invalid compression preset: %#x", preset);
+            PyErr_Format(Error, "Invalid compression preset: %d", preset);
             return -1;
         }
         lzret = lzma_alone_encoder(lzs, &options);
