@@ -409,19 +409,20 @@ class TestOpen(BaseTest):
             self.assertEqual(file_data, uncompressed * 2)
 
     def test_text_modes(self):
-        uncompressed = data1.decode("ascii").replace("\n", os.linesep) * 50
+        uncompressed = data1.decode("ascii") * 50
+        uncompressed_raw = uncompressed.replace("\n", os.linesep)
         with gzip.open(self.filename, "wt") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read()).decode("ascii")
-            self.assertEqual(file_data, uncompressed)
+            self.assertEqual(file_data, uncompressed_raw)
         with gzip.open(self.filename, "rt") as f:
             self.assertEqual(f.read(), uncompressed)
         with gzip.open(self.filename, "at") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read()).decode("ascii")
-            self.assertEqual(file_data, uncompressed * 2)
+            self.assertEqual(file_data, uncompressed_raw * 2)
 
     def test_bad_params(self):
         # Test invalid parameter combinations.
@@ -436,12 +437,13 @@ class TestOpen(BaseTest):
 
     def test_encoding(self):
         # Test non-default encoding.
-        uncompressed = data1.decode("ascii").replace("\n", os.linesep) * 50
+        uncompressed = data1.decode("ascii") * 50
+        uncompressed_raw = uncompressed.replace("\n", os.linesep)
         with gzip.open(self.filename, "wt", encoding="utf-16") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read()).decode("utf-16")
-            self.assertEqual(file_data, uncompressed)
+            self.assertEqual(file_data, uncompressed_raw)
         with gzip.open(self.filename, "rt", encoding="utf-16") as f:
             self.assertEqual(f.read(), uncompressed)
 
