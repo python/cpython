@@ -19,6 +19,7 @@ __all__ = [
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
     "compress", "decompress", "check_is_supported",
+    "encode_filter_properties", "decode_filter_properties",
 ]
 
 import io

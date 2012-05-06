@@ -235,6 +235,32 @@ Miscellaneous
    feature set.
 
 
+.. function:: encode_filter_properties(filter)
+
+   Return a :class:`bytes` object encoding the options (properties) of the
+   filter specified by *filter* (a dictionary).
+
+   *filter* is interpreted as a filter specifier, as described in
+   :ref:`filter-chain-specs`.
+
+   The returned data does not include the filter ID itself, only the options.
+
+   This function is primarily of interest to users implementing custom file
+   formats.
+
+
+.. function:: decode_filter_properties(filter_id, encoded_props)
+
+   Return a dictionary describing a filter with ID *filter_id*, and options
+   (properties) decoded from the :class:`bytes` object *encoded_props*.
+
+   The returned dictionary is a filter specifier, as described in
+   :ref:`filter-chain-specs`.
+
+   This function is primarily of interest to users implementing custom file
+   formats.
+
+
 .. _filter-chain-specs:
 
 Specifying custom filter chains
