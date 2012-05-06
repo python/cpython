@@ -16,6 +16,39 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
+def open(filename, mode="rb", compresslevel=9,
+         encoding=None, errors=None, newline=None):
+    """Open a gzip-compressed file in binary or text mode.
+
+    The mode argument can be "r", "rb", "w", "wb", "a" or "ab" for binary mode,
+    or "rt", "wt" or "at" for text mode. The default mode is "rb", and the
+    default compresslevel is 9.
+
+    For binary mode, this function is equivalent to the GzipFile constructor:
+    GzipFile(filename, mode, compresslevel). In this case, the encoding, errors
+    and newline arguments must not be provided.
+
+    For text mode, a GzipFile object is created, and wrapped in an
+    io.TextIOWrapper instance with the specified encoding, error handling
+    behavior, and line ending(s).
+
+    """
+    if "t" in mode:
+        if "b" in mode:
+            raise ValueError("Invalid mode: %r" % (mode,))
+    else:
+        if encoding is not None:
+            raise ValueError("Argument 'encoding' not supported in binary mode")
+        if errors is not None:
+            raise ValueError("Argument 'errors' not supported in binary mode")
+        if newline is not None:
+            raise ValueError("Argument 'newline' not supported in binary mode")
+    binary_file = GzipFile(filename, mode.replace("t", ""), compresslevel)
+    if "t" in mode:
+        return io.TextIOWrapper(binary_file, encoding, errors, newline)
+    else:
+        return binary_file
+
 def write32u(output, value):
     # The L format writes the bit pattern correctly whether signed
     # or unsigned.
@@ -23,15 +56,6 @@ def write32u(output, value):
 
 def read32(input):
     return struct.unpack("<I", input.read(4))[0]
-
-def open(filename, mode="rb", compresslevel=9):
-    """Shorthand for GzipFile(filename, mode, compresslevel).
-
-    The filename argument is required; mode defaults to 'rb'
-    and compresslevel defaults to 9.
-
-    """
-    return GzipFile(filename, mode, compresslevel)
 
 class _PaddedFile:
     """Minimal read-only file object that prepends a string to the contents

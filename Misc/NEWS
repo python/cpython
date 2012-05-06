@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13989: Add support for text mode to gzip.open().
+
 - Issue #14127: The os.stat() result object now provides three additional
   fields: st_ctime_ns, st_mtime_ns, and st_atime_ns, providing those times as an
   integer with nanosecond resolution.  The functions os.utime(), os.lutimes(),
