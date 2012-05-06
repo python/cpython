@@ -1,6 +1,6 @@
-************************
-:mod:`argparse` Tutorial
-************************
+*****************
+Argparse Tutorial
+*****************
 
 :author: Tshepang Lekhonkhobe <tshepang@gmail.com>
 
