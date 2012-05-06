@@ -409,7 +409,7 @@ class TestOpen(BaseTest):
             self.assertEqual(file_data, uncompressed * 2)
 
     def test_text_modes(self):
-        uncompressed = data1.decode("ascii") * 50
+        uncompressed = data1.decode("ascii").replace("\n", os.linesep) * 50
         with gzip.open(self.filename, "wt") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
@@ -436,7 +436,7 @@ class TestOpen(BaseTest):
 
     def test_encoding(self):
         # Test non-default encoding.
-        uncompressed = data1.decode("ascii") * 50
+        uncompressed = data1.decode("ascii").replace("\n", os.linesep) * 50
         with gzip.open(self.filename, "wt", encoding="utf-16") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
@@ -456,7 +456,7 @@ class TestOpen(BaseTest):
     def test_newline(self):
         # Test with explicit newline (universal newline mode disabled).
         uncompressed = data1.decode("ascii") * 50
-        with gzip.open(self.filename, "wt") as f:
+        with gzip.open(self.filename, "wt", newline="\n") as f:
             f.write(uncompressed)
         with gzip.open(self.filename, "rt", newline="\r") as f:
             self.assertEqual(f.readlines(), [uncompressed])
