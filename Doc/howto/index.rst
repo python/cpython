@@ -27,4 +27,5 @@ Currently, the HOWTOs are:
    unicode.rst
    urllib2.rst
    webservers.rst
+   argparse.rst
 

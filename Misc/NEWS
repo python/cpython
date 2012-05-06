@@ -480,6 +480,11 @@ Build
   Based on patch from Hervé Coatanhay.
 
 - Issue #14321: Do not run pgen during the build if files are up to date.
+Documentation
+-------------
+
+- Issue #14034: added the argparse tutorial.
+
 
 - Issue #14324: Fix configure tests for cross builds.
 
