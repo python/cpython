@@ -13,15 +13,43 @@ like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
 The data compression is provided by the :mod:`zlib` module.
 
-The :mod:`gzip` module provides the :class:`GzipFile` class. The :class:`GzipFile`
-class reads and writes :program:`gzip`\ -format files, automatically compressing
-or decompressing the data so that it looks like an ordinary :term:`file object`.
+The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the
+:func:`gzip.open`, :func:`compress` and :func:`decompress` convenience
+functions. The :class:`GzipFile` class reads and writes :program:`gzip`\ -format
+files, automatically compressing or decompressing the data so that it looks like
+an ordinary :term:`file object`.
 
 Note that additional file formats which can be decompressed by the
 :program:`gzip` and :program:`gunzip` programs, such  as those produced by
 :program:`compress` and :program:`pack`, are not supported by this module.
 
 The module defines the following items:
+
+
+.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+
+   Open *filename* as a gzip-compressed file in binary or text mode.
+
+   Returns a :term:`file object`.
+
+   The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``,
+   ``'w'``, or ``'wb'`` for binary mode, or ``'rt'``, ``'at'``, or ``'wt'`` for
+   text mode. The default is ``'rb'``.
+
+   The *compresslevel* argument is an integer from 1 to 9, as for the
+   :class:`GzipFile` constructor.
+
+   For binary mode, this function is equivalent to the :class:`GzipFile`
+   constructor: ``GzipFile(filename, mode, compresslevel)``. In this case, the
+   *encoding*, *errors* and *newline* arguments must not be provided.
+
+   For text mode, a :class:`GzipFile` object is created, and wrapped in an
+   :class:`io.TextIOWrapper` instance with the specified encoding, error
+   handling behavior, and line ending(s).
+
+   .. versionchanged:: 3.3
+      Support for text mode was added, along with the *encoding*, *errors* and
+      *newline* arguments.
 
 
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
@@ -46,9 +74,9 @@ The module defines the following items:
    or ``'wb'``, depending on whether the file will be read or written.  The default
    is the mode of *fileobj* if discernible; otherwise, the default is ``'rb'``.
 
-   Note that the file is always opened in binary mode; text mode is not
-   supported. If you need to read a compressed file in text mode, wrap your
-   :class:`GzipFile` with an :class:`io.TextIOWrapper`.
+   Note that the file is always opened in binary mode. To open a compressed file
+   in text mode, use :func:`gzip.open` (or wrap your :class:`GzipFile` with an
+   :class:`io.TextIOWrapper`).
 
    The *compresslevel* argument is an integer from ``1`` to ``9`` controlling the
    level of compression; ``1`` is fastest and produces the least compression, and
@@ -96,12 +124,6 @@ The module defines the following items:
    .. versionchanged:: 3.3
       The :meth:`io.BufferedIOBase.read1` method is now implemented.
 
-
-.. function:: open(filename, mode='rb', compresslevel=9)
-
-   This is a shorthand for ``GzipFile(filename,`` ``mode,`` ``compresslevel)``.
-   The *filename* argument is required; *mode* defaults to ``'rb'`` and
-   *compresslevel* defaults to ``9``.
 
 .. function:: compress(data, compresslevel=9)
 
