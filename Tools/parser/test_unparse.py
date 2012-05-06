@@ -209,6 +209,13 @@ class UnparseTestCase(ASTTestCase):
     def test_try_except_finally(self):
         self.check_roundtrip(try_except_finally)
 
+    def test_starred_assignment(self):
+        self.check_roundtrip("a, *b, c = seq")
+        self.check_roundtrip("a, (*b, c) = seq")
+        self.check_roundtrip("a, *b[0], c = seq")
+        self.check_roundtrip("a, *(b, c) = seq")
+
+
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
 
