@@ -92,7 +92,7 @@ class FaultHandlerTests(unittest.TestCase):
 ^Fatal Python error: {name}
 
 {header}:
-  File "<string>", line {lineno} in <module>$
+  File "<string>", line {lineno} in <module>
 """.strip()
         regex = regex.format(
             lineno=line_number,
