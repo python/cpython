@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.3.0 Alpha 4?
 ===================================
 
-*Release date: 26-May-2012*
+*Release date: XX-XXX-2012*
 
 Core and Builtins
 -----------------
@@ -26,6 +26,7 @@ Library
 - Issue #14127 and #10148: shutil.copystat now preserves exact mtime
   and atime on filesystems providing nanosecond resolution.
 
+
 What's New in Python 3.3.0 Alpha 3?
 ===================================
 
@@ -38,7 +39,7 @@ Core and Builtins
 
 - Issue #14433: Prevent msvcrt crash in interactive prompt when stdin
   is closed.
-  
+
 - Issue #14521: Make result of float('nan') and float('-nan') more
   consistent across platforms.
 
