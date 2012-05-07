@@ -1629,6 +1629,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'D': /* complex double */
     case 'c': /* char */
     case 'C': /* unicode char */
+    case 'p': /* boolean predicate */
         {
             (void) va_arg(*p_va, void *);
             break;
