@@ -122,6 +122,11 @@ class Gprof2htmlTests(unittest.TestCase):
         self.assertTrue(wmock.open.called)
 
 
+# Run the tests in Tools/parser/test_unparse.py
+with support.DirsOnSysPath(os.path.join(basepath, 'parser')):
+    from test_unparse import UnparseTestCase, DirectoryTestCase
+
+
 def test_main():
     support.run_unittest(*[obj for obj in globals().values()
                                if isinstance(obj, type)])
