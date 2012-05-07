@@ -110,6 +110,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("lambda x, *y, **z: 0")
         self.check_expr("(x for x in range(10))")
         self.check_expr("foo(x for x in range(10))")
+        self.check_expr("...")
+        self.check_expr("a[...]")
 
     def test_simple_expression(self):
         # expr_stmt
