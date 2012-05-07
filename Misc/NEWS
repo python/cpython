@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14583: Fix importlib bug when a package's __init__.py would first
+  import one of its modules then raise an error.
+
 - Issue #14741: Fix missing support for Ellipsis ('...') in parser module.
 
 - Issue #14697: Fix missing support for set displays and set comprehensions in

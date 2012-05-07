@@ -1633,19 +1633,20 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 goto error_with_unlock;
             }
 
+            if (PyUnicode_GET_LENGTH(PyTuple_GET_ITEM(partition, 1)) == 0) {
+                /* No dot in module name, simple exit */
+                Py_DECREF(partition);
+                final_mod = mod;
+                Py_INCREF(mod);
+                goto exit_with_unlock;
+            }
+
             front = PyTuple_GET_ITEM(partition, 0);
             Py_INCREF(front);
             Py_DECREF(partition);
 
             if (level == 0) {
-                final_mod = PyDict_GetItem(interp->modules, front);
-                if (final_mod == NULL) {
-                    PyErr_Format(PyExc_KeyError,
-                                 "%R not in sys.modules as expected", front);
-                }
-                else {
-                    Py_INCREF(final_mod);
-                }
+                final_mod = PyObject_CallFunctionObjArgs(builtins_import, front, NULL);
                 Py_DECREF(front);
             }
             else {
@@ -1682,6 +1683,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                                   fromlist, builtins_import,
                                                   NULL);
     }
+
+  exit_with_unlock:
   error_with_unlock:
 #ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {

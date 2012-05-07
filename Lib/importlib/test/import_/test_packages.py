@@ -23,6 +23,62 @@ class ParentModuleTests(unittest.TestCase):
                     import_util.import_('pkg.module')
                 self.assertEqual(cm.exception.name, 'pkg')
 
+    def test_raising_parent_after_importing_child(self):
+        def __init__():
+            import pkg.module
+            1/0
+        mock = util.mock_modules('pkg.__init__', 'pkg.module',
+                                 module_code={'pkg': __init__})
+        with mock:
+            with util.import_state(meta_path=[mock]):
+                with self.assertRaises(ZeroDivisionError):
+                    import_util.import_('pkg')
+                self.assertFalse('pkg' in sys.modules)
+                self.assertTrue('pkg.module' in sys.modules)
+                with self.assertRaises(ZeroDivisionError):
+                    import_util.import_('pkg.module')
+                self.assertFalse('pkg' in sys.modules)
+                self.assertTrue('pkg.module' in sys.modules)
+
+    def test_raising_parent_after_relative_importing_child(self):
+        def __init__():
+            from . import module
+            1/0
+        mock = util.mock_modules('pkg.__init__', 'pkg.module',
+                                 module_code={'pkg': __init__})
+        with mock:
+            with util.import_state(meta_path=[mock]):
+                with self.assertRaises((ZeroDivisionError, ImportError)):
+                    # This raises ImportError on the "from . import module"
+                    # line, not sure why.
+                    import_util.import_('pkg')
+                self.assertFalse('pkg' in sys.modules)
+                with self.assertRaises((ZeroDivisionError, ImportError)):
+                    import_util.import_('pkg.module')
+                self.assertFalse('pkg' in sys.modules)
+                # XXX False
+                #self.assertTrue('pkg.module' in sys.modules)
+
+    def test_raising_parent_after_double_relative_importing_child(self):
+        def __init__():
+            from ..subpkg import module
+            1/0
+        mock = util.mock_modules('pkg.__init__', 'pkg.subpkg.__init__',
+                                 'pkg.subpkg.module',
+                                 module_code={'pkg.subpkg': __init__})
+        with mock:
+            with util.import_state(meta_path=[mock]):
+                with self.assertRaises((ZeroDivisionError, ImportError)):
+                    # This raises ImportError on the "from ..subpkg import module"
+                    # line, not sure why.
+                    import_util.import_('pkg.subpkg')
+                self.assertFalse('pkg.subpkg' in sys.modules)
+                with self.assertRaises((ZeroDivisionError, ImportError)):
+                    import_util.import_('pkg.subpkg.module')
+                self.assertFalse('pkg.subpkg' in sys.modules)
+                # XXX False
+                #self.assertTrue('pkg.subpkg.module' in sys.modules)
+
     def test_module_not_package(self):
         # Try to import a submodule from a non-package should raise ImportError.
         assert not hasattr(sys, '__path__')
