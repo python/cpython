@@ -2,8 +2,6 @@
     unicode_format.h -- implementation of str.format().
 */
 
-#include "accu.h"
-
 /* Defines for more efficiently reallocating the string buffer */
 #define INITIAL_SIZE_INCREMENT 100
 #define SIZE_MULTIPLIER 2
@@ -110,33 +108,6 @@ autonumber_state_error(AutoNumberState state, int field_name_is_empty)
     return 0;
 }
 
-
-/************************************************************************/
-/***********    Output string management functions       ****************/
-/************************************************************************/
-
-/*
-    output_data dumps characters into our output string
-    buffer.
-
-    In some cases, it has to reallocate the string.
-
-    It returns a status:  0 for a failed reallocation,
-    1 for success.
-*/
-static int
-output_data(_PyAccu *acc, PyObject *s, Py_ssize_t start, Py_ssize_t end)
-{
-    PyObject *substring;
-    int r;
-
-    substring = PyUnicode_Substring(s, start, end);
-    if (substring == NULL)
-        return 0;
-    r = _PyAccu_Accumulate(acc, substring);
-    Py_DECREF(substring);
-    return r == 0;
-}
 
 /************************************************************************/
 /***********  Format string parsing -- integers and identifiers *********/
@@ -523,7 +494,7 @@ error:
     appends to the output.
 */
 static int
-render_field(PyObject *fieldobj, SubString *format_spec, _PyAccu *acc)
+render_field(PyObject *fieldobj, SubString *format_spec, unicode_writer_t *writer)
 {
     int ok = 0;
     PyObject *result = NULL;
@@ -566,7 +537,8 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyAccu *acc)
         goto done;
 
     assert(PyUnicode_Check(result));
-    ok = output_data(acc, result, 0, PyUnicode_GET_LENGTH(result));
+
+    ok = (unicode_writer_write_str(writer, result, 0, PyUnicode_GET_LENGTH(result)) == 0);
 done:
     Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
@@ -831,7 +803,7 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
 static int
 output_markup(SubString *field_name, SubString *format_spec,
               int format_spec_needs_expanding, Py_UCS4 conversion,
-              _PyAccu *acc, PyObject *args, PyObject *kwargs,
+              unicode_writer_t *writer, PyObject *args, PyObject *kwargs,
               int recursion_depth, AutoNumber *auto_number)
 {
     PyObject *tmp = NULL;
@@ -872,7 +844,7 @@ output_markup(SubString *field_name, SubString *format_spec,
     else
         actual_format_spec = format_spec;
 
-    if (render_field(fieldobj, actual_format_spec, acc) == 0)
+    if (render_field(fieldobj, actual_format_spec, writer) == 0)
         goto done;
 
     result = 1;
@@ -892,7 +864,7 @@ done:
 */
 static int
 do_markup(SubString *input, PyObject *args, PyObject *kwargs,
-          _PyAccu *acc, int recursion_depth, AutoNumber *auto_number)
+          unicode_writer_t *writer, int recursion_depth, AutoNumber *auto_number)
 {
     MarkupIterator iter;
     int format_spec_needs_expanding;
@@ -902,17 +874,21 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
     SubString field_name;
     SubString format_spec;
     Py_UCS4 conversion;
+    int err;
 
     MarkupIterator_init(&iter, input->str, input->start, input->end);
     while ((result = MarkupIterator_next(&iter, &literal, &field_present,
                                          &field_name, &format_spec,
                                          &conversion,
                                          &format_spec_needs_expanding)) == 2) {
-        if (!output_data(acc, literal.str, literal.start, literal.end))
+        err = unicode_writer_write_str(writer,
+                                       literal.str, literal.start,
+                                       literal.end - literal.start);
+        if (err == -1)
             return 0;
         if (field_present)
             if (!output_markup(&field_name, &format_spec,
-                               format_spec_needs_expanding, conversion, acc,
+                               format_spec_needs_expanding, conversion, writer,
                                args, kwargs, recursion_depth, auto_number))
                 return 0;
     }
@@ -928,7 +904,8 @@ static PyObject *
 build_string(SubString *input, PyObject *args, PyObject *kwargs,
              int recursion_depth, AutoNumber *auto_number)
 {
-    _PyAccu acc;
+    unicode_writer_t writer;
+    Py_ssize_t initlen;
 
     /* check the recursion level */
     if (recursion_depth <= 0) {
@@ -937,16 +914,17 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
         return NULL;
     }
 
-    if (_PyAccu_Init(&acc))
+    initlen = PyUnicode_GET_LENGTH(input->str) + 100;
+    if (unicode_writer_init(&writer, initlen, 127) == -1)
         return NULL;
 
-    if (!do_markup(input, args, kwargs, &acc, recursion_depth,
+    if (!do_markup(input, args, kwargs, &writer, recursion_depth,
                    auto_number)) {
-        _PyAccu_Destroy(&acc);
+        unicode_writer_dealloc(&writer);
         return NULL;
     }
 
-    return _PyAccu_Finish(&acc);
+    return unicode_writer_finish(&writer);
 }
 
 /************************************************************************/
