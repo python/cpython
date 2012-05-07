@@ -18,15 +18,24 @@ available.  They are listed here in alphabetical order.
 :func:`bool`         :func:`filter`     :func:`len`         :func:`range`      :func:`type`
 :func:`bytearray`    :func:`float`      :func:`list`        :func:`raw_input`  :func:`unichr`
 :func:`callable`     :func:`format`     :func:`locals`      :func:`reduce`     :func:`unicode`
-:func:`chr`          :func:`frozenset`  :func:`long`        :func:`reload`     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`map`         :func:`.repr`      :func:`xrange`
+:func:`chr`          |func-frozenset|_  :func:`long`        :func:`reload`     :func:`vars`
+:func:`classmethod`  :func:`getattr`    :func:`map`         :func:`repr`       :func:`xrange`
 :func:`cmp`          :func:`globals`    :func:`max`         :func:`reversed`   :func:`zip`
-:func:`compile`      :func:`hasattr`    :func:`memoryview`  :func:`round`      :func:`__import__`
-:func:`complex`      :func:`hash`       :func:`min`         :func:`set`        :func:`apply`
+:func:`compile`      :func:`hasattr`    |func-memoryview|_  :func:`round`      :func:`__import__`
+:func:`complex`      :func:`hash`       :func:`min`         |func-set|_        :func:`apply`
 :func:`delattr`      :func:`help`       :func:`next`        :func:`setattr`    :func:`buffer`
-:func:`dict`         :func:`hex`        :func:`object`      :func:`slice`      :func:`coerce`
+|func-dict|_         :func:`hex`        :func:`object`      :func:`slice`      :func:`coerce`
 :func:`dir`          :func:`id`         :func:`oct`         :func:`sorted`     :func:`intern`
 ===================  =================  ==================  =================  ====================
+
+.. using :func:`dict` would create a link to another page, so local targets are
+   used, with replacement texts to make the output in the table consistent
+
+.. |func-dict| replace:: ``dict()``
+.. |func-frozenset| replace:: ``frozenset()``
+.. |func-memoryview| replace:: ``memoryview()``
+.. |func-set| replace:: ``set()``
+
 
 .. function:: abs(x)
 
@@ -265,6 +274,7 @@ available.  They are listed here in alphabetical order.
    example, ``delattr(x, 'foobar')`` is equivalent to ``del x.foobar``.
 
 
+.. _func-dict:
 .. function:: dict([arg])
    :noindex:
 
@@ -513,6 +523,7 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
+.. _func-frozenset:
 .. function:: frozenset([iterable])
    :noindex:
 
@@ -752,7 +763,7 @@ available.  They are listed here in alphabetical order.
    .. versionchanged:: 2.5
       Added support for the optional *key* argument.
 
-
+.. _func-memoryview:
 .. function:: memoryview(obj)
    :noindex:
 
@@ -1181,6 +1192,8 @@ available.  They are listed here in alphabetical order.
       can't be represented exactly as a float.  See :ref:`tut-fp-issues` for
       more information.
 
+
+.. _func-set:
 .. function:: set([iterable])
    :noindex:
 
