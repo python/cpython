@@ -2865,34 +2865,92 @@ validate_exprlist(node *tree)
                                     validate_expr_or_star_expr, "exprlist"));
 }
 
-
+/*
+ *  dictorsetmaker:
+ *
+ *  (test ':' test (comp_for | (',' test ':' test)* [','])) |
+ *  (test (comp_for | (',' test)* [',']))
+ */
 static int
 validate_dictorsetmaker(node *tree)
 {
     int nch = NCH(tree);
-    int res = (validate_ntype(tree, dictorsetmaker)
-               && (nch >= 3)
-               && validate_test(CHILD(tree, 0))
-               && validate_colon(CHILD(tree, 1))
-               && validate_test(CHILD(tree, 2)));
+    int res;
+    int i = 0;
 
-    if (res && ((nch % 4) == 0))
-        res = validate_comma(CHILD(tree, --nch));
-    else if (res)
-        res = ((nch % 4) == 3);
+    res = validate_ntype(tree, dictorsetmaker);
+    if (!res)
+        return 0;
 
-    if (res && (nch > 3)) {
-        int pos = 3;
-        /*  ( ',' test ':' test )*  */
-        while (res && (pos < nch)) {
-            res = (validate_comma(CHILD(tree, pos))
-                   && validate_test(CHILD(tree, pos + 1))
-                   && validate_colon(CHILD(tree, pos + 2))
-                   && validate_test(CHILD(tree, pos + 3)));
-            pos += 4;
+    if (nch - i < 1) {
+        (void) validate_numnodes(tree, 1, "dictorsetmaker");
+        return 0;
+    }
+
+    res = validate_test(CHILD(tree, i++));
+    if (!res)
+        return 0;
+
+    if (nch - i >= 2 && TYPE(CHILD(tree, i)) == COLON) {
+        /* Dictionary display or dictionary comprehension. */
+        res = (validate_colon(CHILD(tree, i++))
+               && validate_test(CHILD(tree, i++)));
+        if (!res)
+            return 0;
+
+        if (nch - i >= 1 && TYPE(CHILD(tree, i)) == comp_for) {
+            /* Dictionary comprehension. */
+            res = validate_comp_for(CHILD(tree, i++));
+            if (!res)
+                return 0;
+        }
+        else {
+            /* Dictionary display. */
+            while (nch - i >= 4) {
+                res = (validate_comma(CHILD(tree, i++))
+                       && validate_test(CHILD(tree, i++))
+                       && validate_colon(CHILD(tree, i++))
+                       && validate_test(CHILD(tree, i++)));
+                if (!res)
+                    return 0;
+            }
+            if (nch - i == 1) {
+                res = validate_comma(CHILD(tree, i++));
+                if (!res)
+                    return 0;
+            }
         }
     }
-    return (res);
+    else {
+        /* Set display or set comprehension. */
+        if (nch - i >= 1 && TYPE(CHILD(tree, i)) == comp_for) {
+            /* Set comprehension. */
+            res = validate_comp_for(CHILD(tree, i++));
+            if (!res)
+                return 0;
+        }
+        else {
+            /* Set display. */
+            while (nch - i >= 2) {
+                res = (validate_comma(CHILD(tree, i++))
+                       && validate_test(CHILD(tree, i++)));
+                if (!res)
+                    return 0;
+            }
+            if (nch - i == 1) {
+                res = validate_comma(CHILD(tree, i++));
+                if (!res)
+                    return 0;
+            }
+        }
+    }
+
+    if (nch - i > 0) {
+        err_string("Illegal trailing nodes for dictorsetmaker.");
+        return 0;
+    }
+
+    return 1;
 }
 
 

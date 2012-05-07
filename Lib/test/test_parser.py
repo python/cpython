@@ -305,6 +305,29 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "except Exception as e:\n"
                          "    raise ValueError from e\n")
 
+    def test_set_displays(self):
+        self.check_expr('{2}')
+        self.check_expr('{2,}')
+        self.check_expr('{2, 3}')
+        self.check_expr('{2, 3,}')
+
+    def test_dict_displays(self):
+        self.check_expr('{}')
+        self.check_expr('{a:b}')
+        self.check_expr('{a:b,}')
+        self.check_expr('{a:b, c:d}')
+        self.check_expr('{a:b, c:d,}')
+
+    def test_set_comprehensions(self):
+        self.check_expr('{x for x in seq}')
+        self.check_expr('{f(x) for x in seq}')
+        self.check_expr('{f(x) for x in seq if condition(x)}')
+
+    def test_dict_comprehensions(self):
+        self.check_expr('{x:x for x in seq}')
+        self.check_expr('{x**2:x[3] for x in seq if condition(x)}')
+        self.check_expr('{x:x for x in seq1 for y in seq2 if condition(x, y)}')
+
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
