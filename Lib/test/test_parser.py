@@ -301,6 +301,14 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("[*a, *b] = y")
         self.check_suite("for [*x, b] in x: pass")
 
+    def test_raise_statement(self):
+        self.check_suite("raise\n")
+        self.check_suite("raise e\n")
+        self.check_suite("try:\n"
+                         "    suite\n"
+                         "except Exception as e:\n"
+                         "    raise ValueError from e\n")
+
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError

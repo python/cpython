@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14701: Fix missing support for 'raise ... from' in parser module.
+
 - Add support for timeouts to the acquire() methods of
   multiprocessing's lock/semaphore/condition proxies.
 
