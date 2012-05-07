@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14697: Fix missing support for set displays and set comprehensions in
+  parser module.
+
 - Issue #14701: Fix missing support for 'raise ... from' in parser module.
 
 - Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running
