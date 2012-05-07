@@ -13242,8 +13242,10 @@ unicode_writer_prepare(unicode_writer_t *writer,
     newlen = writer->pos + length;
 
     if (newlen > PyUnicode_GET_LENGTH(writer->buffer)) {
-        /* overallocate 25% to limit the number of resize */
-        if (newlen <= (PY_SSIZE_T_MAX - newlen / 4))
+        /* Overallocate 25% to limit the number of resize.
+           Check for integer overflow:
+           (newlen + newlen / 4) <= PY_SSIZE_T_MAX */
+        if (newlen <= (PY_SSIZE_T_MAX - PY_SSIZE_T_MAX / 5))
             newlen += newlen / 4;
 
         if (maxchar > writer->maxchar) {
