@@ -1082,7 +1082,7 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
         # Return up to the first dot in 'name'. This is complicated by the fact
         # that 'name' may be relative.
         if level == 0:
-            return sys.modules[name.partition('.')[0]]
+            return _gcd_import(name.partition('.')[0])
         elif not name:
             return module
         else:

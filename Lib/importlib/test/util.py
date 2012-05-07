@@ -124,7 +124,11 @@ class mock_modules:
         else:
             sys.modules[fullname] = self.modules[fullname]
             if fullname in self.module_code:
-                self.module_code[fullname]()
+                try:
+                    self.module_code[fullname]()
+                except Exception:
+                    del sys.modules[fullname]
+                    raise
             return self.modules[fullname]
 
     def __enter__(self):
