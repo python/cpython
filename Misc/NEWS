@@ -228,7 +228,7 @@ Documentation
 Tools/Demos
 -----------
 
-- Issue #14965: Fix missing support for starred assignments in
+- Issue #14695: Fix missing support for starred assignments in
   Tools/parser/unparse.py.
 
 
