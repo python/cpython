@@ -1608,31 +1608,30 @@ validate_return_stmt(node *tree)
 }
 
 
+/*
+ *  raise_stmt:
+ *
+ *  'raise' [test ['from' test]]
+ */
 static int
 validate_raise_stmt(node *tree)
 {
     int nch = NCH(tree);
     int res = (validate_ntype(tree, raise_stmt)
-               && ((nch == 1) || (nch == 2) || (nch == 4) || (nch == 6)));
+               && ((nch == 1) || (nch == 2) || (nch == 4)));
+
+    if (!res && !PyErr_Occurred())
+        (void) validate_numnodes(tree, 2, "raise");
 
     if (res) {
         res = validate_name(CHILD(tree, 0), "raise");
         if (res && (nch >= 2))
             res = validate_test(CHILD(tree, 1));
-        if (res && nch > 2) {
-            res = (validate_comma(CHILD(tree, 2))
+        if (res && (nch == 4)) {
+            res = (validate_name(CHILD(tree, 2), "from")
                    && validate_test(CHILD(tree, 3)));
-            if (res && (nch > 4))
-                res = (validate_comma(CHILD(tree, 4))
-                       && validate_test(CHILD(tree, 5)));
         }
     }
-    else
-        (void) validate_numnodes(tree, 2, "raise");
-    if (res && (nch == 4))
-        res = (validate_comma(CHILD(tree, 2))
-               && validate_test(CHILD(tree, 3)));
-
     return (res);
 }
 

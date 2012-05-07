@@ -61,6 +61,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14701: Fix missing support for 'raise ... from' in parser module.
+
 - Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running
   step.  Patch by Xavier de Gaye.
 
