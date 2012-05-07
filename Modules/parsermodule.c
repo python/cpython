@@ -2419,16 +2419,12 @@ validate_atom(node *tree)
             break;
           case NAME:
           case NUMBER:
+          case ELLIPSIS:
             res = (nch == 1);
             break;
           case STRING:
             for (pos = 1; res && (pos < nch); ++pos)
                 res = validate_ntype(CHILD(tree, pos), STRING);
-            break;
-          case DOT:
-            res = (nch == 3 &&
-                   validate_ntype(CHILD(tree, 1), DOT) &&
-                   validate_ntype(CHILD(tree, 2), DOT));
             break;
           default:
             res = 0;
