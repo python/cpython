@@ -13933,7 +13933,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                     c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
                     if (c < '0' || c > '9')
                         break;
-                    if ((width*10) / 10 != width) {
+                    if (width > (PY_SSIZE_T_MAX - (c - '0')) / 10) {
                         PyErr_SetString(PyExc_ValueError,
                                         "width too big");
                         goto onError;
@@ -13968,7 +13968,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                         c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
                         if (c < '0' || c > '9')
                             break;
-                        if ((prec*10) / 10 != prec) {
+                        if (prec > (INT_MAX - (c - '0')) / 10) {
                             PyErr_SetString(PyExc_ValueError,
                                             "prec too big");
                             goto onError;

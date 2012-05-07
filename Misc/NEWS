@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #14700: Fix two broken and undefined-behaviour-inducing overflow checks
+  in old-style string formatting.
+
 - Issue #14705: The PyArg_Parse() family of functions now support the 'p' format
   unit, which accepts a "boolean predicate" argument.  It converts any Python
   value into an integer--0 if it is "false", and 1 otherwise.
