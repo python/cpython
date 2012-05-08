@@ -34,15 +34,6 @@ DEFAULT_BUFFER_SIZE
 """
 # New I/O library conforming to PEP 3116.
 
-# XXX edge cases when switching between reading/writing
-# XXX need to support 1 meaning line-buffered
-# XXX whenever an argument is None, use the default value
-# XXX read/write ops should check readable/writable
-# XXX buffered readinto should work with arbitrary buffer objects
-# XXX use incremental encoder for text output, at least for UTF-16 and UTF-8-SIG
-# XXX check writable, readable and seekable in appropriate places
-
-
 __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>, "
               "Mark Russell <mark.russell@zen.co.uk>, "
