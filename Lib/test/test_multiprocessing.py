@@ -2713,7 +2713,7 @@ class TestWait(unittest.TestCase):
         self.test_wait(True)
 
     def test_wait_socket_slow(self):
-        self.test_wait(True)
+        self.test_wait_socket(True)
 
     def test_wait_timeout(self):
         from multiprocessing.connection import wait
