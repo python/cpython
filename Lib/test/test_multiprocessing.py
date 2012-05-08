@@ -2003,8 +2003,8 @@ class _TestPicklingConnections(BaseTestCase):
 
         l = socket.socket()
         l.bind(('localhost', 0))
-        conn.send(l.getsockname())
         l.listen(1)
+        conn.send(l.getsockname())
         new_conn, addr = l.accept()
         conn.send(new_conn)
         new_conn.close()
