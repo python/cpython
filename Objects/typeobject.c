@@ -3565,6 +3565,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 
     for (; meth->ml_name != NULL; meth++) {
         PyObject *descr;
+        int err;
         if (PyDict_GetItemString(dict, meth->ml_name) &&
             !(meth->ml_flags & METH_COEXIST))
                 continue;
@@ -3588,9 +3589,10 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
         }
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0)
-            return -1;
+        err = PyDict_SetItemString(dict, meth->ml_name, descr);
         Py_DECREF(descr);
+        if (err < 0)
+            return -1;
     }
     return 0;
 }
