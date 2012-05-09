@@ -494,7 +494,7 @@ error:
     appends to the output.
 */
 static int
-render_field(PyObject *fieldobj, SubString *format_spec, unicode_writer_t *writer)
+render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *writer)
 {
     int ok = 0;
     PyObject *result = NULL;
@@ -540,7 +540,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, unicode_writer_t *write
         goto done;
 
     len = PyUnicode_GET_LENGTH(result);
-    if (unicode_writer_prepare(writer,
+    if (_PyUnicodeWriter_Prepare(writer,
                                len, PyUnicode_MAX_CHAR_VALUE(result)) == -1)
         goto done;
     copy_characters(writer->buffer, writer->pos,
@@ -811,7 +811,7 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
 static int
 output_markup(SubString *field_name, SubString *format_spec,
               int format_spec_needs_expanding, Py_UCS4 conversion,
-              unicode_writer_t *writer, PyObject *args, PyObject *kwargs,
+              _PyUnicodeWriter *writer, PyObject *args, PyObject *kwargs,
               int recursion_depth, AutoNumber *auto_number)
 {
     PyObject *tmp = NULL;
@@ -872,7 +872,7 @@ done:
 */
 static int
 do_markup(SubString *input, PyObject *args, PyObject *kwargs,
-          unicode_writer_t *writer, int recursion_depth, AutoNumber *auto_number)
+          _PyUnicodeWriter *writer, int recursion_depth, AutoNumber *auto_number)
 {
     MarkupIterator iter;
     int format_spec_needs_expanding;
@@ -894,7 +894,7 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
         if (sublen) {
             maxchar = _PyUnicode_FindMaxChar(literal.str,
                                              literal.start, literal.end);
-            err = unicode_writer_prepare(writer, sublen, maxchar);
+            err = _PyUnicodeWriter_Prepare(writer, sublen, maxchar);
             if (err == -1)
                 return 0;
             copy_characters(writer->buffer, writer->pos,
@@ -920,7 +920,7 @@ static PyObject *
 build_string(SubString *input, PyObject *args, PyObject *kwargs,
              int recursion_depth, AutoNumber *auto_number)
 {
-    unicode_writer_t writer;
+    _PyUnicodeWriter writer;
     Py_ssize_t initlen;
 
     /* check the recursion level */
@@ -931,16 +931,16 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
     }
 
     initlen = PyUnicode_GET_LENGTH(input->str) + 100;
-    if (unicode_writer_init(&writer, initlen, 127) == -1)
+    if (_PyUnicodeWriter_Init(&writer, initlen, 127) == -1)
         return NULL;
 
     if (!do_markup(input, args, kwargs, &writer, recursion_depth,
                    auto_number)) {
-        unicode_writer_dealloc(&writer);
+        _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
 
-    return unicode_writer_finish(&writer);
+    return _PyUnicodeWriter_Finish(&writer);
 }
 
 /************************************************************************/

@@ -13207,10 +13207,10 @@ typedef struct {
     enum PyUnicode_Kind kind;
     Py_UCS4 maxchar;
     Py_ssize_t pos;
-} unicode_writer_t;
+} _PyUnicodeWriter ;
 
 Py_LOCAL_INLINE(void)
-unicode_writer_update(unicode_writer_t *writer)
+_PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
 {
     writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
     writer->data = PyUnicode_DATA(writer->buffer);
@@ -13218,19 +13218,19 @@ unicode_writer_update(unicode_writer_t *writer)
 }
 
 Py_LOCAL(int)
-unicode_writer_init(unicode_writer_t *writer,
+_PyUnicodeWriter_Init(_PyUnicodeWriter *writer,
                     Py_ssize_t length, Py_UCS4 maxchar)
 {
     writer->pos = 0;
     writer->buffer = PyUnicode_New(length, maxchar);
     if (writer->buffer == NULL)
         return -1;
-    unicode_writer_update(writer);
+    _PyUnicodeWriter_Update(writer);
     return 0;
 }
 
 Py_LOCAL_INLINE(int)
-unicode_writer_prepare(unicode_writer_t *writer,
+_PyUnicodeWriter_Prepare(_PyUnicodeWriter *writer,
                        Py_ssize_t length, Py_UCS4 maxchar)
 {
     Py_ssize_t newlen;
@@ -13262,18 +13262,18 @@ unicode_writer_prepare(unicode_writer_t *writer,
                 return -1;
         }
         writer->buffer = newbuffer;
-        unicode_writer_update(writer);
+        _PyUnicodeWriter_Update(writer);
     }
     else if (maxchar > writer->maxchar) {
         if (unicode_widen(&writer->buffer, writer->pos, maxchar) < 0)
             return -1;
-        unicode_writer_update(writer);
+        _PyUnicodeWriter_Update(writer);
     }
     return 0;
 }
 
 Py_LOCAL(PyObject *)
-unicode_writer_finish(unicode_writer_t *writer)
+_PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
     if (PyUnicode_Resize(&writer->buffer, writer->pos) < 0) {
         Py_DECREF(writer->buffer);
@@ -13284,7 +13284,7 @@ unicode_writer_finish(unicode_writer_t *writer)
 }
 
 Py_LOCAL(void)
-unicode_writer_dealloc(unicode_writer_t *writer)
+_PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer)
 {
     Py_CLEAR(writer->buffer);
 }
@@ -13749,7 +13749,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     PyObject *uformat;
     void *fmt;
     enum PyUnicode_Kind kind, fmtkind;
-    unicode_writer_t writer;
+    _PyUnicodeWriter writer;
     Py_ssize_t sublen;
     Py_UCS4 maxchar;
 
@@ -13768,7 +13768,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     fmtcnt = PyUnicode_GET_LENGTH(uformat);
     fmtpos = 0;
 
-    if (unicode_writer_init(&writer, fmtcnt + 100, 127) < 0)
+    if (_PyUnicodeWriter_Init(&writer, fmtcnt + 100, 127) < 0)
         goto onError;
 
     if (PyTuple_Check(args)) {
@@ -13797,7 +13797,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             sublen = fmtpos - nonfmtpos;
             maxchar = _PyUnicode_FindMaxChar(uformat,
                                              nonfmtpos, nonfmtpos + sublen);
-            if (unicode_writer_prepare(&writer, sublen, maxchar) == -1)
+            if (_PyUnicodeWriter_Prepare(&writer, sublen, maxchar) == -1)
                 goto onError;
 
             copy_characters(writer.buffer, writer.pos,
@@ -13961,7 +13961,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             }
 
             if (c == '%') {
-                if (unicode_writer_prepare(&writer, 1, '%') == -1)
+                if (_PyUnicodeWriter_Prepare(&writer, 1, '%') == -1)
                     goto onError;
                 PyUnicode_WRITE(writer.kind, writer.data, writer.pos, '%');
                 writer.pos += 1;
@@ -14119,7 +14119,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             if (sign && len == width)
                 buflen++;
 
-            if (unicode_writer_prepare(&writer, buflen, bufmaxchar) == -1)
+            if (_PyUnicodeWriter_Prepare(&writer, buflen, bufmaxchar) == -1)
                 goto onError;
 
             /* Write characters */
@@ -14195,13 +14195,13 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     Py_DECREF(uformat);
     Py_XDECREF(temp);
     Py_XDECREF(second);
-    return unicode_writer_finish(&writer);
+    return _PyUnicodeWriter_Finish(&writer);
 
   onError:
     Py_DECREF(uformat);
     Py_XDECREF(temp);
     Py_XDECREF(second);
-    unicode_writer_dealloc(&writer);
+    _PyUnicodeWriter_Dealloc(&writer);
     if (args_owned) {
         Py_DECREF(args);
     }
