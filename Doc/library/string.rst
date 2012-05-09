@@ -905,14 +905,15 @@ not be removed until Python 3.  The functions defined in this module are:
 
    Return a list of the words of the string *s*.  If the optional second argument
    *sep* is absent or ``None``, the words are separated by arbitrary strings of
-   whitespace characters (space, tab,  newline, return, formfeed).  If the second
+   whitespace characters (space, tab, newline, return, formfeed).  If the second
    argument *sep* is present and not ``None``, it specifies a string to be used as
    the  word separator.  The returned list will then have one more item than the
-   number of non-overlapping occurrences of the separator in the string.  The
-   optional third argument *maxsplit* defaults to 0.  If it is nonzero, at most
-   *maxsplit* number of splits occur, and the remainder of the string is returned
-   as the final element of the list (thus, the list will have at most
-   ``maxsplit+1`` elements).
+   number of non-overlapping occurrences of the separator in the string.
+   If *maxsplit* is given, at most *maxsplit* number of splits occur, and the
+   remainder of the string is returned as the final element of the list (thus,
+   the list will have at most ``maxsplit+1`` elements).  If *maxsplit* is not
+   specified or ``-1``, then there is no limit on the number of splits (all
+   possible splits are made).
 
    The behavior of split on an empty string depends on the value of *sep*. If *sep*
    is not specified, or specified as ``None``, the result will be an empty list.
@@ -925,7 +926,7 @@ not be removed until Python 3.  The functions defined in this module are:
    Return a list of the words of the string *s*, scanning *s* from the end.  To all
    intents and purposes, the resulting list of words is the same as returned by
    :func:`split`, except when the optional third argument *maxsplit* is explicitly
-   specified and nonzero.  When *maxsplit* is nonzero, at most *maxsplit* number of
+   specified and nonzero.  If *maxsplit* is given, at most *maxsplit* number of
    splits -- the *rightmost* ones -- occur, and the remainder of the string is
    returned as the first element of the list (thus, the list will have at most
    ``maxsplit+1`` elements).
