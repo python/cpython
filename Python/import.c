@@ -998,7 +998,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
     FILE *fpc;
     char *buf;
     char *cpathname;
-    PyCodeObject *co;
+    PyCodeObject *co = NULL;
     PyObject *m;
 
     if (fstat(fileno(fp), &st) != 0) {
@@ -1054,6 +1054,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
     return m;
 
 error_exit:
+    Py_XDECREF(co);
     PyMem_FREE(buf);
     return NULL;
 }
