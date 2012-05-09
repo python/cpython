@@ -1609,8 +1609,10 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 
     switch (c) {
 
-    /* simple codes
-     * The individual types (second arg of va_arg) are irrelevant */
+    /*
+     * codes that take a single data pointer as an argument
+     * (the type of the pointer is irrelevant)
+     */
 
     case 'b': /* byte -- very short int */
     case 'B': /* byte as bitfield */
@@ -1624,20 +1626,18 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'L': /* PY_LONG_LONG */
     case 'K': /* PY_LONG_LONG sized bitfield */
 #endif
+    case 'n': /* Py_ssize_t */
     case 'f': /* float */
     case 'd': /* double */
     case 'D': /* complex double */
     case 'c': /* char */
     case 'C': /* unicode char */
     case 'p': /* boolean predicate */
+    case 'S': /* string object */
+    case 'Y': /* string object */
+    case 'U': /* unicode string object */
         {
             (void) va_arg(*p_va, void *);
-            break;
-        }
-
-    case 'n': /* Py_ssize_t */
-        {
-            (void) va_arg(*p_va, Py_ssize_t *);
             break;
         }
 
@@ -1670,16 +1670,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             } else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
                 format++;
             }
-            break;
-        }
-
-    /* object codes */
-
-    case 'S': /* string object */
-    case 'Y': /* string object */
-    case 'U': /* unicode string object */
-        {
-            (void) va_arg(*p_va, PyObject **);
             break;
         }
 
