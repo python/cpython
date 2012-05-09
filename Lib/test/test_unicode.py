@@ -1064,6 +1064,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
 
+        # PEP 393
+        self.assertEqual('%.1s' % "a\xe9\u20ac", 'a')
+        self.assertEqual('%.2s' % "a\xe9\u20ac", 'a\xe9')
+
     def test_startswith_endswith_errors(self):
         for meth in ('foo'.startswith, 'foo'.endswith):
             with self.assertRaises(TypeError) as cm:
