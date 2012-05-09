@@ -13320,6 +13320,7 @@ unicode_writer_finish(unicode_writer_t *writer)
         Py_DECREF(writer->buffer);
         return NULL;
     }
+    assert(_PyUnicode_CheckConsistency(writer->buffer, 1));
     return writer->buffer;
 }
 
