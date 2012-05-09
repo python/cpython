@@ -500,6 +500,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, unicode_writer_t *write
     PyObject *result = NULL;
     PyObject *format_spec_object = NULL;
     PyObject *(*formatter)(PyObject *, PyObject *, Py_ssize_t, Py_ssize_t) = NULL;
+    Py_ssize_t len;
 
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
@@ -533,12 +534,19 @@ render_field(PyObject *fieldobj, SubString *format_spec, unicode_writer_t *write
 
         result = PyObject_Format(fieldobj, format_spec_object);
     }
-    if (result == NULL || PyUnicode_READY(result) == -1)
+    if (result == NULL)
+        goto done;
+    if (PyUnicode_READY(result) == -1)
         goto done;
 
-    assert(PyUnicode_Check(result));
-
-    ok = (unicode_writer_write_str(writer, result, 0, PyUnicode_GET_LENGTH(result)) == 0);
+    len = PyUnicode_GET_LENGTH(result);
+    if (unicode_writer_prepare(writer,
+                               len, PyUnicode_MAX_CHAR_VALUE(result)) == -1)
+        goto done;
+    copy_characters(writer->buffer, writer->pos,
+                    result, 0, len);
+    writer->pos += len;
+    ok = 1;
 done:
     Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
@@ -873,7 +881,8 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
     SubString literal;
     SubString field_name;
     SubString format_spec;
-    Py_UCS4 conversion;
+    Py_UCS4 conversion, maxchar;
+    Py_ssize_t sublen;
     int err;
 
     MarkupIterator_init(&iter, input->str, input->start, input->end);
@@ -881,11 +890,18 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
                                          &field_name, &format_spec,
                                          &conversion,
                                          &format_spec_needs_expanding)) == 2) {
-        err = unicode_writer_write_str(writer,
-                                       literal.str, literal.start,
-                                       literal.end - literal.start);
-        if (err == -1)
-            return 0;
+        sublen = literal.end - literal.start;
+        if (sublen) {
+            maxchar = _PyUnicode_FindMaxChar(literal.str,
+                                             literal.start, literal.end);
+            err = unicode_writer_prepare(writer, sublen, maxchar);
+            if (err == -1)
+                return 0;
+            copy_characters(writer->buffer, writer->pos,
+                            literal.str, literal.start, sublen);
+            writer->pos += sublen;
+        }
+
         if (field_present)
             if (!output_markup(&field_name, &format_spec,
                                format_spec_needs_expanding, conversion, writer,
