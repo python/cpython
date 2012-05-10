@@ -139,6 +139,8 @@ Library
 
 - Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
 
+- Issue #14768: os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
+
 - Issue #14371: Support bzip2 in zipfile module.  Patch by Serhiy Storchaka.
 
 - Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running

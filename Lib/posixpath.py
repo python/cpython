@@ -266,8 +266,8 @@ def expanduser(path):
         root = b'/'
     else:
         root = '/'
-    userhome = userhome.rstrip(root) or userhome
-    return userhome + path[i:]
+    userhome = userhome.rstrip(root)
+    return (userhome + path[i:]) or root
 
 
 # Expand paths containing shell variable substitutions.
