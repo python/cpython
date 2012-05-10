@@ -326,7 +326,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     if len(data_string) != found.end():
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
-    year = 1900
+
+    year = None
     month = day = 1
     hour = minute = second = fraction = 0
     tz = -1
@@ -425,6 +426,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
+    if year is None and month == 2 and day == 29:
+        year = 1904  # 1904 is first leap year of 20th century
+    elif year is None:
+        year = 1900
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
     if julian == -1 and week_of_year != -1 and weekday != -1:
