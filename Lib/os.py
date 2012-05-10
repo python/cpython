@@ -294,8 +294,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     for name in dirs:
         new_path = join(top, name)
         if followlinks or not islink(new_path):
-            for x in walk(new_path, topdown, onerror, followlinks):
-                yield x
+            yield from walk(new_path, topdown, onerror, followlinks)
     if not topdown:
         yield top, dirs, nondirs
 
@@ -339,8 +338,7 @@ if _exists("openat"):
         try:
             if (followlinks or (st.S_ISDIR(orig_st.st_mode) and
                                 path.samestat(orig_st, fstat(topfd)))):
-                for x in _fwalk(topfd, top, topdown, onerror, followlinks):
-                    yield x
+                yield from _fwalk(topfd, top, topdown, onerror, followlinks)
         finally:
             close(topfd)
 
@@ -377,8 +375,7 @@ if _exists("openat"):
             try:
                 if followlinks or path.samestat(orig_st, fstat(dirfd)):
                     dirpath = path.join(toppath, name)
-                    for x in _fwalk(dirfd, dirpath, topdown, onerror, followlinks):
-                        yield x
+                    yield from _fwalk(dirfd, dirpath, topdown, onerror, followlinks)
             finally:
                 close(dirfd)
 
