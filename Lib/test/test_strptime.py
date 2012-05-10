@@ -378,6 +378,9 @@ class StrptimeTests(unittest.TestCase):
         need_escaping = ".^$*+?{}\[]|)("
         self.assertTrue(_strptime._strptime_time(need_escaping, need_escaping))
 
+    def test_feb29_on_leap_year_without_year(self):
+        time.strptime("Feb 29", "%b %d")
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 
