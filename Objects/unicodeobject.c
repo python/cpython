@@ -4615,28 +4615,6 @@ PyUnicode_EncodeUTF7(const Py_UNICODE *s,
 
 /* --- UTF-8 Codec -------------------------------------------------------- */
 
-static
-char utf8_code_length[256] = {
-    /* Map UTF-8 encoded prefix byte to sequence length.  Zero means
-       illegal prefix.  See RFC 3629 for details */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 00-0F */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 70-7F */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 80-8F */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* B0-BF */
-    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* C0-C1 + C2-CF */
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* D0-DF */
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, /* E0-EF */
-    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  /* F0-F4 + F5-FF */
-};
-
 PyObject *
 PyUnicode_DecodeUTF8(const char *s,
                      Py_ssize_t size,
@@ -4644,6 +4622,10 @@ PyUnicode_DecodeUTF8(const char *s,
 {
     return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
 }
+
+#include "stringlib/asciilib.h"
+#include "stringlib/codecs.h"
+#include "stringlib/undef.h"
 
 #include "stringlib/ucs1lib.h"
 #include "stringlib/codecs.h"
@@ -4670,310 +4652,60 @@ PyUnicode_DecodeUTF8(const char *s,
 # error C 'long' size should be either 4 or 8!
 #endif
 
-/* Scans a UTF-8 string and returns the maximum character to be expected
-   and the size of the decoded unicode string.
-
-   This function doesn't check for errors, these checks are performed in
-   PyUnicode_DecodeUTF8Stateful.
-   */
-static Py_UCS4
-utf8_scanner(const unsigned char *p, Py_ssize_t string_size, Py_ssize_t *unicode_size)
+static Py_ssize_t
+ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
-    Py_ssize_t char_count = 0;
-    const unsigned char *end = p + string_size;
-    const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
+    const char *p = start;
+    const char *aligned_end = (const char *) ((size_t) end & ~LONG_PTR_MASK);
 
-    assert(unicode_size != NULL);
-
-    /* By having a cascade of independent loops which fallback onto each
-       other, we minimize the amount of work done in the average loop
-       iteration, and we also maximize the CPU's ability to predict
-       branches correctly (because a given condition will have always the
-       same boolean outcome except perhaps in the last iteration of the
-       corresponding loop).
-       In the general case this brings us rather close to decoding
-       performance pre-PEP 393, despite the two-pass decoding.
-
-       Note that the pure ASCII loop is not duplicated once a non-ASCII
-       character has been encountered. It is actually a pessimization (by
-       a significant factor) to use this loop on text with many non-ASCII
-       characters, and it is important to avoid bad performance on valid
-       utf-8 data (invalid utf-8 being a different can of worms).
-    */
-
-    /* ASCII */
-    for (; p < end; ++p) {
-        /* Only check value if it's not a ASCII char... */
-        if (*p < 0x80) {
-            /* Fast path, see below in PyUnicode_DecodeUTF8Stateful for
-               an explanation. */
-            if (!((size_t) p & LONG_PTR_MASK)) {
-                /* Help register allocation */
-                register const unsigned char *_p = p;
-                while (_p < aligned_end) {
-                    unsigned long value = *(unsigned long *) _p;
-                    if (value & ASCII_CHAR_MASK)
-                        break;
-                    _p += SIZEOF_LONG;
-                    char_count += SIZEOF_LONG;
-                }
-                p = _p;
-                if (p == end)
-                    break;
-            }
-        }
-        if (*p < 0x80)
-            ++char_count;
-        else
-            goto _ucs1loop;
-    }
-    *unicode_size = char_count;
-    return 127;
-
-_ucs1loop:
-    for (; p < end; ++p) {
-        if (*p < 0xc4)
-            char_count += ((*p & 0xc0) != 0x80);
-        else
-            goto _ucs2loop;
-    }
-    *unicode_size = char_count;
-    return 255;
-
-_ucs2loop:
-    for (; p < end; ++p) {
-        if (*p < 0xf0)
-            char_count += ((*p & 0xc0) != 0x80);
-        else
-            goto _ucs4loop;
-    }
-    *unicode_size = char_count;
-    return 65535;
-
-_ucs4loop:
-    for (; p < end; ++p) {
-        char_count += ((*p & 0xc0) != 0x80);
-    }
-    *unicode_size = char_count;
-    return 65537;
-}
-
-/* Similar to PyUnicode_WRITE but may attempt to widen and resize the string
-   in case of errors. Implicit parameters: unicode, kind, data, onError.
-   Potential resizing overallocates, so the result needs to shrink at the end.
-*/
-#define WRITE_MAYBE_FAIL(index, value)                              \
-    do {                                                            \
-        Py_ssize_t pos = index;                                     \
-        if (pos > PyUnicode_GET_LENGTH(unicode) &&                  \
-            unicode_resize(&unicode, pos + pos/8) < 0)              \
-            goto onError;                                           \
-        if (unicode_putchar(&unicode, &pos, value) < 0)             \
-            goto onError;                                           \
-    } while (0)
-
-static PyObject *
-decode_utf8_errors(const char *starts,
-                   Py_ssize_t size,
-                   const char *errors,
-                   Py_ssize_t *consumed,
-                   const char *s,
-                   PyObject *unicode,
-                   Py_ssize_t i)
-{
-    int n;
-    int k;
-    Py_ssize_t startinpos;
-    Py_ssize_t endinpos;
-    const char *e = starts + size;
-    const char *aligned_end;
-    const char *errmsg = "";
-    PyObject *errorHandler = NULL;
-    PyObject *exc = NULL;
-
-    aligned_end = (const char *) ((size_t) e & ~LONG_PTR_MASK);
-
-    while (s < e) {
-        Py_UCS4 ch = (unsigned char)*s;
-
-        if (ch < 0x80) {
-            /* Fast path for runs of ASCII characters. Given that common UTF-8
-               input will consist of an overwhelming majority of ASCII
-               characters, we try to optimize for this case by checking
-               as many characters as a C 'long' can contain.
-               First, check if we can do an aligned read, as most CPUs have
-               a penalty for unaligned reads.
-            */
-            if (!((size_t) s & LONG_PTR_MASK)) {
-                /* Help register allocation */
-                register const char *_s = s;
-                register Py_ssize_t _i = i;
-                while (_s < aligned_end) {
-                    /* Read a whole long at a time (either 4 or 8 bytes),
-                       and do a fast unrolled copy if it only contains ASCII
-                       characters. */
-                    unsigned long value = *(unsigned long *) _s;
-                    if (value & ASCII_CHAR_MASK)
-                        break;
-                    WRITE_MAYBE_FAIL(_i+0, _s[0]);
-                    WRITE_MAYBE_FAIL(_i+1, _s[1]);
-                    WRITE_MAYBE_FAIL(_i+2, _s[2]);
-                    WRITE_MAYBE_FAIL(_i+3, _s[3]);
-#if (SIZEOF_LONG == 8)
-                    WRITE_MAYBE_FAIL(_i+4, _s[4]);
-                    WRITE_MAYBE_FAIL(_i+5, _s[5]);
-                    WRITE_MAYBE_FAIL(_i+6, _s[6]);
-                    WRITE_MAYBE_FAIL(_i+7, _s[7]);
-#endif
-                    _s += SIZEOF_LONG;
-                    _i += SIZEOF_LONG;
-                }
-                s = _s;
-                i = _i;
-                if (s == e)
-                    break;
-                ch = (unsigned char)*s;
-            }
-        }
-
-        if (ch < 0x80) {
-            WRITE_MAYBE_FAIL(i++, ch);
-            s++;
-            continue;
-        }
-
-        n = utf8_code_length[ch];
-
-        if (s + n > e) {
-            if (consumed)
+#if SIZEOF_LONG <= SIZEOF_VOID_P
+    assert(!((size_t) dest & LONG_PTR_MASK));
+    if (!((size_t) p & LONG_PTR_MASK)) {
+        /* Fast path, see in STRINGLIB(utf8_decode) for
+           an explanation. */
+        /* Help register allocation */
+        register const char *_p = p;
+        register Py_UCS1 * q = dest;
+        while (_p < aligned_end) {
+            unsigned long value = *(const unsigned long *) _p;
+            if (value & ASCII_CHAR_MASK)
                 break;
-            else {
-                errmsg = "unexpected end of data";
-                startinpos = s-starts;
-                endinpos = startinpos+1;
-                for (k=1; (k < size-startinpos) && ((s[k]&0xC0) == 0x80); k++)
-                    endinpos++;
-                goto utf8Error;
-            }
+            *((unsigned long *)q) = value;
+            _p += SIZEOF_LONG;
+            q += SIZEOF_LONG;
         }
-
-        switch (n) {
-
-        case 0:
-            errmsg = "invalid start byte";
-            startinpos = s-starts;
-            endinpos = startinpos+1;
-            goto utf8Error;
-
-        case 1:
-            errmsg = "internal error";
-            startinpos = s-starts;
-            endinpos = startinpos+1;
-            goto utf8Error;
-
-        case 2:
-            if ((s[1] & 0xc0) != 0x80) {
-                errmsg = "invalid continuation byte";
-                startinpos = s-starts;
-                endinpos = startinpos + 1;
-                goto utf8Error;
-            }
-            ch = ((s[0] & 0x1f) << 6) + (s[1] & 0x3f);
-            assert ((ch > 0x007F) && (ch <= 0x07FF));
-            WRITE_MAYBE_FAIL(i++, ch);
-            break;
-
-        case 3:
-            /* Decoding UTF-8 sequences in range \xed\xa0\x80-\xed\xbf\xbf
-               will result in surrogates in range d800-dfff. Surrogates are
-               not valid UTF-8 so they are rejected.
-               See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
-               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xE0 &&
-                 (unsigned char)s[1] < 0xA0) ||
-                ((unsigned char)s[0] == 0xED &&
-                 (unsigned char)s[1] > 0x9F)) {
-                errmsg = "invalid continuation byte";
-                startinpos = s-starts;
-                endinpos = startinpos + 1;
-
-                /* if s[1] first two bits are 1 and 0, then the invalid
-                   continuation byte is s[2], so increment endinpos by 1,
-                   if not, s[1] is invalid and endinpos doesn't need to
-                   be incremented. */
-                if ((s[1] & 0xC0) == 0x80)
-                    endinpos++;
-                goto utf8Error;
-            }
-            ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            assert ((ch > 0x07FF) && (ch <= 0xFFFF));
-            WRITE_MAYBE_FAIL(i++, ch);
-            break;
-
-        case 4:
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                (s[3] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xF0 &&
-                 (unsigned char)s[1] < 0x90) ||
-                ((unsigned char)s[0] == 0xF4 &&
-                 (unsigned char)s[1] > 0x8F)) {
-                errmsg = "invalid continuation byte";
-                startinpos = s-starts;
-                endinpos = startinpos + 1;
-                if ((s[1] & 0xC0) == 0x80) {
-                    endinpos++;
-                    if ((s[2] & 0xC0) == 0x80)
-                        endinpos++;
-                }
-                goto utf8Error;
-            }
-            ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
-                 ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
-            assert ((ch > 0xFFFF) && (ch <= MAX_UNICODE));
-
-            WRITE_MAYBE_FAIL(i++, ch);
-            break;
+        p = _p;
+        while (p < end) {
+            if ((unsigned char)*p & 0x80)
+                break;
+            *q++ = *p++;
         }
-        s += n;
-        continue;
-
-      utf8Error:
-        if (unicode_decode_call_errorhandler(
-                errors, &errorHandler,
-                "utf-8", errmsg,
-                &starts, &e, &startinpos, &endinpos, &exc, &s,
-                &unicode, &i))
-            goto onError;
-        /* Update data because unicode_decode_call_errorhandler might have
-           re-created or resized the unicode object. */
-        aligned_end = (const char *) ((size_t) e & ~LONG_PTR_MASK);
+        return p - start;
     }
-    if (consumed)
-        *consumed = s-starts;
-
-    /* Adjust length and ready string when it contained errors and
-       is of the old resizable kind. */
-    if (unicode_resize(&unicode, i) < 0)
-        goto onError;
-    unicode_adjust_maxchar(&unicode);
-    if (unicode == NULL)
-        goto onError;
-
-    Py_XDECREF(errorHandler);
-    Py_XDECREF(exc);
-    assert(_PyUnicode_CheckConsistency(unicode, 1));
-    return unicode;
-
-  onError:
-    Py_XDECREF(errorHandler);
-    Py_XDECREF(exc);
-    Py_XDECREF(unicode);
-    return NULL;
+#endif
+    while (p < end) {
+        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
+           for an explanation. */
+        if (!((size_t) p & LONG_PTR_MASK)) {
+            /* Help register allocation */
+            register const char *_p = p;
+            while (_p < aligned_end) {
+                unsigned long value = *(unsigned long *) _p;
+                if (value & ASCII_CHAR_MASK)
+                    break;
+                _p += SIZEOF_LONG;
+            }
+            p = _p;
+            if (_p == end)
+                break;
+        }
+        if ((unsigned char)*p & 0x80)
+            break;
+        ++p;
+    }
+    memcpy(dest, start, p - start);
+    return p - start;
 }
-#undef WRITE_MAYBE_FAIL
 
 PyObject *
 PyUnicode_DecodeUTF8Stateful(const char *s,
@@ -4981,15 +4713,16 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
                              const char *errors,
                              Py_ssize_t *consumed)
 {
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t unicode_size;
-    int has_errors = 0;
     PyObject *unicode;
-    int kind;
-    void *data;
     const char *starts = s;
-    const char *e;
-    Py_ssize_t i;
+    const char *end = s + size;
+    Py_ssize_t outpos;
+
+    Py_ssize_t startinpos;
+    Py_ssize_t endinpos;
+    const char *errmsg = "";
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
 
     if (size == 0) {
         if (consumed)
@@ -4998,49 +4731,91 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
         return unicode_empty;
     }
 
-    maxchar = utf8_scanner((const unsigned char *)s, size, &unicode_size);
-
-    /* When the string is ASCII only, just use memcpy and return.
-       unicode_size may be != size if there is an incomplete UTF-8
-       sequence at the end of the ASCII block.  */
-    if (maxchar < 128 && size == unicode_size) {
+    /* ASCII is equivalent to the first 128 ordinals in Unicode. */
+    if (size == 1 && (unsigned char)s[0] < 128) {
         if (consumed)
-            *consumed = size;
-        return unicode_fromascii((const unsigned char *)s, size);
+            *consumed = 1;
+        return get_latin1_char((unsigned char)s[0]);
     }
 
-    unicode = PyUnicode_New(unicode_size, maxchar);
+    unicode = PyUnicode_New(size, 127);
     if (!unicode)
         return NULL;
-    kind = PyUnicode_KIND(unicode);
-    data = PyUnicode_DATA(unicode);
 
-    /* Unpack UTF-8 encoded data */
-    i = 0;
-    e = starts + size;
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND:
-        has_errors = ucs1lib_utf8_try_decode(s, e, (Py_UCS1 *) data, &s, &i);
-        break;
-    case PyUnicode_2BYTE_KIND:
-        has_errors = ucs2lib_utf8_try_decode(s, e, (Py_UCS2 *) data, &s, &i);
-        break;
-    case PyUnicode_4BYTE_KIND:
-        has_errors = ucs4lib_utf8_try_decode(s, e, (Py_UCS4 *) data, &s, &i);
-        break;
-    }
-    if (!has_errors) {
-        /* Ensure the unicode size calculation was correct */
-        assert(i == unicode_size);
-        assert(s == e);
-        if (consumed)
-            *consumed = size;
-        return unicode;
+    outpos = ascii_decode(s, end, PyUnicode_1BYTE_DATA(unicode));
+    s += outpos;
+    while (s < end) {
+        Py_UCS4 ch;
+        int kind = PyUnicode_KIND(unicode);
+        if (kind == PyUnicode_1BYTE_KIND) {
+            if (PyUnicode_IS_ASCII(unicode))
+                ch = asciilib_utf8_decode(&s, end,
+                        PyUnicode_1BYTE_DATA(unicode), &outpos);
+            else
+                ch = ucs1lib_utf8_decode(&s, end,
+                        PyUnicode_1BYTE_DATA(unicode), &outpos);
+        } else if (kind == PyUnicode_2BYTE_KIND) {
+            ch = ucs2lib_utf8_decode(&s, end,
+                    PyUnicode_2BYTE_DATA(unicode), &outpos);
+        } else {
+            assert(kind == PyUnicode_4BYTE_KIND);
+            ch = ucs4lib_utf8_decode(&s, end,
+                    PyUnicode_4BYTE_DATA(unicode), &outpos);
+        }
+
+        switch (ch) {
+        case 0:
+            if (s == end || consumed)
+                goto End;
+            errmsg = "unexpected end of data";
+            startinpos = s - starts;
+            endinpos = startinpos + 1;
+            while (endinpos < size && (starts[endinpos] & 0xC0) == 0x80)
+                endinpos++;
+            break;
+        case 1:
+            errmsg = "invalid start byte";
+            startinpos = s - starts;
+            endinpos = startinpos + 1;
+            break;
+        case 2:
+            errmsg = "invalid continuation byte";
+            startinpos = s - starts;
+            endinpos = startinpos + 1;
+            while (endinpos < size && (starts[endinpos] & 0xC0) == 0x80)
+                endinpos++;
+            break;
+        default:
+            if (unicode_putchar(&unicode, &outpos, ch) < 0)
+                goto onError;
+            continue;
+        }
+
+        if (unicode_decode_call_errorhandler(
+                errors, &errorHandler,
+                "utf-8", errmsg,
+                &starts, &end, &startinpos, &endinpos, &exc, &s,
+                &unicode, &outpos))
+            goto onError;
     }
 
-    /* In case of errors, maxchar and size computation might be incorrect;
-       code below refits and resizes as necessary. */
-    return decode_utf8_errors(starts, size, errors, consumed, s, unicode, i);
+End:
+    if (unicode_resize(&unicode, outpos) < 0)
+        goto onError;
+
+    if (consumed)
+        *consumed = s - starts;
+
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    assert(_PyUnicode_CheckConsistency(unicode, 1));
+    return unicode;
+
+onError:
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    Py_XDECREF(unicode);
+    return NULL;
 }
 
 #ifdef __APPLE__
@@ -5051,9 +4826,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 wchar_t*
 _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 {
-    int n;
     const char *e;
-    wchar_t *unicode, *p;
+    wchar_t *unicode;
+    Py_ssize_t outpos;
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
@@ -5066,86 +4841,33 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
         return NULL;
 
     /* Unpack UTF-8 encoded data */
-    p = unicode;
     e = s + size;
+    outpos = 0;
     while (s < e) {
-        Py_UCS4 ch = (unsigned char)*s;
-
-        if (ch < 0x80) {
-            *p++ = (wchar_t)ch;
-            s++;
-            continue;
-        }
-
-        n = utf8_code_length[ch];
-        if (s + n > e) {
-            goto surrogateescape;
-        }
-
-        switch (n) {
-        case 0:
-        case 1:
-            goto surrogateescape;
-
-        case 2:
-            if ((s[1] & 0xc0) != 0x80)
-                goto surrogateescape;
-            ch = ((s[0] & 0x1f) << 6) + (s[1] & 0x3f);
-            assert ((ch > 0x007F) && (ch <= 0x07FF));
-            *p++ = (wchar_t)ch;
-            break;
-
-        case 3:
-            /* Decoding UTF-8 sequences in range \xed\xa0\x80-\xed\xbf\xbf
-               will result in surrogates in range d800-dfff. Surrogates are
-               not valid UTF-8 so they are rejected.
-               See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
-               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xE0 &&
-                 (unsigned char)s[1] < 0xA0) ||
-                ((unsigned char)s[0] == 0xED &&
-                 (unsigned char)s[1] > 0x9F)) {
-
-                goto surrogateescape;
-            }
-            ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            assert ((ch > 0x07FF) && (ch <= 0xFFFF));
-            *p++ = (wchar_t)ch;
-            break;
-
-        case 4:
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                (s[3] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xF0 &&
-                 (unsigned char)s[1] < 0x90) ||
-                ((unsigned char)s[0] == 0xF4 &&
-                 (unsigned char)s[1] > 0x8F)) {
-                goto surrogateescape;
-            }
-            ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
-                 ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
-            assert ((ch > 0xFFFF) && (ch <= MAX_UNICODE));
-
+        Py_UCS4 ch;
 #if SIZEOF_WCHAR_T == 4
-            *p++ = (wchar_t)ch;
+        ch = ucs4lib_utf8_decode(&s, e, (Py_UCS4 *)unicode, &outpos);
 #else
-            /*  compute and append the two surrogates: */
-            *p++ = (wchar_t)Py_UNICODE_HIGH_SURROGATE(ch);
-            *p++ = (wchar_t)Py_UNICODE_LOW_SURROGATE(ch);
+        ch = ucs2lib_utf8_decode(&s, e, (Py_UCS2 *)unicode, &outpos);
 #endif
-            break;
+        if (ch > 0xFF) {
+#if SIZEOF_WCHAR_T == 4
+            assert(0);
+#else
+            assert(Py_UNICODE_IS_SURROGATE(ch));
+            /*  compute and append the two surrogates: */
+            unicode[outpos++] = (wchar_t)Py_UNICODE_HIGH_SURROGATE(ch);
+            unicode[outpos++] = (wchar_t)Py_UNICODE_LOW_SURROGATE(ch);
+#endif
         }
-        s += n;
-        continue;
-
-      surrogateescape:
-        *p++ = 0xDC00 + ch;
-        s++;
+        else {
+            if (!ch && s == e)
+                break;
+            /* surrogateescape */
+            unicode[outpos++] = 0xDC00 + (unsigned char)*s++;
+        }
     }
-    *p = L'\0';
+    unicode[outpos] = L'\0';
     return unicode;
 }
 
@@ -6970,17 +6692,13 @@ PyUnicode_DecodeASCII(const char *s,
                       const char *errors)
 {
     const char *starts = s;
-    PyObject *v;
+    PyObject *unicode;
     int kind;
     void *data;
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
     const char *e;
-    int has_error;
-    const unsigned char *p = (const unsigned char *)s;
-    const unsigned char *end = p + size;
-    const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
@@ -6993,45 +6711,18 @@ PyUnicode_DecodeASCII(const char *s,
     if (size == 1 && (unsigned char)s[0] < 128)
         return get_latin1_char((unsigned char)s[0]);
 
-    has_error = 0;
-    while (p < end && !has_error) {
-        /* Fast path, see below in PyUnicode_DecodeUTF8Stateful for
-           an explanation. */
-        if (!((size_t) p & LONG_PTR_MASK)) {
-            /* Help register allocation */
-            register const unsigned char *_p = p;
-            while (_p < aligned_end) {
-                unsigned long value = *(unsigned long *) _p;
-                if (value & ASCII_CHAR_MASK) {
-                    has_error = 1;
-                    break;
-                }
-                _p += SIZEOF_LONG;
-            }
-            if (_p == end)
-                break;
-            if (has_error)
-                break;
-            p = _p;
-        }
-        if (*p & 0x80) {
-            has_error = 1;
-            break;
-        }
-        else {
-            ++p;
-        }
-    }
-    if (!has_error)
-        return unicode_fromascii((const unsigned char *)s, size);
-
-    v = PyUnicode_New(size, 127);
-    if (v == NULL)
+    unicode = PyUnicode_New(size, 127);
+    if (unicode == NULL)
         goto onError;
-    kind = PyUnicode_KIND(v);
-    data = PyUnicode_DATA(v);
-    outpos = 0;
+
     e = s + size;
+    data = PyUnicode_1BYTE_DATA(unicode);
+    outpos = ascii_decode(s, e, (Py_UCS1 *)data);
+    if (outpos == size)
+        return unicode;
+
+    s += outpos;
+    kind = PyUnicode_1BYTE_KIND;
     while (s < e) {
         register unsigned char c = (unsigned char)*s;
         if (c < 128) {
@@ -7045,21 +6736,21 @@ PyUnicode_DecodeASCII(const char *s,
                     errors, &errorHandler,
                     "ascii", "ordinal not in range(128)",
                     &starts, &e, &startinpos, &endinpos, &exc, &s,
-                    &v, &outpos))
+                    &unicode, &outpos))
                 goto onError;
-            kind = PyUnicode_KIND(v);
-            data = PyUnicode_DATA(v);
+            kind = PyUnicode_KIND(unicode);
+            data = PyUnicode_DATA(unicode);
         }
     }
-    if (unicode_resize(&v, outpos) < 0)
+    if (unicode_resize(&unicode, outpos) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-    assert(_PyUnicode_CheckConsistency(v, 1));
-    return v;
+    assert(_PyUnicode_CheckConsistency(unicode, 1));
+    return unicode;
 
   onError:
-    Py_XDECREF(v);
+    Py_XDECREF(unicode);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return NULL;

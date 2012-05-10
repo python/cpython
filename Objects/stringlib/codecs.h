@@ -15,19 +15,18 @@
 # error C 'long' size should be either 4 or 8!
 #endif
 
-Py_LOCAL_INLINE(int)
-STRINGLIB(utf8_try_decode)(const char *start, const char *end,
-                           STRINGLIB_CHAR *dest,
-                           const char **src_pos, Py_ssize_t *dest_index)
+Py_LOCAL_INLINE(Py_UCS4)
+STRINGLIB(utf8_decode)(const char **inptr, const char *end,
+                       STRINGLIB_CHAR *dest,
+                       Py_ssize_t *outpos)
 {
-    int ret;
-    Py_ssize_t n;
-    const char *s = start;
+    Py_UCS4 ch;
+    const char *s = *inptr;
     const char *aligned_end = (const char *) ((size_t) end & ~LONG_PTR_MASK);
-    STRINGLIB_CHAR *p = dest;
+    STRINGLIB_CHAR *p = dest + *outpos;
 
     while (s < end) {
-        Py_UCS4 ch = (unsigned char)*s;
+        ch = (unsigned char)*s;
 
         if (ch < 0x80) {
             /* Fast path for runs of ASCII characters. Given that common UTF-8
@@ -48,15 +47,33 @@ STRINGLIB(utf8_try_decode)(const char *start, const char *end,
                     unsigned long value = *(unsigned long *) _s;
                     if (value & ASCII_CHAR_MASK)
                         break;
-                    _p[0] = _s[0];
-                    _p[1] = _s[1];
-                    _p[2] = _s[2];
-                    _p[3] = _s[3];
-#if (SIZEOF_LONG == 8)
-                    _p[4] = _s[4];
-                    _p[5] = _s[5];
-                    _p[6] = _s[6];
-                    _p[7] = _s[7];
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+                    _p[0] = (STRINGLIB_CHAR)(value & 0xFFu);
+                    _p[1] = (STRINGLIB_CHAR)((value >> 8) & 0xFFu);
+                    _p[2] = (STRINGLIB_CHAR)((value >> 16) & 0xFFu);
+                    _p[3] = (STRINGLIB_CHAR)((value >> 24) & 0xFFu);
+# if SIZEOF_LONG == 8
+                    _p[4] = (STRINGLIB_CHAR)((value >> 32) & 0xFFu);
+                    _p[5] = (STRINGLIB_CHAR)((value >> 40) & 0xFFu);
+                    _p[6] = (STRINGLIB_CHAR)((value >> 48) & 0xFFu);
+                    _p[7] = (STRINGLIB_CHAR)((value >> 56) & 0xFFu);
+# endif
+#else
+# if SIZEOF_LONG == 8
+                    _p[0] = (STRINGLIB_CHAR)((value >> 56) & 0xFFu);
+                    _p[1] = (STRINGLIB_CHAR)((value >> 48) & 0xFFu);
+                    _p[2] = (STRINGLIB_CHAR)((value >> 40) & 0xFFu);
+                    _p[3] = (STRINGLIB_CHAR)((value >> 32) & 0xFFu);
+                    _p[4] = (STRINGLIB_CHAR)((value >> 24) & 0xFFu);
+                    _p[5] = (STRINGLIB_CHAR)((value >> 16) & 0xFFu);
+                    _p[6] = (STRINGLIB_CHAR)((value >> 8) & 0xFFu);
+                    _p[7] = (STRINGLIB_CHAR)(value & 0xFFu);
+# else
+                    _p[0] = (STRINGLIB_CHAR)((value >> 24) & 0xFFu);
+                    _p[1] = (STRINGLIB_CHAR)((value >> 16) & 0xFFu);
+                    _p[2] = (STRINGLIB_CHAR)((value >> 8) & 0xFFu);
+                    _p[3] = (STRINGLIB_CHAR)(value & 0xFFu);
+# endif
 #endif
                     _s += SIZEOF_LONG;
                     _p += SIZEOF_LONG;
@@ -67,87 +84,135 @@ STRINGLIB(utf8_try_decode)(const char *start, const char *end,
                     break;
                 ch = (unsigned char)*s;
             }
+            if (ch < 0x80) {
+                s++;
+                *p++ = ch;
+                continue;
+            }
         }
 
-        if (ch < 0x80) {
-            s++;
+        if (ch < 0xC2) {
+            /* invalid sequence
+               \x80-\xBF -- continuation byte
+               \xC0-\xC1 -- fake 0000-007F */
+            goto InvalidStart;
+        }
+
+        if (ch < 0xE0) {
+            /* \xC2\x80-\xDF\xBF -- 0080-07FF */
+            Py_UCS4 ch2;
+            if (end - s < 2) {
+                /* unexpected end of data: the caller will decide whether
+                   it's an error or not */
+                break;
+            }
+            ch2 = (unsigned char)s[1];
+            if ((ch2 & 0xC0) != 0x80)
+                /* invalid continuation byte */
+                goto InvalidContinuation;
+            ch = (ch << 6) + ch2 -
+                 ((0xC0 << 6) + 0x80);
+            assert ((ch > 0x007F) && (ch <= 0x07FF));
+            s += 2;
+            if (STRINGLIB_MAX_CHAR <= 0x007F ||
+                (STRINGLIB_MAX_CHAR < 0x07FF && ch > STRINGLIB_MAX_CHAR))
+                goto Overflow;
             *p++ = ch;
             continue;
         }
 
-        n = utf8_code_length[ch];
-
-        if (s + n > end) {
-            /* unexpected end of data: the caller will decide whether
-               it's an error or not */
-            goto _error;
-        }
-
-        switch (n) {
-        case 0:
-            /* invalid start byte */
-            goto _error;
-        case 1:
-            /* internal error */
-            goto _error;
-        case 2:
-            if ((s[1] & 0xc0) != 0x80)
-                /* invalid continuation byte */
-                goto _error;
-            ch = ((s[0] & 0x1f) << 6) + (s[1] & 0x3f);
-            assert ((ch > 0x007F) && (ch <= 0x07FF));
-            s += 2;
-            *p++ = ch;
-            break;
-
-        case 3:
-            /* Decoding UTF-8 sequences in range \xed\xa0\x80-\xed\xbf\xbf
-               will result in surrogates in range d800-dfff. Surrogates are
-               not valid UTF-8 so they are rejected.
-               See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
-               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xE0 &&
-                 (unsigned char)s[1] < 0xA0) ||
-                ((unsigned char)s[0] == 0xED &&
-                 (unsigned char)s[1] > 0x9F)) {
-                /* invalid continuation byte */
-                goto _error;
+        if (ch < 0xF0) {
+            /* \xE0\xA0\x80-\xEF\xBF\xBF -- 0800-FFFF */
+            Py_UCS4 ch2, ch3;
+            if (end - s < 3) {
+                /* unexpected end of data: the caller will decide whether
+                   it's an error or not */
+                break;
             }
-            ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
+            ch2 = (unsigned char)s[1];
+            ch3 = (unsigned char)s[2];
+            if ((ch2 & 0xC0) != 0x80 ||
+                (ch3 & 0xC0) != 0x80) {
+                /* invalid continuation byte */
+                goto InvalidContinuation;
+            }
+            if (ch == 0xE0) {
+                if (ch2 < 0xA0)
+                    /* invalid sequence
+                       \xE0\x80\x80-\xE0\x9F\xBF -- fake 0000-0800 */
+                    goto InvalidContinuation;
+            }
+            else if (ch == 0xED && ch2 > 0x9F) {
+                /* Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
+                   will result in surrogates in range D800-DFFF. Surrogates are
+                   not valid UTF-8 so they are rejected.
+                   See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+                   (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
+                goto InvalidContinuation;
+            }
+            ch = (ch << 12) + (ch2 << 6) + ch3 -
+                 ((0xE0 << 12) + (0x80 << 6) + 0x80);
             assert ((ch > 0x07FF) && (ch <= 0xFFFF));
             s += 3;
+            if (STRINGLIB_MAX_CHAR <= 0x07FF ||
+                (STRINGLIB_MAX_CHAR < 0xFFFF && ch > STRINGLIB_MAX_CHAR))
+                goto Overflow;
             *p++ = ch;
-            break;
-
-        case 4:
-            if ((s[1] & 0xc0) != 0x80 ||
-                (s[2] & 0xc0) != 0x80 ||
-                (s[3] & 0xc0) != 0x80 ||
-                ((unsigned char)s[0] == 0xF0 &&
-                 (unsigned char)s[1] < 0x90) ||
-                ((unsigned char)s[0] == 0xF4 &&
-                 (unsigned char)s[1] > 0x8F)) {
-                /* invalid continuation byte */
-                goto _error;
-            }
-            ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
-                 ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
-            assert ((ch > 0xFFFF) && (ch <= 0x10ffff));
-            s += 4;
-            *p++ = ch;
-            break;
+            continue;
         }
+
+        if (ch < 0xF5) {
+            /* \xF0\x90\x80\x80-\xF4\x8F\xBF\xBF -- 10000-10FFFF */
+            Py_UCS4 ch2, ch3, ch4;
+            if (end - s < 4) {
+                /* unexpected end of data: the caller will decide whether
+                   it's an error or not */
+                break;
+            }
+            ch2 = (unsigned char)s[1];
+            ch3 = (unsigned char)s[2];
+            ch4 = (unsigned char)s[3];
+            if ((ch2 & 0xC0) != 0x80 ||
+                (ch3 & 0xC0) != 0x80 ||
+                (ch4 & 0xC0) != 0x80) {
+                /* invalid continuation byte */
+                goto InvalidContinuation;
+            }
+            if (ch == 0xF0) {
+                if (ch2 < 0x90)
+                    /* invalid sequence
+                       \xF0\x80\x80\x80-\xF0\x80\xBF\xBF -- fake 0000-FFFF */
+                    goto InvalidContinuation;
+            }
+            else if (ch == 0xF4 && ch2 > 0x8F) {
+                /* invalid sequence
+                   \xF4\x90\x80\80- -- 110000- overflow */
+                goto InvalidContinuation;
+            }
+            ch = (ch << 18) + (ch2 << 12) + (ch3 << 6) + ch4 -
+                 ((0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80);
+            assert ((ch > 0xFFFF) && (ch <= 0x10FFFF));
+            s += 4;
+            if (STRINGLIB_MAX_CHAR <= 0xFFFF ||
+                (STRINGLIB_MAX_CHAR < 0x10FFFF && ch > STRINGLIB_MAX_CHAR))
+                goto Overflow;
+            *p++ = ch;
+            continue;
+        }
+        goto InvalidStart;
     }
-    ret = 0;
-    goto _ok;
-_error:
-    ret = -1;
-_ok:
-    *src_pos = s;
-    *dest_index = p - dest;
-    return ret;
+    ch = 0;
+Overflow:
+Return:
+    *inptr = s;
+    *outpos = p - dest;
+    return ch;
+InvalidStart:
+    ch = 1;
+    goto Return;
+InvalidContinuation:
+    ch = 2;
+    goto Return;
 }
 
 #undef LONG_PTR_MASK
