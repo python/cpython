@@ -63,6 +63,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14768: os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
+
 - Issue #14741: Fix missing support for Ellipsis ('...') in parser module.
 
 - Issue #14697: Fix missing support for set displays and set comprehensions in
