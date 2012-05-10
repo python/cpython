@@ -1328,8 +1328,8 @@ functions based on regular expressions.
    Return a list of the words in the string, using *sep* as the delimiter
    string.  If *maxsplit* is given, at most *maxsplit* splits are done (thus,
    the list will have at most ``maxsplit+1`` elements).  If *maxsplit* is not
-   specified, then there is no limit on the number of splits (all possible
-   splits are made).
+   specified or ``-1``, then there is no limit on the number of splits
+   (all possible splits are made).
 
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
