@@ -7,6 +7,7 @@
 #define STRINGLIB(F)             asciilib_##F
 #define STRINGLIB_OBJECT         PyUnicodeObject
 #define STRINGLIB_SIZEOF_CHAR    1
+#define STRINGLIB_MAX_CHAR       0x7Fu
 #define STRINGLIB_CHAR           Py_UCS1
 #define STRINGLIB_TYPE_NAME      "unicode"
 #define STRINGLIB_PARSE_CODE     "U"
