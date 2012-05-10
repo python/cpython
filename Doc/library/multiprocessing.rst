@@ -928,6 +928,12 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
+   The :meth:`acquire` and :meth:`wait` methods of each of these types
+   treat negative timeouts as zero timeouts.  This differs from
+   :mod:`threading` where, since version 3.2, the equivalent
+   :meth:`acquire` methods treat negative timeouts as infinite
+   timeouts.
+
    On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
    a timeout will emulate that function's behavior using a sleeping loop.
 
@@ -1899,6 +1905,7 @@ multiple connections at the same time.
    those objects in *object_list* which are ready.  If *timeout* is a
    float then the call blocks for at most that many seconds.  If
    *timeout* is ``None`` then it will block for an unlimited period.
+   A negative timeout is equivalent to a zero timeout.
 
    For both Unix and Windows, an object can appear in *object_list* if
    it is

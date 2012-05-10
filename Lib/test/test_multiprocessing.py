@@ -83,23 +83,13 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
-if WIN32:
-    from _winapi import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
 
-    def wait_for_handle(handle, timeout):
-        if timeout is None or timeout < 0.0:
-            timeout = INFINITE
-        else:
-            timeout = int(1000 * timeout)
-        return WaitForSingleObject(handle, timeout) == WAIT_OBJECT_0
-else:
-    from select import select
-    _select = util._eintr_retry(select)
+from multiprocessing.connection import wait
 
-    def wait_for_handle(handle, timeout):
-        if timeout is not None and timeout < 0.0:
-            timeout = None
-        return handle in _select([handle], [], [], timeout)[0]
+def wait_for_handle(handle, timeout):
+    if timeout is not None and timeout < 0.0:
+        timeout = None
+    return wait([handle], timeout)
 
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -291,9 +281,18 @@ class _TestProcess(BaseTestCase):
         self.assertIn(p, self.active_children())
         self.assertEqual(p.exitcode, None)
 
+        join = TimingWrapper(p.join)
+
+        self.assertEqual(join(0), None)
+        self.assertTimingAlmostEqual(join.elapsed, 0.0)
+        self.assertEqual(p.is_alive(), True)
+
+        self.assertEqual(join(-1), None)
+        self.assertTimingAlmostEqual(join.elapsed, 0.0)
+        self.assertEqual(p.is_alive(), True)
+
         p.terminate()
 
-        join = TimingWrapper(p.join)
         self.assertEqual(join(), None)
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
 
@@ -1664,6 +1663,9 @@ class _TestConnection(BaseTestCase):
         self.assertEqual(poll(), False)
         self.assertTimingAlmostEqual(poll.elapsed, 0)
 
+        self.assertEqual(poll(-1), False)
+        self.assertTimingAlmostEqual(poll.elapsed, 0)
+
         self.assertEqual(poll(TIMEOUT1), False)
         self.assertTimingAlmostEqual(poll.elapsed, TIMEOUT1)
 
@@ -2785,6 +2787,16 @@ class TestWait(unittest.TestCase):
         p.terminate()
         p.join()
 
+    def test_neg_timeout(self):
+        from multiprocessing.connection import wait
+        a, b = multiprocessing.Pipe()
+        t = time.time()
+        res = wait([a], timeout=-1)
+        t = time.time() - t
+        self.assertEqual(res, [])
+        self.assertLess(t, 1)
+        a.close()
+        b.close()
 
 #
 # Issue 14151: Test invalid family on invalid environment

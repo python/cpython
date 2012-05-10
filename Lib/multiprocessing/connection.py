@@ -23,8 +23,7 @@ import itertools
 
 import _multiprocessing
 from multiprocessing import current_process, AuthenticationError, BufferTooShort
-from multiprocessing.util import (
-    get_temp_dir, Finalize, sub_debug, debug, _eintr_retry)
+from multiprocessing.util import get_temp_dir, Finalize, sub_debug, debug
 from multiprocessing.forking import ForkingPickler
 try:
     import _winapi
@@ -323,8 +322,6 @@ if _winapi:
             if (self._got_empty_message or
                         _winapi.PeekNamedPipe(self._handle)[0] != 0):
                 return True
-            if timeout < 0:
-                timeout = None
             return bool(wait([self], timeout))
 
         def _get_more_data(self, ov, maxsize):
@@ -402,8 +399,6 @@ class Connection(_ConnectionBase):
         return self._recv(size)
 
     def _poll(self, timeout):
-        if timeout < 0.0:
-            timeout = None
         r = wait([self._handle], timeout)
         return bool(r)
 
