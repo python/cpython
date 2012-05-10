@@ -805,14 +805,6 @@ still can't store things like open files, sockets or windows), and the
 :mod:`shelve` library module uses pickle and (g)dbm to create persistent
 mappings containing arbitrary Python objects.
 
-A more awkward way of doing things is to use pickle's little sister, marshal.
-The :mod:`marshal` module provides very fast ways to store noncircular basic
-Python types to files and strings, and back again.  Although marshal does not do
-fancy things like store instances or handle shared references properly, it does
-run extremely fast.  For example loading a half megabyte of data may take less
-than a third of a second.  This often beats doing something more complex and
-general such as using gdbm with pickle/shelve.
-
 
 Mathematics and Numerics
 ========================
