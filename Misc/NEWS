@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14157: Fix time.strptime failing without a year on February 29th.
+  Patch by Hynek Schlawack.
+
 - Issue #14768: os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
 
 - Issue #14741: Fix missing support for Ellipsis ('...') in parser module.
