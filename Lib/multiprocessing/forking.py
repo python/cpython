@@ -75,12 +75,9 @@ else:
 #
 
 if sys.platform != 'win32':
-    import select
-
     exit = os._exit
     duplicate = os.dup
     close = os.close
-    _select = util._eintr_retry(select.select)
 
     #
     # We define a Popen class similar to the one from subprocess, but
@@ -130,10 +127,10 @@ if sys.platform != 'win32':
         def wait(self, timeout=None):
             if self.returncode is None:
                 if timeout is not None:
-                    r = _select([self.sentinel], [], [], timeout)[0]
-                    if not r:
+                    from .connection import wait
+                    if not wait([self.sentinel], timeout):
                         return None
-                # This shouldn't block if select() returned successfully.
+                # This shouldn't block if wait() returned successfully.
                 return self.poll(os.WNOHANG if timeout == 0.0 else 0)
             return self.returncode
 

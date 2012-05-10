@@ -295,18 +295,3 @@ class ForkAwareLocal(threading.local):
         register_after_fork(self, lambda obj : obj.__dict__.clear())
     def __reduce__(self):
         return type(self), ()
-
-
-#
-# Automatic retry after EINTR
-#
-
-def _eintr_retry(func):
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        while True:
-            try:
-                return func(*args, **kwargs)
-            except InterruptedError:
-                continue
-    return wrapped
