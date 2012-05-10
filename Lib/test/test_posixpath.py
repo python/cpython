@@ -201,6 +201,7 @@ class PosixPathTest(unittest.TestCase):
             with test_support.EnvironmentVarGuard() as env:
                 env['HOME'] = '/'
                 self.assertEqual(posixpath.expanduser("~"), "/")
+                self.assertEqual(posixpath.expanduser("~/foo"), "/foo")
 
     def test_normpath(self):
         self.assertEqual(posixpath.normpath(""), ".")
