@@ -267,8 +267,8 @@ def expanduser(path):
         except KeyError:
             return path
         userhome = pwent.pw_dir
-    userhome = userhome.rstrip('/') or userhome
-    return userhome + path[i:]
+    userhome = userhome.rstrip('/')
+    return (userhome + path[i:]) or '/'
 
 
 # Expand paths containing shell variable substitutions.

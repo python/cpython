@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14768: os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
+
 - Issue #13183: Fix pdb skipping frames after hitting a breakpoint and running
   step.  Patch by Xavier de Gaye.
 
