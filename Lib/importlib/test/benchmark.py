@@ -9,6 +9,8 @@ from .source import util as source_util
 import decimal
 import imp
 import importlib
+import importlib._bootstrap
+import importlib.machinery
 import json
 import os
 import py_compile
@@ -68,6 +70,10 @@ def source_wo_bytecode(seconds, repeat):
         # Clears out sys.modules and puts an entry at the front of sys.path.
         with source_util.create_modules(name) as mapping:
             assert not os.path.exists(imp.cache_from_source(mapping[name]))
+            sys.meta_path.append(importlib.machinery.PathFinder)
+            loader = (importlib.machinery.SourceFileLoader,
+                      importlib._bootstrap._SOURCE_SUFFIXES, True)
+            sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
             for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
                                 seconds=seconds):
                 yield result
@@ -102,6 +108,10 @@ def source_writing_bytecode(seconds, repeat):
     assert not sys.dont_write_bytecode
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
+        sys.meta_path.append(importlib.machinery.PathFinder)
+        loader = (importlib.machinery.SourceFileLoader,
+                  importlib._bootstrap._SOURCE_SUFFIXES, True)
+        sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         def cleanup():
             sys.modules.pop(name)
             os.unlink(imp.cache_from_source(mapping[name]))
@@ -133,6 +143,10 @@ def source_using_bytecode(seconds, repeat):
     """Source w/ bytecode: small"""
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
+        sys.meta_path.append(importlib.machinery.PathFinder)
+        loader = (importlib.machinery.SourceFileLoader,
+                importlib._bootstrap._SOURCE_SUFFIXES, True)
+        sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         py_compile.compile(mapping[name])
         assert os.path.exists(imp.cache_from_source(mapping[name]))
         for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
