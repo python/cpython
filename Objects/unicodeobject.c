@@ -9075,15 +9075,14 @@ PyUnicode_Count(PyObject *str,
 
     kind1 = PyUnicode_KIND(str_obj);
     kind2 = PyUnicode_KIND(sub_obj);
-    kind = kind1 > kind2 ? kind1 : kind2;
+    kind = kind2;
     buf1 = PyUnicode_DATA(str_obj);
-    if (kind1 != kind)
-        buf1 = _PyUnicode_AsKind(str_obj, kind);
-    if (!buf1)
-        goto onError;
     buf2 = PyUnicode_DATA(sub_obj);
-    if (kind2 != kind)
+    if (kind2 != kind) {
+        if (kind2 > kind)
+            return 0;    
         buf2 = _PyUnicode_AsKind(sub_obj, kind);
+    }
     if (!buf2)
         goto onError;
     len1 = PyUnicode_GET_LENGTH(str_obj);
@@ -9122,8 +9121,6 @@ PyUnicode_Count(PyObject *str,
     Py_DECREF(sub_obj);
     Py_DECREF(str_obj);
 
-    if (kind1 != kind)
-        PyMem_Free(buf1);
     if (kind2 != kind)
         PyMem_Free(buf2);
 
@@ -9131,8 +9128,6 @@ PyUnicode_Count(PyObject *str,
   onError:
     Py_DECREF(sub_obj);
     Py_DECREF(str_obj);
-    if (kind1 != kind && buf1)
-        PyMem_Free(buf1);
     if (kind2 != kind && buf2)
         PyMem_Free(buf2);
     return -1;
@@ -10660,20 +10655,17 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
 
     kind1 = PyUnicode_KIND(str);
     kind2 = PyUnicode_KIND(sub);
-    kind = kind1 > kind2 ? kind1 : kind2;
+    kind = kind1;
     buf1 = PyUnicode_DATA(str);
     buf2 = PyUnicode_DATA(sub);
-    if (kind1 != kind)
-        buf1 = _PyUnicode_AsKind(str, kind);
-    if (!buf1) {
-        Py_DECREF(sub);
-        return -1;
-    }
-    if (kind2 != kind)
+    if (kind2 != kind) {
+        if (kind2 > kind)
+            return 0;
         buf2 = _PyUnicode_AsKind(sub, kind);
+    }
     if (!buf2) {
         Py_DECREF(sub);
-        if (kind1 != kind) PyMem_Free(buf1);
+        Py_DECREF(str);
         return -1;
     }
     len1 = PyUnicode_GET_LENGTH(str);
@@ -10697,8 +10689,6 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
     Py_DECREF(str);
     Py_DECREF(sub);
 
-    if (kind1 != kind)
-        PyMem_Free(buf1);
     if (kind2 != kind)
         PyMem_Free(buf2);
 
