@@ -1,6 +1,6 @@
 from . import util as source_util
 
-from importlib import _bootstrap
+from importlib import machinery
 import imp
 import unittest
 
@@ -10,8 +10,8 @@ class PathHookTest(unittest.TestCase):
     """Test the path hook for source."""
 
     def path_hook(self):
-        return _bootstrap.FileFinder.path_hook((_bootstrap.SourceFileLoader,
-            _bootstrap._SOURCE_SUFFIXES, True))
+        return machinery.FileFinder.path_hook((machinery.SourceFileLoader,
+            machinery.SOURCE_SUFFIXES, True))
 
     def test_success(self):
         with source_util.create_modules('dummy') as mapping:

@@ -1,7 +1,7 @@
 from .. import abc
 from . import util as source_util
 
-from importlib import _bootstrap
+from importlib import machinery
 import errno
 import imp
 import os
@@ -36,11 +36,11 @@ class FinderTests(abc.FinderTests):
     """
 
     def import_(self, root, module):
-        loader_details = [(_bootstrap.SourceFileLoader,
-                            _bootstrap._SOURCE_SUFFIXES, True),
-                          (_bootstrap.SourcelessFileLoader,
-                            [_bootstrap._BYTECODE_SUFFIX], True)]
-        finder = _bootstrap.FileFinder(root, *loader_details)
+        loader_details = [(machinery.SourceFileLoader,
+                            machinery.SOURCE_SUFFIXES, True),
+                          (machinery.SourcelessFileLoader,
+                            machinery.BYTECODE_SUFFIXES, True)]
+        finder = machinery.FileFinder(root, *loader_details)
         return finder.find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
@@ -138,8 +138,8 @@ class FinderTests(abc.FinderTests):
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.
-        finder = _bootstrap.FileFinder('', (_bootstrap.SourceFileLoader,
-            _bootstrap._SOURCE_SUFFIXES, True))
+        finder = machinery.FileFinder('', (machinery.SourceFileLoader,
+            machinery.SOURCE_SUFFIXES, True))
         with open('mod.py', 'w') as file:
             file.write("# test file for importlib")
         try:
@@ -150,8 +150,8 @@ class FinderTests(abc.FinderTests):
 
     def test_invalidate_caches(self):
         # invalidate_caches() should reset the mtime.
-        finder = _bootstrap.FileFinder('', (_bootstrap.SourceFileLoader,
-            _bootstrap._SOURCE_SUFFIXES, True))
+        finder = machinery.FileFinder('', (machinery.SourceFileLoader,
+            machinery.SOURCE_SUFFIXES, True))
         finder._path_mtime = 42
         finder.invalidate_caches()
         self.assertEqual(finder._path_mtime, -1)

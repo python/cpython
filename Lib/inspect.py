@@ -29,14 +29,15 @@ Here are some of the useful functions provided by this module:
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
-import sys
-import os
-import types
-import itertools
-import re
 import imp
-import tokenize
+import importlib.machinery
+import itertools
 import linecache
+import os
+import re
+import sys
+import tokenize
+import types
 from operator import attrgetter
 from collections import namedtuple
 
@@ -432,6 +433,8 @@ ModuleInfo = namedtuple('ModuleInfo', 'name suffix mode module_type')
 
 def getmoduleinfo(path):
     """Get the module name, suffix, mode, and module type for a given file."""
+    warnings.warn('inspect.getmoduleinfo() is deprecated', DeprecationWarning,
+                  2)
     filename = os.path.basename(path)
     suffixes = [(-len(suffix), suffix, mode, mtype)
                     for suffix, mode, mtype in imp.get_suffixes()]
@@ -450,12 +453,14 @@ def getsourcefile(object):
     Return None if no way can be identified to get the source.
     """
     filename = getfile(object)
-    if filename[-4:].lower() in ('.pyc', '.pyo'):
-        filename = filename[:-4] + '.py'
-    for suffix, mode, kind in imp.get_suffixes():
-        if 'b' in mode and filename[-len(suffix):].lower() == suffix:
-            # Looks like a binary file.  We want to only return a text file.
-            return None
+    all_bytecode_suffixes = importlib.machinery.DEBUG_BYTECODE_SUFFIXES[:]
+    all_bytecode_suffixes += importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES[:]
+    if any(filename.endswith(s) for s in all_bytecode_suffixes):
+        filename = (os.path.splitext(filename)[0] +
+                    importlib.machinery.SOURCE_SUFFIXES[0])
+    elif any(filename.endswith(s) for s in
+                 importlib.machinery.EXTENSION_SUFFIXES):
+        return None
     if os.path.exists(filename):
         return filename
     # only return a non-existent filename if the module has a PEP 302 loader

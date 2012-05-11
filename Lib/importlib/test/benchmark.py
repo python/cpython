@@ -9,7 +9,6 @@ from .source import util as source_util
 import decimal
 import imp
 import importlib
-import importlib._bootstrap
 import importlib.machinery
 import json
 import os
@@ -72,7 +71,7 @@ def source_wo_bytecode(seconds, repeat):
             assert not os.path.exists(imp.cache_from_source(mapping[name]))
             sys.meta_path.append(importlib.machinery.PathFinder)
             loader = (importlib.machinery.SourceFileLoader,
-                      importlib._bootstrap._SOURCE_SUFFIXES, True)
+                      importlib.machinery.SOURCE_SUFFIXES, True)
             sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
             for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
                                 seconds=seconds):
@@ -110,7 +109,7 @@ def source_writing_bytecode(seconds, repeat):
     with source_util.create_modules(name) as mapping:
         sys.meta_path.append(importlib.machinery.PathFinder)
         loader = (importlib.machinery.SourceFileLoader,
-                  importlib._bootstrap._SOURCE_SUFFIXES, True)
+                  importlib.machinery.SOURCE_SUFFIXES, True)
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         def cleanup():
             sys.modules.pop(name)
@@ -145,7 +144,7 @@ def source_using_bytecode(seconds, repeat):
     with source_util.create_modules(name) as mapping:
         sys.meta_path.append(importlib.machinery.PathFinder)
         loader = (importlib.machinery.SourceFileLoader,
-                importlib._bootstrap._SOURCE_SUFFIXES, True)
+                importlib.machinery.SOURCE_SUFFIXES, True)
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         py_compile.compile(mapping[name])
         assert os.path.exists(imp.cache_from_source(mapping[name]))

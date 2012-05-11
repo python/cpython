@@ -23,6 +23,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #13959: imp.get_suffixes() has been deprecated in favour of the new
+  attributes on importlib.machinery: SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,
+  OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES, and EXTENSION_SUFFIXES. This
+  led to an indirect deprecation of inspect.getmoduleinfo().
+
 - Issue #14662: Prevent shutil failures on OS X when destination does not
   support chflag operations.  Patch by Hynek Schlawack.
 

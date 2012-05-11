@@ -17,9 +17,11 @@ from importlib._bootstrap import new_module
 from importlib._bootstrap import cache_from_source
 
 from importlib import _bootstrap
+from importlib import machinery
 import os
 import sys
 import tokenize
+import warnings
 
 
 # XXX "deprecate" once find_module(), load_module(), and get_suffixes() are
@@ -37,9 +39,12 @@ IMP_HOOK = 9
 
 
 def get_suffixes():
+    warnings.warn('imp.get_suffixes() is deprecated; use the constants '
+                  'defined on importlib.machinery instead',
+                  DeprecationWarning, 2)
     extensions = [(s, 'rb', C_EXTENSION) for s in extension_suffixes()]
-    source = [(s, 'U', PY_SOURCE) for s in _bootstrap._SOURCE_SUFFIXES]
-    bytecode = [(_bootstrap._BYTECODE_SUFFIX, 'rb', PY_COMPILED)]
+    source = [(s, 'U', PY_SOURCE) for s in machinery.SOURCE_SUFFIXES]
+    bytecode = [(s, 'rb', PY_COMPILED) for s in machinery.BYTECODE_SUFFIXES]
 
     return extensions + source + bytecode
 
@@ -61,7 +66,7 @@ def source_from_cache(path):
         raise ValueError('expected only 2 dots in '
                          '{!r}'.format(pycache_filename))
     base_filename = pycache_filename.partition('.')[0]
-    return os.path.join(head, base_filename + _bootstrap._SOURCE_SUFFIXES[0])
+    return os.path.join(head, base_filename + machinery.SOURCE_SUFFIXES[0])
 
 
 class NullImporter:
@@ -126,7 +131,7 @@ def load_compiled(name, pathname, file=None):
 # XXX deprecate
 def load_package(name, path):
     if os.path.isdir(path):
-        extensions = _bootstrap._SOURCE_SUFFIXES + [_bootstrap._BYTECODE_SUFFIX]
+        extensions = machinery.SOURCE_SUFFIXES[:] + [machinery.BYTECODE_SUFFIXES]
         for extension in extensions:
             path = os.path.join(path, '__init__'+extension)
             if os.path.exists(path):
@@ -190,19 +195,21 @@ def find_module(name, path=None):
 
     for entry in path:
         package_directory = os.path.join(entry, name)
-        for suffix in ['.py', _bootstrap._BYTECODE_SUFFIX]:
+        for suffix in ['.py', machinery.BYTECODE_SUFFIXES[0]]:
             package_file_name = '__init__' + suffix
             file_path = os.path.join(package_directory, package_file_name)
             if os.path.isfile(file_path):
                 return None, package_directory, ('', '', PKG_DIRECTORY)
-        for suffix, mode, type_ in get_suffixes():
-            file_name = name + suffix
-            file_path = os.path.join(entry, file_name)
-            if os.path.isfile(file_path):
-                break
-        else:
-            continue
-        break  # Break out of outer loop when breaking out of inner loop.
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            for suffix, mode, type_ in get_suffixes():
+                file_name = name + suffix
+                file_path = os.path.join(entry, file_name)
+                if os.path.isfile(file_path):
+                    break
+            else:
+                continue
+            break  # Break out of outer loop when breaking out of inner loop.
     else:
         raise ImportError('No module name {!r}'.format(name), name=name)
 
