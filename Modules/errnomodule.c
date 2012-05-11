@@ -783,6 +783,9 @@ initerrno(void)
 #ifdef WSAN
     inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
 #endif
+#ifdef ENOTSUP
+    inscode(d, ds, de, "ENOTSUP", ENOTSUP, "Operation not supported");
+#endif
 
     Py_DECREF(de);
 }
