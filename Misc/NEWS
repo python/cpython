@@ -23,6 +23,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #13959: Make importlib.abc.FileLoader.load_module()/get_filename() and
+  importlib.machinery.ExtensionFileLoader.load_module() have their single
+  argument be optional. Allows for the replacement (and thus deprecation) of
+  imp.load_source()/load_package()/load_compiled().
+
 - Issue #13959: imp.get_suffixes() has been deprecated in favour of the new
   attributes on importlib.machinery: SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,
   OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES, and EXTENSION_SUFFIXES. This

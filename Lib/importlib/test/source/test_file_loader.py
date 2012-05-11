@@ -1,5 +1,6 @@
 from ... import _bootstrap
 import importlib
+import importlib.abc
 from .. import abc
 from .. import util
 from . import util as source_util
@@ -23,6 +24,40 @@ class SimpleTest(unittest.TestCase):
     a syntax error, it should raise a SyntaxError [syntax error].
 
     """
+
+    def test_load_module_API(self):
+        # If fullname is not specified that assume self.name is desired.
+        class TesterMixin(importlib.abc.Loader):
+            def load_module(self, fullname): return fullname
+
+        class Tester(importlib.abc.FileLoader, TesterMixin):
+            def get_code(self, _): pass
+            def get_source(self, _): pass
+            def is_package(self, _): pass
+
+        name = 'mod_name'
+        loader = Tester(name, 'some_path')
+        self.assertEqual(name, loader.load_module())
+        self.assertEqual(name, loader.load_module(None))
+        self.assertEqual(name, loader.load_module(name))
+        with self.assertRaises(ImportError):
+            loader.load_module(loader.name + 'XXX')
+
+    def test_get_filename_API(self):
+        # If fullname is not set then assume self.path is desired.
+        class Tester(importlib.abc.FileLoader):
+            def get_code(self, _): pass
+            def get_source(self, _): pass
+            def is_package(self, _): pass
+
+        path = 'some_path'
+        name = 'some_name'
+        loader = Tester(name, path)
+        self.assertEqual(path, loader.get_filename(name))
+        self.assertEqual(path, loader.get_filename())
+        self.assertEqual(path, loader.get_filename(None))
+        with self.assertRaises(ImportError):
+            loader.get_filename(name + 'XXX')
 
     # [basic]
     def test_module(self):
