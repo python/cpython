@@ -944,6 +944,10 @@ the :func:`localcontext` function to temporarily change the active context.
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
 
+      with localcontext(BasicContext):      # temporarily use the BasicContext
+          print Decimal(1) / Decimal(7)
+          print Decimal(355) / Decimal(113)
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
