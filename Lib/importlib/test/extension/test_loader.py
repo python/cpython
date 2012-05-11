@@ -1,4 +1,4 @@
-from importlib import _bootstrap
+from importlib import machinery
 from . import util as ext_util
 from .. import abc
 from .. import util
@@ -11,10 +11,20 @@ class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for extension modules."""
 
+    def setUp(self):
+        self.loader = machinery.ExtensionFileLoader(ext_util.NAME,
+                                                     ext_util.FILEPATH)
+
     def load_module(self, fullname):
-        loader = _bootstrap.ExtensionFileLoader(ext_util.NAME,
-                                                ext_util.FILEPATH)
-        return loader.load_module(fullname)
+        return self.loader.load_module(fullname)
+
+    def test_load_module_API(self):
+        # Test the default argument for load_module().
+        self.loader.load_module()
+        self.loader.load_module(None)
+        with self.assertRaises(ImportError):
+            self.load_module('XXX')
+
 
     def test_module(self):
         with util.uncache(ext_util.NAME):
@@ -25,7 +35,7 @@ class LoaderTests(abc.LoaderTests):
                 self.assertEqual(getattr(module, attr), value)
             self.assertTrue(ext_util.NAME in sys.modules)
             self.assertTrue(isinstance(module.__loader__,
-                                    _bootstrap.ExtensionFileLoader))
+                                    machinery.ExtensionFileLoader))
 
     def test_package(self):
         # Extensions are not found in packages.

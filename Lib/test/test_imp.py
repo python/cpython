@@ -1,11 +1,12 @@
 import imp
+import importlib
 import os
 import os.path
 import shutil
 import sys
-import unittest
 from test import support
-import importlib
+import unittest
+import warnings
 
 class LockTests(unittest.TestCase):
 
@@ -154,18 +155,24 @@ class ImportTests(unittest.TestCase):
                 mod = imp.load_module(temp_mod_name, file, filename, info)
                 self.assertEqual(mod.a, 1)
 
-            mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
             self.assertEqual(mod.a, 1)
 
-            mod = imp.load_compiled(
-                temp_mod_name, imp.cache_from_source(temp_mod_name + '.py'))
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                mod = imp.load_compiled(
+                    temp_mod_name, imp.cache_from_source(temp_mod_name + '.py'))
             self.assertEqual(mod.a, 1)
 
             if not os.path.exists(test_package_name):
                 os.mkdir(test_package_name)
             with open(init_file_name, 'w') as file:
                 file.write('b = 2\n')
-            package = imp.load_package(test_package_name, test_package_name)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                package = imp.load_package(test_package_name, test_package_name)
             self.assertEqual(package.b, 2)
         finally:
             del sys.path[0]

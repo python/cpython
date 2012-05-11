@@ -282,8 +282,10 @@ def _check_name(method):
     compared against. If the comparison fails then ImportError is raised.
 
     """
-    def _check_name_wrapper(self, name, *args, **kwargs):
-        if self.name != name:
+    def _check_name_wrapper(self, name=None, *args, **kwargs):
+        if name is None:
+            name = self.name
+        elif self.name != name:
             raise ImportError("loader cannot handle %s" % name, name=name)
         return method(self, name, *args, **kwargs)
     _wrap(_check_name_wrapper, method)
@@ -614,6 +616,11 @@ class FileLoader:
         self.path = path
 
     @_check_name
+    def load_module(self, fullname):
+        """Load a module from a file."""
+        return super().load_module(fullname)
+
+    @_check_name
     def get_filename(self, fullname):
         """Return the path to the source file as found by the finder."""
         return self.path
@@ -713,17 +720,14 @@ class ExtensionFileLoader:
                 del sys.modules[fullname]
             raise
 
-    @_check_name
     def is_package(self, fullname):
         """Return False as an extension module can never be a package."""
         return False
 
-    @_check_name
     def get_code(self, fullname):
         """Return None as an extension module cannot create a code object."""
         return None
 
-    @_check_name
     def get_source(self, fullname):
         """Return None as extension modules have no source code."""
         return None

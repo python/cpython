@@ -256,9 +256,14 @@ are also provided to help in implementing the core ABCs.
 
       Path to the file of the module.
 
+   .. method:: load_module(fullname=None)
+
+      Calls
+      ``super().load_module(fullname if fullname is not None else self.name)``.
+
    .. method:: get_filename(fullname)
 
-      Returns :attr:`path`.
+      Returns :attr:`path` when ``fullname`` equals :attr:`name` or ``None``.
 
    .. method:: get_data(path)
 
@@ -638,10 +643,6 @@ find and load modules.
 
       Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
 
-   .. method:: load_module(fullname)
-
-      Load the specified module if it is the same as :attr:`name`.
-
 
 .. class:: SourcelessFileLoader(fullname, path)
 
@@ -676,10 +677,6 @@ find and load modules.
       Returns ``None`` as bytecode files have no source when this loader is
       used.
 
-   .. method:: load_module(fullname)
-
-      Loads the specified module if it is the same as :attr:`name`.
-
 
 .. class:: ExtensionFileLoader(fullname, path)
 
@@ -699,10 +696,10 @@ find and load modules.
 
       Path to the extension module.
 
-   .. method:: load_module(fullname)
+   .. method:: load_module(fullname=None)
 
-      Loads the extension module if and only if *fullname** is the same as
-      :attr:`name`.
+      Loads the extension module if and only if *fullname* is the same as
+      :attr:`name` or is ``None``.
 
    .. method:: is_package(fullname)
 
