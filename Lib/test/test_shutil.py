@@ -8,6 +8,7 @@ import stat
 import os
 import os.path
 import functools
+import errno
 from test import support
 from test.support import TESTFN
 from os.path import splitdrive
@@ -306,6 +307,35 @@ class TestShutil(unittest.TestCase):
             os.remove(dst)
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
+
+    @unittest.skipUnless(hasattr(os, 'chflags') and
+                         hasattr(errno, 'EOPNOTSUPP') and
+                         hasattr(errno, 'ENOTSUP'),
+                         "requires os.chflags, EOPNOTSUPP & ENOTSUP")
+    def test_copystat_handles_harmless_chflags_errors(self):
+        tmpdir = self.mkdtemp()
+        file1 = os.path.join(tmpdir, 'file1')
+        file2 = os.path.join(tmpdir, 'file2')
+        self.write_file(file1, 'xxx')
+        self.write_file(file2, 'xxx')
+
+        def make_chflags_raiser(err):
+            ex = OSError()
+
+            def _chflags_raiser(path, flags):
+                ex.errno = err
+                raise ex
+            return _chflags_raiser
+        old_chflags = os.chflags
+        try:
+            for err in errno.EOPNOTSUPP, errno.ENOTSUP:
+                os.chflags = make_chflags_raiser(err)
+                shutil.copystat(file1, file2)
+            # assert others errors break it
+            os.chflags = make_chflags_raiser(errno.EOPNOTSUPP + errno.ENOTSUP)
+            self.assertRaises(OSError, shutil.copystat, file1, file2)
+        finally:
+            os.chflags = old_chflags
 
     @support.skip_unless_symlink
     def test_dont_copy_file_onto_symlink_to_itself(self):
