@@ -190,6 +190,10 @@ attributes:
    compared to the constants defined in the :mod:`imp` module; see the
    documentation for that module for more information on module types.
 
+   .. deprecated:: 3.3
+      You may check the file path's suffix against the supported suffixes
+      listed in :mod:`importlib.machinery` to infer the same information.
+
 
 .. function:: getmodulename(path)
 

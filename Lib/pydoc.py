@@ -53,6 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 
 import builtins
 import imp
+import importlib.machinery
 import inspect
 import io
 import os
@@ -220,20 +221,34 @@ def synopsis(filename, cache={}):
     mtime = os.stat(filename).st_mtime
     lastupdate, result = cache.get(filename, (None, None))
     if lastupdate is None or lastupdate < mtime:
-        info = inspect.getmoduleinfo(filename)
         try:
             file = tokenize.open(filename)
         except IOError:
             # module can't be opened, so skip it
             return None
-        if info and 'b' in info[2]: # binary modules have to be imported
-            try: module = imp.load_module('__temp__', file, filename, info[1:])
-            except: return None
+        binary_suffixes = importlib.machinery.BYTECODE_SUFFIXES[:]
+        binary_suffixes += importlib.machinery.EXTENSION_SUFFIXES[:]
+        if any(filename.endswith(x) for x in binary_suffixes):
+            # binary modules have to be imported
+            file.close()
+            if any(filename.endswith(x) for x in
+                    importlib.machinery.BYTECODE_SUFFIXES):
+                loader = importlib.machinery.SourcelessFileLoader('__temp__',
+                                                                  filename)
+            else:
+                loader = importlib.machinery.ExtensionFileLoader('__temp__',
+                                                                 filename)
+            try:
+                module = loader.load_module('__temp__')
+            except:
+                return None
             result = (module.__doc__ or '').splitlines()[0]
             del sys.modules['__temp__']
-        else: # text modules can be directly examined
+        else:
+            # text modules can be directly examined
             result = source_synopsis(file)
             file.close()
+
         cache[filename] = (mtime, result)
     return result
 
