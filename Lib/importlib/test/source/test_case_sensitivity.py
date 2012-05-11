@@ -1,5 +1,6 @@
 """Test case-sensitivity (PEP 235)."""
 from importlib import _bootstrap
+from importlib import machinery
 from .. import util
 from . import util as source_util
 import imp
@@ -20,12 +21,12 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = _bootstrap.FileFinder(path,
-                                        (_bootstrap.SourceFileLoader,
-                                            _bootstrap._SOURCE_SUFFIXES,
+        finder = machinery.FileFinder(path,
+                                      (machinery.SourceFileLoader,
+                                            machinery.SOURCE_SUFFIXES,
                                             True),
-                                        (_bootstrap.SourcelessFileLoader,
-                                            [_bootstrap._BYTECODE_SUFFIX],
+                                        (machinery.SourcelessFileLoader,
+                                            machinery.BYTECODE_SUFFIXES,
                                             True))
         return finder.find_module(self.name)
 

@@ -222,8 +222,9 @@ class ModuleFinder:
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
         suffixes = []
-        for triple in imp.get_suffixes():
-            suffixes.append(triple[0])
+        suffixes += importlib.machinery.EXTENSION_SUFFIXES[:]
+        suffixes += importlib.machinery.SOURCE_SUFFIXES[:]
+        suffixes += importlib.machinery.BYTECODE_SUFFIXES[:]
         for dir in m.__path__:
             try:
                 names = os.listdir(dir)

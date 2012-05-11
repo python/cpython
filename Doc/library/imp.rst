@@ -30,6 +30,9 @@ This module provides an interface to the mechanisms used to implement the
    :const:`PY_SOURCE`, :const:`PY_COMPILED`, or :const:`C_EXTENSION`, described
    below.
 
+   .. deprecated:: 3.3
+      Use the constants defined on :mod:`importlib.machinery` instead.
+
 
 .. function:: find_module(name[, path])
 

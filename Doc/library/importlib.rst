@@ -477,6 +477,43 @@ are also provided to help in implementing the core ABCs.
 This module contains the various objects that help :keyword:`import`
 find and load modules.
 
+.. attribute:: SOURCE_SUFFIXES
+
+   A list of strings representing the recognized file suffixes for source
+   modules.
+
+   .. versionadded:: 3.3
+
+.. attribute:: DEBUG_BYTECODE_SUFFIXES
+
+   A list of strings representing the file suffixes for non-optimized bytecode
+   modules.
+
+   .. versionadded:: 3.3
+
+.. attribute:: OPTIMIZED_BYTECODE_SUFFIXES
+
+   A list of strings representing the file suffixes for optimized bytecode
+   modules.
+
+   .. versionadded:: 3.3
+
+.. attribute:: BYTECODE_SUFFIXES
+
+   A list of strings representing the recognized file suffixes for bytecode
+   modules. Set to either :attr:`DEBUG_BYTECODE_SUFFIXES` or
+   :attr:`OPTIMIZED_BYTECODE_SUFFIXES` based on whether ``__debug__`` is true.
+
+   .. versionadded:: 3.3
+
+.. attribute:: EXTENSION_SUFFIXES
+
+   A list of strings representing the the recognized file suffixes for
+   extension modules.
+
+   .. versionadded:: 3.3
+
+
 .. class:: BuiltinImporter
 
     An :term:`importer` for built-in modules. All known built-in modules are

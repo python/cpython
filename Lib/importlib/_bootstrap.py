@@ -163,11 +163,14 @@ def new_module(name):
 
 _PYCACHE = '__pycache__'
 
-_SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
+SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
 
-_DEBUG_BYTECODE_SUFFIX = '.pyc'
-_OPT_BYTECODE_SUFFIX = '.pyo'
-_BYTECODE_SUFFIX = _DEBUG_BYTECODE_SUFFIX if __debug__ else _OPT_BYTECODE_SUFFIX
+DEBUG_BYTECODE_SUFFIXES = ['.pyc']
+OPTIMIZED_BYTECODE_SUFFIXES = ['.pyo']
+if __debug__:
+    BYTECODE_SUFFIXES = DEBUG_BYTECODE_SUFFIXES
+else:
+    BYTECODE_SUFFIXES = OPTIMIZED_BYTECODE_SUFFIXES
 
 def cache_from_source(path, debug_override=None):
     """Given the path to a .py file, return the path to its .pyc/.pyo file.
@@ -181,10 +184,13 @@ def cache_from_source(path, debug_override=None):
 
     """
     debug = __debug__ if debug_override is None else debug_override
-    suffix = _DEBUG_BYTECODE_SUFFIX if debug else _OPT_BYTECODE_SUFFIX
+    if debug:
+        suffixes = DEBUG_BYTECODE_SUFFIXES
+    else:
+        suffixes = OPTIMIZED_BYTECODE_SUFFIXES
     head, tail = _path_split(path)
     base_filename, sep, _ = tail.partition('.')
-    filename = ''.join([base_filename, sep, _TAG, suffix])
+    filename = ''.join([base_filename, sep, _TAG, suffixes[0]])
     return _path_join(head, _PYCACHE, filename)
 
 
@@ -1147,15 +1153,15 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
     setattr(self_module, '_TAG', _imp.get_tag())
     if builtin_os == 'nt':
-        _SOURCE_SUFFIXES.append('.pyw')
+        SOURCE_SUFFIXES.append('.pyw')
 
 
 def _install(sys_module, _imp_module):
     """Install importlib as the implementation of import."""
     _setup(sys_module, _imp_module)
     extensions = ExtensionFileLoader, _imp_module.extension_suffixes(), False
-    source = SourceFileLoader, _SOURCE_SUFFIXES, True
-    bytecode = SourcelessFileLoader, [_BYTECODE_SUFFIX], True
+    source = SourceFileLoader, SOURCE_SUFFIXES, True
+    bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES, True
     supported_loaders = [extensions, source, bytecode]
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.extend([BuiltinImporter, FrozenImporter, PathFinder])
