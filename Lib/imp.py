@@ -24,8 +24,7 @@ import tokenize
 import warnings
 
 
-# XXX "deprecate" once find_module(), load_module(), and get_suffixes() are
-#     deprecated.
+# DEPRECATED
 SEARCH_ERROR = 0
 PY_SOURCE = 1
 PY_COMPILED = 2
@@ -112,8 +111,11 @@ class _LoadSourceCompatibility(_HackedGetData, _bootstrap.SourceFileLoader):
     """Compatibility support for implementing load_source()."""
 
 
-# XXX deprecate after better API exposed in importlib
 def load_source(name, pathname, file=None):
+    msg = ('imp.load_source() is deprecated; use '
+           'importlib.machinery.SourceFileLoader(name, pathname).load_module()'
+           ' instead')
+    warnings.warn(msg, DeprecationWarning, 2)
     return _LoadSourceCompatibility(name, pathname, file).load_module(name)
 
 
@@ -123,15 +125,22 @@ class _LoadCompiledCompatibility(_HackedGetData,
     """Compatibility support for implementing load_compiled()."""
 
 
-# XXX deprecate
 def load_compiled(name, pathname, file=None):
+    msg = ('imp.load_compiled() is deprecated; use '
+           'importlib.machinery.SourcelessFileLoader(name, pathname).'
+           'load_module() instead ')
+    warnings.warn(msg, DeprecationWarning, 2)
     return _LoadCompiledCompatibility(name, pathname, file).load_module(name)
 
 
-# XXX deprecate
 def load_package(name, path):
+    msg = ('imp.load_package() is deprecated; use either '
+           'importlib.machinery.SourceFileLoader() or '
+           'importlib.machinery.SourcelessFileLoader() instead')
+    warnings.warn(msg, DeprecationWarning, 2)
     if os.path.isdir(path):
-        extensions = machinery.SOURCE_SUFFIXES[:] + [machinery.BYTECODE_SUFFIXES]
+        extensions = (machinery.SOURCE_SUFFIXES[:] +
+                      machinery.BYTECODE_SUFFIXES[:])
         for extension in extensions:
             path = os.path.join(path, '__init__'+extension)
             if os.path.exists(path):
@@ -149,26 +158,29 @@ def load_module(name, file, filename, details):
 
     """
     suffix, mode, type_ = details
-    if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
-        raise ValueError('invalid file open mode {!r}'.format(mode))
-    elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
-        msg = 'file object required for import (type code {})'.format(type_)
-        raise ValueError(msg)
-    elif type_ == PY_SOURCE:
-        return load_source(name, filename, file)
-    elif type_ == PY_COMPILED:
-        return load_compiled(name, filename, file)
-    elif type_ == PKG_DIRECTORY:
-        return load_package(name, filename)
-    elif type_ == C_BUILTIN:
-        return init_builtin(name)
-    elif type_ == PY_FROZEN:
-        return init_frozen(name)
-    else:
-        msg =  "Don't know how to import {} (type code {}".format(name, type_)
-        raise ImportError(msg, name=name)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
+            raise ValueError('invalid file open mode {!r}'.format(mode))
+        elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
+            msg = 'file object required for import (type code {})'.format(type_)
+            raise ValueError(msg)
+        elif type_ == PY_SOURCE:
+            return load_source(name, filename, file)
+        elif type_ == PY_COMPILED:
+            return load_compiled(name, filename, file)
+        elif type_ == PKG_DIRECTORY:
+            return load_package(name, filename)
+        elif type_ == C_BUILTIN:
+            return init_builtin(name)
+        elif type_ == PY_FROZEN:
+            return init_frozen(name)
+        else:
+            msg =  "Don't know how to import {} (type code {}".format(name, type_)
+            raise ImportError(msg, name=name)
 
 
+# XXX deprecate
 def find_module(name, path=None):
     """Search for a module.
 
