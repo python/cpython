@@ -236,30 +236,42 @@ to indicate the search result of :func:`find_module`.
 
    The module was found as a source file.
 
+   .. deprecated:: 3.3
+
 
 .. data:: PY_COMPILED
 
    The module was found as a compiled code object file.
+
+   .. deprecated:: 3.3
 
 
 .. data:: C_EXTENSION
 
    The module was found as dynamically loadable shared library.
 
+   .. deprecated:: 3.3
+
 
 .. data:: PKG_DIRECTORY
 
    The module was found as a package directory.
+
+   .. deprecated:: 3.3
 
 
 .. data:: C_BUILTIN
 
    The module was found as a built-in module.
 
+   .. deprecated:: 3.3
+
 
 .. data:: PY_FROZEN
 
    The module was found as a frozen module.
+
+   .. deprecated:: 3.3
 
 
 .. class:: NullImporter(path_string)
