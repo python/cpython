@@ -160,8 +160,10 @@ def copystat(src, dst, symlinks=False):
         try:
             chflags_func(dst, st.st_flags)
         except OSError as why:
-            if (not hasattr(errno, 'EOPNOTSUPP') or
-                why.errno != errno.EOPNOTSUPP):
+            for err in 'EOPNOTSUPP', 'ENOTSUP':
+                if hasattr(errno, err) and why.errno == getattr(errno, err):
+                    break
+            else:
                 raise
 
 def copy(src, dst, symlinks=False):
