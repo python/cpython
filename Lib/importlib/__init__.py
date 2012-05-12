@@ -29,6 +29,30 @@ def invalidate_caches():
             finder.invalidate_caches()
 
 
+def find_loader(name, path=None):
+    """Find the loader for the specified module.
+
+    First, sys.modules is checked to see if the module was already imported. If
+    so, then sys.modules[name].__loader__ is returned. If that happens to be
+    set to None, then ValueError is raised. If the module is not in
+    sys.modules, then sys.meta_path is searched for a suitable loader with the
+    value of 'path' given to the finders. None is returned if no loader could
+    be found.
+
+    Dotted names do not have their parent packages implicitly imported.
+
+    """
+    try:
+        loader = sys.modules[name].__loader__
+        if loader is None:
+            raise ValueError('{}.__loader__ is None'.format(name))
+        else:
+            return loader
+    except KeyError:
+        pass
+    return _bootstrap._find_module(name, path)
+
+
 def import_module(name, package=None):
     """Import a module.
 

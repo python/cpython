@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13959: Introduce importlib.find_loader().
+
 - Issue #14082: shutil.copy2() now copies extended attributes, if possible.
   Patch by Hynek Schlawack.
 
