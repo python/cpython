@@ -16,7 +16,6 @@ from test import support
 from itertools import permutations, product
 from random import randrange, sample, choice
 from sysconfig import get_config_var
-from platform import architecture
 import warnings
 import sys, array, io
 from decimal import Decimal
@@ -748,9 +747,10 @@ if SHORT_TEST:
 class TestBufferProtocol(unittest.TestCase):
 
     def setUp(self):
-        self.sizeof_void_p = get_config_var('SIZEOF_VOID_P')
+        self.sizeof_void_p = get_config_var('SIZEOF_VOID_P') \
+                                if sys.platform != 'darwin' else None
         if not self.sizeof_void_p:
-            self.sizeof_void_p = 8 if architecture()[0] == '64bit' else 4
+            self.sizeof_void_p = 8 if sys.maxsize > 2**32 else 4
 
     def verify(self, result, obj=-1,
                      itemsize={1}, fmt=-1, readonly={1},
