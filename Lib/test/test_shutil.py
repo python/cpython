@@ -343,7 +343,7 @@ class TestShutil(unittest.TestCase):
             orig_setxattr = os.setxattr
             os.setxattr = _raise_on_user_foo
             shutil._copyxattr(src, dst)
-            self.assertEqual(['user.bar'], os.listxattr(dst))
+            self.assertIn('user.bar', os.listxattr(dst))
         finally:
             os.setxattr = orig_setxattr
 
