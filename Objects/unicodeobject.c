@@ -9075,12 +9075,12 @@ PyUnicode_Count(PyObject *str,
 
     kind1 = PyUnicode_KIND(str_obj);
     kind2 = PyUnicode_KIND(sub_obj);
-    kind = kind2;
+    kind = kind1;
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sub_obj);
     if (kind2 != kind) {
         if (kind2 > kind)
-            return 0;    
+            return 0;
         buf2 = _PyUnicode_AsKind(sub_obj, kind);
     }
     if (!buf2)
