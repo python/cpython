@@ -86,6 +86,20 @@ Functions
     that was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
     top-level package or module (e.g. ``pkg``).
 
+.. function:: find_loader(name, path=None)
+
+   Find the loader for a module, optionally within the specified *path*. If the
+   module is in :attr:`sys.modules`, then ``sys.modules[name].__loader__`` is
+   returned (unless the loader would be ``None``, in which case
+   :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
+   is done. ``None`` is returned if no loader is found.
+
+   A dotted name does not have its parent's implicitly imported. If that is
+   desired (although not nessarily required to find the loader, it will most
+   likely be needed if the loader actually is used to load the module), then
+   you will have to import the packages containing the module prior to calling
+   this function.
+
 .. function:: invalidate_caches()
 
    Invalidate the internal caches of the finders stored at

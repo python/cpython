@@ -39,8 +39,10 @@ Instances of this class have the following instance variables:
         lineno -- the line in the file on which the class statement occurred
 """
 
+import io
+import os
 import sys
-import imp
+import importlib
 import tokenize
 from token import NAME, DEDENT, OP
 from operator import itemgetter
@@ -133,18 +135,23 @@ def _readmodule(module, path, inpackage=None):
     # Search the path for the module
     f = None
     if inpackage is not None:
-        f, fname, (_s, _m, ty) = imp.find_module(module, path)
+        search_path = path
     else:
-        f, fname, (_s, _m, ty) = imp.find_module(module, path + sys.path)
-    if ty == imp.PKG_DIRECTORY:
-        dict['__path__'] = [fname]
-        path = [fname] + path
-        f, fname, (_s, _m, ty) = imp.find_module('__init__', [fname])
+        search_path = path + sys.path
+    loader = importlib.find_loader(fullmodule, search_path)
+    fname = loader.get_filename(fullmodule)
     _modules[fullmodule] = dict
-    if ty != imp.PY_SOURCE:
+    if loader.is_package(fullmodule):
+        dict['__path__'] = [os.path.dirname(fname)]
+    try:
+        source = loader.get_source(fullmodule)
+        if source is None:
+            return dict
+    except (AttributeError, ImportError):
         # not Python source, can't do anything with this module
-        f.close()
         return dict
+
+    f = io.StringIO(source)
 
     stack = [] # stack of (class, indent) pairs
 
