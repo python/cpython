@@ -9079,8 +9079,11 @@ PyUnicode_Count(PyObject *str,
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sub_obj);
     if (kind2 != kind) {
-        if (kind2 > kind)
+        if (kind2 > kind) {
+            Py_DECREF(sub_obj);
+            Py_DECREF(str_obj);
             return 0;
+        }
         buf2 = _PyUnicode_AsKind(sub_obj, kind);
     }
     if (!buf2)
@@ -10659,8 +10662,11 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
     buf1 = PyUnicode_DATA(str);
     buf2 = PyUnicode_DATA(sub);
     if (kind2 != kind) {
-        if (kind2 > kind)
+        if (kind2 > kind) {
+            Py_DECREF(sub);
+            Py_DECREF(str);
             return 0;
+        }
         buf2 = _PyUnicode_AsKind(sub, kind);
     }
     if (!buf2) {
