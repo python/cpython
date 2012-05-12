@@ -261,8 +261,11 @@ PyDict_Fini(void)
     PyDict_ClearFreeList();
 }
 
-#define DK_INCREF(dk) (++(dk)->dk_refcnt)
-#define DK_DECREF(dk) if ((--(dk)->dk_refcnt) == 0) free_keys_object(dk)
+#define DK_DEBUG_INCREF _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA
+#define DK_DEBUG_DECREF _Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA
+
+#define DK_INCREF(dk) (DK_DEBUG_INCREF ++(dk)->dk_refcnt)
+#define DK_DECREF(dk) if (DK_DEBUG_DECREF (--(dk)->dk_refcnt) == 0) free_keys_object(dk)
 #define DK_SIZE(dk) ((dk)->dk_size)
 #define DK_MASK(dk) (((dk)->dk_size)-1)
 #define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
@@ -324,7 +327,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    dk->dk_refcnt = 1;
+    DK_DEBUG_INCREF dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = USABLE_FRACTION(size);
     ep0 = &dk->dk_entries[0];
@@ -959,7 +962,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
             }
         }
         assert(oldkeys->dk_refcnt == 1);
-        PyMem_FREE(oldkeys);
+        DK_DEBUG_DECREF PyMem_FREE(oldkeys);
     }
     return 0;
 }
@@ -1259,7 +1262,7 @@ PyDict_Clear(PyObject *op)
     }
     else {
        assert(oldkeys->dk_refcnt == 1);
-       free_keys_object(oldkeys);
+       DK_DECREF(oldkeys);
     }
 }
 
@@ -1367,7 +1370,8 @@ dict_dealloc(PyDictObject *mp)
         DK_DECREF(keys);
     }
     else {
-        free_keys_object(keys);
+        assert(keys->dk_refcnt == 1);
+        DK_DECREF(keys);
     }
     if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
         free_list[numfree++] = mp;
