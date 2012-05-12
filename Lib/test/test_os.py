@@ -1810,25 +1810,7 @@ class TestSendfile(unittest.TestCase):
                         raise
 
 
-def supports_extended_attributes():
-    if not hasattr(os, "setxattr"):
-        return False
-    try:
-        with open(support.TESTFN, "wb") as fp:
-            try:
-                os.fsetxattr(fp.fileno(), b"user.test", b"")
-            except OSError:
-                return False
-    finally:
-        support.unlink(support.TESTFN)
-    # Kernels < 2.6.39 don't respect setxattr flags.
-    kernel_version = platform.release()
-    m = re.match("2.6.(\d{1,2})", kernel_version)
-    return m is None or int(m.group(1)) >= 39
-
-
-@unittest.skipUnless(supports_extended_attributes(),
-                     "no non-broken extended attribute support")
+@support.skip_unless_xattr
 class ExtendedAttributeTests(unittest.TestCase):
 
     def tearDown(self):

@@ -166,6 +166,36 @@ def copystat(src, dst, symlinks=False):
             else:
                 raise
 
+if hasattr(os, 'listxattr'):
+    def _copyxattr(src, dst, symlinks=False):
+        """Copy extended filesystem attributes from `src` to `dst`.
+
+        Overwrite existing attributes.
+
+        If the optional flag `symlinks` is set, symlinks won't be followed.
+
+        """
+        if symlinks:
+            listxattr = os.llistxattr
+            removexattr = os.lremovexattr
+            setxattr = os.lsetxattr
+            getxattr = os.lgetxattr
+        else:
+            listxattr = os.listxattr
+            removexattr = os.removexattr
+            setxattr = os.setxattr
+            getxattr = os.getxattr
+
+        for attr in listxattr(src):
+            try:
+                setxattr(dst, attr, getxattr(src, attr))
+            except OSError as e:
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
+                    raise
+else:
+    def _copyxattr(*args, **kwargs):
+        pass
+
 def copy(src, dst, symlinks=False):
     """Copy data and mode bits ("cp src dst").
 
@@ -193,6 +223,7 @@ def copy2(src, dst, symlinks=False):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, symlinks=symlinks)
     copystat(src, dst, symlinks=symlinks)
+    _copyxattr(src, dst, symlinks=symlinks)
 
 def ignore_patterns(*patterns):
     """Function that can be used as copytree() ignore parameter.
