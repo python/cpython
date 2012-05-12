@@ -311,6 +311,67 @@ class TestShutil(unittest.TestCase):
         finally:
             os.chflags = old_chflags
 
+    @support.skip_unless_xattr
+    def test_copyxattr(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        write_file(src, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        write_file(dst, 'bar')
+
+        # no xattr == no problem
+        shutil._copyxattr(src, dst)
+        # common case
+        os.setxattr(src, 'user.foo', b'42')
+        os.setxattr(src, 'user.bar', b'43')
+        shutil._copyxattr(src, dst)
+        self.assertEqual(os.listxattr(src), os.listxattr(dst))
+        self.assertEqual(
+                os.getxattr(src, 'user.foo'),
+                os.getxattr(dst, 'user.foo'))
+        # check errors don't affect other attrs
+        os.remove(dst)
+        write_file(dst, 'bar')
+        os_error = OSError(errno.EPERM, 'EPERM')
+
+        def _raise_on_user_foo(fname, attr, val):
+            if attr == 'user.foo':
+                raise os_error
+            else:
+                orig_setxattr(fname, attr, val)
+        try:
+            orig_setxattr = os.setxattr
+            os.setxattr = _raise_on_user_foo
+            shutil._copyxattr(src, dst)
+            self.assertEqual(['user.bar'], os.listxattr(dst))
+        finally:
+            os.setxattr = orig_setxattr
+
+    @support.skip_unless_symlink
+    @support.skip_unless_xattr
+    @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                         'root privileges required')
+    def test_copyxattr_symlinks(self):
+        # On Linux, it's only possible to access non-user xattr for symlinks;
+        # which in turn require root privileges. This test should be expanded
+        # as soon as other platforms gain support for extended attributes.
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        src_link = os.path.join(tmp_dir, 'baz')
+        write_file(src, 'foo')
+        os.symlink(src, src_link)
+        os.setxattr(src, 'trusted.foo', b'42')
+        os.lsetxattr(src_link, 'trusted.foo', b'43')
+        dst = os.path.join(tmp_dir, 'bar')
+        dst_link = os.path.join(tmp_dir, 'qux')
+        write_file(dst, 'bar')
+        os.symlink(dst, dst_link)
+        shutil._copyxattr(src_link, dst_link, symlinks=True)
+        self.assertEqual(os.lgetxattr(dst_link, 'trusted.foo'), b'43')
+        self.assertRaises(OSError, os.getxattr, dst, 'trusted.foo')
+        shutil._copyxattr(src_link, dst, symlinks=True)
+        self.assertEqual(os.getxattr(dst, 'trusted.foo'), b'43')
+
     @support.skip_unless_symlink
     def test_copy_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -368,6 +429,19 @@ class TestShutil(unittest.TestCase):
             self.assertNotEqual(src_stat.st_mode, dst_stat.st_mode)
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
             self.assertEqual(src_link_stat.st_flags, dst_stat.st_flags)
+
+    @support.skip_unless_xattr
+    def test_copy2_xattr(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        write_file(src, 'foo')
+        os.setxattr(src, 'user.foo', b'42')
+        shutil.copy2(src, dst)
+        self.assertEqual(
+                os.getxattr(src, 'user.foo'),
+                os.getxattr(dst, 'user.foo'))
+        os.remove(dst)
 
     @support.skip_unless_symlink
     def test_copyfile_symlinks(self):

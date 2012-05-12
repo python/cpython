@@ -102,14 +102,14 @@ Directory and files operations
 
 .. function:: copy2(src, dst[, symlinks=False])
 
-   Similar to :func:`shutil.copy`, but metadata is copied as well -- in fact,
-   this is just :func:`shutil.copy` followed by :func:`copystat`.  This is
+   Similar to :func:`shutil.copy`, but metadata is copied as well. This is
    similar to the Unix command :program:`cp -p`.  If *symlinks* is true,
    symbolic links won't be followed but recreated instead -- this resembles
    GNU's :program:`cp -P`.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument.
+      Added *symlinks* argument, try to copy extended file system attributes
+      too (currently Linux only).
 
 .. function:: ignore_patterns(\*patterns)
 

@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14082: shutil.copy2() now copies extended attributes, if possible.
+  Patch by Hynek Schlawack.
+
 - Issue #13959: Make importlib.abc.FileLoader.load_module()/get_filename() and
   importlib.machinery.ExtensionFileLoader.load_module() have their single
   argument be optional. Allows for the replacement (and thus deprecation) of

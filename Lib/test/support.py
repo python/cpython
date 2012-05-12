@@ -1696,6 +1696,35 @@ def skip_unless_symlink(test):
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
 
+_can_xattr = None
+def can_xattr():
+    global _can_xattr
+    if _can_xattr is not None:
+        return _can_xattr
+    if not hasattr(os, "setxattr"):
+        can = False
+    else:
+        try:
+            with open(TESTFN, "wb") as fp:
+                try:
+                    os.fsetxattr(fp.fileno(), b"user.test", b"")
+                    # Kernels < 2.6.39 don't respect setxattr flags.
+                    kernel_version = platform.release()
+                    m = re.match("2.6.(\d{1,2})", kernel_version)
+                    can = m is None or int(m.group(1)) >= 39
+                except OSError:
+                    can = False
+        finally:
+            unlink(TESTFN)
+    _can_xattr = can
+    return can
+
+def skip_unless_xattr(test):
+    """Skip decorator for tests that require functional extended attributes"""
+    ok = can_xattr()
+    msg = "no non-broken extended attribute support"
+    return test if ok else unittest.skip(msg)(test)
+
 def patch(test_instance, object_to_patch, attr_name, new_value):
     """Override 'object_to_patch'.'attr_name' with 'new_value'.
 
