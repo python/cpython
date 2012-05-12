@@ -1422,14 +1422,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(TypeError, str, b"hello", "test.unicode2")
         self.assertRaises(TypeError, "hello".encode, "test.unicode1")
         self.assertRaises(TypeError, "hello".encode, "test.unicode2")
-        # executes PyUnicode_Encode()
-        import imp
-        self.assertRaises(
-            ImportError,
-            imp.find_module,
-            "non-existing module",
-            ["non-existing dir"]
-        )
 
         # Error handling (wrong arguments)
         self.assertRaises(TypeError, "hello".encode, 42, 42, 42)
