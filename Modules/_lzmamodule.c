@@ -412,7 +412,11 @@ build_filter_spec(const lzma_filter *f)
             ADD_FIELD(options, lc);
             ADD_FIELD(options, lp);
             ADD_FIELD(options, pb);
-        case LZMA_FILTER_LZMA2:
+            ADD_FIELD(options, dict_size);
+            break;
+        }
+        case LZMA_FILTER_LZMA2: {
+            lzma_options_lzma *options = f->options;
             ADD_FIELD(options, dict_size);
             break;
         }
