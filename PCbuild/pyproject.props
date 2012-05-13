@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <PyDllName>python33</PyDllName>
+    <PythonExe>$(SolutionDir)\python.exe</PythonExe>
+    <externalsDir>..\..</externalsDir>
+    <sqlite3Dir>$(externalsDir)\sqlite-3.7.4</sqlite3Dir>
+    <bz2Dir>$(externalsDir)\bzip2-1.0.5</bz2Dir>
+    <lzmaDir>$(externalsDir)\xz-5.0.3</lzmaDir>
+    <opensslDir>$(externalsDir)\openssl-1.0.0a</opensslDir>
+    <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
+    <tcltk64Dir>$(externalsDir)\tcltk64</tcltk64Dir>
+    <tcltkLib>$(tcltkDir)\lib\tcl85.lib;$(tcltkDir)\lib\tk85.lib</tcltkLib>
+    <tcltkLibDebug>$(tcltkDir)\lib\tcl85g.lib;$(tcltkDir)\lib\tk85g.lib</tcltkLibDebug>
+    <tcltk64Lib>$(tcltk64Dir)\lib\tcl85.lib;$(tcltk64Dir)\lib\tk85.lib</tcltk64Lib>
+    <tcltk64LibDebug>$(tcltk64Dir)\lib\tcl85g.lib;$(tcltk64Dir)\lib\tk85g.lib</tcltk64LibDebug>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir>$(SolutionDir)\</OutDir>
+    <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\Include; ..\PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>..\PC;..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="PyDllName">
+      <Value>$(PyDllName)</Value>
+    </BuildMacro>
+    <BuildMacro Include="PythonExe">
+      <Value>$(PythonExe)</Value>
+    </BuildMacro>
+    <BuildMacro Include="externalsDir">
+      <Value>$(externalsDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="sqlite3Dir">
+      <Value>$(sqlite3Dir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="bz2Dir">
+      <Value>$(bz2Dir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="lzmaDir">
+      <Value>$(lzmaDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="opensslDir">
+      <Value>$(opensslDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltkDir">
+      <Value>$(tcltkDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltk64Dir">
+      <Value>$(tcltk64Dir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltkLib">
+      <Value>$(tcltkLib)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltkLibDebug">
+      <Value>$(tcltkLibDebug)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltk64Lib">
+      <Value>$(tcltk64Lib)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltk64LibDebug">
+      <Value>$(tcltk64LibDebug)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

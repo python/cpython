@@ -2317,6 +2317,34 @@ PyObject *PyExc_RecursionErrorInst = NULL;
 
 #ifdef MS_WINDOWS
 #include <Winsock2.h>
+/* The following constants were added to errno.h in VS2010 but have
+   preferred WSA equivalents. */
+#undef EADDRINUSE
+#undef EADDRNOTAVAIL
+#undef EAFNOSUPPORT
+#undef EALREADY
+#undef ECONNABORTED
+#undef ECONNREFUSED
+#undef ECONNRESET
+#undef EDESTADDRREQ
+#undef EHOSTUNREACH
+#undef EINPROGRESS
+#undef EISCONN
+#undef ELOOP
+#undef EMSGSIZE
+#undef ENETDOWN
+#undef ENETRESET
+#undef ENETUNREACH
+#undef ENOBUFS
+#undef ENOPROTOOPT
+#undef ENOTCONN
+#undef ENOTSOCK
+#undef EOPNOTSUPP
+#undef EPROTONOSUPPORT
+#undef EPROTOTYPE
+#undef ETIMEDOUT
+#undef EWOULDBLOCK
+
 #if defined(WSAEALREADY) && !defined(EALREADY)
 #define EALREADY WSAEALREADY
 #endif

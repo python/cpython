@@ -2,7 +2,7 @@
 
 @rem Assume we start inside the Python source directory
 call "Tools\buildbot\external-common.bat"
-call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64
+call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64
 
 if not exist tcltk64\bin\tcl85g.dll (
     cd tcl-8.5.9.0\win

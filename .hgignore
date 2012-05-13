@@ -66,6 +66,7 @@ PCbuild/*.ncb
 PCbuild/*.bsc
 PCbuild/*.user
 PCbuild/*.suo
+PCbuild/*.*sdf
 PCbuild/Win32-temp-*
 PCbuild/x64-temp-*
 __pycache__

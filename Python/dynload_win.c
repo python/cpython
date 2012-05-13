@@ -12,8 +12,10 @@
 #include <windows.h>
 
 // "activation context" magic - see dl_nt.c...
+#if HAVE_SXS
 extern ULONG_PTR _Py_ActivateActCtx();
 void _Py_DeactivateActCtx(ULONG_PTR cookie);
+#endif
 
 const char *_PyImport_DynLoadFiletab[] = {
 #ifdef _DEBUG
@@ -191,18 +193,24 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
     {
         HINSTANCE hDLL = NULL;
         unsigned int old_mode;
+#if HAVE_SXS
         ULONG_PTR cookie = 0;
+#endif
 
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
+#if HAVE_SXS
         cookie = _Py_ActivateActCtx();
+#endif
         /* We use LoadLibraryEx so Windows looks for dependent DLLs
             in directory of pathname first. */
         /* XXX This call doesn't exist in Windows CE */
         hDLL = LoadLibraryExW(wpathname, NULL,
                               LOAD_WITH_ALTERED_SEARCH_PATH);
+#if HAVE_SXS
         _Py_DeactivateActCtx(cookie);
+#endif
 
         /* restore old error mode settings */
         SetErrorMode(old_mode);
