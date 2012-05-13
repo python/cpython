@@ -91,7 +91,7 @@ Is there a curses/termcap package for Python?
 
 .. XXX curses *is* built by default, isn't it?
 
-For Unix variants: The standard Python source distribution comes with a curses
+For Unix variants the standard Python source distribution comes with a curses
 module in the :source:`Modules` subdirectory, though it's not compiled by default.
 (Note that this is not available in the Windows distribution -- there is no
 curses module for Windows.)
@@ -352,7 +352,7 @@ class provides a featureful interface.
 What kinds of global value mutation are thread-safe?
 ----------------------------------------------------
 
-A global interpreter lock (:term:`GIL`) is used internally to ensure that only
+A :term:`global interpreter lock` (GIL) is used internally to ensure that only
 one thread runs in the Python VM at a time.  In general, Python offers to switch
 among threads only between bytecode instructions; how frequently it switches can
 be set via :func:`sys.setcheckinterval`.  Each bytecode instruction and
@@ -398,7 +398,7 @@ Can't we get rid of the Global Interpreter Lock?
 .. XXX mention multiprocessing
 .. XXX link to dbeazley's talk about GIL?
 
-The Global Interpreter Lock (:term:`GIL`) is often seen as a hindrance to Python's
+The :term:`global interpreter lock` (GIL) is often seen as a hindrance to Python's
 deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
@@ -675,16 +675,12 @@ Yes. Here's a simple example that uses httplib::
        sys.stdout.write(httpobj.getfile().read())
 
 Note that in general for percent-encoded POST operations, query strings must be
-quoted using :func:`urllib.quote`.  For example, to send
-``name="Guy Steele, Jr."``::
+quoted using :func:`urllib.urlencode`.  For example, to send
+``name=Guy Steele, Jr.``::
 
-   >>> from urllib import quote
-   >>> x = quote("Guy Steele, Jr.")
-   >>> x
-   'Guy%20Steele,%20Jr.'
-   >>> query_string = "name="+x
-   >>> query_string
-   'name=Guy%20Steele,%20Jr.'
+   >>> import urllib
+   >>> urllib.urlencode({'name': 'Guy Steele, Jr.'})
+   'name=Guy+Steele%2C+Jr.'
 
 
 What module should I use to help with generating HTML?
