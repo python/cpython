@@ -634,11 +634,12 @@ class MSVCCompiler(CCompiler) :
                 mfid = 2
                 self._remove_visual_c_ref(temp_manifest)
             out_arg = '-outputresource:%s;%s' % (output_filename, mfid)
-            try:
-                self.spawn(['mt.exe', '-nologo', '-manifest',
-                            temp_manifest, out_arg])
-            except PackagingExecError as msg:
-                raise LinkError(msg)
+            if self.__version < 10:
+                try:
+                    self.spawn(['mt.exe', '-nologo', '-manifest',
+                                temp_manifest, out_arg])
+                except PackagingExecError as msg:
+                    raise LinkError(msg)
         else:
             logger.debug("skipping %s (up-to-date)", output_filename)
 

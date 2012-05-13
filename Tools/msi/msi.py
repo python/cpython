@@ -27,7 +27,7 @@ have_tcl = True
 # path to PCbuild directory
 PCBUILD="PCbuild"
 # msvcrt version
-MSVCR = "90"
+MSVCR = "100"
 # Name of certificate in default store to sign MSI with
 certname = None
 # Make a zip file containing the PDB files for this build?
@@ -872,26 +872,23 @@ def add_features(db):
                         parent = default_feature, attributes=2|8,
                         level=2)
 
-def extract_msvcr90():
+def extract_msvcr100():
     # Find the redistributable files
     if msilib.Win64:
         arch = "amd64"
     else:
         arch = "x86"
-    dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\%s\Microsoft.VC90.CRT" % arch)
+    dir = os.path.join(os.environ['VS100COMNTOOLS'], r"..\..\VC\redist\%s\Microsoft.VC100.CRT" % arch)
 
     result = []
     installer = msilib.MakeInstaller()
-    # omit msvcm90 and msvcp90, as they aren't really needed
-    files = ["Microsoft.VC90.CRT.manifest", "msvcr90.dll"]
-    for f in files:
-        path = os.path.join(dir, f)
-        kw = {'src':path}
-        if f.endswith('.dll'):
-            kw['version'] = installer.FileVersion(path, 0)
-            kw['language'] = installer.FileVersion(path, 1)
-        result.append((f, kw))
-    return result
+    # At least for VS2010, manifests are no longer provided
+    name = "msvcr100.dll"
+    path = os.path.join(dir, name)
+    kw = {'src':path}
+    kw['version'] = installer.FileVersion(path, 0)
+    kw['language'] = installer.FileVersion(path, 1)
+    return name, kw
 
 def generate_license():
     import shutil, glob
@@ -981,9 +978,8 @@ def add_files(db):
     # pointing to the root directory
     root.start_component("msvcr90", feature=private_crt)
     # Results are ID,keyword pairs
-    manifest, crtdll = extract_msvcr90()
-    root.add_file(manifest[0], **manifest[1])
-    root.add_file(crtdll[0], **crtdll[1])
+    crtdll, kwds = extract_msvcr100()
+    root.add_file(crtdll, **kwds)
     # Copy the manifest
     # Actually, don't do that anymore - no DLL in DLLs should have a manifest
     # dependency on msvcr90.dll anymore, so this should not be necessary
@@ -1317,9 +1313,9 @@ finally:
 # Merge CRT into MSI file. This requires the database to be closed.
 mod_dir = os.path.join(os.environ["ProgramFiles"], "Common Files", "Merge Modules")
 if msilib.Win64:
-    modules = ["Microsoft_VC90_CRT_x86_x64.msm", "policy_9_0_Microsoft_VC90_CRT_x86_x64.msm"]
+    modules = ["Microsoft_VC100_CRT_x64.msm"]
 else:
-    modules = ["Microsoft_VC90_CRT_x86.msm","policy_9_0_Microsoft_VC90_CRT_x86.msm"]
+    modules = ["Microsoft_VC100_CRT_x86.msm"]
 
 for i, n in enumerate(modules):
     modules[i] = os.path.join(mod_dir, n)

@@ -80,6 +80,11 @@ Tools/Demos
 - Issue #14695: Bring Tools/parser/unparse.py support up to date with
   the Python 3.3 Grammar.
 
+Build
+-----
+
+- Issue #13210: Windows build now uses VS2010, ported from VS2008.
+
 
 What's New in Python 3.3.0 Alpha 3?
 ===================================

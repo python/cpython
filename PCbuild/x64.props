@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <PythonExe>$(HOST_PYTHON)</PythonExe>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <_PropertySheetDisplayName>amd64</_PropertySheetDisplayName>
+    <OutDir>$(SolutionDir)\amd64\</OutDir>
+    <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/USECL:MS_OPTERON /GS- %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_WIN64;_M_X64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="PythonExe">
+      <Value>$(PythonExe)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
