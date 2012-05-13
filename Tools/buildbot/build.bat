@@ -2,6 +2,7 @@
 cmd /c Tools\buildbot\external.bat
 call "%VS100COMNTOOLS%vsvars32.bat"
 cmd /c Tools\buildbot\clean.bat
-vcbuild /useenv PCbuild\kill_python.vcproj "Debug|Win32" && PCbuild\kill_python_d.exe
-vcbuild /useenv PCbuild\pcbuild.sln "Debug|Win32"
+msbuild /p:useenv=true PCbuild\kill_python.vcxproj /p:Configuration=Debug /p:PlatformTarget=x86
+PCbuild\kill_python_d.exe
+msbuild /p:useenv=true PCbuild\pcbuild.sln /p:Configuration=Debug /p:PlatformTarget=x86
 
