@@ -823,7 +823,8 @@ string literals.  In addition to the functionality described here, there are
 also string-specific methods described in the :ref:`string-methods` section.
 
 Bytes and bytearray objects contain single bytes -- the former is immutable
-while the latter is a mutable sequence.  Bytes objects can be constructed the
+while the latter is a mutable sequence.
+Bytes objects can be constructed by using the
 constructor, :func:`bytes`, and from literals; use a ``b`` prefix with normal
 string syntax: ``b'xyzzy'``.  To construct byte arrays, use the
 :func:`bytearray` function.
