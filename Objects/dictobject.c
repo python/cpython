@@ -439,12 +439,15 @@ lookdict(PyDictObject *mp, PyObject *key,
     register size_t i;
     register size_t perturb;
     register PyDictKeyEntry *freeslot;
-    register size_t mask = DK_MASK(mp->ma_keys);
-    PyDictKeyEntry *ep0 = &mp->ma_keys->dk_entries[0];
+    register size_t mask;
+    PyDictKeyEntry *ep0;
     register PyDictKeyEntry *ep;
     register int cmp;
     PyObject *startkey;
 
+top:
+    mask = DK_MASK(mp->ma_keys);
+    ep0 = &mp->ma_keys->dk_entries[0];
     i = (size_t)hash & mask;
     ep = &ep0[i];
     if (ep->me_key == NULL || ep->me_key == key) {
@@ -468,9 +471,8 @@ lookdict(PyDictObject *mp, PyObject *key,
                 }
             }
             else {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "dictionary changed size during lookup");
-                return NULL;
+                /* The dict was mutated, restart */
+                goto top;
             }
         }
         freeslot = NULL;
@@ -510,9 +512,8 @@ lookdict(PyDictObject *mp, PyObject *key,
                 }
             }
             else {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "dictionary changed size during lookup");
-                return NULL;
+                /* The dict was mutated, restart */
+                goto top;
             }
         }
         else if (ep->me_key == dummy && freeslot == NULL)

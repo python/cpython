@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #14417: Mutating a dict during lookup now restarts the lookup instead
+  of raising a RuntimeError (undoes issue #14205).
+
 - Issue #14738: Speed-up UTF-8 decoding on non-ASCII data.  Patch by Serhiy
   Storchaka.
 
