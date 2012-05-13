@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Add importlib.util.resolve_name().
+
 - Issue #14366: Support lzma compression in zip files.
   Patch by Serhiy Storchaka.
 

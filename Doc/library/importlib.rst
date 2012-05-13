@@ -737,6 +737,22 @@ find and load modules.
 This module contains the various objects that help in the construction of
 an :term:`importer`.
 
+.. function:: resolve_name(name, package)
+
+   Resolve a relative module name to an absolute one.
+
+   If  **name** has no leading dots, then **name** is simply returned. This
+   allows for usage such as
+   ``importlib.util.resolve_name('sys', __package__)`` without doing a
+   check to see if the **package** argument is needed.
+
+   :exc:`ValueError` is raised if **name** is a relative module name but
+   package is a false value (e.g. ``None`` or the empty string).
+   :exc:`ValueError` is also raised a relative name would escape its containing
+   package (e.g. requesting ``..bacon`` from within the ``spam`` package).
+
+   .. versionadded:: 3.3
+
 .. decorator:: module_for_loader
 
     A :term:`decorator` for a :term:`loader` method,
