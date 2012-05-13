@@ -154,6 +154,11 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PyDllName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(PyDllName)_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(PyDllName)</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">.dll</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(PyDllName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(PyDllName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(PyDllName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(PyDllName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

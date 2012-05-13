@@ -83,9 +83,13 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyd.props" />
+    <Import Project="pgupdate.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyd.props" />
+    <Import Project="pginstrument.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -97,9 +101,15 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyd.props" />
+    <Import Project="x64.props" />
+    <Import Project="pgupdate.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyd.props" />
+    <Import Project="x64.props" />
+    <Import Project="pginstrument.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -140,6 +150,16 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.pyd</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.pyd</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">.pyd</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(SolutionDir)$(PlatformName)-pgo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(SolutionDir)$(PlatformName)-pgo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">.pyd</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(OutDirPGI)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">.pyd</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -207,6 +227,7 @@
       <SubSystem>NotSet</SubSystem>
       <BaseAddress>0x1D1A0000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>$(OutDir)python33.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
@@ -231,6 +252,7 @@
       <SubSystem>NotSet</SubSystem>
       <BaseAddress>0x1D1A0000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>$(SolutionDir)\$(PlatformShortName)\python33.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
