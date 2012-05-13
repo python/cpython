@@ -14,7 +14,7 @@ How do I find a module or application to perform task X?
 
 Check :ref:`the Library Reference <library-index>` to see if there's a relevant
 standard library module.  (Eventually you'll learn what's in the standard
-library and will able to skip this step.)
+library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
 <http://pypi.python.org/pypi>`_ or try `Google <http://www.google.com>`_ or
@@ -28,7 +28,7 @@ Where is the math.py (socket.py, regex.py, etc.) source file?
 If you can't find a source file for a module it may be a built-in or
 dynamically loaded module implemented in C, C++ or other compiled language.
 In this case you may not have the source file or it may be something like
-mathmodule.c, somewhere in a C source directory (not on the Python Path).
+:file:`mathmodule.c`, somewhere in a C source directory (not on the Python Path).
 
 There are (at least) three kinds of modules in Python:
 
@@ -60,18 +60,18 @@ as the very first line of your file, using the pathname for where the Python
 interpreter is installed on your platform.
 
 If you would like the script to be independent of where the Python interpreter
-lives, you can use the "env" program.  Almost all Unix variants support the
-following, assuming the Python interpreter is in a directory on the user's
-$PATH::
+lives, you can use the :program:`env` program.  Almost all Unix variants support
+the following, assuming the Python interpreter is in a directory on the user's
+:envvar:`PATH`::
 
   #!/usr/bin/env python
 
-*Don't* do this for CGI scripts.  The $PATH variable for CGI scripts is often
-very minimal, so you need to use the actual absolute pathname of the
+*Don't* do this for CGI scripts.  The :envvar:`PATH` variable for CGI scripts is
+often very minimal, so you need to use the actual absolute pathname of the
 interpreter.
 
-Occasionally, a user's environment is so full that the /usr/bin/env program
-fails; or there's no env program at all.  In that case, you can try the
+Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
+program fails; or there's no env program at all.  In that case, you can try the
 following hack (due to Alex Rezinsky)::
 
    #! /bin/sh
@@ -92,11 +92,11 @@ Is there a curses/termcap package for Python?
 .. XXX curses *is* built by default, isn't it?
 
 For Unix variants: The standard Python source distribution comes with a curses
-module in the ``Modules/`` subdirectory, though it's not compiled by default
-(note that this is not available in the Windows distribution -- there is no
-curses module for Windows).
+module in the :source:`Modules` subdirectory, though it's not compiled by default.
+(Note that this is not available in the Windows distribution -- there is no
+curses module for Windows.)
 
-The curses module supports basic curses features as well as many additional
+The :mod:`curses` module supports basic curses features as well as many additional
 functions from ncurses and SYSV curses such as colour, alternative character set
 support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
@@ -110,7 +110,7 @@ Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
 
 The :mod:`atexit` module provides a register function that is similar to C's
-onexit.
+:c:func:`onexit`.
 
 
 Why don't my signal handlers work?
@@ -140,8 +140,8 @@ the expected output given in the docstring.
 The :mod:`unittest` module is a fancier testing framework modelled on Java and
 Smalltalk testing frameworks.
 
-For testing, it helps to write the program so that it may be easily tested by
-using good modular design.  Your program should have almost all functionality
+To make testing easier, you should use good modular design in your program.
+Your program should have almost all functionality
 encapsulated in either functions or class methods -- and this sometimes has the
 surprising and delightful effect of making the program run faster (because local
 variable accesses are faster than global accesses).  Furthermore the program
@@ -157,7 +157,7 @@ at the bottom of the main module of your program.
 
 Once your program is organized as a tractable collection of functions and class
 behaviours you should write test functions that exercise the behaviours.  A test
-suite can be associated with each module which automates a sequence of tests.
+suite that automates a sequence of tests can be associated with each module.
 This sounds like a lot of work, but since Python is so terse and flexible it's
 surprisingly easy.  You can make coding much more pleasant and fun by writing
 your test functions in parallel with the "production code", since this makes it
@@ -186,7 +186,7 @@ docstrings is `epydoc <http://epydoc.sf.net/>`_.  `Sphinx
 How do I get a single keypress at a time?
 -----------------------------------------
 
-For Unix variants: There are several solutions.  It's straightforward to do this
+For Unix variants there are several solutions.  It's straightforward to do this
 using curses, but curses is a fairly large module to learn.
 
 .. XXX this doesn't work out of the box, some IO expert needs to check why
@@ -275,7 +275,7 @@ A simple fix is to add a tiny sleep to the start of the run function::
 
    time.sleep(10)
 
-Instead of trying to guess how long a :func:`time.sleep` delay will be enough,
+Instead of trying to guess a good delay value for :func:`time.sleep`,
 it's better to use some kind of semaphore mechanism.  One idea is to use the
 :mod:`queue` module to create a queue object, let each thread append a token to
 the queue when it finishes, and let the main thread read as many tokens from the
@@ -291,9 +291,9 @@ especially the :mod:`~concurrent.futures.ThreadPoolExecutor` class.
 Or, if you want fine control over the dispatching algorithm, you can write
 your own logic manually.  Use the :mod:`queue` module to create a queue
 containing a list of jobs.  The :class:`~queue.Queue` class maintains a
-list of objects with ``.put(obj)`` to add an item to the queue and ``.get()``
-to return an item.  The class will take care of the locking necessary to
-ensure that each job is handed out exactly once.
+list of objects and has a ``.put(obj)`` method that adds items to the queue and
+a ``.get()`` method to return them.  The class will take care of the locking
+necessary to ensure that each job is handed out exactly once.
 
 Here's a trivial example::
 
@@ -302,7 +302,7 @@ Here's a trivial example::
    # The worker thread gets jobs off the queue.  When the queue is empty, it
    # assumes there will be no more work and exits.
    # (Realistically workers will run until terminated.)
-   def worker ():
+   def worker():
        print('Running worker')
        time.sleep(0.1)
        while True:
@@ -333,7 +333,9 @@ Here's a trivial example::
    print('Main thread sleeping')
    time.sleep(5)
 
-When run, this will produce the following output::
+When run, this will produce the following output:
+
+.. code-block:: none
 
    Running worker
    Running worker
@@ -349,8 +351,8 @@ When run, this will produce the following output::
    Worker <Thread(worker 1, started 130283832797456)> running with argument 5
    ...
 
-Consult the module's documentation for more details; the ``Queue`` class
-provides a featureful interface.
+Consult the module's documentation for more details; the :class:`~queue.Queue``
+class provides a featureful interface.
 
 
 What kinds of global value mutation are thread-safe?
@@ -467,7 +469,7 @@ To rename a file, use ``os.rename(old_path, new_path)``.
 To truncate a file, open it using ``f = open(filename, "rb+")``, and use
 ``f.truncate(offset)``; offset defaults to the current seek position.  There's
 also ``os.ftruncate(fd, offset)`` for files opened with :func:`os.open`, where
-``fd`` is the file descriptor (a small integer).
+*fd* is the file descriptor (a small integer).
 
 The :mod:`shutil` module also contains a number of functions to work on files
 including :func:`~shutil.copyfile`, :func:`~shutil.copytree`, and
@@ -501,15 +503,15 @@ The '>' in the format string forces big-endian data; the letter 'h' reads one
 "short integer" (2 bytes), and 'l' reads one "long integer" (4 bytes) from the
 string.
 
-For data that is more regular (e.g. a homogeneous list of ints or thefloats),
+For data that is more regular (e.g. a homogeneous list of ints or floats),
 you can also use the :mod:`array` module.
 
-   .. note::
-      To read and write binary data, it is mandatory to open the file in
-      binary mode (here, passing ``"rb"`` to :func:`open`).  If you use
-      ``"r"`` instead (the default), the file will be open in text mode
-      and ``f.read()`` will return :class:`str` objects rather than
-      :class:`bytes` objects.
+.. note::
+   To read and write binary data, it is mandatory to open the file in
+   binary mode (here, passing ``"rb"`` to :func:`open`).  If you use
+   ``"r"`` instead (the default), the file will be open in text mode
+   and ``f.read()`` will return :class:`str` objects rather than
+   :class:`bytes` objects.
 
 
 I can't seem to use os.read() on a pipe created with os.popen(); why?
@@ -518,7 +520,7 @@ I can't seem to use os.read() on a pipe created with os.popen(); why?
 :func:`os.read` is a low-level function which takes a file descriptor, a small
 integer representing the opened file.  :func:`os.popen` creates a high-level
 file object, the same type returned by the built-in :func:`open` function.
-Thus, to read n bytes from a pipe p created with :func:`os.popen`, you need to
+Thus, to read *n* bytes from a pipe *p* created with :func:`os.popen`, you need to
 use ``p.read(n)``.
 
 
@@ -538,8 +540,8 @@ use ``p.read(n)``.
    Warning: in general it is unwise to do this because you can easily cause a
    deadlock where your process is blocked waiting for output from the child
    while the child is blocked waiting for input from you.  This can be caused
-   because the parent expects the child to output more text than it does, or it
-   can be caused by data being stuck in stdio buffers due to lack of flushing.
+   by the parent expecting the child to output more text than it does or
+   by data being stuck in stdio buffers due to lack of flushing.
    The Python parent can of course explicitly flush the data it sends to the
    child before it reads any output, but if the child is a naive C program it
    may have been written to never explicitly flush its output, even if it is
@@ -561,7 +563,7 @@ use ``p.read(n)``.
    get the result back.  Unless the amount of data is very large, the easiest
    way to do this is to write it to a temporary file and run the command with
    that temporary file as input.  The standard module :mod:`tempfile` exports a
-   ``mktemp()`` function to generate unique temporary file names. ::
+   :func:`~tempfile.mktemp` function to generate unique temporary file names. ::
 
       import tempfile
       import os
@@ -681,8 +683,8 @@ Yes. Here's a simple example that uses urllib.request::
    msg, hdrs = req.read(), req.info()
 
 Note that in general for percent-encoded POST operations, query strings must be
-quoted using :func:`urllib.parse.urlencode`.  For example to send name="Guy Steele,
-Jr."::
+quoted using :func:`urllib.parse.urlencode`.  For example, to send
+``name=Guy Steele, Jr.``::
 
    >>> import urllib.parse
    >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
@@ -696,19 +698,8 @@ What module should I use to help with generating HTML?
 
 .. XXX add modern template languages
 
-There are many different modules available:
-
-* HTMLgen is a class library of objects corresponding to all the HTML 3.2 markup
-  tags. It's used when you are writing in Python and wish to synthesize HTML
-  pages for generating a web or for CGI forms, etc.
-
-* DocumentTemplate and Zope Page Templates are two different systems that are
-  part of Zope.
-
-* Quixote's PTL uses Python syntax to assemble strings of text.
-
-Consult the `Web Programming wiki pages
-<http://wiki.python.org/moin/WebProgramming>`_ for more links.
+You can find a collection of useful links on the `Web Programming wiki page
+<http://wiki.python.org/moin/WebProgramming>`_.
 
 
 How do I send mail from a Python script?
@@ -737,7 +728,7 @@ work on any host that supports an SMTP listener. ::
    server.quit()
 
 A Unix-only alternative uses sendmail.  The location of the sendmail program
-varies between systems; sometimes it is ``/usr/lib/sendmail``, sometime
+varies between systems; sometimes it is ``/usr/lib/sendmail``, sometimes
 ``/usr/sbin/sendmail``.  The sendmail manual page will help you out.  Here's
 some sample code::
 
