@@ -27,8 +27,13 @@ try:
 except ImportError:
     bz2 = None
 
+try:
+    import lzma # We may need its compression method
+except ImportError:
+    lzma = None
+
 __all__ = ["BadZipFile", "BadZipfile", "error",
-           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2",
+           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
 
 class BadZipFile(Exception):
@@ -52,13 +57,15 @@ ZIP_MAX_COMMENT = (1 << 16) - 1
 ZIP_STORED = 0
 ZIP_DEFLATED = 8
 ZIP_BZIP2 = 12
+ZIP_LZMA = 14
 # Other ZIP compression methods not supported
 
 DEFAULT_VERSION = 20
 ZIP64_VERSION = 45
 BZIP2_VERSION = 46
+LZMA_VERSION = 63
 # we recognize (but not necessarily support) all features up to that version
-MAX_EXTRACT_VERSION = 46
+MAX_EXTRACT_VERSION = 63
 
 # Below are some formats and associated data for reading/writing headers using
 # the struct module.  The names and structures of headers/records are those used
@@ -367,6 +374,8 @@ class ZipInfo (object):
 
         if self.compress_type == ZIP_BZIP2:
             min_version = max(BZIP2_VERSION, min_version)
+        elif self.compress_type == ZIP_LZMA:
+            min_version = max(LZMA_VERSION, min_version)
 
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
@@ -480,6 +489,77 @@ class _ZipDecrypter:
         return c
 
 
+class LZMACompressor:
+
+    def __init__(self):
+        self._comp = None
+
+    def _init(self):
+        props = lzma.encode_filter_properties({'id': lzma.FILTER_LZMA1})
+        self._comp = lzma.LZMACompressor(lzma.FORMAT_RAW, filters=[
+                lzma.decode_filter_properties(lzma.FILTER_LZMA1, props)
+        ])
+        return struct.pack('<BBH', 9, 4, len(props)) + props
+
+    def compress(self, data):
+        if self._comp is None:
+            return self._init() + self._comp.compress(data)
+        return self._comp.compress(data)
+
+    def flush(self):
+        if self._comp is None:
+            return self._init() + self._comp.flush()
+        return self._comp.flush()
+
+
+class LZMADecompressor:
+
+    def __init__(self):
+        self._decomp = None
+        self._unconsumed = b''
+        self.eof = False
+
+    def decompress(self, data):
+        if self._decomp is None:
+            self._unconsumed += data
+            if len(self._unconsumed) <= 4:
+                return b''
+            psize, = struct.unpack('<H', self._unconsumed[2:4])
+            if len(self._unconsumed) <= 4 + psize:
+                return b''
+
+            self._decomp = lzma.LZMADecompressor(lzma.FORMAT_RAW, filters=[
+                    lzma.decode_filter_properties(lzma.FILTER_LZMA1,
+                            self._unconsumed[4:4 + psize])
+            ])
+            data = self._unconsumed[4 + psize:]
+            del self._unconsumed
+
+        result = self._decomp.decompress(data)
+        self.eof = self._decomp.eof
+        return result
+
+
+compressor_names = {
+    0: 'store',
+    1: 'shrink',
+    2: 'reduce',
+    3: 'reduce',
+    4: 'reduce',
+    5: 'reduce',
+    6: 'implode',
+    7: 'tokenize',
+    8: 'deflate',
+    9: 'deflate64',
+    10: 'implode',
+    12: 'bzip2',
+    14: 'lzma',
+    18: 'terse',
+    19: 'lz77',
+    97: 'wavpack',
+    98: 'ppmd',
+}
+
 def _check_compression(compression):
     if compression == ZIP_STORED:
         pass
@@ -491,6 +571,10 @@ def _check_compression(compression):
         if not bz2:
             raise RuntimeError(
                     "Compression requires the (missing) bz2 module")
+    elif compression == ZIP_LZMA:
+        if not lzma:
+            raise RuntimeError(
+                    "Compression requires the (missing) lzma module")
     else:
         raise RuntimeError("That compression method is not supported")
 
@@ -501,6 +585,8 @@ def _get_compressor(compress_type):
              zlib.DEFLATED, -15)
     elif compress_type == ZIP_BZIP2:
         return bz2.BZ2Compressor()
+    elif compress_type == ZIP_LZMA:
+        return LZMACompressor()
     else:
         return None
 
@@ -512,19 +598,10 @@ def _get_decompressor(compress_type):
         return zlib.decompressobj(-15)
     elif compress_type == ZIP_BZIP2:
         return bz2.BZ2Decompressor()
+    elif compress_type == ZIP_LZMA:
+        return LZMADecompressor()
     else:
-        unknown_compressors = {
-            1: 'shrink',
-            2: 'reduce',
-            3: 'reduce',
-            4: 'reduce',
-            5: 'reduce',
-            6: 'implode',
-            9: 'enhanced deflate',
-            10: 'implode',
-            14: 'lzma',
-            }
-        descr = unknown_compressors.get(compress_type)
+        descr = compressor_names.get(compress_type)
         if descr:
             raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
         else:
@@ -781,8 +858,8 @@ class ZipFile:
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
     mode: The mode can be either read "r", write "w" or append "a".
-    compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib) or
-                 ZIP_BZIP2 (requires bz2).
+    compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
+                 ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
@@ -1062,6 +1139,10 @@ class ZipFile:
             # Zip 2.7: compressed patched data
             raise NotImplementedError("compressed patched data (flag bit 5)")
 
+        if zinfo.flag_bits & 0x40:
+            # strong encryption
+            raise NotImplementedError("strong encryption (flag bit 6)")
+
         if zinfo.flag_bits & 0x800:
             # UTF-8 filename
             fname_str = fname.decode("utf-8")
@@ -1220,6 +1301,9 @@ class ZipFile:
         zinfo.file_size = st.st_size
         zinfo.flag_bits = 0x00
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
+        if zinfo.compress_type == ZIP_LZMA:
+            # Compressed data includes an end-of-stream (EOS) marker
+            zinfo.flag_bits |= 0x02
 
         self._writecheck(zinfo)
         self._didModify = True
@@ -1292,6 +1376,9 @@ class ZipFile:
         zinfo.header_offset = self.fp.tell()    # Start of header data
         if compress_type is not None:
             zinfo.compress_type = compress_type
+        if zinfo.compress_type == ZIP_LZMA:
+            # Compressed data includes an end-of-stream (EOS) marker
+            zinfo.flag_bits |= 0x02
 
         self._writecheck(zinfo)
         self._didModify = True
@@ -1360,6 +1447,8 @@ class ZipFile:
 
                 if zinfo.compress_type == ZIP_BZIP2:
                     min_version = max(BZIP2_VERSION, min_version)
+                elif zinfo.compress_type == ZIP_LZMA:
+                    min_version = max(LZMA_VERSION, min_version)
 
                 extract_version = max(min_version, zinfo.extract_version)
                 create_version = max(min_version, zinfo.create_version)

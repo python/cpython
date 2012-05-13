@@ -97,12 +97,20 @@ The module defines the following items:
 
    .. versionadded:: 3.3
 
+.. data:: ZIP_LZMA
+
+   The numeric constant for the LZMA compression method.  This requires the
+   lzma module.
+
+   .. versionadded:: 3.3
+
    .. note::
 
       The ZIP file format specification has included support for bzip2 compression
-      since 2001. However, some tools (including older Python releases) do not
-      support it, and may either refuse to process the ZIP file altogether, or
-      fail to extract individual files.
+      since 2001, and for LZMA compression since 2006. However, some tools
+      (including older Python releases) do not support these compression
+      methods, and may either refuse to process the ZIP file altogether,
+      or fail to extract individual files.
 
 
 .. seealso::
@@ -133,11 +141,11 @@ ZipFile Objects
    adding a ZIP archive to another file (such as :file:`python.exe`).  If
    *mode* is ``a`` and the file does not exist at all, it is created.
    *compression* is the ZIP compression method to use when writing the archive,
-   and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`; or
-   :const:`ZIP_DEFLATED`; unrecognized
-   values will cause :exc:`RuntimeError` to be raised.  If :const:`ZIP_DEFLATED` or
-   :const:`ZIP_BZIP2` is specified but the corresponded module
-   (:mod:`zlib` or :mod:`bz2`) is not available, :exc:`RuntimeError`
+   and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
+   :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
+   values will cause :exc:`RuntimeError` to be raised.  If :const:`ZIP_DEFLATED`,
+   :const:`ZIP_BZIP2` or :const:`ZIP_LZMA` is specified but the corresponded module
+   (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not available, :exc:`RuntimeError`
    is also raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
    ``True`` zipfile will create ZIP files that use the ZIP64 extensions when
    the zipfile is larger than 2 GB. If it is  false (the default) :mod:`zipfile`
@@ -161,7 +169,7 @@ ZipFile Objects
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
-      Added support for :mod:`bzip2` compression.
+      Added support for :mod:`bzip2` and :mod:`lzma` compression.
 
 
 .. method:: ZipFile.close()
