@@ -1,5 +1,5 @@
 @rem Used by the buildbot "clean" step.
-call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64
+call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64
 @echo Deleting .pyc/.pyo files ...
 del /s Lib\*.pyc Lib\*.pyo
 @echo Deleting test leftovers ...

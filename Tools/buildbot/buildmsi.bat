@@ -2,7 +2,7 @@
 
 cmd /c Tools\buildbot\external.bat
 @rem build release versions of things
-call "%VS90COMNTOOLS%vsvars32.bat"
+call "%VS100COMNTOOLS%vsvars32.bat"
 
 @rem build Python
 vcbuild /useenv PCbuild\pcbuild.sln "Release|Win32"

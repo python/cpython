@@ -18,7 +18,8 @@ char dllVersionBuffer[16] = ""; // a private buffer
 HMODULE PyWin_DLLhModule = NULL;
 const char *PyWin_DLLVersionString = dllVersionBuffer;
 
-// Windows "Activation Context" work:
+#if HAVE_SXS
+// Windows "Activation Context" work.
 // Our .pyd extension modules are generally built without a manifest (ie,
 // those included with Python and those built with a default distutils.
 // This requires we perform some "activation context" magic when loading our
@@ -29,6 +30,8 @@ const char *PyWin_DLLVersionString = dllVersionBuffer;
 // As an added complication, this magic only works on XP or later - we simply
 // use the existence (or not) of the relevant function pointers from kernel32.
 // See bug 4566 (http://python.org/sf/4566) for more details.
+// In Visual Studio 2010, side by side assemblies are no longer used by
+// default.
 
 typedef BOOL (WINAPI * PFN_GETCURRENTACTCTX)(HANDLE *);
 typedef BOOL (WINAPI * PFN_ACTIVATEACTCTX)(HANDLE, ULONG_PTR *);
@@ -75,6 +78,7 @@ void _Py_DeactivateActCtx(ULONG_PTR cookie)
         if (!(*pfnDeactivateActCtx)(0, cookie))
             OutputDebugString("Python failed to de-activate the activation context\n");
 }
+#endif /* HAVE_SXS */
 
 BOOL    WINAPI  DllMain (HANDLE hInst,
                                                 ULONG ul_reason_for_call,
@@ -87,17 +91,21 @@ BOOL    WINAPI  DllMain (HANDLE hInst,
             // 1000 is a magic number I picked out of the air.  Could do with a #define, I spose...
             LoadString(hInst, 1000, dllVersionBuffer, sizeof(dllVersionBuffer));
 
+#if HAVE_SXS
             // and capture our activation context for use when loading extensions.
             _LoadActCtxPointers();
             if (pfnGetCurrentActCtx && pfnAddRefActCtx)
                 if ((*pfnGetCurrentActCtx)(&PyWin_DLLhActivationContext))
                     if (!(*pfnAddRefActCtx)(PyWin_DLLhActivationContext))
                         OutputDebugString("Python failed to load the default activation context\n");
+#endif
             break;
 
         case DLL_PROCESS_DETACH:
+#if HAVE_SXS
             if (pfnReleaseActCtx)
                 (*pfnReleaseActCtx)(PyWin_DLLhActivationContext);
+#endif
             break;
     }
     return TRUE;
