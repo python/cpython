@@ -45,6 +45,11 @@ try:
 except ImportError:
     bz2 = None
 
+try:
+    import lzma
+except ImportError:
+    lzma = None
+
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
     "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -62,7 +67,7 @@ __all__ = [
     "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
     "import_fresh_module", "requires_zlib", "PIPE_MAX_SIZE", "failfast",
-    "anticipate_failure", "run_with_tz", "requires_bz2"
+    "anticipate_failure", "run_with_tz", "requires_bz2", "requires_lzma"
     ]
 
 class Error(Exception):
@@ -512,6 +517,8 @@ requires_IEEE_754 = unittest.skipUnless(
 requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
 
 requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
+
+requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 

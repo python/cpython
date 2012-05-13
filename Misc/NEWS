@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14366: Support lzma compression in zip files.
+  Patch by Serhiy Storchaka.
+
 - Issue #13959: Introduce importlib.find_loader().
 
 - Issue #14082: shutil.copy2() now copies extended attributes, if possible.
