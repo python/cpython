@@ -26,7 +26,8 @@ Library
 - Issue #14366: Support lzma compression in zip files.
   Patch by Serhiy Storchaka.
 
-- Issue #13959: Introduce importlib.find_loader().
+- Issue #13959: Introduce importlib.find_loader() and document
+  imp.find_module/load_module as deprecated.
 
 - Issue #14082: shutil.copy2() now copies extended attributes, if possible.
   Patch by Hynek Schlawack.
