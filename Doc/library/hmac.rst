@@ -38,6 +38,13 @@ An HMAC object has the following methods:
    given to the constructor.  It may contain non-ASCII bytes, including NUL
    bytes.
 
+   .. warning::
+
+      When comparing the output of :meth:`digest` to an externally-supplied
+      digest during a verification routine, it is recommended to use the
+      :func:`hmac.secure_compare` function instead of the ``==`` operator
+      to avoid potential timing attacks.
+
 
 .. method:: HMAC.hexdigest()
 
@@ -45,11 +52,36 @@ An HMAC object has the following methods:
    length containing only hexadecimal digits.  This may be used to exchange the
    value safely in email or other non-binary environments.
 
+   .. warning::
+
+      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      digest during a verification routine, it is recommended to use the
+      :func:`hmac.secure_compare` function instead of the ``==`` operator
+      to avoid potential timing attacks.
+
 
 .. method:: HMAC.copy()
 
    Return a copy ("clone") of the hmac object.  This can be used to efficiently
    compute the digests of strings that share a common initial substring.
+
+
+This module also provides the following helper function:
+
+.. function:: secure_compare(a, b)
+
+   Returns the equivalent of ``a == b``, but using a time-independent
+   comparison method. Comparing the full lengths of the inputs *a* and *b*,
+   instead of short-circuiting the comparison upon the first unequal byte,
+   prevents leaking information about the inputs being compared and mitigates
+   potential timing attacks. The inputs must be either :class:`str` or
+   :class:`bytes` instances.
+
+   .. note::
+
+      While the :func:`hmac.secure_compare` function prevents leaking the
+      contents of the inputs via a timing attack, it does leak the length
+      of the inputs. However, this generally is not a security risk.
 
 
 .. seealso::
