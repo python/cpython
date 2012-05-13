@@ -161,9 +161,47 @@ class SetPackageTests(unittest.TestCase):
         self.assertEqual(wrapped.__name__, fxn.__name__)
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
+
+class ResolveNameTests(unittest.TestCase):
+
+    """Tests importlib.util.resolve_name()."""
+
+    def test_absolute(self):
+        # bacon
+        self.assertEqual('bacon', util.resolve_name('bacon', None))
+
+    def test_aboslute_within_package(self):
+        # bacon in spam
+        self.assertEqual('bacon', util.resolve_name('bacon', 'spam'))
+
+    def test_no_package(self):
+        # .bacon in ''
+        with self.assertRaises(ValueError):
+            util.resolve_name('.bacon', '')
+
+    def test_in_package(self):
+        # .bacon in spam
+        self.assertEqual('spam.eggs.bacon',
+                         util.resolve_name('.bacon', 'spam.eggs'))
+
+    def test_other_package(self):
+        # ..bacon in spam.bacon
+        self.assertEqual('spam.bacon',
+                         util.resolve_name('..bacon', 'spam.eggs'))
+
+    def test_escape(self):
+        # ..bacon in spam
+        with self.assertRaises(ValueError):
+            util.resolve_name('..bacon', 'spam')
+
+
 def test_main():
     from test import support
-    support.run_unittest(ModuleForLoaderTests, SetPackageTests)
+    support.run_unittest(
+            ModuleForLoaderTests,
+            SetPackageTests,
+            ResolveNameTests
+        )
 
 
 if __name__ == '__main__':
