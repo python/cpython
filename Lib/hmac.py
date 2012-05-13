@@ -13,6 +13,27 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 digest_size = None
 
 
+def secure_compare(a, b):
+    """Returns the equivalent of 'a == b', but using a time-independent
+    comparison method to prevent timing attacks."""
+    if not ((isinstance(a, str) and isinstance(b, str)) or
+            (isinstance(a, bytes) and isinstance(b, bytes))):
+        raise TypeError("inputs must be strings or bytes")
+
+    if len(a) != len(b):
+        return False
+
+    result = 0
+    if isinstance(a, bytes):
+        for x, y in zip(a, b):
+            result |= x ^ y
+    else:
+        for x, y in zip(a, b):
+            result |= ord(x) ^ ord(y)
+
+    return result == 0
+
+
 class HMAC:
     """RFC 2104 HMAC class.  Also complies with RFC 4231.
 
