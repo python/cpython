@@ -72,6 +72,9 @@ This module provides an interface to the mechanisms used to implement the
    then use :func:`find_module` with the *path* argument set to ``P.__path__``.
    When *P* itself has a dotted name, apply this recipe recursively.
 
+   .. deprecated:: 3.3
+      Use :func:`importlib.find_loader` instead.
+
 
 .. function:: load_module(name, file, pathname, description)
 
@@ -92,6 +95,10 @@ This module provides an interface to the mechanisms used to implement the
    **Important:** the caller is responsible for closing the *file* argument, if
    it was not ``None``, even when an exception is raised.  This is best done
    using a :keyword:`try` ... :keyword:`finally` statement.
+
+   .. deprecated:: 3.3
+      Unneeded as loaders should be used to load modules and
+      :func:`find_module` is deprecated.
 
 
 .. function:: new_module(name)
