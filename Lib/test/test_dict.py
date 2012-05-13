@@ -411,7 +411,7 @@ class DictTest(unittest.TestCase):
                 d[i+1] = 1
 
     def test_mutating_lookup(self):
-        # changing dict during a lookup
+        # changing dict during a lookup (issue #14417)
         class NastyKey:
             mutate_dict = None
 
@@ -433,9 +433,8 @@ class DictTest(unittest.TestCase):
         key2 = NastyKey(2)
         d = {key1: 1}
         NastyKey.mutate_dict = (d, key1)
-        with self.assertRaisesRegex(RuntimeError,
-                                    'dictionary changed size during lookup'):
-            d[key2] = 2
+        d[key2] = 2
+        self.assertEqual(d, {key2: 2})
 
     def test_repr(self):
         d = {}

@@ -557,13 +557,6 @@ Some smaller changes made to the core Python language are:
 
   (:issue:`12170`)
 
-* A dict lookup now raises a :exc:`RuntimeError` if the dict is modified during
-  the lookup. If you implement your own comparison function for objects used
-  as dict keys and the dict is shared by multiple threads, access to the dict
-  should be protected by a lock.
-
-  (:issue:`14205`)
-
 * New methods have been added to :class:`list` and :class:`bytearray`:
   ``copy()`` and ``clear()``.
 

@@ -2210,10 +2210,6 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       See :class:`collections.Counter` for a complete implementation including
       other methods helpful for accumulating and managing tallies.
 
-      .. versionchanged:: 3.3
-         If the dict is modified during the lookup, a :exc:`RuntimeError`
-         exception is now raised.
-
    .. describe:: d[key] = value
 
       Set ``d[key]`` to *value*.
