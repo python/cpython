@@ -5,7 +5,7 @@
     <PythonExe>$(SolutionDir)\python.exe</PythonExe>
     <externalsDir>..\..</externalsDir>
     <sqlite3Dir>$(externalsDir)\sqlite-3.7.4</sqlite3Dir>
-    <bz2Dir>$(externalsDir)\bzip2-1.0.5</bz2Dir>
+    <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.3</lzmaDir>
     <opensslDir>$(externalsDir)\openssl-1.0.0a</opensslDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
