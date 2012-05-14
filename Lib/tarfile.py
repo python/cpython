@@ -758,6 +758,13 @@ class _FileInFile(object):
         self.closed = True
 #class _FileInFile
 
+class ExFileObject(io.BufferedReader):
+
+    def __init__(self, tarfile, tarinfo):
+        fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
+                tarinfo.size, tarinfo.sparse)
+        super().__init__(fileobj)
+#class ExFileObject
 
 #------------------
 # Exported Classes
@@ -1443,8 +1450,7 @@ class TarFile(object):
 
     tarinfo = TarInfo           # The default TarInfo class to use.
 
-    fileobject = None           # The file-object for extractfile() or
-                                # io.BufferedReader if None.
+    fileobject = ExFileObject   # The file-object for extractfile().
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
@@ -2081,12 +2087,7 @@ class TarFile(object):
 
         if tarinfo.isreg() or tarinfo.type not in SUPPORTED_TYPES:
             # Members with unknown types are treated as regular files.
-            if self.fileobject is None:
-                fileobj = _FileInFile(self.fileobj, tarinfo.offset_data, tarinfo.size, tarinfo.sparse)
-                return io.BufferedReader(fileobj)
-            else:
-                # Keep the traditional pre-3.3 API intact.
-                return self.fileobject(self, tarinfo)
+            return self.fileobject(self, tarinfo)
 
         elif tarinfo.islnk() or tarinfo.issym():
             if isinstance(self.fileobj, _Stream):
