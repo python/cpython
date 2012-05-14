@@ -2379,7 +2379,7 @@ PyType_FromSpec(PyType_Spec *spec)
         /* need to make a copy of the docstring slot, which usually
            points to a static string literal */
         if (slot->slot == Py_tp_doc) {
-            ssize_t len = strlen(slot->pfunc)+1;
+            size_t len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL)
 	    	goto fail;
