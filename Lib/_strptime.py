@@ -444,8 +444,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
+    leap_year_fix = False
     if year is None and month == 2 and day == 29:
         year = 1904  # 1904 is first leap year of 20th century
+        leap_year_fix = True
     elif year is None:
         year = 1900
     # If we know the week of the year and what day of that week, we can figure
@@ -475,6 +477,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         gmtoff = tzoffset * 60
     else:
         gmtoff = None
+
+    if leap_year_fix:
+        # the caller didn't supply a year but asked for Feb 29th. We couldn't
+        # use the default of 1900 for computations. We set it back to ensure
+        # that February 29th is smaller than March 1st.
+        year = 1900
 
     return (year, month, day,
             hour, minute, second,
