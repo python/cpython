@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
+
 - Issue #14532: Add a secure_compare() helper to the hmac module, to mitigate
   timing attacks. Patch by Jon Oberheide. 
 
@@ -180,8 +182,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
 
 - Issue #14768: os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
 
