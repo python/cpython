@@ -532,7 +532,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="bzip2 1.0.5 Header Files"
+			Name="bzip2 1.0.6 Header Files"
 			>
 			<File
 				RelativePath="$(bz2Dir)\bzlib.h"
@@ -544,7 +544,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="bzip2 1.0.5 Source Files"
+			Name="bzip2 1.0.6 Source Files"
 			>
 			<File
 				RelativePath="$(bz2Dir)\blocksort.c"
