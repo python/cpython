@@ -381,6 +381,11 @@ class StrptimeTests(unittest.TestCase):
     def test_feb29_on_leap_year_without_year(self):
         time.strptime("Feb 29", "%b %d")
 
+    def test_mar1_comes_after_feb29_even_when_omitting_the_year(self):
+        self.assertLess(
+                time.strptime("Feb 29", "%b %d"),
+                time.strptime("Mar 1", "%b %d"))
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 
