@@ -78,7 +78,7 @@
 	/>
 	<UserMacro
 		Name="bz2Dir"
-		Value="$(externalsDir)\bzip2-1.0.5"
+		Value="$(externalsDir)\bzip2-1.0.6"
 	/>
 	<UserMacro
 		Name="opensslDir"
