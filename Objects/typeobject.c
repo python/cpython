@@ -2360,21 +2360,21 @@ PyType_FromSpec(PyType_Spec *spec)
       return NULL;
     res->ht_name = PyUnicode_FromString(spec->name);
     if (!res->ht_name)
-	goto fail;
+        goto fail;
     res->ht_type.tp_name = _PyUnicode_AsString(res->ht_name);
     if (!res->ht_type.tp_name)
-	goto fail;
+        goto fail;
 
     res->ht_type.tp_basicsize = spec->basicsize;
     res->ht_type.tp_itemsize = spec->itemsize;
     res->ht_type.tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
     for (slot = spec->slots; slot->slot; slot++) {
-	if (slot->slot >= sizeof(slotoffsets)/sizeof(slotoffsets[0])) {
-	    PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
-	    goto fail;
-	}
-	*(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
+        if (slot->slot >= sizeof(slotoffsets)/sizeof(slotoffsets[0])) {
+            PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
+            goto fail;
+        }
+        *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
 
         /* need to make a copy of the docstring slot, which usually
            points to a static string literal */
@@ -2382,7 +2382,7 @@ PyType_FromSpec(PyType_Spec *spec)
             size_t len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL)
-	    	goto fail;
+                goto fail;
             memcpy(tp_doc, slot->pfunc, len);
             res->ht_type.tp_doc = tp_doc;
         }
