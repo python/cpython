@@ -5,6 +5,6 @@ del /s Lib\*.pyc Lib\*.pyo
 @echo Deleting test leftovers ...
 rmdir /s /q build
 cd PCbuild
-vcbuild /clean pcbuild.sln "Release|Win32"
-vcbuild /clean pcbuild.sln "Debug|Win32"
+msbuild /target:clean pcbuild.sln /p:Configuration=Release /p:PlatformTarget=x86
+msbuild /target:clean pcbuild.sln /p:Configuration=Debug /p:PlatformTarget=x86
 cd ..
