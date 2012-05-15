@@ -197,6 +197,9 @@ The :meth:`handle_request` method is called once all relevant input has been
 marshalled, after setting the channel terminator to ``None`` to ensure that
 any extraneous data sent by the web client are ignored. ::
 
+
+   import asynchat
+
    class http_request_handler(asynchat.async_chat):
 
        def __init__(self, sock, addr, sessions, log):
