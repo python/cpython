@@ -578,9 +578,6 @@
     <ClCompile Include="..\Modules\zlib\deflate.c">
       <Filter>Modules\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\gzio.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\zlib\infback.c">
       <Filter>Modules\zlib</Filter>
     </ClCompile>
