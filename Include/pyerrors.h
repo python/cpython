@@ -10,7 +10,8 @@ extern "C" {
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
              PyObject *args; PyObject *traceback;\
-             PyObject *context; PyObject *cause;
+             PyObject *context; PyObject *cause;\
+             int suppress_context;
 
 typedef struct {
     PyException_HEAD
@@ -114,7 +115,6 @@ PyAPI_FUNC(PyObject *) PyException_GetTraceback(PyObject *);
 /* Cause manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetCause(PyObject *);
 PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
-PyAPI_FUNC(int) _PyException_SetCauseChecked(PyObject *, PyObject *);
 
 /* Context manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);

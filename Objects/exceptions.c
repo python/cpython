@@ -42,6 +42,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
     self->traceback = self->cause = self->context = NULL;
+    self->suppress_context = 0;
 
     self->args = PyTuple_New(0);
     if (!self->args) {
@@ -266,24 +267,7 @@ BaseException_get_cause(PyObject *self) {
     PyObject *res = PyException_GetCause(self);
     if (res)
         return res;  /* new reference already returned above */
-    Py_INCREF(Py_Ellipsis);
-    return Py_Ellipsis;
-}
-
-int
-_PyException_SetCauseChecked(PyObject *self, PyObject *arg) {
-    if (arg == Py_Ellipsis) {
-        arg = NULL;
-    } else if (arg != Py_None && !PyExceptionInstance_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "exception cause must be None, "
-                        "Ellipsis or derive from BaseException");
-        return -1;
-    } else {
-        /* PyException_SetCause steals a reference */
-        Py_INCREF(arg);
-    }
-    PyException_SetCause(self, arg);
-    return 0;
+    Py_RETURN_NONE;
 }
 
 static int
@@ -291,8 +275,18 @@ BaseException_set_cause(PyObject *self, PyObject *arg) {
     if (arg == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
         return -1;
+    } else if (arg == Py_None) {
+        arg = NULL;
+    } else if (!PyExceptionInstance_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "exception cause must be None "
+                        "or derive from BaseException");
+        return -1;
+    } else {
+        /* PyException_SetCause steals this reference */
+        Py_INCREF(arg);
     }
-    return _PyException_SetCauseChecked(self, arg);
+    PyException_SetCause(self, arg);
+    return 0;
 }
 
 
@@ -333,6 +327,7 @@ void
 PyException_SetCause(PyObject *self, PyObject *cause) {
     PyObject *old_cause = ((PyBaseExceptionObject *)self)->cause;
     ((PyBaseExceptionObject *)self)->cause = cause;
+    ((PyBaseExceptionObject *)self)->suppress_context = 1;
     Py_XDECREF(old_cause);
 }
 
@@ -350,6 +345,12 @@ PyException_SetContext(PyObject *self, PyObject *context) {
     ((PyBaseExceptionObject *)self)->context = context;
     Py_XDECREF(old_context);
 }
+
+
+static struct PyMemberDef BaseException_members[] = {
+    {"__suppress_context__", T_BOOL,
+     offsetof(PyBaseExceptionObject, suppress_context)}
+};
 
 
 static PyTypeObject _PyExc_BaseException = {
@@ -382,7 +383,7 @@ static PyTypeObject _PyExc_BaseException = {
     0,                          /* tp_iter */
     0,                          /* tp_iternext */
     BaseException_methods,      /* tp_methods */
-    0,                          /* tp_members */
+    BaseException_members,      /* tp_members */
     BaseException_getset,       /* tp_getset */
     0,                          /* tp_base */
     0,                          /* tp_dict */
