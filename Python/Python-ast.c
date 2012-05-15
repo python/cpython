@@ -636,7 +636,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 
 static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
 {
-    Py_ssize_t i, n = asdl_seq_LEN(seq);
+    int i, n = asdl_seq_LEN(seq);
     PyObject *result = PyList_New(n);
     PyObject *value;
     if (!result)
@@ -2857,7 +2857,7 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 {
-                        Py_ssize_t i, n = asdl_seq_LEN(o->v.Compare.ops);
+                        int i, n = asdl_seq_LEN(o->v.Compare.ops);
                         value = PyList_New(n);
                         if (!value) goto failed;
                         for(i = 0; i < n; i++)
