@@ -23,9 +23,6 @@ if not exist bzip2-1.0.6 (
   svn export http://svn.python.org/projects/external/bzip2-1.0.6
 )
 
-@rem Sleepycat db
-if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20-vs9 db-4.4.20
-
 @rem OpenSSL
 if not exist openssl-1.0.0a svn export http://svn.python.org/projects/external/openssl-1.0.0a
 
