@@ -651,6 +651,7 @@ class WalkTests(unittest.TestCase):
         #         SUB2/             a file kid and a dirsymlink kid
         #           tmp3
         #           link/           a symlink to TESTFN.2
+        #           broken_link
         #       TEST2/
         #         tmp4              a lone file
         walk_path = join(support.TESTFN, "TEST1")
@@ -663,6 +664,8 @@ class WalkTests(unittest.TestCase):
         link_path = join(sub2_path, "link")
         t2_path = join(support.TESTFN, "TEST2")
         tmp4_path = join(support.TESTFN, "TEST2", "tmp4")
+        link_path = join(sub2_path, "link")
+        broken_link_path = join(sub2_path, "broken_link")
 
         # Create stuff.
         os.makedirs(sub11_path)
@@ -679,7 +682,8 @@ class WalkTests(unittest.TestCase):
             else:
                 symlink_to_dir = os.symlink
             symlink_to_dir(os.path.abspath(t2_path), link_path)
-            sub2_tree = (sub2_path, ["link"], ["tmp3"])
+            symlink_to_dir('broken', broken_link_path)
+            sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
         else:
             sub2_tree = (sub2_path, [], ["tmp3"])
 
