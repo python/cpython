@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12541: Be lenient with quotes around Realm field of HTTP Basic
+  Authentation in urllib2.
+
 - Issue #14662: Prevent shutil failures on OS X when destination does not
   support chflag operations.  Patch by Hynek Schlawack.
 
