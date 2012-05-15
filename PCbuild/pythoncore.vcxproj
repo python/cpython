@@ -564,12 +564,6 @@
     <ClCompile Include="..\Modules\zlib\compress.c" />
     <ClCompile Include="..\Modules\zlib\crc32.c" />
     <ClCompile Include="..\Modules\zlib\deflate.c" />
-    <ClCompile Include="..\Modules\zlib\gzio.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
     <ClCompile Include="..\Modules\zlib\infback.c" />
     <ClCompile Include="..\Modules\zlib\inffast.c" />
     <ClCompile Include="..\Modules\zlib\inflate.c" />
