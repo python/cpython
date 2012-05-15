@@ -40,7 +40,7 @@ class TestFilemode(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
     def test_link(self):
         os.symlink(os.getcwd(), TESTFN)
-        self.assertEqual(get_mode(), 'lrwxrwxrwx')
+        self.assertEqual(get_mode()[0], 'l')
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
     def test_fifo(self):
