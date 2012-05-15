@@ -695,6 +695,7 @@ class WalkTests(unittest.TestCase):
         #     flipped:  TESTFN, SUB2, SUB1, SUB11
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
+        all[3 - 2 * flipped][-1].sort()
         self.assertEqual(all[0], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (sub11_path, [], []))
