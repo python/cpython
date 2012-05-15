@@ -13591,7 +13591,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                     c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
                     if (c < '0' || c > '9')
                         break;
-                    if (width > (PY_SSIZE_T_MAX - (c - '0')) / 10) {
+                    /* Since c is unsigned, the RHS would end up as unsigned,
+                       mixing signed and unsigned comparison. Since c is between
+                       '0' and '9', casting to int is safe. */
+                    if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
                         PyErr_SetString(PyExc_ValueError,
                                         "width too big");
                         goto onError;
@@ -13626,7 +13629,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                         c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
                         if (c < '0' || c > '9')
                             break;
-                        if (prec > (INT_MAX - (c - '0')) / 10) {
+                        if (prec > (INT_MAX - ((int)c - '0')) / 10) {
                             PyErr_SetString(PyExc_ValueError,
                                             "prec too big");
                             goto onError;
