@@ -784,7 +784,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 
 static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
 {
-    int i, n = asdl_seq_LEN(seq);
+    Py_ssize_t i, n = asdl_seq_LEN(seq);
     PyObject *result = PyList_New(n);
     PyObject *value;
     if (!result)
@@ -1106,7 +1106,7 @@ class ObjVisitor(PickleVisitor):
                 # While the sequence elements are stored as void*,
                 # ast2obj_cmpop expects an enum
                 self.emit("{", depth)
-                self.emit("int i, n = asdl_seq_LEN(%s);" % value, depth+1)
+                self.emit("Py_ssize_t i, n = asdl_seq_LEN(%s);" % value, depth+1)
                 self.emit("value = PyList_New(n);", depth+1)
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
