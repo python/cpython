@@ -102,6 +102,7 @@ import sys
 import time
 import urlparse
 import bisect
+import warnings
 
 try:
     from cStringIO import StringIO
@@ -861,6 +862,9 @@ class AbstractBasicAuthHandler:
             mo = AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
                 scheme, quote, realm = mo.groups()
+                if quote not in ['"', "'"]:
+                    warnings.warn("Basic Auth Realm was unquoted",
+                                  UserWarning, 2)
                 if scheme.lower() == 'basic':
                     response = self.retry_http_basic_auth(host, req, realm)
                     if response and response.code != 401:
