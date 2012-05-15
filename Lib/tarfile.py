@@ -274,47 +274,13 @@ def copyfileobj(src, dst, length=None):
         dst.write(buf)
     return
 
-filemode_table = (
-    ((S_IFLNK,      "l"),
-     (S_IFREG,      "-"),
-     (S_IFBLK,      "b"),
-     (S_IFDIR,      "d"),
-     (S_IFCHR,      "c"),
-     (S_IFIFO,      "p")),
-
-    ((TUREAD,       "r"),),
-    ((TUWRITE,      "w"),),
-    ((TUEXEC|TSUID, "s"),
-     (TSUID,        "S"),
-     (TUEXEC,       "x")),
-
-    ((TGREAD,       "r"),),
-    ((TGWRITE,      "w"),),
-    ((TGEXEC|TSGID, "s"),
-     (TSGID,        "S"),
-     (TGEXEC,       "x")),
-
-    ((TOREAD,       "r"),),
-    ((TOWRITE,      "w"),),
-    ((TOEXEC|TSVTX, "t"),
-     (TSVTX,        "T"),
-     (TOEXEC,       "x"))
-)
-
 def filemode(mode):
-    """Convert a file's mode to a string of the form
-       -rwxrwxrwx.
-       Used by TarFile.list()
-    """
-    perm = []
-    for table in filemode_table:
-        for bit, char in table:
-            if mode & bit == bit:
-                perm.append(char)
-                break
-        else:
-            perm.append("-")
-    return "".join(perm)
+    """Deprecated in this location; use stat.filemode."""
+    import warnings
+    warnings.warn("deprecated in favor of stat.filemode",
+                  DeprecationWarning, 2)
+    return stat.filemode(mode)
+
 
 class TarError(Exception):
     """Base exception."""
@@ -1891,7 +1857,7 @@ class TarFile(object):
 
         for tarinfo in self:
             if verbose:
-                print(filemode(tarinfo.mode), end=' ')
+                print(stat.filemode(tarinfo.mode), end=' ')
                 print("%s/%s" % (tarinfo.uname or tarinfo.uid,
                                  tarinfo.gname or tarinfo.gid), end=' ')
                 if tarinfo.ischr() or tarinfo.isblk():
