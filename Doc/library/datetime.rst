@@ -14,8 +14,8 @@
 The :mod:`datetime` module supplies classes for manipulating dates and times in
 both simple and complex ways.  While date and time arithmetic is supported, the
 focus of the implementation is on efficient attribute extraction for output
-formatting and manipulation. For related
-functionality, see also the :mod:`time` and :mod:`calendar` modules.
+formatting and manipulation. For related functionality, see also the
+:mod:`time` and :mod:`calendar` modules.
 
 There are two kinds of date and time objects: "naive" and "aware".
 
@@ -26,22 +26,22 @@ is used to represent a specific moment in time that is not open to
 interpretation [#]_.
 
 +A naive object does not contain enough information to unambiguously locate
-+itself relative to other date/time objects.  Whether
-a naive object represents Coordinated Universal Time (UTC),
-local time, or time in some other timezone is purely up to the program, just
-like it's up to the program whether a particular number represents metres,
-miles, or mass.  Naive objects are easy to understand and to
-work with, at the cost of ignoring some aspects of reality.
++itself relative to other date/time objects.  Whether a naive object represents
+Coordinated Universal Time (UTC), local time, or time in some other timezone is
+purely up to the program, just like it's up to the program whether a particular
+number represents metres, miles, or mass.  Naive objects are easy to understand
+and to work with, at the cost of ignoring some aspects of reality.
 
-For applications requiring aware objects, :class:`.datetime` and :class:`.time` objects
-have an optional time zone information attribute, :attr:`tzinfo`, that can be
-set to an instance of a subclass of the abstract :class:`tzinfo` class.  These
-:class:`tzinfo` objects capture information about the offset from UTC time, the
-time zone name, and whether Daylight Saving Time is in effect.  Note that no
-concrete :class:`tzinfo` classes are supplied by the :mod:`datetime` module.
-Supporting timezones at whatever level of detail is required is up to the
-application.  The rules for time adjustment across the world are more political
-than rational, and there is no standard suitable for every application.
+For applications requiring aware objects, :class:`.datetime` and :class:`.time`
+objects have an optional time zone information attribute, :attr:`tzinfo`, that
+can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
+These :class:`tzinfo` objects capture information about the offset from UTC
+time, the time zone name, and whether Daylight Saving Time is in effect.  Note
+that no concrete :class:`tzinfo` classes are supplied by the :mod:`datetime`
+module.  Supporting timezones at whatever level of detail is required is up to
+the application.  The rules for time adjustment across the world are more
+political than rational, and there is no standard suitable for every
+application.
 
 The :mod:`datetime` module exports the following constants:
 
