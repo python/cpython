@@ -12,28 +12,34 @@
 The :mod:`datetime` module supplies classes for manipulating dates and times in
 both simple and complex ways.  While date and time arithmetic is supported, the
 focus of the implementation is on efficient attribute extraction for output
-formatting and manipulation. For related
-functionality, see also the :mod:`time` and :mod:`calendar` modules.
+formatting and manipulation. For related functionality, see also the
+:mod:`time` and :mod:`calendar` modules.
 
-There are two kinds of date and time objects: "naive" and "aware". This
-distinction refers to whether the object has any notion of time zone, daylight
-saving time, or other kind of algorithmic or political time adjustment.  Whether
-a naive :class:`.datetime` object represents Coordinated Universal Time (UTC),
-local time, or time in some other timezone is purely up to the program, just
-like it's up to the program whether a particular number represents metres,
-miles, or mass.  Naive :class:`.datetime` objects are easy to understand and to
-work with, at the cost of ignoring some aspects of reality.
+There are two kinds of date and time objects: "naive" and "aware".
 
-For applications requiring more, :class:`.datetime` and :class:`.time` objects
-have an optional time zone information attribute, :attr:`tzinfo`, that can be
-set to an instance of a subclass of the abstract :class:`tzinfo` class.  These
-:class:`tzinfo` objects capture information about the offset from UTC time, the
-time zone name, and whether Daylight Saving Time is in effect.  Note that only
-one concrete :class:`tzinfo` class, the :class:`timezone` class, is supplied by the
-:mod:`datetime` module.  The :class:`timezone` class can represent simple
-timezones with fixed offset from UTC such as UTC itself or North American EST and
-EDT timezones.  Supporting timezones at whatever level of detail is
-required is up to the application.  The rules for time adjustment across the
+An aware object has sufficient knowledge of applicable algorithmic and
+political time adjustments, such as time zone and daylight saving time
+information, to locate itself relative to other aware objects.  An aware object
+is used to represent a specific moment in time that is not open to
+interpretation [#]_.
+
+A naive object does not contain enough information to unambiguously locate
+itself relative to other date/time objects.  Whether a naive object represents
+Coordinated Universal Time (UTC), local time, or time in some other timezone is
+purely up to the program, just like it is up to the program whether a
+particular number represents metres, miles, or mass.  Naive objects are easy to
+understand and to work with, at the cost of ignoring some aspects of reality.
+
+For applications requiring aware objects, :class:`.datetime` and :class:`.time`
+objects have an optional time zone information attribute, :attr:`tzinfo`, that
+can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
+These :class:`tzinfo` objects capture information about the offset from UTC
+time, the time zone name, and whether Daylight Saving Time is in effect.  Note
+that only one concrete :class:`tzinfo` class, the :class:`timezone` class, is
+supplied by the :mod:`datetime` module.  The :class:`timezone` class can
+represent simple timezones with fixed offset from UTC, such as UTC itself or
+North American EST and EDT timezones.  Supporting timezones at deeper levels of
+detail is up to the application.  The rules for time adjustment across the
 world are more political than rational, change frequently, and there is no
 standard suitable for every application aside from UTC.
 
@@ -114,10 +120,13 @@ Objects of these types are immutable.
 
 Objects of the :class:`date` type are always naive.
 
-An object *d* of type :class:`.time` or :class:`.datetime` may be naive or aware.
-*d* is aware if ``d.tzinfo`` is not ``None`` and ``d.tzinfo.utcoffset(d)`` does
-not return ``None``.  If ``d.tzinfo`` is ``None``, or if ``d.tzinfo`` is not
-``None`` but ``d.tzinfo.utcoffset(d)`` returns ``None``, *d* is naive.
+An object of type :class:`.time` or :class:`.datetime` may be naive or aware.
+A :class:`.datetime` object *d* is aware if ``d.tzinfo`` is not ``None`` and
+``d.tzinfo.utcoffset(d)`` does not return ``None``.  If ``d.tzinfo`` is
+``None``, or if ``d.tzinfo`` is not ``None`` but ``d.tzinfo.utcoffset(d)``
+returns ``None``, *d* is naive.  A :class:`.time` object *t* is aware
+if ``t.tzinfo`` is not ``None`` and ``t.tzinfo.utcoffset(None)`` does not return
+``None``.  Otherwise, *t* is naive.
 
 The distinction between naive and aware doesn't apply to :class:`timedelta`
 objects.
@@ -1846,3 +1855,7 @@ Notes:
    When the ``%z`` directive is provided to the :meth:`strptime` method, an
    aware :class:`.datetime` object will be produced.  The ``tzinfo`` of the
    result will be set to a :class:`timezone` instance.
+
+.. rubric:: Footnotes
+
+.. [#] If, that is, we ignore the effects of Relativity
