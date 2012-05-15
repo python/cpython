@@ -215,7 +215,6 @@ InvalidContinuation:
     goto Return;
 }
 
-#undef LONG_PTR_MASK
 #undef ASCII_CHAR_MASK
 
 
@@ -415,4 +414,152 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #undef MAX_SHORT_UNICHARS
 }
 
+/* The pattern for constructing UCS2-repeated masks. */
+#if SIZEOF_LONG == 8
+# define UCS2_REPEAT_MASK 0x0001000100010001ul
+#elif SIZEOF_LONG == 4
+# define UCS2_REPEAT_MASK 0x00010001ul
+#else
+# error C 'long' size should be either 4 or 8!
+#endif
+
+/* The mask for fast checking. */
+#if STRINGLIB_SIZEOF_CHAR == 1
+/* The mask for fast checking of whether a C 'long' contains a
+   non-ASCII or non-Latin1 UTF16-encoded characters. */
+# define FAST_CHAR_MASK         (UCS2_REPEAT_MASK * (0xFFFFu & ~STRINGLIB_MAX_CHAR))
+#else
+/* The mask for fast checking of whether a C 'long' may contain
+   UTF16-encoded surrogate characters. This is an efficient heuristic,
+   assuming that non-surrogate characters with a code point >= 0x8000 are
+   rare in most input.
+*/
+# define FAST_CHAR_MASK         (UCS2_REPEAT_MASK * 0x8000u)
+#endif
+/* The mask for fast byte-swapping. */
+#define STRIPPED_MASK           (UCS2_REPEAT_MASK * 0x00FFu)
+/* Swap bytes. */
+#define SWAB(value)             ((((value) >> 8) & STRIPPED_MASK) | \
+                                 (((value) & STRIPPED_MASK) << 8))
+
+Py_LOCAL_INLINE(Py_UCS4)
+STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
+                        STRINGLIB_CHAR *dest, Py_ssize_t *outpos,
+                        int native_ordering)
+{
+    Py_UCS4 ch;
+    const unsigned char *aligned_end =
+            (const unsigned char *) ((size_t) e & ~LONG_PTR_MASK);
+    const unsigned char *q = *inptr;
+    STRINGLIB_CHAR *p = dest + *outpos;
+    /* Offsets from q for retrieving byte pairs in the right order. */
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+    int ihi = !!native_ordering, ilo = !native_ordering;
+#else
+    int ihi = !native_ordering, ilo = !!native_ordering;
+#endif
+    --e;
+
+    while (q < e) {
+        Py_UCS4 ch2;
+        /* First check for possible aligned read of a C 'long'. Unaligned
+           reads are more expensive, better to defer to another iteration. */
+        if (!((size_t) q & LONG_PTR_MASK)) {
+            /* Fast path for runs of in-range non-surrogate chars. */
+            register const unsigned char *_q = q;
+            while (_q < aligned_end) {
+                unsigned long block = * (unsigned long *) _q;
+                if (native_ordering) {
+                    /* Can use buffer directly */
+                    if (block & FAST_CHAR_MASK)
+                        break;
+                }
+                else {
+                    /* Need to byte-swap */
+                    if (block & SWAB(FAST_CHAR_MASK))
+                        break;
+#if STRINGLIB_SIZEOF_CHAR == 1
+                    block >>= 8;
+#else
+                    block = SWAB(block);
+#endif
+                }
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+# if SIZEOF_LONG == 4
+                p[0] = (STRINGLIB_CHAR)(block & 0xFFFFu);
+                p[1] = (STRINGLIB_CHAR)(block >> 16);
+# elif SIZEOF_LONG == 8
+                p[0] = (STRINGLIB_CHAR)(block & 0xFFFFu);
+                p[1] = (STRINGLIB_CHAR)((block >> 16) & 0xFFFFu);
+                p[2] = (STRINGLIB_CHAR)((block >> 32) & 0xFFFFu);
+                p[3] = (STRINGLIB_CHAR)(block >> 48);
+# endif
+#else
+# if SIZEOF_LONG == 4
+                p[0] = (STRINGLIB_CHAR)(block >> 16);
+                p[1] = (STRINGLIB_CHAR)(block & 0xFFFFu);
+# elif SIZEOF_LONG == 8
+                p[0] = (STRINGLIB_CHAR)(block >> 48);
+                p[1] = (STRINGLIB_CHAR)((block >> 32) & 0xFFFFu);
+                p[2] = (STRINGLIB_CHAR)((block >> 16) & 0xFFFFu);
+                p[3] = (STRINGLIB_CHAR)(block & 0xFFFFu);
+# endif
+#endif
+                _q += SIZEOF_LONG;
+                p += SIZEOF_LONG / 2;
+            }
+            q = _q;
+            if (q >= e)
+                break;
+        }
+
+        ch = (q[ihi] << 8) | q[ilo];
+        q += 2;
+        if (!Py_UNICODE_IS_SURROGATE(ch)) {
+#if STRINGLIB_SIZEOF_CHAR < 2
+            if (ch > STRINGLIB_MAX_CHAR)
+                /* Out-of-range */
+                goto Return;
+#endif
+            *p++ = (STRINGLIB_CHAR)ch;
+            continue;
+        }
+
+        /* UTF-16 code pair: */
+        if (q >= e)
+            goto UnexpectedEnd;
+        if (!Py_UNICODE_IS_HIGH_SURROGATE(ch))
+            goto IllegalEncoding;
+        ch2 = (q[ihi] << 8) | q[ilo];
+        q += 2;
+        if (!Py_UNICODE_IS_LOW_SURROGATE(ch2))
+            goto IllegalSurrogate;
+        ch = Py_UNICODE_JOIN_SURROGATES(ch, ch2);
+#if STRINGLIB_SIZEOF_CHAR < 4
+        /* Out-of-range */
+        goto Return;
+#else
+        *p++ = (STRINGLIB_CHAR)ch;
+#endif
+    }
+    ch = 0;
+Return:
+    *inptr = q;
+    *outpos = p - dest;
+    return ch;
+UnexpectedEnd:
+    ch = 1;
+    goto Return;
+IllegalEncoding:
+    ch = 2;
+    goto Return;
+IllegalSurrogate:
+    ch = 3;
+    goto Return;
+}
+#undef UCS2_REPEAT_MASK
+#undef FAST_CHAR_MASK
+#undef STRIPPED_MASK
+#undef SWAB
+#undef LONG_PTR_MASK
 #endif /* STRINGLIB_IS_UNICODE */
