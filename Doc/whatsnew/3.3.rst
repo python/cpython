@@ -1177,6 +1177,14 @@ ssl
 
   (Contributed by Colin Marc in :issue:`14204`)
 
+stat
+----
+
+- The undocumented tarfile.filemode function has been moved to
+  :func:`stat.filemode`. It can be used to convert a file's mode to a string of
+  the form '-rwxrwxrwx'.
+
+  (Contributed by Giampaolo Rodolà in :issue:`14807`)
 
 sys
 ---
