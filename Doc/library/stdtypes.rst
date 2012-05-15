@@ -2996,11 +2996,10 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used by slicing (see :ref:`slicings`), but may also
-be used in other situations where a sentinel value other than :const:`None`
-is needed.  It supports no special operations.  There is exactly one ellipsis
-object, named :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()``
-produces the :const:`Ellipsis` singleton.
+This object is commonly used by slicing (see :ref:`slicings`).  It supports no
+special operations.  There is exactly one ellipsis object, named
+:const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
+:const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
 
