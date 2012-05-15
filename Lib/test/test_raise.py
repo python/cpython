@@ -174,11 +174,14 @@ class TestCause(unittest.TestCase):
                     raise ValueError from None
             except ValueError as exc:
                 self.assertIsNone(exc.__cause__)
-                raise exc from Ellipsis
+                self.assertTrue(exc.__suppress_context__)
+                exc.__suppress_context__ = False
+                raise exc
         except ValueError as exc:
             e = exc
 
-        self.assertIs(e.__cause__, Ellipsis)
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
         self.assertIsInstance(e.__context__, TypeError)
 
     def test_invalid_cause(self):

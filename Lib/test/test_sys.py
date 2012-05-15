@@ -700,14 +700,14 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size(h + 'P'))
         # BaseException
-        check(BaseException(), size(h + '5P'))
+        check(BaseException(), size(h + '5Pi'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size(h + '5P 2P2PP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size(h + '5Pi 2P2PP'))
         # UnicodeDecodeError
         # XXX
 #        check(UnicodeDecodeError("", "", 0, 0, ""), size(h + '5P2PP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size(h + '5P 2P2PP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size(h + '5Pi 2P2PP'))
         # ellipses
         check(Ellipsis, size(h + ''))
         # EncodingMap
