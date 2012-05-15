@@ -15,17 +15,17 @@ typedef PyObject * object;
 /* XXX A sequence should be typed so that its use can be typechecked. */
 
 typedef struct {
-    int size;
+    Py_ssize_t size;
     void *elements[1];
 } asdl_seq;
 
 typedef struct {
-    int size;
+    Py_ssize_t size;
     int elements[1];
 } asdl_int_seq;
 
-asdl_seq *asdl_seq_new(int size, PyArena *arena);
-asdl_int_seq *asdl_int_seq_new(int size, PyArena *arena);
+asdl_seq *asdl_seq_new(Py_ssize_t size, PyArena *arena);
+asdl_int_seq *asdl_int_seq_new(Py_ssize_t size, PyArena *arena);
 
 #define asdl_seq_GET(S, I) (S)->elements[(I)]
 #define asdl_seq_LEN(S) ((S) == NULL ? 0 : (S)->size)
