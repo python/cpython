@@ -533,7 +533,8 @@ teedataobject_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         tdo->values[i] = PyList_GET_ITEM(values, i);
         Py_INCREF(tdo->values[i]);
     }
-    tdo->numread = len;
+    /* len <= LINKCELLS < INT_MAX */
+    tdo->numread = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
