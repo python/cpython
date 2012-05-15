@@ -353,13 +353,23 @@ if _exists("openat"):
         names = flistdir(topfd)
         dirs, nondirs = [], []
         for name in names:
-            # Here, we don't use AT_SYMLINK_NOFOLLOW to be consistent with
-            # walk() which reports symlinks to directories as directories. We do
-            # however check for symlinks before recursing into a subdirectory.
-            if st.S_ISDIR(fstatat(topfd, name).st_mode):
-                dirs.append(name)
-            else:
-                nondirs.append(name)
+            try:
+                # Here, we don't use AT_SYMLINK_NOFOLLOW to be consistent with
+                # walk() which reports symlinks to directories as directories.
+                # We do however check for symlinks before recursing into
+                # a subdirectory.
+                if st.S_ISDIR(fstatat(topfd, name).st_mode):
+                    dirs.append(name)
+                else:
+                    nondirs.append(name)
+            except FileNotFoundError:
+                try:
+                    # Add dangling symlinks, ignore disappeared files
+                    if st.S_ISLNK(fstatat(topfd, name, AT_SYMLINK_NOFOLLOW)
+                                .st_mode):
+                        nondirs.append(name)
+                except FileNotFoundError:
+                    continue
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
