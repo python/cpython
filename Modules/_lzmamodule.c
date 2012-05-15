@@ -160,7 +160,7 @@ grow_buffer(PyObject **buf)
                             "Value too large for " #TYPE " type"); \
             return 0; \
         } \
-        *(TYPE *)ptr = val; \
+        *(TYPE *)ptr = (TYPE)val; \
         return 1; \
     }
 
