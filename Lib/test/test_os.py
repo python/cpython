@@ -711,6 +711,7 @@ class WalkTests(unittest.TestCase):
                 dirs.remove('SUB1')
         self.assertEqual(len(all), 2)
         self.assertEqual(all[0], (walk_path, ["SUB2"], ["tmp1"]))
+        all[1][-1].sort()
         self.assertEqual(all[1], sub2_tree)
 
         # Walk bottom-up.
@@ -721,6 +722,7 @@ class WalkTests(unittest.TestCase):
         #     flipped:  SUB2, SUB11, SUB1, TESTFN
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
+        all[2 - 2 * flipped][-1].sort()
         self.assertEqual(all[3], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped], (sub11_path, [], []))
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
