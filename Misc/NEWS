@@ -31,10 +31,13 @@ Core and Builtins
 Library
 -------
 
+- Issue 14807: move undocumented tarfile.filemode() to stat.filemode() and add
+  doc entry. Add tarfile.filemode alias with deprecation warning.
+
 - Issue #13815: TarFile.extractfile() now returns io.BufferedReader objects.
 
 - Issue #14532: Add a secure_compare() helper to the hmac module, to mitigate
-  timing attacks. Patch by Jon Oberheide. 
+  timing attacks. Patch by Jon Oberheide.
 
 - Add importlib.util.resolve_name().
 
