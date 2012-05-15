@@ -95,6 +95,7 @@ import socket
 import sys
 import time
 import collections
+import warnings
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
@@ -827,6 +828,9 @@ class AbstractBasicAuthHandler:
             mo = AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
                 scheme, quote, realm = mo.groups()
+                if quote not in ["'", '"']:
+                    warnings.warn("Basic Auth Realm was unquoted",
+                                  UserWarning, 2)
                 if scheme.lower() == 'basic':
                     response = self.retry_http_basic_auth(host, req, realm)
                     if response and response.code != 401:

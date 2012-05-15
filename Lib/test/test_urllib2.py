@@ -1227,11 +1227,12 @@ class HandlerTests(unittest.TestCase):
             401, 'WWW-Authenticate: Basic realm=%s\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
-        self._test_basic_auth(opener, auth_handler, "Authorization",
-                              realm, http_handler, password_manager,
-                              "http://acme.example.com/protected",
-                              "http://acme.example.com/protected",
-                              )
+        with self.assertWarns(UserWarning):
+            self._test_basic_auth(opener, auth_handler, "Authorization",
+                                realm, http_handler, password_manager,
+                                "http://acme.example.com/protected",
+                                "http://acme.example.com/protected",
+                                )
 
     def test_proxy_basic_auth(self):
         opener = OpenerDirector()
