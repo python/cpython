@@ -2,7 +2,7 @@
 #include "asdl.h"
 
 asdl_seq *
-asdl_seq_new(int size, PyArena *arena)
+asdl_seq_new(Py_ssize_t size, PyArena *arena)
 {
     asdl_seq *seq = NULL;
     size_t n = (size ? (sizeof(void *) * (size - 1)) : 0);
@@ -33,7 +33,7 @@ asdl_seq_new(int size, PyArena *arena)
 }
 
 asdl_int_seq *
-asdl_int_seq_new(int size, PyArena *arena)
+asdl_int_seq_new(Py_ssize_t size, PyArena *arena)
 {
     asdl_int_seq *seq = NULL;
     size_t n = (size ? (sizeof(void *) * (size - 1)) : 0);
