@@ -651,6 +651,7 @@ class WalkTests(unittest.TestCase):
         #         SUB2/             a file kid and a dirsymlink kid
         #           tmp3
         #           link/           a symlink to TESTFN.2
+        #           broken_link
         #       TEST2/
         #         tmp4              a lone file
         walk_path = join(support.TESTFN, "TEST1")
@@ -663,6 +664,8 @@ class WalkTests(unittest.TestCase):
         link_path = join(sub2_path, "link")
         t2_path = join(support.TESTFN, "TEST2")
         tmp4_path = join(support.TESTFN, "TEST2", "tmp4")
+        link_path = join(sub2_path, "link")
+        broken_link_path = join(sub2_path, "broken_link")
 
         # Create stuff.
         os.makedirs(sub11_path)
@@ -679,7 +682,8 @@ class WalkTests(unittest.TestCase):
             else:
                 symlink_to_dir = os.symlink
             symlink_to_dir(os.path.abspath(t2_path), link_path)
-            sub2_tree = (sub2_path, ["link"], ["tmp3"])
+            symlink_to_dir('broken', broken_link_path)
+            sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
         else:
             sub2_tree = (sub2_path, [], ["tmp3"])
 
@@ -691,6 +695,7 @@ class WalkTests(unittest.TestCase):
         #     flipped:  TESTFN, SUB2, SUB1, SUB11
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
+        all[3 - 2 * flipped][-1].sort()
         self.assertEqual(all[0], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (sub11_path, [], []))
@@ -706,6 +711,7 @@ class WalkTests(unittest.TestCase):
                 dirs.remove('SUB1')
         self.assertEqual(len(all), 2)
         self.assertEqual(all[0], (walk_path, ["SUB2"], ["tmp1"]))
+        all[1][-1].sort()
         self.assertEqual(all[1], sub2_tree)
 
         # Walk bottom-up.
@@ -716,6 +722,7 @@ class WalkTests(unittest.TestCase):
         #     flipped:  SUB2, SUB11, SUB1, TESTFN
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
+        all[2 - 2 * flipped][-1].sort()
         self.assertEqual(all[3], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped], (sub11_path, [], []))
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
