@@ -23,24 +23,35 @@ class TestFilemode(unittest.TestCase):
     def test_mode(self):
         with open(TESTFN, 'w'):
             pass
-        os.chmod(TESTFN, 0o700)
-        self.assertEqual(get_mode(), '-rwx------')
-        os.chmod(TESTFN, 0o070)
-        self.assertEqual(get_mode(), '----rwx---')
-        os.chmod(TESTFN, 0o007)
-        self.assertEqual(get_mode(), '-------rwx')
-        os.chmod(TESTFN, 0o444)
-        self.assertEqual(get_mode(), '-r--r--r--')
+        if os.name == 'posix':
+            os.chmod(TESTFN, 0o700)
+            self.assertEqual(get_mode(), '-rwx------')
+            os.chmod(TESTFN, 0o070)
+            self.assertEqual(get_mode(), '----rwx---')
+            os.chmod(TESTFN, 0o007)
+            self.assertEqual(get_mode(), '-------rwx')
+            os.chmod(TESTFN, 0o444)
+            self.assertEqual(get_mode(), '-r--r--r--')
+        else:
+            os.chmod(TESTFN, 0o700)
+            self.assertEqual(get_mode()[:3], '-rw')
 
     def test_directory(self):
         os.mkdir(TESTFN)
         os.chmod(TESTFN, 0o700)
-        self.assertEqual(get_mode(), 'drwx------')
+        if os.name == 'posix':
+            self.assertEqual(get_mode(), 'drwx------')
+        else:
+            self.assertEqual(get_mode()[0], 'd')
 
     @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
     def test_link(self):
-        os.symlink(os.getcwd(), TESTFN)
-        self.assertEqual(get_mode()[0], 'l')
+        try:
+            os.symlink(os.getcwd(), TESTFN)
+        except (OSError, NotImplementedError) as err:
+            raise unittest.SkipTest(str(err))
+        else:
+            self.assertEqual(get_mode()[0], 'l')
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
     def test_fifo(self):
