@@ -60,6 +60,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
+  accessing the Tk clipboard.  Modify clipboad_get() to first request type
+  UTF8_STRING when no specific type is requested in an X11 windowing
+  environment, falling back to the current default type STRING if that fails.
+  Original patch by Thomas Kluyver.
+
 - Issue #12541: Be lenient with quotes around Realm field with HTTP Basic
   Authentation in urllib2.
 
