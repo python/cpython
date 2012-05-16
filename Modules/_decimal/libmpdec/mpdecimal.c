@@ -3878,53 +3878,97 @@ mpd_qdiv_u64(mpd_t *result, const mpd_t *a, uint64_t b,
 }
 #endif
 
-#if defined(_MSC_VER)
-  /* conversion from 'double' to 'mpd_ssize_t', possible loss of data */
-  #pragma warning(disable:4244)
-#endif
+/* Pad the result with trailing zeros if it has fewer digits than prec. */
+static void
+_mpd_zeropad(mpd_t *result, const mpd_context_t *ctx, uint32_t *status)
+{
+    if (!mpd_isspecial(result) && !mpd_iszero(result) &&
+        result->digits < ctx->prec) {
+       mpd_ssize_t shift = ctx->prec - result->digits;
+       mpd_qshiftl(result, result, shift, status);
+       result->exp -= shift;
+    }
+}
+
+/* Check if the result is guaranteed to be one. */
+static int
+_mpd_qexp_check_one(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
+                    uint32_t *status)
+{
+    MPD_NEW_CONST(lim,0,-(ctx->prec+1),1,1,1,9);
+    MPD_NEW_SHARED(aa, a);
+
+    mpd_set_positive(&aa);
+
+    /* abs(a) <= 9 * 10**(-prec-1) */
+    if (_mpd_cmp(&aa, &lim) <= 0) {
+        _settriple(result, 0, 1, 0);
+        _mpd_zeropad(result, ctx, status);
+        *status = MPD_Rounded|MPD_Inexact;
+        return 1;
+    }
+
+    return 0;
+}
+
 /*
  * Get the number of iterations for the Horner scheme in _mpd_qexp().
  */
 static inline mpd_ssize_t
-_mpd_get_exp_iterations(const mpd_t *a, mpd_ssize_t prec)
+_mpd_get_exp_iterations(const mpd_t *r, mpd_ssize_t p)
 {
-    mpd_uint_t dummy;
-    mpd_uint_t msdigits;
-    double f;
+    mpd_ssize_t log10pbyr; /* lower bound for log10(p / abs(r)) */
+    mpd_ssize_t n;
 
-    /* 9 is MPD_RDIGITS for 32 bit platforms */
-    _mpd_get_msdigits(&dummy, &msdigits, a, 9);
-    f = ((double)msdigits + 1) / mpd_pow10[mpd_word_digits(msdigits)];
+    assert(p >= 10);
+    assert(!mpd_iszero(r));
+    assert(-p < mpd_adjexp(r) && mpd_adjexp(r) <= -1);
 
 #ifdef CONFIG_64
-  #ifdef USE_80BIT_LONG_DOUBLE
-    return ceill((1.435*(long double)prec - 1.182)
-                 / log10l((long double)prec/f));
-  #else
-    /* prec > floor((1ULL<<53) / 1.435) */
-    if (prec > 6276793905742851LL) {
+    if (p > (mpd_ssize_t)(1ULL<<52)) {
         return MPD_SSIZE_MAX;
     }
-    return ceil((1.435*(double)prec - 1.182) / log10((double)prec/f));
-  #endif
-#else /* CONFIG_32 */
-    return ceil((1.435*(double)prec - 1.182) / log10((double)prec/f));
-    #if defined(_MSC_VER)
-      #pragma warning(default:4244)
-    #endif
 #endif
+
+    /*
+     * Lower bound for log10(p / abs(r)): adjexp(p) - (adjexp(r) + 1)
+     * At this point (for CONFIG_64, CONFIG_32 is not problematic):
+     *    1) 10 <= p <= 2**52
+     *    2) -p < adjexp(r) <= -1
+     *    3) 1 <= log10pbyr <= 2**52 + 14
+     */
+    log10pbyr = (mpd_word_digits(p)-1) - (mpd_adjexp(r)+1);
+
+    /*
+     * The numerator in the paper is 1.435 * p - 1.182, calculated
+     * exactly. We compensate for rounding errors by using 1.43503.
+     * ACL2 proofs:
+     *    1) exp-iter-approx-lower-bound: The term below evaluated
+     *       in 53-bit floating point arithmetic is greater than or
+     *       equal to the exact term used in the paper.
+     *    2) exp-iter-approx-upper-bound: The term below is less than
+     *       or equal to 3/2 * p <= 3/2 * 2**52.
+     */
+    n = (mpd_ssize_t)ceil((1.43503*(double)p - 1.182) / (double)log10pbyr);
+    return n >= 3 ? n : 3;
 }
 
 /*
- * Internal function, specials have been dealt with.
+ * Internal function, specials have been dealt with. The result has a
+ * relative error of less than 0.5 * 10**(-ctx->prec).
  *
  * The algorithm is from Hull&Abrham, Variable Precision Exponential Function,
  * ACM Transactions on Mathematical Software, Vol. 12, No. 2, June 1986.
  *
  * Main differences:
  *
- *  - The number of iterations for the Horner scheme is calculated using the
- *    C log10() function.
+ *  - The number of iterations for the Horner scheme is calculated using
+ *    53-bit floating point arithmetic.
+ *
+ *  - In the error analysis for ER (relative error accumulated in the
+ *    evaluation of the truncated series) the reduced operand r may
+ *    have any number of digits.
+ *    ACL2 proof: exponent-relative-error
  *
  *  - The analysis for early abortion has been adapted for the mpd_t
  *    ranges.
@@ -3941,18 +3985,23 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
 
     assert(!mpd_isspecial(a));
 
+    if (mpd_iszerocoeff(a)) {
+        _settriple(result, MPD_POS, 1, 0);
+        return;
+    }
+
     /*
-     * We are calculating e^x = e^(r*10^t) = (e^r)^(10^t), where r < 1 and t >= 0.
+     * We are calculating e^x = e^(r*10^t) = (e^r)^(10^t), where abs(r) < 1 and t >= 0.
      *
      * If t > 0, we have:
      *
-     *   (1) 0.1 <= r < 1, so e^r >= e^0.1. Overflow in the final power operation
-     *       will occur when (e^0.1)^(10^t) > 10^(emax+1). If we consider MAX_EMAX,
-     *       this will happen for t > 10 (32 bit) or (t > 19) (64 bit).
+     *   (1) 0.1 <= r < 1, so e^0.1 <= e^r. If t > MAX_T, overflow occurs:
      *
-     *   (2) -1 < r <= -0.1, so e^r > e^-1. Underflow in the final power operation
-     *       will occur when (e^-1)^(10^t) < 10^(etiny-1). If we consider MIN_ETINY,
-     *       this will also happen for t > 10 (32 bit) or (t > 19) (64 bit).
+     *     MAX-EMAX+1 < log10(e^(0.1*10*t)) <= log10(e^(r*10^t)) < adjexp(e^(r*10^t))+1
+     *
+     *   (2) -1 < r <= -0.1, so e^r <= e^-0.1. It t > MAX_T, underflow occurs:
+     *
+     *     adjexp(e^(r*10^t)) <= log10(e^(r*10^t)) <= log10(e^(-0.1*10^t) < MIN-ETINY
      */
 #if defined(CONFIG_64)
     #define MPD_EXP_MAX_T 19
@@ -3974,20 +4023,33 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         return;
     }
 
+    /* abs(a) <= 9 * 10**(-prec-1) */
+    if (_mpd_qexp_check_one(result, a, ctx, status)) {
+        return;
+    }
+
     mpd_maxcontext(&workctx);
     workctx.prec = ctx->prec + t + 2;
-    workctx.prec = (workctx.prec < 9) ? 9 : workctx.prec;
+    workctx.prec = (workctx.prec < 10) ? 10 : workctx.prec;
     workctx.round = MPD_ROUND_HALF_EVEN;
 
-    if ((n = _mpd_get_exp_iterations(a, workctx.prec)) == MPD_SSIZE_MAX) {
-        mpd_seterror(result, MPD_Invalid_operation, status); /* GCOV_UNLIKELY */
-        goto finish; /* GCOV_UNLIKELY */
-    }
-
     if (!mpd_qcopy(result, a, status)) {
-        goto finish;
+        return;
     }
     result->exp -= t;
+
+    /*
+     * At this point:
+     *    1) 9 * 10**(-prec-1) < abs(a)
+     *    2) 9 * 10**(-prec-t-1) < abs(r)
+     *    3) log10(9) - prec - t - 1 < log10(abs(r)) < adjexp(abs(r)) + 1
+     *    4) - prec - t - 2 < adjexp(abs(r)) <= -1
+     */
+    n = _mpd_get_exp_iterations(result, workctx.prec);
+    if (n == MPD_SSIZE_MAX) {
+        mpd_seterror(result, MPD_Invalid_operation, status); /* GCOV_UNLIKELY */
+        return; /* GCOV_UNLIKELY */
+    }
 
     _settriple(&sum, MPD_POS, 1, 0);
 
@@ -3995,8 +4057,7 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         word.data[0] = j;
         mpd_setdigits(&word);
         mpd_qdiv(&tmp, result, &word, &workctx, &workctx.status);
-        mpd_qmul(&sum, &sum, &tmp, &workctx, &workctx.status);
-        mpd_qadd(&sum, &sum, &one, &workctx, &workctx.status);
+        mpd_qfma(&sum, &sum, &tmp, &one, &workctx, &workctx.status);
     }
 
 #ifdef CONFIG_64
@@ -4013,8 +4074,8 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     }
 #endif
 
+    _mpd_zeropad(result, ctx, status);
 
-finish:
     mpd_del(&tmp);
     mpd_del(&sum);
     *status |= (workctx.status&MPD_Errors);
@@ -4069,8 +4130,18 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
             workctx.prec = prec;
             _mpd_qexp(result, a, &workctx, status);
             _ssettriple(&ulp, MPD_POS, 1,
-                        result->exp + result->digits-workctx.prec-1);
+                        result->exp + result->digits-workctx.prec);
 
+            /*
+             * At this point:
+             *   1) abs(result - e**x) < 0.5 * 10**(-prec) * e**x
+             *   2) result - ulp < e**x < result + ulp
+             *   3) result - ulp < result < result + ulp
+             *
+             * If round(result-ulp)==round(result+ulp), then
+             * round(result)==round(e**x). Therefore the result
+             * is correctly rounded.
+             */
             workctx.prec = ctx->prec;
             mpd_qadd(&t1, result, &ulp, &workctx, &workctx.status);
             mpd_qsub(&t2, result, &ulp, &workctx, &workctx.status);
