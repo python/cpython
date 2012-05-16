@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #14624: UTF-16 decoding is now 3x to 4x faster on various inputs.
+  Patch by Serhiy Storchaka.
+
 - asdl_seq and asdl_int_seq are now Py_ssize_t sized.
 
 - Issue #14133 (PEP 415): Implement suppression of __context__ display with an
@@ -30,6 +33,21 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14829: Fix bisect and range() indexing with large indices
+  (>= 2 ** 32) under 64-bit Windows.
+
+- Issue #14732: The _csv module now uses PEP 3121 module initialization.
+  Patch by Robin Schreiber.
+
+- Issue #14809: Add HTTP status codes introduced by RFC 6585 to http.server
+  and http.client. Patch by EungJun Yi.
+
+- Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
+  accessing the Tk clipboard.  Modify clipboad_get() to first request type
+  UTF8_STRING when no specific type is requested in an X11 windowing
+  environment, falling back to the current default type STRING if that fails.
+  Original patch by Thomas Kluyver.
 
 - Issue #14773: Fix os.fwalk() failing on dangling symlinks.
 
