@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14780: urllib.request.urlopen() now has a ``cadefault`` argument
+  to use the default certificate store.  Initial patch by James Oakley.
+
 - Issue #14829: Fix bisect and range() indexing with large indices
   (>= 2 ** 32) under 64-bit Windows.
 
