@@ -872,7 +872,7 @@ class TestCase(object):
             - [0, 1, 1] and [1, 0, 1] compare equal.
             - [0, 0, 1] and [0, 1] compare unequal.
         """
-        first_seq, second_seq = list(actual_seq), list(expected_seq)
+        first_seq, second_seq = list(expected_seq), list(actual_seq)
         with warnings.catch_warnings():
             if sys.py3kwarning:
                 # Silence Py3k warning raised during the sorting
