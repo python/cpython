@@ -125,7 +125,10 @@ class TestBisect(unittest.TestCase):
     def test_large_range(self):
         # Issue 13496
         mod = self.module
-        data = xrange(sys.maxsize-1)
+        try:
+            data = xrange(sys.maxsize-1)
+        except OverflowError:
+            self.skipTest("can't create a xrange() object of size `sys.maxsize`")
         self.assertEqual(mod.bisect_left(data, sys.maxsize-3), sys.maxsize-3)
         self.assertEqual(mod.bisect_right(data, sys.maxsize-3), sys.maxsize-2)
 
