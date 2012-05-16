@@ -16,9 +16,39 @@ module instead.
 #define IS_BASESTRING(o) \
     PyUnicode_Check(o)
 
-static PyObject *error_obj;     /* CSV exception */
-static PyObject *dialects;      /* Dialect registry */
-static long field_limit = 128 * 1024;   /* max parsed field size */
+typedef struct {
+    PyObject *error_obj;   /* CSV exception */
+    PyObject *dialects;   /* Dialect registry */
+    long field_limit;   /* max parsed field size */
+} _csvstate;
+
+#define _csvstate(o) ((_csvstate *)PyModule_GetState(o))
+
+static int
+_csv_clear(PyObject *m)
+{
+    Py_CLEAR(_csvstate(m)->error_obj);
+    Py_CLEAR(_csvstate(m)->dialects);
+    return 0;
+}
+
+static int
+_csv_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    Py_VISIT(_csvstate(m)->error_obj);
+    Py_VISIT(_csvstate(m)->dialects);
+    return 0;
+}
+
+static void
+_csv_free(void *m)
+{
+   _csv_clear((PyObject *)m);
+}
+
+static struct PyModuleDef _csvmodule;
+
+#define _csvstate_global ((_csvstate *)PyModule_GetState(PyState_FindModule(&_csvmodule)))
 
 typedef enum {
     START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD,
@@ -103,10 +133,10 @@ get_dialect_from_registry(PyObject * name_obj)
 {
     PyObject *dialect_obj;
 
-    dialect_obj = PyDict_GetItem(dialects, name_obj);
+    dialect_obj = PyDict_GetItem(_csvstate_global->dialects, name_obj);
     if (dialect_obj == NULL) {
         if (!PyErr_Occurred())
-            PyErr_Format(error_obj, "unknown dialect");
+            PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
     }
     else
         Py_INCREF(dialect_obj);
@@ -544,9 +574,9 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, Py_UCS4 c)
 {
-    if (self->field_len >= field_limit) {
-        PyErr_Format(error_obj, "field larger than field limit (%ld)",
-                     field_limit);
+    if (self->field_len >= _csvstate_global->field_limit) {
+        PyErr_Format(_csvstate_global->error_obj, "field larger than field limit (%ld)",
+                     _csvstate_global->field_limit);
         return -1;
     }
     if (self->field_len == self->field_size && !parse_grow_buff(self))
@@ -703,7 +733,7 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
         }
         else {
             /* illegal */
-            PyErr_Format(error_obj, "'%c' expected after '%c'",
+            PyErr_Format(_csvstate_global->error_obj, "'%c' expected after '%c'",
                             dialect->delimiter,
                             dialect->quotechar);
             return -1;
@@ -716,7 +746,7 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
         else if (c == '\0')
             self->state = START_RECORD;
         else {
-            PyErr_Format(error_obj, "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
+            PyErr_Format(_csvstate_global->error_obj, "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
             return -1;
         }
         break;
@@ -755,12 +785,12 @@ Reader_iternext(ReaderObj *self)
         if (lineobj == NULL) {
             /* End of input OR exception */
             if (!PyErr_Occurred() && self->field_len != 0)
-                PyErr_Format(error_obj,
+                PyErr_Format(_csvstate_global->error_obj,
                              "newline inside string");
             return NULL;
         }
         if (!PyUnicode_Check(lineobj)) {
-            PyErr_Format(error_obj,
+            PyErr_Format(_csvstate_global->error_obj,
                          "iterator should return strings, "
                          "not %.200s "
                          "(did you open the file in text mode?)",
@@ -778,7 +808,7 @@ Reader_iternext(ReaderObj *self)
             c = PyUnicode_READ(kind, data, pos);
             if (c == '\0') {
                 Py_DECREF(lineobj);
-                PyErr_Format(error_obj,
+                PyErr_Format(_csvstate_global->error_obj,
                              "line contains NULL byte");
                 goto err;
             }
@@ -994,7 +1024,7 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
             }
             if (want_escape) {
                 if (!dialect->escapechar) {
-                    PyErr_Format(error_obj,
+                    PyErr_Format(_csvstate_global->error_obj,
                                  "need to escape, but no escapechar set");
                     return -1;
                 }
@@ -1010,7 +1040,7 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
      */
     if (i == 0 && quote_empty) {
         if (dialect->quoting == QUOTE_NONE) {
-            PyErr_Format(error_obj,
+            PyErr_Format(_csvstate_global->error_obj,
                 "single empty field record must be quoted");
             return -1;
         }
@@ -1127,7 +1157,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     PyObject *line, *result;
 
     if (!PySequence_Check(seq))
-        return PyErr_Format(error_obj, "sequence expected");
+        return PyErr_Format(_csvstate_global->error_obj, "sequence expected");
 
     len = PySequence_Length(seq);
     if (len < 0)
@@ -1353,7 +1383,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 static PyObject *
 csv_list_dialects(PyObject *module, PyObject *args)
 {
-    return PyDict_Keys(dialects);
+    return PyDict_Keys(_csvstate_global->dialects);
 }
 
 static PyObject *
@@ -1372,7 +1402,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     dialect = _call_dialect(dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
-    if (PyDict_SetItem(dialects, name_obj, dialect) < 0) {
+    if (PyDict_SetItem(_csvstate_global->dialects, name_obj, dialect) < 0) {
         Py_DECREF(dialect);
         return NULL;
     }
@@ -1384,8 +1414,8 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 static PyObject *
 csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
-    if (PyDict_DelItem(dialects, name_obj) < 0)
-        return PyErr_Format(error_obj, "unknown dialect");
+    if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0)
+        return PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -1400,7 +1430,7 @@ static PyObject *
 csv_field_size_limit(PyObject *module, PyObject *args)
 {
     PyObject *new_limit = NULL;
-    long old_limit = field_limit;
+    long old_limit = _csvstate_global->field_limit;
 
     if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
         return NULL;
@@ -1410,9 +1440,9 @@ csv_field_size_limit(PyObject *module, PyObject *args)
                          "limit must be an integer");
             return NULL;
         }
-        field_limit = PyLong_AsLong(new_limit);
-        if (field_limit == -1 && PyErr_Occurred()) {
-            field_limit = old_limit;
+        _csvstate_global->field_limit = PyLong_AsLong(new_limit);
+        if (_csvstate_global->field_limit == -1 && PyErr_Occurred()) {
+            _csvstate_global->field_limit = old_limit;
             return NULL;
         }
     }
@@ -1551,17 +1581,16 @@ static struct PyMethodDef csv_methods[] = {
     { NULL, NULL }
 };
 
-
 static struct PyModuleDef _csvmodule = {
     PyModuleDef_HEAD_INIT,
     "_csv",
     csv_module_doc,
-    -1,
+    sizeof(_csvstate),
     csv_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _csv_traverse,
+    _csv_clear,
+    _csv_free
 };
 
 PyMODINIT_FUNC
@@ -1589,11 +1618,16 @@ PyInit__csv(void)
                                    MODULE_VERSION) == -1)
         return NULL;
 
+    /* Set the field limit */
+    _csvstate(module)->field_limit = 128 * 1024;
+    /* Do I still need to add this var to the Module Dict? */
+
     /* Add _dialects dictionary */
-    dialects = PyDict_New();
-    if (dialects == NULL)
+    _csvstate(module)->dialects = PyDict_New();
+    if (_csvstate(module)->dialects == NULL)
         return NULL;
-    if (PyModule_AddObject(module, "_dialects", dialects))
+    Py_INCREF(_csvstate(module)->dialects);
+    if (PyModule_AddObject(module, "_dialects", _csvstate(module)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
@@ -1609,9 +1643,10 @@ PyInit__csv(void)
         return NULL;
 
     /* Add the CSV exception object to the module. */
-    error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (error_obj == NULL)
+    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
+    if (_csvstate(module)->error_obj == NULL)
         return NULL;
-    PyModule_AddObject(module, "Error", error_obj);
+    Py_INCREF(_csvstate(module)->error_obj);
+    PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
     return module;
 }
