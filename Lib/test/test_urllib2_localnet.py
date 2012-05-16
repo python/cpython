@@ -474,6 +474,13 @@ class TestUrlopen(unittest.TestCase):
             self.urlopen("https://localhost:%s/bizarre" % handler.port,
                          cafile=CERT_fakehostname)
 
+    def test_https_with_cadefault(self):
+        handler = self.start_https_server(certfile=CERT_localhost)
+        # Self-signed cert should fail verification with system certificate store
+        with self.assertRaises(urllib.error.URLError) as cm:
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cadefault=True)
+
     def test_sending_headers(self):
         handler = self.start_server()
         req = urllib.request.Request("http://localhost:%s/" % handler.port,
