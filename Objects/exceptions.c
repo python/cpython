@@ -349,7 +349,8 @@ PyException_SetContext(PyObject *self, PyObject *context) {
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
-     offsetof(PyBaseExceptionObject, suppress_context)}
+     offsetof(PyBaseExceptionObject, suppress_context)},
+    {NULL}
 };
 
 
