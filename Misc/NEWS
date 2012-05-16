@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14829: Fix bisect and range() indexing with large indices
+  (>= 2 ** 32) under 64-bit Windows.
+
 - Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
   accessing the Tk clipboard.  Modify clipboad_get() to first request type
   UTF8_STRING when no specific type is requested in an X11 windowing
