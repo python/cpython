@@ -195,7 +195,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = PyObject_CallMethod(list, "insert", "iO",
+        result = PyObject_CallMethod(list, "insert", "nO",
                                      index, item);
         if (result == NULL)
             return NULL;
