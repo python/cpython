@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14809: Add HTTP status codes introduced by RFC 6585 to http.server
+  and http.client. Patch by EungJun Yi.
+
 - Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
   accessing the Tk clipboard.  Modify clipboad_get() to first request type
   UTF8_STRING when no specific type is requested in an X11 windowing
