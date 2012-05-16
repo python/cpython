@@ -11,7 +11,7 @@
 		Optimization="2"
 		InlineFunctionExpansion="1"
 		EnableIntrinsicFunctions="true"
-		AdditionalIncludeDirectories="..\Include; ..\PC"
+		AdditionalIncludeDirectories="..\..\Include; ..\..\PC"
 		PreprocessorDefinitions="_WIN32"
 		StringPooling="true"
 		ExceptionHandling="0"
@@ -34,7 +34,7 @@
 	/>
 	<Tool
 		Name="VCResourceCompilerTool"
-		AdditionalIncludeDirectories="..\PC;..\Include"
+		AdditionalIncludeDirectories="..\..\PC;..\..\Include"
 	/>
 	<UserMacro
 		Name="PyDllName"
@@ -46,7 +46,7 @@
 	/>
 	<UserMacro
 		Name="externalsDir"
-		Value="..\.."
+		Value="..\..\.."
 	/>
 	<UserMacro
 		Name="sqlite3Dir"

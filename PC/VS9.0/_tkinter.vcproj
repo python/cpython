@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_tkinter"
 	ProjectGUID="{4946ECAC-2E69-4BF8-A90A-F5136F5094DF}"
 	RootNamespace="_tkinter"
@@ -527,11 +527,11 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_tkinter.c"
+				RelativePath="..\..\Modules\_tkinter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\tkappinit.c"
+				RelativePath="..\..\Modules\tkappinit.c"
 				>
 			</File>
 		</Filter>

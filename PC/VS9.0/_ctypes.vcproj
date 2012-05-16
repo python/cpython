@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -164,7 +164,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -228,7 +228,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -291,7 +291,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -355,7 +355,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -419,7 +419,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -483,7 +483,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -531,27 +531,27 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\_ctypes\ctypes.h"
+				RelativePath="..\..\Modules\_ctypes\ctypes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\ctypes_dlfcn.h"
+				RelativePath="..\..\Modules\_ctypes\ctypes_dlfcn.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\ffi.h"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\ffi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\ffi_common.h"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\ffi_common.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\fficonfig.h"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\fficonfig.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\ffitarget.h"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\ffitarget.h"
 				>
 			</File>
 		</Filter>
@@ -559,39 +559,39 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_ctypes\_ctypes.c"
+				RelativePath="..\..\Modules\_ctypes\_ctypes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\callbacks.c"
+				RelativePath="..\..\Modules\_ctypes\callbacks.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\callproc.c"
+				RelativePath="..\..\Modules\_ctypes\callproc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\cfield.c"
+				RelativePath="..\..\Modules\_ctypes\cfield.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\ffi.c"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\ffi.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\malloc_closure.c"
+				RelativePath="..\..\Modules\_ctypes\malloc_closure.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\prep_cif.c"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\prep_cif.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\stgdict.c"
+				RelativePath="..\..\Modules\_ctypes\stgdict.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\win32.c"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\win32.c"
 				>
 				<FileConfiguration
 					Name="Debug|x64"
@@ -627,7 +627,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi_msvc\win64.asm"
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\win64.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

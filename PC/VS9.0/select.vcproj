@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="select"
 	ProjectGUID="{18CAE28C-B454-46C1-87A0-493D91D97F03}"
 	RootNamespace="select"
@@ -527,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\selectmodule.c"
+				RelativePath="..\..\Modules\selectmodule.c"
 				>
 			</File>
 		</Filter>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_socket"
 	ProjectGUID="{86937F53-C189-40EF-8CE8-8759D8E7D480}"
 	RootNamespace="_socket"
@@ -519,7 +519,7 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\socketmodule.h"
+				RelativePath="..\..\Modules\socketmodule.h"
 				>
 			</File>
 		</Filter>
@@ -527,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\socketmodule.c"
+				RelativePath="..\..\Modules\socketmodule.c"
 				>
 			</File>
 		</Filter>

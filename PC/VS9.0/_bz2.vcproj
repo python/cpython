@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_bz2"
 	ProjectGUID="{73FCD2BD-F133-46B7-8EC1-144CD82A59D5}"
 	RootNamespace="bz2"
@@ -527,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_bz2module.c"
+				RelativePath="..\..\Modules\_bz2module.c"
 				>
 			</File>
 		</Filter>

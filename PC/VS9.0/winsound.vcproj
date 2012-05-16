@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="winsound"
 	ProjectGUID="{28B5D777-DDF2-4B6B-B34F-31D938813856}"
 	RootNamespace="winsound"
@@ -513,7 +513,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\PC\winsound.c"
+				RelativePath="..\..\PC\winsound.c"
 				>
 			</File>
 		</Filter>

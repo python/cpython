@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_lzma"
 	ProjectGUID="{F9D71780-F393-11E0-BE50-0800200C9A66}"
 	RootNamespace="lzma"
@@ -527,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_lzmamodule.c"
+				RelativePath="..\..\Modules\_lzmamodule.c"
 				>
 			</File>
 		</Filter>

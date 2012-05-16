@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_decimal"
 	ProjectGUID="{0E9791DB-593A-465F-98BC-681011311617}"
 	RootNamespace="_decimal"
@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -167,7 +167,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -231,7 +231,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -294,7 +294,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -358,7 +358,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -422,7 +422,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_32 /DPPRO /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -486,7 +486,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D_CRT_SECURE_NO_WARNINGS /DCONFIG_64 /DMASM"
-				AdditionalIncludeDirectories="..\Modules\_decimal;..\Modules\_decimal\libmpdec"
+				AdditionalIncludeDirectories="..\..\Modules\_decimal;..\..\Modules\_decimal\libmpdec"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -533,71 +533,71 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\basearith.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\basearith.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\bits.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\bits.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\constants.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\constants.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\convolute.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\convolute.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\crt.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\crt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\difradix2.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\difradix2.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\docstrings.h"
+				RelativePath="..\..\Modules\_decimal\docstrings.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\fnt.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\fnt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\fourstep.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\fourstep.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\mpdecimal.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\mpdecimal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\numbertheory.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\numbertheory.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\sixstep.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\sixstep.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\transpose.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\transpose.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\typearith.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\typearith.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\umodarith.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\umodarith.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\vccompat.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\vccompat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\vcstdint.h"
+				RelativePath="..\..\Modules\_decimal\libmpdec\vcstdint.h"
 				>
 			</File>
 		</Filter>
@@ -605,67 +605,67 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_decimal\_decimal.c"
+				RelativePath="..\..\Modules\_decimal\_decimal.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\basearith.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\basearith.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\constants.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\constants.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\context.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\context.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\convolute.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\convolute.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\crt.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\crt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\difradix2.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\difradix2.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\fnt.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\fnt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\fourstep.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\fourstep.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\io.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\io.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\memory.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\memory.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\mpdecimal.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\mpdecimal.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\numbertheory.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\numbertheory.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\sixstep.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\sixstep.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\transpose.c"
+				RelativePath="..\..\Modules\_decimal\libmpdec\transpose.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_decimal\libmpdec\vcdiv64.asm"
+				RelativePath="..\..\Modules\_decimal\libmpdec\vcdiv64.asm"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

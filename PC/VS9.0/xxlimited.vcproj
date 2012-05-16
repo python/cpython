@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="xxlimited"
 	ProjectGUID="{F749B822-B489-4CA5-A3AD-CE078F5F338A}"
 	RootNamespace="xxlimited"
@@ -407,7 +407,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\xxlimited.c"
+				RelativePath="..\..\Modules\xxlimited.c"
 				>
 			</File>
 		</Filter>

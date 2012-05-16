@@ -20,7 +20,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\lib\distutils\command"
+			OutputDirectory="..\..\lib\distutils\command"
 			ConfigurationType="1"
 			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			UseOfMFC="0"
@@ -45,14 +45,14 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\..\lib\distutils\command\wininst.tlb"
+				TypeLibraryName=".\..\..\lib\distutils\command\wininst.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\PC\bdist_wininst;..\Include;..\Modules\zlib"
+				AdditionalIncludeDirectories="..\..\PC\bdist_wininst;..\..\Include;..\..\Modules\zlib"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -67,7 +67,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
 				Culture="0"
-				AdditionalIncludeDirectories="..\PC;..\PC\bdist_wininst;..\Include"
+				AdditionalIncludeDirectories="..\..\PC;..\..\PC\bdist_wininst;..\..\Include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -75,11 +75,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib imagehlp.lib"
-				OutputFile="..\lib\distutils\command\wininst-9.0.exe"
+				OutputFile="..\..\lib\distutils\command\wininst-9.0.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="LIBC"
-				ProgramDatabaseFile="..\lib\distutils\command\wininst-9.0.pdb"
+				ProgramDatabaseFile="..\..\lib\distutils\command\wininst-9.0.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -135,14 +135,14 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\..\lib\distutils\command\wininst.tlb"
+				TypeLibraryName=".\..\..\lib\distutils\command\wininst.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\PC\bdist_wininst;..\Include;..\Modules\zlib"
+				AdditionalIncludeDirectories="..\..\PC\bdist_wininst;..\..\Include;..\..\Modules\zlib"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -157,7 +157,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
 				Culture="0"
-				AdditionalIncludeDirectories="..\PC;..\PC\bdist_wininst;..\Include"
+				AdditionalIncludeDirectories="..\..\PC;..\..\PC\bdist_wininst;..\..\Include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -165,11 +165,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib imagehlp.lib"
-				OutputFile="..\lib\distutils\command\wininst-9.0-amd64.exe"
+				OutputFile="..\..\lib\distutils\command\wininst-9.0-amd64.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="LIBC"
-				ProgramDatabaseFile="..\lib\distutils\command\wininst-9.0-amd64.pdb"
+				ProgramDatabaseFile="..\..\lib\distutils\command\wininst-9.0-amd64.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -206,38 +206,38 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\PC\bdist_wininst\extract.c"
+				RelativePath="..\..\PC\bdist_wininst\extract.c"
 				>
 			</File>
 			<File
-				RelativePath="..\PC\bdist_wininst\install.c"
+				RelativePath="..\..\PC\bdist_wininst\install.c"
 				>
 			</File>
 			<Filter
 				Name="zlib"
 				>
 				<File
-					RelativePath="..\Modules\zlib\adler32.c"
+					RelativePath="..\..\Modules\zlib\adler32.c"
 					>
 				</File>
 				<File
-					RelativePath="..\Modules\zlib\crc32.c"
+					RelativePath="..\..\Modules\zlib\crc32.c"
 					>
 				</File>
 				<File
-					RelativePath="..\Modules\zlib\inffast.c"
+					RelativePath="..\..\Modules\zlib\inffast.c"
 					>
 				</File>
 				<File
-					RelativePath="..\Modules\zlib\inflate.c"
+					RelativePath="..\..\Modules\zlib\inflate.c"
 					>
 				</File>
 				<File
-					RelativePath="..\Modules\zlib\inftrees.c"
+					RelativePath="..\..\Modules\zlib\inftrees.c"
 					>
 				</File>
 				<File
-					RelativePath="..\Modules\zlib\zutil.c"
+					RelativePath="..\..\Modules\zlib\zutil.c"
 					>
 				</File>
 			</Filter>
@@ -247,7 +247,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\PC\bdist_wininst\archive.h"
+				RelativePath="..\..\PC\bdist_wininst\archive.h"
 				>
 			</File>
 		</Filter>
@@ -256,11 +256,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="..\PC\bdist_wininst\install.rc"
+				RelativePath="..\..\PC\bdist_wininst\install.rc"
 				>
 			</File>
 			<File
-				RelativePath="..\PC\bdist_wininst\PythonPowered.bmp"
+				RelativePath="..\..\PC\bdist_wininst\PythonPowered.bmp"
 				>
 			</File>
 		</Filter>

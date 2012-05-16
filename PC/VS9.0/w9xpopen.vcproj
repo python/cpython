@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="w9xpopen"
 	ProjectGUID="{E9E0A1F6-0009-4E8C-B8F8-1B8F5D49A058}"
 	RootNamespace="w9xpopen"
@@ -566,7 +566,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\PC\w9xpopen.c"
+				RelativePath="..\..\PC\w9xpopen.c"
 				>
 			</File>
 		</Filter>
