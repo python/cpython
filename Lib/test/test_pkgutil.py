@@ -137,8 +137,54 @@ class PkgutilPEP302Tests(unittest.TestCase):
         self.assertEqual(foo.loads, 1)
         del sys.modules['foo']
 
+
+class ExtendPathTests(unittest.TestCase):
+    def create_init(self, pkgname):
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, dirname)
+        sys.path.insert(0, dirname)
+
+        pkgdir = os.path.join(dirname, pkgname)
+        os.mkdir(pkgdir)
+        with open(os.path.join(pkgdir, '__init__.py'), 'w') as fl:
+            fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
+
+        return dirname
+
+    def create_submodule(self, dirname, pkgname, submodule_name, value):
+        module_name = os.path.join(dirname, pkgname, submodule_name + '.py')
+        with open(module_name, 'w') as fl:
+            print('value={}'.format(value), file=fl)
+
+    def setUp(self):
+        # Create 2 directories on sys.path
+        self.pkgname = 'foo'
+        self.dirname_0 = self.create_init(self.pkgname)
+        self.dirname_1 = self.create_init(self.pkgname)
+
+    def tearDown(self):
+        del sys.path[0]
+        del sys.path[0]
+
+    def test_simple(self):
+        self.create_submodule(self.dirname_0, self.pkgname, 'bar', 0)
+        self.create_submodule(self.dirname_1, self.pkgname, 'baz', 1)
+        import foo.bar
+        import foo.baz
+        # Ensure we read the expected values
+        self.assertEqual(foo.bar.value, 0)
+        self.assertEqual(foo.baz.value, 1)
+
+        # Ensure the path is set up correctly
+        self.assertEqual(sorted(foo.__path__),
+                         sorted([os.path.join(self.dirname_0, self.pkgname),
+                                 os.path.join(self.dirname_1, self.pkgname)]))
+
+    # XXX: test .pkg files
+
+
 def test_main():
-    run_unittest(PkgutilTests, PkgutilPEP302Tests)
+    run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests)
     # this is necessary if test is run repeated (like when finding leaks)
     import zipimport
     zipimport._zip_directory_cache.clear()
