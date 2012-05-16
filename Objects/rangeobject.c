@@ -308,7 +308,7 @@ compute_range_item(rangeobject *r, PyObject *arg)
 static PyObject *
 range_item(rangeobject *r, Py_ssize_t i)
 {
-    PyObject *res, *arg = PyLong_FromLong(i);
+    PyObject *res, *arg = PyLong_FromSsize_t(i);
     if (!arg) {
         return NULL;
     }
