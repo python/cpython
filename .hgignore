@@ -56,6 +56,9 @@ PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
 PC/*.exe
+PC/*/*.user
+PC/*/*.ncb
+PC/*/*.suo
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
@@ -69,6 +72,7 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/Win32-temp-*
 PCbuild/x64-temp-*
+BuildLog.htm
 __pycache__
 Modules/_testembed
 .coverage
