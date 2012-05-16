@@ -7431,7 +7431,7 @@ mpd_sizeinbase(mpd_t *a, uint32_t base)
     if (x > 2711437152599294ULL) {
         return SIZE_MAX;
     }
-    return (double)x / log10(base) + 3;
+    return (size_t)((double)x / log10(base) + 3);
   #endif
 #else /* CONFIG_32 */
 {
