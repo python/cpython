@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14829: Fix bisect and range() indexing with large indices
+  (>= 2 ** 32) under 64-bit Windows.
+
 - Issue #14732: The _csv module now uses PEP 3121 module initialization.
   Patch by Robin Schreiber.
 
