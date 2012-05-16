@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="python"
 	ProjectGUID="{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}"
 	TargetFrameworkVersion="131072"
@@ -202,7 +202,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"
+				AdditionalIncludeDirectories="..\..\Include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -277,7 +277,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"
+				AdditionalIncludeDirectories="..\..\Include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -615,11 +615,11 @@
 			Name="Resource Files"
 			>
 			<File
-				RelativePath="..\PC\pycon.ico"
+				RelativePath="..\..\PC\pycon.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\PC\python_exe.rc"
+				RelativePath="..\..\PC\python_exe.rc"
 				>
 			</File>
 		</Filter>
@@ -627,7 +627,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\python.c"
+				RelativePath="..\..\Modules\python.c"
 				>
 			</File>
 		</Filter>

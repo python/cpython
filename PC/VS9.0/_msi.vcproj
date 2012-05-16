@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_msi"
 	ProjectGUID="{31FFC478-7B4A-43E8-9954-8D03E2187E9C}"
 	RootNamespace="_msi"
@@ -519,7 +519,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\PC\_msi.c"
+				RelativePath="..\..\PC\_msi.c"
 				>
 			</File>
 		</Filter>

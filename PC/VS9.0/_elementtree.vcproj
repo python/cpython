@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_elementtree"
 	ProjectGUID="{17E1E049-C309-4D79-843F-AE483C264AEA}"
 	RootNamespace="_elementtree"
@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -166,7 +166,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -229,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -291,7 +291,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -354,7 +354,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -417,7 +417,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -480,7 +480,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat"
+				AdditionalIncludeDirectories="..\..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -527,63 +527,63 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\expat\ascii.h"
+				RelativePath="..\..\Modules\expat\ascii.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\asciitab.h"
+				RelativePath="..\..\Modules\expat\asciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\expat.h"
+				RelativePath="..\..\Modules\expat\expat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\expat_config.h"
+				RelativePath="..\..\Modules\expat\expat_config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\expat_external.h"
+				RelativePath="..\..\Modules\expat\expat_external.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\iasciitab.h"
+				RelativePath="..\..\Modules\expat\iasciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\internal.h"
+				RelativePath="..\..\Modules\expat\internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\latin1tab.h"
+				RelativePath="..\..\Modules\expat\latin1tab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\macconfig.h"
+				RelativePath="..\..\Modules\expat\macconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\nametab.h"
+				RelativePath="..\..\Modules\expat\nametab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\pyexpatns.h"
+				RelativePath="..\..\Modules\expat\pyexpatns.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\utf8tab.h"
+				RelativePath="..\..\Modules\expat\utf8tab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\winconfig.h"
+				RelativePath="..\..\Modules\expat\winconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmlrole.h"
+				RelativePath="..\..\Modules\expat\xmlrole.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmltok.h"
+				RelativePath="..\..\Modules\expat\xmltok.h"
 				>
 			</File>
 		</Filter>
@@ -591,19 +591,19 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_elementtree.c"
+				RelativePath="..\..\Modules\_elementtree.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmlparse.c"
+				RelativePath="..\..\Modules\expat\xmlparse.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmlrole.c"
+				RelativePath="..\..\Modules\expat\xmlrole.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmltok.c"
+				RelativePath="..\..\Modules\expat\xmltok.c"
 				>
 			</File>
 		</Filter>
