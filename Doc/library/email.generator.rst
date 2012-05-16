@@ -18,10 +18,9 @@ standards-compliant way, should handle MIME and non-MIME email messages just
 fine, and is designed so that the transformation from flat text, to a message
 structure via the :class:`~email.parser.Parser` class, and back to flat text,
 is idempotent (the input is identical to the output) [#]_.  On the other hand,
-using
-the Generator on a :class:`~email.message.Message` constructed by program may
-result in changes to the :class:`~email.message.Message` object as defaults are
-filled in.
+using the Generator on a :class:`~email.message.Message` constructed by program
+may result in changes to the :class:`~email.message.Message` object as defaults
+are filled in.
 
 :class:`bytes` output can be generated using the :class:`BytesGenerator` class.
 If the message object structure contains non-ASCII bytes, this generator's
