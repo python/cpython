@@ -339,6 +339,15 @@ and also the following constants for integer status codes:
 | :const:`UPGRADE_REQUIRED`                | ``426`` | HTTP Upgrade to TLS,                                                  |
 |                                          |         | :rfc:`2817`, Section 6                                                |
 +------------------------------------------+---------+-----------------------------------------------------------------------+
+| :const:`PRECONDITION_REQUIRED`           | ``428`` | Additional HTTP Status Codes,                                         |
+|                                          |         | :rfc:`6585`, Section 3                                                |
++------------------------------------------+---------+-----------------------------------------------------------------------+
+| :const:`TOO_MANY_REQUESTS`               | ``429`` | Additional HTTP Status Codes,                                         |
+|                                          |         | :rfc:`6585`, Section 4                                                |
++------------------------------------------+---------+-----------------------------------------------------------------------+
+| :const:`REQUEST_HEADER_FIELDS_TOO_LARGE` | ``431`` | Additional HTTP Status Codes,                                         |
+|                                          |         | :rfc:`6585`, Section 5                                                |
++------------------------------------------+---------+-----------------------------------------------------------------------+
 | :const:`INTERNAL_SERVER_ERROR`           | ``500`` | HTTP/1.1, `RFC 2616, Section                                          |
 |                                          |         | 10.5.1                                                                |
 |                                          |         | <http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1>`_  |
@@ -369,6 +378,12 @@ and also the following constants for integer status codes:
 | :const:`NOT_EXTENDED`                    | ``510`` | An HTTP Extension Framework,                                          |
 |                                          |         | :rfc:`2774`, Section 7                                                |
 +------------------------------------------+---------+-----------------------------------------------------------------------+
+| :const:`NETWORK_AUTHENTICATION_REQUIRED` | ``511`` | Additional HTTP Status Codes,                                         |
+|                                          |         | :rfc:`6585`, Section 6                                                |
++------------------------------------------+---------+-----------------------------------------------------------------------+
+
+  .. versionchanged:: 3.3
+     Added codes ``428``, ``429``, ``431`` and ``511`` from :rfc:`6585`.
 
 
 .. data:: responses
