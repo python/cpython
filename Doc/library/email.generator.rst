@@ -17,7 +17,8 @@ yourself.  However the bundled generator knows how to generate most email in a
 standards-compliant way, should handle MIME and non-MIME email messages just
 fine, and is designed so that the transformation from flat text, to a message
 structure via the :class:`~email.parser.Parser` class, and back to flat text,
-is idempotent (the input is identical to the output).  On the other hand, using
+is idempotent (the input is identical to the output) [#]_.  On the other hand,
+using
 the Generator on a :class:`~email.message.Message` constructed by program may
 result in changes to the :class:`~email.message.Message` object as defaults are
 filled in.
@@ -125,3 +126,11 @@ representing the part.
 .. versionchanged:: 2.5
    The previously deprecated method :meth:`__call__` was removed.
 
+
+.. rubric:: Footnotes
+
+.. [#] This statement assumes that you use the appropriate setting for the
+       ``unixfrom`` argument, and that you set maxheaderlen=0 (which will
+       preserve whatever the input line lengths were).  It is also not strictly
+       true, since in many cases runs of whitespace in headers are collapsed
+       into single blanks.  The latter is a bug that will eventually be fixed.
