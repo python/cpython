@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="make_versioninfo"
 	ProjectGUID="{F0E0541E-F17D-430B-97C4-93ADF0DD284E}"
 	RootNamespace="make_versioninfo"
@@ -32,8 +32,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Build PC/pythonnt_rc(_d).h"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h&#x0D;&#x0A;"
-				Outputs="$(SolutionDir)..\PC\pythonnt_rc.h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\..\PC\pythonnt_rc.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\..\PC\pythonnt_rc.h"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -92,7 +92,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\python_nt.h&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\..\PC\python_nt.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -106,8 +106,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Build PC/pythonnt_rc(_d).h"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h&#x0D;&#x0A;"
-				Outputs="$(SolutionDir)..\PC\pythonnt_rc.h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\..\PC\pythonnt_rc.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\..\PC\pythonnt_rc.h"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -158,7 +158,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\PC\python_nt.h&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo.exe &gt; ..\..\PC\python_nt.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -175,8 +175,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Build PC/pythonnt_rc(_d).h"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
-				Outputs="$(SolutionDir)..\PC\pythonnt_rc_d.h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\..\PC\pythonnt_rc_d.h"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -235,7 +235,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\python_nt_d.h&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\..\PC\python_nt_d.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -249,8 +249,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Build PC/pythonnt_rc(_d).h"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
-				Outputs="$(SolutionDir)..\PC\pythonnt_rc_d.h"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
+				Outputs="$(SolutionDir)..\..\PC\pythonnt_rc_d.h"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -303,7 +303,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\PC\python_nt_d.h&#x0D;&#x0A;"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_versioninfo_d.exe &gt; ..\..\PC\python_nt_d.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -314,7 +314,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\PC\make_versioninfo.c"
+				RelativePath="..\..\PC\make_versioninfo.c"
 				>
 			</File>
 		</Filter>

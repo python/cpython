@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_testcapi"
 	ProjectGUID="{6901D91C-6E48-4BB7-9FEC-700C8131DF1D}"
 	RootNamespace="_testcapi"
@@ -511,7 +511,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_testcapimodule.c"
+				RelativePath="..\..\Modules\_testcapimodule.c"
 				>
 			</File>
 		</Filter>

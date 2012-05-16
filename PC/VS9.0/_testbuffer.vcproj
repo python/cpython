@@ -511,7 +511,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_testbuffer.c"
+				RelativePath="..\..\Modules\_testbuffer.c"
 				>
 			</File>
 		</Filter>

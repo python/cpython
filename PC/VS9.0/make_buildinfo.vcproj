@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="make_buildinfo"
 	ProjectGUID="{C73F0EC1-358B-4177-940F-0846AC8B04CD}"
 	RootNamespace="make_buildinfo"

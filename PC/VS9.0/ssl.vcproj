@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="ssl"
 	ProjectGUID="{E5B04CC0-EB4C-42AB-B4DC-18EF95F864B0}"
 	RootNamespace="ssl"

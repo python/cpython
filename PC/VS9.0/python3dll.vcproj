@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="python3dll"
 	ProjectGUID="{885D4898-D08D-4091-9C40-C700CFE3FC5A}"
 	RootNamespace="python3dll"
@@ -27,9 +27,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -46,9 +46,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -65,9 +65,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -84,9 +84,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -103,9 +103,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -122,9 +122,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
-				ReBuildCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
-				CleanCommandLine="cd $(InputDir)\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
+				BuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)"
+				ReBuildCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild"
+				CleanCommandLine="cd $(InputDir)\..\..\PC&#x0D;&#x0A;nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean"
 				Output="$(OutDir)\python3.dll"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -144,7 +144,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\PC\python3.def"
+				RelativePath="..\..\PC\python3.def"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -172,7 +172,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\PC\python3dll.c"
+				RelativePath="..\..\PC\python3dll.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -212,7 +212,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath="..\PC\python_nt.rc"
+				RelativePath="..\..\PC\python_nt.rc"
 				>
 				<FileConfiguration
 					Name="Release|Win32"

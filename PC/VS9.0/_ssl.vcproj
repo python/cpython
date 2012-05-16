@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="_ssl"
 	ProjectGUID="{C6E20F84-3247-4AD6-B051-B073268F73BA}"
 	RootNamespace="_ssl"
@@ -527,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_ssl.c"
+				RelativePath="..\..\Modules\_ssl.c"
 				>
 			</File>
 		</Filter>

@@ -527,43 +527,43 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\_sqlite\cache.h"
+				RelativePath="..\..\Modules\_sqlite\cache.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\connection.h"
+				RelativePath="..\..\Modules\_sqlite\connection.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\cursor.h"
+				RelativePath="..\..\Modules\_sqlite\cursor.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\microprotocols.h"
+				RelativePath="..\..\Modules\_sqlite\microprotocols.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\module.h"
+				RelativePath="..\..\Modules\_sqlite\module.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\prepare_protocol.h"
+				RelativePath="..\..\Modules\_sqlite\prepare_protocol.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\row.h"
+				RelativePath="..\..\Modules\_sqlite\row.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\sqlitecompat.h"
+				RelativePath="..\..\Modules\_sqlite\sqlitecompat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\statement.h"
+				RelativePath="..\..\Modules\_sqlite\statement.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\util.h"
+				RelativePath="..\..\Modules\_sqlite\util.h"
 				>
 			</File>
 		</Filter>
@@ -571,39 +571,39 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\_sqlite\cache.c"
+				RelativePath="..\..\Modules\_sqlite\cache.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\connection.c"
+				RelativePath="..\..\Modules\_sqlite\connection.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\cursor.c"
+				RelativePath="..\..\Modules\_sqlite\cursor.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\microprotocols.c"
+				RelativePath="..\..\Modules\_sqlite\microprotocols.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\module.c"
+				RelativePath="..\..\Modules\_sqlite\module.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\prepare_protocol.c"
+				RelativePath="..\..\Modules\_sqlite\prepare_protocol.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\row.c"
+				RelativePath="..\..\Modules\_sqlite\row.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\statement.c"
+				RelativePath="..\..\Modules\_sqlite\statement.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_sqlite\util.c"
+				RelativePath="..\..\Modules\_sqlite\util.c"
 				>
 			</File>
 		</Filter>

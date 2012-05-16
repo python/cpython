@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="pyexpat"
 	ProjectGUID="{D06B6426-4762-44CC-8BAD-D79052507F2F}"
 	RootNamespace="pyexpat"
@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -164,7 +164,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -226,7 +226,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -287,7 +287,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -349,7 +349,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -411,7 +411,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -473,7 +473,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\..\Modules\expat"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 			/>
 			<Tool
@@ -519,11 +519,11 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\Modules\expat\xmlrole.h"
+				RelativePath="..\..\Modules\expat\xmlrole.h"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmltok.h"
+				RelativePath="..\..\Modules\expat\xmltok.h"
 				>
 			</File>
 		</Filter>
@@ -531,19 +531,19 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\Modules\pyexpat.c"
+				RelativePath="..\..\Modules\pyexpat.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmlparse.c"
+				RelativePath="..\..\Modules\expat\xmlparse.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmlrole.c"
+				RelativePath="..\..\Modules\expat\xmlrole.c"
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\expat\xmltok.c"
+				RelativePath="..\..\Modules\expat\xmltok.c"
 				>
 			</File>
 		</Filter>
