@@ -32,7 +32,6 @@ Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix$
 Parser/pgen$
-PCbuild/amd64/
 ^core
 ^python-gdb.py
 ^python.exe-gdb.py
@@ -56,6 +55,12 @@ PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
 PC/*.exe
+PC/*/*.user
+PC/*/*.ncb
+PC/*/*.suo
+PC/*/Win32-temp-*
+PC/*/x64-temp-*
+PC/*/amd64
 PCbuild/*.exe
 PCbuild/*.dll
 PCbuild/*.pdb
@@ -69,6 +74,8 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/Win32-temp-*
 PCbuild/x64-temp-*
+PCbuild/amd64
+BuildLog.htm
 __pycache__
 Modules/_testembed
 .coverage

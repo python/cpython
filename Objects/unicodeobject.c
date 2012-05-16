@@ -5195,25 +5195,6 @@ PyUnicode_DecodeUTF16(const char *s,
     return PyUnicode_DecodeUTF16Stateful(s, size, errors, byteorder, NULL);
 }
 
-/* Two masks for fast checking of whether a C 'long' may contain
-   UTF16-encoded surrogate characters. This is an efficient heuristic,
-   assuming that non-surrogate characters with a code point >= 0x8000 are
-   rare in most input.
-   FAST_CHAR_MASK is used when the input is in native byte ordering,
-   SWAPPED_FAST_CHAR_MASK when the input is in byteswapped ordering.
-*/
-#if (SIZEOF_LONG == 8)
-# define FAST_CHAR_MASK         0x8000800080008000L
-# define SWAPPED_FAST_CHAR_MASK 0x0080008000800080L
-# define STRIPPED_MASK          0x00FF00FF00FF00FFL
-#elif (SIZEOF_LONG == 4)
-# define FAST_CHAR_MASK         0x80008000L
-# define SWAPPED_FAST_CHAR_MASK 0x00800080L
-# define STRIPPED_MASK          0x00FF00FFL
-#else
-# error C 'long' size should be either 4 or 8!
-#endif
-
 PyObject *
 PyUnicode_DecodeUTF16Stateful(const char *s,
                               Py_ssize_t size,
@@ -5226,30 +5207,15 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
     PyObject *unicode;
-    const unsigned char *q, *e, *aligned_end;
+    const unsigned char *q, *e;
     int bo = 0;       /* assume native ordering by default */
-    int native_ordering = 0;
+    int native_ordering;
     const char *errmsg = "";
-    /* Offsets from q for retrieving byte pairs in the right order. */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-    int ihi = 1, ilo = 0;
-#else
-    int ihi = 0, ilo = 1;
-#endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
-    /* Note: size will always be longer than the resulting Unicode
-       character count */
-    unicode = PyUnicode_New(size, 127);
-    if (!unicode)
-        return NULL;
-    if (size == 0)
-        return unicode;
-    outpos = 0;
-
     q = (unsigned char *)s;
-    e = q + size - 1;
+    e = q + size;
 
     if (byteorder)
         bo = *byteorder;
@@ -5258,155 +5224,98 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
        byte order setting accordingly. In native mode, the leading BOM
        mark is skipped, in all other modes, it is copied to the output
        stream as-is (giving a ZWNBSP character). */
-    if (bo == 0) {
-        if (size >= 2) {
-            const Py_UCS4 bom = (q[ihi] << 8) | q[ilo];
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-            if (bom == 0xFEFF) {
-                q += 2;
-                bo = -1;
-            }
-            else if (bom == 0xFFFE) {
-                q += 2;
-                bo = 1;
-            }
-#else
-            if (bom == 0xFEFF) {
-                q += 2;
-                bo = 1;
-            }
-            else if (bom == 0xFFFE) {
-                q += 2;
-                bo = -1;
-            }
-#endif
+    if (bo == 0 && size >= 2) {
+        const Py_UCS4 bom = (q[1] << 8) | q[0];
+        if (bom == 0xFEFF) {
+            q += 2;
+            bo = -1;
         }
+        else if (bom == 0xFFFE) {
+            q += 2;
+            bo = 1;
+        }
+        if (byteorder)
+            *byteorder = bo;
     }
 
-    if (bo == -1) {
-        /* force LE */
-        ihi = 1;
-        ilo = 0;
+    if (q == e) {
+        if (consumed)
+            *consumed = size;
+        Py_INCREF(unicode_empty);
+        return unicode_empty;
     }
-    else if (bo == 1) {
-        /* force BE */
-        ihi = 0;
-        ilo = 1;
-    }
+
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
-    native_ordering = ilo < ihi;
+    native_ordering = bo <= 0;
 #else
-    native_ordering = ilo > ihi;
+    native_ordering = bo >= 0;
 #endif
 
-    aligned_end = (const unsigned char *) ((size_t) e & ~LONG_PTR_MASK);
-    while (q < e) {
-        Py_UCS4 ch;
-        /* First check for possible aligned read of a C 'long'. Unaligned
-           reads are more expensive, better to defer to another iteration. */
-        if (!((size_t) q & LONG_PTR_MASK)) {
-            /* Fast path for runs of non-surrogate chars. */
-            register const unsigned char *_q = q;
+    /* Note: size will always be longer than the resulting Unicode
+       character count */
+    unicode = PyUnicode_New((e - q + 1) / 2, 127);
+    if (!unicode)
+        return NULL;
+
+    outpos = 0;
+    while (1) {
+        Py_UCS4 ch = 0;
+        if (e - q >= 2) {
             int kind = PyUnicode_KIND(unicode);
-            void *data = PyUnicode_DATA(unicode);
-            while (_q < aligned_end) {
-                unsigned long block = * (unsigned long *) _q;
-                Py_UCS4 maxch;
-                if (native_ordering) {
-                    /* Can use buffer directly */
-                    if (block & FAST_CHAR_MASK)
-                        break;
-                }
-                else {
-                    /* Need to byte-swap */
-                    if (block & SWAPPED_FAST_CHAR_MASK)
-                        break;
-                    block = ((block >> 8) & STRIPPED_MASK) |
-                            ((block & STRIPPED_MASK) << 8);
-                }
-                maxch = (Py_UCS2)(block & 0xFFFF);
-#if SIZEOF_LONG == 8
-                ch = (Py_UCS2)((block >> 16) & 0xFFFF);
-                maxch = MAX_MAXCHAR(maxch, ch);
-                ch = (Py_UCS2)((block >> 32) & 0xFFFF);
-                maxch = MAX_MAXCHAR(maxch, ch);
-                ch = (Py_UCS2)(block >> 48);
-                maxch = MAX_MAXCHAR(maxch, ch);
-#else
-                ch = (Py_UCS2)(block >> 16);
-                maxch = MAX_MAXCHAR(maxch, ch);
-#endif
-                if (maxch > PyUnicode_MAX_CHAR_VALUE(unicode)) {
-                    if (unicode_widen(&unicode, outpos, maxch) < 0)
-                        goto onError;
-                    kind = PyUnicode_KIND(unicode);
-                    data = PyUnicode_DATA(unicode);
-                }
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
-#if SIZEOF_LONG == 8
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
-#else
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
-#endif
-#else
-#if SIZEOF_LONG == 8
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 48)));
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 32) & 0xFFFF));
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)((block >> 16) & 0xFFFF));
-#else
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block >> 16));
-#endif
-                PyUnicode_WRITE(kind, data, outpos++, (Py_UCS2)(block & 0xFFFF));
-#endif
-                _q += SIZEOF_LONG;
+            if (kind == PyUnicode_1BYTE_KIND) {
+                if (PyUnicode_IS_ASCII(unicode))
+                    ch = asciilib_utf16_decode(&q, e,
+                            PyUnicode_1BYTE_DATA(unicode), &outpos,
+                            native_ordering);
+                else
+                    ch = ucs1lib_utf16_decode(&q, e,
+                            PyUnicode_1BYTE_DATA(unicode), &outpos,
+                            native_ordering);
+            } else if (kind == PyUnicode_2BYTE_KIND) {
+                ch = ucs2lib_utf16_decode(&q, e,
+                        PyUnicode_2BYTE_DATA(unicode), &outpos,
+                        native_ordering);
+            } else {
+                assert(kind == PyUnicode_4BYTE_KIND);
+                ch = ucs4lib_utf16_decode(&q, e,
+                        PyUnicode_4BYTE_DATA(unicode), &outpos,
+                        native_ordering);
             }
-            q = _q;
-            if (q >= e)
-                break;
         }
-        ch = (q[ihi] << 8) | q[ilo];
 
-        q += 2;
-
-        if (!Py_UNICODE_IS_SURROGATE(ch)) {
+        switch (ch)
+        {
+        case 0:
+            /* remaining byte at the end? (size should be even) */
+            if (q == e || consumed)
+                goto End;
+            errmsg = "truncated data";
+            startinpos = ((const char *)q) - starts;
+            endinpos = ((const char *)e) - starts;
+            break;
+            /* The remaining input chars are ignored if the callback
+               chooses to skip the input */
+        case 1:
+            errmsg = "unexpected end of data";
+            startinpos = ((const char *)q) - 2 - starts;
+            endinpos = ((const char *)e) - starts;
+            break;
+        case 2:
+            errmsg = "illegal encoding";
+            startinpos = ((const char *)q) - 2 - starts;
+            endinpos = startinpos + 2;
+            break;
+        case 3:
+            errmsg = "illegal UTF-16 surrogate";
+            startinpos = ((const char *)q) - 4 - starts;
+            endinpos = startinpos + 2;
+            break;
+        default:
             if (unicode_putchar(&unicode, &outpos, ch) < 0)
                 goto onError;
             continue;
         }
 
-        /* UTF-16 code pair: */
-        if (q > e) {
-            errmsg = "unexpected end of data";
-            startinpos = (((const char *)q) - 2) - starts;
-            endinpos = ((const char *)e) + 1 - starts;
-            goto utf16Error;
-        }
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
-            Py_UCS4 ch2 = (q[ihi] << 8) | q[ilo];
-            q += 2;
-            if (Py_UNICODE_IS_LOW_SURROGATE(ch2)) {
-                if (unicode_putchar(&unicode, &outpos,
-                                    Py_UNICODE_JOIN_SURROGATES(ch, ch2)) < 0)
-                    goto onError;
-                continue;
-            }
-            else {
-                errmsg = "illegal UTF-16 surrogate";
-                startinpos = (((const char *)q)-4)-starts;
-                endinpos = startinpos+2;
-                goto utf16Error;
-            }
-
-        }
-        errmsg = "illegal encoding";
-        startinpos = (((const char *)q)-2)-starts;
-        endinpos = startinpos+2;
-        /* Fall through to report the error */
-
-      utf16Error:
         if (unicode_decode_call_errorhandler(
                 errors,
                 &errorHandler,
@@ -5421,33 +5330,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
                 &outpos))
             goto onError;
     }
-    /* remaining byte at the end? (size should be even) */
-    if (e == q) {
-        if (!consumed) {
-            errmsg = "truncated data";
-            startinpos = ((const char *)q) - starts;
-            endinpos = ((const char *)e) + 1 - starts;
-            if (unicode_decode_call_errorhandler(
-                    errors,
-                    &errorHandler,
-                    "utf16", errmsg,
-                    &starts,
-                    (const char **)&e,
-                    &startinpos,
-                    &endinpos,
-                    &exc,
-                    (const char **)&q,
-                    &unicode,
-                    &outpos))
-                goto onError;
-            /* The remaining input chars are ignored if the callback
-               chooses to skip the input */
-        }
-    }
 
-    if (byteorder)
-        *byteorder = bo;
-
+End:
     if (consumed)
         *consumed = (const char *)q-starts;
 
@@ -5465,9 +5349,6 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     Py_XDECREF(exc);
     return NULL;
 }
-
-#undef FAST_CHAR_MASK
-#undef SWAPPED_FAST_CHAR_MASK
 
 PyObject *
 _PyUnicode_EncodeUTF16(PyObject *str,

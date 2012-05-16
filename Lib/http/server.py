@@ -573,7 +573,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     # Table mapping response codes to messages; entries have the
     # form {code: (shortmessage, longmessage)}.
-    # See RFC 2616.
+    # See RFC 2616 and 6585.
     responses = {
         100: ('Continue', 'Request received, please continue'),
         101: ('Switching Protocols',
@@ -628,6 +628,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
               'Cannot satisfy request range.'),
         417: ('Expectation Failed',
               'Expect condition could not be satisfied.'),
+        428: ('Precondition Required',
+              'The origin server requires the request to be conditional.'),
+        429: ('Too Many Requests', 'The user has sent too many requests '
+              'in a given amount of time ("rate limiting").'),
+        431: ('Request Header Fields Too Large', 'The server is unwilling to '
+              'process the request because its header fields are too large.'),
 
         500: ('Internal Server Error', 'Server got itself in trouble'),
         501: ('Not Implemented',
@@ -638,6 +644,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         504: ('Gateway Timeout',
               'The gateway server did not receive a timely response'),
         505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
+        511: ('Network Authentication Required',
+              'The client needs to authenticate to gain network access.'),
         }
 
 

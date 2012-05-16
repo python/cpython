@@ -141,6 +141,9 @@ UNPROCESSABLE_ENTITY = 422
 LOCKED = 423
 FAILED_DEPENDENCY = 424
 UPGRADE_REQUIRED = 426
+PRECONDITION_REQUIRED = 428
+TOO_MANY_REQUESTS = 429
+REQUEST_HEADER_FIELDS_TOO_LARGE = 431
 
 # server error
 INTERNAL_SERVER_ERROR = 500
@@ -151,6 +154,7 @@ GATEWAY_TIMEOUT = 504
 HTTP_VERSION_NOT_SUPPORTED = 505
 INSUFFICIENT_STORAGE = 507
 NOT_EXTENDED = 510
+NETWORK_AUTHENTICATION_REQUIRED = 511
 
 # Mapping status codes to official W3C names
 responses = {
@@ -192,6 +196,9 @@ responses = {
     415: 'Unsupported Media Type',
     416: 'Requested Range Not Satisfiable',
     417: 'Expectation Failed',
+    428: 'Precondition Required',
+    429: 'Too Many Requests',
+    431: 'Request Header Fields Too Large',
 
     500: 'Internal Server Error',
     501: 'Not Implemented',
@@ -199,6 +206,7 @@ responses = {
     503: 'Service Unavailable',
     504: 'Gateway Timeout',
     505: 'HTTP Version Not Supported',
+    511: 'Network Authentication Required',
 }
 
 # maximal amount of data to read at one time in _safe_read
