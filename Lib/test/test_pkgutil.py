@@ -165,6 +165,9 @@ class ExtendPathTests(unittest.TestCase):
     def tearDown(self):
         del sys.path[0]
         del sys.path[0]
+        del sys.modules['foo']
+        del sys.modules['foo.bar']
+        del sys.modules['foo.baz']
 
     def test_simple(self):
         self.create_submodule(self.dirname_0, self.pkgname, 'bar', 0)
