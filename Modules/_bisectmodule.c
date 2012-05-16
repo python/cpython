@@ -3,6 +3,7 @@
 Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 static Py_ssize_t
@@ -192,7 +193,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        result = PyObject_CallMethod(list, "insert", "iO", index, item);
+        result = PyObject_CallMethod(list, "insert", "nO", index, item);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
