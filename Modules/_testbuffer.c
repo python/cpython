@@ -2337,6 +2337,12 @@ out:
     return ret;
 }
 
+static PyObject *
+get_sizeof_void_p(PyObject *self)
+{
+    return PyLong_FromSize_t(sizeof(void *));
+}
+
 static char
 get_ascii_order(PyObject *order)
 {
@@ -2726,6 +2732,7 @@ static PyTypeObject StaticArray_Type = {
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
     {"get_pointer", get_pointer, METH_VARARGS, NULL},
+    {"get_sizeof_void_p", (PyCFunction)get_sizeof_void_p, METH_NOARGS, NULL},
     {"get_contiguous", get_contiguous, METH_VARARGS, NULL},
     {"is_contiguous", is_contiguous, METH_VARARGS, NULL},
     {"cmp_contig", cmp_contig, METH_VARARGS, NULL},

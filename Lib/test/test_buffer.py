@@ -747,10 +747,8 @@ if SHORT_TEST:
 class TestBufferProtocol(unittest.TestCase):
 
     def setUp(self):
-        self.sizeof_void_p = get_config_var('SIZEOF_VOID_P') \
-                                if sys.platform != 'darwin' else None
-        if not self.sizeof_void_p:
-            self.sizeof_void_p = 8 if sys.maxsize > 2**32 else 4
+        # The suboffsets tests need sizeof(void *).
+        self.sizeof_void_p = get_sizeof_void_p()
 
     def verify(self, result, obj=-1,
                      itemsize={1}, fmt=-1, readonly={1},
