@@ -125,6 +125,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #14693: Under non-Windows platforms, hashlib's fallback modules are
+  always compiled, even if OpenSSL is present at build time.
+
 - Issue #13210: Windows build now uses VS2010, ported from VS2008.
 
 
