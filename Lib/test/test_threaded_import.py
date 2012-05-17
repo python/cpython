@@ -12,7 +12,7 @@ import time
 import shutil
 import unittest
 from test.support import (
-    verbose, import_module, run_unittest, TESTFN, reap_threads, forget)
+    verbose, import_module, run_unittest, TESTFN, reap_threads, forget, unlink)
 threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
@@ -214,8 +214,10 @@ class ThreadedImportTests(unittest.TestCase):
             t.join()"""
         sys.path.insert(0, os.curdir)
         self.addCleanup(sys.path.remove, os.curdir)
-        with open(TESTFN + ".py", "wb") as f:
+        filename = TESTFN + ".py"
+        with open(filename, "wb") as f:
             f.write(code.encode('utf-8'))
+        self.addCleanup(unlink, filename)
         self.addCleanup(forget, TESTFN)
         __import__(TESTFN)
 
