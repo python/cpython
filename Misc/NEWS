@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13031: Small speed-up for tarfile when unzipping tarfiles.
+  Patch by Justin Peel.
+
 - Issue #14780: urllib.request.urlopen() now has a ``cadefault`` argument
   to use the default certificate store.  Initial patch by James Oakley.
 
