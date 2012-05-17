@@ -107,48 +107,6 @@ This module provides an interface to the mechanisms used to implement the
    in ``sys.modules``.
 
 
-.. function:: lock_held()
-
-   Return ``True`` if the import lock is currently held, else ``False``. On
-   platforms without threads, always return ``False``.
-
-   On platforms with threads, a thread executing an import first holds a
-   global import lock, then sets up a per-module lock for the rest of the
-   import.  This blocks other threads from importing the same module until
-   the original import completes, preventing other threads from seeing
-   incomplete module objects constructed by the original thread.  An
-   exception is made for circular imports, which by construction have to
-   expose an incomplete module object at some point.
-
-   .. note::
-      Locking semantics of imports are an implementation detail which may
-      vary from release to release.  However, Python ensures that circular
-      imports work without any deadlocks.
-
-   .. versionchanged:: 3.3
-      In Python 3.3, the locking scheme has changed to per-module locks for
-      the most part.
-
-
-.. function:: acquire_lock()
-
-   Acquire the interpreter's global import lock for the current thread.
-   This lock should be used by import hooks to ensure thread-safety when
-   importing modules.
-
-   Once a thread has acquired the import lock, the same thread may acquire it
-   again without blocking; the thread must release it once for each time it has
-   acquired it.
-
-   On platforms without threads, this function does nothing.
-
-
-.. function:: release_lock()
-
-   Release the interpreter's global import lock. On platforms without
-   threads, this function does nothing.
-
-
 .. function:: reload(module)
 
    Reload a previously imported *module*.  The argument must be a module object, so
@@ -244,6 +202,49 @@ file paths.
 
    Return the :pep:`3147` magic tag string matching this version of Python's
    magic number, as returned by :func:`get_magic`.
+
+
+The following functions help interact with the import system's internal
+locking mechanism.  Locking semantics of imports are an implementation
+detail which may vary from release to release.  However, Python ensures
+that circular imports work without any deadlocks.
+
+.. versionchanged:: 3.3
+   In Python 3.3, the locking scheme has changed to per-module locks for
+   the most part.  A global import lock is kept for some critical tasks,
+   such as initializing the per-module locks.
+
+
+.. function:: lock_held()
+
+   Return ``True`` if the global import lock is currently held, else
+   ``False``. On platforms without threads, always return ``False``.
+
+   On platforms with threads, a thread executing an import first holds a
+   global import lock, then sets up a per-module lock for the rest of the
+   import.  This blocks other threads from importing the same module until
+   the original import completes, preventing other threads from seeing
+   incomplete module objects constructed by the original thread.  An
+   exception is made for circular imports, which by construction have to
+   expose an incomplete module object at some point.
+
+.. function:: acquire_lock()
+
+   Acquire the interpreter's global import lock for the current thread.
+   This lock should be used by import hooks to ensure thread-safety when
+   importing modules.
+
+   Once a thread has acquired the import lock, the same thread may acquire it
+   again without blocking; the thread must release it once for each time it has
+   acquired it.
+
+   On platforms without threads, this function does nothing.
+
+
+.. function:: release_lock()
+
+   Release the interpreter's global import lock. On platforms without
+   threads, this function does nothing.
 
 
 The following constants with integer values, defined in this module, are used
