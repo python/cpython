@@ -403,15 +403,12 @@ All methods are executed atomically.
 
    Acquire a lock, blocking or non-blocking.
 
-   When invoked without arguments, block until the lock is unlocked, then set it to
-   locked, and return true.
+   When invoked with the *blocking* argument set to ``True`` (the default),
+   block until the lock is unlocked, then set it to locked and return ``True``.
 
-   When invoked with the *blocking* argument set to true, do the same thing as when
-   called without arguments, and return true.
-
-   When invoked with the *blocking* argument set to false, do not block.  If a call
-   without an argument would block, return false immediately; otherwise, do the
-   same thing as when called without arguments, and return true.
+   When invoked with the *blocking* argument set to ``False``, do not block.
+   If a call with *blocking* set to ``True`` would block, return ``False``
+   immediately; otherwise, set the lock to locked and return ``True``.
 
    When invoked with the floating-point *timeout* argument set to a positive
    value, block for at most the number of seconds specified by *timeout*
