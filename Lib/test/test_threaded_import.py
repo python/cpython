@@ -12,7 +12,7 @@ import time
 import shutil
 import unittest
 from test.support import (
-    verbose, import_module, run_unittest, TESTFN, reap_threads)
+    verbose, import_module, run_unittest, TESTFN, reap_threads, forget)
 threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
@@ -187,7 +187,7 @@ class ThreadedImportTests(unittest.TestCase):
             contents = contents % {'delay': delay}
             with open(os.path.join(TESTFN, name + ".py"), "wb") as f:
                 f.write(contents.encode('utf-8'))
-            self.addCleanup(sys.modules.pop, name, None)
+            self.addCleanup(forget, name)
 
         results = []
         def import_ab():
@@ -203,6 +203,21 @@ class ThreadedImportTests(unittest.TestCase):
         t1.join()
         t2.join()
         self.assertEqual(set(results), {'a', 'b'})
+
+    def test_side_effect_import(self):
+        code = """if 1:
+            import threading
+            def target():
+                import random
+            t = threading.Thread(target=target)
+            t.start()
+            t.join()"""
+        sys.path.insert(0, os.curdir)
+        self.addCleanup(sys.path.remove, os.curdir)
+        with open(TESTFN + ".py", "wb") as f:
+            f.write(code.encode('utf-8'))
+        self.addCleanup(forget, TESTFN)
+        __import__(TESTFN)
 
 
 @reap_threads

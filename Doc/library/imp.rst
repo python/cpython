@@ -112,18 +112,29 @@ This module provides an interface to the mechanisms used to implement the
    Return ``True`` if the import lock is currently held, else ``False``. On
    platforms without threads, always return ``False``.
 
-   On platforms with threads, a thread executing an import holds an internal lock
-   until the import is complete. This lock blocks other threads from doing an
-   import until the original import completes, which in turn prevents other threads
-   from seeing incomplete module objects constructed by the original thread while
-   in the process of completing its import (and the imports, if any, triggered by
-   that).
+   On platforms with threads, a thread executing an import first holds a
+   global import lock, then sets up a per-module lock for the rest of the
+   import.  This blocks other threads from importing the same module until
+   the original import completes, preventing other threads from seeing
+   incomplete module objects constructed by the original thread.  An
+   exception is made for circular imports, which by construction have to
+   expose an incomplete module object at some point.
+
+   .. note::
+      Locking semantics of imports are an implementation detail which may
+      vary from release to release.  However, Python ensures that circular
+      imports work without any deadlocks.
+
+   .. versionchanged:: 3.3
+      In Python 3.3, the locking scheme has changed to per-module locks for
+      the most part.
 
 
 .. function:: acquire_lock()
 
-   Acquire the interpreter's import lock for the current thread.  This lock should
-   be used by import hooks to ensure thread-safety when importing modules.
+   Acquire the interpreter's global import lock for the current thread.
+   This lock should be used by import hooks to ensure thread-safety when
+   importing modules.
 
    Once a thread has acquired the import lock, the same thread may acquire it
    again without blocking; the thread must release it once for each time it has
@@ -134,8 +145,8 @@ This module provides an interface to the mechanisms used to implement the
 
 .. function:: release_lock()
 
-   Release the interpreter's import lock. On platforms without threads, this
-   function does nothing.
+   Release the interpreter's global import lock. On platforms without
+   threads, this function does nothing.
 
 
 .. function:: reload(module)

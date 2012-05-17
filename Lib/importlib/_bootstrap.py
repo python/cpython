@@ -159,6 +159,145 @@ def new_module(name):
     return type(_io)(name)
 
 
+# Module-level locking ########################################################
+
+# A dict mapping module names to weakrefs of _ModuleLock instances
+_module_locks = {}
+# A dict mapping thread ids to _ModuleLock instances
+_blocking_on = {}
+
+
+class _DeadlockError(RuntimeError):
+    pass
+
+
+class _ModuleLock:
+    """A recursive lock implementation which is able to detect deadlocks
+    (e.g. thread 1 trying to take locks A then B, and thread 2 trying to
+    take locks B then A).
+    """
+
+    def __init__(self, name):
+        self.lock = _thread.allocate_lock()
+        self.wakeup = _thread.allocate_lock()
+        self.name = name
+        self.owner = None
+        self.count = 0
+        self.waiters = 0
+
+    def has_deadlock(self):
+        # Deadlock avoidance for concurrent circular imports.
+        me = _thread.get_ident()
+        tid = self.owner
+        while True:
+            lock = _blocking_on.get(tid)
+            if lock is None:
+                return False
+            tid = lock.owner
+            if tid == me:
+                return True
+
+    def acquire(self):
+        """
+        Acquire the module lock.  If a potential deadlock is detected,
+        a _DeadlockError is raised.
+        Otherwise, the lock is always acquired and True is returned.
+        """
+        tid = _thread.get_ident()
+        _blocking_on[tid] = self
+        try:
+            while True:
+                with self.lock:
+                    if self.count == 0 or self.owner == tid:
+                        self.owner = tid
+                        self.count += 1
+                        return True
+                    if self.has_deadlock():
+                        raise _DeadlockError("deadlock detected by %r" % self)
+                    if self.wakeup.acquire(False):
+                        self.waiters += 1
+                # Wait for a release() call
+                self.wakeup.acquire()
+                self.wakeup.release()
+        finally:
+            del _blocking_on[tid]
+
+    def release(self):
+        tid = _thread.get_ident()
+        with self.lock:
+            if self.owner != tid:
+                raise RuntimeError("cannot release un-acquired lock")
+            assert self.count > 0
+            self.count -= 1
+            if self.count == 0:
+                self.owner = None
+                if self.waiters:
+                    self.waiters -= 1
+                    self.wakeup.release()
+
+    def __repr__(self):
+        return "_ModuleLock(%r) at %d" % (self.name, id(self))
+
+
+class _DummyModuleLock:
+    """A simple _ModuleLock equivalent for Python builds without
+    multi-threading support."""
+
+    def __init__(self, name):
+        self.name = name
+        self.count = 0
+
+    def acquire(self):
+        self.count += 1
+        return True
+
+    def release(self):
+        if self.count == 0:
+            raise RuntimeError("cannot release un-acquired lock")
+        self.count -= 1
+
+    def __repr__(self):
+        return "_DummyModuleLock(%r) at %d" % (self.name, id(self))
+
+
+# The following two functions are for consumption by Python/import.c.
+
+def _get_module_lock(name):
+    """Get or create the module lock for a given module name.
+
+    Should only be called with the import lock taken."""
+    lock = None
+    if name in _module_locks:
+        lock = _module_locks[name]()
+    if lock is None:
+        if _thread is None:
+            lock = _DummyModuleLock(name)
+        else:
+            lock = _ModuleLock(name)
+        def cb(_):
+            del _module_locks[name]
+        _module_locks[name] = _weakref.ref(lock, cb)
+    return lock
+
+def _lock_unlock_module(name):
+    """Release the global import lock, and acquires then release the
+    module lock for a given module name.
+    This is used to ensure a module is completely initialized, in the
+    event it is being imported by another thread.
+
+    Should only be called with the import lock taken."""
+    lock = _get_module_lock(name)
+    _imp.release_lock()
+    try:
+        lock.acquire()
+    except _DeadlockError:
+        # Concurrent circular import, we'll accept a partially initialized
+        # module object.
+        pass
+    else:
+        lock.release()
+
+
 # Finder/loader utility code ##################################################
 
 _PYCACHE = '__pycache__'
@@ -264,12 +403,15 @@ def module_for_loader(fxn):
                 else:
                     module.__package__ = fullname.rpartition('.')[0]
         try:
+            module.__initializing__ = True
             # If __package__ was not set above, __import__() will do it later.
             return fxn(self, module, *args, **kwargs)
         except:
             if not is_reload:
                 del sys.modules[fullname]
             raise
+        finally:
+            module.__initializing__ = False
     _wrap(module_for_loader_wrapper, fxn)
     return module_for_loader_wrapper
 
@@ -932,7 +1074,8 @@ def _find_module(name, path):
     if not sys.meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
     for finder in sys.meta_path:
-        loader = finder.find_module(name, path)
+        with _ImportLockContext():
+            loader = finder.find_module(name, path)
         if loader is not None:
             # The parent import may have already imported this module.
             if name not in sys.modules:
@@ -962,8 +1105,7 @@ def _sanity_check(name, package, level):
 
 _ERR_MSG = 'No module named {!r}'
 
-def _find_and_load(name, import_):
-    """Find and load the module."""
+def _find_and_load_unlocked(name, import_):
     path = None
     parent = name.rpartition('.')[0]
     if parent:
@@ -1009,6 +1151,19 @@ def _find_and_load(name, import_):
     return module
 
 
+def _find_and_load(name, import_):
+    """Find and load the module, and release the import lock."""
+    try:
+        lock = _get_module_lock(name)
+    finally:
+        _imp.release_lock()
+    lock.acquire()
+    try:
+        return _find_and_load_unlocked(name, import_)
+    finally:
+        lock.release()
+
+
 def _gcd_import(name, package=None, level=0):
     """Import and return the module based on its name, the package the call is
     being made from, and the level adjustment.
@@ -1021,17 +1176,17 @@ def _gcd_import(name, package=None, level=0):
     _sanity_check(name, package, level)
     if level > 0:
         name = _resolve_name(name, package, level)
-    with _ImportLockContext():
-        try:
-            module = sys.modules[name]
-            if module is None:
-                message = ("import of {} halted; "
-                            "None in sys.modules".format(name))
-                raise ImportError(message, name=name)
-            return module
-        except KeyError:
-            pass  # Don't want to chain the exception
+    _imp.acquire_lock()
+    if name not in sys.modules:
         return _find_and_load(name, _gcd_import)
+    module = sys.modules[name]
+    if module is None:
+        _imp.release_lock()
+        message = ("import of {} halted; "
+                    "None in sys.modules".format(name))
+        raise ImportError(message, name=name)
+    _lock_unlock_module(name)
+    return module
 
 
 def _handle_fromlist(module, fromlist, import_):
@@ -1149,7 +1304,17 @@ def _setup(sys_module, _imp_module):
                 continue
     else:
         raise ImportError('importlib requires posix or nt')
+
+    try:
+        thread_module = BuiltinImporter.load_module('_thread')
+    except ImportError:
+        # Python was built without threads
+        thread_module = None
+    weakref_module = BuiltinImporter.load_module('_weakref')
+
     setattr(self_module, '_os', os_module)
+    setattr(self_module, '_thread', thread_module)
+    setattr(self_module, '_weakref', weakref_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', set(path_separators))
     # Constants
