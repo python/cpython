@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #9260: A finer-grained import lock.  Most of the import sequence
+  now uses per-module locks rather than the global import lock, eliminating
+  well-known issues with threads and imports.
+
 - Issue #14624: UTF-16 decoding is now 3x to 4x faster on various inputs.
   Patch by Serhiy Storchaka.
 

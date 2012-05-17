@@ -30,13 +30,13 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
-   This version of :c:func:`PyImport_ImportModule` does not block. It's intended
-   to be used in C functions that import other modules to execute a function.
-   The import may block if another thread holds the import lock. The function
-   :c:func:`PyImport_ImportModuleNoBlock` never blocks. It first tries to fetch
-   the module from sys.modules and falls back to :c:func:`PyImport_ImportModule`
-   unless the lock is held, in which case the function will raise an
-   :exc:`ImportError`.
+   This function is a deprecated alias of :c:func:`PyImport_ImportModule`.
+
+   .. versionchanged:: 3.3
+      This function used to fail immediately when the import lock was held
+      by another thread.  In Python 3.3 though, the locking scheme switched
+      to per-module locks for most purposes, so this function's special
+      behaviour isn't needed anymore.
 
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)

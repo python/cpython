@@ -1370,47 +1370,7 @@ PyImport_ImportModule(const char *name)
 PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
-    PyObject *nameobj, *modules, *result;
-#ifdef WITH_THREAD
-    long me;
-#endif
-
-    /* Try to get the module from sys.modules[name] */
-    modules = PyImport_GetModuleDict();
-    if (modules == NULL)
-        return NULL;
-
-    nameobj = PyUnicode_FromString(name);
-    if (nameobj == NULL)
-        return NULL;
-    result = PyDict_GetItem(modules, nameobj);
-    if (result != NULL) {
-        Py_DECREF(nameobj);
-        Py_INCREF(result);
-        return result;
-    }
-    PyErr_Clear();
-#ifdef WITH_THREAD
-    /* check the import lock
-     * me might be -1 but I ignore the error here, the lock function
-     * takes care of the problem */
-    me = PyThread_get_thread_ident();
-    if (import_lock_thread == -1 || import_lock_thread == me) {
-        /* no thread or me is holding the lock */
-        result = PyImport_Import(nameobj);
-    }
-    else {
-        PyErr_Format(PyExc_ImportError,
-                     "Failed to import %R because the import lock"
-                     "is held by another thread.",
-                     nameobj);
-        result = NULL;
-    }
-#else
-    result = PyImport_Import(nameobj);
-#endif
-    Py_DECREF(nameobj);
-    return result;
+    return PyImport_ImportModule(name);
 }
 
 
@@ -1420,11 +1380,13 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                  int level)
 {
     _Py_IDENTIFIER(__import__);
+    _Py_IDENTIFIER(__initializing__);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__path__);
     _Py_IDENTIFIER(__name__);
     _Py_IDENTIFIER(_find_and_load);
     _Py_IDENTIFIER(_handle_fromlist);
+    _Py_IDENTIFIER(_lock_unlock_module);
     _Py_static_string(single_dot, ".");
     PyObject *abs_name = NULL;
     PyObject *builtins_import = NULL;
@@ -1607,16 +1569,48 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         goto error_with_unlock;
     }
     else if (mod != NULL) {
+        PyObject *value;
+        int initializing = 0;
+
         Py_INCREF(mod);
+        /* Only call _bootstrap._lock_unlock_module() if __initializing__ is true. */
+        value = _PyObject_GetAttrId(mod, &PyId___initializing__);
+        if (value == NULL)
+            PyErr_Clear();
+        else {
+            initializing = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (initializing == -1)
+                PyErr_Clear();
+        }
+        if (initializing > 0) {
+            /* _bootstrap._lock_unlock_module() releases the import lock */
+            value = _PyObject_CallMethodObjIdArgs(interp->importlib,
+                                            &PyId__lock_unlock_module, abs_name,
+                                            NULL);
+            if (value == NULL)
+                goto error;
+            Py_DECREF(value);
+        }
+        else {
+#ifdef WITH_THREAD
+            if (_PyImport_ReleaseLock() < 0) {
+                PyErr_SetString(PyExc_RuntimeError, "not holding the import lock");
+                goto error;
+            }
+#endif
+        }
     }
     else {
+        /* _bootstrap._find_and_load() releases the import lock */
         mod = _PyObject_CallMethodObjIdArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             builtins_import, NULL);
         if (mod == NULL) {
-            goto error_with_unlock;
+            goto error;
         }
     }
+    /* From now on we don't hold the import lock anymore. */
 
     if (PyObject_Not(fromlist)) {
         if (level == 0 || PyUnicode_GET_LENGTH(name) > 0) {
@@ -1625,12 +1619,12 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
 
             if (borrowed_dot == NULL) {
-                goto error_with_unlock;
+                goto error;
             }
 
             partition = PyUnicode_Partition(name, borrowed_dot);
             if (partition == NULL) {
-                goto error_with_unlock;
+                goto error;
             }
 
             if (PyUnicode_GET_LENGTH(PyTuple_GET_ITEM(partition, 1)) == 0) {
@@ -1638,7 +1632,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 Py_DECREF(partition);
                 final_mod = mod;
                 Py_INCREF(mod);
-                goto exit_with_unlock;
+                goto error;
             }
 
             front = PyTuple_GET_ITEM(partition, 0);
@@ -1657,7 +1651,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                                         abs_name_len - cut_off);
                 Py_DECREF(front);
                 if (to_return == NULL) {
-                    goto error_with_unlock;
+                    goto error;
                 }
 
                 final_mod = PyDict_GetItem(interp->modules, to_return);
@@ -1683,8 +1677,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                                   fromlist, builtins_import,
                                                   NULL);
     }
+    goto error;
 
-  exit_with_unlock:
   error_with_unlock:
 #ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
