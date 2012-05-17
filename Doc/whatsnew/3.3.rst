@@ -573,6 +573,23 @@ Some smaller changes made to the core Python language are:
 .. XXX mention new error messages for passing wrong number of arguments to functions
 
 
+A Finer-Grained Import Lock
+===========================
+
+Previous versions of CPython have always relied on a global import lock.
+This led to unexpected annoyances, such as deadlocks when importing a module
+would trigger code execution in a different thread as a side-effect.
+Clumsy workarounds were sometimes employed, such as the
+:c:func:`PyImport_ImportModuleNoBlock` C API function.
+
+In Python 3.3, importing a module takes a per-module lock.  This correctly
+serializes importation of a given module from multiple threads (preventing
+the exposure of incompletely initialized modules), while eliminating the
+aforementioned annoyances.
+
+(contributed by Antoine Pitrou in :issue:`9260`.)
+
+
 New and Improved Modules
 ========================
 
