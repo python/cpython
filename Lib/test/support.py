@@ -1596,24 +1596,8 @@ def strip_python_stderr(stderr):
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
-    flag_opt_map = {
-        'bytes_warning': 'b',
-        'dont_write_bytecode': 'B',
-        'hash_randomization': 'R',
-        'ignore_environment': 'E',
-        'no_user_site': 's',
-        'no_site': 'S',
-        'optimize': 'O',
-        'verbose': 'v',
-    }
-    args = []
-    for flag, opt in flag_opt_map.items():
-        v = getattr(sys.flags, flag)
-        if v > 0:
-            args.append('-' + opt * v)
-    for opt in sys.warnoptions:
-        args.append('-W' + opt)
-    return args
+    from multiprocessing.util import _args_from_interpreter_flags
+    return _args_from_interpreter_flags()
 
 #============================================================
 # Support for assertions about logging.

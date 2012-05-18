@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12098: multiprocessing on Windows now starts child processes
+  using the same sys.flags as the current process.  Initial patch by
+  Sergey Mezentsev.
+
 - Issue #13031: Small speed-up for tarfile when unzipping tarfiles.
   Patch by Justin Peel.
 
