@@ -475,6 +475,37 @@ def _eintr_retry_call(func, *args):
             continue
 
 
+# XXX This function is only used by multiprocessing and the test suite,
+# but it's here so that it can be imported when Python is compiled without
+# threads.
+
+def _args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    settings in sys.flags and sys.warnoptions."""
+    flag_opt_map = {
+        'debug': 'd',
+        # 'inspect': 'i',
+        # 'interactive': 'i',
+        'optimize': 'O',
+        'dont_write_bytecode': 'B',
+        'no_user_site': 's',
+        'no_site': 'S',
+        'ignore_environment': 'E',
+        'verbose': 'v',
+        'bytes_warning': 'b',
+        'quiet': 'q',
+        'hash_randomization': 'R',
+    }
+    args = []
+    for flag, opt in flag_opt_map.items():
+        v = getattr(sys.flags, flag)
+        if v > 0:
+            args.append('-' + opt * v)
+    for opt in sys.warnoptions:
+        args.append('-W' + opt)
+    return args
+
+
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
     timeout, then return the returncode attribute.
