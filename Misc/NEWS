@@ -63,6 +63,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14798: Fix the functions in pyclbr to raise an ImportError
+  when the first part of a dotted name is not a package. Patch by
+  Xavier de Gaye.
+
 - Issue #14829: Fix bisect and range() indexing with large indices
   (>= 2 ** 32) under 64-bit Windows.
 
