@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14798: Fix the functions in pyclbr to raise an ImportError
+  when the first part of a dotted name is not a package. Patch by
+  Xavier de Gaye.
+
 - Issue #12098: multiprocessing on Windows now starts child processes
   using the same sys.flags as the current process.  Initial patch by
   Sergey Mezentsev.
