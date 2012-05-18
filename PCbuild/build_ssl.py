@@ -64,37 +64,13 @@ def find_working_perl(perls):
     print(" Please install ActivePerl and ensure it appears on your path")
     return None
 
-# Locate the best SSL directory given a few roots to look into.
-def find_best_ssl_dir(sources):
-    candidates = []
-    for s in sources:
-        try:
-            # note: do not abspath s; the build will fail if any
-            # higher up directory name has spaces in it.
-            fnames = os.listdir(s)
-        except os.error:
-            fnames = []
-        for fname in fnames:
-            fqn = os.path.join(s, fname)
-            if os.path.isdir(fqn) and fname.startswith("openssl-"):
-                candidates.append(fqn)
-    # Now we have all the candidates, locate the best.
-    best_parts = []
-    best_name = None
-    for c in candidates:
-        parts = re.split("[.-]", os.path.basename(c))[1:]
-        # eg - openssl-0.9.7-beta1 - ignore all "beta" or any other qualifiers
-        if len(parts) >= 4:
-            continue
-        if parts > best_parts:
-            best_parts = parts
-            best_name = c
-    if best_name is not None:
-        print("Found an SSL directory at '%s'" % (best_name,))
-    else:
-        print("Could not find an SSL directory in '%s'" % (sources,))
-    sys.stdout.flush()
-    return best_name
+# Fetch SSL directory from VC properties
+def get_ssl_dir():
+    propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.vsprops'))
+    with open(propfile) as f:
+        m = re.search('openssl-([^"]+)"', f.read())
+        return "..\..\openssl-"+m.group(1)
+
 
 def create_makefile64(makefile, m32):
     """Create and fix makefile for 64bit
@@ -190,7 +166,7 @@ def main():
         print("No Perl installation was found. Existing Makefiles are used.")
     sys.stdout.flush()
     # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
-    ssl_dir = find_best_ssl_dir(("..\\..",))
+    ssl_dir = get_ssl_dir()
     if ssl_dir is None:
         sys.exit(1)
 
