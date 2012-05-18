@@ -65,9 +65,9 @@ def find_working_perl(perls):
 
 # Fetch SSL directory from VC properties
 def get_ssl_dir():
-    propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.vsprops'))
+    propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.props'))
     with open(propfile) as f:
-        m = re.search('openssl-([^"]+)"', f.read())
+        m = re.search('openssl-([^<]+)<', f.read())
         return "..\..\openssl-"+m.group(1)
 
 
