@@ -62,9 +62,9 @@ An explanation of some terminology and conventions is in order.
   the units in which their value or argument is expressed. E.g. on most Unix
   systems, the clock "ticks" only 50 or 100 times a second.
 
-* On the other hand, the precision of :func:`time` and :func:`sleep` is better
+* On the other hand, the precision of :func:`.time` and :func:`sleep` is better
   than their Unix equivalents: times are expressed as floating point numbers,
-  :func:`time` returns the most accurate time available (using Unix
+  :func:`.time` returns the most accurate time available (using Unix
   :c:func:`gettimeofday` where available), and :func:`sleep` will accept a time
   with a nonzero fraction (Unix :c:func:`select` is used to implement this, where
   available).
@@ -256,7 +256,7 @@ The module defines the following functions and data items:
 
    Convert a time expressed in seconds since the epoch to a string representing
    local time. If *secs* is not provided or :const:`None`, the current time as
-   returned by :func:`time` is used.  ``ctime(secs)`` is equivalent to
+   returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
    ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
 
 
@@ -284,7 +284,7 @@ The module defines the following functions and data items:
 
    Convert a time expressed in seconds since the epoch to a :class:`struct_time` in
    UTC in which the dst flag is always zero.  If *secs* is not provided or
-   :const:`None`, the current time as returned by :func:`time` is used.  Fractions
+   :const:`None`, the current time as returned by :func:`.time` is used.  Fractions
    of a second are ignored.  See above for a description of the
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
@@ -293,7 +293,7 @@ The module defines the following functions and data items:
 .. function:: localtime([secs])
 
    Like :func:`gmtime` but converts to local time.  If *secs* is not provided or
-   :const:`None`, the current time as returned by :func:`time` is used.  The dst
+   :const:`None`, the current time as returned by :func:`.time` is used.  The dst
    flag is set to ``1`` when DST applies to the given time.
 
 
@@ -302,7 +302,7 @@ The module defines the following functions and data items:
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`time`.
+   UTC.  It returns a floating point number, for compatibility with :func:`.time`.
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
