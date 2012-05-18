@@ -135,6 +135,8 @@ Tools/Demos
 Build
 -----
 
+- Upgrade Windows library versions: bzip 1.0.6, OpenSSL 1.0.1c.
+
 - Issue #14693: Under non-Windows platforms, hashlib's fallback modules are
   always compiled, even if OpenSSL is present at build time.
 
