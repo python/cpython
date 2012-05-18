@@ -228,9 +228,9 @@ def main():
 
         # Now run make.
         if arch == "amd64":
-            rc = os.system("ml64 -c -Foms\\uptable.obj ms\\uptable.asm")
+            rc = os.system("nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm")
             if rc:
-                print("ml64 assembler has failed.")
+                print("nasm assembler has failed.")
                 sys.exit(rc)
 
         copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
