@@ -7,6 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+import sys
 import functools
 import itertools
 import weakref
@@ -295,3 +296,33 @@ class ForkAwareLocal(threading.local):
         register_after_fork(self, lambda obj : obj.__dict__.clear())
     def __reduce__(self):
         return type(self), ()
+
+#
+# Get options for python to produce the same sys.flags
+#
+
+def _args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    settings in sys.flags and sys.warnoptions."""
+    flag_opt_map = {
+        'debug': 'd',
+        # 'inspect': 'i',
+        # 'interactive': 'i',
+        'optimize': 'O',
+        'dont_write_bytecode': 'B',
+        'no_user_site': 's',
+        'no_site': 'S',
+        'ignore_environment': 'E',
+        'verbose': 'v',
+        'bytes_warning': 'b',
+        'quiet': 'q',
+        'hash_randomization': 'R',
+    }
+    args = []
+    for flag, opt in flag_opt_map.items():
+        v = getattr(sys.flags, flag)
+        if v > 0:
+            args.append('-' + opt * v)
+    for opt in sys.warnoptions:
+        args.append('-W' + opt)
+    return args
