@@ -188,6 +188,11 @@ class PyclbrTest(TestCase):
         cm('email.parser')
         cm('test.test_pyclbr')
 
+    def test_issue_14798(self):
+        # test ImportError is raised when the first part of a dotted name is
+        # not a package
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+
 
 def test_main():
     run_unittest(PyclbrTest)
