@@ -1596,8 +1596,7 @@ def strip_python_stderr(stderr):
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
-    from multiprocessing.util import _args_from_interpreter_flags
-    return _args_from_interpreter_flags()
+    return subprocess._args_from_interpreter_flags()
 
 #============================================================
 # Support for assertions about logging.
