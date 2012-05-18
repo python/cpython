@@ -120,9 +120,7 @@ processes:
           print(q.get())    # prints "[42, None, 'hello']"
           p.join()
 
-   Queues are thread and process safe, but note that they must never
-   be instantiated as a side effect of importing a module: this can lead
-   to a deadlock!  (see :ref:`threaded-imports`)
+   Queues are thread and process safe.
 
 **Pipes**
 
