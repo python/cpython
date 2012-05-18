@@ -24,9 +24,9 @@ if not exist bzip2-1.0.6 (
 )
 
 @rem OpenSSL
-if not exist openssl-1.0.0c (
+if not exist openssl-1.0.1c (
     rd /s/q openssl-1.0.0j
-    svn export http://svn.python.org/projects/external/openssl-1.0.0c
+    svn export http://svn.python.org/projects/external/openssl-1.0.1c
 )
 
 @rem tcl/tk
