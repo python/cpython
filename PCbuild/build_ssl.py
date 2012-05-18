@@ -46,7 +46,7 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen('"%s" -e "use Win32;"' % perl)
+        fh = os.popen('""%s" -e "use Win32;""' % perl)
         fh.read()
         rc = fh.close()
         if rc:
