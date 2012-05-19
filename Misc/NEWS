@@ -10,6 +10,10 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #14494: Fix __future__.py and its documentation to note that
+  absolute imports are the default behavior in 3.0 instead of 2.7.
+  Patch by Sven Marnach.
+
 - Issue #14761: Fix potential leak on an error case in the import machinery.
 
 - Issue #14699: Fix calling the classmethod descriptor directly.
