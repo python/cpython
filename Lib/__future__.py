@@ -114,7 +114,7 @@ division = _Feature((2, 2, 0, "alpha", 2),
                     CO_FUTURE_DIVISION)
 
 absolute_import = _Feature((2, 5, 0, "alpha", 1),
-                           (2, 7, 0, "alpha", 0),
+                           (3, 0, 0, "alpha", 0),
                            CO_FUTURE_ABSOLUTE_IMPORT)
 
 with_statement = _Feature((2, 5, 0, "alpha", 1),
