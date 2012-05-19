@@ -1907,7 +1907,10 @@ class HandlerTest(BaseTest):
                     h.handle(r)
             finally:
                 remover.join()
-                h.close()
+                try:
+                    h.close()
+                except ValueError:
+                    pass
                 if os.path.exists(fn):
                     os.unlink(fn)
 
