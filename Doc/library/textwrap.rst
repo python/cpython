@@ -107,6 +107,15 @@ indentation from strings that have unwanted whitespace to the left of the text.
       expanded to spaces using the :meth:`expandtabs` method of *text*.
 
 
+   .. attribute:: tabsize
+
+      (default: ``8``) If :attr:`expand_tabs` is true, then all tab characters
+      in *text* will be expanded to zero or more spaces, depending on the
+      current column and the given tab size.
+
+      .. versionadded:: 3.3
+
+
    .. attribute:: replace_whitespace
 
       (default: ``True``) If true, each whitespace character (as defined by

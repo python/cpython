@@ -91,6 +91,14 @@ What a mess!
         result = wrapper.fill(text)
         self.check(result, '\n'.join(expect))
 
+        text = "\tTest\tdefault\t\ttabsize."
+        expect = ["        Test    default         tabsize."]
+        self.check_wrap(text, 80, expect)
+
+        text = "\tTest\tcustom\t\ttabsize."
+        expect = ["    Test    custom      tabsize."]
+        self.check_wrap(text, 80, expect, tabsize=4)
+
     def test_fix_sentence_endings(self):
         wrapper = TextWrapper(60, fix_sentence_endings=True)
 
