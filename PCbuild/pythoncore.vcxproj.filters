@@ -111,9 +111,6 @@
     <ClInclude Include="..\Include\floatobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\formatter_unicode.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\frameobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -219,9 +216,6 @@
     <ClInclude Include="..\Include\pygetopt.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pymactoolbox.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pymath.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -282,9 +276,6 @@
     <ClInclude Include="..\Include\sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\timefuncs.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\token.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -304,9 +295,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\_math.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_time.h">
       <Filter>Modules</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\rotatingtree.h">
