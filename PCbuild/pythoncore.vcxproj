@@ -389,7 +389,6 @@
     <ClInclude Include="..\Include\fileobject.h" />
     <ClInclude Include="..\Include\fileutils.h" />
     <ClInclude Include="..\Include\floatobject.h" />
-    <ClInclude Include="..\Include\formatter_unicode.h" />
     <ClInclude Include="..\Include\frameobject.h" />
     <ClInclude Include="..\Include\funcobject.h" />
     <ClInclude Include="..\Include\genobject.h" />
@@ -425,7 +424,6 @@
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
     <ClInclude Include="..\Include\pygetopt.h" />
-    <ClInclude Include="..\Include\pymactoolbox.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />
     <ClInclude Include="..\Include\pymacro.h" />
@@ -446,7 +444,6 @@
     <ClInclude Include="..\Include\structseq.h" />
     <ClInclude Include="..\Include\symtable.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
-    <ClInclude Include="..\Include\timefuncs.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
@@ -454,7 +451,6 @@
     <ClInclude Include="..\Include\unicodeobject.h" />
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
-    <ClInclude Include="..\Modules\_time.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\zlib\crc32.h" />
