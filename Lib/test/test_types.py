@@ -747,8 +747,257 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(copy['key1'], 27)
 
 
+class ClassCreationTests(unittest.TestCase):
+
+    class Meta(type):
+        def __init__(cls, name, bases, ns, **kw):
+            super().__init__(name, bases, ns)
+        @staticmethod
+        def __new__(mcls, name, bases, ns, **kw):
+            return super().__new__(mcls, name, bases, ns)
+        @classmethod
+        def __prepare__(mcls, name, bases, **kw):
+            ns = super().__prepare__(name, bases)
+            ns["y"] = 1
+            ns.update(kw)
+            return ns
+
+    def test_new_class_basics(self):
+        C = types.new_class("C")
+        self.assertEqual(C.__name__, "C")
+        self.assertEqual(C.__bases__, (object,))
+
+    def test_new_class_subclass(self):
+        C = types.new_class("C", (int,))
+        self.assertTrue(issubclass(C, int))
+
+    def test_new_class_meta(self):
+        Meta = self.Meta
+        settings = {"metaclass": Meta, "z": 2}
+        # We do this twice to make sure the passed in dict isn't mutated
+        for i in range(2):
+            C = types.new_class("C" + str(i), (), settings)
+            self.assertIsInstance(C, Meta)
+            self.assertEqual(C.y, 1)
+            self.assertEqual(C.z, 2)
+
+    def test_new_class_exec_body(self):
+        Meta = self.Meta
+        def func(ns):
+            ns["x"] = 0
+        C = types.new_class("C", (), {"metaclass": Meta, "z": 2}, func)
+        self.assertIsInstance(C, Meta)
+        self.assertEqual(C.x, 0)
+        self.assertEqual(C.y, 1)
+        self.assertEqual(C.z, 2)
+
+    def test_new_class_exec_body(self):
+        #Test that keywords are passed to the metaclass:
+        def meta_func(name, bases, ns, **kw):
+            return name, bases, ns, kw
+        res = types.new_class("X",
+                              (int, object),
+                              dict(metaclass=meta_func, x=0))
+        self.assertEqual(res, ("X", (int, object), {}, {"x": 0}))
+
+    def test_new_class_defaults(self):
+        # Test defaults/keywords:
+        C = types.new_class("C", (), {}, None)
+        self.assertEqual(C.__name__, "C")
+        self.assertEqual(C.__bases__, (object,))
+
+    def test_new_class_meta_with_base(self):
+        Meta = self.Meta
+        def func(ns):
+            ns["x"] = 0
+        C = types.new_class(name="C",
+                            bases=(int,),
+                            kwds=dict(metaclass=Meta, z=2),
+                            exec_body=func)
+        self.assertTrue(issubclass(C, int))
+        self.assertIsInstance(C, Meta)
+        self.assertEqual(C.x, 0)
+        self.assertEqual(C.y, 1)
+        self.assertEqual(C.z, 2)
+
+    # Many of the following tests are derived from test_descr.py
+    def test_prepare_class(self):
+        # Basic test of metaclass derivation
+        expected_ns = {}
+        class A(type):
+            def __new__(*args, **kwargs):
+                return type.__new__(*args, **kwargs)
+
+            def __prepare__(*args):
+                return expected_ns
+
+        B = types.new_class("B", (object,))
+        C = types.new_class("C", (object,), {"metaclass": A})
+
+        # The most derived metaclass of D is A rather than type.
+        meta, ns, kwds = types.prepare_class("D", (B, C), {"metaclass": type})
+        self.assertIs(meta, A)
+        self.assertIs(ns, expected_ns)
+        self.assertEqual(len(kwds), 0)
+
+    def test_metaclass_derivation(self):
+        # issue1294232: correct metaclass calculation
+        new_calls = []  # to check the order of __new__ calls
+        class AMeta(type):
+            def __new__(mcls, name, bases, ns):
+                new_calls.append('AMeta')
+                return super().__new__(mcls, name, bases, ns)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                return {}
+
+        class BMeta(AMeta):
+            def __new__(mcls, name, bases, ns):
+                new_calls.append('BMeta')
+                return super().__new__(mcls, name, bases, ns)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                ns = super().__prepare__(name, bases)
+                ns['BMeta_was_here'] = True
+                return ns
+
+        A = types.new_class("A", (), {"metaclass": AMeta})
+        self.assertEqual(new_calls, ['AMeta'])
+        new_calls.clear()
+
+        B = types.new_class("B", (), {"metaclass": BMeta})
+        # BMeta.__new__ calls AMeta.__new__ with super:
+        self.assertEqual(new_calls, ['BMeta', 'AMeta'])
+        new_calls.clear()
+
+        C = types.new_class("C", (A, B))
+        # The most derived metaclass is BMeta:
+        self.assertEqual(new_calls, ['BMeta', 'AMeta'])
+        new_calls.clear()
+        # BMeta.__prepare__ should've been called:
+        self.assertIn('BMeta_was_here', C.__dict__)
+
+        # The order of the bases shouldn't matter:
+        C2 = types.new_class("C2", (B, A))
+        self.assertEqual(new_calls, ['BMeta', 'AMeta'])
+        new_calls.clear()
+        self.assertIn('BMeta_was_here', C2.__dict__)
+
+        # Check correct metaclass calculation when a metaclass is declared:
+        D = types.new_class("D", (C,), {"metaclass": type})
+        self.assertEqual(new_calls, ['BMeta', 'AMeta'])
+        new_calls.clear()
+        self.assertIn('BMeta_was_here', D.__dict__)
+
+        E = types.new_class("E", (C,), {"metaclass": AMeta})
+        self.assertEqual(new_calls, ['BMeta', 'AMeta'])
+        new_calls.clear()
+        self.assertIn('BMeta_was_here', E.__dict__)
+
+    def test_metaclass_override_function(self):
+        # Special case: the given metaclass isn't a class,
+        # so there is no metaclass calculation.
+        class A(metaclass=self.Meta):
+            pass
+
+        marker = object()
+        def func(*args, **kwargs):
+            return marker
+
+        X = types.new_class("X", (), {"metaclass": func})
+        Y = types.new_class("Y", (object,), {"metaclass": func})
+        Z = types.new_class("Z", (A,), {"metaclass": func})
+        self.assertIs(marker, X)
+        self.assertIs(marker, Y)
+        self.assertIs(marker, Z)
+
+    def test_metaclass_override_callable(self):
+        # The given metaclass is a class,
+        # but not a descendant of type.
+        new_calls = []  # to check the order of __new__ calls
+        prepare_calls = []  # to track __prepare__ calls
+        class ANotMeta:
+            def __new__(mcls, *args, **kwargs):
+                new_calls.append('ANotMeta')
+                return super().__new__(mcls)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                prepare_calls.append('ANotMeta')
+                return {}
+
+        class BNotMeta(ANotMeta):
+            def __new__(mcls, *args, **kwargs):
+                new_calls.append('BNotMeta')
+                return super().__new__(mcls)
+            @classmethod
+            def __prepare__(mcls, name, bases):
+                prepare_calls.append('BNotMeta')
+                return super().__prepare__(name, bases)
+
+        A = types.new_class("A", (), {"metaclass": ANotMeta})
+        self.assertIs(ANotMeta, type(A))
+        self.assertEqual(prepare_calls, ['ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['ANotMeta'])
+        new_calls.clear()
+
+        B = types.new_class("B", (), {"metaclass": BNotMeta})
+        self.assertIs(BNotMeta, type(B))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        C = types.new_class("C", (A, B))
+        self.assertIs(BNotMeta, type(C))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        C2 = types.new_class("C2", (B, A))
+        self.assertIs(BNotMeta, type(C2))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        # This is a TypeError, because of a metaclass conflict:
+        # BNotMeta is neither a subclass, nor a superclass of type
+        with self.assertRaises(TypeError):
+            D = types.new_class("D", (C,), {"metaclass": type})
+
+        E = types.new_class("E", (C,), {"metaclass": ANotMeta})
+        self.assertIs(BNotMeta, type(E))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        F = types.new_class("F", (object(), C))
+        self.assertIs(BNotMeta, type(F))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        F2 = types.new_class("F2", (C, object()))
+        self.assertIs(BNotMeta, type(F2))
+        self.assertEqual(prepare_calls, ['BNotMeta', 'ANotMeta'])
+        prepare_calls.clear()
+        self.assertEqual(new_calls, ['BNotMeta', 'ANotMeta'])
+        new_calls.clear()
+
+        # TypeError: BNotMeta is neither a
+        # subclass, nor a superclass of int
+        with self.assertRaises(TypeError):
+            X = types.new_class("X", (C, int()))
+        with self.assertRaises(TypeError):
+            X = types.new_class("X", (int(), C))
+
+
 def test_main():
-    run_unittest(TypesTests, MappingProxyTests)
+    run_unittest(TypesTests, MappingProxyTests, ClassCreationTests)
 
 if __name__ == '__main__':
     test_main()
