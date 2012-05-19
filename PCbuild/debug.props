@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
+    <PyDebugExt>_d</PyDebugExt>
     <KillPythonExe>$(OutDir)kill_python_d.exe</KillPythonExe>
   </PropertyGroup>
   <PropertyGroup>
@@ -11,11 +12,11 @@
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <BuildMacro Include="PyDebugExt">
+      <Value>$(PyDebugExt)</Value>
+    </BuildMacro>
     <BuildMacro Include="KillPythonExe">
       <Value>$(KillPythonExe)</Value>
     </BuildMacro>

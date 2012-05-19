@@ -1,4 +1,4 @@
-Building Python using VC++ 9.0
+Building Python using VC++ 10.0
 ------------------------------
 
 This directory is used to build Python for Win32 and x64 platforms, e.g. 
@@ -62,17 +62,11 @@ PC/VS8.0/
 C RUNTIME
 ---------
 
-Visual Studio 2008 uses version 9 of the C runtime (MSVCRT9).  The executables
-are linked to a CRT "side by side" assembly which must be present on the target
-machine.  This is avalible under the VC/Redist folder of your visual studio
-distribution. On XP and later operating systems that support
-side-by-side assemblies it is not enough to have the msvcrt90.dll present,
-it has to be there as a whole assembly, that is, a folder with the .dll
-and a .manifest.  Also, a check is made for the correct version.
-Therefore, one should distribute this assembly with the dlls, and keep
-it in the same directory.  For compatibility with older systems, one should
-also set the PATH to this directory so that the dll can be found.
-For more info, see the Readme in the VC/Redist folder.
+Visual Studio 2010 uses version 10 of the C runtime (MSVCRT9).  The executables
+no longer use the "Side by Side" assemblies used in previous versions of the
+compiler.  This simplifies distribution of applications.
+The run time libraries are avalible under the VC/Redist folder of your visual studio
+distribution. For more info, see the Readme in the VC/Redist folder.
 
 SUBPROJECTS
 -----------
