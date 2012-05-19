@@ -437,6 +437,13 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
+    def test_issue14072(self):
+        p1 = urlparse.urlsplit('tel:+31-641044153')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '+31-641044153')
+        p2 = urlparse.urlsplit('tel:+31641044153')
+        self.assertEqual(p2.scheme, 'tel')
+        self.assertEqual(p2.path, '+31641044153')
 
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
