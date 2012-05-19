@@ -636,11 +636,20 @@ class UrlParseTestCase(unittest.TestCase):
                          ('s3', 'foo.com', '/stuff', '', '', ''))
         self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff"),
                          ('x-newscheme', 'foo.com', '/stuff', '', '', ''))
+        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
+                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', 'fragment'))
+        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query"),
+                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', ''))
+
         # And for bytes...
         self.assertEqual(urllib.parse.urlparse(b"s3://foo.com/stuff"),
                          (b's3', b'foo.com', b'/stuff', b'', b'', b''))
         self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff"),
                          (b'x-newscheme', b'foo.com', b'/stuff', b'', b'', b''))
+        self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query#fragment"),
+                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b'fragment'))
+        self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query"),
+                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b''))
 
     def test_mixed_types_rejected(self):
         # Several functions that process either strings or ASCII encoded bytes
