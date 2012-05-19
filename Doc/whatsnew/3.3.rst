@@ -1239,6 +1239,10 @@ Add a new :class:`types.MappingProxyType` class: Read-only proxy of a mapping.
 (:issue:`14386`)
 
 
+The new functions `types.new_class` and `types.prepare_class` provide support
+for PEP 3115 compliant dynamic type creation. (:issue:`14588`)
+
+
 urllib
 ------
 

@@ -1550,53 +1550,115 @@ Notes on using *__slots__*
 Customizing class creation
 --------------------------
 
-By default, classes are constructed using :func:`type`. A class definition is
-read into a separate namespace and the value of class name is bound to the
-result of ``type(name, bases, dict)``.
+By default, classes are constructed using :func:`type`. The class body is
+executed in a new namespace and the class name is bound locally to the
+result of ``type(name, bases, namespace)``.
 
-When the class definition is read, if a callable ``metaclass`` keyword argument
-is passed after the bases in the class definition, the callable given will be
-called instead of :func:`type`.  If other keyword arguments are passed, they
-will also be passed to the metaclass.  This allows classes or functions to be
-written which monitor or alter the class creation process:
+The class creation process can be customised by passing the ``metaclass``
+keyword argument in the class definition line, or by inheriting from an
+existing class that included such an argument. In the following example,
+both ``MyClass`` and ``MySubclass`` are instances of ``Meta``::
 
-* Modifying the class dictionary prior to the class being created.
+   class Meta(type):
+       pass
 
-* Returning an instance of another class -- essentially performing the role of a
-  factory function.
+   class MyClass(metaclass=Meta):
+       pass
 
-These steps will have to be performed in the metaclass's :meth:`__new__` method
--- :meth:`type.__new__` can then be called from this method to create a class
-with different properties.  This example adds a new element to the class
-dictionary before creating the class::
+   class MySubclass(MyClass):
+       pass
 
-  class metacls(type):
-      def __new__(mcs, name, bases, dict):
-          dict['foo'] = 'metacls was here'
-          return type.__new__(mcs, name, bases, dict)
+Any other keyword arguments that are specified in the class definition are
+passed through to all metaclass operations described below.
 
-You can of course also override other class methods (or add new methods); for
-example defining a custom :meth:`__call__` method in the metaclass allows custom
-behavior when the class is called, e.g. not always creating a new instance.
+When a class definition is executed, the following steps occur:
 
-If the metaclass has a :meth:`__prepare__` attribute (usually implemented as a
-class or static method), it is called before the class body is evaluated with
-the name of the class and a tuple of its bases for arguments.  It should return
-an object that supports the mapping interface that will be used to store the
-namespace of the class.  The default is a plain dictionary.  This could be used,
-for example, to keep track of the order that class attributes are declared in by
-returning an ordered dictionary.
+* the appropriate metaclass is determined
+* the class namespace is prepared
+* the class body is executed
+* the class object is created
 
-The appropriate metaclass is determined by the following precedence rules:
+Determining the appropriate metaclass
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* If the ``metaclass`` keyword argument is passed with the bases, it is used.
+The appropriate metaclass for a class definition is determined as follows:
 
-* Otherwise, if there is at least one base class, its metaclass is used.
+* if no bases and no explicit metaclass are given, then :func:`type` is used
+* if an explicit metaclass is given and it is *not* an instance of
+  :func:`type`, then it is used directly as the metaclass
+* if an instance of :func:`type` is given as the explicit metaclass, or
+  bases are defined, then the most derived metaclass is used
 
-* Otherwise, the default metaclass (:class:`type`) is used.
+The most derived metaclass is selected from the explicitly specified
+metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
+base classes. The most derived metaclass is one which is a subtype of *all*
+of these candidate metaclasses. If none of the candidate metaclasses meets
+that criterion, then the class definition will fail with ``TypeError``.
+
+
+Preparing the class namespace
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once the appropriate metaclass has been identified, then the class namespace
+is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
+as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
+additional keyword arguments, if any, come from the class definition).
+
+If the metaclass has no ``__prepare__`` attribute, then the class namespace
+is initialised as an empty :func:`dict` instance.
+
+.. seealso::
+
+   :pep:`3115` - Metaclasses in Python 3000
+      Introduced the ``__prepare__`` namespace hook
+
+
+Executing the class body
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The class body is executed (approximately) as
+``exec(body, globals(), namespace)``. The key difference from a normal
+call to :func:`exec` is that lexical scoping allows the class body (including
+any methods) to reference names from the current and outer scopes when the
+class definition occurs inside a function.
+
+However, even when the class definition occurs inside the function, methods
+defined inside the class still cannot see names defined at the class scope.
+Class variables must be accessed through the first parameter of instance or
+class methods, and cannot be accessed at all from static methods.
+
+
+Creating the class object
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once the class namespace has been populated by executing the class body,
+the class object is created by calling
+``metaclass(name, bases, namespace, **kwds)`` (the additional keywords
+passed here are the same as those passed to ``__prepate__``).
+
+This class object is the one that will be referenced by the zero-argument
+form of :func:`super`. ``__class__`` is an implicit closure reference
+created by the compiler if any methods in a class body refer to either
+``__class__`` or ``super``. This allows the zero argument form of
+:func:`super` to correctly identify the class being defined based on
+lexical scoping, while the class or instance that was used to make the
+current call is identified based on the first argument passed to the method.
+
+After the class object is created, any class decorators included in the
+function definition are invoked and the resulting object is bound in the
+local namespace to the name of the class.
+
+.. seealso::
+
+   :pep:`3135` - New super
+      Describes the implicit ``__class__`` closure reference
+
+
+Metaclass example
+^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
-explored including logging, interface checking, automatic delegation, automatic
+explored include logging, interface checking, automatic delegation, automatic
 property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
@@ -1609,9 +1671,9 @@ to remember the order that class members were defined::
          def __prepare__(metacls, name, bases, **kwds):
             return collections.OrderedDict()
 
-         def __new__(cls, name, bases, classdict):
-            result = type.__new__(cls, name, bases, dict(classdict))
-            result.members = tuple(classdict)
+         def __new__(cls, name, bases, namespace, **kwds):
+            result = type.__new__(cls, name, bases, dict(namespace))
+            result.members = tuple(namespace)
             return result
 
     class A(metaclass=OrderedClass):

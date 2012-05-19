@@ -42,6 +42,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14588: The types module now provide new_class() and prepare_class()
+  functions to support PEP 3115 compliant dynamic class creation. Patch by
+  Daniel Urban and Nick Coghlan.
+
 - Issue #13152: Allow to specify a custom tabsize for expanding tabs in
   textwrap. Patch by John Feuerstein.
 
@@ -165,6 +169,13 @@ Build
   always compiled, even if OpenSSL is present at build time.
 
 - Issue #13210: Windows build now uses VS2010, ported from VS2008.
+
+Documentation
+-------------
+
+- Issue #14588: The language reference now accurately documents the Python 3
+  class definition process. Patch by Nick Coghlan.
+
 
 
 What's New in Python 3.3.0 Alpha 3?
