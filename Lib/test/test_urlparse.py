@@ -493,6 +493,10 @@ class UrlParseTestCase(unittest.TestCase):
                          ('s3','foo.com','/stuff','','',''))
         self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff"),
                          ('x-newscheme','foo.com','/stuff','','',''))
+        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
+                         ('x-newscheme','foo.com','/stuff','','query','fragment'))
+        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff?query"),
+                         ('x-newscheme','foo.com','/stuff','','query',''))
 
     def test_withoutscheme(self):
         # Test urlparse without scheme
