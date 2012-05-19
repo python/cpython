@@ -40,16 +40,9 @@ uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
                'svn', 'svn+ssh', 'sftp','nfs','git', 'git+ssh']
-non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
-                    'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
                'mms', '', 'sftp']
-uses_query = ['http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', 'sips', '']
-uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news',
-                 'nntp', 'wais', 'https', 'shttp', 'snews',
-                 'file', 'prospero', '']
 
 # Characters valid in scheme names
 scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
@@ -204,9 +197,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
         if (('[' in netloc and ']' not in netloc) or
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
-    if allow_fragments and scheme in uses_fragment and '#' in url:
+    if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
-    if scheme in uses_query and '?' in url:
+    if '?' in url:
         url, query = url.split('?', 1)
     v = SplitResult(scheme, netloc, url, query, fragment)
     _parse_cache[key] = v
