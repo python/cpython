@@ -75,7 +75,7 @@ language using this mechanism:
 | division         | 2.2.0a2     | 3.0          | :pep:`238`:                                 |
 |                  |             |              | *Changing the Division Operator*            |
 +------------------+-------------+--------------+---------------------------------------------+
-| absolute_import  | 2.5.0a1     | 2.7          | :pep:`328`:                                 |
+| absolute_import  | 2.5.0a1     | 3.0          | :pep:`328`:                                 |
 |                  |             |              | *Imports: Multi-Line and Absolute/Relative* |
 +------------------+-------------+--------------+---------------------------------------------+
 | with_statement   | 2.5.0a1     | 2.6          | :pep:`343`:                                 |
