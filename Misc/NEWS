@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14721: Send the correct 'Content-length: 0' header when the body is an
+  empty string ''. Initial Patch contributed by Arve Knudsen.
+
 - Issue #9374: Generic parsing of query and fragment portions of url for any
   scheme. Supported both by RFC3986 and RFC2396.
 
