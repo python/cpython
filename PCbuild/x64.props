@@ -6,7 +6,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>amd64</_PropertySheetDisplayName>
-    <OutDir>$(SolutionDir)\amd64\</OutDir>
+    <OutDir>$(SolutionDir)amd64\</OutDir>
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>

@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
-    <PyDllName>python33</PyDllName>
-    <PythonExe>$(SolutionDir)\python.exe</PythonExe>
+    <PyDllName>python33$(PyDebugExt)</PyDllName>
+    <PythonExe>$(SolutionDir)python$(PyDebugExt).exe</PythonExe>
+    <KillPythonExe>$(OutDir)kill_python$(PyDebugExt).exe</KillPythonExe>
     <externalsDir>..\..</externalsDir>
     <sqlite3Dir>$(externalsDir)\sqlite-3.7.12</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
@@ -17,10 +18,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir>$(SolutionDir)\</OutDir>
+    <OutDir>$(SolutionDir)</OutDir>
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -58,6 +58,9 @@
     </BuildMacro>
     <BuildMacro Include="PythonExe">
       <Value>$(PythonExe)</Value>
+    </BuildMacro>
+    <BuildMacro Include="KillPythonExe">
+      <Value>$(KillPythonExe)</Value>
     </BuildMacro>
     <BuildMacro Include="externalsDir">
       <Value>$(externalsDir)</Value>
