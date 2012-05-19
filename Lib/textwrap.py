@@ -39,8 +39,11 @@ class TextWrapper:
         of wrapped output; also counts towards each line's width.
       expand_tabs (default: true)
         Expand tabs in input text to spaces before further processing.
-        Each tab will become 1 .. 8 spaces, depending on its position in
-        its line.  If false, each tab is treated as a single character.
+        Each tab will become 0 .. 'tabsize' spaces, depending on its position
+        in its line.  If false, each tab is treated as a single character.
+      tabsize (default: 8)
+        Expand tabs in input text to 0 .. 'tabsize' spaces, unless
+        'expand_tabs' is false.
       replace_whitespace (default: true)
         Replace all whitespace characters in the input text by spaces
         after tab expansion.  Note that if expand_tabs is false and
@@ -100,7 +103,8 @@ class TextWrapper:
                  fix_sentence_endings=False,
                  break_long_words=True,
                  drop_whitespace=True,
-                 break_on_hyphens=True):
+                 break_on_hyphens=True,
+                 tabsize=8):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -110,6 +114,7 @@ class TextWrapper:
         self.break_long_words = break_long_words
         self.drop_whitespace = drop_whitespace
         self.break_on_hyphens = break_on_hyphens
+        self.tabsize = tabsize
 
 
     # -- Private methods -----------------------------------------------
@@ -123,7 +128,7 @@ class TextWrapper:
         becomes " foo    bar  baz".
         """
         if self.expand_tabs:
-            text = text.expandtabs()
+            text = text.expandtabs(self.tabsize)
         if self.replace_whitespace:
             text = text.translate(self.unicode_whitespace_trans)
         return text
