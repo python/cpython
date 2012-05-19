@@ -1,5 +1,5 @@
-:mod:`types` --- Names for built-in types
-=========================================
+:mod:`types` --- Dynamic type creation and names for built-in types
+===================================================================
 
 .. module:: types
    :synopsis: Names for built-in types.
@@ -8,20 +8,69 @@
 
 --------------
 
-This module defines names for some object types that are used by the standard
+This module defines utility function to assist in dynamic creation of
+new types.
+
+It also defines names for some object types that are used by the standard
 Python interpreter, but not exposed as builtins like :class:`int` or
-:class:`str` are.  Also, it does not include some of the types that arise
-transparently during processing such as the ``listiterator`` type.
+:class:`str` are.
 
-Typical use is for :func:`isinstance` or :func:`issubclass` checks.
 
-The module defines the following names:
+Dynamic Type Creation
+---------------------
+
+.. function:: new_class(name, bases=(), kwds=None, exec_body=None)
+
+   Creates a class object dynamically using the appropriate metaclass.
+
+   The arguments are the components that make up a class definition: the
+   class name, the base classes (in order), the keyword arguments (such as
+   ``metaclass``) and the callback function to populate the class namespace.
+
+   The *exec_body* callback should accept the class namespace as its sole
+   argument and update the namespace directly with the class contents.
+
+.. function:: prepare_class(name, bases=(), kwds=None)
+
+   Calculates the appropriate metaclass and creates the class namespace.
+
+   The arguments are the components that make up a class definition: the
+   class name, the base classes (in order) and the keyword arguments (such as
+   ``metaclass``).
+
+   The return value is a 3-tuple: ``metaclass, namespace, kwds``
+
+   *metaclass* is the appropriate metaclass
+   *namespace* is the prepared class namespace
+   *kwds* is an updated copy of the passed in *kwds* argument with any
+   ``'metaclass'`` entry removed. If no *kwds* argument is passed in, this
+   will be an empty dict.
+
+
+.. seealso::
+
+   :pep:`3115` - Metaclasses in Python 3000
+      Introduced the ``__prepare__`` namespace hook
+
+
+Standard Interpreter Types
+--------------------------
+
+This module provides names for many of the types that are required to
+implement a Python interpreter. It deliberately avoids including some of
+the types that arise only incidentally during processing such as the
+``listiterator`` type.
+
+Typical use is of these names is for :func:`isinstance` or
+:func:`issubclass` checks.
+
+Standard names are defined for the following types:
 
 .. data:: FunctionType
           LambdaType
 
-   The type of user-defined functions and functions created by :keyword:`lambda`
-   expressions.
+   The type of user-defined functions and functions created by
+   :keyword:`lambda`  expressions.
 
 
 .. data:: GeneratorType

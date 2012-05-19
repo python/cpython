@@ -1324,10 +1324,12 @@ are always available.  They are listed here in alphabetical order.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.
 
-   Also note that :func:`super` is not limited to use inside methods.  The two
-   argument form specifies the arguments exactly and makes the appropriate
-   references.  The zero argument form automatically searches the stack frame
-   for the class (``__class__``) and the first argument.
+   Also note that, aside from the zero argument form, :func:`super` is not
+   limited to use inside methods.  The two argument form specifies the
+   arguments exactly and makes the appropriate references.  The zero
+   argument form only works inside a class definition, as the compiler fills
+   in the necessary details to correctly retrieve the class being defined,
+   as well as accessing the current instance for ordinary methods.
 
    For practical suggestions on how to design cooperative classes using
    :func:`super`, see `guide to using super()
