@@ -148,12 +148,6 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -190,7 +184,6 @@
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
       <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

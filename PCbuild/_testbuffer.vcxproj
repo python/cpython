@@ -148,19 +148,6 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">.pyd</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(SolutionDir)$(PlatformName)-pgo\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(SolutionDir)$(PlatformName)-pgo\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">.pyd</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(OutDirPGI)\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(ProjectName)</TargetName>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\</IntDir>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">.pyd</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -173,7 +160,6 @@
     </Midl>
     <Link>
       <BaseAddress>0x1e1F0000</BaseAddress>
-      <AdditionalDependencies>$(OutDir)python33_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -187,7 +173,6 @@
     </Midl>
     <Link>
       <BaseAddress>0x1e1F0000</BaseAddress>
-      <AdditionalDependencies>$(OutDir)python33.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
@@ -202,7 +187,6 @@
     <Link>
       <BaseAddress>0x1e1F0000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>$(OutDir)python33.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
@@ -217,11 +201,15 @@
     <Link>
       <BaseAddress>0x1e1F0000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>$(SolutionDir)\$(PlatformShortName)\python33.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testbuffer.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="pythoncore.vcxproj">
+      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
