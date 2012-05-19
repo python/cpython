@@ -338,12 +338,12 @@ def urlsplit(url, scheme='', allow_fragments=True):
             if c not in scheme_chars:
                 break
         else:
-            try:
-                # make sure "url" is not actually a port number (in which case
-                # "scheme" is really part of the path
-                _testportnum = int(url[i+1:])
-            except ValueError:
-                scheme, url = url[:i].lower(), url[i+1:]
+            # make sure "url" is not actually a port number (in which case
+            # "scheme" is really part of the path)
+            rest = url[i+1:]
+            if not rest or any(c not in '0123456789' for c in rest):
+                # not a port number
+                scheme, url = url[:i].lower(), rest
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)

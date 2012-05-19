@@ -806,6 +806,13 @@ class UrlParseTestCase(unittest.TestCase):
                           encoding='utf-8')
         self.assertRaises(TypeError, urllib.parse.quote, b'foo', errors='strict')
 
+    def test_issue14072(self):
+        p1 = urllib.parse.urlsplit('tel:+31-641044153')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '+31-641044153')
+        p2 = urllib.parse.urlsplit('tel:+31641044153')
+        self.assertEqual(p2.scheme, 'tel')
+        self.assertEqual(p2.path, '+31641044153')
 
 def test_main():
     support.run_unittest(UrlParseTestCase)
