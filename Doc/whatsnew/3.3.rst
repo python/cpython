@@ -851,6 +851,15 @@ already exists. It is based on the C11 'x' mode to fopen().
 (Contributed by David Townshend in :issue:`12760`)
 
 
+ipaddress
+---------
+
+The new :mod:`ipaddress` module provides tools for creating and manipulating
+objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
+an IP address associated with a specific IP subnet).
+
+(Contributed by Google and Peter Moody in :pep:`3144`)
+
 lzma
 ----
 
