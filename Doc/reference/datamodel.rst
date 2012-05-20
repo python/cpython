@@ -1656,9 +1656,9 @@ created by the compiler if any methods in a class body refer to either
 lexical scoping, while the class or instance that was used to make the
 current call is identified based on the first argument passed to the method.
 
-After the class object is created, any class decorators included in the
-function definition are invoked and the resulting object is bound in the
-local namespace to the name of the class.
+After the class object is created, it is passed to the class decorators
+included in the class definition (if any) and the resulting object is bound
+in the local namespace as the defined class.
 
 .. seealso::
 
