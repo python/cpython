@@ -2111,8 +2111,10 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PySet_Type) < 0)
         Py_FatalError("Can't initialize set type");
 
+#ifdef Py_USING_UNICODE
     if (PyType_Ready(&PyUnicode_Type) < 0)
         Py_FatalError("Can't initialize unicode type");
+#endif
 
     if (PyType_Ready(&PySlice_Type) < 0)
         Py_FatalError("Can't initialize slice type");

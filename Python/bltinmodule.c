@@ -1578,6 +1578,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
             Py_CLEAR(str_newline);
             return NULL;
         }
+#ifdef Py_USING_UNICODE
         unicode_newline = PyUnicode_FromString("\n");
         if (unicode_newline == NULL) {
             Py_CLEAR(str_newline);
@@ -1591,6 +1592,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
             Py_CLEAR(unicode_space);
             return NULL;
         }
+#endif
     }
     if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
                                      kwlist, &sep, &end, &file))

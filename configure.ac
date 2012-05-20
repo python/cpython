@@ -3776,6 +3776,7 @@ ucs2) unicode_size="2"
 ucs4) unicode_size="4"
       AC_DEFINE(Py_UNICODE_SIZE,4)
       ;;
+no)   ;;      # To allow --disable-unicode
 *) AC_MSG_ERROR([invalid value for --enable-unicode. Use either ucs2 or ucs4 (lowercase).]) ;;
 esac
 

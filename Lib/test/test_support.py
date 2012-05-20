@@ -405,7 +405,7 @@ def temp_cwd(name='tempcwd', quiet=False):
     the CWD, an error is raised.  If it's True, only a warning is raised
     and the original CWD is used.
     """
-    if isinstance(name, unicode):
+    if have_unicode and isinstance(name, unicode):
         try:
             name = name.encode(sys.getfilesystemencoding() or 'ascii')
         except UnicodeEncodeError:
