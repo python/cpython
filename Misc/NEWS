@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14426: Correct the Date format in Expires attribute of Set-Cookie
+  Header in Cookie.py.
+
 - Issue #14588: The types module now provide new_class() and prepare_class()
   functions to support PEP 3115 compliant dynamic class creation. Patch by
   Daniel Urban and Nick Coghlan.
