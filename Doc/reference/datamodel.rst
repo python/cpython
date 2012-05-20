@@ -1634,7 +1634,7 @@ Creating the class object
 Once the class namespace has been populated by executing the class body,
 the class object is created by calling
 ``metaclass(name, bases, namespace, **kwds)`` (the additional keywords
-passed here are the same as those passed to ``__prepate__``).
+passed here are the same as those passed to ``__prepare__``).
 
 This class object is the one that will be referenced by the zero-argument
 form of :func:`super`. ``__class__`` is an implicit closure reference
