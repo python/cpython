@@ -213,7 +213,7 @@ Basic Usage
    This can be used to raise an exception if invalid JSON numbers
    are encountered.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.1
       *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
 
    To use a custom :class:`JSONDecoder` subclass, specify it with the ``cls``
