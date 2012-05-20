@@ -202,7 +202,11 @@ class TestCase(object):
         self.addTypeEqualityFunc(tuple, 'assertTupleEqual')
         self.addTypeEqualityFunc(set, 'assertSetEqual')
         self.addTypeEqualityFunc(frozenset, 'assertSetEqual')
-        self.addTypeEqualityFunc(unicode, 'assertMultiLineEqual')
+        try:
+            self.addTypeEqualityFunc(unicode, 'assertMultiLineEqual')
+        except NameError:
+            # No unicode support in this build
+            pass
 
     def addTypeEqualityFunc(self, typeobj, function):
         """Add a type specific assertEqual style function to compare a type.

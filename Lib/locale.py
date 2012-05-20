@@ -18,6 +18,14 @@ import re
 import operator
 import functools
 
+try:
+    _unicode = unicode
+except NameError:
+    # If Python is built without Unicode support, the unicode type
+    # will not exist. Fake one.
+    class _unicode(object):
+        pass
+
 # Try importing the _locale module.
 #
 # If this fails, fall back on a basic 'C' locale emulation.
@@ -353,7 +361,7 @@ def normalize(localename):
 
     """
     # Normalize the locale name and extract the encoding
-    if isinstance(localename, unicode):
+    if isinstance(localename, _unicode):
         localename = localename.encode('ascii')
     fullname = localename.translate(_ascii_lower_map)
     if ':' in fullname:

@@ -191,6 +191,9 @@ Tests
 Build
 -----
 
+- Issue #8767: Restore building with --disable-unicode.
+  Patch by Stefano Taschini.
+
 - Build against bzip2 1.0.6 and openssl 0.9.8x on Windows.
 
 - Issue #14557: Fix extensions build on HP-UX. Patch by Adi Roiban.

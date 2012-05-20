@@ -17,6 +17,14 @@ import genericpath
 import warnings
 from genericpath import *
 
+try:
+    _unicode = unicode
+except NameError:
+    # If Python is built without Unicode support, the unicode type
+    # will not exist. Fake one.
+    class _unicode(object):
+        pass
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
@@ -312,7 +320,7 @@ def expandvars(path):
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     # Preserve unicode (if path is unicode)
-    slash, dot = (u'/', u'.') if isinstance(path, unicode) else ('/', '.')
+    slash, dot = (u'/', u'.') if isinstance(path, _unicode) else ('/', '.')
     if path == '':
         return dot
     initial_slashes = path.startswith('/')
@@ -341,7 +349,7 @@ def normpath(path):
 def abspath(path):
     """Return an absolute path."""
     if not isabs(path):
-        if isinstance(path, unicode):
+        if isinstance(path, _unicode):
             cwd = os.getcwdu()
         else:
             cwd = os.getcwd()
