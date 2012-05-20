@@ -213,6 +213,9 @@ Basic Usage
    This can be used to raise an exception if invalid JSON numbers
    are encountered.
 
+   .. versionchanged:: 2.7
+      *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
+
    To use a custom :class:`JSONDecoder` subclass, specify it with the ``cls``
    kwarg; otherwise :class:`JSONDecoder` is used.  Additional keyword arguments
    will be passed to the constructor of the class.
