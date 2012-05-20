@@ -797,17 +797,19 @@ are always available.  They are listed here in alphabetical order.
    *mode* is an optional string that specifies the mode in which the file is
    opened.  It defaults to ``'r'`` which means open for reading in text mode.
    Other common values are ``'w'`` for writing (truncating the file if it
-   already exists), and ``'a'`` for appending (which on *some* Unix systems,
-   means that *all* writes append to the end of the file regardless of the
-   current seek position).  In text mode, if *encoding* is not specified the
-   encoding used is platform dependent. (For reading and writing raw bytes use
-   binary mode and leave *encoding* unspecified.)  The available modes are:
+   already exists), ``'x'`` for exclusive creation and ``'a'`` for appending
+   (which on *some* Unix systems, means that *all* writes append to the end of
+   the file regardless of the current seek position).  In text mode, if
+   *encoding* is not specified the encoding used is platform dependent. (For
+   reading and writing raw bytes use binary mode and leave *encoding*
+   unspecified.)  The available modes are:
 
    ========= ===============================================================
    Character Meaning
    --------- ---------------------------------------------------------------
    ``'r'``   open for reading (default)
    ``'w'``   open for writing, truncating the file first
+   ``'x'``   open for exclusive creation, failing if the file already exists
    ``'a'``   open for writing, appending to the end of the file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
@@ -898,6 +900,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
       The *opener* parameter was added.
+      The ``'x'`` mode was added.
 
    The type of file object returned by the :func:`open` function depends on the
    mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
@@ -926,6 +929,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
+      :exc:`FileExistsError` is now raised if the file opened in exclusive
+      creation mode (``'x'``) already exists.
 
 
 .. XXX works for bytes too, but should it?
