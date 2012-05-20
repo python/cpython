@@ -1262,15 +1262,10 @@ Basic customization
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
-
    User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
    and ``x.__hash__()`` returns an appropriate value such that ``x == y``
    implies both that ``x is y`` and ``hash(x) == hash(y)``.
-
-   .. impl-detail::
-
-      CPython uses ``hash(id(x))`` as the default hash for class instances.
 
    Classes which inherit a :meth:`__hash__` method from a parent class but
    change the meaning of :meth:`__eq__` such that the hash value returned is no
