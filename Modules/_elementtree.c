@@ -1640,16 +1640,15 @@ element_getattro(ElementObject* self, PyObject* nameobj)
     return res;
 }
 
-static int
-element_setattr(ElementObject* self, const char* name, PyObject* value)
+static PyObject*
+element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
 {
-    if (value == NULL) {
-        PyErr_SetString(
-            PyExc_AttributeError,
-            "can't delete element attributes"
-            );
-        return -1;
-    }
+    char *name = "";
+    if (PyUnicode_Check(nameobj))
+        name = _PyUnicode_AsString(nameobj);
+
+    if (name == NULL)
+        return NULL;
 
     if (strcmp(name, "tag") == 0) {
         Py_DECREF(self->tag);
@@ -1671,10 +1670,10 @@ element_setattr(ElementObject* self, const char* name, PyObject* value)
         Py_INCREF(self->extra->attrib);
     } else {
         PyErr_SetString(PyExc_AttributeError, name);
-        return -1;
+        return NULL;
     }
 
-    return 0;
+    return NULL;
 }
 
 static PySequenceMethods element_as_sequence = {
@@ -1700,7 +1699,7 @@ static PyTypeObject Element_Type = {
     (destructor)element_dealloc,                    /* tp_dealloc */
     0,                                              /* tp_print */
     0,                                              /* tp_getattr */
-    (setattrfunc)element_setattr,                   /* tp_setattr */
+    0,                                              /* tp_setattr */
     0,                                              /* tp_reserved */
     (reprfunc)element_repr,                         /* tp_repr */
     0,                                              /* tp_as_number */
@@ -1710,7 +1709,7 @@ static PyTypeObject Element_Type = {
     0,                                              /* tp_call */
     0,                                              /* tp_str */
     (getattrofunc)element_getattro,                 /* tp_getattro */
-    0,                                              /* tp_setattro */
+    (setattrofunc)element_setattro,                 /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
                                                     /* tp_flags */

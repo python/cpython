@@ -1914,6 +1914,10 @@ class ElementTreeTest(unittest.TestCase):
         self.assertIsInstance(mye, MyElement)
         self.assertEqual(mye.tag, 'foo')
 
+        # test that attribute assignment works (issue 14849)
+        mye.text = "joe"
+        self.assertEqual(mye.text, "joe")
+
     def test_Element_subclass_constructor(self):
         class MyElement(ET.Element):
             def __init__(self, tag, attrib={}, **extra):
