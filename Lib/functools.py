@@ -166,7 +166,7 @@ class _CacheKey(list):
     def __hash__(self):
         return self.hashvalue
 
-def lru_cache(maxsize=100, typed=False):
+def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
 
     If *maxsize* is set to None, the LRU features are disabled and the cache
