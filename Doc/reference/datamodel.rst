@@ -35,12 +35,19 @@ represented by objects.)
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
 memory.  The ':keyword:`is`' operator compares the identity of two objects; the
-:func:`id` function returns an integer representing its identity (currently
-implemented as its address). An object's :dfn:`type` is also unchangeable. [#]_
+:func:`id` function returns an integer representing its identity.
+
+.. impl-detail::
+
+   For CPython, ``id(x)`` is the memory address where ``x`` is stored.
+
 An object's type determines the operations that the object supports (e.g., "does
 it have a length?") and also defines the possible values for objects of that
 type.  The :func:`type` function returns an object's type (which is an object
-itself).  The *value* of some objects can change.  Objects whose value can
+itself).  Like its identity, an object's :dfn:`type` is also unchangeable.
+[#]_
+
+The *value* of some objects can change.  Objects whose value can
 change are said to be *mutable*; objects whose value is unchangeable once they
 are created are called *immutable*. (The value of an immutable container object
 that contains a reference to a mutable object can change when the latter's value
@@ -1258,7 +1265,12 @@ Basic customization
 
    User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
-   and ``x.__hash__()`` returns ``id(x)``.
+   and ``x.__hash__()`` returns an appropriate value such that ``x == y``
+   implies both that ``x is y`` and ``hash(x) == hash(y)``.
+
+   .. impl-detail::
+
+      CPython uses ``hash(id(x))`` as the default hash for class instances.
 
    Classes which inherit a :meth:`__hash__` method from a parent class but
    change the meaning of :meth:`__eq__` such that the hash value returned is no
