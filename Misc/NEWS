@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14572: Prevent build failures with pre-3.5.0 versions of
+  sqlite3, such as was shipped with Centos 5 and Mac OS X 10.4.
+
 - Issue #14426: Correct the Date format in Expires attribute of Set-Cookie
   Header in Cookie.py.
 
