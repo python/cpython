@@ -10,7 +10,13 @@ import subprocess
 import py_compile
 import contextlib
 import shutil
-import zipfile
+try:
+    import zipfile
+except ImportError:
+    # If Python is build without Unicode support, importing _io will
+    # fail, which, in turn, means that zipfile cannot be imported
+    # Most of this module can then still be used.
+    pass
 
 from test.test_support import strip_python_stderr
 

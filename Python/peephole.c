@@ -135,6 +135,7 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
                will return a surrogate.  In both the cases skip the
                optimization in order to produce compatible pycs.
              */
+#ifdef Py_USING_UNICODE
             if (newconst != NULL &&
                 PyUnicode_Check(v) && PyUnicode_Check(newconst)) {
                 Py_UNICODE ch = PyUnicode_AS_UNICODE(newconst)[0];
@@ -147,6 +148,7 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
                     return 0;
                 }
             }
+#endif
             break;
         case BINARY_LSHIFT:
             newconst = PyNumber_Lshift(v, w);

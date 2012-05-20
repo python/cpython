@@ -12522,6 +12522,7 @@ ucs4) unicode_size="4"
       $as_echo "#define Py_UNICODE_SIZE 4" >>confdefs.h
 
       ;;
+no)   ;;      # To allow --disable-unicode
 *) as_fn_error $? "invalid value for --enable-unicode. Use either ucs2 or ucs4 (lowercase)." "$LINENO" 5 ;;
 esac
 
