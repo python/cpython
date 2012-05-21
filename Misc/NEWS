@@ -64,6 +64,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14875: Use float('inf') instead of float('1e66666') in the json module.
+
 - Issue #14572: Prevent build failures with pre-3.5.0 versions of
   sqlite3, such as was shipped with Centos 5 and Mac OS X 10.4.
 
@@ -119,7 +121,7 @@ Library
 
 - Issue #13684: Fix httplib tunnel issue of infinite loops for certain sites
   which send EOF without trailing \r\n.
- 
+
 - Issue #14308: Fix an exception when a "dummy" thread is in the threading
   module's active list after a fork().
 

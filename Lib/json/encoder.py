@@ -27,8 +27,7 @@ for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
     #ESCAPE_DCT.setdefault(chr(i), '\\u%04x' % (i,))
 
-# Assume this produces an infinity on all machines (probably not guaranteed)
-INFINITY = float('1e66666')
+INFINITY = float('inf')
 FLOAT_REPR = repr
 
 def encode_basestring(s):
