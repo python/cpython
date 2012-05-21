@@ -526,7 +526,7 @@ Cursor Objects
    or :const:`None` when no more data is available.
 
 
-.. method:: Cursor.fetchmany([size=cursor.arraysize])
+.. method:: Cursor.fetchmany(size=cursor.arraysize)
 
    Fetches the next set of rows of a query result, returning a list.  An empty
    list is returned when no more rows are available.
