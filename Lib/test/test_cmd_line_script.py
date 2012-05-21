@@ -7,6 +7,7 @@ import os
 import os.path
 import py_compile
 
+import textwrap
 from test import support
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
@@ -285,6 +286,24 @@ class CmdLineTest(unittest.TestCase):
                     rc, out, err = assert_python_ok('-m', 'other', *example_args)
                     self._check_output(script_name, rc, out,
                                       script_name, script_name, '', '')
+
+    def test_pep_409_verbiage(self):
+        # Make sure PEP 409 syntax properly suppresses
+        # the context of an exception
+        script = textwrap.dedent("""\
+            try:
+                raise ValueError
+            except:
+                raise NameError from None
+            """)
+        with temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = stderr.decode('ascii').split('\n')
+            self.assertEqual(len(text), 4)
+            self.assertTrue(text[0].startswith('Traceback'))
+            self.assertTrue(text[1].startswith('  File '))
+            self.assertTrue(text[3].startswith('NameError'))
 
 def test_main():
     support.run_unittest(CmdLineTest)
