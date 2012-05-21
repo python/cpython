@@ -700,7 +700,7 @@ accessed using the following methods:
 The :class:`Cookie` class also defines the following method:
 
 
-.. method:: Cookie.is_expired([now=None])
+.. method:: Cookie.is_expired(now=None)
 
    True if cookie has passed the time at which the server requested it should
    expire.  If *now* is given (in seconds since the epoch), return whether the
