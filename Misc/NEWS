@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13585: Added contextlib.ExitStack
+
 - PEP 3144, Issue #14814: Added the ipaddress module
 
 - Issue #14426: Correct the Date format in Expires attribute of Set-Cookie
