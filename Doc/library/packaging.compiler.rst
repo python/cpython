@@ -255,7 +255,7 @@ libraries and the like.
       that the runtime linker may search by default.
 
 
-   .. method:: CCompiler.define_macro(name[, value=None])
+   .. method:: CCompiler.define_macro(name, value=None)
 
       Define a preprocessor macro for all compilations driven by this compiler
       object. The optional parameter *value* should be a string; if it is not
@@ -298,7 +298,7 @@ libraries and the like.
       (a list) to do the job.
 
 
-   .. method:: CCompiler.find_library_file(dirs, lib[, debug=0])
+   .. method:: CCompiler.find_library_file(dirs, lib, debug=0)
 
       Search the specified list of directories for a static or shared library file
       *lib* and return the full path to that file.  If *debug* is true, look for a
@@ -306,7 +306,7 @@ libraries and the like.
       ``None`` if *lib* wasn't found in any of the specified directories.
 
 
-   .. method:: CCompiler.has_function(funcname [, includes=None, include_dirs=None, libraries=None, library_dirs=None])
+   .. method:: CCompiler.has_function(funcname, includes=None, include_dirs=None, libraries=None, library_dirs=None)
 
       Return a boolean indicating whether *funcname* is supported on the current
       platform.  The optional arguments can be used to augment the compilation
@@ -361,7 +361,7 @@ libraries and the like.
    The following methods invoke stages in the build process.
 
 
-   .. method:: CCompiler.compile(sources[, output_dir=None, macros=None, include_dirs=None, debug=0, extra_preargs=None, extra_postargs=None, depends=None])
+   .. method:: CCompiler.compile(sources, output_dir=None, macros=None, include_dirs=None, debug=0, extra_preargs=None, extra_postargs=None, depends=None)
 
       Compile one or more source files. Generates object files (e.g. transforms a
       :file:`.c` file to a :file:`.o` file.)
@@ -405,7 +405,7 @@ libraries and the like.
       Raises :exc:`CompileError` on failure.
 
 
-   .. method:: CCompiler.create_static_lib(objects, output_libname[, output_dir=None, debug=0, target_lang=None])
+   .. method:: CCompiler.create_static_lib(objects, output_libname, output_dir=None, debug=0, target_lang=None)
 
       Link a bunch of stuff together to create a static library file. The "bunch of
       stuff" consists of the list of object files supplied as *objects*, the extra
@@ -427,7 +427,7 @@ libraries and the like.
       Raises :exc:`LibError` on failure.
 
 
-   .. method:: CCompiler.link(target_desc, objects, output_filename[, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None])
+   .. method:: CCompiler.link(target_desc, objects, output_filename, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None)
 
       Link a bunch of stuff together to create an executable or shared library file.
 
@@ -469,28 +469,28 @@ libraries and the like.
       Raises :exc:`LinkError` on failure.
 
 
-   .. method:: CCompiler.link_executable(objects, output_progname[, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, debug=0, extra_preargs=None, extra_postargs=None, target_lang=None])
+   .. method:: CCompiler.link_executable(objects, output_progname, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, debug=0, extra_preargs=None, extra_postargs=None, target_lang=None)
 
       Link an executable.  *output_progname* is the name of the file executable, while
       *objects* are a list of object filenames to link in. Other arguments are as for
       the :meth:`link` method.
 
 
-   .. method:: CCompiler.link_shared_lib(objects, output_libname[, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None])
+   .. method:: CCompiler.link_shared_lib(objects, output_libname, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None)
 
       Link a shared library. *output_libname* is the name of the output library,
       while *objects* is a list of object filenames to link in. Other arguments are
       as for the :meth:`link` method.
 
 
-   .. method:: CCompiler.link_shared_object(objects, output_filename[, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None])
+   .. method:: CCompiler.link_shared_object(objects, output_filename, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None)
 
       Link a shared object. *output_filename* is the name of the shared object that
       will be created, while *objects* is a list of object filenames to link in.
       Other arguments are as for the :meth:`link` method.
 
 
-   .. method:: CCompiler.preprocess(source[, output_file=None, macros=None, include_dirs=None, extra_preargs=None, extra_postargs=None])
+   .. method:: CCompiler.preprocess(source, output_file=None, macros=None, include_dirs=None, extra_preargs=None, extra_postargs=None)
 
       Preprocess a single C/C++ source file, named in *source*. Output will be written
       to file named *output_file*, or *stdout* if *output_file* not supplied.
@@ -505,14 +505,14 @@ libraries and the like.
    use by the various concrete subclasses.
 
 
-   .. method:: CCompiler.executable_filename(basename[, strip_dir=0, output_dir=''])
+   .. method:: CCompiler.executable_filename(basename, strip_dir=0, output_dir='')
 
       Returns the filename of the executable for the given *basename*.  Typically for
       non-Windows platforms this is the same as the basename, while Windows will get
       a :file:`.exe` added.
 
 
-   .. method:: CCompiler.library_filename(libname[, lib_type='static', strip_dir=0, output_dir=''])
+   .. method:: CCompiler.library_filename(libname, lib_type='static', strip_dir=0, output_dir='')
 
       Returns the filename for the given library name on the current platform. On Unix
       a library with *lib_type* of ``'static'`` will typically be of the form
@@ -520,18 +520,18 @@ libraries and the like.
       :file:`liblibname.so`.
 
 
-   .. method:: CCompiler.object_filenames(source_filenames[, strip_dir=0, output_dir=''])
+   .. method:: CCompiler.object_filenames(source_filenames, strip_dir=0, output_dir='')
 
       Returns the name of the object files for the given source files.
       *source_filenames* should be a list of filenames.
 
 
-   .. method:: CCompiler.shared_object_filename(basename[, strip_dir=0, output_dir=''])
+   .. method:: CCompiler.shared_object_filename(basename, strip_dir=0, output_dir='')
 
       Returns the name of a shared object file for the given file name *basename*.
 
 
-   .. method:: CCompiler.execute(func, args[, msg=None, level=1])
+   .. method:: CCompiler.execute(func, args, msg=None, level=1)
 
       Invokes :func:`packaging.util.execute` This method invokes a Python function
       *func* with the given arguments *args*, after logging and taking into account
@@ -544,7 +544,7 @@ libraries and the like.
       the given command. XXX see also.
 
 
-   .. method:: CCompiler.mkpath(name[, mode=511])
+   .. method:: CCompiler.mkpath(name, mode=511)
 
       Invokes :func:`packaging.dir_util.mkpath`. This creates a directory and any
       missing ancestor directories. XXX see also.

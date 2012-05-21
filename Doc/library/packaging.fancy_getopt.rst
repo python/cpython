@@ -33,7 +33,7 @@ provides the following additional features:
    ``sys.argv[1:]`` if you pass ``None`` as *args*.
 
 
-.. class:: FancyGetopt([option_table=None])
+.. class:: FancyGetopt(option_table=None)
 
    The option_table is a list of 3-tuples: ``(long_option, short_option,
    help_string)``
@@ -46,7 +46,7 @@ provides the following additional features:
 The :class:`FancyGetopt` class provides the following methods:
 
 
-.. method:: FancyGetopt.getopt([args=None, object=None])
+.. method:: FancyGetopt.getopt(args=None, object=None)
 
    Parse command-line options in args. Store as attributes on *object*.
 
@@ -67,7 +67,7 @@ The :class:`FancyGetopt` class provides the following methods:
    yet.
 
 
-.. method:: FancyGetopt.generate_help([header=None])
+.. method:: FancyGetopt.generate_help(header=None)
 
    Generate help text (a list of strings, one per suggested line of output) from
    the option table for this :class:`FancyGetopt` object.
