@@ -382,8 +382,8 @@ and also the following constants for integer status codes:
 |                                          |         | :rfc:`6585`, Section 6                                                |
 +------------------------------------------+---------+-----------------------------------------------------------------------+
 
-  .. versionchanged:: 3.3
-     Added codes ``428``, ``429``, ``431`` and ``511`` from :rfc:`6585`.
+.. versionchanged:: 3.3
+   Added codes ``428``, ``429``, ``431`` and ``511`` from :rfc:`6585`.
 
 
 .. data:: responses
