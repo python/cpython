@@ -47,7 +47,7 @@ Directory and files operations
    be copied.
 
 
-.. function:: copyfile(src, dst[, symlinks=False])
+.. function:: copyfile(src, dst, symlinks=False)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst*.  *dst* must be the complete target file name; look at
@@ -67,7 +67,7 @@ Directory and files operations
       Added *symlinks* argument.
 
 
-.. function:: copymode(src, dst[, symlinks=False])
+.. function:: copymode(src, dst, symlinks=False)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
    group are unaffected.  *src* and *dst* are path names given as strings.  If
@@ -78,7 +78,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument.
 
-.. function:: copystat(src, dst[, symlinks=False])
+.. function:: copystat(src, dst, symlinks=False)
 
    Copy the permission bits, last access time, last modification time, and flags
    from *src* to *dst*.  The file contents, owner, and group are unaffected.  *src*
@@ -89,7 +89,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument.
 
-.. function:: copy(src, dst[, symlinks=False]))
+.. function:: copy(src, dst, symlinks=False))
 
    Copy the file *src* to the file or directory *dst*.  If *dst* is a directory, a
    file with the same basename as *src*  is created (or overwritten) in the
@@ -100,7 +100,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument.
 
-.. function:: copy2(src, dst[, symlinks=False])
+.. function:: copy2(src, dst, symlinks=False)
 
    Similar to :func:`shutil.copy`, but metadata is copied as well. This is
    similar to the Unix command :program:`cp -p`.  If *symlinks* is true,
