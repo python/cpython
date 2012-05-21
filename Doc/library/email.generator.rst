@@ -197,7 +197,7 @@ except that non-\ :mimetype:`text` parts are substituted with a format string
 representing the part.
 
 
-.. class:: DecodedGenerator(outfp[, mangle_from_=True, maxheaderlen=78, fmt=None)
+.. class:: DecodedGenerator(outfp, mangle_from_=True, maxheaderlen=78, fmt=None)
 
    This class, derived from :class:`Generator` walks through all the subparts of a
    message.  If the subpart is of main type :mimetype:`text`, then it prints the

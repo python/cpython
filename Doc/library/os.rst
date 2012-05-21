@@ -1786,7 +1786,7 @@ Files and Directories
    Availability: Unix.
 
 
-.. function:: mknod(filename[, mode=0o600[, device]])
+.. function:: mknod(filename, mode=0o600, device=0)
 
    Create a filesystem node (file, device special file or named pipe) named
    *filename*. *mode* specifies both the permissions to use and the type of node
