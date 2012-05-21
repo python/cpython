@@ -1455,11 +1455,6 @@ Porting Python code
 
 .. XXX add a point about hash randomization and that it's always on in 3.3
 
-* :issue:`14205`: A dict lookup now raises a :exc:`RuntimeError` if the dict is
-  modified during the lookup. If you implement your own comparison function for
-  objects used as dict keys and the dict is shared by multiple threads, access
-  to the dict should be protected by a lock.
-
 * :issue:`12326`: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
   on the Linux version used to build Python. Replace sys.platform == 'linux2'
