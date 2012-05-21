@@ -696,6 +696,21 @@ collections classes.  Aliases for ABCs are still present in the
 .. XXX addition of __slots__ to ABCs not recorded here: internal detail
 
 
+contextlib
+----------
+
+:class:`~collections.ExitStack` now provides a solid foundation for
+programmatic manipulation of context managers and similar cleanup
+functionality. Unlike the previous ``contextlib.nested`` API (which was
+deprecated and removed), the new API is designed to work correctly
+regardless of whether context managers acquire their resources in
+their ``__init`` method (for example, file objects) or in their
+``__enter__`` method (for example, synchronisation objects from the
+:mod:`threading` module).
+
+(:issue:`13585`)
+
+
 crypt
 -----
 
