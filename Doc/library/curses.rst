@@ -1120,7 +1120,7 @@ the following methods and attributes:
    rendition (as set by :meth:`bkgdset`) merged into them.
 
 
-.. method:: window.scroll(lines=1)
+.. method:: window.scroll([lines=1])
 
    Scroll the screen or scrolling region upward by *lines* lines.
 

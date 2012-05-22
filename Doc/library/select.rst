@@ -371,7 +371,7 @@ Kqueue Objects
    Create a kqueue object from a given file descriptor.
 
 
-.. method:: kqueue.control(changelist, max_events, timeout=None) -> eventlist
+.. method:: kqueue.control(changelist, max_events[, timeout=None]) -> eventlist
 
    Low level interface to kevent
 
