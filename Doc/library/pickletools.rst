@@ -20,7 +20,7 @@ useful for Python core developers who are working on the :mod:`pickle` and
 probably won't find the :mod:`pickletools` module relevant.
 
 
-.. function:: dis(pickle[, out=None, memo=None, indentlevel=4])
+.. function:: dis(pickle, out=None, memo=None, indentlevel=4)
 
    Outputs a symbolic disassembly of the pickle to the file-like object *out*,
    defaulting to ``sys.stdout``.  *pickle* can be a string or a file-like object.

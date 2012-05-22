@@ -627,7 +627,7 @@ loops that truncate the stream.
                   break
 
 
-.. function:: tee(iterable[, n=2])
+.. function:: tee(iterable, n=2)
 
    Return *n* independent iterators from a single iterable.  Equivalent to::
 

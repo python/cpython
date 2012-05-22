@@ -74,7 +74,7 @@ This module defines the following functions:
 
 
 
-.. function:: readPlistFromResource(path[, restype='plst'[, resid=0]])
+.. function:: readPlistFromResource(path, restype='plst', resid=0)
 
     Read a plist from the resource with type *restype* from the resource fork of
     *path*.  Availability: Mac OS X.
@@ -84,7 +84,7 @@ This module defines the following functions:
        In Python 3.x, this function has been removed.
 
 
-.. function:: writePlistToResource(rootObject, path[, restype='plst'[, resid=0]])
+.. function:: writePlistToResource(rootObject, path, restype='plst', resid=0)
 
     Write *rootObject* as a resource with type *restype* to the resource fork of
     *path*.  Availability: Mac OS X.

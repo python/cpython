@@ -386,7 +386,7 @@ The :mod:`struct` module also defines the following type:
       (``len(string)`` must equal :attr:`self.size`).
 
 
-   .. method:: unpack_from(buffer[, offset=0])
+   .. method:: unpack_from(buffer, offset=0)
 
       Identical to the :func:`unpack_from` function, using the compiled format.
       (``len(buffer[offset:])`` must be at least :attr:`self.size`).

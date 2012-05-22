@@ -96,7 +96,7 @@ Directory and files operations
    .. versionadded:: 2.6
 
 
-.. function:: copytree(src, dst[, symlinks=False[, ignore=None]])
+.. function:: copytree(src, dst, symlinks=False, ignore=None)
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
    directory, named by *dst*, must not already exist; it will be created as
