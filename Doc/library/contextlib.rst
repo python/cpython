@@ -207,6 +207,8 @@ Functions and classes provided:
    foundation for higher level context managers that manipulate the exit
    stack in application specific ways.
 
+   .. versionadded:: 3.3
+
    .. method:: enter_context(cm)
 
       Enters a new context manager and adds its :meth:`__exit__` method to
@@ -269,8 +271,6 @@ Functions and classes provided:
       reverse order of registration. For any context managers and exit
       callbacks registered, the arguments passed in will indicate that no
       exception occurred.
-
-   .. versionadded:: 3.3
 
 
 Examples and Recipes

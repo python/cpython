@@ -30,6 +30,8 @@ Dynamic Type Creation
    The *exec_body* callback should accept the class namespace as its sole
    argument and update the namespace directly with the class contents.
 
+   .. versionadded:: 3.3
+
 .. function:: prepare_class(name, bases=(), kwds=None)
 
    Calculates the appropriate metaclass and creates the class namespace.
@@ -46,6 +48,7 @@ Dynamic Type Creation
    ``'metaclass'`` entry removed. If no *kwds* argument is passed in, this
    will be an empty dict.
 
+   .. versionadded:: 3.3
 
 .. seealso::
 
