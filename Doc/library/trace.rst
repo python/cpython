@@ -149,7 +149,7 @@ Programmatic Interface
        the current tracing parameters.  *cmd* must be a string or code object,
        suitable for passing into :func:`exec`.
 
-    .. method:: runctx(cmd[, globals=None[, locals=None]])
+    .. method:: runctx(cmd, globals=None, locals=None)
 
        Execute the command and gather statistics from the execution with the
        current tracing parameters, in the defined global and local

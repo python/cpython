@@ -59,7 +59,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
    found, and "http" otherwise.
 
 
-.. function:: request_uri(environ [, include_query=1])
+.. function:: request_uri(environ, include_query=1)
 
    Return the full request URI, optionally including the query string, using the
    algorithm found in the "URL Reconstruction" section of :pep:`333`.  If
@@ -148,7 +148,7 @@ also provides these miscellaneous utilities:
    :rfc:`2616`.
 
 
-.. class:: FileWrapper(filelike [, blksize=8192])
+.. class:: FileWrapper(filelike, blksize=8192)
 
    A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
    support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
@@ -271,7 +271,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
 :mod:`wsgiref.util`.)
 
 
-.. function:: make_server(host, port, app [, server_class=WSGIServer [, handler_class=WSGIRequestHandler]])
+.. function:: make_server(host, port, app, server_class=WSGIServer, handler_class=WSGIRequestHandler)
 
    Create a new WSGI server listening on *host* and *port*, accepting connections
    for *app*.  The return value is an instance of the supplied *server_class*, and
@@ -460,7 +460,7 @@ input, output, and error streams.
    environment.
 
 
-.. class:: BaseCGIHandler(stdin, stdout, stderr, environ [, multithread=True [, multiprocess=False]])
+.. class:: BaseCGIHandler(stdin, stdout, stderr, environ, multithread=True, multiprocess=False)
 
    Similar to :class:`CGIHandler`, but instead of using the :mod:`sys` and
    :mod:`os` modules, the CGI environment and I/O streams are specified explicitly.
@@ -475,7 +475,7 @@ input, output, and error streams.
    instead of :class:`SimpleHandler`.
 
 
-.. class:: SimpleHandler(stdin, stdout, stderr, environ [,multithread=True [, multiprocess=False]])
+.. class:: SimpleHandler(stdin, stdout, stderr, environ, multithread=True, multiprocess=False)
 
    Similar to :class:`BaseCGIHandler`, but designed for use with HTTP origin
    servers.  If you are writing an HTTP server implementation, you will probably

@@ -265,7 +265,7 @@ Besides the methods described below, the :class:`ttk.Widget` class supports the
       *x* and *y* are pixel coordinates relative to the widget.
 
 
-   .. method:: instate(statespec[, callback=None[, *args[, **kw]]])
+   .. method:: instate(statespec, callback=None, *args, **kw)
 
       Test the widget's state. If a callback is not specified, returns True
       if the widget state matches *statespec* and False otherwise. If callback
@@ -523,7 +523,7 @@ ttk.Notebook
       omitted, returns the widget name of the currently selected pane.
 
 
-   .. method:: tab(tab_id[, option=None[, **kw]])
+   .. method:: tab(tab_id, option=None, **kw)
 
       Query or modify the options of the specific *tab_id*.
 
@@ -846,7 +846,7 @@ ttk.Treeview
 
 .. class:: Treeview
 
-   .. method:: bbox(item[, column=None])
+   .. method:: bbox(item, column=None)
 
       Returns the bounding box (relative to the treeview widget's window) of
       the specified *item* in the form (x, y, width, height).
@@ -873,7 +873,7 @@ ttk.Treeview
       *item*'s children.
 
 
-   .. method:: column(column[, option=None[, **kw]])
+   .. method:: column(column, option=None, **kw)
 
       Query or modify the options for the specified *column*.
 
@@ -928,7 +928,7 @@ ttk.Treeview
       the current focus item, or '' if there is none.
 
 
-   .. method:: heading(column[, option=None[, **kw]])
+   .. method:: heading(column, option=None, **kw)
 
       Query or modify the heading options for the specified *column*.
 
@@ -1001,7 +1001,7 @@ ttk.Treeview
       Returns the integer index of *item* within its parent's list of children.
 
 
-   .. method:: insert(parent, index[, iid=None[, **kw]])
+   .. method:: insert(parent, index, iid=None, **kw)
 
       Creates a new item and returns the item identifier of the newly created
       item.
@@ -1096,7 +1096,7 @@ ttk.Treeview
       Toggle the selection state of each item in *items*.
 
 
-   .. method:: set(item[, column=None[, value=None]])
+   .. method:: set(item, column=None, value=None)
 
       With one argument, returns a dictionary of column/value pairs for the
       specified *item*. With two arguments, returns the current value of the
@@ -1104,14 +1104,14 @@ ttk.Treeview
       *column* in given *item* to the specified *value*.
 
 
-   .. method:: tag_bind(tagname[, sequence=None[, callback=None]])
+   .. method:: tag_bind(tagname, sequence=None, callback=None)
 
       Bind a callback for the given event *sequence* to the tag *tagname*.
       When an event is delivered to an item, the callbacks for each of the
       item's tags option are called.
 
 
-   .. method:: tag_configure(tagname[, option=None[, **kw]])
+   .. method:: tag_configure(tagname, option=None, **kw)
 
       Query or modify the options for the specified *tagname*.
 
@@ -1220,7 +1220,7 @@ option. If the class name of a widget is unknown, use the method
       foreground option, for example, you would get a blue foreground
       when the widget is in the active or pressed states.
 
-   .. method:: lookup(style, option[, state=None[, default=None]])
+   .. method:: lookup(style, option, state=None, default=None)
 
       Returns the value specified for *option* in *style*.
 
@@ -1235,7 +1235,7 @@ option. If the class name of a widget is unknown, use the method
          print ttk.Style().lookup("TButton", "font")
 
 
-   .. method:: layout(style[, layoutspec=None])
+   .. method:: layout(style, layoutspec=None)
 
       Define the widget layout for given *style*. If *layoutspec* is omitted,
       return the layout specification for given style.
@@ -1318,7 +1318,7 @@ option. If the class name of a widget is unknown, use the method
       Returns the list of *elementname*'s options.
 
 
-   .. method:: theme_create(themename[, parent=None[, settings=None]])
+   .. method:: theme_create(themename, parent=None, settings=None)
 
       Create a new theme.
 
