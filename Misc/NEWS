@@ -172,6 +172,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #14472: Update .gitignore. Patch by Matej Cepl.
+
 - Upgrade Windows library versions: bzip 1.0.6, OpenSSL 1.0.1c.
 
 - Issue #14693: Under non-Windows platforms, hashlib's fallback modules are
