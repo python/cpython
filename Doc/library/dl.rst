@@ -31,7 +31,7 @@ libraries. It allows the program to call arbitrary functions in such a library.
 The :mod:`dl` module defines the following function:
 
 
-.. function:: open(name, mode=RTLD_LAZY)
+.. function:: open(name[, mode=RTLD_LAZY])
 
    Open a shared object file, and return a handle. Mode signifies late binding
    (:const:`RTLD_LAZY`) or immediate binding (:const:`RTLD_NOW`). Default is
