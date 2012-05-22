@@ -114,7 +114,7 @@ The module also defines three convenience functions:
    time.  This means that other processes running on the same computer may
    interfere with the timing.
 
-.. function:: repeat(stmt[, setup[, timer[, repeat=3 [, number=1000000]]]])
+.. function:: repeat(stmt, setup='pass', timer=default_timer, repeat=3 , number=1000000)
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
    function and run its :meth:`repeat` method with the given repeat count and
@@ -123,7 +123,7 @@ The module also defines three convenience functions:
    .. versionadded:: 2.6
 
 
-.. function:: timeit(stmt[, setup[, timer[, number=1000000]]])
+.. function:: timeit(stmt, setup='pass', timer=default_timer, number=1000000)
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
    function and run its :meth:`timeit` method with *number* executions.

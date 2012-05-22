@@ -200,7 +200,7 @@ numbering information.
    information is omitted if the flag is false or omitted.
 
 
-.. function:: compilest(ast[, filename='<syntax-tree>'])
+.. function:: compilest(ast, filename='<syntax-tree>')
 
    .. index:: builtin: eval
 

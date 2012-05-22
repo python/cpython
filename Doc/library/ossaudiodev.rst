@@ -275,7 +275,7 @@ The following convenience methods combine several ioctls, or one ioctl and some
 simple calculations.
 
 
-.. method:: oss_audio_device.setparameters(format, nchannels, samplerate [, strict=False])
+.. method:: oss_audio_device.setparameters(format, nchannels, samplerate, strict=False)
 
    Set the key audio sampling parameters---sample format, number of channels, and
    sampling rate---in one method call.  *format*,  *nchannels*, and *samplerate*

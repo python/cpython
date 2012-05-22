@@ -298,7 +298,7 @@ Analysis of the profiler data is done using the :class:`Stats` class.
    :synopsis: Statistics object for use with the profiler.
 
 
-.. class:: Stats(filename[, stream=sys.stdout[, ...]])
+.. class:: Stats(filename, stream=sys.stdout[, ...])
 
    This class constructor creates an instance of a "statistics object" from a
    *filename* (or set of filenames).  :class:`Stats` objects are manipulated by

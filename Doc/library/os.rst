@@ -1181,7 +1181,7 @@ Files and Directories
    doesn't open the FIFO --- it just creates the rendezvous point.
 
 
-.. function:: mknod(filename[, mode=0600, device])
+.. function:: mknod(filename, mode=0600, device=0)
 
    Create a filesystem node (file, device special file or named pipe) named
    *filename*. *mode* specifies both the permissions to use and the type of node to
@@ -1583,7 +1583,7 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: walk(top[, topdown=True [, onerror=None[, followlinks=False]]])
+.. function:: walk(top, topdown=True, onerror=None, followlinks=False)
 
    .. index::
       single: directory; walking

@@ -154,7 +154,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       when the :class:`Mailbox` instance was initialized.
 
 
-   .. method:: get(key[, default=None])
+   .. method:: get(key, default=None)
                __getitem__(key)
 
       Return a representation of the message corresponding to *key*. If no such
@@ -278,7 +278,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^
 
 
-.. class:: Maildir(dirname[, factory=rfc822.Message[, create=True]])
+.. class:: Maildir(dirname, factory=rfc822.Message, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Maildir format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -423,7 +423,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: mbox(path[, factory=None[, create=True]])
+.. class:: mbox(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in mbox format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -483,7 +483,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^
 
 
-.. class:: MH(path[, factory=None[, create=True]])
+.. class:: MH(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MH format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -613,7 +613,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^
 
 
-.. class:: Babyl(path[, factory=None[, create=True]])
+.. class:: Babyl(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Babyl format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -689,7 +689,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: MMDF(path[, factory=None[, create=True]])
+.. class:: MMDF(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MMDF format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -987,7 +987,7 @@ When a :class:`MaildirMessage` instance is created based upon a
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
@@ -1358,7 +1358,7 @@ When a :class:`BabylMessage` instance is created based upon an
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be

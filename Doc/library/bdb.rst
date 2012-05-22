@@ -20,7 +20,7 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line[, temporary=0[, cond=None [, funcname=None]]])
+.. class:: Breakpoint(self, file, line, temporary=0, cond=None , funcname=None)
 
    This class implements temporary breakpoints, ignore counts, disabling and
    (re-)enabling, and conditionals.
@@ -245,7 +245,7 @@ The :mod:`bdb` module also defines two classes:
    breakpoints.  These methods return a string containing an error message if
    something went wrong, or ``None`` if all is well.
 
-   .. method:: set_break(filename, lineno[, temporary=0[, cond[, funcname]]])
+   .. method:: set_break(filename, lineno, temporary=0, cond=None, funcname=None)
 
       Set a new breakpoint.  If the *lineno* line doesn't exist for the
       *filename* passed as argument, return an error message.  The *filename*

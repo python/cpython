@@ -89,7 +89,7 @@ The module provides the following classes:
       *source_address* was added.
 
 
-.. class:: HTTPResponse(sock[, debuglevel=0][, strict=0])
+.. class:: HTTPResponse(sock, debuglevel=0, strict=0)
 
    Class whose instances are returned upon successful connection.  Not instantiated
    directly by user.
