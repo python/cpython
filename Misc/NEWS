@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14888: Fix misbehaviour of the _md5 module when called on data
+  larger than 2**32 bytes.
+
 - Issue #14875: Use float('inf') instead of float('1e66666') in the json module.
 
 - Issue #14572: Prevent build failures with pre-3.5.0 versions of
