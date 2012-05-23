@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-#
 # Copyright 2007 Google Inc.
 #  Licensed to PSF under a Contributor Agreement.
 #
@@ -146,6 +144,7 @@ def ip_interface(address, version=None):
         The IPv?Interface classes describe an Address on a particular
         Network, so they're basically a combination of both the Address
         and Network classes.
+
     """
     if version is not None:
         if version == 4:
@@ -181,6 +180,7 @@ def v4_int_to_packed(address):
     Raises:
         ValueError: If the integer is negative or too large to be an
           IPv4 IP address.
+
     """
     try:
         return struct.pack('!I', address)
@@ -196,6 +196,7 @@ def v6_int_to_packed(address):
 
     Returns:
         The integer address packed as 16 bytes in network (big-endian) order.
+
     """
     try:
         return struct.pack('!QQ', address >> 64, address & (2**64 - 1))
@@ -221,6 +222,7 @@ def _find_address_range(addresses):
             break
     return (first, last)
 
+
 def _get_prefix_length(number1, number2, bits):
     """Get the number of leading bits that are same for two numbers.
 
@@ -237,6 +239,7 @@ def _get_prefix_length(number1, number2, bits):
         if number1 >> i == number2 >> i:
             return bits - i
     return 0
+
 
 def _count_righthand_zero_bits(number, bits):
     """Count the number of zero bits on the right hand side.
@@ -318,6 +321,7 @@ def summarize_address_range(first, last):
             break
         first_int = current + 1
         first = ip_address(first_int, version=first._version)
+
 
 def _collapse_addresses_recursive(addresses):
     """Loops through the addresses, collapsing concurrent netblocks.
@@ -632,8 +636,8 @@ class _BaseNetwork(_IPAddressBase):
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
 
-           This is like __iter__ except it doesn't return the network
-           or broadcast addresses.
+        This is like __iter__ except it doesn't return the network
+        or broadcast addresses.
 
         """
         cur = int(self.network_address) + 1
@@ -1965,8 +1969,7 @@ class _BaseV6(object):
 
 class IPv6Address(_BaseV6, _BaseAddress):
 
-    """Represent and manipulate single IPv6 Addresses.
-    """
+    """Represent and manipulate single IPv6 Addresses."""
 
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
