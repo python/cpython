@@ -45,8 +45,8 @@ def ip_address(address, version=None):
         address: A string or integer, the IP address.  Either IPv4 or
           IPv6 addresses may be supplied; integers less than 2**32 will
           be considered to be IPv4 by default.
-        version: An Integer, 4 or 6. If set, don't try to automatically
-          determine what the IP address type is. important for things
+        version: An integer, 4 or 6.  If set, don't try to automatically
+          determine what the IP address type is.  Important for things
           like ip_address(1), which could be IPv4, '192.0.2.1',  or IPv6,
           '2001:db8::1'.
 
@@ -54,15 +54,17 @@ def ip_address(address, version=None):
         An IPv4Address or IPv6Address object.
 
     Raises:
-        ValueError: if the string passed isn't either a v4 or a v6
-          address.
+        ValueError: if the *address* passed isn't either a v4 or a v6
+          address, or if the version is not None, 4, or 6.
 
     """
-    if version:
+    if version is not None:
         if version == 4:
             return IPv4Address(address)
         elif version == 6:
             return IPv6Address(address)
+        else:
+            raise ValueError()
 
     try:
         return IPv4Address(address)
@@ -85,8 +87,8 @@ def ip_network(address, version=None, strict=True):
         address: A string or integer, the IP network.  Either IPv4 or
           IPv6 networks may be supplied; integers less than 2**32 will
           be considered to be IPv4 by default.
-        version: An Integer, if set, don't try to automatically
-          determine what the IP address type is. important for things
+        version: An integer, 4 or 6.  If set, don't try to automatically
+          determine what the IP address type is.  Important for things
           like ip_network(1), which could be IPv4, '192.0.2.1/32', or IPv6,
           '2001:db8::1/128'.
 
@@ -95,14 +97,17 @@ def ip_network(address, version=None, strict=True):
 
     Raises:
         ValueError: if the string passed isn't either a v4 or a v6
-          address. Or if the network has host bits set.
+          address. Or if the network has host bits set.  Or if the version
+          is not None, 4, or 6.
 
     """
-    if version:
+    if version is not None:
         if version == 4:
             return IPv4Network(address, strict)
         elif version == 6:
             return IPv6Network(address, strict)
+        else:
+            raise ValueError()
 
     try:
         return IPv4Network(address, strict)
@@ -125,28 +130,30 @@ def ip_interface(address, version=None):
         address: A string or integer, the IP address.  Either IPv4 or
           IPv6 addresses may be supplied; integers less than 2**32 will
           be considered to be IPv4 by default.
-        version: An Integer, if set, don't try to automatically
-          determine what the IP address type is. important for things
-          like ip_network(1), which could be IPv4, '192.0.2.1/32', or IPv6,
+        version: An integer, 4 or 6.  If set, don't try to automatically
+          determine what the IP address type is.  Important for things
+          like ip_interface(1), which could be IPv4, '192.0.2.1/32', or IPv6,
           '2001:db8::1/128'.
 
     Returns:
-        An IPv4Network or IPv6Network object.
+        An IPv4Interface or IPv6Interface object.
 
     Raises:
         ValueError: if the string passed isn't either a v4 or a v6
-          address.
+          address.  Or if the version is not None, 4, or 6.
 
     Notes:
         The IPv?Interface classes describe an Address on a particular
         Network, so they're basically a combination of both the Address
         and Network classes.
     """
-    if version:
+    if version is not None:
         if version == 4:
             return IPv4Interface(address)
         elif version == 6:
             return IPv6Interface(address)
+        else:
+            raise ValueError()
 
     try:
         return IPv4Interface(address)
@@ -163,40 +170,44 @@ def ip_interface(address, version=None):
 
 
 def v4_int_to_packed(address):
-    """The binary representation of this address.
+    """Represent an address as 4 packed bytes in network (big-endian) order.
 
     Args:
         address: An integer representation of an IPv4 IP address.
 
     Returns:
-        The binary representation of this address.
+        The integer address packed as 4 bytes in network (big-endian) order.
 
     Raises:
-        ValueError: If the integer is too large to be an IPv4 IP
-          address.
+        ValueError: If the integer is negative or too large to be an
+          IPv4 IP address.
     """
-    if address > _BaseV4._ALL_ONES:
-        raise ValueError('Address too large for IPv4')
-    return struct.pack('!I', address)
+    try:
+        return struct.pack('!I', address)
+    except:
+        raise ValueError("Address negative or too large for IPv4")
 
 
 def v6_int_to_packed(address):
-    """The binary representation of this address.
+    """Represent an address as 16 packed bytes in network (big-endian) order.
 
     Args:
         address: An integer representation of an IPv4 IP address.
 
     Returns:
-        The binary representation of this address.
+        The integer address packed as 16 bytes in network (big-endian) order.
     """
-    return struct.pack('!QQ', address >> 64, address & (2**64 - 1))
+    try:
+        return struct.pack('!QQ', address >> 64, address & (2**64 - 1))
+    except:
+        raise ValueError("Address negative or too large for IPv6")
 
 
 def _find_address_range(addresses):
-    """Find a sequence of addresses.
+    """Find a sequence of IPv#Address.
 
     Args:
-        addresses: a list of IPv4 or IPv6 addresses.
+        addresses: a list of IPv#Address objects.
 
     Returns:
         A tuple containing the first and last IP addresses in the sequence.
