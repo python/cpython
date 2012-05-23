@@ -30,8 +30,9 @@ _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
-           "defpath", "name", "path", "devnull",
-           "SEEK_SET", "SEEK_CUR", "SEEK_END"]
+           "defpath", "name", "path", "devnull", "SEEK_SET", "SEEK_CUR",
+           "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
+           "popen", "extsep"]
 
 def _exists(name):
     return name in globals()
@@ -50,6 +51,7 @@ if 'posix' in _names:
     from posix import *
     try:
         from posix import _exit
+        __all__.append('_exit')
     except ImportError:
         pass
     import posixpath as path
@@ -64,6 +66,7 @@ elif 'nt' in _names:
     from nt import *
     try:
         from nt import _exit
+        __all__.append('_exit')
     except ImportError:
         pass
     import ntpath as path
@@ -78,6 +81,7 @@ elif 'os2' in _names:
     from os2 import *
     try:
         from os2 import _exit
+        __all__.append('_exit')
     except ImportError:
         pass
     if sys.version.find('EMX GCC') == -1:
@@ -96,6 +100,7 @@ elif 'ce' in _names:
     from ce import *
     try:
         from ce import _exit
+        __all__.append('_exit')
     except ImportError:
         pass
     # We can use the standard Windows path.
@@ -699,6 +704,8 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
 
     P_WAIT = 0
     P_NOWAIT = P_NOWAITO = 1
+
+    __all__.extend(["P_WAIT", "P_NOWAIT", "P_NOWAITO"])
 
     # XXX Should we support P_DETACH?  I suppose it could fork()**2
     # and close the std I/O streams.  Also, P_OVERLAY is the same
