@@ -437,6 +437,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
+        # Verify an illegal port of value greater than 65535 is set as None
+        url = "http://www.python.org:65536"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.port, None)
+
     def test_issue14072(self):
         p1 = urlparse.urlsplit('tel:+31-641044153')
         self.assertEqual(p1.scheme, 'tel')
