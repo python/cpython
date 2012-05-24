@@ -118,7 +118,7 @@ class StrTest(unittest.TestCase):
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @precisionbigmemtest(size=_2G-1, memuse=2)
+    @precisionbigmemtest(size=_2G-1, memuse=4)
     def test_decodeascii(self, size):
         return self.basic_encode_test(size, 'ascii', c='A')
 
