@@ -524,6 +524,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
+        # Verify an illegal port is returned as None
+        url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.port, None)
+
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
         p = urllib.parse.urlsplit("http://www.example.net:foo")
