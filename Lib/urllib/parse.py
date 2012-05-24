@@ -143,6 +143,9 @@ class _NetlocResultMixinBase(object):
         port = self._hostinfo[1]
         if port is not None:
             port = int(port, 10)
+            # Return None on an illegal port
+            if not ( 0 <= port <= 65535):
+                return None
         return port
 
 
