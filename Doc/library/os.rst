@@ -600,26 +600,13 @@ File Object Creation
 These functions create new :term:`file objects <file object>`. (See also :func:`open`.)
 
 
-.. function:: fdopen(fd[, mode[, bufsize]])
+.. function:: fdopen(fd, *args, **kwargs)
 
-   .. index:: single: I/O control; buffering
+   Return an open file object connected to the file descriptor *fd*.
+   This is an alias of :func:`open` and accepts the same arguments.
+   The only difference is that the first argument of :func:`fdopen`
+   must always be an integer.
 
-   Return an open file object connected to the file descriptor *fd*.  The *mode*
-   and *bufsize* arguments have the same meaning as the corresponding arguments to
-   the built-in :func:`open` function.
-
-   When specified, the *mode* argument must start with one of the letters
-   ``'r'``, ``'w'``, ``'x'`` or ``'a'``, otherwise a :exc:`ValueError` is
-   raised.
-
-   On Unix, when the *mode* argument starts with ``'a'``, the *O_APPEND* flag is
-   set on the file descriptor (which the :c:func:`fdopen` implementation already
-   does on most platforms).
-
-   Availability: Unix, Windows.
-
-   .. versionchanged:: 3.3
-      The ``'x'`` mode was added.
 
 .. _os-fd-ops:
 

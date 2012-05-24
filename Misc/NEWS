@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14863: Update the documentation of os.fdopen() to reflect the
+  fact that it's only a thin wrapper around open() anymore.
+
 - Issue #14036: Add an additional check to validate that port in urlparse does
   not go in illegal range and returns None.
 
