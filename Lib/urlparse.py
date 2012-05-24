@@ -97,9 +97,11 @@ class ResultMixin(object):
         netloc = self.netloc.split('@')[-1].split(']')[-1]
         if ':' in netloc:
             port = netloc.split(':')[1]
-            return int(port, 10)
-        else:
-            return None
+            port = int(port, 10)
+            # verify legal port
+            if (0 <= port <= 65535):
+                return port
+        return None
 
 from collections import namedtuple
 

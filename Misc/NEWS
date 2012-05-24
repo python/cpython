@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14036: Add an additional check to validate that port in urlparse does
+  not go in illegal range and returns None.
+
 - Issue #14888: Fix misbehaviour of the _md5 module when called on data
   larger than 2**32 bytes.
 
