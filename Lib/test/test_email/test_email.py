@@ -16,6 +16,7 @@ from io import StringIO, BytesIO
 from itertools import chain
 
 import email
+import email.policy
 
 from email.charset import Charset
 from email.header import Header, decode_header, make_header
@@ -1805,11 +1806,7 @@ YXNkZg==
 
 
 # Test some badly formatted messages
-class TestNonConformantBase:
-
-    def _msgobj(self, filename):
-        with openfile(filename) as fp:
-            return email.message_from_file(fp, policy=self.policy)
+class TestNonConformant(TestEmailBase):
 
     def test_parse_missing_minor_type(self):
         eq = self.assertEqual
@@ -1818,24 +1815,26 @@ class TestNonConformantBase:
         eq(msg.get_content_maintype(), 'text')
         eq(msg.get_content_subtype(), 'plain')
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_same_boundary_inner_outer(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_15.txt')
         # XXX We can probably eventually do better
         inner = msg.get_payload(0)
         unless(hasattr(inner, 'defects'))
-        self.assertEqual(len(self.get_defects(inner)), 1)
-        unless(isinstance(self.get_defects(inner)[0],
+        self.assertEqual(len(inner.defects), 1)
+        unless(isinstance(inner.defects[0],
                           errors.StartBoundaryNotFoundDefect))
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_multipart_no_boundary(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_25.txt')
         unless(isinstance(msg.get_payload(), str))
-        self.assertEqual(len(self.get_defects(msg)), 2)
-        unless(isinstance(self.get_defects(msg)[0],
+        self.assertEqual(len(msg.defects), 2)
+        unless(isinstance(msg.defects[0],
                           errors.NoBoundaryInMultipartDefect))
-        unless(isinstance(self.get_defects(msg)[1],
+        unless(isinstance(msg.defects[1],
                           errors.MultipartInvariantViolationDefect))
 
     multipart_msg = textwrap.dedent("""\
@@ -1861,27 +1860,26 @@ class TestNonConformantBase:
         --===============3344438784458119861==--
         """)
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_multipart_invalid_cte(self):
-        msg = email.message_from_string(
-            self.multipart_msg.format("\nContent-Transfer-Encoding: base64"),
-            policy = self.policy)
-        self.assertEqual(len(self.get_defects(msg)), 1)
-        self.assertIsInstance(self.get_defects(msg)[0],
+        msg = self._str_msg(
+            self.multipart_msg.format("\nContent-Transfer-Encoding: base64"))
+        self.assertEqual(len(msg.defects), 1)
+        self.assertIsInstance(msg.defects[0],
             errors.InvalidMultipartContentTransferEncodingDefect)
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_multipart_no_cte_no_defect(self):
-        msg = email.message_from_string(
-            self.multipart_msg.format(''),
-            policy = self.policy)
-        self.assertEqual(len(self.get_defects(msg)), 0)
+        msg = self._str_msg(self.multipart_msg.format(''))
+        self.assertEqual(len(msg.defects), 0)
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_multipart_valid_cte_no_defect(self):
         for cte in ('7bit', '8bit', 'BINary'):
-            msg = email.message_from_string(
+            msg = self._str_msg(
                 self.multipart_msg.format(
-                    "\nContent-Transfer-Encoding: {}".format(cte)),
-                policy = self.policy)
-            self.assertEqual(len(self.get_defects(msg)), 0)
+                    "\nContent-Transfer-Encoding: {}".format(cte)))
+            self.assertEqual(len(msg.defects), 0)
 
     def test_invalid_content_type(self):
         eq = self.assertEqual
@@ -1932,16 +1930,18 @@ Subject: here's something interesting
 counter to RFC 2822, there's no separating newline here
 """)
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_lying_multipart(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_41.txt')
         unless(hasattr(msg, 'defects'))
-        self.assertEqual(len(self.get_defects(msg)), 2)
-        unless(isinstance(self.get_defects(msg)[0],
+        self.assertEqual(len(msg.defects), 2)
+        unless(isinstance(msg.defects[0],
                           errors.NoBoundaryInMultipartDefect))
-        unless(isinstance(self.get_defects(msg)[1],
+        unless(isinstance(msg.defects[1],
                           errors.MultipartInvariantViolationDefect))
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_missing_start_boundary(self):
         outer = self._msgobj('msg_42.txt')
         # The message structure is:
@@ -1953,71 +1953,21 @@ counter to RFC 2822, there's no separating newline here
         #
         # [*] This message is missing its start boundary
         bad = outer.get_payload(1).get_payload(0)
-        self.assertEqual(len(self.get_defects(bad)), 1)
-        self.assertTrue(isinstance(self.get_defects(bad)[0],
+        self.assertEqual(len(bad.defects), 1)
+        self.assertTrue(isinstance(bad.defects[0],
                                    errors.StartBoundaryNotFoundDefect))
 
+    # test_parser.TestMessageDefectDetectionBase
     def test_first_line_is_continuation_header(self):
         eq = self.assertEqual
         m = ' Line 1\nLine 2\nLine 3'
-        msg = email.message_from_string(m, policy=self.policy)
+        msg = email.message_from_string(m)
         eq(msg.keys(), [])
         eq(msg.get_payload(), 'Line 2\nLine 3')
-        eq(len(self.get_defects(msg)), 1)
-        self.assertTrue(isinstance(self.get_defects(msg)[0],
+        eq(len(msg.defects), 1)
+        self.assertTrue(isinstance(msg.defects[0],
                                    errors.FirstHeaderLineIsContinuationDefect))
-        eq(self.get_defects(msg)[0].line, ' Line 1\n')
-
-
-class TestNonConformant(TestNonConformantBase, TestEmailBase):
-
-    policy=email.policy.default
-
-    def get_defects(self, obj):
-        return obj.defects
-
-
-class TestNonConformantCapture(TestNonConformantBase, TestEmailBase):
-
-    class CapturePolicy(email.policy.Policy):
-        captured = None
-        def register_defect(self, obj, defect):
-            self.captured.append(defect)
-
-    def setUp(self):
-        self.policy = self.CapturePolicy(captured=list())
-
-    def get_defects(self, obj):
-        return self.policy.captured
-
-
-class TestRaisingDefects(TestEmailBase):
-
-    def _msgobj(self, filename):
-        with openfile(filename) as fp:
-            return email.message_from_file(fp, policy=email.policy.strict)
-
-    def test_same_boundary_inner_outer(self):
-        with self.assertRaises(errors.StartBoundaryNotFoundDefect):
-            self._msgobj('msg_15.txt')
-
-    def test_multipart_no_boundary(self):
-        with self.assertRaises(errors.NoBoundaryInMultipartDefect):
-            self._msgobj('msg_25.txt')
-
-    def test_lying_multipart(self):
-        with self.assertRaises(errors.NoBoundaryInMultipartDefect):
-            self._msgobj('msg_41.txt')
-
-
-    def test_missing_start_boundary(self):
-        with self.assertRaises(errors.StartBoundaryNotFoundDefect):
-            self._msgobj('msg_42.txt')
-
-    def test_first_line_is_continuation_header(self):
-        m = ' Line 1\nLine 2\nLine 3'
-        with self.assertRaises(errors.FirstHeaderLineIsContinuationDefect):
-            msg = email.message_from_string(m, policy=email.policy.strict)
+        eq(msg.defects[0].line, ' Line 1\n')
 
 
 # Test RFC 2047 header encoding and decoding
@@ -2610,6 +2560,13 @@ class TestMiscellaneous(TestEmailBase):
         for subpart in msg.walk():
             unless(isinstance(subpart, MyMessage))
 
+    def test_custom_message_does_not_require_arguments(self):
+        class MyMessage(Message):
+            def __init__(self):
+                super().__init__()
+        msg = self._str_msg("Subject: test\n\ntest", MyMessage)
+        self.assertTrue(isinstance(msg, MyMessage))
+
     def test__all__(self):
         module = __import__('email')
         self.assertEqual(sorted(module.__all__), [
@@ -3137,25 +3094,6 @@ Here's the message body
         g.flatten(msg, linesep='\r\n')
         self.assertEqual(s.getvalue(), text)
 
-    def test_crlf_control_via_policy(self):
-        with openfile('msg_26.txt', newline='\n') as fp:
-            text = fp.read()
-        msg = email.message_from_string(text)
-        s = StringIO()
-        g = email.generator.Generator(s, policy=email.policy.SMTP)
-        g.flatten(msg)
-        self.assertEqual(s.getvalue(), text)
-
-    def test_flatten_linesep_overrides_policy(self):
-        # msg_27 is lf separated
-        with openfile('msg_27.txt', newline='\n') as fp:
-            text = fp.read()
-        msg = email.message_from_string(text)
-        s = StringIO()
-        g = email.generator.Generator(s, policy=email.policy.SMTP)
-        g.flatten(msg, linesep='\n')
-        self.assertEqual(s.getvalue(), text)
-
     maxDiff = None
 
     def test_multipart_digest_with_extra_mime_headers(self):
@@ -3645,44 +3583,6 @@ class Test8BitBytesHandling(unittest.TestCase):
         self.assertEqual(
             s.getvalue(),
             'Subject: =?utf-8?b?xb5sdcWlb3XEjWvDvSBrxa/FiA==?=\r\n\r\n')
-
-    def test_crlf_control_via_policy(self):
-        # msg_26 is crlf terminated
-        with openfile('msg_26.txt', 'rb') as fp:
-            text = fp.read()
-        msg = email.message_from_bytes(text)
-        s = BytesIO()
-        g = email.generator.BytesGenerator(s, policy=email.policy.SMTP)
-        g.flatten(msg)
-        self.assertEqual(s.getvalue(), text)
-
-    def test_flatten_linesep_overrides_policy(self):
-        # msg_27 is lf separated
-        with openfile('msg_27.txt', 'rb') as fp:
-            text = fp.read()
-        msg = email.message_from_bytes(text)
-        s = BytesIO()
-        g = email.generator.BytesGenerator(s, policy=email.policy.SMTP)
-        g.flatten(msg, linesep='\n')
-        self.assertEqual(s.getvalue(), text)
-
-    def test_must_be_7bit_handles_unknown_8bit(self):
-        msg = email.message_from_bytes(self.non_latin_bin_msg)
-        out = BytesIO()
-        g = email.generator.BytesGenerator(out,
-                        policy=email.policy.default.clone(must_be_7bit=True))
-        g.flatten(msg)
-        self.assertEqual(out.getvalue(),
-            self.non_latin_bin_msg_as7bit_wrapped.encode('ascii'))
-
-    def test_must_be_7bit_transforms_8bit_cte(self):
-        msg = email.message_from_bytes(self.latin_bin_msg)
-        out = BytesIO()
-        g = email.generator.BytesGenerator(out,
-                        policy=email.policy.default.clone(must_be_7bit=True))
-        g.flatten(msg)
-        self.assertEqual(out.getvalue(),
-                        self.latin_bin_msg_as7bit.encode('ascii'))
 
     maxDiff = None
 

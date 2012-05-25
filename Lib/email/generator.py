@@ -13,9 +13,9 @@ import random
 import warnings
 
 from io import StringIO, BytesIO
-from email import policy
+from email._policybase import compat32
 from email.header import Header
-from email.message import _has_surrogates
+from email.utils import _has_surrogates
 import email.charset as _charset
 
 UNDERSCORE = '_'
@@ -36,7 +36,7 @@ class Generator:
     #
 
     def __init__(self, outfp, mangle_from_=True, maxheaderlen=None, *,
-                 policy=policy.default):
+                 policy=None):
         """Create the generator for message flattening.
 
         outfp is the output file-like object for writing the message to.  It
@@ -60,8 +60,7 @@ class Generator:
         """
         self._fp = outfp
         self._mangle_from_ = mangle_from_
-        self._maxheaderlen = (maxheaderlen if maxheaderlen is not None else
-                                 policy.max_line_length)
+        self.maxheaderlen = maxheaderlen
         self.policy = policy
 
     def write(self, s):
@@ -87,20 +86,33 @@ class Generator:
         # from the msg, and _encoded_XXX constants for operating on data that
         # has already been converted (to bytes in the BytesGenerator) and
         # inserted into a temporary buffer.
-        self._NL = linesep if linesep is not None else self.policy.linesep
+        policy = msg.policy if self.policy is None else self.policy
+        if linesep is not None:
+            policy = policy.clone(linesep=linesep)
+        if self.maxheaderlen is not None:
+            policy = policy.clone(max_line_length=self.maxheaderlen)
+        self._NL = policy.linesep
         self._encoded_NL = self._encode(self._NL)
         self._EMPTY = ''
         self._encoded_EMTPY = self._encode('')
-        if unixfrom:
-            ufrom = msg.get_unixfrom()
-            if not ufrom:
-                ufrom = 'From nobody ' + time.ctime(time.time())
-            self.write(ufrom + self._NL)
-        self._write(msg)
+        p = self.policy
+        try:
+            self.policy = policy
+            if unixfrom:
+                ufrom = msg.get_unixfrom()
+                if not ufrom:
+                    ufrom = 'From nobody ' + time.ctime(time.time())
+                self.write(ufrom + self._NL)
+            self._write(msg)
+        finally:
+            self.policy = p
 
     def clone(self, fp):
         """Clone this generator with the exact same options."""
-        return self.__class__(fp, self._mangle_from_, self._maxheaderlen)
+        return self.__class__(fp,
+                              self._mangle_from_,
+                              None, # Use policy setting, which we've adjusted
+                              policy=self.policy)
 
     #
     # Protected interface - undocumented ;/
@@ -175,16 +187,8 @@ class Generator:
     #
 
     def _write_headers(self, msg):
-        for h, v in msg.items():
-            self.write('%s: ' % h)
-            if isinstance(v, Header):
-                self.write(v.encode(
-                    maxlinelen=self._maxheaderlen, linesep=self._NL)+self._NL)
-            else:
-                # Header's got lots of smarts, so use it.
-                header = Header(v, maxlinelen=self._maxheaderlen,
-                                header_name=h)
-                self.write(header.encode(linesep=self._NL)+self._NL)
+        for h, v in msg.raw_items():
+            self.write(self.policy.fold(h, v))
         # A blank line always separates headers from body
         self.write(self._NL)
 
@@ -265,12 +269,12 @@ class Generator:
         # The contents of signed parts has to stay unmodified in order to keep
         # the signature intact per RFC1847 2.1, so we disable header wrapping.
         # RDM: This isn't enough to completely preserve the part, but it helps.
-        old_maxheaderlen = self._maxheaderlen
+        p = self.policy
+        self.policy = p.clone(max_line_length=0)
         try:
-            self._maxheaderlen = 0
             self._handle_multipart(msg)
         finally:
-            self._maxheaderlen = old_maxheaderlen
+            self.policy = p
 
     def _handle_message_delivery_status(self, msg):
         # We can't just write the headers directly to self's file object
@@ -347,9 +351,9 @@ class BytesGenerator(Generator):
     Functionally identical to the base Generator except that the output is
     bytes and not string.  When surrogates were used in the input to encode
     bytes, these are decoded back to bytes for output.  If the policy has
-    must_be_7bit set true, then the message is transformed such that the
-    non-ASCII bytes are properly content transfer encoded, using the
-    charset unknown-8bit.
+    cte_type set to 7bit, then the message is transformed such that the
+    non-ASCII bytes are properly content transfer encoded, using the charset
+    unknown-8bit.
 
     The outfp object must accept bytes in its write method.
     """
@@ -370,27 +374,8 @@ class BytesGenerator(Generator):
     def _write_headers(self, msg):
         # This is almost the same as the string version, except for handling
         # strings with 8bit bytes.
-        for h, v in msg._headers:
-            self.write('%s: ' % h)
-            if isinstance(v, str):
-                if _has_surrogates(v):
-                    if not self.policy.must_be_7bit:
-                        # If we have raw 8bit data in a byte string, we have no idea
-                        # what the encoding is.  There is no safe way to split this
-                        # string.  If it's ascii-subset, then we could do a normal
-                        # ascii split, but if it's multibyte then we could break the
-                        # string.  There's no way to know so the least harm seems to
-                        # be to not split the string and risk it being too long.
-                        self.write(v+NL)
-                        continue
-                    h = Header(v, charset=_charset.UNKNOWN8BIT, header_name=h)
-                else:
-                    h = Header(v, header_name=h)
-            else:
-                # Assume it is a Header-like object.
-                h = v
-            self.write(h.encode(linesep=self._NL,
-                                maxlinelen=self._maxheaderlen)+self._NL)
+        for h, v in msg.raw_items():
+            self._fp.write(self.policy.fold_binary(h, v))
         # A blank line always separates headers from body
         self.write(self._NL)
 
@@ -399,7 +384,7 @@ class BytesGenerator(Generator):
         # just write it back out.
         if msg._payload is None:
             return
-        if _has_surrogates(msg._payload) and not self.policy.must_be_7bit:
+        if _has_surrogates(msg._payload) and not self.policy.cte_type=='7bit':
             self.write(msg._payload)
         else:
             super(BytesGenerator,self)._handle_text(msg)
