@@ -3661,11 +3661,11 @@ typedef struct {
  */
 
 typedef enum {
-  utime_success = 0,
-  utime_parse_failure = 1,
-  utime_times_and_ns_collision = 2,
-  utime_times_conversion_failure = 3,
-  utime_ns_conversion_failure = 4,
+  UTIME_SUCCESS = 0,
+  UTIME_PARSE_FAILURE = 1,
+  UTIME_TIMES_AND_NS_COLLISION = 2,
+  UTIME_TIMES_CONVERSION_FAILURE = 3,
+  UTIME_NS_CONVERSION_FAILURE = 4,
 } utime_status;
 
 static utime_status
@@ -3697,14 +3697,14 @@ utime_read_time_arguments(utime_arguments *ua)
             format, kwlist, ua->path, &times, &ns);
 
     if (!parse_result)
-        return utime_parse_failure;
+        return UTIME_PARSE_FAILURE;
 
     if (times && ns) {
         PyErr_Format(PyExc_RuntimeError,
                      "%s: you may specify either 'times'"
                      " or 'ns' but not both",
                      ua->function_name);
-        return_value = utime_times_and_ns_collision;
+        return_value = UTIME_TIMES_AND_NS_COLLISION;
         goto fail;
     }
 
@@ -3714,7 +3714,7 @@ utime_read_time_arguments(utime_arguments *ua)
                          "%s: 'times' must be either"
                          " a tuple of two ints or None",
                          ua->function_name);
-            return_value = utime_times_conversion_failure;
+            return_value = UTIME_TIMES_CONVERSION_FAILURE;
             goto fail;
         }
         ua->now = 0;
@@ -3722,10 +3722,10 @@ utime_read_time_arguments(utime_arguments *ua)
                                      &ua->atime_s, &ua->atime_ns) == -1 ||
             _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
                                      &ua->mtime_s, &ua->mtime_ns) == -1) {
-            return_value = utime_times_conversion_failure;
+            return_value = UTIME_TIMES_CONVERSION_FAILURE;
             goto fail;
         }
-        return utime_success;
+        return UTIME_SUCCESS;
     }
 
     if (ns) {
@@ -3733,7 +3733,7 @@ utime_read_time_arguments(utime_arguments *ua)
             PyErr_Format(PyExc_TypeError,
                          "%s: 'ns' must be a tuple of two ints",
                          ua->function_name);
-            return_value = utime_ns_conversion_failure;
+            return_value = UTIME_NS_CONVERSION_FAILURE;
             goto fail;
         }
         ua->now = 0;
@@ -3741,15 +3741,15 @@ utime_read_time_arguments(utime_arguments *ua)
                                       &ua->atime_s, &ua->atime_ns) ||
             !split_py_long_to_s_and_ns(PyTuple_GET_ITEM(ns, 1),
                                        &ua->mtime_s, &ua->mtime_ns)) {
-            return_value = utime_ns_conversion_failure;
+            return_value = UTIME_NS_CONVERSION_FAILURE;
             goto fail;
         }
-        return utime_success;
+        return UTIME_SUCCESS;
     }
 
     /* either times=None, or neither times nor ns was specified. use "now". */
     ua->now = 1;
-    return utime_success;
+    return UTIME_SUCCESS;
 
   fail:
     if (ua->converter)
@@ -3786,7 +3786,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     switch (utime_read_time_arguments(&ua)) {
     default:
         return NULL;
-    case utime_success: {
+    case UTIME_SUCCESS: {
         wchar_t *wpath = PyUnicode_AsUnicode(upath);
         if (wpath == NULL)
             return NULL;
@@ -3799,7 +3799,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
             return win32_error_object("utime", upath);
         break;
     }
-    case utime_parse_failure: {
+    case UTIME_PARSE_FAILURE: {
         const char *apath;
         /* Drop the argument parsing error as narrow strings
            are also valid. */
@@ -3807,7 +3807,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
 
         ua.path_format = 'y';
         ua.path = (PyObject **)&apath;
-        if (utime_read_time_arguments(&ua) != utime_success)
+        if (utime_read_time_arguments(&ua) != UTIME_SUCCESS)
             return NULL;
         if (win32_warn_bytes_api())
             return NULL;
@@ -3862,7 +3862,7 @@ done:
     ua.path = &opath;
     ua.converter = PyUnicode_FSConverter;
 
-    if (utime_read_time_arguments(&ua) != utime_success)
+    if (utime_read_time_arguments(&ua) != UTIME_SUCCESS)
         return NULL;
     path = PyBytes_AsString(opath);
     if (ua.now) {
@@ -3915,7 +3915,7 @@ posix_futimes(PyObject *self, PyObject *args, PyObject *kwargs)
     ua.path = (PyObject **)&fd;
     ua.first_argument_name = "fd";
 
-    if (utime_read_time_arguments(&ua) != utime_success)
+    if (utime_read_time_arguments(&ua) != UTIME_SUCCESS)
         return NULL;
 
     if (ua.now) {
@@ -3960,7 +3960,7 @@ posix_lutimes(PyObject *self, PyObject *args, PyObject *kwargs)
     ua.path = &opath;
     ua.converter = PyUnicode_FSConverter;
 
-    if (utime_read_time_arguments(&ua) != utime_success)
+    if (utime_read_time_arguments(&ua) != UTIME_SUCCESS)
         return NULL;
     path = PyBytes_AsString(opath);
 
