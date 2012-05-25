@@ -65,3 +65,9 @@ class TestEmailBase(unittest.TestCase):
     def assertBytesEqual(self, first, second, msg):
         """Our byte strings are really encoded strings; improve diff output"""
         self.assertEqual(self._bytes_repr(first), self._bytes_repr(second))
+
+    def assertDefectsEqual(self, actual, expected):
+        self.assertEqual(len(actual), len(expected), actual)
+        for i in range(len(actual)):
+            self.assertIsInstance(actual[i], expected[i],
+                                    'item {}'.format(i))

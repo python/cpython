@@ -5,49 +5,70 @@ import unittest
 import email.policy
 import email.parser
 import email.generator
+from email import _headerregistry
+
+def make_defaults(base_defaults, differences):
+    defaults = base_defaults.copy()
+    defaults.update(differences)
+    return defaults
 
 class PolicyAPITests(unittest.TestCase):
 
     longMessage = True
 
-    # These default values are the ones set on email.policy.default.
-    # If any of these defaults change, the docs must be updated.
-    policy_defaults = {
+    # Base default values.
+    compat32_defaults = {
         'max_line_length':          78,
         'linesep':                  '\n',
         'cte_type':                 '8bit',
         'raise_on_defect':          False,
         }
+    # These default values are the ones set on email.policy.default.
+    # If any of these defaults change, the docs must be updated.
+    policy_defaults = compat32_defaults.copy()
+    policy_defaults.update({
+        'raise_on_defect':          False,
+        'header_factory':           email.policy.EmailPolicy.header_factory,
+        'refold_source':            'long',
+        })
 
-    # For each policy under test, we give here the values of the attributes
-    # that are different from the defaults for that policy.
+    # For each policy under test, we give here what we expect the defaults to
+    # be for that policy.  The second argument to make defaults is the
+    # difference between the base defaults and that for the particular policy.
+    new_policy = email.policy.EmailPolicy()
     policies = {
-        email.policy.Compat32(): {},
-        email.policy.compat32: {},
-        email.policy.default: {},
-        email.policy.SMTP: {'linesep': '\r\n'},
-        email.policy.HTTP: {'linesep': '\r\n', 'max_line_length': None},
-        email.policy.strict: {'raise_on_defect': True},
+        email.policy.compat32: make_defaults(compat32_defaults, {}),
+        email.policy.default: make_defaults(policy_defaults, {}),
+        email.policy.SMTP: make_defaults(policy_defaults,
+                                         {'linesep': '\r\n'}),
+        email.policy.HTTP: make_defaults(policy_defaults,
+                                         {'linesep': '\r\n',
+                                          'max_line_length': None}),
+        email.policy.strict: make_defaults(policy_defaults,
+                                           {'raise_on_defect': True}),
+        new_policy: make_defaults(policy_defaults, {}),
         }
+    # Creating a new policy creates a new header factory.  There is a test
+    # later that proves this.
+    policies[new_policy]['header_factory'] = new_policy.header_factory
 
     def test_defaults(self):
-        for policy, changed_defaults in self.policies.items():
-            expected = self.policy_defaults.copy()
-            expected.update(changed_defaults)
+        for policy, expected in self.policies.items():
             for attr, value in expected.items():
                 self.assertEqual(getattr(policy, attr), value,
                                 ("change {} docs/docstrings if defaults have "
                                 "changed").format(policy))
 
     def test_all_attributes_covered(self):
-        for attr in dir(email.policy.default):
-            if (attr.startswith('_') or
-               isinstance(getattr(email.policy.Policy, attr),
-                          types.FunctionType)):
-                continue
-            else:
-                self.assertIn(attr, self.policy_defaults,
-                              "{} is not fully tested".format(attr))
+        for policy, expected in self.policies.items():
+            for attr in dir(policy):
+                if (attr.startswith('_') or
+                        isinstance(getattr(email.policy.EmailPolicy, attr),
+                              types.FunctionType)):
+                    continue
+                else:
+                    self.assertIn(attr, expected,
+                                  "{} is not fully tested".format(attr))
 
     def test_abc(self):
         with self.assertRaises(TypeError) as cm:
@@ -62,18 +83,20 @@ class PolicyAPITests(unittest.TestCase):
             self.assertIn(method, msg)
 
     def test_policy_is_immutable(self):
-        for policy in self.policies:
-            for attr in self.policy_defaults:
+        for policy, defaults in self.policies.items():
+            for attr in defaults:
                 with self.assertRaisesRegex(AttributeError, attr+".*read-only"):
                     setattr(policy, attr, None)
             with self.assertRaisesRegex(AttributeError, 'no attribute.*foo'):
                 policy.foo = None
 
-    def test_set_policy_attrs_when_calledl(self):
-        testattrdict = { attr: None for attr in self.policy_defaults }
-        for policyclass in self.policies:
+    def test_set_policy_attrs_when_cloned(self):
+        # None of the attributes has a default value of None, so we set them
+        # all to None in the clone call and check that it worked.
+        for policyclass, defaults in self.policies.items():
+            testattrdict = {attr: None for attr in defaults}
             policy = policyclass.clone(**testattrdict)
-            for attr in self.policy_defaults:
+            for attr in defaults:
                 self.assertIsNone(getattr(policy, attr))
 
     def test_reject_non_policy_keyword_when_called(self):
@@ -105,7 +128,7 @@ class PolicyAPITests(unittest.TestCase):
                 self.defects = []
         obj = Dummy()
         defect = object()
-        policy = email.policy.Compat32()
+        policy = email.policy.EmailPolicy()
         policy.register_defect(obj, defect)
         self.assertEqual(obj.defects, [defect])
         defect2 = object()
@@ -134,7 +157,7 @@ class PolicyAPITests(unittest.TestCase):
         email.policy.default.handle_defect(foo, defect2)
         self.assertEqual(foo.defects, [defect1, defect2])
 
-    class MyPolicy(email.policy.Compat32):
+    class MyPolicy(email.policy.EmailPolicy):
         defects = None
         def __init__(self, *args, **kw):
             super().__init__(*args, defects=[], **kw)
@@ -158,6 +181,49 @@ class PolicyAPITests(unittest.TestCase):
         my_policy.handle_defect(foo, defect2)
         self.assertEqual(my_policy.defects, [defect1, defect2])
         self.assertEqual(foo.defects, [])
+
+    def test_default_header_factory(self):
+        h = email.policy.default.header_factory('Test', 'test')
+        self.assertEqual(h.name, 'Test')
+        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, _headerregistry.BaseHeader)
+
+    class Foo:
+        parse = _headerregistry.UnstructuredHeader.parse
+
+    def test_each_Policy_gets_unique_factory(self):
+        policy1 = email.policy.EmailPolicy()
+        policy2 = email.policy.EmailPolicy()
+        policy1.header_factory.map_to_type('foo', self.Foo)
+        h = policy1.header_factory('foo', 'test')
+        self.assertIsInstance(h, self.Foo)
+        self.assertNotIsInstance(h, _headerregistry.UnstructuredHeader)
+        h = policy2.header_factory('foo', 'test')
+        self.assertNotIsInstance(h, self.Foo)
+        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+
+    def test_clone_copies_factory(self):
+        policy1 = email.policy.EmailPolicy()
+        policy2 = policy1.clone()
+        policy1.header_factory.map_to_type('foo', self.Foo)
+        h = policy1.header_factory('foo', 'test')
+        self.assertIsInstance(h, self.Foo)
+        h = policy2.header_factory('foo', 'test')
+        self.assertIsInstance(h, self.Foo)
+
+    def test_new_factory_overrides_default(self):
+        mypolicy = email.policy.EmailPolicy()
+        myfactory = mypolicy.header_factory
+        newpolicy = mypolicy + email.policy.strict
+        self.assertEqual(newpolicy.header_factory, myfactory)
+        newpolicy = email.policy.strict + mypolicy
+        self.assertEqual(newpolicy.header_factory, myfactory)
+
+    def test_adding_default_policies_preserves_default_factory(self):
+        newpolicy = email.policy.default + email.policy.strict
+        self.assertEqual(newpolicy.header_factory,
+                         email.policy.EmailPolicy.header_factory)
+        self.assertEqual(newpolicy.__dict__, {'raise_on_defect': True})
 
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass

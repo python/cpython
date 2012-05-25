@@ -62,6 +62,13 @@ escapesre = re.compile(r'[\\"]')
 _has_surrogates = re.compile(
     '([^\ud800-\udbff]|\A)[\udc00-\udfff]([^\udc00-\udfff]|\Z)').search
 
+# How to deal with a string containing bytes before handing it to the
+# application through the 'normal' interface.
+def _sanitize(string):
+    # Turn any escaped bytes into unicode 'unknown' char.
+    original_bytes = string.encode('ascii', 'surrogateescape')
+    return original_bytes.decode('ascii', 'replace')
+
 
 # Helpers
 
