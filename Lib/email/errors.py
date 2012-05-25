@@ -5,7 +5,6 @@
 """email package exception classes."""
 
 
-
 class MessageError(Exception):
     """Base class for errors in the email package."""
 
@@ -30,9 +29,8 @@ class CharsetError(MessageError):
     """An illegal charset was given."""
 
 
-
 # These are parsing defects which the parser was able to work around.
-class MessageDefect(Exception):
+class MessageDefect(ValueError):
     """Base class for a message defect."""
 
     def __init__(self, line=None):
@@ -58,3 +56,42 @@ class MultipartInvariantViolationDefect(MessageDefect):
 
 class InvalidMultipartContentTransferEncodingDefect(MessageDefect):
     """An invalid content transfer encoding was set on the multipart itself."""
+
+class UndecodableBytesDefect(MessageDefect):
+    """Header contained bytes that could not be decoded"""
+
+class InvalidBase64PaddingDefect(MessageDefect):
+    """base64 encoded sequence had an incorrect length"""
+
+class InvalidBase64CharactersDefect(MessageDefect):
+    """base64 encoded sequence had characters not in base64 alphabet"""
+
+# These errors are specific to header parsing.
+
+class HeaderDefect(MessageDefect):
+    """Base class for a header defect."""
+
+class InvalidHeaderDefect(HeaderDefect):
+    """Header is not valid, message gives details."""
+
+class HeaderMissingRequiredValue(HeaderDefect):
+    """A header that must have a value had none"""
+
+class NonPrintableDefect(HeaderDefect):
+    """ASCII characters outside the ascii-printable range found"""
+
+    def __init__(self, non_printables):
+        super().__init__(non_printables)
+        self.non_printables = non_printables
+
+    def __str__(self):
+        return ("the following ASCII non-printables found in header: "
+            "{}".format(self.non_printables))
+
+class ObsoleteHeaderDefect(HeaderDefect):
+    """Header uses syntax declared obsolete by RFC 5322"""
+
+class NonASCIILocalPartDefect(HeaderDefect):
+    """local_part contains non-ASCII characters"""
+    # This defect only occurs during unicode parsing, not when
+    # parsing messages decoded from binary.

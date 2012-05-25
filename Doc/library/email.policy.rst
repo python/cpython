@@ -306,3 +306,326 @@ added matters.  To illustrate::
       ``7bit``, non-ascii binary data is CTE encoded using the ``unknown-8bit``
       charset.  Otherwise the original source header is used, with its existing
       line breaks and and any (RFC invalid) binary data it may contain.
+
+
+.. note::
+
+   The remainder of the classes documented below are included in the standard
+   library on a :term:`provisional basis <provisional package>`.  Backwards
+   incompatible changes (up to and including removal of the feature) may occur
+   if deemed necessary by the core developers.
+
+
+.. class:: EmailPolicy(**kw)
+
+   This concrete :class:`Policy` provides behavior that is intended to be fully
+   compliant with the current email RFCs.  These include (but are not limited
+   to) :rfc:`5322`, :rfc:`2047`, and the current MIME RFCs.
+
+   This policy adds new header parsing and folding algorithms.  Instead of
+   simple strings, headers are custom objects with custom attributes depending
+   on the type of the field.  The parsing and folding algorithm fully implement
+   :rfc:`2047` and :rfc:`5322`.
+
+   In addition to the settable attributes listed above that apply to all
+   policies, this policy adds the following additional attributes:
+
+   .. attribute:: refold_source
+
+      If the value for a header in the ``Message`` object originated from a
+      :mod:`~email.parser` (as opposed to being set by a program), this
+      attribute indicates whether or not a generator should refold that value
+      when transforming the message back into stream form.  The possible values
+      are:
+
+      ========  ===============================================================
+      ``none``  all source values use original folding
+
+      ``long``  source values that have any line that is longer than
+                ``max_line_length`` will be refolded
+
+      ``all``   all values are refolded.
+      ========  ===============================================================
+
+      The default is ``long``.
+
+   .. attribute:: header_factory
+
+      A callable that takes two arguments, ``name`` and ``value``, where
+      ``name`` is a header field name and ``value`` is an unfolded header field
+      value, and returns a string-like object that represents that header.  A
+      default ``header_factory`` is provided that understands some of the
+      :RFC:`5322` header field types.  (Currently address fields and date
+      fields have special treatment, while all other fields are treated as
+      unstructured.  This list will be completed before the extension is marked
+      stable.)
+
+   The class provides the following concrete implementations of the abstract
+   methods of :class:`Policy`:
+
+   .. method:: header_source_parse(sourcelines)
+
+      The implementation of this method is the same as that for the
+      :class:`Compat32` policy.
+
+   .. method:: header_store_parse(name, value)
+
+      The name is returned unchanged.  If the input value has a ``name``
+      attribute and it matches *name* ignoring case, the value is returned
+      unchanged.  Otherwise the *name* and *value* are passed to
+      ``header_factory``, and the resulting custom header object is returned as
+      the value.  In this case a ``ValueError`` is raised if the input value
+      contains CR or LF characters.
+
+   .. method:: header_fetch_parse(name, value)
+
+      If the value has a ``name`` attribute, it is returned to unmodified.
+      Otherwise the *name*, and the *value* with any CR or LF characters
+      removed, are passed to the ``header_factory``, and the resulting custom
+      header object is returned.  Any surrogateescaped bytes get turned into
+      the unicode unknown-character glyph.
+
+   .. method:: fold(name, value)
+
+      Header folding is controlled by the :attr:`refold_source` policy setting.
+      A value is considered to be a 'source value' if and only if it does not
+      have a ``name`` attribute (having a ``name`` attribute means it is a
+      header object of some sort).  If a source value needs to be refolded
+      according to the policy, it is converted into a custom header object by
+      passing the *name* and the *value* with any CR and LF characters removed
+      to the ``header_factory``.  Folding of a custom header object is done by
+      calling its ``fold`` method with the current policy.
+
+      Source values are split into lines using :meth:`~str.splitlines`.  If
+      the value is not to be refolded, the lines are rejoined using the
+      ``linesep`` from the policy and returned.  The exception is lines
+      containing non-ascii binary data.  In that case the value is refolded
+      regardless of the ``refold_source`` setting, which causes the binary data
+      to be CTE encoded using the ``unknown-8bit`` charset.
+
+   .. method:: fold_binary(name, value)
+
+      The same as :meth:`fold` if :attr:`cte_type` is ``7bit``, except that
+      the returned value is bytes.
+
+      If :attr:`cte_type` is ``8bit``, non-ASCII binary data is converted back
+      into bytes.  Headers with binary data are not refolded, regardless of the
+      ``refold_header`` setting, since there is no way to know whether the
+      binary data consists of single byte characters or multibyte characters.
+
+The following instances of :class:`EmailPolicy` provide defaults suitable for
+specific application domains.  Note that in the future the behavior of these
+instances (in particular the ``HTTP` instance) may be adjusted to conform even
+more closely to the RFCs relevant to their domains.
+
+.. data:: default
+
+   An instance of ``EmailPolicy`` with all defaults unchanged.  This policy
+   uses the standard Python ``\n`` line endings rather than the RFC-correct
+   ``\r\n``.
+
+.. data:: SMTP
+
+   Suitable for serializing messages in conformance with the email RFCs.
+   Like ``default``, but with ``linesep`` set to ``\r\n``, which is RFC
+   compliant.
+
+.. data:: HTTP
+
+   Suitable for serializing headers with for use in HTTP traffic.  Like
+   ``SMTP`` except that ``max_line_length`` is set to ``None`` (unlimited).
+
+.. data:: strict
+
+   Convenience instance.  The same as ``default`` except that
+   ``raise_on_defect`` is set to ``True``.  This allows any policy to be made
+   strict by writing::
+
+        somepolicy + policy.strict
+
+With all of these :class:`EmailPolicies <.EmailPolicy>`, the effective API of
+the email package is changed from the Python 3.2 API in the following ways:
+
+   * Setting a header on a :class:`~email.message.Message` results in that
+     header being parsed and a custom header object created.
+
+   * Fetching a header value from a :class:`~email.message.Message` results
+     in that header being parsed and a custom header object created and
+     returned.
+
+   * Any custom header object, or any header that is refolded due to the
+     policy settings, is folded using an algorithm that fully implements the
+     RFC folding algorithms, including knowing where encoded words are required
+     and allowed.
+
+From the application view, this means that any header obtained through the
+:class:`~email.message.Message` is a custom header object with custom
+attributes, whose string value is the fully decoded unicode value of the
+header.  Likewise, a header may be assigned a new value, or a new header
+created, using a unicode string, and the policy will take care of converting
+the unicode string into the correct RFC encoded form.
+
+The custom header objects and their attributes are described below.  All custom
+header objects are string subclasses, and their string value is the fully
+decoded value of the header field (the part of the field after the ``:``)
+
+
+.. class:: BaseHeader
+
+   This is the base class for all custom header objects.  It provides the
+   following attributes:
+
+   .. attribute:: name
+
+      The header field name (the portion of the field before the ':').
+
+   .. attribute:: defects
+
+      A possibly empty list of :class:`~email.errors.MessageDefect` objects
+      that record any RFC violations found while parsing the header field.
+
+   .. method:: fold(*, policy)
+
+      Return a string containing :attr:`~email.policy.Policy.linesep`
+      characters as required to correctly fold the header according
+      to *policy*.  A :attr:`~email.policy.Policy.cte_type` of
+      ``8bit`` will be treated as if it were ``7bit``, since strings
+      may not contain binary data.
+
+
+.. class:: UnstructuredHeader
+
+   The class used for any header that does not have a more specific
+   type.  (The :mailheader:`Subject` header is an example of an
+   unstructured header.)  It does not have any additional attributes.
+
+
+.. class:: DateHeader
+
+   The value of this type of header is a single date and time value.  The
+   primary example of this type of header is the :mailheader:`Date` header.
+
+   .. attribute:: datetime
+
+      A :class:`~datetime.datetime` encoding the date and time from the
+      header value.
+
+      The ``datetime`` will be a naive ``datetime`` if the value either does
+      not have a specified timezone (which would be a violation of the RFC) or
+      if the timezone is specified as ``-0000``.  This timezone value indicates
+      that the date and time is to be considered to be in UTC, but with no
+      indication of the local timezone in which it was generated.  (This
+      contrasts to ``+0000``, which indicates a date and time that really is in
+      the UTC ``0000`` timezone.)
+
+      If the header value contains a valid timezone that is not ``-0000``, the
+      ``datetime`` will be an aware ``datetime`` having a
+      :class:`~datetime.tzinfo` set to the :class:`~datetime.timezone`
+      indicated by the header value.
+
+   A ``datetime`` may also be assigned to a :mailheader:`Date` type header.
+   The resulting string value will use a timezone of ``-0000`` if the
+   ``datetime`` is naive, and the appropriate UTC offset if the ``datetime`` is
+   aware.
+
+
+.. class:: AddressHeader
+
+   This class is used for all headers that can contain addresses, whether they
+   are supposed to be singleton addresses or a list.
+
+   .. attribute:: addresses
+
+      A list of :class:`.Address` objects listing all of the addresses that
+      could be parsed out of the field value.
+
+   .. attribute:: groups
+
+      A list of :class:`.Group` objects.  Every address in :attr:`.addresses`
+      appears in one of the group objects in the tuple.  Addresses that are not
+      syntactically part of a group are represented by ``Group`` objects whose
+      ``name`` is ``None``.
+
+   In addition to addresses in string form, any combination of
+   :class:`.Address` and :class:`.Group` objects, singly or in a list, may be
+   assigned to an address header.
+
+
+.. class:: Address(display_name='', username='', domain='', addr_spec=None):
+
+   The class used to represent an email address.  The general form of an
+   address is::
+
+      [display_name] <username@domain>
+
+   or::
+
+      username@domain
+
+   where each part must conform to specific syntax rules spelled out in
+   :rfc:`5322`.
+
+   As a convenience *addr_spec* can be specified instead of *username* and
+   *domain*, in which case *username* and *domain* will be parsed from the
+   *addr_spec*.  An *addr_spec* must be a properly RFC quoted string; if it is
+   not ``Address`` will raise an error.  Unicode characters are allowed and
+   will be property encoded when serialized.  However, per the RFCs, unicode is
+   *not* allowed in the username portion of the address.
+
+   .. attribute:: display_name
+
+      The display name portion of the address, if any, with all quoting
+      removed.  If the address does not have a display name, this attribute
+      will be an empty string.
+
+   .. attribute:: username
+
+      The ``username`` portion of the address, with all quoting removed.
+
+   .. attribute:: domain
+
+      The ``domain`` portion of the address.
+
+   .. attribute:: addr_spec
+
+      The ``username@domain`` portion of the address, correctly quoted
+      for use as a bare address (the second form shown above).  This
+      attribute is not mutable.
+
+   .. method:: __str__()
+
+      The ``str`` value of the object is the address quoted according to
+      :rfc:`5322` rules, but with no Content Transfer Encoding of any non-ASCII
+      characters.
+
+
+.. class:: Group(display_name=None, addresses=None)
+
+   The class used to represent an address group.  The general form of an
+   address group is::
+
+     display_name: [address-list];
+
+   As a convenience for processing lists of addresses that consist of a mixture
+   of groups and single addresses, a ``Group`` may also be used to represent
+   single addresses that are not part of a group by setting *display_name* to
+   ``None`` and providing a list of the single address as *addresses*.
+
+   .. attribute:: display_name
+
+      The ``display_name`` of the group.  If it is ``None`` and there is
+      exactly one ``Address`` in ``addresses``, then the ``Group`` represents a
+      single address that is not in a group.
+
+   .. attribute:: addresses
+
+      A possibly empty tuple of :class:`.Address` objects representing the
+      addresses in the group.
+
+   .. method:: __str__()
+
+      The ``str`` value of a ``Group`` is formatted according to :rfc:`5322`,
+      but with no Content Transfer Encoding of any non-ASCII characters.  If
+      ``display_name`` is none and there is a single ``Address`` in the
+      ``addresses` list, the ``str`` value will be the same as the ``str`` of
+      that single ``Address``.

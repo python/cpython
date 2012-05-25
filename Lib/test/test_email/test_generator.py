@@ -6,14 +6,16 @@ from email.generator import Generator, BytesGenerator
 from email import policy
 from test.test_email import TestEmailBase
 
-# XXX: move generator tests from test_email into here at some point.
 
+class TestGeneratorBase:
 
-class TestGeneratorBase():
+    policy = policy.default
 
-    policy = policy.compat32
+    def msgmaker(self, msg, policy=None):
+        policy = self.policy if policy is None else policy
+        return self.msgfunc(msg, policy=policy)
 
-    long_subject = {
+    refold_long_expected = {
         0: textwrap.dedent("""\
             To: whom_it_may_concern@example.com
             From: nobody_you_want_to_know@example.com
@@ -23,33 +25,32 @@ class TestGeneratorBase():
 
             None
             """),
+        # From is wrapped because wrapped it fits in 40.
         40: textwrap.dedent("""\
             To: whom_it_may_concern@example.com
-            From:\x20
+            From:
              nobody_you_want_to_know@example.com
             Subject: We the willing led by the
-             unknowing are doing the
-             impossible for the ungrateful. We have
-             done so much for so long with so little
-             we are now qualified to do anything
-             with nothing.
+             unknowing are doing the impossible for
+             the ungrateful. We have done so much
+             for so long with so little we are now
+             qualified to do anything with nothing.
 
             None
             """),
+        # Neither to nor from fit even if put on a new line,
+        # so we leave them sticking out on the first line.
         20: textwrap.dedent("""\
-            To:\x20
-             whom_it_may_concern@example.com
-            From:\x20
-             nobody_you_want_to_know@example.com
+            To: whom_it_may_concern@example.com
+            From: nobody_you_want_to_know@example.com
             Subject: We the
              willing led by the
              unknowing are doing
-             the
-             impossible for the
-             ungrateful. We have
-             done so much for so
-             long with so little
-             we are now
+             the impossible for
+             the ungrateful. We
+             have done so much
+             for so long with so
+             little we are now
              qualified to do
              anything with
              nothing.
@@ -57,65 +58,90 @@ class TestGeneratorBase():
             None
             """),
         }
-    long_subject[100] = long_subject[0]
+    refold_long_expected[100] = refold_long_expected[0]
 
-    def maxheaderlen_parameter_test(self, n):
-        msg = self.msgmaker(self.typ(self.long_subject[0]))
+    refold_all_expected = refold_long_expected.copy()
+    refold_all_expected[0] = (
+            "To: whom_it_may_concern@example.com\n"
+            "From: nobody_you_want_to_know@example.com\n"
+            "Subject: We the willing led by the unknowing are doing the "
+              "impossible for the ungrateful. We have done so much for "
+              "so long with so little we are now qualified to do anything "
+              "with nothing.\n"
+              "\n"
+              "None\n")
+    refold_all_expected[100] = (
+            "To: whom_it_may_concern@example.com\n"
+            "From: nobody_you_want_to_know@example.com\n"
+            "Subject: We the willing led by the unknowing are doing the "
+                "impossible for the ungrateful. We have\n"
+              " done so much for so long with so little we are now qualified "
+                "to do anything with nothing.\n"
+              "\n"
+              "None\n")
+
+    def _test_maxheaderlen_parameter(self, n):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
-        g = self.genclass(s, maxheaderlen=n)
+        g = self.genclass(s, maxheaderlen=n, policy=self.policy)
         g.flatten(msg)
-        self.assertEqual(s.getvalue(), self.typ(self.long_subject[n]))
+        self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    def test_maxheaderlen_parameter_0(self):
-        self.maxheaderlen_parameter_test(0)
+    for n in refold_long_expected:
+        locals()['test_maxheaderlen_parameter_' + str(n)] = (
+            lambda self, n=n:
+                self._test_maxheaderlen_parameter(n))
 
-    def test_maxheaderlen_parameter_100(self):
-        self.maxheaderlen_parameter_test(100)
-
-    def test_maxheaderlen_parameter_40(self):
-        self.maxheaderlen_parameter_test(40)
-
-    def test_maxheaderlen_parameter_20(self):
-        self.maxheaderlen_parameter_test(20)
-
-    def maxheaderlen_policy_test(self, n):
-        msg = self.msgmaker(self.typ(self.long_subject[0]))
+    def _test_max_line_length_policy(self, n):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
-        g = self.genclass(s, policy=policy.default.clone(max_line_length=n))
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=n))
         g.flatten(msg)
-        self.assertEqual(s.getvalue(), self.typ(self.long_subject[n]))
+        self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    def test_maxheaderlen_policy_0(self):
-        self.maxheaderlen_policy_test(0)
+    for n in refold_long_expected:
+        locals()['test_max_line_length_policy' + str(n)] = (
+            lambda self, n=n:
+                self._test_max_line_length_policy(n))
 
-    def test_maxheaderlen_policy_100(self):
-        self.maxheaderlen_policy_test(100)
-
-    def test_maxheaderlen_policy_40(self):
-        self.maxheaderlen_policy_test(40)
-
-    def test_maxheaderlen_policy_20(self):
-        self.maxheaderlen_policy_test(20)
-
-    def maxheaderlen_parm_overrides_policy_test(self, n):
-        msg = self.msgmaker(self.typ(self.long_subject[0]))
+    def _test_maxheaderlen_parm_overrides_policy(self, n):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, maxheaderlen=n,
-                          policy=policy.default.clone(max_line_length=10))
+                          policy=self.policy.clone(max_line_length=10))
         g.flatten(msg)
-        self.assertEqual(s.getvalue(), self.typ(self.long_subject[n]))
+        self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    def test_maxheaderlen_parm_overrides_policy_0(self):
-        self.maxheaderlen_parm_overrides_policy_test(0)
+    for n in refold_long_expected:
+        locals()['test_maxheaderlen_parm_overrides_policy' + str(n)] = (
+            lambda self, n=n:
+                self._test_maxheaderlen_parm_overrides_policy(n))
 
-    def test_maxheaderlen_parm_overrides_policy_100(self):
-        self.maxheaderlen_parm_overrides_policy_test(100)
+    def _test_refold_none_does_not_fold(self, n):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='none',
+                                                      max_line_length=n))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[0]))
 
-    def test_maxheaderlen_parm_overrides_policy_40(self):
-        self.maxheaderlen_parm_overrides_policy_test(40)
+    for n in refold_long_expected:
+        locals()['test_refold_none_does_not_fold' + str(n)] = (
+            lambda self, n=n:
+                self._test_refold_none_does_not_fold(n))
 
-    def test_maxheaderlen_parm_overrides_policy_20(self):
-        self.maxheaderlen_parm_overrides_policy_test(20)
+    def _test_refold_all(self, n):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all',
+                                                      max_line_length=n))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(self.refold_all_expected[n]))
+
+    for n in refold_long_expected:
+        locals()['test_refold_all' + str(n)] = (
+            lambda self, n=n:
+                self._test_refold_all(n))
 
     def test_crlf_control_via_policy(self):
         source = "Subject: test\r\n\r\ntest body\r\n"
@@ -138,30 +164,24 @@ class TestGeneratorBase():
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
+    msgfunc = staticmethod(message_from_string)
     genclass = Generator
     ioclass = io.StringIO
     typ = str
 
-    def msgmaker(self, msg, policy=None):
-        policy = self.policy if policy is None else policy
-        return message_from_string(msg, policy=policy)
-
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
+    msgfunc = staticmethod(message_from_bytes)
     genclass = BytesGenerator
     ioclass = io.BytesIO
     typ = lambda self, x: x.encode('ascii')
 
-    def msgmaker(self, msg, policy=None):
-        policy = self.policy if policy is None else policy
-        return message_from_bytes(msg, policy=policy)
-
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "
                  "collègue\n\n").encode('utf-8')
-        expected = ('Subject: =?unknown-8bit?q?Maintenant_je_vous_pr=C3=A9sente_mon_'
-                    'coll=C3=A8gue?=\n\n').encode('ascii')
+        expected = ('Subject: Maintenant je vous =?unknown-8bit?q?'
+                    'pr=C3=A9sente_mon_coll=C3=A8gue?=\n\n').encode('ascii')
         msg = message_from_bytes(source)
         s = io.BytesIO()
         g = BytesGenerator(s, policy=self.policy.clone(cte_type='7bit'))
