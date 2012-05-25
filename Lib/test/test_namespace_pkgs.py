@@ -206,6 +206,51 @@ class LegacySupport(NamespacePackageTest):
         self.assertNotIn('namespace', str(foo.__loader__).lower())
 
 
+class DynamicPathCalculation(NamespacePackageTest):
+    paths = ['project1', 'project2']
+
+    def test_project3_fails(self):
+        import parent.child.one
+        self.assertEqual(len(parent.__path__), 2)
+        self.assertEqual(len(parent.child.__path__), 2)
+        import parent.child.two
+        self.assertEqual(len(parent.__path__), 2)
+        self.assertEqual(len(parent.child.__path__), 2)
+
+        self.assertEqual(parent.child.one.attr, 'parent child one')
+        self.assertEqual(parent.child.two.attr, 'parent child two')
+
+        with self.assertRaises(ImportError):
+            import parent.child.three
+
+        self.assertEqual(len(parent.__path__), 2)
+        self.assertEqual(len(parent.child.__path__), 2)
+
+    def test_project3_succeeds(self):
+        import parent.child.one
+        self.assertEqual(len(parent.__path__), 2)
+        self.assertEqual(len(parent.child.__path__), 2)
+        import parent.child.two
+        self.assertEqual(len(parent.__path__), 2)
+        self.assertEqual(len(parent.child.__path__), 2)
+
+        self.assertEqual(parent.child.one.attr, 'parent child one')
+        self.assertEqual(parent.child.two.attr, 'parent child two')
+
+        with self.assertRaises(ImportError):
+            import parent.child.three
+
+        # now add project3
+        sys.path.append(os.path.join(self.root, 'project3'))
+        import parent.child.three
+
+        # the paths dynamically get longer, to include the new directories
+        self.assertEqual(len(parent.__path__), 3)
+        self.assertEqual(len(parent.child.__path__), 3)
+
+        self.assertEqual(parent.child.three.attr, 'parent child three')
+
+
 class ZipWithMissingDirectory(NamespacePackageTest):
     paths = ['missing_directory.zip']
 
