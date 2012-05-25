@@ -381,11 +381,12 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
         return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
+    case fl_error:
+        return NULL;
     case fl_ns_found:
         /* A namespace portion is not allowed via find_module, so return None. */
         Py_DECREF(namespace_portion);
         /* FALL THROUGH */
-    case fl_error:
     case fl_not_found:
         result = Py_None;
         break;
@@ -393,7 +394,7 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
         result = (PyObject *)self;
         break;
     }
-    Py_XINCREF(result);
+    Py_INCREF(result);
     return result;
 }
 
