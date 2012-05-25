@@ -198,9 +198,13 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
     assert(PyFileIO_Check(oself));
     if (self->fd >= 0) {
-        /* Have to close the existing file first. */
-        if (internal_close(self) < 0)
-            return -1;
+        if (self->closefd) {
+            /* Have to close the existing file first. */
+            if (internal_close(self) < 0)
+                return -1;
+        }
+        else
+            self->fd = -1;
     }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:fileio",
