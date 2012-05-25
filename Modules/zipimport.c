@@ -319,13 +319,20 @@ get_module_info(ZipImporter *self, PyObject *fullname)
     return MI_NOT_FOUND;
 }
 
+typedef enum {
+    fl_error,
+    fl_not_found,
+    fl_module_found,
+    fl_ns_found
+} find_loader_result;
+
 /* The guts of "find_loader" and "find_module". Return values:
    -1: error
     0: no loader or namespace portions found
     1: module/package found
     2: namespace portion found: *namespace_portion will point to the name
 */
-static int
+static find_loader_result
 find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
 {
     enum zi_module_info mi;
@@ -334,7 +341,7 @@ find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
 
     mi = get_module_info(self, fullname);
     if (mi == MI_ERROR)
-        return -1;
+        return fl_error;
     if (mi == MI_NOT_FOUND) {
         /* Not a module or regular package. See if this is a directory, and
            therefore possibly a portion of a namespace package. */
@@ -349,13 +356,13 @@ find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
                                                       self->archive, SEP,
                                                       self->prefix, fullname);
             if (*namespace_portion == NULL)
-                return -1;
-            return 2;
+                return fl_error;
+            return fl_ns_found;
         }
-        return 0;
+        return fl_not_found;
     }
     /* This is a module or package. */
-    return 1;
+    return fl_module_found;
 }
 
 
@@ -367,32 +374,26 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
     ZipImporter *self = (ZipImporter *)obj;
     PyObject *path = NULL;
     PyObject *fullname;
-    PyObject* namespace_portion = NULL;
+    PyObject *namespace_portion = NULL;
+    PyObject *result = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module",
-                          &fullname, &path))
-        goto error;
+    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module", &fullname, &path))
+        return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
-    case -1:            /* Error */
-        goto error;
-    case 0:             /* Not found, return None */
-        Py_INCREF(Py_None);
-        return Py_None;
-    case 1:             /* Return self */
-        Py_INCREF(self);
-        return (PyObject *)self;
-    case 2:             /* A namespace portion, but not allowed via
-                           find_module, so return None */
+    case fl_ns_found:
+        /* A namespace portion is not allowed via find_module, so return None. */
         Py_DECREF(namespace_portion);
-        Py_INCREF(Py_None);
-        return Py_None;
+        /* FALL THROUGH */
+    case fl_error:
+    case fl_not_found:
+        result = Py_None;
+        break;
+    case fl_module_found:
+        result = (PyObject *)self;
+        break;
     }
-    /* Can't get here. */
-    assert(0);
-    return NULL;
-error:
-    Py_XDECREF(namespace_portion);
+    Py_XINCREF(result);
     return NULL;
 }
 
@@ -411,35 +412,24 @@ zipimporter_find_loader(PyObject *obj, PyObject *args)
     PyObject *result = NULL;
     PyObject *namespace_portion = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module",
-                          &fullname, &path))
-        goto error;
+    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module", &fullname, &path))
+        return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
-    case -1:            /* Error */
-        goto error;
-    case 0:             /* Not found, return (None, []) */
-        if (!(result = Py_BuildValue("O[]", Py_None)))
-            goto error;
-        return result;
-    case 1:             /* Return (self, []) */
-        if (!(result = Py_BuildValue("O[]", self)))
-            goto error;
-        return result;
-    case 2:             /* Return (None, [namespace_portion]) */
-        if (!(result = Py_BuildValue("O[O]", Py_None, namespace_portion)))
-            goto error;
+    case fl_error:
+        return NULL;
+    case fl_not_found:        /* Not found, return (None, []) */
+        result = Py_BuildValue("O[]", Py_None);
+        break;
+    case fl_module_found:     /* Return (self, []) */
+        result = Py_BuildValue("O[]", self);
+        break;
+    case fl_ns_found:         /* Return (None, [namespace_portion]) */
+        result = Py_BuildValue("O[O]", Py_None, namespace_portion);
         Py_DECREF(namespace_portion);
         return result;
     }
-    /* Can't get here. */
-    assert(0);
-        return NULL;
-
-error:
-    Py_XDECREF(namespace_portion);
-    Py_XDECREF(result);
-        return NULL;
+    return result;
 }
 
 /* Load and return the module named by 'fullname'. */
