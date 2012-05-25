@@ -634,6 +634,19 @@ class IOTest(unittest.TestCase):
         for obj in test:
             self.assertTrue(hasattr(obj, "__dict__"))
 
+    def test_fileio_closefd(self):
+        # Issue #4841
+        with self.open(__file__, 'rb') as f1, \
+             self.open(__file__, 'rb') as f2:
+            fileio = self.FileIO(f1.fileno(), closefd=False)
+            # .__init__() must not close f1
+            fileio.__init__(f2.fileno(), closefd=False)
+            f1.readline()
+            # .close() must not close f2
+            fileio.close()
+            f2.readline()
+
+
 class CIOTest(IOTest):
 
     def test_IOBase_finalize(self):
