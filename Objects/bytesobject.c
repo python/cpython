@@ -2577,6 +2577,12 @@ PyBytes_FromObject(PyObject *x)
         PyErr_BadInternalCall();
         return NULL;
     }
+
+    if (PyBytes_CheckExact(x)) {
+        Py_INCREF(x);
+        return x;
+    }
+
     /* Use the modern buffer interface */
     if (PyObject_CheckBuffer(x)) {
         Py_buffer view;
