@@ -48,6 +48,26 @@
 
 This article explains the new features in Python 3.3, compared to 3.2.
 
+.. note:: Alpha users should be aware that this document is currently in
+   draft form. It will be updated substantially as Python 3.3 moves towards
+   release, so it's worth checking back even after reading earlier versions.
+
+
+New packaging infrastructure
+============================
+
+The standard library's packaging infrastructure has been updated to adopt
+some of the features developed by the wider community.
+
+* the :mod:`packaging` package and ``pysetup`` script (inspired by
+  ``setuptools``, ``distribute``, ``distutil2`` and ``pip``)
+* the :mod:`venv` module and ``pyvenv`` script (inspired by ``virtualenv``)
+  (Note: at time of writing, :pep:`405` is accepted, but not yet implemented)
+* native support for package directories that don't require ``__init__.py``
+  marker files and can automatically span multiple path segments
+  (inspired by various third party approaches to namespace packages, as
+  described in :pep:`420`)
+
 
 .. pep-3118-update:
 
