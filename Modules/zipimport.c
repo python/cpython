@@ -429,6 +429,7 @@ zipimporter_find_loader(PyObject *obj, PyObject *args)
     case 2:             /* Return (None, [namespace_portion]) */
         if (!(result = Py_BuildValue("O[O]", Py_None, namespace_portion)))
             goto error;
+        Py_DECREF(namespace_portion);
         return result;
     }
     /* Can't get here. */
