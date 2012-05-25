@@ -64,10 +64,16 @@ class _PolicyBase:
         except for the changes passed in as keyword arguments.
 
         """
+        newpolicy = self.__class__.__new__(self.__class__)
         for attr, value in self.__dict__.items():
-            if attr not in kw:
-                kw[attr] = value
-        return self.__class__(**kw)
+            object.__setattr__(newpolicy, attr, value)
+        for attr, value in kw.items():
+            if not hasattr(self, attr):
+                raise TypeError(
+                    "{!r} is an invalid keyword argument for {}".format(
+                        attr, self.__class__.__name__))
+            object.__setattr__(newpolicy, attr, value)
+        return newpolicy
 
     def __setattr__(self, name, value):
         if hasattr(self, name):

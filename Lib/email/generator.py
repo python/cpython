@@ -95,9 +95,15 @@ class Generator:
         self._encoded_NL = self._encode(self._NL)
         self._EMPTY = ''
         self._encoded_EMTPY = self._encode('')
-        p = self.policy
+        # Because we use clone (below) when we recursively process message
+        # subparts, and because clone uses the computed policy (not None),
+        # submessages will automatically get set to the computed policy when
+        # they are processed by this code.
+        old_gen_policy = self.policy
+        old_msg_policy = msg.policy
         try:
             self.policy = policy
+            msg.policy = policy
             if unixfrom:
                 ufrom = msg.get_unixfrom()
                 if not ufrom:
@@ -105,7 +111,8 @@ class Generator:
                 self.write(ufrom + self._NL)
             self._write(msg)
         finally:
-            self.policy = p
+            self.policy = old_gen_policy
+            msg.policy = old_msg_policy
 
     def clone(self, fp):
         """Clone this generator with the exact same options."""
