@@ -468,6 +468,10 @@ class BuiltinImporter:
     """
 
     @classmethod
+    def module_repr(cls, module):
+        return "<module '{}' (built-in)>".format(module.__name__)
+
+    @classmethod
     def find_module(cls, fullname, path=None):
         """Find the built-in module.
 
@@ -521,6 +525,10 @@ class FrozenImporter:
     """
 
     @classmethod
+    def module_repr(cls, m):
+        return "<module '{}' (frozen)>".format(m.__name__)
+
+    @classmethod
     def find_module(cls, fullname, path=None):
         """Find a frozen module."""
         return cls if _imp.is_frozen(fullname) else None
@@ -533,7 +541,10 @@ class FrozenImporter:
         """Load a frozen module."""
         is_reload = fullname in sys.modules
         try:
-            return _imp.init_frozen(fullname)
+            m = _imp.init_frozen(fullname)
+            # Let our own module_repr() method produce a suitable repr.
+            del m.__file__
+            return m
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
@@ -875,6 +886,79 @@ class ExtensionFileLoader:
         return None
 
 
+class _NamespacePath:
+    """Represents a namespace package's path.  It uses the module name
+    to find its parent module, and from there it looks up the parent's
+    __path__.  When this changes, the module's own path is recomputed,
+    using path_finder.  For top-leve modules, the parent module's path
+    is sys.path."""
+
+    def __init__(self, name, path, path_finder):
+        self._name = name
+        self._path = path
+        self._last_parent_path = tuple(self._get_parent_path())
+        self._path_finder = path_finder
+
+    def _find_parent_path_names(self):
+        """Returns a tuple of (parent-module-name, parent-path-attr-name)"""
+        parent, dot, me = self._name.rpartition('.')
+        if dot == '':
+            # This is a top-level module. sys.path contains the parent path.
+            return 'sys', 'path'
+        # Not a top-level module. parent-module.__path__ contains the
+        #  parent path.
+        return parent, '__path__'
+
+    def _get_parent_path(self):
+        parent_module_name, path_attr_name = self._find_parent_path_names()
+        return getattr(sys.modules[parent_module_name], path_attr_name)
+
+    def _recalculate(self):
+        # If the parent's path has changed, recalculate _path
+        parent_path = tuple(self._get_parent_path()) # Make a copy
+        if parent_path != self._last_parent_path:
+            loader, new_path = self._path_finder(self._name, parent_path)
+            # Note that no changes are made if a loader is returned, but we
+            #  do remember the new parent path
+            if loader is None:
+                self._path = new_path
+            self._last_parent_path = parent_path     # Save the copy
+        return self._path
+
+    def __iter__(self):
+        return iter(self._recalculate())
+
+    def __len__(self):
+        return len(self._recalculate())
+
+    def __repr__(self):
+        return "_NamespacePath({0!r})".format(self._path)
+
+    def __contains__(self, item):
+        return item in self._recalculate()
+
+    def append(self, item):
+        self._path.append(item)
+
+
+class NamespaceLoader:
+    def __init__(self, name, path, path_finder):
+        self._path = _NamespacePath(name, path, path_finder)
+
+    @classmethod
+    def module_repr(cls, module):
+        return "<module '{}' (namespace)>".format(module.__name__)
+
+    @set_package
+    @set_loader
+    @module_for_loader
+    def load_module(self, module):
+        """Load a namespace module."""
+        _verbose_message('namespace module loaded with path {!r}', self._path)
+        module.__path__ = self._path
+        return module
+
+
 # Finders #####################################################################
 
 class PathFinder:
@@ -916,19 +1000,46 @@ class PathFinder:
         return finder
 
     @classmethod
+    def _get_loader(cls, fullname, path):
+        """Find the loader or namespace_path for this module/package name."""
+        # If this ends up being a namespace package, namespace_path is
+        #  the list of paths that will become its __path__
+        namespace_path = []
+        for entry in path:
+            finder = cls._path_importer_cache(entry)
+            if finder is not None:
+                if hasattr(finder, 'find_loader'):
+                    loader, portions = finder.find_loader(fullname)
+                else:
+                    loader = finder.find_module(fullname)
+                    portions = []
+                if loader is not None:
+                    # We found a loader: return it immediately.
+                    return (loader, namespace_path)
+                # This is possibly part of a namespace package.
+                #  Remember these path entries (if any) for when we
+                #  create a namespace package, and continue iterating
+                #  on path.
+                namespace_path.extend(portions)
+        else:
+            return (None, namespace_path)
+
+    @classmethod
     def find_module(cls, fullname, path=None):
         """Find the module on sys.path or 'path' based on sys.path_hooks and
         sys.path_importer_cache."""
         if path is None:
             path = sys.path
-        for entry in path:
-            finder = cls._path_importer_cache(entry)
-            if finder is not None:
-                loader = finder.find_module(fullname)
-                if loader:
-                    return loader
+        loader, namespace_path = cls._get_loader(fullname, path)
+        if loader is not None:
+            return loader
         else:
-            return None
+            if namespace_path:
+                # We found at least one namespace path.  Return a
+                #  loader which can create the namespace package.
+                return NamespaceLoader(fullname, namespace_path, cls._get_loader)
+            else:
+                return None
 
 
 class FileFinder:
@@ -942,8 +1053,8 @@ class FileFinder:
 
     def __init__(self, path, *details):
         """Initialize with the path to search on and a variable number of
-        3-tuples containing the loader, file suffixes the loader recognizes, and
-        a boolean of whether the loader handles packages."""
+        3-tuples containing the loader, file suffixes the loader recognizes,
+        and a boolean of whether the loader handles packages."""
         packages = []
         modules = []
         for loader, suffixes, supports_packages in details:
@@ -964,6 +1075,19 @@ class FileFinder:
 
     def find_module(self, fullname):
         """Try to find a loader for the specified module."""
+        # Call find_loader(). If it returns a string (indicating this
+        # is a namespace package portion), generate a warning and
+        # return None.
+        loader, portions = self.find_loader(fullname)
+        assert len(portions) in [0, 1]
+        if loader is None and len(portions):
+            msg = "Not importing directory {}: missing __init__"
+            _warnings.warn(msg.format(portions[0]), ImportWarning)
+        return loader
+
+    def find_loader(self, fullname):
+        """Try to find a loader for the specified module, or the namespace
+        package portions. Returns (loader, list-of-portions)."""
         tail_module = fullname.rpartition('.')[2]
         try:
             mtime = _os.stat(self.path).st_mtime
@@ -987,17 +1111,17 @@ class FileFinder:
                     init_filename = '__init__' + suffix
                     full_path = _path_join(base_path, init_filename)
                     if _path_isfile(full_path):
-                        return loader(fullname, full_path)
+                        return (loader(fullname, full_path), [base_path])
                 else:
-                    msg = "Not importing directory {}: missing __init__"
-                    _warnings.warn(msg.format(base_path), ImportWarning)
+                    # A namespace package, return the path
+                    return (None, [base_path])
         # Check for a file w/ a proper suffix exists.
         for suffix, loader in self.modules:
             if cache_module + suffix in cache:
                 full_path = _path_join(self.path, tail_module + suffix)
                 if _path_isfile(full_path):
-                    return loader(fullname, full_path)
-        return None
+                    return (loader(fullname, full_path), [])
+        return (None, [])
 
     def _fill_cache(self):
         """Fill the cache of potential modules and packages for this directory."""

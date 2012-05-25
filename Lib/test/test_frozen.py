@@ -7,7 +7,7 @@ import sys
 class FrozenTests(unittest.TestCase):
 
     module_attrs = frozenset(['__builtins__', '__cached__', '__doc__',
-                              '__file__', '__loader__', '__name__',
+                              '__loader__', '__name__',
                               '__package__'])
     package_attrs = frozenset(list(module_attrs) + ['__path__'])
 

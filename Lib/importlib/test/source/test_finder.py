@@ -106,35 +106,16 @@ class FinderTests(abc.FinderTests):
             loader = self.import_(pkg_dir, 'pkg.sub')
             self.assertTrue(hasattr(loader, 'load_module'))
 
-    # [sub empty]
-    def test_empty_sub_directory(self):
-        context = source_util.create_modules('pkg.__init__', 'pkg.sub.__init__')
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", ImportWarning)
-            with context as mapping:
-                os.unlink(mapping['pkg.sub.__init__'])
-                pkg_dir = os.path.dirname(mapping['pkg.__init__'])
-                with self.assertRaises(ImportWarning):
-                    self.import_(pkg_dir, 'pkg.sub')
-
     # [package over modules]
     def test_package_over_module(self):
         name = '_temp'
         loader = self.run_test(name, {'{0}.__init__'.format(name), name})
         self.assertTrue('__init__' in loader.get_filename(name))
 
-
     def test_failure(self):
         with source_util.create_modules('blah') as mapping:
             nothing = self.import_(mapping['.root'], 'sdfsadsadf')
             self.assertTrue(nothing is None)
-
-    # [empty dir]
-    def test_empty_dir(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", ImportWarning)
-            with self.assertRaises(ImportWarning):
-                self.run_test('pkg', {'pkg.__init__'}, unlink={'pkg.__init__'})
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.

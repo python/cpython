@@ -515,19 +515,29 @@ def extend_path(path, name):
 
     pname = os.path.join(*name.split('.')) # Reconstitute as relative path
     sname_pkg = name + ".pkg"
-    init_py = "__init__.py"
 
     path = path[:] # Start with a copy of the existing path
 
     for dir in sys.path:
-        if not isinstance(dir, str) or not os.path.isdir(dir):
+        if not isinstance(dir, str):
             continue
-        subdir = os.path.join(dir, pname)
-        # XXX This may still add duplicate entries to path on
-        # case-insensitive filesystems
-        initfile = os.path.join(subdir, init_py)
-        if subdir not in path and os.path.isfile(initfile):
-            path.append(subdir)
+
+        finder = get_importer(dir)
+        if finder is not None:
+            # Is this finder PEP 420 compliant?
+            if hasattr(finder, 'find_loader'):
+                loader, portions = finder.find_loader(name)
+            else:
+                # No, no need to call it
+                loader = None
+                portions = []
+
+            for portion in portions:
+                # XXX This may still add duplicate entries to path on
+                # case-insensitive filesystems
+                if portion not in path:
+                    path.append(portion)
+
         # XXX Is this the right thing for subpackages like zope.app?
         # It looks for a file named "zope.app.pkg"
         pkgfile = os.path.join(dir, sname_pkg)

@@ -286,12 +286,6 @@ class ImportTests(unittest.TestCase):
         import test.support as y
         self.assertIs(y, test.support, y.__name__)
 
-    def test_import_initless_directory_warning(self):
-        with check_warnings(('', ImportWarning)):
-            # Just a random non-package directory we always expect to be
-            # somewhere in sys.path...
-            self.assertRaises(ImportError, __import__, "site-packages")
-
     def test_import_by_filename(self):
         path = os.path.abspath(TESTFN)
         encoding = sys.getfilesystemencoding()
