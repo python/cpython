@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14548: Make multiprocessing finalizers check pid before
+  running to cope with possibility of gc running just after fork.
+
 - Issue #14863: Update the documentation of os.fdopen() to reflect the
   fact that it's only a thin wrapper around open() anymore.
 
