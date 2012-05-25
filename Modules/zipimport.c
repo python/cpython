@@ -320,10 +320,10 @@ get_module_info(ZipImporter *self, PyObject *fullname)
 }
 
 typedef enum {
-    fl_error,
-    fl_not_found,
-    fl_module_found,
-    fl_ns_found
+    FL_ERROR,
+    FL_NOT_FOUND,
+    FL_MODULE_FOUND,
+    FL_NS_FOUND
 } find_loader_result;
 
 /* The guts of "find_loader" and "find_module". Return values:
@@ -341,7 +341,7 @@ find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
 
     mi = get_module_info(self, fullname);
     if (mi == MI_ERROR)
-        return fl_error;
+        return FL_ERROR;
     if (mi == MI_NOT_FOUND) {
         /* Not a module or regular package. See if this is a directory, and
            therefore possibly a portion of a namespace package. */
@@ -356,13 +356,13 @@ find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
                                                       self->archive, SEP,
                                                       self->prefix, fullname);
             if (*namespace_portion == NULL)
-                return fl_error;
-            return fl_ns_found;
+                return FL_ERROR;
+            return FL_NS_FOUND;
         }
-        return fl_not_found;
+        return FL_NOT_FOUND;
     }
     /* This is a module or package. */
-    return fl_module_found;
+    return FL_MODULE_FOUND;
 }
 
 
@@ -381,16 +381,16 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
         return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
-    case fl_error:
+    case FL_ERROR:
         return NULL;
-    case fl_ns_found:
+    case FL_NS_FOUND:
         /* A namespace portion is not allowed via find_module, so return None. */
         Py_DECREF(namespace_portion);
         /* FALL THROUGH */
-    case fl_not_found:
+    case FL_NOT_FOUND:
         result = Py_None;
         break;
-    case fl_module_found:
+    case FL_MODULE_FOUND:
         result = (PyObject *)self;
         break;
     }
@@ -417,15 +417,15 @@ zipimporter_find_loader(PyObject *obj, PyObject *args)
         return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
-    case fl_error:
+    case FL_ERROR:
         return NULL;
-    case fl_not_found:        /* Not found, return (None, []) */
+    case FL_NOT_FOUND:        /* Not found, return (None, []) */
         result = Py_BuildValue("O[]", Py_None);
         break;
-    case fl_module_found:     /* Return (self, []) */
+    case FL_MODULE_FOUND:     /* Return (self, []) */
         result = Py_BuildValue("O[]", self);
         break;
-    case fl_ns_found:         /* Return (None, [namespace_portion]) */
+    case FL_NS_FOUND:         /* Return (None, [namespace_portion]) */
         result = Py_BuildValue("O[O]", Py_None, namespace_portion);
         Py_DECREF(namespace_portion);
         return result;
