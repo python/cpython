@@ -394,7 +394,7 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
         break;
     }
     Py_XINCREF(result);
-    return NULL;
+    return result;
 }
 
 
