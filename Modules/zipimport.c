@@ -268,7 +268,7 @@ static int
 check_is_directory(ZipImporter *self, PyObject* prefix, PyObject *path)
 {
     PyObject *dirpath;
-    PyObject *item;
+    int res;
 
     /* See if this is a "directory". If so, it's eligible to be part
        of a namespace package. We test by seeing if the name, with an
@@ -277,9 +277,9 @@ check_is_directory(ZipImporter *self, PyObject* prefix, PyObject *path)
     if (dirpath == NULL)
         return -1;
     /* If dirpath is present in self->files, we have a directory. */
-    item = PyDict_GetItem(self->files, dirpath);
+    res = PyDict_Contains(self->files, dirpath);
     Py_DECREF(dirpath);
-    return item != NULL;
+    return res;
 }
 
 /* Return some information about a module. */
