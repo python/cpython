@@ -11,7 +11,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__hello__'), captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__',
-                    '__package__': '', 
+                    '__package__': '',
                     '__loader__': machinery.FrozenImporter,
                     }
             for attr, value in check.items():
@@ -22,8 +22,8 @@ class LoaderTests(abc.LoaderTests):
     def test_package(self):
         with util.uncache('__phello__'),  captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__phello__')
-            check = {'__name__': '__phello__', 
-                     '__package__': '__phello__', 
+            check = {'__name__': '__phello__',
+                     '__package__': '__phello__',
                      '__path__': ['__phello__'],
                      '__loader__': machinery.FrozenImporter,
                      }
@@ -62,7 +62,7 @@ class LoaderTests(abc.LoaderTests):
     def test_module_repr(self):
         with util.uncache('__hello__'), captured_stdout():
             module = machinery.FrozenImporter.load_module('__hello__')
-            self.assertEqual(repr(module), 
+            self.assertEqual(repr(module),
                              "<module '__hello__' (frozen)>")
 
     def test_state_after_failure(self):
