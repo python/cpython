@@ -10,38 +10,46 @@ class LoaderTests(abc.LoaderTests):
     def test_module(self):
         with util.uncache('__hello__'), captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__hello__')
-            check = {'__name__': '__hello__', '__file__': '<frozen>',
-                    '__package__': '', '__loader__': machinery.FrozenImporter}
+            check = {'__name__': '__hello__',
+                    '__package__': '', 
+                    '__loader__': machinery.FrozenImporter,
+                    }
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
+            self.assertFalse(hasattr(module, '__file__'))
 
     def test_package(self):
         with util.uncache('__phello__'),  captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__phello__')
-            check = {'__name__': '__phello__', '__file__': '<frozen>',
-                     '__package__': '__phello__', '__path__': ['__phello__'],
-                     '__loader__': machinery.FrozenImporter}
+            check = {'__name__': '__phello__', 
+                     '__package__': '__phello__', 
+                     '__path__': ['__phello__'],
+                     '__loader__': machinery.FrozenImporter,
+                     }
             for attr, value in check.items():
                 attr_value = getattr(module, attr)
                 self.assertEqual(attr_value, value,
                                  "for __phello__.%s, %r != %r" %
                                  (attr, attr_value, value))
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
+            self.assertFalse(hasattr(module, '__file__'))
 
     def test_lacking_parent(self):
         with util.uncache('__phello__', '__phello__.spam'), \
              captured_stdout() as stdout:
             module = machinery.FrozenImporter.load_module('__phello__.spam')
-            check = {'__name__': '__phello__.spam', '__file__': '<frozen>',
+            check = {'__name__': '__phello__.spam',
                     '__package__': '__phello__',
-                    '__loader__': machinery.FrozenImporter}
+                    '__loader__': machinery.FrozenImporter,
+                    }
             for attr, value in check.items():
                 attr_value = getattr(module, attr)
                 self.assertEqual(attr_value, value,
                                  "for __phello__.spam.%s, %r != %r" %
                                  (attr, attr_value, value))
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')
+            self.assertFalse(hasattr(module, '__file__'))
 
     def test_module_reuse(self):
         with util.uncache('__hello__'), captured_stdout() as stdout:
@@ -50,6 +58,12 @@ class LoaderTests(abc.LoaderTests):
             self.assertTrue(module1 is module2)
             self.assertEqual(stdout.getvalue(),
                              'Hello world!\nHello world!\n')
+
+    def test_module_repr(self):
+        with util.uncache('__hello__'), captured_stdout():
+            module = machinery.FrozenImporter.load_module('__hello__')
+            self.assertEqual(repr(module), 
+                             "<module '__hello__' (frozen)>")
 
     def test_state_after_failure(self):
         # No way to trigger an error in a frozen module.
