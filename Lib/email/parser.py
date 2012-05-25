@@ -11,12 +11,12 @@ from io import StringIO, TextIOWrapper
 
 from email.feedparser import FeedParser
 from email.message import Message
-from email import policy
+from email._policybase import compat32
 
 
 
 class Parser:
-    def __init__(self, _class=Message, *, policy=policy.default):
+    def __init__(self, _class=Message, *, policy=compat32):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which

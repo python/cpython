@@ -32,8 +32,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
 :mod:`email.generator` module:
 
 
-.. class:: Generator(outfp, mangle_from_=True, maxheaderlen=78, *, \
-                     policy=policy.default)
+.. class:: Generator(outfp, mangle_from_=True, maxheaderlen=78, *, policy=None)
 
    The constructor for the :class:`Generator` class takes a :term:`file-like object`
    called *outfp* for an argument.  *outfp* must support the :meth:`write` method
@@ -55,8 +54,9 @@ Here are the public methods of the :class:`Generator` class, imported from the
    The default is 78, as recommended (but not required) by :rfc:`2822`.
 
    The *policy* keyword specifies a :mod:`~email.policy` object that controls a
-   number of aspects of the generator's operation.  The default policy
-   maintains backward compatibility.
+   number of aspects of the generator's operation.  If no *policy* is specified,
+   then the *policy* attached to the message object passed to :attr:``flatten``
+   is used.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
 
@@ -80,19 +80,19 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
       Optional *linesep* specifies the line separator character used to
       terminate lines in the output.  If specified it overrides the value
-      specified by the ``Generator``\'s ``policy``.
+      specified by the *msg*\'s or ``Generator``\'s ``policy``.
 
-      Because strings cannot represent non-ASCII bytes, ``Generator`` ignores
-      the value of the :attr:`~email.policy.Policy.must_be_7bit`
-      :mod:`~email.policy` setting and operates as if it were set ``True``.
-      This means that messages parsed with a Bytes parser that have a
-      :mailheader:`Content-Transfer-Encoding` of 8bit will be converted to a
-      use a 7bit Content-Transfer-Encoding.  Non-ASCII bytes in the headers
-      will be :rfc:`2047` encoded with a charset of `unknown-8bit`.
+      Because strings cannot represent non-ASCII bytes, if the policy that
+      applies when ``flatten`` is run has :attr:`~email.policy.Policy.cte_type`
+      set to ``8bit``, ``Generator`` will operate as if it were set to
+      ``7bit``.  This means that messages parsed with a Bytes parser that have
+      a :mailheader:`Content-Transfer-Encoding` of ``8bit`` will be converted
+      to a use a ``7bit`` Content-Transfer-Encoding.  Non-ASCII bytes in the
+      headers will be :rfc:`2047` encoded with a charset of ``unknown-8bit``.
 
       .. versionchanged:: 3.2
-         Added support for re-encoding 8bit message bodies, and the *linesep*
-         argument.
+         Added support for re-encoding ``8bit`` message bodies, and the
+         *linesep* argument.
 
    .. method:: clone(fp)
 
@@ -149,13 +149,13 @@ formatted string representation of a message object.  For more detail, see
       at *msg* to the output file specified when the :class:`BytesGenerator`
       instance was created.  Subparts are visited depth-first and the resulting
       text will be properly MIME encoded.  If the :mod:`~email.policy` option
-      :attr:`~email.policy.Policy.must_be_7bit` is ``False`` (the default),
+      :attr:`~email.policy.Policy.cte_type` is ``8bit`` (the default),
       then any bytes with the high bit set in the original parsed message that
       have not been modified will be copied faithfully to the output.  If
-      ``must_be_7bit`` is true, the bytes will be converted as needed using an
-      ASCII content-transfer-encoding.  In particular, RFC-invalid non-ASCII
-      bytes in headers will be encoded using the MIME ``unknown-8bit``
-      character set, thus rendering them RFC-compliant.
+      ``cte_type`` is ``7bit``, the bytes will be converted as needed
+      using an ASCII-compatible Content-Transfer-Encoding.  In particular,
+      RFC-invalid non-ASCII bytes in headers will be encoded using the MIME
+      ``unknown-8bit`` character set, thus rendering them RFC-compliant.
 
       .. XXX: There should be a complementary option that just does the RFC
          compliance transformation but leaves CTE 8bit parts alone.

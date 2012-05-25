@@ -25,7 +25,7 @@ import re
 
 from email import errors
 from email import message
-from email import policy
+from email._policybase import compat32
 
 NLCRE = re.compile('\r\n|\r|\n')
 NLCRE_bol = re.compile('(\r\n|\r|\n)')
@@ -135,7 +135,7 @@ class BufferedSubFile(object):
 class FeedParser:
     """A feed-style parser of email."""
 
-    def __init__(self, _factory=message.Message, *, policy=policy.default):
+    def __init__(self, _factory=message.Message, *, policy=compat32):
         """_factory is called with no arguments to create a new message obj
 
         The policy keyword specifies a policy object that controls a number of
@@ -145,6 +145,12 @@ class FeedParser:
         """
         self._factory = _factory
         self.policy = policy
+        try:
+            _factory(policy=self.policy)
+            self._factory_kwds = lambda: {'policy': self.policy}
+        except TypeError:
+            # Assume this is an old-style factory
+            self._factory_kwds = lambda: {}
         self._input = BufferedSubFile()
         self._msgstack = []
         self._parse = self._parsegen().__next__
@@ -181,7 +187,7 @@ class FeedParser:
         return root
 
     def _new_message(self):
-        msg = self._factory()
+        msg = self._factory(**self._factory_kwds())
         if self._cur and self._cur.get_content_type() == 'multipart/digest':
             msg.set_default_type('message/rfc822')
         if self._msgstack:
@@ -458,9 +464,7 @@ class FeedParser:
                 lastvalue.append(line)
                 continue
             if lastheader:
-                # XXX reconsider the joining of folded lines
-                lhdr = EMPTYSTRING.join(lastvalue)[:-1].rstrip('\r\n')
-                self._cur[lastheader] = lhdr
+                self._cur.set_raw(*self.policy.header_source_parse(lastvalue))
                 lastheader, lastvalue = '', []
             # Check for envelope header, i.e. unix-from
             if line.startswith('From '):
@@ -487,16 +491,16 @@ class FeedParser:
             i = line.find(':')
             if i < 0:
                 defect = errors.MalformedHeaderDefect(line)
+                # XXX: fixme (defect not going through policy)
                 self._cur.defects.append(defect)
                 continue
             lastheader = line[:i]
-            lastvalue = [line[i+1:].lstrip()]
+            lastvalue = [line]
         # Done with all the lines, so handle the last header.
         if lastheader:
-            # XXX reconsider the joining of folded lines
-            self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip('\r\n')
+            self._cur.set_raw(*self.policy.header_source_parse(lastvalue))
 
-
+
 class BytesFeedParser(FeedParser):
     """Like FeedParser, but feed accepts bytes."""
 

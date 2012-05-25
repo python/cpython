@@ -3,6 +3,8 @@ import sys
 import unittest
 import test.support
 import email
+from email.message import Message
+from email._policybase import compat32
 from test.test_email import __file__ as landmark
 
 # Run all tests in package for '-m unittest test.test_email'
@@ -36,16 +38,26 @@ def openfile(filename, *args, **kws):
 class TestEmailBase(unittest.TestCase):
 
     maxDiff = None
+    # Currently the default policy is compat32.  By setting that as the default
+    # here we make minimal changes in the test_email tests compared to their
+    # pre-3.3 state.
+    policy = compat32
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.addTypeEqualityFunc(bytes, self.assertBytesEqual)
 
+    # Backward compatibility to minimize test_email test changes.
     ndiffAssertEqual = unittest.TestCase.assertEqual
 
     def _msgobj(self, filename):
         with openfile(filename) as fp:
-            return email.message_from_file(fp)
+            return email.message_from_file(fp, policy=self.policy)
+
+    def _str_msg(self, string, message=Message, policy=None):
+        if policy is None:
+            policy = self.policy
+        return email.message_from_string(string, message, policy=policy)
 
     def _bytes_repr(self, b):
         return [repr(x) for x in b.splitlines(keepends=True)]
