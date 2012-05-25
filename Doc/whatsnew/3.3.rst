@@ -555,6 +555,61 @@ consideration when updating code for Python 3.3, and thus should be read about
 in the `Porting Python code`_ section of this document.
 
 
+New Email Package Features
+==========================
+
+The email package now has a :mod:`~email.policy` framework.  A
+:class:`~email.policy.Policy` is an object with several methods and properties
+that control how the email package behaves.  The primary policy for Python 3.3
+is the :class:`~email.policy.Compat32` policy, which provides backward
+compatibility with the email package in Python 3.2.  A ``policy`` can be
+specified when an email message is parsed by a :mod:`~email.parser`, or when a
+:class:`~email.message.Message` object is created, or when an email is
+serialized using a :mod:`~email.generator`.  Unless overridden, a policy passed
+to a ``parser`` is inherited by all the ``Message`` object and sub-objects
+created by the ``parser``.  By default a ``generator`` will use the policy of
+the ``Message`` object it is serializing.  The default policy is
+:data:`~email.policy.compat32`.
+
+The minimum set of controls implemented by all ``policy`` objects are:
+
+    ===============     =======================================================
+    max_line_length     The maximum length, excluding the linesep character(s),
+                        individual lines may have when a ``Message`` is
+                        serialized.  Defaults to 78.
+
+    linesep             The character used to separate individual lines when a
+                        ``Message`` is serialized.  Defaults to ``\n``.
+
+    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
+                        ``Bytes`` ``generator``, and means that non-ASCII may
+                        be used where allowed by the protocol (or where it
+                        exists in the original input).
+
+    raise_on_defect     Causes a ``parser`` to raise error when defects are
+                        encountered instead of adding them to the ``Message``
+                        object's ``defects`` list.
+    ===============     =======================================================
+
+A new policy instance, with new settings, is created using the
+:meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
+any of the above controls as keyword arguments.  Any control not specified in
+the call retains its default value.  Thus you can create a policy that uses
+``\r\n`` linesep characters like this::
+
+    mypolicy = compat32.clone(linesep=`\r\n`)
+
+Policies can be used to make the generation of messages in the format needed by
+your application simpler.  Instead of having to remember to specify
+``linesep='\r\n'`` in all the places you call a ``generator``, you can specify
+it once, when you set the policy used by the ``parser`` or the ``Message``,
+whichever your program uses to create ``Message`` objects.  On the other hand,
+if you need to generate messages in multiple forms, you can still specify the
+parameters in the appropriate ``generator`` call.  Or you can have custom
+policy instances for your different cases, and pass those in when you create
+the ``generator``.
+
+
 Other Language Changes
 ======================
 
