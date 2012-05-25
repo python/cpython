@@ -138,10 +138,11 @@ class PkgutilPEP302Tests(unittest.TestCase):
         del sys.modules['foo']
 
 
+# These tests, especially the setup and cleanup, are hideous. They
+# need to be cleaned up once issue 14715 is addressed.
 class ExtendPathTests(unittest.TestCase):
     def create_init(self, pkgname):
         dirname = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, dirname)
         sys.path.insert(0, dirname)
 
         pkgdir = os.path.join(dirname, pkgname)
@@ -156,22 +157,12 @@ class ExtendPathTests(unittest.TestCase):
         with open(module_name, 'w') as fl:
             print('value={}'.format(value), file=fl)
 
-    def setUp(self):
-        # Create 2 directories on sys.path
-        self.pkgname = 'foo'
-        self.dirname_0 = self.create_init(self.pkgname)
-        self.dirname_1 = self.create_init(self.pkgname)
-
-    def tearDown(self):
-        del sys.path[0]
-        del sys.path[0]
-        del sys.modules['foo']
-        del sys.modules['foo.bar']
-        del sys.modules['foo.baz']
-
     def test_simple(self):
-        self.create_submodule(self.dirname_0, self.pkgname, 'bar', 0)
-        self.create_submodule(self.dirname_1, self.pkgname, 'baz', 1)
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+        dirname_1 = self.create_init(pkgname)
+        self.create_submodule(dirname_0, pkgname, 'bar', 0)
+        self.create_submodule(dirname_1, pkgname, 'baz', 1)
         import foo.bar
         import foo.baz
         # Ensure we read the expected values
@@ -180,8 +171,45 @@ class ExtendPathTests(unittest.TestCase):
 
         # Ensure the path is set up correctly
         self.assertEqual(sorted(foo.__path__),
-                         sorted([os.path.join(self.dirname_0, self.pkgname),
-                                 os.path.join(self.dirname_1, self.pkgname)]))
+                         sorted([os.path.join(dirname_0, pkgname),
+                                 os.path.join(dirname_1, pkgname)]))
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        shutil.rmtree(dirname_1)
+        del sys.path[0]
+        del sys.path[0]
+        del sys.modules['foo']
+        del sys.modules['foo.bar']
+        del sys.modules['foo.baz']
+
+    def test_mixed_namespace(self):
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+        dirname_1 = self.create_init(pkgname)
+        self.create_submodule(dirname_0, pkgname, 'bar', 0)
+        # Turn this into a PEP 420 namespace package
+        os.unlink(os.path.join(dirname_0, pkgname, '__init__.py'))
+        self.create_submodule(dirname_1, pkgname, 'baz', 1)
+        import foo.bar
+        import foo.baz
+        # Ensure we read the expected values
+        self.assertEqual(foo.bar.value, 0)
+        self.assertEqual(foo.baz.value, 1)
+
+        # Ensure the path is set up correctly
+        self.assertEqual(sorted(foo.__path__),
+                         sorted([os.path.join(dirname_0, pkgname),
+                                 os.path.join(dirname_1, pkgname)]))
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        shutil.rmtree(dirname_1)
+        del sys.path[0]
+        del sys.path[0]
+        del sys.modules['foo']
+        del sys.modules['foo.bar']
+        del sys.modules['foo.baz']
 
     # XXX: test .pkg files
 
