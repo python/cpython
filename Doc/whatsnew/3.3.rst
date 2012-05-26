@@ -558,6 +558,9 @@ in the `Porting Python code`_ section of this document.
 New Email Package Features
 ==========================
 
+Policy Framework
+----------------
+
 The email package now has a :mod:`~email.policy` framework.  A
 :class:`~email.policy.Policy` is an object with several methods and properties
 that control how the email package behaves.  The primary policy for Python 3.3
@@ -608,6 +611,99 @@ if you need to generate messages in multiple forms, you can still specify the
 parameters in the appropriate ``generator`` call.  Or you can have custom
 policy instances for your different cases, and pass those in when you create
 the ``generator``.
+
+
+Provisional Policy with New Header API
+--------------------------------------
+
+While the policy framework is worthwhile all by itself, the main motivation for
+introducing it is to allow the creation of new policies that implement new
+features for the email package in a way that maintains backward compatibility
+for those who do not use the new policies.  Because the new policies introduce a
+new API, we are releasing them in Python 3.3 as a :term:`provisional policy
+<provisional package>`.  Backwards incompatible changes (up to and including
+removal of the code) may occur if deemed necessary by the core developers.
+
+The new policies are instances of :class:`~email.policy.EmailPolicy`,
+and add the following additional controls:
+
+    ===============     =======================================================
+    refold_source       Controls whether or not headers parsed by a
+                        :mod:`~email.parser` are refolded by the
+                        :mod:`~email.generator`.  It can be ``none``, ``long``,
+                        or ``all``.  The default is ``long``, which means that
+                        source headers with a line longer than
+                        ``max_line_length`` get refolded.  ``none`` means no
+                        line get refolded, and ``all`` means that all lines
+                        get refolded.
+
+    header_factory      A callable that take a ``name`` and ``value`` and
+                        produces a custom header object.
+    ===============     =======================================================
+
+The ``header_factory`` is the key to the new features provided by the new
+policies.  When one of the new policies is used, any header retrieved from
+a ``Message`` object is an object produced by the ``header_factory``, and any
+time you set a header on a ``Message`` it becomes an object produced by
+``header_factory``.  All such header objects have a ``name`` attribute equal
+to the header name.  Address and Date headers have additional attributes
+that give you access to the parsed data of the header.  This means you can now
+do things like this::
+
+    >>> m = Message(policy=SMTP)
+    >>> m['To'] = 'Éric <foo@example.com>'
+    >>> m['to']
+    'Éric <foo@example.com>'
+    >>> m['to'].addresses
+    (Address(display_name='Éric', username='foo', domain='example.com'),)
+    >>> m['to'].addresses[0].username
+    'foo'
+    >>> m['to'].addresses[0].display_name
+    'Éric'
+    >>> m['Date'] = email.utils.localtime()
+    >>> m['Date'].datetime
+    datetime.datetime(2012, 5, 25, 21, 39, 24, 465484, tzinfo=datetime.timezone(datetime.timedelta(-1, 72000), 'EDT'))
+    >>> m['Date']
+    'Fri, 25 May 2012 21:44:27 -0400'
+    >>> print(m)
+    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
+    Date: Fri, 25 May 2012 21:44:27 -0400
+
+You will note that the unicode display name is automatically encoded as
+``utf-8`` when the message is serialized, but that when the header is accessed
+directly, you get the unicode version.  This eliminates any need to deal with
+the :mod:`email.header` :meth:`~email.header.decode_header` or
+:meth:`~email.header.make_header` functions.
+
+You can also create addresses from parts::
+
+    >>> m['cc'] = [Group('pals', [Address('Bob', 'bob', 'example.com'),
+    ...                           Address('Sally', 'sally', 'example.com')]),
+    ...            Address('Bonzo', addr_spec='bonz@laugh.com')]
+    >>> print(m)
+    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
+    Date: Fri, 25 May 2012 21:44:27 -0400
+    cc: pals: Bob <bob@example.com>, Sally <sally@example.com>;, Bonzo <bonz@laugh.com>
+
+Decoding to unicode is done automatically::
+
+    >>> m2 = message_from_string(str(m))
+    >>> m2['to']
+    'Éric <foo@example.com>'
+
+When you parse a message, you can use the ``addresses`` and ``groups``
+attributes of the header objects to access the groups and individual
+addresses::
+
+    >>> m2['cc'].addresses
+    (Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com'), Address(display_name='Bonzo', username='bonz', domain='laugh.com'))
+    >>> m2['cc'].groups
+    (Group(display_name='pals', addresses=(Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com')), Group(display_name=None, addresses=(Address(display_name='Bonzo', username='bonz', domain='laugh.com'),))
+
+In summary, if you use one of the new policies, header manipulation works the
+way it ought to:  your application works with unicode strings, and the email
+package transparently encodes and decodes the unicode to and from the RFC
+standard Content Transfer Encodings.
 
 
 Other Language Changes
