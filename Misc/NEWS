@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14920: Fix the help(urllib.parse) failure on locale C on terminals.
+  Have ascii characters in help.
+
 - Issue #14548: Make multiprocessing finalizers check pid before
   running to cope with possibility of gc running just after fork.
 
