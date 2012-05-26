@@ -51,20 +51,6 @@ mp_SetError(PyObject *Type, int num)
     return NULL;
 }
 
-
-static PyObject*
-multiprocessing_address_of_buffer(PyObject *self, PyObject *obj)
-{
-    void *buffer;
-    Py_ssize_t buffer_len;
-
-    if (PyObject_AsWriteBuffer(obj, &buffer, &buffer_len) < 0)
-        return NULL;
-
-    return Py_BuildValue("Nn",
-                         PyLong_FromVoidPtr(buffer), buffer_len);
-}
-
 #ifdef MS_WINDOWS
 static PyObject *
 multiprocessing_closesocket(PyObject *self, PyObject *args)
@@ -137,9 +123,6 @@ multiprocessing_send(PyObject *self, PyObject *args)
  */
 
 static PyMethodDef module_methods[] = {
-    {"address_of_buffer", multiprocessing_address_of_buffer, METH_O,
-     "address_of_buffer(obj) -> int\n"
-     "Return address of obj assuming obj supports buffer inteface"},
 #ifdef MS_WINDOWS
     {"closesocket", multiprocessing_closesocket, METH_VARARGS, ""},
     {"recv", multiprocessing_recv, METH_VARARGS, ""},
