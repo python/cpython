@@ -284,15 +284,14 @@ def summarize_address_range(first, last):
             If the version is not 4 or 6.
 
     """
-    if not (isinstance(first, _BaseAddress) and isinstance(last, _BaseAddress)):
+    if (not (isinstance(first, _BaseAddress) and
+             isinstance(last, _BaseAddress))):
         raise TypeError('first and last must be IP addresses, not networks')
     if first.version != last.version:
         raise TypeError("%s and %s are not of the same version" % (
                 str(first), str(last)))
     if first > last:
         raise ValueError('last IP address must be greater than first')
-
-    networks = []
 
     if first.version == 4:
         ip = IPv4Network
@@ -316,7 +315,6 @@ def summarize_address_range(first, last):
         prefix = _get_prefix_length(first_int, current, ip_bits)
         net = ip('%s/%d' % (str(first), prefix))
         yield net
-        #networks.append(net)
         if current == ip._ALL_ONES:
             break
         first_int = current + 1
@@ -599,7 +597,7 @@ class _BaseAddress(_IPAddressBase):
         return '%s(%r)' % (self.__class__.__name__, str(self))
 
     def __str__(self):
-        return  '%s' % self._string_from_ip_int(self._ip)
+        return str(self._string_from_ip_int(self._ip))
 
     def __hash__(self):
         return hash(hex(int(self._ip)))
@@ -719,8 +717,7 @@ class _BaseNetwork(_IPAddressBase):
         return not eq
 
     def __str__(self):
-        return  '%s/%s' % (str(self.ip),
-                           str(self._prefixlen))
+        return '%s/%s' % (self.ip, self._prefixlen)
 
     def __hash__(self):
         return hash(int(self.network_address) ^ int(self.netmask))
@@ -838,12 +835,9 @@ class _BaseNetwork(_IPAddressBase):
 
         if not (other.network_address >= self.network_address and
                 other.broadcast_address <= self.broadcast_address):
-            raise ValueError('%s not contained in %s' % (str(other), str(self)))
-
+            raise ValueError('%s not contained in %s' % (other, self))
         if other == self:
             raise StopIteration
-
-        ret_addrs = []
 
         # Make sure we're comparing the network of other.
         other = ip_network('%s/%s' % (str(other.network_address),
@@ -1013,8 +1007,8 @@ class _BaseNetwork(_IPAddressBase):
             An IPv4 network object.
 
         Raises:
-            ValueError: If self.prefixlen - prefixlen_diff < 0. I.e., you have a
-              negative prefix length.
+            ValueError: If self.prefixlen - prefixlen_diff < 0. I.e., you have
+              a negative prefix length.
                 OR
             If prefixlen_diff and new_prefix are both set or new_prefix is a
               larger number than the current prefix (larger number means a
@@ -1030,7 +1024,6 @@ class _BaseNetwork(_IPAddressBase):
             if prefixlen_diff != 1:
                 raise ValueError('cannot set prefixlen_diff and new_prefix')
             prefixlen_diff = self._prefixlen - new_prefix
-
 
         if self.prefixlen - prefixlen_diff < 0:
             raise ValueError(
@@ -1302,7 +1295,6 @@ class IPv4Interface(IPv4Address):
         self.netmask = self.network.netmask
         self.hostmask = self.network.hostmask
 
-
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
                           self.network.prefixlen)
@@ -1364,7 +1356,6 @@ class IPv4Interface(IPv4Address):
             return True
         return False
 
-
     @property
     def prefixlen(self):
         return self._prefixlen
@@ -1381,6 +1372,7 @@ class IPv4Interface(IPv4Address):
     def with_netmask(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.netmask)
+
     @property
     def with_hostmask(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
@@ -1652,8 +1644,9 @@ class _BaseV6(object):
             if parts_skipped < 1:
                 raise AddressValueError(ip_str)
         else:
-            # Otherwise, allocate the entire address to parts_hi.  The endpoints
-            # could still be empty, but _parse_hextet() will check for that.
+            # Otherwise, allocate the entire address to parts_hi.  The
+            # endpoints could still be empty, but _parse_hextet() will check
+            # for that.
             if len(parts) != self._HEXTET_COUNT:
                 raise AddressValueError(ip_str)
             parts_hi = len(parts)
@@ -1684,7 +1677,8 @@ class _BaseV6(object):
             The hextet as an integer.
 
         Raises:
-            ValueError: if the input isn't strictly a hex number from [0..FFFF].
+            ValueError: if the input isn't strictly a hex number from
+              [0..FFFF].
 
         """
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
@@ -1893,7 +1887,6 @@ class _BaseV6(object):
         return (self.network_address in private_network and
                 self.broadcast_address in private_network)
 
-
     @property
     def ipv4_mapped(self):
         """Return the IPv4 mapped address.
@@ -2029,7 +2022,6 @@ class IPv6Interface(IPv6Address):
         self._prefixlen = self.network._prefixlen
         self.hostmask = self.network.hostmask
 
-
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
                           self.network.prefixlen)
@@ -2047,6 +2039,7 @@ class IPv6Interface(IPv6Address):
     @property
     def prefixlen(self):
         return self._prefixlen
+
     @property
     def ip(self):
         return IPv6Address(self._ip)
@@ -2058,6 +2051,7 @@ class IPv6Interface(IPv6Address):
     @property
     def with_netmask(self):
         return self.with_prefixlen
+
     @property
     def with_hostmask(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
@@ -2081,8 +2075,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         """Instantiate a new IPv6 Network object.
 
         Args:
-            address: A string or integer representing the IPv6 network or the IP
-              and prefix/netmask.
+            address: A string or integer representing the IPv6 network or the
+              IP and prefix/netmask.
               '2001:db8::/128'
               '2001:db8:0000:0000:0000:0000:0000:0000/128'
               '2001:db8::'
@@ -2189,10 +2183,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         except ValueError:
             return False
         return 0 <= prefixlen <= self._max_prefixlen
-
-    @property
-    def with_netmask(self):
-        return self.with_prefixlen
 
     @property
     def with_prefixlen(self):
