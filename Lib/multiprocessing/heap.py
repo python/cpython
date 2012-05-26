@@ -205,7 +205,7 @@ class Heap(object):
             self._lock.release()
 
 #
-# Class representing a chunk of an mmap -- can be inherited
+# Class representing a chunk of an mmap -- can be inherited by child process
 #
 
 class BufferWrapper(object):
@@ -218,11 +218,6 @@ class BufferWrapper(object):
         self._state = (block, size)
         Finalize(self, BufferWrapper._heap.free, args=(block,))
 
-    def get_address(self):
+    def create_memoryview(self):
         (arena, start, stop), size = self._state
-        address, length = _multiprocessing.address_of_buffer(arena.buffer)
-        assert size <= length
-        return address + start
-
-    def get_size(self):
-        return self._state[1]
+        return memoryview(arena.buffer)[start:start+size]
