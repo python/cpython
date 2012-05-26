@@ -707,7 +707,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
 def quote_from_bytes(bs, safe='/'):
     """Like quote(), but accepts a bytes object rather than a str, and does
     not perform string-to-bytes encoding.  It always returns an ASCII string.
-    quote_from_bytes(b'abc def\xab') -> 'abc%20def%AB'
+    quote_from_bytes(b'abc def\x3f') -> 'abc%20def%3f'
     """
     if not isinstance(bs, (bytes, bytearray)):
         raise TypeError("quote_from_bytes() expected bytes")
