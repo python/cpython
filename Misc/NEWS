@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #14712 (PEP 405): Virtual environments. Implemented by Vinay Sajip.
+
 - Issue #14660 (PEP 420): Namespace packages. Implemented by Eric Smith.
 
 - Issue #14494: Fix __future__.py and its documentation to note that
@@ -43,6 +45,17 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #12586: Added new provisional policies that implement convenient
+  unicode support for email headers.  See What's New for details.
+
+- Issue #14731: Refactored email Policy framework to support full backward
+  compatibility with Python 3.2 by default yet allow for the introduction of
+  new features through new policies.  Note that Policy.must_be_7bit is renamed
+  to cte_type.
+
+- Issue #14920: Fix the help(urllib.parse) failure on locale C on terminals.
+  Have ascii characters in help.
 
 - Issue #14548: Make multiprocessing finalizers check pid before
   running to cope with possibility of gc running just after fork.
