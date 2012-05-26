@@ -150,6 +150,18 @@ setup_spawnattr(posix_spawnattr_t* spawnattr)
 int
 main(int argc, char **argv) {
     char* exec_path = get_python_path();
+    static char path[PATH_MAX * 2];
+    static char real_path[PATH_MAX * 2];
+    int status;
+    uint32_t size = PATH_MAX * 2;
+
+    /* Set the original executable path in the environment. */
+    status = _NSGetExecutablePath(path, &size);
+    if (status == 0) {
+        if (realpath(path, real_path) != NULL) {
+            setenv("__PYTHONV_LAUNCHER__", real_path, 1);
+        }
+    }
 
     /*
      * Let argv[0] refer to the new interpreter. This is needed to

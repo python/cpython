@@ -189,6 +189,8 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stderr, None)
 
+    @unittest.skipIf(sys.base_prefix != sys.prefix,
+                     'Test is not venv-compatible')
     def test_executable_with_cwd(self):
         python_dir = os.path.dirname(os.path.realpath(sys.executable))
         p = subprocess.Popen(["somethingyoudonthave", "-c",
@@ -197,6 +199,8 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.returncode, 47)
 
+    @unittest.skipIf(sys.base_prefix != sys.prefix,
+                     'Test is not venv-compatible')
     @unittest.skipIf(sysconfig.is_python_build(),
                      "need an installed Python. See #7774")
     def test_executable_without_cwd(self):

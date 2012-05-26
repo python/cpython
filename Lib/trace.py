@@ -39,8 +39,8 @@ Sample use, programmatically
 
   # create a Trace object, telling it what to ignore, and whether to
   # do tracing or line-counting or both.
-  tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
-                    count=1)
+  tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
+                       trace=0, count=1)
   # run the new command using the given tracer
   tracer.run('main()')
   # make a report, placing output in /tmp
@@ -749,10 +749,10 @@ def main(argv=None):
                 # should I also call expanduser? (after all, could use $HOME)
 
                 s = s.replace("$prefix",
-                              os.path.join(sys.prefix, "lib",
+                              os.path.join(sys.base_prefix, "lib",
                                            "python" + sys.version[:3]))
                 s = s.replace("$exec_prefix",
-                              os.path.join(sys.exec_prefix, "lib",
+                              os.path.join(sys.base_exec_prefix, "lib",
                                            "python" + sys.version[:3]))
                 s = os.path.normpath(s)
                 ignore_dirs.append(s)

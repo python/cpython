@@ -260,6 +260,59 @@ absolutize(wchar_t *path)
     wcscpy(path, buffer);
 }
 
+/* search for a prefix value in an environment file. If found, copy it
+   to the provided buffer, which is expected to be no more than MAXPATHLEN
+   bytes long.
+*/
+
+static int
+find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
+{
+    int result = 0; /* meaning not found */
+    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
+
+    fseek(env_file, 0, SEEK_SET);
+    while (!feof(env_file)) {
+        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
+        wchar_t tmpbuffer[MAXPATHLEN*2+1];
+        PyObject * decoded;
+        int n;
+
+        if (p == NULL)
+            break;
+        n = strlen(p);
+        if (p[n - 1] != '\n') {
+            /* line has overflowed - bail */
+            break;
+        }
+        if (p[0] == '#')    /* Comment - skip */
+            continue;
+        decoded = PyUnicode_DecodeUTF8(buffer, n, "surrogateescape");
+        if (decoded != NULL) {
+            Py_ssize_t k;
+            wchar_t * state;
+            k = PyUnicode_AsWideChar(decoded,
+                                     tmpbuffer, MAXPATHLEN * 2);
+            Py_DECREF(decoded);
+            if (k >= 0) {
+                wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
+                if ((tok != NULL) && !wcscmp(tok, key)) {
+                    tok = wcstok(NULL, L" \t", &state);
+                    if ((tok != NULL) && !wcscmp(tok, L"=")) {
+                        tok = wcstok(NULL, L"\r\n", &state);
+                        if (tok != NULL) {
+                            wcsncpy(value, tok, MAXPATHLEN);
+                            result = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
@@ -564,6 +617,39 @@ calculate_path(void)
     /* At this point, argv0_path is guaranteed to be less than
        MAXPATHLEN bytes long.
     */
+
+    /* Search for an environment configuration file, first in the
+       executable's directory and then in the parent directory.
+       If found, open it for use when searching for prefixes.
+    */
+
+    {
+        wchar_t tmpbuffer[MAXPATHLEN+1];
+        wchar_t *env_cfg = L"pyvenv.cfg";
+        FILE * env_file = NULL;
+
+        wcscpy(tmpbuffer, argv0_path);
+        joinpath(tmpbuffer, env_cfg);
+        env_file = _Py_wfopen(tmpbuffer, L"r");
+        if (env_file == NULL) {
+            errno = 0;
+            reduce(tmpbuffer);
+            reduce(tmpbuffer);
+            joinpath(tmpbuffer, env_cfg);
+            env_file = _Py_wfopen(tmpbuffer, L"r");
+            if (env_file == NULL) {
+                errno = 0;
+            }
+        }
+        if (env_file != NULL) {
+            /* Look for a 'home' variable and set argv0_path to it, if found */
+            if (find_env_config_value(env_file, L"home", tmpbuffer)) {
+                wcscpy(argv0_path, tmpbuffer);
+            }
+            fclose(env_file);
+            env_file = NULL;
+        }
+    }
 
     if (!(pfound = search_for_prefix(argv0_path, home, _prefix))) {
         if (!Py_FrozenFlag)

@@ -419,6 +419,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.builtin_module_names, tuple)
         self.assertIsInstance(sys.copyright, str)
         self.assertIsInstance(sys.exec_prefix, str)
+        self.assertIsInstance(sys.base_exec_prefix, str)
         self.assertIsInstance(sys.executable, str)
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
@@ -450,6 +451,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.maxunicode, 0x10FFFF)
         self.assertIsInstance(sys.platform, str)
         self.assertIsInstance(sys.prefix, str)
+        self.assertIsInstance(sys.base_prefix, str)
         self.assertIsInstance(sys.version, str)
         vi = sys.version_info
         self.assertIsInstance(vi[:], tuple)
@@ -541,6 +543,8 @@ class SysModuleTest(unittest.TestCase):
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'?')
 
+    @unittest.skipIf(sys.base_prefix != sys.prefix,
+                     'Test is not venv-compatible')
     def test_executable(self):
         # sys.executable should be absolute
         self.assertEqual(os.path.abspath(sys.executable), sys.executable)

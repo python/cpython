@@ -1021,7 +1021,7 @@ class Popen(object):
             if not os.path.exists(w9xpopen):
                 # Eeek - file-not-found - possibly an embedding
                 # situation - see if we can locate it in sys.exec_prefix
-                w9xpopen = os.path.join(os.path.dirname(sys.exec_prefix),
+                w9xpopen = os.path.join(os.path.dirname(sys.base_exec_prefix),
                                         "w9xpopen.exe")
                 if not os.path.exists(w9xpopen):
                     raise RuntimeError("Cannot locate w9xpopen.exe, which is "

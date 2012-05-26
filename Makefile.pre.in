@@ -947,6 +947,8 @@ bininstall: altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s 2to3-$(VERSION) 2to3)
 	-rm -f $(DESTDIR)$(BINDIR)/pysetup3
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pysetup$(VERSION) pysetup3)
+	-rm -f $(DESTDIR)$(BINDIR)/pyvenv
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s pyvenv-$(VERSION) pyvenv)
 
 # Install the manual page
 maninstall:
@@ -1038,6 +1040,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
+		venv venv/scripts venv/scripts/posix \
 		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \

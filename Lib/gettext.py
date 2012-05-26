@@ -55,7 +55,7 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            'dgettext', 'dngettext', 'gettext', 'ngettext',
            ]
 
-_default_localedir = os.path.join(sys.prefix, 'share', 'locale')
+_default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 
 
 def c2py(plural):
