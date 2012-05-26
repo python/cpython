@@ -1528,6 +1528,10 @@ _PySys_Init(void)
                         PyUnicode_FromWideChar(Py_GetPrefix(), -1));
     SET_SYS_FROM_STRING("exec_prefix",
                         PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
+    SET_SYS_FROM_STRING("base_prefix",
+                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
+    SET_SYS_FROM_STRING("base_exec_prefix",
+                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
     SET_SYS_FROM_STRING("maxsize",
                         PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     SET_SYS_FROM_STRING("float_info",

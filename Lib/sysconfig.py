@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import os
 from os.path import pardir, realpath
 from configparser import RawConfigParser
 
@@ -61,13 +62,15 @@ def _expand_globals(config):
 
 _expand_globals(_SCHEMES)
 
- # FIXME don't rely on sys.version here, its format is an implementatin detail
+ # FIXME don't rely on sys.version here, its format is an implementation detail
  # of CPython, use sys.version_info or sys.hexversion
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = sys.version[:3]
 _PY_VERSION_SHORT_NO_DOT = _PY_VERSION[0] + _PY_VERSION[2]
 _PREFIX = os.path.normpath(sys.prefix)
+_BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
+_BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
 
@@ -94,14 +97,22 @@ if os.name == "nt" and "\\pc\\v" in _PROJECT_BASE[-10:].lower():
 if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
-
-def is_python_build():
+def _is_python_source_dir(d):
     for fn in ("Setup.dist", "Setup.local"):
-        if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
+        if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
 
-_PYTHON_BUILD = is_python_build()
+_sys_home = getattr(sys, '_home', None)
+if _sys_home and os.name == 'nt' and _sys_home.lower().endswith('pcbuild'):
+    _sys_home = os.path.dirname(_sys_home)
+
+def is_python_build(check_home=False):
+    if check_home and _sys_home:
+        return _is_python_source_dir(_sys_home)
+    return _is_python_source_dir(_PROJECT_BASE)
+
+_PYTHON_BUILD = is_python_build(True)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
@@ -312,7 +323,7 @@ def _parse_makefile(filename, vars=None):
 def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
-        return os.path.join(_PROJECT_BASE, "Makefile")
+        return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
     if hasattr(sys, 'abiflags'):
         config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
     else:
@@ -412,9 +423,9 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+            inc_dir = os.path.join(_sys_home or _PROJECT_BASE, "PC")
         else:
-            inc_dir = _PROJECT_BASE
+            inc_dir = _sys_home or _PROJECT_BASE
     else:
         inc_dir = get_path('platinclude')
     return os.path.join(inc_dir, 'pyconfig.h')
@@ -472,7 +483,9 @@ def get_config_vars(*args):
         _CONFIG_VARS['py_version'] = _PY_VERSION
         _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
         _CONFIG_VARS['py_version_nodot'] = _PY_VERSION[0] + _PY_VERSION[2]
+        _CONFIG_VARS['installed_base'] = _BASE_PREFIX
         _CONFIG_VARS['base'] = _PREFIX
+        _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
         _CONFIG_VARS['platbase'] = _EXEC_PREFIX
         _CONFIG_VARS['projectbase'] = _PROJECT_BASE
         try:

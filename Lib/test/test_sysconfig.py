@@ -260,12 +260,17 @@ class TestSysConfig(unittest.TestCase):
         # the global scheme mirrors the distinction between prefix and
         # exec-prefix but not the user scheme, so we have to adapt the paths
         # before comparing (issue #9100)
-        adapt = sys.prefix != sys.exec_prefix
+        adapt = sys.base_prefix != sys.base_exec_prefix
         for name in ('stdlib', 'platstdlib', 'purelib', 'platlib'):
             global_path = get_path(name, 'posix_prefix')
             if adapt:
-                global_path = global_path.replace(sys.exec_prefix, sys.prefix)
-                base = base.replace(sys.exec_prefix, sys.prefix)
+                global_path = global_path.replace(sys.exec_prefix, sys.base_prefix)
+                base = base.replace(sys.exec_prefix, sys.base_prefix)
+            elif sys.base_prefix != sys.prefix:
+                # virtual environment? Likewise, we have to adapt the paths
+                # before comparing
+                global_path = global_path.replace(sys.base_prefix, sys.prefix)
+                base = base.replace(sys.base_prefix, sys.prefix)
             user_path = get_path(name, 'posix_user')
             self.assertEqual(user_path, global_path.replace(base, user, 1))
 

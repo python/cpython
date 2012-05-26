@@ -316,8 +316,8 @@ class TestCoverage(unittest.TestCase):
         # Ignore all files, nothing should be traced nor printed
         libpath = os.path.normpath(os.path.dirname(os.__file__))
         # sys.prefix does not work when running from a checkout
-        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix, libpath],
-                             trace=0, count=1)
+        tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
+                             libpath], trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
         if os.path.exists(TESTFN):

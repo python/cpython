@@ -564,7 +564,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         random.shuffle(selected)
     if trace:
         import trace, tempfile
-        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,
+        tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
                                          tempfile.gettempdir()],
                              trace=False, count=True)
 
