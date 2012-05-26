@@ -47,7 +47,8 @@ def _is_python_source_dir(d):
             return True
     return False
 _sys_home = getattr(sys, '_home', None)
-if _sys_home and os.name == 'nt' and _sys_home.lower().endswith('pcbuild'):
+if _sys_home and os.name == 'nt' and \
+    _sys_home.lower().endswith(('pcbuild', 'pcbuild\\amd64')):
     _sys_home = os.path.dirname(_sys_home)
 def _python_build():
     if _sys_home:

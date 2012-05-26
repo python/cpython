@@ -1,24 +1,7 @@
-#!/usr/bin/env python
-#
-# Copyright 2011 by Vinay Sajip. All Rights Reserved.
-#
-# Permission to use, copy, modify, and distribute this software and its
-# documentation for any purpose and without fee is hereby granted,
-# provided that the above copyright notice appear in all copies and that
-# both that copyright notice and this permission notice appear in
-# supporting documentation, and that the name of Vinay Sajip
-# not be used in advertising or publicity pertaining to distribution
-# of the software without specific, written prior permission.
-# VINAY SAJIP DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
-# VINAY SAJIP BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-# ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-# IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-# OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+"""
+Test harness for the venv module.
 
-"""Test harness for the venv module. Run all tests.
-
-Copyright (C) 2011 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2011-2012 Vinay Sajip.
 """
 
 import os
@@ -93,7 +76,7 @@ class BasicTest(BaseTest):
         data = self.get_text_file_contents(self.bindir, self.ps3name)
         self.assertTrue(data.startswith('#!%s%s' % (self.env_dir, os.sep)))
         fn = self.get_env_file(self.bindir, self.exe)
-        self.assertTrue(os.path.exists(fn))
+        self.assertTrue(os.path.exists(fn), 'File %r exists' % fn)
 
     def test_overwrite_existing(self):
         """
