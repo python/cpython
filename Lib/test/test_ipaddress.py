@@ -390,7 +390,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertRaises(ValueError, list,
                           self.ipv4_interface.network.subnets(-1))
         self.assertRaises(ValueError, list,
-                          self.ipv4_network.network.subnets(-1))
+                          self.ipv4_network.subnets(-1))
         self.assertRaises(ValueError, list,
                           self.ipv6_interface.network.subnets(-1))
         self.assertRaises(ValueError, list,
