@@ -3,6 +3,7 @@ import textwrap
 import unittest
 from email import errors
 from email import policy
+from email.message import Message
 from test.test_email import TestEmailBase
 from email import _headerregistry
 # Address and Group are public but I'm not sure where to put them yet.
@@ -167,6 +168,12 @@ class TestDateHeader(TestHeaderBase):
         h = self.make_header('date', self.datestring)
         with self.assertRaises(AttributeError):
             h.datetime = 'foo'
+
+    def test_set_date_header_from_datetime(self):
+        m = Message(policy=policy.default)
+        m['Date'] = self.dt
+        self.assertEqual(m['Date'], self.datestring)
+        self.assertEqual(m['Date'].datetime, self.dt)
 
 
 class TestAddressHeader(TestHeaderBase):
@@ -625,6 +632,20 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertEqual(g.addresses, tuple())
         self.assertEqual(str(g), 'foo bar:;')
 
+    def test_set_message_header_from_address(self):
+        a = Address('foo', 'bar', 'example.com')
+        m = Message(policy=policy.default)
+        m['To'] = a
+        self.assertEqual(m['to'], 'foo <bar@example.com>')
+        self.assertEqual(m['to'].addresses, (a,))
+
+    def test_set_message_header_from_group(self):
+        g = Group('foo bar')
+        m = Message(policy=policy.default)
+        m['To'] = g
+        self.assertEqual(m['to'], 'foo bar:;')
+        self.assertEqual(m['to'].addresses, g.addresses)
+
 
 class TestFolding(TestHeaderBase):
 
@@ -711,6 +732,7 @@ class TestFolding(TestHeaderBase):
         h = self.make_header('Date', 'Sat, 2 Feb 2002 17:00:06 -0800')
         self.assertEqual(h.fold(policy=self.policy),
                         'Date: Sat, 02 Feb 2002 17:00:06 -0800\n')
+
 
 
 if __name__ == '__main__':
