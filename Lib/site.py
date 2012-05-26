@@ -13,6 +13,19 @@ prefixes directly, as well as with lib/site-packages appended.  The
 resulting directories, if they exist, are appended to sys.path, and
 also inspected for path configuration files.
 
+If a file named "pyvenv.cfg" exists one directory above sys.executable,
+sys.prefix and sys.exec_prefix are set to that directory and
+it is also checked for site-packages and site-python (sys.prefix and
+sys.exec_prefix will always be the "real" prefixes of the Python
+installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
+the key "include-system-site-packages" set to anything other than "false"
+(case-insensitive), the system-level prefixes will still also be
+searched for site-packages; otherwise they won't.
+
+All of the resulting site-specific directories, if they exist, are
+appended to sys.path, and also inspected for path configuration
+files.
+
 A path configuration file is a file whose name has the form
 <package>.pth; its contents are additional directories (one per line)
 to be added to sys.path.  Non-existing directories (or
@@ -54,6 +67,7 @@ ImportError exception, it is silently ignored.
 
 import sys
 import os
+import re
 import builtins
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
@@ -179,6 +193,7 @@ def addsitedir(sitedir, known_paths=None):
     sitedir, sitedircase = makepath(sitedir)
     if not sitedircase in known_paths:
         sys.path.append(sitedir)        # Add path component
+        known_paths.add(sitedircase)
     try:
         names = os.listdir(sitedir)
     except os.error:
@@ -266,18 +281,21 @@ def addusersitepackages(known_paths):
         addsitedir(user_site, known_paths)
     return known_paths
 
-def getsitepackages():
+def getsitepackages(prefixes=None):
     """Returns a list containing all global site-packages directories
     (and possibly site-python).
 
-    For each directory present in the global ``PREFIXES``, this function
-    will find its `site-packages` subdirectory depending on the system
-    environment, and will return a list of full paths.
+    For each directory present in ``prefixes`` (or the global ``PREFIXES``),
+    this function will find its `site-packages` subdirectory depending on the
+    system environment, and will return a list of full paths.
     """
     sitepackages = []
     seen = set()
 
-    for prefix in PREFIXES:
+    if prefixes is None:
+        prefixes = PREFIXES
+
+    for prefix in prefixes:
         if not prefix or prefix in seen:
             continue
         seen.add(prefix)
@@ -303,9 +321,9 @@ def getsitepackages():
                             sys.version[:3], "site-packages"))
     return sitepackages
 
-def addsitepackages(known_paths):
+def addsitepackages(known_paths, prefixes=None):
     """Add site-packages (and possibly site-python) to sys.path"""
-    for sitedir in getsitepackages():
+    for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
             addsitedir(sitedir, known_paths)
 
@@ -475,6 +493,61 @@ def aliasmbcs():
                 encodings.aliases.aliases[enc] = 'mbcs'
 
 
+CONFIG_LINE = re.compile(r'^(?P<key>(\w|[-_])+)\s*=\s*(?P<value>.*)\s*$')
+
+def venv(known_paths):
+    global PREFIXES, ENABLE_USER_SITE
+
+    env = os.environ
+    if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in env:
+        executable = os.environ['__PYTHONV_LAUNCHER__']
+    else:
+        executable = sys.executable
+    executable_dir, executable_name = os.path.split(executable)
+    site_prefix = os.path.dirname(executable_dir)
+    sys._home = None
+    if sys.platform == 'win32':
+        executable_name = os.path.splitext(executable_name)[0]
+    conf_basename = 'pyvenv.cfg'
+    candidate_confs = [
+        conffile for conffile in (
+            os.path.join(executable_dir, conf_basename),
+            os.path.join(site_prefix, conf_basename)
+            )
+        if os.path.isfile(conffile)
+        ]
+
+    if candidate_confs:
+        virtual_conf = candidate_confs[0]
+        system_site = "true"
+        with open(virtual_conf) as f:
+            for line in f:
+                line = line.strip()
+                m = CONFIG_LINE.match(line)
+                if m:
+                    d = m.groupdict()
+                    key, value = d['key'].lower(), d['value']
+                    if key == 'include-system-site-packages':
+                        system_site = value.lower()
+                    elif key == 'home':
+                        sys._home = value
+
+        sys.prefix = sys.exec_prefix = site_prefix
+
+        # Doing this here ensures venv takes precedence over user-site
+        addsitepackages(known_paths, [sys.prefix])
+
+        # addsitepackages will process site_prefix again if its in PREFIXES,
+        # but that's ok; known_paths will prevent anything being added twice
+        if system_site == "true":
+            PREFIXES.insert(0, sys.prefix)
+        else:
+            PREFIXES = [sys.prefix]
+            ENABLE_USER_SITE = False
+
+    return known_paths
+
+
 def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
@@ -517,6 +590,7 @@ def main():
 
     abs_paths()
     known_paths = removeduppaths()
+    known_paths = venv(known_paths)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths)

@@ -228,7 +228,7 @@ def test_main(verbose=None):
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')
-    tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
+    tracer=trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
                         trace=0, count=1)
     tracer.run('reload(cmd);test_main()')
     r=tracer.results()

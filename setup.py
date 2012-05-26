@@ -431,7 +431,7 @@ class PyBuildExt(build_ext):
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
-        if os.path.normpath(sys.prefix) != '/usr' \
+        if os.path.normpath(sys.base_prefix) != '/usr' \
                 and not sysconfig.get_config_var('PYTHONFRAMEWORK'):
             # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
             # (PYTHONFRAMEWORK is set) to avoid # linking problems when
@@ -1978,7 +1978,7 @@ class PyBuildScripts(build_scripts):
         newoutfiles = []
         newupdated_files = []
         for filename in outfiles:
-            if filename.endswith('2to3'):
+            if filename.endswith(('2to3', 'pyvenv')):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
@@ -2046,7 +2046,8 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3", "Tools/scripts/pysetup3"]
+                     "Tools/scripts/2to3", "Tools/scripts/pysetup3",
+                     "Tools/scripts/pyvenv"]
         )
 
 # --install-platlib

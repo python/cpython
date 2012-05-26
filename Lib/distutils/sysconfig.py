@@ -18,6 +18,8 @@ from .errors import DistutilsPlatformError
 # These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
+BASE_PREFIX = os.path.normpath(sys.base_prefix)
+BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCBuild9.  If we're dealing with an x64 Windows build,
@@ -39,11 +41,18 @@ if os.name == "nt" and "\\pcbuild\\amd64" in project_base[-14:].lower():
 # different (hard-wired) directories.
 # Setup.local is available for Makefile builds including VPATH builds,
 # Setup.dist is available on Windows
-def _python_build():
+def _is_python_source_dir(d):
     for fn in ("Setup.dist", "Setup.local"):
-        if os.path.isfile(os.path.join(project_base, "Modules", fn)):
+        if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
+_sys_home = getattr(sys, '_home', None)
+if _sys_home and os.name == 'nt' and _sys_home.lower().endswith('pcbuild'):
+    _sys_home = os.path.dirname(_sys_home)
+def _python_build():
+    if _sys_home:
+        return _is_python_source_dir(_sys_home)
+    return _is_python_source_dir(project_base)
 python_build = _python_build()
 
 # Calculate the build qualifier flags if they are defined.  Adding the flags
@@ -74,11 +83,11 @@ def get_python_inc(plat_specific=0, prefix=None):
     otherwise, this is the path to platform-specific header files
     (namely pyconfig.h).
 
-    If 'prefix' is supplied, use it instead of sys.prefix or
-    sys.exec_prefix -- i.e., ignore 'plat_specific'.
+    If 'prefix' is supplied, use it instead of sys.base_prefix or
+    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
     """
     if prefix is None:
-        prefix = plat_specific and EXEC_PREFIX or PREFIX
+        prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
     if os.name == "posix":
         if python_build:
             # Assume the executable is in the build directory.  The
@@ -86,11 +95,12 @@ def get_python_inc(plat_specific=0, prefix=None):
             # the build directory may not be the source directory, we
             # must use "srcdir" from the makefile to find the "Include"
             # directory.
-            base = os.path.dirname(os.path.abspath(sys.executable))
+            base = _sys_home or os.path.dirname(os.path.abspath(sys.executable))
             if plat_specific:
                 return base
             else:
-                incdir = os.path.join(get_config_var('srcdir'), 'Include')
+                incdir = os.path.join(_sys_home or get_config_var('srcdir'),
+                                      'Include')
                 return os.path.normpath(incdir)
         python_dir = 'python' + get_python_version() + build_flags
         return os.path.join(prefix, "include", python_dir)
@@ -115,11 +125,14 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     containing standard Python library modules; otherwise, return the
     directory for site-specific modules.
 
-    If 'prefix' is supplied, use it instead of sys.prefix or
-    sys.exec_prefix -- i.e., ignore 'plat_specific'.
+    If 'prefix' is supplied, use it instead of sys.base_prefix or
+    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
     """
     if prefix is None:
-        prefix = plat_specific and EXEC_PREFIX or PREFIX
+        if standard_lib:
+            prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
+        else:
+            prefix = plat_specific and EXEC_PREFIX or PREFIX
 
     if os.name == "posix":
         libpython = os.path.join(prefix,
@@ -232,9 +245,9 @@ def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
     if python_build:
         if os.name == "nt":
-            inc_dir = os.path.join(project_base, "PC")
+            inc_dir = os.path.join(_sys_home or project_base, "PC")
         else:
-            inc_dir = project_base
+            inc_dir = _sys_home or project_base
     else:
         inc_dir = get_python_inc(plat_specific=1)
     if get_python_version() < '2.2':
@@ -248,7 +261,8 @@ def get_config_h_filename():
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
     if python_build:
-        return os.path.join(os.path.dirname(sys.executable), "Makefile")
+        return os.path.join(_sys_home or os.path.dirname(sys.executable),
+                                                         "Makefile")
     lib_dir = get_python_lib(plat_specific=0, standard_lib=1)
     config_file = 'config-{}{}'.format(get_python_version(), build_flags)
     return os.path.join(lib_dir, config_file, 'Makefile')

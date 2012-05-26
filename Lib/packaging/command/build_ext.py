@@ -182,7 +182,10 @@ class build_ext(Command):
             # the 'libs' directory is for binary installs - we assume that
             # must be the *native* platform.  But we don't really support
             # cross-compiling via a binary install anyway, so we let it go.
-            self.library_dirs.append(os.path.join(sys.exec_prefix, 'libs'))
+            # Note that we must use sys.base_exec_prefix here rather than
+            # exec_prefix, since the Python libs are not copied to a virtual
+            # environment.
+            self.library_dirs.append(os.path.join(sys.base_exec_prefix, 'libs'))
             if self.debug:
                 self.build_temp = os.path.join(self.build_temp, "Debug")
             else:

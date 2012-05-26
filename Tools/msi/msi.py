@@ -1122,6 +1122,7 @@ def add_files(db):
             lib.add_file("2to3.py", src="2to3")
             lib.add_file("pydoc3.py", src="pydoc3")
             lib.add_file("pysetup3.py", src="pysetup3")
+            lib.add_file("pyvenv.py", src="pyvenv")
             if have_tcl:
                 lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
                 lib.add_file("pydocgui.pyw")
