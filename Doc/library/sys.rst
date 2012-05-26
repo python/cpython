@@ -39,6 +39,9 @@ always available.
    :data:`base_exec_prefix` will remain pointing to the base Python
    installation (the one which the virtual environment was created from).
 
+   .. versionadded:: 3.3
+
+
 .. data:: base_prefix
 
    Set during Python startup, before ``site.py`` is run, to the same value as
@@ -48,6 +51,9 @@ always available.
    point to the virtual environment, whereas :data:`base_prefix` and
    :data:`base_exec_prefix` will remain pointing to the base Python
    installation (the one which the virtual environment was created from).
+
+   .. versionadded:: 3.3
+
 
 .. data:: byteorder
 
