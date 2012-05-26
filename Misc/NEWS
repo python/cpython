@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14920: Fix the help(urllib.parse) failure on locale C on terminals.
+  Have ascii characters in help.
+
 - Issue #14863: Update the documentation of os.fdopen() to reflect the
   fact that it's only a thin wrapper around open() anymore.
 
