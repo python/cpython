@@ -363,3 +363,56 @@ def collapse_rfc2231_value(value, errors='replace',
     except LookupError:
         # charset is not a known codec.
         return unquote(text)
+
+
+#
+# datetime doesn't provide a localtime function yet, so provide one.  Code
+# adapted from the patch in issue 9527.  This may not be perfect, but it is
+# better than not having it.
+#
+
+def localtime(dt=None, isdst=-1):
+    """Return local time as an aware datetime object.
+
+    If called without arguments, return current time.  Otherwise *dt*
+    argument should be a datetime instance, and it is converted to the
+    local time zone according to the system time zone database.  If *dt* is
+    naive (that is, dt.tzinfo is None), it is assumed to be in local time.
+    In this case, a positive or zero value for *isdst* causes localtime to
+    presume initially that summer time (for example, Daylight Saving Time)
+    is or is not (respectively) in effect for the specified time.  A
+    negative value for *isdst* causes the localtime() function to attempt
+    to divine whether summer time is in effect for the specified time.
+
+    """
+    if dt is None:
+        seconds = time.time()
+    else:
+        if dt.tzinfo is None:
+            # A naive datetime is given.  Convert to a (localtime)
+            # timetuple and pass to system mktime together with
+            # the isdst hint.  System mktime will return seconds
+            # sysce epoch.
+            tm = dt.timetuple()[:-1] + (isdst,)
+            seconds = time.mktime(tm)
+        else:
+            # An aware datetime is given.  Use aware datetime
+            # arithmetics to find seconds since epoch.
+            delta = dt - datetime.datetime(1970, 1, 1,
+                                           tzinfo=datetime.timezone.utc)
+            seconds = delta.total_seconds()
+    tm = time.localtime(seconds)
+
+    # XXX: The following logic may not work correctly if UTC
+    # offset has changed since time provided in dt.  This will be
+    # corrected in C implementation for platforms that support
+    # tm_gmtoff.
+    if time.daylight and tm.tm_isdst:
+        offset = time.altzone
+        tzname = time.tzname[1]
+    else:
+        offset = time.timezone
+        tzname = time.tzname[0]
+
+    tz = datetime.timezone(datetime.timedelta(seconds=-offset), tzname)
+    return datetime.datetime.fromtimestamp(seconds, tz)
