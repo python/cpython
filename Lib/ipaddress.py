@@ -710,12 +710,6 @@ class _BaseNetwork(_IPAddressBase):
         return x
 
     @property
-    def network(self):
-        # XXX (ncoghlan): This is redundant now and will likely be removed
-        return self.__class__('%s/%d' % (str(self.network_address),
-                                         self.prefixlen))
-
-    @property
     def with_prefixlen(self):
         return '%s/%d' % (str(self.ip), self._prefixlen)
 
@@ -941,12 +935,6 @@ class _BaseNetwork(_IPAddressBase):
                                                 str(new_prefixlen)))
 
             yield current
-
-    def masked(self):
-        """Return the network object with the host bits masked out."""
-        # XXX (ncoghlan): This is redundant now and will likely be removed
-        return self.__class__('%s/%d' % (self.network_address,
-                                         self._prefixlen))
 
     def supernet(self, prefixlen_diff=1, new_prefix=None):
         """The supernet containing the current network.
@@ -1908,7 +1896,7 @@ class _BaseV6(object):
 
         """
         if isinstance(self, IPv6Network):
-            return int(self.network) == 1 and getattr(
+            return int(self) == 1 and getattr(
                 self, '_prefixlen', 128) == 128
         elif isinstance(self, IPv6Interface):
             return int(self.network.network_address) == 1 and getattr(
