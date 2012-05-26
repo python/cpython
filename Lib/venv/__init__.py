@@ -1,30 +1,34 @@
-# Copyright (C) 2011-2012 Vinay Sajip.
-#
-# Use with a Python executable built from the Python fork at
-#
-# https://bitbucket.org/vinay.sajip/pythonv/ as follows:
-#
-# python -m venv env_dir
-#
-# You'll need an Internet connection (needed to download distribute_setup.py).
-#
-# The script will change to the environment's binary directory and run
-#
-# ./python distribute_setup.py
-#
-# after which you can change to the environment's directory and do some
-# installations, e.g.
-#
-# source bin/activate.sh
-# pysetup3 install setuptools-git
-# pysetup3 install Pygments
-# pysetup3 install Jinja2
-# pysetup3 install SQLAlchemy
-# pysetup3 install coverage
-#
-# Note that on Windows, distributions which include C extensions (e.g. coverage)
-# may fail due to lack of a suitable C compiler.
-#
+"""
+Virtual environment (venv) package for Python. Based on PEP 405.
+
+Copyright (C) 20011-2012 Vinay Sajip. All Rights Reserved.
+
+usage: python -m venv [-h] [--no-distribute] [--system-site-packages]
+            [--symlinks] [--clear] [--upgrade]
+            ENV_DIR [ENV_DIR ...]
+
+Creates virtual Python environments in one or more target directories.
+
+positional arguments:
+  ENV_DIR               A directory to create the environment in.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --no-distribute       Don't install Distribute in the virtual environment.*
+  --system-site-packages
+                        Give the virtual environment access to the system
+                        site-packages dir.
+  --symlinks            Attempt to symlink rather than copy.
+  --clear               Delete the environment directory if it already exists.
+                        If not specified and the directory exists, an error is
+                        raised.
+  --upgrade             Upgrade the environment directory to use this version
+                        of Python, assuming Python has been upgraded in-place.
+
+*Note: Distribute support will be available during the alpha phase to
+facilitate testing third-party packages with venvs created using this package.
+This support will be removed after the alpha phase.
+"""
 import base64
 import io
 import logging
@@ -32,13 +36,17 @@ import os
 import os.path
 import shutil
 import sys
+try:
+    import threading
+except ImportError:
+    threading = None
 import zipfile
 
 logger = logging.getLogger(__name__)
 
 class Context:
     """
-    Holds information about a current virtualisation request.
+    Holds information about a current venv creation/upgrade request.
     """
     pass
 
@@ -353,7 +361,8 @@ class DistributeEnvBuilder(EnvBuilder):
                         being processed.
         """
         if not self.nodist:
-            self.install_distribute(context)
+            if threading:
+                self.install_distribute(context)
 
     def reader(self, stream, context):
         """
@@ -381,7 +390,6 @@ class DistributeEnvBuilder(EnvBuilder):
                         being processed.
         """
         from subprocess import Popen, PIPE
-        from threading import Thread
         from urllib.request import urlretrieve
 
         url = 'http://python-distribute.org/distribute_setup.py'
@@ -398,9 +406,9 @@ class DistributeEnvBuilder(EnvBuilder):
         # Install Distribute in the env
         args = [context.env_exe, 'distribute_setup.py']
         p = Popen(args, stdout=PIPE, stderr=PIPE, cwd=binpath)
-        t1 = Thread(target=self.reader, args=(p.stdout, 'stdout'))
+        t1 = threading.Thread(target=self.reader, args=(p.stdout, 'stdout'))
         t1.start()
-        t2 = Thread(target=self.reader, args=(p.stderr, 'stderr'))
+        t2 = threading.Thread(target=self.reader, args=(p.stderr, 'stderr'))
         t2.start()
         p.wait()
         t1.join()
@@ -478,8 +486,8 @@ def main(args=None):
         parser.add_argument('--upgrade', default=False, action='store_true',
                             dest='upgrade', help='Upgrade the environment '
                                                'directory to use this version '
-                                               'of Python, assuming it has been '
-                                               'upgraded in-place.')
+                                               'of Python, assuming Python '
+                                               'has been upgraded in-place.')
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
