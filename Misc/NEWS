@@ -67,6 +67,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14876: Use user-selected font for highlight configuration.
+
 - Issue #14920: Fix the help(urllib.parse) failure on locale C on terminals.
   Have ascii characters in help.
 
