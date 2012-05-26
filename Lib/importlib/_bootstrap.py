@@ -949,8 +949,6 @@ class NamespaceLoader:
     def module_repr(cls, module):
         return "<module '{}' (namespace)>".format(module.__name__)
 
-    @set_package
-    @set_loader
     @module_for_loader
     def load_module(self, module):
         """Load a namespace module."""
