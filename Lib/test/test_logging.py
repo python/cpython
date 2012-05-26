@@ -663,6 +663,7 @@ if threading:
             self.smtp_server = server
             self.conn = conn
             self.addr = addr
+            self.data_size_limit = None
             self.received_lines = []
             self.smtp_state = self.COMMAND
             self.seen_greeting = ''
@@ -682,6 +683,7 @@ if threading:
                 return
             self.push('220 %s %s' % (self.fqdn, smtpd.__version__))
             self.set_terminator(b'\r\n')
+            self.extended_smtp = False
 
 
     class TestSMTPServer(smtpd.SMTPServer):
@@ -709,6 +711,7 @@ if threading:
         def __init__(self, addr, handler, poll_interval, sockmap):
             self._localaddr = addr
             self._remoteaddr = None
+            self.data_size_limit = None
             self.sockmap = sockmap
             asyncore.dispatcher.__init__(self, map=sockmap)
             try:

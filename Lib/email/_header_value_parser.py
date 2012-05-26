@@ -791,6 +791,8 @@ class AngleAddr(TokenList):
         for x in self:
             if x.token_type == 'addr-spec':
                 return x.addr_spec
+        else:
+            return '<>'
 
 
 class ObsRoute(TokenList):
@@ -1829,6 +1831,14 @@ def get_angle_addr(value):
             "expected angle-addr but found '{}'".format(value))
     angle_addr.append(ValueTerminal('<', 'angle-addr-start'))
     value = value[1:]
+    # Although it is not legal per RFC5322, SMTP uses '<>' in certain
+    # circumstances.
+    if value[0] == '>':
+        angle_addr.append(ValueTerminal('>', 'angle-addr-end'))
+        angle_addr.defects.append(errors.InvalidHeaderDefect(
+            "null addr-spec in angle-addr"))
+        value = value[1:]
+        return angle_addr, value
     try:
         token, value = get_addr_spec(value)
     except errors.HeaderParseError:
@@ -1838,7 +1848,7 @@ def get_angle_addr(value):
                 "obsolete route specification in angle-addr"))
         except errors.HeaderParseError:
             raise errors.HeaderParseError(
-                "expected addr-spec or but found '{}'".format(value))
+                "expected addr-spec or obs-route but found '{}'".format(value))
         angle_addr.append(token)
         token, value = get_addr_spec(value)
     angle_addr.append(token)

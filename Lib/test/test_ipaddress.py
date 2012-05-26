@@ -1,21 +1,7 @@
-#!/usr/bin/python3
-#
 # Copyright 2007 Google Inc.
 #  Licensed to PSF under a Contributor Agreement.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-"""Unittest for ipaddressmodule."""
+"""Unittest for ipaddress module."""
 
 
 import unittest
@@ -404,7 +390,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertRaises(ValueError, list,
                           self.ipv4_interface.network.subnets(-1))
         self.assertRaises(ValueError, list,
-                          self.ipv4_network.network.subnets(-1))
+                          self.ipv4_network.subnets(-1))
         self.assertRaises(ValueError, list,
                           self.ipv6_interface.network.subnets(-1))
         self.assertRaises(ValueError, list,
@@ -780,12 +766,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv4_address.version, 4)
         self.assertEqual(self.ipv6_address.version, 6)
 
-        with self.assertRaises(ValueError):
-            ipaddress.ip_address('1', version=[])
-
-        with self.assertRaises(ValueError):
-            ipaddress.ip_address('1', version=5)
-
     def testMaxPrefixLength(self):
         self.assertEqual(self.ipv4_interface.max_prefixlen, 32)
         self.assertEqual(self.ipv6_interface.max_prefixlen, 128)
@@ -1052,12 +1032,7 @@ class IpaddrUnitTest(unittest.TestCase):
 
     def testForceVersion(self):
         self.assertEqual(ipaddress.ip_network(1).version, 4)
-        self.assertEqual(ipaddress.ip_network(1, version=6).version, 6)
-
-        with self.assertRaises(ValueError):
-            ipaddress.ip_network(1, version='l')
-        with self.assertRaises(ValueError):
-            ipaddress.ip_network(1, version=3)
+        self.assertEqual(ipaddress.IPv6Network(1).version, 6)
 
     def testWithStar(self):
         self.assertEqual(str(self.ipv4_interface.with_prefixlen), "1.2.3.4/24")
@@ -1147,13 +1122,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Address('172.29.45.100'),
                          sixtofouraddr.sixtofour)
         self.assertFalse(bad_addr.sixtofour)
-
-    def testIpInterfaceVersion(self):
-        with self.assertRaises(ValueError):
-            ipaddress.ip_interface(1, version=123)
-
-        with self.assertRaises(ValueError):
-            ipaddress.ip_interface(1, version='')
 
 
 if __name__ == '__main__':
