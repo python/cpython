@@ -1429,6 +1429,19 @@ class TestParser(TestEmailBase):
         self.assertIsNone(angle_addr.route)
         self.assertEqual(angle_addr.addr_spec, 'dinsdale@example.com')
 
+    def test_get_angle_addr_empty(self):
+        angle_addr = self._test_get_x(parser.get_angle_addr,
+            '<>',
+            '<>',
+            '<>',
+            [errors.InvalidHeaderDefect],
+            '')
+        self.assertEqual(angle_addr.token_type, 'angle-addr')
+        self.assertIsNone(angle_addr.local_part)
+        self.assertIsNone(angle_addr.domain)
+        self.assertIsNone(angle_addr.route)
+        self.assertEqual(angle_addr.addr_spec, '<>')
+
     def test_get_angle_addr_with_cfws(self):
         angle_addr = self._test_get_x(parser.get_angle_addr,
             ' (foo) <dinsdale@example.com>(bar)',
@@ -2007,7 +2020,7 @@ class TestParser(TestEmailBase):
         self.assertEqual(group.mailboxes,
                          group.all_mailboxes)
 
-    def test_get_troup_null_addr_spec(self):
+    def test_get_group_null_addr_spec(self):
         group = self._test_get_x(parser.get_group,
             'foo: <>;',
             'foo: <>;',
