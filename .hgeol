@@ -32,6 +32,8 @@ Lib/test/decimaltestdata/*.decTest = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
 Lib/test/test_email/data/msg_26.txt = BIN
 
+Lib/venv/scripts/nt/* = BIN
+
 # All other files (which presumably are human-editable) are "native".
 # This must be the last rule!
 
