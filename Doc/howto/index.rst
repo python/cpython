@@ -28,4 +28,5 @@ Currently, the HOWTOs are:
    urllib2.rst
    webservers.rst
    argparse.rst
+   ipaddress.rst
 
