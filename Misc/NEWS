@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #665194: Added a localtime function to email.utils to provide an
+  aware local datetime for use in setting Date headers.
+
 - Issue #12586: Added new provisional policies that implement convenient
   unicode support for email headers.  See What's New for details.
 
