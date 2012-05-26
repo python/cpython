@@ -104,7 +104,7 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        if len(value.splitlines())>1:
+        if isinstance(value, str) and len(value.splitlines())>1:
             raise ValueError("Header values may not contain linefeed "
                              "or carriage return characters")
         return (name, self.header_factory(name, value))
