@@ -229,13 +229,13 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testNOOP(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
-        expected = (250, b'Ok')
+        expected = (250, b'OK')
         self.assertEqual(smtp.noop(), expected)
         smtp.quit()
 
     def testRSET(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
-        expected = (250, b'Ok')
+        expected = (250, b'OK')
         self.assertEqual(smtp.rset(), expected)
         smtp.quit()
 
@@ -246,10 +246,18 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertEqual(smtp.ehlo(), expected)
         smtp.quit()
 
-    def testVRFY(self):
-        # VRFY isn't implemented in DebuggingServer
+    def testNotImplemented(self):
+        # EXPN isn't implemented in DebuggingServer
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
-        expected = (502, b'Error: command "VRFY" not implemented')
+        expected = (502, b'EXPN not implemented')
+        smtp.putcmd('EXPN')
+        self.assertEqual(smtp.getreply(), expected)
+        smtp.quit()
+
+    def testVRFY(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        expected = (252, b'Cannot VRFY user, but will accept message ' + \
+                         b'and attempt delivery')
         self.assertEqual(smtp.vrfy('nobody@nowhere.com'), expected)
         self.assertEqual(smtp.verify('nobody@nowhere.com'), expected)
         smtp.quit()
@@ -265,7 +273,8 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testHELP(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
-        self.assertEqual(smtp.help(), b'Error: command "HELP" not implemented')
+        self.assertEqual(smtp.help(), b'Supported commands: EHLO HELO MAIL ' + \
+                                      b'RCPT DATA RSET NOOP QUIT VRFY')
         smtp.quit()
 
     def testSend(self):
