@@ -46,6 +46,16 @@ import functools
 from string import ascii_letters, digits
 from email import errors
 
+__all__ = ['decode_q',
+           'encode_q',
+           'decode_b',
+           'encode_b',
+           'len_q',
+           'len_b',
+           'decode',
+           'encode',
+           ]
+
 #
 # Quoted Printable
 #
@@ -60,7 +70,7 @@ def decode_q(encoded):
 
 
 # dict mapping bytes to their encoded form
-class QByteMap(dict):
+class _QByteMap(dict):
 
     safe = b'-!*+/' + ascii_letters.encode('ascii') + digits.encode('ascii')
 
@@ -71,7 +81,7 @@ class QByteMap(dict):
             self[key] = "={:02X}".format(key)
         return self[key]
 
-_q_byte_map = QByteMap()
+_q_byte_map = _QByteMap()
 
 # In headers spaces are mapped to '_'.
 _q_byte_map[ord(' ')] = '_'
