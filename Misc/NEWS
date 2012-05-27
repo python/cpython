@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #14857: fix regression in references to PEP 3135 implicit __class__
+  closure variable (Reopens issue #12370)
+
 - Issue #14712 (PEP 405): Virtual environments. Implemented by Vinay Sajip.
 
 - Issue #14660 (PEP 420): Namespace packages. Implemented by Eric Smith.

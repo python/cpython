@@ -1676,7 +1676,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return 0;
         }
         /* return the (empty) __class__ cell */
-        str = PyUnicode_InternFromString("@__class__");
+        str = PyUnicode_InternFromString("__class__");
         if (str == NULL) {
             compiler_exit_scope(c);
             return 0;
