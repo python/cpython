@@ -106,6 +106,7 @@ typedef unsigned short mode_t;
        Python 3.3a0  3200 (__qualname__ added)
                      3210 (added size modulo 2**32 to the pyc header)
        Python 3.3a1  3220 (changed PEP 380 implementation)
+       Python 3.3a4  3230 (revert changes to implicit __class__ closure)
 */
 
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -118,7 +119,7 @@ typedef unsigned short mode_t;
 #define STRIFY(name) QUOTE(name)
 #define MAJOR STRIFY(PY_MAJOR_VERSION)
 #define MINOR STRIFY(PY_MINOR_VERSION)
-#define MAGIC (3220 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3230 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */
