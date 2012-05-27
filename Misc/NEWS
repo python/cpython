@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10365: File open dialog now works instead of crashing
+  even when parent window is closed. Patch by Roger Serwy.
+
 - Issue #14876: Use user-selected font for highlight configuration.
   Patch by Roger Serwy.
 
