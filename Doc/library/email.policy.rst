@@ -415,7 +415,7 @@ added matters.  To illustrate::
 
 The following instances of :class:`EmailPolicy` provide defaults suitable for
 specific application domains.  Note that in the future the behavior of these
-instances (in particular the ``HTTP` instance) may be adjusted to conform even
+instances (in particular the ``HTTP`` instance) may be adjusted to conform even
 more closely to the RFCs relevant to their domains.
 
 .. data:: default
