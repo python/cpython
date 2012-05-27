@@ -1,5 +1,5 @@
-:mod:`email`: Iterators
------------------------
+:mod:`email.iterators`: Iterators
+---------------------------------
 
 .. module:: email.iterators
    :synopsis: Iterate over a  message object tree.

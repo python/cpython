@@ -4,6 +4,10 @@
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
 
+.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
+.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
+
+
 .. note::
 
    The headerregistry module has been included in the standard library on a
