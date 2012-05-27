@@ -6436,7 +6436,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
             PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
             assert(PyUnicode_Check(name));
             if (!PyUnicode_CompareWithASCIIString(name,
-                                                  "@__class__")) {
+                                                  "__class__")) {
                 Py_ssize_t index = co->co_nlocals +
                     PyTuple_GET_SIZE(co->co_cellvars) + i;
                 PyObject *cell = f->f_localsplus[index];
