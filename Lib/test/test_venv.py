@@ -52,19 +52,19 @@ class BaseTest(unittest.TestCase):
 class BasicTest(BaseTest):
     """Test venv module functionality."""
 
+    def isdir(self, *args):
+        fn = self.get_env_file(*args)
+        self.assertTrue(os.path.isdir(fn))
+
     def test_defaults(self):
         """
         Test the create function with default arguments.
         """
-        def isdir(*args):
-            fn = self.get_env_file(*args)
-            self.assertTrue(os.path.isdir(fn))
-
         shutil.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        isdir(self.bindir)
-        isdir(self.include)
-        isdir(*self.lib)
+        self.isdir(self.bindir)
+        self.isdir(self.include)
+        self.isdir(*self.lib)
         data = self.get_text_file_contents('pyvenv.cfg')
         if sys.platform == 'darwin' and ('__PYTHONV_LAUNCHER__'
                                          in os.environ):
@@ -77,8 +77,9 @@ class BasicTest(BaseTest):
         self.assertTrue(data.startswith('#!%s%s' % (self.env_dir, os.sep)))
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
-            print('Contents of %r:' % self.bindir)
-            print('    %r' % os.listdir(self.bindir))
+            bd = self.get_env_file(self.bindir)
+            print('Contents of %r:' % bd)
+            print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_overwrite_existing(self):
@@ -88,6 +89,22 @@ class BasicTest(BaseTest):
         self.assertRaises(ValueError, venv.create, self.env_dir)
         builder = venv.EnvBuilder(clear=True)
         builder.create(self.env_dir)
+
+    def test_upgrade(self):
+        """
+        Test upgrading an existing environment directory.
+        """
+        builder = venv.EnvBuilder(upgrade=True)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.isdir(self.bindir)
+        self.isdir(self.include)
+        self.isdir(*self.lib)
+        fn = self.get_env_file(self.bindir, self.exe)
+        if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
+            bd = self.get_env_file(self.bindir)
+            print('Contents of %r:' % bd)
+            print('    %r' % os.listdir(bd))
+        self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_isolation(self):
         """
