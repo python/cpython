@@ -1,8 +1,11 @@
-:mod:`email`: Policy Objects
-----------------------------
+:mod:`email.policy`: Policy Objects
+-----------------------------------
 
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages
+
+.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
+.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
 .. versionadded:: 3.3
 
