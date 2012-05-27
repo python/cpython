@@ -76,7 +76,10 @@ class BasicTest(BaseTest):
         data = self.get_text_file_contents(self.bindir, self.ps3name)
         self.assertTrue(data.startswith('#!%s%s' % (self.env_dir, os.sep)))
         fn = self.get_env_file(self.bindir, self.exe)
-        self.assertTrue(os.path.exists(fn), 'File %r exists' % fn)
+        if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
+            print('Contents of %r:' % self.bindir)
+            print('    %r' % os.listdir(self.bindir))
+        self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_overwrite_existing(self):
         """
