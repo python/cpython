@@ -24,13 +24,12 @@ class BaseTest(unittest.TestCase):
             self.ps3name = 'pysetup3-script.py'
             self.lib = ('Lib',)
             self.include = 'Include'
-            self.exe = 'python.exe'
         else:
             self.bindir = 'bin'
             self.ps3name = 'pysetup3'
             self.lib = ('lib', 'python%s' % sys.version[:3])
             self.include = 'include'
-            self.exe = 'python'
+        self.exe = os.path.split(sys.executable)[-1]
 
     def tearDown(self):
         shutil.rmtree(self.env_dir)
