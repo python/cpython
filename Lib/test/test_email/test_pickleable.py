@@ -4,7 +4,7 @@ import copy
 import pickle
 from email import policy
 from email import message_from_string
-from email._headerregistry import HeaderRegistry
+from email.headerregistry import HeaderRegistry
 from test.test_email import TestEmailBase
 
 class TestPickleCopyHeader(TestEmailBase):
