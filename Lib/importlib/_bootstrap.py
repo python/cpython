@@ -771,7 +771,9 @@ class FileLoader:
     @_check_name
     def load_module(self, fullname):
         """Load a module from a file."""
-        return super().load_module(fullname)
+        # Issue #14857: Avoid the zero-argument form so the implementation
+        # of that form can be updated without breaking the frozen module
+        return super(FileLoader, self).load_module(fullname)
 
     @_check_name
     def get_filename(self, fullname):
