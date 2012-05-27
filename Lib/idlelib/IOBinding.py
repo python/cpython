@@ -183,7 +183,7 @@ class IOBinding:
             else:
                 if self.text:
                     self.text.focus_set()
-            
+
             return "break"
         #
         # Code for use outside IDLE:
