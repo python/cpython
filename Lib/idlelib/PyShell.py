@@ -1435,7 +1435,8 @@ def main():
     if tkversionwarning:
         shell.interp.runcommand(''.join(("print('", tkversionwarning, "')")))
 
-    root.mainloop()
+    while flist.inversedict:  # keep IDLE running while files are open.
+        root.mainloop()
     root.destroy()
 
 if __name__ == "__main__":

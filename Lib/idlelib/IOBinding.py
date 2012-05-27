@@ -156,7 +156,8 @@ class IOBinding:
                 self.filename_change_hook()
 
     def open(self, event=None, editFile=None):
-        if self.editwin.flist:
+        flist = self.editwin.flist
+        if flist:
             if not editFile:
                 filename = self.askopenfile()
             else:
@@ -167,16 +168,22 @@ class IOBinding:
                 # we open a new window.  But we won't replace the
                 # shell window (which has an interp(reter) attribute), which
                 # gets set to "not modified" at every new prompt.
+                # Also, make sure the current window has not been closed,
+                # since it can be closed during the Open File dialog.
                 try:
                     interp = self.editwin.interp
                 except AttributeError:
                     interp = None
-                if not self.filename and self.get_saved() and not interp:
-                    self.editwin.flist.open(filename, self.loadfile)
+
+                if self.editwin and not self.filename and \
+                          self.get_saved() and not interp:
+                    flist.open(filename, self.loadfile)
                 else:
-                    self.editwin.flist.open(filename)
+                    flist.open(filename)
             else:
-                self.text.focus_set()
+                if self.text:
+                    self.text.focus_set()
+            
             return "break"
         #
         # Code for use outside IDLE:
