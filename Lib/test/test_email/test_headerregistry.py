@@ -5,72 +5,71 @@ from email import errors
 from email import policy
 from email.message import Message
 from test.test_email import TestEmailBase
-from email import _headerregistry
-# Address and Group are public but I'm not sure where to put them yet.
-from email._headerregistry import Address, Group
+from email import headerregistry
+from email.headerregistry import Address, Group
 
 
 class TestHeaderRegistry(TestEmailBase):
 
     def test_arbitrary_name_unstructured(self):
-        factory = _headerregistry.HeaderRegistry()
+        factory = headerregistry.HeaderRegistry()
         h = factory('foobar', 'test')
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
-        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.UnstructuredHeader)
 
     def test_name_case_ignored(self):
-        factory = _headerregistry.HeaderRegistry()
+        factory = headerregistry.HeaderRegistry()
         # Whitebox check that test is valid
         self.assertNotIn('Subject', factory.registry)
         h = factory('Subject', 'test')
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
-        self.assertIsInstance(h, _headerregistry.UniqueUnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.UniqueUnstructuredHeader)
 
     class FooBase:
         def __init__(self, *args, **kw):
             pass
 
     def test_override_default_base_class(self):
-        factory = _headerregistry.HeaderRegistry(base_class=self.FooBase)
+        factory = headerregistry.HeaderRegistry(base_class=self.FooBase)
         h = factory('foobar', 'test')
         self.assertIsInstance(h, self.FooBase)
-        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.UnstructuredHeader)
 
     class FooDefault:
-        parse = _headerregistry.UnstructuredHeader.parse
+        parse = headerregistry.UnstructuredHeader.parse
 
     def test_override_default_class(self):
-        factory = _headerregistry.HeaderRegistry(default_class=self.FooDefault)
+        factory = headerregistry.HeaderRegistry(default_class=self.FooDefault)
         h = factory('foobar', 'test')
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
         self.assertIsInstance(h, self.FooDefault)
 
     def test_override_default_class_only_overrides_default(self):
-        factory = _headerregistry.HeaderRegistry(default_class=self.FooDefault)
+        factory = headerregistry.HeaderRegistry(default_class=self.FooDefault)
         h = factory('subject', 'test')
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
-        self.assertIsInstance(h, _headerregistry.UniqueUnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.UniqueUnstructuredHeader)
 
     def test_dont_use_default_map(self):
-        factory = _headerregistry.HeaderRegistry(use_default_map=False)
+        factory = headerregistry.HeaderRegistry(use_default_map=False)
         h = factory('subject', 'test')
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
-        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.UnstructuredHeader)
 
     def test_map_to_type(self):
-        factory = _headerregistry.HeaderRegistry()
+        factory = headerregistry.HeaderRegistry()
         h1 = factory('foobar', 'test')
-        factory.map_to_type('foobar', _headerregistry.UniqueUnstructuredHeader)
+        factory.map_to_type('foobar', headerregistry.UniqueUnstructuredHeader)
         h2 = factory('foobar', 'test')
-        self.assertIsInstance(h1, _headerregistry.BaseHeader)
-        self.assertIsInstance(h1, _headerregistry.UnstructuredHeader)
-        self.assertIsInstance(h2, _headerregistry.BaseHeader)
-        self.assertIsInstance(h2, _headerregistry.UniqueUnstructuredHeader)
+        self.assertIsInstance(h1, headerregistry.BaseHeader)
+        self.assertIsInstance(h1, headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h2, headerregistry.BaseHeader)
+        self.assertIsInstance(h2, headerregistry.UniqueUnstructuredHeader)
 
 
 class TestHeaderBase(TestEmailBase):
 
-    factory = _headerregistry.HeaderRegistry()
+    factory = headerregistry.HeaderRegistry()
 
     def make_header(self, name, value):
         return self.factory(name, value)
@@ -149,13 +148,13 @@ class TestDateHeader(TestHeaderBase):
 
     def test_date_header_properties(self):
         h = self.make_header('date', self.datestring)
-        self.assertIsInstance(h, _headerregistry.UniqueDateHeader)
+        self.assertIsInstance(h, headerregistry.UniqueDateHeader)
         self.assertEqual(h.max_count, 1)
         self.assertEqual(h.defects, ())
 
     def test_resent_date_header_properties(self):
         h = self.make_header('resent-date', self.datestring)
-        self.assertIsInstance(h, _headerregistry.DateHeader)
+        self.assertIsInstance(h, headerregistry.DateHeader)
         self.assertEqual(h.max_count, None)
         self.assertEqual(h.defects, ())
 

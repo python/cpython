@@ -310,10 +310,10 @@ added matters.  To illustrate::
 
 .. note::
 
-   The remainder of the classes documented below are included in the standard
-   library on a :term:`provisional basis <provisional package>`.  Backwards
-   incompatible changes (up to and including removal of the feature) may occur
-   if deemed necessary by the core developers.
+   The documentation below describes new policies that are included in the
+   standard library on a :term:`provisional basis <provisional package>`.
+   Backwards incompatible changes (up to and including removal of the feature)
+   may occur if deemed necessary by the core developers.
 
 
 .. class:: EmailPolicy(**kw)
@@ -353,12 +353,12 @@ added matters.  To illustrate::
 
       A callable that takes two arguments, ``name`` and ``value``, where
       ``name`` is a header field name and ``value`` is an unfolded header field
-      value, and returns a string-like object that represents that header.  A
-      default ``header_factory`` is provided that understands some of the
-      :RFC:`5322` header field types.  (Currently address fields and date
-      fields have special treatment, while all other fields are treated as
-      unstructured.  This list will be completed before the extension is marked
-      stable.)
+      value, and returns a string subclass that represents that header.  A
+      default ``header_factory`` (see :mod:`~email.headerregistry`) is provided
+      that understands some of the :RFC:`5322` header field types.  (Currently
+      address fields and date fields have special treatment, while all other
+      fields are treated as unstructured.  This list will be completed before
+      the extension is marked stable.)
 
    The class provides the following concrete implementations of the abstract
    methods of :class:`Policy`:
@@ -465,167 +465,5 @@ header.  Likewise, a header may be assigned a new value, or a new header
 created, using a unicode string, and the policy will take care of converting
 the unicode string into the correct RFC encoded form.
 
-The custom header objects and their attributes are described below.  All custom
-header objects are string subclasses, and their string value is the fully
-decoded value of the header field (the part of the field after the ``:``)
-
-
-.. class:: BaseHeader
-
-   This is the base class for all custom header objects.  It provides the
-   following attributes:
-
-   .. attribute:: name
-
-      The header field name (the portion of the field before the ':').
-
-   .. attribute:: defects
-
-      A possibly empty list of :class:`~email.errors.MessageDefect` objects
-      that record any RFC violations found while parsing the header field.
-
-   .. method:: fold(*, policy)
-
-      Return a string containing :attr:`~email.policy.Policy.linesep`
-      characters as required to correctly fold the header according
-      to *policy*.  A :attr:`~email.policy.Policy.cte_type` of
-      ``8bit`` will be treated as if it were ``7bit``, since strings
-      may not contain binary data.
-
-
-.. class:: UnstructuredHeader
-
-   The class used for any header that does not have a more specific
-   type.  (The :mailheader:`Subject` header is an example of an
-   unstructured header.)  It does not have any additional attributes.
-
-
-.. class:: DateHeader
-
-   The value of this type of header is a single date and time value.  The
-   primary example of this type of header is the :mailheader:`Date` header.
-
-   .. attribute:: datetime
-
-      A :class:`~datetime.datetime` encoding the date and time from the
-      header value.
-
-      The ``datetime`` will be a naive ``datetime`` if the value either does
-      not have a specified timezone (which would be a violation of the RFC) or
-      if the timezone is specified as ``-0000``.  This timezone value indicates
-      that the date and time is to be considered to be in UTC, but with no
-      indication of the local timezone in which it was generated.  (This
-      contrasts to ``+0000``, which indicates a date and time that really is in
-      the UTC ``0000`` timezone.)
-
-      If the header value contains a valid timezone that is not ``-0000``, the
-      ``datetime`` will be an aware ``datetime`` having a
-      :class:`~datetime.tzinfo` set to the :class:`~datetime.timezone`
-      indicated by the header value.
-
-   A ``datetime`` may also be assigned to a :mailheader:`Date` type header.
-   The resulting string value will use a timezone of ``-0000`` if the
-   ``datetime`` is naive, and the appropriate UTC offset if the ``datetime`` is
-   aware.
-
-
-.. class:: AddressHeader
-
-   This class is used for all headers that can contain addresses, whether they
-   are supposed to be singleton addresses or a list.
-
-   .. attribute:: addresses
-
-      A list of :class:`.Address` objects listing all of the addresses that
-      could be parsed out of the field value.
-
-   .. attribute:: groups
-
-      A list of :class:`.Group` objects.  Every address in :attr:`.addresses`
-      appears in one of the group objects in the tuple.  Addresses that are not
-      syntactically part of a group are represented by ``Group`` objects whose
-      ``name`` is ``None``.
-
-   In addition to addresses in string form, any combination of
-   :class:`.Address` and :class:`.Group` objects, singly or in a list, may be
-   assigned to an address header.
-
-
-.. class:: Address(display_name='', username='', domain='', addr_spec=None):
-
-   The class used to represent an email address.  The general form of an
-   address is::
-
-      [display_name] <username@domain>
-
-   or::
-
-      username@domain
-
-   where each part must conform to specific syntax rules spelled out in
-   :rfc:`5322`.
-
-   As a convenience *addr_spec* can be specified instead of *username* and
-   *domain*, in which case *username* and *domain* will be parsed from the
-   *addr_spec*.  An *addr_spec* must be a properly RFC quoted string; if it is
-   not ``Address`` will raise an error.  Unicode characters are allowed and
-   will be property encoded when serialized.  However, per the RFCs, unicode is
-   *not* allowed in the username portion of the address.
-
-   .. attribute:: display_name
-
-      The display name portion of the address, if any, with all quoting
-      removed.  If the address does not have a display name, this attribute
-      will be an empty string.
-
-   .. attribute:: username
-
-      The ``username`` portion of the address, with all quoting removed.
-
-   .. attribute:: domain
-
-      The ``domain`` portion of the address.
-
-   .. attribute:: addr_spec
-
-      The ``username@domain`` portion of the address, correctly quoted
-      for use as a bare address (the second form shown above).  This
-      attribute is not mutable.
-
-   .. method:: __str__()
-
-      The ``str`` value of the object is the address quoted according to
-      :rfc:`5322` rules, but with no Content Transfer Encoding of any non-ASCII
-      characters.
-
-
-.. class:: Group(display_name=None, addresses=None)
-
-   The class used to represent an address group.  The general form of an
-   address group is::
-
-     display_name: [address-list];
-
-   As a convenience for processing lists of addresses that consist of a mixture
-   of groups and single addresses, a ``Group`` may also be used to represent
-   single addresses that are not part of a group by setting *display_name* to
-   ``None`` and providing a list of the single address as *addresses*.
-
-   .. attribute:: display_name
-
-      The ``display_name`` of the group.  If it is ``None`` and there is
-      exactly one ``Address`` in ``addresses``, then the ``Group`` represents a
-      single address that is not in a group.
-
-   .. attribute:: addresses
-
-      A possibly empty tuple of :class:`.Address` objects representing the
-      addresses in the group.
-
-   .. method:: __str__()
-
-      The ``str`` value of a ``Group`` is formatted according to :rfc:`5322`,
-      but with no Content Transfer Encoding of any non-ASCII characters.  If
-      ``display_name`` is none and there is a single ``Address`` in the
-      ``addresses` list, the ``str`` value will be the same as the ``str`` of
-      that single ``Address``.
+The custom header objects and their attributes are described in
+:mod:`~email.headerregistry`.
