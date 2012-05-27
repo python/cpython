@@ -1,5 +1,5 @@
-:mod:`email`: Representing an email message
--------------------------------------------
+:mod:`email.message`: Representing an email message
+---------------------------------------------------
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
