@@ -5,7 +5,7 @@ import unittest
 import email.policy
 import email.parser
 import email.generator
-from email import _headerregistry
+from email import headerregistry
 
 def make_defaults(base_defaults, differences):
     defaults = base_defaults.copy()
@@ -185,11 +185,11 @@ class PolicyAPITests(unittest.TestCase):
     def test_default_header_factory(self):
         h = email.policy.default.header_factory('Test', 'test')
         self.assertEqual(h.name, 'Test')
-        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
-        self.assertIsInstance(h, _headerregistry.BaseHeader)
+        self.assertIsInstance(h, headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.BaseHeader)
 
     class Foo:
-        parse = _headerregistry.UnstructuredHeader.parse
+        parse = headerregistry.UnstructuredHeader.parse
 
     def test_each_Policy_gets_unique_factory(self):
         policy1 = email.policy.EmailPolicy()
@@ -197,10 +197,10 @@ class PolicyAPITests(unittest.TestCase):
         policy1.header_factory.map_to_type('foo', self.Foo)
         h = policy1.header_factory('foo', 'test')
         self.assertIsInstance(h, self.Foo)
-        self.assertNotIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertNotIsInstance(h, headerregistry.UnstructuredHeader)
         h = policy2.header_factory('foo', 'test')
         self.assertNotIsInstance(h, self.Foo)
-        self.assertIsInstance(h, _headerregistry.UnstructuredHeader)
+        self.assertIsInstance(h, headerregistry.UnstructuredHeader)
 
     def test_clone_copies_factory(self):
         policy1 = email.policy.EmailPolicy()

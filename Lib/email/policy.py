@@ -4,7 +4,7 @@ code that adds all the email6 features.
 
 from email._policybase import Policy, Compat32, compat32
 from email.utils import _has_surrogates
-from email._headerregistry import HeaderRegistry as _HeaderRegistry
+from email.headerregistry import HeaderRegistry as HeaderRegistry
 
 __all__ = [
     'Compat32',
@@ -60,13 +60,13 @@ class EmailPolicy(Policy):
     """
 
     refold_source = 'long'
-    header_factory = _HeaderRegistry()
+    header_factory = HeaderRegistry()
 
     def __init__(self, **kw):
         # Ensure that each new instance gets a unique header factory
         # (as opposed to clones, which share the factory).
         if 'header_factory' not in kw:
-            object.__setattr__(self, 'header_factory', _HeaderRegistry())
+            object.__setattr__(self, 'header_factory', HeaderRegistry())
         super().__init__(**kw)
 
     # The logic of the next three methods is chosen such that it is possible to
