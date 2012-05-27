@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10365: File open dialog now works instead of crashing
+  even when parent window is closed. Patch by Roger Serwy.
+
 - Issue #8739: Updated smtpd to support RFC 5321, and added support for the
   RFC 1870 SIZE extension.
 
