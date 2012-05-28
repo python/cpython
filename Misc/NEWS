@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14443: Tell rpmbuild to use the correct version of Python in
+  bdist_rpm. Initial patch by Ross Lagerwall.
+
 - Issue14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
   Patch by Roger Serwy.
 
