@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue12510: Attempting to get invalid tooltip no longer closes Idle.
+  Original patch by Roger Serwy.
+
 - Issue #14925: email now registers a defect when the parser decides that there
   is a missing header/body separator line.  MalformedHeaderDefect, which the
   existing code would never actually generate, is deprecated.
