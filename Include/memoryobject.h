@@ -63,6 +63,7 @@ typedef struct {
     Py_ssize_t exports;           /* number of buffer re-exports */
     Py_buffer view;               /* private copy of the exporter's view */
     char format[_Py_MEMORYVIEW_MAX_FORMAT]; /* used for casting */
+    PyObject *weakreflist;
     Py_ssize_t ob_array[1];       /* shape, strides, suboffsets */
 } PyMemoryViewObject;
 #endif
