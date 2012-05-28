@@ -110,7 +110,9 @@ class CallTips:
             namespace.update(__main__.__dict__)
             try:
                 return eval(name, namespace)
-            except (NameError, AttributeError):
+                # any exception is possible if evalfuncs True in open_calltip
+                # at least Syntax, Name, Attribute, Index, and Key E. if not
+            except:
                 return None
 
 def _find_constructor(class_ob):
@@ -125,9 +127,10 @@ def _find_constructor(class_ob):
         return None
 
 def get_argspec(ob):
-    """Get a string describing the arguments for the given object."""
+    """Get a string describing the arguments for the given object,
+       only if it is callable."""
     argspec = ""
-    if ob is not None:
+    if ob is not None and hasattr(ob, '__call__'):
         if isinstance(ob, type):
             fob = _find_constructor(ob)
             if fob is None:
