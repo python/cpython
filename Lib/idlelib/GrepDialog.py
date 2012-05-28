@@ -81,7 +81,7 @@ class GrepDialog(SearchDialogBase):
         hits = 0
         for fn in list:
             try:
-                f = open(fn)
+                f = open(fn, errors='replace')
             except IOError as msg:
                 print(msg)
                 continue

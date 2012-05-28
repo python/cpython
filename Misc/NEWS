@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
+  Patch by Roger Serwy.
+
 - Issue12510: Attempting to get invalid tooltip no longer closes Idle.
   Original patch by Roger Serwy.
 
