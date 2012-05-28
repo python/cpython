@@ -29,7 +29,11 @@ class BaseTest(unittest.TestCase):
             self.ps3name = 'pysetup3'
             self.lib = ('lib', 'python%s' % sys.version[:3])
             self.include = 'include'
-        self.exe = os.path.split(sys.executable)[-1]
+        if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in env:
+            executable = os.environ['__PYTHONV_LAUNCHER__']
+        else:
+            executable = sys.executable
+        self.exe = os.path.split(executable)[-1]
 
     def tearDown(self):
         shutil.rmtree(self.env_dir)
