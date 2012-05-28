@@ -237,17 +237,33 @@ class TestMessageDefectDetectionBase:
                           policy=self.policy.clone(raise_on_defect=True))
 
     def test_first_line_is_continuation_header(self):
-        msg = self._str_msg(' Line 1\nLine 2\nLine 3')
-        self.assertEqual(msg.keys(), [])
-        self.assertEqual(msg.get_payload(), 'Line 2\nLine 3')
+        msg = self._str_msg(' Line 1\nSubject: test\n\nbody')
+        self.assertEqual(msg.keys(), ['Subject'])
+        self.assertEqual(msg.get_payload(), 'body')
         self.assertEqual(len(self.get_defects(msg)), 1)
-        self.assertTrue(isinstance(self.get_defects(msg)[0],
-                                   errors.FirstHeaderLineIsContinuationDefect))
+        self.assertDefectsEqual(self.get_defects(msg),
+                                 [errors.FirstHeaderLineIsContinuationDefect])
         self.assertEqual(self.get_defects(msg)[0].line, ' Line 1\n')
 
     def test_first_line_is_continuation_header_raise_on_defect(self):
         with self.assertRaises(errors.FirstHeaderLineIsContinuationDefect):
-            self._str_msg(' Line 1\nLine 2\nLine 3',
+            self._str_msg(' Line 1\nSubject: test\n\nbody\n',
+                          policy=self.policy.clone(raise_on_defect=True))
+
+    def test_missing_header_body_separator(self):
+        # Our heuristic if we see a line that doesn't look like a header (no
+        # leading whitespace but no ':') is to assume that the blank line that
+        # separates the header from the body is missing, and to stop parsing
+        # headers and start parsing the body.
+        msg = self._str_msg('Subject: test\nnot a header\nTo: abc\n\nb\n')
+        self.assertEqual(msg.keys(), ['Subject'])
+        self.assertEqual(msg.get_payload(), 'not a header\nTo: abc\n\nb\n')
+        self.assertDefectsEqual(self.get_defects(msg),
+                                [errors.MissingHeaderBodySeparatorDefect])
+
+    def test_missing_header_body_separator_raise_on_defect(self):
+        with self.assertRaises(errors.MissingHeaderBodySeparatorDefect):
+            self._str_msg('Subject: test\nnot a header\nTo: abc\n\nb\n',
                           policy=self.policy.clone(raise_on_defect=True))
 
 
