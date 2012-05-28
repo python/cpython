@@ -29,7 +29,7 @@ class BaseTest(unittest.TestCase):
             self.ps3name = 'pysetup3'
             self.lib = ('lib', 'python%s' % sys.version[:3])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in env:
+        if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in os.environ:
             executable = os.environ['__PYTHONV_LAUNCHER__']
         else:
             executable = sys.executable
