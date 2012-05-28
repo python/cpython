@@ -778,7 +778,7 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2-1), size(vh) + 2*self.longdigit)
         check(int(PyLong_BASE**2), size(vh) + 3*self.longdigit)
         # memoryview
-        check(memoryview(b''), size(h + 'PPiP4P2i5P3cP'))
+        check(memoryview(b''), size(h + 'PPiP4P2i5P3c2P'))
         # module
         check(unittest, size(h + '3P'))
         # None
