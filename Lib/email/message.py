@@ -17,6 +17,7 @@ from email import utils
 from email import errors
 from email._policybase import compat32
 from email import charset as _charset
+from email._encoded_words import decode_b
 Charset = _charset.Charset
 
 SEMISPACE = '; '
@@ -249,11 +250,12 @@ class Message:
         if cte == 'quoted-printable':
             return utils._qdecode(bpayload)
         elif cte == 'base64':
-            try:
-                return base64.b64decode(bpayload)
-            except binascii.Error:
-                # Incorrect padding
-                return bpayload
+            # XXX: this is a bit of a hack; decode_b should probably be factored
+            # out somewhere, but I haven't figured out where yet.
+            value, defects = decode_b(b''.join(bpayload.splitlines()))
+            for defect in defects:
+                self.policy.handle_defect(self, defect)
+            return value
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
             in_file = BytesIO(bpayload)
             out_file = BytesIO()

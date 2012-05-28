@@ -513,6 +513,7 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.values(), ['One Hundred', 'Twenty', 'Three', 'Eleven'])
         self.assertRaises(KeyError, msg.replace_header, 'Fourth', 'Missing')
 
+    # test_defect_handling:test_invalid_chars_in_base64_payload
     def test_broken_base64_payload(self):
         x = 'AwDp0P7//y6LwKEAcPa/6Q=9'
         msg = Message()
@@ -520,7 +521,10 @@ class TestMessageAPI(TestEmailBase):
         msg['content-transfer-encoding'] = 'base64'
         msg.set_payload(x)
         self.assertEqual(msg.get_payload(decode=True),
-                         bytes(x, 'raw-unicode-escape'))
+                         (b'\x03\x00\xe9\xd0\xfe\xff\xff.\x8b\xc0'
+                          b'\xa1\x00p\xf6\xbf\xe9\x0f'))
+        self.assertIsInstance(msg.defects[0],
+                              errors.InvalidBase64CharactersDefect)
 
     def test_broken_unicode_payload(self):
         # This test improves coverage but is not a compliance test.
@@ -1815,7 +1819,7 @@ class TestNonConformant(TestEmailBase):
         eq(msg.get_content_maintype(), 'text')
         eq(msg.get_content_subtype(), 'plain')
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_same_boundary_inner_outer(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_15.txt')
@@ -1826,7 +1830,7 @@ class TestNonConformant(TestEmailBase):
         unless(isinstance(inner.defects[0],
                           errors.StartBoundaryNotFoundDefect))
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_multipart_no_boundary(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_25.txt')
@@ -1860,7 +1864,7 @@ class TestNonConformant(TestEmailBase):
         --===============3344438784458119861==--
         """)
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_multipart_invalid_cte(self):
         msg = self._str_msg(
             self.multipart_msg.format("\nContent-Transfer-Encoding: base64"))
@@ -1868,12 +1872,12 @@ class TestNonConformant(TestEmailBase):
         self.assertIsInstance(msg.defects[0],
             errors.InvalidMultipartContentTransferEncodingDefect)
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_multipart_no_cte_no_defect(self):
         msg = self._str_msg(self.multipart_msg.format(''))
         self.assertEqual(len(msg.defects), 0)
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_multipart_valid_cte_no_defect(self):
         for cte in ('7bit', '8bit', 'BINary'):
             msg = self._str_msg(
@@ -1930,7 +1934,7 @@ Subject: here's something interesting
 counter to RFC 2822, there's no separating newline here
 """)
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_lying_multipart(self):
         unless = self.assertTrue
         msg = self._msgobj('msg_41.txt')
@@ -1941,7 +1945,7 @@ counter to RFC 2822, there's no separating newline here
         unless(isinstance(msg.defects[1],
                           errors.MultipartInvariantViolationDefect))
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_missing_start_boundary(self):
         outer = self._msgobj('msg_42.txt')
         # The message structure is:
@@ -1957,7 +1961,7 @@ counter to RFC 2822, there's no separating newline here
         self.assertTrue(isinstance(bad.defects[0],
                                    errors.StartBoundaryNotFoundDefect))
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_first_line_is_continuation_header(self):
         eq = self.assertEqual
         m = ' Line 1\nSubject: test\n\nbody'
@@ -3271,15 +3275,19 @@ class Test8BitBytesHandling(unittest.TestCase):
         self.assertEqual(msg.get_payload(decode=True),
                         'pöstál\n'.encode('utf-8'))
 
+    # test_defect_handling:test_invalid_chars_in_base64_payload
     def test_8bit_in_base64_body(self):
-        # Sticking an 8bit byte in a base64 block makes it undecodable by
-        # normal means, so the block is returned undecoded, but as bytes.
+        # If we get 8bit bytes in a base64 body, we can just ignore them
+        # as being outside the base64 alphabet and decode anyway.  But
+        # we register a defect.
         m = self.bodytest_msg.format(charset='utf-8',
                                      cte='base64',
                                      bodyline='cMO2c3RhbAá=').encode('utf-8')
         msg = email.message_from_bytes(m)
         self.assertEqual(msg.get_payload(decode=True),
-                         'cMO2c3RhbAá=\n'.encode('utf-8'))
+                         'pöstal'.encode('utf-8'))
+        self.assertIsInstance(msg.defects[0],
+                              errors.InvalidBase64CharactersDefect)
 
     def test_8bit_in_uuencode_body(self):
         # Sticking an 8bit byte in a uuencode block makes it undecodable by
