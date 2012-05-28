@@ -111,10 +111,14 @@ Here are the methods of the :class:`Message` class:
       header. When ``True`` and the message is not a multipart, the payload will
       be decoded if this header's value is ``quoted-printable`` or ``base64``.
       If some other encoding is used, or :mailheader:`Content-Transfer-Encoding`
-      header is missing, or if the payload has bogus base64 data, the payload is
+      header is missing, the payload is
       returned as-is (undecoded).  In all cases the returned value is binary
       data.  If the message is a multipart and the *decode* flag is ``True``,
-      then ``None`` is returned.
+      then ``None`` is returned.  If the payload is base64 and it was not
+      perfectly formed (missing padding, characters outside the base64
+      alphabet), then an appropriate defect will be added to the message's
+      defect property (:class:`~email.errors.InvalidBase64PaddingDefect` or
+      :class:`~email.errors.InvalidBase64CharactersDefect`, respectively).
 
       When *decode* is ``False`` (the default) the body is returned as a string
       without decoding the :mailheader:`Content-Transfer-Encoding`.  However,
