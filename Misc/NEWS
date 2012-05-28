@@ -49,8 +49,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #12515: email now registers a defect if it gets to EOF while parsing
+  a MIME part without seeing the closing MIME boundary.
+
 - Issue12510: Attempting to get invalid tooltip no longer closes Idle.
   Original patch by Roger Serwy.
+
+- Issue #1672568: email now always decodes base64 payloads, adding padding and
+  ignoring non-base64-alphabet characters if needed, and registering defects
+  for any such problems.
 
 - Issue #14925: email now registers a defect when the parser decides that there
   is a missing header/body separator line.  MalformedHeaderDefect, which the

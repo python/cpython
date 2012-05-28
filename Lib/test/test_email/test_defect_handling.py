@@ -278,6 +278,39 @@ class TestMessageDefectDetectionBase:
         with self.assertRaises(errors.InvalidBase64CharactersDefect):
             msg.get_payload(decode=True)
 
+    missing_ending_boundary = textwrap.dedent("""\
+        To: 1@harrydomain4.com
+        Subject: Fwd: 1
+        MIME-Version: 1.0
+        Content-Type: multipart/alternative;
+         boundary="------------000101020201080900040301"
+
+        --------------000101020201080900040301
+        Content-Type: text/plain; charset=ISO-8859-1
+        Content-Transfer-Encoding: 7bit
+
+        Alternative 1
+
+        --------------000101020201080900040301
+        Content-Type: text/html; charset=ISO-8859-1
+        Content-Transfer-Encoding: 7bit
+
+        Alternative 2
+
+        """)
+
+    def test_missing_ending_boundary(self):
+        msg = self._str_msg(self.missing_ending_boundary)
+        self.assertEqual(len(msg.get_payload()), 2)
+        self.assertEqual(msg.get_payload(1).get_payload(), 'Alternative 2\n')
+        self.assertDefectsEqual(self.get_defects(msg),
+                                [errors.CloseBoundaryNotFoundDefect])
+
+    def test_missing_ending_boundary_raise_on_defect(self):
+        with self.assertRaises(errors.CloseBoundaryNotFoundDefect):
+            self._str_msg(self.missing_ending_boundary,
+                          policy=self.policy.clone(raise_on_defect=True))
+
 
 class TestMessageDefectDetection(TestMessageDefectDetectionBase, TestEmailBase):
 
