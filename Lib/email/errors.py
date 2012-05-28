@@ -42,6 +42,9 @@ class NoBoundaryInMultipartDefect(MessageDefect):
 class StartBoundaryNotFoundDefect(MessageDefect):
     """The claimed start boundary was never found."""
 
+class CloseBoundaryNotFoundDefect(MessageDefect):
+    """A start boundary was found, but not the corresponding close boundary."""
+
 class FirstHeaderLineIsContinuationDefect(MessageDefect):
     """A message had a continuation line as its first header line."""
 

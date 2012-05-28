@@ -73,6 +73,11 @@ this class is *not* an exception!
 * :class:`StartBoundaryNotFoundDefect` -- The start boundary claimed in the
   :mailheader:`Content-Type` header was never found.
 
+* :class:`CloseBoundaryNotFoundDefect` -- A start boundary was found, but
+  no corresponding close boundary was ever found.
+
+  .. versionadded: 3.3
+
 * :class:`FirstHeaderLineIsContinuationDefect` -- The message had a continuation
   line as its first header line.
 

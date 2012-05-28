@@ -324,6 +324,7 @@ class FeedParser:
             capturing_preamble = True
             preamble = []
             linesep = False
+            close_boundary_seen = False
             while True:
                 line = self._input.readline()
                 if line is NeedMoreData:
@@ -338,6 +339,7 @@ class FeedParser:
                     # the closing boundary, then we need to initialize the
                     # epilogue with the empty string (see below).
                     if mo.group('end'):
+                        close_boundary_seen = True
                         linesep = mo.group('linesep')
                         break
                     # We saw an inter-part boundary.  Were we in the preamble?
@@ -406,7 +408,6 @@ class FeedParser:
             # We've seen either the EOF or the end boundary.  If we're still
             # capturing the preamble, we never saw the start boundary.  Note
             # that as a defect and store the captured text as the payload.
-            # Everything from here to the EOF is epilogue.
             if capturing_preamble:
                 defect = errors.StartBoundaryNotFoundDefect()
                 self.policy.handle_defect(self._cur, defect)
@@ -418,8 +419,15 @@ class FeedParser:
                         continue
                 self._cur.epilogue = EMPTYSTRING.join(epilogue)
                 return
-            # If the end boundary ended in a newline, we'll need to make sure
-            # the epilogue isn't None
+            # If we're not processing the preamble, then we might have seen
+            # EOF without seeing that end boundary...that is also a defect.
+            if not close_boundary_seen:
+                defect = errors.CloseBoundaryNotFoundDefect()
+                self.policy.handle_defect(self._cur, defect)
+                return
+            # Everything from here to the EOF is epilogue.  If the end boundary
+            # ended in a newline, we'll need to make sure the epilogue isn't
+            # None
             if linesep:
                 epilogue = ['']
             else:
