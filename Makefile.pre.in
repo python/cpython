@@ -974,6 +974,24 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/cjkencodings test/decimaltestdata test/xmltestdata \
 		test/subprocessdata test/sndhdrdata \
 		test/tracedmodules test/encoded_modules \
+		test/namespace_pkgs \
+		test/namespace_pkgs/both_portions \
+		test/namespace_pkgs/both_portions/foo \
+		test/namespace_pkgs/not_a_namespace_pkg \
+		test/namespace_pkgs/not_a_namespace_pkg/foo \
+		test/namespace_pkgs/portion1 \
+		test/namespace_pkgs/portion1/foo \
+		test/namespace_pkgs/portion2 \
+		test/namespace_pkgs/portion2/foo \
+		test/namespace_pkgs/project1 \
+		test/namespace_pkgs/project1/parent \
+		test/namespace_pkgs/project1/parent/child \
+		test/namespace_pkgs/project2 \
+		test/namespace_pkgs/project2/parent \
+		test/namespace_pkgs/project2/parent/child \
+		test/namespace_pkgs/project3 \
+		test/namespace_pkgs/project3/parent \
+		test/namespace_pkgs/project3/parent/child \
 		collections concurrent concurrent/futures encodings \
 		email email/mime test/test_email test/test_email/data \
 		html json test/json_tests http dbm xmlrpc \
