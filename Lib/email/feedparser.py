@@ -219,6 +219,8 @@ class FeedParser:
                 # (i.e. newline), just throw it away. Otherwise the line is
                 # part of the body so push it back.
                 if not NLCRE.match(line):
+                    defect = errors.MissingHeaderBodySeparatorDefect()
+                    self.policy.handle_defect(self._cur, defect)
                     self._input.unreadline(line)
                 break
             headers.append(line)
@@ -488,12 +490,10 @@ class FeedParser:
                     self._cur.defects.append(defect)
                     continue
             # Split the line on the colon separating field name from value.
+            # There will always be a colon, because if there wasn't the part of
+            # the parser that calls us would have started parsing the body.
             i = line.find(':')
-            if i < 0:
-                defect = errors.MalformedHeaderDefect(line)
-                # XXX: fixme (defect not going through policy)
-                self._cur.defects.append(defect)
-                continue
+            assert i>0, "_parse_headers fed line with no : and no leading WS"
             lastheader = line[:i]
             lastvalue = [line]
         # Done with all the lines, so handle the last header.
