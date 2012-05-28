@@ -111,6 +111,46 @@ static Py_ssize_t long_lived_pending = 0;
     http://mail.python.org/pipermail/python-dev/2008-June/080579.html
 */
 
+/*
+   NOTE: about untracking of mutable objects.
+   
+   Certain types of container cannot participate in a reference cycle, and
+   so do not need to be tracked by the garbage collector. Untracking these
+   objects reduces the cost of garbage collections. However, determining
+   which objects may be untracked is not free, and the costs must be
+   weighed against the benefits for garbage collection.
+
+   There are two possible strategies for when to untrack a container:
+
+   i) When the container is created.
+   ii) When the container is examined by the garbage collector.
+
+   Tuples containing only immutable objects (integers, strings etc, and
+   recursively, tuples of immutable objects) do not need to be tracked.
+   The interpreter creates a large number of tuples, many of which will
+   not survive until garbage collection. It is therefore not worthwhile
+   to untrack eligible tuples at creation time.
+
+   Instead, all tuples except the empty tuple are tracked when created. 
+   During garbage collection it is determined whether any surviving tuples 
+   can be untracked. A tuple can be untracked if all of its contents are 
+   already not tracked. Tuples are examined for untracking in all garbage 
+   collection cycles. It may take more than one cycle to untrack a tuple.
+
+   Dictionaries containing only immutable objects also do not need to be
+   tracked. Dictionaries are untracked when created. If a tracked item is
+   inserted into a dictionary (either as a key or value), the dictionary
+   becomes tracked. During a full garbage collection (all generations),
+   the collector will untrack any dictionaries whose contents are not
+   tracked.
+
+   The module provides the python function is_tracked(obj), which returns
+   the CURRENT tracking status of the object. Subsequent garbage
+   collections may change the tracking status of the object.
+   
+   Untracking of certain containers was introduced in issue #4688, and 
+   the algorithm was refined in response to issue #14775.
+*/
 
 /* set for debugging information */
 #define DEBUG_STATS             (1<<0) /* print collection statistics */
@@ -436,9 +476,6 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             if (PyTuple_CheckExact(op)) {
                 _PyTuple_MaybeUntrack(op);
             }
-            else if (PyDict_CheckExact(op)) {
-                _PyDict_MaybeUntrack(op);
-            }
         }
         else {
             /* This *may* be unreachable.  To make progress,
@@ -476,6 +513,20 @@ has_finalizer(PyObject *op)
         return PyGen_NeedsFinalizing((PyGenObject *)op);
     else
         return 0;
+}
+
+/* Try to untrack all currently tracked dictionaries */
+static void
+untrack_dicts(PyGC_Head *head)
+{
+    PyGC_Head *next, *gc = head->gc.gc_next;
+    while (gc != head) {
+        PyObject *op = FROM_GC(gc);
+        next = gc->gc.gc_next;
+        if (PyDict_CheckExact(op))
+            _PyDict_MaybeUntrack(op);
+        gc = next;
+    }
 }
 
 /* Move the objects in unreachable with __del__ methods into `finalizers`.
@@ -890,6 +941,9 @@ collect(int generation)
         gc_list_merge(young, old);
     }
     else {
+        /* We only untrack dicts in full collections, to avoid quadratic
+           dict build-up. See issue #14775. */
+        untrack_dicts(young);
         long_lived_pending = 0;
         long_lived_total = gc_list_size(young);
     }
