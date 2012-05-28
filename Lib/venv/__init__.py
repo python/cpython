@@ -3,8 +3,8 @@ Virtual environment (venv) package for Python. Based on PEP 405.
 
 Copyright (C) 20011-2012 Vinay Sajip. All Rights Reserved.
 
-usage: python -m venv [-h] [--no-distribute] [--system-site-packages]
-            [--symlinks] [--clear] [--upgrade]
+usage: python -m venv [-h] [--system-site-packages] [--symlinks] [--clear]
+            [--upgrade]
             ENV_DIR [ENV_DIR ...]
 
 Creates virtual Python environments in one or more target directories.
@@ -14,7 +14,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --no-distribute       Don't install Distribute in the virtual environment.*
   --system-site-packages
                         Give the virtual environment access to the system
                         site-packages dir.
@@ -24,10 +23,6 @@ optional arguments:
                         raised.
   --upgrade             Upgrade the environment directory to use this version
                         of Python, assuming Python has been upgraded in-place.
-
-*Note: Distribute support will be available during the alpha phase to
-facilitate testing third-party packages with venvs created using this package.
-This support will be removed after the alpha phase.
 """
 import base64
 import io
@@ -36,6 +31,7 @@ import os
 import os.path
 import shutil
 import sys
+import sysconfig
 try:
     import threading
 except ImportError:
@@ -88,11 +84,11 @@ class EnvBuilder:
         """
         if (self.symlinks and
             sys.platform == 'darwin' and
-            'Library/Framework' in sys.base_prefix):
+            sysconfig.get_config_var('PYTHONFRAMEWORK')):
             # Symlinking the stub executable in an OSX framework build will
             # result in a broken virtual environment.
             raise ValueError(
-                "Symlinking is not supported on OSX framework Python.")
+                'Symlinking is not supported on OSX framework Python.')
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
         self.create_configuration(context)
@@ -206,9 +202,10 @@ class EnvBuilder:
         if os.name != 'nt':
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            path = os.path.join(binpath, 'python')
-            if not os.path.exists(path):
-                os.symlink(exename, path)
+            for suffix in ('python', 'python3'):
+                path = os.path.join(binpath, suffix)
+                if not os.path.exists(path):
+                    os.symlink(exename, path)
         else:
             subdir = 'DLLs'
             include = self.include_binary
@@ -322,104 +319,6 @@ class EnvBuilder:
                 os.chmod(dstfile, 0o755)
 
 
-# This class will not be included in Python core; it's here for now to
-# facilitate experimentation and testing, and as proof-of-concept of what could
-# be done by external extension tools.
-class DistributeEnvBuilder(EnvBuilder):
-    """
-    By default, this builder installs Distribute so that you can pip or
-    easy_install other packages into the created environment.
-
-    :param nodist: If True, Distribute is not installed into the created
-                   environment.
-    :param progress: If Distribute is installed, the progress of the
-                     installation can be monitored by passing a progress
-                     callable. If specified, it is called with two
-                     arguments: a string indicating some progress, and a
-                     context indicating where the string is coming from.
-                     The context argument can have one of three values:
-                     'main', indicating that it is called from virtualize()
-                     itself, and 'stdout' and 'stderr', which are obtained
-                     by reading lines from the output streams of a subprocess
-                     which is used to install Distribute.
-
-                     If a callable is not specified, default progress
-                     information is output to sys.stderr.
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.nodist = kwargs.pop("nodist", False)
-        self.progress = kwargs.pop("progress", None)
-        super().__init__(*args, **kwargs)
-
-    def post_setup(self, context):
-        """
-        Set up any packages which need to be pre-installed into the
-        environment being created.
-
-        :param context: The information for the environment creation request
-                        being processed.
-        """
-        if not self.nodist:
-            if threading:
-                self.install_distribute(context)
-
-    def reader(self, stream, context):
-        """
-        Read lines from a subprocess' output stream and either pass to a progress
-        callable (if specified) or write progress information to sys.stderr.
-        """
-        progress = self.progress
-        while True:
-            s = stream.readline()
-            if not s:
-                break
-            if progress is not None:
-                progress(s, context)
-            else:
-                sys.stderr.write('.')
-                #sys.stderr.write(s.decode('utf-8'))
-                sys.stderr.flush()
-        stream.close()
-
-    def install_distribute(self, context):
-        """
-        Install Distribute in the environment.
-
-        :param context: The information for the environment creation request
-                        being processed.
-        """
-        from subprocess import Popen, PIPE
-        from urllib.request import urlretrieve
-
-        url = 'http://python-distribute.org/distribute_setup.py'
-        binpath = context.bin_path
-        distpath = os.path.join(binpath, 'distribute_setup.py')
-        # Download Distribute in the env
-        urlretrieve(url, distpath)
-        progress = self.progress
-        if progress is not None:
-            progress('Installing distribute', 'main')
-        else:
-            sys.stderr.write('Installing distribute ')
-            sys.stderr.flush()
-        # Install Distribute in the env
-        args = [context.env_exe, 'distribute_setup.py']
-        p = Popen(args, stdout=PIPE, stderr=PIPE, cwd=binpath)
-        t1 = threading.Thread(target=self.reader, args=(p.stdout, 'stdout'))
-        t1.start()
-        t2 = threading.Thread(target=self.reader, args=(p.stderr, 'stderr'))
-        t2.start()
-        p.wait()
-        t1.join()
-        t2.join()
-        if progress is not None:
-            progress('done.', 'main')
-        else:
-            sys.stderr.write('done.\n')
-        # Clean up - no longer needed
-        os.unlink(distpath)
-
 def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
     """
     Create a virtual environment in a directory.
@@ -436,8 +335,7 @@ def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     """
-    # XXX This should be changed to EnvBuilder.
-    builder = DistributeEnvBuilder(system_site_packages=system_site_packages,
+    builder = EnvBuilder(system_site_packages=system_site_packages,
                                    clear=clear, symlinks=symlinks)
     builder.create(env_dir)
 
@@ -460,17 +358,12 @@ def main(args=None):
                                                      'directories.')
         parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                             help='A directory to create the environment in.')
-        # XXX This option will be removed.
-        parser.add_argument('--no-distribute', default=False,
-                            action='store_true', dest='nodist',
-                            help="Don't install Distribute in the virtual "
-                                 "environment.")
         parser.add_argument('--system-site-packages', default=False,
                             action='store_true', dest='system_site',
-                            help="Give the virtual environment access to the "
-                                 "system site-packages dir. ")
+                            help='Give the virtual environment access to the '
+                                 'system site-packages dir.')
         if os.name == 'nt' or (sys.platform == 'darwin' and
-                               'Library/Framework' in sys.base_prefix):
+                               sysconfig.get_config_var('PYTHONFRAMEWORK')):
             use_symlinks = False
         else:
             use_symlinks = True
@@ -491,12 +384,9 @@ def main(args=None):
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
-        # XXX This will be changed to EnvBuilder
-        builder = DistributeEnvBuilder(system_site_packages=options.system_site,
-                                       clear=options.clear,
-                                       symlinks=options.symlinks,
-                                       upgrade=options.upgrade,
-                                       nodist=options.nodist)
+        builder = EnvBuilder(system_site_packages=options.system_site,
+                             clear=options.clear, symlinks=options.symlinks,
+                             upgrade=options.upgrade)
         for d in options.dirs:
             builder.create(d)
 
