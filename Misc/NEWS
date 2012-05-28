@@ -708,6 +708,10 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9041: An issue in ctypes.c_longdouble, ctypes.c_double, and
+  ctypes.c_float that caused an incorrect exception to be returned in the
+  case of overflow has been fixed.
+
 - bsddb module: Erratic behaviour of "DBEnv->rep_elect()" because a typo.
   Possible crash.
 
