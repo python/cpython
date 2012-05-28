@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
+  Patch by Roger Serwy.
+
 - Issue #12515: email now registers a defect if it gets to EOF while parsing
   a MIME part without seeing the closing MIME boundary.
 
