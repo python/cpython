@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14775: Fix a potential quadratic dict build-up due to the garbage
+  collector repeatedly trying to untrack dicts.
+
 - Issue #14494: Fix __future__.py and its documentation to note that
   absolute imports are the default behavior in 3.0 instead of 2.7.
   Patch by Sven Marnach.
