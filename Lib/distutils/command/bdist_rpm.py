@@ -190,7 +190,7 @@ class bdist_rpm(Command):
             if self.fix_python:
                 self.python = sys.executable
             else:
-                self.python = "python"
+                self.python = "python3"
         elif self.fix_python:
             raise DistutilsOptionError(
                   "--python and --fix-python are mutually exclusive options")
@@ -320,6 +320,7 @@ class bdist_rpm(Command):
             rpm_cmd.append('-bb')
         else:
             rpm_cmd.append('-ba')
+        rpm_cmd.extend(['--define', '__python %s' % self.python])
         if self.rpm3_mode:
             rpm_cmd.extend(['--define',
                              '_topdir %s' % os.path.abspath(self.rpm_base)])
