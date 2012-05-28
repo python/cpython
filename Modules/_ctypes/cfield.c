@@ -1002,12 +1002,8 @@ g_set(void *ptr, PyObject *value, Py_ssize_t size)
     long double x;
 
     x = PyFloat_AsDouble(value);
-    if (x == -1 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError,
-                     " float expected instead of %s instance",
-                     value->ob_type->tp_name);
+    if (x == -1 && PyErr_Occurred())
         return NULL;
-    }
     memcpy(ptr, &x, sizeof(long double));
     _RET(value);
 }
@@ -1026,12 +1022,8 @@ d_set(void *ptr, PyObject *value, Py_ssize_t size)
     double x;
 
     x = PyFloat_AsDouble(value);
-    if (x == -1 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError,
-                     " float expected instead of %s instance",
-                     value->ob_type->tp_name);
+    if (x == -1 && PyErr_Occurred())
         return NULL;
-    }
     memcpy(ptr, &x, sizeof(double));
     _RET(value);
 }
@@ -1050,12 +1042,8 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     double x;
 
     x = PyFloat_AsDouble(value);
-    if (x == -1 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError,
-                     " float expected instead of %s instance",
-                     value->ob_type->tp_name);
+    if (x == -1 && PyErr_Occurred())
         return NULL;
-    }
 #ifdef WORDS_BIGENDIAN
     if (_PyFloat_Pack8(x, (unsigned char *)ptr, 1))
         return NULL;
@@ -1082,12 +1070,8 @@ f_set(void *ptr, PyObject *value, Py_ssize_t size)
     float x;
 
     x = (float)PyFloat_AsDouble(value);
-    if (x == -1 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError,
-                     " float expected instead of %s instance",
-                     value->ob_type->tp_name);
+    if (x == -1 && PyErr_Occurred())
         return NULL;
-    }
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -1106,12 +1090,8 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     float x;
 
     x = (float)PyFloat_AsDouble(value);
-    if (x == -1 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError,
-                     " float expected instead of %s instance",
-                     value->ob_type->tp_name);
+    if (x == -1 && PyErr_Occurred())
         return NULL;
-    }
 #ifdef WORDS_BIGENDIAN
     if (_PyFloat_Pack4(x, (unsigned char *)ptr, 1))
         return NULL;
