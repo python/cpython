@@ -48,8 +48,10 @@ class FirstHeaderLineIsContinuationDefect(MessageDefect):
 class MisplacedEnvelopeHeaderDefect(MessageDefect):
     """A 'Unix-from' header was found in the middle of a header block."""
 
-class MalformedHeaderDefect(MessageDefect):
-    """Found a header that was missing a colon, or was otherwise malformed."""
+class MissingHeaderBodySeparatorDefect(MessageDefect):
+    """Found line with no leading whitespace and no colon before blank line."""
+# XXX: backward compatibility, just in case (it was never emitted).
+MalformedHeaderDefect = MissingHeaderBodySeparatorDefect
 
 class MultipartInvariantViolationDefect(MessageDefect):
     """A message claimed to be a multipart but no subparts were found."""

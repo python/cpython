@@ -1960,14 +1960,26 @@ counter to RFC 2822, there's no separating newline here
     # test_parser.TestMessageDefectDetectionBase
     def test_first_line_is_continuation_header(self):
         eq = self.assertEqual
-        m = ' Line 1\nLine 2\nLine 3'
+        m = ' Line 1\nSubject: test\n\nbody'
         msg = email.message_from_string(m)
-        eq(msg.keys(), [])
-        eq(msg.get_payload(), 'Line 2\nLine 3')
+        eq(msg.keys(), ['Subject'])
+        eq(msg.get_payload(), 'body')
         eq(len(msg.defects), 1)
-        self.assertTrue(isinstance(msg.defects[0],
-                                   errors.FirstHeaderLineIsContinuationDefect))
+        self.assertDefectsEqual(msg.defects,
+                                 [errors.FirstHeaderLineIsContinuationDefect])
         eq(msg.defects[0].line, ' Line 1\n')
+
+    # test_parser.TestMessageDefectDetectionBase
+    def test_missing_header_body_separator(self):
+        # Our heuristic if we see a line that doesn't look like a header (no
+        # leading whitespace but no ':') is to assume that the blank line that
+        # separates the header from the body is missing, and to stop parsing
+        # headers and start parsing the body.
+        msg = self._str_msg('Subject: test\nnot a header\nTo: abc\n\nb\n')
+        self.assertEqual(msg.keys(), ['Subject'])
+        self.assertEqual(msg.get_payload(), 'not a header\nTo: abc\n\nb\n')
+        self.assertDefectsEqual(msg.defects,
+                                [errors.MissingHeaderBodySeparatorDefect])
 
 
 # Test RFC 2047 header encoding and decoding
