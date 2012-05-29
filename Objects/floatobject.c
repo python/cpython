@@ -267,13 +267,15 @@ static PyObject *
 float_repr(PyFloatObject *v)
 {
     PyObject *result;
-    char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
-                                      'r', 0,
-                                      Py_DTSF_ADD_DOT_0,
-                                      NULL);
+    char *buf;
+
+    buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
+                                'r', 0,
+                                Py_DTSF_ADD_DOT_0,
+                                NULL);
     if (!buf)
         return PyErr_NoMemory();
-    result = PyUnicode_FromString(buf);
+    result = _PyUnicode_FromASCII(buf, strlen(buf));
     PyMem_Free(buf);
     return result;
 }
@@ -1703,11 +1705,22 @@ static PyObject *
 float__format__(PyObject *self, PyObject *args)
 {
     PyObject *format_spec;
+    _PyUnicodeWriter writer;
+    int ret;
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
-    return _PyFloat_FormatAdvanced(self, format_spec, 0,
-                                   PyUnicode_GET_LENGTH(format_spec));
+
+    _PyUnicodeWriter_Init(&writer, 0);
+    ret = _PyFloat_FormatAdvancedWriter(
+        &writer,
+        self,
+        format_spec, 0, PyUnicode_GET_LENGTH(format_spec));
+    if (ret == -1) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
 }
 
 PyDoc_STRVAR(float__format__doc,

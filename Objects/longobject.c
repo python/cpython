@@ -1550,20 +1550,22 @@ divrem1(PyLongObject *a, digit n, digit *prem)
    string.  (Return value is non-shared so that callers can modify the
    returned value if necessary.) */
 
-static PyObject *
-long_to_decimal_string(PyObject *aa)
+static int
+long_to_decimal_string_internal(PyObject *aa,
+                                PyObject **p_output,
+                                _PyUnicodeWriter *writer)
 {
     PyLongObject *scratch, *a;
     PyObject *str;
     Py_ssize_t size, strlen, size_a, i, j;
     digit *pout, *pin, rem, tenpow;
-    unsigned char *p;
     int negative;
+    enum PyUnicode_Kind kind;
 
     a = (PyLongObject *)aa;
     if (a == NULL || !PyLong_Check(a)) {
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
     size_a = ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
@@ -1580,13 +1582,13 @@ long_to_decimal_string(PyObject *aa)
     if (size_a > PY_SSIZE_T_MAX / PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
                         "long is too large to format");
-        return NULL;
+        return -1;
     }
     /* the expression size_a * PyLong_SHIFT is now safe from overflow */
     size = 1 + size_a * PyLong_SHIFT / (3 * _PyLong_DECIMAL_SHIFT);
     scratch = _PyLong_New(size);
     if (scratch == NULL)
-        return NULL;
+        return -1;
 
     /* convert array of base _PyLong_BASE digits in pin to an array of
        base _PyLong_DECIMAL_BASE digits in pout, following Knuth (TAOCP,
@@ -1609,7 +1611,7 @@ long_to_decimal_string(PyObject *aa)
         /* check for keyboard interrupt */
         SIGCHECK({
                 Py_DECREF(scratch);
-                return NULL;
+                return -1;
             });
     }
     /* pout should have at least one digit, so that the case when a = 0
@@ -1625,65 +1627,113 @@ long_to_decimal_string(PyObject *aa)
         tenpow *= 10;
         strlen++;
     }
-    str = PyUnicode_New(strlen, '9');
-    if (str == NULL) {
-        Py_DECREF(scratch);
-        return NULL;
+    if (writer) {
+        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1)
+            return -1;
+        kind = writer->kind;
+        str = NULL;
     }
+    else {
+        str = PyUnicode_New(strlen, '9');
+        if (str == NULL) {
+            Py_DECREF(scratch);
+            return -1;
+        }
+        kind = PyUnicode_KIND(str);
+    }
+
+#define WRITE_DIGITS(TYPE)                                            \
+    do {                                                              \
+        if (writer)                                                   \
+            p = (TYPE*)PyUnicode_DATA(writer->buffer) + writer->pos + strlen; \
+        else                                                          \
+            p = (TYPE*)PyUnicode_DATA(str) + strlen;                  \
+                                                                      \
+        *p = '\0';                                                    \
+        /* pout[0] through pout[size-2] contribute exactly            \
+           _PyLong_DECIMAL_SHIFT digits each */                       \
+        for (i=0; i < size - 1; i++) {                                \
+            rem = pout[i];                                            \
+            for (j = 0; j < _PyLong_DECIMAL_SHIFT; j++) {             \
+                *--p = '0' + rem % 10;                                \
+                rem /= 10;                                            \
+            }                                                         \
+        }                                                             \
+        /* pout[size-1]: always produce at least one decimal digit */ \
+        rem = pout[i];                                                \
+        do {                                                          \
+            *--p = '0' + rem % 10;                                    \
+            rem /= 10;                                                \
+        } while (rem != 0);                                           \
+                                                                      \
+        /* and sign */                                                \
+        if (negative)                                                 \
+            *--p = '-';                                               \
+                                                                      \
+        /* check we've counted correctly */                           \
+        if (writer)                                                   \
+            assert(p == ((TYPE*)PyUnicode_DATA(writer->buffer) + writer->pos)); \
+        else                                                          \
+            assert(p == (TYPE*)PyUnicode_DATA(str));                  \
+    } while (0)
 
     /* fill the string right-to-left */
-    assert(PyUnicode_KIND(str) == PyUnicode_1BYTE_KIND);
-    p = PyUnicode_1BYTE_DATA(str) + strlen;
-    *p = '\0';
-    /* pout[0] through pout[size-2] contribute exactly
-       _PyLong_DECIMAL_SHIFT digits each */
-    for (i=0; i < size - 1; i++) {
-        rem = pout[i];
-        for (j = 0; j < _PyLong_DECIMAL_SHIFT; j++) {
-            *--p = '0' + rem % 10;
-            rem /= 10;
-        }
+    if (kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *p;
+        WRITE_DIGITS(Py_UCS1);
     }
-    /* pout[size-1]: always produce at least one decimal digit */
-    rem = pout[i];
-    do {
-        *--p = '0' + rem % 10;
-        rem /= 10;
-    } while (rem != 0);
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        Py_UCS2 *p;
+        WRITE_DIGITS(Py_UCS2);
+    }
+    else {
+        assert (kind == PyUnicode_4BYTE_KIND);
+        Py_UCS4 *p;
+        WRITE_DIGITS(Py_UCS4);
+    }
+#undef WRITE_DIGITS
 
-    /* and sign */
-    if (negative)
-        *--p = '-';
-
-    /* check we've counted correctly */
-    assert(p == PyUnicode_1BYTE_DATA(str));
-    assert(_PyUnicode_CheckConsistency(str, 1));
     Py_DECREF(scratch);
-    return (PyObject *)str;
+    if (writer) {
+        writer->pos += strlen;
+    }
+    else {
+        assert(_PyUnicode_CheckConsistency(str, 1));
+        *p_output = (PyObject *)str;
+    }
+    return 0;
+}
+
+static PyObject *
+long_to_decimal_string(PyObject *aa)
+{
+    PyObject *v;
+    if (long_to_decimal_string_internal(aa, &v, NULL) == -1)
+        return NULL;
+    return v;
 }
 
 /* Convert a long int object to a string, using a given conversion base,
-   which should be one of 2, 8, 10 or 16.  Return a string object.
-   If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'. */
+   which should be one of 2, 8 or 16.  Return a string object.
+   If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'
+   if alternate is nonzero. */
 
-PyObject *
-_PyLong_Format(PyObject *aa, int base)
+static int
+long_format_binary(PyObject *aa, int base, int alternate,
+                   PyObject **p_output, _PyUnicodeWriter *writer)
 {
     register PyLongObject *a = (PyLongObject *)aa;
     PyObject *v;
     Py_ssize_t sz;
     Py_ssize_t size_a;
-    Py_UCS1 *p;
+    enum PyUnicode_Kind kind;
     int negative;
     int bits;
 
-    assert(base == 2 || base == 8 || base == 10 || base == 16);
-    if (base == 10)
-        return long_to_decimal_string((PyObject *)a);
-
+    assert(base == 2 || base == 8 || base == 16);
     if (a == NULL || !PyLong_Check(a)) {
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
     size_a = ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
@@ -1706,7 +1756,7 @@ _PyLong_Format(PyObject *aa, int base)
 
     /* Compute exact length 'sz' of output string. */
     if (size_a == 0) {
-        sz = 3;
+        sz = 1;
     }
     else {
         Py_ssize_t size_a_in_bits;
@@ -1714,56 +1764,126 @@ _PyLong_Format(PyObject *aa, int base)
         if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
                             "int is too large to format");
-            return NULL;
+            return -1;
         }
         size_a_in_bits = (size_a - 1) * PyLong_SHIFT +
                          bits_in_digit(a->ob_digit[size_a - 1]);
-        /* Allow 2 characters for prefix and 1 for a '-' sign. */
-        sz = 2 + negative + (size_a_in_bits + (bits - 1)) / bits;
+        /* Allow 1 character for a '-' sign. */
+        sz = negative + (size_a_in_bits + (bits - 1)) / bits;
+    }
+    if (alternate) {
+        /* 2 characters for prefix  */
+        sz += 2;
     }
 
-    v = PyUnicode_New(sz, 'x');
-    if (v == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
-
-    p = PyUnicode_1BYTE_DATA(v) + sz;
-    if (size_a == 0) {
-        *--p = '0';
+    if (writer) {
+        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1)
+            return -1;
+        kind = writer->kind;
+        v = NULL;
     }
     else {
-        /* JRH: special case for power-of-2 bases */
-        twodigits accum = 0;
-        int accumbits = 0;              /* # of bits in accum */
-        Py_ssize_t i;
-        for (i = 0; i < size_a; ++i) {
-            accum |= (twodigits)a->ob_digit[i] << accumbits;
-            accumbits += PyLong_SHIFT;
-            assert(accumbits >= bits);
-            do {
-                char cdigit;
-                cdigit = (char)(accum & (base - 1));
-                cdigit += (cdigit < 10) ? '0' : 'a'-10;
-                *--p = cdigit;
-                accumbits -= bits;
-                accum >>= bits;
-            } while (i < size_a-1 ? accumbits >= bits : accum > 0);
-        }
+        v = PyUnicode_New(sz, 'x');
+        if (v == NULL)
+            return -1;
+        kind = PyUnicode_KIND(v);
     }
 
-    if (base == 16)
-        *--p = 'x';
-    else if (base == 8)
-        *--p = 'o';
-    else /* (base == 2) */
-        *--p = 'b';
-    *--p = '0';
-    if (negative)
-        *--p = '-';
-    assert(p == PyUnicode_1BYTE_DATA(v));
-    assert(_PyUnicode_CheckConsistency(v, 1));
-    return v;
+#define WRITE_DIGITS(TYPE)                                              \
+    do {                                                                \
+        if (writer)                                                     \
+            p = (TYPE*)PyUnicode_DATA(writer->buffer) + writer->pos + sz; \
+        else                                                            \
+            p = (TYPE*)PyUnicode_DATA(v) + sz;                          \
+                                                                        \
+        if (size_a == 0) {                                              \
+            *--p = '0';                                                 \
+        }                                                               \
+        else {                                                          \
+            /* JRH: special case for power-of-2 bases */                \
+            twodigits accum = 0;                                        \
+            int accumbits = 0;   /* # of bits in accum */               \
+            Py_ssize_t i;                                               \
+            for (i = 0; i < size_a; ++i) {                              \
+                accum |= (twodigits)a->ob_digit[i] << accumbits;        \
+                accumbits += PyLong_SHIFT;                              \
+                assert(accumbits >= bits);                              \
+                do {                                                    \
+                    char cdigit;                                        \
+                    cdigit = (char)(accum & (base - 1));                \
+                    cdigit += (cdigit < 10) ? '0' : 'a'-10;             \
+                    *--p = cdigit;                                      \
+                    accumbits -= bits;                                  \
+                    accum >>= bits;                                     \
+                } while (i < size_a-1 ? accumbits >= bits : accum > 0); \
+            }                                                           \
+        }                                                               \
+                                                                        \
+        if (alternate) {                                                \
+            if (base == 16)                                             \
+                *--p = 'x';                                             \
+            else if (base == 8)                                         \
+                *--p = 'o';                                             \
+            else /* (base == 2) */                                      \
+                *--p = 'b';                                             \
+            *--p = '0';                                                 \
+        }                                                               \
+        if (negative)                                                   \
+            *--p = '-';                                                 \
+        if (writer)                                                     \
+            assert(p == ((TYPE*)PyUnicode_DATA(writer->buffer) + writer->pos)); \
+        else                                                            \
+            assert(p == (TYPE*)PyUnicode_DATA(v));                      \
+    } while (0)
+
+    if (kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *p;
+        WRITE_DIGITS(Py_UCS1);
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        Py_UCS2 *p;
+        WRITE_DIGITS(Py_UCS2);
+    }
+    else {
+        assert (kind == PyUnicode_4BYTE_KIND);
+        Py_UCS4 *p;
+        WRITE_DIGITS(Py_UCS4);
+    }
+#undef WRITE_DIGITS
+
+    if (writer) {
+        writer->pos += sz;
+    }
+    else {
+        assert(_PyUnicode_CheckConsistency(v, 1));
+        *p_output = v;
+    }
+    return 0;
+}
+
+PyObject *
+_PyLong_Format(PyObject *obj, int base)
+{
+    PyObject *str;
+    int err;
+    if (base == 10)
+        err = long_to_decimal_string_internal(obj, &str, NULL);
+    else
+        err = long_format_binary(obj, base, 1, &str, NULL);
+    if (err == -1)
+        return NULL;
+    return str;
+}
+
+int
+_PyLong_FormatWriter(_PyUnicodeWriter *writer,
+                     PyObject *obj,
+                     int base, int alternate)
+{
+    if (base == 10)
+        return long_to_decimal_string_internal(obj, NULL, writer);
+    else
+        return long_format_binary(obj, base, alternate, NULL, writer);
 }
 
 /* Table of digit values for 8-bit string -> integer conversion.
@@ -4232,11 +4352,22 @@ static PyObject *
 long__format__(PyObject *self, PyObject *args)
 {
     PyObject *format_spec;
+    _PyUnicodeWriter writer;
+    int ret;
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
-    return _PyLong_FormatAdvanced(self, format_spec, 0,
-                                  PyUnicode_GET_LENGTH(format_spec));
+
+    _PyUnicodeWriter_Init(&writer, 0);
+    ret = _PyLong_FormatAdvancedWriter(
+        &writer,
+        self,
+        format_spec, 0, PyUnicode_GET_LENGTH(format_spec));
+    if (ret == -1) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
 }
 
 /* Return a pair (q, r) such that a = b * q + r, and

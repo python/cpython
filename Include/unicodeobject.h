@@ -648,8 +648,20 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_CopyCharacters(
     Py_ssize_t from_start,
     Py_ssize_t how_many
     );
+
+/* Unsafe version of PyUnicode_CopyCharacters(): don't check arguments and so
+   may crash if parameters are invalid (e.g. if the output string
+   is too short). */
+PyAPI_FUNC(void) _PyUnicode_FastCopyCharacters(
+    PyObject *to,
+    Py_ssize_t to_start,
+    PyObject *from,
+    Py_ssize_t from_start,
+    Py_ssize_t how_many
+    );
 #endif
 
+#ifndef Py_LIMITED_API
 /* Fill a string with a character: write fill_char into
    unicode[start:start+length].
 
@@ -658,8 +670,16 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_CopyCharacters(
 
    Return the number of written character, or return -1 and raise an exception
    on error. */
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) PyUnicode_Fill(
+    PyObject *unicode,
+    Py_ssize_t start,
+    Py_ssize_t length,
+    Py_UCS4 fill_char
+    );
+
+/* Unsafe version of PyUnicode_Fill(): don't check arguments and so may crash
+   if parameters are invalid (e.g. if length is longer than the string). */
+PyAPI_FUNC(void) _PyUnicode_FastFill(
     PyObject *unicode,
     Py_ssize_t start,
     Py_ssize_t length,
@@ -696,12 +716,18 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromString(
     const char *u              /* UTF-8 encoded string */
     );
 
+#ifndef Py_LIMITED_API
 /* Create a new string from a buffer of Py_UCS1, Py_UCS2 or Py_UCS4 characters.
    Scan the string to find the maximum character. */
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
     int kind,
     const void *buffer,
+    Py_ssize_t size);
+
+/* Create a new string from a buffer of ASCII characters.
+   WARNING: Don't check if the string contains any non-ASCII character. */
+PyAPI_FUNC(PyObject*) _PyUnicode_FromASCII(
+    const char *buffer,
     Py_ssize_t size);
 #endif
 
@@ -865,12 +891,69 @@ PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(
     );
 
 #ifndef Py_LIMITED_API
+typedef struct {
+    PyObject *buffer;
+    void *data;
+    enum PyUnicode_Kind kind;
+    Py_UCS4 maxchar;
+    Py_ssize_t size;
+    Py_ssize_t pos;
+    /* minimum length of the buffer when overallocation is enabled,
+       see _PyUnicodeWriter_Init() */
+    Py_ssize_t min_length;
+    struct {
+        unsigned char overallocate:1;
+        /* If readonly is 1, buffer is a shared string (cannot be modified)
+           and size is set to 0. */
+        unsigned char readonly:1;
+    } flags;
+} _PyUnicodeWriter ;
+
+/* Initialize a Unicode writer.
+
+   If min_length is greater than zero, _PyUnicodeWriter_Prepare()
+   overallocates the buffer and min_length is the minimum length in characters
+   of the buffer. */
+PyAPI_FUNC(void)
+_PyUnicodeWriter_Init(_PyUnicodeWriter *writer, Py_ssize_t min_length);
+
+/* Prepare the buffer to write 'length' characters
+   with the specified maximum character.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+#define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)             \
+    (((MAXCHAR) <= (WRITER)->maxchar                                  \
+      && (LENGTH) <= (WRITER)->size - (WRITER)->pos)                  \
+     ? 0                                                              \
+     : (((LENGTH) == 0)                                               \
+        ? 0                                                           \
+        : _PyUnicodeWriter_PrepareInternal((WRITER), (LENGTH), (MAXCHAR))))
+
+/* Don't call this function directly, use the _PyUnicodeWriter_Prepare() macro
+   instead. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
+                                 Py_ssize_t length, Py_UCS4 maxchar);
+
+PyAPI_FUNC(int)
+_PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str);
+
+PyAPI_FUNC(PyObject *)
+_PyUnicodeWriter_Finish(_PyUnicodeWriter *writer);
+
+PyAPI_FUNC(void)
+_PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
+#endif
+
+#ifndef Py_LIMITED_API
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(PyObject *) _PyUnicode_FormatAdvanced(PyObject *obj,
-                                                 PyObject *format_spec,
-                                                 Py_ssize_t start,
-                                                 Py_ssize_t end);
+PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
+    _PyUnicodeWriter *writer,
+    PyObject *obj,
+    PyObject *format_spec,
+    Py_ssize_t start,
+    Py_ssize_t end);
 #endif
 
 PyAPI_FUNC(void) PyUnicode_InternInPlace(PyObject **);

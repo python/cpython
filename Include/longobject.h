@@ -151,14 +151,22 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 
 /* _PyLong_Format: Convert the long to a string object with given base,
    appending a base prefix of 0[box] if base is 2, 8 or 16. */
-PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base);
+PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *obj, int base);
+
+PyAPI_FUNC(int) _PyLong_FormatWriter(
+    _PyUnicodeWriter *writer,
+    PyObject *obj,
+    int base,
+    int alternate);
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
-                                              PyObject *format_spec,
-                                              Py_ssize_t start,
-                                              Py_ssize_t end);
+PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
+    _PyUnicodeWriter *writer,
+    PyObject *obj,
+    PyObject *format_spec,
+    Py_ssize_t start,
+    Py_ssize_t end);
 #endif /* Py_LIMITED_API */
 
 /* These aren't really part of the long object, but they're handy. The
