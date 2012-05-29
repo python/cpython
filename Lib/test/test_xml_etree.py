@@ -1979,6 +1979,20 @@ class TreeBuilderTest(unittest.TestCase):
         parser.feed(self.sample1)
         self.assertIsNone(parser.close())
 
+    def test_subclass(self):
+        class MyTreeBuilder(ET.TreeBuilder):
+            def foobar(self, x):
+                return x * 2
+
+        tb = MyTreeBuilder()
+        self.assertEqual(tb.foobar(10), 20)
+
+        parser = ET.XMLParser(target=tb)
+        parser.feed(self.sample1)
+
+        e = parser.close()
+        self.assertEqual(e.tag, 'html')
+
     # XXX in _elementtree, the constructor of TreeBuilder expects no
     # arguments
     @unittest.expectedFailure
