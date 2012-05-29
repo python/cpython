@@ -21,7 +21,7 @@ class BaseTest(unittest.TestCase):
         self.env_dir = tempfile.mkdtemp()
         if os.name == 'nt':
             self.bindir = 'Scripts'
-            self.ps3name = 'pysetup3-script.py'
+            self.ps3name = 'pysetup3.py'
             self.lib = ('Lib',)
             self.include = 'Include'
         else:
