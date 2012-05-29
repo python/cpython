@@ -1687,8 +1687,8 @@ long_to_decimal_string_internal(PyObject *aa,
         WRITE_DIGITS(Py_UCS2);
     }
     else {
-        assert (kind == PyUnicode_4BYTE_KIND);
         Py_UCS4 *p;
+        assert (kind == PyUnicode_4BYTE_KIND);
         WRITE_DIGITS(Py_UCS4);
     }
 #undef WRITE_DIGITS
@@ -1845,8 +1845,8 @@ long_format_binary(PyObject *aa, int base, int alternate,
         WRITE_DIGITS(Py_UCS2);
     }
     else {
-        assert (kind == PyUnicode_4BYTE_KIND);
         Py_UCS4 *p;
+        assert (kind == PyUnicode_4BYTE_KIND);
         WRITE_DIGITS(Py_UCS4);
     }
 #undef WRITE_DIGITS
