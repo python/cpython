@@ -196,6 +196,25 @@ added matters.  To illustrate::
       custom ``Message`` objects) should also provide such an attribute,
       otherwise defects in parsed messages will raise unexpected errors.
 
+   .. method:: header_max_count(name)
+
+      Return the maximum allowed number of headers named *name*.
+
+      Called when a header is added to a :class:`~email.message.Message`
+      object.  If the returned value is not ``0`` or ``None``, and there are
+      already a number of headers with the name *name* equal to the value
+      returned, a :exc:`ValueError` is raised.
+
+      Because the default behavior of ``Message.__setitem__`` is to append the
+      value to the list of headers, it is easy to create duplicate headers
+      without realizing it.  This method allows certain headers to be limited
+      in the number of instances of that header that may be added to a
+      ``Message`` programmatically.  (The limit is not observed by the parser,
+      which will faithfully produce as many headers as exist in the message
+      being parsed.)
+
+      The default implementation returns ``None`` for all header names.
+
    .. method:: header_source_parse(sourcelines)
 
       The email package calls this method with a list of strings, each string
@@ -365,6 +384,12 @@ added matters.  To illustrate::
 
    The class provides the following concrete implementations of the abstract
    methods of :class:`Policy`:
+
+   .. method:: header_max_count(name)
+
+      Returns the value of the
+      :attr:`~email.headerregistry.BaseHeader.max_count` attribute of the
+      specialized class used to represent the header with the given name.
 
    .. method:: header_source_parse(sourcelines)
 

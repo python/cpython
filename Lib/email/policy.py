@@ -69,6 +69,14 @@ class EmailPolicy(Policy):
             object.__setattr__(self, 'header_factory', HeaderRegistry())
         super().__init__(**kw)
 
+    def header_max_count(self, name):
+        """+
+        The implementation for this class returns the max_count attribute from
+        the specialized header class that would be used to construct a header
+        of type 'name'.
+        """
+        return self.header_factory[name].max_count
+
     # The logic of the next three methods is chosen such that it is possible to
     # switch a Message object between a Compat32 policy and a policy derived
     # from this class and have the results stay consistent.  This allows a
