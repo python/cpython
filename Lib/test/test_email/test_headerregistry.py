@@ -650,14 +650,14 @@ class TestFolding(TestHeaderBase):
 
     def test_short_unstructured(self):
         h = self.make_header('subject', 'this is a test')
-        self.assertEqual(h.fold(policy=self.policy),
+        self.assertEqual(h.fold(policy=policy.default),
                          'subject: this is a test\n')
 
     def test_long_unstructured(self):
         h = self.make_header('Subject', 'This is a long header '
             'line that will need to be folded into two lines '
             'and will demonstrate basic folding')
-        self.assertEqual(h.fold(policy=self.policy),
+        self.assertEqual(h.fold(policy=policy.default),
                         'Subject: This is a long header line that will '
                             'need to be folded into two lines\n'
                         ' and will demonstrate basic folding\n')
@@ -676,11 +676,11 @@ class TestFolding(TestHeaderBase):
 
     def test_fold_unstructured_single_word(self):
         h = self.make_header('Subject', 'test')
-        self.assertEqual(h.fold(policy=self.policy), 'Subject: test\n')
+        self.assertEqual(h.fold(policy=policy.default), 'Subject: test\n')
 
     def test_fold_unstructured_short(self):
         h = self.make_header('Subject', 'test test test')
-        self.assertEqual(h.fold(policy=self.policy),
+        self.assertEqual(h.fold(policy=policy.default),
                         'Subject: test test test\n')
 
     def test_fold_unstructured_with_overlong_word(self):
@@ -721,7 +721,7 @@ class TestFolding(TestHeaderBase):
         h = self.make_header('To', '"Theodore H. Perfect" <yes@man.com>, '
             '"My address is very long because my name is long" <foo@bar.com>, '
             '"Only A. Friend" <no@yes.com>')
-        self.assertEqual(h.fold(policy=self.policy), textwrap.dedent("""\
+        self.assertEqual(h.fold(policy=policy.default), textwrap.dedent("""\
             To: "Theodore H. Perfect" <yes@man.com>,
              "My address is very long because my name is long" <foo@bar.com>,
              "Only A. Friend" <no@yes.com>
@@ -729,7 +729,7 @@ class TestFolding(TestHeaderBase):
 
     def test_fold_date_header(self):
         h = self.make_header('Date', 'Sat, 2 Feb 2002 17:00:06 -0800')
-        self.assertEqual(h.fold(policy=self.policy),
+        self.assertEqual(h.fold(policy=policy.default),
                         'Date: Sat, 02 Feb 2002 17:00:06 -0800\n')
 
 
