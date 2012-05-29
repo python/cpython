@@ -1167,8 +1167,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'U': { /* PyUnicode object */
         PyObject **p = va_arg(*p_va, PyObject **);
-        if (PyUnicode_Check(arg))
+        if (PyUnicode_Check(arg)) {
+            if (PyUnicode_READY(arg) == -1)
+                RETURN_ERR_OCCURRED;
             *p = arg;
+        }
         else
             return converterr("str", arg, msgbuf, bufsize);
         break;
