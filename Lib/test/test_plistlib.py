@@ -55,6 +55,10 @@ TESTDATA = b"""<?xml version="1.0" encoding="UTF-8"?>
         </array>
         <key>aString</key>
         <string>Doodah</string>
+        <key>anEmptyDict</key>
+        <dict/>
+        <key>anEmptyList</key>
+        <array/>
         <key>anInt</key>
         <integer>728</integer>
         <key>nestedData</key>
@@ -112,6 +116,8 @@ class TestPlistlib(unittest.TestCase):
             someMoreData = plistlib.Data(b"<lots of binary gunk>\0\1\2\3" * 10),
             nestedData = [plistlib.Data(b"<lots of binary gunk>\0\1\2\3" * 10)],
             aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
+            anEmptyDict = dict(),
+            anEmptyList = list()
         )
         pl['\xc5benraa'] = "That was a unicode key."
         return pl
