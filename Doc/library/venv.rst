@@ -54,7 +54,7 @@ or equivalently::
 The command, if run with ``-h``, will show the available options::
 
     usage: pyvenv [-h] [--system-site-packages] [--symlink] [--clear]
-                  ENV_DIR [ENV_DIR ...]
+                  [--upgrade] ENV_DIR [ENV_DIR ...]
 
     Creates virtual Python environments in one or more target directories.
 
@@ -69,12 +69,11 @@ The command, if run with ``-h``, will show the available options::
       --clear                Delete the environment directory if it already exists.
                              If not specified and the directory exists, an error is
                              raised.
-
+      --upgrade              Upgrade the environment directory to use this version
+                             of Python, assuming Python has been upgraded in-place.
 
 If the target directory already exists an error will be raised, unless
-the ``--clear`` option was provided, in which case the target
-directory will be deleted and virtual environment creation will
-proceed as usual.
+the ``--clear`` or ``--upgrade`` option was provided.
 
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is

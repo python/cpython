@@ -17,4 +17,4 @@ interpreter and things that make working with Python easier.
    unix.rst
    windows.rst
    mac.rst
-
+   scripts.rst
