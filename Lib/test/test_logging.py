@@ -582,6 +582,7 @@ class HandlerTest(BaseTest):
         self.assertFalse(h.shouldFlush(r))
         h.close()
 
+    @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_race(self):
         # Issue #14632 refers.
