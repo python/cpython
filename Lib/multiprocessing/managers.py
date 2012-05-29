@@ -1035,12 +1035,11 @@ class ValueProxy(BaseProxy):
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__delslice__',
-    '__getitem__', '__getslice__', '__len__', '__mul__',
-    '__reversed__', '__rmul__', '__setitem__', '__setslice__',
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
+    '__mul__', '__reversed__', '__rmul__', '__setitem__',
     'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
     'reverse', 'sort', '__imul__'
-    ))                  # XXX __getslice__ and __setslice__ unneeded in Py3.0
+    ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
         self._callmethod('extend', (value,))
@@ -1058,8 +1057,8 @@ DictProxy = MakeProxyType('DictProxy', (
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
-    '__len__', '__getitem__', '__setitem__', '__getslice__', '__setslice__'
-    ))                  # XXX __getslice__ and __setslice__ unneeded in Py3.0
+    '__len__', '__getitem__', '__setitem__'
+    ))
 
 
 PoolProxy = MakeProxyType('PoolProxy', (
