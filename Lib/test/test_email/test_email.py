@@ -1973,7 +1973,7 @@ counter to RFC 2822, there's no separating newline here
                                  [errors.FirstHeaderLineIsContinuationDefect])
         eq(msg.defects[0].line, ' Line 1\n')
 
-    # test_parser.TestMessageDefectDetectionBase
+    # test_defect_handling
     def test_missing_header_body_separator(self):
         # Our heuristic if we see a line that doesn't look like a header (no
         # leading whitespace but no ':') is to assume that the blank line that
