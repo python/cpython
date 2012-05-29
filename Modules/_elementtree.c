@@ -347,6 +347,41 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)e;
 }
 
+/* Helper function for extracting the attrib dictionary from a keywords dict.
+ * This is required by some constructors/functions in this module that can
+ * either accept attrib as a keyword argument or all attributes splashed 
+ * directly into *kwds.
+ * If there is no 'attrib' keyword, return an empty dict.
+ */
+static PyObject*
+get_attrib_from_keywords(PyObject *kwds)
+{
+    PyObject *attrib_str = PyUnicode_FromString("attrib");
+    PyObject *attrib = PyDict_GetItem(kwds, attrib_str);
+
+    if (attrib) {
+        /* If attrib was found in kwds, copy its value and remove it from
+         * kwds
+         */
+        if (!PyDict_Check(attrib)) {
+            Py_DECREF(attrib_str);
+            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
+                         Py_TYPE(attrib)->tp_name);
+            return NULL;
+        }
+        attrib = PyDict_Copy(attrib);
+        PyDict_DelItem(kwds, attrib_str);
+    } else {
+        attrib = PyDict_New();
+    }
+
+    Py_DECREF(attrib_str);
+
+    if (attrib)
+        PyDict_Update(attrib, kwds);
+    return attrib;
+}
+
 static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -358,13 +393,23 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, &PyDict_Type, &attrib))
         return -1;
 
-    if (attrib || kwds) {
-        attrib = (attrib) ? PyDict_Copy(attrib) : PyDict_New();
+    if (attrib) {
+        /* attrib passed as positional arg */
+        attrib = PyDict_Copy(attrib);
         if (!attrib)
             return -1;
-        if (kwds)
-            PyDict_Update(attrib, kwds);
+        if (kwds) {
+            if (PyDict_Update(attrib, kwds) < 0) {
+                return -1;
+            }
+        }
+    } else if (kwds) {
+        /* have keywords args */
+        attrib = get_attrib_from_keywords(kwds);
+        if (!attrib)
+            return -1;
     } else {
+        /* no attrib arg, no kwds, so no attributes */
         Py_INCREF(Py_None);
         attrib = Py_None;
     }
@@ -536,7 +581,7 @@ element_get_tail(ElementObject* self)
 }
 
 static PyObject*
-subelement(PyObject* self, PyObject* args, PyObject* kw)
+subelement(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject* elem;
 
@@ -548,13 +593,23 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
                           &PyDict_Type, &attrib))
         return NULL;
 
-    if (attrib || kw) {
-        attrib = (attrib) ? PyDict_Copy(attrib) : PyDict_New();
+    if (attrib) {
+        /* attrib passed as positional arg */
+        attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (kw)
-            PyDict_Update(attrib, kw);
+        if (kwds) {
+            if (PyDict_Update(attrib, kwds) < 0) {
+                return NULL;
+            }
+        }
+    } else if (kwds) {
+        /* have keyword args */
+        attrib = get_attrib_from_keywords(kwds);
+        if (!attrib)
+            return NULL;
     } else {
+        /* no attrib arg, no kwds, so no attribute */
         Py_INCREF(Py_None);
         attrib = Py_None;
     }
@@ -881,13 +936,15 @@ element_extend(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_find(ElementObject* self, PyObject* args)
+element_find(ElementObject *self, PyObject *args, PyObject *kwds)
 {
     int i;
     PyObject* tag;
     PyObject* namespaces = Py_None;
+    static char *kwlist[] = {"path", "namespaces", 0};
 
-    if (!PyArg_ParseTuple(args, "O|O:find", &tag, &namespaces))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:find", kwlist,
+                                     &tag, &namespaces))
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None) {
@@ -913,15 +970,17 @@ element_find(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_findtext(ElementObject* self, PyObject* args)
+element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 {
     int i;
     PyObject* tag;
     PyObject* default_value = Py_None;
     PyObject* namespaces = Py_None;
     _Py_IDENTIFIER(findtext);
+    static char *kwlist[] = {"path", "default", "namespaces", 0};
 
-    if (!PyArg_ParseTuple(args, "O|OO:findtext", &tag, &default_value, &namespaces))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:findtext", kwlist,
+                                     &tag, &default_value, &namespaces))
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None)
@@ -951,14 +1010,16 @@ element_findtext(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_findall(ElementObject* self, PyObject* args)
+element_findall(ElementObject *self, PyObject *args, PyObject *kwds)
 {
     int i;
     PyObject* out;
     PyObject* tag;
     PyObject* namespaces = Py_None;
+    static char *kwlist[] = {"path", "namespaces", 0};
 
-    if (!PyArg_ParseTuple(args, "O|O:findall", &tag, &namespaces))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:findall", kwlist,
+                                     &tag, &namespaces))
         return NULL;
 
     if (checkpath(tag) || namespaces != Py_None) {
@@ -990,13 +1051,15 @@ element_findall(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_iterfind(ElementObject* self, PyObject* args)
+element_iterfind(ElementObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject* tag;
     PyObject* namespaces = Py_None;
     _Py_IDENTIFIER(iterfind);
+    static char *kwlist[] = {"path", "namespaces", 0};
 
-    if (!PyArg_ParseTuple(args, "O|O:iterfind", &tag, &namespaces))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:iterfind", kwlist,
+                                     &tag, &namespaces))
         return NULL;
 
     return _PyObject_CallMethodId(
@@ -1567,9 +1630,9 @@ static PyMethodDef element_methods[] = {
     {"get", (PyCFunction) element_get, METH_VARARGS},
     {"set", (PyCFunction) element_set, METH_VARARGS},
 
-    {"find", (PyCFunction) element_find, METH_VARARGS},
-    {"findtext", (PyCFunction) element_findtext, METH_VARARGS},
-    {"findall", (PyCFunction) element_findall, METH_VARARGS},
+    {"find", (PyCFunction) element_find, METH_VARARGS | METH_KEYWORDS},
+    {"findtext", (PyCFunction) element_findtext, METH_VARARGS | METH_KEYWORDS},
+    {"findall", (PyCFunction) element_findall, METH_VARARGS | METH_KEYWORDS},
 
     {"append", (PyCFunction) element_append, METH_VARARGS},
     {"extend", (PyCFunction) element_extend, METH_VARARGS},
@@ -1578,7 +1641,7 @@ static PyMethodDef element_methods[] = {
 
     {"iter", (PyCFunction) element_iter, METH_VARARGS},
     {"itertext", (PyCFunction) element_itertext, METH_VARARGS},
-    {"iterfind", (PyCFunction) element_iterfind, METH_VARARGS},
+    {"iterfind", (PyCFunction) element_iterfind, METH_VARARGS | METH_KEYWORDS},
 
     {"getiterator", (PyCFunction) element_iter, METH_VARARGS},
     {"getchildren", (PyCFunction) element_getchildren, METH_VARARGS},
