@@ -271,7 +271,7 @@ This module offers the following functions:
    specified in *file_name* is relative to the remote computer.
 
 
-.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_ALL_ACCESS)
+.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -280,9 +280,9 @@ This module offers the following functions:
 
    *sub_key* is a string that identifies the sub_key to open.
 
-   *res* is a reserved integer, and must be zero.  The default is zero.
+   *reserved* is a reserved integer, and must be zero.  The default is zero.
 
-   *sam* is an integer that specifies an access mask that describes the desired
+   *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
    Rights <access-rights>` for other allowed values.
 
