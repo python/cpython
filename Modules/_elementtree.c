@@ -1803,23 +1803,22 @@ static PyTypeObject Element_Type = {
 typedef struct {
     PyObject_HEAD
 
-    PyObject* root; /* root node (first created node) */
+    PyObject *root; /* root node (first created node) */
 
-    ElementObject* this; /* current node */
-    ElementObject* last; /* most recently created node */
+    ElementObject *this; /* current node */
+    ElementObject *last; /* most recently created node */
 
-    PyObject* data; /* data collector (string or list), or NULL */
+    PyObject *data; /* data collector (string or list), or NULL */
 
-    PyObject* stack; /* element stack */
-    Py_ssize_t index; /* current stack size (0=empty) */
+    PyObject *stack; /* element stack */
+    Py_ssize_t index; /* current stack size (0 means empty) */
 
     /* element tracing */
-    PyObject* events; /* list of events, or NULL if not collecting */
-    PyObject* start_event_obj; /* event objects (NULL to ignore) */
-    PyObject* end_event_obj;
-    PyObject* start_ns_event_obj;
-    PyObject* end_ns_event_obj;
-
+    PyObject *events; /* list of events, or NULL if not collecting */
+    PyObject *start_event_obj; /* event objects (NULL to ignore) */
+    PyObject *end_event_obj;
+    PyObject *start_ns_event_obj;
+    PyObject *end_ns_event_obj;
 } TreeBuilderObject;
 
 static PyTypeObject TreeBuilder_Type;
@@ -1829,48 +1828,42 @@ static PyTypeObject TreeBuilder_Type;
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
 
-LOCAL(PyObject*)
-treebuilder_new(void)
+static PyObject *
+treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    TreeBuilderObject* self;
+    TreeBuilderObject *t = (TreeBuilderObject *)type->tp_alloc(type, 0);
+    if (t != NULL) {
+        t->root = NULL;
 
-    self = PyObject_New(TreeBuilderObject, &TreeBuilder_Type);
-    if (self == NULL)
-        return NULL;
+        Py_INCREF(Py_None);
+        t->this = (ElementObject *)Py_None;
+        Py_INCREF(Py_None);
+        t->last = (ElementObject *)Py_None;
 
-    self->root = NULL;
+        t->data = NULL;
+        t->stack = PyList_New(20);
+        if (!t->stack) {
+            Py_DECREF(t->this);
+            Py_DECREF(t->last);
+            return NULL;
+        }
+        t->index = 0;
 
-    Py_INCREF(Py_None);
-    self->this = (ElementObject*) Py_None;
-
-    Py_INCREF(Py_None);
-    self->last = (ElementObject*) Py_None;
-
-    self->data = NULL;
-
-    self->stack = PyList_New(20);
-    self->index = 0;
-
-    self->events = NULL;
-    self->start_event_obj = self->end_event_obj = NULL;
-    self->start_ns_event_obj = self->end_ns_event_obj = NULL;
-
-    ALLOC(sizeof(TreeBuilderObject), "create treebuilder");
-
-    return (PyObject*) self;
+        t->events = NULL;
+        t->start_event_obj = t->end_event_obj = NULL;
+        t->start_ns_event_obj = t->end_ns_event_obj = NULL;
+    }
+    return (PyObject *)t;
 }
 
-static PyObject*
-treebuilder(PyObject* self_, PyObject* args)
+static int
+treebuilder_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (!PyArg_ParseTuple(args, ":TreeBuilder"))
-        return NULL;
-
-    return treebuilder_new();
+    return 0;
 }
 
 static void
-treebuilder_dealloc(TreeBuilderObject* self)
+treebuilder_dealloc(TreeBuilderObject *self)
 {
     Py_XDECREF(self->end_ns_event_obj);
     Py_XDECREF(self->start_ns_event_obj);
@@ -1883,9 +1876,7 @@ treebuilder_dealloc(TreeBuilderObject* self)
     Py_DECREF(self->this);
     Py_XDECREF(self->root);
 
-    RELEASE(sizeof(TreeBuilderObject), "destroy treebuilder");
-
-    PyObject_Del(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /* -------------------------------------------------------------------- */
@@ -2174,31 +2165,41 @@ static PyTypeObject TreeBuilder_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
-    (destructor)treebuilder_dealloc, /* tp_dealloc */
-    0, /* tp_print */
-    0, /* tp_getattr */
-    0, /* tp_setattr */
-    0, /* tp_reserved */
-    0, /* tp_repr */
-    0, /* tp_as_number */
-    0, /* tp_as_sequence */
-    0, /* tp_as_mapping */
-    0, /* tp_hash */
-    0, /* tp_call */
-    0, /* tp_str */
-    0, /* tp_getattro */
-    0, /* tp_setattro */
-    0, /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT, /* tp_flags */
-    0, /* tp_doc */
-    0, /* tp_traverse */
-    0, /* tp_clear */
-    0, /* tp_richcompare */
-    0, /* tp_weaklistoffset */
-    0, /* tp_iter */
-    0, /* tp_iternext */
-    treebuilder_methods, /* tp_methods */
-    0, /* tp_members */
+    (destructor)treebuilder_dealloc,                /* tp_dealloc */
+    0,                                              /* tp_print */
+    0,                                              /* tp_getattr */
+    0,                                              /* tp_setattr */
+    0,                                              /* tp_reserved */
+    0,                                              /* tp_repr */
+    0,                                              /* tp_as_number */
+    0,                                              /* tp_as_sequence */
+    0,                                              /* tp_as_mapping */
+    0,                                              /* tp_hash */
+    0,                                              /* tp_call */
+    0,                                              /* tp_str */
+    0,                                              /* tp_getattro */
+    0,                                              /* tp_setattro */
+    0,                                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
+    0,                                              /* tp_doc */
+    0,                                              /* tp_traverse */
+    0,                                              /* tp_clear */
+    0,                                              /* tp_richcompare */
+    0,                                              /* tp_weaklistoffset */
+    0,                                              /* tp_iter */
+    0,                                              /* tp_iternext */
+    treebuilder_methods,                            /* tp_methods */
+    0,                                              /* tp_members */
+    0,                                              /* tp_getset */
+    0,                                              /* tp_base */
+    0,                                              /* tp_dict */
+    0,                                              /* tp_descr_get */
+    0,                                              /* tp_descr_set */
+    0,                                              /* tp_dictoffset */
+    (initproc)treebuilder_init,                     /* tp_init */
+    PyType_GenericAlloc,                            /* tp_alloc */
+    treebuilder_new,                                /* tp_new */
+    0,                                              /* tp_free */
 };
 
 /* ==================================================================== */
@@ -2684,7 +2685,7 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 
     /* setup target handlers */
     if (!target) {
-        target = treebuilder_new();
+        target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);
         if (!target) {
             EXPAT(ParserFree)(self->parser);
             PyObject_Del(self->names);
@@ -3073,7 +3074,6 @@ static PyTypeObject XMLParser_Type = {
 
 static PyMethodDef _functions[] = {
     {"SubElement", (PyCFunction) subelement, METH_VARARGS|METH_KEYWORDS},
-    {"TreeBuilder", (PyCFunction) treebuilder, METH_VARARGS},
 #if defined(USE_EXPAT)
     {"XMLParser", (PyCFunction) xmlparser, METH_VARARGS|METH_KEYWORDS},
 #endif
@@ -3184,6 +3184,9 @@ PyInit__elementtree(void)
 
     Py_INCREF((PyObject *)&Element_Type);
     PyModule_AddObject(m, "Element", (PyObject *)&Element_Type);
+
+    Py_INCREF((PyObject *)&TreeBuilder_Type);
+    PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
 
     return m;
 }
