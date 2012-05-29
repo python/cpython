@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #14835: Make plistlib output empty arrays & dicts like OS X.
   Patch by Sidney San Martín.
 
+- Issue #14744: Use the new _PyUnicodeWriter internal API to speed up
+  str%args and str.format(args).
+
 - Issue #14930: Make memoryview objects weakrefable.
 
 - Issue #14775: Fix a potential quadratic dict build-up due to the garbage

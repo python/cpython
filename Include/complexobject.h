@@ -63,10 +63,12 @@ PyAPI_FUNC(Py_complex) PyComplex_AsCComplex(PyObject *op);
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyComplex_FormatAdvanced(PyObject *obj,
-                                                 PyObject *format_spec,
-                                                 Py_ssize_t start,
-                                                 Py_ssize_t end);
+PyAPI_FUNC(int) _PyComplex_FormatAdvancedWriter(
+    _PyUnicodeWriter *writer,
+    PyObject *obj,
+    PyObject *format_spec,
+    Py_ssize_t start,
+    Py_ssize_t end);
 #endif
 
 #ifdef __cplusplus

@@ -699,11 +699,22 @@ static PyObject *
 complex__format__(PyObject* self, PyObject* args)
 {
     PyObject *format_spec;
+    _PyUnicodeWriter writer;
+    int ret;
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
-    return NULL;
-    return _PyComplex_FormatAdvanced(self, format_spec, 0,
-                                     PyUnicode_GET_LENGTH(format_spec));
+        return NULL;
+
+    _PyUnicodeWriter_Init(&writer, 0);
+    ret = _PyComplex_FormatAdvancedWriter(
+        &writer,
+        self,
+        format_spec, 0, PyUnicode_GET_LENGTH(format_spec));
+    if (ret == -1) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
 }
 
 #if 0
