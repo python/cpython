@@ -13229,7 +13229,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (writer) {
         if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
             return -1;
-        memcpy(writer->data + writer->pos * writer->kind,
+        memcpy((char*)writer->data + writer->pos * writer->kind,
                p,
                len);
         writer->pos += len;
