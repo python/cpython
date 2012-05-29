@@ -953,7 +953,7 @@ Shared :mod:`ctypes` Objects
 It is possible to create shared objects using shared memory which can be
 inherited by child processes.
 
-.. function:: Value(typecode_or_type, *args[, lock])
+.. function:: Value(typecode_or_type, *args, lock=True)
 
    Return a :mod:`ctypes` object allocated from shared memory.  By default the
    return value is actually a synchronized wrapper for the object.
@@ -1045,7 +1045,7 @@ processes.
    attributes which allow one to use it to store and retrieve strings -- see
    documentation for :mod:`ctypes`.
 
-.. function:: Array(typecode_or_type, size_or_initializer, *args[, lock])
+.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True)
 
    The same as :func:`RawArray` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -1060,7 +1060,7 @@ processes.
 
    Note that *lock* is a keyword-only argument.
 
-.. function:: Value(typecode_or_type, *args[, lock])
+.. function:: Value(typecode_or_type, *args, lock=True)
 
    The same as :func:`RawValue` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
