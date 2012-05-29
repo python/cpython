@@ -228,19 +228,19 @@ def RawArray(typecode_or_type, size_or_initializer):
     from multiprocessing.sharedctypes import RawArray
     return RawArray(typecode_or_type, size_or_initializer)
 
-def Value(typecode_or_type, *args, **kwds):
+def Value(typecode_or_type, *args, lock=True):
     '''
     Returns a synchronized shared object
     '''
     from multiprocessing.sharedctypes import Value
-    return Value(typecode_or_type, *args, **kwds)
+    return Value(typecode_or_type, *args, lock=lock)
 
-def Array(typecode_or_type, size_or_initializer, **kwds):
+def Array(typecode_or_type, size_or_initializer, *, lock=True):
     '''
     Returns a synchronized shared array
     '''
     from multiprocessing.sharedctypes import Array
-    return Array(typecode_or_type, size_or_initializer, **kwds)
+    return Array(typecode_or_type, size_or_initializer, lock=lock)
 
 #
 #
