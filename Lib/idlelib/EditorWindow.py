@@ -860,7 +860,7 @@ class EditorWindow(object):
         # for each edit window instance, construct the recent files menu
         for instance in self.top.instance_dict:
             menu = instance.recent_files_menu
-            menu.delete(1, END)  # clear, and rebuild:
+            menu.delete(0, END)  # clear, and rebuild:
             for i, file_name in enumerate(rf_list):
                 file_name = file_name.rstrip()  # zap \n
                 # make unicode string to display non-ASCII chars correctly
