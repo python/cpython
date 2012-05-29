@@ -499,26 +499,26 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *write
     int ok = 0;
     PyObject *result = NULL;
     PyObject *format_spec_object = NULL;
-    PyObject *(*formatter)(PyObject *, PyObject *, Py_ssize_t, Py_ssize_t) = NULL;
-    Py_ssize_t len;
+    int (*formatter) (_PyUnicodeWriter*, PyObject *, PyObject *, Py_ssize_t, Py_ssize_t) = NULL;
+    int err;
 
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
     if (PyUnicode_CheckExact(fieldobj))
-        formatter = _PyUnicode_FormatAdvanced;
+        formatter = _PyUnicode_FormatAdvancedWriter;
     else if (PyLong_CheckExact(fieldobj))
-        formatter =_PyLong_FormatAdvanced;
+        formatter = _PyLong_FormatAdvancedWriter;
     else if (PyFloat_CheckExact(fieldobj))
-        formatter = _PyFloat_FormatAdvanced;
-
-    /* XXX: for 2.6, convert format_spec to the appropriate type
-       (unicode, str) */
+        formatter = _PyFloat_FormatAdvancedWriter;
+    else if (PyComplex_CheckExact(fieldobj))
+        formatter = _PyComplex_FormatAdvancedWriter;
 
     if (formatter) {
         /* we know exactly which formatter will be called when __format__ is
            looked up, so call it directly, instead. */
-        result = formatter(fieldobj, format_spec->str,
-                           format_spec->start, format_spec->end);
+        err = formatter(writer, fieldobj, format_spec->str,
+                        format_spec->start, format_spec->end);
+        return (err == 0);
     }
     else {
         /* We need to create an object out of the pointers we have, because
@@ -536,17 +536,11 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *write
     }
     if (result == NULL)
         goto done;
-    if (PyUnicode_READY(result) == -1)
-        goto done;
 
-    len = PyUnicode_GET_LENGTH(result);
-    if (_PyUnicodeWriter_Prepare(writer,
-                               len, PyUnicode_MAX_CHAR_VALUE(result)) == -1)
+    if (_PyUnicodeWriter_WriteStr(writer, result) == -1)
         goto done;
-    copy_characters(writer->buffer, writer->pos,
-                    result, 0, len);
-    writer->pos += len;
     ok = 1;
+
 done:
     Py_XDECREF(format_spec_object);
     Py_XDECREF(result);
@@ -897,16 +891,19 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
             err = _PyUnicodeWriter_Prepare(writer, sublen, maxchar);
             if (err == -1)
                 return 0;
-            copy_characters(writer->buffer, writer->pos,
-                            literal.str, literal.start, sublen);
+            _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
+                                          literal.str, literal.start, sublen);
             writer->pos += sublen;
         }
 
-        if (field_present)
+        if (field_present) {
+            if (iter.str.start == iter.str.end)
+                writer->flags.overallocate = 0;
             if (!output_markup(&field_name, &format_spec,
                                format_spec_needs_expanding, conversion, writer,
                                args, kwargs, recursion_depth, auto_number))
                 return 0;
+        }
     }
     return result;
 }
@@ -921,7 +918,7 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
              int recursion_depth, AutoNumber *auto_number)
 {
     _PyUnicodeWriter writer;
-    Py_ssize_t initlen;
+    Py_ssize_t minlen;
 
     /* check the recursion level */
     if (recursion_depth <= 0) {
@@ -930,9 +927,8 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
         return NULL;
     }
 
-    initlen = PyUnicode_GET_LENGTH(input->str) + 100;
-    if (_PyUnicodeWriter_Init(&writer, initlen, 127) == -1)
-        return NULL;
+    minlen = PyUnicode_GET_LENGTH(input->str) + 100;
+    _PyUnicodeWriter_Init(&writer, minlen);
 
     if (!do_markup(input, args, kwargs, &writer, recursion_depth,
                    auto_number)) {
