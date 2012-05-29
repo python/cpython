@@ -476,27 +476,30 @@ Element Objects
       .. versionadded:: 3.2
 
 
-   .. method:: find(match)
+   .. method:: find(match, namespaces=None)
 
       Finds the first subelement matching *match*.  *match* may be a tag name
       or a :ref:`path <elementtree-xpath>`.  Returns an element instance
-      or ``None``.
+      or ``None``.  *namespaces* is an optional mapping from namespace prefix
+      to full name.
 
 
-   .. method:: findall(match)
+   .. method:: findall(match, namespaces=None)
 
       Finds all matching subelements, by tag name or
       :ref:`path <elementtree-xpath>`.  Returns a list containing all matching
-      elements in document order.
+      elements in document order.  *namespaces* is an optional mapping from
+      namespace prefix to full name.
 
 
-   .. method:: findtext(match, default=None)
+   .. method:: findtext(match, default=None, namespaces=None)
 
       Finds text for the first subelement matching *match*.  *match* may be
       a tag name or a :ref:`path <elementtree-xpath>`.  Returns the text content
       of the first matching element, or *default* if no element was found.
       Note that if the matching element has no text content an empty string
-      is returned.
+      is returned. *namespaces* is an optional mapping from namespace prefix
+      to full name.
 
 
    .. method:: getchildren()
@@ -528,11 +531,13 @@ Element Objects
       .. versionadded:: 3.2
 
 
-   .. method:: iterfind(match)
+   .. method:: iterfind(match, namespaces=None)
 
       Finds all matching subelements, by tag name or
       :ref:`path <elementtree-xpath>`.  Returns an iterable yielding all
-      matching elements in document order.
+      matching elements in document order. *namespaces* is an optional mapping
+      from namespace prefix to full name.
+
 
       .. versionadded:: 3.2
 
@@ -597,17 +602,17 @@ ElementTree Objects
       care.  *element* is an element instance.
 
 
-   .. method:: find(match)
+   .. method:: find(match, namespaces=None)
 
       Same as :meth:`Element.find`, starting at the root of the tree.
 
 
-   .. method:: findall(match)
+   .. method:: findall(match, namespaces=None)
 
       Same as :meth:`Element.findall`, starting at the root of the tree.
 
 
-   .. method:: findtext(match, default=None)
+   .. method:: findtext(match, default=None, namespaces=None)
 
       Same as :meth:`Element.findtext`, starting at the root of the tree.
 
@@ -630,7 +635,7 @@ ElementTree Objects
       to look for (default is to return all elements)
 
 
-   .. method:: iterfind(match)
+   .. method:: iterfind(match, namespaces=None)
 
       Same as :meth:`Element.iterfind`, starting at the root of the tree.
 
