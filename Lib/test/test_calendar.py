@@ -353,8 +353,9 @@ class OutputTestCase(unittest.TestCase):
 
     def test_yeardatescalendar(self):
         def shrink(cal):
-            return [[[' '.join((d.strftime('%D')
-                    for d in z)) for z in y] for y in x] for x in cal]
+            return [[[' '.join('{:02d}/{:02d}/{}'.format(
+                                d.month, d.day, str(d.year)[-2:]) for d in z)
+                            for z in y] for y in x] for x in cal]
         self.assertEqual(
             shrink(calendar.Calendar().yeardatescalendar(2004)),
             result_2004_dates
