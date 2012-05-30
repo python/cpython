@@ -136,9 +136,7 @@ hooks available for subclass customization::
     def create(self, env_dir):
         """
         Create a virtualized Python environment in a directory.
-
-        :param env_dir: The target directory to create an environment in.
-
+        env_dir is the target directory to create an environment in.
         """
         env_dir = os.path.abspath(env_dir)
         context = self.create_directories(env_dir)
