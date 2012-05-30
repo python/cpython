@@ -600,7 +600,7 @@ any of the above controls as keyword arguments.  Any control not specified in
 the call retains its default value.  Thus you can create a policy that uses
 ``\r\n`` linesep characters like this::
 
-    mypolicy = compat32.clone(linesep=`\r\n`)
+    mypolicy = compat32.clone(linesep='\r\n')
 
 Policies can be used to make the generation of messages in the format needed by
 your application simpler.  Instead of having to remember to specify
