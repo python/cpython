@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14690: Use monotonic clock instead of system clock in the sched,
+  subprocess and trace modules.
+
 - Issue #14958: Change IDLE systax highlighting to recognize all string and
   byte literals supported in Python 3.3.
 

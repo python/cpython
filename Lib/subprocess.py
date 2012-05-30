@@ -349,6 +349,10 @@ import signal
 import builtins
 import warnings
 import errno
+try:
+    from time import monotonic as _time
+except ImportError:
+    from time import time as _time
 
 # Exception classes used by this module.
 class SubprocessError(Exception): pass
@@ -894,7 +898,7 @@ class Popen(object):
             self.wait()
         else:
             if timeout is not None:
-                endtime = time.time() + timeout
+                endtime = _time() + timeout
             else:
                 endtime = None
 
@@ -917,14 +921,14 @@ class Popen(object):
         if endtime is None:
             return None
         else:
-            return endtime - time.time()
+            return endtime - _time()
 
 
     def _check_timeout(self, endtime, orig_timeout):
         """Convenience for checking if a timeout has expired."""
         if endtime is None:
             return
-        if time.time() > endtime:
+        if _time() > endtime:
             raise TimeoutExpired(self.args, orig_timeout)
 
 
@@ -1471,7 +1475,7 @@ class Popen(object):
             # printing.
             if endtime is not None or timeout is not None:
                 if endtime is None:
-                    endtime = time.time() + timeout
+                    endtime = _time() + timeout
                 elif timeout is None:
                     timeout = self._remaining_time(endtime)
 

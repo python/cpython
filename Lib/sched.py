@@ -35,6 +35,10 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
+try:
+    from time import monotonic as _time
+except ImportError:
+    from time import time as _time
 
 __all__ = ["scheduler"]
 
@@ -48,7 +52,7 @@ class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
 
 class scheduler:
 
-    def __init__(self, timefunc=time.time, delayfunc=time.sleep):
+    def __init__(self, timefunc=_time, delayfunc=time.sleep):
         """Initialize a new instance, passing the time and delay
         functions"""
         self._queue = []
