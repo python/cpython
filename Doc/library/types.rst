@@ -23,12 +23,15 @@ Dynamic Type Creation
 
    Creates a class object dynamically using the appropriate metaclass.
 
-   The arguments are the components that make up a class definition: the
-   class name, the base classes (in order), the keyword arguments (such as
-   ``metaclass``) and the callback function to populate the class namespace.
+   The first three arguments are the components that make up a class
+   definition header: the class name, the base classes (in order), the
+   keyword arguments (such as ``metaclass``).
 
-   The *exec_body* callback should accept the class namespace as its sole
-   argument and update the namespace directly with the class contents.
+   The *exec_body* argument is a callback that is used to populate the
+   freshly created class namespace. It should accept the class namespace
+   as its sole argument and update the namespace directly with the class
+   contents. If no callback is provided, it has the same effect as passing
+   in ``lambda ns: ns``.
 
    .. versionadded:: 3.3
 
@@ -36,21 +39,23 @@ Dynamic Type Creation
 
    Calculates the appropriate metaclass and creates the class namespace.
 
-   The arguments are the components that make up a class definition: the
-   class name, the base classes (in order) and the keyword arguments (such as
-   ``metaclass``).
+   The arguments are the components that make up a class definition header:
+   the class name, the base classes (in order) and the keyword arguments
+   (such as ``metaclass``).
 
    The return value is a 3-tuple: ``metaclass, namespace, kwds``
 
-   *metaclass* is the appropriate metaclass
-   *namespace* is the prepared class namespace
-   *kwds* is an updated copy of the passed in *kwds* argument with any
-   ``'metaclass'`` entry removed. If no *kwds* argument is passed in, this
-   will be an empty dict.
+   *metaclass* is the appropriate metaclass, *namespace* is the
+   prepared class namespace and *kwds* is an updated copy of the passed
+   in *kwds* argument with any ``'metaclass'`` entry removed. If no *kwds*
+   argument is passed in, this will be an empty dict.
 
    .. versionadded:: 3.3
 
 .. seealso::
+
+   :ref:`metaclasses`
+      Full details of the class creation process supported by these functions
 
    :pep:`3115` - Metaclasses in Python 3000
       Introduced the ``__prepare__`` namespace hook
