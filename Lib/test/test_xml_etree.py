@@ -1959,6 +1959,8 @@ class TreeBuilderTest(unittest.TestCase):
         ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
         '<html>text</html>')
 
+    sample2 = '''<toplevel>sometext</toplevel>'''
+
     def test_dummy_builder(self):
         class BaseDummyBuilder:
             def close(self):
@@ -1993,11 +1995,19 @@ class TreeBuilderTest(unittest.TestCase):
         e = parser.close()
         self.assertEqual(e.tag, 'html')
 
-    # XXX in _elementtree, the constructor of TreeBuilder expects no
-    # arguments
-    @unittest.expectedFailure
     def test_element_factory(self):
-        tb = ET.TreeBuilder(element_factory=lambda: ET.Element())
+        lst = []
+        def myfactory(tag, attrib):
+            nonlocal lst
+            lst.append(tag)
+            return ET.Element(tag, attrib)
+
+        tb = ET.TreeBuilder(element_factory=myfactory)
+        parser = ET.XMLParser(target=tb)
+        parser.feed(self.sample2)
+        parser.close()
+
+        self.assertEqual(lst, ['toplevel'])
 
     @unittest.expectedFailure   # XXX issue 14007 with C ElementTree
     def test_doctype(self):

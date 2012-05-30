@@ -716,9 +716,9 @@ TreeBuilder Objects
    Generic element structure builder.  This builder converts a sequence of
    start, data, and end method calls to a well-formed element structure.  You
    can use this class to build an element structure using a custom XML parser,
-   or a parser for some other XML-like format.  The *element_factory* is called
-   to create new :class:`Element` instances when given.
-
+   or a parser for some other XML-like format.  *element_factory*, when given,
+   must be a callable accepting two positional arguments: a tag and
+   a dict of attributes.  It is expected to return a new element instance.
 
    .. method:: close()
 
