@@ -55,7 +55,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
    The *policy* keyword specifies a :mod:`~email.policy` object that controls a
    number of aspects of the generator's operation.  If no *policy* is specified,
-   then the *policy* attached to the message object passed to :attr:``flatten``
+   then the *policy* attached to the message object passed to :attr:`flatten`
    is used.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
