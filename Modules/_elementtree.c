@@ -191,6 +191,15 @@ list_join(PyObject* list)
     return result;
 }
 
+/* Is the given object an empty dictionary?
+*/
+static int
+is_empty_dict(PyObject *obj)
+{
+    return PyDict_CheckExact(obj) && PyDict_Size(obj) == 0;
+}
+
+
 /* -------------------------------------------------------------------- */
 /* the Element type */
 
@@ -297,14 +306,9 @@ create_new_element(PyObject* tag, PyObject* attrib)
     self = PyObject_GC_New(ElementObject, &Element_Type);
     if (self == NULL)
         return NULL;
-
-    /* use None for empty dictionaries */
-    if (PyDict_CheckExact(attrib) && !PyDict_Size(attrib))
-        attrib = Py_None;
-
     self->extra = NULL;
 
-    if (attrib != Py_None) {
+    if (attrib != Py_None && !is_empty_dict(attrib)) {
         if (create_extra(self, attrib) < 0) {
             PyObject_Del(self);
             return NULL;
@@ -416,22 +420,14 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     self_elem = (ElementObject *)self;
 
-    /* Use None for empty dictionaries */
-    if (PyDict_CheckExact(attrib) && PyDict_Size(attrib) == 0) {
-        Py_INCREF(Py_None);
-        attrib = Py_None;
-    }
-
-    if (attrib != Py_None) {
+    if (attrib != Py_None && !is_empty_dict(attrib)) {
         if (create_extra(self_elem, attrib) < 0) {
             PyObject_Del(self_elem);
             return -1;
         }
     }
 
-    /* If create_extra needed attrib, it took a reference to it, so we can
-     * release ours anyway.
-    */
+    /* We own a reference to attrib here and it's no longer needed. */
     Py_DECREF(attrib);
 
     /* Replace the objects already pointed to by tag, text and tail. */
@@ -1813,6 +1809,8 @@ typedef struct {
     PyObject *stack; /* element stack */
     Py_ssize_t index; /* current stack size (0 means empty) */
 
+    PyObject *element_factory;
+
     /* element tracing */
     PyObject *events; /* list of events, or NULL if not collecting */
     PyObject *start_event_obj; /* event objects (NULL to ignore) */
@@ -1841,6 +1839,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->last = (ElementObject *)Py_None;
 
         t->data = NULL;
+        t->element_factory = NULL;
         t->stack = PyList_New(20);
         if (!t->stack) {
             Py_DECREF(t->this);
@@ -1859,11 +1858,38 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 treebuilder_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"element_factory", NULL};
+    PyObject *element_factory = NULL;
+    TreeBuilderObject *self_tb = (TreeBuilderObject *)self;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:TreeBuilder", kwlist,
+                                     &element_factory)) {
+        return -1;
+    }
+
+    if (element_factory) {
+        Py_INCREF(element_factory);
+        Py_XDECREF(self_tb->element_factory);
+        self_tb->element_factory = element_factory;
+    }
+
     return 0;
 }
 
-static void
-treebuilder_dealloc(TreeBuilderObject *self)
+static int
+treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->root);
+    Py_VISIT(self->this);
+    Py_VISIT(self->last);
+    Py_VISIT(self->data);
+    Py_VISIT(self->stack);
+    Py_VISIT(self->element_factory);
+    return 0;
+}
+
+static int
+treebuilder_gc_clear(TreeBuilderObject *self)
 {
     Py_XDECREF(self->end_ns_event_obj);
     Py_XDECREF(self->start_ns_event_obj);
@@ -1874,8 +1900,16 @@ treebuilder_dealloc(TreeBuilderObject *self)
     Py_XDECREF(self->data);
     Py_DECREF(self->last);
     Py_DECREF(self->this);
+    Py_CLEAR(self->element_factory);
     Py_XDECREF(self->root);
+    return 0;
+}
 
+static void
+treebuilder_dealloc(TreeBuilderObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    treebuilder_gc_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -1904,9 +1938,14 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
         self->data = NULL;
     }
 
-    node = create_new_element(tag, attrib);
-    if (!node)
+    if (self->element_factory) {
+        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
+    } else {
+        node = create_new_element(tag, attrib);
+    }
+    if (!node) {
         return NULL;
+    }
 
     this = (PyObject*) self->this;
 
@@ -2180,10 +2219,11 @@ static PyTypeObject TreeBuilder_Type = {
     0,                                              /* tp_getattro */
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+                                                    /* tp_flags */
     0,                                              /* tp_doc */
-    0,                                              /* tp_traverse */
-    0,                                              /* tp_clear */
+    (traverseproc)treebuilder_gc_traverse,          /* tp_traverse */
+    (inquiry)treebuilder_gc_clear,                  /* tp_clear */
     0,                                              /* tp_richcompare */
     0,                                              /* tp_weaklistoffset */
     0,                                              /* tp_iter */
@@ -2443,17 +2483,20 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
         attrib = Py_None;
     }
 
-    if (TreeBuilder_CheckExact(self->target))
+    /* If we get None, pass an empty dictionary on */
+    if (attrib == Py_None) {
+        Py_DECREF(attrib);
+        attrib = PyDict_New();
+        if (!attrib)
+            return;
+    }
+
+    if (TreeBuilder_CheckExact(self->target)) {
         /* shortcut */
         res = treebuilder_handle_start((TreeBuilderObject*) self->target,
                                        tag, attrib);
+    }
     else if (self->handle_start) {
-        if (attrib == Py_None) {
-            Py_DECREF(attrib);
-            attrib = PyDict_New();
-            if (!attrib)
-                return;
-        }
         res = PyObject_CallFunction(self->handle_start, "OO", tag, attrib);
     } else
         res = NULL;
