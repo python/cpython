@@ -61,6 +61,10 @@ import gc
 import dis
 import pickle
 from warnings import warn as _warn
+try:
+    from time import monotonic as _time
+except ImportError:
+    from time import time as _time
 
 try:
     import threading
@@ -476,7 +480,7 @@ class Trace:
         self._caller_cache = {}
         self.start_time = None
         if timing:
-            self.start_time = time.time()
+            self.start_time = _time()
         if countcallers:
             self.globaltrace = self.globaltrace_trackcallers
         elif countfuncs:
@@ -614,7 +618,7 @@ class Trace:
             self.counts[key] = self.counts.get(key, 0) + 1
 
             if self.start_time:
-                print('%.2f' % (time.time() - self.start_time), end=' ')
+                print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
             print("%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)), end='')
@@ -627,7 +631,7 @@ class Trace:
             lineno = frame.f_lineno
 
             if self.start_time:
-                print('%.2f' % (time.time() - self.start_time), end=' ')
+                print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
             print("%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)), end='')
