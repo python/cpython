@@ -3903,7 +3903,6 @@ _mpd_qexp_check_one(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     /* abs(a) <= 9 * 10**(-prec-1) */
     if (_mpd_cmp(&aa, &lim) <= 0) {
         _settriple(result, 0, 1, 0);
-        _mpd_zeropad(result, ctx, status);
         *status |= MPD_Rounded|MPD_Inexact;
         return 1;
     }
@@ -4074,8 +4073,6 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     }
 #endif
 
-    _mpd_zeropad(result, ctx, status);
-
     mpd_del(&tmp);
     mpd_del(&sum);
     *status |= (workctx.status&MPD_Errors);
@@ -4148,6 +4145,7 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
             if (mpd_isspecial(result) || mpd_iszerocoeff(result) ||
                 mpd_qcmp(&t1, &t2, status) == 0) {
                 workctx.clamp = ctx->clamp;
+                _mpd_zeropad(result, ctx, status);
                 mpd_check_underflow(result, &workctx, status);
                 mpd_qfinalize(result, &workctx, status);
                 break;
