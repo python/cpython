@@ -91,31 +91,25 @@ class _PolicyBase:
         return self.clone(**other.__dict__)
 
 
-# Conceptually this isn't a subclass of ABCMeta, but since we want Policy to
-# use ABCMeta as a metaclass *and* we want it to use this one as well, we have
-# to make this one a subclas of ABCMeta.
-class _DocstringExtenderMetaclass(abc.ABCMeta):
+def _append_doc(doc, added_doc):
+    doc = doc.rsplit('\n', 1)[0]
+    added_doc = added_doc.split('\n', 1)[1]
+    return doc + '\n' + added_doc
 
-    def __new__(meta, classname, bases, classdict):
-        if classdict.get('__doc__') and classdict['__doc__'].startswith('+'):
-            classdict['__doc__'] = meta._append_doc(bases[0].__doc__,
-                                                    classdict['__doc__'])
-        for name, attr in classdict.items():
-            if attr.__doc__ and attr.__doc__.startswith('+'):
-                for cls in (cls for base in bases for cls in base.mro()):
-                    doc = getattr(getattr(cls, name), '__doc__')
-                    if doc:
-                        attr.__doc__ = meta._append_doc(doc, attr.__doc__)
-                        break
-        return super().__new__(meta, classname, bases, classdict)
-
-    @staticmethod
-    def _append_doc(doc, added_doc):
-        added_doc = added_doc.split('\n', 1)[1]
-        return doc + '\n' + added_doc
+def _extend_docstrings(cls):
+    if cls.__doc__ and cls.__doc__.startswith('+'):
+        cls.__doc__ = _append_doc(cls.__bases__[0].__doc__, cls.__doc__)
+    for name, attr in cls.__dict__.items():
+        if attr.__doc__ and attr.__doc__.startswith('+'):
+            for c in (c for base in cls.__bases__ for c in base.mro()):
+                doc = getattr(getattr(c, name), '__doc__')
+                if doc:
+                    attr.__doc__ = _append_doc(doc, attr.__doc__)
+                    break
+    return cls
 
 
-class Policy(_PolicyBase, metaclass=_DocstringExtenderMetaclass):
+class Policy(_PolicyBase, metaclass=abc.ABCMeta):
 
     r"""Controls for how messages are interpreted and formatted.
 
@@ -264,6 +258,7 @@ class Policy(_PolicyBase, metaclass=_DocstringExtenderMetaclass):
         raise NotImplementedError
 
 
+@_extend_docstrings
 class Compat32(Policy):
 
     """+

@@ -4,10 +4,11 @@ import unittest
 from email import message_from_string, message_from_bytes
 from email.generator import Generator, BytesGenerator
 from email import policy
-from test.test_email import TestEmailBase, Parameterized
+from test.test_email import TestEmailBase, parameterize
 
 
-class TestGeneratorBase(metaclass=Parameterized):
+@parameterize
+class TestGeneratorBase:
 
     policy = policy.default
 

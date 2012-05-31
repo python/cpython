@@ -6,9 +6,11 @@ import email
 import email.message
 from email import policy
 from email.headerregistry import HeaderRegistry
-from test.test_email import TestEmailBase, Parameterized
+from test.test_email import TestEmailBase, parameterize
 
-class TestPickleCopyHeader(TestEmailBase, metaclass=Parameterized):
+
+@parameterize
+class TestPickleCopyHeader(TestEmailBase):
 
     header_factory = HeaderRegistry()
 
@@ -33,7 +35,8 @@ class TestPickleCopyHeader(TestEmailBase, metaclass=Parameterized):
         self.assertEqual(str(h), str(header))
 
 
-class TestPickleCopyMessage(TestEmailBase, metaclass=Parameterized):
+@parameterize
+class TestPickleCopyMessage(TestEmailBase):
 
     # Message objects are a sequence, so we have to make them a one-tuple in
     # msg_params so they get passed to the parameterized test method as a
