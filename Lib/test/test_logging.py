@@ -1877,7 +1877,7 @@ class ChildLoggerTest(BaseTest):
 
 class HandlerTest(BaseTest):
 
-    @unittest.skipIf(os.name == 'nt', 'Temporarily disabled for Windows')
+    @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_race(self):
         # Issue #14632 refers.
