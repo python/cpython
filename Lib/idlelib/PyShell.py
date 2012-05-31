@@ -309,6 +309,11 @@ class ModifiedColorDelegator(ColorDelegator):
             "console": idleConf.GetHighlight(theme, "console"),
         })
 
+    def removecolors(self):
+        # Don't remove shell color tags before "iomark"
+        for tag in self.tagdefs:
+            self.tag_remove(tag, "iomark", "end")
+
 class ModifiedUndoDelegator(UndoDelegator):
     "Extend base class: forbid insert/delete before the I/O mark"
 
