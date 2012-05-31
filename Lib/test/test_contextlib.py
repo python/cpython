@@ -483,6 +483,95 @@ class TestExitStack(unittest.TestCase):
         new_stack.close()
         self.assertEqual(result, [1, 2, 3])
 
+    def test_exit_raise(self):
+        with self.assertRaises(ZeroDivisionError):
+            with ExitStack() as stack:
+                stack.push(lambda *exc: False)
+                1/0
+
+    def test_exit_suppress(self):
+        with ExitStack() as stack:
+            stack.push(lambda *exc: True)
+            1/0
+
+    def test_exit_exception_chaining_reference(self):
+        # Sanity check to make sure that ExitStack chaining matches
+        # actual nested with statements
+        class RaiseExc:
+            def __init__(self, exc):
+                self.exc = exc
+            def __enter__(self):
+                return self
+            def __exit__(self, *exc_details):
+                raise self.exc
+
+        class SuppressExc:
+            def __enter__(self):
+                return self
+            def __exit__(self, *exc_details):
+                type(self).saved_details = exc_details
+                return True
+
+        try:
+            with RaiseExc(IndexError):
+                with RaiseExc(KeyError):
+                    with RaiseExc(AttributeError):
+                        with SuppressExc():
+                            with RaiseExc(ValueError):
+                                1 / 0
+        except IndexError as exc:
+            self.assertIsInstance(exc.__context__, KeyError)
+            self.assertIsInstance(exc.__context__.__context__, AttributeError)
+            # Inner exceptions were suppressed
+            self.assertIsNone(exc.__context__.__context__.__context__)
+        else:
+            self.fail("Expected IndexError, but no exception was raised")
+        # Check the inner exceptions
+        inner_exc = SuppressExc.saved_details[1]
+        self.assertIsInstance(inner_exc, ValueError)
+        self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+    def test_exit_exception_chaining(self):
+        # Ensure exception chaining matches the reference behaviour
+        def raise_exc(exc):
+            raise exc
+
+        saved_details = None
+        def suppress_exc(*exc_details):
+            nonlocal saved_details
+            saved_details = exc_details
+            return True
+
+        try:
+            with ExitStack() as stack:
+                stack.callback(raise_exc, IndexError)
+                stack.callback(raise_exc, KeyError)
+                stack.callback(raise_exc, AttributeError)
+                stack.push(suppress_exc)
+                stack.callback(raise_exc, ValueError)
+                1 / 0
+        except IndexError as exc:
+            self.assertIsInstance(exc.__context__, KeyError)
+            self.assertIsInstance(exc.__context__.__context__, AttributeError)
+            # Inner exceptions were suppressed, but the with statement
+            # cleanup code adds the one from the body back in as the
+            # context of the exception raised by the outer callbacks
+            # See http://bugs.python.org/issue14969
+            suite_exc = exc.__context__.__context__.__context__
+            self.assertIsInstance(suite_exc, ZeroDivisionError)
+        else:
+            self.fail("Expected IndexError, but no exception was raised")
+        # Check the inner exceptions
+        inner_exc = saved_details[1]
+        self.assertIsInstance(inner_exc, ValueError)
+        self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+    def test_exit_exception_chaining_suppress(self):
+        with ExitStack() as stack:
+            stack.push(lambda *exc: True)
+            stack.push(lambda *exc: 1/0)
+            stack.push(lambda *exc: {}[1])
+
     def test_instance_bypass(self):
         class Example(object): pass
         cm = Example()
