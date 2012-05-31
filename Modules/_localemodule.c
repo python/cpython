@@ -257,11 +257,12 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     n2 = wcsxfrm(buf, s, n1);
     if (n2 >= (size_t)n1) {
         /* more space needed */
-        buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
-        if (!buf) {
+        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
+        if (!new_buf) {
             PyErr_NoMemory();
             goto exit;
         }
+        buf = new_buf;
         n2 = wcsxfrm(buf, s, n2+1);
     }
     result = PyUnicode_FromWideChar(buf, n2);

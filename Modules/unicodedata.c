@@ -526,13 +526,16 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             /* Hangul Decomposition adds three characters in
                a single step, so we need atleast that much room. */
             if (space < 3) {
+                Py_UCS4 *new_output;
                 osize += 10;
                 space += 10;
-                output = PyMem_Realloc(output, osize*sizeof(Py_UCS4));
-                if (output == NULL) {
+                new_output = PyMem_Realloc(output, osize*sizeof(Py_UCS4));
+                if (new_output == NULL) {
+                    PyMem_Free(output);
                     PyErr_NoMemory();
                     return NULL;
                 }
+                output = new_output;
             }
             /* Hangul Decomposition. */
             if (SBase <= code && code < (SBase+SCount)) {
