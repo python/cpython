@@ -8343,13 +8343,15 @@ charmaptranslate_makespace(Py_UCS4 **outobj, Py_ssize_t *psize,
                                Py_ssize_t requiredsize)
 {
     Py_ssize_t oldsize = *psize;
+    Py_UCS4 *new_outobj;
     if (requiredsize > oldsize) {
         /* exponentially overallocate to minimize reallocations */
         if (requiredsize < 2 * oldsize)
             requiredsize = 2 * oldsize;
-        *outobj = PyMem_Realloc(*outobj, requiredsize * sizeof(Py_UCS4));
-        if (*outobj == 0)
+        new_outobj = PyMem_Realloc(*outobj, requiredsize * sizeof(Py_UCS4));
+        if (new_outobj == 0)
             return -1;
+        *outobj = new_outobj;
         *psize = requiredsize;
     }
     return 0;

@@ -663,11 +663,13 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
             f = free_list;
             free_list = free_list->f_back;
             if (Py_SIZE(f) < extras) {
-                f = PyObject_GC_Resize(PyFrameObject, f, extras);
-                if (f == NULL) {
+                PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
+                if (new_f == NULL) {
+                    PyObject_GC_Del(f);
                     Py_DECREF(builtins);
                     return NULL;
                 }
+                f = new_f;
             }
             _Py_NewReference((PyObject *)f);
         }
