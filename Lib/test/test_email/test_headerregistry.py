@@ -4,7 +4,7 @@ import unittest
 from email import errors
 from email import policy
 from email.message import Message
-from test.test_email import TestEmailBase, Parameterized
+from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
 
@@ -175,7 +175,8 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(m['Date'].datetime, self.dt)
 
 
-class TestAddressHeader(TestHeaderBase, metaclass=Parameterized):
+@parameterize
+class TestAddressHeader(TestHeaderBase):
 
     example_params = {
 
