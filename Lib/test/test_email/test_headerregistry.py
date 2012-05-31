@@ -4,7 +4,7 @@ import unittest
 from email import errors
 from email import policy
 from email.message import Message
-from test.test_email import TestEmailBase
+from test.test_email import TestEmailBase, Parameterized
 from email import headerregistry
 from email.headerregistry import Address, Group
 
@@ -175,9 +175,9 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(m['Date'].datetime, self.dt)
 
 
-class TestAddressHeader(TestHeaderBase):
+class TestAddressHeader(TestHeaderBase, metaclass=Parameterized):
 
-    examples = {
+    example_params = {
 
         'empty':
             ('<>',
@@ -305,8 +305,8 @@ class TestAddressHeader(TestHeaderBase):
         # trailing comments, which aren't currently handled.  comments in
         # general are not handled yet.
 
-    def _test_single_addr(self, source, defects, decoded, display_name,
-                          addr_spec, username, domain, comment):
+    def example_as_address(self, source, defects, decoded, display_name,
+                           addr_spec, username, domain, comment):
         h = self.make_header('sender', source)
         self.assertEqual(h, decoded)
         self.assertDefectsEqual(h.defects, defects)
@@ -322,13 +322,8 @@ class TestAddressHeader(TestHeaderBase):
         # XXX: we have no comment support yet.
         #self.assertEqual(a.comment, comment)
 
-    for name in examples:
-        locals()['test_'+name] = (
-            lambda self, name=name:
-                self._test_single_addr(*self.examples[name]))
-
-    def _test_group_single_addr(self, source, defects, decoded, display_name,
-                                addr_spec, username, domain, comment):
+    def example_as_group(self, source, defects, decoded, display_name,
+                         addr_spec, username, domain, comment):
         source = 'foo: {};'.format(source)
         gdecoded = 'foo: {};'.format(decoded) if decoded else 'foo:;'
         h = self.make_header('to', source)
@@ -343,11 +338,6 @@ class TestAddressHeader(TestHeaderBase):
         self.assertEqual(a.addr_spec, addr_spec)
         self.assertEqual(a.username, username)
         self.assertEqual(a.domain, domain)
-
-    for name in examples:
-        locals()['test_group_'+name] = (
-            lambda self, name=name:
-                self._test_group_single_addr(*self.examples[name]))
 
     def test_simple_address_list(self):
         value = ('Fred <dinsdale@python.org>, foo@example.com, '
@@ -366,7 +356,7 @@ class TestAddressHeader(TestHeaderBase):
             'Harry W. Hastings')
 
     def test_complex_address_list(self):
-        examples = list(self.examples.values())
+        examples = list(self.example_params.values())
         source = ('dummy list:;, another: (empty);,' +
                  ', '.join([x[0] for x in examples[:4]]) + ', ' +
                  r'"A \"list\"": ' +
