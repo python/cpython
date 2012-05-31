@@ -188,15 +188,15 @@ Functions and classes provided:
 
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly
-   at the end of a ``with`` statement). Note that callbacks are *not* invoked
-   implicitly when the context stack instance is garbage collected.
+   at the end of a :keyword:`with` statement). Note that callbacks are *not*
+   invoked implicitly when the context stack instance is garbage collected.
 
    This stack model is used so that context managers that acquire their
    resources in their ``__init__`` method (such as file objects) can be
    handled correctly.
 
    Since registered callbacks are invoked in the reverse order of
-   registration, this ends up behaving as if multiple nested ``with``
+   registration, this ends up behaving as if multiple nested :keyword:`with`
    statements had been used with the registered set of callbacks. This even
    extends to exception handling - if an inner callback suppresses or replaces
    an exception, then outer callbacks will be passed arguments based on that
@@ -216,7 +216,7 @@ Functions and classes provided:
       manager's own :meth:`__enter__` method.
 
       These context managers may suppress exceptions just as they normally
-      would if used directly as part of a ``with`` statement.
+      would if used directly as part of a :keyword:`with` statement.
 
    .. method:: push(exit)
 
@@ -234,7 +234,7 @@ Functions and classes provided:
       same way context manager :meth:`__exit__` methods can.
 
       The passed in object is returned from the function, allowing this
-      method to be used is a function decorator.
+      method to be used as a function decorator.
 
    .. method:: callback(callback, *args, **kwds)
 
@@ -245,14 +245,14 @@ Functions and classes provided:
       exceptions (as they are never passed the exception details).
 
       The passed in callback is returned from the function, allowing this
-      method to be used is a function decorator.
+      method to be used as a function decorator.
 
    .. method:: pop_all()
 
       Transfers the callback stack to a fresh :class:`ExitStack` instance
       and returns it. No callbacks are invoked by this operation - instead,
       they will now be invoked when the new stack is closed (either
-      explicitly or implicitly).
+      explicitly or implicitly at the end of a :keyword:`with` statement).
 
       For example, a group of files can be opened as an "all or nothing"
       operation as follows::
@@ -278,6 +278,74 @@ Examples and Recipes
 
 This section describes some examples and recipes for making effective use of
 the tools provided by :mod:`contextlib`.
+
+
+Supporting a variable number of context managers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The primary use case for :class:`ExitStack` is the one given in the class
+documentation: supporting a variable number of context managers and other
+cleanup operations in a single :keyword:`with` statement. The variability
+may come from the number of context managers needed being driven by user
+input (such as opening a user specified collection of files), or from
+some of the context managers being optional::
+
+    with ExitStack() as stack:
+        for resource in resources:
+            stack.enter_context(resource)
+        if need_special resource:
+            special = acquire_special_resource()
+            stack.callback(release_special_resource, special)
+        # Perform operations that use the acquired resources
+
+As shown, :class:`ExitStack` also makes it quite easy to use :keyword:`with`
+statements to manage arbitrary resources that don't natively support the
+context management protocol.
+
+
+Simplifying support for single optional context managers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the specific case of a single optional context manager, :class:`ExitStack`
+instances can be used as a "do nothing" context manager, allowing a context
+managers to easily be omitted without affecting the overall structure of
+the source code::
+
+   def debug_trace(details):
+       if __debug__:
+           return TraceContext(details)
+       # Don't do anything special with the context in release mode
+       return ExitStack()
+
+   with debug_trace():
+       # Suite is traced in debug mode, but runs normally otherwise
+
+
+Catching exceptions from ``__enter__`` methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is occasionally desirable to catch exceptions from an ``__enter__``
+method implementation, *without* inadvertently catching exceptions from
+the :keyword:`with` statement body or the context manager's ``__exit__``
+method. By using :class:`ExitStack` the steps in the context management
+protocol can be separated slightly in order to allow this::
+
+   stack = ExitStack()
+   try:
+       x = stack.enter_context(cm)
+   except Exception:
+       # handle __enter__ exception
+   else:
+       with stack:
+           # Handle normal case
+
+Actually needing to do this is likely to indicate that the underlying API
+should be providing a direct resource management interface for use with
+:keyword:`try`/:keyword:`except`/:keyword:`finally` statements, but not
+all APIs are well designed in that regard. When a context manager is the
+only resource management API provided, then :class:`ExitStack` can make it
+easier to handle various situations that can't be handled directly in a
+:keyword:`with` statement.
 
 
 Cleaning up in an ``__enter__`` implementation
