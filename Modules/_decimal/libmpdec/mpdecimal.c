@@ -4122,6 +4122,8 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         MPD_NEW_STATIC(ulp, 0,0,0,0);
         MPD_NEW_STATIC(aa, 0,0,0,0);
         mpd_ssize_t prec;
+        mpd_ssize_t ulpexp;
+        uint32_t workstatus;
 
         if (result == a) {
             if (!mpd_qcopy(&aa, a, status)) {
@@ -4135,12 +4137,20 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         prec = ctx->prec + 3;
         while (1) {
             workctx.prec = prec;
-            _mpd_qexp(result, a, &workctx, status);
-            _ssettriple(&ulp, MPD_POS, 1,
-                        result->exp + result->digits-workctx.prec);
+            workstatus = 0;
+
+            _mpd_qexp(result, a, &workctx, &workstatus);
+            *status |= workstatus;
+
+            ulpexp = result->exp + result->digits - workctx.prec;
+            if (workstatus & MPD_Underflow) {
+                /* The effective work precision is result->digits. */
+                ulpexp = result->exp;
+            }
+            _ssettriple(&ulp, MPD_POS, 1, ulpexp);
 
             /*
-             * At this point:
+             * At this point [1]:
              *   1) abs(result - e**x) < 0.5 * 10**(-prec) * e**x
              *   2) result - ulp < e**x < result + ulp
              *   3) result - ulp < result < result + ulp
@@ -4148,6 +4158,9 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
              * If round(result-ulp)==round(result+ulp), then
              * round(result)==round(e**x). Therefore the result
              * is correctly rounded.
+             *
+             * [1] If abs(a) <= 9 * 10**(-prec-1), use the absolute
+             *     error for a similar argument.
              */
             workctx.prec = ctx->prec;
             mpd_qadd(&t1, result, &ulp, &workctx, &workctx.status);
