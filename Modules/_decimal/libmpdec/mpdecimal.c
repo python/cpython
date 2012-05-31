@@ -3904,7 +3904,7 @@ _mpd_qexp_check_one(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     if (_mpd_cmp(&aa, &lim) <= 0) {
         _settriple(result, 0, 1, 0);
         _mpd_zeropad(result, ctx, status);
-        *status = MPD_Rounded|MPD_Inexact;
+        *status |= MPD_Rounded|MPD_Inexact;
         return 1;
     }
 
