@@ -308,7 +308,7 @@ Simplifying support for single optional context managers
 
 In the specific case of a single optional context manager, :class:`ExitStack`
 instances can be used as a "do nothing" context manager, allowing a context
-managers to easily be omitted without affecting the overall structure of
+manager to easily be omitted without affecting the overall structure of
 the source code::
 
    def debug_trace(details):
