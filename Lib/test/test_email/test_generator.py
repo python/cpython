@@ -4,10 +4,10 @@ import unittest
 from email import message_from_string, message_from_bytes
 from email.generator import Generator, BytesGenerator
 from email import policy
-from test.test_email import TestEmailBase
+from test.test_email import TestEmailBase, Parameterized
 
 
-class TestGeneratorBase:
+class TestGeneratorBase(metaclass=Parameterized):
 
     policy = policy.default
 
@@ -80,31 +80,23 @@ class TestGeneratorBase:
               "\n"
               "None\n")
 
-    def _test_maxheaderlen_parameter(self, n):
+    length_params = [n for n in refold_long_expected]
+
+    def length_as_maxheaderlen_parameter(self, n):
         msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, maxheaderlen=n, policy=self.policy)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    for n in refold_long_expected:
-        locals()['test_maxheaderlen_parameter_' + str(n)] = (
-            lambda self, n=n:
-                self._test_maxheaderlen_parameter(n))
-
-    def _test_max_line_length_policy(self, n):
+    def length_as_max_line_length_policy(self, n):
         msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, policy=self.policy.clone(max_line_length=n))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    for n in refold_long_expected:
-        locals()['test_max_line_length_policy' + str(n)] = (
-            lambda self, n=n:
-                self._test_max_line_length_policy(n))
-
-    def _test_maxheaderlen_parm_overrides_policy(self, n):
+    def length_as_maxheaderlen_parm_overrides_policy(self, n):
         msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, maxheaderlen=n,
@@ -112,12 +104,7 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[n]))
 
-    for n in refold_long_expected:
-        locals()['test_maxheaderlen_parm_overrides_policy' + str(n)] = (
-            lambda self, n=n:
-                self._test_maxheaderlen_parm_overrides_policy(n))
-
-    def _test_refold_none_does_not_fold(self, n):
+    def length_as_max_line_length_with_refold_none_does_not_fold(self, n):
         msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, policy=self.policy.clone(refold_source='none',
@@ -125,23 +112,13 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[0]))
 
-    for n in refold_long_expected:
-        locals()['test_refold_none_does_not_fold' + str(n)] = (
-            lambda self, n=n:
-                self._test_refold_none_does_not_fold(n))
-
-    def _test_refold_all(self, n):
+    def length_as_max_line_length_with_refold_all_folds(self, n):
         msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
         s = self.ioclass()
         g = self.genclass(s, policy=self.policy.clone(refold_source='all',
                                                       max_line_length=n))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(self.refold_all_expected[n]))
-
-    for n in refold_long_expected:
-        locals()['test_refold_all' + str(n)] = (
-            lambda self, n=n:
-                self._test_refold_all(n))
 
     def test_crlf_control_via_policy(self):
         source = "Subject: test\r\n\r\ntest body\r\n"
