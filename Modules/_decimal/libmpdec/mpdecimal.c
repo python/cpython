@@ -3953,8 +3953,18 @@ _mpd_get_exp_iterations(const mpd_t *r, mpd_ssize_t p)
 }
 
 /*
- * Internal function, specials have been dealt with. The result has a
- * relative error of less than 0.5 * 10**(-ctx->prec).
+ * Internal function, specials have been dealt with. Apart from Overflow
+ * and Underflow, two cases must be considered for the error of the result:
+ *
+ *   1) abs(a) <= 9 * 10**(-prec-1)  ==>  result == 1
+ *
+ *      Absolute error: abs(1 - e**x) < 10**(-prec)
+ *      -------------------------------------------
+ *
+ *   2) abs(a) > 9 * 10**(-prec-1)
+ *
+ *      Relative error: abs(result - e**x) < 0.5 * 10**(-prec) * e**x
+ *      -------------------------------------------------------------
  *
  * The algorithm is from Hull&Abrham, Variable Precision Exponential Function,
  * ACM Transactions on Mathematical Software, Vol. 12, No. 2, June 1986.
@@ -3998,9 +4008,9 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
      *
      *     MAX-EMAX+1 < log10(e^(0.1*10*t)) <= log10(e^(r*10^t)) < adjexp(e^(r*10^t))+1
      *
-     *   (2) -1 < r <= -0.1, so e^r <= e^-0.1. It t > MAX_T, underflow occurs:
+     *   (2) -1 < r <= -0.1, so e^r <= e^-0.1. If t > MAX_T, underflow occurs:
      *
-     *     adjexp(e^(r*10^t)) <= log10(e^(r*10^t)) <= log10(e^(-0.1*10^t) < MIN-ETINY
+     *     adjexp(e^(r*10^t)) <= log10(e^(r*10^t)) <= log10(e^(-0.1*10^t)) < MIN-ETINY
      */
 #if defined(CONFIG_64)
     #define MPD_EXP_MAX_T 19
