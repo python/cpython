@@ -4168,7 +4168,7 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
             if (mpd_isspecial(result) || mpd_iszerocoeff(result) ||
                 mpd_qcmp(&t1, &t2, status) == 0) {
                 workctx.clamp = ctx->clamp;
-                _mpd_zeropad(result, ctx, status);
+                _mpd_zeropad(result, &workctx, status);
                 mpd_check_underflow(result, &workctx, status);
                 mpd_qfinalize(result, &workctx, status);
                 break;
@@ -4182,6 +4182,7 @@ mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     }
     else {
         _mpd_qexp(result, a, &workctx, status);
+        _mpd_zeropad(result, &workctx, status);
         mpd_check_underflow(result, &workctx, status);
         mpd_qfinalize(result, &workctx, status);
     }
