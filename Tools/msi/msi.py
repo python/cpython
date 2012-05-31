@@ -875,7 +875,7 @@ def add_features(db):
 def extract_msvcr100():
     # Find the redistributable files
     if msilib.Win64:
-        arch = "amd64"
+        arch = "x64"
     else:
         arch = "x86"
     dir = os.path.join(os.environ['VS100COMNTOOLS'], r"..\..\VC\redist\%s\Microsoft.VC100.CRT" % arch)
