@@ -572,6 +572,12 @@ class TestExitStack(unittest.TestCase):
             stack.push(lambda *exc: 1/0)
             stack.push(lambda *exc: {}[1])
 
+    def test_excessive_nesting(self):
+        # The original implementation would die with RecursionError here
+        with ExitStack() as stack:
+            for i in range(10000):
+                stack.callback(int)
+
     def test_instance_bypass(self):
         class Example(object): pass
         cm = Example()
