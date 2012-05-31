@@ -73,10 +73,8 @@ class TestEmailBase(unittest.TestCase):
                                     'item {}'.format(i))
 
 
-# Metaclass to allow for parameterized tests
-class Parameterized(type):
-
-    """Provide a test method parameterization facility.
+def parameterize(cls):
+    """A test method parameterization class decorator.
 
     Parameters are specified as the value of a class attribute that ends with
     the string '_params'.  Call the portion before '_params' the prefix.  Then
@@ -92,9 +90,10 @@ class Parameterized(type):
     In a _params dictioanry, the keys become part of the name of the generated
     tests.  In a _params list, the values in the list are converted into a
     string by joining the string values of the elements of the tuple by '_' and
-    converting any blanks into '_'s, and this become part of the name.  The
-    full name of a generated test is the portion of the _params name before the
-    '_params' portion, plus an '_', plus the name derived as explained above.
+    converting any blanks into '_'s, and this become part of the name.
+    The  full name of a generated test is a 'test_' prefix, the portion of the
+    test function name after the  '_as_' separator, plus an '_', plus the name
+    derived as explained above.
 
     For example, if we have:
 
@@ -123,30 +122,29 @@ class Parameterized(type):
     be used to select the test individually from the unittest command line.
 
     """
-
-    def __new__(meta, classname, bases, classdict):
-        paramdicts = {}
-        for name, attr in classdict.items():
-            if name.endswith('_params'):
-                if not hasattr(attr, 'keys'):
-                    d = {}
-                    for x in attr:
-                        if not hasattr(x, '__iter__'):
-                            x = (x,)
-                        n = '_'.join(str(v) for v in x).replace(' ', '_')
-                        d[n] = x
-                    attr = d
-                paramdicts[name[:-7] + '_as_'] = attr
-        testfuncs = {}
-        for name, attr in classdict.items():
-            for paramsname, paramsdict in paramdicts.items():
-                if name.startswith(paramsname):
-                    testnameroot = 'test_' + name[len(paramsname):]
-                    for paramname, params in paramsdict.items():
-                        test = (lambda self, name=name, params=params:
-                                        getattr(self, name)(*params))
-                        testname = testnameroot + '_' + paramname
-                        test.__name__ = testname
-                        testfuncs[testname] = test
-        classdict.update(testfuncs)
-        return super().__new__(meta, classname, bases, classdict)
+    paramdicts = {}
+    for name, attr in cls.__dict__.items():
+        if name.endswith('_params'):
+            if not hasattr(attr, 'keys'):
+                d = {}
+                for x in attr:
+                    if not hasattr(x, '__iter__'):
+                        x = (x,)
+                    n = '_'.join(str(v) for v in x).replace(' ', '_')
+                    d[n] = x
+                attr = d
+            paramdicts[name[:-7] + '_as_'] = attr
+    testfuncs = {}
+    for name, attr in cls.__dict__.items():
+        for paramsname, paramsdict in paramdicts.items():
+            if name.startswith(paramsname):
+                testnameroot = 'test_' + name[len(paramsname):]
+                for paramname, params in paramsdict.items():
+                    test = (lambda self, name=name, params=params:
+                                    getattr(self, name)(*params))
+                    testname = testnameroot + '_' + paramname
+                    test.__name__ = testname
+                    testfuncs[testname] = test
+    for key, value in testfuncs.items():
+        setattr(cls, key, value)
+    return cls
