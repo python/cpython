@@ -210,7 +210,7 @@ random_seed(RandomObject *self, PyObject *args)
     PyObject *masklower = NULL;
     PyObject *thirtytwo = NULL;
     PyObject *n = NULL;
-    unsigned long *key = NULL;
+    unsigned long *new_key, *key = NULL;
     unsigned long keymax;               /* # of allocated slots in key */
     unsigned long keyused;              /* # of used slots in key */
     int err;
@@ -287,10 +287,11 @@ random_seed(RandomObject *self, PyObject *args)
                 PyErr_NoMemory();
                 goto Done;
             }
-            key = (unsigned long *)PyMem_Realloc(key,
+            new_key = (unsigned long *)PyMem_Realloc(key,
                                     bigger * sizeof(*key));
-            if (key == NULL)
+            if (new_key == NULL)
                 goto Done;
+            key = new_key;
             keymax = bigger;
         }
         assert(keyused < keymax);
