@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Library
 -------
 
+- Issue #14962: Update text coloring in IDLE shell window after changing
+  options.  Patch by Roger Serwy.
+
 - Issue #14963: Convert contextlib.ExitStack.__exit__ to use an iterative
   algorithm (Patch by Alon Horev)
 
