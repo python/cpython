@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14962: Update text coloring in IDLE shell window after changing
+  options.  Patch by Roger Serwy.
+
 - Issue #10997: Prevent a duplicate entry in IDLE's "Recent Files" menu.
 
 - Issue12510: Attempting to get invalid tooltip no longer closes Idle.
