@@ -203,7 +203,6 @@
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
@@ -257,7 +256,6 @@
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(PyDllName)_d.dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
@@ -306,7 +304,6 @@
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
@@ -356,7 +353,6 @@
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
