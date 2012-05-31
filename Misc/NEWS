@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.0 Beta 1?
+===================================
+
+*Release date: TBD*
+
+Tests
+-----
+
+- Issue #14963 (partial): Add test cases for exception handling behaviour
+  in contextlib.ContextStack (Initial patch by Alon Horev)
+
 What's New in Python 3.3.0 Alpha 4?
 ===================================
 
