@@ -482,9 +482,6 @@ class _BaseAddress(_IPAddressBase):
     def __int__(self):
         return self._ip
 
-    def __hex__(self):
-        return hex(self._ip)
-
     def __eq__(self, other):
         try:
             return (self._ip == other._ip
