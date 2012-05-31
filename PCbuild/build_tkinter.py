@@ -11,8 +11,8 @@ import sys
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-TCL = "tcl8.5.9"
-TK = "tk8.5.9"
+TCL = "tcl8.5.11"
+TK = "tk8.5.11"
 TIX = "tix-8.4.3.x"
 
 ROOT = os.path.abspath(os.path.join(here, par, par))
@@ -32,7 +32,7 @@ def nmake(makefile, command="", **kw):
 def build(platform, clean):
     if platform == "Win32":
         dest = os.path.join(ROOT, "tcltk")
-        machine = "X86"
+        machine = "IX86"
     elif platform == "AMD64":
         dest = os.path.join(ROOT, "tcltk64")
         machine = "AMD64"
