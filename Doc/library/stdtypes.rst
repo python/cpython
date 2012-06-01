@@ -1329,7 +1329,13 @@ functions based on regular expressions.
 
    Return a list of the lines in the string, breaking at line boundaries.  Line
    breaks are not included in the resulting list unless *keepends* is given and
-   true.
+   true. This method uses the universal newlines approach to splitting lines.
+   Unlike :meth:`~str.split`, if the string ends with line boundary characters
+   the returned list does ``not`` have an empty last element.
+
+   For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
+   ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splinelines(True)``
+   returns ``['ab c\n', '\n, 'de fg\r', 'kl\r\n']``.
 
 
 .. method:: str.startswith(prefix[, start[, end]])
