@@ -3107,6 +3107,8 @@ format_missing(const char *kind, PyCodeObject *co, PyObject *names)
         tail = PyUnicode_FromFormat(", %U, and %U",
                                     PyList_GET_ITEM(names, len - 2),
                                     PyList_GET_ITEM(names, len - 1));
+        if (tail == NULL)
+            return;
         /* Chop off the last two objects in the list. This shouldn't actually
            fail, but we can't be too careful. */
         err = PyList_SetSlice(names, len - 2, len, NULL);
