@@ -400,7 +400,7 @@ def get_mixed_type_key(obj):
     return NotImplemented
 
 
-class _IPAddressBase(object):
+class _IPAddressBase:
 
     """The mother class."""
 
@@ -975,7 +975,7 @@ class _BaseNetwork(_IPAddressBase):
         return t.__class__('%s/%d' % (str(t.network_address), t.prefixlen))
 
 
-class _BaseV4(object):
+class _BaseV4:
 
     """Base IPv4 object.
 
@@ -1511,7 +1511,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         return '%s/%s' % (str(self.network_address), str(self.hostmask))
 
 
-class _BaseV6(object):
+class _BaseV6:
 
     """Base IPv6 object.
 
