@@ -2257,6 +2257,9 @@ static struct PyExpat_CAPI* expat_capi;
 #define EXPAT(func) (XML_##func)
 #endif
 
+static XML_Memory_Handling_Suite ExpatMemoryHandler = {
+    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+
 typedef struct {
     PyObject_HEAD
 
@@ -2671,121 +2674,125 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 }
 
 /* -------------------------------------------------------------------- */
-/* constructor and destructor */
 
-static PyObject*
-xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
+static PyObject *
+xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    XMLParserObject* self;
-    /* FIXME: does this need to be static? */
-    static XML_Memory_Handling_Suite memory_handler;
-
-    PyObject* target = NULL;
-    char* encoding = NULL;
-    static char* kwlist[] = { "target", "encoding", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Oz:XMLParser", kwlist,
-                                     &target, &encoding))
-        return NULL;
-
-#if defined(USE_PYEXPAT_CAPI)
-    if (!expat_capi) {
-        PyErr_SetString(
-            PyExc_RuntimeError, "cannot load dispatch table from pyexpat"
-            );
-        return NULL;
+    XMLParserObject *self = (XMLParserObject *)type->tp_alloc(type, 0);
+    if (self) {
+        self->parser = NULL;
+        self->target = self->entity = self->names = NULL;
+        self->handle_start = self->handle_data = self->handle_end = NULL;
+        self->handle_comment = self->handle_pi = self->handle_close = NULL;
     }
-#endif
+    return (PyObject *)self;
+}
 
-    self = PyObject_New(XMLParserObject, &XMLParser_Type);
-    if (self == NULL)
-        return NULL;
+static int
+xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    XMLParserObject *self_xp = (XMLParserObject *)self;
+    PyObject *target = NULL, *html = NULL;
+    char *encoding = NULL;
+    static char *kwlist[] = {"html", "target", "encoding"};
 
-    self->entity = PyDict_New();
-    if (!self->entity) {
-        PyObject_Del(self);
-        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOz:XMLParser", kwlist,
+                                     &html, &target, &encoding)) {
+        return -1;
     }
 
-    self->names = PyDict_New();
-    if (!self->names) {
-        PyObject_Del(self->entity);
-        PyObject_Del(self);
-        return NULL;
+    self_xp->entity = PyDict_New();
+    if (!self_xp->entity)
+        return -1;
+
+    self_xp->names = PyDict_New();
+    if (!self_xp->names) {
+        Py_XDECREF(self_xp->entity);
+        return -1;
     }
 
-    memory_handler.malloc_fcn = PyObject_Malloc;
-    memory_handler.realloc_fcn = PyObject_Realloc;
-    memory_handler.free_fcn = PyObject_Free;
-
-    self->parser = EXPAT(ParserCreate_MM)(encoding, &memory_handler, "}");
-    if (!self->parser) {
-        PyObject_Del(self->names);
-        PyObject_Del(self->entity);
-        PyObject_Del(self);
+    self_xp->parser = EXPAT(ParserCreate_MM)(encoding, &ExpatMemoryHandler, "}");
+    if (!self_xp->parser) {
+        Py_XDECREF(self_xp->entity);
+        Py_XDECREF(self_xp->names);
         PyErr_NoMemory();
-        return NULL;
+        return -1;
     }
 
-    /* setup target handlers */
-    if (!target) {
+    if (target) {
+        Py_INCREF(target);
+    } else {
         target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);
         if (!target) {
-            EXPAT(ParserFree)(self->parser);
-            PyObject_Del(self->names);
-            PyObject_Del(self->entity);
-            PyObject_Del(self);
-            return NULL;
+            Py_XDECREF(self_xp->entity);
+            Py_XDECREF(self_xp->names);
+            EXPAT(ParserFree)(self_xp->parser);
+            return -1;
         }
-    } else
-        Py_INCREF(target);
-    self->target = target;
+    }
+    self_xp->target = target;
 
-    self->handle_start = PyObject_GetAttrString(target, "start");
-    self->handle_data = PyObject_GetAttrString(target, "data");
-    self->handle_end = PyObject_GetAttrString(target, "end");
-    self->handle_comment = PyObject_GetAttrString(target, "comment");
-    self->handle_pi = PyObject_GetAttrString(target, "pi");
-    self->handle_close = PyObject_GetAttrString(target, "close");
+    self_xp->handle_start = PyObject_GetAttrString(target, "start");
+    self_xp->handle_data = PyObject_GetAttrString(target, "data");
+    self_xp->handle_end = PyObject_GetAttrString(target, "end");
+    self_xp->handle_comment = PyObject_GetAttrString(target, "comment");
+    self_xp->handle_pi = PyObject_GetAttrString(target, "pi");
+    self_xp->handle_close = PyObject_GetAttrString(target, "close");
 
     PyErr_Clear();
-
+    
     /* configure parser */
-    EXPAT(SetUserData)(self->parser, self);
+    EXPAT(SetUserData)(self_xp->parser, self_xp);
     EXPAT(SetElementHandler)(
-        self->parser,
+        self_xp->parser,
         (XML_StartElementHandler) expat_start_handler,
         (XML_EndElementHandler) expat_end_handler
         );
     EXPAT(SetDefaultHandlerExpand)(
-        self->parser,
+        self_xp->parser,
         (XML_DefaultHandler) expat_default_handler
         );
     EXPAT(SetCharacterDataHandler)(
-        self->parser,
+        self_xp->parser,
         (XML_CharacterDataHandler) expat_data_handler
         );
-    if (self->handle_comment)
+    if (self_xp->handle_comment)
         EXPAT(SetCommentHandler)(
-            self->parser,
+            self_xp->parser,
             (XML_CommentHandler) expat_comment_handler
             );
-    if (self->handle_pi)
+    if (self_xp->handle_pi)
         EXPAT(SetProcessingInstructionHandler)(
-            self->parser,
+            self_xp->parser,
             (XML_ProcessingInstructionHandler) expat_pi_handler
             );
     EXPAT(SetUnknownEncodingHandler)(
-        self->parser,
+        self_xp->parser,
         (XML_UnknownEncodingHandler) expat_unknown_encoding_handler, NULL
         );
 
-    ALLOC(sizeof(XMLParserObject), "create expatparser");
-
-    return (PyObject*) self;
+    return 0;
 }
 
-static void
-xmlparser_dealloc(XMLParserObject* self)
+static int
+xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->handle_close);
+    Py_VISIT(self->handle_pi);
+    Py_VISIT(self->handle_comment);
+    Py_VISIT(self->handle_end);
+    Py_VISIT(self->handle_data);
+    Py_VISIT(self->handle_start);
+
+    Py_VISIT(self->target);
+    Py_VISIT(self->entity);
+    Py_VISIT(self->names);
+
+    return 0;
+}
+
+static int
+xmlparser_gc_clear(XMLParserObject *self)
 {
     EXPAT(ParserFree)(self->parser);
 
@@ -2796,17 +2803,20 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_XDECREF(self->handle_data);
     Py_XDECREF(self->handle_start);
 
-    Py_DECREF(self->target);
-    Py_DECREF(self->entity);
-    Py_DECREF(self->names);
+    Py_XDECREF(self->target);
+    Py_XDECREF(self->entity);
+    Py_XDECREF(self->names);
 
-    RELEASE(sizeof(XMLParserObject), "destroy expatparser");
-
-    PyObject_Del(self);
+    return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/* methods (in alphabetical order) */
+static void
+xmlparser_dealloc(XMLParserObject* self)
+{
+    PyObject_GC_UnTrack(self);
+    xmlparser_gc_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
 
 LOCAL(PyObject*)
 expat_parse(XMLParserObject* self, char* data, int data_len, int final)
@@ -3083,31 +3093,42 @@ static PyTypeObject XMLParser_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
-    (destructor)xmlparser_dealloc, /* tp_dealloc */
-    0, /* tp_print */
-    0, /* tp_getattr */
-    0, /* tp_setattr */
-    0, /* tp_reserved */
-    0, /* tp_repr */
-    0, /* tp_as_number */
-    0, /* tp_as_sequence */
-    0, /* tp_as_mapping */
-    0, /* tp_hash */
-    0, /* tp_call */
-    0, /* tp_str */
-    (getattrofunc)xmlparser_getattro, /* tp_getattro */
-    0, /* tp_setattro */
-    0, /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT, /* tp_flags */
-    0, /* tp_doc */
-    0, /* tp_traverse */
-    0, /* tp_clear */
-    0, /* tp_richcompare */
-    0, /* tp_weaklistoffset */
-    0, /* tp_iter */
-    0, /* tp_iternext */
-    xmlparser_methods, /* tp_methods */
-    0, /* tp_members */
+    (destructor)xmlparser_dealloc,                  /* tp_dealloc */
+    0,                                              /* tp_print */
+    0,                                              /* tp_getattr */
+    0,                                              /* tp_setattr */
+    0,                                              /* tp_reserved */
+    0,                                              /* tp_repr */
+    0,                                              /* tp_as_number */
+    0,                                              /* tp_as_sequence */
+    0,                                              /* tp_as_mapping */
+    0,                                              /* tp_hash */
+    0,                                              /* tp_call */
+    0,                                              /* tp_str */
+    (getattrofunc)xmlparser_getattro,               /* tp_getattro */
+    0,                                              /* tp_setattro */
+    0,                                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+                                                    /* tp_flags */
+    0,                                              /* tp_doc */
+    (traverseproc)xmlparser_gc_traverse,            /* tp_traverse */
+    (inquiry)xmlparser_gc_clear,                    /* tp_clear */
+    0,                                              /* tp_richcompare */
+    0,                                              /* tp_weaklistoffset */
+    0,                                              /* tp_iter */
+    0,                                              /* tp_iternext */
+    xmlparser_methods,                              /* tp_methods */
+    0,                                              /* tp_members */
+    0,                                              /* tp_getset */
+    0,                                              /* tp_base */
+    0,                                              /* tp_dict */
+    0,                                              /* tp_descr_get */
+    0,                                              /* tp_descr_set */
+    0,                                              /* tp_dictoffset */
+    (initproc)xmlparser_init,                       /* tp_init */
+    PyType_GenericAlloc,                            /* tp_alloc */
+    xmlparser_new,                                  /* tp_new */
+    0,                                              /* tp_free */
 };
 
 #endif
@@ -3117,9 +3138,6 @@ static PyTypeObject XMLParser_Type = {
 
 static PyMethodDef _functions[] = {
     {"SubElement", (PyCFunction) subelement, METH_VARARGS|METH_KEYWORDS},
-#if defined(USE_EXPAT)
-    {"XMLParser", (PyCFunction) xmlparser, METH_VARARGS|METH_KEYWORDS},
-#endif
     {NULL, NULL}
 };
 
@@ -3214,8 +3232,15 @@ PyInit__elementtree(void)
             expat_capi->size < sizeof(struct PyExpat_CAPI) ||
             expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
             expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
-            expat_capi->MICRO_VERSION != XML_MICRO_VERSION)
+            expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
             expat_capi = NULL;
+        }
+    }
+    if (!expat_capi) {
+        PyErr_SetString(
+            PyExc_RuntimeError, "cannot load dispatch table from pyexpat"
+            );
+        return NULL;
     }
 #endif
 
@@ -3230,6 +3255,11 @@ PyInit__elementtree(void)
 
     Py_INCREF((PyObject *)&TreeBuilder_Type);
     PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
+
+#if defined(USE_EXPAT)
+    Py_INCREF((PyObject *)&XMLParser_Type);
+    PyModule_AddObject(m, "XMLParser", (PyObject *)&XMLParser_Type);
+#endif
 
     return m;
 }
