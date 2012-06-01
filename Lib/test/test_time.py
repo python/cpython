@@ -380,10 +380,13 @@ class TimeTestCase(unittest.TestCase):
         time.perf_counter()
 
     def test_process_time(self):
+        # process_time() should not include time spend during a sleep
         start = time.process_time()
-        time.sleep(0.1)
+        time.sleep(0.100)
         stop = time.process_time()
-        self.assertLess(stop - start, 0.01)
+        # use 20 ms because process_time() has usually a resolution of 15 ms
+        # on Windows
+        self.assertLess(stop - start, 0.020)
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
