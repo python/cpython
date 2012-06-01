@@ -3989,7 +3989,7 @@ _mpd_qexp(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     mpd_context_t workctx;
     MPD_NEW_STATIC(tmp,0,0,0,0);
     MPD_NEW_STATIC(sum,0,0,0,0);
-    MPD_NEW_CONST(word,0,0,0,1,1,1);
+    MPD_NEW_CONST(word,0,0,1,1,1,1);
     mpd_ssize_t j, n, t;
 
     assert(!mpd_isspecial(a));
