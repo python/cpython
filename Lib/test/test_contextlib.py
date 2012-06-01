@@ -505,6 +505,18 @@ class TestExitStack(unittest.TestCase):
             def __exit__(self, *exc_details):
                 raise self.exc
 
+        class RaiseExcWithContext:
+            def __init__(self, outer, inner):
+                self.outer = outer
+                self.inner = inner
+            def __enter__(self):
+                return self
+            def __exit__(self, *exc_details):
+                try:
+                    raise self.inner
+                except:
+                    raise self.outer
+
         class SuppressExc:
             def __enter__(self):
                 return self
@@ -514,11 +526,10 @@ class TestExitStack(unittest.TestCase):
 
         try:
             with RaiseExc(IndexError):
-                with RaiseExc(KeyError):
-                    with RaiseExc(AttributeError):
-                        with SuppressExc():
-                            with RaiseExc(ValueError):
-                                1 / 0
+                with RaiseExcWithContext(KeyError, AttributeError):
+                    with SuppressExc():
+                        with RaiseExc(ValueError):
+                            1 / 0
         except IndexError as exc:
             self.assertIsInstance(exc.__context__, KeyError)
             self.assertIsInstance(exc.__context__.__context__, AttributeError)
@@ -553,12 +564,8 @@ class TestExitStack(unittest.TestCase):
         except IndexError as exc:
             self.assertIsInstance(exc.__context__, KeyError)
             self.assertIsInstance(exc.__context__.__context__, AttributeError)
-            # Inner exceptions were suppressed, but the with statement
-            # cleanup code adds the one from the body back in as the
-            # context of the exception raised by the outer callbacks
-            # See http://bugs.python.org/issue14969
-            suite_exc = exc.__context__.__context__.__context__
-            self.assertIsInstance(suite_exc, ZeroDivisionError)
+            # Inner exceptions were suppressed
+            self.assertIsNone(exc.__context__.__context__.__context__)
         else:
             self.fail("Expected IndexError, but no exception was raised")
         # Check the inner exceptions
