@@ -58,9 +58,6 @@
 /* Leave defined to include the expat-based XMLParser type */
 #define USE_EXPAT
 
-/* Define to do all expat calls via pyexpat's embedded expat library */
-/* #define USE_PYEXPAT_CAPI */
-
 /* An element can hold this many children without extra memory
    allocations. */
 #define STATIC_CHILDREN 4
@@ -2248,14 +2245,9 @@ static PyTypeObject TreeBuilder_Type = {
 #if defined(USE_EXPAT)
 
 #include "expat.h"
-
-#if defined(USE_PYEXPAT_CAPI)
 #include "pyexpat.h"
-static struct PyExpat_CAPI* expat_capi;
+static struct PyExpat_CAPI *expat_capi;
 #define EXPAT(func) (expat_capi->func)
-#else
-#define EXPAT(func) (XML_##func)
-#endif
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyObject_Malloc, PyObject_Realloc, PyObject_Free};
@@ -3223,8 +3215,7 @@ PyInit__elementtree(void)
     elementtree_iter_obj = PyDict_GetItemString(g, "iter");
     elementtree_itertext_obj = PyDict_GetItemString(g, "itertext");
 
-#if defined(USE_PYEXPAT_CAPI)
-    /* link against pyexpat, if possible */
+    /* link against pyexpat */
     expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
     if (expat_capi) {
         /* check that it's usable */
@@ -3242,7 +3233,6 @@ PyInit__elementtree(void)
             );
         return NULL;
     }
-#endif
 
     elementtree_parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
