@@ -2028,6 +2028,34 @@ class TreeBuilderTest(unittest.TestCase):
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
+class XMLParserTest(unittest.TestCase):
+    sample1 = '<file><line>22</line></file>'
+
+    def _check_sample_element(self, e):
+        self.assertEqual(e.tag, 'file')
+        self.assertEqual(e[0].tag, 'line')
+        self.assertEqual(e[0].text, '22')
+
+    def test_constructor_args(self):
+        # Positional args. The first (html) is not supported, but should be
+        # nevertheless correctly accepted.
+        parser = ET.XMLParser(None, ET.TreeBuilder(), 'utf-8')
+        parser.feed(self.sample1)
+        self._check_sample_element(parser.close())
+
+        # Now as keyword args.
+        parser2 = ET.XMLParser(encoding='utf-8', html=[{}], target=ET.TreeBuilder())
+        parser2.feed(self.sample1)
+        self._check_sample_element(parser2.close())
+
+    def test_subclass(self):
+        class MyParser(ET.XMLParser):
+            pass
+        parser = MyParser()
+        parser.feed(self.sample1)
+        self._check_sample_element(parser.close())
+
+
 class NoAcceleratorTest(unittest.TestCase):
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
@@ -2245,6 +2273,7 @@ def test_main(module=pyET):
         ElementTreeTest,
         NamespaceParseTest,
         TreeBuilderTest,
+        XMLParserTest,
         KeywordArgsTest]
     if module is pyET:
         # Run the tests specific to the Python implementation
