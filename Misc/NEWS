@@ -92,13 +92,13 @@ Library
 - Issue #14443: Tell rpmbuild to use the correct version of Python in
   bdist_rpm. Initial patch by Ross Lagerwall.
 
-- Issue14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
+- Issue #14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
   Patch by Roger Serwy.
 
 - Issue #12515: email now registers a defect if it gets to EOF while parsing
   a MIME part without seeing the closing MIME boundary.
 
-- Issue12510: Attempting to get invalid tooltip no longer closes Idle.
+- Issue #12510: Attempting to get invalid tooltip no longer closes Idle.
   Original patch by Roger Serwy.
 
 - Issue #1672568: email now always decodes base64 payloads, adding padding and
