@@ -359,7 +359,7 @@ def collapse_addresses(addresses):
         else:
             if nets and nets[-1]._version != ip._version:
                 raise TypeError("%s and %s are not of the same version" % (
-                        str(ip), str(ips[-1])))
+                        str(ip), str(nets[-1])))
             nets.append(ip)
 
     # sort and dedup
