@@ -2257,23 +2257,26 @@ typedef struct {
 
     XML_Parser parser;
 
-    PyObject* target;
-    PyObject* entity;
+    PyObject *target;
+    PyObject *entity;
 
-    PyObject* names;
+    PyObject *names;
 
-    PyObject* handle_start;
-    PyObject* handle_data;
-    PyObject* handle_end;
+    PyObject *handle_start;
+    PyObject *handle_data;
+    PyObject *handle_end;
 
-    PyObject* handle_comment;
-    PyObject* handle_pi;
+    PyObject *handle_comment;
+    PyObject *handle_pi;
+    PyObject *handle_doctype;
 
-    PyObject* handle_close;
+    PyObject *handle_close;
 
 } XMLParserObject;
 
 static PyTypeObject XMLParser_Type;
+
+#define XMLParser_CheckExact(op) (Py_TYPE(op) == &XMLParser_Type)
 
 /* helpers */
 
@@ -2601,6 +2604,78 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     }
 }
 
+static void 
+expat_start_doctype_handler(XMLParserObject *self,
+                            const XML_Char *doctype_name,
+                            const XML_Char *sysid,
+                            const XML_Char *pubid,
+                            int has_internal_subset)
+{
+    PyObject *self_pyobj = (PyObject *)self;
+    PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
+    PyObject *parser_doctype = NULL;
+    PyObject *res = NULL;
+
+    doctype_name_obj = makeuniversal(self, doctype_name);
+    if (!doctype_name_obj)
+        return;
+
+    if (sysid) {
+        sysid_obj = makeuniversal(self, sysid);
+        if (!sysid_obj) {
+            Py_DECREF(doctype_name_obj);
+            return;
+        }
+    } else {
+        Py_INCREF(Py_None);
+        sysid_obj = Py_None;
+    }
+
+    if (pubid) {
+        pubid_obj = makeuniversal(self, pubid);
+        if (!pubid_obj) {
+            Py_DECREF(doctype_name_obj);
+            Py_DECREF(sysid_obj);
+            return;
+        }
+    } else {
+        Py_INCREF(Py_None);
+        pubid_obj = Py_None;
+    }
+
+    /* If the target has a handler for doctype, call it. */
+    if (self->handle_doctype) {
+        res = PyObject_CallFunction(self->handle_doctype, "OOO",
+                                    doctype_name_obj, pubid_obj, sysid_obj);
+        Py_CLEAR(res);
+    }
+
+    /* Now see if the parser itself has a doctype method. If yes and it's
+     * a subclass, call it but warn about deprecation. If it's not a subclass
+     * (i.e. vanilla XMLParser), do nothing.
+     */
+    parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
+    if (parser_doctype) {
+        if (!XMLParser_CheckExact(self_pyobj)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "This method of XMLParser is deprecated.  Define"
+                            " doctype() method on the TreeBuilder target.",
+                            1) < 0) {
+                goto clear;
+            }
+            res = PyObject_CallFunction(parser_doctype, "OOO",
+                                        doctype_name_obj, pubid_obj, sysid_obj);
+            Py_CLEAR(res);
+        }
+    }
+
+clear:
+    Py_XDECREF(parser_doctype);
+    Py_DECREF(doctype_name_obj);
+    Py_DECREF(pubid_obj);
+    Py_DECREF(sysid_obj);
+}
+
 static void
 expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
                  const XML_Char* data_in)
@@ -2676,6 +2751,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->target = self->entity = self->names = NULL;
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
+        self->handle_doctype = NULL;
     }
     return (PyObject *)self;
 }
@@ -2730,6 +2806,7 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
     self_xp->handle_comment = PyObject_GetAttrString(target, "comment");
     self_xp->handle_pi = PyObject_GetAttrString(target, "pi");
     self_xp->handle_close = PyObject_GetAttrString(target, "close");
+    self_xp->handle_doctype = PyObject_GetAttrString(target, "doctype");
 
     PyErr_Clear();
     
@@ -2758,6 +2835,10 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
             self_xp->parser,
             (XML_ProcessingInstructionHandler) expat_pi_handler
             );
+    EXPAT(SetStartDoctypeDeclHandler)(
+        self_xp->parser,
+        (XML_StartDoctypeDeclHandler) expat_start_doctype_handler
+        );
     EXPAT(SetUnknownEncodingHandler)(
         self_xp->parser,
         (XML_UnknownEncodingHandler) expat_unknown_encoding_handler, NULL
@@ -2794,6 +2875,7 @@ xmlparser_gc_clear(XMLParserObject *self)
     Py_XDECREF(self->handle_end);
     Py_XDECREF(self->handle_data);
     Py_XDECREF(self->handle_start);
+    Py_XDECREF(self->handle_doctype);
 
     Py_XDECREF(self->target);
     Py_XDECREF(self->entity);
@@ -2950,7 +3032,13 @@ xmlparser_parse(XMLParserObject* self, PyObject* args)
 }
 
 static PyObject*
-xmlparser_setevents(XMLParserObject* self, PyObject* args)
+xmlparser_doctype(XMLParserObject *self, PyObject *args)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+xmlparser_setevents(XMLParserObject *self, PyObject* args)
 {
     /* activate element event reporting */
 
@@ -3054,6 +3142,7 @@ static PyMethodDef xmlparser_methods[] = {
     {"close", (PyCFunction) xmlparser_close, METH_VARARGS},
     {"_parse", (PyCFunction) xmlparser_parse, METH_VARARGS},
     {"_setevents", (PyCFunction) xmlparser_setevents, METH_VARARGS},
+    {"doctype", (PyCFunction) xmlparser_doctype, METH_VARARGS},
     {NULL, NULL}
 };
 

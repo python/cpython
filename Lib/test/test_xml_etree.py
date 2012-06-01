@@ -2009,7 +2009,6 @@ class TreeBuilderTest(unittest.TestCase):
 
         self.assertEqual(lst, ['toplevel'])
 
-    @unittest.expectedFailure   # XXX issue 14007 with C ElementTree
     def test_doctype(self):
         class DoctypeParser:
             _doctype = None
@@ -2030,6 +2029,10 @@ class TreeBuilderTest(unittest.TestCase):
 
 class XMLParserTest(unittest.TestCase):
     sample1 = '<file><line>22</line></file>'
+    sample2 = ('<!DOCTYPE html PUBLIC'
+        ' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+        ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+        '<html>text</html>')
 
     def _check_sample_element(self, e):
         self.assertEqual(e.tag, 'file')
@@ -2054,6 +2057,20 @@ class XMLParserTest(unittest.TestCase):
         parser = MyParser()
         parser.feed(self.sample1)
         self._check_sample_element(parser.close())
+
+    def test_subclass_doctype(self):
+        _doctype = None
+        class MyParserWithDoctype(ET.XMLParser):
+            def doctype(self, name, pubid, system):
+                nonlocal _doctype
+                _doctype = (name, pubid, system)
+
+        parser = MyParserWithDoctype()
+        parser.feed(self.sample2)
+        parser.close()
+        self.assertEqual(_doctype,
+            ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
+             'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
 class NoAcceleratorTest(unittest.TestCase):
