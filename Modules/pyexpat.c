@@ -1904,6 +1904,7 @@ MODULE_INITFUNC(void)
     capi.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
     capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
     capi.SetUserData = XML_SetUserData;
+    capi.SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
 
     /* export using capsule */
     capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
