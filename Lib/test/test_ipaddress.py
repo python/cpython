@@ -596,10 +596,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(list(collapsed), [ip3])
 
         # the toejam test
-        ip1 = ipaddress.ip_address('1.1.1.1')
-        ip2 = ipaddress.ip_address('::1')
-        self.assertRaises(TypeError, ipaddress.collapse_addresses,
-                          [ip1, ip2])
+        addr_tuples = [
+                (ipaddress.ip_address('1.1.1.1'),
+                 ipaddress.ip_address('::1')),
+                (ipaddress.IPv4Network('1.1.0.0/24'),
+                 ipaddress.IPv6Network('2001::/120')),
+                (ipaddress.IPv4Network('1.1.0.0/32'),
+                 ipaddress.IPv6Network('2001::/128')),
+        ]
+        for ip1, ip2 in addr_tuples:
+            self.assertRaises(TypeError, ipaddress.collapse_addresses,
+                              [ip1, ip2])
 
     def testSummarizing(self):
         #ip = ipaddress.ip_address
