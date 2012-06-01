@@ -646,8 +646,8 @@ ElementTree Objects
 
       Loads an external XML section into this element tree.  *source* is a file
       name or :term:`file object`.  *parser* is an optional parser instance.
-      If not given, the standard XMLParser parser is used.  Returns the section
-      root element.
+      If not given, the standard :class:`XMLParser` parser is used.  Returns the
+      section root element.
 
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
@@ -767,9 +767,9 @@ XMLParser Objects
    :class:`Element` structure builder for XML source data, based on the expat
    parser.  *html* are predefined HTML entities.  This flag is not supported by
    the current implementation.  *target* is the target object.  If omitted, the
-   builder uses an instance of the standard TreeBuilder class.  *encoding* [1]_
-   is optional.  If given, the value overrides the encoding specified in the
-   XML file.
+   builder uses an instance of the standard :class:`TreeBuilder` class. 
+   *encoding* [1]_ is optional.  If given, the value overrides the encoding
+   specified in the XML file.
 
 
    .. method:: close()
