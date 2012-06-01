@@ -225,6 +225,17 @@ class ExitStack(object):
         return self
 
     def __exit__(self, *exc_details):
+        # We manipulate the exception state so it behaves as though
+        # we were actually nesting multiple with statements
+        frame_exc = sys.exc_info()[1]
+        def _fix_exception_context(new_exc, old_exc):
+            while 1:
+                exc_context = new_exc.__context__
+                if exc_context in (None, frame_exc):
+                    break
+                new_exc = exc_context
+            new_exc.__context__ = old_exc
+
         # Callbacks are invoked in LIFO order to match the behaviour of
         # nested context managers
         suppressed_exc = False
@@ -236,9 +247,8 @@ class ExitStack(object):
                     exc_details = (None, None, None)
             except:
                 new_exc_details = sys.exc_info()
-                if exc_details != (None, None, None):
-                    # simulate the stack of exceptions by setting the context
-                    new_exc_details[1].__context__ = exc_details[1]
+                # simulate the stack of exceptions by setting the context
+                _fix_exception_context(new_exc_details[1], exc_details[1])
                 if not self._exit_callbacks:
                     raise
                 exc_details = new_exc_details
