@@ -143,7 +143,7 @@ def v6_int_to_packed(address):
     """Represent an address as 16 packed bytes in network (big-endian) order.
 
     Args:
-        address: An integer representation of an IPv4 IP address.
+        address: An integer representation of an IPv6 IP address.
 
     Returns:
         The integer address packed as 16 bytes in network (big-endian) order.
@@ -1181,7 +1181,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
                 IPv4Address('192.0.2.1')
 
         Raises:
-            AddressValueError: If ipaddressisn't a valid IPv4 address.
+            AddressValueError: If ipaddress isn't a valid IPv4 address.
 
         """
         _BaseAddress.__init__(self, address)
@@ -1366,10 +1366,10 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                 IPv4Interface('192.0.2.1')
 
         Raises:
-            AddressValueError: If ipaddressisn't a valid IPv4 address.
+            AddressValueError: If ipaddress isn't a valid IPv4 address.
             NetmaskValueError: If the netmask isn't valid for
               an IPv4 address.
-            ValueError: If strict was True and a network address was not
+            ValueError: If strict is True and a network address is not
               supplied.
 
         """
