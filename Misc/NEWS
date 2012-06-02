@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Beta 1?
 Library
 -------
 
+- Issue #1079: email.header.decode_header now correctly parses all the examples
+  in RFC2047.  There is a necessary visible behavior change: the leading and/or
+  trailing whitespace on ASCII parts is now preserved.
+
 - Issue #14969: Better handling of exception chaining in contextlib.ExitStack
 
 - Issue #14962: Update text coloring in IDLE shell window after changing

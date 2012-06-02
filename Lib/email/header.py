@@ -40,7 +40,6 @@ ecre = re.compile(r'''
   \?                    # literal ?
   (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
   \?=                   # literal ?=
-  (?=[ \t]|$)           # whitespace or the end of the string
   ''', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
 
 # Field name regexp, including trailing colon, but not separating whitespace,
@@ -86,8 +85,12 @@ def decode_header(header):
     words = []
     for line in header.splitlines():
         parts = ecre.split(line)
+        first = True
         while parts:
-            unencoded = parts.pop(0).strip()
+            unencoded = parts.pop(0)
+            if first:
+                unencoded = unencoded.lstrip()
+                first = False
             if unencoded:
                 words.append((unencoded, None, None))
             if parts:
@@ -95,6 +98,16 @@ def decode_header(header):
                 encoding = parts.pop(0).lower()
                 encoded = parts.pop(0)
                 words.append((encoded, encoding, charset))
+    # Now loop over words and remove words that consist of whitespace
+    # between two encoded strings.
+    import sys
+    droplist = []
+    for n, w in enumerate(words):
+        if n>1 and w[1] and words[n-2][1] and words[n-1][0].isspace():
+            droplist.append(n-1)
+    for d in reversed(droplist):
+        del words[d]
+
     # The next step is to decode each encoded word by applying the reverse
     # base64 or quopri transformation.  decoded_words is now a list of the
     # form (decoded_word, charset).
@@ -217,22 +230,27 @@ class Header:
         self._normalize()
         uchunks = []
         lastcs = None
+        lastspace = None
         for string, charset in self._chunks:
             # We must preserve spaces between encoded and non-encoded word
             # boundaries, which means for us we need to add a space when we go
             # from a charset to None/us-ascii, or from None/us-ascii to a
             # charset.  Only do this for the second and subsequent chunks.
+            # Don't add a space if the None/us-ascii string already has
+            # a space (trailing or leading depending on transition)
             nextcs = charset
             if nextcs == _charset.UNKNOWN8BIT:
                 original_bytes = string.encode('ascii', 'surrogateescape')
                 string = original_bytes.decode('ascii', 'replace')
             if uchunks:
+                hasspace = string and self._nonctext(string[0])
                 if lastcs not in (None, 'us-ascii'):
-                    if nextcs in (None, 'us-ascii'):
+                    if nextcs in (None, 'us-ascii') and not hasspace:
                         uchunks.append(SPACE)
                         nextcs = None
-                elif nextcs not in (None, 'us-ascii'):
+                elif nextcs not in (None, 'us-ascii') and not lastspace:
                     uchunks.append(SPACE)
+            lastspace = string and self._nonctext(string[-1])
             lastcs = nextcs
             uchunks.append(string)
         return EMPTYSTRING.join(uchunks)
@@ -291,6 +309,11 @@ class Header:
                 charset = UTF8
         self._chunks.append((s, charset))
 
+    def _nonctext(self, s):
+        """True if string s is not a ctext character of RFC822.
+        """
+        return s.isspace() or s in ('(', ')', '\\')
+
     def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):
         r"""Encode a message header into an RFC-compliant format.
 
@@ -334,7 +357,20 @@ class Header:
             maxlinelen = 1000000
         formatter = _ValueFormatter(self._headerlen, maxlinelen,
                                     self._continuation_ws, splitchars)
+        lastcs = None
+        hasspace = lastspace = None
         for string, charset in self._chunks:
+            if hasspace is not None:
+                hasspace = string and self._nonctext(string[0])
+                import sys
+                if lastcs not in (None, 'us-ascii'):
+                    if not hasspace or charset not in (None, 'us-ascii'):
+                        formatter.add_transition()
+                elif charset not in (None, 'us-ascii') and not lastspace:
+                    formatter.add_transition()
+            lastspace = string and self._nonctext(string[-1])
+            lastcs = charset
+            hasspace = False
             lines = string.splitlines()
             if lines:
                 formatter.feed('', lines[0], charset)
@@ -351,6 +387,7 @@ class Header:
                     formatter.feed(fws, sline, charset)
             if len(lines) > 1:
                 formatter.newline()
+        if self._chunks:
             formatter.add_transition()
         value = formatter._str(linesep)
         if _embeded_header.search(value):
