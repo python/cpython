@@ -163,10 +163,8 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
             cls = PyEval_CallObjectWithKeywords(meta, margs, mkw);
             Py_DECREF(margs);
         }
-        if (cls != NULL && PyCell_Check(cell)) {
-            Py_INCREF(cls);
-            PyCell_SET(cell, cls);
-        }
+        if (cls != NULL && PyCell_Check(cell))
+            PyCell_Set(cell, cls);
         Py_DECREF(cell);
     }
     Py_DECREF(ns);
