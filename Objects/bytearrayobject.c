@@ -2649,7 +2649,7 @@ bytearray_join(PyByteArrayObject *self, PyObject *it)
 }
 
 PyDoc_STRVAR(splitlines__doc__,
-"B.splitlines([keepends]) -> list of lines\n\
+"B.splitlines(keepends=False) -> list of lines\n\
 \n\
 Return a list of the lines in B, breaking at line boundaries.\n\
 Line breaks are not included in the resulting list unless keepends\n\
