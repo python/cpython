@@ -288,4 +288,4 @@ you can still do the following::
    try:
        ipaddress.IPv4Address(address)
    except ValueError:
-       print 'address/netmask is invalid: %s' % address
+       print('address/netmask is invalid:', address)
