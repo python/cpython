@@ -41,7 +41,7 @@ class TestEmailAsianCodecs(TestEmailBase):
 Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
  =?iso-8859-1?q?Gr=FC=DF_Gott!?=""")
         eq(decode_header(h.encode()),
-           [(b'Hello World!', None),
+           [(b'Hello World! ', None),
             (b'\x1b$B%O%m!<%o!<%k%I!*\x1b(B', 'iso-2022-jp'),
             (b'Gr\xfc\xdf Gott!', gcode)])
         subject_bytes = (b'test-ja \xa4\xd8\xc5\xea\xb9\xc6\xa4\xb5'
