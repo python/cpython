@@ -1994,9 +1994,9 @@ class TestRFC2047(TestEmailBase):
  foo bar =?mac-iceland?q?r=8Aksm=9Arg=8Cs?="""
         dh = decode_header(s)
         eq(dh, [
-            (b'Re:', None),
+            (b'Re: ', None),
             (b'r\x8aksm\x9arg\x8cs', 'mac-iceland'),
-            (b'baz foo bar', None),
+            (b' baz foo bar ', None),
             (b'r\x8aksm\x9arg\x8cs', 'mac-iceland')])
         header = make_header(dh)
         eq(str(header),
@@ -2005,35 +2005,37 @@ class TestRFC2047(TestEmailBase):
 Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
  =?mac-iceland?q?=9Arg=8Cs?=""")
 
-    def test_whitespace_eater_unicode(self):
+    def test_whitespace_keeper_unicode(self):
         eq = self.assertEqual
         s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
         dh = decode_header(s)
         eq(dh, [(b'Andr\xe9', 'iso-8859-1'),
-                (b'Pirard <pirard@dom.ain>', None)])
+                (b' Pirard <pirard@dom.ain>', None)])
         header = str(make_header(dh))
         eq(header, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
-    def test_whitespace_eater_unicode_2(self):
+    def test_whitespace_keeper_unicode_2(self):
         eq = self.assertEqual
         s = 'The =?iso-8859-1?b?cXVpY2sgYnJvd24gZm94?= jumped over the =?iso-8859-1?b?bGF6eSBkb2c=?='
         dh = decode_header(s)
-        eq(dh, [(b'The', None), (b'quick brown fox', 'iso-8859-1'),
-                (b'jumped over the', None), (b'lazy dog', 'iso-8859-1')])
+        eq(dh, [(b'The ', None), (b'quick brown fox', 'iso-8859-1'),
+                (b' jumped over the ', None), (b'lazy dog', 'iso-8859-1')])
         hu = str(make_header(dh))
         eq(hu, 'The quick brown fox jumped over the lazy dog')
 
     def test_rfc2047_missing_whitespace(self):
         s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
         dh = decode_header(s)
-        self.assertEqual(dh, [(s, None)])
+        self.assertEqual(dh, [(b'Sm', None), (b'\xf6', 'iso-8859-1'),
+                              (b'rg', None), (b'\xe5', 'iso-8859-1'),
+                              (b'sbord', None)])
 
     def test_rfc2047_with_whitespace(self):
         s = 'Sm =?ISO-8859-1?B?9g==?= rg =?ISO-8859-1?B?5Q==?= sbord'
         dh = decode_header(s)
-        self.assertEqual(dh, [(b'Sm', None), (b'\xf6', 'iso-8859-1'),
-                              (b'rg', None), (b'\xe5', 'iso-8859-1'),
-                              (b'sbord', None)])
+        self.assertEqual(dh, [(b'Sm ', None), (b'\xf6', 'iso-8859-1'),
+                              (b' rg ', None), (b'\xe5', 'iso-8859-1'),
+                              (b' sbord', None)])
 
     def test_rfc2047_B_bad_padding(self):
         s = '=?iso-8859-1?B?%s?='
@@ -2050,6 +2052,57 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
         s = '=?iso-8659-1?Q?andr=e9=zz?='
         self.assertEqual(decode_header(s),
                         [(b'andr\xe9=zz', 'iso-8659-1')])
+
+    def test_rfc2047_rfc2047_1(self):
+        # 1st testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'a', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_2(self):
+        # 2nd testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a?= b)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'a', 'iso-8859-1'), (b' b)', None)])
+
+    def test_rfc2047_rfc2047_3(self):
+        # 3rd testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_4(self):
+        # 4th testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a?=  =?ISO-8859-1?Q?b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_5a(self):
+        # 5th testcase at end of rfc2047 newline is \r\n
+        s = '(=?ISO-8859-1?Q?a?=\r\n    =?ISO-8859-1?Q?b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_5b(self):
+        # 5th testcase at end of rfc2047 newline is \n
+        s = '(=?ISO-8859-1?Q?a?=\n    =?ISO-8859-1?Q?b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_6(self):
+        # 6th testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a_b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'a b', 'iso-8859-1'), (b')', None)])
+
+    def test_rfc2047_rfc2047_7(self):
+        # 7th testcase at end of rfc2047
+        s = '(=?ISO-8859-1?Q?a?= =?ISO-8859-2?Q?_b?=)'
+        self.assertEqual(decode_header(s),
+            [(b'(', None), (b'a', 'iso-8859-1'), (b' b', 'iso-8859-2'),
+             (b')', None)])
+        self.assertEqual(make_header(decode_header(s)).encode(), s.lower())
+        self.assertEqual(str(make_header(decode_header(s))), '(a b)')
 
 
 # Test the MIMEMessage class
@@ -4388,11 +4441,11 @@ A very long line that must get split to something other than at the
         h = make_header(decode_header(s))
         eq(h.encode(), s)
 
-    def test_whitespace_eater(self):
+    def test_whitespace_keeper(self):
         eq = self.assertEqual
         s = 'Subject: =?koi8-r?b?8NLP18XSy8EgzsEgxsnOwczYztk=?= =?koi8-r?q?=CA?= zz.'
         parts = decode_header(s)
-        eq(parts, [(b'Subject:', None), (b'\xf0\xd2\xcf\xd7\xc5\xd2\xcb\xc1 \xce\xc1 \xc6\xc9\xce\xc1\xcc\xd8\xce\xd9\xca', 'koi8-r'), (b'zz.', None)])
+        eq(parts, [(b'Subject: ', None), (b'\xf0\xd2\xcf\xd7\xc5\xd2\xcb\xc1 \xce\xc1 \xc6\xc9\xce\xc1\xcc\xd8\xce\xd9\xca', 'koi8-r'), (b' zz.', None)])
         hdr = make_header(parts)
         eq(hdr.encode(),
            'Subject: =?koi8-r?b?8NLP18XSy8EgzsEgxsnOwczYztnK?= zz.')

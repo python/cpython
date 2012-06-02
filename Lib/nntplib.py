@@ -166,7 +166,7 @@ def decode_header(header_str):
             parts.append(v.decode(enc or 'ascii'))
         else:
             parts.append(v)
-    return ' '.join(parts)
+    return ''.join(parts)
 
 def _parse_overview_fmt(lines):
     """Parse a list of string representing the response to LIST OVERVIEW.FMT
