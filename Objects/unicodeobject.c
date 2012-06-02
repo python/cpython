@@ -7521,7 +7521,7 @@ unicode_rsplit(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(splitlines__doc__,
-             "S.splitlines([keepends]) -> list of strings\n\
+             "S.splitlines(keepends=False) -> list of strings\n\
 \n\
 Return a list of the lines in S, breaking at line boundaries.\n\
 Line breaks are not included in the resulting list unless keepends\n\
