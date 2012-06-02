@@ -1358,7 +1358,7 @@ functions based on regular expressions.
    the returned list does ``not`` have an empty last element.
 
    For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
-   ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splinelines(True)``
+   ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splitlines(True)``
    returns ``['ab c\n', '\n, 'de fg\r', 'kl\r\n']``.
 
 
