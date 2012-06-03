@@ -10,11 +10,6 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
-- Issue #14992: os.makedirs(path, exist_ok=True) would raise an OSError
-  when the path existed and had the S_ISGID mode bit set when it was
-  not explicitly asked for.  This is no longer an exception as mkdir
-  cannot control if the OS sets that bit for it or not.
-
 - Issue #14775: Fix a potential quadratic dict build-up due to the garbage
   collector repeatedly trying to untrack dicts.
 
@@ -74,6 +69,11 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14992: os.makedirs(path, exist_ok=True) would raise an OSError
+  when the path existed and had the S_ISGID mode bit set when it was
+  not explicitly asked for.  This is no longer an exception as mkdir
+  cannot control if the OS sets that bit for it or not.
 
 - Issue #14962: Update text coloring in IDLE shell window after changing
   options.  Patch by Roger Serwy.
