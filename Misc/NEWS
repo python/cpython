@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Library
 -------
 
+- Issue #14989: Make the CGI enable option to http.server available via command
+  line.
+
 - Issue #14987: Add a missing import statement to inspect.
 
 - Issue #1079: email.header.decode_header now correctly parses all the examples
