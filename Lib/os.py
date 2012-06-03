@@ -163,9 +163,6 @@ def makedirs(name, mode=0o777, exist_ok=False):
             actual_mode = -1
         if not (e.errno == errno.EEXIST and exist_ok and dir_exists and
                 actual_mode == expected_mode):
-            if dir_exists and actual_mode != expected_mode:
-                e.strerror += ' (mode %o != expected mode %o)' % (
-                        actual_mode, expected_mode)
             raise
 
 def removedirs(name):
