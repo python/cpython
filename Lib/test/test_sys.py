@@ -581,6 +581,24 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
+    def test_implementation(self):
+        # This test applies to all implementations equally.
+
+        levels = {'alpha': 0xA, 'beta': 0xB, 'candidate': 0xC, 'release': 0xF}
+
+        self.assertTrue(hasattr(sys.implementation, 'name'))
+        self.assertTrue(hasattr(sys.implementation, 'version'))
+        self.assertTrue(hasattr(sys.implementation, 'hexversion'))
+        self.assertTrue(hasattr(sys.implementation, 'cache_tag'))
+
+        version = sys.implementation.version
+        self.assertEqual(version[:2], (version.major, version.minor))
+
+        hexversion = (version.major << 24 | version.minor << 16 |
+                      version.micro << 8 | levels[version.releaselevel] << 4 |
+                      version.serial << 0)
+        self.assertEqual(sys.implementation.hexversion, hexversion)
+
 
 class SizeofTest(unittest.TestCase):
 

@@ -996,8 +996,149 @@ class ClassCreationTests(unittest.TestCase):
             X = types.new_class("X", (int(), C))
 
 
+class SimpleNamespaceTests(unittest.TestCase):
+
+    def test_constructor(self):
+        ns1 = types.SimpleNamespace()
+        ns2 = types.SimpleNamespace(x=1, y=2)
+        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
+
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(1, 2, 3)
+
+        self.assertEqual(len(ns1.__dict__), 0)
+        self.assertEqual(vars(ns1), {})
+        self.assertEqual(len(ns2.__dict__), 2)
+        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
+        self.assertEqual(len(ns3.__dict__), 2)
+        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
+
+    def test_unbound(self):
+        ns1 = vars(types.SimpleNamespace())
+        ns2 = vars(types.SimpleNamespace(x=1, y=2))
+
+        self.assertEqual(ns1, {})
+        self.assertEqual(ns2, {'y': 2, 'x': 1})
+
+    def test_underlying_dict(self):
+        ns1 = types.SimpleNamespace()
+        ns2 = types.SimpleNamespace(x=1, y=2)
+        ns3 = types.SimpleNamespace(a=True, b=False)
+        mapping = ns3.__dict__
+        del ns3
+
+        self.assertEqual(ns1.__dict__, {})
+        self.assertEqual(ns2.__dict__, {'y': 2, 'x': 1})
+        self.assertEqual(mapping, dict(a=True, b=False))
+
+    def test_attrget(self):
+        ns = types.SimpleNamespace(x=1, y=2, w=3)
+
+        self.assertEqual(ns.x, 1)
+        self.assertEqual(ns.y, 2)
+        self.assertEqual(ns.w, 3)
+        with self.assertRaises(AttributeError):
+            ns.z
+
+    def test_attrset(self):
+        ns1 = types.SimpleNamespace()
+        ns2 = types.SimpleNamespace(x=1, y=2, w=3)
+        ns1.a = 'spam'
+        ns1.b = 'ham'
+        ns2.z = 4
+        ns2.theta = None
+
+        self.assertEqual(ns1.__dict__, dict(a='spam', b='ham'))
+        self.assertEqual(ns2.__dict__, dict(x=1, y=2, w=3, z=4, theta=None))
+
+    def test_attrdel(self):
+        ns1 = types.SimpleNamespace()
+        ns2 = types.SimpleNamespace(x=1, y=2, w=3)
+
+        with self.assertRaises(AttributeError):
+            del ns1.spam
+        with self.assertRaises(AttributeError):
+            del ns2.spam
+
+        del ns2.y
+        self.assertEqual(vars(ns2), dict(w=3, x=1))
+        ns2.y = 'spam'
+        self.assertEqual(vars(ns2), dict(w=3, x=1, y='spam'))
+        del ns2.y
+        self.assertEqual(vars(ns2), dict(w=3, x=1))
+
+        ns1.spam = 5
+        self.assertEqual(vars(ns1), dict(spam=5))
+        del ns1.spam
+        self.assertEqual(vars(ns1), {})
+
+    def test_repr(self):
+        ns1 = types.SimpleNamespace(x=1, y=2, w=3)
+        ns2 = types.SimpleNamespace()
+        ns2.x = "spam"
+        ns2._y = 5
+
+        self.assertEqual(repr(ns1), "namespace(w=3, x=1, y=2)")
+        self.assertEqual(repr(ns2), "namespace(_y=5, x='spam')")
+
+    def test_nested(self):
+        ns1 = types.SimpleNamespace(a=1, b=2)
+        ns2 = types.SimpleNamespace()
+        ns3 = types.SimpleNamespace(x=ns1)
+        ns2.spam = ns1
+        ns2.ham = '?'
+        ns2.spam = ns3
+
+        self.assertEqual(vars(ns1), dict(a=1, b=2))
+        self.assertEqual(vars(ns2), dict(spam=ns3, ham='?'))
+        self.assertEqual(ns2.spam, ns3)
+        self.assertEqual(vars(ns3), dict(x=ns1))
+        self.assertEqual(ns3.x.a, 1)
+
+    def test_recursive(self):
+        ns1 = types.SimpleNamespace(c='cookie')
+        ns2 = types.SimpleNamespace()
+        ns3 = types.SimpleNamespace(x=1)
+        ns1.spam = ns1
+        ns2.spam = ns3
+        ns3.spam = ns2
+
+        self.assertEqual(ns1.spam, ns1)
+        self.assertEqual(ns1.spam.spam, ns1)
+        self.assertEqual(ns1.spam.spam, ns1.spam)
+        self.assertEqual(ns2.spam, ns3)
+        self.assertEqual(ns3.spam, ns2)
+        self.assertEqual(ns2.spam.spam, ns2)
+
+    def test_recursive_repr(self):
+        ns1 = types.SimpleNamespace(c='cookie')
+        ns2 = types.SimpleNamespace()
+        ns3 = types.SimpleNamespace(x=1)
+        ns1.spam = ns1
+        ns2.spam = ns3
+        ns3.spam = ns2
+
+        self.assertEqual(repr(ns1),
+                         "namespace(c='cookie', spam=namespace(...))")
+        self.assertEqual(repr(ns2),
+                         "namespace(spam=namespace(spam=namespace(...), x=1))")
+
+    def test_as_dict(self):
+        ns = types.SimpleNamespace(spam='spamspamspam')
+
+        with self.assertRaises(TypeError):
+            len(ns)
+        with self.assertRaises(TypeError):
+            iter(ns)
+        with self.assertRaises(TypeError):
+            'spam' in ns
+        with self.assertRaises(TypeError):
+            ns['spam']
+
+
 def test_main():
-    run_unittest(TypesTests, MappingProxyTests, ClassCreationTests)
+    run_unittest(TypesTests, MappingProxyTests, ClassCreationTests,
+                 SimpleNamespaceTests)
 
 if __name__ == '__main__':
     test_main()
