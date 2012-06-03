@@ -2104,6 +2104,16 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
         self.assertEqual(make_header(decode_header(s)).encode(), s.lower())
         self.assertEqual(str(make_header(decode_header(s))), '(a b)')
 
+    def test_multiline_header(self):
+        s = '=?windows-1252?q?=22M=FCller_T=22?=\r\n <T.Mueller@xxx.com>'
+        self.assertEqual(decode_header(s),
+            [(b'"M\xfcller T"', 'windows-1252'),
+             (b'<T.Mueller@xxx.com>', None)])
+        self.assertEqual(make_header(decode_header(s)).encode(),
+                         ''.join(s.splitlines()))
+        self.assertEqual(str(make_header(decode_header(s))),
+                         '"Müller T" <T.Mueller@xxx.com>')
+
 
 # Test the MIMEMessage class
 class TestMIMEMessage(TestEmailBase):
