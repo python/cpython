@@ -143,7 +143,7 @@ class AutoComplete:
         elif hp.is_in_code() and (not mode or mode==COMPLETE_ATTRIBUTES):
             self._remove_autocomplete_window()
             mode = COMPLETE_ATTRIBUTES
-            while i and curline[i-1] in ID_CHARS:
+            while i and curline[i-1] in ID_CHARS or ord(curline[i-1]) > 127:
                 i -= 1
             comp_start = curline[i:j]
             if i and curline[i-1] == '.':
