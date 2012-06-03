@@ -82,9 +82,12 @@ PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
     PyParser_SimpleParseFileFlags(FP, S, B, 0)
 #endif
 PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int,
-                                                          int);
+                                                           int);
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(const char *,
+                                                                   const char *,
+                                                                   int, int);
 PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
-                                                        int, int);
+                                                         int, int);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,

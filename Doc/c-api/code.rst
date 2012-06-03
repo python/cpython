@@ -31,11 +31,11 @@ bound into a function.
 
    Return true if *co* is a :class:`code` object
 
-.. c:function:: int PyCode_GetNumFree(PyObject *co)
+.. c:function:: int PyCode_GetNumFree(PyCodeObject *co)
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject *PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
    Return a new code object.  If you need a dummy code object to
    create a frame, use :c:func:`PyCode_NewEmpty` instead.  Calling
@@ -43,7 +43,7 @@ bound into a function.
    version since the definition of the bytecode changes often.
 
 
-.. c:function:: int PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
+.. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
    Return a new empty code object with the specified filename,
    function name, and first line number.  It is illegal to

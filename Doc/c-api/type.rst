@@ -51,13 +51,13 @@ Type Objects
    modification of the attributes or base classes of the type.
 
 
-.. c:function:: int PyType_HasFeature(PyObject *o, int feature)
+.. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)
 
    Return true if the type object *o* sets the feature *feature*.  Type features
    are denoted by single bit flags.
 
 
-.. c:function:: int PyType_IS_GC(PyObject *o)
+.. c:function:: int PyType_IS_GC(PyTypeObject *o)
 
    Return true if the type object includes support for the cycle detector; this
    tests the type flag :const:`Py_TPFLAGS_HAVE_GC`.
