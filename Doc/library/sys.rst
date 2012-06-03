@@ -616,6 +616,44 @@ always available.
 
    Thus ``2.1.0a3`` is hexversion ``0x020100a3``.
 
+
+.. data:: implementation
+
+   An object containing the information about the implementation of the
+   currently running Python interpreter.  Its attributes are the those
+   that all Python implementations must implement.  They are described
+   below.
+
+   *name* is the implementation's identifier, like ``'cpython'``.
+
+   *version* is a named tuple, in the same format as
+   :data:`sys.version_info`.  It represents the version of the Python
+   *implementation*.  This has a distinct meaning from the specific
+   version of the Python *language* to which the currently running
+   interpreter conforms, which ``sys.version_info`` represents.  For
+   example, for PyPy 1.8 ``sys.implementation.version`` might be
+   ``sys.version_info(1, 8, 0, 'final', 0)``, whereas ``sys.version_info``
+   would be ``sys.version_info(1, 8, 0, 'final', 0)``.  For CPython they
+   are the same value, since it is the reference implementation.
+
+   *hexversion* is the implementation version in hexadecimal format, like
+   :data:`sys.hexversion`.
+
+   *cache_tag* is the tag used by the import machinery in the filenames of
+   cached modules.  By convention, it would be a composite of the
+   implementation's name and version, like ``'cpython-33'``.  However, a
+   Python implementation may use some other value if appropriate.  If
+   ``cache_tag`` is set to ``None``, it indicates that module caching should
+   be disabled.
+
+   Regardless of its contents, :data:`sys.implementation` will not
+   change during a run of the interpreter, nor between implementation
+   versions.  (It may change between Python language versions,
+   however.)  See `PEP 421` for more information.
+
+   .. versionadded:: 3.3
+
+
 .. data:: int_info
 
    A :term:`struct sequence` that holds information about Python's internal

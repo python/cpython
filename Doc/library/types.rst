@@ -194,3 +194,27 @@ Standard names are defined for the following types:
       Return a new view of the underlying mapping's values.
 
 
+.. class:: SimpleNamespace
+
+   A simple :class:`object` subclass that provides attribute access to its
+   namespace, as well as a meaningful repr.
+
+   Unlike :class:`object`, with ``SimpleNamespace`` you can add and remove
+   attributes.  If a ``SimpleNamespace`` object is initialized with keyword
+   arguments, those are directly added to the underlying namespace.
+
+   The type is roughly equivalent to the following code::
+
+       class SimpleNamespace:
+           def __init__(self, **kwargs):
+               self.__dict__.update(kwargs)
+           def __repr__(self):
+               keys = sorted(self.__dict__)
+               items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+               return "{}({})".format(type(self).__name__, ", ".join(items))
+
+   ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
+   However, for a structured record type use :func:`~collections.namedtuple`
+   instead.
+
+   .. versionadded:: 3.3

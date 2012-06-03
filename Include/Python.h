@@ -101,6 +101,7 @@
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
+#include "namespaceobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"

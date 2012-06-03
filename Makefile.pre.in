@@ -392,6 +392,7 @@ OBJECT_OBJS=	\
 		Objects/memoryobject.o \
 		Objects/methodobject.o \
 		Objects/moduleobject.o \
+		Objects/namespaceobject.o \
 		Objects/object.o \
 		Objects/obmalloc.o \
 		Objects/capsule.o \
@@ -766,6 +767,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
+		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \

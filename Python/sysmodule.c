@@ -1261,6 +1261,7 @@ executable -- absolute path of the executable binary of the Python interpreter\n
 float_info -- a struct sequence with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
 hexversion -- version information encoded as a single integer\n\
+implementation -- Python implementation information.\n\
 int_info -- a struct sequence with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the value of the largest Unicode codepoint\n\
@@ -1454,6 +1455,69 @@ make_version_info(void)
     return version_info;
 }
 
+static PyObject *
+make_impl_info(PyObject *version_info)
+{
+    int res;
+    PyObject *impl_info, *value, *ns;
+
+    impl_info = PyDict_New();
+    if (impl_info == NULL)
+        return NULL;
+
+    /* populate the dict */
+
+#define NAME "cpython"
+#define QUOTE(arg) #arg
+#define STRIFY(name) QUOTE(name)
+#define MAJOR STRIFY(PY_MAJOR_VERSION)
+#define MINOR STRIFY(PY_MINOR_VERSION)
+#define TAG NAME "-" MAJOR MINOR
+    value = PyUnicode_FromString(NAME);
+    if (value == NULL)
+        goto error;
+    res = PyDict_SetItemString(impl_info, "name", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+
+    value = PyUnicode_FromString(TAG);
+    if (value == NULL)
+        goto error;
+    res = PyDict_SetItemString(impl_info, "cache_tag", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+#undef NAME
+#undef QUOTE
+#undef STRIFY
+#undef MAJOR
+#undef MINOR
+#undef TAG
+
+    res = PyDict_SetItemString(impl_info, "version", version_info);
+    if (res < 0)
+        goto error;
+
+    value = PyLong_FromLong(PY_VERSION_HEX);
+    if (value == NULL)
+        goto error;
+    res = PyDict_SetItemString(impl_info, "hexversion", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+
+    /* dict ready */
+
+    ns = _PyNamespace_New(impl_info);
+    Py_DECREF(impl_info);
+    return ns;
+
+error:
+    Py_CLEAR(impl_info);
+    return NULL;
+}
+
 static struct PyModuleDef sysmodule = {
     PyModuleDef_HEAD_INIT,
     "sys",
@@ -1469,7 +1533,7 @@ static struct PyModuleDef sysmodule = {
 PyObject *
 _PySys_Init(void)
 {
-    PyObject *m, *v, *sysdict;
+    PyObject *m, *v, *sysdict, *version_info;
     char *s;
 
     m = PyModule_Create(&sysmodule);
@@ -1589,10 +1653,14 @@ _PySys_Init(void)
     /* version_info */
     if (VersionInfoType.tp_name == 0)
         PyStructSequence_InitType(&VersionInfoType, &version_info_desc);
-    SET_SYS_FROM_STRING("version_info", make_version_info());
+    version_info = make_version_info();
+    SET_SYS_FROM_STRING("version_info", version_info);
     /* prevent user from creating new instances */
     VersionInfoType.tp_init = NULL;
     VersionInfoType.tp_new = NULL;
+
+    /* implementation */
+    SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
 
     /* flags */
     if (FlagsType.tp_name == 0)
