@@ -51,13 +51,13 @@ Type Objects
    modification of the attributes or base classes of the type.
 
 
-.. c:function:: int PyType_HasFeature(PyObject *o, int feature)
+.. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)
 
    Return true if the type object *o* sets the feature *feature*.  Type features
    are denoted by single bit flags.
 
 
-.. c:function:: int PyType_IS_GC(PyObject *o)
+.. c:function:: int PyType_IS_GC(PyTypeObject *o)
 
    Return true if the type object includes support for the cycle detector; this
    tests the type flag :const:`Py_TPFLAGS_HAVE_GC`.
@@ -70,13 +70,14 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   XXX: Document.
-
+   Generic handler for the :attr:`tp_alloc` slot of a type object.  Use
+   Python's default memory allocation mechanism to allocate a new instance and
+   initialize all its contents to *NULL*.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :attr:`tp_new` slot of a type object.  Initialize
-   all instance variables to *NULL*.
+   Generic handler for the :attr:`tp_new` slot of a type object.  Create a
+   new instance using the type's :attr:`tp_alloc` slot.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
