@@ -646,7 +646,7 @@ with sub-interpreters:
    :c:func:`PyGILState_Release` on the same thread.
 
 
-.. c:function:: PyThreadState PyGILState_GetThisThreadState()
+.. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
    Get the current thread state for this thread.  May return ``NULL`` if no
    GILState API has been used on the current thread.  Note that the main thread
