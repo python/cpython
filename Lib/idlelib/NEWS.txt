@@ -1,3 +1,9 @@
+What's New in IDLE 3.2.4?
+=========================
+
+- Issue #14937: Perform auto-completion of filenames in strings even for
+  non-ASCII filenames.
+
 What's New in IDLE 3.2.3?
 =========================
 
