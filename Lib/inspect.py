@@ -38,6 +38,7 @@ import re
 import sys
 import tokenize
 import types
+import warnings
 from operator import attrgetter
 from collections import namedtuple
 
