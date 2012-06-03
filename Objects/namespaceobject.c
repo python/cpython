@@ -1,0 +1,225 @@
+/* namespace object implementation */
+
+#include "Python.h"
+#include "structmember.h"
+
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *ns_dict;
+} _PyNamespaceObject;
+
+
+static PyMemberDef namespace_members[] = {
+    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {NULL}
+};
+
+
+/* Methods */
+
+static PyObject *
+namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    _PyNamespaceObject *ns;
+    ns = PyObject_GC_New(_PyNamespaceObject, &_PyNamespace_Type);
+    if (ns == NULL)
+        return NULL;
+
+    ns->ns_dict = PyDict_New();
+    if (ns->ns_dict == NULL) {
+        Py_DECREF(ns);
+        return NULL;
+    }
+
+    PyObject_GC_Track(ns);
+    return (PyObject *)ns;
+}
+
+
+static int
+namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
+{
+    /* ignore args if it's NULL or empty */
+    if (args != NULL) {
+        Py_ssize_t argcount = PyObject_Size(args);
+        if (argcount < 0)
+            return argcount;
+        else if (argcount > 0) {
+            PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+            return -1;
+        }
+    }
+    if (kwds == NULL)
+        return 0;
+    return PyDict_Update(ns->ns_dict, kwds);
+}
+
+
+static void
+namespace_dealloc(_PyNamespaceObject *ns)
+{
+    PyObject_GC_UnTrack(ns);
+    Py_CLEAR(ns->ns_dict);
+    Py_TYPE(ns)->tp_free((PyObject *)ns);
+}
+
+
+static PyObject *
+namespace_repr(_PyNamespaceObject *ns)
+{
+    int i, loop_error = 0;
+    PyObject *pairs = NULL, *d = NULL, *keys = NULL, *keys_iter = NULL;
+    PyObject *key;
+    PyObject *separator, *pairsrepr, *repr = NULL;
+
+    i = Py_ReprEnter((PyObject *)ns);
+    if (i != 0) {
+        return i > 0 ? PyUnicode_FromString("namespace(...)") : NULL;
+    }
+
+    pairs = PyList_New(0);
+    if (pairs == NULL)
+        goto error;
+
+    d = ((_PyNamespaceObject *)ns)->ns_dict;
+    assert(d != NULL);
+    Py_INCREF(d);
+
+    keys = PyDict_Keys(d);
+    if (keys == NULL)
+        goto error;
+    if (PyList_Sort(keys) != 0)
+        goto error;
+
+    keys_iter = PyObject_GetIter(keys);
+    if (keys_iter == NULL)
+        goto error;
+
+    while ((key = PyIter_Next(keys_iter)) != NULL) {
+        if (PyUnicode_Check(key) && PyUnicode_GET_SIZE(key) > 0) {
+            PyObject *value, *item;
+
+            value = PyDict_GetItem(d, key);
+            assert(value != NULL);
+
+            item = PyUnicode_FromFormat("%S=%R", key, value);
+            if (item == NULL) {
+                loop_error = 1;
+            }
+            else {
+                loop_error = PyList_Append(pairs, item);
+                Py_DECREF(item);
+            }
+        }
+
+        Py_DECREF(key);
+        if (loop_error)
+            goto error;
+    }
+
+    separator = PyUnicode_FromString(", ");
+    if (separator == NULL)
+        goto error;
+
+    pairsrepr = PyUnicode_Join(separator, pairs);
+    Py_DECREF(separator);
+    if (pairsrepr == NULL)
+        goto error;
+
+    repr = PyUnicode_FromFormat("%s(%S)",
+                                ((PyObject *)ns)->ob_type->tp_name, pairsrepr);
+    Py_DECREF(pairsrepr);
+
+error:
+    Py_XDECREF(pairs);
+    Py_XDECREF(d);
+    Py_XDECREF(keys);
+    Py_XDECREF(keys_iter);
+    Py_ReprLeave((PyObject *)ns);
+
+    return repr;
+}
+
+
+static int
+namespace_traverse(_PyNamespaceObject *ns, visitproc visit, void *arg)
+{
+    Py_VISIT(ns->ns_dict);
+    return 0;
+}
+
+
+static int
+namespace_clear(_PyNamespaceObject *ns)
+{
+    Py_CLEAR(ns->ns_dict);
+    return 0;
+}
+
+
+PyDoc_STRVAR(namespace_doc,
+"A simple attribute-based namespace.\n\
+\n\
+namespace(**kwargs)");
+
+PyTypeObject _PyNamespace_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "namespace",                                /* tp_name */
+    sizeof(_PyNamespaceObject),                 /* tp_size */
+    0,                                          /* tp_itemsize */
+    (destructor)namespace_dealloc,              /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    (reprfunc)namespace_repr,                   /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    PyObject_GenericSetAttr,                    /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,                    /* tp_flags */
+    namespace_doc,                              /* tp_doc */
+    (traverseproc)namespace_traverse,           /* tp_traverse */
+    (inquiry)namespace_clear,                   /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    namespace_members,                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    offsetof(_PyNamespaceObject, ns_dict),      /* tp_dictoffset */
+    (initproc)namespace_init,                   /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    (newfunc)namespace_new,                     /* tp_new */
+    PyObject_GC_Del,                            /* tp_free */
+};
+
+
+PyObject *
+_PyNamespace_New(PyObject *kwds)
+{
+    PyObject *ns = namespace_new(&_PyNamespace_Type, NULL, NULL);
+    if (ns == NULL)
+        return NULL;
+
+    if (kwds == NULL)
+        return ns;
+    if (PyDict_Update(((_PyNamespaceObject *)ns)->ns_dict, kwds) != 0) {
+        Py_DECREF(ns);
+        return NULL;
+    }
+
+    return (PyObject *)ns;
+}

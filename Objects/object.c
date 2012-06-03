@@ -1707,6 +1707,9 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&PyZip_Type) < 0)
         Py_FatalError("Can't initialize zip type");
+
+    if (PyType_Ready(&_PyNamespace_Type) < 0)
+        Py_FatalError("Can't initialize namespace type");
 }
 
 
