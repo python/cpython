@@ -1855,7 +1855,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 treebuilder_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"element_factory", NULL};
+    static char *kwlist[] = {"element_factory", 0};
     PyObject *element_factory = NULL;
     TreeBuilderObject *self_tb = (TreeBuilderObject *)self;
 
@@ -2762,7 +2762,7 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
     XMLParserObject *self_xp = (XMLParserObject *)self;
     PyObject *target = NULL, *html = NULL;
     char *encoding = NULL;
-    static char *kwlist[] = {"html", "target", "encoding"};
+    static char *kwlist[] = {"html", "target", "encoding", 0};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOz:XMLParser", kwlist,
                                      &html, &target, &encoding)) {
