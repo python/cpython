@@ -354,6 +354,15 @@ class AutoCompleteWindow:
             # A modifier key, so ignore
             return
 
+        elif event.char:
+            # Regular character with a non-length-1 keycode
+            self._change_start(self.start + event.char)
+            self.lasttypedstart = self.start
+            self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
+            self.listbox.select_set(self._binary_search(self.start))
+            self._selection_changed()
+            return "break"
+
         else:
             # Unknown event, close the window and let it through.
             self.hide_window()
