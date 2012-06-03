@@ -354,7 +354,7 @@ class AutoCompleteWindow:
             # A modifier key, so ignore
             return
 
-        elif event.char:
+        elif event.char and event.char >= ' ':
             # Regular character with a non-length-1 keycode
             self._change_start(self.start + event.char)
             self.lasttypedstart = self.start
