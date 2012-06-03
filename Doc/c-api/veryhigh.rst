@@ -95,12 +95,6 @@ the same library that the Python runtime is using.
    leaving *closeit* set to ``0`` and *flags* set to *NULL*.
 
 
-.. c:function:: int PyRun_SimpleFileFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
-
-   This is a simplified interface to :c:func:`PyRun_SimpleFileExFlags` below,
-   leaving *closeit* set to ``0``.
-
-
 .. c:function:: int PyRun_SimpleFileEx(FILE *fp, const char *filename, int closeit)
 
    This is a simplified interface to :c:func:`PyRun_SimpleFileExFlags` below,

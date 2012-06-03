@@ -1615,7 +1615,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    ISO-8859-1 if it contains non-ASCII characters".
 
 
-.. c:function:: int PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
+.. c:function:: PyObject* PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
 
    Rich compare two unicode strings and return one of the following:
 
