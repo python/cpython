@@ -1,5 +1,8 @@
-What's New in IDLE 3.3?
+What's New in IDLE 3.3.0?
 =========================
+
+- Issue #14937: Perform auto-completion of filenames in strings even for
+  non-ASCII filenames.
 
 - Issue #8515: Set __file__ when run file in IDLE.
   Initial patch by Bruce Frederiksen.

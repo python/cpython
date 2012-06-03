@@ -124,13 +124,20 @@ class AutoComplete:
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
         if hp.is_in_string() and (not mode or mode==COMPLETE_FILES):
+            # Find the beginning of the string
+            # fetch_completions will look at the file system to determine whether the
+            # string value constitutes an actual file name
+            # XXX could consider raw strings here and unescape the string value if it's
+            # not raw.
             self._remove_autocomplete_window()
             mode = COMPLETE_FILES
-            while i and curline[i-1] in FILENAME_CHARS:
+            # Find last separator or string start
+            while i and curline[i-1] not in "'\"" + SEPS:
                 i -= 1
             comp_start = curline[i:j]
             j = i
-            while i and curline[i-1] in FILENAME_CHARS + SEPS:
+            # Find string start
+            while i and curline[i-1] not in "'\"":
                 i -= 1
             comp_what = curline[i:j]
         elif hp.is_in_code() and (not mode or mode==COMPLETE_ATTRIBUTES):
