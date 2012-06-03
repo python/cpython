@@ -15,6 +15,7 @@ from test import support
 import contextlib
 import mmap
 import uuid
+import stat
 from test.script_helper import assert_python_ok
 
 # Detect whether we're on a Linux system that uses the (now outdated
@@ -574,12 +575,39 @@ class MakedirTests(unittest.TestCase):
         path = os.path.join(support.TESTFN, 'dir1')
         mode = 0o777
         old_mask = os.umask(0o022)
-        os.makedirs(path, mode)
-        self.assertRaises(OSError, os.makedirs, path, mode)
-        self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
-        self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
-        os.makedirs(path, mode=mode, exist_ok=True)
-        os.umask(old_mask)
+        try:
+            os.makedirs(path, mode)
+            self.assertRaises(OSError, os.makedirs, path, mode)
+            self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
+            self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
+            os.makedirs(path, mode=mode, exist_ok=True)
+        finally:
+            os.umask(old_mask)
+
+    def test_exist_ok_s_isgid_directory(self):
+        path = os.path.join(support.TESTFN, 'dir1')
+        S_ISGID = stat.S_ISGID
+        mode = 0o777
+        old_mask = os.umask(0o022)
+        try:
+            existing_testfn_mode = stat.S_IMODE(
+                    os.lstat(support.TESTFN).st_mode)
+            os.chmod(support.TESTFN, existing_testfn_mode | S_ISGID)
+            if (os.lstat(support.TESTFN).st_mode & S_ISGID != S_ISGID):
+                raise unittest.SkipTest('No support for S_ISGID dir mode.')
+            # The os should apply S_ISGID from the parent dir for us, but
+            # this test need not depend on that behavior.  Be explicit.
+            os.makedirs(path, mode | S_ISGID)
+            # http://bugs.python.org/issue14992
+            # Should not fail when the bit is already set.
+            os.makedirs(path, mode, exist_ok=True)
+            # remove the bit.
+            os.chmod(path, stat.S_IMODE(os.lstat(path).st_mode) & ~S_ISGID)
+            with self.assertRaises(OSError):
+                # Should fail when the bit is not already set when demanded.
+                os.makedirs(path, mode | S_ISGID, exist_ok=True)
+        finally:
+            os.umask(old_mask)
 
     def test_exist_ok_existing_regular_file(self):
         base = support.TESTFN
