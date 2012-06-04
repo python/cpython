@@ -374,6 +374,21 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(TESTFN, "a") as f:
                 pass
 
+    def test_init_mode(self):
+        with TempFile(TESTFN):
+            with LZMAFile(TESTFN, "r"):
+                pass
+            with LZMAFile(TESTFN, "rb"):
+                pass
+            with LZMAFile(TESTFN, "w"):
+                pass
+            with LZMAFile(TESTFN, "wb"):
+                pass
+            with LZMAFile(TESTFN, "a"):
+                pass
+            with LZMAFile(TESTFN, "ab"):
+                pass
+
     def test_init_bad_mode(self):
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(COMPRESSED_XZ), (3, "x"))
@@ -382,11 +397,11 @@ class FileTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(COMPRESSED_XZ), "x")
         with self.assertRaises(ValueError):
-            LZMAFile(BytesIO(COMPRESSED_XZ), "rb")
+            LZMAFile(BytesIO(COMPRESSED_XZ), "rt")
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(COMPRESSED_XZ), "r+")
         with self.assertRaises(ValueError):
-            LZMAFile(BytesIO(COMPRESSED_XZ), "wb")
+            LZMAFile(BytesIO(COMPRESSED_XZ), "wt")
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(COMPRESSED_XZ), "w+")
         with self.assertRaises(ValueError):

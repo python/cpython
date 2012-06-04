@@ -54,7 +54,8 @@ class LZMAFile(io.BufferedIOBase):
         be an existing file object to read from or write to.
 
         mode can be "r" for reading (default), "w" for (over)writing, or
-        "a" for appending.
+        "a" for appending. These can equivalently be given as "rb", "wb",
+        and "ab" respectively.
 
         format specifies the container format to use for the file.
         If mode is "r", this defaults to FORMAT_AUTO. Otherwise, the
@@ -93,7 +94,7 @@ class LZMAFile(io.BufferedIOBase):
         self._pos = 0
         self._size = -1
 
-        if mode == "r":
+        if mode in ("r", "rb"):
             if check != -1:
                 raise ValueError("Cannot specify an integrity check "
                                  "when opening a file for reading")
@@ -109,7 +110,7 @@ class LZMAFile(io.BufferedIOBase):
             self._init_args = {"format":format, "filters":filters}
             self._decompressor = LZMADecompressor(**self._init_args)
             self._buffer = None
-        elif mode in ("w", "a"):
+        elif mode in ("w", "wb", "a", "ab"):
             if format is None:
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
@@ -119,7 +120,8 @@ class LZMAFile(io.BufferedIOBase):
             raise ValueError("Invalid mode: {!r}".format(mode))
 
         if isinstance(filename, (str, bytes)):
-            mode += "b"
+            if "b" not in mode:
+                mode += "b"
             self._fp = open(filename, mode)
             self._closefp = True
             self._mode = mode_code
