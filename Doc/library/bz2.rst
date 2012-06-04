@@ -14,7 +14,8 @@ decompressing data using the bzip2 compression algorithm.
 
 The :mod:`bz2` module contains:
 
-* The :class:`BZ2File` class for reading and writing compressed files.
+* The :func:`.open` function and :class:`BZ2File` class for reading and
+  writing compressed files.
 * The :class:`BZ2Compressor` and :class:`BZ2Decompressor` classes for
   incremental (de)compression.
 * The :func:`compress` and :func:`decompress` functions for one-shot
@@ -26,9 +27,37 @@ All of the classes in this module may safely be accessed from multiple threads.
 (De)compression of files
 ------------------------
 
+.. function:: open(filename, mode='r', compresslevel=9, encoding=None, errors=None, newline=None)
+
+   Open a bzip2-compressed file in binary or text mode, returning a :term:`file
+   object`.
+
+   As with the constructor for :class:`BZ2File`, the *filename* argument can be
+   an actual filename (a :class:`str` or :class:`bytes` object), or an existing
+   file object to read from or write to.
+
+   The *mode* argument can be any of ``'r'``, ``'rb'``, ``'w'``, ``'wb'``,
+   ``'a'``, or ``'ab'`` for binary mode, or ``'rt'``, ``'wt'``, or ``'at'`` for
+   text mode. The default is ``'rb'``.
+
+   The *compresslevel* argument is an integer from 1 to 9, as for the
+   :class:`BZ2File` constructor.
+
+   For binary mode, this function is equivalent to the :class:`BZ2File`
+   constructor: ``BZ2File(filename, mode, compresslevel=compresslevel)``. In
+   this case, the *encoding*, *errors* and *newline* arguments must not be
+   provided.
+
+   For text mode, a :class:`BZ2File` object is created, and wrapped in an
+   :class:`io.TextIOWrapper` instance with the specified encoding, error
+   handling behavior, and line ending(s).
+
+   .. versionadded:: 3.3
+
+
 .. class:: BZ2File(filename, mode='r', buffering=None, compresslevel=9)
 
-   Open a bzip2-compressed file.
+   Open a bzip2-compressed file in binary mode.
 
    If *filename* is a :class:`str` or :class:`bytes` object, open the named file
    directly. Otherwise, *filename* should be a :term:`file object`, which will
