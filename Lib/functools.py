@@ -142,29 +142,34 @@ except ImportError:
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
-class _CacheKey(list):
-    'Make a cache key from optionally typed positional and keyword arguments'
-
+class _HashedSeq(list):
     __slots__ = 'hashvalue'
 
-    def __init__(self, args, kwds, typed,
-                 kwd_mark = (object(),),
-                 sorted=sorted, tuple=tuple, type=type, hash=hash):
-        key = args
-        if kwds:
-            sorted_items = sorted(kwds.items())
-            key += kwd_mark
-            for item in sorted_items:
-                key += item
-        if typed:
-            key += tuple(type(v) for v in args)
-            if kwds:
-                key += tuple(type(v) for k, v in sorted_items)
-        self[:] = key
-        self.hashvalue = hash(key)  # so we only have to hash just once
+    def __init__(self, tup, hash=hash):
+        self[:] = tup
+        self.hashvalue = hash(tup)
 
     def __hash__(self):
         return self.hashvalue
+
+def _make_key(args, kwds, typed,
+             kwd_mark = (object(),),
+             fasttypes = {int, str, frozenset, type(None)},
+             sorted=sorted, tuple=tuple, type=type, len=len):
+    'Make a cache key from optionally typed positional and keyword arguments'
+    key = args
+    if kwds:
+        sorted_items = sorted(kwds.items())
+        key += kwd_mark
+        for item in sorted_items:
+            key += item
+    if typed:
+        key += tuple(type(v) for v in args)
+        if kwds:
+            key += tuple(type(v) for k, v in sorted_items)
+    elif len(key) == 1 and type(key[0]) in fasttypes:
+        return key[0]
+    return _HashedSeq(key)
 
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
@@ -193,7 +198,7 @@ def lru_cache(maxsize=128, typed=False):
 
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
-    make_key = _CacheKey         # build a key from the function arguments
+    make_key = _make_key         # build a key from the function arguments
     PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
 
     def decorating_function(user_function):
