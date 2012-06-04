@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- The bz2 module now contains an open() function, allowing compressed files to
+  conveniently be opened in text mode as well as binary mode.
+
 - BZ2File.__init__() now accepts a file object as its first argument, rather
   than requiring a separate "fileobj" argument.
 
