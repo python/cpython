@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -402,6 +402,7 @@
     <ClInclude Include="..\Include\methodobject.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />
+    <ClInclude Include="..\Include\namespaceobject.h" />
     <ClInclude Include="..\Include\node.h" />
     <ClInclude Include="..\Include\object.h" />
     <ClInclude Include="..\Include\objimpl.h" />
@@ -579,6 +580,7 @@
     <ClCompile Include="..\Objects\memoryobject.c" />
     <ClCompile Include="..\Objects\methodobject.c" />
     <ClCompile Include="..\Objects\moduleobject.c" />
+    <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Objects\object.c" />
     <ClCompile Include="..\Objects\obmalloc.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
