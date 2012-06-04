@@ -30,7 +30,9 @@ except ImportError:
     threading = None
 from test.script_helper import assert_python_ok
 
-os.stat_float_times(True)
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    os.stat_float_times(True)
 st = os.stat(__file__)
 stat_supports_subsecond = (
     # check if float and int timestamps are different
@@ -388,7 +390,9 @@ class StatAttributeTests(unittest.TestCase):
         filename = self.fname
         os.utime(filename, (0, 0))
         set_time_func(filename, atime, mtime)
-        os.stat_float_times(True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            os.stat_float_times(True)
         st = os.stat(filename)
         self.assertAlmostEqual(st.st_atime, atime, places=3)
         self.assertAlmostEqual(st.st_mtime, mtime, places=3)

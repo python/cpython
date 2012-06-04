@@ -2128,6 +2128,8 @@ Files and Directories
    are processed, this application should turn the feature off until the library
    has been corrected.
 
+   .. deprecated:: 3.3
+
 
 .. function:: statvfs(path)
 

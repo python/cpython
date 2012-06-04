@@ -1721,6 +1721,10 @@ stat_float_times(PyObject* self, PyObject *args)
     int newval = -1;
     if (!PyArg_ParseTuple(args, "|i:stat_float_times", &newval))
         return NULL;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "stat_float_times() is deprecated",
+                     1))
+        return NULL;
     if (newval == -1)
         /* Return old value */
         return PyBool_FromLong(_stat_float_times);
@@ -3605,7 +3609,7 @@ typedef struct {
     PyObject *args;
     PyObject *kwargs;
 
-    /* input/output */    
+    /* input/output */
     PyObject **path;
 
     /* output only */
@@ -3655,7 +3659,7 @@ typedef struct {
     timet[1] = ua.mtime_s
 
 
-/* 
+/*
  * utime_read_time_arguments() processes arguments for the utime
  * family of functions.
  */
