@@ -160,8 +160,20 @@ def makedirs(name, mode=0o777, exist_ok=False):
     try:
         mkdir(name, mode)
     except OSError as e:
-        if not (e.errno == errno.EEXIST and exist_ok and path.isdir(name) and
-                st.S_IMODE(lstat(name).st_mode) == _get_masked_mode(mode)):
+        dir_exists = path.isdir(name)
+        expected_mode = _get_masked_mode(mode)
+        if dir_exists:
+            # S_ISGID is automatically copied by the OS from parent to child
+            # directories on mkdir.  Don't consider it being set to be a mode
+            # mismatch as mkdir does not unset it when not specified in mode.
+            actual_mode = st.S_IMODE(lstat(name).st_mode) & ~st.S_ISGID
+        else:
+            actual_mode = -1
+        if not (e.errno == errno.EEXIST and exist_ok and dir_exists and
+                actual_mode == expected_mode):
+            if dir_exists and actual_mode != expected_mode:
+                e.strerror += ' (mode %o != expected mode %o)' % (
+                        actual_mode, expected_mode)
             raise
 
 def removedirs(name):
