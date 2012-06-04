@@ -972,6 +972,22 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(self.ipv4_address in dummy)
         self.assertTrue(ip2 in dummy)
 
+    def testIPv6NetworkHelpers(self):
+        net = self.ipv6_network
+        self.assertEqual('2001:658:22a:cafe::/64', net.with_prefixlen)
+        self.assertEqual('2001:658:22a:cafe::/ffff:ffff:ffff:ffff::',
+                         net.with_netmask)
+        self.assertEqual('2001:658:22a:cafe::/::ffff:ffff:ffff:ffff',
+                         net.with_hostmask)
+        self.assertEqual('2001:658:22a:cafe::/64', str(net))
+
+    def testIPv4NetworkHelpers(self):
+        net = self.ipv4_network
+        self.assertEqual('1.2.3.0/24', net.with_prefixlen)
+        self.assertEqual('1.2.3.0/255.255.255.0', net.with_netmask)
+        self.assertEqual('1.2.3.0/0.0.0.255', net.with_hostmask)
+        self.assertEqual('1.2.3.0/24', str(net))
+
     def testCopyConstructor(self):
         addr1 = ipaddress.ip_network('10.1.1.0/24')
         addr2 = ipaddress.ip_network(addr1)

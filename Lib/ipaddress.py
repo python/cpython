@@ -578,6 +578,10 @@ class _BaseNetwork(_IPAddressBase):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, str(self))
 
+    def __str__(self):
+        return '%s/%d' % (str(self.network_address),
+                          self.prefixlen)
+
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
 
@@ -663,9 +667,6 @@ class _BaseNetwork(_IPAddressBase):
             return NotImplemented
         return not eq
 
-    def __str__(self):
-        return '%s/%s' % (self.ip, self._prefixlen)
-
     def __hash__(self):
         return hash(int(self.network_address) ^ int(self.netmask))
 
@@ -708,15 +709,15 @@ class _BaseNetwork(_IPAddressBase):
 
     @property
     def with_prefixlen(self):
-        return '%s/%d' % (str(self.ip), self._prefixlen)
+        return '%s/%d' % (str(self.network_address), self._prefixlen)
 
     @property
     def with_netmask(self):
-        return '%s/%s' % (str(self.ip), str(self.netmask))
+        return '%s/%s' % (str(self.network_address), str(self.netmask))
 
     @property
     def with_hostmask(self):
-        return '%s/%s' % (str(self.ip), str(self.hostmask))
+        return '%s/%s' % (str(self.network_address), str(self.hostmask))
 
     @property
     def num_addresses(self):
@@ -1447,10 +1448,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         """The binary representation of this address."""
         return v4_int_to_packed(self.network_address)
 
-    def __str__(self):
-        return '%s/%d' % (str(self.network_address),
-                          self.prefixlen)
-
     def _is_valid_netmask(self, netmask):
         """Verify that the netmask is valid.
 
@@ -1497,18 +1494,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         if parts[0] < parts[-1]:
             return True
         return False
-
-    @property
-    def with_prefixlen(self):
-        return '%s/%d' % (str(self.network_address), self._prefixlen)
-
-    @property
-    def with_netmask(self):
-        return '%s/%s' % (str(self.network_address), str(self.netmask))
-
-    @property
-    def with_hostmask(self):
-        return '%s/%s' % (str(self.network_address), str(self.hostmask))
 
 
 class _BaseV6:
@@ -2108,10 +2093,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
 
-    def __str__(self):
-        return '%s/%d' % (str(self.network_address),
-                          self.prefixlen)
-
     def _is_valid_netmask(self, prefixlen):
         """Verify that the netmask/prefixlen is valid.
 
@@ -2128,15 +2109,3 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         except ValueError:
             return False
         return 0 <= prefixlen <= self._max_prefixlen
-
-    @property
-    def with_prefixlen(self):
-        return '%s/%d' % (str(self.network_address), self._prefixlen)
-
-    @property
-    def with_netmask(self):
-        return '%s/%s' % (str(self.network_address), str(self.netmask))
-
-    @property
-    def with_hostmask(self):
-        return '%s/%s' % (str(self.network_address), str(self.hostmask))
