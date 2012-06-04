@@ -935,6 +935,106 @@ class FileTestCase(unittest.TestCase):
         self.assertRaises(ValueError, f.tell)
 
 
+class OpenTestCase(unittest.TestCase):
+
+    def test_binary_modes(self):
+        with lzma.open(BytesIO(COMPRESSED_XZ), "rb") as f:
+            self.assertEqual(f.read(), INPUT)
+        with BytesIO() as bio:
+            with lzma.open(bio, "wb") as f:
+                f.write(INPUT)
+            file_data = lzma.decompress(bio.getvalue())
+            self.assertEqual(file_data, INPUT)
+            with lzma.open(bio, "ab") as f:
+                f.write(INPUT)
+            file_data = lzma.decompress(bio.getvalue())
+            self.assertEqual(file_data, INPUT * 2)
+
+    def test_text_modes(self):
+        uncompressed = INPUT.decode("ascii")
+        uncompressed_raw = uncompressed.replace("\n", os.linesep)
+        with lzma.open(BytesIO(COMPRESSED_XZ), "rt") as f:
+            self.assertEqual(f.read(), uncompressed)
+        with BytesIO() as bio:
+            with lzma.open(bio, "wt") as f:
+                f.write(uncompressed)
+            file_data = lzma.decompress(bio.getvalue()).decode("ascii")
+            self.assertEqual(file_data, uncompressed_raw)
+            with lzma.open(bio, "at") as f:
+                f.write(uncompressed)
+            file_data = lzma.decompress(bio.getvalue()).decode("ascii")
+            self.assertEqual(file_data, uncompressed_raw * 2)
+
+    def test_filename(self):
+        with TempFile(TESTFN):
+            with lzma.open(TESTFN, "wb") as f:
+                f.write(INPUT)
+            with open(TESTFN, "rb") as f:
+                file_data = lzma.decompress(f.read())
+                self.assertEqual(file_data, INPUT)
+            with lzma.open(TESTFN, "rb") as f:
+                self.assertEqual(f.read(), INPUT)
+            with lzma.open(TESTFN, "ab") as f:
+                f.write(INPUT)
+            with lzma.open(TESTFN, "rb") as f:
+                self.assertEqual(f.read(), INPUT * 2)
+
+    def test_bad_params(self):
+        # Test invalid parameter combinations.
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "")
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "x")
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "rbt")
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "rb", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "rb", errors="ignore")
+        with self.assertRaises(ValueError):
+            lzma.open(TESTFN, "rb", newline="\n")
+
+    def test_format_and_filters(self):
+        # Test non-default format and filter chain.
+        options = {"format": lzma.FORMAT_RAW, "filters": FILTERS_RAW_1}
+        with lzma.open(BytesIO(COMPRESSED_RAW_1), "rb", **options) as f:
+            self.assertEqual(f.read(), INPUT)
+        with BytesIO() as bio:
+            with lzma.open(bio, "wb", **options) as f:
+                f.write(INPUT)
+            file_data = lzma.decompress(bio.getvalue(), **options)
+            self.assertEqual(file_data, INPUT)
+
+    def test_encoding(self):
+        # Test non-default encoding.
+        uncompressed = INPUT.decode("ascii")
+        uncompressed_raw = uncompressed.replace("\n", os.linesep)
+        with BytesIO() as bio:
+            with lzma.open(bio, "wt", encoding="utf-16-le") as f:
+                f.write(uncompressed)
+            file_data = lzma.decompress(bio.getvalue()).decode("utf-16-le")
+            self.assertEqual(file_data, uncompressed_raw)
+            bio.seek(0)
+            with lzma.open(bio, "rt", encoding="utf-16-le") as f:
+                self.assertEqual(f.read(), uncompressed)
+
+    def test_encoding_error_handler(self):
+        # Test wih non-default encoding error handler.
+        with BytesIO(lzma.compress(b"foo\xffbar")) as bio:
+            with lzma.open(bio, "rt", encoding="ascii", errors="ignore") as f:
+                self.assertEqual(f.read(), "foobar")
+
+    def test_newline(self):
+        # Test with explicit newline (universal newline mode disabled).
+        text = INPUT.decode("ascii")
+        with BytesIO() as bio:
+            with lzma.open(bio, "wt", newline="\n") as f:
+                f.write(text)
+            bio.seek(0)
+            with lzma.open(bio, "rt", newline="\r") as f:
+                self.assertEqual(f.readlines(), [text])
+
+
 class MiscellaneousTestCase(unittest.TestCase):
 
     def test_is_check_supported(self):
@@ -1385,6 +1485,7 @@ def test_main():
         CompressorDecompressorTestCase,
         CompressDecompressFunctionTestCase,
         FileTestCase,
+        OpenTestCase,
         MiscellaneousTestCase,
     )
 
