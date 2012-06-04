@@ -1130,7 +1130,7 @@ class _BaseV4:
         """
         unspecified_address = IPv4Address('0.0.0.0')
         if isinstance(self, _BaseAddress):
-            return self in unspecified_address
+            return self == unspecified_address
         return (self.network_address == self.broadcast_address ==
                 unspecified_address)
 
