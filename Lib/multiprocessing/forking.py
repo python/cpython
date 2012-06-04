@@ -209,6 +209,9 @@ else:
         _tls = _thread._local()
 
         def __init__(self, process_obj):
+            cmd = ' '.join('"%s"' % x for x in get_command_line())
+            prep_data = get_preparation_data(process_obj._name)
+
             # create pipe for communication with child
             rfd, wfd = os.pipe()
 
@@ -216,31 +219,30 @@ else:
             rhandle = duplicate(msvcrt.get_osfhandle(rfd), inheritable=True)
             os.close(rfd)
 
-            # start process
-            cmd = get_command_line() + [rhandle]
-            cmd = ' '.join('"%s"' % x for x in cmd)
-            hp, ht, pid, tid = _winapi.CreateProcess(
-                _python_exe, cmd, None, None, 1, 0, None, None, None
-                )
-            _winapi.CloseHandle(ht)
-            close(rhandle)
+            with open(wfd, 'wb', closefd=True) as to_child:
+                # start process
+                try:
+                    hp, ht, pid, tid = _winapi.CreateProcess(
+                        _python_exe, cmd + (' %s' % rhandle),
+                        None, None, 1, 0, None, None, None
+                        )
+                    _winapi.CloseHandle(ht)
+                finally:
+                    close(rhandle)
 
-            # set attributes of self
-            self.pid = pid
-            self.returncode = None
-            self._handle = hp
-            self.sentinel = int(hp)
+                # set attributes of self
+                self.pid = pid
+                self.returncode = None
+                self._handle = hp
+                self.sentinel = int(hp)
 
-            # send information to child
-            prep_data = get_preparation_data(process_obj._name)
-            to_child = os.fdopen(wfd, 'wb')
-            Popen._tls.process_handle = int(hp)
-            try:
-                dump(prep_data, to_child, HIGHEST_PROTOCOL)
-                dump(process_obj, to_child, HIGHEST_PROTOCOL)
-            finally:
-                del Popen._tls.process_handle
-                to_child.close()
+                # send information to child
+                Popen._tls.process_handle = int(hp)
+                try:
+                    dump(prep_data, to_child, HIGHEST_PROTOCOL)
+                    dump(process_obj, to_child, HIGHEST_PROTOCOL)
+                finally:
+                    del Popen._tls.process_handle
 
         @staticmethod
         def thread_is_spawning():
