@@ -46,8 +46,8 @@ class BZ2File(io.BufferedIOBase):
         be opened. Otherwise, it should be a file object, which will be used to
         read or write the compressed data.
 
-        mode can be 'r' for reading (default), 'w' for (over)writing, or
-        'a' for appending.
+        mode can be 'r' for reading (default), 'w' for (over)writing, or 'a' for
+        appending. These can equivalently be given as 'rb', 'wb', and 'ab'.
 
         buffering is ignored. Its use is deprecated.
 
