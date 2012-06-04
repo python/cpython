@@ -18,8 +18,8 @@ Library
 - The bz2 module now contains an open() function, allowing compressed files to
   conveniently be opened in text mode as well as binary mode.
 
-- BZ2File.__init__() now accepts a file object as its first argument, rather
-  than requiring a separate "fileobj" argument.
+- BZ2File.__init__() and LZMAFile.__init__() now accept a file object as their
+  first argument, rather than requiring a separate "fileobj" argument.
 
 - gzip.open() now accepts file objects as well as filenames.
 
