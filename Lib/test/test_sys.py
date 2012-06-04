@@ -600,7 +600,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.hexversion, hexversion)
 
         # PEP 421 requires that .name be lower case.
-        self.assertEqual(sys.implementation.name, 
+        self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
 
