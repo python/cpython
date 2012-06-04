@@ -29,18 +29,20 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
-.. class:: LZMAFile(filename=None, mode="r", \*, fileobj=None, format=None, check=-1, preset=None, filters=None)
+.. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
 
-   Open an LZMA-compressed file.
+   Open an LZMA-compressed file in binary mode.
 
-   An :class:`LZMAFile` can wrap an existing :term:`file object` (given by
-   *fileobj*), or operate directly on a named file (named by *filename*).
-   Exactly one of these two parameters should be provided. If *fileobj* is
-   provided, it is not closed when the :class:`LZMAFile` is closed.
+   An :class:`LZMAFile` can wrap an already-open :term:`file object`, or operate
+   directly on a named file. The *filename* argument specifies either the file
+   object to wrap, or the name of the file to open (as a :class:`str` or
+   :class:`bytes` object). When wrapping an existing file object, the wrapped
+   file will not be closed when the :class:`LZMAFile` is closed.
 
    The *mode* argument can be either ``"r"`` for reading (default), ``"w"`` for
-   overwriting, or ``"a"`` for appending. If *fileobj* is provided, a mode of
-   ``"w"`` does not truncate the file, and is instead equivalent to ``"a"``.
+   overwriting, or ``"a"`` for appending. If *filename* is an existing file
+   object, a mode of ``"w"`` does not truncate the file, and is instead
+   equivalent to ``"a"``.
 
    When opening a file for reading, the input file may be the concatenation of
    multiple separate compressed streams. These are transparently decoded as a
@@ -360,7 +362,7 @@ Writing compressed data to an already-open file::
    import lzma
    with open("file.xz", "wb") as f:
        f.write(b"This data will not be compressed\n")
-       with lzma.LZMAFile(fileobj=f, mode="w") as lzf:
+       with lzma.LZMAFile(f, "w") as lzf:
            lzf.write(b"This *will* be compressed\n")
        f.write(b"Not compressed\n")
 

@@ -1681,8 +1681,7 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("lzma module is not available")
 
-        fileobj = lzma.LZMAFile(filename=name if fileobj is None else None,
-                mode=mode, fileobj=fileobj, preset=preset)
+        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
