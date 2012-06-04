@@ -18,10 +18,11 @@ __all__ = [
     "MODE_FAST", "MODE_NORMAL", "PRESET_DEFAULT", "PRESET_EXTREME",
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
-    "compress", "decompress", "is_check_supported",
+    "open", "compress", "decompress", "is_check_supported",
     "encode_filter_properties", "decode_filter_properties",
 ]
 
+import builtins
 import io
 from _lzma import *
 
@@ -122,7 +123,7 @@ class LZMAFile(io.BufferedIOBase):
         if isinstance(filename, (str, bytes)):
             if "b" not in mode:
                 mode += "b"
-            self._fp = open(filename, mode)
+            self._fp = builtins.open(filename, mode)
             self._closefp = True
             self._mode = mode_code
         elif hasattr(filename, "read") or hasattr(filename, "write"):
@@ -368,6 +369,51 @@ class LZMAFile(io.BufferedIOBase):
         """Return the current file position."""
         self._check_not_closed()
         return self._pos
+
+
+def open(filename, mode="rb", *,
+         format=None, check=-1, preset=None, filters=None,
+         encoding=None, errors=None, newline=None):
+    """Open an LZMA-compressed file in binary or text mode.
+
+    filename can be either an actual file name (given as a str or bytes object),
+    in which case the named file is opened, or it can be an existing file object
+    to read from or write to.
+
+    The mode argument can be "r", "rb" (default), "w", "wb", "a", or "ab" for
+    binary mode, or "rt", "wt" or "at" for text mode.
+
+    The format, check, preset and filters arguments specify the compression
+    settings, as for LZMACompressor, LZMADecompressor and LZMAFile.
+
+    For binary mode, this function is equivalent to the LZMAFile constructor:
+    LZMAFile(filename, mode, ...). In this case, the encoding, errors and
+    newline arguments must not be provided.
+
+    For text mode, a LZMAFile object is created, and wrapped in an
+    io.TextIOWrapper instance with the specified encoding, error handling
+    behavior, and line ending(s).
+
+    """
+    if "t" in mode:
+        if "b" in mode:
+            raise ValueError("Invalid mode: %r" % (mode,))
+    else:
+        if encoding is not None:
+            raise ValueError("Argument 'encoding' not supported in binary mode")
+        if errors is not None:
+            raise ValueError("Argument 'errors' not supported in binary mode")
+        if newline is not None:
+            raise ValueError("Argument 'newline' not supported in binary mode")
+
+    lz_mode = mode.replace("t", "")
+    binary_file = LZMAFile(filename, lz_mode, format=format, check=check,
+                           preset=preset, filters=filters)
+
+    if "t" in mode:
+        return io.TextIOWrapper(binary_file, encoding, errors, newline)
+    else:
+        return binary_file
 
 
 def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None):
