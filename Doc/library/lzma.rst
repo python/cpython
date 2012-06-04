@@ -29,6 +29,35 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
+.. function:: open(filename, mode="rb", \*, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
+
+   Open an LZMA-compressed file in binary or text mode, returning a :term:`file
+   object`.
+
+   The *filename* argument can be either an actual file name (given as a
+   :class:`str` or :class:`bytes` object), in which case the named file is
+   opened, or it can be an existing file object to read from or write to.
+
+   The *mode* argument can be any of ``"r"``, ``"rb"``, ``"w"``, ``"wb"``,
+   ``"a"`` or ``"ab"`` for binary mode, or ``"rt"``, ``"wt"``, or ``"at"`` for
+   text mode. The default is ``"rb"``.
+
+   When opening a file for reading, the *format* and *filters* arguments have
+   the same meanings as for :class:`LZMADecompressor`. In this case, the *check*
+   and *preset* arguments should not be used.
+
+   When opening a file for writing, the *format*, *check*, *preset* and
+   *filters* arguments have the same meanings as for :class:`LZMACompressor`.
+
+   For binary mode, this function is equivalent to the :class:`LZMAFile`
+   constructor: ``LZMAFile(filename, mode, ...)``. In this case, the *encoding*,
+   *errors* and *newline* arguments must not be provided.
+
+   For text mode, a :class:`LZMAFile` object is created, and wrapped in an
+   :class:`io.TextIOWrapper` instance with the specified encoding, error
+   handling behavior, and line ending(s).
+
+
 .. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
 
    Open an LZMA-compressed file in binary mode.
