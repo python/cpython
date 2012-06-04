@@ -216,7 +216,7 @@ class Condition(object):
 
         try:
             # wait for notification or timeout
-            ret = self._wait_semaphore.acquire(True, timeout)
+            return self._wait_semaphore.acquire(True, timeout)
         finally:
             # indicate that this thread has woken
             self._woken_count.release()
@@ -224,7 +224,6 @@ class Condition(object):
             # reacquire lock
             for i in range(count):
                 self._lock.acquire()
-            return ret
 
     def notify(self):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
