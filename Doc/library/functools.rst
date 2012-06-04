@@ -49,8 +49,9 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
-   If *maxsize* is set to None, the LRU feature is disabled and the cache
-   can grow without bound.
+   If *maxsize* is set to None, the LRU feature is disabled and the cache can
+   grow without bound.  The LRU feature performs best when *maxsize* is a
+   power-of-two.
 
    If *typed* is set to True, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
