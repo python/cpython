@@ -40,9 +40,11 @@ Reading and writing compressed files
    file will not be closed when the :class:`LZMAFile` is closed.
 
    The *mode* argument can be either ``"r"`` for reading (default), ``"w"`` for
-   overwriting, or ``"a"`` for appending. If *filename* is an existing file
-   object, a mode of ``"w"`` does not truncate the file, and is instead
-   equivalent to ``"a"``.
+   overwriting, or ``"a"`` for appending. These can equivalently be given as
+   ``"rb"``, ``"wb"``, and ``"ab"`` respectively.
+
+   If *filename* is a file object (rather than an actual file name), a mode of
+   ``"w"`` does not truncate the file, and is instead equivalent to ``"a"``.
 
    When opening a file for reading, the input file may be the concatenation of
    multiple separate compressed streams. These are transparently decoded as a
