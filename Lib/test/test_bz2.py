@@ -81,6 +81,20 @@ class BZ2FileTest(BaseTest):
         with open(self.filename, "wb") as f:
             f.write(self.DATA * streams)
 
+    def testBadArgs(self):
+        with self.assertRaises(TypeError):
+            BZ2File(123.456)
+        with self.assertRaises(ValueError):
+            BZ2File("/dev/null", "z")
+        with self.assertRaises(ValueError):
+            BZ2File("/dev/null", "rx")
+        with self.assertRaises(ValueError):
+            BZ2File("/dev/null", "rbt")
+        with self.assertRaises(ValueError):
+            BZ2File("/dev/null", compresslevel=0)
+        with self.assertRaises(ValueError):
+            BZ2File("/dev/null", compresslevel=10)
+
     def testRead(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
@@ -348,7 +362,7 @@ class BZ2FileTest(BaseTest):
     def testFileno(self):
         self.createTempFile()
         with open(self.filename, 'rb') as rawf:
-            bz2f = BZ2File(fileobj=rawf)
+            bz2f = BZ2File(rawf)
             try:
                 self.assertEqual(bz2f.fileno(), rawf.fileno())
             finally:
@@ -356,7 +370,7 @@ class BZ2FileTest(BaseTest):
         self.assertRaises(ValueError, bz2f.fileno)
 
     def testSeekable(self):
-        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        bz2f = BZ2File(BytesIO(self.DATA))
         try:
             self.assertTrue(bz2f.seekable())
             bz2f.read()
@@ -365,7 +379,7 @@ class BZ2FileTest(BaseTest):
             bz2f.close()
         self.assertRaises(ValueError, bz2f.seekable)
 
-        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        bz2f = BZ2File(BytesIO(), mode="w")
         try:
             self.assertFalse(bz2f.seekable())
         finally:
@@ -374,7 +388,7 @@ class BZ2FileTest(BaseTest):
 
         src = BytesIO(self.DATA)
         src.seekable = lambda: False
-        bz2f = BZ2File(fileobj=src)
+        bz2f = BZ2File(src)
         try:
             self.assertFalse(bz2f.seekable())
         finally:
@@ -382,7 +396,7 @@ class BZ2FileTest(BaseTest):
         self.assertRaises(ValueError, bz2f.seekable)
 
     def testReadable(self):
-        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        bz2f = BZ2File(BytesIO(self.DATA))
         try:
             self.assertTrue(bz2f.readable())
             bz2f.read()
@@ -391,7 +405,7 @@ class BZ2FileTest(BaseTest):
             bz2f.close()
         self.assertRaises(ValueError, bz2f.readable)
 
-        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        bz2f = BZ2File(BytesIO(), mode="w")
         try:
             self.assertFalse(bz2f.readable())
         finally:
@@ -399,7 +413,7 @@ class BZ2FileTest(BaseTest):
         self.assertRaises(ValueError, bz2f.readable)
 
     def testWritable(self):
-        bz2f = BZ2File(fileobj=BytesIO(self.DATA))
+        bz2f = BZ2File(BytesIO(self.DATA))
         try:
             self.assertFalse(bz2f.writable())
             bz2f.read()
@@ -408,7 +422,7 @@ class BZ2FileTest(BaseTest):
             bz2f.close()
         self.assertRaises(ValueError, bz2f.writable)
 
-        bz2f = BZ2File(fileobj=BytesIO(), mode="w")
+        bz2f = BZ2File(BytesIO(), mode="w")
         try:
             self.assertTrue(bz2f.writable())
         finally:
@@ -512,14 +526,14 @@ class BZ2FileTest(BaseTest):
 
     def testReadBytesIO(self):
         with BytesIO(self.DATA) as bio:
-            with BZ2File(fileobj=bio) as bz2f:
+            with BZ2File(bio) as bz2f:
                 self.assertRaises(TypeError, bz2f.read, None)
                 self.assertEqual(bz2f.read(), self.TEXT)
             self.assertFalse(bio.closed)
 
     def testPeekBytesIO(self):
         with BytesIO(self.DATA) as bio:
-            with BZ2File(fileobj=bio) as bz2f:
+            with BZ2File(bio) as bz2f:
                 pdata = bz2f.peek()
                 self.assertNotEqual(len(pdata), 0)
                 self.assertTrue(self.TEXT.startswith(pdata))
@@ -527,7 +541,7 @@ class BZ2FileTest(BaseTest):
 
     def testWriteBytesIO(self):
         with BytesIO() as bio:
-            with BZ2File(fileobj=bio, mode="w") as bz2f:
+            with BZ2File(bio, "w") as bz2f:
                 self.assertRaises(TypeError, bz2f.write)
                 bz2f.write(self.TEXT)
             self.assertEqual(self.decompress(bio.getvalue()), self.TEXT)
@@ -535,14 +549,14 @@ class BZ2FileTest(BaseTest):
 
     def testSeekForwardBytesIO(self):
         with BytesIO(self.DATA) as bio:
-            with BZ2File(fileobj=bio) as bz2f:
+            with BZ2File(bio) as bz2f:
                 self.assertRaises(TypeError, bz2f.seek)
                 bz2f.seek(150)
                 self.assertEqual(bz2f.read(), self.TEXT[150:])
 
     def testSeekBackwardsBytesIO(self):
         with BytesIO(self.DATA) as bio:
-            with BZ2File(fileobj=bio) as bz2f:
+            with BZ2File(bio) as bz2f:
                 bz2f.read(500)
                 bz2f.seek(-150, 1)
                 self.assertEqual(bz2f.read(), self.TEXT[500-150:])

@@ -1657,8 +1657,8 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        fileobj = bz2.BZ2File(filename=name if fileobj is None else None,
-                mode=mode, fileobj=fileobj, compresslevel=compresslevel)
+        fileobj = bz2.BZ2File(fileobj or name, mode,
+                              compresslevel=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
