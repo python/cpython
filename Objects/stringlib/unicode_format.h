@@ -898,7 +898,7 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
 
         if (field_present) {
             if (iter.str.start == iter.str.end)
-                writer->flags.overallocate = 0;
+                writer->overallocate = 0;
             if (!output_markup(&field_name, &format_spec,
                                format_spec_needs_expanding, conversion, writer,
                                args, kwargs, recursion_depth, auto_number))
