@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- BZ2File.__init__() now accepts a file object as its first argument, rather
+  than requiring a separate "fileobj" argument.
+
 - gzip.open() now accepts file objects as well as filenames.
 
 - Issue #14992: os.makedirs(path, exist_ok=True) would raise an OSError
