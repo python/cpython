@@ -170,7 +170,7 @@ class Finalize(object):
                  # Need to bind these locally because the globals can have
                  # been cleared at shutdown
                  _finalizer_registry=_finalizer_registry,
-                 sub_debug=sub_debug):
+                 sub_debug=sub_debug, getpid=os.getpid):
         '''
         Run the callback unless it has already been called or cancelled
         '''
@@ -179,7 +179,7 @@ class Finalize(object):
         except KeyError:
             sub_debug('finalizer no longer registered')
         else:
-            if self._pid != os.getpid():
+            if self._pid != getpid():
                 sub_debug('finalizer ignored because different process')
                 res = None
             else:
