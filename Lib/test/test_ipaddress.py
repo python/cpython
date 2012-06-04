@@ -837,6 +837,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('128.0.0.0').is_loopback)
 
         # test addresses
+        self.assertEqual(True, ipaddress.ip_address('0.0.0.0').is_unspecified)
         self.assertEqual(True, ipaddress.ip_address('224.1.1.1').is_multicast)
         self.assertEqual(False, ipaddress.ip_address('240.0.0.0').is_multicast)
 
