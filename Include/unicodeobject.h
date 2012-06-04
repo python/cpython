@@ -901,12 +901,10 @@ typedef struct {
     /* minimum length of the buffer when overallocation is enabled,
        see _PyUnicodeWriter_Init() */
     Py_ssize_t min_length;
-    struct {
-        unsigned char overallocate:1;
-        /* If readonly is 1, buffer is a shared string (cannot be modified)
-           and size is set to 0. */
-        unsigned char readonly:1;
-    } flags;
+    unsigned char overallocate;
+    /* If readonly is 1, buffer is a shared string (cannot be modified)
+       and size is set to 0. */
+    unsigned char readonly;
 } _PyUnicodeWriter ;
 
 /* Initialize a Unicode writer.
