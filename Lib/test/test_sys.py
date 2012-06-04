@@ -599,6 +599,10 @@ class SysModuleTest(unittest.TestCase):
                       version.serial << 0)
         self.assertEqual(sys.implementation.hexversion, hexversion)
 
+        # PEP 421 requires that .name be lower case.
+        self.assertEqual(sys.implementation.name, 
+                         sys.implementation.name.lower())
+
 
 class SizeofTest(unittest.TestCase):
 
