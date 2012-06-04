@@ -424,8 +424,21 @@ class TestOpen(BaseTest):
             file_data = gzip.decompress(f.read()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw * 2)
 
+    def test_fileobj(self):
+        uncompressed_bytes = data1 * 50
+        uncompressed_str = uncompressed_bytes.decode("ascii")
+        compressed = gzip.compress(uncompressed_bytes)
+        with gzip.open(io.BytesIO(compressed), "r") as f:
+            self.assertEqual(f.read(), uncompressed_bytes)
+        with gzip.open(io.BytesIO(compressed), "rb") as f:
+            self.assertEqual(f.read(), uncompressed_bytes)
+        with gzip.open(io.BytesIO(compressed), "rt") as f:
+            self.assertEqual(f.read(), uncompressed_str)
+
     def test_bad_params(self):
         # Test invalid parameter combinations.
+        with self.assertRaises(TypeError):
+            gzip.open(123.456)
         with self.assertRaises(ValueError):
             gzip.open(self.filename, "wbt")
         with self.assertRaises(ValueError):
