@@ -20,6 +20,9 @@ def open(filename, mode="rb", compresslevel=9,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
+    The filename argument can be an actual filename (a str or bytes object), or
+    an existing file object to read from or write to.
+
     The mode argument can be "r", "rb", "w", "wb", "a" or "ab" for binary mode,
     or "rt", "wt" or "at" for text mode. The default mode is "rb", and the
     default compresslevel is 9.
@@ -43,7 +46,15 @@ def open(filename, mode="rb", compresslevel=9,
             raise ValueError("Argument 'errors' not supported in binary mode")
         if newline is not None:
             raise ValueError("Argument 'newline' not supported in binary mode")
-    binary_file = GzipFile(filename, mode.replace("t", ""), compresslevel)
+
+    gz_mode = mode.replace("t", "")
+    if isinstance(filename, (str, bytes)):
+        binary_file = GzipFile(filename, gz_mode, compresslevel)
+    elif hasattr(filename, "read") or hasattr(filename, "write"):
+        binary_file = GzipFile(None, gz_mode, compresslevel, filename)
+    else:
+        raise TypeError("filename must be a str or bytes object, or a file")
+
     if "t" in mode:
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
