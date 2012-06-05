@@ -10,7 +10,9 @@ and networks.
 
 __version__ = '1.0'
 
+
 import struct
+
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -424,7 +426,7 @@ class _IPAddressBase:
             An integer.
 
         """
-        if not prefixlen and prefixlen != 0:
+        if prefixlen is None:
             prefixlen = self._prefixlen
         return self._ALL_ONES ^ (self._ALL_ONES >> prefixlen)
 
@@ -989,6 +991,9 @@ class _BaseV4:
     _ALL_ONES = (2**IPV4LENGTH) - 1
     _DECIMAL_DIGITS = frozenset('0123456789')
 
+    # the valid octets for host and netmasks. only useful for IPv4.
+    _valid_mask_octets = set((255, 254, 252, 248, 240, 224, 192, 128, 0))
+
     def __init__(self, address):
         self._version = 4
         self._max_prefixlen = IPV4LENGTH
@@ -1059,6 +1064,53 @@ class _BaseV4:
             octets.insert(0, str(ip_int & 0xFF))
             ip_int >>= 8
         return '.'.join(octets)
+
+    def _is_valid_netmask(self, netmask):
+        """Verify that the netmask is valid.
+
+        Args:
+            netmask: A string, either a prefix or dotted decimal
+              netmask.
+
+        Returns:
+            A boolean, True if the prefix represents a valid IPv4
+            netmask.
+
+        """
+        mask = netmask.split('.')
+        if len(mask) == 4:
+            if [x for x in mask if int(x) not in self._valid_mask_octets]:
+                return False
+            if [y for idx, y in enumerate(mask) if idx > 0 and
+                y > mask[idx - 1]]:
+                return False
+            return True
+        try:
+            netmask = int(netmask)
+        except ValueError:
+            return False
+        return 0 <= netmask <= self._max_prefixlen
+
+    def _is_hostmask(self, ip_str):
+        """Test if the IP string is a hostmask (rather than a netmask).
+
+        Args:
+            ip_str: A string, the potential hostmask.
+
+        Returns:
+            A boolean, True if the IP string is a hostmask.
+
+        """
+        bits = ip_str.split('.')
+        try:
+            parts = [int(x) for x in bits if int(x) in self._valid_mask_octets]
+        except ValueError:
+            return False
+        if len(parts) != len(bits):
+            return False
+        if parts[0] < parts[-1]:
+            return True
+        return False
 
     @property
     def max_prefixlen(self):
@@ -1213,9 +1265,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
 class IPv4Interface(IPv4Address):
 
-    # the valid octets for host and netmasks. only useful for IPv4.
-    _valid_mask_octets = set((255, 254, 252, 248, 240, 224, 192, 128, 0))
-
     def __init__(self, address):
         if isinstance(address, (bytes, int)):
             IPv4Address.__init__(self, address)
@@ -1247,53 +1296,6 @@ class IPv4Interface(IPv4Address):
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
-
-    def _is_valid_netmask(self, netmask):
-        """Verify that the netmask is valid.
-
-        Args:
-            netmask: A string, either a prefix or dotted decimal
-              netmask.
-
-        Returns:
-            A boolean, True if the prefix represents a valid IPv4
-            netmask.
-
-        """
-        mask = netmask.split('.')
-        if len(mask) == 4:
-            if [x for x in mask if int(x) not in self._valid_mask_octets]:
-                return False
-            if [y for idx, y in enumerate(mask) if idx > 0 and
-                y > mask[idx - 1]]:
-                return False
-            return True
-        try:
-            netmask = int(netmask)
-        except ValueError:
-            return False
-        return 0 <= netmask <= self._max_prefixlen
-
-    def _is_hostmask(self, ip_str):
-        """Test if the IP string is a hostmask (rather than a netmask).
-
-        Args:
-            ip_str: A string, the potential hostmask.
-
-        Returns:
-            A boolean, True if the IP string is a hostmask.
-
-        """
-        bits = ip_str.split('.')
-        try:
-            parts = [int(x) for x in bits if int(x) in self._valid_mask_octets]
-        except ValueError:
-            return False
-        if len(parts) != len(bits):
-            return False
-        if parts[0] < parts[-1]:
-            return True
-        return False
 
     @property
     def prefixlen(self):
@@ -1333,9 +1335,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
     # Class to use when creating address objects
     # TODO (ncoghlan): Investigate using IPv4Interface instead
     _address_class = IPv4Address
-
-    # the valid octets for host and netmasks. only useful for IPv4.
-    _valid_mask_octets = set((255, 254, 252, 248, 240, 224, 192, 128, 0))
 
     def __init__(self, address, strict=True):
 
@@ -1442,58 +1441,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
-
-    @property
-    def packed(self):
-        """The binary representation of this address."""
-        return v4_int_to_packed(self.network_address)
-
-    def _is_valid_netmask(self, netmask):
-        """Verify that the netmask is valid.
-
-        Args:
-            netmask: A string, either a prefix or dotted decimal
-              netmask.
-
-        Returns:
-            A boolean, True if the prefix represents a valid IPv4
-            netmask.
-
-        """
-        mask = netmask.split('.')
-        if len(mask) == 4:
-            if [x for x in mask if int(x) not in self._valid_mask_octets]:
-                return False
-            if [y for idx, y in enumerate(mask) if idx > 0 and
-                y > mask[idx - 1]]:
-                return False
-            return True
-        try:
-            netmask = int(netmask)
-        except ValueError:
-            return False
-        return 0 <= netmask <= self._max_prefixlen
-
-    def _is_hostmask(self, ip_str):
-        """Test if the IP string is a hostmask (rather than a netmask).
-
-        Args:
-            ip_str: A string, the potential hostmask.
-
-        Returns:
-            A boolean, True if the IP string is a hostmask.
-
-        """
-        bits = ip_str.split('.')
-        try:
-            parts = [int(x) for x in bits if int(x) in self._valid_mask_octets]
-        except ValueError:
-            return False
-        if len(parts) != len(bits):
-            return False
-        if parts[0] < parts[-1]:
-            return True
-        return False
 
 
 class _BaseV6:
@@ -1675,7 +1622,7 @@ class _BaseV6:
             ValueError: The address is bigger than 128 bits of all ones.
 
         """
-        if not ip_int and ip_int != 0:
+        if ip_int is None:
             ip_int = int(self._ip)
 
         if ip_int > self._ALL_ONES:
@@ -1719,11 +1666,6 @@ class _BaseV6:
     @property
     def max_prefixlen(self):
         return self._max_prefixlen
-
-    @property
-    def packed(self):
-        """The binary representation of this address."""
-        return v6_int_to_packed(self._ip)
 
     @property
     def version(self):
@@ -1930,6 +1872,11 @@ class IPv6Address(_BaseV6, _BaseAddress):
             raise AddressValueError('')
 
         self._ip = self._ip_int_from_string(addr_str)
+
+    @property
+    def packed(self):
+        """The binary representation of this address."""
+        return v6_int_to_packed(self._ip)
 
 
 class IPv6Interface(IPv6Address):
