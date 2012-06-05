@@ -55,6 +55,11 @@ Library
 - Issue #14963: Convert contextlib.ExitStack.__exit__ to use an iterative
   algorithm (Patch by Alon Horev)
 
+Extension Modules
+-----------------
+
+- Issue #15000: Support the "unique" x32 architecture in _posixsubprocess.c.
+
 Tests
 -----
 
