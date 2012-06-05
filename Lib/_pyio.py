@@ -1448,7 +1448,7 @@ class TextIOWrapper(TextIOBase):
     r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
-    decoded or encoded with. It defaults to locale.getpreferredencoding.
+    decoded or encoded with. It defaults to locale.getpreferredencoding(False).
 
     errors determines the strictness of encoding and decoding (see the
     codecs.register) and defaults to "strict".
@@ -1487,7 +1487,7 @@ class TextIOWrapper(TextIOBase):
                     # Importing locale may fail if Python is being built
                     encoding = "ascii"
                 else:
-                    encoding = locale.getpreferredencoding()
+                    encoding = locale.getpreferredencoding(False)
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
