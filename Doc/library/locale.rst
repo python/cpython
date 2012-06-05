@@ -475,8 +475,11 @@ in such a way that frequent locale changes may cause core dumps.  This makes the
 locale somewhat painful to use correctly.
 
 Initially, when a program is started, the locale is the ``C`` locale, no matter
-what the user's preferred locale is.  The program must explicitly say that it
-wants the user's preferred locale settings by calling ``setlocale(LC_ALL, '')``.
+what the user's preferred locale is.  There is one exception: the
+:data:`LC_CTYPE` category is changed at startup to set the current locale
+encoding to the user's preferred locale encoding. The program must explicitly
+say that it wants the user's preferred locale settings for other categories by
+calling ``setlocale(LC_ALL, '')``.
 
 It is generally a bad idea to call :func:`setlocale` in some library routine,
 since as a side effect it affects the entire program.  Saving and restoring it
