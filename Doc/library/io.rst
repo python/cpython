@@ -752,7 +752,7 @@ Text I/O
    It inherits :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getpreferredencoding`.
+   encoded with.  It defaults to ``locale.getpreferredencoding(False)``.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
@@ -783,6 +783,12 @@ Text I/O
 
    .. versionchanged:: 3.3
       The *write_through* argument has been added.
+
+   .. versionchanged:: 3.3
+      The default *encoding* is now ``locale.getpreferredencoding(False)``
+      instead of ``locale.getpreferredencoding()``. Don't change temporary the
+      locale encoding using :func:`locale.setlocale`, use the current locale
+      encoding instead of the user preferred encoding.
 
    :class:`TextIOWrapper` provides one attribute in addition to those of
    :class:`TextIOBase` and its parents:
