@@ -19,20 +19,21 @@
 # test both implementations. This file has lots of examples.
 ################################################################################
 
+import abc
+import array
+import errno
+import locale
 import os
+import pickle
+import random
+import signal
 import sys
 import time
-import array
-import random
 import unittest
-import weakref
-import abc
-import signal
-import errno
 import warnings
-import pickle
-from itertools import cycle, count
+import weakref
 from collections import deque
+from itertools import cycle, count
 from test import support
 
 import codecs
@@ -1880,6 +1881,24 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(r.getvalue(), b"XY\nZ")  # All got flushed
         t.write("A\rB")
         self.assertEqual(r.getvalue(), b"XY\nZA\rB")
+
+    def test_default_encoding(self):
+        old_environ = dict(os.environ)
+        try:
+            # try to get a user preferred encoding different than the current
+            # locale encoding to check that TextIOWrapper() uses the current
+            # locale encoding and not the user preferred encoding
+            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
+                if key in os.environ:
+                    del os.environ[key]
+
+            current_locale_encoding = locale.getpreferredencoding(False)
+            b = self.BytesIO()
+            t = self.TextIOWrapper(b)
+            self.assertEqual(t.encoding, current_locale_encoding)
+        finally:
+            os.environ.clear()
+            os.environ.update(old_environ)
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid

@@ -630,7 +630,7 @@ PyDoc_STRVAR(textiowrapper_doc,
     "Character and line based layer over a BufferedIOBase object, buffer.\n"
     "\n"
     "encoding gives the name of the encoding that the stream will be\n"
-    "decoded or encoded with. It defaults to locale.getpreferredencoding.\n"
+    "decoded or encoded with. It defaults to locale.getpreferredencoding(False).\n"
     "\n"
     "errors determines the strictness of encoding and decoding (see the\n"
     "codecs.register) and defaults to \"strict\".\n"
@@ -898,7 +898,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
         else {
           use_locale:
             self->encoding = _PyObject_CallMethodId(
-                state->locale_module, &PyId_getpreferredencoding, NULL);
+                state->locale_module, &PyId_getpreferredencoding, "O", Py_False);
             if (self->encoding == NULL) {
               catch_ImportError:
                 /*

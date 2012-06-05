@@ -800,9 +800,10 @@ are always available.  They are listed here in alphabetical order.
    already exists), ``'x'`` for exclusive creation and ``'a'`` for appending
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
-   *encoding* is not specified the encoding used is platform dependent. (For
-   reading and writing raw bytes use binary mode and leave *encoding*
-   unspecified.)  The available modes are:
+   *encoding* is not specified the encoding used is platform dependent:
+   ``locale.getpreferredencoding(False)`` is called to get the current locale
+   encoding. (For reading and writing raw bytes use binary mode and leave
+   *encoding* unspecified.)  The available modes are:
 
    ========= ===============================================================
    Character Meaning

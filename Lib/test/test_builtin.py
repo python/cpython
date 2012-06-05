@@ -1,20 +1,21 @@
 # Python test set -- built-in functions
 
-import platform
-import unittest
-import sys
-import warnings
+import ast
+import builtins
 import collections
 import io
+import locale
 import os
-import ast
-import types
-import builtins
-import random
-import traceback
-from test.support import TESTFN, unlink,  run_unittest, check_warnings
-from operator import neg
 import pickle
+import platform
+import random
+import sys
+import traceback
+import types
+import unittest
+import warnings
+from operator import neg
+from test.support import TESTFN, unlink,  run_unittest, check_warnings
 try:
     import pty, signal
 except ImportError:
@@ -960,6 +961,27 @@ class BuiltinTest(unittest.TestCase):
         finally:
             fp.close()
         unlink(TESTFN)
+
+    def test_open_default_encoding(self):
+        old_environ = dict(os.environ)
+        try:
+            # try to get a user preferred encoding different than the current
+            # locale encoding to check that open() uses the current locale
+            # encoding and not the user preferred encoding
+            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
+                if key in os.environ:
+                    del os.environ[key]
+
+            self.write_testfile()
+            current_locale_encoding = locale.getpreferredencoding(False)
+            fp = open(TESTFN, 'w')
+            try:
+                self.assertEqual(fp.encoding, current_locale_encoding)
+            finally:
+                fp.close()
+        finally:
+            os.environ.clear()
+            os.environ.update(old_environ)
 
     def test_ord(self):
         self.assertEqual(ord(' '), 32)
