@@ -175,8 +175,15 @@ _close_fds_by_brute_force(int start_fd, int end_fd, PyObject *py_fds_to_keep)
  * chooses to break compatibility with all existing binaries.  Highly Unlikely.
  */
 struct linux_dirent {
+#if defined(__x86_64__) && defined(__ILP32__)
+   /* Support the wacky x32 ABI (fake 32-bit userspace speaking to x86_64
+    * kernel interfaces) - https://sites.google.com/site/x32abi/ */
+   unsigned long long d_ino;
+   unsigned long long d_off;
+#else
    unsigned long  d_ino;        /* Inode number */
    unsigned long  d_off;        /* Offset to next linux_dirent */
+#endif
    unsigned short d_reclen;     /* Length of this linux_dirent */
    char           d_name[256];  /* Filename (null-terminated) */
 };
