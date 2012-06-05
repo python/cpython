@@ -313,13 +313,14 @@ static void create_gil(void)
 
 static void destroy_gil(void)
 {
+    /* some pthread-like implementations tie the mutex to the cond
+     * and must have the cond destroyed first.
+     */
+    COND_FINI(gil_cond);
     MUTEX_FINI(gil_mutex);
 #ifdef FORCE_SWITCHING
-    MUTEX_FINI(switch_mutex);
-#endif
-    COND_FINI(gil_cond);
-#ifdef FORCE_SWITCHING
     COND_FINI(switch_cond);
+    MUTEX_FINI(switch_mutex);
 #endif
     _Py_atomic_store_explicit(&gil_locked, -1, _Py_memory_order_release);
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
