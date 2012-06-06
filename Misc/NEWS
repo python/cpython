@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12157: Make pool.map() empty iterables correctly.  Initial
+  patch by mouad.
+
 - Issue #14962: Update text coloring in IDLE shell window after changing
   options.  Patch by Roger Serwy.
 
