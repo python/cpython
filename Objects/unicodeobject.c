@@ -12038,30 +12038,28 @@ unicode_repr(PyObject *unicode)
                (categories Z* and C* except ASCII space)
             */
             if (!Py_UNICODE_ISPRINTABLE(ch)) {
+                PyUnicode_WRITE(okind, odata, o++, '\\');
                 /* Map 8-bit characters to '\xhh' */
                 if (ch <= 0xff) {
-                    PyUnicode_WRITE(okind, odata, o++, '\\');
                     PyUnicode_WRITE(okind, odata, o++, 'x');
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
                 }
-                /* Map 21-bit characters to '\U00xxxxxx' */
-                else if (ch >= 0x10000) {
-                    PyUnicode_WRITE(okind, odata, o++, '\\');
-                    PyUnicode_WRITE(okind, odata, o++, 'U');
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 28) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 24) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 20) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 16) & 0xF]);
+                /* Map 16-bit characters to '\uxxxx' */
+                else if (ch <= 0xffff) {
+                    PyUnicode_WRITE(okind, odata, o++, 'u');
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
                 }
-                /* Map 16-bit characters to '\uxxxx' */
+                /* Map 21-bit characters to '\U00xxxxxx' */
                 else {
-                    PyUnicode_WRITE(okind, odata, o++, '\\');
-                    PyUnicode_WRITE(okind, odata, o++, 'u');
+                    PyUnicode_WRITE(okind, odata, o++, 'U');
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 28) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 24) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 20) & 0xF]);
+                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 16) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
                     PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
