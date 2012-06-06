@@ -4212,6 +4212,18 @@ mpd_qfma(mpd_t *result, const mpd_t *a, const mpd_t *b, const mpd_t *c,
     *status |= workstatus;
 }
 
+/*
+ * Schedule the optimal precision increase for the Newton iteration.
+ *   v := input operand
+ *   z_0 := initial approximation
+ *   initprec := natural number such that abs(log(v) - z_0) < 10**-initprec
+ *   maxprec := target precision
+ *
+ * For convenience the output klist contains the elements in reverse order:
+ *   klist := [k_n-1, ..., k_0], where
+ *     1) k_0 <= initprec and
+ *     2) abs(log(v) - result) < 10**(-2*k_n-1 + 1) <= 10**-maxprec.
+ */
 static inline int
 ln_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2], mpd_ssize_t maxprec,
                  mpd_ssize_t initprec)
@@ -4231,6 +4243,7 @@ ln_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2], mpd_ssize_t maxprec,
     return i-1;
 }
 
+/* The constants have been verified with both decimal.py and mpfr. */
 #ifdef CONFIG_64
 #if MPD_RDIGITS != 19
   #error "mpdecimal.c: MPD_RDIGITS must be 19."
@@ -4285,7 +4298,7 @@ static const mpd_t _mpd_ln10 = {
   (mpd_uint_t *)mpd_ln10_data
 };
 
-/* Set 'result' to ln(10), with 'prec' digits, using ROUND_HALF_EVEN. */
+/* Set 'result' to ln(10). ulp error: abs(result - log(10)) < ulp(log(10)) */
 void
 mpd_qln10(mpd_t *result, mpd_ssize_t prec, uint32_t *status)
 {
@@ -4320,7 +4333,7 @@ mpd_qln10(mpd_t *result, mpd_ssize_t prec, uint32_t *status)
     mpd_maxcontext(&varcontext);
     varcontext.round = MPD_ROUND_TRUNC;
 
-    i = ln_schedule_prec(klist, prec+2, result->digits);
+    i = ln_schedule_prec(klist, prec+2, -result->exp);
     for (; i >= 0; i--) {
         varcontext.prec = 2*klist[i]+3;
         result->flags ^= MPD_NEG;
@@ -4339,7 +4352,18 @@ mpd_qln10(mpd_t *result, mpd_ssize_t prec, uint32_t *status)
     mpd_qfinalize(result, &maxcontext, status);
 }
 
-/* Initial approximations for the ln() iteration */
+/*
+ * Initial approximations for the ln() iteration. The values have the
+ * following properties (established with both decimal.py and mpfr):
+ *
+ * Index 0 - 400, logarithms of x in [1.00, 5.00]:
+ *   abs(lnapprox[i] * 10**-3 - log((i+100)/100)) < 10**-2
+ *   abs(lnapprox[i] * 10**-3 - log((i+1+100)/100)) < 10**-2
+ *
+ * Index 401 - 899, logarithms of x in (0.500, 0.999]:
+ *   abs(-lnapprox[i] * 10**-3 - log((i+100)/1000)) < 10**-2
+ *   abs(-lnapprox[i] * 10**-3 - log((i+1+100)/1000)) < 10**-2
+ */
 static const uint16_t lnapprox[900] = {
   /* index 0 - 400: log((i+100)/100) * 1000 */
   0, 10, 20, 30, 39, 49, 58, 68, 77, 86, 95, 104, 113, 122, 131, 140, 148, 157,
@@ -4406,7 +4430,10 @@ static const uint16_t lnapprox[900] = {
   18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
 };
 
-/* Internal ln() function that does not check for specials, zero or one. */
+/*
+ * Internal ln() function that does not check for specials, zero or one.
+ * Relative error: abs(result - log(a)) < 0.1 * 10**-prec * abs(log(a))
+ */
 static void
 _mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
          uint32_t *status)
@@ -4451,10 +4478,16 @@ _mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     mpd_setdigits(z);
 
     if (x <= 400) {
+        /* Reduce the input operand to 1.00 <= v <= 5.00. Let y = x + 100,
+         * so 100 <= y <= 500. Since y contains the most significant digits
+         * of v, y/100 <= v < (y+1)/100 and abs(z - log(v)) < 10**-2. */
         v.exp = -(a_digits - 1);
         t = a_exp + a_digits - 1;
     }
     else {
+        /* Reduce the input operand to 0.500 < v <= 0.999. Let y = x + 100,
+         * so 500 < y <= 999. Since y contains the most significant digits
+         * of v, y/1000 <= v < (y+1)/1000 and abs(z - log(v)) < 10**-2. */
         v.exp = -a_digits;
         t = a_exp + a_digits;
         mpd_set_negative(z);
@@ -4465,37 +4498,46 @@ _mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     varcontext.round = MPD_ROUND_TRUNC;
 
     maxprec = ctx->prec + 2;
-    if (x <= 10 || x >= 805) {
-        /* v is close to 1: Estimate the magnitude of the logarithm.
-         * If v = 1 or ln(v) will underflow, skip the loop. Otherwise,
-         * adjust the precision upwards in order to obtain a sufficient
-         * number of significant digits.
+    if (t == 0 && (x <= 15 || x >= 800)) {
+        /* 0.900 <= v <= 1.15: Estimate the magnitude of the logarithm.
+         * If ln(v) will underflow, skip the loop. Otherwise, adjust the
+         * precision upwards in order to obtain a sufficient number of
+         * significant digits.
          *
-         *   1) x/(1+x) < ln(1+x) < x, for x > -1, x != 0
-         *
-         *   2) (v-1)/v < ln(v) < v-1
+         *   Case v > 1:
+         *      abs((v-1)/10) < abs((v-1)/v) < abs(ln(v)) < abs(v-1)
+         *   Case v < 1:
+         *      abs(v-1) < abs(ln(v)) < abs((v-1)/v) < abs((v-1)*10)
          */
-        mpd_t *lower = &tmp;
-        mpd_t *upper = &vtmp;
         int cmp = _mpd_cmp(&v, &one);
 
-        varcontext.round = MPD_ROUND_CEILING;
-        varcontext.prec = maxprec;
-        mpd_qsub(upper, &v, &one, &varcontext, &varcontext.status);
-        varcontext.round = MPD_ROUND_FLOOR;
-        mpd_qdiv(lower, upper, &v, &varcontext, &varcontext.status);
-        varcontext.round = MPD_ROUND_TRUNC;
+        /* Upper bound (assume v > 1): abs(v-1), unrounded */
+        _mpd_qsub(&tmp, &v, &one, &maxcontext, &maxcontext.status);
+        if (maxcontext.status & MPD_Errors) {
+            mpd_seterror(result, MPD_Malloc_error, status);
+            goto finish;
+        }
 
         if (cmp < 0) {
-            _mpd_ptrswap(&upper, &lower);
+            /* v < 1: abs((v-1)*10) */
+            tmp.exp += 1;
         }
-        if (mpd_adjexp(upper) < mpd_etiny(ctx)) {
-            _settriple(z, (cmp<0), 1, mpd_etiny(ctx)-1);
-            goto postloop;
+        if (mpd_adjexp(&tmp) < mpd_etiny(ctx)) {
+            /* The upper bound is less than etiny: Underflow to zero */
+            _settriple(result, (cmp<0), 1, mpd_etiny(ctx)-1);
+            goto finish;
         }
-        /* XXX optimization: t == 0 && mpd_adjexp(lower) < 0 */
-        if (mpd_adjexp(lower) < 0) {
-            maxprec = maxprec - mpd_adjexp(lower);
+        /* Lower bound: abs((v-1)/10) or abs(v-1) */
+        tmp.exp -= 1;
+        if (mpd_adjexp(&tmp) < 0) {
+            /* Absolute error of the loop: abs(z - log(v)) < 10**-p. If
+             * p = ctx->prec+2-adjexp(lower), then the relative error of
+             * the result is (using 10**adjexp(x) <= abs(x)):
+             *
+             *   abs(z - log(v)) / abs(log(v)) < 10**-p / abs(log(v))
+             *                                 <= 10**(-ctx->prec-2)
+             */
+            maxprec = maxprec - mpd_adjexp(&tmp);
         }
     }
 
@@ -4523,14 +4565,37 @@ _mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         }
     }
 
-postloop:
-    mpd_qln10(&v, maxprec+2, status);
+    /*
+     * Case t == 0:
+     *    t * log(10) == 0, the result does not change and the analysis
+     *    above applies. If v < 0.900 or v > 1.15, the relative error is
+     *    less than 10**(-ctx.prec-1).
+     * Case t != 0:
+     *      z := approx(log(v))
+     *      y := approx(log(10))
+     *      p := maxprec = ctx->prec + 2
+     *   Absolute errors:
+     *      1) abs(z - log(v)) < 10**-p
+     *      2) abs(y - log(10)) < 10**-p
+     *   The multiplication is exact, so:
+     *      3) abs(t*y - t*log(10)) < t*10**-p
+     *   The sum is exact, so:
+     *      4) abs((z + t*y) - (log(v) + t*log(10))) < (abs(t) + 1) * 10**-p
+     *   Bounds for log(v) and log(10):
+     *      5) -7/10 < log(v) < 17/10
+     *      6) 23/10 < log(10) < 24/10
+     *   Using 4), 5), 6) and t != 0, the relative error is:
+     *
+     *      7) relerr < ((abs(t) + 1)*10**-p) / abs(log(v) + t*log(10))
+     *                < 0.5 * 10**(-p + 1) = 0.5 * 10**(-ctx->prec-1)
+     */
+    mpd_qln10(&v, maxprec+1, status);
     mpd_qmul_ssize(&tmp, &v, t, &maxcontext, status);
-    varcontext.prec = maxprec+2;
-    mpd_qadd(result, &tmp, z, &varcontext, status);
+    mpd_qadd(result, &tmp, z, &maxcontext, status);
 
 
 finish:
+    *status |= (MPD_Inexact|MPD_Rounded);
     mpd_del(&v);
     mpd_del(&vtmp);
     mpd_del(&tmp);
