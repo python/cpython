@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12157: Make pool.map() empty iterables correctly.  Initial
+  patch by mouad.
+
 - Issue #14992: os.makedirs(path, exist_ok=True) would raise an OSError
   when the path existed and had the S_ISGID mode bit set when it was
   not explicitly asked for.  This is no longer an exception as mkdir
