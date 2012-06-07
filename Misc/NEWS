@@ -78,7 +78,7 @@ Library
 
 - Issue #10997: Prevent a duplicate entry in IDLE's "Recent Files" menu.
 
-- Issue12510: Attempting to get invalid tooltip no longer closes Idle.
+- Issue #12510: Attempting to get invalid tooltip no longer closes Idle.
   Original patch by Roger Serwy.
 
 - Issue #10365: File open dialog now works instead of crashing
