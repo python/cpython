@@ -1,5 +1,16 @@
+What's New in IDLE 2.7.4?
+=========================
+
+- Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
+
+- Issue10365: File open dialog now works instead of crashing even when
+  parent window is closed while dialog is open.
+
+- Issue 14876: use user-selected font for highlight configuration.
+
+
 What's New in IDLE 2.7.3?
-=======================
+=========================
 
 - Issue #14409: IDLE now properly executes commands in the Shell window
   when it cannot read the normal config files on startup and
@@ -11,7 +22,7 @@ What's New in IDLE 2.7.3?
 
 
 What's New in IDLE 2.7.2?
-=======================
+=========================
 
 *Release date: 29-May-2011*
 
