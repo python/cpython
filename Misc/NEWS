@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11823: disassembly now shows argument counts on calls with keyword args.
+
 - Issue #14711: os.stat_float_times() has been deprecated.
 
 - LZMAFile now accepts the modes "rb"/"wb"/"ab" as synonyms of "r"/"w"/"a".
