@@ -439,6 +439,36 @@ class _TestSubclassingProcess(BaseTestCase):
         1/0 # MARKER
 
 
+    @classmethod
+    def _test_sys_exit(cls, reason, testfn):
+        sys.stderr = open(testfn, 'w')
+        sys.exit(reason)
+
+    def test_sys_exit(self):
+        # See Issue 13854
+        if self.TYPE == 'threads':
+            return
+
+        testfn = test.support.TESTFN
+        self.addCleanup(test.support.unlink, testfn)
+
+        for reason, code in (([1, 2, 3], 1), ('ignore this', 0)):
+            p = self.Process(target=self._test_sys_exit, args=(reason, testfn))
+            p.daemon = True
+            p.start()
+            p.join(5)
+            self.assertEqual(p.exitcode, code)
+
+            with open(testfn, 'r') as f:
+                self.assertEqual(f.read().rstrip(), str(reason))
+
+        for reason in (True, False, 8):
+            p = self.Process(target=sys.exit, args=(reason,))
+            p.daemon = True
+            p.start()
+            p.join(5)
+            self.assertEqual(p.exitcode, reason)
+
 #
 #
 #
@@ -1341,6 +1371,18 @@ class _TestPool(BaseTestCase):
         join = TimingWrapper(self.pool.join)
         join()
         self.assertLess(join.elapsed, 0.5)
+
+    def test_empty_iterable(self):
+        # See Issue 12157
+        p = self.Pool(1)
+
+        self.assertEqual(p.map(sqr, []), [])
+        self.assertEqual(list(p.imap(sqr, [])), [])
+        self.assertEqual(list(p.imap_unordered(sqr, [])), [])
+        self.assertEqual(p.map_async(sqr, []).get(), [])
+
+        p.close()
+        p.join()
 
 def raising():
     raise KeyError("key")
@@ -2487,7 +2529,7 @@ class ProcessesMixin(object):
         'Queue', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore',
         'Condition', 'Event', 'Value', 'Array', 'RawValue',
         'RawArray', 'current_process', 'active_children', 'Pipe',
-        'connection', 'JoinableQueue'
+        'connection', 'JoinableQueue', 'Pool'
         )))
 
 testcases_processes = create_test_cases(ProcessesMixin, type='processes')
@@ -2501,7 +2543,7 @@ class ManagerMixin(object):
     locals().update(get_attributes(manager, (
         'Queue', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore',
        'Condition', 'Event', 'Value', 'Array', 'list', 'dict',
-        'Namespace', 'JoinableQueue'
+        'Namespace', 'JoinableQueue', 'Pool'
         )))
 
 testcases_manager = create_test_cases(ManagerMixin, type='manager')
@@ -2515,7 +2557,7 @@ class ThreadsMixin(object):
         'Queue', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore',
         'Condition', 'Event', 'Value', 'Array', 'current_process',
         'active_children', 'Pipe', 'connection', 'dict', 'list',
-        'Namespace', 'JoinableQueue'
+        'Namespace', 'JoinableQueue', 'Pool'
         )))
 
 testcases_threads = create_test_cases(ThreadsMixin, type='threads')
