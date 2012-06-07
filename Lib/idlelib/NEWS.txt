@@ -1,6 +1,14 @@
 What's New in IDLE 3.2.4?
 =========================
 
+- Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
+  Erroneous tool tips have been corrected. Default added for callables.
+
+- Issue10365: File open dialog now works instead of crashing even when
+  parent window is closed while dialog is open.
+
+- Issue 14876: use user-selected font for highlight configuration.
+
 - Issue #14937: Perform auto-completion of filenames in strings even for
   non-ASCII filenames. Likewise for identifiers.
 

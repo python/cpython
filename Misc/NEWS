@@ -89,14 +89,15 @@ Library
 - Issue #14443: Tell rpmbuild to use the correct version of Python in
   bdist_rpm. Initial patch by Ross Lagerwall.
 
-- Issue14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
-  Patch by Roger Serwy.
+- Issue #14929: Stop Idle 3.x from closing on Unicode decode errors when
+  grepping. Patch by Roger Serwy.
 
-- Issue12510: Attempting to get invalid tooltip no longer closes Idle.
-  Original patch by Roger Serwy.
+- Issue #12510: Attempting to get invalid tooltip no longer closes Idle.
+  Other tooltipss have been corrected or improved and the number of tests
+  has been tripled. Original patch by Roger Serwy.
 
-- Issue #10365: File open dialog now works instead of crashing
-  even when parent window is closed. Patch by Roger Serwy.
+- Issue #10365: File open dialog now works instead of crashing even when
+  the parent window is closed before the dialog. Patch by Roger Serwy.
 
 - Issue #14876: Use user-selected font for highlight configuration.
 
