@@ -190,6 +190,9 @@ def disassemble(co, lasti=-1):
                 if free is None:
                     free = co.co_cellvars + co.co_freevars
                 print('(' + free[oparg] + ')', end=' ')
+            elif op in hasnargs:
+                print('(%d positional, %d keyword pair)'
+                      % (code[i-2], code[i-1]), end=' ')
         print()
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
@@ -229,6 +232,9 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                     print('(%d)' % oparg, end=' ')
             elif op in hascompare:
                 print('(' + cmp_op[oparg] + ')', end=' ')
+            elif op in hasnargs:
+                print('(%d positional, %d keyword pair)'
+                      % (code[i-2], code[i-1]), end=' ')
         print()
 
 def _disassemble_str(source):

@@ -6,7 +6,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
         'is not', 'exception match', 'BAD')
@@ -18,6 +18,7 @@ hasjabs = []
 haslocal = []
 hascompare = []
 hasfree = []
+hasnargs = []
 
 opmap = {}
 opname = [''] * 256
@@ -152,6 +153,7 @@ haslocal.append(126)
 
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args + (#kwargs << 8)
+hasnargs.append(131)
 def_op('MAKE_FUNCTION', 132)    # Number of args with default values
 def_op('BUILD_SLICE', 133)      # Number of items
 def_op('MAKE_CLOSURE', 134)
@@ -165,8 +167,11 @@ def_op('DELETE_DEREF', 138)
 hasfree.append(138)
 
 def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
+hasnargs.append(140)
 def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)
+hasnargs.append(141)
 def_op('CALL_FUNCTION_VAR_KW', 142)  # #args + (#kwargs << 8)
+hasnargs.append(142)
 
 jrel_op('SETUP_WITH', 143)
 

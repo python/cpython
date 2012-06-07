@@ -38,7 +38,7 @@ def _f(a):
 dis_f = """\
  %-4d         0 LOAD_GLOBAL              0 (print)
               3 LOAD_FAST                0 (a)
-              6 CALL_FUNCTION            1
+              6 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
               9 POP_TOP
 
  %-4d        10 LOAD_CONST               1 (1)
@@ -50,7 +50,7 @@ dis_f = """\
 dis_f_co_code = """\
           0 LOAD_GLOBAL         0 (0)
           3 LOAD_FAST           0 (0)
-          6 CALL_FUNCTION       1
+          6 CALL_FUNCTION       1 (1 positional, 0 keyword pair)
           9 POP_TOP
          10 LOAD_CONST          1 (1)
          13 RETURN_VALUE
@@ -68,7 +68,7 @@ dis_bug708901 = """\
               6 LOAD_CONST               1 (1)
 
  %-4d         9 LOAD_CONST               2 (10)
-             12 CALL_FUNCTION            2
+             12 CALL_FUNCTION            2 (2 positional, 0 keyword pair)
              15 GET_ITER
         >>   16 FOR_ITER                 6 (to 25)
              19 STORE_FAST               0 (res)
