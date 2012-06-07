@@ -576,6 +576,7 @@ class MapResult(ApplyResult):
         if chunksize <= 0:
             self._number_left = 0
             self._event.set()
+            del cache[self._job]
         else:
             self._number_left = length//chunksize + bool(length % chunksize)
 

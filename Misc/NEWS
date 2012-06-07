@@ -21,6 +21,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #13854: Make multiprocessing properly handle non-integer
+  non-string argument to SystemExit.
+
+- Issue #12157: Make pool.map() empty iterables correctly.  Initial
+  patch by mouad.
+
 - Issue #11823: disassembly now shows argument counts on calls with keyword args.
 
 - Issue #14711: os.stat_float_times() has been deprecated.
