@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2736: Added datetime.timestamp() method.
+
 - Issue #13854: Make multiprocessing properly handle non-integer
   non-string argument to SystemExit.
 

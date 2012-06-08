@@ -1735,6 +1735,42 @@ class TestDateTime(TestDate):
         got = self.theclass.utcfromtimestamp(ts)
         self.verify_field_equality(expected, got)
 
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_timestamp_naive(self):
+        t = self.theclass(1970, 1, 1)
+        self.assertEqual(t.timestamp(), 18000.0)
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 4)
+        self.assertEqual(t.timestamp(),
+                         18000.0 + 3600 + 2*60 + 3 + 4*1e-6)
+        # Missing hour defaults to standard time
+        t = self.theclass(2012, 3, 11, 2, 30)
+        self.assertEqual(self.theclass.fromtimestamp(t.timestamp()),
+                                  t + timedelta(hours=1))
+        # Ambiguous hour defaults to DST
+        t = self.theclass(2012, 11, 4, 1, 30)
+        self.assertEqual(self.theclass.fromtimestamp(t.timestamp()), t)
+
+        # Timestamp may raise an overflow error on some platforms
+        for t in [self.theclass(1,1,1), self.theclass(9999,12,12)]:
+            try:
+                s = t.timestamp()
+            except OverflowError:
+                pass
+            else:
+                self.assertEqual(self.theclass.fromtimestamp(s), t)
+
+    def test_timestamp_aware(self):
+        t = self.theclass(1970, 1, 1, tzinfo=timezone.utc)
+        self.assertEqual(t.timestamp(), 0.0)
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 4, tzinfo=timezone.utc)
+        self.assertEqual(t.timestamp(),
+                         3600 + 2*60 + 3 + 4*1e-6)
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 4,
+                          tzinfo=timezone(timedelta(hours=-5), 'EST'))
+        self.assertEqual(t.timestamp(),
+                         18000 + 3600 + 2*60 + 3 + 4*1e-6)
     def test_microsecond_rounding(self):
         for fts in [self.theclass.fromtimestamp,
                     self.theclass.utcfromtimestamp]:
