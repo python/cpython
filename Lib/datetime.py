@@ -1434,6 +1434,15 @@ class datetime(date):
                                   self.hour, self.minute, self.second,
                                   dst)
 
+    def timestamp(self):
+        "Return POSIX timestamp as float"
+        if self._tzinfo is None:
+            return _time.mktime((self.year, self.month, self.day,
+                                 self.hour, self.minute, self.second,
+                                 -1, -1, -1)) + self.microsecond / 1e6
+        else:
+            return (self - _EPOCH).total_seconds()
+
     def utctimetuple(self):
         "Return UTC time tuple compatible with time.gmtime()."
         offset = self.utcoffset()
@@ -1889,7 +1898,7 @@ class timezone(tzinfo):
 timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(timezone._minoffset)
 timezone.max = timezone._create(timezone._maxoffset)
-
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 """
 Some time zone algebra.  For a datetime x, let
     x.n = x stripped of its timezone -- its naive time.
