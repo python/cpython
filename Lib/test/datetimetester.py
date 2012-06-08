@@ -1744,10 +1744,10 @@ class TestDateTime(TestDate):
         t = self.theclass(1970, 1, 1, 1, 2, 3, 4)
         self.assertEqual(t.timestamp(),
                          18000.0 + 3600 + 2*60 + 3 + 4*1e-6)
-        # Missing hour defaults to standard time
+        # Missing hour may produce platform-dependent result
         t = self.theclass(2012, 3, 11, 2, 30)
-        self.assertEqual(self.theclass.fromtimestamp(t.timestamp()),
-                                  t + timedelta(hours=1))
+        self.assertIn(self.theclass.fromtimestamp(t.timestamp()),
+                      [t, t + timedelta(hours=1)])
         # Ambiguous hour defaults to DST
         t = self.theclass(2012, 11, 4, 1, 30)
         self.assertEqual(self.theclass.fromtimestamp(t.timestamp()), t)
