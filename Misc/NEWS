@@ -144,14 +144,15 @@ Library
 - Issue #14443: Tell rpmbuild to use the correct version of Python in
   bdist_rpm. Initial patch by Ross Lagerwall.
 
-- Issue #14929: Stop Idle 3.x from closing on Unicode decode errors when grepping.
-  Patch by Roger Serwy.
+- Issue #14929: Stop Idle 3.x from closing on Unicode decode errors when
+  grepping. Patch by Roger Serwy.
 
 - Issue #12515: email now registers a defect if it gets to EOF while parsing
   a MIME part without seeing the closing MIME boundary.
 
 - Issue #12510: Attempting to get invalid tooltip no longer closes Idle.
-  Original patch by Roger Serwy.
+  Other tooltipss have been corrected or improved and the number of tests
+  has been tripled. Original patch by Roger Serwy.
 
 - Issue #1672568: email now always decodes base64 payloads, adding padding and
   ignoring non-base64-alphabet characters if needed, and registering defects
@@ -161,8 +162,8 @@ Library
   is a missing header/body separator line.  MalformedHeaderDefect, which the
   existing code would never actually generate, is deprecated.
 
-- Issue #10365: File open dialog now works instead of crashing
-  even when parent window is closed. Patch by Roger Serwy.
+- Issue #10365: File open dialog now works instead of crashing even when
+  the parent window is closed before the dialog. Patch by Roger Serwy.
 
 - Issue #8739: Updated smtpd to support RFC 5321, and added support for the
   RFC 1870 SIZE extension.
