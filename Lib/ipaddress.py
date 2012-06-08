@@ -1990,12 +1990,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
             self.network_address = IPv6Address(address)
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv6Address(self._ALL_ONES)
-            if strict:
-                if (IPv6Address(int(self.network_address) &
-                                int(self.netmask)) != self.network_address):
-                    raise ValueError('%s has host bits set' % str(self))
-            self.network_address = IPv6Address(int(self.network_address) &
-                                               int(self.netmask))
             return
 
         # Constructing from a packed address
@@ -2004,13 +1998,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
             self.network_address = IPv6Address((tmp[0] << 64) | tmp[1])
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv6Address(self._ALL_ONES)
-            if strict:
-                if (IPv6Address(int(self.network_address) &
-                                int(self.netmask)) != self.network_address):
-                    raise ValueError('%s has host bits set' % str(self))
-                self.network_address = IPv6Address(int(self.network_address) &
-                                                   int(self.netmask))
-                return
+            return
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP prefix string.
