@@ -120,6 +120,14 @@ name multiple exceptions as a parenthesized tuple, for example::
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
+Note that the parentheses around this tuple are required, because
+``except ValueError, e:`` was the syntax used for what is normally
+written as ``except ValueError as e:`` in modern Python (described
+below). The old syntax is still supported for backwards compatibility.
+This means ``except RuntimeError, TypeError`` is not equivalent to
+``except (RuntimeError, TypeError):`` but to ``except RuntimeError as
+TypeError:`` which is not what you want.
+
 The last except clause may omit the exception name(s), to serve as a wildcard.
 Use this with extreme caution, since it is easy to mask a real programming error
 in this way!  It can also be used to print an error message and then re-raise
@@ -131,8 +139,8 @@ the exception (allowing a caller to handle the exception as well)::
        f = open('myfile.txt')
        s = f.readline()
        i = int(s.strip())
-   except IOError as (errno, strerror):
-       print "I/O error({0}): {1}".format(errno, strerror)
+   except IOError as e:
+       print "I/O error({0}): {1}".format(e.errno, e.strerror)
    except ValueError:
        print "Could not convert data to an integer."
    except:
@@ -177,7 +185,7 @@ attributes to it as desired. ::
    ...    print type(inst)     # the exception instance
    ...    print inst.args      # arguments stored in .args
    ...    print inst           # __str__ allows args to printed directly
-   ...    x, y = inst          # __getitem__ allows args to be unpacked directly
+   ...    x, y = inst.args
    ...    print 'x =', x
    ...    print 'y =', y
    ...
