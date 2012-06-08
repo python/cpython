@@ -4298,7 +4298,14 @@ static const mpd_t _mpd_ln10 = {
   (mpd_uint_t *)mpd_ln10_data
 };
 
-/* Set 'result' to ln(10). ulp error: abs(result - log(10)) < ulp(log(10)) */
+/*
+ * Set 'result' to log(10).
+ *   Ulp error: abs(result - log(10)) < ulp(log(10))
+ *   Relative error : abs(result - log(10)) < 5 * 10**-prec * log(10)
+ *
+ * NOTE: The relative error is not derived from the ulp error, but
+ * calculated separately using the fact that 23/10 < log(10) < 24/10.
+ */
 void
 mpd_qln10(mpd_t *result, mpd_ssize_t prec, uint32_t *status)
 {
@@ -4712,21 +4719,34 @@ mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     }
 }
 
-/* Internal log10() function that does not check for specials, zero, ... */
+/*
+ * Internal log10() function that does not check for specials, zero or one.
+ * Case SKIP_FINALIZE:
+ *   Relative error: abs(result - log10(a)) < 0.1 * 10**-prec * abs(log10(a))
+ * Case DO_FINALIZE:
+ *   Ulp error: abs(result - log10(a)) < ulp(log10(a))
+ */
+enum {SKIP_FINALIZE, DO_FINALIZE};
 static void
-_mpd_qlog10(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
-            uint32_t *status)
+_mpd_qlog10(int action, mpd_t *result, const mpd_t *a,
+            const mpd_context_t *ctx, uint32_t *status)
 {
     mpd_context_t workctx;
     MPD_NEW_STATIC(ln10,0,0,0,0);
 
     mpd_maxcontext(&workctx);
     workctx.prec = ctx->prec + 3;
+    /* relative error: 0.1 * 10**(-p-3). The specific underflow shortcut
+     * in _mpd_qln() does not change the final result. */
     _mpd_qln(result, a, &workctx, status);
+    /* relative error: 5 * 10**(-p-3) */
     mpd_qln10(&ln10, workctx.prec, status);
 
-    workctx = *ctx;
-    workctx.round = MPD_ROUND_HALF_EVEN;
+    if (action == DO_FINALIZE) {
+        workctx = *ctx;
+        workctx.round = MPD_ROUND_HALF_EVEN;
+    }
+    /* SKIP_FINALIZE: relative error: 5 * 10**(-p-3) */
     _mpd_qdiv(NO_IDEAL_EXP, result, result, &ln10, &workctx, status);
 
     mpd_del(&ln10);
@@ -4807,9 +4827,9 @@ mpd_qlog10(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         prec = ctx->prec + 3;
         while (1) {
             workctx.prec = prec;
-            _mpd_qlog10(result, a, &workctx, status);
+            _mpd_qlog10(SKIP_FINALIZE, result, a, &workctx, status);
             _ssettriple(&ulp, MPD_POS, 1,
-                        result->exp + result->digits-workctx.prec-1);
+                        result->exp + result->digits-workctx.prec);
 
             workctx.prec = ctx->prec;
             mpd_qadd(&t1, result, &ulp, &workctx, &workctx.status);
@@ -4829,7 +4849,7 @@ mpd_qlog10(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         mpd_del(&aa);
     }
     else {
-        _mpd_qlog10(result, a, &workctx, status);
+        _mpd_qlog10(DO_FINALIZE, result, a, &workctx, status);
         mpd_check_underflow(result, &workctx, status);
     }
 }
