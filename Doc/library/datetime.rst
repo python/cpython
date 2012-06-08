@@ -752,17 +752,6 @@ Other constructors, all class methods:
 
      datetime(1970, 1, 1) + timedelta(seconds=timestamp)
 
-   There is no method to obtain the timestamp from a :class:`datetime`
-   instance, but POSIX timestamp corresponding to a :class:`datetime`
-   instance ``dt`` can be easily calculated as follows.  For a naive
-   ``dt``::
-
-      timestamp = (dt - datetime(1970, 1, 1)) / timedelta(seconds=1)
-
-   And for an aware ``dt``::
-
-      timestamp = (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)) / timedelta(seconds=1)
-
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
       is out of the range of values supported by the platform C
@@ -1054,6 +1043,39 @@ Instance methods:
    Return the proleptic Gregorian ordinal of the date.  The same as
    ``self.date().toordinal()``.
 
+.. method:: datetime.timestamp()
+
+   Return POSIX timestamp corresponding to the :class:`datetime`
+   instance.  The return value is a :class:`float` similar to that
+   returned by :func:`time.time`.
+
+   Naive :class:`datetime` instances are assumed to represent local
+   time and this method relies on the platform C :c:func:`mktime`
+   function to perform the conversion.  Since :class:`datetime`
+   supports wider range of values than :c:func:`mktime` on many
+   platforms, this method may raise :exc:`OverflowError` for times far
+   in the past or far in the future.
+
+   For aware :class:`datetime` instances, the return value is computed
+   as::
+
+      (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds()
+
+   .. versionadded:: 3.3
+
+   .. note::
+
+      There is no method to obtain the POSIX timestamp directly from a
+      naive :class:`datetime` instance representing UTC time.  If your
+      application uses this convention and your system timezone is not
+      set to UTC, you can obtain the POSIX timestamp by supplying
+      ``tzinfo=timezone.utc``::
+
+         timestamp = dt.replace(tzinfo=timezone.utc).timestamp()
+
+      or by calculating the timestamp directly::
+
+         timestamp = (dt - datetime(1970, 1, 1)) / timedelta(seconds=1)
 
 .. method:: datetime.weekday()
 
