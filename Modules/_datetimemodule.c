@@ -766,6 +766,8 @@ typedef struct
 
 /* The interned UTC timezone instance */
 static PyObject *PyDateTime_TimeZone_UTC;
+/* The interned Epoch datetime instance */
+static PyObject *PyDateTime_Epoch;
 
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
@@ -4748,6 +4750,44 @@ datetime_timetuple(PyDateTime_DateTime *self)
 }
 
 static PyObject *
+datetime_timestamp(PyDateTime_DateTime *self)
+{
+    PyObject *result;
+
+    if (HASTZINFO(self) && self->tzinfo != Py_None) {
+        PyObject *delta;
+        delta = datetime_subtract((PyObject *)self, PyDateTime_Epoch);
+        if (delta == NULL)
+            return NULL;
+        result = delta_total_seconds(delta);
+        Py_DECREF(delta);
+    }
+    else {
+        struct tm time;
+        time_t timestamp;
+        memset((void *) &time, '\0', sizeof(struct tm));
+        time.tm_year = GET_YEAR(self) - 1900;
+        time.tm_mon = GET_MONTH(self) - 1;
+        time.tm_mday = GET_DAY(self);
+        time.tm_hour = DATE_GET_HOUR(self);
+        time.tm_min = DATE_GET_MINUTE(self);
+        time.tm_sec = DATE_GET_SECOND(self);
+        time.tm_wday = -1;
+        time.tm_isdst = -1;
+        timestamp = mktime(&time);
+        /* Return value of -1 does not necessarily mean an error, but tm_wday
+         * cannot remain set to -1 if mktime succeeded. */
+        if (timestamp == (time_t)(-1) && time.tm_wday == -1) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "timestamp out of range");
+            return NULL;
+        }
+        result = PyFloat_FromDouble(timestamp + DATE_GET_MICROSECOND(self) / 1e6);
+    }
+    return result;
+}
+
+static PyObject *
 datetime_getdate(PyDateTime_DateTime *self)
 {
     return new_date(GET_YEAR(self),
@@ -4893,6 +4933,9 @@ static PyMethodDef datetime_methods[] = {
 
     {"timetuple",   (PyCFunction)datetime_timetuple, METH_NOARGS,
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
+
+    {"timestamp",   (PyCFunction)datetime_timestamp, METH_NOARGS,
+     PyDoc_STR("Return POSIX timestamp as float.")},
 
     {"utctimetuple",   (PyCFunction)datetime_utctimetuple, METH_NOARGS,
      PyDoc_STR("Return UTC time tuple, compatible with time.localtime().")},
@@ -5150,6 +5193,12 @@ PyInit__datetime(void)
     if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
         return NULL;
     Py_DECREF(x);
+
+    /* Epoch */
+    PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
+                                    PyDateTime_TimeZone_UTC);
+    if (PyDateTime_Epoch == NULL)
+      return NULL;
 
     /* module initialization */
     PyModule_AddIntConstant(m, "MINYEAR", MINYEAR);
