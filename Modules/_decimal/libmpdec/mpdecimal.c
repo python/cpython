@@ -4793,12 +4793,25 @@ mpd_qlog10(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         mpd_qfinalize(result, &workctx, status);
         return;
     }
-    /* Check if the result will overflow.
+    /*
+     * Check if the result will overflow (0 < x, x != 1):
+     *   1) log10(x) < 0 iff adjexp(x) < 0
+     *   2) 0 < x /\ x <= y ==> adjexp(x) <= adjexp(y)
+     *   3) adjexp(x) <= log10(x) < adjexp(x) + 1
      *
-     * 1) adjexp(a) + 1 > log10(a) >= adjexp(a)
+     * Case adjexp(x) >= 0:
+     *   4) adjexp(x) <= abs(log10(x))
+     *   Case adjexp(x) > 0:
+     *     5) adjexp(adjexp(x)) <= adjexp(abs(log10(x)))
+     *   Case adjexp(x) == 0:
+     *     mpd_exp_digits(t)-1 == 0 <= emax (the shortcut is not triggered)
      *
-     * 2) |log10(a)| >= adjexp(a), if adjexp(a) >= 0
-     *    |log10(a)| > -adjexp(a)-1, if adjexp(a) < 0
+     * Case adjexp(x) < 0:
+     *   6) -adjexp(x) - 1 < abs(log10(x))
+     *   Case adjexp(x) < -1:
+     *     7) adjexp(-adjexp(x) - 1) <= adjexp(abs(log(x)))
+     *   Case adjexp(x) == -1:
+     *     mpd_exp_digits(t)-1 == 0 <= emax (the shortcut is not triggered)
      */
     adjexp = mpd_adjexp(a);
     t = (adjexp < 0) ? -adjexp-1 : adjexp;
