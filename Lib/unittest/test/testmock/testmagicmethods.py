@@ -345,6 +345,14 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(mock[1][2][3], 3)
 
 
+    def test_magic_method_reset_mock(self):
+        mock = MagicMock()
+        str(mock)
+        self.assertTrue(mock.__str__.called)
+        mock.reset_mock()
+        self.assertFalse(mock.__str__.called)
+
+
     def test_dir(self):
         # overriding the default implementation
         for mock in Mock(), MagicMock():

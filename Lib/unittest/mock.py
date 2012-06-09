@@ -510,6 +510,8 @@ class NonCallableMock(Base):
         self.method_calls = _CallList()
 
         for child in self._mock_children.values():
+            if isinstance(child, _SpecState):
+                continue
             child.reset_mock()
 
         ret = self._mock_return_value
@@ -664,6 +666,7 @@ class NonCallableMock(Base):
                 # but not method calls
                 _check_and_set_parent(self, value, None, name)
                 setattr(type(self), name, value)
+                self._mock_children[name] = value
         elif name == '__class__':
             self._spec_class = value
             return
