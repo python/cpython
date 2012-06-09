@@ -5543,32 +5543,24 @@ _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
 
 
     if (small->len == 1) {
-        if ((rdata = mpd_calloc(rsize, sizeof *rdata)) == NULL) {
-            mpd_seterror(result, MPD_Malloc_error, status);
-            return;
+        rdata = mpd_calloc(rsize, sizeof *rdata);
+        if (rdata != NULL) {
+            _mpd_shortmul(rdata, big->data, big->len, small->data[0]);
         }
-        _mpd_shortmul(rdata, big->data, big->len, small->data[0]);
     }
     else if (rsize <= 1024) {
         rdata = _mpd_kmul(big->data, small->data, big->len, small->len, &rsize);
-        if (rdata == NULL) {
-            mpd_seterror(result, MPD_Malloc_error, status);
-            return;
-        }
     }
     else if (rsize <= 3*MPD_MAXTRANSFORM_2N) {
         rdata = _mpd_fntmul(big->data, small->data, big->len, small->len, &rsize);
-        if (rdata == NULL) {
-            mpd_seterror(result, MPD_Malloc_error, status);
-            return;
-        }
     }
     else {
         rdata = _mpd_kmul_fnt(big->data, small->data, big->len, small->len, &rsize);
-        if (rdata == NULL) {
-            mpd_seterror(result, MPD_Malloc_error, status); /* GCOV_UNLIKELY */
-            return; /* GCOV_UNLIKELY */
-        }
+    }
+
+    if (rdata == NULL) {
+        mpd_seterror(result, MPD_Malloc_error, status);
+        return;
     }
 
     if (mpd_isdynamic_data(result)) {
