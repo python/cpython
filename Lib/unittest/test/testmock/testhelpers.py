@@ -355,6 +355,13 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertEqual(mock(), 'foo')
 
 
+    def test_autospec_reset_mock(self):
+        m = create_autospec(int)
+        int(m)
+        m.reset_mock()
+        self.assertEqual(m.__int__.call_count, 0)
+
+
     def test_mocking_unbound_methods(self):
         class Foo(object):
             def foo(self, foo):
