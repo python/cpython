@@ -308,35 +308,37 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     """
 
-    # Parse and validate the field names.  Validation serves two purposes,
-    # generating informative error messages and preventing template injection attacks.
+    # Validate the field names.  At the user's option, either generate an error
+    # message or automatically replace the field name with a valid name.
     if isinstance(field_names, basestring):
-        field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
-    field_names = tuple(map(str, field_names))
+        field_names = field_names.replace(',', ' ').split()
+    field_names = map(str, field_names)
     if rename:
-        names = list(field_names)
         seen = set()
-        for i, name in enumerate(names):
+        for index, name in enumerate(field_names):
             if (not all(c.isalnum() or c=='_' for c in name)
                 or _iskeyword(name)
                 or not name
                 or name[0].isdigit()
                 or name.startswith('_')
                 or name in seen):
-                names[i] = '_%d' % i
+                field_names[index] = '_%d' % index
             seen.add(name)
-        field_names = tuple(names)
-    for name in (typename,) + field_names:
+    for name in [typename] + field_names:
         if not all(c.isalnum() or c=='_' for c in name):
-            raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
+            raise ValueError('Type names and field names can only contain '
+                             'alphanumeric characters and underscores: %r' % name)
         if _iskeyword(name):
-            raise ValueError('Type names and field names cannot be a keyword: %r' % name)
+            raise ValueError('Type names and field names cannot be a '
+                             'keyword: %r' % name)
         if name[0].isdigit():
-            raise ValueError('Type names and field names cannot start with a number: %r' % name)
+            raise ValueError('Type names and field names cannot start with '
+                             'a number: %r' % name)
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
-            raise ValueError('Field names cannot start with an underscore: %r' % name)
+            raise ValueError('Field names cannot start with an underscore:'
+                             '%r' % name)
         if name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
         seen.add(name)
@@ -347,21 +349,22 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         field_names = tuple(field_names),
         num_fields = len(field_names),
         arg_list = repr(tuple(field_names)).replace("'", "")[1:-1],
-        repr_fmt = ', '.join(_repr_template.format(name=name) for name in field_names),
+        repr_fmt = ', '.join(_repr_template.format(name=name)
+                             for name in field_names),
         field_defs = '\n'.join(_field_template.format(index=index, name=name)
                                for index, name in enumerate(field_names))
     )
     if verbose:
         print class_definition
 
-    # Execute the template string in a temporary namespace and
-    # support tracing utilities by setting a value for frame.f_globals['__name__']
+    # Execute the template string in a temporary namespace and support
+    # tracing utilities by setting a value for frame.f_globals['__name__']
     namespace = dict(_itemgetter=_itemgetter, __name__='namedtuple_%s' % typename,
                      OrderedDict=OrderedDict, _property=property, _tuple=tuple)
     try:
         exec class_definition in namespace
     except SyntaxError as e:
-        raise SyntaxError(e.message + ':\n' + template)
+        raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to the frame
