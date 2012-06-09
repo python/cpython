@@ -34,6 +34,8 @@ class MessageDefect(ValueError):
     """Base class for a message defect."""
 
     def __init__(self, line=None):
+        if line is not None:
+            super().__init__(line)
         self.line = line
 
 class NoBoundaryInMultipartDefect(MessageDefect):
@@ -75,6 +77,9 @@ class InvalidBase64CharactersDefect(MessageDefect):
 
 class HeaderDefect(MessageDefect):
     """Base class for a header defect."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
 
 class InvalidHeaderDefect(HeaderDefect):
     """Header is not valid, message gives details."""
