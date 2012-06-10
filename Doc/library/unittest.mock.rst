@@ -1359,7 +1359,7 @@ It is also possible to stop all patches which have been started by using
 
 .. function:: patch.stopall
 
-    Stop all active patches.
+    Stop all active patches. Only stops patches started with `start`.
 
 
 TEST_PREFIX
