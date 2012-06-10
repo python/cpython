@@ -315,10 +315,10 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     """
 
-    # Parse and validate the field names.  Validation serves two purposes,
-    # generating informative error messages and preventing template injection attacks.
+    # Validate the field names.  At the user's option, either generate an error
+    # message or automatically replace the field name with a valid name.
     if isinstance(field_names, str):
-        field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
+        field_names = field_names.replace(',', ' ').split()
     field_names = list(map(str, field_names))
     if rename:
         seen = set()
@@ -333,15 +333,19 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             seen.add(name)
     for name in [typename] + field_names:
         if not all(c.isalnum() or c=='_' for c in name):
-            raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
+            raise ValueError('Type names and field names can only contain '
+                             'alphanumeric characters and underscores: %r' % name)
         if _iskeyword(name):
-            raise ValueError('Type names and field names cannot be a keyword: %r' % name)
+            raise ValueError('Type names and field names cannot be a '
+                             'keyword: %r' % name)
         if name[0].isdigit():
-            raise ValueError('Type names and field names cannot start with a number: %r' % name)
+            raise ValueError('Type names and field names cannot start with '
+                             'a number: %r' % name)
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
-            raise ValueError('Field names cannot start with an underscore: %r' % name)
+            raise ValueError('Field names cannot start with an underscore: '
+                             '%r' % name)
         if name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
         seen.add(name)
@@ -352,13 +356,14 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         field_names = tuple(field_names),
         num_fields = len(field_names),
         arg_list = repr(tuple(field_names)).replace("'", "")[1:-1],
-        repr_fmt = ', '.join(_repr_template.format(name=name) for name in field_names),
+        repr_fmt = ', '.join(_repr_template.format(name=name)
+                             for name in field_names),
         field_defs = '\n'.join(_field_template.format(index=index, name=name)
                                for index, name in enumerate(field_names))
     )
 
-    # Execute the template string in a temporary namespace and
-    # support tracing utilities by setting a value for frame.f_globals['__name__']
+    # Execute the template string in a temporary namespace and support
+    # tracing utilities by setting a value for frame.f_globals['__name__']
     namespace = dict(__name__='namedtuple_%s' % typename)
     try:
         exec(class_definition, namespace)
@@ -1122,44 +1127,3 @@ class UserString(Sequence):
         return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
     def zfill(self, width): return self.__class__(self.data.zfill(width))
-
-
-
-################################################################################
-### Simple tests
-################################################################################
-
-if __name__ == '__main__':
-    # verify that instances can be pickled
-    from pickle import loads, dumps
-    Point = namedtuple('Point', 'x, y', True)
-    p = Point(x=10, y=20)
-    assert p == loads(dumps(p))
-
-    # test and demonstrate ability to override methods
-    class Point(namedtuple('Point', 'x y')):
-        __slots__ = ()
-        @property
-        def hypot(self):
-            return (self.x ** 2 + self.y ** 2) ** 0.5
-        def __str__(self):
-            return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
-
-    for p in Point(3, 4), Point(14, 5/7.):
-        print (p)
-
-    class Point(namedtuple('Point', 'x y')):
-        'Point class with optimized _make() and _replace() without error-checking'
-        __slots__ = ()
-        _make = classmethod(tuple.__new__)
-        def _replace(self, _map=map, **kwds):
-            return self._make(_map(kwds.get, ('x', 'y'), self))
-
-    print(Point(11, 22)._replace(x=100))
-
-    Point3D = namedtuple('Point3D', Point._fields + ('z',))
-    print(Point3D.__doc__)
-
-    import doctest
-    TestResults = namedtuple('TestResults', 'failed attempted')
-    print(TestResults(*doctest.testmod()))
