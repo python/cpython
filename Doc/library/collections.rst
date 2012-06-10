@@ -93,13 +93,44 @@ The class can be used to simulate nested scopes and is useful in templating.
         The use-cases also parallel those for the builtin :func:`super` function.
         A reference to  ``d.parents`` is equivalent to: ``ChainMap(*d.maps[1:])``.
 
-    Example of simulating Python's internal lookup chain::
+
+.. seealso::
+
+    * The `MultiContext class
+      <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
+      in the Enthought `CodeTools package
+      <https://github.com/enthought/codetools>`_ has options to support
+      writing to any mapping in the chain.
+
+    * Django's `Context class
+      <http://code.djangoproject.com/browser/django/trunk/django/template/context.py>`_
+      for templating is a read-only chain of mappings.  It also features
+      pushing and popping of contexts similar to the
+      :meth:`~collections.ChainMap.new_child` method and the
+      :meth:`~collections.ChainMap.parents` property.
+
+    * The `Nested Contexts recipe
+      <http://code.activestate.com/recipes/577434/>`_ has options to control
+      whether writes and other mutations apply only to the first mapping or to
+      any mapping in the chain.
+
+    * A `greatly simplified read-only version of Chainmap
+      <http://code.activestate.com/recipes/305268/>`_.
+
+
+:class:`ChainMap` Examples and Recipes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section shows various approaches to working with chained maps.
+
+
+Example of simulating Python's internal lookup chain::
 
         import builtins
         pylookup = ChainMap(locals(), globals(), vars(builtins))
 
-    Example of letting user specified values take precedence over environment
-    variables which in turn take precedence over default values::
+Example of letting user specified values take precedence over environment
+variables which in turn take precedence over default values::
 
         import os, argparse
         defaults = {'color': 'red', 'user': guest}
@@ -109,8 +140,8 @@ The class can be used to simulate nested scopes and is useful in templating.
         user_specified = vars(parser.parse_args())
         combined = ChainMap(user_specified, os.environ, defaults)
 
-    Example patterns for using the :class:`ChainMap` class to simulate nested
-    contexts::
+Example patterns for using the :class:`ChainMap` class to simulate nested
+contexts::
 
         c = ChainMap()        # Create root context
         d = c.new_child()     # Create nested child context
@@ -128,28 +159,33 @@ The class can be used to simulate nested scopes and is useful in templating.
         d.items()             # All nested items
         dict(d)               # Flatten into a regular dictionary
 
-    .. seealso::
+The :class:`ChainMap` class only makes updates (writes and deletions) to the
+first mapping in the chain while lookups will search the full chain.  However,
+if deep writes and deletions are desired, it is easy to make a subclass that
+updates keys found deeper in the chain::
 
-        * The `MultiContext class
-            <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
-            in the Enthought `CodeTools package
-            <https://github.com/enthought/codetools>`_ has options to support
-            writing to any mapping in the chain.
+    class DeepChainMap(ChainMap):
+        'Variant of ChainMap that allows direct updates to inner scopes'
 
-        * Django's `Context class
-            <http://code.djangoproject.com/browser/django/trunk/django/template/context.py>`_
-            for templating is a read-only chain of mappings.  It also features
-            pushing and popping of contexts similar to the
-            :meth:`~collections.ChainMap.new_child` method and the
-            :meth:`~collections.ChainMap.parents` property.
+        def __setitem__(self, key, value):
+            for mapping in self.maps:
+                if key in mapping:
+                    mapping[key] = value
+                    return
+            self.maps[0][key] = value
 
-        * The `Nested Contexts recipe
-            <http://code.activestate.com/recipes/577434/>`_ has options to control
-            whether writes and other mutations apply only to the first mapping or to
-            any mapping in the chain.
+        def __delitem__(self, key):
+            for mapping in self.maps:
+                if key in mapping:
+                    del mapping[key]
+                    return
+            raise KeyError(key)
 
-        * A `greatly simplified read-only version of Chainmap
-            <http://code.activestate.com/recipes/305268/>`_.
+    >>> d = DeepChainMap({'zebra': 'black'}, {'elephant' : 'blue'}, {'lion' : 'yellow'})
+    >>> d['lion'] = 'orange'         # update an existing key two levels down
+    >>> d['snake'] = 'red'           # new keys get added to the topmost dict
+    >>> del d['elephant']            # remove an existing key one level down
+    DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
 
 
 :class:`Counter` objects
@@ -326,23 +362,23 @@ or subtracting from an empty counter.
 .. seealso::
 
     * `Counter class <http://code.activestate.com/recipes/576611/>`_
-        adapted for Python 2.5 and an early `Bag recipe
-        <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
+      adapted for Python 2.5 and an early `Bag recipe
+      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
-        in Smalltalk.
+      in Smalltalk.
 
     * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_.
 
     * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-        tutorial with examples.
+      tutorial with examples.
 
     * For mathematical operations on multisets and their use cases, see
-        *Knuth, Donald. The Art of Computer Programming Volume II,
-        Section 4.6.3, Exercise 19*.
+      *Knuth, Donald. The Art of Computer Programming Volume II,
+      Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
-        elements, see :func:`itertools.combinations_with_replacement`.
+      elements, see :func:`itertools.combinations_with_replacement`.
 
             map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
 
@@ -876,14 +912,14 @@ and more efficient to use a simple class declaration:
 .. seealso::
 
     * `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
-        adapted for Python 2.4.
+      adapted for Python 2.4.
 
     * `Recipe for named tuple abstract base class with a metaclass mix-in
-        <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
-        by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
-        named tuples, it also supports an alternate :term:`metaclass`-based
-        constructor that is convenient for use cases where named tuples are being
-        subclassed.
+      <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
+      by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
+      named tuples, it also supports an alternate :term:`metaclass`-based
+      constructor that is convenient for use cases where named tuples are being
+      subclassed.
 
 
 :class:`OrderedDict` objects
