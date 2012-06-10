@@ -337,7 +337,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
-            raise ValueError('Field names cannot start with an underscore:'
+            raise ValueError('Field names cannot start with an underscore: '
                              '%r' % name)
         if name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
