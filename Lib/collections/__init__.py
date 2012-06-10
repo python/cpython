@@ -8,7 +8,7 @@ import collections.abc
 __all__ += collections.abc.__all__
 
 from _collections import deque, defaultdict
-from operator import itemgetter as _itemgetter
+from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
@@ -229,7 +229,7 @@ class OrderedDict(dict):
         '''
         if isinstance(other, OrderedDict):
             return len(self)==len(other) and \
-                   all(p==q for p, q in zip(self.items(), other.items()))
+                   all(map(_eq, self.items(), other.items()))
         return dict.__eq__(self, other)
 
 
