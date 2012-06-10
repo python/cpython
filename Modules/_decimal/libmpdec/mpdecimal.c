@@ -5158,7 +5158,11 @@ _mpd_kmul(const mpd_uint_t *u, const mpd_uint_t *v,
 }
 
 
-/* Determine the minimum length for the number theoretic transform. */
+/*
+ * Determine the minimum length for the number theoretic transform. Valid
+ * transform lengths are 2**n or 3*2**n, where 2**n <= MPD_MAXTRANSFORM_2N.
+ * The function finds the shortest length m such that rsize <= m.
+ */
 static inline mpd_size_t
 _mpd_get_transform_len(mpd_size_t rsize)
 {
@@ -5169,6 +5173,7 @@ _mpd_get_transform_len(mpd_size_t rsize)
     log2rsize = mpd_bsr(rsize);
 
     if (rsize <= 1024) {
+        /* 2**n is faster in this range. */
         x = ((mpd_size_t)1)<<log2rsize;
         return (rsize == x) ? x : x<<1;
     }
@@ -5264,13 +5269,13 @@ _mpd_fntmul(const mpd_uint_t *u, const mpd_uint_t *v,
         goto malloc_error;
     }
 
-    if ((c1 = mpd_calloc(sizeof *c1, n)) == NULL) {
+    if ((c1 = mpd_calloc(n, sizeof *c1)) == NULL) {
         goto malloc_error;
     }
-    if ((c2 = mpd_calloc(sizeof *c2, n)) == NULL) {
+    if ((c2 = mpd_calloc(n, sizeof *c2)) == NULL) {
         goto malloc_error;
     }
-    if ((c3 = mpd_calloc(sizeof *c3, n)) == NULL) {
+    if ((c3 = mpd_calloc(n, sizeof *c3)) == NULL) {
         goto malloc_error;
     }
 
@@ -5286,7 +5291,7 @@ _mpd_fntmul(const mpd_uint_t *u, const mpd_uint_t *v,
         }
     }
     else {
-        if ((vtmp = mpd_calloc(sizeof *vtmp, n)) == NULL) {
+        if ((vtmp = mpd_calloc(n, sizeof *vtmp)) == NULL) {
             goto malloc_error;
         }
 
