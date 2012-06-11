@@ -798,11 +798,11 @@ field names, the method and attribute names start with an underscore.
 
     Class method that makes a new instance from an existing sequence or iterable.
 
-.. doctest::
+    .. doctest::
 
-    >>> t = [11, 22]
-    >>> Point._make(t)
-    Point(x=11, y=22)
+        >>> t = [11, 22]
+        >>> Point._make(t)
+        Point(x=11, y=22)
 
 .. method:: somenamedtuple._asdict()
 
@@ -819,16 +819,14 @@ field names, the method and attribute names start with an underscore.
 .. method:: somenamedtuple._replace(kwargs)
 
     Return a new instance of the named tuple replacing specified fields with new
-    values:
+    values::
 
-::
+        >>> p = Point(x=11, y=22)
+        >>> p._replace(x=33)
+        Point(x=33, y=22)
 
-    >>> p = Point(x=11, y=22)
-    >>> p._replace(x=33)
-    Point(x=33, y=22)
-
-    >>> for partnum, record in inventory.items():
-    ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+        >>> for partnum, record in inventory.items():
+        ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
 .. attribute:: somenamedtuple._source
 
@@ -844,15 +842,15 @@ field names, the method and attribute names start with an underscore.
     Tuple of strings listing the field names.  Useful for introspection
     and for creating new named tuple types from existing named tuples.
 
-.. doctest::
+    .. doctest::
 
-    >>> p._fields            # view the field names
-    ('x', 'y')
+        >>> p._fields            # view the field names
+        ('x', 'y')
 
-    >>> Color = namedtuple('Color', 'red green blue')
-    >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
-    >>> Pixel(11, 22, 128, 255, 0)
-    Pixel(x=11, y=22, red=128, green=255, blue=0)
+        >>> Color = namedtuple('Color', 'red green blue')
+        >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
+        >>> Pixel(11, 22, 128, 255, 0)
+        Pixel(x=11, y=22, red=128, green=255, blue=0)
 
 To retrieve a field whose name is stored in a string, use the :func:`getattr`
 function:
