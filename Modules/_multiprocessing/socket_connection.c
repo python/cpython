@@ -117,7 +117,7 @@ static Py_ssize_t
 conn_recv_string(ConnectionObject *conn, char *buffer,
                  size_t buflength, char **newbuffer, size_t maxlength)
 {
-    int res;
+    Py_ssize_t res;
     UINT32 ulength;
 
     *newbuffer = NULL;
@@ -132,20 +132,23 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
     if (ulength > maxlength)
         return MP_BAD_MESSAGE_LENGTH;
 
-    if (ulength <= buflength) {
-        Py_BEGIN_ALLOW_THREADS
-        res = _conn_recvall(conn->handle, buffer, (size_t)ulength);
-        Py_END_ALLOW_THREADS
-        return res < 0 ? res : ulength;
-    } else {
-        *newbuffer = PyMem_Malloc((size_t)ulength);
-        if (*newbuffer == NULL)
+    if (ulength > buflength) {
+        *newbuffer = buffer = PyMem_Malloc((size_t)ulength);
+        if (buffer == NULL)
             return MP_MEMORY_ERROR;
-        Py_BEGIN_ALLOW_THREADS
-        res = _conn_recvall(conn->handle, *newbuffer, (size_t)ulength);
-        Py_END_ALLOW_THREADS
-        return res < 0 ? (Py_ssize_t)res : (Py_ssize_t)ulength;
     }
+
+    Py_BEGIN_ALLOW_THREADS
+    res = _conn_recvall(conn->handle, buffer, (size_t)ulength);
+    Py_END_ALLOW_THREADS
+
+    if (res >= 0) {
+        res = (Py_ssize_t)ulength;
+    } else if (*newbuffer != NULL) {
+        PyMem_Free(*newbuffer);
+        *newbuffer = NULL;
+    }
+    return res;
 }
 
 /*
