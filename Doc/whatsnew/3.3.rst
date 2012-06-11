@@ -1406,6 +1406,14 @@ sys
 
   (:issue:`11223`)
 
+textwrap
+--------
+
+* The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
+  it straightforward to add a common prefix to selected lines in a block
+  of text.
+
+  (:issue:`13857`)
 
 time
 ----
