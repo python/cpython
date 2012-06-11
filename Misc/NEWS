@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13857: Added textwrap.indent() function (initial patch by Ezra
+  Berch)
+
 - Issue #2736: Added datetime.timestamp() method.
 
 - Issue #13854: Make multiprocessing properly handle non-integer
