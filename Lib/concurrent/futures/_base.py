@@ -470,8 +470,8 @@ class Future(object):
                 return True
             else:
                 LOGGER.critical('Future %s in unexpected state: %s',
-                                id(self.future),
-                                self.future._state)
+                                id(self),
+                                self._state)
                 raise RuntimeError('Future in unexpected state')
 
     def set_result(self, result):

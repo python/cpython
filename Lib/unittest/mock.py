@@ -1002,6 +1002,7 @@ def _is_started(patcher):
 class _patch(object):
 
     attribute_name = None
+    _active_patches = set()
 
     def __init__(
             self, getter, attribute, new, spec, create,
@@ -1270,8 +1271,18 @@ class _patch(object):
             if _is_started(patcher):
                 patcher.__exit__(*exc_info)
 
-    start = __enter__
-    stop = __exit__
+
+    def start(self):
+        """Activate a patch, returning any created mock."""
+        result = self.__enter__()
+        self._active_patches.add(self)
+        return result
+
+
+    def stop(self):
+        """Stop an active patch."""
+        self._active_patches.discard(self)
+        return self.__exit__()
 
 
 
@@ -1562,9 +1573,16 @@ def _clear_dict(in_dict):
             del in_dict[key]
 
 
+def _patch_stopall():
+    """Stop all active patches."""
+    for patch in list(_patch._active_patches):
+        patch.stop()
+
+
 patch.object = _patch_object
 patch.dict = _patch_dict
 patch.multiple = _patch_multiple
+patch.stopall = _patch_stopall
 patch.TEST_PREFIX = 'test'
 
 magic_methods = (
