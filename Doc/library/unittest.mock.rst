@@ -1354,8 +1354,12 @@ method of a `TestCase`:
     As an added bonus you no longer need to keep a reference to the `patcher`
     object.
 
-In fact `start` and `stop` are just aliases for the context manager
-`__enter__` and `__exit__` methods.
+It is also possible to stop all patches which have been started by using
+`patch.stopall`.
+
+.. function:: patch.stopall
+
+    Stop all active patches. Only stops patches started with `start`.
 
 
 TEST_PREFIX

@@ -1762,6 +1762,24 @@ class PatchTest(unittest.TestCase):
             p.stop()
 
 
+    def test_patch_stopall(self):
+        unlink = os.unlink
+        chdir = os.chdir
+        path = os.path
+        patch('os.unlink', something).start()
+        patch('os.chdir', something_else).start()
+
+        @patch('os.path')
+        def patched(mock_path):
+            patch.stopall()
+            self.assertIs(os.path, mock_path)
+            self.assertIs(os.unlink, unlink)
+            self.assertIs(os.chdir, chdir)
+
+        patched()
+        self.assertIs(os.path, path)
+
+
 
 if __name__ == '__main__':
     unittest.main()
