@@ -12,7 +12,7 @@
 
 The :mod:`textwrap` module provides two convenience functions, :func:`wrap` and
 :func:`fill`, as well as :class:`TextWrapper`, the class that does all the work,
-and a utility function  :func:`dedent`.  If you're just wrapping or filling one
+and two utility functions, :func:`dedent` and :func:`indent`.  If you're just wrapping or filling one
 or two  text strings, the convenience functions should be good enough;
 otherwise,  you should use an instance of :class:`TextWrapper` for efficiency.
 
@@ -45,9 +45,10 @@ Text is preferably wrapped on whitespaces and right after the hyphens in
 hyphenated words; only then will long words be broken if necessary, unless
 :attr:`TextWrapper.break_long_words` is set to false.
 
-An additional utility function, :func:`dedent`, is provided to remove
-indentation from strings that have unwanted whitespace to the left of the text.
-
+Two additional utility function, :func:`dedent` and :func:`indent`, are
+provided to remove indentation from strings that have unwanted whitespace
+to the left of the text and to add an arbitrary prefix to selected lines
+in a block of text.
 
 .. function:: dedent(text)
 
@@ -70,6 +71,32 @@ indentation from strings that have unwanted whitespace to the left of the text.
           '''
           print(repr(s))          # prints '    hello\n      world\n    '
           print(repr(dedent(s)))  # prints 'hello\n  world\n'
+
+
+.. function:: indent(text, prefix, predicate=None)
+
+   Add *prefix* to the beginning of selected lines in *text*.
+
+   Lines are separated by calling ``text.splitlines(True)``.
+
+   By default, *prefix* is added to all lines that do not consist
+   solely of whitespace (including any line endings).
+
+   For example::
+
+      >>> s = 'hello\n\n \nworld'
+      >>> indent(s, '  ')
+      '  hello\n\n \n  world'
+
+   The optional *predicate* argument can be used to control which lines
+   are indented. For example, it is easy to add *prefix* to even empty
+   and whitespace-only lines::
+
+      >>> print(indent(s, '+ ', lambda line: True))
+      + hello
+      +
+      +
+      + world
 
 
 .. class:: TextWrapper(**kwargs)
