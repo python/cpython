@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10133: Make multiprocessing deallocate buffer if socket read
+  fails.  Patch by Hallvard B Furuseth.
+
 - Issue #13854: Make multiprocessing properly handle non-integer
   non-string argument to SystemExit.
 
