@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3518: Remove references to non-existent BaseManager.from_address()
+  method.
+
 - Issue #13857: Added textwrap.indent() function (initial patch by Ezra
   Berch)
 
