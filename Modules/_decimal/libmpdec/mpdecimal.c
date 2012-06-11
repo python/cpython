@@ -5713,30 +5713,28 @@ void
 mpd_qnext_minus(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
                 uint32_t *status)
 {
-    mpd_context_t workctx; /* function context */
+    mpd_context_t workctx;
     MPD_NEW_CONST(tiny,MPD_POS,mpd_etiny(ctx)-1,1,1,1,1);
 
     if (mpd_isspecial(a)) {
         if (mpd_qcheck_nan(result, a, ctx, status)) {
             return;
         }
-        if (mpd_isinfinite(a)) {
-            if (mpd_isnegative(a)) {
-                mpd_qcopy(result, a, status);
-                return;
-            }
-            else {
-                mpd_clear_flags(result);
-                mpd_qmaxcoeff(result, ctx, status);
-                if (mpd_isnan(result)) {
-                    return;
-                }
-                result->exp = ctx->emax - ctx->prec + 1;
-                return;
-            }
+
+        assert(mpd_isinfinite(a));
+        if (mpd_isnegative(a)) {
+            mpd_qcopy(result, a, status);
+            return;
         }
-        /* debug */
-        abort(); /* GCOV_NOT_REACHED */
+        else {
+            mpd_clear_flags(result);
+            mpd_qmaxcoeff(result, ctx, status);
+            if (mpd_isnan(result)) {
+                return;
+            }
+            result->exp = mpd_etop(ctx);
+            return;
+        }
     }
 
     mpd_workcontext(&workctx, ctx);
@@ -5769,21 +5767,21 @@ mpd_qnext_plus(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         if (mpd_qcheck_nan(result, a, ctx, status)) {
             return;
         }
-        if (mpd_isinfinite(a)) {
-            if (mpd_ispositive(a)) {
-                mpd_qcopy(result, a, status);
-            }
-            else {
-                mpd_clear_flags(result);
-                mpd_qmaxcoeff(result, ctx, status);
-                if (mpd_isnan(result)) {
-                    return;
-                }
-                mpd_set_flags(result, MPD_NEG);
-                result->exp = mpd_etop(ctx);
-            }
-            return;
+
+        assert(mpd_isinfinite(a));
+        if (mpd_ispositive(a)) {
+            mpd_qcopy(result, a, status);
         }
+        else {
+            mpd_clear_flags(result);
+            mpd_qmaxcoeff(result, ctx, status);
+            if (mpd_isnan(result)) {
+                return;
+            }
+            mpd_set_flags(result, MPD_NEG);
+            result->exp = mpd_etop(ctx);
+        }
+        return;
     }
 
     mpd_workcontext(&workctx, ctx);
@@ -5814,9 +5812,8 @@ mpd_qnext_toward(mpd_t *result, const mpd_t *a, const mpd_t *b,
 {
     int c;
 
-    if (mpd_isnan(a) || mpd_isnan(b)) {
-        if (mpd_qcheck_nans(result, a, b, ctx, status))
-            return;
+    if (mpd_qcheck_nans(result, a, b, ctx, status)) {
+        return;
     }
 
     c = _mpd_cmp(a, b);
