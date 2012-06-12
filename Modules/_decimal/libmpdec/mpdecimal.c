@@ -107,8 +107,9 @@ static inline void _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
                              const mpd_context_t *ctx, uint32_t *status);
 static void _mpd_base_ndivmod(mpd_t *q, mpd_t *r, const mpd_t *a,
                               const mpd_t *b, uint32_t *status);
-static inline void _mpd_qpow_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp,
-                uint8_t resultsign, const mpd_context_t *ctx, uint32_t *status);
+static inline void _mpd_qpow_uint(mpd_t *result, const mpd_t *base,
+                                  mpd_uint_t exp, uint8_t resultsign,
+                                  const mpd_context_t *ctx, uint32_t *status);
 
 mpd_uint_t mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n);
 
@@ -5841,12 +5842,12 @@ mpd_qnext_toward(mpd_t *result, const mpd_t *a, const mpd_t *b,
 }
 
 /*
- * Internal function: Integer power with mpd_uint_t exponent, base is modified!
- * Function can fail with MPD_Malloc_error.
+ * Internal function: Integer power with mpd_uint_t exponent. The function
+ * can fail with MPD_Malloc_error.
  */
 static inline void
-_mpd_qpow_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp, uint8_t resultsign,
-               const mpd_context_t *ctx, uint32_t *status)
+_mpd_qpow_uint(mpd_t *result, const mpd_t *base, mpd_uint_t exp,
+               uint8_t resultsign, const mpd_context_t *ctx, uint32_t *status)
 {
     uint32_t workstatus = 0;
     mpd_uint_t n;
@@ -5866,7 +5867,8 @@ _mpd_qpow_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp, uint8_t resultsign,
         if (exp & n) {
             mpd_qmul(result, result, base, ctx, &workstatus);
         }
-        if (workstatus & (MPD_Overflow|MPD_Clamped)) {
+        if (mpd_isspecial(result) ||
+            (mpd_iszerocoeff(result) && (workstatus & MPD_Clamped))) {
             break;
         }
     }
