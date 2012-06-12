@@ -160,30 +160,6 @@ The module defines the following functions and data items:
    .. versionadded:: 3.3
 
 
-.. class:: clock_info
-
-   Clock information object returned by :func:`get_clock_info`.
-
-   .. attribute:: implementation
-
-      The name of the underlying C function used to get the clock value.
-
-   .. attribute::  monotonic
-
-      ``True`` if the clock cannot go backward, ``False`` otherwise.
-
-   .. attribute:: adjusted
-
-      ``True`` if the clock can be adjusted (e.g. by a NTP daemon), ``False``
-      otherwise.
-
-   .. attribute:: resolution
-
-      The resolution of the clock in seconds (:class:`float`).
-
-   .. versionadded:: 3.3
-
-
 .. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.
@@ -267,7 +243,7 @@ The module defines the following functions and data items:
 
 .. function:: get_clock_info(name)
 
-   Get information on the specified clock as a :class:`clock_info` object.
+   Get information on the specified clock as a namespace object.
    Supported clock names and the corresponding functions to read their value
    are:
 
@@ -276,6 +252,16 @@ The module defines the following functions and data items:
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
    * ``'time'``: :func:`time.time`
+
+   The result has the following attributes:
+
+   - *adjusted*: ``True`` if the clock can be adjusted (e.g. by a NTP daemon),
+     ``False`` otherwise
+   - *implementation*: The name of the underlying C function used to get
+     the clock value
+   - *monotonic*: ``True`` if the clock cannot go backward,
+     ``False`` otherwise
+   - *resolution*: The resolution of the clock in seconds (:class:`float`)
 
    .. versionadded:: 3.3
 
