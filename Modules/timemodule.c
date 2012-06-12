@@ -401,7 +401,7 @@ time_localtime(PyObject *self, PyObject *args)
 
     if (!parse_time_t_args(args, "|O:localtime", &when))
         return NULL;
-    if (pylocaltime(&when, &buf) == 1)
+    if (pylocaltime(&when, &buf) == -1)
         return NULL;
     return tmtotuple(&buf);
 }
