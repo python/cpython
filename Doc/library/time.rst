@@ -255,8 +255,8 @@ The module defines the following functions and data items:
 
    The result has the following attributes:
 
-   - *adjusted*: ``True`` if the clock can be adjusted (e.g. by a NTP daemon),
-     ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
+     a NTP daemon) or manually by the system administrator, ``False`` otherwise
    - *implementation*: The name of the underlying C function used to get
      the clock value
    - *monotonic*: ``True`` if the clock cannot go backward,
