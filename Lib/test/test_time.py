@@ -32,14 +32,14 @@ class TimeTestCase(unittest.TestCase):
         info = time.get_clock_info('time')
         self.assertFalse(info.monotonic)
         if sys.platform != 'win32':
-            self.assertTrue(info.adjusted)
+            self.assertTrue(info.adjustable)
 
     def test_clock(self):
         time.clock()
 
         info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjusted)
+        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -372,9 +372,9 @@ class TimeTestCase(unittest.TestCase):
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
         if sys.platform == 'linux':
-            self.assertTrue(info.adjusted)
+            self.assertTrue(info.adjustable)
         else:
-            self.assertFalse(info.adjusted)
+            self.assertFalse(info.adjustable)
 
     def test_perf_counter(self):
         time.perf_counter()
@@ -390,7 +390,7 @@ class TimeTestCase(unittest.TestCase):
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjusted)
+        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
@@ -441,7 +441,7 @@ class TimeTestCase(unittest.TestCase):
             # 0.0 < resolution <= 1.0
             self.assertGreater(info.resolution, 0.0)
             self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.adjusted, bool)
+            self.assertIsInstance(info.adjustable, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 

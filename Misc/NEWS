@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Rename adjusted attribute to adjustable in time.get_clock_info() result.
+
 - Issue #3518: Remove references to non-existent BaseManager.from_address()
   method.
 
