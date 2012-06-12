@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
     const char *implementation;
     int monotonic;
-    int adjusted;
+    int adjustable;
     double resolution;
 } _Py_clock_info_t;
 
