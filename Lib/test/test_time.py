@@ -31,8 +31,7 @@ class TimeTestCase(unittest.TestCase):
         time.time()
         info = time.get_clock_info('time')
         self.assertFalse(info.monotonic)
-        if sys.platform != 'win32':
-            self.assertTrue(info.adjustable)
+        self.assertTrue(info.adjustable)
 
     def test_clock(self):
         time.clock()
@@ -371,10 +370,7 @@ class TimeTestCase(unittest.TestCase):
 
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
-        if sys.platform == 'linux':
-            self.assertTrue(info.adjustable)
-        else:
-            self.assertFalse(info.adjustable)
+        self.assertFalse(info.adjustable)
 
     def test_perf_counter(self):
         time.perf_counter()
