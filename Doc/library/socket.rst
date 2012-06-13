@@ -47,7 +47,7 @@ Socket addresses are represented as follows:
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
   where *host* is a string representing either a hostname in Internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
-  and *port* is an integral port number.
+  and *port* is an integer port number.
 
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
