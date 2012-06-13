@@ -38,7 +38,7 @@ Socket addresses are represented as follows: A single string is used for the
 :const:`AF_UNIX` address family. A pair ``(host, port)`` is used for the
 :const:`AF_INET` address family, where *host* is a string representing either a
 hostname in Internet domain notation like ``'daring.cwi.nl'`` or an IPv4 address
-like ``'100.50.200.5'``, and *port* is an integral port number. For
+like ``'100.50.200.5'``, and *port* is an integer port number. For
 :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
 scopeid)`` is used, where *flowinfo* and *scopeid* represents ``sin6_flowinfo``
 and ``sin6_scope_id`` member in :const:`struct sockaddr_in6` in C. For
