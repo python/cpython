@@ -275,6 +275,10 @@ static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_wday", "day of week, range [0, 6], Monday is 0"},
     {"tm_yday", "day of year, range [1, 366]"},
     {"tm_isdst", "1 if summer time is in effect, 0 if not, and -1 if unknown"},
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    {"tm_zone", "abbreviation of timezone name"},
+    {"tm_gmtoff", "offset from UTC in seconds"},
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
     {0}
 };
 
@@ -294,6 +298,7 @@ static PyStructSequence_Desc struct_time_type_desc = {
 static int initialized;
 static PyTypeObject StructTimeType;
 
+
 static PyObject *
 tmtotuple(struct tm *p)
 {
@@ -312,6 +317,11 @@ tmtotuple(struct tm *p)
     SET(6, (p->tm_wday + 6) % 7); /* Want Monday == 0 */
     SET(7, p->tm_yday + 1);        /* Want January, 1 == 1 */
     SET(8, p->tm_isdst);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    PyStructSequence_SET_ITEM(v, 9,
+        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+    SET(10, p->tm_gmtoff);
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
     if (PyErr_Occurred()) {
         Py_XDECREF(v);
@@ -371,7 +381,10 @@ PyDoc_STRVAR(gmtime_doc,
                        tm_sec, tm_wday, tm_yday, tm_isdst)\n\
 \n\
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a.\n\
-GMT).  When 'seconds' is not passed in, convert the current time instead.");
+GMT).  When 'seconds' is not passed in, convert the current time instead.\n\
+\n\
+If the platform supports the tm_gmtoff and tm_zone, they are available as\n\
+attributes only.");
 
 static int
 pylocaltime(time_t *timep, struct tm *result)
@@ -438,6 +451,17 @@ gettmarg(PyObject *args, struct tm *p)
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    if (Py_TYPE(args) == &StructTimeType) {
+        PyObject *item;
+        item = PyTuple_GET_ITEM(args, 9);
+        p->tm_zone = item == Py_None ? NULL : _PyUnicode_AsString(item);
+        item = PyTuple_GET_ITEM(args, 10);
+        p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
+        if (PyErr_Occurred())
+            return 0;
+    }
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
     return 1;
 }
 
@@ -778,7 +802,10 @@ time_mktime(PyObject *self, PyObject *tup)
 PyDoc_STRVAR(mktime_doc,
 "mktime(tuple) -> floating point number\n\
 \n\
-Convert a time tuple in local time to seconds since the Epoch.");
+Convert a time tuple in local time to seconds since the Epoch.\n\
+Note that mktime(gmtime(0)) will not generally return zero for most\n\
+time zones; instead the returned value will either be equal to that\n\
+of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
@@ -1443,6 +1470,11 @@ PyInit_time(void)
 #endif
     }
     Py_INCREF(&StructTimeType);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
+#else
+    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 9);
+#endif
     PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
     initialized = 1;
     return m;
