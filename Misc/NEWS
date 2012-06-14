@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14936: curses_panel was converted to PEP 3121 API.
+  Patch by Robin Schreiber.
+
 - Issue #1667546: On platforms supporting tm_zone and tm_gmtoff fields
   in struct tm, time.struct_time objects returned by time.gmtime(),
   time.localtime() and time.strptime() functions now have tm_zone and
