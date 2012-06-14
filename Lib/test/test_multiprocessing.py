@@ -1564,6 +1564,11 @@ class _TestMyManager(BaseTestCase):
 
         manager.shutdown()
 
+        # If the manager process exited cleanly then the exitcode
+        # will be zero.  Otherwise (after a short timeout)
+        # terminate() is used, resulting in an exitcode of -SIGTERM.
+        self.assertEqual(manager._process.exitcode, 0)
+
 #
 # Test of connecting to a remote server and using xmlrpclib for serialization
 #
