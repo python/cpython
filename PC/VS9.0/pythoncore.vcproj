@@ -803,6 +803,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Include\namespaceobject.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\node.h"
 				>
 			</File>
@@ -1560,6 +1564,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Objects\moduleobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Objects\namespaceobject.c"
 				>
 			</File>
 			<File
