@@ -18,11 +18,10 @@ static char *PyCursesVersion = "2.1";
 
 typedef struct {
     PyObject *PyCursesError;
+    PyObject *PyCursesPanel_Type;
 } _curses_panelstate;
 
 #define _curses_panelstate(o) ((_curses_panelstate *)PyModule_GetState(o))
-
-/*static PyObject *PyCursesError;*/
 
 static int
 _curses_panel_clear(PyObject *m)
@@ -84,9 +83,8 @@ typedef struct {
     PyCursesWindowObject *wo;   /* for reference counts */
 } PyCursesPanelObject;
 
-PyTypeObject PyCursesPanel_Type;
-
-#define PyCursesPanel_Check(v)   (Py_TYPE(v) == &PyCursesPanel_Type)
+#define PyCursesPanel_Check(v)  \
+ (Py_TYPE(v) == _curses_panelstate_global->PyCursesPanel_Type)
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull
@@ -205,7 +203,8 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 {
     PyCursesPanelObject *po;
 
-    po = PyObject_NEW(PyCursesPanelObject, &PyCursesPanel_Type);
+    po = PyObject_NEW(PyCursesPanelObject,
+                      (PyTypeObject *)(_curses_panelstate_global)->PyCursesPanel_Type);
     if (po == NULL) return NULL;
     po->pan = pan;
     if (insert_lop(po) < 0) {
@@ -364,36 +363,18 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 
 /* -------------------------------------------------------*/
 
-PyTypeObject PyCursesPanel_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_curses_panel.curses panel",       /*tp_name*/
-    sizeof(PyCursesPanelObject),        /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    (destructor)PyCursesPanel_Dealloc, /*tp_dealloc*/
-    0,                  /*tp_print*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    PyCursesPanel_Methods, /*tp_methods*/
+static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_dealloc, PyCursesPanel_Dealloc},
+    {Py_tp_methods, PyCursesPanel_Methods},
+    {0, 0},
+};
+
+static PyType_Spec PyCursesPanel_Type_spec = {
+    "_curses_panel.curses panel",
+    sizeof(PyCursesPanelObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PyCursesPanel_Type_slots
 };
 
 /* Wrapper for panel_above(NULL). This function returns the bottom
@@ -510,17 +491,19 @@ PyInit__curses_panel(void)
 {
     PyObject *m, *d, *v;
 
-    /* Initialize object type */
-    if (PyType_Ready(&PyCursesPanel_Type) < 0)
-        return NULL;
-
-    import_curses();
-
     /* Create the module and add the functions */
     m = PyModule_Create(&_curses_panelmodule);
     if (m == NULL)
-        return NULL;
+        goto fail;
     d = PyModule_GetDict(m);
+
+    /* Initialize object type */
+    _curses_panelstate(m)->PyCursesPanel_Type = \
+        PyType_FromSpec(&PyCursesPanel_Type_spec);
+    if (_curses_panelstate(m)->PyCursesPanel_Type == NULL)
+        goto fail;
+
+    import_curses();
 
     /* For exception _curses_panel.error */
     _curses_panelstate(m)->PyCursesError = PyErr_NewException("_curses_panel.error", NULL, NULL);
@@ -532,4 +515,7 @@ PyInit__curses_panel(void)
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
     return m;
+  fail:
+    Py_XDECREF(m);
+    return NULL;
 }

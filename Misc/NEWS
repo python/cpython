@@ -21,7 +21,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #14936: curses_panel was converted to PEP 3121 API.
+- Issue #14936: curses_panel was converted to PEP 3121 and PEP 384 API.
   Patch by Robin Schreiber.
 
 - Issue #1667546: On platforms supporting tm_zone and tm_gmtoff fields
