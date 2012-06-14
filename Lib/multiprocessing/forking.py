@@ -13,7 +13,7 @@ import signal
 
 from multiprocessing import util, process
 
-__all__ = ['Popen', 'assert_spawning', 'exit', 'duplicate', 'close', 'ForkingPickler']
+__all__ = ['Popen', 'assert_spawning', 'duplicate', 'close', 'ForkingPickler']
 
 #
 # Check that the current thread is spawning a child process
@@ -75,7 +75,6 @@ else:
 #
 
 if sys.platform != 'win32':
-    exit = os._exit
     duplicate = os.dup
     close = os.close
 
@@ -168,7 +167,6 @@ else:
     WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
     WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
-    exit = _winapi.ExitProcess
     close = _winapi.CloseHandle
 
     #
@@ -349,7 +347,7 @@ else:
         from_parent.close()
 
         exitcode = self._bootstrap()
-        exit(exitcode)
+        sys.exit(exitcode)
 
 
     def get_preparation_data(name):

@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13841: Make child processes exit using sys.exit() on Windows.
+
 - Issue #14936: curses_panel was converted to PEP 3121 and PEP 384 API.
   Patch by Robin Schreiber.
 
