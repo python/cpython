@@ -21,6 +21,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #1667546: On platforms supporting tm_zone and tm_gmtoff fields
+  in struct tm, time.struct_time objects returned by time.gmtime(),
+  time.localtime() and time.strptime() functions now have tm_zone and
+  tm_gmtoff attributes.  Original patch by Paul Boddie.
+
 - Rename adjusted attribute to adjustable in time.get_clock_info() result.
 
 - Issue #3518: Remove references to non-existent BaseManager.from_address()
