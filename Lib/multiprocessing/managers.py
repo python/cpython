@@ -22,7 +22,7 @@ import queue
 from traceback import format_exc
 from multiprocessing import Process, current_process, active_children, Pool, util, connection
 from multiprocessing.process import AuthenticationString
-from multiprocessing.forking import exit, Popen, ForkingPickler
+from multiprocessing.forking import Popen, ForkingPickler
 from time import time as _time
 
 #
@@ -140,28 +140,38 @@ class Server(object):
         self.id_to_obj = {'0': (None, ())}
         self.id_to_refcount = {}
         self.mutex = threading.RLock()
-        self.stop = 0
 
     def serve_forever(self):
         '''
         Run the server forever
         '''
+        self.stop_event = threading.Event()
         current_process()._manager_server = self
         try:
+            accepter = threading.Thread(target=self.accepter)
+            accepter.daemon = True
+            accepter.start()
             try:
-                while 1:
-                    try:
-                        c = self.listener.accept()
-                    except (OSError, IOError):
-                        continue
-                    t = threading.Thread(target=self.handle_request, args=(c,))
-                    t.daemon = True
-                    t.start()
+                while not self.stop_event.is_set():
+                    self.stop_event.wait(1)
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
-            self.stop = 999
-            self.listener.close()
+            if sys.stdout != sys.__stdout__:
+                util.debug('resetting stdout, stderr')
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
+            sys.exit(0)
+
+    def accepter(self):
+        while True:
+            try:
+                c = self.listener.accept()
+            except (OSError, IOError):
+                continue
+            t = threading.Thread(target=self.handle_request, args=(c,))
+            t.daemon = True
+            t.start()
 
     def handle_request(self, c):
         '''
@@ -208,7 +218,7 @@ class Server(object):
         send = conn.send
         id_to_obj = self.id_to_obj
 
-        while not self.stop:
+        while not self.stop_event.is_set():
 
             try:
                 methodname = obj = None
@@ -318,32 +328,13 @@ class Server(object):
         Shutdown this process
         '''
         try:
-            try:
-                util.debug('manager received shutdown message')
-                c.send(('#RETURN', None))
-
-                if sys.stdout != sys.__stdout__:
-                    util.debug('resetting stdout, stderr')
-                    sys.stdout = sys.__stdout__
-                    sys.stderr = sys.__stderr__
-
-                util._run_finalizers(0)
-
-                for p in active_children():
-                    util.debug('terminating a child process of manager')
-                    p.terminate()
-
-                for p in active_children():
-                    util.debug('terminating a child process of manager')
-                    p.join()
-
-                util._run_finalizers()
-                util.info('manager exiting with exitcode 0')
-            except:
-                import traceback
-                traceback.print_exc()
+            util.debug('manager received shutdown message')
+            c.send(('#RETURN', None))
+        except:
+            import traceback
+            traceback.print_exc()
         finally:
-            exit(0)
+            self.stop_event.set()
 
     def create(self, c, typeid, *args, **kwds):
         '''
