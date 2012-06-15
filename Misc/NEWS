@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14982: Document that pkgutil's iteration functions require the
+  non-standard iter_modules() method to be defined by an importer (something
+  the importlib importers do not define).
+
 - Issue #15036: Allow removing or changing multiple items in
   single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
   between the changes.
