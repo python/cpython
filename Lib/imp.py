@@ -150,9 +150,10 @@ def load_package(name, path):
     return _bootstrap.SourceFileLoader(name, path).load_module(name)
 
 
-# XXX deprecate
 def load_module(name, file, filename, details):
-    """Load a module, given information returned by find_module().
+    """**DEPRECATED**
+
+    Load a module, given information returned by find_module().
 
     The module name must include the full package name, if any.
 
@@ -180,9 +181,10 @@ def load_module(name, file, filename, details):
             raise ImportError(msg, name=name)
 
 
-# XXX deprecate
 def find_module(name, path=None):
-    """Search for a module.
+    """**DEPRECATED**
+
+    Search for a module.
 
     If path is omitted or None, search for a built-in, frozen or special
     module and continue search in sys.path. The module name cannot
