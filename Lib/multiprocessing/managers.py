@@ -993,6 +993,26 @@ class EventProxy(BaseProxy):
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
 
+
+class BarrierProxy(BaseProxy):
+    _exposed_ = ('__getattribute__', 'wait', 'abort', 'reset')
+    def wait(self, timeout=None):
+        return self._callmethod('wait', (timeout,))
+    def abort(self):
+        return self._callmethod('abort')
+    def reset(self):
+        return self._callmethod('reset')
+    @property
+    def parties(self):
+        return self._callmethod('__getattribute__', ('parties',))
+    @property
+    def n_waiting(self):
+        return self._callmethod('__getattribute__', ('n_waiting',))
+    @property
+    def broken(self):
+        return self._callmethod('__getattribute__', ('broken',))
+
+
 class NamespaceProxy(BaseProxy):
     _exposed_ = ('__getattribute__', '__setattr__', '__delattr__')
     def __getattr__(self, key):
@@ -1084,6 +1104,7 @@ SyncManager.register('Semaphore', threading.Semaphore, AcquirerProxy)
 SyncManager.register('BoundedSemaphore', threading.BoundedSemaphore,
                      AcquirerProxy)
 SyncManager.register('Condition', threading.Condition, ConditionProxy)
+SyncManager.register('Barrier', threading.Barrier, BarrierProxy)
 SyncManager.register('Pool', Pool, PoolProxy)
 SyncManager.register('list', list, ListProxy)
 SyncManager.register('dict', dict, DictProxy)
