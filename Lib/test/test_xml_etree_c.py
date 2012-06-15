@@ -8,31 +8,6 @@ cET = import_fresh_module('xml.etree.ElementTree', fresh=['_elementtree'])
 cET_alias = import_fresh_module('xml.etree.cElementTree', fresh=['_elementtree', 'xml.etree'])
 
 
-# cElementTree specific tests
-
-def sanity():
-    r"""
-    Import sanity.
-
-    Issue #6697.
-
-    >>> cElementTree = cET
-    >>> e = cElementTree.Element('a')
-    >>> getattr(e, '\uD800')           # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-      ...
-    UnicodeEncodeError: ...
-
-    >>> p = cElementTree.XMLParser()
-    >>> p.version.split()[0]
-    'Expat'
-    >>> getattr(p, '\uD800')
-    Traceback (most recent call last):
-     ...
-    AttributeError: 'XMLParser' object has no attribute '\ud800'
-    """
-
-
 class MiscTests(unittest.TestCase):
     # Issue #8651.
     @support.bigmemtest(size=support._2G + 100, memuse=1)
@@ -46,12 +21,14 @@ class MiscTests(unittest.TestCase):
         finally:
             data = None
 
+
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
     # Test that the cET alias module is alive
     def test_alias_working(self):
         e = cET_alias.Element('foo')
         self.assertEqual(e.tag, 'foo')
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAcceleratorImported(unittest.TestCase):
@@ -67,7 +44,6 @@ def test_main():
     from test import test_xml_etree, test_xml_etree_c
 
     # Run the tests specific to the C implementation
-    support.run_doctest(test_xml_etree_c, verbosity=True)
     support.run_unittest(
         MiscTests,
         TestAliasWorking,
