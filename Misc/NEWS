@@ -67,6 +67,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15036: Allow removing or changing multiple items in
+  single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
+  between the changes.
+
 - Issue #10133: Make multiprocessing deallocate buffer if socket read
   fails.  Patch by Hallvard B Furuseth.
 
