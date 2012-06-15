@@ -2011,8 +2011,8 @@ class TreeBuilderTest(unittest.TestCase):
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
+@unittest.skip('Unstable due to module monkeypatching')
 class XincludeTest(unittest.TestCase):
-    @unittest.expectedFailure
     def test_xinclude_default(self):
         from xml.etree import ElementInclude
         doc = xinclude_loader('default.xml')
