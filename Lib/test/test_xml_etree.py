@@ -23,7 +23,8 @@ import weakref
 from test import support
 from test.support import findfile, import_fresh_module, gc_collect
 
-pyET = import_fresh_module('xml.etree.ElementTree', blocked=['_elementtree'])
+pyET = None
+ET = None
 
 SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
 try:
@@ -209,10 +210,8 @@ def interface():
 
     These methods return an iterable. See bug 6472.
 
-    >>> check_method(element.iter("tag").__next__)
     >>> check_method(element.iterfind("tag").__next__)
     >>> check_method(element.iterfind("*").__next__)
-    >>> check_method(tree.iter("tag").__next__)
     >>> check_method(tree.iterfind("tag").__next__)
     >>> check_method(tree.iterfind("*").__next__)
 
@@ -289,42 +288,6 @@ def cdata():
     '<tag>hello</tag>'
     >>> serialize(ET.XML("<tag><![CDATA[hello]]></tag>"))
     '<tag>hello</tag>'
-    """
-
-# Only with Python implementation
-def simplefind():
-    """
-    Test find methods using the elementpath fallback.
-
-    >>> ElementTree = pyET
-
-    >>> CurrentElementPath = ElementTree.ElementPath
-    >>> ElementTree.ElementPath = ElementTree._SimpleElementPath()
-    >>> elem = ElementTree.XML(SAMPLE_XML)
-    >>> elem.find("tag").tag
-    'tag'
-    >>> ElementTree.ElementTree(elem).find("tag").tag
-    'tag'
-    >>> elem.findtext("tag")
-    'text'
-    >>> elem.findtext("tog")
-    >>> elem.findtext("tog", "default")
-    'default'
-    >>> ElementTree.ElementTree(elem).findtext("tag")
-    'text'
-    >>> summarize_list(elem.findall("tag"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall(".//tag"))
-    ['tag', 'tag', 'tag']
-
-    Path syntax doesn't work in this case.
-
-    >>> elem.find("section/tag")
-    >>> elem.findtext("section/tag")
-    >>> summarize_list(elem.findall("section/tag"))
-    []
-
-    >>> ElementTree.ElementPath = CurrentElementPath
     """
 
 def find():
@@ -1002,36 +965,6 @@ def methods():
     '1 < 2\n'
     """
 
-def iterators():
-    """
-    Test iterators.
-
-    >>> e = ET.XML("<html><body>this is a <i>paragraph</i>.</body>..</html>")
-    >>> summarize_list(e.iter())
-    ['html', 'body', 'i']
-    >>> summarize_list(e.find("body").iter())
-    ['body', 'i']
-    >>> summarize(next(e.iter()))
-    'html'
-    >>> "".join(e.itertext())
-    'this is a paragraph...'
-    >>> "".join(e.find("body").itertext())
-    'this is a paragraph.'
-    >>> next(e.itertext())
-    'this is a '
-
-    Method iterparse should return an iterator. See bug 6472.
-
-    >>> sourcefile = serialize(e, to_string=False)
-    >>> next(ET.iterparse(sourcefile))  # doctest: +ELLIPSIS
-    ('end', <Element 'i' at 0x...>)
-
-    >>> tree = ET.ElementTree(None)
-    >>> tree.iter()
-    Traceback (most recent call last):
-    AttributeError: 'NoneType' object has no attribute 'iter'
-    """
-
 ENTITY_XML = """\
 <!DOCTYPE points [
 <!ENTITY % user-entities SYSTEM 'user-entities.xml'>
@@ -1339,6 +1272,7 @@ XINCLUDE["default.xml"] = """\
 </document>
 """.format(html.escape(SIMPLE_XMLFILE, True))
 
+
 def xinclude_loader(href, parse="xml", encoding=None):
     try:
         data = XINCLUDE[href]
@@ -1411,22 +1345,6 @@ def xinclude():
     >>> # print(serialize(document)) # C5
     """
 
-def xinclude_default():
-    """
-    >>> from xml.etree import ElementInclude
-
-    >>> document = xinclude_loader("default.xml")
-    >>> ElementInclude.include(document)
-    >>> print(serialize(document)) # default
-    <document>
-      <p>Example.</p>
-      <root>
-       <element key="value">text</element>
-       <element>text</element>tail
-       <empty-element />
-    </root>
-    </document>
-    """
 
 #
 # badly formatted xi:include tags
@@ -1917,9 +1835,8 @@ class ElementTreeTest(unittest.TestCase):
         self.assertIsInstance(ET.QName, type)
         self.assertIsInstance(ET.ElementTree, type)
         self.assertIsInstance(ET.Element, type)
-        # XXX issue 14128 with C ElementTree
-        # self.assertIsInstance(ET.TreeBuilder, type)
-        # self.assertIsInstance(ET.XMLParser, type)
+        self.assertIsInstance(ET.TreeBuilder, type)
+        self.assertIsInstance(ET.XMLParser, type)
 
     def test_Element_subclass_trivial(self):
         class MyElement(ET.Element):
@@ -1951,6 +1868,73 @@ class ElementTreeTest(unittest.TestCase):
 
         mye = MyElement('joe')
         self.assertEqual(mye.newmethod(), 'joe')
+
+
+class ElementIterTest(unittest.TestCase):
+    def _ilist(self, elem, tag=None):
+        return summarize_list(elem.iter(tag))
+
+    def test_basic(self):
+        doc = ET.XML("<html><body>this is a <i>paragraph</i>.</body>..</html>")
+        self.assertEqual(self._ilist(doc), ['html', 'body', 'i'])
+        self.assertEqual(self._ilist(doc.find('body')), ['body', 'i'])
+        self.assertEqual(next(doc.iter()).tag, 'html')
+        self.assertEqual(''.join(doc.itertext()), 'this is a paragraph...')
+        self.assertEqual(''.join(doc.find('body').itertext()),
+            'this is a paragraph.')
+        self.assertEqual(next(doc.itertext()), 'this is a ')
+
+        # iterparse should return an iterator
+        sourcefile = serialize(doc, to_string=False)
+        self.assertEqual(next(ET.iterparse(sourcefile))[0], 'end')
+
+        tree = ET.ElementTree(None)
+        self.assertRaises(AttributeError, tree.iter)
+
+    def test_corners(self):
+        # single root, no subelements
+        a = ET.Element('a')
+        self.assertEqual(self._ilist(a), ['a'])
+
+        # one child
+        b = ET.SubElement(a, 'b')
+        self.assertEqual(self._ilist(a), ['a', 'b'])
+
+        # one child and one grandchild
+        c = ET.SubElement(b, 'c')
+        self.assertEqual(self._ilist(a), ['a', 'b', 'c'])
+
+        # two children, only first with grandchild
+        d = ET.SubElement(a, 'd')
+        self.assertEqual(self._ilist(a), ['a', 'b', 'c', 'd'])
+
+        # replace first child by second
+        a[0] = a[1]
+        del a[1]
+        self.assertEqual(self._ilist(a), ['a', 'd'])
+
+    def test_iter_by_tag(self):
+        doc = ET.XML('''
+            <document>
+                <house>
+                    <room>bedroom1</room>
+                    <room>bedroom2</room>
+                </house>
+                <shed>nothing here
+                </shed>
+                <house>
+                    <room>bedroom8</room>
+                </house>
+            </document>''')
+
+        self.assertEqual(self._ilist(doc, 'room'), ['room'] * 3)
+        self.assertEqual(self._ilist(doc, 'house'), ['house'] * 2)
+
+        # make sure both tag=None and tag='*' return all tags
+        all_tags = ['document', 'house', 'room', 'room',
+                    'shed', 'house', 'room']
+        self.assertEqual(self._ilist(doc), all_tags)
+        self.assertEqual(self._ilist(doc, '*'), all_tags)
 
 
 class TreeBuilderTest(unittest.TestCase):
@@ -2027,6 +2011,23 @@ class TreeBuilderTest(unittest.TestCase):
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
+@unittest.skip('Unstable due to module monkeypatching')
+class XincludeTest(unittest.TestCase):
+    def test_xinclude_default(self):
+        from xml.etree import ElementInclude
+        doc = xinclude_loader('default.xml')
+        ElementInclude.include(doc)
+        s = serialize(doc)
+        self.assertEqual(s.strip(), '''<document>
+  <p>Example.</p>
+  <root>
+   <element key="value">text</element>
+   <element>text</element>tail
+   <empty-element />
+</root>
+</document>''')
+
+
 class XMLParserTest(unittest.TestCase):
     sample1 = '<file><line>22</line></file>'
     sample2 = ('<!DOCTYPE html PUBLIC'
@@ -2073,13 +2074,6 @@ class XMLParserTest(unittest.TestCase):
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
-class NoAcceleratorTest(unittest.TestCase):
-    # Test that the C accelerator was not imported for pyET
-    def test_correct_import_pyET(self):
-        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
-        self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
-
-
 class NamespaceParseTest(unittest.TestCase):
     def test_find_with_namespace(self):
         nsmap = {'h': 'hello', 'f': 'foo'}
@@ -2088,7 +2082,6 @@ class NamespaceParseTest(unittest.TestCase):
         self.assertEqual(len(doc.findall('{hello}table', nsmap)), 1)
         self.assertEqual(len(doc.findall('.//{hello}td', nsmap)), 2)
         self.assertEqual(len(doc.findall('.//{foo}name', nsmap)), 1)
-
 
 
 class ElementSlicingTest(unittest.TestCase):
@@ -2232,6 +2225,14 @@ class KeywordArgsTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
             ET.Element('a', attrib="I'm not a dict")
 
+# --------------------------------------------------------------------
+
+@unittest.skipUnless(pyET, 'only for the Python version')
+class NoAcceleratorTest(unittest.TestCase):
+    # Test that the C accelerator was not imported for pyET
+    def test_correct_import_pyET(self):
+        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
+        self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
 
 # --------------------------------------------------------------------
 
@@ -2276,31 +2277,42 @@ class CleanContext(object):
         self.checkwarnings.__exit__(*args)
 
 
-def test_main(module=pyET):
-    from test import test_xml_etree
+def test_main(module=None):
+    # When invoked without a module, runs the Python ET tests by loading pyET.
+    # Otherwise, uses the given module as the ET.
+    if module is None:
+        global pyET
+        pyET = import_fresh_module('xml.etree.ElementTree',
+                                   blocked=['_elementtree'])
+        module = pyET
 
-    # The same doctests are used for both the Python and the C implementations
-    test_xml_etree.ET = module
+    global ET
+    ET = module
 
     test_classes = [
         ElementSlicingTest,
         BasicElementTest,
         StringIOTest,
         ParseErrorTest,
+        XincludeTest,
         ElementTreeTest,
-        NamespaceParseTest,
+        ElementIterTest,
         TreeBuilderTest,
-        XMLParserTest,
-        KeywordArgsTest]
-    if module is pyET:
-        # Run the tests specific to the Python implementation
-        test_classes += [NoAcceleratorTest]
+        ]
+
+    # These tests will only run for the pure-Python version that doesn't import
+    # _elementtree. We can't use skipUnless here, because pyET is filled in only
+    # after the module is loaded.
+    if pyET:
+        test_classes.extend([
+            NoAcceleratorTest,
+            ])
 
     support.run_unittest(*test_classes)
 
     # XXX the C module should give the same warnings as the Python module
     with CleanContext(quiet=(module is not pyET)):
-        support.run_doctest(test_xml_etree, verbosity=True)
+        support.run_doctest(sys.modules[__name__], verbosity=True)
 
 if __name__ == '__main__':
     test_main()

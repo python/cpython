@@ -35,7 +35,7 @@
 __all__ = [
     'Process', 'current_process', 'active_children', 'freeze_support',
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
-    'Event', 'Queue', 'Manager', 'Pipe', 'Pool', 'JoinableQueue'
+    'Event', 'Barrier', 'Queue', 'Manager', 'Pipe', 'Pool', 'JoinableQueue'
     ]
 
 #
@@ -49,7 +49,7 @@ import array
 
 from multiprocessing.dummy.connection import Pipe
 from threading import Lock, RLock, Semaphore, BoundedSemaphore
-from threading import Event, Condition
+from threading import Event, Condition, Barrier
 from queue import Queue
 
 #

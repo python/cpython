@@ -31,15 +31,14 @@ class TimeTestCase(unittest.TestCase):
         time.time()
         info = time.get_clock_info('time')
         self.assertFalse(info.monotonic)
-        if sys.platform != 'win32':
-            self.assertTrue(info.adjusted)
+        self.assertTrue(info.adjustable)
 
     def test_clock(self):
         time.clock()
 
         info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjusted)
+        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -371,10 +370,7 @@ class TimeTestCase(unittest.TestCase):
 
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
-        if sys.platform == 'linux':
-            self.assertTrue(info.adjusted)
-        else:
-            self.assertFalse(info.adjusted)
+        self.assertFalse(info.adjustable)
 
     def test_perf_counter(self):
         time.perf_counter()
@@ -390,7 +386,7 @@ class TimeTestCase(unittest.TestCase):
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjusted)
+        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
@@ -441,7 +437,7 @@ class TimeTestCase(unittest.TestCase):
             # 0.0 < resolution <= 1.0
             self.assertGreater(info.resolution, 0.0)
             self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.adjusted, bool)
+            self.assertIsInstance(info.adjustable, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 
@@ -624,7 +620,58 @@ class TestPytime(unittest.TestCase):
         for invalid in self.invalid_values:
             self.assertRaises(OverflowError, pytime_object_to_timespec, invalid)
 
+    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    def test_localtime_timezone(self):
 
+        # Get the localtime and examine it for the offset and zone.
+        lt = time.localtime()
+        self.assertTrue(hasattr(lt, "tm_gmtoff"))
+        self.assertTrue(hasattr(lt, "tm_zone"))
+
+        # See if the offset and zone are similar to the module
+        # attributes.
+        if lt.tm_gmtoff is None:
+            self.assertTrue(not hasattr(time, "timezone"))
+        else:
+            self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
+        if lt.tm_zone is None:
+            self.assertTrue(not hasattr(time, "tzname"))
+        else:
+            self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
+
+        # Try and make UNIX times from the localtime and a 9-tuple
+        # created from the localtime. Test to see that the times are
+        # the same.
+        t = time.mktime(lt); t9 = time.mktime(lt[:9])
+        self.assertEqual(t, t9)
+
+        # Make localtimes from the UNIX times and compare them to
+        # the original localtime, thus making a round trip.
+        new_lt = time.localtime(t); new_lt9 = time.localtime(t9)
+        self.assertEqual(new_lt, lt)
+        self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
+        self.assertEqual(new_lt.tm_zone, lt.tm_zone)
+        self.assertEqual(new_lt9, lt)
+        self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
+        self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
+
+    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    def test_strptime_timezone(self):
+        t = time.strptime("UTC", "%Z")
+        self.assertEqual(t.tm_zone, 'UTC')
+        t = time.strptime("+0500", "%z")
+        self.assertEqual(t.tm_gmtoff, 5 * 3600)
+
+    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    def test_short_times(self):
+
+        import pickle
+
+        # Load a short time structure using pickle.
+        st = b"ctime\nstruct_time\np0\n((I2007\nI8\nI11\nI1\nI24\nI49\nI5\nI223\nI1\ntp1\n(dp2\ntp3\nRp4\n."
+        lt = pickle.loads(st)
+        self.assertIs(lt.tm_gmtoff, None)
+        self.assertIs(lt.tm_zone, None)
 
 def test_main():
     support.run_unittest(

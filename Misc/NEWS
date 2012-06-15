@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #15026: utf-16 encoding is now significantly faster (up to 10x).
+  Patch by Serhiy Storchaka.
+
 - Issue #11022: open() and io.TextIOWrapper are now calling
   locale.getpreferredencoding(False) instead of locale.getpreferredencoding()
   in text mode if the encoding is not specified. Don't change temporary the
@@ -20,6 +23,32 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #15036: Allow removing or changing multiple items in
+  single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
+  between the changes.
+
+- Issue #14059: Implement multiprocessing.Barrier.
+
+- Issue #15061: The inappropriately named hmac.secure_compare has been
+  renamed to hmac.compare_digest, restricted to operating on bytes inputs
+  only and had its documentation updated to more accurately reflect both its
+  intent and its limitations
+
+- Issue #13841: Make child processes exit using sys.exit() on Windows.
+
+- Issue #14936: curses_panel was converted to PEP 3121 and PEP 384 API.
+  Patch by Robin Schreiber.
+
+- Issue #1667546: On platforms supporting tm_zone and tm_gmtoff fields
+  in struct tm, time.struct_time objects returned by time.gmtime(),
+  time.localtime() and time.strptime() functions now have tm_zone and
+  tm_gmtoff attributes.  Original patch by Paul Boddie.
+
+- Rename adjusted attribute to adjustable in time.get_clock_info() result.
+
+- Issue #3518: Remove references to non-existent BaseManager.from_address()
+  method.
 
 - Issue #13857: Added textwrap.indent() function (initial patch by Ezra
   Berch)

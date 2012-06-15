@@ -77,6 +77,12 @@ An explanation of some terminology and conventions is in order.
 
   See :class:`struct_time` for a description of these objects.
 
+  .. versionchanged:: 3.3
+
+  The :class:`struct_time` type was extended to provide the
+  :attr:`tm_gmtoff` and :attr:`tm_zone` attributes when platform
+  supports corresponding ``struct tm`` members.
+
 * Use the following functions to convert between time representations:
 
   +-------------------------+-------------------------+-------------------------+
@@ -156,30 +162,6 @@ The module defines the following functions and data items:
    Return the time of the specified clock *clk_id*.
 
    Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. class:: clock_info
-
-   Clock information object returned by :func:`get_clock_info`.
-
-   .. attribute:: implementation
-
-      The name of the underlying C function used to get the clock value.
-
-   .. attribute::  monotonic
-
-      ``True`` if the clock cannot go backward, ``False`` otherwise.
-
-   .. attribute:: adjusted
-
-      ``True`` if the clock can be adjusted (e.g. by a NTP daemon), ``False``
-      otherwise.
-
-   .. attribute:: resolution
-
-      The resolution of the clock in seconds (:class:`float`).
 
    .. versionadded:: 3.3
 
@@ -267,7 +249,7 @@ The module defines the following functions and data items:
 
 .. function:: get_clock_info(name)
 
-   Get information on the specified clock as a :class:`clock_info` object.
+   Get information on the specified clock as a namespace object.
    Supported clock names and the corresponding functions to read their value
    are:
 
@@ -276,6 +258,16 @@ The module defines the following functions and data items:
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
    * ``'time'``: :func:`time.time`
+
+   The result has the following attributes:
+
+   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
+     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *implementation*: The name of the underlying C function used to get
+     the clock value
+   - *monotonic*: ``True`` if the clock cannot go backward,
+     ``False`` otherwise
+   - *resolution*: The resolution of the clock in seconds (:class:`float`)
 
    .. versionadded:: 3.3
 
@@ -349,7 +341,6 @@ The module defines the following functions and data items:
    of consecutive calls is valid.
 
    .. versionadded:: 3.3
-
 
 .. function:: sleep(secs)
 
@@ -446,6 +437,12 @@ The module defines the following functions and data items:
    +-----------+------------------------------------------------+-------+
    | ``%Y``    | Year with century as a decimal number.         |       |
    |           |                                                |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%z``    | Time zone offset indicating a positive or      |       |
+   |           | negative time difference from UTC/GMT of the   |       |
+   |           | form +HHMM or -HHMM, where H represents decimal|       |
+   |           | hour digits and M represents decimal minute    |       |
+   |           | digits [-23:59, +23:59].                       |       |
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists).                                       |       |
@@ -546,6 +543,10 @@ The module defines the following functions and data items:
    +-------+-------------------+---------------------------------+
    | 8     | :attr:`tm_isdst`  | 0, 1 or -1; see below           |
    +-------+-------------------+---------------------------------+
+   | N/A   | :attr:`tm_zone`   | abbreviation of timezone name   |
+   +-------+-------------------+---------------------------------+
+   | N/A   | :attr:`tm_gmtoff` | offset from UTC in seconds      |
+   +-------+-------------------+---------------------------------+
 
    Note that unlike the C structure, the month value is a range of [1, 12], not
    [0, 11].  A ``-1`` argument as the daylight
@@ -556,6 +557,11 @@ The module defines the following functions and data items:
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
+  .. versionchanged:: 3.3
+
+  :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are avaliable on
+  platforms with C library supporting the corresponding fields in
+  ``struct tm``.
 
 .. function:: time()
 
@@ -565,7 +571,6 @@ The module defines the following functions and data items:
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back between
    the two calls.
-
 
 .. data:: timezone
 

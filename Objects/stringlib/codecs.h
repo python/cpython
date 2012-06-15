@@ -562,4 +562,68 @@ IllegalSurrogate:
 #undef STRIPPED_MASK
 #undef SWAB
 #undef LONG_PTR_MASK
+
+
+Py_LOCAL_INLINE(void)
+STRINGLIB(utf16_encode)(unsigned short *out,
+                        const STRINGLIB_CHAR *in,
+                        Py_ssize_t len,
+                        int native_ordering)
+{
+    const STRINGLIB_CHAR *end = in + len;
+#if STRINGLIB_SIZEOF_CHAR == 1
+# define SWAB2(CH)  ((CH) << 8)
+#else
+# define SWAB2(CH)  (((CH) << 8) | ((CH) >> 8))
+#endif
+#if STRINGLIB_MAX_CHAR < 0x10000
+    if (native_ordering) {
+# if STRINGLIB_SIZEOF_CHAR == 2
+        Py_MEMCPY(out, in, 2 * len);
+# else
+        _PyUnicode_CONVERT_BYTES(STRINGLIB_CHAR, unsigned short, in, end, out);
+# endif
+    } else {
+        const STRINGLIB_CHAR *unrolled_end = in + (len & ~ (Py_ssize_t) 3);
+        while (in < unrolled_end) {
+            out[0] = SWAB2(in[0]);
+            out[1] = SWAB2(in[1]);
+            out[2] = SWAB2(in[2]);
+            out[3] = SWAB2(in[3]);
+            in += 4; out += 4;
+        }
+        while (in < end) {
+            *out++ = SWAB2(*in);
+            ++in;
+        }
+    }
+#else
+    if (native_ordering) {
+        while (in < end) {
+            Py_UCS4 ch = *in++;
+            if (ch < 0x10000)
+                *out++ = ch;
+            else {
+                out[0] = Py_UNICODE_HIGH_SURROGATE(ch);
+                out[1] = Py_UNICODE_LOW_SURROGATE(ch);
+                out += 2;
+            }
+        }
+    } else {
+        while (in < end) {
+            Py_UCS4 ch = *in++;
+            if (ch < 0x10000)
+                *out++ = SWAB2((Py_UCS2)ch);
+            else {
+                Py_UCS2 ch1 = Py_UNICODE_HIGH_SURROGATE(ch);
+                Py_UCS2 ch2 = Py_UNICODE_LOW_SURROGATE(ch);
+                out[0] = SWAB2(ch1);
+                out[1] = SWAB2(ch2);
+                out += 2;
+            }
+        }
+    }
+#endif
+#undef SWAB2
+}
 #endif /* STRINGLIB_IS_UNICODE */

@@ -486,19 +486,19 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     return (year, month, day,
             hour, minute, second,
-            weekday, julian, tz, gmtoff, tzname), fraction
+            weekday, julian, tz, tzname, gmtoff), fraction
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the
     format string."""
     tt = _strptime(data_string, format)[0]
-    return time.struct_time(tt[:9])
+    return time.struct_time(tt[:time._STRUCT_TM_ITEMS])
 
 def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a class cls instance based on the input string and the
     format string."""
     tt, fraction = _strptime(data_string, format)
-    gmtoff, tzname = tt[-2:]
+    tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
     if gmtoff is not None:
         tzdelta = datetime_timedelta(seconds=gmtoff)
