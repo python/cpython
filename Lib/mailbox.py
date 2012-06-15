@@ -675,6 +675,7 @@ class _singlefileMailbox(Mailbox):
                     new_file.write(buffer)
                 new_toc[key] = (new_start, new_file.tell())
                 self._post_message_hook(new_file)
+            self._file_length = new_file.tell()
         except:
             new_file.close()
             os.remove(new_file.name)
