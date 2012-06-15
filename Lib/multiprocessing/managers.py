@@ -582,7 +582,7 @@ class BaseManager(object):
             except Exception:
                 pass
 
-            process.join(timeout=0.2)
+            process.join(timeout=1.0)
             if process.is_alive():
                 util.info('manager still alive')
                 if hasattr(process, 'terminate'):

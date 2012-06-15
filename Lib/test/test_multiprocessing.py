@@ -1820,6 +1820,11 @@ class _TestZZZNumberOfObjects(BaseTestCase):
     # run after all the other tests for the manager.  It tests that
     # there have been no "reference leaks" for the manager's shared
     # objects.  Note the comment in _TestPool.test_terminate().
+
+    # If some other test using ManagerMixin.manager fails, then the
+    # raised exception may keep alive a frame which holds a reference
+    # to a managed object.  This will cause test_number_of_objects to
+    # also fail.
     ALLOWED_TYPES = ('manager',)
 
     def test_number_of_objects(self):
