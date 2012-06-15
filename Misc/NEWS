@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #15026: utf-16 encoding is now significantly faster (up to 10x).
+  Patch by Serhiy Storchaka.
+
 - Issue #11022: open() and io.TextIOWrapper are now calling
   locale.getpreferredencoding(False) instead of locale.getpreferredencoding()
   in text mode if the encoding is not specified. Don't change temporary the
