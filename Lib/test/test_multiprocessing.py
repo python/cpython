@@ -1109,9 +1109,13 @@ class Bunch(object):
         self.n = n
         self.started = namespace.DummyList()
         self.finished = namespace.DummyList()
-        self._can_exit = namespace.Value('i', not wait_before_exit)
+        self._can_exit = namespace.Event()
+        if not wait_before_exit:
+            self._can_exit.set()
         for i in range(n):
-            namespace.Process(target=self.task).start()
+            p = namespace.Process(target=self.task)
+            p.daemon = True
+            p.start()
 
     def task(self):
         pid = os.getpid()
@@ -1120,8 +1124,8 @@ class Bunch(object):
             self.f(*self.args)
         finally:
             self.finished.append(pid)
-            while not self._can_exit.value:
-                _wait()
+            self._can_exit.wait(30)
+            assert self._can_exit.is_set()
 
     def wait_for_started(self):
         while len(self.started) < self.n:
@@ -1132,7 +1136,7 @@ class Bunch(object):
             _wait()
 
     def do_finish(self):
-        self._can_exit.value = True
+        self._can_exit.set()
 
 
 class AppendTrue(object):
