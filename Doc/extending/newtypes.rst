@@ -1459,9 +1459,8 @@ The type constructor is responsible for initializing the weak reference list to
    }
 
 The only further addition is that the destructor needs to call the weak
-reference manager to clear any weak references.  This should be done before any
-other parts of the destruction have occurred, but is only required if the weak
-reference list is non-*NULL*::
+reference manager to clear any weak references.  This is only required if the
+weak reference list is non-*NULL*::
 
    static void
    instance_dealloc(PyInstanceObject *inst)
