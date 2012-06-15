@@ -2234,28 +2234,6 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
         self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
 
-
-class ElementPathFallbackTest(unittest.TestCase):
-    def test_fallback(self):
-        current_ElementPath = ET.ElementPath
-        ET.ElementPath = ET._SimpleElementPath()
-        elem = ET.XML(SAMPLE_XML)
-        self.assertEqual(elem.find('tag').tag, 'tag')
-        self.assertEqual(ET.ElementTree(elem).find('tag').tag, 'tag')
-        self.assertEqual(elem.findtext('tag'), 'text')
-        self.assertIsNone(elem.findtext('tog'))
-        self.assertEqual(elem.findtext('tog', 'default'), 'default')
-        self.assertEqual(ET.ElementTree(elem).findtext('tag'), 'text')
-        self.assertEqual(summarize_list(elem.findall('tag')), ['tag', 'tag'])
-        self.assertEqual(summarize_list(elem.findall('.//tag')),
-            ['tag', 'tag', 'tag'])
-
-        #self.assertIsNone(elem.find('section/tag'))
-        #self.assertIsNone(elem.findtext('section/tag'))
-        self.assertEqual(summarize_list(elem.findall('section/tag')), [])
-
-        ET.ElementPath = current_ElementPath
-
 # --------------------------------------------------------------------
 
 
@@ -2328,7 +2306,6 @@ def test_main(module=None):
     if pyET:
         test_classes.extend([
             NoAcceleratorTest,
-            ElementPathFallbackTest,
             ])
 
     support.run_unittest(*test_classes)
