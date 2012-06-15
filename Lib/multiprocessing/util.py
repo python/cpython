@@ -269,21 +269,24 @@ _exiting = False
 def _exit_function():
     global _exiting
 
-    info('process shutting down')
-    debug('running all "atexit" finalizers with priority >= 0')
-    _run_finalizers(0)
+    if not _exiting:
+        _exiting = True
 
-    for p in active_children():
-        if p._daemonic:
-            info('calling terminate() for daemon %s', p.name)
-            p._popen.terminate()
+        info('process shutting down')
+        debug('running all "atexit" finalizers with priority >= 0')
+        _run_finalizers(0)
 
-    for p in active_children():
-        info('calling join() for process %s', p.name)
-        p.join()
+        for p in active_children():
+            if p._daemonic:
+                info('calling terminate() for daemon %s', p.name)
+                p._popen.terminate()
 
-    debug('running the remaining "atexit" finalizers')
-    _run_finalizers()
+        for p in active_children():
+            info('calling join() for process %s', p.name)
+            p.join()
+
+        debug('running the remaining "atexit" finalizers')
+        _run_finalizers()
 
 atexit.register(_exit_function)
 

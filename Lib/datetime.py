@@ -1670,10 +1670,8 @@ class datetime(date):
         if mytz is ottz:
             base_compare = True
         else:
-            if mytz is not None:
-                myoff = self.utcoffset()
-            if ottz is not None:
-                otoff = other.utcoffset()
+            myoff = self.utcoffset()
+            otoff = other.utcoffset()
             base_compare = myoff == otoff
 
         if base_compare:

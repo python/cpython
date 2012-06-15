@@ -101,32 +101,8 @@ import sys
 import re
 import warnings
 
-class _SimpleElementPath:
-    # emulate pre-1.2 find/findtext/findall behaviour
-    def find(self, element, tag, namespaces=None):
-        for elem in element:
-            if elem.tag == tag:
-                return elem
-        return None
-    def findtext(self, element, tag, default=None, namespaces=None):
-        elem = self.find(element, tag)
-        if elem is None:
-            return default
-        return elem.text or ""
-    def iterfind(self, element, tag, namespaces=None):
-        if tag[:3] == ".//":
-            for elem in element.iter(tag[3:]):
-                yield elem
-        for elem in element:
-            if elem.tag == tag:
-                yield elem
-    def findall(self, element, tag, namespaces=None):
-        return list(self.iterfind(element, tag, namespaces))
+from . import ElementPath
 
-try:
-    from . import ElementPath
-except ImportError:
-    ElementPath = _SimpleElementPath()
 
 ##
 # Parser error.  This is a subclass of <b>SyntaxError</b>.
@@ -916,11 +892,7 @@ def _namespaces(elem, default_namespace=None):
             _raise_serialization_error(qname)
 
     # populate qname and namespaces table
-    try:
-        iterate = elem.iter
-    except AttributeError:
-        iterate = elem.getiterator # cET compatibility
-    for elem in iterate():
+    for elem in elem.iter():
         tag = elem.tag
         if isinstance(tag, QName):
             if tag.text not in qnames:

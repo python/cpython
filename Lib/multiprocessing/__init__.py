@@ -23,8 +23,8 @@ __all__ = [
     'Manager', 'Pipe', 'cpu_count', 'log_to_stderr', 'get_logger',
     'allow_connection_pickling', 'BufferTooShort', 'TimeoutError',
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
-    'Event', 'Queue', 'SimpleQueue', 'JoinableQueue', 'Pool', 'Value', 'Array',
-    'RawValue', 'RawArray', 'SUBDEBUG', 'SUBWARNING',
+    'Event', 'Barrier', 'Queue', 'SimpleQueue', 'JoinableQueue', 'Pool',
+    'Value', 'Array', 'RawValue', 'RawArray', 'SUBDEBUG', 'SUBWARNING',
     ]
 
 __author__ = 'R. Oudkerk (r.m.oudkerk@gmail.com)'
@@ -185,6 +185,13 @@ def Event():
     '''
     from multiprocessing.synchronize import Event
     return Event()
+
+def Barrier(parties, action=None, timeout=None):
+    '''
+    Returns a barrier object
+    '''
+    from multiprocessing.synchronize import Barrier
+    return Barrier(parties, action, timeout)
 
 def Queue(maxsize=0):
     '''

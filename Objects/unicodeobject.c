@@ -5359,26 +5359,18 @@ _PyUnicode_EncodeUTF16(PyObject *str,
                        const char *errors,
                        int byteorder)
 {
-    int kind;
-    void *data;
+    enum PyUnicode_Kind kind;
+    const void *data;
     Py_ssize_t len;
     PyObject *v;
-    unsigned char *p;
-    Py_ssize_t nsize, bytesize;
-    Py_ssize_t i, pairs;
-    /* Offsets from p for storing byte pairs in the right order. */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-    int ihi = 1, ilo = 0;
+    unsigned short *out;
+    Py_ssize_t bytesize;
+    Py_ssize_t pairs;
+#ifdef WORDS_BIGENDIAN
+    int native_ordering = byteorder >= 0;
 #else
-    int ihi = 0, ilo = 1;
+    int native_ordering = byteorder <= 0;
 #endif
-
-#define STORECHAR(CH)                           \
-    do {                                        \
-        p[ihi] = ((CH) >> 8) & 0xff;            \
-        p[ilo] = (CH) & 0xff;                   \
-        p += 2;                                 \
-    } while(0)
 
     if (!PyUnicode_Check(str)) {
         PyErr_BadArgument();
@@ -5391,53 +5383,47 @@ _PyUnicode_EncodeUTF16(PyObject *str,
     len = PyUnicode_GET_LENGTH(str);
 
     pairs = 0;
-    if (kind == PyUnicode_4BYTE_KIND)
-        for (i = 0; i < len; i++)
-            if (PyUnicode_READ(kind, data, i) >= 0x10000)
+    if (kind == PyUnicode_4BYTE_KIND) {
+        const Py_UCS4 *in = (const Py_UCS4 *)data;
+        const Py_UCS4 *end = in + len;
+        while (in < end)
+            if (*in++ >= 0x10000)
                 pairs++;
-    /* 2 * (len + pairs + (byteorder == 0)) */
-    if (len > PY_SSIZE_T_MAX - pairs - (byteorder == 0))
+    }
+    if (len > PY_SSIZE_T_MAX / 2 - pairs - (byteorder == 0))
         return PyErr_NoMemory();
-    nsize = len + pairs + (byteorder == 0);
-    bytesize = nsize * 2;
-    if (bytesize / 2 != nsize)
-        return PyErr_NoMemory();
+    bytesize = (len + pairs + (byteorder == 0)) * 2;
     v = PyBytes_FromStringAndSize(NULL, bytesize);
     if (v == NULL)
         return NULL;
 
-    p = (unsigned char *)PyBytes_AS_STRING(v);
+    /* output buffer is 2-bytes aligned */
+    assert(((Py_uintptr_t)PyBytes_AS_STRING(v) & 1) == 0);
+    out = (unsigned short *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
-        STORECHAR(0xFEFF);
+        *out++ = 0xFEFF;
     if (len == 0)
         goto done;
 
-    if (byteorder == -1) {
-        /* force LE */
-        ihi = 1;
-        ilo = 0;
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        ucs1lib_utf16_encode(out, (const Py_UCS1 *)data, len, native_ordering);
+        break;
     }
-    else if (byteorder == 1) {
-        /* force BE */
-        ihi = 0;
-        ilo = 1;
+    case PyUnicode_2BYTE_KIND: {
+        ucs2lib_utf16_encode(out, (const Py_UCS2 *)data, len, native_ordering);
+        break;
     }
-
-    for (i = 0; i < len; i++) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        Py_UCS4 ch2 = 0;
-        if (ch >= 0x10000) {
-            ch2 = Py_UNICODE_LOW_SURROGATE(ch);
-            ch  = Py_UNICODE_HIGH_SURROGATE(ch);
-        }
-        STORECHAR(ch);
-        if (ch2)
-            STORECHAR(ch2);
+    case PyUnicode_4BYTE_KIND: {
+        ucs4lib_utf16_encode(out, (const Py_UCS4 *)data, len, native_ordering);
+        break;
+    }
+    default:
+        assert(0);
     }
 
   done:
     return v;
-#undef STORECHAR
 }
 
 PyObject *

@@ -55,6 +55,8 @@ PC/python_nt*.h
 PC/pythonnt_rc*.h
 PC/*.obj
 PC/*.exe
+PC/*/*.exe
+PC/*/*.pdb
 PC/*/*.user
 PC/*/*.ncb
 PC/*/*.suo
