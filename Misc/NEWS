@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14059: Implement multiprocessing.Barrier.
+
 - Issue #15061: The inappropriately named hmac.secure_compare has been
   renamed to hmac.compare_digest, restricted to operating on bytes inputs
   only and had its documentation updated to more accurately reflect both its

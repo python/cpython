@@ -333,3 +333,43 @@ class Event(object):
             return False
         finally:
             self._cond.release()
+
+#
+# Barrier
+#
+
+class Barrier(threading.Barrier):
+
+    def __init__(self, parties, action=None, timeout=None):
+        import struct
+        from multiprocessing.heap import BufferWrapper
+        wrapper = BufferWrapper(struct.calcsize('i') * 2)
+        cond = Condition()
+        self.__setstate__((parties, action, timeout, cond, wrapper))
+        self._state = 0
+        self._count = 0
+
+    def __setstate__(self, state):
+        (self._parties, self._action, self._timeout,
+         self._cond, self._wrapper) = state
+        self._array = self._wrapper.create_memoryview().cast('i')
+
+    def __getstate__(self):
+        return (self._parties, self._action, self._timeout,
+                self._cond, self._wrapper)
+
+    @property
+    def _state(self):
+        return self._array[0]
+
+    @_state.setter
+    def _state(self, value):
+        self._array[0] = value
+
+    @property
+    def _count(self):
+        return self._array[1]
+
+    @_count.setter
+    def _count(self, value):
+        self._array[1] = value
