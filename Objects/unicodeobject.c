@@ -803,10 +803,6 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
 
 */
 
-#ifdef Py_DEBUG
-static int unicode_old_new_calls = 0;
-#endif
-
 static PyUnicodeObject *
 _PyUnicode_New(Py_ssize_t length)
 {
@@ -828,10 +824,6 @@ _PyUnicode_New(Py_ssize_t length)
                         "Negative size passed to _PyUnicode_New");
         return NULL;
     }
-
-#ifdef Py_DEBUG
-    ++unicode_old_new_calls;
-#endif
 
     unicode = PyObject_New(PyUnicodeObject, &PyUnicode_Type);
     if (unicode == NULL)
@@ -909,8 +901,6 @@ unicode_kind_name(PyObject *unicode)
 }
 
 #ifdef Py_DEBUG
-static int unicode_new_new_calls = 0;
-
 /* Functions wrapping macros for use in debugger */
 char *_PyUnicode_utf8(void *unicode){
     return PyUnicode_UTF8(unicode);
@@ -978,10 +968,6 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         Py_INCREF(unicode_empty);
         return unicode_empty;
     }
-
-#ifdef Py_DEBUG
-    ++unicode_new_new_calls;
-#endif
 
     is_ascii = 0;
     is_sharing = 0;
