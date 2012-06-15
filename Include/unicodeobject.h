@@ -188,9 +188,9 @@ typedef unsigned char Py_UCS1;
     (((((Py_UCS4)(high) & 0x03FF) << 10) |      \
       ((Py_UCS4)(low) & 0x03FF)) + 0x10000)
 /* high surrogate = top 10 bits added to D800 */
-#define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 | (((ch) - 0x10000) >> 10))
+#define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 - (0x10000 >> 10) + ((ch) >> 10))
 /* low surrogate = bottom 10 bits added to DC00 */
-#define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 | (((ch) - 0x10000) & 0x3FF))
+#define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
 
 /* Check if substring matches at given offset.  The offset must be
    valid, and the substring must not be empty. */

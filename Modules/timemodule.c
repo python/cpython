@@ -96,7 +96,7 @@ floatclock(_Py_clock_info_t *info)
         info->implementation = "clock()";
         info->resolution = 1.0 / (double)CLOCKS_PER_SEC;
         info->monotonic = 1;
-        info->adjusted = 0;
+        info->adjustable = 0;
     }
     return PyFloat_FromDouble((double)value / CLOCKS_PER_SEC);
 }
@@ -132,7 +132,7 @@ win_perf_counter(_Py_clock_info_t *info, PyObject **result)
         info->implementation = "QueryPerformanceCounter()";
         info->resolution = 1.0 / (double)cpu_frequency;
         info->monotonic = 1;
-        info->adjusted = 0;
+        info->adjustable = 0;
     }
     *result = PyFloat_FromDouble(diff / (double)cpu_frequency);
     return 0;
@@ -275,6 +275,10 @@ static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_wday", "day of week, range [0, 6], Monday is 0"},
     {"tm_yday", "day of year, range [1, 366]"},
     {"tm_isdst", "1 if summer time is in effect, 0 if not, and -1 if unknown"},
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    {"tm_zone", "abbreviation of timezone name"},
+    {"tm_gmtoff", "offset from UTC in seconds"},
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
     {0}
 };
 
@@ -294,6 +298,7 @@ static PyStructSequence_Desc struct_time_type_desc = {
 static int initialized;
 static PyTypeObject StructTimeType;
 
+
 static PyObject *
 tmtotuple(struct tm *p)
 {
@@ -312,6 +317,11 @@ tmtotuple(struct tm *p)
     SET(6, (p->tm_wday + 6) % 7); /* Want Monday == 0 */
     SET(7, p->tm_yday + 1);        /* Want January, 1 == 1 */
     SET(8, p->tm_isdst);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    PyStructSequence_SET_ITEM(v, 9,
+        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+    SET(10, p->tm_gmtoff);
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
     if (PyErr_Occurred()) {
         Py_XDECREF(v);
@@ -371,7 +381,10 @@ PyDoc_STRVAR(gmtime_doc,
                        tm_sec, tm_wday, tm_yday, tm_isdst)\n\
 \n\
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a.\n\
-GMT).  When 'seconds' is not passed in, convert the current time instead.");
+GMT).  When 'seconds' is not passed in, convert the current time instead.\n\
+\n\
+If the platform supports the tm_gmtoff and tm_zone, they are available as\n\
+attributes only.");
 
 static int
 pylocaltime(time_t *timep, struct tm *result)
@@ -401,7 +414,7 @@ time_localtime(PyObject *self, PyObject *args)
 
     if (!parse_time_t_args(args, "|O:localtime", &when))
         return NULL;
-    if (pylocaltime(&when, &buf) == 1)
+    if (pylocaltime(&when, &buf) == -1)
         return NULL;
     return tmtotuple(&buf);
 }
@@ -438,6 +451,17 @@ gettmarg(PyObject *args, struct tm *p)
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    if (Py_TYPE(args) == &StructTimeType) {
+        PyObject *item;
+        item = PyTuple_GET_ITEM(args, 9);
+        p->tm_zone = item == Py_None ? NULL : _PyUnicode_AsString(item);
+        item = PyTuple_GET_ITEM(args, 10);
+        p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
+        if (PyErr_Occurred())
+            return 0;
+    }
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
     return 1;
 }
 
@@ -778,7 +802,10 @@ time_mktime(PyObject *self, PyObject *tup)
 PyDoc_STRVAR(mktime_doc,
 "mktime(tuple) -> floating point number\n\
 \n\
-Convert a time tuple in local time to seconds since the Epoch.");
+Convert a time tuple in local time to seconds since the Epoch.\n\
+Note that mktime(gmtime(0)) will not generally return zero for most\n\
+time zones; instead the returned value will either be equal to that\n\
+of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
@@ -882,7 +909,7 @@ pymonotonic(_Py_clock_info_t *info)
             return NULL;
         }
         info->resolution = timeIncrement * 1e-7;
-        info->adjusted = 0;
+        info->adjustable = 0;
     }
     return PyFloat_FromDouble(result);
 
@@ -903,7 +930,7 @@ pymonotonic(_Py_clock_info_t *info)
         info->implementation = "mach_absolute_time()";
         info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
         info->monotonic = 1;
-        info->adjusted = 0;
+        info->adjustable = 0;
     }
     return PyFloat_FromDouble(secs);
 
@@ -926,13 +953,7 @@ pymonotonic(_Py_clock_info_t *info)
         struct timespec res;
         info->monotonic = 1;
         info->implementation = function;
-#if (defined(linux) || defined(__linux) || defined(__linux__)) \
-    && !defined(CLOCK_HIGHRES)
-        /* CLOCK_MONOTONIC is adjusted on Linux */
-        info->adjusted = 1;
-#else
-        info->adjusted = 0;
-#endif
+        info->adjustable = 0;
         if (clock_getres(clk_id, &res) == 0)
             info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
         else
@@ -1024,7 +1045,7 @@ py_process_time(_Py_clock_info_t *info)
         info->implementation = "GetProcessTimes()";
         info->resolution = 1e-7;
         info->monotonic = 1;
-        info->adjusted = 0;
+        info->adjustable = 0;
     }
     return PyFloat_FromDouble(total * 1e-7);
 #else
@@ -1053,7 +1074,7 @@ py_process_time(_Py_clock_info_t *info)
             struct timespec res;
             info->implementation = function;
             info->monotonic = 1;
-            info->adjusted = 0;
+            info->adjustable = 0;
             if (clock_getres(clk_id, &res) == 0)
                 info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
             else
@@ -1071,7 +1092,7 @@ py_process_time(_Py_clock_info_t *info)
         if (info) {
             info->implementation = "getrusage(RUSAGE_SELF)";
             info->monotonic = 1;
-            info->adjusted = 0;
+            info->adjustable = 0;
             info->resolution = 1e-6;
         }
         return PyFloat_FromDouble(total);
@@ -1100,7 +1121,7 @@ py_process_time(_Py_clock_info_t *info)
             if (info) {
                 info->implementation = "times()";
                 info->monotonic = 1;
-                info->adjusted = 0;
+                info->adjustable = 0;
                 info->resolution = 1.0 / ticks_per_second;
             }
             return PyFloat_FromDouble(total);
@@ -1124,35 +1145,12 @@ PyDoc_STRVAR(process_time_doc,
 Process time for profiling: sum of the kernel and user-space CPU time.");
 
 
-static PyTypeObject ClockInfoType;
-
-PyDoc_STRVAR(ClockInfo_docstring,
-    "Clock information");
-
-static PyStructSequence_Field ClockInfo_fields[] = {
-    {"implementation", "name of the underlying C function "
-                       "used to get the clock value"},
-    {"monotonic", "True if the clock cannot go backward, False otherwise"},
-    {"adjusted", "True if the clock can be adjusted "
-                    "(e.g. by a NTP daemon), False otherwise"},
-    {"resolution", "resolution of the clock in seconds"},
-    {NULL, NULL}
-};
-
-static PyStructSequence_Desc ClockInfo_desc = {
-    "time.clock_info",
-    ClockInfo_docstring,
-    ClockInfo_fields,
-    4,
-};
-
 static PyObject *
 time_get_clock_info(PyObject *self, PyObject *args)
 {
     char *name;
-    PyObject *obj;
     _Py_clock_info_t info;
-    PyObject *result;
+    PyObject *obj = NULL, *dict, *ns;
 
     if (!PyArg_ParseTuple(args, "s:get_clock_info", &name))
         return NULL;
@@ -1160,12 +1158,12 @@ time_get_clock_info(PyObject *self, PyObject *args)
 #ifdef Py_DEBUG
     info.implementation = NULL;
     info.monotonic = -1;
-    info.adjusted = -1;
+    info.adjustable = -1;
     info.resolution = -1.0;
 #else
     info.implementation = "";
     info.monotonic = 0;
-    info.adjusted = 0;
+    info.adjustable = 0;
     info.resolution = 1.0;
 #endif
 
@@ -1191,39 +1189,50 @@ time_get_clock_info(PyObject *self, PyObject *args)
         return NULL;
     Py_DECREF(obj);
 
-    result = PyStructSequence_New(&ClockInfoType);
-    if (result == NULL)
+    dict = PyDict_New();
+    if (dict == NULL)
         return NULL;
 
     assert(info.implementation != NULL);
     obj = PyUnicode_FromString(info.implementation);
     if (obj == NULL)
         goto error;
-    PyStructSequence_SET_ITEM(result, 0, obj);
+    if (PyDict_SetItemString(dict, "implementation", obj) == -1)
+        goto error;
+    Py_CLEAR(obj);
 
     assert(info.monotonic != -1);
     obj = PyBool_FromLong(info.monotonic);
     if (obj == NULL)
         goto error;
-    PyStructSequence_SET_ITEM(result, 1, obj);
+    if (PyDict_SetItemString(dict, "monotonic", obj) == -1)
+        goto error;
+    Py_CLEAR(obj);
 
-    assert(info.adjusted != -1);
-    obj = PyBool_FromLong(info.adjusted);
+    assert(info.adjustable != -1);
+    obj = PyBool_FromLong(info.adjustable);
     if (obj == NULL)
         goto error;
-    PyStructSequence_SET_ITEM(result, 2, obj);
+    if (PyDict_SetItemString(dict, "adjustable", obj) == -1)
+        goto error;
+    Py_CLEAR(obj);
 
     assert(info.resolution > 0.0);
     assert(info.resolution <= 1.0);
     obj = PyFloat_FromDouble(info.resolution);
     if (obj == NULL)
         goto error;
-    PyStructSequence_SET_ITEM(result, 3, obj);
+    if (PyDict_SetItemString(dict, "resolution", obj) == -1)
+        goto error;
+    Py_CLEAR(obj);
 
-    return result;
+    ns = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return ns;
 
 error:
-    Py_DECREF(result);
+    Py_DECREF(dict);
+    Py_XDECREF(obj);
     return NULL;
 }
 
@@ -1451,11 +1460,6 @@ PyInit_time(void)
         PyStructSequence_InitType(&StructTimeType,
                                   &struct_time_type_desc);
 
-        /* initialize ClockInfoType */
-        PyStructSequence_InitType(&ClockInfoType, &ClockInfo_desc);
-        Py_INCREF(&ClockInfoType);
-        PyModule_AddObject(m, "clock_info", (PyObject*)&ClockInfoType);
-
 #ifdef MS_WINDOWS
         winver.dwOSVersionInfoSize = sizeof(winver);
         if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
@@ -1466,6 +1470,11 @@ PyInit_time(void)
 #endif
     }
     Py_INCREF(&StructTimeType);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
+#else
+    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 9);
+#endif
     PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
     initialized = 1;
     return m;
@@ -1488,7 +1497,7 @@ floattime(_Py_clock_info_t *info)
             struct timespec res;
             info->implementation = "clock_gettime(CLOCK_REALTIME)";
             info->monotonic = 0;
-            info->adjusted = 1;
+            info->adjustable = 1;
             if (clock_getres(CLOCK_REALTIME, &res) == 0)
                 info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
             else

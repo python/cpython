@@ -226,11 +226,11 @@ However, if you really do need to use some shared data then
    holds Python objects and allows other processes to manipulate them using
    proxies.
 
-   A manager returned by :func:`Manager` will support types :class:`list`,
-   :class:`dict`, :class:`Namespace`, :class:`Lock`, :class:`RLock`,
-   :class:`Semaphore`, :class:`BoundedSemaphore`, :class:`Condition`,
-   :class:`Event`, :class:`Queue`, :class:`Value` and :class:`Array`.  For
-   example, ::
+   A manager returned by :func:`Manager` will support types
+   :class:`list`, :class:`dict`, :class:`Namespace`, :class:`Lock`,
+   :class:`RLock`, :class:`Semaphore`, :class:`BoundedSemaphore`,
+   :class:`Condition`, :class:`Event`, :class:`Barrier`,
+   :class:`Queue`, :class:`Value` and :class:`Array`.  For example, ::
 
       from multiprocessing import Process, Manager
 
@@ -885,6 +885,12 @@ program as they are in a multithreaded program.  See the documentation for
 Note that one can also create synchronization primitives by using a manager
 object -- see :ref:`multiprocessing-managers`.
 
+.. class:: Barrier(parties[, action[, timeout]])
+
+   A barrier object: a clone of :class:`threading.Barrier`.
+
+   .. versionadded:: 3.3
+
 .. class:: BoundedSemaphore([value])
 
    A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
@@ -1236,9 +1242,10 @@ their parent process exits.  The manager classes are defined in the
       type of shared object.  This must be a string.
 
       *callable* is a callable used for creating objects for this type
-      identifier.  If a manager instance will be created using the
-      :meth:`from_address` classmethod or if the *create_method* argument is
-      ``False`` then this can be left as ``None``.
+      identifier.  If a manager instance will be connected to the
+      server using the :meth:`connect` method, or if the
+      *create_method* argument is ``False`` then this can be left as
+      ``None``.
 
       *proxytype* is a subclass of :class:`BaseProxy` which is used to create
       proxies for shared objects with this *typeid*.  If ``None`` then a proxy
@@ -1278,6 +1285,13 @@ their parent process exits.  The manager classes are defined in the
    :func:`multiprocessing.Manager`.
 
    It also supports creation of shared lists and dictionaries.
+
+   .. method:: Barrier(parties[, action[, timeout]])
+
+      Create a shared :class:`threading.Barrier` object and return a
+      proxy for it.
+
+      .. versionadded:: 3.3
 
    .. method:: BoundedSemaphore([value])
 

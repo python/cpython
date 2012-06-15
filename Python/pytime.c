@@ -44,10 +44,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
         (void) GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
                                        &isTimeAdjustmentDisabled);
         info->resolution = timeIncrement * 1e-7;
-        if (isTimeAdjustmentDisabled)
-            info->adjusted = 0;
-        else
-            info->adjusted = 1;
+        info->adjustable = 1;
     }
 #else
     /* There are three ways to get the time:
@@ -71,7 +68,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
             info->implementation = "gettimeofday()";
             info->resolution = 1e-6;
             info->monotonic = 0;
-            info->adjusted = 1;
+            info->adjustable = 1;
         }
         return;
     }
@@ -87,7 +84,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
             info->implementation = "ftime()";
             info->resolution = 1e-3;
             info->monotonic = 0;
-            info->adjusted = 1;
+            info->adjustable = 1;
         }
     }
 #else /* !HAVE_FTIME */
@@ -97,7 +94,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
         info->implementation = "time()";
         info->resolution = 1.0;
         info->monotonic = 0;
-        info->adjusted = 1;
+        info->adjustable = 1;
     }
 #endif /* !HAVE_FTIME */
 

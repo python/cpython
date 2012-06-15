@@ -504,6 +504,17 @@ class TestMailbox(TestBase):
         # Write changes to disk
         self._test_flush_or_close(self._box.flush, True)
 
+    def test_popitem_and_flush_twice(self):
+        # See #15036.
+        self._box.add(self._template % 0)
+        self._box.add(self._template % 1)
+        self._box.flush()
+
+        self._box.popitem()
+        self._box.flush()
+        self._box.popitem()
+        self._box.flush()
+
     def test_lock_unlock(self):
         # Lock and unlock the mailbox
         self.assertFalse(os.path.exists(self._get_lock_path()))
