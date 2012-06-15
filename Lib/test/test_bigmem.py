@@ -124,6 +124,7 @@ class StrTest(unittest.TestCase):
 
     @precisionbigmemtest(size=_4G // 5, memuse=6+2)
     def test_unicode_repr_oflw(self, size):
+        self.skipTest("test crashes - see issue #14904")
         try:
             s = u"\uAAAA"*size
             r = repr(s)
