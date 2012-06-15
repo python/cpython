@@ -1840,6 +1840,8 @@ elementiter_next(ElementIterObject *it)
      *   - itertext() also has to handle tail, after finishing with all the
      *     children of a node.
      */
+    ElementObject *cur_parent;
+    Py_ssize_t child_index;
 
     while (1) {
         /* Handle the case reached in the beginning and end of iteration, where
@@ -1881,8 +1883,8 @@ elementiter_next(ElementIterObject *it)
         /* See if there are children left to traverse in the current parent. If
          * yes, visit the next child. If not, pop the stack and try again.
          */
-        ElementObject *cur_parent = it->parent_stack->parent;
-        Py_ssize_t child_index = it->parent_stack->child_index;
+        cur_parent = it->parent_stack->parent;
+        child_index = it->parent_stack->child_index;
         if (cur_parent->extra && child_index < cur_parent->extra->length) {
             ElementObject *child = (ElementObject *)
                 cur_parent->extra->children[child_index];
