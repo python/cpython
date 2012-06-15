@@ -2268,7 +2268,7 @@ class _TestConnection(BaseTestCase):
 
 class _TestListener(BaseTestCase):
 
-    ALLOWED_TYPES = ('processes')
+    ALLOWED_TYPES = ('processes',)
 
     def test_multiple_bind(self):
         for family in self.connection.families:
@@ -2850,10 +2850,12 @@ def create_test_cases(Mixin, type):
     result = {}
     glob = globals()
     Type = type.capitalize()
+    ALL_TYPES = {'processes', 'threads', 'manager'}
 
     for name in list(glob.keys()):
         if name.startswith('_Test'):
             base = glob[name]
+            assert set(base.ALLOWED_TYPES) <= ALL_TYPES, set(base.ALLOWED_TYPES)
             if type in base.ALLOWED_TYPES:
                 newname = 'With' + Type + name[1:]
                 class Temp(base, unittest.TestCase, Mixin):
