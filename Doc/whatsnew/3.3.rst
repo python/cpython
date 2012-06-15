@@ -1484,9 +1484,11 @@ Major performance enhancements have been added:
   * repeating a single ASCII letter and getting a substring of a ASCII strings
     is 4 times faster
 
-* UTF-8 and UTF-16 decoding is now 2x to 4x faster.
+* UTF-8 and UTF-16 decoding is now 2x to 4x faster.  UTF-16 encoding is now
+  up to 10x faster.
 
-  (contributed by Serhiy Storchaka, :issue:`14624` and :issue:`14738`.)
+  (contributed by Serhiy Storchaka, :issue:`14624`, :issue:`14738` and
+  :issue:`15026`.)
 
 
 Build and C API Changes
