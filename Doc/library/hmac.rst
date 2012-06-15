@@ -42,8 +42,8 @@ An HMAC object has the following methods:
 
       When comparing the output of :meth:`digest` to an externally-supplied
       digest during a verification routine, it is recommended to use the
-      :func:`hmac.secure_compare` function instead of the ``==`` operator
-      to avoid potential timing attacks.
+      :func:`compare_digest` function instead of the ``==`` operator
+      to reduce the vulnerability to timing attacks.
 
 
 .. method:: HMAC.hexdigest()
@@ -54,10 +54,11 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`hexdigest` to an externally-supplied
-      digest during a verification routine, it is recommended to use the
-      :func:`hmac.secure_compare` function instead of the ``==`` operator
-      to avoid potential timing attacks.
+      The output of :meth:`hexdigest` should not be compared directly to an
+      externally-supplied digest during a verification routine. Instead, the
+      externally supplied digest should be converted to a :class:`bytes`
+      value and compared to the output of :meth:`digest` with
+      :func:`compare_digest`.
 
 
 .. method:: HMAC.copy()
@@ -68,20 +69,28 @@ An HMAC object has the following methods:
 
 This module also provides the following helper function:
 
-.. function:: secure_compare(a, b)
+.. function:: compare_digest(a, b)
 
-   Returns the equivalent of ``a == b``, but using a time-independent
-   comparison method. Comparing the full lengths of the inputs *a* and *b*,
-   instead of short-circuiting the comparison upon the first unequal byte,
-   prevents leaking information about the inputs being compared and mitigates
-   potential timing attacks. The inputs must be either :class:`str` or
-   :class:`bytes` instances.
+   Returns the equivalent of ``a == b``, but avoids content based
+   short circuiting behaviour to reduce the vulnerability to timing
+   analysis. The inputs must be :class:`bytes` instances.
+
+   Using a short circuiting comparison (that is, one that terminates as soon
+   as it finds any difference between the values) to check digests for
+   correctness can be problematic, as it introduces a potential
+   vulnerability when an attacker can control both the message to be checked
+   *and* the purported signature value. By keeping the plaintext consistent
+   and supplying different signature values, an attacker may be able to use
+   timing variations to search the signature space for the expected value in
+   O(n) time rather than the desired O(2**n).
 
    .. note::
 
-      While the :func:`hmac.secure_compare` function prevents leaking the
-      contents of the inputs via a timing attack, it does leak the length
-      of the inputs. However, this generally is not a security risk.
+      While this function reduces the likelihood of leaking the contents of
+      the expected digest via a timing attack, it still uses short circuiting
+      behaviour based on the *length* of the inputs. It is assumed that the
+      expected length of the digest is not a secret, as it is typically
+      published as part of a file format, network protocol or API definition.
 
    .. versionadded:: 3.3
 
