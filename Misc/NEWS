@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15036: Allow removing or changing multiple items in
+  single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
+  between the changes.
+
 - Issue #14059: Implement multiprocessing.Barrier.
 
 - Issue #15061: The inappropriately named hmac.secure_compare has been
