@@ -102,7 +102,7 @@ def readmap(filename):
             comment = ''
         else:
             comment = comment[1:].strip()
-        if enc < 256:
+        if not isinstance(enc, tuple) and enc < 256:
             if enc in unmapped:
                 unmapped.remove(enc)
             if enc == uni:
@@ -202,11 +202,10 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
     # Analyze map and create table dict
     mappings = sorted(map.items())
     table = {}
-    maxkey = 0
+    maxkey = 255
     if 'IDENTITY' in map:
         for key in range(256):
             table[key] = (key, '')
-        maxkey = 255
         del map['IDENTITY']
     for mapkey, mapvalue in mappings:
         mapcomment = ''
@@ -224,6 +223,7 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
         return None
 
     # Create table code
+    maxchar = 0
     for key in range(maxkey + 1):
         if key not in table:
             mapvalue = MISSING_CODE
@@ -238,6 +238,7 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
                 return None
             else:
                 mapchar = chr(mapvalue)
+        maxchar = max(maxchar, ord(mapchar))
         if mapcomment and comments:
             append('    %a \t#  %s -> %s' % (mapchar,
                                             hexrepr(key, key_precision),
@@ -245,6 +246,8 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
         else:
             append('    %a' % mapchar)
 
+    if maxchar < 256:
+        append('    %a \t## Widen to UCS2 for optimization' % UNI_UNDEFINED)
     append(')')
     return l
 

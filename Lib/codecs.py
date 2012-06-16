@@ -1042,10 +1042,7 @@ def make_identity_dict(rng):
         mapped to themselves.
 
     """
-    res = {}
-    for i in rng:
-        res[i]=i
-    return res
+    return {i:i for i in rng}
 
 def make_encoding_map(decoding_map):
 
