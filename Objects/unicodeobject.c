@@ -1148,27 +1148,31 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
     to_kind = PyUnicode_KIND(to);
     to_data = PyUnicode_DATA(to);
 
+#ifdef Py_DEBUG
+    if (!check_maxchar
+        && PyUnicode_MAX_CHAR_VALUE(from) > PyUnicode_MAX_CHAR_VALUE(to))
+    {
+        const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
+        Py_UCS4 ch;
+        Py_ssize_t i;
+        for (i=0; i < how_many; i++) {
+            ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+            assert(ch <= to_maxchar);
+        }
+    }
+#endif
+
     if (from_kind == to_kind) {
-        if (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)) {
+        if (check_maxchar
+            && !PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to))
+        {
             /* Writing Latin-1 characters into an ASCII string requires to
                check that all written characters are pure ASCII */
-#ifndef Py_DEBUG
-            if (check_maxchar) {
-                Py_UCS4 max_char;
-                max_char = ucs1lib_find_max_char(from_data,
-                                                 (Py_UCS1*)from_data + how_many);
-                if (max_char >= 128)
-                    return -1;
-            }
-#else
-            const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
-            Py_UCS4 ch;
-            Py_ssize_t i;
-            for (i=0; i < how_many; i++) {
-                ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-                assert(ch <= to_maxchar);
-            }
-#endif
+            Py_UCS4 max_char;
+            max_char = ucs1lib_find_max_char(from_data,
+                                             (Py_UCS1*)from_data + how_many);
+            if (max_char >= 128)
+                return -1;
         }
         Py_MEMCPY((char*)to_data + to_kind * to_start,
                   (char*)from_data + from_kind * from_start,
@@ -1207,7 +1211,6 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
     else {
         assert (PyUnicode_MAX_CHAR_VALUE(from) > PyUnicode_MAX_CHAR_VALUE(to));
 
-#ifndef Py_DEBUG
         if (!check_maxchar) {
             if (from_kind == PyUnicode_2BYTE_KIND
                 && to_kind == PyUnicode_1BYTE_KIND)
@@ -1244,21 +1247,15 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
                 return -1;
             }
         }
-        else
-#endif
-        {
+        else {
             const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
             Py_UCS4 ch;
             Py_ssize_t i;
 
             for (i=0; i < how_many; i++) {
                 ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-#ifndef Py_DEBUG
                 if (ch > to_maxchar)
                     return -1;
-#else
-                assert(ch <= to_maxchar);
-#endif
                 PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
             }
         }
