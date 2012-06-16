@@ -578,7 +578,9 @@ class _LoaderBasics:
         """Concrete implementation of InspectLoader.is_package by checking if
         the path returned by get_filename has a filename of '__init__.py'."""
         filename = _path_split(self.get_filename(fullname))[1]
-        return filename.rsplit('.', 1)[0] == '__init__'
+        filename_base = filename.rsplit('.', 1)[0]
+        tail_name = fullname.rpartition('.')[2]
+        return filename_base == '__init__' and tail_name != '__init__'
 
     def _bytes_from_bytecode(self, fullname, data, bytecode_path, source_stats):
         """Return the marshalled bytes from bytecode, verifying the magic
