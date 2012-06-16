@@ -1128,7 +1128,6 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
 {
     unsigned int from_kind, to_kind;
     void *from_data, *to_data;
-    int fast;
 
     assert(0 <= how_many);
     assert(0 <= from_start);
@@ -1137,41 +1136,40 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
     assert(PyUnicode_IS_READY(from));
     assert(from_start + how_many <= PyUnicode_GET_LENGTH(from));
 
-    if (how_many == 0)
-        return 0;
-
     assert(PyUnicode_Check(to));
     assert(PyUnicode_IS_READY(to));
     assert(to_start + how_many <= PyUnicode_GET_LENGTH(to));
+
+    if (how_many == 0)
+        return 0;
 
     from_kind = PyUnicode_KIND(from);
     from_data = PyUnicode_DATA(from);
     to_kind = PyUnicode_KIND(to);
     to_data = PyUnicode_DATA(to);
 
-#ifdef Py_DEBUG
-    if (!check_maxchar
-        && (from_kind > to_kind
-            || (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to))))
-    {
-        const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
-        Py_UCS4 ch;
-        Py_ssize_t i;
-        for (i=0; i < how_many; i++) {
-            ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-            assert(ch <= to_maxchar);
-        }
-    }
+    if (from_kind == to_kind) {
+        if (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)) {
+            /* Writing Latin-1 characters into an ASCII string requires to
+               check that all written characters are pure ASCII */
+#ifndef Py_DEBUG
+            if (check_maxchar) {
+                Py_UCS4 max_char;
+                max_char = ucs1lib_find_max_char(from_data,
+                                                 (char*)from_data + how_many);
+                if (max_char >= 128)
+                    return -1;
+            }
+#else
+            const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
+            Py_UCS4 ch;
+            Py_ssize_t i;
+            for (i=0; i < how_many; i++) {
+                ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+                assert(ch <= to_maxchar);
+            }
 #endif
-    fast = (from_kind == to_kind);
-    if (check_maxchar
-        && (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)))
-    {
-        /* deny latin1 => ascii */
-        fast = 0;
-    }
-
-    if (fast) {
+        }
         Py_MEMCPY((char*)to_data + to_kind * to_start,
                   (char*)from_data + from_kind * from_start,
                   to_kind * how_many);
@@ -1207,42 +1205,62 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
             );
     }
     else {
-        /* check if max_char(from substring) <= max_char(to) */
-        if (from_kind > to_kind
-                /* latin1 => ascii */
-            || (!PyUnicode_IS_ASCII(from) && PyUnicode_IS_ASCII(to)))
+        assert (PyUnicode_MAX_CHAR_VALUE(from) > PyUnicode_MAX_CHAR_VALUE(to));
+
+#ifndef Py_DEBUG
+        if (!check_maxchar) {
+            if (from_kind == PyUnicode_2BYTE_KIND
+                && to_kind == PyUnicode_1BYTE_KIND)
+            {
+                _PyUnicode_CONVERT_BYTES(
+                    Py_UCS2, Py_UCS1,
+                    PyUnicode_2BYTE_DATA(from) + from_start,
+                    PyUnicode_2BYTE_DATA(from) + from_start + how_many,
+                    PyUnicode_1BYTE_DATA(to) + to_start
+                    );
+            }
+            else if (from_kind == PyUnicode_4BYTE_KIND
+                     && to_kind == PyUnicode_1BYTE_KIND)
+            {
+                _PyUnicode_CONVERT_BYTES(
+                    Py_UCS4, Py_UCS1,
+                    PyUnicode_4BYTE_DATA(from) + from_start,
+                    PyUnicode_4BYTE_DATA(from) + from_start + how_many,
+                    PyUnicode_1BYTE_DATA(to) + to_start
+                    );
+            }
+            else if (from_kind == PyUnicode_4BYTE_KIND
+                     && to_kind == PyUnicode_2BYTE_KIND)
+            {
+                _PyUnicode_CONVERT_BYTES(
+                    Py_UCS4, Py_UCS2,
+                    PyUnicode_4BYTE_DATA(from) + from_start,
+                    PyUnicode_4BYTE_DATA(from) + from_start + how_many,
+                    PyUnicode_2BYTE_DATA(to) + to_start
+                    );
+            }
+            else {
+                assert(0);
+                return -1;
+            }
+        }
+        else
+#endif
         {
-            /* slow path to check for character overflow */
             const Py_UCS4 to_maxchar = PyUnicode_MAX_CHAR_VALUE(to);
             Py_UCS4 ch;
             Py_ssize_t i;
 
-#ifdef Py_DEBUG
             for (i=0; i < how_many; i++) {
                 ch = PyUnicode_READ(from_kind, from_data, from_start + i);
+#ifndef Py_DEBUG
                 assert(ch <= to_maxchar);
+#else
+                if (ch > to_maxchar)
+                    return -1;
+#endif
                 PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
             }
-#else
-            if (!check_maxchar) {
-                for (i=0; i < how_many; i++) {
-                    ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-                    PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
-                }
-            }
-            else {
-                for (i=0; i < how_many; i++) {
-                    ch = PyUnicode_READ(from_kind, from_data, from_start + i);
-                    if (ch > to_maxchar)
-                        return 1;
-                    PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
-                }
-            }
-#endif
-        }
-        else {
-            assert(0 && "inconsistent state");
-            return 1;
         }
     }
     return 0;
@@ -13876,9 +13894,11 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 }
             }
 
-            _PyUnicode_FastCopyCharacters(writer.buffer, writer.pos,
-                                          temp, pindex, len);
-            writer.pos += len;
+            if (len) {
+                _PyUnicode_FastCopyCharacters(writer.buffer, writer.pos,
+                                              temp, pindex, len);
+                writer.pos += len;
+            }
             if (width > len) {
                 sublen = width - len;
                 FILL(writer.kind, writer.data, ' ', writer.pos, sublen);
