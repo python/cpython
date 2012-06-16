@@ -602,10 +602,11 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
 
     def test_is_package(self):
         # Properly detect when loading a package.
-        self.setUp(is_package=True)
-        self.assertTrue(self.loader.is_package(self.name))
         self.setUp(is_package=False)
         self.assertFalse(self.loader.is_package(self.name))
+        self.setUp(is_package=True)
+        self.assertTrue(self.loader.is_package(self.name))
+        self.assertFalse(self.loader.is_package(self.name + '.__init__'))
 
     def test_get_code(self):
         # Verify the code object is created.

@@ -351,8 +351,10 @@ are also provided to help in implementing the core ABCs.
     .. method:: is_package(self, fullname)
 
         Concrete implementation of :meth:`InspectLoader.is_package`. A module
-        is determined to be a package if its file path is a file named
-        ``__init__`` when the file extension is removed.
+        is determined to be a package if its file path (as provided by
+        :meth:`ExecutionLoader.get_filename`) is a file named
+        ``__init__`` when the file extension is removed **and** the module name
+        itself does not end in ``__init__``.
 
 
 .. class:: PyLoader
