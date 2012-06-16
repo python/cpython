@@ -786,8 +786,10 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
 
     /* Then the source string. */
-    _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
-                                  value, 0, len);
+    if (len) {
+        _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
+                                      value, 0, len);
+    }
     writer->pos += (len + rpad);
     result = 0;
 
