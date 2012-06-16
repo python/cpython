@@ -1279,8 +1279,7 @@ def xinclude_loader(href, parse="xml", encoding=None):
     except KeyError:
         raise OSError("resource not found")
     if parse == "xml":
-        from xml.etree.ElementTree import XML
-        return XML(data)
+        data = ET.XML(data)
     return data
 
 def xinclude():
@@ -2011,12 +2010,20 @@ class TreeBuilderTest(unittest.TestCase):
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
 
 
-@unittest.skip('Unstable due to module monkeypatching')
 class XincludeTest(unittest.TestCase):
+    def _my_loader(self, href, parse):
+        # Used to avoid a test-dependency problem where the default loader
+        # of ElementInclude uses the pyET parser for cET tests.
+        if parse == 'xml':
+            with open(href, 'rb') as f:
+                return ET.parse(f).getroot()
+        else:
+            return None
+
     def test_xinclude_default(self):
         from xml.etree import ElementInclude
         doc = xinclude_loader('default.xml')
-        ElementInclude.include(doc)
+        ElementInclude.include(doc, self._my_loader)
         s = serialize(doc)
         self.assertEqual(s.strip(), '''<document>
   <p>Example.</p>
@@ -2308,11 +2315,16 @@ def test_main(module=None):
             NoAcceleratorTest,
             ])
 
-    support.run_unittest(*test_classes)
+    try:
+        support.run_unittest(*test_classes)
 
-    # XXX the C module should give the same warnings as the Python module
-    with CleanContext(quiet=(module is not pyET)):
-        support.run_doctest(sys.modules[__name__], verbosity=True)
+        # XXX the C module should give the same warnings as the Python module
+        with CleanContext(quiet=(module is not pyET)):
+            support.run_doctest(sys.modules[__name__], verbosity=True)
+    finally:
+        # don't interfere with subsequent tests
+        ET = pyET = None
+
 
 if __name__ == '__main__':
     test_main()
