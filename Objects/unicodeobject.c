@@ -1156,7 +1156,7 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
             if (check_maxchar) {
                 Py_UCS4 max_char;
                 max_char = ucs1lib_find_max_char(from_data,
-                                                 (char*)from_data + how_many);
+                                                 (Py_UCS1*)from_data + how_many);
                 if (max_char >= 128)
                     return -1;
             }
@@ -3860,11 +3860,6 @@ PyUnicode_AsUTF8(PyObject *unicode)
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
 
-#ifdef Py_DEBUG
-static int unicode_as_unicode_calls = 0;
-#endif
-
-
 Py_UNICODE *
 PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 {
@@ -3887,10 +3882,6 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
         /* Non-ASCII compact unicode object */
         assert(_PyUnicode_KIND(unicode) != 0);
         assert(PyUnicode_IS_READY(unicode));
-
-#ifdef Py_DEBUG
-        ++unicode_as_unicode_calls;
-#endif
 
         if (PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND) {
 #if SIZEOF_WCHAR_T == 2
