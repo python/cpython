@@ -265,6 +265,8 @@ class FormatTest(unittest.TestCase):
                 raise TestFailed('"%*d"%(maxsize, -127) should fail')
 
     def test_non_ascii(self):
+        testformat("\u20ac=%f", (1.0,), "\u20ac=1.000000")
+
         self.assertEqual(format("abc", "\u2007<5"), "abc\u2007\u2007")
         self.assertEqual(format(123, "\u2007<5"), "123\u2007\u2007")
         self.assertEqual(format(12.3, "\u2007<6"), "12.3\u2007\u2007")
