@@ -1254,10 +1254,10 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
             for (i=0; i < how_many; i++) {
                 ch = PyUnicode_READ(from_kind, from_data, from_start + i);
 #ifndef Py_DEBUG
-                assert(ch <= to_maxchar);
-#else
                 if (ch > to_maxchar)
                     return -1;
+#else
+                assert(ch <= to_maxchar);
 #endif
                 PyUnicode_WRITE(to_kind, to_data, to_start + i, ch);
             }
