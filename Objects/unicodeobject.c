@@ -1371,10 +1371,6 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
     return 0;
 }
 
-#ifdef Py_DEBUG
-static int unicode_ready_calls = 0;
-#endif
-
 int
 _PyUnicode_Ready(PyObject *unicode)
 {
@@ -1396,10 +1392,6 @@ _PyUnicode_Ready(PyObject *unicode)
     assert(_PyUnicode_UTF8(unicode) == NULL);
     /* Actually, it should neither be interned nor be anything else: */
     assert(_PyUnicode_STATE(unicode).interned == SSTATE_NOT_INTERNED);
-
-#ifdef Py_DEBUG
-    ++unicode_ready_calls;
-#endif
 
     end = _PyUnicode_WSTR(unicode) + _PyUnicode_WSTR_LENGTH(unicode);
     if (find_maxchar_surrogates(_PyUnicode_WSTR(unicode), end,
