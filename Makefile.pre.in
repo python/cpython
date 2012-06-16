@@ -442,7 +442,7 @@ build_all_generate_profile:
 	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-generate" LIBS="$(LIBS) -lgcov"
 
 run_profile_task:
-	./$(BUILDPYTHON) $(PROFILE_TASK)
+	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 
 build_all_use_profile:
 	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use"
@@ -580,7 +580,7 @@ Modules/_testembed: Modules/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 
 Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py $(srcdir)/Python/freeze_importlib.py
 	@if test -f ./$(BUILDPYTHON); then \
-	    ./$(BUILDPYTHON) $(srcdir)/Python/freeze_importlib.py \
+	    $(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Python/freeze_importlib.py \
 		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h; \
 	else \
 	    echo "----------------------------------------------------------"; \
