@@ -2544,7 +2544,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(t1, t2)
         self.assertEqual(t1, t3)
         self.assertEqual(t2, t3)
-        self.assertRaises(TypeError, lambda: t4 == t5) # mixed tz-aware & naive
+        self.assertNotEqual(t4, t5) # mixed tz-aware & naive
         self.assertRaises(TypeError, lambda: t4 < t5) # mixed tz-aware & naive
         self.assertRaises(TypeError, lambda: t5 < t4) # mixed tz-aware & naive
 
@@ -2696,7 +2696,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t2 = t2.replace(tzinfo=FixedOffset(None, ""))
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=FixedOffset(0, ""))
-        self.assertRaises(TypeError, lambda: t1 == t2)
+        self.assertNotEqual(t1, t2)
 
         # In time w/ identical tzinfo objects, utcoffset is ignored.
         class Varies(tzinfo):
@@ -2801,16 +2801,16 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                            microsecond=1)
         self.assertTrue(t1 > t2)
 
-        # Make t2 naive and it should fail.
+        # Make t2 naive and it should differ.
         t2 = self.theclass.min
-        self.assertRaises(TypeError, lambda: t1 == t2)
+        self.assertNotEqual(t1, t2)
         self.assertEqual(t2, t2)
 
         # It's also naive if it has tzinfo but tzinfo.utcoffset() is None.
         class Naive(tzinfo):
             def utcoffset(self, dt): return None
         t2 = self.theclass(5, 6, 7, tzinfo=Naive())
-        self.assertRaises(TypeError, lambda: t1 == t2)
+        self.assertNotEqual(t1, t2)
         self.assertEqual(t2, t2)
 
         # OTOH, it's OK to compare two of these mixing the two ways of being
@@ -3327,7 +3327,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         t2 = t2.replace(tzinfo=FixedOffset(None, ""))
         self.assertEqual(t1, t2)
         t2 = t2.replace(tzinfo=FixedOffset(0, ""))
-        self.assertRaises(TypeError, lambda: t1 == t2)
+        self.assertNotEqual(t1, t2)
 
         # In datetime w/ identical tzinfo objects, utcoffset is ignored.
         class Varies(tzinfo):

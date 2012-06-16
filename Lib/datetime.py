@@ -1065,13 +1065,13 @@ class time:
 
     def __eq__(self, other):
         if isinstance(other, time):
-            return self._cmp(other) == 0
+            return self._cmp(other, allow_mixed=True) == 0
         else:
             return False
 
     def __ne__(self, other):
         if isinstance(other, time):
-            return self._cmp(other) != 0
+            return self._cmp(other, allow_mixed=True) != 0
         else:
             return True
 
@@ -1099,7 +1099,7 @@ class time:
         else:
             _cmperror(self, other)
 
-    def _cmp(self, other):
+    def _cmp(self, other, allow_mixed=False):
         assert isinstance(other, time)
         mytz = self._tzinfo
         ottz = other._tzinfo
@@ -1118,7 +1118,10 @@ class time:
                        (other._hour, other._minute, other._second,
                         other._microsecond))
         if myoff is None or otoff is None:
-            raise TypeError("cannot compare naive and aware times")
+            if allow_mixed:
+                return 2 # arbitrary non-zero value
+            else:
+                raise TypeError("cannot compare naive and aware times")
         myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
         othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
         return _cmp((myhhmm, self._second, self._microsecond),
@@ -1615,7 +1618,7 @@ class datetime(date):
 
     def __eq__(self, other):
         if isinstance(other, datetime):
-            return self._cmp(other) == 0
+            return self._cmp(other, allow_mixed=True) == 0
         elif not isinstance(other, date):
             return NotImplemented
         else:
@@ -1623,7 +1626,7 @@ class datetime(date):
 
     def __ne__(self, other):
         if isinstance(other, datetime):
-            return self._cmp(other) != 0
+            return self._cmp(other, allow_mixed=True) != 0
         elif not isinstance(other, date):
             return NotImplemented
         else:
@@ -1661,7 +1664,7 @@ class datetime(date):
         else:
             _cmperror(self, other)
 
-    def _cmp(self, other):
+    def _cmp(self, other, allow_mixed=False):
         assert isinstance(other, datetime)
         mytz = self._tzinfo
         ottz = other._tzinfo
@@ -1682,7 +1685,10 @@ class datetime(date):
                         other._hour, other._minute, other._second,
                         other._microsecond))
         if myoff is None or otoff is None:
-            raise TypeError("cannot compare naive and aware datetimes")
+            if allow_mixed:
+                return 2 # arbitrary non-zero value
+            else:
+                raise TypeError("cannot compare naive and aware datetimes")
         # XXX What follows could be done more efficiently...
         diff = self - other     # this will take offsets into account
         if diff.days < 0:

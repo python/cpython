@@ -3707,6 +3707,14 @@ time_richcompare(PyObject *self, PyObject *other, int op)
                    TIME_GET_MICROSECOND(other);
         result = diff_to_bool(diff, op);
     }
+    else if (op == Py_EQ) {
+        result = Py_False;
+        Py_INCREF(result);
+    }
+    else if (op == Py_NE) {
+        result = Py_True;
+        Py_INCREF(result);
+    }
     else {
         PyErr_SetString(PyExc_TypeError,
                         "can't compare offset-naive and "
@@ -4583,6 +4591,14 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
                    GET_TD_MICROSECONDS(delta);
         Py_DECREF(delta);
         result = diff_to_bool(diff, op);
+    }
+    else if (op == Py_EQ) {
+        result = Py_False;
+        Py_INCREF(result);
+    }
+    else if (op == Py_NE) {
+        result = Py_True;
+        Py_INCREF(result);
     }
     else {
         PyErr_SetString(PyExc_TypeError,
