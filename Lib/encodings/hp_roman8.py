@@ -310,4 +310,3 @@ decoding_table = (
 
 ### Encoding table
 encoding_table=codecs.charmap_build(decoding_table)
-
