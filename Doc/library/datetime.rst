@@ -901,12 +901,20 @@ Supported operations:
    *datetime1* is considered less than *datetime2* when *datetime1* precedes
    *datetime2* in time.
 
-   If one comparand is naive and the other is aware, :exc:`TypeError` is raised.
+   If one comparand is naive and the other is aware, :exc:`TypeError`
+   is raised if an order comparison is attempted.  For equality
+   comparisons, naive instances are never equal to aware instances.
+
    If both comparands are aware, and have the same :attr:`tzinfo` attribute, the
    common :attr:`tzinfo` attribute is ignored and the base datetimes are
    compared.  If both comparands are aware and have different :attr:`tzinfo`
    attributes, the comparands are first adjusted by subtracting their UTC
    offsets (obtained from ``self.utcoffset()``).
+
+   .. versionchanged:: 3.3
+
+   Equality comparisons between naive and aware :class:`datetime`
+   instances don't raise :exc:`TypeError`.
 
    .. note::
 
@@ -1316,7 +1324,10 @@ Supported operations:
 
 * comparison of :class:`.time` to :class:`.time`, where *a* is considered less
   than *b* when *a* precedes *b* in time.  If one comparand is naive and the other
-  is aware, :exc:`TypeError` is raised.  If both comparands are aware, and have
+  is aware, :exc:`TypeError` is raised if an order comparison is attempted. For equality
+  comparisons, naive instances are never equal to aware instances.
+
+  If both comparands are aware, and have
   the same :attr:`tzinfo` attribute, the common :attr:`tzinfo` attribute is
   ignored and the base times are compared.  If both comparands are aware and
   have different :attr:`tzinfo` attributes, the comparands are first adjusted by
@@ -1325,6 +1336,11 @@ Supported operations:
   object address, when a :class:`.time` object is compared to an object of a
   different type, :exc:`TypeError` is raised unless the comparison is ``==`` or
   ``!=``.  The latter cases return :const:`False` or :const:`True`, respectively.
+
+  .. versionchanged:: 3.3
+
+  Equality comparisons between naive and aware :class:`time` instances
+  don't raise :exc:`TypeError`.
 
 * hash, use as dict key
 
