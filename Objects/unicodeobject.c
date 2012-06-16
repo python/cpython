@@ -2084,7 +2084,8 @@ unicode_adjust_maxchar(PyObject **p_unicode)
             return;
     }
     copy = PyUnicode_New(len, max_char);
-    _PyUnicode_FastCopyCharacters(copy, 0, unicode, 0, len);
+    if (copy != NULL)
+        _PyUnicode_FastCopyCharacters(copy, 0, unicode, 0, len);
     Py_DECREF(unicode);
     *p_unicode = copy;
 }
