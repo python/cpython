@@ -24,9 +24,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #14938: importlib.abc.SourceLoader.is_package() will not consider a
-  module whose name ends in '__init__' a package (e.g. importing pkg.__init__
-  directly should be considered a module, not a package).
+- Issue #15006: Allow equality comparison between naive and aware
+  time or datetime objects.
 
 - Issue #14982: Document that pkgutil's iteration functions require the
   non-standard iter_modules() method to be defined by an importer (something
