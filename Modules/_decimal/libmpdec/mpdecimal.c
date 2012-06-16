@@ -5844,6 +5844,12 @@ mpd_qnext_toward(mpd_t *result, const mpd_t *a, const mpd_t *b,
 /*
  * Internal function: Integer power with mpd_uint_t exponent. The function
  * can fail with MPD_Malloc_error.
+ *
+ * The error is equal to the error incurred in k-1 multiplications. Assuming
+ * the upper bound for the relative error in each operation:
+ *
+ *   abs(err) = 5 * 10**-prec
+ *   result = x**k * (1 + err)**(k-1)
  */
 static inline void
 _mpd_qpow_uint(mpd_t *result, const mpd_t *base, mpd_uint_t exp,
@@ -5880,6 +5886,12 @@ _mpd_qpow_uint(mpd_t *result, const mpd_t *base, mpd_uint_t exp,
 /*
  * Internal function: Integer power with mpd_t exponent, tbase and texp
  * are modified!! Function can fail with MPD_Malloc_error.
+ *
+ * The error is equal to the error incurred in k multiplications. Assuming
+ * the upper bound for the relative error in each operation:
+ *
+ *   abs(err) = 5 * 10**-prec
+ *   result = x**k * (1 + err)**k
  */
 static inline void
 _mpd_qpow_mpd(mpd_t *result, mpd_t *tbase, mpd_t *texp, uint8_t resultsign,
@@ -5899,7 +5911,8 @@ _mpd_qpow_mpd(mpd_t *result, mpd_t *tbase, mpd_t *texp, uint8_t resultsign,
         if (mpd_isodd(texp)) {
             mpd_qmul(result, result, tbase, ctx, &workstatus);
             *status |= workstatus;
-            if (workstatus & (MPD_Overflow|MPD_Clamped)) {
+            if (mpd_isspecial(result) ||
+                (mpd_iszerocoeff(result) && (workstatus & MPD_Clamped))) {
                 break;
             }
         }
@@ -5914,7 +5927,9 @@ _mpd_qpow_mpd(mpd_t *result, mpd_t *tbase, mpd_t *texp, uint8_t resultsign,
 }
 
 /*
- * The power function for integer exponents.
+ * The power function for integer exponents. Relative error _before_ the
+ * final rounding to prec:
+ *   abs(result - base**exp) < 0.1 * 10**-prec * abs(base**exp)
  */
 static void
 _mpd_qpow_int(mpd_t *result, const mpd_t *base, const mpd_t *exp,
@@ -5932,6 +5947,7 @@ _mpd_qpow_int(mpd_t *result, const mpd_t *base, const mpd_t *exp,
     workctx.round = MPD_ROUND_HALF_EVEN;
     workctx.clamp = 0;
     if (mpd_isnegative(exp)) {
+        workctx.prec += 1;
         mpd_qdiv(&tbase, &one, base, &workctx, status);
         if (*status&MPD_Errors) {
             mpd_setspecial(result, MPD_POS, MPD_NAN);
