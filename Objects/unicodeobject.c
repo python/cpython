@@ -7435,24 +7435,53 @@ PyUnicode_DecodeCharmap(const char *s,
     e = s + size;
     if (PyUnicode_CheckExact(mapping)) {
         Py_ssize_t maplen;
-        enum PyUnicode_Kind kind;
-        void *data;
+        enum PyUnicode_Kind mapkind;
+        void *mapdata;
         Py_UCS4 x;
 
         if (PyUnicode_READY(mapping) == -1)
             return NULL;
 
         maplen = PyUnicode_GET_LENGTH(mapping);
-        data = PyUnicode_DATA(mapping);
-        kind = PyUnicode_KIND(mapping);
+        mapdata = PyUnicode_DATA(mapping);
+        mapkind = PyUnicode_KIND(mapping);
         while (s < e) {
-            unsigned char ch = *s;
+            unsigned char ch;
+            if (mapkind == PyUnicode_2BYTE_KIND && maplen >= 256) {
+                enum PyUnicode_Kind outkind = PyUnicode_KIND(v);
+                if (outkind == PyUnicode_1BYTE_KIND) {
+                    void *outdata = PyUnicode_DATA(v);
+                    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(v);
+                    while (s < e) {
+                        unsigned char ch = *s;
+                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        if (x > maxchar)
+                            goto Error;
+                        PyUnicode_WRITE(PyUnicode_1BYTE_KIND, outdata, outpos++, x);
+                        ++s;
+                    }
+                    break;
+                }
+                else if (outkind == PyUnicode_2BYTE_KIND) {
+                    void *outdata = PyUnicode_DATA(v);
+                    while (s < e) {
+                        unsigned char ch = *s;
+                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        if (x == 0xFFFE)
+                            goto Error;
+                        PyUnicode_WRITE(PyUnicode_2BYTE_KIND, outdata, outpos++, x);
+                        ++s;
+                    }
+                    break;
+                }
+            }
+            ch = *s;
 
             if (ch < maplen)
-                x = PyUnicode_READ(kind, data, ch);
+                x = PyUnicode_READ(mapkind, mapdata, ch);
             else
                 x = 0xfffe; /* invalid value */
-
+Error:
             if (x == 0xfffe)
             {
                 /* undefined mapping */
@@ -7667,14 +7696,17 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     int count2 = 0, count3 = 0;
     int kind;
     void *data;
+    Py_ssize_t length;
     Py_UCS4 ch;
 
-    if (!PyUnicode_Check(string) || PyUnicode_GET_LENGTH(string) != 256) {
+    if (!PyUnicode_Check(string) || !PyUnicode_GET_LENGTH(string)) {
         PyErr_BadArgument();
         return NULL;
     }
     kind = PyUnicode_KIND(string);
     data = PyUnicode_DATA(string);
+    length = PyUnicode_GET_LENGTH(string);
+    length = Py_MIN(length, 256);
     memset(level1, 0xFF, sizeof level1);
     memset(level2, 0xFF, sizeof level2);
 
@@ -7683,7 +7715,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
        a mapping dictionary. */
     if (PyUnicode_READ(kind, data, 0) != 0)
         need_dict = 1;
-    for (i = 1; i < 256; i++) {
+    for (i = 1; i < length; i++) {
         int l1, l2;
         ch = PyUnicode_READ(kind, data, i);
         if (ch == 0 || ch > 0xFFFF) {
@@ -7709,7 +7741,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
         PyObject *key, *value;
         if (!result)
             return NULL;
-        for (i = 0; i < 256; i++) {
+        for (i = 0; i < length; i++) {
             key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
             value = PyLong_FromLong(i);
             if (!key || !value)
@@ -7743,17 +7775,18 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     memset(mlevel2, 0xFF, 16*count2);
     memset(mlevel3, 0, 128*count3);
     count3 = 0;
-    for (i = 1; i < 256; i++) {
+    for (i = 1; i < length; i++) {
         int o1, o2, o3, i2, i3;
-        if (PyUnicode_READ(kind, data, i) == 0xFFFE)
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch == 0xFFFE)
             /* unmapped character */
             continue;
-        o1 = PyUnicode_READ(kind, data, i)>>11;
-        o2 = (PyUnicode_READ(kind, data, i)>>7) & 0xF;
+        o1 = ch>>11;
+        o2 = (ch>>7) & 0xF;
         i2 = 16*mlevel1[o1] + o2;
         if (mlevel2[i2] == 0xFF)
             mlevel2[i2] = count3++;
-        o3 = PyUnicode_READ(kind, data, i) & 0x7F;
+        o3 = ch & 0x7F;
         i3 = 128*mlevel2[i2] + o3;
         mlevel3[i3] = i;
     }
