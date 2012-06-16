@@ -1008,23 +1008,25 @@ static PyObject *
 get_sourcefile(PyObject *filename)
 {
     Py_ssize_t len;
-    Py_UCS4 *fileuni;
     PyObject *py;
     struct stat statbuf;
     int err;
+    void *data;
+    unsigned int kind;
 
     len = PyUnicode_GET_LENGTH(filename);
     if (len == 0)
         Py_RETURN_NONE;
 
     /* don't match *.pyc or *.pyo? */
-    fileuni = PyUnicode_AsUCS4Copy(filename);
-    if (!fileuni)
-        return NULL;
+    data = PyUnicode_DATA(filename);
+    kind = PyUnicode_KIND(filename);
     if (len < 5
-        || fileuni[len-4] != '.'
-        || (fileuni[len-3] != 'p' && fileuni[len-3] != 'P')
-        || (fileuni[len-2] != 'y' && fileuni[len-2] != 'Y'))
+        || PyUnicode_READ(kind, data, len-4) != '.'
+        || (PyUnicode_READ(kind, data, len-3) != 'p'
+            && PyUnicode_READ(kind, data, len-3) != 'P')
+        || (PyUnicode_READ(kind, data, len-2) != 'y'
+            && PyUnicode_READ(kind, data, len-2) != 'Y'))
         goto unchanged;
 
     /* Start by trying to turn PEP 3147 path into source path.  If that
@@ -1034,7 +1036,7 @@ get_sourcefile(PyObject *filename)
     py = make_source_pathname(filename);
     if (py == NULL) {
         PyErr_Clear();
-        py = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, fileuni, len - 1);
+        py = PyUnicode_Substring(filename, 0, len - 1);
     }
     if (py == NULL)
         goto error;
@@ -1042,17 +1044,14 @@ get_sourcefile(PyObject *filename)
     err = _Py_stat(py, &statbuf);
     if (err == -2)
         goto error;
-    if (err == 0 && S_ISREG(statbuf.st_mode)) {
-        PyMem_Free(fileuni);
+    if (err == 0 && S_ISREG(statbuf.st_mode))
         return py;
-    }
     Py_DECREF(py);
     goto unchanged;
 
 error:
     PyErr_Clear();
 unchanged:
-    PyMem_Free(fileuni);
     Py_INCREF(filename);
     return filename;
 }
