@@ -97,7 +97,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
             /* Delay exception instantiation if we can */
             PyErr_SetNone(PyExc_StopIteration);
         } else {
-            PyObject *e = PyStopIteration_Create(result);
+            PyObject *e = PyObject_CallFunctionObjArgs(
+                               PyExc_StopIteration, result, NULL);
             if (e != NULL) {
                 PyErr_SetObject(PyExc_StopIteration, e);
                 Py_DECREF(e);
@@ -339,7 +340,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
             gen->gi_frame->f_lasti++;
-            if (PyGen_FetchStopIterationValue(&val) == 0) {
+            if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send_ex(gen, val, 0);
                 Py_DECREF(val);
             } else {
@@ -428,7 +429,7 @@ gen_iternext(PyGenObject *gen)
  */
 
 int
-PyGen_FetchStopIterationValue(PyObject **pvalue) {
+_PyGen_FetchStopIterationValue(PyObject **pvalue) {
     PyObject *et, *ev, *tb;
     PyObject *value = NULL;
 

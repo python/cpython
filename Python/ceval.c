@@ -1852,7 +1852,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 PyObject *val;
                 x = POP(); /* Remove iter from stack */
                 Py_DECREF(x);
-                err = PyGen_FetchStopIterationValue(&val);
+                err = _PyGen_FetchStopIterationValue(&val);
                 if (err < 0) {
                     x = NULL;
                     break;
