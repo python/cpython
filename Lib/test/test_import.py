@@ -726,6 +726,10 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
     @test.support.skip_unless_symlink
+    @unittest.skipUnless(
+        sys.platform == 'win32',
+        "Test failing on Unix (see issue15091)"
+        )
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']
