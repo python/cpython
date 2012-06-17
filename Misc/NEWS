@@ -134,7 +134,10 @@ Documentation
 Tests
 -----
 
-- Issue #14963 (partial): Add test cases for exception handling behaviour
+- Issue #15043: test_gdb is now skipped entirely if gdb security settings
+  block loading of the gdb hooks
+
+- Issue #14963: Add test cases for exception handling behaviour
   in contextlib.ExitStack (Initial patch by Alon Horev)
 
 
