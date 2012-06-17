@@ -13,7 +13,9 @@ import sys
 import unittest
 import textwrap
 import errno
+import shutil
 
+import test.support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
@@ -690,6 +692,56 @@ class PycacheTests(unittest.TestCase):
         self.assertEqual(m.x, 5)
 
 
+class TestSymbolicallyLinkedPackage(unittest.TestCase):
+    package_name = 'sample'
+
+    def setUp(self):
+        if os.path.exists(self.tagged):
+            shutil.rmtree(self.tagged)
+        if os.path.exists(self.package_name):
+            os.remove(self.package_name)
+        self.orig_sys_path = sys.path[:]
+
+        # create a sample package; imagine you have a package with a tag and
+        #  you want to symbolically link it from its untagged name.
+        os.mkdir(self.tagged)
+        init_file = os.path.join(self.tagged, '__init__.py')
+        open(init_file, 'w').close()
+        assert os.path.exists(init_file)
+
+        # now create a symlink to the tagged package
+        # sample -> sample-tagged
+        os.symlink(self.tagged, self.package_name)
+
+        # assert os.path.isdir(self.package_name) # currently fails
+        assert os.path.isfile(os.path.join(self.package_name, '__init__.py'))
+
+    @property
+    def tagged(self):
+        return self.package_name + '-tagged'
+
+    # regression test for issue6727
+    @unittest.skipUnless(
+        not hasattr(sys, 'getwindowsversion')
+        or sys.getwindowsversion() >= (6, 0),
+        "Windows Vista or later required")
+    @test.support.skip_unless_symlink
+    def test_symlinked_dir_importable(self):
+        # make sure sample can only be imported from the current directory.
+        sys.path[:] = ['.']
+
+        # and try to import the package
+        __import__(self.package_name)
+
+    def tearDown(self):
+        # now cleanup
+        if os.path.exists(self.package_name):
+            os.remove(self.package_name)
+        if os.path.exists(self.tagged):
+            shutil.rmtree(self.tagged)
+        sys.path[:] = self.orig_sys_path
+
+
 def test_main(verbose=None):
     flag = importlib_util.using___import__
     try:
@@ -697,6 +749,7 @@ def test_main(verbose=None):
         run_unittest(ImportTests, PycacheTests,
                      PycRewritingTests, PathsTests, RelativeImportTests,
                      OverridingImportBuiltinTests,
+                     TestSymbolicallyLinkedPackage,
                      importlib_import_test_suite())
     finally:
         importlib_util.using___import__ = flag
