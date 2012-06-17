@@ -101,7 +101,7 @@ class LifetimeTests(unittest.TestCase):
 
     def test_all_locks(self):
         support.gc_collect()
-        self.assertEqual(0, len(_bootstrap._module_locks))
+        self.assertEqual(0, len(_bootstrap._module_locks), _bootstrap._module_locks)
 
 
 @support.reap_threads
