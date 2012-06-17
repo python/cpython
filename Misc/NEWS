@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14657: The frozen instance of importlib used for bootstrap is now
+  also the module imported as importlib._bootstrap.
+
 - Issue #14055: Add __sizeof__ support to _elementtree.
 
 - Issue #15054: A bug in tokenize.tokenize that caused string literals
