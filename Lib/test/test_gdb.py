@@ -32,6 +32,15 @@ gdbpy_version, _ = p.communicate()
 if gdbpy_version == '':
     raise unittest.SkipTest("gdb not built with embedded python support")
 
+# Verify that "gdb" can load our custom hooks
+p = subprocess.Popen(["gdb", "--batch", cmd,
+                      "--args", sys.executable],
+                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+__, gdbpy_errors = p.communicate()
+if b"auto-loading has been declined" in gdbpy_errors:
+    msg = "gdb security settings prevent use of custom hooks: %s"
+    raise unittest.SkipTest(msg % gdbpy_errors)
+
 def python_is_optimized():
     cflags = sysconfig.get_config_vars()['PY_CFLAGS']
     final_opt = ""

@@ -227,6 +227,9 @@ Library
 Tests
 -----
 
+- Issue #15043: test_gdb is now skipped entirely if gdb security settings
+  block loading of the gdb hooks
+
 - Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
   a test failure in test_ssl.
 
