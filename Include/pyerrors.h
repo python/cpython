@@ -400,9 +400,6 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
     const char *reason          /* UTF-8 encoded string */
     );
 
-/* create a StopIteration exception with the given value */
-PyAPI_FUNC(PyObject *) PyStopIteration_Create(PyObject *);
-
 /* These APIs aren't really part of the error implementation, but
    often needed to format error messages; the native C lib APIs are
    not available on all platforms, which is why we provide emulations
