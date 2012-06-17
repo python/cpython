@@ -1,19 +1,26 @@
 """A pure Python implementation of import."""
 __all__ = ['__import__', 'import_module', 'invalidate_caches']
 
-from . import _bootstrap
-
-
-# To simplify imports in test code
-_w_long = _bootstrap._w_long
-_r_long = _bootstrap._r_long
-
-
 # Bootstrap help #####################################################
 import imp
 import sys
 
-_bootstrap._setup(sys, imp)
+try:
+    _bootstrap = sys.modules['_frozen_importlib']
+except ImportError:
+    from . import _bootstrap
+    _bootstrap._setup(sys, imp)
+else:
+    # importlib._bootstrap is the built-in import, ensure we don't create
+    # a second copy of the module.
+    _bootstrap.__name__ = 'importlib._bootstrap'
+    _bootstrap.__package__ = 'importlib'
+    _bootstrap.__file__ = __file__.replace('__init__.py', '_bootstrap.py')
+    sys.modules['importlib._bootstrap'] = _bootstrap
+
+# To simplify imports in test code
+_w_long = _bootstrap._w_long
+_r_long = _bootstrap._r_long
 
 
 # Public API #########################################################
