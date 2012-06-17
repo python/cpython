@@ -301,6 +301,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15043: test_gdb is now skipped entirely if gdb security settings
+  block loading of the gdb hooks
+
 - Issue #14026: In test_cmd_line_script, check that sys.argv is populated
   correctly for the various invocation approaches (Patch by Jason Yeo)
 
