@@ -1085,10 +1085,14 @@ class PyBuildExt(build_ext):
             for cand in dbm_order:
                 if cand == "ndbm":
                     if find_file("ndbm.h", inc_dirs, []) is not None:
-                        # Some systems have -lndbm, others don't
+                        # Some systems have -lndbm, others have -lgdbm_compat,
+                        # others don't have either
                         if self.compiler.find_library_file(lib_dirs,
                                                                'ndbm'):
                             ndbm_libs = ['ndbm']
+                        elif self.compiler.find_library_file(lib_dirs,
+                                                             'gdbm_compat'):
+                            ndbm_libs = ['gdbm_compat']
                         else:
                             ndbm_libs = []
                         if dbm_setup_debug: print("building dbm using ndbm")
