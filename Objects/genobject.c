@@ -149,13 +149,14 @@ static int
 gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
+    _Py_IDENTIFIER(close);
 
     if (PyGen_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
         if (retval == NULL)
             return -1;
     } else {
-        PyObject *meth = PyObject_GetAttrString(yf, "close");
+        PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
         if (meth == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_WriteUnraisable(yf);
@@ -295,6 +296,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
     PyObject *tb = NULL;
     PyObject *val = NULL;
     PyObject *yf = gen_yf(gen);
+    _Py_IDENTIFIER(throw);
 
     if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
         return NULL;
@@ -316,7 +318,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
             ret = gen_throw((PyGenObject *)yf, args);
             gen->gi_running = 0;
         } else {
-            PyObject *meth = PyObject_GetAttrString(yf, "throw");
+            PyObject *meth = _PyObject_GetAttrId(yf, &PyId_throw);
             if (meth == NULL) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                     Py_DECREF(yf);
