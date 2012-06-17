@@ -67,6 +67,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15054: A bug in tokenize.tokenize that caused string literals
+  with 'b' and 'br' prefixes to be incorrectly tokenized has been fixed.
+  Patch by Serhiy Storchaka.
+
 - Issue #15036: Allow removing or changing multiple items in
   single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
   between the changes.
