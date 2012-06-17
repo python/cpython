@@ -62,7 +62,7 @@ class SizeofTest(unittest.TestCase):
 
     def test_element_with_attrib(self):
         e = cET.Element('a', href='about:')
-        self.assertEqual(sys.getsizeof(e), 
+        self.assertEqual(sys.getsizeof(e),
                          self.elementsize + self.extra)
 
     def test_element_with_children(self):
@@ -70,8 +70,8 @@ class SizeofTest(unittest.TestCase):
         for i in range(5):
             cET.SubElement(e, 'span')
         # should have space for 8 children now
-        self.assertEqual(sys.getsizeof(e), 
-                         self.elementsize + self.extra + 
+        self.assertEqual(sys.getsizeof(e),
+                         self.elementsize + self.extra +
                          struct.calcsize('8P'))
 
 def test_main():
