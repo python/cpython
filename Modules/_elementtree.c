@@ -842,6 +842,19 @@ element_deepcopy(ElementObject* self, PyObject* args)
     return NULL;
 }
 
+static PyObject*
+element_sizeof(PyObject* _self, PyObject* args)
+{
+    ElementObject *self = (ElementObject*)_self;
+    Py_ssize_t result = sizeof(ElementObject);
+    if (self->extra) {
+        result += sizeof(ElementObjectExtra);
+        if (self->extra->children != self->extra->_children)
+            result += sizeof(PyObject*) * self->extra->allocated;
+    }
+    return PyLong_FromSsize_t(result);
+}
+
 LOCAL(int)
 checkpath(PyObject* tag)
 {
@@ -1609,6 +1622,7 @@ static PyMethodDef element_methods[] = {
 
     {"__copy__", (PyCFunction) element_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction) element_deepcopy, METH_VARARGS},
+    {"__sizeof__", element_sizeof, METH_NOARGS},
 
     {NULL, NULL}
 };
