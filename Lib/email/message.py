@@ -613,17 +613,15 @@ class Message:
         the form (CHARSET, LANGUAGE, VALUE).  Note that both CHARSET and
         LANGUAGE can be None, in which case you should consider VALUE to be
         encoded in the us-ascii charset.  You can usually ignore LANGUAGE.
+        The parameter value (either the returned string, or the VALUE item in
+        the 3-tuple) is always unquoted, unless unquote is set to False.
 
-        Your application should be prepared to deal with 3-tuple return
-        values, and can convert the parameter to a Unicode string like so:
+        If your application doesn't care whether the parameter was RFC 2231
+        encoded, it can turn the return value into a string as follows:
 
             param = msg.get_param('foo')
-            if isinstance(param, tuple):
-                param = unicode(param[2], param[0] or 'us-ascii')
+            param = email.utils.collapse_rfc2231_value(rawparam)
 
-        In any case, the parameter value (either the returned string, or the
-        VALUE item in the 3-tuple) is always unquoted, unless unquote is set
-        to False.
         """
         if header not in self:
             return failobj
