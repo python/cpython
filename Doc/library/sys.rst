@@ -441,6 +441,9 @@ always available.
    does not have to hold true for third-party extensions as it is implementation
    specific.
 
+   Only the memory consumption directly attributed to the object is
+   accounted for, not the memory consumption of objects it refers to.
+
    If given, *default* will be returned if the object does not provide means to
    retrieve the size.  Otherwise a :exc:`TypeError` will be raised.
 
