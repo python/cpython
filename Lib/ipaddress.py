@@ -416,6 +416,11 @@ class _IPAddressBase:
         """Return the shorthand version of the IP address as a string."""
         return str(self)
 
+    @property
+    def version(self):
+        msg = '%200s has no version specified' % (type(self),)
+        raise NotImplementedError(msg)
+
     def _ip_int_from_prefix(self, prefixlen=None):
         """Turn the prefix length netmask into a int for comparison.
 
@@ -554,10 +559,6 @@ class _BaseAddress(_IPAddressBase):
 
     def _get_address_key(self):
         return (self._version, self)
-
-    @property
-    def version(self):
-        raise NotImplementedError('BaseIP has no version')
 
 
 class _BaseNetwork(_IPAddressBase):
@@ -727,12 +728,12 @@ class _BaseNetwork(_IPAddressBase):
         return int(self.broadcast_address) - int(self.network_address) + 1
 
     @property
-    def version(self):
-        raise NotImplementedError('BaseNet has no version')
-
-    @property
     def _address_class(self):
-        raise NotImplementedError('BaseNet has no associated address class')
+        # Returning bare address objects (rather than interfaces) allows for
+        # more consistent behaviour across the network address, broadcast
+        # address and individual host addresses.
+        msg = '%200s has no associated address class' % (type(self),)
+        raise NotImplementedError(msg)
 
     @property
     def prefixlen(self):
@@ -1333,7 +1334,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
     """
     # Class to use when creating address objects
-    # TODO (ncoghlan): Investigate using IPv4Interface instead
     _address_class = IPv4Address
 
     def __init__(self, address, strict=True):
@@ -1945,7 +1945,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
     """
 
     # Class to use when creating address objects
-    # TODO (ncoghlan): Investigate using IPv6Interface instead
     _address_class = IPv6Address
 
     def __init__(self, address, strict=True):
