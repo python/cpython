@@ -124,6 +124,11 @@ Extension Modules
 
 - Issue #15000: Support the "unique" x32 architecture in _posixsubprocess.c.
 
+Documentation
+-------------
+
+- Issue #14814: Added first draft of ipaddress module API reference
+
 Tests
 -----
 
