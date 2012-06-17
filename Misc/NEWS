@@ -301,6 +301,9 @@ Extension Modules
 Tests
 -----
 
+- test_nntplib now tolerates being run from behind NNTP gateways that add
+  "X-Antivirus" headers to articles
+
 - Issue #15043: test_gdb is now skipped entirely if gdb security settings
   block loading of the gdb hooks
 
