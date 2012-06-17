@@ -354,17 +354,31 @@ A tuple consists of a number of values separated by commas, for instance::
    ... u = t, (1, 2, 3, 4, 5)
    >>> u
    ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
+   >>> # Tuples are immutable:
+   ... t[0] = 88888
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: 'tuple' object does not support item assignment
+   >>> # but they can contain mutable objects:
+   ... v = ([1, 2, 3], [3, 2, 1])
+   >>> v
+   ([1, 2, 3], [3, 2, 1])
+
 
 As you see, on output tuples are always enclosed in parentheses, so that nested
 tuples are interpreted correctly; they may be input with or without surrounding
 parentheses, although often parentheses are necessary anyway (if the tuple is
-part of a larger expression).
+part of a larger expression).  It is not possible to assign to the individual
+items of a tuple, however it is possible to create tuples which contain mutable
+objects, such as lists.
 
-Tuples have many uses.  For example: (x, y) coordinate pairs, employee records
-from a database, etc.  Tuples, like strings, are immutable: it is not possible
-to assign to the individual items of a tuple (you can simulate much of the same
-effect with slicing and concatenation, though).  It is also possible to create
-tuples which contain mutable objects, such as lists.
+Though tuples may seem similar to lists, they are often used in different
+situations and for different purposes.
+Tuples are :term:`immutable`, and usually contain an heterogeneous sequence of
+elements that are accessed via unpacking (see later in this section) or indexing
+(or even by attribute in the case of :func:`namedtuples <collections.namedtuple>`).
+Lists are :term:`mutable`, and their elements are usually homogeneous and are
+accessed by iterating over the list.
 
 A special problem is the construction of tuples containing 0 or 1 items: the
 syntax has some extra quirks to accommodate these.  Empty tuples are constructed
@@ -392,8 +406,6 @@ sequence on the right-hand side.  Sequence unpacking requires that there are as
 many variables on the left side of the equals sign as there are elements in the
 sequence.  Note that multiple assignment is really just a combination of tuple
 packing and sequence unpacking.
-
-.. XXX Add a bit on the difference between tuples and lists.
 
 
 .. _tut-sets:
