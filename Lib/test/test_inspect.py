@@ -41,11 +41,6 @@ def revise(filename, *args):
 
 import builtins
 
-try:
-    1/0
-except:
-    tb = sys.exc_info()[2]
-
 git = mod.StupidGit()
 
 class IsTestBase(unittest.TestCase):
@@ -79,23 +74,31 @@ class TestPredicates(IsTestBase):
 
 
     def test_excluding_predicates(self):
+        global tb
         self.istest(inspect.isbuiltin, 'sys.exit')
         self.istest(inspect.isbuiltin, '[].append')
         self.istest(inspect.iscode, 'mod.spam.__code__')
-        self.istest(inspect.isframe, 'tb.tb_frame')
+        try:
+            1/0
+        except:
+            tb = sys.exc_info()[2]
+            self.istest(inspect.isframe, 'tb.tb_frame')
+            self.istest(inspect.istraceback, 'tb')
+            if hasattr(types, 'GetSetDescriptorType'):
+                self.istest(inspect.isgetsetdescriptor,
+                            'type(tb.tb_frame).f_locals')
+            else:
+                self.assertFalse(inspect.isgetsetdescriptor(type(tb.tb_frame).f_locals))
+        finally:
+            # Clear traceback and all the frames and local variables hanging to it.
+            tb = None
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
         self.istest(inspect.ismodule, 'mod')
-        self.istest(inspect.istraceback, 'tb')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
         self.istest(inspect.isgeneratorfunction, 'generator_function_example')
-        if hasattr(types, 'GetSetDescriptorType'):
-            self.istest(inspect.isgetsetdescriptor,
-                        'type(tb.tb_frame).f_locals')
-        else:
-            self.assertFalse(inspect.isgetsetdescriptor(type(tb.tb_frame).f_locals))
         if hasattr(types, 'MemberDescriptorType'):
             self.istest(inspect.ismemberdescriptor, 'datetime.timedelta.days')
         else:
