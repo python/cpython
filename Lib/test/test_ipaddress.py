@@ -150,15 +150,30 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(first, last)
         self.assertEqual(0, ipaddress._get_prefix_length(2**32, 0, 32))
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
-        base_ip = ipaddress._BaseAddress('127.0.0.1')
-        try:
-            base_ip.version
-            self.fail('_BaseAddress.version didn\'t raise NotImplementedError')
-        except NotImplementedError:
-            pass
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
         self.assertEqual('0x1020318', hex(self.ipv4_network))
         self.assertRaises(TypeError, self.ipv4_network.__eq__, object())
+
+    def testMissingAddressVersion(self):
+        class Broken(ipaddress._BaseAddress):
+            pass
+        broken = Broken('127.0.0.1')
+        with self.assertRaisesRegex(NotImplementedError, "Broken.*version"):
+            broken.version
+
+    def testMissingNetworkVersion(self):
+        class Broken(ipaddress._BaseNetwork):
+            pass
+        broken = Broken('127.0.0.1')
+        with self.assertRaisesRegex(NotImplementedError, "Broken.*version"):
+            broken.version
+
+    def testMissingAddressClass(self):
+        class Broken(ipaddress._BaseNetwork):
+            pass
+        broken = Broken('127.0.0.1')
+        with self.assertRaisesRegex(NotImplementedError, "Broken.*address"):
+            broken._address_class
 
     def testGetNetwork(self):
         self.assertEqual(int(self.ipv4_network.network_address), 16909056)
