@@ -19,7 +19,7 @@ import test.support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file)
+    unlink, unload, create_empty_file, cpython_only)
 from test import script_helper
 
 
@@ -746,6 +746,23 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         sys.path[:] = self.orig_sys_path
 
 
+@cpython_only
+class ImportlibBootstrapTests(unittest.TestCase):
+    # These tests check that importlib is bootstrapped.
+
+    def test_frozen_importlib(self):
+        mod = sys.modules['_frozen_importlib']
+        self.assertTrue(mod)
+
+    def test_frozen_importlib_is_bootstrap(self):
+        from importlib import _bootstrap
+        mod = sys.modules['_frozen_importlib']
+        self.assertIs(mod, _bootstrap)
+        self.assertEqual(mod.__name__, 'importlib._bootstrap')
+        self.assertEqual(mod.__package__, 'importlib')
+        self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
+
+
 def test_main(verbose=None):
     flag = importlib_util.using___import__
     try:
@@ -753,6 +770,7 @@ def test_main(verbose=None):
         run_unittest(ImportTests, PycacheTests,
                      PycRewritingTests, PathsTests, RelativeImportTests,
                      OverridingImportBuiltinTests,
+                     ImportlibBootstrapTests,
                      TestSymbolicallyLinkedPackage,
                      importlib_import_test_suite())
     finally:
