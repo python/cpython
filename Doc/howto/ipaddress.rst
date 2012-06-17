@@ -1,14 +1,19 @@
 .. _ipaddress-howto:
 
-***************
-Ipaddress Howto
-***************
+***************************************
+An Introduction to the ipaddress module
+***************************************
 
 :author: Peter Moody
+:author: Nick Coghlan
 
-.. topic:: Abstract
+.. topic:: Overview
 
-   This document is a gentle introduction to :mod:`ipaddress` module.
+   This document aims to provide a gentle introduction to :mod:`ipaddress`
+   module. It is aimed primarily at users that aren't already familiar with
+   IP networking terminology, but may also be useful to network engineers
+   wanting an overview of how the ipaddress module represents IP network
+   addressing concepts.
 
 
 Creating Address/Network/Interface objects
@@ -40,7 +45,7 @@ IP Host Addresses
 
 Addresses, often referred to as "host addresses" are the most basic unit
 when working with IP addressing. The simplest way to create addresses is
-to use the ``ip_address`` factory function, which automatically determines
+to use the :func:`ipaddress.ip_address` factory function, which automatically determines
 whether to create an IPv4 or IPv6 address based on the passed in value::
 
    >>> ipaddress.ip_address('192.0.2.1')
@@ -113,7 +118,7 @@ integer, so the network prefix includes the entire network address::
 
    >>> ipaddress.ip_network(3221225984)
    IPv4Network('192.0.2.0/32')
-   >>> ipaddress.ip_network(42540766411282592856903984951653826560L)
+   >>> ipaddress.ip_network(42540766411282592856903984951653826560)
    IPv6Network('2001:db8::/128')
 
 Creation of a particular kind of network can be forced by calling the
@@ -275,15 +280,18 @@ an integer or string that the other module will accept::
 Exceptions raised by :mod:`ipaddress`
 =====================================
 
-If you try to create an address/network/interface object with an invalid value
-for either the address or netmask, :mod:`ipaddress` will raise an
-:exc:`AddressValueError` or :exc:`NetmaskValueError` respectively. However,
-this applies only when calling the class constructors directly. The factory
-functions and other module level functions will just raise :exc:`ValueError`.
+When creating address/network/interface objects using the version-agnostic
+factory functions, any errors will be reported as :exc:`ValueError`.
+
+For some use cases, it desirable to know whether it is the address or the
+netmask which is incorrect. To support these use cases, the class
+constructors actually raise the :exc:`ValueError` subclasses
+:exc:`ipaddress.AddressValueError` and :exc:`ipaddress.NetmaskValueError`
+to indicate exactly which part of the definition failed to parse correctly.
 
 Both of the module specific exceptions have :exc:`ValueError` as their
 parent class, so if you're not concerned with the particular type of error,
-you can still do the following::
+you can still write code like the following::
 
    try:
        ipaddress.IPv4Address(address)
