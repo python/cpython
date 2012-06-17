@@ -34,7 +34,7 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 
 PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
 PyAPI_FUNC(int) PyGen_NeedsFinalizing(PyGenObject *);
-PyAPI_FUNC(int) PyGen_FetchStopIterationValue(PyObject **);
+PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyObject *_PyGen_Send(PyGenObject *, PyObject *);
 
 #ifdef __cplusplus

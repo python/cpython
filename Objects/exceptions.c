@@ -516,12 +516,6 @@ StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-PyObject *
-PyStopIteration_Create(PyObject *value)
-{
-    return PyObject_CallFunctionObjArgs(PyExc_StopIteration, value, NULL);
-}
-
 ComplexExtendsException(
     PyExc_Exception,       /* base */
     StopIteration,         /* name */

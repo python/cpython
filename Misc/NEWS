@@ -111,6 +111,12 @@ Library
 - Issue #14963: Convert contextlib.ExitStack.__exit__ to use an iterative
   algorithm (Patch by Alon Horev)
 
+C-API
+-----
+
+- Issue #13783: Inadvertent additions to the public C API in the PEP 380
+  implementation have either been removed or marked as private interfaces.
+
 Extension Modules
 -----------------
 
