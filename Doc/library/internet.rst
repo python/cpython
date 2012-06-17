@@ -42,3 +42,4 @@ is currently supported on most popular platforms.  Here is an overview:
    http.cookiejar.rst
    xmlrpc.client.rst
    xmlrpc.server.rst
+   ipaddress.rst
