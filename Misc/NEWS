@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15054: A bug in tokenize.tokenize that caused string literals
+  with 'b' prefixes to be incorrectly tokenized has been fixed.
+  Patch by Serhiy Storchaka.
+
 - Issue #15006: Allow equality comparison between naive and aware
   time or datetime objects.
 
