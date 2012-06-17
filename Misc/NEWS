@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #13783: Generator objects now use the identifier APIs internally
+
 - Issue #14874: Restore charmap decoding speed to pre-PEP 393 levels.
   Patch by Serhiy Storchaka.
 
