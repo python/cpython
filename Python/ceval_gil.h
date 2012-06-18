@@ -59,213 +59,49 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
      (Note: this mechanism is enabled with FORCE_SWITCHING above)
 */
 
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
+#include "condvar.h"
+#ifndef Py_HAVE_CONDVAR
+#error You need either a POSIX-compatible or a Windows system!
 #endif
 
-
-#ifdef _POSIX_THREADS
-
-/*
- * POSIX support
- */
-
-#include <pthread.h>
-
-#define ADD_MICROSECONDS(tv, interval) \
-do { \
-    tv.tv_usec += (long) interval; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-} while (0)
-
-/* We assume all modern POSIX systems have gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv)
-#else
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv, (struct timezone *)NULL)
-#endif
-
-#define MUTEX_T pthread_mutex_t
+#define MUTEX_T PyMUTEX_T
 #define MUTEX_INIT(mut) \
-    if (pthread_mutex_init(&mut, NULL)) { \
-        Py_FatalError("pthread_mutex_init(" #mut ") failed"); };
+    if (PyMUTEX_INIT(&(mut))) { \
+        Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };
 #define MUTEX_FINI(mut) \
-    if (pthread_mutex_destroy(&mut)) { \
-        Py_FatalError("pthread_mutex_destroy(" #mut ") failed"); };
+    if (PyMUTEX_FINI(&(mut))) { \
+        Py_FatalError("PyMUTEX_FINI(" #mut ") failed"); };
 #define MUTEX_LOCK(mut) \
-    if (pthread_mutex_lock(&mut)) { \
-        Py_FatalError("pthread_mutex_lock(" #mut ") failed"); };
+    if (PyMUTEX_LOCK(&(mut))) { \
+        Py_FatalError("PyMUTEX_LOCK(" #mut ") failed"); };
 #define MUTEX_UNLOCK(mut) \
-    if (pthread_mutex_unlock(&mut)) { \
-        Py_FatalError("pthread_mutex_unlock(" #mut ") failed"); };
+    if (PyMUTEX_UNLOCK(&(mut))) { \
+        Py_FatalError("PyMUTEX_UNLOCK(" #mut ") failed"); };
 
-#define COND_T pthread_cond_t
+#define COND_T PyCOND_T
 #define COND_INIT(cond) \
-    if (pthread_cond_init(&cond, NULL)) { \
-        Py_FatalError("pthread_cond_init(" #cond ") failed"); };
+    if (PyCOND_INIT(&(cond))) { \
+        Py_FatalError("PyCOND_INIT(" #cond ") failed"); };
 #define COND_FINI(cond) \
-    if (pthread_cond_destroy(&cond)) { \
-        Py_FatalError("pthread_cond_destroy(" #cond ") failed"); };
+    if (PyCOND_FINI(&(cond))) { \
+        Py_FatalError("PyCOND_FINI(" #cond ") failed"); };
 #define COND_SIGNAL(cond) \
-    if (pthread_cond_signal(&cond)) { \
-        Py_FatalError("pthread_cond_signal(" #cond ") failed"); };
+    if (PyCOND_SIGNAL(&(cond))) { \
+        Py_FatalError("PyCOND_SIGNAL(" #cond ") failed"); };
 #define COND_WAIT(cond, mut) \
-    if (pthread_cond_wait(&cond, &mut)) { \
-        Py_FatalError("pthread_cond_wait(" #cond ") failed"); };
+    if (PyCOND_WAIT(&(cond), &(mut))) { \
+        Py_FatalError("PyCOND_WAIT(" #cond ") failed"); };
 #define COND_TIMED_WAIT(cond, mut, microseconds, timeout_result) \
     { \
-        int r; \
-        struct timespec ts; \
-        struct timeval deadline; \
-        \
-        GETTIMEOFDAY(&deadline); \
-        ADD_MICROSECONDS(deadline, microseconds); \
-        ts.tv_sec = deadline.tv_sec; \
-        ts.tv_nsec = deadline.tv_usec * 1000; \
-        \
-        r = pthread_cond_timedwait(&cond, &mut, &ts); \
-        if (r == ETIMEDOUT) \
+        int r = PyCOND_TIMEDWAIT(&(cond), &(mut), (microseconds)); \
+        if (r < 0) \
+            Py_FatalError("PyCOND_WAIT(" #cond ") failed"); \
+        if (r) /* 1 == timeout, 2 == impl. can't say, so assume timeout */ \
             timeout_result = 1; \
-        else if (r) \
-            Py_FatalError("pthread_cond_timedwait(" #cond ") failed"); \
         else \
             timeout_result = 0; \
     } \
 
-#elif defined(NT_THREADS)
-
-/*
- * Windows (2000 and later, as well as (hopefully) CE) support
- */
-
-#include <windows.h>
-
-#define MUTEX_T CRITICAL_SECTION
-#define MUTEX_INIT(mut) do { \
-    if (!(InitializeCriticalSectionAndSpinCount(&(mut), 4000))) \
-        Py_FatalError("CreateMutex(" #mut ") failed"); \
-} while (0)
-#define MUTEX_FINI(mut) \
-    DeleteCriticalSection(&(mut))
-#define MUTEX_LOCK(mut) \
-    EnterCriticalSection(&(mut))
-#define MUTEX_UNLOCK(mut) \
-    LeaveCriticalSection(&(mut))
-
-/* We emulate condition variables with a semaphore.
-   We use a Semaphore rather than an auto-reset event, because although
-   an auto-resent event might appear to solve the lost-wakeup bug (race
-   condition between releasing the outer lock and waiting) because it
-   maintains state even though a wait hasn't happened, there is still
-   a lost wakeup problem if more than one thread are interrupted in the
-   critical place.  A semaphore solves that.
-   Because it is ok to signal a condition variable with no one
-   waiting, we need to keep track of the number of
-   waiting threads.  Otherwise, the semaphore's state could rise
-   without bound.
-
-   Generic emulations of the pthread_cond_* API using
-   Win32 functions can be found on the Web.
-   The following read can be edificating (or not):
-   http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
-*/
-typedef struct COND_T
-{
-    HANDLE sem;    /* the semaphore */
-    int n_waiting; /* how many are unreleased */
-} COND_T;
-
-__inline static void _cond_init(COND_T *cond)
-{
-    /* A semaphore with a large max value,  The positive value
-     * is only needed to catch those "lost wakeup" events and
-     * race conditions when a timed wait elapses.
-     */
-    if (!(cond->sem = CreateSemaphore(NULL, 0, 1000, NULL)))
-        Py_FatalError("CreateSemaphore() failed");
-    cond->n_waiting = 0;
-}
-
-__inline static void _cond_fini(COND_T *cond)
-{
-    BOOL ok = CloseHandle(cond->sem);
-    if (!ok)
-        Py_FatalError("CloseHandle() failed");
-}
-
-__inline static void _cond_wait(COND_T *cond, MUTEX_T *mut)
-{
-    ++cond->n_waiting;
-    MUTEX_UNLOCK(*mut);
-    /* "lost wakeup bug" would occur if the caller were interrupted here,
-     * but we are safe because we are using a semaphore wich has an internal
-     * count.
-     */
-    if (WaitForSingleObject(cond->sem, INFINITE) == WAIT_FAILED)
-        Py_FatalError("WaitForSingleObject() failed");
-    MUTEX_LOCK(*mut);
-}
-
-__inline static int _cond_timed_wait(COND_T *cond, MUTEX_T *mut,
-                              int us)
-{
-    DWORD r;
-    ++cond->n_waiting;
-    MUTEX_UNLOCK(*mut);
-    r = WaitForSingleObject(cond->sem, us / 1000);
-    if (r == WAIT_FAILED)
-        Py_FatalError("WaitForSingleObject() failed");
-    MUTEX_LOCK(*mut);
-    if (r == WAIT_TIMEOUT)
-        --cond->n_waiting;
-        /* Here we have a benign race condition with _cond_signal.  If the
-         * wait operation has timed out, but before we can acquire the
-         * mutex again to decrement n_waiting, a thread holding the mutex
-         * still sees a positive n_waiting value and may call
-         * ReleaseSemaphore and decrement n_waiting.
-         * This will cause n_waiting to be decremented twice.
-         * This is benign, though, because ReleaseSemaphore will also have
-         * been called, leaving the semaphore state positive.  We may
-         * thus end up with semaphore in state 1, and n_waiting == -1, and
-         * the next time someone calls _cond_wait(), that thread will
-         * pass right through, decrementing the semaphore state and
-         * incrementing n_waiting, thus correcting the extra _cond_signal.
-         */
-    return r == WAIT_TIMEOUT;
-}
-
-__inline static void _cond_signal(COND_T  *cond) {
-    /* NOTE: This must be called with the mutex held */
-    if (cond->n_waiting > 0) {
-        if (!ReleaseSemaphore(cond->sem, 1, NULL))
-            Py_FatalError("ReleaseSemaphore() failed");
-        --cond->n_waiting;
-    }
-}
-
-#define COND_INIT(cond) \
-    _cond_init(&(cond))
-#define COND_FINI(cond) \
-    _cond_fini(&(cond))
-#define COND_SIGNAL(cond) \
-    _cond_signal(&(cond))
-#define COND_WAIT(cond, mut) \
-    _cond_wait(&(cond), &(mut))
-#define COND_TIMED_WAIT(cond, mut, us, timeout_result) do { \
-    (timeout_result) = _cond_timed_wait(&(cond), &(mut), us); \
-} while (0)
-
-#else
-
-#error You need either a POSIX-compatible or a Windows system!
-
-#endif /* _POSIX_THREADS, NT_THREADS */
 
 
 /* Whether the GIL is already taken (-1 if uninitialized). This is atomic
@@ -356,13 +192,13 @@ static void drop_gil(PyThreadState *tstate)
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
         if (_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
-	    RESET_GIL_DROP_REQUEST();
+        RESET_GIL_DROP_REQUEST();
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
                before we even had a chance to wait for it. */
             COND_WAIT(switch_cond, switch_mutex);
-	}
+    }
         MUTEX_UNLOCK(switch_mutex);
     }
 #endif
