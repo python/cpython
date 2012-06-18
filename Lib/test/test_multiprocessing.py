@@ -1151,7 +1151,7 @@ class _TestBarrier(BaseTestCase):
     Tests for Barrier objects.
     """
     N = 5
-    defaultTimeout = 10.0  # XXX Slow Windows buildbots need generous timeout
+    defaultTimeout = 30.0  # XXX Slow Windows buildbots need generous timeout
 
     def setUp(self):
         self.barrier = self.Barrier(self.N, timeout=self.defaultTimeout)
@@ -1327,10 +1327,10 @@ class _TestBarrier(BaseTestCase):
 
     @classmethod
     def _test_timeout_f(cls, barrier, results):
-        i = barrier.wait(20)
+        i = barrier.wait()
         if i == cls.N//2:
             # One thread is late!
-            time.sleep(4.0)
+            time.sleep(1.0)
         try:
             barrier.wait(0.5)
         except threading.BrokenBarrierError:
@@ -1346,10 +1346,10 @@ class _TestBarrier(BaseTestCase):
 
     @classmethod
     def _test_default_timeout_f(cls, barrier, results):
-        i = barrier.wait(20)
+        i = barrier.wait(cls.defaultTimeout)
         if i == cls.N//2:
             # One thread is later than the default timeout
-            time.sleep(4.0)
+            time.sleep(1.0)
         try:
             barrier.wait()
         except threading.BrokenBarrierError:
@@ -1359,7 +1359,7 @@ class _TestBarrier(BaseTestCase):
         """
         Test the barrier's default timeout
         """
-        barrier = self.Barrier(self.N, timeout=1.0)
+        barrier = self.Barrier(self.N, timeout=0.5)
         results = self.DummyList()
         self.run_threads(self._test_default_timeout_f, (barrier, results))
         self.assertEqual(len(results), barrier.parties)
