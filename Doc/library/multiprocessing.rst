@@ -241,17 +241,16 @@ However, if you really do need to use some shared data then
           l.reverse()
 
       if __name__ == '__main__':
-          manager = Manager()
+          with Manager() as manager:
+              d = manager.dict()
+              l = manager.list(range(10))
 
-          d = manager.dict()
-          l = manager.list(range(10))
+              p = Process(target=f, args=(d, l))
+              p.start()
+              p.join()
 
-          p = Process(target=f, args=(d, l))
-          p.start()
-          p.join()
-
-          print(d)
-          print(l)
+              print(d)
+              print(l)
 
    will print ::
 
@@ -279,10 +278,10 @@ For example::
        return x*x
 
    if __name__ == '__main__':
-       pool = Pool(processes=4)               # start 4 worker processes
-       result = pool.apply_async(f, [10])     # evaluate "f(10)" asynchronously
-       print(result.get(timeout=1))           # prints "100" unless your computer is *very* slow
-       print(pool.map(f, range(10)))          # prints "[0, 1, 4,..., 81]"
+       with Pool(processes=4) as pool         # start 4 worker processes
+           result = pool.apply_async(f, [10]) # evaluate "f(10)" asynchronously
+           print(result.get(timeout=1))       # prints "100" unless your computer is *very* slow
+           print(pool.map(f, range(10)))      # prints "[0, 1, 4,..., 81]"
 
 
 Reference
@@ -1426,11 +1425,10 @@ callables with the manager class.  For example::
    MyManager.register('Maths', MathsClass)
 
    if __name__ == '__main__':
-       manager = MyManager()
-       manager.start()
-       maths = manager.Maths()
-       print(maths.add(4, 3))         # prints 7
-       print(maths.mul(7, 8))         # prints 56
+       with MyManager() as manager:
+           maths = manager.Maths()
+           print(maths.add(4, 3))         # prints 7
+           print(maths.mul(7, 8))         # prints 56
 
 
 Using a remote manager
@@ -1798,21 +1796,20 @@ The following example demonstrates the use of a pool::
        return x*x
 
    if __name__ == '__main__':
-       pool = Pool(processes=4)              # start 4 worker processes
+       with Pool(processes=4) as pool:         # start 4 worker processes
+           result = pool.apply_async(f, (10,)) # evaluate "f(10)" asynchronously
+           print(result.get(timeout=1))        # prints "100" unless your computer is *very* slow
 
-       result = pool.apply_async(f, (10,))   # evaluate "f(10)" asynchronously
-       print(result.get(timeout=1))          # prints "100" unless your computer is *very* slow
+           print(pool.map(f, range(10)))       # prints "[0, 1, 4,..., 81]"
 
-       print(pool.map(f, range(10)))         # prints "[0, 1, 4,..., 81]"
+           it = pool.imap(f, range(10))
+           print(next(it))                     # prints "0"
+           print(next(it))                     # prints "1"
+           print(it.next(timeout=1))           # prints "4" unless your computer is *very* slow
 
-       it = pool.imap(f, range(10))
-       print(next(it))                       # prints "0"
-       print(next(it))                       # prints "1"
-       print(it.next(timeout=1))             # prints "4" unless your computer is *very* slow
-
-       import time
-       result = pool.apply_async(time.sleep, (10,))
-       print(result.get(timeout=1))          # raises TimeoutError
+           import time
+           result = pool.apply_async(time.sleep, (10,))
+           print(result.get(timeout=1))        # raises TimeoutError
 
 
 .. _multiprocessing-listeners-clients:
@@ -1984,19 +1981,16 @@ the client::
    from array import array
 
    address = ('localhost', 6000)     # family is deduced to be 'AF_INET'
-   listener = Listener(address, authkey=b'secret password')
 
-   conn = listener.accept()
-   print('connection accepted from', listener.last_accepted)
+   with Listener(address, authkey=b'secret password') as listener:
+       with listener.accept() as conn:
+           print('connection accepted from', listener.last_accepted)
 
-   conn.send([2.25, None, 'junk', float])
+           conn.send([2.25, None, 'junk', float])
 
-   conn.send_bytes(b'hello')
+           conn.send_bytes(b'hello')
 
-   conn.send_bytes(array('i', [42, 1729]))
-
-   conn.close()
-   listener.close()
+           conn.send_bytes(array('i', [42, 1729]))
 
 The following code connects to the server and receives some data from the
 server::
@@ -2005,17 +1999,15 @@ server::
    from array import array
 
    address = ('localhost', 6000)
-   conn = Client(address, authkey=b'secret password')
 
-   print(conn.recv())                  # => [2.25, None, 'junk', float]
+   with Client(address, authkey=b'secret password') as conn:
+       print(conn.recv())                  # => [2.25, None, 'junk', float]
 
-   print(conn.recv_bytes())            # => 'hello'
+       print(conn.recv_bytes())            # => 'hello'
 
-   arr = array('i', [0, 0, 0, 0, 0])
-   print(conn.recv_bytes_into(arr))    # => 8
-   print(arr)                          # => array('i', [42, 1729, 0, 0, 0])
-
-   conn.close()
+       arr = array('i', [0, 0, 0, 0, 0])
+       print(conn.recv_bytes_into(arr))    # => 8
+       print(arr)                          # => array('i', [42, 1729, 0, 0, 0])
 
 The following code uses :func:`~multiprocessing.connection.wait` to
 wait for messages from multiple processes at once::
