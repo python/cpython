@@ -1719,6 +1719,15 @@ class _TestPool(BaseTestCase):
         p.close()
         p.join()
 
+    def test_context(self):
+        if self.TYPE == 'processes':
+            L = list(range(10))
+            expected = [sqr(i) for i in L]
+            with multiprocessing.Pool(2) as p:
+                r = p.map_async(sqr, L)
+                self.assertEqual(r.get(), expected)
+            self.assertRaises(AssertionError, p.map_async, sqr, L)
+
 def raising():
     raise KeyError("key")
 
@@ -2266,6 +2275,22 @@ class _TestConnection(BaseTestCase):
         self.assertRaises(RuntimeError, reduction.recv_handle, conn)
         p.join()
 
+    def test_context(self):
+        a, b = self.Pipe()
+
+        with a, b:
+            a.send(1729)
+            self.assertEqual(b.recv(), 1729)
+            if self.TYPE == 'processes':
+                self.assertFalse(a.closed)
+                self.assertFalse(b.closed)
+
+        if self.TYPE == 'processes':
+            self.assertTrue(a.closed)
+            self.assertTrue(b.closed)
+            self.assertRaises(IOError, a.recv)
+            self.assertRaises(IOError, b.recv)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -2276,6 +2301,16 @@ class _TestListener(BaseTestCase):
             self.addCleanup(l.close)
             self.assertRaises(OSError, self.connection.Listener,
                               l.address, family)
+
+    def test_context(self):
+        with self.connection.Listener() as l:
+            with self.connection.Client(l.address) as c:
+                with l.accept() as d:
+                    c.send(1729)
+                    self.assertEqual(d.recv(), 1729)
+
+        if self.TYPE == 'processes':
+            self.assertRaises(IOError, l.accept)
 
 class _TestListenerClient(BaseTestCase):
 
