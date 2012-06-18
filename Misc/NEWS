@@ -67,6 +67,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15101: Make pool finalizer avoid joining current thread.
+
 - Issue #15054: A bug in tokenize.tokenize that caused string literals
   with 'b' and 'br' prefixes to be incorrectly tokenized has been fixed.
   Patch by Serhiy Storchaka.
