@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15101: Make pool finalizer avoid joining current thread.
+
 - Issue #14657: The frozen instance of importlib used for bootstrap is now
   also the module imported as importlib._bootstrap.
 
