@@ -71,9 +71,9 @@ Library
   with 'b' and 'br' prefixes to be incorrectly tokenized has been fixed.
   Patch by Serhiy Storchaka.
 
-- Issue #15036: Allow removing or changing multiple items in
-  single-file mailboxes (mbox, MMDF, Babyl) flushing the mailbox
-  between the changes.
+- Issue #15036: Mailbox no longer throws an error if a flush is done
+  between operations when removing or changing multiple items in mbox,
+  MMDF, or Babyl mailboxes.
 
 - Issue #10133: Make multiprocessing deallocate buffer if socket read
   fails.  Patch by Hallvard B Furuseth.
