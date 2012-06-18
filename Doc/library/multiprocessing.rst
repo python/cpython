@@ -834,6 +834,10 @@ Connection objects are usually created using :func:`Pipe` -- see also
       Connection objects themselves can now be transferred between processes
       using :meth:`Connection.send` and :meth:`Connection.recv`.
 
+   .. versionadded:: 3.3
+      Connection objects now support the context manager protocol -- see
+      :ref:`typecontextmanager`.  :meth:`__enter__` returns the
+      connection object, and :meth:`__exit__` calls :meth:`close`.
 
 For example:
 
@@ -1277,6 +1281,9 @@ their parent process exits.  The manager classes are defined in the
 
       The address used by the manager.
 
+   Manager objects support the context manager protocol -- see
+   :ref:`typecontextmanager`.  :meth:`__enter__` returns the
+   manager object, and :meth:`__exit__` calls :meth:`shutdown`.
 
 .. class:: SyncManager
 
@@ -1747,6 +1754,11 @@ with the :class:`Pool` class.
       Wait for the worker processes to exit.  One must call :meth:`close` or
       :meth:`terminate` before using :meth:`join`.
 
+   .. versionadded:: 3.3
+      Pool objects now support the context manager protocol -- see
+      :ref:`typecontextmanager`.  :meth:`__enter__` returns the pool
+      object, and :meth:`__exit__` calls :meth:`terminate`.
+
 
 .. class:: AsyncResult
 
@@ -1910,6 +1922,11 @@ multiple connections at the same time.
 
       The address from which the last accepted connection came.  If this is
       unavailable then it is ``None``.
+
+   .. versionadded:: 3.3
+      Listener objects now support the context manager protocol -- see
+      :ref:`typecontextmanager`.  :meth:`__enter__` returns the
+      listener object, and :meth:`__exit__` calls :meth:`close`.
 
 .. function:: wait(object_list, timeout=None)
 

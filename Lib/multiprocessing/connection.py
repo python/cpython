@@ -257,6 +257,12 @@ class _ConnectionBase:
         self._check_readable()
         return self._poll(timeout)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
+
 
 if _winapi:
 
@@ -436,6 +442,8 @@ class Listener(object):
 
         Returns a `Connection` object.
         '''
+        if self._listener is None:
+            raise IOError('listener is closed')
         c = self._listener.accept()
         if self._authkey:
             deliver_challenge(c, self._authkey)
@@ -446,10 +454,18 @@ class Listener(object):
         '''
         Close the bound socket or named pipe of `self`.
         '''
-        return self._listener.close()
+        if self._listener is not None:
+            self._listener.close()
+            self._listener = None
 
     address = property(lambda self: self._listener._address)
     last_accepted = property(lambda self: self._listener._last_accepted)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
 
 
 def Client(address, family=None, authkey=None):
