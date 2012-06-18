@@ -70,6 +70,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15101: Make pool finalizer avoid joining current thread.
+
 - Issue #15036: Mailbox no longer throws an error if a flush is done
   between operations when removing or changing multiple items in mbox,
   MMDF, or Babyl mailboxes.
