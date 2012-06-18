@@ -9,6 +9,109 @@
 #include <process.h>
 #endif
 
+/* options */
+#ifndef _PY_USE_CV_LOCKS
+#define _PY_USE_CV_LOCKS 1     /* use locks based on cond vars */
+#endif
+
+/* Now, define a non-recursive mutex using either condition variables
+ * and critical sections (fast) or using operating system mutexes
+ * (slow)
+ */
+
+#if _PY_USE_CV_LOCKS
+
+#include "condvar.h"
+
+typedef struct _NRMUTEX
+{
+    PyMUTEX_T cs;
+    PyCOND_T cv;
+    int locked;
+} NRMUTEX;
+typedef NRMUTEX *PNRMUTEX;
+
+PNRMUTEX
+AllocNonRecursiveMutex()
+{
+    PNRMUTEX m = (PNRMUTEX)malloc(sizeof(NRMUTEX));
+    if (!m)
+        return NULL;
+    if (PyCOND_INIT(&m->cv))
+        goto fail;
+    if (PyMUTEX_INIT(&m->cs)) {
+        PyCOND_FINI(&m->cv);
+        goto fail;
+    }
+    m->locked = 0;
+    return m;
+fail:
+    free(m);
+    return NULL;
+}
+
+VOID
+FreeNonRecursiveMutex(PNRMUTEX mutex)
+{
+    if (mutex) {
+        PyCOND_FINI(&mutex->cv);
+        PyMUTEX_FINI(&mutex->cs);
+        free(mutex);
+    }
+}
+
+DWORD
+EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
+{
+    DWORD result = WAIT_OBJECT_0;
+    if (PyMUTEX_LOCK(&mutex->cs))
+        return WAIT_FAILED;
+    if (milliseconds == INFINITE) {
+        while (mutex->locked) {
+            if (PyCOND_WAIT(&mutex->cv, &mutex->cs)) {
+                result = WAIT_FAILED;
+                break;
+            }
+        }
+    } else if (milliseconds != 0) {
+        /* wait at least until the target */
+        DWORD now, target = GetTickCount() + milliseconds;
+        while (mutex->locked) {
+            if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, milliseconds*1000) < 0) {
+                result = WAIT_FAILED;
+                break;
+            }
+            now = GetTickCount();
+            if (target <= now)
+                break;
+            milliseconds = target-now;
+        }
+    }
+    if (!mutex->locked) {
+        mutex->locked = 1;
+        result = WAIT_OBJECT_0;
+    } else if (result == WAIT_OBJECT_0)
+        result = WAIT_TIMEOUT;
+    /* else, it is WAIT_FAILED */
+    PyMUTEX_UNLOCK(&mutex->cs); /* must ignore result here */
+    return result;
+}
+
+BOOL
+LeaveNonRecursiveMutex(PNRMUTEX mutex)
+{
+    BOOL result;
+    if (PyMUTEX_LOCK(&mutex->cs))
+        return FALSE;
+    mutex->locked = 0;
+    result = PyCOND_SIGNAL(&mutex->cv);
+    result &= PyMUTEX_UNLOCK(&mutex->cs);
+    return result;
+}    
+
+#else /* if ! _PY_USE_CV_LOCKS */
+
+/* NR-locks based on a kernel mutex */
 #define PNRMUTEX HANDLE
 
 PNRMUTEX
@@ -35,6 +138,7 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 {
     return ReleaseSemaphore(mutex, 1, NULL);
 }
+#endif /* _PY_USE_CV_LOCKS */
 
 long PyThread_get_thread_ident(void);
 

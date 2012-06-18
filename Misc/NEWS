@@ -26,6 +26,8 @@ Core and Builtins
 
 - Issue #14673: Add Eric Snow's sys.implementation implementation.
 
+- Issue #15038: Optimize python Locks on Windows.
+
 Library
 -------
 
