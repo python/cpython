@@ -522,6 +522,12 @@ class Pool(object):
                     debug('cleaning up worker %d' % p.pid)
                     p.join()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.terminate()
+
 #
 # Class whose instances are returned by `Pool.apply_async()`
 #
