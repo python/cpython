@@ -5984,8 +5984,10 @@ finish:
     mpd_qfinalize(result, ctx, status);
 }
 
-/*
- * This is an internal function that does not check for NaNs.
+/* 
+ * If the exponent is infinite and base equals one, the result is one
+ * with a coefficient of length prec. Otherwise, result is undefined.
+ * Return the value of the comparison against one.
  */
 static int
 _qcheck_pow_one_inf(mpd_t *result, const mpd_t *base, uint8_t resultsign,
@@ -6006,7 +6008,7 @@ _qcheck_pow_one_inf(mpd_t *result, const mpd_t *base, uint8_t resultsign,
 }
 
 /*
- * If base equals one, calculate the correct power of one result.
+ * If abs(base) equals one, calculate the correct power of one result.
  * Otherwise, result is undefined. Return the value of the comparison
  * against 1.
  *
@@ -6060,7 +6062,7 @@ _qcheck_pow_one(mpd_t *result, const mpd_t *base, const mpd_t *exp,
 
 /*
  * Detect certain over/underflow of x**y.
- * ACL2 proof: pow_bounds.lisp.
+ * ACL2 proof: pow-bounds.lisp.
  *
  *   Symbols:
  *
@@ -6215,7 +6217,10 @@ _mpd_qpow_exact(mpd_t *result, const mpd_t *base, const mpd_t *exp,
 }
 */
 
-/* The power function for real exponents */
+/*
+ * The power function for real exponents.
+ *   Relative error: abs(result - e**y) < e**y * 1/5 * 10**(-prec - 1)
+ */
 static void
 _mpd_qpow_real(mpd_t *result, const mpd_t *base, const mpd_t *exp,
                const mpd_context_t *ctx, uint32_t *status)
@@ -6234,6 +6239,30 @@ _mpd_qpow_real(mpd_t *result, const mpd_t *base, const mpd_t *exp,
     workctx.round = MPD_ROUND_HALF_EVEN;
     workctx.allcr = ctx->allcr;
 
+    /*
+     * extra := MPD_EXPDIGITS = MPD_EXP_MAX_T
+     * wp := prec + 4 + extra
+     * abs(err) < 5 * 10**-wp
+     * y := log(base) * exp
+     * Calculate:
+     *   1)   e**(y * (1 + err)**2) * (1 + err)
+     *      = e**y * e**(y * (2*err + err**2)) * (1 + err)
+     *        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     * Relative error of the underlined term:
+     *   2) abs(e**(y * (2*err + err**2)) - 1)
+     * Case abs(y) >= 10**extra:
+     *   3) adjexp(y)+1 > log10(abs(y)) >= extra
+     *   This triggers the Overflow/Underflow shortcut in _mpd_qexp(),
+     *   so no further analysis is necessary.
+     * Case abs(y) < 10**extra:
+     *   4) abs(y * (2*err + err**2)) < 1/5 * 10**(-prec - 2)
+     *   Use (see _mpd_qexp):
+     *     5) abs(x) <= 9/10 * 10**-p ==> abs(e**x - 1) < 10**-p
+     *   With 2), 4) and 5):
+     *     6) abs(e**(y * (2*err + err**2)) - 1) < 10**(-prec - 2)
+     *   The complete relative error of 1) is:
+     *     7) abs(result - e**y) < e**y * 1/5 * 10**(-prec - 1)
+     */
     mpd_qln(result, base, &workctx, &workctx.status);
     mpd_qmul(result, result, &texp, &workctx, &workctx.status);
     mpd_qexp(result, result, &workctx, status);
