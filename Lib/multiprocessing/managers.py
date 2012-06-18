@@ -561,6 +561,9 @@ class BaseManager(object):
             conn.close()
 
     def __enter__(self):
+        if self._state.value == State.INITIAL:
+            self.start()
+        assert self._state.value == State.STARTED
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
