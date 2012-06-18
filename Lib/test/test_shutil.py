@@ -1095,6 +1095,38 @@ class TestShutil(unittest.TestCase):
         shutil.chown(dirname, user, group)
         check_chown(dirname, uid, gid)
 
+    def test_copy_return_value(self):
+        # copy and copy2 both return their destination path.
+        for fn in (shutil.copy, shutil.copy2):
+            src_dir = self.mkdtemp()
+            dst_dir = self.mkdtemp()
+            src = os.path.join(src_dir, 'foo')
+            write_file(src, 'foo')
+            rv = fn(src, dst_dir)
+            self.assertEqual(rv, os.path.join(dst_dir, 'foo'))
+            rv = fn(src, os.path.join(dst_dir, 'bar'))
+            self.assertEqual(rv, os.path.join(dst_dir, 'bar'))
+
+    def test_copyfile_return_value(self):
+        # copytree returns its destination path.
+        src_dir = self.mkdtemp()
+        dst_dir = self.mkdtemp()
+        dst_file = os.path.join(dst_dir, 'bar')
+        src_file = os.path.join(src_dir, 'foo')
+        write_file(src_file, 'foo')
+        rv = shutil.copyfile(src_file, dst_file)
+        self.assertTrue(os.path.exists(rv))
+        self.assertEqual(read_file(src_file), read_file(dst_file))
+
+    def test_copytree_return_value(self):
+        # copytree returns its destination path.
+        src_dir = self.mkdtemp()
+        dst_dir = src_dir + "dest"
+        src = os.path.join(src_dir, 'foo')
+        write_file(src, 'foo')
+        rv = shutil.copytree(src_dir, dst_dir)
+        self.assertEqual(['foo'], os.listdir(rv))
+
 
 class TestMove(unittest.TestCase):
 
@@ -1250,6 +1282,15 @@ class TestMove(unittest.TestCase):
         shutil.move(dst, dst_link)
         self.assertTrue(os.path.islink(dst_link))
         self.assertTrue(os.path.samefile(src, dst_link))
+
+    def test_move_return_value(self):
+        rv = shutil.move(self.src_file, self.dst_dir)
+        self.assertEqual(rv,
+                os.path.join(self.dst_dir, os.path.basename(self.src_file)))
+
+    def test_move_as_rename_return_value(self):
+        rv = shutil.move(self.src_file, os.path.join(self.dst_dir, 'bar'))
+        self.assertEqual(rv, os.path.join(self.dst_dir, 'bar'))
 
 
 class TestCopyFile(unittest.TestCase):

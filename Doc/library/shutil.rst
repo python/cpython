@@ -50,7 +50,7 @@ Directory and files operations
 .. function:: copyfile(src, dst, symlinks=False)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst*.  *dst* must be the complete target file name; look at
+   *dst* and return *dst*.  *dst* must be the complete target file name; look at
    :func:`shutil.copy` for a copy that accepts a target directory path.  If
    *src* and *dst* are the same files, :exc:`Error` is raised.
 
@@ -91,7 +91,8 @@ Directory and files operations
 
 .. function:: copy(src, dst, symlinks=False))
 
-   Copy the file *src* to the file or directory *dst*.  If *dst* is a directory, a
+   Copy the file *src* to the file or directory *dst* and return the file's
+   destination.  If *dst* is a directory, a
    file with the same basename as *src*  is created (or overwritten) in the
    directory specified.  Permission bits are copied.  *src* and *dst* are path
    names given as strings.  If *symlinks* is true, symbolic links won't be
@@ -102,7 +103,8 @@ Directory and files operations
 
 .. function:: copy2(src, dst, symlinks=False)
 
-   Similar to :func:`shutil.copy`, but metadata is copied as well. This is
+   Similar to :func:`shutil.copy`, including that the destination is
+   returned, but metadata is copied as well. This is
    similar to the Unix command :program:`cp -p`.  If *symlinks* is true,
    symbolic links won't be followed but recreated instead -- this resembles
    GNU's :program:`cp -P`.
@@ -120,7 +122,8 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2, ignore_dangling_symlinks=False)
 
-   Recursively copy an entire directory tree rooted at *src*.  The destination
+   Recursively copy an entire directory tree rooted at *src*, returning the
+   destination directory.  The destination
    directory, named by *dst*, must not already exist; it will be created as
    well as missing parent directories.  Permissions and times of directories
    are copied with :func:`copystat`, individual files are copied using
@@ -189,7 +192,8 @@ Directory and files operations
 
 .. function:: move(src, dst)
 
-   Recursively move a file or directory (*src*) to another location (*dst*).
+   Recursively move a file or directory (*src*) to another location (*dst*)
+   and return the destination.
 
    If the destination is a directory or a symlink to a directory, then *src* is
    moved inside that directory.

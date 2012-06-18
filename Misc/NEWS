@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14772: Return destination values from some shutil functions.
+
 - Issue #15064: Implement context manager protocol for multiprocessing types
 
 - Issue #15101: Make pool finalizer avoid joining current thread.
