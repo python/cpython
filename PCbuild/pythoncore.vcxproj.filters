@@ -402,6 +402,13 @@
     <ClInclude Include="..\Python\thread_nt.h">
       <Filter>Python</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\namespaceobject.h" />
+    <ClInclude Include="..\Python\condvar.h">
+      <Filter>Python</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Python\ceval_gil.h">
+      <Filter>Python</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_bisectmodule.c">
@@ -908,6 +915,7 @@
     <ClCompile Include="..\Modules\_winapi.c">
       <Filter>PC</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\namespaceobject.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc">
