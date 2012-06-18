@@ -1888,7 +1888,27 @@ class _TestMyManager(BaseTestCase):
     def test_mymanager(self):
         manager = MyManager()
         manager.start()
+        self.common(manager)
+        manager.shutdown()
 
+        # If the manager process exited cleanly then the exitcode
+        # will be zero.  Otherwise (after a short timeout)
+        # terminate() is used, resulting in an exitcode of -SIGTERM.
+        self.assertEqual(manager._process.exitcode, 0)
+
+    def test_mymanager_context(self):
+        with MyManager() as manager:
+            self.common(manager)
+        self.assertEqual(manager._process.exitcode, 0)
+
+    def test_mymanager_context_prestarted(self):
+        manager = MyManager()
+        manager.start()
+        with manager:
+            self.common(manager)
+        self.assertEqual(manager._process.exitcode, 0)
+
+    def common(self, manager):
         foo = manager.Foo()
         bar = manager.Bar()
         baz = manager.baz()
@@ -1911,12 +1931,6 @@ class _TestMyManager(BaseTestCase):
 
         self.assertEqual(list(baz), [i*i for i in range(10)])
 
-        manager.shutdown()
-
-        # If the manager process exited cleanly then the exitcode
-        # will be zero.  Otherwise (after a short timeout)
-        # terminate() is used, resulting in an exitcode of -SIGTERM.
-        self.assertEqual(manager._process.exitcode, 0)
 
 #
 # Test of connecting to a remote server and using xmlrpclib for serialization

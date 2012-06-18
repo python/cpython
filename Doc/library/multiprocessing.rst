@@ -1281,9 +1281,14 @@ their parent process exits.  The manager classes are defined in the
 
       The address used by the manager.
 
-   Manager objects support the context manager protocol -- see
-   :ref:`typecontextmanager`.  :meth:`__enter__` returns the
-   manager object, and :meth:`__exit__` calls :meth:`shutdown`.
+   .. versionchanged:: 3.3
+      Manager objects support the context manager protocol -- see
+      :ref:`typecontextmanager`.  :meth:`__enter__` starts the server
+      process (if it has not already started) and then returns the
+      manager object.  :meth:`__exit__` calls :meth:`shutdown`.
+
+      In previous versions :meth:`__enter__` did not start the
+      manager's server process if it was not already started.
 
 .. class:: SyncManager
 
