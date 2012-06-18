@@ -109,6 +109,7 @@ def copyfile(src, dst, symlinks=False):
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
                 copyfileobj(fsrc, fdst)
+    return dst
 
 def copymode(src, dst, symlinks=False):
     """Copy mode bits from src to dst.
@@ -197,7 +198,7 @@ else:
         pass
 
 def copy(src, dst, symlinks=False):
-    """Copy data and mode bits ("cp src dst").
+    """Copy data and mode bits ("cp src dst"). Return the file's destination.
 
     The destination may be a directory.
 
@@ -209,9 +210,11 @@ def copy(src, dst, symlinks=False):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, symlinks=symlinks)
     copymode(src, dst, symlinks=symlinks)
+    return dst
 
 def copy2(src, dst, symlinks=False):
-    """Copy data and all stat info ("cp -p src dst").
+    """Copy data and all stat info ("cp -p src dst"). Return the file's
+    destination."
 
     The destination may be a directory.
 
@@ -224,6 +227,7 @@ def copy2(src, dst, symlinks=False):
     copyfile(src, dst, symlinks=symlinks)
     copystat(src, dst, symlinks=symlinks)
     _copyxattr(src, dst, symlinks=symlinks)
+    return dst
 
 def ignore_patterns(*patterns):
     """Function that can be used as copytree() ignore parameter.
@@ -322,6 +326,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
             errors.extend((src, dst, str(why)))
     if errors:
         raise Error(errors)
+    return dst
 
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
@@ -379,7 +384,8 @@ def _basename(path):
 
 def move(src, dst):
     """Recursively move a file or directory to another location. This is
-    similar to the Unix "mv" command.
+    similar to the Unix "mv" command. Return the file or directory's
+    destination.
 
     If the destination is a directory or a symlink to a directory, the source
     is moved inside the directory. The destination path must not already
@@ -423,6 +429,7 @@ def move(src, dst):
         else:
             copy2(src, real_dst)
             os.unlink(src)
+    return real_dst
 
 def _destinsrc(src, dst):
     src = abspath(src)
