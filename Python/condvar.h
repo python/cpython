@@ -177,7 +177,7 @@ PyMUTEX_UNLOCK(PyMUTEX_T *cs)
 typedef struct _PyCOND_T
 {
     HANDLE sem;
-    int waiting;
+    int waiting; /* to allow PyCOND_SIGNAL to be a no-op */
 } PyCOND_T;
 
 Py_LOCAL_INLINE(int)
@@ -222,6 +222,10 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
          * PyCOND_SIGNAL also decrements this value
          * and signals releases the mutex.  This is benign because it
          * just means an extra spurious wakeup for a waiting thread.
+         * ('waiting' corresponds to the semaphore's "negative" count and
+         * we may end up with e.g. (waiting == -1 && sem.count == 1).  When
+         * a new thread comes along, it will pass right throuhgh, having
+         * adjusted it to (waiting == 0 && sem.count == 0).
          */
          
     if (wait == WAIT_FAILED)
@@ -246,10 +250,14 @@ PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long us)
 Py_LOCAL_INLINE(int)
 PyCOND_SIGNAL(PyCOND_T *cv)
 {
-    if (cv->waiting) {
+    /* this test allows PyCOND_SIGNAL to be a no-op unless required
+     * to wake someone up, thus preventing an unbounded increase of
+     * the semaphore's internal counter.
+     */
+    if (cv->waiting > 0) {
         /* notifying thread decreases the cv->waiting count so that
-         * a delay between notify and wakeup doesn't cause a number
-         * of extra ReleaseSemaphore calls
+         * a delay between notify and actual wakeup of the target thread
+         * doesn't cause a number of extra ReleaseSemaphore calls.
          */
         cv->waiting--;
         return ReleaseSemaphore(cv->sem, 1, NULL) ? 0 : -1;
@@ -260,7 +268,7 @@ PyCOND_SIGNAL(PyCOND_T *cv)
 Py_LOCAL_INLINE(int)
 PyCOND_BROADCAST(PyCOND_T *cv)
 {
-    if (cv->waiting) {
+    if (cv->waiting > 0) {
         return ReleaseSemaphore(cv->sem, cv->waiting, NULL) ? 0 : -1;
 		cv->waiting = 0;
     }
