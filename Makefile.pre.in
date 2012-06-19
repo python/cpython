@@ -324,7 +324,6 @@ PYTHON_OBJS=	\
 		Python/codecs.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
-		Python/frozen.o \
 		Python/frozenmain.o \
 		Python/future.o \
 		Python/getargs.o \
@@ -410,7 +409,7 @@ SYSCONFIGDATA=$(srcdir)/Lib/_sysconfigdata.py
 
 ##########################################################################
 # objects that get linked into the Python library
-LIBRARY_OBJS=	\
+LIBRARY_OBJS_OMIT_FROZEN=	\
 		Modules/getbuildinfo.o \
 		$(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
@@ -418,6 +417,10 @@ LIBRARY_OBJS=	\
 		$(MODULE_OBJS) \
 		$(SIGNAL_OBJS) \
 		$(MODOBJS)
+
+LIBRARY_OBJS=	\
+		$(LIBRARY_OBJS_OMIT_FROZEN) \
+		Python/frozen.o
 
 #########################################################################
 # Rules
@@ -478,7 +481,7 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ Modules/getbuildinfo.o
 	$(AR) $(ARFLAGS) $@ $(PARSER_OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJECT_OBJS)
-	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS)
+	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS) Python/frozen.o
 	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS) $(SIGNAL_OBJS)
 	$(AR) $(ARFLAGS) $@ $(MODOBJS)
 	$(RANLIB) $@
@@ -578,18 +581,14 @@ Modules/_testembed: Modules/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 ############################################################################
 # Importlib
 
-Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py $(srcdir)/Python/freeze_importlib.py
-	@if test -f ./$(BUILDPYTHON); then \
-	    $(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Python/freeze_importlib.py \
-		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h; \
-	else \
-	    echo "----------------------------------------------------------"; \
-	    echo "Python/importlib.h needs to be rebuilt, but no interpreter"; \
-	    echo "is available to do so. Leaving the previous version in"; \
-	    echo "place. You may want to run ''make'' a second time after"; \
-	    echo "this build is complete."; \
-	    echo "----------------------------------------------------------"; \
-	fi
+Modules/_freeze_importlib: Modules/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_LDFLAGS) -o $@ Modules/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
+
+Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Modules/_freeze_importlib.c
+	$(MAKE) Modules/_freeze_importlib
+	./Modules/_freeze_importlib \
+		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
+
 
 ############################################################################
 # Special rules for object files
@@ -1389,7 +1388,7 @@ clean: pycremoval
 	find build -name 'fficonfig.py' -exec rm -f {} ';' || true
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f $(SYSCONFIGDATA)
-	-rm -f Modules/_testembed
+	-rm -f Modules/_testembed Modules/_freeze_importlib
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'

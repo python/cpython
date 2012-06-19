@@ -242,7 +242,7 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 
 
 void
-Py_InitializeEx(int install_sigs)
+_Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
@@ -363,6 +363,9 @@ Py_InitializeEx(int install_sigs)
     /* Initialize _warnings. */
     _PyWarnings_Init();
 
+    if (!install_importlib)
+        return;
+
     import_init(interp, sysmod);
 
     _PyTime_Init();
@@ -390,6 +393,12 @@ Py_InitializeEx(int install_sigs)
 
     if (!Py_NoSiteFlag)
         initsite(); /* Module site */
+}
+
+void
+Py_InitializeEx(int install_sigs)
+{
+    _Py_InitializeEx_Private(install_sigs, 1);
 }
 
 void

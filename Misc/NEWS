@@ -154,6 +154,12 @@ Tests
 - Issue #14963: Add test cases for exception handling behaviour
   in contextlib.ExitStack (Initial patch by Alon Horev)
 
+Build
+-----
+
+- Issue #14928: Fix importlib bootstrap issues by using a custom executable
+  (Modules/_freeze_importlib) to build Python/importlib.h.
+
 
 What's New in Python 3.3.0 Alpha 4?
 ===================================

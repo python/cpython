@@ -30,6 +30,9 @@ PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_InitializeEx_Private(int, int);
+#endif
 PyAPI_FUNC(void) Py_Finalize(void);
 PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
