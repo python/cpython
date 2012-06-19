@@ -655,6 +655,16 @@ class FileTestCase(unittest.TestCase):
                 self.assertEqual(f.read(), INPUT)
                 self.assertEqual(f.read(), b"")
 
+    def test_read_from_file_with_bytes_filename(self):
+        try:
+            bytes_filename = TESTFN.encode("ascii")
+        except UnicodeEncodeError:
+            self.skipTest("Temporary file name needs to be ASCII")
+        with TempFile(TESTFN, COMPRESSED_XZ):
+            with LZMAFile(bytes_filename) as f:
+                self.assertEqual(f.read(), INPUT)
+                self.assertEqual(f.read(), b"")
+
     def test_read_incomplete(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ[:128])) as f:
             self.assertRaises(EOFError, f.read)
@@ -807,6 +817,20 @@ class FileTestCase(unittest.TestCase):
     def test_write_to_file(self):
         try:
             with LZMAFile(TESTFN, "w") as f:
+                f.write(INPUT)
+            expected = lzma.compress(INPUT)
+            with open(TESTFN, "rb") as f:
+                self.assertEqual(f.read(), expected)
+        finally:
+            unlink(TESTFN)
+
+    def test_write_to_file_with_bytes_filename(self):
+        try:
+            bytes_filename = TESTFN.encode("ascii")
+        except UnicodeEncodeError:
+            self.skipTest("Temporary file name needs to be ASCII")
+        try:
+            with LZMAFile(bytes_filename, "w") as f:
                 f.write(INPUT)
             expected = lzma.compress(INPUT)
             with open(TESTFN, "rb") as f:

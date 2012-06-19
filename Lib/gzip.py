@@ -182,9 +182,8 @@ class GzipFile(io.BufferedIOBase):
         if fileobj is None:
             fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
         if filename is None:
-            if hasattr(fileobj, 'name') and isinstance(fileobj.name, str):
-                filename = fileobj.name
-            else:
+            filename = getattr(fileobj, 'name', '')
+            if not isinstance(filename, (str, bytes)):
                 filename = ''
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
@@ -258,7 +257,8 @@ class GzipFile(io.BufferedIOBase):
             # RFC 1952 requires the FNAME field to be Latin-1. Do not
             # include filenames that cannot be represented that way.
             fname = os.path.basename(self.name)
-            fname = fname.encode('latin-1')
+            if not isinstance(fname, bytes):
+                fname = fname.encode('latin-1')
             if fname.endswith(b'.gz'):
                 fname = fname[:-3]
         except UnicodeEncodeError:
