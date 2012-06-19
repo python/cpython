@@ -79,6 +79,7 @@ PCbuild/x64-temp-*
 PCbuild/amd64
 BuildLog.htm
 __pycache__
+Modules/_freeze_importlib
 Modules/_testembed
 .coverage
 coverage/
