@@ -522,6 +522,21 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertEqual(bz2f.read(), data1 + data2)
 
+    def testOpenBytesFilename(self):
+        str_filename = self.filename
+        try:
+            bytes_filename = str_filename.encode("ascii")
+        except UnicodeEncodeError:
+            self.skipTest("Temporary file name needs to be ASCII")
+        with BZ2File(bytes_filename, "wb") as f:
+            f.write(self.DATA)
+        with BZ2File(bytes_filename, "rb") as f:
+            self.assertEqual(f.read(), self.DATA)
+        # Sanity check that we are actually operating on the right file.
+        with BZ2File(str_filename, "rb") as f:
+            self.assertEqual(f.read(), self.DATA)
+
+
     # Tests for a BZ2File wrapping another file object:
 
     def testReadBytesIO(self):
