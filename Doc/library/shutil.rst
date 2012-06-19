@@ -66,6 +66,8 @@ Directory and files operations
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *symlinks* argument.
 
+   .. versionchanged:: 3.3
+      Added return of the *dst*.
 
 .. function:: copymode(src, dst, symlinks=False)
 
@@ -101,6 +103,9 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument.
 
+   .. versionchanged:: 3.3
+      Added return of the *dst*.
+
 .. function:: copy2(src, dst, symlinks=False)
 
    Similar to :func:`shutil.copy`, including that the destination is
@@ -112,6 +117,9 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument, try to copy extended file system attributes
       too (currently Linux only).
+
+   .. versionchanged:: 3.3
+      Added return of the *dst*.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -169,6 +177,8 @@ Directory and files operations
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
 
+   .. versionchanged:: 3.3
+      Added return of the *dst*.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -210,6 +220,9 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
       it to the behavior of GNU's :program:`mv`.
+
+   .. versionchanged:: 3.3
+      Added return of the *dst*.
 
 .. function:: disk_usage(path)
 
