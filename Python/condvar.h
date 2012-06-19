@@ -13,6 +13,28 @@
  * PyCOND_TIMEDWAIT, in addition to returning negative on error,
  * thus returns 0 on regular success, 1 on timeout
  * or 2 if it can't tell.
+ *
+ * There are at least two caveats with using these condition variables,
+ * due to the fact that they may be emulated with Semaphores on
+ * Windows:
+ * 1) While PyCOND_SIGNAL() will wake up at least one thread, we
+ *    cannot currently guarantee that it will be one of the threads
+ *    already waiting in a PyCOND_WAIT() call.  It _could_ cause
+ *    the wakeup of a subsequent thread to try a PyCOND_WAIT(),
+ *    including the thread doing the PyCOND_SIGNAL() itself.
+ *    The same applies to PyCOND_BROADCAST(), if N threads are waiting
+ *    then at least N threads will be woken up, but not necessarily
+ *    those already waiting.
+ *    For this reason, don't make the scheduling assumption that a
+ *    specific other thread will get the wakeup signal
+ * 2) The _mutex_ must be held when calling PyCOND_SIGNAL() and
+ *    PyCOND_BROADCAST().
+ *    While e.g. the posix standard strongly recommends that the mutex
+ *    associated with the condition variable is held when a
+ *    pthread_cond_signal() call is made, this is not a hard requirement,
+ *    although scheduling will not be "reliable" if it isn't.  Here
+ *    the mutex is used for internal synchronization of the emulated
+ *    Condition Variable.
  */
 
 #ifndef _CONDVAR_H_
@@ -134,10 +156,17 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long us)
    without bound.  This also helps reduce the number of "spurious wakeups"
    that would otherwise happen.
 
+   This implementation still has the problem that the threads woken
+   with a "signal" aren't necessarily those that are already
+   waiting.  It corresponds to listing 2 in:
+   http://birrell.org/andrew/papers/ImplementingCVs.pdf
+
    Generic emulations of the pthread_cond_* API using
    earlier Win32 functions can be found on the Web.
    The following read can be edificating (or not):
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
+
+   See also 
 */
 
 typedef CRITICAL_SECTION PyMUTEX_T;
