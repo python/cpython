@@ -444,7 +444,7 @@ must be expressed with escapes.
 As of Python 3.3 it is possible again to prefix unicode strings with a
 ``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
 
-Bytes literals may optionally be prefixed with a letter ``'r'``
+Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
 literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
 escapes in raw strings are not treated specially. Given that Python 2.x's raw
