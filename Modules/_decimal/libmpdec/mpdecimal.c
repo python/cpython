@@ -7080,7 +7080,7 @@ _mpd_qreciprocal(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
  *     q, r = divmod(coeff(a), coeff(b))
  *
  * Strategy: Multiply the dividend by the reciprocal of the divisor. The
- * inexact result is fixed by a small loop, using at most 2 iterations.
+ * inexact result is fixed by a small loop, using at most one iteration.
  *
  * ACL2 proofs:
  * ------------
