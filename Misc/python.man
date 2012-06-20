@@ -257,9 +257,9 @@ executes a
 from that file;
 when called with
 .B \-c
-.I command,
+.IR command ,
 it executes the Python statement(s) given as
-.I command.
+.IR command .
 Here
 .I command
 may contain multiple statements separated by newlines.
@@ -269,7 +269,7 @@ executed.
 .PP
 If available, the script name and additional arguments thereafter are
 passed to the script in the Python variable
-.I sys.argv ,
+.IR sys.argv ,
 which is a list of strings (you must first
 .I import sys
 to be able to access it).
@@ -283,14 +283,14 @@ contains the string
 .I '-c'.
 Note that options interpreted by the Python interpreter itself
 are not placed in
-.I sys.argv.
+.IR sys.argv .
 .PP
 In interactive mode, the primary prompt is `>>>'; the second prompt
 (which appears when a command is not complete) is `...'.
 The prompts can be changed by assignment to
 .I sys.ps1
 or
-.I sys.ps2.
+.IR sys.ps2 .
 The interpreter quits when it reads an EOF at a prompt.
 When an unhandled exception occurs, a stack trace is printed and
 control returns to the primary prompt; in non-interactive mode, the
@@ -346,7 +346,7 @@ If a script argument is given, the directory containing the script is
 inserted in the path in front of $PYTHONPATH.
 The search path can be manipulated from within a Python program as the
 variable
-.I sys.path .
+.IR sys.path .
 .IP PYTHONSTARTUP
 If this is the name of a readable file, the Python commands in that
 file are executed before the first prompt is displayed in interactive
