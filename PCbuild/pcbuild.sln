@@ -68,6 +68,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xxlimited", "xxlimited.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testbuffer", "_testbuffer.vcxproj", "{A2697BD3-28C1-4AEC-9106-8B748639FD16}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pylauncher", "pylauncher.vcxproj", "{7B2727B5-5A3F-40EE-A866-43A13CD31446}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -565,6 +567,18 @@ Global
 		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|Win32.Build.0 = Release|Win32
 		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|x64.ActiveCfg = Release|x64
 		{A2697BD3-28C1-4AEC-9106-8B748639FD16}.Release|x64.Build.0 = Release|x64
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Debug|Win32.Build.0 = Debug|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Debug|x64.ActiveCfg = Debug|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGInstrument|Win32.ActiveCfg = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGInstrument|Win32.Build.0 = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGInstrument|x64.ActiveCfg = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGUpdate|Win32.ActiveCfg = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGUpdate|Win32.Build.0 = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.PGUpdate|x64.ActiveCfg = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Release|Win32.ActiveCfg = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Release|Win32.Build.0 = Release|Win32
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
