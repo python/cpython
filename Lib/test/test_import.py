@@ -707,14 +707,19 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         os.mkdir(self.tagged)
         init_file = os.path.join(self.tagged, '__init__.py')
         open(init_file, 'w').close()
-        assert os.path.exists(init_file)
+        self.assertEqual(os.path.exists(init_file), True)
 
         # now create a symlink to the tagged package
         # sample -> sample-tagged
         os.symlink(self.tagged, self.package_name)
 
-        # assert os.path.isdir(self.package_name) # currently fails
-        assert os.path.isfile(os.path.join(self.package_name, '__init__.py'))
+        # disabled because os.isdir currently fails (see issue 15093)
+        # self.assertEqual(os.path.isdir(self.package_name), True)
+
+        self.assertEqual(
+            os.path.isfile(os.path.join(self.package_name, '__init__.py')),
+            True,
+        )
 
     @property
     def tagged(self):
