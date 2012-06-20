@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #15096: Removed support for ur'' as the raw notation isn't
+  compatible with Python 2.x's raw unicode strings.
+
 - Issue #13783: Generator objects now use the identifier APIs internally
 
 - Issue #14874: Restore charmap decoding speed to pre-PEP 393 levels.
