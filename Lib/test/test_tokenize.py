@@ -299,24 +299,6 @@ String literals
     STRING     'u"abc"'      (1, 0) (1, 6)
     OP         '+'           (1, 7) (1, 8)
     STRING     'U"abc"'      (1, 9) (1, 15)
-    >>> dump_tokens("ur'abc' + uR'abc' + Ur'abc' + UR'abc'")
-    ENCODING   'utf-8'       (0, 0) (0, 0)
-    STRING     "ur'abc'"     (1, 0) (1, 7)
-    OP         '+'           (1, 8) (1, 9)
-    STRING     "uR'abc'"     (1, 10) (1, 17)
-    OP         '+'           (1, 18) (1, 19)
-    STRING     "Ur'abc'"     (1, 20) (1, 27)
-    OP         '+'           (1, 28) (1, 29)
-    STRING     "UR'abc'"     (1, 30) (1, 37)
-    >>> dump_tokens('ur"abc" + uR"abc" + Ur"abc" + UR"abc"')
-    ENCODING   'utf-8'       (0, 0) (0, 0)
-    STRING     'ur"abc"'     (1, 0) (1, 7)
-    OP         '+'           (1, 8) (1, 9)
-    STRING     'uR"abc"'     (1, 10) (1, 17)
-    OP         '+'           (1, 18) (1, 19)
-    STRING     'Ur"abc"'     (1, 20) (1, 27)
-    OP         '+'           (1, 28) (1, 29)
-    STRING     'UR"abc"'     (1, 30) (1, 37)
 
     >>> dump_tokens("b'abc' + B'abc'")
     ENCODING   'utf-8'       (0, 0) (0, 0)
@@ -642,7 +624,7 @@ Non-ascii identifiers
 
 Legacy unicode literals:
 
-    >>> dump_tokens("Örter = u'places'\\ngrün = UR'green'")
+    >>> dump_tokens("Örter = u'places'\\ngrün = U'green'")
     ENCODING   'utf-8'       (0, 0) (0, 0)
     NAME       'Örter'       (1, 0) (1, 5)
     OP         '='           (1, 6) (1, 7)
@@ -650,7 +632,7 @@ Legacy unicode literals:
     NEWLINE    '\\n'          (1, 17) (1, 18)
     NAME       'grün'        (2, 0) (2, 4)
     OP         '='           (2, 5) (2, 6)
-    STRING     "UR'green'"   (2, 7) (2, 16)
+    STRING     "U'green'"    (2, 7) (2, 15)
 """
 
 from test import support

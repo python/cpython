@@ -401,7 +401,7 @@ String literals are described by the following lexical definitions:
 
 .. productionlist::
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
-   stringprefix: "r" | "u" | "ur" | "R" | "U" | "UR" | "Ur" | "uR"
+   stringprefix: "r" | "u" | "R" | "U"
    shortstring: "'" `shortstringitem`* "'" | '"' `shortstringitem`* '"'
    longstring: "'''" `longstringitem`* "'''" | '"""' `longstringitem`* '"""'
    shortstringitem: `shortstringchar` | `stringescapeseq`
@@ -444,19 +444,21 @@ must be expressed with escapes.
 As of Python 3.3 it is possible again to prefix unicode strings with a
 ``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
 
-Both string and bytes literals may optionally be prefixed with a letter ``'r'``
+Bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
 literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
-escapes in raw strings are not treated specially.
+escapes in raw strings are not treated specially. Given that Python 2.x's raw
+unicode literals behave differently than Python 3.x's the ``'ur'`` syntax
+is not supported.
 
    .. versionadded:: 3.3
       The ``'rb'`` prefix of raw bytes literals has been added as a synonym
       of ``'br'``.
 
    .. versionadded:: 3.3
-      Support for the unicode legacy literal (``u'value'``) and other
-      versions were reintroduced to simplify the maintenance of dual
-      Python 2.x and 3.x codebases.  See :pep:`414` for more information.
+      Support for the unicode legacy literal (``u'value'``) was reintroduced
+      to simplify the maintenance of dual Python 2.x and 3.x codebases.
+      See :pep:`414` for more information.
 
 In triple-quoted strings, unescaped newlines and quotes are allowed (and are
 retained), except that three unescaped quotes in a row terminate the string.  (A
