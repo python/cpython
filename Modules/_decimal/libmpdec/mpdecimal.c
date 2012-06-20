@@ -6679,7 +6679,7 @@ mpd_qrem_near(mpd_t *r, const mpd_t *a, const mpd_t *b,
     mpd_context_t workctx;
     MPD_NEW_STATIC(btmp,0,0,0,0);
     MPD_NEW_STATIC(q,0,0,0,0);
-    mpd_ssize_t expdiff, floordigits;
+    mpd_ssize_t expdiff, qdigits;
     int cmp, isodd, allnine;
 
     if (mpd_isspecial(a) || mpd_isspecial(b)) {
@@ -6716,53 +6716,45 @@ mpd_qrem_near(mpd_t *r, const mpd_t *a, const mpd_t *b,
         b = &btmp;
     }
 
-    workctx = *ctx;
-    workctx.prec = a->digits;
-    workctx.prec = (workctx.prec > ctx->prec) ? workctx.prec : ctx->prec;
-
-    _mpd_qdivmod(&q, r, a, b, &workctx, status);
-    if (mpd_isnan(&q) || mpd_isnan(r) || q.digits > ctx->prec) {
-        mpd_seterror(r, MPD_Division_impossible, status);
+    _mpd_qdivmod(&q, r, a, b, ctx, status);
+    if (mpd_isnan(&q) || mpd_isnan(r)) {
         goto finish;
     }
     if (mpd_iszerocoeff(r)) {
         goto finish;
     }
 
-    /* Deal with cases like rmnx078:
-     * remaindernear 999999999.5 1 -> NaN Division_impossible */
     expdiff = mpd_adjexp(b) - mpd_adjexp(r);
     if (-1 <= expdiff && expdiff <= 1) {
 
-        mpd_qtrunc(&q, &q, &workctx, &workctx.status);
         allnine = mpd_coeff_isallnine(&q);
-        floordigits = q.digits;
+        qdigits = q.digits;
         isodd = mpd_isodd(&q);
 
         mpd_maxcontext(&workctx);
         if (mpd_sign(a) == mpd_sign(b)) {
+            /* sign(r) == sign(b) */
             _mpd_qsub(&q, r, b, &workctx, &workctx.status);
-            if (workctx.status&MPD_Errors) {
-                mpd_seterror(r, workctx.status&MPD_Errors, status);
-                goto finish;
-            }
         }
         else {
+            /* sign(r) != sign(b) */
             _mpd_qadd(&q, r, b, &workctx, &workctx.status);
-            if (workctx.status&MPD_Errors) {
-                mpd_seterror(r, workctx.status&MPD_Errors, status);
-                goto finish;
-            }
         }
 
-        cmp = mpd_cmp_total_mag(&q, r);
+        if (workctx.status&MPD_Errors) {
+            mpd_seterror(r, workctx.status&MPD_Errors, status);
+            goto finish;
+        }
+
+        cmp = _mpd_cmp_abs(&q, r);
         if (cmp < 0 || (cmp == 0 && isodd)) {
-            if (allnine && floordigits == ctx->prec) {
+            /* abs(r) > abs(b)/2 or abs(r) == abs(b)/2 and isodd(quotient) */
+            if (allnine && qdigits == ctx->prec) {
+                /* abs(quotient) + 1 == 10**prec */
                 mpd_seterror(r, MPD_Division_impossible, status);
                 goto finish;
             }
             mpd_qcopy(r, &q, status);
-            *status &= ~MPD_Rounded;
         }
     }
 
