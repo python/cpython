@@ -127,7 +127,7 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group(r'[0-9]+[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-StringPrefix = r'(?:[uUbB][rR]?|[rR][bB]?)?'
+StringPrefix = r'(?:[bB][rR]?|[rR][bB]?|[uU])?'
 
 # Tail end of ' string.
 Single = r"[^'\\]*(?:\\.[^'\\]*)*'"
@@ -183,12 +183,8 @@ endpats = {"'": Single, '"': Double,
            "rB'''": Single3, 'rB"""': Double3,
            "RB'''": Single3, 'RB"""': Double3,
            "u'''": Single3, 'u"""': Double3,
-           "ur'''": Single3, 'ur"""': Double3,
            "R'''": Single3, 'R"""': Double3,
            "U'''": Single3, 'U"""': Double3,
-           "uR'''": Single3, 'uR"""': Double3,
-           "Ur'''": Single3, 'Ur"""': Double3,
-           "UR'''": Single3, 'UR"""': Double3,
            'r': None, 'R': None, 'b': None, 'B': None,
            'u': None, 'U': None}
 
@@ -201,8 +197,7 @@ for t in ("'''", '"""',
           "rb'''", 'rb"""', "rB'''", 'rB"""',
           "Rb'''", 'Rb"""', "RB'''", 'RB"""',
           "u'''", 'u"""', "U'''", 'U"""',
-          "ur'''", 'ur"""', "Ur'''", 'Ur"""',
-          "uR'''", 'uR"""', "UR'''", 'UR"""'):
+          ):
     triple_quoted[t] = t
 single_quoted = {}
 for t in ("'", '"',
@@ -213,8 +208,7 @@ for t in ("'", '"',
           "rb'", 'rb"', "rB'", 'rB"',
           "Rb'", 'Rb"', "RB'", 'RB"' ,
           "u'", 'u"', "U'", 'U"',
-          "ur'", 'ur"', "Ur'", 'Ur"',
-          "uR'", 'uR"', "UR'", 'UR"' ):
+          ):
     single_quoted[t] = t
 
 tabsize = 8
