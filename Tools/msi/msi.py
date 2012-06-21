@@ -286,7 +286,7 @@ def remove_old_versions(db):
               None, migrate_features, None, "REMOVEOLDSNAPSHOT")])
         props = "REMOVEOLDSNAPSHOT;REMOVEOLDVERSION"
 
-    props += ";TARGETDIR;DLLDIR"
+    props += ";TARGETDIR;DLLDIR;LAUNCHERDIR"
     # Installer collects the product codes of the earlier releases in
     # these properties. In order to allow modification of the properties,
     # they must be declared as secure. See "SecureCustomProperties Property"
@@ -426,6 +426,8 @@ def add_ui(db):
          "[WindowsVolume]Python%s%s" % (major, minor)),
         ("SetDLLDirToTarget", 307, "DLLDIR", "[TARGETDIR]"),
         ("SetDLLDirToSystem32", 307, "DLLDIR", SystemFolderName),
+        ("SetLauncherDirToTarget", 307, "LAUNCHERDIR", "[TARGETDIR]"),
+        ("SetLauncherDirToWindows", 307, "LAUNCHERDIR", "[WindowsFolder]"),
         # msidbCustomActionTypeExe + msidbCustomActionTypeSourceFile
         # See "Custom Action Type 18"
         ("CompilePyc", 18, "python.exe", compileargs),
@@ -442,6 +444,8 @@ def add_ui(db):
               # In the user interface, assume all-users installation if privileged.
               ("SetDLLDirToSystem32", 'DLLDIR="" and ' + sys32cond, 751),
               ("SetDLLDirToTarget", 'DLLDIR="" and not ' + sys32cond, 752),
+              ("SetLauncherDirToWindows", 'LAUNCHERDIR="" and ' + sys32cond, 753),
+              ("SetLauncherDirToTarget", 'LAUNCHERDIR="" and not ' + sys32cond, 754),
               ("SelectDirectoryDlg", "Not Installed", 1230),
               # XXX no support for resume installations yet
               #("ResumeDlg", "Installed AND (RESUME OR Preselected)", 1240),
@@ -450,6 +454,7 @@ def add_ui(db):
     add_data(db, "AdminUISequence",
              [("InitialTargetDir", 'TARGETDIR=""', 750),
               ("SetDLLDirToTarget", 'DLLDIR=""', 751),
+              ("SetLauncherDirToTarget", 'LAUNCHERDIR=""', 752),
              ])
 
     # Prepend TARGETDIR to the system path, and remove it on uninstall.
@@ -461,6 +466,8 @@ def add_ui(db):
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToSystem32", 'DLLDIR="" and ' + sys32cond, 751),
              ("SetDLLDirToTarget", 'DLLDIR="" and not ' + sys32cond, 752),
+             ("SetLauncherDirToWindows", 'LAUNCHERDIR="" and ' + sys32cond, 753),
+             ("SetLauncherDirToTarget", 'LAUNCHERDIR="" and not ' + sys32cond, 754),
              ("UpdateEditIDLE", None, 1050),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
@@ -469,6 +476,7 @@ def add_ui(db):
     add_data(db, "AdminExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToTarget", 'DLLDIR=""', 751),
+             ("SetLauncherDirToTarget", 'LAUNCHERDIR=""', 752),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
              ("CompileGrammar", "COMPILEALL", 6802),
@@ -904,7 +912,7 @@ def generate_license():
         dirs = glob.glob(srcdir+"/../"+pat)
         if not dirs:
             raise ValueError, "Could not find "+srcdir+"/../"+pat
-        if len(dirs) > 2:
+        if len(dirs) > 2 and not snapshot:
             raise ValueError, "Multiple copies of "+pat
         dir = dirs[0]
         shutil.copyfileobj(open(os.path.join(dir, file)), out)
@@ -939,6 +947,7 @@ def hgmanifest():
 # See "File Table", "Component Table", "Directory Table",
 # "FeatureComponents Table"
 def add_files(db):
+    installer = msilib.MakeInstaller()
     hgfiles = hgmanifest()
     cab = CAB("python")
     tmpfiles = []
@@ -958,11 +967,27 @@ def add_files(db):
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
+    launcherdir = PyDirectory(db, cab, root, srcdir, "LAUNCHERDIR", ".")
+
+    # msidbComponentAttributes64bit = 256; this disables registry redirection
+    # to allow setting the SharedDLLs key in the 64-bit portion even for a
+    # 32-bit installer.
+    # XXX does this still allow to install the component on a 32-bit system?
+    # Pick up 32-bit binary always
+    launcher = os.path.join(srcdir, "PCBuild", "py.exe")
+    launcherdir.start_component("launcher", flags = 8+256, keyfile="py.exe")
+    launcherdir.add_file("%s/py.exe" % PCBUILD,
+                         version=installer.FileVersion(launcher, 0),
+                         language=installer.FileVersion(launcher, 1))
+    launcherw = os.path.join(srcdir, "PCBuild", "pyw.exe")
+    launcherdir.start_component("launcherw", flags = 8+256, keyfile="pyw.exe")
+    launcherdir.add_file("%s/pyw.exe" % PCBUILD,
+                         version=installer.FileVersion(launcherw, 0),
+                         language=installer.FileVersion(launcherw, 1))
 
     pydll = "python%s%s.dll" % (major, minor)
     pydllsrc = os.path.join(srcdir, PCBUILD, pydll)
     dlldir.start_component("DLLDIR", flags = 8, keyfile = pydll, uuid = pythondll_uuid)
-    installer = msilib.MakeInstaller()
     pyversion = installer.FileVersion(pydllsrc, 0)
     if not snapshot:
         # For releases, the Python DLL has the same version as the
@@ -1211,11 +1236,11 @@ def add_registry(db):
               "text/plain", "REGISTRY.def"),
              #Verbs
              ("py.open", -1, pat % (testprefix, "", "open"), "",
-              r'"[TARGETDIR]python.exe" "%1" %*', "REGISTRY.def"),
+              r'"[LAUNCHERDIR]py.exe" "%1" %*', "REGISTRY.def"),
              ("pyw.open", -1, pat % (testprefix, "NoCon", "open"), "",
-              r'"[TARGETDIR]pythonw.exe" "%1" %*', "REGISTRY.def"),
+              r'"[LAUNCHERDIR]pyw.exe" "%1" %*', "REGISTRY.def"),
              ("pyc.open", -1, pat % (testprefix, "Compiled", "open"), "",
-              r'"[TARGETDIR]python.exe" "%1" %*', "REGISTRY.def"),
+              r'"[LAUNCHERDIR]py.exe" "%1" %*', "REGISTRY.def"),
              ] + tcl_verbs + [
              #Icons
              ("py.icon", -1, pat2 % (testprefix, ""), "",
