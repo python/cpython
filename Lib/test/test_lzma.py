@@ -1073,19 +1073,19 @@ class MiscellaneousTestCase(unittest.TestCase):
         # This value should not be a valid check ID.
         self.assertFalse(lzma.is_check_supported(lzma.CHECK_UNKNOWN))
 
-    def test_encode_filter_properties(self):
+    def test__encode_filter_properties(self):
         with self.assertRaises(TypeError):
-            lzma.encode_filter_properties(b"not a dict")
+            lzma._encode_filter_properties(b"not a dict")
         with self.assertRaises(ValueError):
-            lzma.encode_filter_properties({"id": 0x100})
+            lzma._encode_filter_properties({"id": 0x100})
         with self.assertRaises(ValueError):
-            lzma.encode_filter_properties({"id": lzma.FILTER_LZMA2, "junk": 12})
+            lzma._encode_filter_properties({"id": lzma.FILTER_LZMA2, "junk": 12})
         with self.assertRaises(lzma.LZMAError):
-            lzma.encode_filter_properties({"id": lzma.FILTER_DELTA,
+            lzma._encode_filter_properties({"id": lzma.FILTER_DELTA,
                                            "dist": 9001})
 
         # Test with parameters used by zipfile module.
-        props = lzma.encode_filter_properties({
+        props = lzma._encode_filter_properties({
                 "id": lzma.FILTER_LZMA1,
                 "pb": 2,
                 "lp": 0,
@@ -1094,14 +1094,14 @@ class MiscellaneousTestCase(unittest.TestCase):
             })
         self.assertEqual(props, b"]\x00\x00\x80\x00")
 
-    def test_decode_filter_properties(self):
+    def test__decode_filter_properties(self):
         with self.assertRaises(TypeError):
-            lzma.decode_filter_properties(lzma.FILTER_X86, {"should be": bytes})
+            lzma._decode_filter_properties(lzma.FILTER_X86, {"should be": bytes})
         with self.assertRaises(lzma.LZMAError):
-            lzma.decode_filter_properties(lzma.FILTER_DELTA, b"too long")
+            lzma._decode_filter_properties(lzma.FILTER_DELTA, b"too long")
 
         # Test with parameters used by zipfile module.
-        filterspec = lzma.decode_filter_properties(
+        filterspec = lzma._decode_filter_properties(
                 lzma.FILTER_LZMA1, b"]\x00\x00\x80\x00")
         self.assertEqual(filterspec["id"], lzma.FILTER_LZMA1)
         self.assertEqual(filterspec["pb"], 2)
@@ -1110,10 +1110,10 @@ class MiscellaneousTestCase(unittest.TestCase):
         self.assertEqual(filterspec["dict_size"], 8 << 20)
 
     def test_filter_properties_roundtrip(self):
-        spec1 = lzma.decode_filter_properties(
+        spec1 = lzma._decode_filter_properties(
                 lzma.FILTER_LZMA1, b"]\x00\x00\x80\x00")
-        reencoded = lzma.encode_filter_properties(spec1)
-        spec2 = lzma.decode_filter_properties(lzma.FILTER_LZMA1, reencoded)
+        reencoded = lzma._encode_filter_properties(spec1)
+        spec2 = lzma._decode_filter_properties(lzma.FILTER_LZMA1, reencoded)
         self.assertEqual(spec1, spec2)
 
 
