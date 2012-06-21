@@ -227,6 +227,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     int flags = 0;
     int fd = -1;
     int closefd = 1;
+    int fd_is_own = 0;
 
     assert(PyFileIO_Check(oself));
     if (self->fd >= 0) {
@@ -376,6 +377,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #endif
                 self->fd = open(name, flags, 0666);
             Py_END_ALLOW_THREADS
+            fd_is_own = 1;
         } else {
             PyObject *fdobj = PyObject_CallFunction(
                                   opener, "Oi", nameobj, flags);
@@ -393,6 +395,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             if (self->fd == -1) {
                 goto error;
             }
+            fd_is_own = 1;
         }
 
         if (self->fd < 0) {
@@ -421,13 +424,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
            end of file (otherwise, it might be done only on the
            first write()). */
         PyObject *pos = portable_lseek(self->fd, NULL, 2);
-        if (pos == NULL) {
-            if (closefd) {
-                close(self->fd);
-                self->fd = -1;
-            }
+        if (pos == NULL)
             goto error;
-        }
         Py_DECREF(pos);
     }
 
@@ -435,6 +433,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
  error:
     ret = -1;
+    if (!fd_is_own)
+        self->fd = -1;
     if (self->fd >= 0)
         internal_close(self);
 
