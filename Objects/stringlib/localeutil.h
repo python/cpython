@@ -99,7 +99,7 @@ STRINGLIB(fill)(STRINGLIB_CHAR **digits_end, STRINGLIB_CHAR **buffer_end,
  * As closely as possible, this code mimics the logic in decimal.py's
     _insert_thousands_sep().
  **/
-Py_ssize_t
+static Py_ssize_t
 STRINGLIB(InsertThousandsGrouping)(
     STRINGLIB_CHAR *buffer,
     Py_ssize_t n_buffer,
