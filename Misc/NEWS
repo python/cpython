@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10053: Don't close FDs when FileIO.__init__ fails. Loosely based on
+  the work by Hirokazu Yamamoto.
+
 - Issue #15096: Removed support for ur'' as the raw notation isn't
   compatible with Python 2.x's raw unicode strings.
 
