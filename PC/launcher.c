@@ -230,8 +230,8 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
                     continue;
                 }
                 data_size = sizeof(ip->executable) - 1;
-                status = RegQueryValueEx(ip_key, NULL, NULL, &type,
-                                         (LPBYTE) ip->executable, &data_size);
+                status = RegQueryValueExW(ip_key, NULL, NULL, &type,
+                                          (LPBYTE)ip->executable, &data_size);
                 RegCloseKey(ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);
