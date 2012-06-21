@@ -427,24 +427,23 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_dictionary(self):
         h = HAMLET_SCENE
-        # build a simulated dictionary out of the words in HAMLET
+        # Build a simulated dictionary out of the words in HAMLET.
         words = h.split()
         random.shuffle(words)
         zdict = b''.join(words)
-        # use it to compress HAMLET
+        # Use it to compress HAMLET.
         co = zlib.compressobj(zdict=zdict)
         cd = co.compress(h) + co.flush()
-        # verify that it will decompress with the dictionary
+        # Verify that it will decompress with the dictionary.
         dco = zlib.decompressobj(zdict=zdict)
         self.assertEqual(dco.decompress(cd) + dco.flush(), h)
-        # verify that it fails when not given the dictionary
+        # Verify that it fails when not given the dictionary.
         dco = zlib.decompressobj()
         self.assertRaises(zlib.error, dco.decompress, cd)
 
     def test_dictionary_streaming(self):
-        # this is simulating the needs of SPDY to be able to reuse the same
-        #  stream object (with its compression state) between sets of compressed
-        #  headers.
+        # This simulates the reuse of a compressor object for compressing
+        # several separate data streams.
         co = zlib.compressobj(zdict=HAMLET_SCENE)
         do = zlib.decompressobj(zdict=HAMLET_SCENE)
         piece = HAMLET_SCENE[1000:1500]
