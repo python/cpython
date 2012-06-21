@@ -72,8 +72,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pylauncher", "pylauncher.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pywlauncher", "pywlauncher.vcxproj", "{1D4B18D3-7C12-4ECB-9179-8531FF876CE6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "associator", "associator.vcxproj", "{023B3CDA-59C8-45FD-95DC-F8973322ED34}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
