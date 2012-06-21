@@ -210,7 +210,8 @@ static void md5_compress(struct md5_state *md5, unsigned char *buf)
    Initialize the hash state
    @param sha1   The hash state you wish to initialize
 */
-void md5_init(struct md5_state *md5)
+static void
+md5_init(struct md5_state *md5)
 {
     assert(md5 != NULL);
     md5->state[0] = 0x67452301UL;
@@ -227,8 +228,8 @@ void md5_init(struct md5_state *md5)
    @param in     The data to hash
    @param inlen  The length of the data (octets)
 */
-void md5_process(struct md5_state *md5,
-                const unsigned char *in, Py_ssize_t inlen)
+static void
+md5_process(struct md5_state *md5, const unsigned char *in, Py_ssize_t inlen)
 {
     Py_ssize_t n;
 
@@ -262,7 +263,8 @@ void md5_process(struct md5_state *md5,
    @param sha1  The hash state
    @param out [out] The destination of the hash (16 bytes)
 */
-void md5_done(struct md5_state *md5, unsigned char *out)
+static void
+md5_done(struct md5_state *md5, unsigned char *out)
 {
     int i;
 
