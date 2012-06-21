@@ -54,21 +54,30 @@ skip_whitespace(wchar_t * p)
 }
 
 /*
- * This function is here to minimise Visual Studio
- * warnings about security implications of getenv, and to
- * treat blank values as if they are absent.
+ * This function is here to simplify memory management
+ * and to treat blank values as if they are absent.
  */
 static wchar_t * get_env(wchar_t * key)
 {
-    wchar_t * result = _wgetenv(key);
+    /* This is not thread-safe, just like getenv */
+    static wchar_t buf[256];
+    DWORD result = GetEnvironmentVariableW(key, buf, 256);
 
-    if (result) {
-        result = skip_whitespace(result);
-        if (*result == L'\0')
-            result = NULL;
+    if (result > 256) {
+        /* Large environment variable. Accept some leakage */
+        wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
+        GetEnvironmentVariableW(key, buf2, result);
+        return buf2;
     }
-    return result;
+
+    if (result == 0)
+        /* Either some error, e.g. ERROR_ENVVAR_NOT_FOUND,
+           or an empty environment variable. */
+        return NULL;
+
+    return buf;
 }
+
 
 static void
 debug(wchar_t * format, ...)
