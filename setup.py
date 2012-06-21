@@ -1185,6 +1185,18 @@ class PyBuildExt(build_ext):
             # Bug 1464056: If _curses.so links with ncursesw,
             # _curses_panel.so must link with panelw.
             panel_library = 'panelw'
+            if platform == 'darwin':
+                # On OS X, there is no separate /usr/lib/libncursesw nor
+                # libpanelw.  If we are here, we found a locally-supplied
+                # version of libncursesw.  There should be also be a
+                # libpanelw.  _XOPEN_SOURCE defines are usually excluded
+                # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
+                # ncurses wide char support
+                curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
+        elif platform == 'darwin' and curses_library == 'ncurses':
+            # Building with the system-suppied combined libncurses/libpanel
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+            curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
 
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
@@ -1213,6 +1225,7 @@ class PyBuildExt(build_ext):
             self.compiler.find_library_file(lib_dirs, panel_library)):
             exts.append( Extension('_curses_panel', ['_curses_panel.c'],
                                    include_dirs=curses_includes,
+                                   define_macros=curses_defines,
                                    libraries = [panel_library] + curses_libs) )
         else:
             missing.append('_curses_panel')

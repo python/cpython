@@ -165,6 +165,8 @@ Tests
 Build
 -----
 
+- Issue #14225: Fix Unicode support for curses (#12567) on OS X
+
 - Issue #14928: Fix importlib bootstrap issues by using a custom executable
   (Modules/_freeze_importlib) to build Python/importlib.h.
 
