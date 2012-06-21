@@ -19,12 +19,12 @@ __all__ = [
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
     "open", "compress", "decompress", "is_check_supported",
-    "encode_filter_properties", "decode_filter_properties",
 ]
 
 import builtins
 import io
 from _lzma import *
+from _lzma import _encode_filter_properties, _decode_filter_properties
 
 
 _MODE_CLOSED   = 0
