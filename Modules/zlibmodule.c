@@ -81,13 +81,26 @@ zlib_error(z_stream zst, int err, char *msg)
 }
 
 PyDoc_STRVAR(compressobj__doc__,
-"compressobj([level[, method[, wbits[, memlevel[, strategy[, zdict]]]]]])\n"
+"compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8,\n"
+"            strategy=Z_DEFAULT_STRATEGY[, zdict])\n"
 " -- Return a compressor object.\n"
 "\n"
-"Optional arg level is the compression level, in 1-9.\n"
+"level is the compression level (an integer in the range 0-9; default is 6).\n"
+"Higher compression levels are slower, but produce smaller results.\n"
 "\n"
-"Optional arg zdict is the predefined compression dictionary - a sequence of\n"
-"bytes containing subsequences that are likely to occur in the input data.");
+"method is the compression algorithm. If given, this must be DEFLATED.\n"
+"\n"
+"wbits is the base two logarithm of the window size (range: 8..15).\n"
+"\n"
+"memlevel controls the amount of memory used for internal compression state.\n"
+"Valid values range from 1 to 9. Higher values result in higher memory usage,\n"
+"faster compression, and smaller output.\n"
+"\n"
+"strategy is used to tune the compression algorithm. Possible values are\n"
+"Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.\n"
+"\n"
+"zdict is the predefined compression dictionary - a sequence of bytes\n"
+"containing subsequences that are likely to occur in the input data.");
 
 PyDoc_STRVAR(decompressobj__doc__,
 "decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
