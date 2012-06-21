@@ -1,3 +1,51 @@
+#include <windows.h>
+
+#define MS_WINDOWS
+#include "..\Include\modsupport.h"
+#include "..\Include\patchlevel.h"
+#ifdef _DEBUG
+#   include "pythonnt_rc_d.h"
+#else
+#   include "pythonnt_rc.h"
+#endif
+
+#define PYTHON_VERSION PY_VERSION "\0"
+#define PYVERSION64 PY_MAJOR_VERSION, PY_MINOR_VERSION, FIELD3, PYTHON_API_VERSION
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION PYVERSION64
+ PRODUCTVERSION PYVERSION64
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "Comments", "Python Launcher for Windows"
+            VALUE "CompanyName", "Python Software Foundation"
+            VALUE "FileDescription", "Python Launcher for Windows (Console)"
+            VALUE "FileVersion", PYTHON_VERSION
+            VALUE "InternalName", "py"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2012 Python Software Foundation"
+            VALUE "OriginalFilename", "py"
+            VALUE "ProductName", "Python Launcher for Windows"
+            VALUE "ProductVersion", PYTHON_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
 IDI_ICON1               ICON                    "launcher.ico"
-IDI_ICON2               ICON                    "py.ico"
-IDI_ICON3               ICON                    "pyc.ico"
+
+
