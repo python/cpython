@@ -1097,19 +1097,16 @@ is_check_supported(PyObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(encode_filter_properties_doc,
-"encode_filter_properties(filter) -> bytes\n"
+PyDoc_STRVAR(_encode_filter_properties_doc,
+"_encode_filter_properties(filter) -> bytes\n"
 "\n"
 "Return a bytes object encoding the options (properties) of the filter\n"
 "specified by *filter* (a dict).\n"
 "\n"
-"The result does not include the filter ID itself, only the options.\n"
-"\n"
-"This function is primarily of interest to users implementing custom\n"
-"file formats.\n");
+"The result does not include the filter ID itself, only the options.\n");
 
 static PyObject *
-encode_filter_properties(PyObject *self, PyObject *args)
+_encode_filter_properties(PyObject *self, PyObject *args)
 {
     PyObject *filterspec;
     lzma_filter filter;
@@ -1117,7 +1114,7 @@ encode_filter_properties(PyObject *self, PyObject *args)
     uint32_t encoded_size;
     PyObject *result = NULL;
 
-    if (!PyArg_ParseTuple(args, "O:encode_filter_properties", &filterspec))
+    if (!PyArg_ParseTuple(args, "O:_encode_filter_properties", &filterspec))
         return NULL;
 
     if (parse_filter_spec(&filter, filterspec) == NULL)
@@ -1146,24 +1143,21 @@ error:
 }
 
 
-PyDoc_STRVAR(decode_filter_properties_doc,
-"decode_filter_properties(filter_id, encoded_props) -> dict\n"
+PyDoc_STRVAR(_decode_filter_properties_doc,
+"_decode_filter_properties(filter_id, encoded_props) -> dict\n"
 "\n"
 "Return a dict describing a filter with ID *filter_id*, and options\n"
-"(properties) decoded from the bytes object *encoded_props*.\n"
-"\n"
-"This function is primarily of interest to users implementing custom\n"
-"file formats.\n");
+"(properties) decoded from the bytes object *encoded_props*.\n");
 
 static PyObject *
-decode_filter_properties(PyObject *self, PyObject *args)
+_decode_filter_properties(PyObject *self, PyObject *args)
 {
     Py_buffer encoded_props;
     lzma_filter filter;
     lzma_ret lzret;
     PyObject *result = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&y*:decode_filter_properties",
+    if (!PyArg_ParseTuple(args, "O&y*:_decode_filter_properties",
                           lzma_vli_converter, &filter.id, &encoded_props))
         return NULL;
 
@@ -1187,10 +1181,10 @@ decode_filter_properties(PyObject *self, PyObject *args)
 static PyMethodDef module_methods[] = {
     {"is_check_supported", (PyCFunction)is_check_supported,
      METH_VARARGS, is_check_supported_doc},
-    {"encode_filter_properties", (PyCFunction)encode_filter_properties,
-     METH_VARARGS, encode_filter_properties_doc},
-    {"decode_filter_properties", (PyCFunction)decode_filter_properties,
-     METH_VARARGS, decode_filter_properties_doc},
+    {"_encode_filter_properties", (PyCFunction)_encode_filter_properties,
+     METH_VARARGS, _encode_filter_properties_doc},
+    {"_decode_filter_properties", (PyCFunction)_decode_filter_properties,
+     METH_VARARGS, _decode_filter_properties_doc},
     {NULL}
 };
 
