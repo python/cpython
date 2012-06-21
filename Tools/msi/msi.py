@@ -973,12 +973,13 @@ def add_files(db):
     # to allow setting the SharedDLLs key in the 64-bit portion even for a
     # 32-bit installer.
     # XXX does this still allow to install the component on a 32-bit system?
-    launcher = os.path.join(srcdir, PCBUILD, "py.exe")
+    # Pick up 32-bit binary always
+    launcher = os.path.join(srcdir, "PCBuild", "py.exe")
     launcherdir.start_component("launcher", flags = 8+256, keyfile="py.exe")
     launcherdir.add_file("%s/py.exe" % PCBUILD,
                          version=installer.FileVersion(launcher, 0),
                          language=installer.FileVersion(launcher, 1))
-    launcherw = os.path.join(srcdir, PCBUILD, "pyw.exe")
+    launcherw = os.path.join(srcdir, "PCBuild", "pyw.exe")
     launcherdir.start_component("launcherw", flags = 8+256, keyfile="pyw.exe")
     launcherdir.add_file("%s/pyw.exe" % PCBUILD,
                          version=installer.FileVersion(launcherw, 0),
