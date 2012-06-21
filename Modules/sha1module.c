@@ -184,7 +184,8 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
    Initialize the hash state
    @param sha1   The hash state you wish to initialize
 */
-void sha1_init(struct sha1_state *sha1)
+static void
+sha1_init(struct sha1_state *sha1)
 {
    assert(sha1 != NULL);
    sha1->state[0] = 0x67452301UL;
@@ -202,7 +203,8 @@ void sha1_init(struct sha1_state *sha1)
    @param in     The data to hash
    @param inlen  The length of the data (octets)
 */
-void sha1_process(struct sha1_state *sha1,
+static void
+sha1_process(struct sha1_state *sha1,
                   const unsigned char *in, Py_ssize_t inlen)
 {
     Py_ssize_t n;
@@ -237,7 +239,8 @@ void sha1_process(struct sha1_state *sha1,
    @param sha1  The hash state
    @param out [out] The destination of the hash (20 bytes)
 */
-void sha1_done(struct sha1_state *sha1, unsigned char *out)
+static void
+sha1_done(struct sha1_state *sha1, unsigned char *out)
 {
     int i;
 
