@@ -234,10 +234,9 @@ _symtable symtablemodule.c
 # system does not have the OpenSSL libs containing an optimized version.
 
 # The _md5 module implements the RSA Data Security, Inc. MD5
-# Message-Digest Algorithm, described in RFC 1321.  The necessary files
-# md5.c and md5.h are included here.
+# Message-Digest Algorithm, described in RFC 1321.
 
-#_md5 md5module.c md5.c
+#_md5 md5module.c
 
 
 # The _sha module implements the SHA checksum algorithms.
