@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14684: zlib.compressobj() and zlib.decompressobj() now support the use
+  of predefined compression dictionaries. Original patch by Sam Rushing.
+
 - Fix GzipFile's handling of filenames given as bytes objects.
 
 - Issue #14772: Return destination values from some shutil functions.

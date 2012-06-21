@@ -425,6 +425,36 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj()
         self.assertEqual(dco.flush(), b"") # Returns nothing
 
+    def test_dictionary(self):
+        h = HAMLET_SCENE
+        # build a simulated dictionary out of the words in HAMLET
+        words = h.split()
+        random.shuffle(words)
+        zdict = b''.join(words)
+        # use it to compress HAMLET
+        co = zlib.compressobj(zdict=zdict)
+        cd = co.compress(h) + co.flush()
+        # verify that it will decompress with the dictionary
+        dco = zlib.decompressobj(zdict=zdict)
+        self.assertEqual(dco.decompress(cd) + dco.flush(), h)
+        # verify that it fails when not given the dictionary
+        dco = zlib.decompressobj()
+        self.assertRaises(zlib.error, dco.decompress, cd)
+
+    def test_dictionary_streaming(self):
+        # this is simulating the needs of SPDY to be able to reuse the same
+        #  stream object (with its compression state) between sets of compressed
+        #  headers.
+        co = zlib.compressobj(zdict=HAMLET_SCENE)
+        do = zlib.decompressobj(zdict=HAMLET_SCENE)
+        piece = HAMLET_SCENE[1000:1500]
+        d0 = co.compress(piece) + co.flush(zlib.Z_SYNC_FLUSH)
+        d1 = co.compress(piece[100:]) + co.flush(zlib.Z_SYNC_FLUSH)
+        d2 = co.compress(piece[:-100]) + co.flush(zlib.Z_SYNC_FLUSH)
+        self.assertEqual(do.decompress(d0), piece)
+        self.assertEqual(do.decompress(d1), piece[100:])
+        self.assertEqual(do.decompress(d2), piece[:-100])
+
     def test_decompress_incomplete_stream(self):
         # This is 'foo', deflated
         x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'
