@@ -619,7 +619,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
             RetVal = NULL;
             goto error;
         }
-        /* repeat the call to inflate! */
+        /* Repeat the call to inflate. */
         Py_BEGIN_ALLOW_THREADS
         err = inflate(&(self->zst), Z_SYNC_FLUSH);
         Py_END_ALLOW_THREADS
