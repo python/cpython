@@ -63,7 +63,7 @@ static wchar_t * get_env(wchar_t * key)
     static wchar_t buf[256];
     DWORD result = GetEnvironmentVariableW(key, buf, 256);
 
-    if (result > 256) {
+    if (result > 255) {
         /* Large environment variable. Accept some leakage */
         wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
         GetEnvironmentVariableW(key, buf2, result);
