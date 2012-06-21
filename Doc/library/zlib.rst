@@ -58,14 +58,28 @@ The available exception and functions in this module are:
    exception if any error occurs.
 
 
-.. function:: compressobj([level[, method[, wbits[, memlevel[, strategy[, zdict]]]]]])
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY, [zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
-   *level* is an integer from ``1`` to ``9`` controlling the level of
-   compression; ``1`` is fastest and produces the least compression, ``9`` is
-   slowest and produces the most.  The default value is ``6``.
+   *level* is the compression level -- an integer from ``1`` to ``9``. A value
+   of ``1`` is fastest and produces the least compression, while a value of
+   ``9`` is slowest and produces the most. The default value is ``6``.
+
+   *method* is the compression algorithm. Currently, the only supported value is
+   ``DEFLATED``.
+
+   *wbits* is the base two logarithm of the size of the window buffer. This
+   should be an integer from ``8`` to ``15``. Higher values give better
+   compression, but use more memory.
+
+   *memlevel* controls the amount of memory used for internal compression state.
+   Valid values range from ``1`` to ``9``. Higher values using more memory,
+   but are faster and produce smaller output.
+
+   *strategy* is used to tune the compression algorithm. Possible values are
+   ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, and ``Z_HUFFMAN_ONLY``.
 
    *zdict* is a predefined compression dictionary. This is a sequence of bytes
    (such as a :class:`bytes` object) containing subsequences that are expected
