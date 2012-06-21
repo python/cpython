@@ -154,6 +154,11 @@
   <ItemGroup>
     <ResourceCompile Include="..\PC\pylauncher.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="make_versioninfo.vcxproj">
+      <Project>{f0e0541e-f17d-430b-97c4-93adf0dd284e}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
