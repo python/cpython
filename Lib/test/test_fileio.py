@@ -404,6 +404,17 @@ class OtherFileTests(unittest.TestCase):
             self.assertRaises(ValueError, _FileIO, "/some/invalid/name", "rt")
             self.assertEqual(w.warnings, [])
 
+    def testUnclosedFDOnException(self):
+        class MyException(Exception): pass
+        class MyFileIO(_FileIO):
+            def __setattr__(self, name, value):
+                if name == "name":
+                    raise MyException("blocked setting name")
+                return super(MyFileIO, self).__setattr__(name, value)
+        fd = os.open(__file__, os.O_RDONLY)
+        self.assertRaises(MyException, MyFileIO, fd)
+        os.close(fd)  # should not raise OSError(EBADF)
+
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
