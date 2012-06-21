@@ -58,12 +58,19 @@ The available exception and functions in this module are:
    exception if any error occurs.
 
 
-.. function:: compressobj([level])
+.. function:: compressobj([level[, method[, wbits[, memlevel[, strategy[, zdict]]]]]])
 
    Returns a compression object, to be used for compressing data streams that won't
-   fit into memory at once.  *level* is an integer from ``1`` to ``9`` controlling
-   the level of compression; ``1`` is fastest and produces the least compression,
-   ``9`` is slowest and produces the most.  The default value is ``6``.
+   fit into memory at once.
+
+   *level* is an integer from ``1`` to ``9`` controlling the level of
+   compression; ``1`` is fastest and produces the least compression, ``9`` is
+   slowest and produces the most.  The default value is ``6``.
+
+   *zdict* is a predefined compression dictionary. This is a sequence of bytes
+   (such as a :class:`bytes` object) containing subsequences that are expected
+   to occur frequently in the data that is to be compressed. Those subsequences
+   that are expected to be most common should come at the end of the dictionary.
 
 
 .. function:: crc32(data[, value])
@@ -114,11 +121,21 @@ The available exception and functions in this module are:
    to :c:func:`malloc`.  The default size is 16384.
 
 
-.. function:: decompressobj([wbits])
+.. function:: decompressobj([wbits[, zdict]])
 
    Returns a decompression object, to be used for decompressing data streams that
-   won't fit into memory at once.  The *wbits* parameter controls the size of the
-   window buffer.
+   won't fit into memory at once.
+
+   The *wbits* parameter controls the size of the window buffer.
+
+   The *zdict* parameter specifies a predefined compression dictionary. If
+   provided, this must be the same dictionary as was used by the compressor that
+   produced the data that is to be decompressed.
+
+.. note::
+   If *zdict* is a mutable object (such as a :class:`bytearray`), you must not
+   modify its contents between the call to :func:`decompressobj` and the first
+   call to the decompressor's ``decompress()`` method.
 
 
 Compression objects support the following methods:
