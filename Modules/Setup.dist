@@ -241,7 +241,7 @@ _symtable symtablemodule.c
 
 # The _sha module implements the SHA checksum algorithms.
 # (NIST's Secure Hash Algorithms.)
-#_sha1 shamodule.c
+#_sha1 sha1module.c
 #_sha256 sha256module.c
 #_sha512 sha512module.c
 
