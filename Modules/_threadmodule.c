@@ -23,6 +23,7 @@ typedef struct {
     PyObject_HEAD
     PyThread_type_lock lock_lock;
     PyObject *in_weakreflist;
+    char locked; /* for sanity checking */
 } lockobject;
 
 static void
@@ -32,9 +33,8 @@ lock_dealloc(lockobject *self)
         PyObject_ClearWeakRefs((PyObject *) self);
     if (self->lock_lock != NULL) {
         /* Unlock the lock so it's safe to free it */
-        PyThread_acquire_lock(self->lock_lock, 0);
-        PyThread_release_lock(self->lock_lock);
-
+        if (self->locked)
+            PyThread_release_lock(self->lock_lock);
         PyThread_free_lock(self->lock_lock);
     }
     PyObject_Del(self);
@@ -62,9 +62,13 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
 
 
     do {
-        Py_BEGIN_ALLOW_THREADS
-        r = PyThread_acquire_lock_timed(lock, microseconds, 1);
-        Py_END_ALLOW_THREADS
+        /* first a simple non-blocking try without releasing the GIL */
+        r = PyThread_acquire_lock_timed(lock, 0, 0);
+        if (r == PY_LOCK_FAILURE && microseconds != 0) {
+            Py_BEGIN_ALLOW_THREADS
+            r = PyThread_acquire_lock_timed(lock, microseconds, 1);
+            Py_END_ALLOW_THREADS
+        } 
 
         if (r == PY_LOCK_INTR) {
             /* Run signal handlers if we were interrupted.  Propagate
@@ -135,6 +139,8 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    if (r == PY_LOCK_ACQUIRED)
+        self->locked = 1;
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
@@ -153,13 +159,13 @@ static PyObject *
 lock_PyThread_release_lock(lockobject *self)
 {
     /* Sanity check: the lock must be locked */
-    if (PyThread_acquire_lock(self->lock_lock, 0)) {
-        PyThread_release_lock(self->lock_lock);
+    if (!self->locked) {
         PyErr_SetString(ThreadError, "release unlocked lock");
         return NULL;
     }
 
     PyThread_release_lock(self->lock_lock);
+    self->locked = 0;
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -175,11 +181,7 @@ but it needn't be locked by the same thread that unlocks it.");
 static PyObject *
 lock_locked_lock(lockobject *self)
 {
-    if (PyThread_acquire_lock(self->lock_lock, 0)) {
-        PyThread_release_lock(self->lock_lock);
-        return PyBool_FromLong(0L);
-    }
-    return PyBool_FromLong(1L);
+    return PyBool_FromLong((long)self->locked);
 }
 
 PyDoc_STRVAR(locked_doc,
@@ -313,14 +315,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
         self->rlock_count = count;
         Py_RETURN_TRUE;
     }
-
-    if (self->rlock_count > 0 ||
-        !PyThread_acquire_lock(self->rlock_lock, 0)) {
-        if (microseconds == 0) {
-            Py_RETURN_FALSE;
-        }
-        r = acquire_timed(self->rlock_lock, microseconds);
-    }
+    r = acquire_timed(self->rlock_lock, microseconds);
     if (r == PY_LOCK_ACQUIRED) {
         assert(self->rlock_count == 0);
         self->rlock_owner = tid;
@@ -548,6 +543,7 @@ newlockobject(void)
     if (self == NULL)
         return NULL;
     self->lock_lock = PyThread_allocate_lock();
+    self->locked = 0;
     self->in_weakreflist = NULL;
     if (self->lock_lock == NULL) {
         Py_DECREF(self);
