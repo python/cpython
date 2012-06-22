@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14653: email.utils.mktime_tz() no longer relies on system
+  mktime() when timezone offest is supplied.
+
 - Issue #15101: Make pool finalizer avoid joining current thread.
 
 - Issue #15054: A bug in tokenize.tokenize that caused string literals
