@@ -40,6 +40,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #14626: Large refactoring of functions / parameters in the os module.
+  Many functions now support "dir_fd" and "follow_symlinks" parameters;
+  some also support accepting an open file descriptor in place of of a path
+  string.  Added os.support_* collections as LBYL helpers.  Removed many
+  functions only previously seen in 3.3 alpha releases (often starting with
+  "f" or "l", or ending with "at").  Originally suggested by Serhiy Storchaka;
+  implemented by Larry Hastings.
+
 - Issue #15008: Implement PEP 362 "Signature Objects".
   Patch by Yury Selivanov.
 
@@ -56,7 +64,7 @@ Library
 - Issue #9527: datetime.astimezone() method will now supply a class
   timezone instance corresponding to the system local timezone when
   called with no arguments.
-
+  
 - Issue #14653: email.utils.mktime_tz() no longer relies on system
   mktime() when timezone offest is supplied.
 

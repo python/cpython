@@ -268,7 +268,7 @@ class TestShutil(unittest.TestCase):
         # don't follow
         shutil.copystat(src_link, dst_link, symlinks=True)
         dst_link_stat = os.lstat(dst_link)
-        if hasattr(os, 'lutimes'):
+        if os.utime in os.supports_follow_symlinks:
             for attr in 'st_atime', 'st_mtime':
                 # The modification times may be truncated in the new file.
                 self.assertLessEqual(getattr(src_link_stat, attr),
@@ -334,11 +334,11 @@ class TestShutil(unittest.TestCase):
         write_file(dst, 'bar')
         os_error = OSError(errno.EPERM, 'EPERM')
 
-        def _raise_on_user_foo(fname, attr, val):
+        def _raise_on_user_foo(fname, attr, val, **kwargs):
             if attr == 'user.foo':
                 raise os_error
             else:
-                orig_setxattr(fname, attr, val)
+                orig_setxattr(fname, attr, val, **kwargs)
         try:
             orig_setxattr = os.setxattr
             os.setxattr = _raise_on_user_foo
@@ -361,13 +361,13 @@ class TestShutil(unittest.TestCase):
         write_file(src, 'foo')
         os.symlink(src, src_link)
         os.setxattr(src, 'trusted.foo', b'42')
-        os.lsetxattr(src_link, 'trusted.foo', b'43')
+        os.setxattr(src_link, 'trusted.foo', b'43', follow_symlinks=False)
         dst = os.path.join(tmp_dir, 'bar')
         dst_link = os.path.join(tmp_dir, 'qux')
         write_file(dst, 'bar')
         os.symlink(dst, dst_link)
         shutil._copyxattr(src_link, dst_link, symlinks=True)
-        self.assertEqual(os.lgetxattr(dst_link, 'trusted.foo'), b'43')
+        self.assertEqual(os.getxattr(dst_link, 'trusted.foo', follow_symlinks=False), b'43')
         self.assertRaises(OSError, os.getxattr, dst, 'trusted.foo')
         shutil._copyxattr(src_link, dst, symlinks=True)
         self.assertEqual(os.getxattr(dst, 'trusted.foo'), b'43')
@@ -419,7 +419,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.readlink(dst), os.readlink(src_link))
         dst_stat = os.lstat(dst)
-        if hasattr(os, 'lutimes'):
+        if os.utime in os.supports_follow_symlinks:
             for attr in 'st_atime', 'st_mtime':
                 # The modification times may be truncated in the new file.
                 self.assertLessEqual(getattr(src_link_stat, attr),
