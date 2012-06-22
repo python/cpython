@@ -139,27 +139,45 @@ def copystat(src, dst, symlinks=False):
     only if both `src` and `dst` are symlinks.
 
     """
-    def _nop(*args, ns=None):
+    def _nop(*args, ns=None, follow_symlinks=None):
         pass
 
-    if symlinks and os.path.islink(src) and os.path.islink(dst):
-        stat_func = os.lstat
-        utime_func = os.lutimes if hasattr(os, 'lutimes') else _nop
-        chmod_func = os.lchmod if hasattr(os, 'lchmod') else _nop
-        chflags_func = os.lchflags if hasattr(os, 'lchflags') else _nop
+    # follow symlinks (aka don't not follow symlinks)
+    follow = not (symlinks and os.path.islink(src) and os.path.islink(dst))
+    if follow:
+        # use the real function if it exists
+        def lookup(name):
+            return getattr(os, name, _nop)
     else:
-        stat_func = os.stat
-        utime_func = os.utime if hasattr(os, 'utime') else _nop
-        chmod_func = os.chmod if hasattr(os, 'chmod') else _nop
-        chflags_func = os.chflags if hasattr(os, 'chflags') else _nop
+        # use the real function only if it exists
+        # *and* it supports follow_symlinks
+        def lookup(name):
+            fn = getattr(os, name, _nop)
+            if fn in os.supports_follow_symlinks:
+                return fn
+            return _nop
 
-    st = stat_func(src)
+    st = lookup("stat")(src, follow_symlinks=follow)
     mode = stat.S_IMODE(st.st_mode)
-    utime_func(dst, ns=(st.st_atime_ns, st.st_mtime_ns))
-    chmod_func(dst, mode)
+    lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
+        follow_symlinks=follow)
+    try:
+        lookup("chmod")(dst, mode, follow_symlinks=follow)
+    except NotImplementedError:
+        # if we got a NotImplementedError, it's because
+        #   * follow_symlinks=False,
+        #   * lchown() is unavailable, and
+        #   * either
+        #       * fchownat() is unvailable or
+        #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
+        #         (it returned ENOSUP.)
+        # therefore we're out of options--we simply cannot chown the
+        # symlink.  give up, suppress the error.
+        # (which is what shutil always did in this circumstance.)
+        pass
     if hasattr(st, 'st_flags'):
         try:
-            chflags_func(dst, st.st_flags)
+            lookup("chflags")(dst, st.st_flags, follow_symlinks=follow)
         except OSError as why:
             for err in 'EOPNOTSUPP', 'ENOTSUP':
                 if hasattr(errno, err) and why.errno == getattr(errno, err):
@@ -176,20 +194,11 @@ if hasattr(os, 'listxattr'):
         If the optional flag `symlinks` is set, symlinks won't be followed.
 
         """
-        if symlinks:
-            listxattr = os.llistxattr
-            removexattr = os.lremovexattr
-            setxattr = os.lsetxattr
-            getxattr = os.lgetxattr
-        else:
-            listxattr = os.listxattr
-            removexattr = os.removexattr
-            setxattr = os.setxattr
-            getxattr = os.getxattr
 
-        for attr in listxattr(src):
+        for name in os.listxattr(src, follow_symlinks=symlinks):
             try:
-                setxattr(dst, attr, getxattr(src, attr))
+                value = os.getxattr(src, name, follow_symlinks=symlinks)
+                os.setxattr(dst, name, value, follow_symlinks=symlinks)
             except OSError as e:
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
                     raise

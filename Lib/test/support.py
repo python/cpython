@@ -1703,8 +1703,8 @@ def can_xattr():
                 try:
                     # TESTFN & tempfile may use different file systems with
                     # different capabilities
-                    os.fsetxattr(tmp_fp, b"user.test", b"")
-                    os.fsetxattr(fp.fileno(), b"user.test", b"")
+                    os.setxattr(tmp_fp, b"user.test", b"")
+                    os.setxattr(fp.fileno(), b"user.test", b"")
                     # Kernels < 2.6.39 don't respect setxattr flags.
                     kernel_version = platform.release()
                     m = re.match("2.6.(\d{1,2})", kernel_version)
