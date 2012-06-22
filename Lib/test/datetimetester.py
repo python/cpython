@@ -3283,11 +3283,11 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         dt = self.theclass(2012, 11, 4, 6, 30, tzinfo=timezone.utc)
         local = dt.astimezone()
         self.assertEqual(dt, local)
-        self.assertEqual(local.strftime("%z %Z"), "+0500 EST") 
+        self.assertEqual(local.strftime("%z %Z"), "+0500 EST")
         dt = self.theclass(2012, 11, 4, 5, 30, tzinfo=timezone.utc)
         local = dt.astimezone()
         self.assertEqual(dt, local)
-        self.assertEqual(local.strftime("%z %Z"), "+0400 EDT") 
+        self.assertEqual(local.strftime("%z %Z"), "+0400 EDT")
 
     def test_aware_subtract(self):
         cls = self.theclass
