@@ -995,6 +995,10 @@ as internal buffering of data.
    Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
    respectively. Availability: Windows, Unix.
 
+   .. versionadded:: 3.3
+      Some operating systems could support additional values, like
+      :data:`os.SEEK_HOLE` or :data:`os.SEEK_DATA`.
+
 
 .. function:: mkdirat(dirfd, path, mode=0o777)
 
