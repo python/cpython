@@ -1501,7 +1501,7 @@ class datetime(date):
             localtm = _time.localtime(ts)
             local = datetime(*localtm[:6])
             try:
-                # Extract TZ data if available 
+                # Extract TZ data if available
                 gmtoff = localtm.tm_gmtoff
                 zone = localtm.tm_zone
             except AttributeError:
@@ -1517,7 +1517,7 @@ class datetime(date):
                     tz = timezone(delta)
             else:
                 tz = timezone(timedelta(seconds=-gmtoff), zone)
-                
+
         elif not isinstance(tz, tzinfo):
             raise TypeError("tz argument must be an instance of tzinfo")
 
