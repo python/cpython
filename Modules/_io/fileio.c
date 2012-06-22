@@ -377,7 +377,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #endif
                 self->fd = open(name, flags, 0666);
             Py_END_ALLOW_THREADS
-            fd_is_own = 1;
         } else {
             PyObject *fdobj = PyObject_CallFunction(
                                   opener, "Oi", nameobj, flags);
@@ -395,9 +394,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             if (self->fd == -1) {
                 goto error;
             }
-            fd_is_own = 1;
         }
 
+        fd_is_own = 1;
         if (self->fd < 0) {
 #ifdef MS_WINDOWS
             if (widename != NULL)
