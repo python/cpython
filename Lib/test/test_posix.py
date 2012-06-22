@@ -1015,6 +1015,26 @@ class PosixTester(unittest.TestCase):
         posix.RTLD_GLOBAL
         posix.RTLD_LOCAL
 
+    @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
+                         "test needs an OS that reports file holes")
+    def test_fs_holes(self) :
+        # Even if the filesystem doesn't report holes,
+        # if the OS supports it the SEEK_* constants
+        # will be defined and will have a consistent
+        # behaviour:
+        # os.SEEK_DATA = current position
+        # os.SEEK_HOLE = end of file position
+        with open(support.TESTFN, 'r+b') as fp :
+            fp.write(b"hello")
+            fp.flush()
+            size = fp.tell()
+            fno = fp.fileno()
+            for i in range(size) :
+                self.assertEqual(i, os.lseek(fno, i, os.SEEK_DATA))
+                self.assertLessEqual(size, os.lseek(fno, i, os.SEEK_HOLE))
+            self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_DATA)
+            self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_HOLE)
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):

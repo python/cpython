@@ -935,6 +935,8 @@ Extension Modules
 - Issue #14259: The finditer() method of re objects did not take any
   keyword arguments, contrary to the documentation.
 
+- Issue #10142: Support for SEEK_HOLE/SEEK_DATA (for example, under ZFS).
+
 Tests
 -----
 
