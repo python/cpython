@@ -642,7 +642,7 @@ Py_Finalize(void)
 #endif /* Py_TRACE_REFS */
 #ifdef PYMALLOC_DEBUG
     if (Py_GETENV("PYTHONMALLOCSTATS"))
-        _PyObject_DebugMallocStats();
+        _PyObject_DebugMallocStats(stderr);
 #endif
 
     call_ll_exitfuncs();

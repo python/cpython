@@ -4754,7 +4754,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
     return result;
 }
 
-static PyObject *
+static PyDateTime_DateTime *
 datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     PyDateTime_DateTime *result;
@@ -4777,7 +4777,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     /* Conversion to self's own time zone is a NOP. */
     if (self->tzinfo == tzinfo) {
         Py_INCREF(self);
-        return (PyObject *)self;
+        return self;
     }
 
     /* Convert self to UTC. */
@@ -4814,10 +4814,11 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     Py_DECREF(temp);
 
     temp = (PyObject *)result;
-    result = _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", temp);
+    result = (PyDateTime_DateTime *)
+        _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", temp);
     Py_DECREF(temp);
 
-    return (PyObject *)result;
+    return result;
 }
 
 static PyObject *
