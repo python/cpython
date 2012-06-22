@@ -2263,9 +2263,9 @@ class TestMiscellaneous(TestEmailBase):
         eq(int(time.strftime('%Y', timetup[:9])), 2003)
 
     def test_mktime_tz(self):
-        self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
+        self.assertEqual(Utils.mktime_tz((1970, 1, 1, 0, 0, 0,
                                           -1, -1, -1, 0)), 0)
-        self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
+        self.assertEqual(Utils.mktime_tz((1970, 1, 1, 0, 0, 0,
                                           -1, -1, -1, 1234)), -1234)
 
     def test_parsedate_y2k(self):
