@@ -222,36 +222,38 @@ class SkipitemTest(unittest.TestCase):
         in Python/getargs.c, but neglected to update our poor friend
         skipitem() in the same file.  (If so, shame on you!)
 
-        This function brute-force tests all** ASCII characters (1 to 127
-        inclusive) as format units, checking to see that
-        PyArg_ParseTupleAndKeywords() return consistent errors both when
-        the unit is attempted to be used and when it is skipped.  If the
-        format unit doesn't exist, we'll get one of two specific error
-        messages (one for used, one for skipped); if it does exist we
-        *won't* get that error--we'll get either no error or some other
-        error.  If we get the "does not exist" error for one test and
-        not for the other, there's a mismatch, and the test fails.
+        With a few exceptions**, this function brute-force tests all
+        printable ASCII*** characters (32 to 126 inclusive) as format units,
+        checking to see that PyArg_ParseTupleAndKeywords() return consistent
+        errors both when the unit is attempted to be used and when it is
+        skipped.  If the format unit doesn't exist, we'll get one of two
+        specific error messages (one for used, one for skipped); if it does
+        exist we *won't* get that error--we'll get either no error or some
+        other error.  If we get the specific "does not exist" error for one
+        test and not for the other, there's a mismatch, and the test fails.
 
-          ** Okay, it actually skips some ASCII characters.  Some characters
-             have special funny semantics, and it would be difficult to
-             accomodate them here.
+           ** Some format units have special funny semantics and it would
+              be difficult to accomodate them here.  Since these are all
+              well-established and properly skipped in skipitem() we can
+              get away with not testing them--this test is really intended
+              to catch *new* format units.
+
+          *** Python C source files must be ASCII.  Therefore it's impossible
+              to have non-ASCII format units.
+
         """
         empty_tuple = ()
         tuple_1 = (0,)
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        # Python C source files must be ASCII,
-        # therefore we'll never have a format unit > 127
-        for i in range(1, 128):
+        for i in range(32, 127):
             c = chr(i)
 
-            # skip non-printable characters, no one is insane enough to define
-            #    one as a format unit
             # skip parentheses, the error reporting is inconsistent about them
             # skip 'e', it's always a two-character code
             # skip '|' and '$', they don't represent arguments anyway
-            if (not c.isprintable()) or (c in '()e|$'):
+            if c in '()e|$':
                 continue
 
             # test the format unit when not skipped
