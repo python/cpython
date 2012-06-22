@@ -113,8 +113,28 @@ There are only a few functions special to module objects.
 
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
    created, or *NULL* if the module wasn't created with
-   :c:func:`PyModule_Create`.
+   :c:func:`PyModule_Create`.i
 
+.. c:function:: PyObject* PyState_FindModule(PyModuleDef *def)
+
+   Returns the module object that was created from *def* for the current interpreter.
+   This method requires that the module object has been attached to the interpreter state with
+   :c:func:`PyState_AddModule` beforehand. In case the corresponding module object is not
+   found or has not been attached to the interpreter state yet, it returns NULL.
+
+.. c:function:: int PyState_AddModule(PyModuleDef *def, PyObject *module)
+
+   Attaches the module object passed to the function to the interpreter state. This allows
+   the module object to be accessible via
+   :c:func:`PyState_FindModule`.
+
+   .. versionadded:: 3.3
+
+.. c:function:: int PyState_RemoveModule(PyModuleDef *def, PyObject *module)
+
+   Removes the module object created from *def* from the interpreter state.
+
+   .. versionadded:: 3.3
 
 Initializing C modules
 ^^^^^^^^^^^^^^^^^^^^^^

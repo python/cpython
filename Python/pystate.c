@@ -239,9 +239,9 @@ _PyThreadState_Init(PyThreadState *tstate)
 }
 
 PyObject*
-PyState_FindModule(struct PyModuleDef* m)
+PyState_FindModule(struct PyModuleDef* module)
 {
-    Py_ssize_t index = m->m_base.m_index;
+    Py_ssize_t index = module->m_base.m_index;
     PyInterpreterState *state = PyThreadState_GET()->interp;
     PyObject *res;
     if (index == 0)
@@ -271,6 +271,47 @@ _PyState_AddModule(PyObject* module, struct PyModuleDef* def)
     Py_INCREF(module);
     return PyList_SetItem(state->modules_by_index,
                           def->m_base.m_index, module);
+}
+
+int
+PyState_AddModule(PyObject* module, struct PyModuleDef* def)
+{
+    Py_ssize_t index;
+    PyInterpreterState *state = PyThreadState_GET()->interp;
+    if (!def) {
+        Py_FatalError("PyState_AddModule: Module Definition is NULL");
+        return -1;
+    }
+    index = def->m_base.m_index;
+    if (state->modules_by_index) {
+        if(PyList_GET_SIZE(state->modules_by_index) >= index) {
+            if(module == PyList_GET_ITEM(state->modules_by_index, index)) {
+                Py_FatalError("PyState_AddModule: Module already added!");
+                return -1;
+            }
+        }
+    }
+    return _PyState_AddModule(module, def);
+}
+
+int
+PyState_RemoveModule(struct PyModuleDef* def)
+{
+    Py_ssize_t index = def->m_base.m_index;
+    PyInterpreterState *state = PyThreadState_GET()->interp;
+    if (index == 0) {
+        Py_FatalError("PyState_RemoveModule: Module index invalid.");
+        return -1;
+    }
+    if (state->modules_by_index == NULL) {
+        Py_FatalError("PyState_RemoveModule: Interpreters module-list not acessible.");
+        return -1;
+    }
+    if (index > PyList_GET_SIZE(state->modules_by_index)) {
+        Py_FatalError("PyState_RemoveModule: Module index out of bounds.");
+        return -1;
+    }
+    return PyList_SetItem(state->modules_by_index, index, Py_None);
 }
 
 void
