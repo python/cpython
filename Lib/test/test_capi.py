@@ -214,9 +214,78 @@ class EmbeddingTest(unittest.TestCase):
         finally:
             os.chdir(oldcwd)
 
+class SkipitemTest(unittest.TestCase):
+
+    def test_skipitem(self):
+        """
+        If this test failed, you probably added a new "format unit"
+        in Python/getargs.c, but neglected to update our poor friend
+        skipitem() in the same file.  (If so, shame on you!)
+
+        This function brute-force tests all** ASCII characters (1 to 127
+        inclusive) as format units, checking to see that
+        PyArg_ParseTupleAndKeywords() return consistent errors both when
+        the unit is attempted to be used and when it is skipped.  If the
+        format unit doesn't exist, we'll get one of two specific error
+        messages (one for used, one for skipped); if it does exist we
+        *won't* get that error--we'll get either no error or some other
+        error.  If we get the "does not exist" error for one test and
+        not for the other, there's a mismatch, and the test fails.
+
+          ** Okay, it actually skips some ASCII characters.  Some characters
+             have special funny semantics, and it would be difficult to
+             accomodate them here.
+        """
+        empty_tuple = ()
+        tuple_1 = (0,)
+        dict_b = {'b':1}
+        keywords = ["a", "b"]
+
+        # Python C source files must be ASCII,
+        # therefore we'll never have a format unit > 127
+        for i in range(1, 128):
+            c = chr(i)
+
+            # skip non-printable characters, no one is insane enough to define
+            #    one as a format unit
+            # skip parentheses, the error reporting is inconsistent about them
+            # skip 'e', it's always a two-character code
+            # skip '|' and '$', they don't represent arguments anyway
+            if (not c.isprintable()) or (c in '()e|$'):
+                continue
+
+            # test the format unit when not skipped
+            format = c + "i"
+            try:
+                # (note: the format string must be bytes!)
+                _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
+                    format.encode("ascii"), keywords)
+                when_not_skipped = False
+            except TypeError as e:
+                s = "argument 1 must be impossible<bad format char>, not int"
+                when_not_skipped = (str(e) == s)
+            except RuntimeError as e:
+                when_not_skipped = False
+
+            # test the format unit when skipped
+            optional_format = "|" + format
+            try:
+                _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
+                    optional_format.encode("ascii"), keywords)
+                when_skipped = False
+            except RuntimeError as e:
+                s = "impossible<bad format char>: '{}'".format(format)
+                when_skipped = (str(e) == s)
+
+            message = ("test_skipitem_parity: "
+                "detected mismatch between convertsimple and skipitem "
+                "for format unit '{}' ({}), not skipped {}, skipped {}".format(
+                    c, i, when_skipped, when_not_skipped))
+            self.assertIs(when_skipped, when_not_skipped, message)
 
 def test_main():
-    support.run_unittest(CAPITest, TestPendingCalls, Test6012, EmbeddingTest)
+    support.run_unittest(CAPITest, TestPendingCalls,
+                         Test6012, EmbeddingTest, SkipitemTest)
 
     for name in dir(_testcapi):
         if name.startswith('test_'):
