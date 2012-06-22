@@ -6910,7 +6910,7 @@ mpd_qround_to_int(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
 
 void
 mpd_qtrunc(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
-              uint32_t *status)
+           uint32_t *status)
 {
     (void)_mpd_qround_to_integral(TO_INT_TRUNC, result, a, ctx, status);
 }
