@@ -1510,13 +1510,13 @@ class datetime(date):
                 # implied by tm_isdst.
                 delta = local - datetime(*_time.gmtime(ts)[:6])
                 dst = _time.daylight and localtm.tm_isdst > 0
-                gmtoff = _time.altzone if dst else _time.timezone
-                if delta == timedelta(seconds=-gmtoff):
+                gmtoff = -(_time.altzone if dst else _time.timezone)
+                if delta == timedelta(seconds=gmtoff):
                     tz = timezone(delta, _time.tzname[dst])
                 else:
                     tz = timezone(delta)
             else:
-                tz = timezone(timedelta(seconds=-gmtoff), zone)
+                tz = timezone(timedelta(seconds=gmtoff), zone)
 
         elif not isinstance(tz, tzinfo):
             raise TypeError("tz argument must be an instance of tzinfo")
