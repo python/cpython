@@ -255,6 +255,15 @@ PyDict_ClearFreeList(void)
     return ret;
 }
 
+/* Print summary info about the state of the optimized allocator */
+void
+_PyDict_DebugMallocStats(FILE *out)
+{
+    _PyDebugAllocatorStats(out,
+                           "free PyDictObject", numfree, sizeof(PyDictObject));
+}
+
+
 void
 PyDict_Fini(void)
 {
