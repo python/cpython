@@ -11292,6 +11292,13 @@ all_ins(PyObject *d)
 #endif
 
 
+#ifdef SEEK_HOLE
+    if (ins(d, "SEEK_HOLE", (long)SEEK_HOLE)) return -1;
+#endif
+#ifdef SEEK_DATA
+    if (ins(d, "SEEK_DATA", (long)SEEK_DATA)) return -1;
+#endif
+
 /* MS Windows */
 #ifdef O_NOINHERIT
     /* Don't inherit in child processes. */
