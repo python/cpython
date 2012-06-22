@@ -15,8 +15,8 @@ Unfortunately, the API compatibility does not extend to binary
 compatibility (the ABI). The reason is primarily the evolution of
 struct definitions, where addition of a new field, or changing
 the type of a field, might not break the API, but can break the ABI.
-As a consequence, extension modules need to be recompiled for 
-every Python release (although an exception is possible on Unix 
+As a consequence, extension modules need to be recompiled for
+every Python release (although an exception is possible on Unix
 when none of the affected interfaces are used). In addition, on
 Windows, extension modules link with a specific pythonXY.dll and
 need to be recompiled to link with a newer one.
