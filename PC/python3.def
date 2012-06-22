@@ -471,6 +471,8 @@ EXPORTS
   PySlice_Type=python33.PySlice_Type DATA
   PySortWrapper_Type=python33.PySortWrapper_Type DATA
   PyState_FindModule=python33.PyState_FindModule
+  PyState_AddModule=python33.PyState_AddModule
+  PyState_RemoveModule=python33.PyState_RemoveModule
   PyStructSequence_GetItem=python33.PyStructSequence_GetItem
   PyStructSequence_New=python33.PyStructSequence_New
   PyStructSequence_NewType=python33.PyStructSequence_NewType
