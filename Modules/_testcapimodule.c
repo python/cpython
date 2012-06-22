@@ -1195,50 +1195,72 @@ test_s_code(PyObject *self)
 }
 
 static PyObject *
-test_bug_7414(PyObject *self)
+parse_tuple_and_keywords(PyObject *self, PyObject *args)
 {
-    /* Issue #7414: for PyArg_ParseTupleAndKeywords, 'C' code wasn't being
-       skipped properly in skipitem() */
-    int a = 0, b = 0, result;
-    char *kwlist[] = {"a", "b", NULL};
-    PyObject *tuple = NULL, *dict = NULL, *b_str;
+    PyObject *sub_args;
+    PyObject *sub_kwargs;
+    char *sub_format;
+    PyObject *sub_keywords;
 
-    tuple = PyTuple_New(0);
-    if (tuple == NULL)
-        goto failure;
-    dict = PyDict_New();
-    if (dict == NULL)
-        goto failure;
-    b_str = PyUnicode_FromString("b");
-    if (b_str == NULL)
-        goto failure;
-    result = PyDict_SetItemString(dict, "b", b_str);
-    Py_DECREF(b_str);
-    if (result < 0)
-        goto failure;
+    Py_ssize_t i, size;
+    char *keywords[8 + 1]; /* space for NULL at end */
+    PyObject *o;
+    PyObject *converted[8];
 
-    result = PyArg_ParseTupleAndKeywords(tuple, dict, "|CC",
-                                         kwlist, &a, &b);
-    if (!result)
-        goto failure;
+    int result;
+    PyObject *return_value = NULL;
 
-    if (a != 0)
-        return raiseTestError("test_bug_7414",
-            "C format code not skipped properly");
-    if (b != 'b')
-        return raiseTestError("test_bug_7414",
-            "C format code returned wrong value");
+    char buffers[32][8];
 
-    Py_DECREF(dict);
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
+    if (!PyArg_ParseTuple(args, "OOyO:parse_tuple_and_keywords",
+        &sub_args, &sub_kwargs,
+        &sub_format, &sub_keywords))
+        return NULL;
 
-  failure:
-    Py_XDECREF(dict);
-    Py_XDECREF(tuple);
-    return NULL;
+    if (!(PyList_CheckExact(sub_keywords) || PyTuple_CheckExact(sub_keywords))) {
+        PyErr_SetString(PyExc_ValueError,
+            "parse_tuple_and_keywords: sub_keywords must be either list or tuple");
+        return NULL;
+    }
+
+    memset(buffers, 0, sizeof(buffers));
+    memset(converted, 0, sizeof(converted));
+    memset(keywords, 0, sizeof(keywords));
+
+    size = PySequence_Fast_GET_SIZE(sub_keywords);
+    if (size > 8) {
+        PyErr_SetString(PyExc_ValueError,
+            "parse_tuple_and_keywords: too many keywords in sub_keywords");
+        goto exit;
+    }
+
+    for (i = 0; i < size; i++) {
+        o = PySequence_Fast_GET_ITEM(sub_keywords, i);
+        if (!PyUnicode_FSConverter(o, (void *)(converted + i))) {
+            PyErr_Format(PyExc_ValueError,
+                "parse_tuple_and_keywords: could not convert keywords[%s] to narrow string", i);
+            goto exit;
+        }
+        keywords[i] = PyBytes_AS_STRING(converted[i]);
+    }
+
+    result = PyArg_ParseTupleAndKeywords(sub_args, sub_kwargs,
+        sub_format, keywords,
+        buffers + 0, buffers + 1, buffers + 2, buffers + 3,
+        buffers + 4, buffers + 5, buffers + 6, buffers + 7);
+
+    if (result) {
+        return_value = Py_None;
+        Py_INCREF(Py_None);
+    }
+
+exit:
+    size = sizeof(converted) / sizeof(converted[0]);
+    for (i = 0; i < size; i++) {
+        Py_XDECREF(converted[i]);
+    }
+    return return_value;
 }
-
 
 static volatile int x;
 
@@ -2426,7 +2448,7 @@ static PyMethodDef TestMethods[] = {
     {"test_long_numbits",       (PyCFunction)test_long_numbits,  METH_NOARGS},
     {"test_k_code",             (PyCFunction)test_k_code,        METH_NOARGS},
     {"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
-    {"test_bug_7414", (PyCFunction)test_bug_7414, METH_NOARGS},
+    {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
     {"test_null_strings",       (PyCFunction)test_null_strings,  METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
     {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
