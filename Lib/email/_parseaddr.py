@@ -13,7 +13,7 @@ __all__ = [
     'quote',
     ]
 
-import time
+import time, calendar
 
 SPACE = ' '
 EMPTYSTRING = ''
@@ -177,13 +177,13 @@ def parsedate(data):
 
 
 def mktime_tz(data):
-    """Turn a 10-tuple as returned by parsedate_tz() into a UTC timestamp."""
+    """Turn a 10-tuple as returned by parsedate_tz() into a POSIX timestamp."""
     if data[9] is None:
         # No zone info, so localtime is better assumption than GMT
         return time.mktime(data[:8] + (-1,))
     else:
-        t = time.mktime(data[:8] + (0,))
-        return t - data[9] - time.timezone
+        t = calendar.timegm(data)
+        return t - data[9]
 
 
 def quote(str):
