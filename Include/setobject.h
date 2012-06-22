@@ -101,6 +101,7 @@ PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
 
 PyAPI_FUNC(int) PySet_ClearFreeList(void);
+PyAPI_FUNC(void) _PySet_DebugMallocStats(FILE *out);
 #endif
 
 #ifdef __cplusplus

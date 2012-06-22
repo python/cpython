@@ -809,14 +809,16 @@ new_timezone(PyObject *offset, PyObject *name)
     }
     if (GET_TD_MICROSECONDS(offset) != 0 || GET_TD_SECONDS(offset) % 60 != 0) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
-                     " representing a whole number of minutes");
+                     " representing a whole number of minutes,"
+                     " not %R.", offset);
         return NULL;
     }
     if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
-                     " timedelta(hours=24).");
+                     " timedelta(hours=24),"
+                     " not %R.", offset);
         return NULL;
     }
 
@@ -4686,12 +4688,11 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-local_timezone(PyObject *utc_time)
+local_timezone(PyDateTime_DateTime *utc_time)
 {
     PyObject *result = NULL;
     struct tm *timep;
     time_t timestamp;
-    long offset;
     PyObject *delta;
     PyObject *one_second;
     PyObject *seconds;
@@ -4716,21 +4717,18 @@ local_timezone(PyObject *utc_time)
         return NULL;
     timep = localtime(&timestamp);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    offset = timep->tm_gmtoff;
     zone = timep->tm_zone;
-    delta = new_delta(0, -offset, 0, 0);
+    delta = new_delta(0, timep->tm_gmtoff, 0, 1);
 #else /* HAVE_STRUCT_TM_TM_ZONE */
     {
         PyObject *local_time;
-        Py_INCREF(utc_time->tzinfo);
         local_time = new_datetime(timep->tm_year + 1900, timep->tm_mon + 1,
                                   timep->tm_mday, timep->tm_hour, timep->tm_min,
-                                  timep->tm_sec, utc_time->tzinfo);
-        if (local_time == NULL) {
-            Py_DECREF(utc_time->tzinfo);
+                                  timep->tm_sec, DATE_GET_MICROSECOND(utc_time),
+                                  utc_time->tzinfo);
+        if (local_time == NULL)
             goto error;
-        }
-        delta = datetime_subtract(local_time, utc_time);
+        delta = datetime_subtract(local_time, (PyObject*)utc_time);
         /* XXX: before relying on tzname, we should compare delta
            to the offset implied by timezone/altzone */
         if (daylight && timep->tm_isdst >= 0)
@@ -4752,10 +4750,10 @@ local_timezone(PyObject *utc_time)
     return result;
 }
 
-static PyObject *
+static PyDateTime_DateTime *
 datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
-    PyObject *result;
+    PyDateTime_DateTime *result;
     PyObject *offset;
     PyObject *temp;
     PyObject *tzinfo = Py_None;
@@ -4775,7 +4773,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     /* Conversion to self's own time zone is a NOP. */
     if (self->tzinfo == tzinfo) {
         Py_INCREF(self);
-        return (PyObject *)self;
+        return self;
     }
 
     /* Convert self to UTC. */
@@ -4791,14 +4789,14 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
 
     /* result = self - offset */
-    result = add_datetime_timedelta(self,
-                (PyDateTime_Delta *)offset, -1);
+    result = (PyDateTime_DateTime *)add_datetime_timedelta(self,
+                                       (PyDateTime_Delta *)offset, -1);
     Py_DECREF(offset);
     if (result == NULL)
         return NULL;
 
     /* Attach new tzinfo and let fromutc() do the rest. */
-    temp = ((PyDateTime_DateTime *)result)->tzinfo;
+    temp = result->tzinfo;
     if (tzinfo == Py_None) {
         tzinfo = local_timezone(result);
         if (tzinfo == NULL) {
@@ -4808,11 +4806,12 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else
       Py_INCREF(tzinfo);
-    ((PyDateTime_DateTime *)result)->tzinfo = tzinfo;
+    result->tzinfo = tzinfo;
     Py_DECREF(temp);
 
-    temp = result;
-    result = _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", temp);
+    temp = (PyObject *)result;
+    result = (PyDateTime_DateTime *)
+        _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", temp);
     Py_DECREF(temp);
 
     return result;
