@@ -165,6 +165,10 @@ Documentation
 Tests
 -----
 
+- Issue #14769: test_capi now has SkipitemTest, which cleverly checks
+  for "parity" between PyArg_ParseTuple() and the Python/getargs.c static
+  function skipitem() for all possible "format units".
+
 - test_nntplib now tolerates being run from behind NNTP gateways that add
   "X-Antivirus" headers to articles
 
