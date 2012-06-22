@@ -1852,6 +1852,18 @@ PyMem_Free(void *p)
     PyMem_FREE(p);
 }
 
+void
+_PyObject_DebugTypeStats(FILE *out)
+{
+    _PyCFunction_DebugMallocStats(out);
+    _PyDict_DebugMallocStats(out);
+    _PyFloat_DebugMallocStats(out);
+    _PyFrame_DebugMallocStats(out);
+    _PyList_DebugMallocStats(out);
+    _PyMethod_DebugMallocStats(out);
+    _PySet_DebugMallocStats(out);
+    _PyTuple_DebugMallocStats(out);
+}
 
 /* These methods are used to control infinite recursion in repr, str, print,
    etc.  Container objects that may recursively contain themselves,

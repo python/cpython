@@ -247,6 +247,30 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
+.. function:: which(cmd, mode=os.F_OK | os.X_OK, path=None)
+
+   Return the path to an executable which would be run if the given *cmd*
+   was called. If no *cmd* would be called, return ``None``.
+
+   *mode* is a permission mask passed a to :func:`os.access`, by default
+   determining if the file exists and executable.
+
+   When no *path* is specified, the results of :func:`os.environ` are
+   used, returning either the "PATH" value or a fallback of :attr:`os.defpath`.
+
+   On Windows, the current directory is always prepended to the *path*
+   whether or not you use the default or provide your own, which
+   is the behavior the command shell uses when finding executables.
+   Additionaly, when finding the *cmd* in the *path*, the
+   ``PATHEXT`` environment variable is checked. For example, if you
+   call ``shutil.which("python")``, :func:`which` will search
+   ``PATHEXT`` to know that it should look for ``python.exe`` within
+   the *path* directories.
+
+      >>> print(shutil.which("python"))
+      'c:\\python33\\python.exe'
+
+   .. versionadded:: 3.3
 
 .. exception:: Error
 

@@ -9,6 +9,12 @@
 """
 
 import sys, os, time, difflib, optparse
+from datetime import datetime, timezone
+
+def file_mtime(path):
+    t = datetime.fromtimestamp(os.stat(path).st_mtime,
+                               timezone.utc)
+    return t.astimezone().isoformat()
 
 def main():
 
@@ -30,10 +36,12 @@ def main():
     n = options.lines
     fromfile, tofile = args
 
-    fromdate = time.ctime(os.stat(fromfile).st_mtime)
-    todate = time.ctime(os.stat(tofile).st_mtime)
-    fromlines = open(fromfile, 'U').readlines()
-    tolines = open(tofile, 'U').readlines()
+    fromdate = file_mtime(fromfile)
+    todate = file_mtime(tofile)
+    with open(fromfile, 'U') as ff:
+        fromlines = ff.readlines()
+    with open(tofile, 'U') as tf:
+        tolines = tf.readlines()
 
     if options.u:
         diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)

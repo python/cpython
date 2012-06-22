@@ -106,6 +106,22 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: _debugmallocstats()
+
+   Print low-level information to stderr about the state of CPython's memory
+   allocator.
+
+   If Python is configured --with-pydebug, it also performs some expensive
+   internal consistency checks.
+
+   .. versionadded:: 3.3
+
+   .. impl-detail::
+
+      This function is specific to CPython.  The exact output format is not
+      defined here, and may change.
+
+
 .. data:: dllhandle
 
    Integer specifying the handle of the Python DLL. Availability: Windows.

@@ -1128,6 +1128,59 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(['foo'], os.listdir(rv))
 
 
+class TestWhich(unittest.TestCase):
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        # Give the temp_file an ".exe" suffix for all.
+        # It's needed on Windows and not harmful on other platforms.
+        self.temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir,
+                                                     suffix=".exe")
+        os.chmod(self.temp_file.name, stat.S_IXUSR)
+        self.addCleanup(self.temp_file.close)
+        self.dir, self.file = os.path.split(self.temp_file.name)
+
+    def test_basic(self):
+        # Given an EXE in a directory, it should be returned.
+        rv = shutil.which(self.file, path=self.dir)
+        self.assertEqual(rv, self.temp_file.name)
+
+    def test_full_path_short_circuit(self):
+        # When given the fully qualified path to an executable that exists,
+        # it should be returned.
+        rv = shutil.which(self.temp_file.name, path=self.temp_dir)
+        self.assertEqual(self.temp_file.name, rv)
+
+    def test_non_matching_mode(self):
+        # Set the file read-only and ask for writeable files.
+        os.chmod(self.temp_file.name, stat.S_IREAD)
+        rv = shutil.which(self.file, path=self.dir, mode=os.W_OK)
+        self.assertIsNone(rv)
+
+    def test_relative(self):
+        old_cwd = os.getcwd()
+        base_dir, tail_dir = os.path.split(self.dir)
+        os.chdir(base_dir)
+        try:
+            rv = shutil.which(self.file, path=tail_dir)
+            self.assertEqual(rv, os.path.join(tail_dir, self.file))
+        finally:
+            os.chdir(old_cwd)
+
+    def test_nonexistent_file(self):
+        # Return None when no matching executable file is found on the path.
+        rv = shutil.which("foo.exe", path=self.dir)
+        self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "pathext check is Windows-only")
+    def test_pathext_checking(self):
+        # Ask for the file without the ".exe" extension, then ensure that
+        # it gets found properly with the extension.
+        rv = shutil.which(self.temp_file.name[:-4], path=self.dir)
+        self.assertEqual(self.temp_file.name, rv)
+
+
 class TestMove(unittest.TestCase):
 
     def setUp(self):
@@ -1460,7 +1513,7 @@ class TermsizeTests(unittest.TestCase):
 
 def test_main():
     support.run_unittest(TestShutil, TestMove, TestCopyFile,
-                         TermsizeTests)
+                         TermsizeTests, TestWhich)
 
 if __name__ == '__main__':
     test_main()

@@ -63,6 +63,9 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #endif
 
 PyAPI_FUNC(int) PyTuple_ClearFreeList(void);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
+#endif /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }
