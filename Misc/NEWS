@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14837: SSL errors now have ``library`` and ``reason`` attributes
+  describing precisely what happened and in which OpenSSL submodule.  The
+  str() of a SSLError is also enhanced accordingly.
+
 - Issue #9527: datetime.astimezone() method will now supply a class
   timezone instance corresponding to the system local timezone when
   called with no arguments.
