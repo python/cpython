@@ -955,3 +955,13 @@ PyFrame_Fini(void)
     Py_XDECREF(builtin_object);
     builtin_object = NULL;
 }
+
+/* Print summary info about the state of the optimized allocator */
+void
+_PyFrame_DebugMallocStats(FILE *out)
+{
+    _PyDebugAllocatorStats(out,
+                           "free PyFrameObject",
+                           numfree, sizeof(PyFrameObject));
+}
+

@@ -59,6 +59,22 @@ Functions, Constants, and Exceptions
    .. versionchanged:: 3.3
       :exc:`SSLError` used to be a subtype of :exc:`socket.error`.
 
+   .. attribute:: library
+
+      A string mnemonic designating the OpenSSL submodule in which the error
+      occurred, such as ``SSL``, ``PEM`` or ``X509``.  The range of possible
+      values depends on the OpenSSL version.
+
+      .. versionadded:: 3.3
+
+   .. attribute:: reason
+
+      A string mnemonic designating the reason this error occurred, for
+      example ``CERTIFICATE_VERIFY_FAILED``.  The range of possible
+      values depends on the OpenSSL version.
+
+      .. versionadded:: 3.3
+
 .. exception:: SSLZeroReturnError
 
    A subclass of :exc:`SSLError` raised when trying to read or write and
