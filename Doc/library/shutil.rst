@@ -249,8 +249,8 @@ Directory and files operations
 
 .. function:: which(cmd, mode=os.F_OK | os.X_OK, path=None)
 
-   Return the full path to an executable which would be run if the given
-   *cmd* was called. If no *cmd* would be called, return ``None``.
+   Return the path to an executable which would be run if the given *cmd*
+   was called. If no *cmd* would be called, return ``None``.
 
    *mode* is a permission mask passed a to :func:`os.access`, by default
    determining if the file exists and executable.
