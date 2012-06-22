@@ -10,7 +10,7 @@ import shutil
 import importlib
 import unittest
 
-from test.support import run_unittest, create_empty_file
+from test.support import run_unittest, create_empty_file, verbose
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
 from reprlib import recursive_repr
@@ -248,6 +248,8 @@ class LongReprTest(unittest.TestCase):
             # (see http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath)
             self.skipTest("test paths too long (%d characters) for Windows' 260 character limit"
                           % cached_path_len)
+        elif os.name == 'nt' and verbose:
+            print("len(cached_path_len) =", len(cached_path_len))
 
     def test_module(self):
         self._check_path_limitations(self.pkgname)
