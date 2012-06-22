@@ -110,6 +110,8 @@ PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char *p, int le);
 /* free list api */
 PyAPI_FUNC(int) PyFloat_ClearFreeList(void);
 
+PyAPI_FUNC(void) _PyFloat_DebugMallocStats(FILE* out);
+
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 PyAPI_FUNC(int) _PyFloat_FormatAdvancedWriter(

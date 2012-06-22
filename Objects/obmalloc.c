@@ -523,12 +523,10 @@ static struct arena_object* usable_arenas = NULL;
 /* Number of arenas allocated that haven't been free()'d. */
 static size_t narenas_currently_allocated = 0;
 
-#ifdef PYMALLOC_DEBUG
 /* Total number of times malloc() called to allocate an arena. */
 static size_t ntimes_arena_allocated = 0;
 /* High water mark (max value ever seen) for narenas_currently_allocated. */
 static size_t narenas_highwater = 0;
-#endif
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
  * allocate a new arena, and return the address of an arena_object
@@ -545,7 +543,7 @@ new_arena(void)
 
 #ifdef PYMALLOC_DEBUG
     if (Py_GETENV("PYTHONMALLOCSTATS"))
-        _PyObject_DebugMallocStats();
+        _PyObject_DebugMallocStats(stderr);
 #endif
     if (unused_arena_objects == NULL) {
         uint i;
@@ -613,11 +611,9 @@ new_arena(void)
     arenaobj->address = (uptr)address;
 
     ++narenas_currently_allocated;
-#ifdef PYMALLOC_DEBUG
     ++ntimes_arena_allocated;
     if (narenas_currently_allocated > narenas_highwater)
         narenas_highwater = narenas_currently_allocated;
-#endif
     arenaobj->freepools = NULL;
     /* pool_address <- first pool-aligned address in the arena
        nfreepools <- number of whole pools that fit after alignment */
@@ -1723,17 +1719,19 @@ _PyObject_DebugDumpAddress(const void *p)
     }
 }
 
+#endif  /* PYMALLOC_DEBUG */
+
 static size_t
-printone(const char* msg, size_t value)
+printone(FILE *out, const char* msg, size_t value)
 {
     int i, k;
     char buf[100];
     size_t origvalue = value;
 
-    fputs(msg, stderr);
+    fputs(msg, out);
     for (i = (int)strlen(msg); i < 35; ++i)
-        fputc(' ', stderr);
-    fputc('=', stderr);
+        fputc(' ', out);
+    fputc('=', out);
 
     /* Write the value with commas. */
     i = 22;
@@ -1754,17 +1752,33 @@ printone(const char* msg, size_t value)
 
     while (i >= 0)
         buf[i--] = ' ';
-    fputs(buf, stderr);
+    fputs(buf, out);
 
     return origvalue;
 }
 
-/* Print summary info to stderr about the state of pymalloc's structures.
+void
+_PyDebugAllocatorStats(FILE *out,
+                       const char *block_name, int num_blocks, size_t sizeof_block)
+{
+    char buf1[128];
+    char buf2[128];
+    PyOS_snprintf(buf1, sizeof(buf1),
+                  "%d %ss * %zd bytes each",
+                  num_blocks, block_name, sizeof_block);
+    PyOS_snprintf(buf2, sizeof(buf2),
+                  "%48s ", buf1);
+    (void)printone(out, buf2, num_blocks * sizeof_block);
+}
+
+#ifdef WITH_PYMALLOC
+
+/* Print summary info to "out" about the state of pymalloc's structures.
  * In Py_DEBUG mode, also perform some expensive internal consistency
  * checks.
  */
 void
-_PyObject_DebugMallocStats(void)
+_PyObject_DebugMallocStats(FILE *out)
 {
     uint i;
     const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
@@ -1793,7 +1807,7 @@ _PyObject_DebugMallocStats(void)
     size_t total;
     char buf[128];
 
-    fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
+    fprintf(out, "Small block threshold = %d, in %u size classes.\n",
             SMALL_REQUEST_THRESHOLD, numclasses);
 
     for (i = 0; i < numclasses; ++i)
@@ -1847,10 +1861,10 @@ _PyObject_DebugMallocStats(void)
     }
     assert(narenas == narenas_currently_allocated);
 
-    fputc('\n', stderr);
+    fputc('\n', out);
     fputs("class   size   num pools   blocks in use  avail blocks\n"
           "-----   ----   ---------   -------------  ------------\n",
-          stderr);
+          out);
 
     for (i = 0; i < numclasses; ++i) {
         size_t p = numpools[i];
@@ -1861,7 +1875,7 @@ _PyObject_DebugMallocStats(void)
             assert(b == 0 && f == 0);
             continue;
         }
-        fprintf(stderr, "%5u %6u "
+        fprintf(out, "%5u %6u "
                         "%11" PY_FORMAT_SIZE_T "u "
                         "%15" PY_FORMAT_SIZE_T "u "
                         "%13" PY_FORMAT_SIZE_T "u\n",
@@ -1871,35 +1885,36 @@ _PyObject_DebugMallocStats(void)
         pool_header_bytes += p * POOL_OVERHEAD;
         quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
     }
-    fputc('\n', stderr);
-    (void)printone("# times object malloc called", serialno);
-
-    (void)printone("# arenas allocated total", ntimes_arena_allocated);
-    (void)printone("# arenas reclaimed", ntimes_arena_allocated - narenas);
-    (void)printone("# arenas highwater mark", narenas_highwater);
-    (void)printone("# arenas allocated current", narenas);
+    fputc('\n', out);
+#ifdef PYMALLOC_DEBUG
+    (void)printone(out, "# times object malloc called", serialno);
+#endif
+    (void)printone(out, "# arenas allocated total", ntimes_arena_allocated);
+    (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
+    (void)printone(out, "# arenas highwater mark", narenas_highwater);
+    (void)printone(out, "# arenas allocated current", narenas);
 
     PyOS_snprintf(buf, sizeof(buf),
         "%" PY_FORMAT_SIZE_T "u arenas * %d bytes/arena",
         narenas, ARENA_SIZE);
-    (void)printone(buf, narenas * ARENA_SIZE);
+    (void)printone(out, buf, narenas * ARENA_SIZE);
 
-    fputc('\n', stderr);
+    fputc('\n', out);
 
-    total = printone("# bytes in allocated blocks", allocated_bytes);
-    total += printone("# bytes in available blocks", available_bytes);
+    total = printone(out, "# bytes in allocated blocks", allocated_bytes);
+    total += printone(out, "# bytes in available blocks", available_bytes);
 
     PyOS_snprintf(buf, sizeof(buf),
         "%u unused pools * %d bytes", numfreepools, POOL_SIZE);
-    total += printone(buf, (size_t)numfreepools * POOL_SIZE);
+    total += printone(out, buf, (size_t)numfreepools * POOL_SIZE);
 
-    total += printone("# bytes lost to pool headers", pool_header_bytes);
-    total += printone("# bytes lost to quantization", quantization);
-    total += printone("# bytes lost to arena alignment", arena_alignment);
-    (void)printone("Total", total);
+    total += printone(out, "# bytes lost to pool headers", pool_header_bytes);
+    total += printone(out, "# bytes lost to quantization", quantization);
+    total += printone(out, "# bytes lost to arena alignment", arena_alignment);
+    (void)printone(out, "Total", total);
 }
 
-#endif  /* PYMALLOC_DEBUG */
+#endif /* #ifdef WITH_PYMALLOC */
 
 #ifdef Py_USING_MEMORY_DEBUGGER
 /* Make this function last so gcc won't inline it since the definition is

@@ -1133,6 +1133,16 @@ PySet_Fini(void)
     Py_CLEAR(emptyfrozenset);
 }
 
+/* Print summary info about the state of the optimized allocator */
+void
+_PySet_DebugMallocStats(FILE *out)
+{
+    _PyDebugAllocatorStats(out,
+                           "free PySetObject",
+                           numfree, sizeof(PySetObject));
+}
+
+
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {

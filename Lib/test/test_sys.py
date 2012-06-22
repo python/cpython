@@ -603,6 +603,12 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
+    def test_debugmallocstats(self):
+        # Test sys._debugmallocstats()
+        from test.script_helper import assert_python_ok
+        args = ['-c', 'import sys; sys._debugmallocstats()']
+        ret, out, err = assert_python_ok(*args)
+        self.assertIn(b"free PyDictObjects", err)
 
 class SizeofTest(unittest.TestCase):
 
