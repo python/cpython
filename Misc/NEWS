@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #444582: Add shutil.which, for finding programs on the system path.
+  Original patch by Erik Demaine, with later iterations by Jan Killian
+  and Brian Curtin.
+
 - Issue #14837: SSL errors now have ``library`` and ``reason`` attributes
   describing precisely what happened and in which OpenSSL submodule.  The
   str() of a SSLError is also enhanced accordingly.
