@@ -4686,17 +4686,87 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
+local_timezone(PyObject *utc_time)
+{
+    PyObject *result = NULL;
+    struct tm *timep;
+    time_t timestamp;
+    long offset;
+    PyObject *delta;
+    PyObject *one_second;
+    PyObject *seconds;
+    PyObject *nameo = NULL;
+    const char *zone = NULL;
+
+    delta = datetime_subtract((PyObject *)utc_time, PyDateTime_Epoch);
+    if (delta == NULL)
+        return NULL;
+    one_second = new_delta(0, 1, 0, 0);
+    if (one_second == NULL)
+        goto error;
+    seconds = divide_timedelta_timedelta((PyDateTime_Delta *)delta,
+                                         (PyDateTime_Delta *)one_second);
+    Py_DECREF(one_second);
+    if (seconds == NULL)
+        goto error;
+    Py_DECREF(delta);
+    timestamp = PyLong_AsLong(seconds);
+    Py_DECREF(seconds);
+    if (timestamp == -1 && PyErr_Occurred())
+        return NULL;
+    timep = localtime(&timestamp);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    offset = timep->tm_gmtoff;
+    zone = timep->tm_zone;
+    delta = new_delta(0, -offset, 0, 0);
+#else /* HAVE_STRUCT_TM_TM_ZONE */
+    {
+        PyObject *local_time;
+        Py_INCREF(utc_time->tzinfo);
+        local_time = new_datetime(timep->tm_year + 1900, timep->tm_mon + 1,
+                                  timep->tm_mday, timep->tm_hour, timep->tm_min,
+                                  timep->tm_sec, utc_time->tzinfo);
+        if (local_time == NULL) {
+            Py_DECREF(utc_time->tzinfo);
+            goto error;
+        }
+        delta = datetime_subtract(local_time, utc_time);
+        /* XXX: before relying on tzname, we should compare delta
+           to the offset implied by timezone/altzone */
+        if (daylight && timep->tm_isdst >= 0)
+            zone = tzname[timep->tm_isdst % 2];
+        else
+            zone = tzname[0];
+        Py_DECREF(local_time);
+    }
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
+    if (zone != NULL) {
+        nameo = PyUnicode_DecodeLocale(zone, "surrogateescape");
+        if (nameo == NULL)
+            goto error;
+    }
+    result = new_timezone(delta, nameo);
+    Py_DECREF(nameo);
+  error:
+    Py_DECREF(delta);
+    return result;
+}
+
+static PyObject *
 datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     PyObject *result;
     PyObject *offset;
     PyObject *temp;
-    PyObject *tzinfo;
+    PyObject *tzinfo = Py_None;
     _Py_IDENTIFIER(fromutc);
     static char *keywords[] = {"tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:astimezone", keywords,
-                                      &PyDateTime_TZInfoType, &tzinfo))
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", keywords,
+				      &tzinfo))
+        return NULL;
+
+    if (check_tzinfo_subclass(tzinfo) == -1)
         return NULL;
 
     if (!HASTZINFO(self) || self->tzinfo == Py_None)
@@ -4729,8 +4799,16 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
     /* Attach new tzinfo and let fromutc() do the rest. */
     temp = ((PyDateTime_DateTime *)result)->tzinfo;
+    if (tzinfo == Py_None) {
+        tzinfo = local_timezone(result);
+        if (tzinfo == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    else
+      Py_INCREF(tzinfo);
     ((PyDateTime_DateTime *)result)->tzinfo = tzinfo;
-    Py_INCREF(tzinfo);
     Py_DECREF(temp);
 
     temp = result;
