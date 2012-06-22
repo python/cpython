@@ -958,16 +958,21 @@ Instance methods:
    datetime with no conversion of date and time data.
 
 
-.. method:: datetime.astimezone(tz)
+.. method:: datetime.astimezone(tz=None)
 
-   Return a :class:`.datetime` object with new :attr:`tzinfo` attribute *tz*,
+   Return a :class:`datetime` object with new :attr:`tzinfo` attribute *tz*,
    adjusting the date and time data so the result is the same UTC time as
    *self*, but in *tz*'s local time.
 
-   *tz* must be an instance of a :class:`tzinfo` subclass, and its
+   If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  *self* must
    be aware (``self.tzinfo`` must not be ``None``, and ``self.utcoffset()`` must
    not return ``None``).
+
+   If called without arguments (or with ``tz=None``) the system local
+   timezone is assumed.  The ``tzinfo`` attribute of the converted
+   datetime instance will be set to an instance of :class:`timezone`
+   with the zone name and offset obtained from the OS.
 
    If ``self.tzinfo`` is *tz*, ``self.astimezone(tz)`` is equal to *self*:  no
    adjustment of date or time data is performed. Else the result is local
