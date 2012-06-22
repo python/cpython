@@ -706,7 +706,7 @@ class CommonBufferedTests:
         bufio = self.tp(rawio)
         # Invalid whence
         self.assertRaises(ValueError, bufio.seek, 0, -1)
-        self.assertRaises(ValueError, bufio.seek, 0, 3)
+        self.assertRaises(ValueError, bufio.seek, 0, 9)
 
     def test_override_destructor(self):
         tp = self.tp
