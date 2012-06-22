@@ -147,6 +147,9 @@ Library
 - Issue #14963: Convert contextlib.ExitStack.__exit__ to use an iterative
   algorithm (Patch by Alon Horev)
 
+- Issue #14785: Add sys._debugmallocstats() to help debug low-level memory
+  allocation issues
+
 C-API
 -----
 
