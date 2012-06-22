@@ -2585,6 +2585,12 @@ class TestMiscellaneous(TestEmailBase):
         eq(time.localtime(t)[:6], timetup[:6])
         eq(int(time.strftime('%Y', timetup[:9])), 2003)
 
+    def test_mktime_tz(self):
+        self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
+                                          -1, -1, -1, 0)), 0)
+        self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
+                                          -1, -1, -1, 1234)), -1234)
+
     def test_parsedate_y2k(self):
         """Test for parsing a date with a two-digit year.
 
