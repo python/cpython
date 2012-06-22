@@ -25,3 +25,4 @@ document the API functions in detail.
    init.rst
    memory.rst
    objimpl.rst
+   stable.rst
