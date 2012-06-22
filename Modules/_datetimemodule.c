@@ -4717,12 +4717,8 @@ local_timezone(PyDateTime_DateTime *utc_time)
         return NULL;
     timep = localtime(&timestamp);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    {
-        long offset;
-        offset = timep->tm_gmtoff;
-        zone = timep->tm_zone;
-        delta = new_delta(0, -offset, 0, 0);
-    }
+    zone = timep->tm_zone;
+    delta = new_delta(0, timep->tm_gmtoff, 0, 1);
 #else /* HAVE_STRUCT_TM_TM_ZONE */
     {
         PyObject *local_time;
@@ -4732,7 +4728,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
                                   utc_time->tzinfo);
         if (local_time == NULL)
             goto error;
-        delta = datetime_subtract((PyObject*)utc_time, local_time);
+        delta = datetime_subtract(local_time, (PyObject*)utc_time);
         /* XXX: before relying on tzname, we should compare delta
            to the offset implied by timezone/altzone */
         if (daylight && timep->tm_isdst >= 0)

@@ -1,5 +1,16 @@
 #! /usr/bin/env python3
 
+"""
+This script should be called *manually* when we want to upgrade SSLError
+`library` and `reason` mnemnonics to a more recent OpenSSL version.
+
+It takes two arguments:
+- the path to the OpenSSL include files' directory
+  (e.g. openssl-1.0.1-beta3/include/openssl/)
+- the path to the C file to be generated
+  (probably Modules/_ssl_data.h)
+"""
+
 import datetime
 import os
 import re
