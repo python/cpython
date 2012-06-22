@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14653: email.utils.mktime_tz() no longer relies on system
+  mktime() when timezone offest is supplied.
+
 - Fix GzipFile's handling of filenames given as bytes objects.
 
 - Issue #15101: Make pool finalizer avoid joining current thread.
