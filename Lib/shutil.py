@@ -1000,7 +1000,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
     seen = set()
     for dir in path:
-        dir = os.path.normcase(os.path.abspath(dir))
+        dir = os.path.normcase(dir)
         if not dir in seen:
             seen.add(dir)
             for thefile in files:

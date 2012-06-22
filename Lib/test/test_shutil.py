@@ -1157,6 +1157,16 @@ class TestWhich(unittest.TestCase):
         rv = shutil.which(self.file, path=self.dir, mode=os.W_OK)
         self.assertIsNone(rv)
 
+    def test_relative(self):
+        old_cwd = os.getcwd()
+        base_dir, tail_dir = os.path.split(self.dir)
+        os.chdir(base_dir)
+        try:
+            rv = shutil.which(self.file, path=tail_dir)
+            self.assertEqual(rv, os.path.join(tail_dir, self.file))
+        finally:
+            os.chdir(old_cwd)
+
     def test_nonexistent_file(self):
         # Return None when no matching executable file is found on the path.
         rv = shutil.which("foo.exe", path=self.dir)
