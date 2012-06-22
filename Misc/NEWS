@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15008: Implement PEP 362 "Signature Objects".
+  Patch by Yury Selivanov.
+
 - Issue: #15138: base64.urlsafe_{en,de}code() are now 3-4x faster.
 
 - Issue #444582: Add shutil.which, for finding programs on the system path.
