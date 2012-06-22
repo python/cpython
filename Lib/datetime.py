@@ -1493,8 +1493,32 @@ class datetime(date):
         return datetime(year, month, day, hour, minute, second,
                           microsecond, tzinfo)
 
-    def astimezone(self, tz):
-        if not isinstance(tz, tzinfo):
+    def astimezone(self, tz=None):
+        if tz is None:
+            if self.tzinfo is None:
+                raise ValueError("astimezone() requires an aware datetime")
+            ts = (self - _EPOCH) // timedelta(seconds=1)
+            localtm = _time.localtime(ts)
+            local = datetime(*localtm[:6])
+            try:
+                # Extract TZ data if available 
+                gmtoff = localtm.tm_gmtoff
+                zone = localtm.tm_zone
+            except AttributeError:
+                # Compute UTC offset and compare with the value implied
+                # by tm_isdst.  If the values match, use the zone name
+                # implied by tm_isdst.
+                delta = local - datetime(*_time.gmtime(ts)[:6])
+                dst = _time.daylight and localtm.tm_isdst > 0
+                gmtoff = _time.altzone if dst else _time.timezone
+                if delta == timedelta(seconds=-gmtoff):
+                    tz = timezone(delta, _time.tzname[dst])
+                else:
+                    tz = timezone(delta)
+            else:
+                tz = timezone(timedelta(seconds=-gmtoff), zone)
+                
+        elif not isinstance(tz, tzinfo):
             raise TypeError("tz argument must be an instance of tzinfo")
 
         mytz = self.tzinfo

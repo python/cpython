@@ -1972,7 +1972,7 @@ class TestDateTime(TestDate):
         # simply can't be applied to a naive object.
         dt = self.theclass.now()
         f = FixedOffset(44, "")
-        self.assertRaises(TypeError, dt.astimezone) # not enough args
+        self.assertRaises(ValueError, dt.astimezone) # naive
         self.assertRaises(TypeError, dt.astimezone, f, f) # too many args
         self.assertRaises(TypeError, dt.astimezone, dt) # arg wrong type
         self.assertRaises(ValueError, dt.astimezone, f) # naive
@@ -3253,8 +3253,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertTrue(dt.tzinfo is f44m)
         # Replacing with degenerate tzinfo raises an exception.
         self.assertRaises(ValueError, dt.astimezone, fnone)
-        # Ditto with None tz.
-        self.assertRaises(TypeError, dt.astimezone, None)
         # Replacing with same tzinfo makes no change.
         x = dt.astimezone(dt.tzinfo)
         self.assertTrue(x.tzinfo is f44m)
@@ -3273,6 +3271,23 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(got.timetz(), expected.timetz())
         self.assertTrue(got.tzinfo is expected.tzinfo)
         self.assertEqual(got, expected)
+
+    @support.run_with_tz('UTC')
+    def test_astimezone_default_utc(self):
+        dt = self.theclass.now(timezone.utc)
+        self.assertEqual(dt.astimezone(None), dt)
+        self.assertEqual(dt.astimezone(), dt)
+
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_astimezone_default_eastern(self):
+        dt = self.theclass(2012, 11, 4, 6, 30, tzinfo=timezone.utc)
+        local = dt.astimezone()
+        self.assertEqual(dt, local)
+        self.assertEqual(local.strftime("%z %Z"), "+0500 EST") 
+        dt = self.theclass(2012, 11, 4, 5, 30, tzinfo=timezone.utc)
+        local = dt.astimezone()
+        self.assertEqual(dt, local)
+        self.assertEqual(local.strftime("%z %Z"), "+0400 EDT") 
 
     def test_aware_subtract(self):
         cls = self.theclass
