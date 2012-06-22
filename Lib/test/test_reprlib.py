@@ -249,7 +249,7 @@ class LongReprTest(unittest.TestCase):
             self.skipTest("test paths too long (%d characters) for Windows' 260 character limit"
                           % cached_path_len)
         elif os.name == 'nt' and verbose:
-            print("len(cached_path_len) =", len(cached_path_len))
+            print("cached_path_len =", cached_path_len)
 
     def test_module(self):
         self._check_path_limitations(self.pkgname)
