@@ -36,7 +36,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
-           "ignore_patterns", "chown"]
+           "ignore_patterns", "chown", "which"]
            # disk_usage is added later, if available on the platform
 
 class Error(EnvironmentError):
@@ -961,3 +961,51 @@ def get_terminal_size(fallback=(80, 24)):
             lines = size.lines
 
     return os.terminal_size((columns, lines))
+
+def which(cmd, mode=os.F_OK | os.X_OK, path=None):
+    """Given a file, mode, and a path string, return the path whichs conform
+    to the given mode on the path."""
+    # Check that a given file can be accessed with the correct mode.
+    # Additionally check that `file` is not a directory, as on Windows
+    # directories pass the os.access check.
+    def _access_check(fn, mode):
+        if (os.path.exists(fn) and os.access(fn, mode)
+            and not os.path.isdir(fn)):
+            return True
+        return False
+
+    # Short circuit. If we're given a full path which matches the mode
+    # and it exists, we're done here.
+    if _access_check(cmd, mode):
+        return cmd
+
+    path = (path or os.environ.get("PATH", os.defpath)).split(os.pathsep)
+
+    if sys.platform == "win32":
+        # The current directory takes precedence on Windows.
+        if not os.curdir in path:
+            path.insert(0, os.curdir)
+
+        # PATHEXT is necessary to check on Windows.
+        pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        # See if the given file matches any of the expected path extensions.
+        # This will allow us to short circuit when given "python.exe".
+        matches = [cmd for ext in pathext if cmd.lower().endswith(ext.lower())]
+        # If it does match, only test that one, otherwise we have to try others.
+        files = [cmd + ext.lower() for ext in pathext] if not matches else [cmd]
+    else:
+        # On other platforms you don't have things like PATHEXT to tell you
+        # what file suffixes are executable, so just pass on cmd as-is.
+        files = [cmd]
+
+    seen = set()
+    for dir in path:
+        dir = os.path.normcase(os.path.abspath(dir))
+        if not dir in seen:
+            seen.add(dir)
+            for thefile in files:
+                name = os.path.join(dir, thefile)
+                if _access_check(name, mode):
+                    return name
+    return None
+
