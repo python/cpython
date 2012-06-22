@@ -545,7 +545,7 @@ The module defines the following functions and data items:
    +-------+-------------------+---------------------------------+
    | N/A   | :attr:`tm_zone`   | abbreviation of timezone name   |
    +-------+-------------------+---------------------------------+
-   | N/A   | :attr:`tm_gmtoff` | offset from UTC in seconds      |
+   | N/A   | :attr:`tm_gmtoff` | offset east of UTC in seconds   |
    +-------+-------------------+---------------------------------+
 
    Note that unlike the C structure, the month value is a range of [1, 12], not

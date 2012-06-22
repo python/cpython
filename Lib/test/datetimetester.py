@@ -3278,16 +3278,18 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(dt.astimezone(None), dt)
         self.assertEqual(dt.astimezone(), dt)
 
+    # Note that offset in TZ variable has the opposite sign to that
+    # produced by %z directive.
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_astimezone_default_eastern(self):
         dt = self.theclass(2012, 11, 4, 6, 30, tzinfo=timezone.utc)
         local = dt.astimezone()
         self.assertEqual(dt, local)
-        self.assertEqual(local.strftime("%z %Z"), "+0500 EST")
+        self.assertEqual(local.strftime("%z %Z"), "-0500 EST")
         dt = self.theclass(2012, 11, 4, 5, 30, tzinfo=timezone.utc)
         local = dt.astimezone()
         self.assertEqual(dt, local)
-        self.assertEqual(local.strftime("%z %Z"), "+0400 EDT")
+        self.assertEqual(local.strftime("%z %Z"), "-0400 EDT")
 
     def test_aware_subtract(self):
         cls = self.theclass
