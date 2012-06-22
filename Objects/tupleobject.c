@@ -45,6 +45,22 @@ show_track(void)
 }
 #endif
 
+/* Print summary info about the state of the optimized allocator */
+void
+_PyTuple_DebugMallocStats(FILE *out)
+{
+#if PyTuple_MAXSAVESIZE > 0
+    int i;
+    char buf[128];
+    for (i = 1; i < PyTuple_MAXSAVESIZE; i++) {
+        PyOS_snprintf(buf, sizeof(buf),
+                      "free %d-sized PyTupleObject", i);
+        _PyDebugAllocatorStats(out,
+                               buf,
+                               numfree[i], _PyObject_VAR_SIZE(&PyTuple_Type, i));
+    }
+#endif
+}
 
 PyObject *
 PyTuple_New(register Py_ssize_t size)

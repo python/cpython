@@ -338,6 +338,15 @@ PyCFunction_Fini(void)
     (void)PyCFunction_ClearFreeList();
 }
 
+/* Print summary info about the state of the optimized allocator */
+void
+_PyCFunction_DebugMallocStats(FILE *out)
+{
+    _PyDebugAllocatorStats(out,
+                           "free PyCFunction",
+                           numfree, sizeof(PyCFunction));
+}
+
 /* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),
    but it's part of the API so we need to keep a function around that
    existing C extensions can call.
