@@ -101,13 +101,15 @@ PyAPI_FUNC(void) PyObject_Free(void *);
 
 /* Macros */
 #ifdef WITH_PYMALLOC
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyObject_DebugMallocStats(FILE *out);
+#endif /* #ifndef Py_LIMITED_API */
 #ifdef PYMALLOC_DEBUG   /* WITH_PYMALLOC && PYMALLOC_DEBUG */
 PyAPI_FUNC(void *) _PyObject_DebugMalloc(size_t nbytes);
 PyAPI_FUNC(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
 PyAPI_FUNC(void) _PyObject_DebugFree(void *p);
 PyAPI_FUNC(void) _PyObject_DebugDumpAddress(const void *p);
 PyAPI_FUNC(void) _PyObject_DebugCheckAddress(const void *p);
-PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 PyAPI_FUNC(void *) _PyObject_DebugMallocApi(char api, size_t nbytes);
 PyAPI_FUNC(void *) _PyObject_DebugReallocApi(char api, void *p, size_t nbytes);
 PyAPI_FUNC(void) _PyObject_DebugFreeApi(char api, void *p);

@@ -977,6 +977,14 @@ PyAPI_DATA(PyObject *) _PyTrash_delete_later;
     else \
         _PyTrash_deposit_object((PyObject*)op);
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void)
+_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
+                       size_t sizeof_block);
+PyAPI_FUNC(void)
+_PyObject_DebugTypeStats(FILE *out);
+#endif /* ifndef Py_LIMITED_API */
+
 #ifdef __cplusplus
 }
 #endif

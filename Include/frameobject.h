@@ -79,6 +79,8 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
 
+PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
+
 /* Return the line of code the frame is currently executing. */
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 

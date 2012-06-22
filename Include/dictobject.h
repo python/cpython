@@ -111,6 +111,7 @@ PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
 #ifndef Py_LIMITED_API
 int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
 #endif
 
 #ifdef __cplusplus
