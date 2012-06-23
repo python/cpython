@@ -1750,14 +1750,10 @@ Files and Directories
       The *dir_fd* argument.
 
 
-.. function:: remove(path, *, dir_fd=None, rmdir=False)
+.. function:: remove(path, *, dir_fd=None)
 
-   Remove (delete) the file *path*.  This function is identical to
-   :func:`os.unlink`.
-
-   Specify ``rmdir=True`` if *path* is a directory.  Failing to do so
-   will raise an exception; likewise, specifying ``rmdir=True`` when
-   *path* is not a directory will also raise an exception.
+   Remove (delete) the file *path*.  If *path* is a directory, :exc:`OSError`
+   is raised.  Use :func:`rmdir` to remove directories.
 
    If *dir_fd* is not ``None``, it should be a file descriptor referring to a
    directory, and *path* should be relative; path will then be relative to
@@ -1771,10 +1767,12 @@ Files and Directories
    be raised; on Unix, the directory entry is removed but the storage allocated
    to the file is not made available until the original file is no longer in use.
 
+   This function is identical to :func:`unlink`.
+
    Availability: Unix, Windows.
 
    .. versionadded:: 3.3
-      The *dir_fd* and *rmdir* arguments.
+      The *dir_fd* argument.
 
 
 .. function:: removedirs(path)
@@ -1872,13 +1870,24 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: rmdir(path)
+.. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  Only works when the directory is
    empty, otherwise, :exc:`OSError` is raised.  In order to remove whole
    directory trees, :func:`shutil.rmtree` can be used.
 
+   If *dir_fd* is not ``None``, it should be a file descriptor referring to a
+   directory, and *path* should be relative; path will then be relative to
+   that directory.  (If *path* is absolute, *dir_fd* is ignored.)
+   *dir_fd* may not be supported on your platform;
+   you can check whether or not it is available using
+   :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise
+   a :exc:`NotImplementedError`.
+
    Availability: Unix, Windows.
+
+   .. versionadded:: 3.3
+      The *dir_fd* parameter.
 
 
 .. data:: XATTR_SIZE_MAX
@@ -2235,9 +2244,9 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: unlink(path, *, dir_fd=None, rmdir=False)
+.. function:: unlink(path, *, dir_fd=None)
 
-   Remove (delete) the file *path*.  This is the same function as
+   Remove (delete) the file *path*.  This function is identical to
    :func:`remove`; the :func:`unlink` name is its traditional Unix
    name.  Please see the documentation for :func:`remove` for
    further information.
@@ -2245,7 +2254,7 @@ Files and Directories
    Availability: Unix, Windows.
 
    .. versionadded:: 3.3
-      The *dir_fd* and *rmdir* parameters.
+      The *dir_fd* parameter.
 
 
 .. function:: utime(path, times=None, *, ns=None, dir_fd=None, follow_symlinks=True)
