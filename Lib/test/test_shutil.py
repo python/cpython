@@ -120,6 +120,8 @@ class TestShutil(unittest.TestCase):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
+            self.addCleanup(shutil.rmtree, TESTFN)
+
             self.child_file_path = os.path.join(TESTFN, 'a')
             self.child_dir_path = os.path.join(TESTFN, 'b')
             support.create_empty_file(self.child_file_path)
@@ -133,19 +135,15 @@ class TestShutil(unittest.TestCase):
             os.chmod(self.child_dir_path, new_mode)
             os.chmod(TESTFN, new_mode)
 
+            self.addCleanup(os.chmod, TESTFN, old_dir_mode)
+            self.addCleanup(os.chmod, self.child_file_path, old_child_file_mode)
+            self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
+
             shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
             # Test whether onerror has actually been called.
             self.assertEqual(self.errorState, 3,
                              "Expected call to onerror function did not "
                              "happen.")
-
-            # Make writable again.
-            os.chmod(TESTFN, old_dir_mode)
-            os.chmod(self.child_file_path, old_child_file_mode)
-            os.chmod(self.child_dir_path, old_child_dir_mode)
-
-            # Clean up.
-            shutil.rmtree(TESTFN)
 
     def check_args_to_onerror(self, func, arg, exc):
         # test_rmtree_errors deliberately runs rmtree
