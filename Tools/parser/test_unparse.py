@@ -2,9 +2,10 @@ import unittest
 import test.support
 import io
 import os
+import random
 import tokenize
-import ast
 import unparse
+import ast
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
@@ -256,6 +257,10 @@ class DirectoryTestCase(ASTTestCase):
             for n in os.listdir(test_dir):
                 if n.endswith('.py') and not n.startswith('bad'):
                     names.append(os.path.join(test_dir, n))
+
+        # Test limited subset of files unless the 'cpu' resource is specified.
+        if not test.support.is_resource_enabled("cpu"):
+            names = random.sample(names, 10)
 
         for filename in names:
             if test.support.verbose:
