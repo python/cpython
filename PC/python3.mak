@@ -1,4 +1,4 @@
-$(OutDir)python3.dll:	python3.def $(OutDir)python32stub.lib
+$(OutDir)python3.dll:	python3.def $(OutDir)python33stub.lib
 	cl /LD /Fe$(OutDir)python3.dll python3dll.c python3.def $(OutDir)python33stub.lib
 
 $(OutDir)python33stub.lib:	python33stub.def
