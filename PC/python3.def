@@ -1,3 +1,4 @@
+; When changing this file, run python33gen.py
 LIBRARY	"python3"
 EXPORTS
   PyArg_Parse=python33.PyArg_Parse
@@ -513,6 +514,7 @@ EXPORTS
   PyTuple_Type=python33.PyTuple_Type DATA
   PyType_ClearCache=python33.PyType_ClearCache
   PyType_FromSpec=python33.PyType_FromSpec
+  PyType_FromSpecWithBases=python33.PyType_FromSpecWithBases
   PyType_GenericAlloc=python33.PyType_GenericAlloc
   PyType_GenericNew=python33.PyType_GenericNew
   PyType_GetFlags=python33.PyType_GetFlags

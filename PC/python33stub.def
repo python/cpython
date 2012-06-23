@@ -513,6 +513,7 @@ PyTuple_Size
 PyTuple_Type
 PyType_ClearCache
 PyType_FromSpec
+PyType_FromSpecWithBases
 PyType_GenericAlloc
 PyType_GenericNew
 PyType_GetFlags
