@@ -1027,6 +1027,16 @@ parameter to control parameters of the secure channel.
 (Contributed by Sijin Joseph in :issue:`8808`)
 
 
+inspect
+-------
+
+A new :func:`~inspect.getclosurevars` function has been added. This function
+reports the current binding of all names referenced from the function body and
+where those names were resolved, making it easier to verify correct internal
+state when testing code that relies on stateful closures.
+
+(Contributed by Meador Inge and Nick Coghlan in :issue:`13062`)
+
 io
 --
 

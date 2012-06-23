@@ -497,6 +497,22 @@ Classes and functions
    .. versionadded:: 3.2
 
 
+.. function:: getclosurevars(func)
+
+   Get the mapping of external name references in a Python function or
+   method *func* to their current values. A
+   :term:`named tuple` ``ClosureVars(nonlocals, globals, builtins, unbound)``
+   is returned. *nonlocals* maps referenced names to lexical closure
+   variables, *globals* to the function's module globals and *builtins* to
+   the builtins visible from the function body. *unbound* is the set of names
+   referenced in the function that could not be resolved at all given the
+   current module globals and builtins.
+
+   :exc:`TypeError` is raised if *func* is not a Python function or method.
+
+   .. versionadded:: 3.3
+
+
 .. _inspect-stack:
 
 The interpreter stack
