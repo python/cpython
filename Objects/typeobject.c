@@ -2858,7 +2858,12 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 {
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
-    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        char msg[200];
+        sprintf(msg, "type_traverse() called for non-heap type '%.100s'",
+                type->tp_name);
+        Py_FatalError(msg);
+    }
 
     Py_VISIT(type->tp_dict);
     Py_VISIT(type->tp_cache);
