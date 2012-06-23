@@ -972,7 +972,7 @@ def get_terminal_size(fallback=(80, 24)):
     return os.terminal_size((columns, lines))
 
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
-    """Given a file, mode, and a path string, return the path whichs conform
+    """Given a file, mode, and a path string, return the path which conforms
     to the given mode on the path."""
     # Check that a given file can be accessed with the correct mode.
     # Additionally check that `file` is not a directory, as on Windows
