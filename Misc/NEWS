@@ -40,6 +40,8 @@ Core and Builtins
 Library
 -------
 
+- Issues #11024: Fixes and additional tests for Time2Internaldate.
+
 - Issue #14626: Large refactoring of functions / parameters in the os module.
   Many functions now support "dir_fd" and "follow_symlinks" parameters;
   some also support accepting an open file descriptor in place of of a path
