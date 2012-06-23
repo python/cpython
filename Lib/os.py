@@ -157,6 +157,7 @@ if _exists("_have_functions"):
     _add("HAVE_RENAMEAT",   "rename")
     _add("HAVE_SYMLINKAT",  "symlink")
     _add("HAVE_UNLINKAT",   "unlink")
+    _add("HAVE_UNLINKAT",   "rmdir")
     _add("HAVE_UTIMENSAT",  "utime")
     supports_dir_fd = _set
 
@@ -213,10 +214,6 @@ if _exists("_have_functions"):
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
     supports_follow_symlinks = _set
-
-    _set = set()
-    _add("HAVE_UNLINKAT",   "unlink")
-    supports_remove_directory = _set
 
     del _set
     del _have_functions

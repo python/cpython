@@ -4084,17 +4084,62 @@ posix_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(posix_rmdir__doc__,
-"rmdir(path)\n\n\
-Remove a directory.");
+"rmdir(path, *, dir_fd=None)\n\n\
+Remove a directory.\n\
+\n\
+If dir_fd is not None, it should be a file descriptor open to a directory,\n\
+  and path should be relative; path will then be relative to that directory.\n\
+dir_fd may not be implemented on your platform.\n\
+  If it is unavailable, using it will raise a NotImplementedError.");
 
 static PyObject *
-posix_rmdir(PyObject *self, PyObject *args)
+posix_rmdir(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-#ifdef MS_WINDOWS
-    return win32_1str(args, "rmdir", "y:rmdir", RemoveDirectoryA, "U:rmdir", RemoveDirectoryW);
+    path_t path;
+    int dir_fd = DEFAULT_DIR_FD;
+    static char *keywords[] = {"path", "dir_fd", NULL};
+    int result;
+    PyObject *return_value = NULL;
+
+    memset(&path, 0, sizeof(path));
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:rmdir", keywords,
+            path_converter, &path,
+#ifdef HAVE_UNLINKAT
+            dir_fd_converter, &dir_fd
 #else
-    return posix_1str(args, "O&:rmdir", rmdir);
+            dir_fd_unavailable, &dir_fd
 #endif
+            ))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+#ifdef MS_WINDOWS
+    if (path.wide)
+        result = RemoveDirectoryW(path.wide);
+    else
+        result = RemoveDirectoryA(path.narrow);
+    result = !result; /* Windows, success=1, UNIX, success=0 */
+#else
+#ifdef HAVE_UNLINKAT
+    if (dir_fd != DEFAULT_DIR_FD)
+        result = unlinkat(dir_fd, path.narrow, AT_REMOVEDIR);
+    else
+#endif
+        result = rmdir(path.narrow);
+#endif
+    Py_END_ALLOW_THREADS
+
+    if (result) {
+        return_value = path_error("rmdir", &path);
+        goto exit;
+    }
+
+    return_value = Py_None;
+    Py_INCREF(Py_None);
+
+exit:
+    path_cleanup(&path);
+    return return_value;
 }
 
 
@@ -4186,68 +4231,54 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_unlink__doc__,
-"unlink(path, *, dir_fd=None, rmdir=False)\n\n\
+"unlink(path, *, dir_fd=None)\n\n\
 Remove a file (same as remove()).\n\
 \n\
 If dir_fd is not None, it should be a file descriptor open to a directory,\n\
   and path should be relative; path will then be relative to that directory.\n\
 dir_fd may not be implemented on your platform.\n\
-  If it is unavailable, using it will raise a NotImplementedError.\n\
-If rmdir is True, unlink will behave like os.rmdir().");
+  If it is unavailable, using it will raise a NotImplementedError.");
 
 PyDoc_STRVAR(posix_remove__doc__,
-"remove(path, *, dir_fd=None, rmdir=False)\n\n\
+"remove(path, *, dir_fd=None)\n\n\
 Remove a file (same as unlink()).\n\
 \n\
 If dir_fd is not None, it should be a file descriptor open to a directory,\n\
   and path should be relative; path will then be relative to that directory.\n\
 dir_fd may not be implemented on your platform.\n\
-  If it is unavailable, using it will raise a NotImplementedError.\n\
-If rmdir is True, remove will behave like os.rmdir().");
+  If it is unavailable, using it will raise a NotImplementedError.");
 
 static PyObject *
 posix_unlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     int dir_fd = DEFAULT_DIR_FD;
-    int remove_dir = 0;
-    static char *keywords[] = {"path", "dir_fd", "rmdir", NULL};
+    static char *keywords[] = {"path", "dir_fd", NULL};
     int result;
     PyObject *return_value = NULL;
 
     memset(&path, 0, sizeof(path));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&p:unlink", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:unlink", keywords,
             path_converter, &path,
 #ifdef HAVE_UNLINKAT
-            dir_fd_converter, &dir_fd,
+            dir_fd_converter, &dir_fd
 #else
-            dir_fd_unavailable, &dir_fd,
+            dir_fd_unavailable, &dir_fd
 #endif
-            &remove_dir))
+            ))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-    if (remove_dir) {
-        if (path.wide)
-            result = RemoveDirectoryW(path.wide);
-        else
-            result = RemoveDirectoryA(path.narrow);
-    }
-    else {
-        if (path.wide)
-            result = Py_DeleteFileW(path.wide);
-        else
-            result = DeleteFileA(path.narrow);
-    }
+    if (path.wide)
+        result = Py_DeleteFileW(path.wide);
+    else
+        result = DeleteFileA(path.narrow);
     result = !result; /* Windows, success=1, UNIX, success=0 */
 #else
-    if (remove_dir && (dir_fd == DEFAULT_DIR_FD))
-        result = rmdir(path.narrow);
-    else
 #ifdef HAVE_UNLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
-        result = unlinkat(dir_fd, path.narrow, remove_dir ? AT_REMOVEDIR : 0);
+        result = unlinkat(dir_fd, path.narrow, 0);
     else
 #endif /* HAVE_UNLINKAT */
         result = unlink(path.narrow);
@@ -10806,7 +10837,9 @@ static PyMethodDef posix_methods[] = {
     {"replace",         (PyCFunction)posix_replace,
                         METH_VARARGS | METH_KEYWORDS,
                         posix_replace__doc__},
-    {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
+    {"rmdir",           (PyCFunction)posix_rmdir,
+                        METH_VARARGS | METH_KEYWORDS,
+                        posix_rmdir__doc__},
     {"stat",            (PyCFunction)posix_stat,
                         METH_VARARGS | METH_KEYWORDS,
                         posix_stat__doc__},

@@ -785,7 +785,10 @@ class FwalkTests(WalkTests):
                 os.unlink(name, dir_fd=rootfd)
             for name in dirs:
                 st = os.stat(name, dir_fd=rootfd, follow_symlinks=False)
-                os.unlink(name, dir_fd=rootfd, rmdir=stat.S_ISDIR(st.st_mode))
+                if stat.S_ISDIR(st.st_mode):
+                    os.rmdir(name, dir_fd=rootfd)
+                else:
+                    os.unlink(name, dir_fd=rootfd)
         os.rmdir(support.TESTFN)
 
 
