@@ -676,3 +676,27 @@ generator to be determined easily.
     * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
+
+The current internal state of the generator can also be queried. This is
+mostly useful for testing purposes, to ensure that internal state is being
+updated as expected:
+
+.. function:: getgeneratorlocals(generator)
+
+   Get the mapping of live local variables in *generator* to their current
+   values.  A dictionary is returned that maps from variable names to values.
+   This is the equivalent of calling :func:`locals` in the body of the
+   generator, and all the same caveats apply.
+
+   If *generator* is a :term:`generator` with no currently associated frame,
+   then an empty dictionary is returned.  :exc:`TypeError` is raised if
+   *generator* is not a Python generator object.
+
+   .. impl-detail::
+
+      This function relies on the generator exposing a Python stack frame
+      for introspection, which isn't guaranteed to be the case in all
+      implementations of Python. In such cases, this function will always
+      return an empty dictionary.
+
+   .. versionadded:: 3.3

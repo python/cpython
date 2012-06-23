@@ -1037,6 +1037,13 @@ state when testing code that relies on stateful closures.
 
 (Contributed by Meador Inge and Nick Coghlan in :issue:`13062`)
 
+A new :func:`~inspect.getgeneratorlocals` function has been added. This
+function reports the current binding of local variables in the generator's
+stack frame, making it easier to verify correct internal state when testing
+generators.
+
+(Contributed by Meador Inge in :issue:`15153`)
+
 io
 --
 
