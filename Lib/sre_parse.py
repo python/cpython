@@ -177,6 +177,7 @@ class SubPattern:
 
 class Tokenizer:
     def __init__(self, string):
+        self.istext = isinstance(string, str)
         self.string = string
         self.index = 0
         self.__next()
@@ -187,14 +188,14 @@ class Tokenizer:
         char = self.string[self.index:self.index+1]
         # Special case for the str8, since indexing returns a integer
         # XXX This is only needed for test_bug_926075 in test_re.py
-        if char and isinstance(char, bytes):
+        if char and not self.istext:
             char = chr(char[0])
         if char == "\\":
             try:
                 c = self.string[self.index + 1]
             except IndexError:
                 raise error("bogus escape (end of line)")
-            if isinstance(self.string, bytes):
+            if not self.istext:
                 c = chr(c)
             char = char + c
         self.index = self.index + len(char)
@@ -209,6 +210,15 @@ class Tokenizer:
         this = self.next
         self.__next()
         return this
+    def getwhile(self, n, charset):
+        result = ''
+        for _ in range(n):
+            c = self.next
+            if c not in charset:
+                break
+            result += c
+            self.__next()
+        return result
     def tell(self):
         return self.index, self.next
     def seek(self, index):
@@ -241,20 +251,30 @@ def _class_escape(source, escape):
         c = escape[1:2]
         if c == "x":
             # hexadecimal escape (exactly two digits)
-            while source.next in HEXDIGITS and len(escape) < 4:
-                escape = escape + source.get()
-            escape = escape[2:]
-            if len(escape) != 2:
-                raise error("bogus escape: %s" % repr("\\" + escape))
-            return LITERAL, int(escape, 16) & 0xff
+            escape += source.getwhile(2, HEXDIGITS)
+            if len(escape) != 4:
+                raise ValueError
+            return LITERAL, int(escape[2:], 16) & 0xff
+        elif c == "u" and source.istext:
+            # unicode escape (exactly four digits)
+            escape += source.getwhile(4, HEXDIGITS)
+            if len(escape) != 6:
+                raise ValueError
+            return LITERAL, int(escape[2:], 16)
+        elif c == "U" and source.istext:
+            # unicode escape (exactly eight digits)
+            escape += source.getwhile(8, HEXDIGITS)
+            if len(escape) != 10:
+                raise ValueError
+            c = int(escape[2:], 16)
+            chr(c) # raise ValueError for invalid code
+            return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
-            while source.next in OCTDIGITS and len(escape) < 4:
-                escape = escape + source.get()
-            escape = escape[1:]
-            return LITERAL, int(escape, 8) & 0xff
+            escape += source.getwhile(2, OCTDIGITS)
+            return LITERAL, int(escape[1:], 8) & 0xff
         elif c in DIGITS:
-            raise error("bogus escape: %s" % repr(escape))
+            raise ValueError
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -273,15 +293,27 @@ def _escape(source, escape, state):
         c = escape[1:2]
         if c == "x":
             # hexadecimal escape
-            while source.next in HEXDIGITS and len(escape) < 4:
-                escape = escape + source.get()
+            escape += source.getwhile(2, HEXDIGITS)
             if len(escape) != 4:
                 raise ValueError
             return LITERAL, int(escape[2:], 16) & 0xff
+        elif c == "u" and source.istext:
+            # unicode escape (exactly four digits)
+            escape += source.getwhile(4, HEXDIGITS)
+            if len(escape) != 6:
+                raise ValueError
+            return LITERAL, int(escape[2:], 16)
+        elif c == "U" and source.istext:
+            # unicode escape (exactly eight digits)
+            escape += source.getwhile(8, HEXDIGITS)
+            if len(escape) != 10:
+                raise ValueError
+            c = int(escape[2:], 16)
+            chr(c) # raise ValueError for invalid code
+            return LITERAL, c
         elif c == "0":
             # octal escape
-            while source.next in OCTDIGITS and len(escape) < 4:
-                escape = escape + source.get()
+            escape += source.getwhile(2, OCTDIGITS)
             return LITERAL, int(escape[1:], 8) & 0xff
         elif c in DIGITS:
             # octal escape *or* decimal group reference (sigh)

@@ -414,16 +414,23 @@ Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
 
    \a      \b      \f      \n
-   \r      \t      \v      \x
-   \\
+   \r      \t      \u      \U
+   \v      \x      \\
 
 (Note that ``\b`` is used to represent word boundaries, and means "backspace"
 only inside character classes.)
+
+``'\u'`` and ``'\U'`` escape sequences are only recognized in Unicode
+patterns.  In bytes patterns they are not treated specially.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
 a group reference.  As for string literals, octal escapes are always at most
 three digits in length.
+
+.. versionchanged:: 3.3
+   The ``'\u'`` and ``'\U'`` escape sequences have been added.
+
 
 
 .. _contents-of-module-re:
