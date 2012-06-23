@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4489: Add a shutil.rmtree that isn't suspectible to symlink attacks.
+  It is used automatically on platforms supporting the necessary os.openat()
+  and os.unlinkat() functions. Main code by Martin von Löwis.
+
 - Issue #15114: the strict mode of HTMLParser and the HTMLParseError exception
   are deprecated now that the parser is able to parse invalid markup.
 
