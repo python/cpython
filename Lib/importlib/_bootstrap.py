@@ -1169,6 +1169,8 @@ class FileFinder:
 
         return path_hook_for_FileFinder
 
+    def __repr__(self):
+        return "FileFinder(%r)" % (self.path,)
 
 
 # Import itself ###############################################################
