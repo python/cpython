@@ -405,6 +405,7 @@ def add_ui(db):
               ("ErrorDialog", "ErrorDlg"),
               ("Progress1", "Install"),   # modified in maintenance type dlg
               ("Progress2", "installs"),
+              ("ModifyPath", "0"),
               ("MaintenanceForm_Action", "Repair")])
 
     # Fonts, see "TextStyle Table"
@@ -634,7 +635,11 @@ def add_ui(db):
     c.event("SpawnDialog", "ExistingDirectoryDlg", 'TargetExists=1 and REMOVEOLDVERSION="" and REMOVEOLDSNAPSHOT=""', 2)
     c.event("SetTargetPath", "TARGETDIR", 'TargetExists=0 or REMOVEOLDVERSION<>"" or REMOVEOLDSNAPSHOT<>""', 3)
     c.event("SpawnWaitDialog", "WaitForCostingDlg", "CostingComplete=1", 4)
-    c.event("NewDialog", "SelectFeaturesDlg", 'TargetExists=0 or REMOVEOLDVERSION<>"" or REMOVEOLDSNAPSHOT<>""', 5)
+    #c.event("NewDialog", "PathInfoDlg", "1=1", 5) # Show this once no matter what.
+    c.event("NewDialog", "PathInfoDlg", 'TargetExists=0 or REMOVEOLDVERSION<>"" or REMOVEOLDSNAPSHOT<>""', 5)
+
+    # SelectFeaturesDlg is no longer directly shown from here. PathInfoDlg
+    # currently takes care of showing it.
 
     c = seldlg.cancel("Cancel", "DirectoryCombo")
     c.event("SpawnDialog", "CancelDlg")
@@ -649,6 +654,38 @@ def add_ui(db):
     c = seldlg.pushbutton("NewDir", 324, 70, 30, 18, 3, "New", None)
     c.event("DirectoryListNew", "0")
 
+
+    #####################################################################
+    # PathInfoDlg
+    path_dialog = PyDialog(db, "PathInfoDlg", x, y, w, h, modal, title,
+                           "Yes", "No", "Yes")
+    path_dialog.title("New for Python 3.3")
+    path_dialog.text("News", 135, 65, 240, 130, 0x30003,
+        "New in 3.3 is the ability to add [TARGETDIR] to\n"
+        "your system's Path variable. This option allows you\n"
+        "to type `python` at a command prompt without\n"
+        "requiring anything else on your part.\n\n"
+        "However, users of multiple versions need to be\n"
+        "aware that this will overrule the behavior of any\n"
+        "existing Python installations that you have placed\n"
+        "on the Path.\n\n"
+        "If you choose to enable this feature, it will be\n"
+        "applied after you logout."
+        )
+
+    path_dialog.text("Question", 135, 235, 240, 40, 0x30003,
+            "{\\VerdanaBold10}Would you like to add Python to the Path?")
+
+    c = path_dialog.back("< Back", "No")
+    c.event("NewDialog", "SelectDirectoryDlg")
+
+    c = path_dialog.next("Yes", "Back", name="Yes")
+    c.event("[ModifyPath]", "1", order=1)
+    c.event("NewDialog", "SelectFeaturesDlg", order=2)
+
+    c = path_dialog.cancel("No", "Yes", name="No")
+    c.event("NewDialog", "SelectFeaturesDlg", order=1)
+
     #####################################################################
     # SelectFeaturesDlg
     features = PyDialog(db, "SelectFeaturesDlg", x, y, w, h, modal|track_disk_space,
@@ -660,7 +697,7 @@ def add_ui(db):
                   "Click on the icons in the tree below to change the way features will be installed.")
 
     c=features.back("< Back", "Next")
-    c.event("NewDialog", "SelectDirectoryDlg")
+    c.event("NewDialog", "PathInfoDlg")
 
     c=features.next("Next >", "Cancel")
     c.mapping("SelectionNoItems", "Enabled")
@@ -853,8 +890,6 @@ def add_features(db):
                          level=0)
     private_crt = Feature(db, "PrivateCRT", "MSVCRT", "C Run-Time (private)", 0,
                           level=0)
-    add_data(db, "Condition", [("SharedCRT", 1, sys32cond),
-                               ("PrivateCRT", 1, "not "+sys32cond)])
     # We don't support advertisement of extensions
     ext_feature = Feature(db, "Extensions", "Register Extensions",
                           "Make this Python installation the default Python installation", 3,
@@ -879,6 +914,9 @@ def add_features(db):
                         "prompt without needing the full path.", 13,
                         parent = default_feature, attributes=2|8,
                         level=2)
+    add_data(db, "Condition", [("SharedCRT", 1, sys32cond),
+                               ("PrivateCRT", 1, "not "+sys32cond),
+                               ("PrependPath", 1, "ModifyPath='0'")])
 
 def extract_msvcr100():
     # Find the redistributable files
