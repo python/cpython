@@ -158,14 +158,13 @@ class TestShutil(unittest.TestCase):
         # be either.
         if support.verbose:
             print("onerror [%d]: %r" % (self.errorState, (func, arg, exc[1])))
-        if 0 <= self.errorState < 2:
+        if self.errorState < 2:
             if func is os.unlink:
-                self.assertIn(arg, [self.child_file_path, self.child_dir_path])
+                self.assertEqual(arg, self.child_file_path)
+            elif func is os.rmdir:
+                self.assertEqual(arg, self.child_dir_path)
             else:
-                if self.errorState == 1:
-                    self.assertEqual(func, os.rmdir)
-                else:
-                    self.assertIs(func, os.listdir, "func must be os.listdir")
+                self.assertIs(func, os.listdir)
                 self.assertIn(arg, [TESTFN, self.child_dir_path])
             self.assertTrue(issubclass(exc[0], OSError))
             self.errorState += 1
