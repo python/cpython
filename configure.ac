@@ -104,14 +104,20 @@ CONFIG_ARGS="$ac_configure_args"
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
-	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build against Mac OS X 10.4u SDK (ppc/i386)]),
+	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build fat binary against Mac OS X SDK]),
 [
 	case $enableval in
 	yes)
-		enableval=/Developer/SDKs/MacOSX10.4u.sdk
-		if test ! -d "${enableval}"
+		# Locate the best usable SDK, see Mac/README.txt for more
+		# information
+		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
+		if test -z "${enableval}"
 		then
-			enableval=/
+			enableval=/Developer/SDKs/MacOSX10.4u.sdk
+			if test ! -d "${enableval}"
+			then
+				enableval=/
+			fi
 		fi
 		;;
 	esac
@@ -143,7 +149,20 @@ AC_SUBST(UNIVERSALSDK)
 
 AC_SUBST(ARCH_RUN_32BIT)
 
+# For backward compatibility reasons we prefer to select '32-bit' if available,
+# otherwise use 'intel'
 UNIVERSAL_ARCHS="32-bit"
+if test "`uname -s`" = "Darwin"
+then
+	if test -n "${UNIVERSALSDK}"
+	then
+		if test -z "`/usr/bin/file "${UNIVERSALSDK}/usr/lib/libSystem.dylib" | grep ppc`"
+		then
+			UNIVERSAL_ARCHS="intel"
+		fi
+	fi
+fi
+
 AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
@@ -153,7 +172,7 @@ AC_ARG_WITH(universal-archs,
 	UNIVERSAL_ARCHS="$withval"
 ],
 [
- 	AC_MSG_RESULT(32-bit)
+ 	AC_MSG_RESULT(${UNIVERSAL_ARCHS})
 ])
 
 
@@ -501,6 +520,63 @@ fi
 if test -z "$CFLAGS"; then
         CFLAGS=
 fi
+
+if test "$ac_sys_system" = "Darwin"
+then
+	# Compiler selection on MacOSX is more complicated than
+	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# information
+	if test -z "${CC}"
+	then
+		found_gcc=
+		found_clang=
+		as_save_IFS=$IFS; IFS=:
+		for as_dir in $PATH
+		do
+			IFS=$as_save_IFS
+			if test -x $as_dir/gcc; then
+				if test -z "${found_gcc}"; then
+					found_gcc=$as_dir/gcc
+				fi
+			fi
+			if test -x $as_dir/clang; then
+				if test -z "${found_clang}"; then
+					found_clang=$as_dir/clang
+				fi
+			fi
+		done
+		IFS=$as_save_IFS
+
+		if test -n "$found_gcc" -a -n "$found_clang"
+		then
+			if test -n "`"$found_gcc" --version | grep llvm-gcc`"
+			then
+				AC_MSG_NOTICE([Detected llvm-gcc, falling back to clang])
+				CC="$found_clang"
+				CXX="$found_clang++"
+			fi
+
+
+		elif test -z "$found_gcc" -a -n "$found_clang"
+		then
+			AC_MSG_NOTICE([No GCC found, use CLANG])
+			CC="$found_clang"
+			CXX="$found_clang++"
+
+		elif test -z "$found_gcc" -a -z "$found_clang"
+		then
+			found_clang=`/usr/bin/xcrun -find clang 2>/dev/null`
+			if test -n "${found_clang}"
+			then
+				AC_MSG_NOTICE([Using clang from Xcode.app])
+				CC="${found_clang}"
+				CXX="`/usr/bin/xcrun -find clang++`"
+
+			# else: use default behaviour
+			fi
+		fi
+	fi
+fi
 AC_PROG_CC
 
 AC_SUBST(CXX)
@@ -534,6 +610,7 @@ then
         case "$CC" in
         gcc)    AC_PATH_PROG(CXX, [g++], [g++], [notfound]) ;;
         cc)     AC_PATH_PROG(CXX, [c++], [c++], [notfound]) ;;
+        clang|*/clang)     AC_PATH_PROG(CXX, [clang++], [clang++], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then

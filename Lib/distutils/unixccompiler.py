@@ -83,9 +83,8 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
         except ValueError:
             pass
 
-    # Check if the SDK that is used during compilation actually exists,
-    # the universal build requires the usage of a universal SDK and not all
-    # users have that installed by default.
+    # Check if the SDK that is used during compilation actually exists.
+    # If not, revert to using the installed headers and hope for the best.
     sysroot = None
     if '-isysroot' in cc_args:
         idx = cc_args.index('-isysroot')
@@ -97,7 +96,21 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
     if sysroot and not os.path.isdir(sysroot):
         log.warn("Compiling with an SDK that doesn't seem to exist: %s",
                 sysroot)
-        log.warn("Please check your Xcode installation")
+        log.warn("Attempting to compile without the SDK")
+        while True:
+            try:
+                index = cc_args.index('-isysroot')
+                # Strip this argument and the next one:
+                del cc_args[index:index+2]
+            except ValueError:
+                break
+        while True:
+            try:
+                index = compiler_so.index('-isysroot')
+                # Strip this argument and the next one:
+                del compiler_so[index:index+2]
+            except ValueError:
+                break
 
     return compiler_so
 

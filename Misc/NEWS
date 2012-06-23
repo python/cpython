@@ -234,6 +234,21 @@ Tests
 Build
 -----
 
+- Issue #13590: Improve support for OS X Xcode 4:
+    * Try to avoid building Python or extension modules with problematic
+      llvm-gcc compiler.
+    * Since Xcode 4 removes ppc support, extension module builds now
+      check for ppc compiler support and automatically remove ppc and
+      ppc64 archs when not available.
+    * Since Xcode 4 no longer install SDKs in default locations,
+      extension module builds now revert to using installed headers
+      and libs if the SDK used to build the interpreter is not
+      available.
+    * Update ./configure to use better defaults for universal builds;
+      in particular, --enable-universalsdk=yes uses the Xcode default
+      SDK and --with-universal-archs now defaults to "intel" if ppc
+      not available.
+
 - Issue #14225: Fix Unicode support for curses (#12567) on OS X
 
 - Issue #14928: Fix importlib bootstrap issues by using a custom executable
