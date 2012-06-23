@@ -691,3 +691,9 @@ EXPORTS
   _Py_SwappedOp=python33._Py_SwappedOp DATA
   _Py_TrueStruct=python33._Py_TrueStruct DATA
   _Py_VaBuildValue_SizeT=python33._Py_VaBuildValue_SizeT
+  _PyArg_Parse_SizeT=python33._PyArg_Parse_SizeT
+  _PyArg_ParseTuple_SizeT=python33._PyArg_ParseTuple_SizeT
+  _PyArg_ParseTupleAndKeywords_SizeT=python33._PyArg_ParseTupleAndKeywords_SizeT
+  _PyArg_VaParse_SizeT=python33._PyArg_VaParse_SizeT
+  _PyArg_VaParseTupleAndKeywords_SizeT=python33._PyArg_VaParseTupleAndKeywords_SizeT
+  _Py_BuildValue_SizeT=python33._Py_BuildValue_SizeT
