@@ -16,13 +16,14 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(strict=True)
+.. class:: HTMLParser(strict=False)
 
-   Create a parser instance.  If *strict* is ``True`` (the default), invalid
-   HTML results in :exc:`~html.parser.HTMLParseError` exceptions [#]_.  If
-   *strict* is ``False``, the parser uses heuristics to make a best guess at
-   the intention of any invalid HTML it encounters, similar to the way most
-   browsers do.  Using ``strict=False`` is advised.
+   Create a parser instance.  If *strict* is ``False`` (the default), the parser
+   will accept and parse invalid markup.  If *strict* is ``True`` the parser
+   will raise an :exc:`~html.parser.HTMLParseError` exception instead [#]_ when
+   it's not able to parse the markup.
+   The use of ``strict=True`` is discouraged and the *strict* argument is
+   deprecated.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -33,6 +34,10 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    handler for elements which are closed implicitly by closing an outer element.
 
    .. versionchanged:: 3.2 *strict* keyword added
+
+   .. deprecated-removed:: 3.3 3.5
+      The *strict* argument and the strict mode have been deprecated.
+      The parser is now able to accept and parse invalid markup too.
 
 An exception is defined as well:
 
@@ -45,6 +50,10 @@ An exception is defined as well:
    :attr:`lineno` is the number of the line on which the broken construct was
    detected, and :attr:`offset` is the number of characters into the line at
    which the construct starts.
+
+   .. deprecated-removed:: 3.3 3.5
+      This exception has been deprecated because it's never raised by the parser
+      (when the default non-strict mode is used).
 
 
 Example HTML Parser Application

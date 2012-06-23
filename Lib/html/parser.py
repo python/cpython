@@ -10,6 +10,7 @@
 
 import _markupbase
 import re
+import warnings
 
 # Regular expressions used for parsing
 
@@ -113,14 +114,16 @@ class HTMLParser(_markupbase.ParserBase):
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
-    def __init__(self, strict=True):
+    def __init__(self, strict=False):
         """Initialize and reset this instance.
 
-        If strict is set to True (the default), errors are raised when invalid
-        HTML is encountered.  If set to False, an attempt is instead made to
-        continue parsing, making "best guesses" about the intended meaning, in
-        a fashion similar to what browsers typically do.
+        If strict is set to False (the default) the parser will parse invalid
+        markup, otherwise it will raise an error.  Note that the strict mode
+        is deprecated.
         """
+        if strict:
+            warnings.warn("The strict mode is deprecated.",
+                          DeprecationWarning, stacklevel=2)
         self.strict = strict
         self.reset()
 
@@ -271,8 +274,8 @@ class HTMLParser(_markupbase.ParserBase):
     # See also parse_declaration in _markupbase
     def parse_html_declaration(self, i):
         rawdata = self.rawdata
-        if rawdata[i:i+2] != '<!':
-            self.error('unexpected call to parse_html_declaration()')
+        assert rawdata[i:i+2] == '<!', ('unexpected call to '
+                                        'parse_html_declaration()')
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
@@ -292,8 +295,8 @@ class HTMLParser(_markupbase.ParserBase):
     # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
-        if rawdata[i:i+2] not in ('<!', '</'):
-            self.error('unexpected call to parse_comment()')
+        assert rawdata[i:i+2] in ('<!', '</'), ('unexpected call to '
+                                                'parse_comment()')
         pos = rawdata.find('>', i+2)
         if pos == -1:
             return -1
