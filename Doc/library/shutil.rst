@@ -195,9 +195,9 @@ Directory and files operations
       The default :func:`rmtree` function is susceptible to a symlink attack:
       given proper timing and circumstances, attackers can use it to delete
       files they wouldn't be able to access otherwise.  Thus -- on platforms
-      that support the necessary fd-based functions :func:`os.openat` and
-      :func:`os.unlinkat` -- a safe version of :func:`rmtree` is used, which
-      isn't vulnerable.
+      that support the necessary fd-based functions -- a safe version of
+      :func:`rmtree` is used, which isn't vulnerable. In this case
+      :data:`rmtree_is_safe` is set to True.
 
    If *onerror* is provided, it must be a callable that accepts three
    parameters: *function*, *path*, and *excinfo*.
@@ -210,8 +210,15 @@ Directory and files operations
 
    .. versionchanged:: 3.3
       Added a safe version that is used automatically if platform supports
-      the fd-based functions :func:`os.openat` and :func:`os.unlinkat`.
+      fd-based functions.
 
+.. data:: rmtree_is_safe
+
+   Indicates whether the current platform and implementation has a symlink
+   attack-proof version of :func:`rmtree`. Currently this is only true for
+   platforms supporting fd-based directory access functions.
+
+   .. versionadded:: 3.3
 
 .. function:: move(src, dst)
 

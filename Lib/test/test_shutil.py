@@ -159,8 +159,7 @@ class TestShutil(unittest.TestCase):
         # at os.listdir.  The first failure may legally
         # be either.
         if 0 <= self.errorState < 2:
-            if (func is os.remove or
-                hasattr(os, 'unlinkat') and func is os.unlinkat):
+            if func is os.unlink:
                 self.assertIn(arg, [self.child_file_path, self.child_dir_path])
             else:
                 if self.errorState == 1:
@@ -485,6 +484,26 @@ class TestShutil(unittest.TestCase):
         # follow
         shutil.copyfile(link, dst)
         self.assertFalse(os.path.islink(dst))
+
+    def test_rmtree_uses_safe_fd_version_if_available(self):
+        if os.unlink in os.supports_dir_fd and os.open in os.supports_dir_fd:
+            self.assertTrue(shutil._use_fd_functions)
+            self.assertTrue(shutil.rmtree_is_safe)
+            tmp_dir = self.mkdtemp()
+            d = os.path.join(tmp_dir, 'a')
+            os.mkdir(d)
+            try:
+                real_rmtree = shutil._rmtree_safe_fd
+                class Called(Exception): pass
+                def _raiser(*args, **kwargs):
+                    raise Called
+                shutil._rmtree_safe_fd = _raiser
+                self.assertRaises(Called, shutil.rmtree, d)
+            finally:
+                shutil._rmtree_safe_fd = real_rmtree
+        else:
+            self.assertFalse(shutil._use_fd_functions)
+            self.assertFalse(shutil.rmtree_is_safe)
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
