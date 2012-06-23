@@ -721,8 +721,13 @@ class PosixTester(unittest.TestCase):
             posix.utime(support.TESTFN, dir_fd=f,
                             times=(int(now), int((now - int(now)) * 1e9)))
 
+            # try dir_fd and follow_symlinks together
             if os.utime in os.supports_follow_symlinks:
-                posix.utime(support.TESTFN, follow_symlinks=False, dir_fd=f)
+                try:
+                    posix.utime(support.TESTFN, follow_symlinks=False, dir_fd=f)
+                except RuntimeError:
+                    # whoops!  using both together not supported on this platform.
+                    pass
 
         finally:
             posix.close(f)
