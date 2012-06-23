@@ -56,6 +56,10 @@ PC/pythonnt_rc*.h
 PC/*.obj
 PC/*.exe
 PC/*/*.exe
+PC/*/*.exp
+PC/*/*.lib
+PC/*/*.bsc
+PC/*/*.dll
 PC/*/*.pdb
 PC/*/*.user
 PC/*/*.ncb
