@@ -2396,6 +2396,8 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     if (res == NULL)
         return NULL;
     type = &res->ht_type;
+    /* The flags must be initialized early, before the GC traverses us */
+    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
     res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name)
         goto fail;
@@ -2450,7 +2452,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
-    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
