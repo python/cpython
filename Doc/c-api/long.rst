@@ -108,26 +108,29 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
 
 .. XXX alias PyLong_AS_LONG (for now)
-.. c:function:: long PyLong_AsLong(PyObject *pylong)
+.. c:function:: long PyLong_AsLong(PyObject *obj)
 
    .. index::
       single: LONG_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`long` representation of the contents of *pylong*.  If
-   *pylong* is greater than :const:`LONG_MAX`, raise an :exc:`OverflowError`,
-   and return -1. Convert non-long objects automatically to long first,
-   and return -1 if that raises exceptions.
+   Return a C :c:type:`long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`__int__` method
+   (if present) to convert it to a :c:type:`PyLongObject`.
 
-.. c:function:: long PyLong_AsLongAndOverflow(PyObject *pylong, int *overflow)
+   Raise :exc:`OverflowError` if the value of *obj* is out of range for a
+   :c:type:`long`.
 
-   Return a C :c:type:`long` representation of the contents of
-   *pylong*.  If *pylong* is greater than :const:`LONG_MAX` or less
-   than :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``,
-   respectively, and return ``-1``; otherwise, set *\*overflow* to
-   ``0``.  If any other exception occurs (for example a TypeError or
-   MemoryError), then ``-1`` will be returned and *\*overflow* will
-   be ``0``.
+.. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
+
+   Return a C :c:type:`long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`__int__` method
+   (if present) to convert it to a :c:type:`PyLongObject`.
+
+   If the value of *obj* is greater than :const:`LONG_MAX` or less than
+   :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
+   return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
+   occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
 
 .. c:function:: PY_LONG_LONG PyLong_AsLongLongAndOverflow(PyObject *pylong, int *overflow)
