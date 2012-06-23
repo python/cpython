@@ -296,7 +296,7 @@ class TestShutil(unittest.TestCase):
         def make_chflags_raiser(err):
             ex = OSError()
 
-            def _chflags_raiser(path, flags):
+            def _chflags_raiser(path, flags, *, follow_symlinks=True):
                 ex.errno = err
                 raise ex
             return _chflags_raiser
