@@ -242,7 +242,7 @@ class LongReprTest(unittest.TestCase):
         # a path separator + `module_name` + ".py"
         source_path_len += len(module_name) + 1 + len(".py")
         cached_path_len = source_path_len + len(imp.cache_from_source("x.py")) - len("x.py")
-        if os.name == 'nt' and cached_path_len >= 259:
+        if os.name == 'nt' and cached_path_len >= 258:
             # Under Windows, the max path len is 260 including C's terminating
             # NUL character.
             # (see http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath)
