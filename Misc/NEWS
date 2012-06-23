@@ -43,7 +43,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #4489: Add a shutil.rmtree that isn't suspectible to symlink attacks.
+- Issue #4489: Add a shutil.rmtree that isn't susceptible to symlink attacks.
   It is used automatically on platforms supporting the necessary os.openat()
   and os.unlinkat() functions. Main code by Martin von Löwis.
 
