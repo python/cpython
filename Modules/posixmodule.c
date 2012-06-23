@@ -2430,7 +2430,7 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
     */
     return_value = PyBool_FromLong(
         (attr != 0xFFFFFFFF) &&
-            ((mode & 2) ||
+            (!(mode & 2) ||
             !(attr & FILE_ATTRIBUTE_READONLY) ||
             (attr & FILE_ATTRIBUTE_DIRECTORY)));
 #else
