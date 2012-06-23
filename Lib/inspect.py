@@ -42,6 +42,7 @@ import tokenize
 import types
 import warnings
 import functools
+import builtins
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
 
@@ -1035,6 +1036,59 @@ def getcallargs(func, *positional, **named):
     if missing:
         _missing_arguments(f_name, kwonlyargs, False, arg2value)
     return arg2value
+
+ClosureVars = namedtuple('ClosureVars', 'nonlocals globals builtins unbound')
+
+def getclosurevars(func):
+    """
+    Get the mapping of free variables to their current values.
+
+    Returns a named tuple of dics mapping the current nonlocal, global
+    and builtin references as seen by the body of the function. A final
+    set of unbound names that could not be resolved is also provided.
+    """
+
+    if ismethod(func):
+        func = func.__func__
+
+    if not isfunction(func):
+        raise TypeError("'{!r}' is not a Python function".format(func))
+
+    code = func.__code__
+    # Nonlocal references are named in co_freevars and resolved
+    # by looking them up in __closure__ by positional index
+    if func.__closure__ is None:
+        nonlocal_vars = {}
+    else:
+        nonlocal_vars = {
+            var : cell.cell_contents
+            for var, cell in zip(code.co_freevars, func.__closure__)
+       }
+
+    # Global and builtin references are named in co_names and resolved
+    # by looking them up in __globals__ or __builtins__
+    global_ns = func.__globals__
+    builtin_ns = global_ns.get("__builtins__", builtins.__dict__)
+    if ismodule(builtin_ns):
+        builtin_ns = builtin_ns.__dict__
+    global_vars = {}
+    builtin_vars = {}
+    unbound_names = set()
+    for name in code.co_names:
+        if name in ("None", "True", "False"):
+            # Because these used to be builtins instead of keywords, they
+            # may still show up as name references. We ignore them.
+            continue
+        try:
+            global_vars[name] = global_ns[name]
+        except KeyError:
+            try:
+                builtin_vars[name] = builtin_ns[name]
+            except KeyError:
+                unbound_names.add(name)
+
+    return ClosureVars(nonlocal_vars, global_vars,
+                       builtin_vars, unbound_names)
 
 # -------------------------------------------------- stack frame extraction
 

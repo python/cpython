@@ -40,7 +40,10 @@ Core and Builtins
 Library
 -------
 
-- Issues #11024: Fixes and additional tests for Time2Internaldate.
+- Issue #13062: Added inspect.getclosurevars to simplify testing stateful
+  closures
+
+- Issue #11024: Fixes and additional tests for Time2Internaldate.
 
 - Issue #14626: Large refactoring of functions / parameters in the os module.
   Many functions now support "dir_fd" and "follow_symlinks" parameters;
