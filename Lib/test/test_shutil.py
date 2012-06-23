@@ -120,29 +120,36 @@ class TestShutil(unittest.TestCase):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
-            self.childpath = os.path.join(TESTFN, 'a')
-            support.create_empty_file(self.childpath)
+            self.child_file_path = os.path.join(TESTFN, 'a')
+            self.child_dir_path = os.path.join(TESTFN, 'b')
+            support.create_empty_file(self.child_file_path)
+            os.mkdir(self.child_dir_path)
             old_dir_mode = os.stat(TESTFN).st_mode
-            old_child_mode = os.stat(self.childpath).st_mode
+            old_child_file_mode = os.stat(self.child_file_path).st_mode
+            old_child_dir_mode = os.stat(self.child_dir_path).st_mode
             # Make unwritable.
-            os.chmod(self.childpath, stat.S_IREAD)
-            os.chmod(TESTFN, stat.S_IREAD)
+            new_mode = stat.S_IREAD|stat.S_IEXEC
+            os.chmod(self.child_file_path, new_mode)
+            os.chmod(self.child_dir_path, new_mode)
+            os.chmod(TESTFN, new_mode)
 
             shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
             # Test whether onerror has actually been called.
-            self.assertEqual(self.errorState, 2,
-                             "Expected call to onerror function did not happen.")
+            self.assertEqual(self.errorState, 3,
+                             "Expected call to onerror function did not "
+                             "happen.")
 
             # Make writable again.
             os.chmod(TESTFN, old_dir_mode)
-            os.chmod(self.childpath, old_child_mode)
+            os.chmod(self.child_file_path, old_child_file_mode)
+            os.chmod(self.child_dir_path, old_child_dir_mode)
 
             # Clean up.
             shutil.rmtree(TESTFN)
 
     def check_args_to_onerror(self, func, arg, exc):
         # test_rmtree_errors deliberately runs rmtree
-        # on a directory that is chmod 400, which will fail.
+        # on a directory that is chmod 500, which will fail.
         # This function is run when shutil.rmtree fails.
         # 99.9% of the time it initially fails to remove
         # a file in the directory, so the first time through
@@ -151,20 +158,39 @@ class TestShutil(unittest.TestCase):
         # FUSE experienced a failure earlier in the process
         # at os.listdir.  The first failure may legally
         # be either.
-        if self.errorState == 0:
-            if func is os.remove:
-                self.assertEqual(arg, self.childpath)
+        if 0 <= self.errorState < 2:
+            if (func is os.remove or
+                hasattr(os, 'unlinkat') and func is os.unlinkat):
+                self.assertIn(arg, [self.child_file_path, self.child_dir_path])
             else:
-                self.assertIs(func, os.listdir,
-                              "func must be either os.remove or os.listdir")
-                self.assertEqual(arg, TESTFN)
+                if self.errorState == 1:
+                    self.assertEqual(func, os.rmdir)
+                else:
+                    self.assertIs(func, os.listdir, "func must be os.listdir")
+                self.assertIn(arg, [TESTFN, self.child_dir_path])
             self.assertTrue(issubclass(exc[0], OSError))
-            self.errorState = 1
+            self.errorState += 1
         else:
             self.assertEqual(func, os.rmdir)
             self.assertEqual(arg, TESTFN)
             self.assertTrue(issubclass(exc[0], OSError))
-            self.errorState = 2
+            self.errorState = 3
+
+    def test_rmtree_does_not_choke_on_failing_lstat(self):
+        try:
+            orig_lstat = os.lstat
+            def raiser(fn):
+                if fn != TESTFN:
+                    raise OSError()
+                else:
+                    return orig_lstat(fn)
+            os.lstat = raiser
+
+            os.mkdir(TESTFN)
+            write_file((TESTFN, 'foo'), 'foo')
+            shutil.rmtree(TESTFN)
+        finally:
+            os.lstat = orig_lstat
 
     @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @support.skip_unless_symlink
@@ -464,7 +490,7 @@ class TestShutil(unittest.TestCase):
         # When called on a file instead of a directory, don't delete it.
         handle, path = tempfile.mkstemp()
         os.close(handle)
-        self.assertRaises(OSError, shutil.rmtree, path)
+        self.assertRaises(NotADirectoryError, shutil.rmtree, path)
         os.remove(path)
 
     def test_copytree_simple(self):
@@ -629,6 +655,7 @@ class TestShutil(unittest.TestCase):
             os.mkdir(src)
             os.symlink(src, dst)
             self.assertRaises(OSError, shutil.rmtree, dst)
+            shutil.rmtree(dst, ignore_errors=True)
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 

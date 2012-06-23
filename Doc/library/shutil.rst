@@ -190,14 +190,27 @@ Directory and files operations
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
 
+   .. warning::
+
+      The default :func:`rmtree` function is susceptible to a symlink attack:
+      given proper timing and circumstances, attackers can use it to delete
+      files they wouldn't be able to access otherwise.  Thus -- on platforms
+      that support the necessary fd-based functions :func:`os.openat` and
+      :func:`os.unlinkat` -- a safe version of :func:`rmtree` is used, which
+      isn't vulnerable.
+
    If *onerror* is provided, it must be a callable that accepts three
-   parameters: *function*, *path*, and *excinfo*. The first parameter,
-   *function*, is the function which raised the exception; it will be
-   :func:`os.path.islink`, :func:`os.listdir`, :func:`os.remove` or
-   :func:`os.rmdir`.  The second parameter, *path*, will be the path name passed
-   to *function*.  The third parameter, *excinfo*, will be the exception
-   information return by :func:`sys.exc_info`.  Exceptions raised by *onerror*
-   will not be caught.
+   parameters: *function*, *path*, and *excinfo*.
+
+   The first parameter, *function*, is the function which raised the exception;
+   it depends on the platform and implementation.  The second parameter,
+   *path*, will be the path name passed to *function*.  The third parameter,
+   *excinfo*, will be the exception information returned by
+   :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
+
+   .. versionchanged:: 3.3
+      Added a safe version that is used automatically if platform supports
+      the fd-based functions :func:`os.openat` and :func:`os.unlinkat`.
 
 
 .. function:: move(src, dst)
