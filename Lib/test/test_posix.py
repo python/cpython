@@ -1010,11 +1010,11 @@ class PosixTester(unittest.TestCase):
         posix.RTLD_GLOBAL
         posix.RTLD_LOCAL
 
+    @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
+                         "test needs an OS that reports file holes")
     @unittest.skipIf(sys.platform == 'freebsd9',
             "Skip test because known kernel bug - " \
             "http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html")
-    @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
-                         "test needs an OS that reports file holes")
     def test_fs_holes(self) :
         # Even if the filesystem doesn't report holes,
         # if the OS supports it the SEEK_* constants
