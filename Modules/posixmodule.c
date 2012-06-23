@@ -2696,7 +2696,8 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
         /*
          * fchmodat() doesn't currently support AT_SYMLINK_NOFOLLOW!
          * The documentation specifically shows how to use it,
-         * and then says it isn't implemented yet.   (glibc 2.15)
+         * and then says it isn't implemented yet.
+         * (true on linux with glibc 2.15, and openindiana 3.x)
          *
          * Once it is supported, os.chmod will automatically
          * support dir_fd and follow_symlinks=False.  (Hopefully.)
@@ -2709,7 +2710,9 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
          * and we can't do that in this nested scope.  (Macro trickery, sigh.)
          */
         fchmodat_nofollow_unsupported =
-                         result && (errno == ENOTSUP) && !follow_symlinks;
+                         result &&
+                         ((errno == ENOTSUP) || (errno == EOPNOTSUPP)) &&
+                         !follow_symlinks;
     }
     else
 #endif
