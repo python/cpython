@@ -2417,6 +2417,12 @@ PyType_FromSpec(PyType_Spec *spec)
     if (res->ht_type.tp_dictoffset) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
+    if (res->ht_type.tp_dealloc == NULL) {
+        /* It's a heap type, so needs the heap types' dealloc.
+           subtype_dealloc will call the base type's tp_dealloc, if
+           necessary. */
+        res->ht_type.tp_dealloc = subtype_dealloc;
+    }
 
     if (PyType_Ready(&res->ht_type) < 0)
         goto fail;
