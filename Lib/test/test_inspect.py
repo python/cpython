@@ -1271,6 +1271,52 @@ class TestGetGeneratorState(unittest.TestCase):
             self.assertIn(name, repr(state))
             self.assertIn(name, str(state))
 
+    def test_getgeneratorlocals(self):
+        def each(lst, a=None):
+            b=(1, 2, 3)
+            for v in lst:
+                if v == 3:
+                    c = 12
+                yield v
+
+        numbers = each([1, 2, 3])
+        self.assertEqual(inspect.getgeneratorlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3]})
+        next(numbers)
+        self.assertEqual(inspect.getgeneratorlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 1,
+                          'b': (1, 2, 3)})
+        next(numbers)
+        self.assertEqual(inspect.getgeneratorlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 2,
+                          'b': (1, 2, 3)})
+        next(numbers)
+        self.assertEqual(inspect.getgeneratorlocals(numbers),
+                         {'a': None, 'lst': [1, 2, 3], 'v': 3,
+                          'b': (1, 2, 3), 'c': 12})
+        try:
+            next(numbers)
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getgeneratorlocals(numbers), {})
+
+    def test_getgeneratorlocals_empty(self):
+        def yield_one():
+            yield 1
+        one = yield_one()
+        self.assertEqual(inspect.getgeneratorlocals(one), {})
+        try:
+            next(one)
+        except StopIteration:
+            pass
+        self.assertEqual(inspect.getgeneratorlocals(one), {})
+
+    def test_getgeneratorlocals_error(self):
+        self.assertRaises(TypeError, inspect.getgeneratorlocals, 1)
+        self.assertRaises(TypeError, inspect.getgeneratorlocals, lambda x: True)
+        self.assertRaises(TypeError, inspect.getgeneratorlocals, set)
+        self.assertRaises(TypeError, inspect.getgeneratorlocals, (2,3))
+
 
 class TestSignatureObject(unittest.TestCase):
     @staticmethod

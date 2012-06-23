@@ -1259,6 +1259,8 @@ def getattr_static(obj, attr, default=_sentinel):
     raise AttributeError(attr)
 
 
+# ------------------------------------------------ generator introspection
+
 GEN_CREATED = 'GEN_CREATED'
 GEN_RUNNING = 'GEN_RUNNING'
 GEN_SUSPENDED = 'GEN_SUSPENDED'
@@ -1281,6 +1283,22 @@ def getgeneratorstate(generator):
         return GEN_CREATED
     return GEN_SUSPENDED
 
+
+def getgeneratorlocals(generator):
+    """
+    Get the mapping of generator local variables to their current values.
+
+    A dict is returned, with the keys the local variable names and values the
+    bound values."""
+
+    if not isgenerator(generator):
+        raise TypeError("'{!r}' is not a Python generator".format(generator))
+
+    frame = getattr(generator, "gi_frame", None)
+    if frame is not None:
+        return generator.gi_frame.f_locals
+    else:
+        return {}
 
 ###############################################################################
 ### Function Signature Object (PEP 362)
