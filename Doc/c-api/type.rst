@@ -85,7 +85,7 @@ Type Objects
    their initialization.  This function is responsible for adding inherited slots
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
-   
+
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
    Creates and returns a heap type object from the *spec* passed to the function.
