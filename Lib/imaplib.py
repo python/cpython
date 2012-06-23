@@ -23,7 +23,7 @@ Public functions:       Internaldate2tuple
 __version__ = "2.58"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
-
+from datetime import datetime, timezone, timedelta
 try:
     import ssl
     HAVE_SSL = True
@@ -1313,10 +1313,8 @@ class _Authenticator:
             return ''
         return binascii.a2b_base64(inp)
 
-
-
-Mon2num = {b'Jan': 1, b'Feb': 2, b'Mar': 3, b'Apr': 4, b'May': 5, b'Jun': 6,
-           b'Jul': 7, b'Aug': 8, b'Sep': 9, b'Oct': 10, b'Nov': 11, b'Dec': 12}
+Months = ' Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
+Mon2num = {s.encode():n+1 for n, s in enumerate(Months[1:])}
 
 def Internaldate2tuple(resp):
     """Parse an IMAP4 INTERNALDATE string.
@@ -1384,28 +1382,37 @@ def Time2Internaldate(date_time):
     Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'.  The
     date_time argument can be a number (int or float) representing
     seconds since epoch (as returned by time.time()), a 9-tuple
-    representing local time (as returned by time.localtime()), or a
+    representing local time, an instance of time.struct_time (as
+    returned by time.localtime()), an aware datetime instance or a
     double-quoted string.  In the last case, it is assumed to already
     be in the correct format.
     """
-
     if isinstance(date_time, (int, float)):
-        tt = time.localtime(date_time)
-    elif isinstance(date_time, (tuple, time.struct_time)):
-        tt = date_time
+        dt = datetime.fromtimestamp(date_time,
+                                    timezone.utc).astimezone()
+    elif isinstance(date_time, tuple):
+        try:
+            gmtoff = date_time.tm_gmtoff
+        except AttributeError:
+            if time.daylight:
+                dst = date_time[8]
+                if dst == -1:
+                    dst = time.localtime(time.mktime(date_time))[8]
+                gmtoff = -(time.timezone, time.altzone)[dst]
+            else:
+                gmtoff = -time.timezone
+        delta = timedelta(seconds=gmtoff)
+        dt = datetime(*date_time[:6], tzinfo=timezone(delta))
+    elif isinstance(date_time, datetime):
+        if date_time.tzinfo is None:
+            raise ValueError("date_time must be aware")
+        dt = date_time
     elif isinstance(date_time, str) and (date_time[0],date_time[-1]) == ('"','"'):
         return date_time        # Assume in correct format
     else:
         raise ValueError("date_time not of a known type")
-
-    dt = time.strftime("%d-%b-%Y %H:%M:%S", tt)
-    if dt[0] == '0':
-        dt = ' ' + dt[1:]
-    if time.daylight and tt[-1]:
-        zone = -time.altzone
-    else:
-        zone = -time.timezone
-    return '"' + dt + " %+03d%02d" % divmod(zone//60, 60) + '"'
+    fmt = '"%d-{}-%Y %H:%M:%S %z"'.format(Months[dt.month])
+    return dt.strftime(fmt)
 
 
 

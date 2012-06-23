@@ -113,13 +113,15 @@ The following utility functions are defined:
 
 .. function:: Time2Internaldate(date_time)
 
-   Convert *date_time* to an IMAP4 ``INTERNALDATE`` representation.  The
-   return value is a string in the form: ``"DD-Mmm-YYYY HH:MM:SS
-   +HHMM"`` (including double-quotes).  The *date_time* argument can be a
-   number (int or float) representing seconds since epoch (as returned
-   by :func:`time.time`), a 9-tuple representing local time (as returned by
-   :func:`time.localtime`), or a double-quoted string.  In the last case, it
-   is assumed to already be in the correct format.
+   Convert *date_time* to an IMAP4 ``INTERNALDATE`` representation.
+   The return value is a string in the form: ``"DD-Mmm-YYYY HH:MM:SS
+   +HHMM"`` (including double-quotes).  The *date_time* argument can
+   be a number (int or float) representing seconds since epoch (as
+   returned by :func:`time.time`), a 9-tuple representing local time
+   an instance of :class:`time.struct_time` (as returned by
+   :func:`time.localtime`), an aware instance of
+   :class:`datetime.datetime`, or a double-quoted string.  In the last
+   case, it is assumed to already be in the correct format.
 
 Note that IMAP4 message numbers change as the mailbox changes; in particular,
 after an ``EXPUNGE`` command performs deletions the remaining messages are
