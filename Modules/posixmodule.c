@@ -3238,7 +3238,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 #else
     Py_BEGIN_ALLOW_THREADS
-#ifndef HAVE_LINKAT
+#ifdef HAVE_LINKAT
     if ((src_dir_fd != DEFAULT_DIR_FD) ||
         (dst_dir_fd != DEFAULT_DIR_FD) ||
         (!follow_symlinks))
