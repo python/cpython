@@ -471,6 +471,8 @@ PySlice_New
 PySlice_Type
 PySortWrapper_Type
 PyState_FindModule
+PyState_AddModule
+PyState_RemoveModule
 PyStructSequence_GetItem
 PyStructSequence_New
 PyStructSequence_NewType
