@@ -2394,14 +2394,15 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         s++;
 
     if (res == NULL)
-      return NULL;
+        return NULL;
+    type = &res->ht_type;
     res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name)
         goto fail;
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
-    res->ht_type.tp_name = spec->name;
-    if (!res->ht_type.tp_name)
+    type->tp_name = spec->name;
+    if (!type->tp_name)
         goto fail;
     
     /* Adjust for empty tuple bases */
@@ -2436,7 +2437,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         goto fail;
     }
 
-    type = (PyTypeObject *)res;
     /* Initialize essential fields */
     type->tp_as_number = &res->as_number;
     type->tp_as_sequence = &res->as_sequence;
@@ -2448,9 +2448,9 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     Py_INCREF(base);
     type->tp_base = base;
 
-    res->ht_type.tp_basicsize = spec->basicsize;
-    res->ht_type.tp_itemsize = spec->itemsize;
-    res->ht_type.tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
+    type->tp_basicsize = spec->basicsize;
+    type->tp_itemsize = spec->itemsize;
+    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
 
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
@@ -2470,20 +2470,20 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             if (tp_doc == NULL)
                 goto fail;
             memcpy(tp_doc, slot->pfunc, len);
-            res->ht_type.tp_doc = tp_doc;
+            type->tp_doc = tp_doc;
         }
     }
-    if (res->ht_type.tp_dictoffset) {
+    if (type->tp_dictoffset) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
-    if (res->ht_type.tp_dealloc == NULL) {
+    if (type->tp_dealloc == NULL) {
         /* It's a heap type, so needs the heap types' dealloc.
            subtype_dealloc will call the base type's tp_dealloc, if
            necessary. */
-        res->ht_type.tp_dealloc = subtype_dealloc;
+        type->tp_dealloc = subtype_dealloc;
     }
 
-    if (PyType_Ready(&res->ht_type) < 0)
+    if (PyType_Ready(type) < 0)
         goto fail;
 
     /* Set type.__module__ */
