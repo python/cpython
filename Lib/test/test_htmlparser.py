@@ -102,7 +102,8 @@ class TestCaseBase(unittest.TestCase):
 class HTMLParserStrictTestCase(TestCaseBase):
 
     def get_collector(self):
-        return EventCollector(strict=True)
+        with support.check_warnings(("", DeprecationWarning), quite=False):
+            return EventCollector(strict=True)
 
     def test_processing_instruction_only(self):
         self._run_check("<?processing instruction>", [
@@ -594,7 +595,8 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
 class AttributesStrictTestCase(TestCaseBase):
 
     def get_collector(self):
-        return EventCollector(strict=True)
+        with support.check_warnings(("", DeprecationWarning), quite=False):
+            return EventCollector(strict=True)
 
     def test_attr_syntax(self):
         output = [
