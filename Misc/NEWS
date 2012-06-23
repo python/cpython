@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3665: \u and \U escapes are now supported in unicode regular
+  expressions.  Patch by Serhiy Storchaka.
+
 - Issue #15153: Added inspect.getgeneratorlocals to simplify white box
   testing of generator state updates
 
