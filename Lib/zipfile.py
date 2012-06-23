@@ -733,12 +733,13 @@ class ZipExtFile(io.BufferedIOBase):
                 buf += self._read1(self.MAX_N)
             return buf
 
-        n -= len(self._readbuffer) - self._offset
-        if n < 0:
-            buf = self._readbuffer[self._offset:n]
-            self._offset += len(buf)
+        end = n + self._offset
+        if end < len(self._readbuffer):
+            buf = self._readbuffer[self._offset:end]
+            self._offset = end
             return buf
 
+        n = end - len(self._readbuffer)
         buf = self._readbuffer[self._offset:]
         self._readbuffer = b''
         self._offset = 0
@@ -774,12 +775,13 @@ class ZipExtFile(io.BufferedIOBase):
             buf += data
             return buf
 
-        n -= len(self._readbuffer) - self._offset
-        if n < 0:
-            buf = self._readbuffer[self._offset:n]
-            self._offset += len(buf)
+        end = n + self._offset
+        if end < len(self._readbuffer):
+            buf = self._readbuffer[self._offset:end]
+            self._offset = end
             return buf
 
+        n = end - len(self._readbuffer)
         buf = self._readbuffer[self._offset:]
         self._readbuffer = b''
         self._offset = 0
