@@ -320,6 +320,12 @@ class PEP3147Tests(unittest.TestCase):
             '/foo/bar/foo.cpython-32.foo.pyc')
 
     def test_package___file__(self):
+        try:
+            m = __import__('pep3147')
+        except ImportError:
+            pass
+        else:
+            self.fail("pep3147 module already exists: %r" % (m,))
         # Test that a package's __file__ points to the right source directory.
         os.mkdir('pep3147')
         sys.path.insert(0, os.curdir)
