@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
     <PyDllName>python33$(PyDebugExt)</PyDllName>
-    <PythonExe>$(SolutionDir)python$(PyDebugExt).exe</PythonExe>
+    <PythonExe>$(OutDir)python$(PyDebugExt).exe</PythonExe>
     <KillPythonExe>$(OutDir)kill_python$(PyDebugExt).exe</KillPythonExe>
     <externalsDir>..\..</externalsDir>
     <sqlite3Dir>$(externalsDir)\sqlite-3.7.12</sqlite3Dir>
