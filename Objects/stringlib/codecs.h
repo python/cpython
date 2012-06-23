@@ -15,6 +15,9 @@
 # error C 'long' size should be either 4 or 8!
 #endif
 
+/* 10xxxxxx */
+#define IS_CONTINUATION_BYTE(ch) ((ch) >= 0x80 && (ch) < 0xC0)
+
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                        STRINGLIB_CHAR *dest,
@@ -107,7 +110,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                 break;
             }
             ch2 = (unsigned char)s[1];
-            if ((ch2 & 0xC0) != 0x80)
+            if (!IS_CONTINUATION_BYTE(ch2))
                 /* invalid continuation byte */
                 goto InvalidContinuation;
             ch = (ch << 6) + ch2 -
@@ -131,8 +134,8 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             }
             ch2 = (unsigned char)s[1];
             ch3 = (unsigned char)s[2];
-            if ((ch2 & 0xC0) != 0x80 ||
-                (ch3 & 0xC0) != 0x80) {
+            if (!IS_CONTINUATION_BYTE(ch2) ||
+                !IS_CONTINUATION_BYTE(ch3)) {
                 /* invalid continuation byte */
                 goto InvalidContinuation;
             }
@@ -172,9 +175,9 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             ch2 = (unsigned char)s[1];
             ch3 = (unsigned char)s[2];
             ch4 = (unsigned char)s[3];
-            if ((ch2 & 0xC0) != 0x80 ||
-                (ch3 & 0xC0) != 0x80 ||
-                (ch4 & 0xC0) != 0x80) {
+            if (!IS_CONTINUATION_BYTE(ch2) ||
+                !IS_CONTINUATION_BYTE(ch3) ||
+                !IS_CONTINUATION_BYTE(ch4)) {
                 /* invalid continuation byte */
                 goto InvalidContinuation;
             }
@@ -216,6 +219,7 @@ InvalidContinuation:
 }
 
 #undef ASCII_CHAR_MASK
+#undef IS_CONTINUATION_BYTE
 
 
 /* UTF-8 encoder specialized for a Unicode kind to avoid the slow
