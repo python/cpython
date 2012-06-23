@@ -763,6 +763,30 @@ class TestGetClosureVars(unittest.TestCase):
         self.assertRaises(TypeError, inspect.getclosurevars, list)
         self.assertRaises(TypeError, inspect.getclosurevars, {})
 
+    def _private_globals(self):
+        code = """def f(): print(path)"""
+        ns = {}
+        exec(code, ns)
+        return ns["f"], ns
+
+    def test_builtins_fallback(self):
+        f, ns = self._private_globals()
+        ns.pop("__builtins__", None)
+        expected = inspect.ClosureVars({}, {}, {"print":print}, {"path"})
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
+    def test_builtins_as_dict(self):
+        f, ns = self._private_globals()
+        ns["__builtins__"] = {"path":1}
+        expected = inspect.ClosureVars({}, {}, {"path":1}, {"print"})
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
+    def test_builtins_as_module(self):
+        f, ns = self._private_globals()
+        ns["__builtins__"] = os
+        expected = inspect.ClosureVars({}, {}, {"path":os.path}, {"print"})
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
 
 class TestGetcallargsFunctions(unittest.TestCase):
 
