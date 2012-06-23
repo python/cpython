@@ -7,8 +7,10 @@ out.write('LIBRARY "python33"\n')
 out.write('EXPORTS\n')
 
 inp = open("python3.def")
-inp.readline()
 line = inp.readline()
+while line.strip().startswith(';'):
+    line = inp.readline()
+line = inp.readline() # LIBRARY
 assert line.strip()=='EXPORTS'
 
 for line in inp:
