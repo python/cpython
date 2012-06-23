@@ -127,6 +127,7 @@ class Gprof2htmlTests(unittest.TestCase):
 # Run the tests in Tools/parser/test_unparse.py
 with support.DirsOnSysPath(os.path.join(basepath, 'parser')):
     from test_unparse import UnparseTestCase
+    from test_unparse import DirectoryTestCase
 
 
 def test_main():
