@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15114: the strict mode of HTMLParser and the HTMLParseError exception
+  are deprecated now that the parser is able to parse invalid markup.
+
 - Issue #3665: \u and \U escapes are now supported in unicode regular
   expressions.  Patch by Serhiy Storchaka.
 
@@ -78,7 +81,7 @@ Library
 - Issue #9527: datetime.astimezone() method will now supply a class
   timezone instance corresponding to the system local timezone when
   called with no arguments.
-  
+
 - Issue #14653: email.utils.mktime_tz() no longer relies on system
   mktime() when timezone offest is supplied.
 
