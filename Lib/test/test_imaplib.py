@@ -49,7 +49,7 @@ class TestImaplib(unittest.TestCase):
         return [2000000000, 2000000000.0, time.localtime(2000000000),
                 (2033, 5, 18, 5, 33, 20, -1, -1, -1),
                 (2033, 5, 18, 5, 33, 20, -1, -1, 1),
-                datetime.fromtimestamp(2000000000, 
+                datetime.fromtimestamp(2000000000,
                                        timezone(timedelta(0, 2*60*60))),
                 '"18-May-2033 05:33:20 +0200"']
 
