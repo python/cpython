@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15153: Added inspect.getgeneratorlocals to simplify white box
+  testing of generator state updates
+
 - Issue #13062: Added inspect.getclosurevars to simplify testing stateful
   closures
 
