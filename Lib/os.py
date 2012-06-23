@@ -179,16 +179,27 @@ if _exists("_have_functions"):
 
     _set = set()
     _add("HAVE_FACCESSAT",  "access")
-    # Current linux (kernel 3.2, glibc 2.15) doesn't support lchmod.
-    # (The function exists, but it's a stub that always returns ENOSUP.)
-    # Now, linux *does* have fchmodat, which says it can ignore
-    # symbolic links.  But that doesn't work either (also returns ENOSUP).
-    # I'm guessing that if they fix fchmodat, they'll also add lchmod at
-    # the same time.  So, for now, assume that fchmodat doesn't support
-    # follow_symlinks unless lchmod works.
-    if ((sys.platform != "linux") or
-        ("HAVE_LCHMOD" in _have_functions)):
-        _add("HAVE_FCHMODAT",   "chmod")
+    # Some platforms don't support lchmod().  Often the function exists
+    # anyway, as a stub that always returns ENOSUP or perhaps EOPNOTSUPP.
+    # (No, I don't know why that's a good design.)  ./configure will detect
+    # this and reject it--so HAVE_LCHMOD still won't be defined on such
+    # platforms.  This is Very Helpful.
+    #
+    # However, sometimes platforms without a working lchmod() *do* have
+    # fchmodat().  (Examples: Linux kernel 3.2 with glibc 2.15,
+    # OpenIndiana 3.x.)  And fchmodat() has a flag that theoretically makes
+    # it behave like lchmod().  So in theory it would be a suitable
+    # replacement for lchmod().  But when lchmod() doesn't work, fchmodat()'s
+    # flag doesn't work *either*.  Sadly ./configure isn't sophisticated
+    # enough to detect this condition--it only determines whether or not
+    # fchmodat() minimally works.
+    #
+    # Therefore we simply ignore fchmodat() when deciding whether or not
+    # os.chmod supports follow_symlinks.  Just checking lchmod() is
+    # sufficient.  After all--if you have a working fchmodat(), your
+    # lchmod() almost certainly works too.
+    #
+    # _add("HAVE_FCHMODAT",   "chmod")
     _add("HAVE_FCHOWNAT",   "chown")
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_LCHFLAGS",   "chflags")
