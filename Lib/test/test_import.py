@@ -636,6 +636,8 @@ class PycacheTests(unittest.TestCase):
         # Like test___cached__ but for packages.
         def cleanup():
             rmtree('pep3147')
+            unload('pep3147.foo')
+            unload('pep3147')
         os.mkdir('pep3147')
         self.addCleanup(cleanup)
         # Touch the __init__.py
@@ -643,8 +645,6 @@ class PycacheTests(unittest.TestCase):
             pass
         with open(os.path.join('pep3147', 'foo.py'), 'w'):
             pass
-        unload('pep3147.foo')
-        unload('pep3147')
         importlib.invalidate_caches()
         m = __import__('pep3147.foo')
         init_pyc = imp.cache_from_source(
@@ -659,10 +659,10 @@ class PycacheTests(unittest.TestCase):
         # PEP 3147 pyc file.
         def cleanup():
             rmtree('pep3147')
+            unload('pep3147.foo')
+            unload('pep3147')
         os.mkdir('pep3147')
         self.addCleanup(cleanup)
-        unload('pep3147.foo')
-        unload('pep3147')
         # Touch the __init__.py
         with open(os.path.join('pep3147', '__init__.py'), 'w'):
             pass
