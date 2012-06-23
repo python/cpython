@@ -1490,13 +1490,7 @@ PyDoc_VAR(ord_doc) = PyDoc_STR(
 "ord(c) -> integer\n\
 \n\
 Return the integer ordinal of a one-character string."
-)
-#ifndef Py_UNICODE_WIDE
-PyDoc_STR(
-"\nA valid surrogate pair is also accepted."
-)
-#endif
-;
+);
 
 
 static PyObject *
