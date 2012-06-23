@@ -48,6 +48,9 @@ _Py_IDENTIFIER(__new__);
 static PyObject *
 _PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name);
 
+static PyObject *
+slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 unsigned int
 PyType_ClearCache(void)
 {
@@ -2375,22 +2378,75 @@ static short slotoffsets[] = {
 };
 
 PyObject *
-PyType_FromSpec(PyType_Spec *spec)
+PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
+    PyTypeObject *type, *base;
+    char *s;
     char *res_start = (char*)res;
     PyType_Slot *slot;
+    
+    /* Set the type name and qualname */
+    s = strrchr(spec->name, '.');
+    if (s == NULL)
+        s = (char*)spec->name;
+    else
+        s++;
 
     if (res == NULL)
       return NULL;
-    res->ht_name = PyUnicode_FromString(spec->name);
+    res->ht_name = PyUnicode_FromString(s);
     if (!res->ht_name)
         goto fail;
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
-    res->ht_type.tp_name = _PyUnicode_AsString(res->ht_name);
+    res->ht_type.tp_name = spec->name;
     if (!res->ht_type.tp_name)
         goto fail;
+    
+    /* Adjust for empty tuple bases */
+    if (!bases) {
+        base = &PyBaseObject_Type;
+        /* See whether Py_tp_base(s) was specified */
+        for (slot = spec->slots; slot->slot; slot++) {
+            if (slot->slot == Py_tp_base)
+                base = slot->pfunc;
+            else if (slot->slot == Py_tp_bases) {
+                bases = slot->pfunc;
+                Py_INCREF(bases);
+            }
+        }
+        if (!bases)
+            bases = PyTuple_Pack(1, base);
+        if (!bases)
+            goto fail;
+    }
+    else
+        Py_INCREF(bases);
+
+    /* Calculate best base, and check that all bases are type objects */
+    base = best_base(bases);
+    if (base == NULL) {
+        goto fail;
+    }
+    if (!PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "type '%.100s' is not an acceptable base type",
+                     base->tp_name);
+        goto fail;
+    }
+
+    type = (PyTypeObject *)res;
+    /* Initialize essential fields */
+    type->tp_as_number = &res->as_number;
+    type->tp_as_sequence = &res->as_sequence;
+    type->tp_as_mapping = &res->as_mapping;
+    type->tp_as_buffer = &res->as_buffer;
+    /* Set tp_base and tp_bases */
+    type->tp_bases = bases;
+    bases = NULL;
+    Py_INCREF(base);
+    type->tp_base = base;
 
     res->ht_type.tp_basicsize = spec->basicsize;
     res->ht_type.tp_itemsize = spec->itemsize;
@@ -2401,6 +2457,9 @@ PyType_FromSpec(PyType_Spec *spec)
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto fail;
         }
+        if (slot->slot == Py_tp_base || slot->slot == Py_tp_bases)
+            /* Processed above */
+            continue;
         *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
 
         /* need to make a copy of the docstring slot, which usually
@@ -2427,11 +2486,24 @@ PyType_FromSpec(PyType_Spec *spec)
     if (PyType_Ready(&res->ht_type) < 0)
         goto fail;
 
+    /* Set type.__module__ */
+    s = strrchr(spec->name, '.');
+    if (s != NULL)
+        _PyDict_SetItemId(type->tp_dict, &PyId___module__, 
+            PyUnicode_FromStringAndSize(
+                spec->name, (Py_ssize_t)(s - spec->name)));
+
     return (PyObject*)res;
 
  fail:
     Py_DECREF(res);
     return NULL;
+}
+
+PyObject *
+PyType_FromSpec(PyType_Spec *spec)
+{
+    return PyType_FromSpecWithBases(spec, NULL);
 }
 
 
@@ -4763,7 +4835,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
        object.__new__(dict).  To do this, we check that the
        most derived base that's not a heap type is this type. */
     staticbase = subtype;
-    while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
+    while (staticbase && (staticbase->tp_new == slot_tp_new))
         staticbase = staticbase->tp_base;
     /* If staticbase is NULL now, it is a really weird type.
        In the spirit of backwards compatibility (?), just shut up. */
