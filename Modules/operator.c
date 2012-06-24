@@ -211,14 +211,15 @@ _tscmp(const unsigned char *a, const unsigned char *b,
 PyDoc_STRVAR(compare_digest__doc__,
 "compare_digest(a, b) -> bool\n"
 "\n"
-"Return the equivalent of 'a == b', but avoid any short circuiting to\n"
-"counterfeit timing analysis of input data. The function should be used to\n"
-"compare cryptographic secrets. a and b must both either support the buffer\n"
-"protocol (e.g. bytes) or be ASCII only str instances at the same time.\n"
+"Return ``a == b``.  This function uses an approach designed to prevent\n"
+"timing analysis, making it appropriate for cryptography.  *a* and *b*\n"
+"must both be of the same type: either `str` (ASCII only, as e.g.\n"
+"returned by HMAC.hexdigest()), or any type that supports the buffer\n"
+"protocol, (e.g. `bytes`).\n"
 "\n"
-"Note: In case of an error or different lengths the function may disclose\n"
-"some timing information about the types and lengths of a and b.\n");
-
+"Note: If *a* and *b* are different lengths, or if an error occurs,\n"
+"a timing attack may be able to infer information about the types\n"
+"and lengths of *a* and *b*, but not their values.\n");
 
 static PyObject*
 compare_digest(PyObject *self, PyObject *args)
