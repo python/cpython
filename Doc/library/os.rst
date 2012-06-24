@@ -2252,7 +2252,7 @@ features:
       import os
       for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
           print(root, "consumes", end="")
-          print(sum([os.fstatat(rootfd, name).st_size for name in files]),
+          print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
                 end="")
           print("bytes in", len(files), "non-directory files")
           if 'CVS' in dirs:
