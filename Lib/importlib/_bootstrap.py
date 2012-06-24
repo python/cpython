@@ -1090,6 +1090,7 @@ class FileFinder:
     def find_loader(self, fullname):
         """Try to find a loader for the specified module, or the namespace
         package portions. Returns (loader, list-of-portions)."""
+        is_namespace = False
         tail_module = fullname.rpartition('.')[2]
         try:
             mtime = _os.stat(self.path).st_mtime
@@ -1115,14 +1116,17 @@ class FileFinder:
                     if _path_isfile(full_path):
                         return (loader(fullname, full_path), [base_path])
                 else:
-                    # A namespace package, return the path
-                    return (None, [base_path])
+                    # A namespace package, return the path if we don't also
+                    #  find a module in the next section.
+                    is_namespace = True
         # Check for a file w/ a proper suffix exists.
         for suffix, loader in self.modules:
             if cache_module + suffix in cache:
                 full_path = _path_join(self.path, tail_module + suffix)
                 if _path_isfile(full_path):
                     return (loader(fullname, full_path), [])
+        if is_namespace:
+            return (None, [base_path])
         return (None, [])
 
     def _fill_cache(self):
