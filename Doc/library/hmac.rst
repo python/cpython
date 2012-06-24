@@ -54,11 +54,10 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      The output of :meth:`hexdigest` should not be compared directly to an
-      externally-supplied digest during a verification routine. Instead, the
-      externally supplied digest should be converted to a :class:`bytes`
-      value and compared to the output of :meth:`digest` with
-      :func:`compare_digest`.
+      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      digest during a verification routine, it is recommended to use the
+      :func:`compare_digest` function instead of the ``==`` operator
+      to reduce the vulnerability to timing attacks.
 
 
 .. method:: HMAC.copy()
@@ -72,11 +71,11 @@ This module also provides the following helper function:
 .. function:: compare_digest(a, b)
 
    Return ``a == b``.  This function uses an approach designed to prevent timing
-   analysis by avoiding content based short circuiting behaviour.  The inputs
-   must either both support the buffer protocol (e.g. :class:`bytes` and
-   :class:`bytearray` instances) or be ASCII-only :class:`str` instances as
-   returned by :meth:`hexdigest`.  :class:`bytes` and :class:`str` instances
-   can't be mixed.
+   analysis by avoiding content based short circuiting behaviour, making it
+   appropriate for cryptography.  *a* and *b*
+   must both be of the same type: either :class:`str` (ASCII only, as e.g.
+   returned by :meth:`HMAC.hexdigest`), or any type that supports the
+   :term:`buffer protocol` (e.g. :class:`bytes`).
 
    Using a short circuiting comparison (that is, one that terminates as soon as
    it finds any difference between the values) to check digests for correctness
