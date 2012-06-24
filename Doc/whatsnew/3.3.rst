@@ -48,7 +48,7 @@
 
 This article explains the new features in Python 3.3, compared to 3.2.
 
-.. note:: Alpha users should be aware that this document is currently in
+.. note:: Beta users should be aware that this document is currently in
    draft form. It will be updated substantially as Python 3.3 moves towards
    release, so it's worth checking back even after reading earlier versions.
 
