@@ -966,7 +966,7 @@ class saved_test_environment:
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
-                 'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
+                 'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'support.TESTFN',
                 )
 
@@ -1113,15 +1113,13 @@ class saved_test_environment:
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(saved[2])
 
-    def get_sysconfig__SCHEMES(self):
-        # it's mildly evil to look at the internal attribute, but it's easier
-        # than copying a RawConfigParser object
-        return (id(sysconfig._SCHEMES), sysconfig._SCHEMES._sections,
-                sysconfig._SCHEMES._sections.copy())
-    def restore_sysconfig__SCHEMES(self, saved):
-        sysconfig._SCHEMES._sections = saved[1]
-        sysconfig._SCHEMES._sections.clear()
-        sysconfig._SCHEMES._sections.update(saved[2])
+    def get_sysconfig__INSTALL_SCHEMES(self):
+        return (id(sysconfig._INSTALL_SCHEMES), sysconfig._INSTALL_SCHEMES,
+                sysconfig._INSTALL_SCHEMES.copy())
+    def restore_sysconfig__INSTALL_SCHEMES(self, saved):
+        sysconfig._INSTALL_SCHEMES = saved[1]
+        sysconfig._INSTALL_SCHEMES.clear()
+        sysconfig._INSTALL_SCHEMES.update(saved[2])
 
     def get_support_TESTFN(self):
         if os.path.isfile(support.TESTFN):
