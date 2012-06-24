@@ -70,21 +70,12 @@ This module also provides the following helper function:
 
 .. function:: compare_digest(a, b)
 
-   Return ``a == b``.  This function uses an approach designed to prevent timing
-   analysis by avoiding content based short circuiting behaviour, making it
-   appropriate for cryptography.  *a* and *b* must both be of the same type:
-   either :class:`str` (ASCII only, as e.g. returned by
+   Return ``a == b``.  This function uses an approach designed to prevent
+   timing analysis by avoiding content-based short circuiting behaviour,
+   making it appropriate for cryptography.  *a* and *b* must both be of the
+   same type: either :class:`str` (ASCII only, as e.g. returned by
    :meth:`HMAC.hexdigest`), or any type that supports the buffer protocol
    (e.g. :class:`bytes`).
-
-   Using a short circuiting comparison (that is, one that terminates as soon as
-   it finds any difference between the values) to check digests for correctness
-   can be problematic, as it introduces a potential vulnerability when an
-   attacker can control both the message to be checked *and* the purported
-   signature value.  By keeping the plaintext consistent and supplying different
-   signature values, an attacker may be able to use timing variations to search
-   the signature space for the expected value in O(n) time rather than the
-   desired O(2**n).
 
    .. note::
 
