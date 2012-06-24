@@ -180,6 +180,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added return of the *dst*.
 
+
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
    .. index:: single: directory; deleting
@@ -193,12 +194,12 @@ Directory and files operations
    .. note::
 
       On platforms that support the necessary fd-based functions a symlink
-      attack resistant version of :func:`rmtree` is used by default. On other
-      platforms, the :func:`rmtree` implementation is susceptible to a
-      symlink attack: given proper timing and circumstances, attackers can
-      manipulate symlinks on the filesystem to delete files they wouldn't
-      be able to access otherwise. Applications can use the :data:`rmtree.avoids_symlink_attacks` function attribute to
-      determine which case applies.
+      attack resistant version of :func:`rmtree` is used by default.  On other
+      platforms, the :func:`rmtree` implementation is susceptible to a symlink
+      attack: given proper timing and circumstances, attackers can manipulate
+      symlinks on the filesystem to delete files they wouldn't be able to access
+      otherwise.  Applications can use the :data:`rmtree.avoids_symlink_attacks`
+      function attribute to determine which case applies.
 
    If *onerror* is provided, it must be a callable that accepts three
    parameters: *function*, *path*, and *excinfo*.
@@ -216,10 +217,11 @@ Directory and files operations
    .. data:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
-      symlink attack resistant version of :func:`rmtree`. Currently this is
+      symlink attack resistant version of :func:`rmtree`.  Currently this is
       only true for platforms supporting fd-based directory access functions.
 
       .. versionadded:: 3.3
+
 
 .. function:: move(src, dst)
 
