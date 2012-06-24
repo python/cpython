@@ -228,16 +228,17 @@ random_seed(RandomObject *self, PyObject *args)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    /* If the arg is an int or long, use its absolute value; else use
-     * the absolute value of its hash code.
+    /* This algorithm relies on the number being unsigned.
+     * So: if the arg is a PyLong, use its absolute value.
+     * Otherwise use its hash value, cast to unsigned.
      */
     if (PyLong_Check(arg))
         n = PyNumber_Absolute(arg);
     else {
-        Py_ssize_t hash = PyObject_Hash(arg);
+        Py_hash_t hash = PyObject_Hash(arg);
         if (hash == -1)
             goto Done;
-        n = PyLong_FromSsize_t(hash);
+        n = PyLong_FromSize_t((size_t)hash);
     }
     if (n == NULL)
         goto Done;
