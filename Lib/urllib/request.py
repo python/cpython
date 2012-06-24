@@ -1066,8 +1066,8 @@ class AbstractHTTPHandler(BaseHandler):
         if request.data is not None:  # POST
             data = request.data
             if isinstance(data, str):
-                msg = "POST data should be bytes or an iterable of bytes."\
-                      "It cannot be str"
+                msg = "POST data should be bytes or an iterable of bytes. "\
+                      "It cannot be of type str."
                 raise TypeError(msg)
             if not request.has_header('Content-type'):
                 request.add_unredirected_header(
