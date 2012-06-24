@@ -10,7 +10,7 @@ from test.support import (run_unittest, TESTFN, unlink,
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
-                       get_path, get_path_names, _SCHEMES,
+                       get_path, get_path_names, _INSTALL_SCHEMES,
                        _get_default_scheme, _expand_vars,
                        get_scheme_names, get_config_var, _main)
 
@@ -36,8 +36,7 @@ class TestSysConfig(unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
-        self._config_vars = sysconfig._CONFIG_VARS
-        sysconfig._CONFIG_VARS = copy(sysconfig._CONFIG_VARS)
+        self._config_vars = sysconfig._CONFIG_VARS, copy(sysconfig._CONFIG_VARS)
         self._added_envvars = []
         self._changed_envvars = []
         for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
@@ -60,7 +59,9 @@ class TestSysConfig(unittest.TestCase):
         os.path.join = self.join
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
-        sysconfig._CONFIG_VARS = self._config_vars
+        sysconfig._CONFIG_VARS = self._config_vars[0]
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self._config_vars[1])
         for var, value in self._changed_envvars:
             os.environ[var] = value
         for var in self._added_envvars:
@@ -82,7 +83,7 @@ class TestSysConfig(unittest.TestCase):
             shutil.rmtree(path)
 
     def test_get_path_names(self):
-        self.assertEqual(get_path_names(), _SCHEMES.options('posix_prefix'))
+        self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
 
     def test_get_paths(self):
         scheme = get_paths()
@@ -94,8 +95,8 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_path(self):
         # XXX make real tests here
-        for scheme in _SCHEMES:
-            for name in _SCHEMES[scheme]:
+        for scheme in _INSTALL_SCHEMES:
+            for name in _INSTALL_SCHEMES[scheme]:
                 res = get_path(name, scheme)
 
     def test_get_config_vars(self):
