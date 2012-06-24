@@ -801,6 +801,7 @@ as internal buffering of data.
 
    .. versionadded:: 3.3
 
+
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
@@ -1952,8 +1953,8 @@ features:
 
        os.stat in os.supports_dir_fd
 
-   Currently *dir_fd* parameters only work on UNIX platforms;
-   none of them work on Windows.
+   Currently *dir_fd* parameters only work on Unix platforms; none of them work
+   on Windows.
 
    .. versionadded:: 3.3
 
@@ -3308,6 +3309,6 @@ Miscellaneous Functions
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
-   though its exact quality depends on the OS implementation.  On a UNIX-like
+   though its exact quality depends on the OS implementation.  On a Unix-like
    system this will query /dev/urandom, and on Windows it will use CryptGenRandom.
    If a randomness source is not found, :exc:`NotImplementedError` will be raised.
