@@ -17,7 +17,7 @@ P = import_fresh_module('decimal', blocked=['_decimal'])
 
 
 # Pi function from the decimal.py documentation
-def pi_float(prec):
+def pi_float():
     """native float"""
     lasts, t, s, n, na, d, da = 0, 3.0, 3, 1, 0, 0, 24
     while s != lasts:
@@ -28,9 +28,8 @@ def pi_float(prec):
         s += t
     return s
 
-def pi_cdecimal(prec):
+def pi_cdecimal():
     """cdecimal"""
-    C.getcontext().prec = prec
     D = C.Decimal
     lasts, t, s, n, na, d, da = D(0), D(3), D(3), D(1), D(0), D(0), D(24)
     while s != lasts:
@@ -41,9 +40,8 @@ def pi_cdecimal(prec):
         s += t
     return s
 
-def pi_decimal(prec):
+def pi_decimal():
     """decimal"""
-    P.getcontext().prec = prec
     D = P.Decimal
     lasts, t, s, n, na, d, da = D(0), D(3), D(3), D(1), D(0), D(0), D(24)
     while s != lasts:
@@ -73,8 +71,10 @@ for prec in [9, 19]:
     print("\nPrecision: %d decimal digits\n" % prec)
     for func in [pi_float, pi_cdecimal, pi_decimal]:
         start = time.time()
+        C.getcontext().prec = prec
+        P.getcontext().prec = prec
         for i in range(10000):
-            x = func(prec)
+            x = func()
         print("%s:" % func.__name__.replace("pi_", ""))
         print("result: %s" % str(x))
         print("time: %fs\n" % (time.time()-start))
