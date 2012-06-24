@@ -292,9 +292,7 @@ compare_digest(PyObject *self, PyObject *args)
         PyBuffer_Release(&view_b);
     }
 
-    result = PyBool_FromLong(rc);
-    Py_INCREF(result);
-    return result;
+    return PyBool_FromLong(rc);
 }
 
 /* operator methods **********************************************************/
