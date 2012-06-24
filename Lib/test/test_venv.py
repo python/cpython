@@ -2,6 +2,7 @@
 Test harness for the venv module.
 
 Copyright (C) 2011-2012 Vinay Sajip.
+Licensed to the PSF under a contributor agreement.
 """
 
 import os
@@ -29,8 +30,8 @@ class BaseTest(unittest.TestCase):
             self.pydocname = 'pydoc'
             self.lib = ('lib', 'python%s' % sys.version[:3])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in os.environ:
-            executable = os.environ['__PYTHONV_LAUNCHER__']
+        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
+            executable = os.environ['__PYVENV_LAUNCHER__']
         else:
             executable = sys.executable
         self.exe = os.path.split(executable)[-1]
@@ -69,9 +70,9 @@ class BasicTest(BaseTest):
         self.isdir(self.include)
         self.isdir(*self.lib)
         data = self.get_text_file_contents('pyvenv.cfg')
-        if sys.platform == 'darwin' and ('__PYTHONV_LAUNCHER__'
+        if sys.platform == 'darwin' and ('__PYVENV_LAUNCHER__'
                                          in os.environ):
-            executable =  os.environ['__PYTHONV_LAUNCHER__']
+            executable =  os.environ['__PYVENV_LAUNCHER__']
         else:
             executable = sys.executable
         path = os.path.dirname(executable)
@@ -127,7 +128,7 @@ class BasicTest(BaseTest):
         for usl in (False, True):
             builder = venv.EnvBuilder(clear=True, symlinks=usl)
             if (usl and sys.platform == 'darwin' and
-                '__PYTHONV_LAUNCHER__' in os.environ):
+                '__PYVENV_LAUNCHER__' in os.environ):
                 self.assertRaises(ValueError, builder.create, self.env_dir)
             else:
                 builder.create(self.env_dir)
