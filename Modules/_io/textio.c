@@ -1560,8 +1560,14 @@ textiowrapper_read(textio *self, PyObject *args)
         /* Keep reading chunks until we have n characters to return */
         while (remaining > 0) {
             res = textiowrapper_read_chunk(self, remaining);
-            if (res < 0)
+            if (res < 0) {
+                /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
+                   when EINTR occurs so we needn't do it ourselves. */
+                if (_PyIO_trap_eintr()) {
+                    continue;
+                }
                 goto fail;
+            }
             if (res == 0)  /* EOF */
                 break;
             if (chunks == NULL) {
@@ -1728,8 +1734,14 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         while (!self->decoded_chars ||
                !PyUnicode_GET_LENGTH(self->decoded_chars)) {
             res = textiowrapper_read_chunk(self, 0);
-            if (res < 0)
+            if (res < 0) {
+                /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
+                   when EINTR occurs so we needn't do it ourselves. */
+                if (_PyIO_trap_eintr()) {
+                    continue;
+                }
                 goto error;
+            }
             if (res == 0)
                 break;
         }
