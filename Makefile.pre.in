@@ -946,8 +946,6 @@ bininstall: altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(VERSION) pydoc3)
 	-rm -f $(DESTDIR)$(BINDIR)/2to3
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s 2to3-$(VERSION) 2to3)
-	-rm -f $(DESTDIR)$(BINDIR)/pysetup3
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s pysetup$(VERSION) pysetup3)
 	-rm -f $(DESTDIR)$(BINDIR)/pyvenv
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pyvenv-$(VERSION) pyvenv)
 
