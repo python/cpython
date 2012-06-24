@@ -33,7 +33,8 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    This parser does not check that end tags match start tags or call the end-tag
    handler for elements which are closed implicitly by closing an outer element.
 
-   .. versionchanged:: 3.2 *strict* keyword added
+   .. versionchanged:: 3.2
+      *strict* keyword added.
 
    .. deprecated-removed:: 3.3 3.5
       The *strict* argument and the strict mode have been deprecated.

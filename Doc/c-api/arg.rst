@@ -264,7 +264,8 @@ Numbers
    Convert a Python byte, represented as a :class:`bytes` or
    :class:`bytearray` object of length 1, to a C :c:type:`char`.
 
-   .. versionchanged:: 3.3 Allow :class:`bytearray` objects
+   .. versionchanged:: 3.3
+      Allow :class:`bytearray` objects.
 
 ``C`` (:class:`str` of length 1) [int]
    Convert a Python character, represented as a :class:`str` object of
@@ -324,7 +325,7 @@ Other objects
    This accepts any valid Python value.  See :ref:`truth` for more
    information about how Python tests values for truth.
 
-   .. versionchanged:: 3.3
+   .. versionadded:: 3.3
 
 ``(items)`` (:class:`tuple`) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units

@@ -362,7 +362,8 @@ An :class:`SMTP` instance has the following methods:
    Unless otherwise noted, the connection will be open even after an exception is
    raised.
 
-   .. versionchanged:: 3.2 *msg* may be a byte string.
+   .. versionchanged:: 3.2
+      *msg* may be a byte string.
 
 
 .. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \

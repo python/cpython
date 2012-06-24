@@ -785,8 +785,8 @@ an :term:`importer`.
     loader should initialize as specified by :pep:`302` as best as possible.
 
     .. versionchanged:: 3.3
-      :attr:`__loader__` and :attr:`__package__` are automatically set
-      (when possible).
+       :attr:`__loader__` and :attr:`__package__` are automatically set
+       (when possible).
 
 .. decorator:: set_loader
 

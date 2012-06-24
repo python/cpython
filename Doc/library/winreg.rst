@@ -290,7 +290,8 @@ This module offers the following functions:
 
    If the function fails, :exc:`OSError` is raised.
 
-   .. versionchanged:: 3.2 Allow the use of named arguments.
+   .. versionchanged:: 3.2
+      Allow the use of named arguments.
 
    .. versionchanged:: 3.3
       This function used to raise a :exc:`WindowsError`, which is now an
