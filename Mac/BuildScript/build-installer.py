@@ -361,7 +361,7 @@ def pkg_recipes():
         ),
     ]
 
-    if DEPTARGET < '10.4':
+    if DEPTARGET < '10.4' and not PYTHON_3:
         result.append(
             dict(
                 name="PythonSystemFixes",
