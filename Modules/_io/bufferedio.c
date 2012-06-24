@@ -730,8 +730,8 @@ _buffered_init(buffered *self)
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */
-static int
-_trap_eintr(void)
+int
+_PyIO_trap_eintr(void)
 {
     static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
@@ -1314,7 +1314,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     */
     do {
         res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readinto, memobj, NULL);
-    } while (res == NULL && _trap_eintr());
+    } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
@@ -1742,7 +1742,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
         errno = 0;
         res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_write, memobj, NULL);
         errnum = errno;
-    } while (res == NULL && _trap_eintr());
+    } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
