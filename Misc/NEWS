@@ -10,6 +10,11 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #12268: File readline, readlines and read() or readall() methods
+  no longer lose data when an underlying read system call is interrupted.
+  IOError is no longer raised due to a read system call returning EINTR
+  from within these methods.
+
 - Issue #15142: Fix reference leak when deallocating instances of types
   created using PyType_FromSpec().
 
