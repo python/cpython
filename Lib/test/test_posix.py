@@ -1015,19 +1015,19 @@ class PosixTester(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'freebsd9',
             "Skip test because known kernel bug - " \
             "http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html")
-    def test_fs_holes(self) :
+    def test_fs_holes(self):
         # Even if the filesystem doesn't report holes,
         # if the OS supports it the SEEK_* constants
         # will be defined and will have a consistent
         # behaviour:
         # os.SEEK_DATA = current position
         # os.SEEK_HOLE = end of file position
-        with open(support.TESTFN, 'r+b') as fp :
+        with open(support.TESTFN, 'r+b') as fp:
             fp.write(b"hello")
             fp.flush()
             size = fp.tell()
             fno = fp.fileno()
-            for i in range(size) :
+            for i in range(size):
                 self.assertEqual(i, os.lseek(fno, i, os.SEEK_DATA))
                 self.assertLessEqual(size, os.lseek(fno, i, os.SEEK_HOLE))
             self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_DATA)
