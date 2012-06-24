@@ -279,7 +279,13 @@ PyDict_Fini(void)
 #define DK_MASK(dk) (((dk)->dk_size)-1)
 #define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
 
-/* USABLE_FRACTION must obey the following:
+/* USABLE_FRACTION is the maximum dictionary load.
+ * Currently set to (2n+1)/3. Increasing this ratio makes dictionaries more
+ * dense resulting in more collisions.  Decreasing it improves sparseness
+ * at the expense of spreading entries over more cache lines and at the
+ * cost of total memory consumed.
+ *
+ * USABLE_FRACTION must obey the following:
  *     (0 < USABLE_FRACTION(n) < n) for all n >= 2
  *
  * USABLE_FRACTION should be very quick to calculate.
@@ -299,6 +305,14 @@ PyDict_Fini(void)
  * #define USABLE_FRACTION(n) (((n) >> 1) + ((n) >> 2) - ((n) >> 3))
 */
 
+/* GROWTH_RATE. Growth rate upon hitting maximum load.  Currently set to *2.
+ * Raising this to *4 doubles memory consumption depending on the size of
+ * the dictionary, but results in half the number of resizes, less effort to
+ * resize and better sparseness for some (but not all dict sizes).
+ * Setting to *4 eliminates every other resize step.
+ * GROWTH_RATE was set to *4 up to version 3.2.
+ */
+#define GROWTH_RATE(x) ((x) * 2)
 
 #define ENSURE_ALLOWS_DELETIONS(d) \
     if ((d)->ma_keys->dk_lookup == lookdict_unicode_nodummy) { \
@@ -776,13 +790,7 @@ find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 static int
 insertion_resize(PyDictObject *mp)
 {
-    /*
-    * Double the size of the dict,
-    * Previous versions quadrupled size, but doing so may result in excessive
-    * memory use. Doubling keeps the number of resizes low without wasting
-    * too much memory.
-    */
-    return dictresize(mp, 2 * mp->ma_used);
+    return dictresize(mp, GROWTH_RATE(mp->ma_used));
 }
 
 /*

@@ -70,42 +70,8 @@ A values array
 Tunable Dictionary Parameters
 -----------------------------
 
-* PyDict_STARTSIZE. Starting size of dict (unless an instance dict).
-    Currently set to 8. Must be a power of two.
-    New dicts have to zero-out every cell.
-    Increasing improves the sparseness of small dictionaries but costs
-    time to read in the additional cache lines if they are not already
-    in cache. That case is common when keyword arguments are passed.
-    Prior to version 3.3, PyDict_MINSIZE was used as the starting size
-    of a new dict.
-
-* PyDict_MINSIZE. Minimum size of a dict.
-    Currently set to 4 (to keep instance dicts small).
-    Must be a power of two. Prior to version 3.3, PyDict_MINSIZE was
-    set to 8.
-
-* USABLE_FRACTION. Maximum dictionary load in PyDict_SetItem.
-    Currently set to 2/3. Increasing this ratio makes dictionaries more
-    dense resulting in more collisions.  Decreasing it improves sparseness
-    at the expense of spreading entries over more cache lines and at the
-    cost of total memory consumed.
-
-* Growth rate upon hitting maximum load.  Currently set to *2.
-    Raising this to *4 results in half the number of resizes, less
-    effort to resize, better sparseness for some (but not all dict sizes),
-    and potentially doubles memory consumption depending on the size of
-    the dictionary.  Setting to *4 eliminates every other resize step.
-
-* Maximum sparseness (minimum dictionary load).  What percentage
-    of entries can be unused before the dictionary shrinks to
-    free up memory and speed up iteration?  (The current CPython
-    code does not represent this parameter directly.)
-
-* Shrinkage rate upon exceeding maximum sparseness.  The current
-    CPython code never even checks sparseness when deleting a
-    key.  When a new key is added, it resizes based on the number
-    of active keys, so that the addition may trigger shrinkage
-    rather than growth.
+See comments for PyDict_MINSIZE_SPLIT, PyDict_MINSIZE_COMBINED,
+USABLE_FRACTION and GROWTH_RATE in dictobject.c
 
 Tune-ups should be measured across a broad range of applications and
 use cases.  A change to any parameter will help in some situations and
