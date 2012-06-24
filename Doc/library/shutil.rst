@@ -306,7 +306,7 @@ Directory and files operations
 .. _shutil-copytree-example:
 
 copytree example
-::::::::::::::::
+~~~~~~~~~~~~~~~~
 
 This example is the implementation of the :func:`copytree` function, described
 above, with the docstring omitted.  It demonstrates many of the other functions
@@ -370,6 +370,8 @@ Another example that uses the *ignore* argument to add a logging call::
 Archiving operations
 --------------------
 
+.. versionadded:: 3.2
+
 High-level utilities to create and read compressed and archived files are also
 provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
@@ -397,8 +399,6 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
 
-   .. versionadded:: 3.2
-
 
 .. function:: get_archive_formats()
 
@@ -415,8 +415,6 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.
 
-   .. versionadded:: 3.2
-
 
 .. function:: register_archive_format(name, function, [extra_args, [description]])
 
@@ -429,14 +427,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *description* is used by :func:`get_archive_formats` which returns the
    list of archivers. Defaults to an empty list.
 
-   .. versionadded:: 3.2
-
 
 .. function:: unregister_archive_format(name)
 
    Remove the archive format *name* from the list of supported formats.
-
-   .. versionadded:: 3.2
 
 
 .. function:: unpack_archive(filename[, extract_dir[, format]])
@@ -451,8 +445,6 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    provided, :func:`unpack_archive` will use the archive file name extension
    and see if an unpacker was registered for that extension. In case none is
    found, a :exc:`ValueError` is raised.
-
-   .. versionadded:: 3.2
 
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
@@ -471,14 +463,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *description* can be provided to describe the format, and will be returned
    by the :func:`get_unpack_formats` function.
 
-   .. versionadded:: 3.2
-
 
 .. function:: unregister_unpack_format(name)
 
    Unregister an unpack format. *name* is the name of the format.
-
-   .. versionadded:: 3.2
 
 
 .. function:: get_unpack_formats()
@@ -497,13 +485,11 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
 
-   .. versionadded:: 3.2
-
 
 .. _shutil-archiving-example:
 
 Archiving example
-:::::::::::::::::
+~~~~~~~~~~~~~~~~~
 
 In this example, we create a gzip'ed tar-file archive containing all files
 found in the :file:`.ssh` directory of the user::
