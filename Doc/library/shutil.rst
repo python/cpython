@@ -190,14 +190,15 @@ Directory and files operations
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
 
-   .. warning::
+   .. note::
 
-      The default :func:`rmtree` function is susceptible to a symlink attack:
-      given proper timing and circumstances, attackers can use it to delete
-      files they wouldn't be able to access otherwise.  Thus -- on platforms
-      that support the necessary fd-based functions -- a safe version of
-      :func:`rmtree` is used, which isn't vulnerable. In this case
-      :data:`rmtree_is_safe` is set to True.
+      On platforms that support the necessary fd-based functions a symlink
+      attack resistant version of :func:`rmtree` is used by default. On other
+      platforms, the :func:`rmtree` implementation is susceptible to a
+      symlink attack: given proper timing and circumstances, attackers can
+      manipulate symlinks on the filesystem to delete files they wouldn't
+      be able to access otherwise. Applications can use the :data:`rmtree.avoids_symlink_attacks` function attribute to
+      determine which case applies.
 
    If *onerror* is provided, it must be a callable that accepts three
    parameters: *function*, *path*, and *excinfo*.
@@ -209,16 +210,16 @@ Directory and files operations
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
    .. versionchanged:: 3.3
-      Added a safe version that is used automatically if platform supports
-      fd-based functions.
+      Added a symlink attack resistant version that is used automatically
+      if platform supports fd-based functions.
 
-.. data:: rmtree_is_safe
+   .. data:: rmtree.avoids_symlink_attacks
 
-   Indicates whether the current platform and implementation has a symlink
-   attack-proof version of :func:`rmtree`. Currently this is only true for
-   platforms supporting fd-based directory access functions.
+      Indicates whether the current platform and implementation provides a
+      symlink attack resistant version of :func:`rmtree`. Currently this is
+      only true for platforms supporting fd-based directory access functions.
 
-   .. versionadded:: 3.3
+      .. versionadded:: 3.3
 
 .. function:: move(src, dst)
 

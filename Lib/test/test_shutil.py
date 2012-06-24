@@ -487,7 +487,7 @@ class TestShutil(unittest.TestCase):
     def test_rmtree_uses_safe_fd_version_if_available(self):
         if os.unlink in os.supports_dir_fd and os.open in os.supports_dir_fd:
             self.assertTrue(shutil._use_fd_functions)
-            self.assertTrue(shutil.rmtree_is_safe)
+            self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
             os.mkdir(d)
@@ -502,7 +502,7 @@ class TestShutil(unittest.TestCase):
                 shutil._rmtree_safe_fd = real_rmtree
         else:
             self.assertFalse(shutil._use_fd_functions)
-            self.assertFalse(shutil.rmtree_is_safe)
+            self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.

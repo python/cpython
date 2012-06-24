@@ -1296,6 +1296,11 @@ shutil
   acts on the symlink itself (or creates one, if relevant).
   (Contributed by Hynek Schlawack in :issue:`12715`.)
 
+* :func:`~shutil.rmtree` is now resistant to symlink attacks on platforms
+  which support the new ``dir_fd`` parameter in :func:`os.open` and
+  :func:`os.unlinkat`. (Contributed by Martin von Löwis and Hynek Schlawack
+  in :issue:`4489`.)
+
 
 
 signal
