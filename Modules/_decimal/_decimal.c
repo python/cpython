@@ -76,6 +76,9 @@ typedef struct {
     PyObject *traps;
     PyObject *flags;
     int capitals;
+#ifndef WITHOUT_THREADS
+    PyThreadState *tstate;
+#endif
 } PyDecContextObject;
 
 typedef struct {
@@ -123,6 +126,8 @@ static PyObject *module_context = NULL;
 #else
 /* Key for thread state dictionary */
 static PyObject *tls_context_key = NULL;
+/* Invariant: NULL or the most recently accessed thread local context */
+static PyDecContextObject *cached_context = NULL;
 #endif
 
 /* Template for creating new thread contexts, calling Context() without
@@ -1182,6 +1187,9 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     SdFlagAddr(self->flags) = &ctx->status;
 
     CtxCaps(self) = 1;
+#ifndef WITHOUT_THREADS
+    self->tstate = NULL;
+#endif
 
     return (PyObject *)self;
 }
@@ -1189,6 +1197,11 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 static void
 context_dealloc(PyDecContextObject *self)
 {
+#ifndef WITHOUT_THREADS
+    if (self == cached_context) {
+        cached_context = NULL;
+    }
+#endif
     Py_XDECREF(self->traps);
     Py_XDECREF(self->flags);
     Py_TYPE(self)->tp_free(self);
@@ -1555,18 +1568,19 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 }
 #else
 /*
- * Thread local storage currently has a speed penalty of about 16%.
+ * Thread local storage currently has a speed penalty of about 4%.
  * All functions that map Python's arithmetic operators to mpdecimal
  * functions have to look up the current context for each and every
  * operation.
  */
 
-/* Return borrowed reference to thread local context. */
+/* Get the context from the thread state dictionary. */
 static PyObject *
-current_context(void)
+current_context_from_dict(void)
 {
-    PyObject *dict = NULL;
-    PyObject *tl_context = NULL;
+    PyObject *dict;
+    PyObject *tl_context;
+    PyThreadState *tstate;
 
     dict = PyThreadState_GetDict();
     if (dict == NULL) {
@@ -1577,30 +1591,52 @@ current_context(void)
 
     tl_context = PyDict_GetItemWithError(dict, tls_context_key);
     if (tl_context != NULL) {
-        /* We already have a thread local context and
-         * return a borrowed reference. */
+        /* We already have a thread local context. */
         CONTEXT_CHECK(tl_context);
-        return tl_context;
     }
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
+    else {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
 
-    /* Otherwise, set up a new thread local context. */
-    tl_context = context_copy(default_context_template);
-    if (tl_context == NULL) {
-        return NULL;
-    }
-    CTX(tl_context)->status = 0;
+        /* Set up a new thread local context. */
+        tl_context = context_copy(default_context_template);
+        if (tl_context == NULL) {
+            return NULL;
+        }
+        CTX(tl_context)->status = 0;
 
-    if (PyDict_SetItem(dict, tls_context_key, tl_context) < 0) {
+        if (PyDict_SetItem(dict, tls_context_key, tl_context) < 0) {
+            Py_DECREF(tl_context);
+            return NULL;
+        }
         Py_DECREF(tl_context);
-        return NULL;
     }
-    Py_DECREF(tl_context);
 
-    /* refcount is 1 */
+    /* Cache the context of the current thread, assuming that it
+     * will be accessed several times before a thread switch. */
+    tstate = PyThreadState_GET();
+    if (tstate) {
+        cached_context = (PyDecContextObject *)tl_context;
+        cached_context->tstate = tstate;
+    }
+
+    /* Borrowed reference with refcount==1 */
     return tl_context;
+}
+
+/* Return borrowed reference to thread local context. */
+static PyObject *
+current_context(void)
+{
+    PyThreadState *tstate;
+
+    tstate = PyThreadState_GET();
+    if (cached_context && cached_context->tstate == tstate) {
+        return (PyObject *)cached_context;
+    }
+
+    return current_context_from_dict();
 }
 
 /* ctxobj := borrowed reference to the current context */
@@ -1664,6 +1700,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         Py_INCREF(v);
     }
 
+    cached_context = NULL;
     if (PyDict_SetItem(dict, tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;

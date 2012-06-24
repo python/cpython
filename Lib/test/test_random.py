@@ -34,8 +34,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(randseq, self.randomlist(N))
 
     def test_seedargs(self):
+        # Seed value with a negative hash.
+        class MySeed(object):
+            def __hash__(self):
+                return -1729
         for arg in [None, 0, 0, 1, 1, -1, -1, 10**20, -(10**20),
-                    3.14, 1+2j, 'a', tuple('abc')]:
+                    3.14, 1+2j, 'a', tuple('abc'), MySeed()]:
             self.gen.seed(arg)
         for arg in [list(range(3)), dict(one=1)]:
             self.assertRaises(TypeError, self.gen.seed, arg)
