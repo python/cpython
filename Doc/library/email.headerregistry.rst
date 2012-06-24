@@ -16,7 +16,7 @@
    necessary by the core developers.
 
 .. versionadded:: 3.3
-   as a :term:`provisional module <provisional package>`
+   as a :term:`provisional module <provisional package>`.
 
 Headers are represented by customized subclasses of :class:`str`.  The
 particular class used to represent a given header is determined by the
