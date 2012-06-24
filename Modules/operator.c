@@ -225,7 +225,6 @@ compare_digest(PyObject *self, PyObject *args)
 {
     PyObject *a, *b;
     int rc;
-    PyObject *result;
 
     if (!PyArg_ParseTuple(args, "OO:compare_digest", &a, &b)) {
         return NULL;
