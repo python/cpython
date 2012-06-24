@@ -678,9 +678,9 @@ as internal buffering of data.
 
 .. function:: fchmod(fd, mode)
 
-   Change the mode of the file given by *fd* to the numeric *mode*.  See the docs
-   for :func:`chmod` for possible values of *mode*.
-   Equivalent to ``os.chmod(fd, mode)``.
+   Change the mode of the file given by *fd* to the numeric *mode*.  See the
+   docs for :func:`chmod` for possible values of *mode*.  From Python 3.3, this
+   is equivalent to ``os.chmod(fd, mode)``.
 
    Availability: Unix.
 
@@ -688,8 +688,9 @@ as internal buffering of data.
 .. function:: fchown(fd, uid, gid)
 
    Change the owner and group id of the file given by *fd* to the numeric *uid*
-   and *gid*.  To leave one of the ids unchanged, set it to -1.  Equivalent
-   to ``os.chown(fd, uid, gid)``.
+   and *gid*.  To leave one of the ids unchanged, set it to -1.  See
+   :func:`chown`.  From Python 3.3, this is equivalent to ``os.chown(fd, uid,
+   gid)``.
 
    Availability: Unix.
 
@@ -725,15 +726,17 @@ as internal buffering of data.
 
 .. function:: fstat(fd)
 
-   Return status for file descriptor *fd*, like :func:`~os.stat`.
+   Return status for file descriptor *fd*, like :func:`~os.stat`.  From Python
+   3.3, this is equivalent to ``os.stat(fd)``.
 
    Availability: Unix, Windows.
 
 
 .. function:: fstatvfs(fd)
 
-   Return information about the filesystem containing the file associated with file
-   descriptor *fd*, like :func:`statvfs`.
+   Return information about the filesystem containing the file associated with
+   file descriptor *fd*, like :func:`statvfs`.  From Python 3.3, this is
+   equivalent to ``os.statvfs(fd)``.
 
    Availability: Unix.
 
@@ -1309,7 +1312,7 @@ features:
 
    Change the current working directory to the directory represented by the file
    descriptor *fd*.  The descriptor must refer to an opened directory, not an
-   open file.  Equivalent to ``os.chdir(fd)``.
+   open file.  From Python 3.3, this is equivalent to ``os.chdir(fd)``.
 
    Availability: Unix.
 
@@ -1425,8 +1428,8 @@ features:
 .. function:: lchflags(path, flags)
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do
-   not follow symbolic links.  Equivalent to ``os.chflags(path, flags,
-   follow_symlinks=False)``.
+   not follow symbolic links.  From Python 3.3, this is equivalent to
+   ``os.chflags(path, flags, follow_symlinks=False)``.
 
    Availability: Unix.
 
@@ -1435,8 +1438,8 @@ features:
 
    Change the mode of *path* to the numeric *mode*. If path is a symlink, this
    affects the symlink rather than the target.  See the docs for :func:`chmod`
-   for possible values of *mode*.  Equivalent to ``os.chmod(path, mode,
-   follow_symlinks=False)``.
+   for possible values of *mode*.  From Python 3.3, this is equivalent to
+   ``os.chmod(path, mode, follow_symlinks=False)``.
 
    Availability: Unix.
 
@@ -1444,8 +1447,8 @@ features:
 .. function:: lchown(path, uid, gid)
 
    Change the owner and group id of *path* to the numeric *uid* and *gid*.  This
-   function will not follow symbolic links.  Equivalent to ``os.chown(path, uid,
-   gid, follow_symlinks=False)``.
+   function will not follow symbolic links.  From Python 3.3, this is equivalent
+   to ``os.chown(path, uid, gid, follow_symlinks=False)``.
 
    Availability: Unix.
 
@@ -1502,7 +1505,8 @@ features:
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links.  On
    platforms that do not support symbolic links, this is an alias for
-   :func:`~os.stat`.  (Equivalent to ``os.stat(path, follow_symlinks=False)``.)
+   :func:`~os.stat`.  From Python 3.3, this is equivalent to ``os.stat(path,
+   dir_fd=dir_fd, follow_symlinks=False)``.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
