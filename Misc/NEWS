@@ -55,6 +55,10 @@ Core and Builtins
 Library
 -------
 
+- Speed up _decimal by another 10-15% by caching the thread local context
+  that was last accessed. In the pi benchmark (64-bit platform, prec=9),
+  _decimal is now only 1.5x slower than float.
+
 - Remove the packaging module, which is not ready for prime time.
 
 - Issue #15154: Add "dir_fd" parameter to os.rmdir, remove "rmdir"
