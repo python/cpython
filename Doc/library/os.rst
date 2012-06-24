@@ -96,6 +96,13 @@ These functions and data items provide information and operate on the current
 process and user.
 
 
+.. function:: ctermid()
+
+   Return the filename corresponding to the controlling terminal of the process.
+
+   Availability: Unix.
+
+
 .. data:: environ
 
    A mapping object representing the string environment. For example,
@@ -177,6 +184,28 @@ process and user.
    .. versionadded:: 3.2
 
 
+.. function:: getenv(key, default=None)
+
+   Return the value of the environment variable *key* if it exists, or
+   *default* if it doesn't. *key*, *default* and the result are str.
+
+   On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
+   and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
+   would like to use a different encoding.
+
+   Availability: most flavors of Unix, Windows.
+
+
+.. function:: getenvb(key, default=None)
+
+   Return the value of the environment variable *key* if it exists, or
+   *default* if it doesn't. *key*, *default* and the result are bytes.
+
+   Availability: most flavors of Unix.
+
+   .. versionadded:: 3.2
+
+
 .. function:: get_exec_path(env=None)
 
    Returns the list of directories that will be searched for a named
@@ -186,13 +215,6 @@ process and user.
    By default, when *env* is None, :data:`environ` is used.
 
    .. versionadded:: 3.2
-
-
-.. function:: ctermid()
-
-   Return the filename corresponding to the controlling terminal of the process.
-
-   Availability: Unix.
 
 
 .. function:: getegid()
@@ -253,17 +275,6 @@ process and user.
       obtained with :func:`sysconfig.get_config_var`.
 
 
-.. function:: initgroups(username, gid)
-
-   Call the system initgroups() to initialize the group access list with all of
-   the groups of which the specified username is a member, plus the specified
-   group id.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.2
-
-
 .. function:: getlogin()
 
    Return the name of the user logged in on the controlling terminal of the
@@ -317,17 +328,29 @@ process and user.
 
    .. index:: single: process; scheduling priority
 
-   Get program scheduling priority. The value *which* is one of
+   Get program scheduling priority.  The value *which* is one of
    :const:`PRIO_PROCESS`, :const:`PRIO_PGRP`, or :const:`PRIO_USER`, and *who*
    is interpreted relative to *which* (a process identifier for
    :const:`PRIO_PROCESS`, process group identifier for :const:`PRIO_PGRP`, and a
-   user ID for :const:`PRIO_USER`). A zero value for *who* denotes
+   user ID for :const:`PRIO_USER`).  A zero value for *who* denotes
    (respectively) the calling process, the process group of the calling process,
    or the real user ID of the calling process.
 
-   Availability: Unix
+   Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. data:: PRIO_PROCESS
+          PRIO_PGRP
+          PRIO_USER
+
+   Parameters for the :func:`getpriority` and :func:`setpriority` functions.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
 
 .. function:: getresuid()
 
@@ -358,36 +381,16 @@ process and user.
    Availability: Unix.
 
 
-.. function:: getenv(key, default=None)
+.. function:: initgroups(username, gid)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str.
-
-   On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
-   and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
-   would like to use a different encoding.
-
-   Availability: most flavors of Unix, Windows.
-
-
-.. function:: getenvb(key, default=None)
-
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes.
-
-   Availability: most flavors of Unix.
-
-   .. versionadded:: 3.2
-
-.. data:: PRIO_PROCESS
-          PRIO_PGRP
-          PRIO_USER
-
-   Parameters for :func:`getpriority` and :func:`setpriority` functions.
+   Call the system initgroups() to initialize the group access list with all of
+   the groups of which the specified username is a member, plus the specified
+   group id.
 
    Availability: Unix.
 
-   .. versionadded:: 3.3
+   .. versionadded:: 3.2
+
 
 .. function:: putenv(key, value)
 
@@ -1269,27 +1272,13 @@ features:
 
 
 .. data:: F_OK
+          R_OK
+          W_OK
+          X_OK
 
-   Value to pass as the *mode* parameter of :func:`access` to test the existence of
-   *path*.
-
-
-.. data:: R_OK
-
-   Value to include in the *mode* parameter of :func:`access` to test the
-   readability of *path*.
-
-
-.. data:: W_OK
-
-   Value to include in the *mode* parameter of :func:`access` to test the
-   writability of *path*.
-
-
-.. data:: X_OK
-
-   Value to include in the *mode* parameter of :func:`access` to determine if
-   *path* can be executed.
+   Values to pass as the *mode* parameter of :func:`access` to test the
+   existence, readability, writability and executability of *path*,
+   respectively.
 
 
 .. function:: chdir(path)
@@ -1306,29 +1295,6 @@ features:
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
-
-
-.. function:: fchdir(fd)
-
-   Change the current working directory to the directory represented by the file
-   descriptor *fd*.  The descriptor must refer to an opened directory, not an
-   open file.  From Python 3.3, this is equivalent to ``os.chdir(fd)``.
-
-   Availability: Unix.
-
-
-.. function:: getcwd()
-
-   Return a string representing the current working directory.
-
-   Availability: Unix, Windows.
-
-
-.. function:: getcwdb()
-
-   Return a bytestring representing the current working directory.
-
-   Availability: Unix, Windows.
 
 
 .. function:: chflags(path, flags, *, follow_symlinks=True)
@@ -1355,12 +1321,6 @@ features:
 
    .. versionadded:: 3.3
       The *follow_symlinks* argument.
-
-
-.. function:: chroot(path)
-
-   Change the root directory of the current process to *path*. Availability:
-   Unix.
 
 
 .. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=True)
@@ -1423,6 +1383,35 @@ features:
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*,
       and the *dir_fd* and *follow_symlinks* arguments.
+
+
+.. function:: chroot(path)
+
+   Change the root directory of the current process to *path*. Availability:
+   Unix.
+
+
+.. function:: fchdir(fd)
+
+   Change the current working directory to the directory represented by the file
+   descriptor *fd*.  The descriptor must refer to an opened directory, not an
+   open file.  From Python 3.3, this is equivalent to ``os.chdir(fd)``.
+
+   Availability: Unix.
+
+
+.. function:: getcwd()
+
+   Return a string representing the current working directory.
+
+   Availability: Unix, Windows.
+
+
+.. function:: getcwdb()
+
+   Return a bytestring representing the current working directory.
+
+   Availability: Unix, Windows.
 
 
 .. function:: lchflags(path, flags)
@@ -1518,6 +1507,52 @@ features:
       Added the *dir_fd* parameter.
 
 
+.. function:: mkdir(path, mode=0o777, *, dir_fd=None)
+
+   Create a directory named *path* with numeric mode *mode*.
+
+   On some systems, *mode* is ignored.  Where it is used, the current umask
+   value is first masked out.  If the directory already exists, :exc:`OSError`
+   is raised.
+
+   This function can also support :ref:`paths relative to directory descriptors
+   <dir_fd>`.
+
+   It is also possible to create temporary directories; see the
+   :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
+
+   Availability: Unix, Windows.
+
+   .. versionadded:: 3.3
+      The *dir_fd* argument.
+
+
+.. function:: makedirs(path, mode=0o777, exist_ok=False)
+
+   .. index::
+      single: directory; creating
+      single: UNC paths; and os.makedirs()
+
+   Recursive directory creation function.  Like :func:`mkdir`, but makes all
+   intermediate-level directories needed to contain the leaf directory.  If
+   the target directory with the same mode as specified already exists,
+   raises an :exc:`OSError` exception if *exist_ok* is False, otherwise no
+   exception is raised.  If the directory cannot be created in other cases,
+   raises an :exc:`OSError` exception.  The default *mode* is ``0o777`` (octal).
+   On some systems, *mode* is ignored.  Where it is used, the current umask
+   value is first masked out.
+
+   .. note::
+
+      :func:`makedirs` will become confused if the path elements to create
+      include :data:`pardir`.
+
+   This function handles UNC paths correctly.
+
+   .. versionadded:: 3.2
+      The *exist_ok* parameter.
+
+
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
 
    Create a FIFO (a named pipe) named *path* with numeric mode *mode*.
@@ -1570,52 +1605,6 @@ features:
 .. function:: makedev(major, minor)
 
    Compose a raw device number from the major and minor device numbers.
-
-
-.. function:: mkdir(path, mode=0o777, *, dir_fd=None)
-
-   Create a directory named *path* with numeric mode *mode*.
-
-   On some systems, *mode* is ignored.  Where it is used, the current umask
-   value is first masked out.  If the directory already exists, :exc:`OSError`
-   is raised.
-
-   This function can also support :ref:`paths relative to directory descriptors
-   <dir_fd>`.
-
-   It is also possible to create temporary directories; see the
-   :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
-
-   Availability: Unix, Windows.
-
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
-
-
-.. function:: makedirs(path, mode=0o777, exist_ok=False)
-
-   .. index::
-      single: directory; creating
-      single: UNC paths; and os.makedirs()
-
-   Recursive directory creation function.  Like :func:`mkdir`, but makes all
-   intermediate-level directories needed to contain the leaf directory.  If
-   the target directory with the same mode as specified already exists,
-   raises an :exc:`OSError` exception if *exist_ok* is False, otherwise no
-   exception is raised.  If the directory cannot be created in other cases,
-   raises an :exc:`OSError` exception.  The default *mode* is ``0o777`` (octal).
-   On some systems, *mode* is ignored.  Where it is used, the current umask
-   value is first masked out.
-
-   .. note::
-
-      :func:`makedirs` will become confused if the path elements to create
-      include :data:`pardir`.
-
-   This function handles UNC paths correctly.
-
-   .. versionadded:: 3.2
-      The *exist_ok* parameter.
 
 
 .. function:: pathconf(path, name)
@@ -1956,6 +1945,7 @@ features:
 
    .. versionadded:: 3.3
 
+
 .. data:: supports_effective_ids
 
    An object implementing collections.Set indicating which functions in the
@@ -1972,6 +1962,7 @@ features:
    Windows.
 
    .. versionadded:: 3.3
+
 
 .. data:: supports_fd
 
@@ -1993,6 +1984,7 @@ features:
 
    .. versionadded:: 3.3
 
+
 .. data:: supports_follow_symlinks
 
    An object implementing collections.Set indicating which functions in the
@@ -2010,6 +2002,7 @@ features:
        os.stat in os.supports_follow_symlinks
 
    .. versionadded:: 3.3
+
 
 .. function:: symlink(source, link_name, target_is_directory=False, *, dir_fd=None)
 
