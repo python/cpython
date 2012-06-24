@@ -137,8 +137,10 @@ DEPTARGET = '10.3'
 target_cc_map = {
         '10.3': 'gcc-4.0',
         '10.4': 'gcc-4.0',
-        '10.5': 'gcc-4.0',
+        '10.5': 'gcc-4.2',
         '10.6': 'gcc-4.2',
+        '10.7': 'clang',
+        '10.8': 'clang',
 }
 
 CC = target_cc_map[DEPTARGET]
