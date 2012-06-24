@@ -670,6 +670,13 @@ fileio_readall(fileio *self)
         if (n == 0)
             break;
         if (n < 0) {
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    Py_DECREF(result);
+                    return NULL;
+                }
+                continue;
+            }
             if (total > 0)
                 break;
             if (errno == EAGAIN) {
