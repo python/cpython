@@ -68,6 +68,8 @@ XXX: provide complete list of token types.
 """
 
 import re
+import urllib   # For urllib.parse.unquote
+from collections import namedtuple, OrderedDict
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
@@ -83,6 +85,11 @@ ATOM_ENDS = SPECIALS | WSP
 DOT_ATOM_ENDS = ATOM_ENDS - set('.')
 # '.', '"', and '(' do not end phrases in order to support obs-phrase
 PHRASE_ENDS = SPECIALS - set('."(')
+TSPECIALS = (SPECIALS | set('/?=')) - set('.')
+TOKEN_ENDS = TSPECIALS | WSP
+ASPECIALS = TSPECIALS | set("*'%")
+ATTRIBUTE_ENDS = ASPECIALS | WSP
+EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
 
 def quote_string(value):
     return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
@@ -356,8 +363,12 @@ class TokenList(list):
             self.__class__.__name__,
             self.token_type)
         for token in self:
-            for line in token._pp(indent+'    '):
-                yield line
+            if not hasattr(token, '_pp'):
+                yield (indent + '    !! invalid element in token '
+                                        'list: {!r}'.format(token))
+            else:
+                for line in token._pp(indent+'    '):
+                    yield line
         if self.defects:
             extra = ' Defects: {}'.format(self.defects)
         else:
@@ -567,6 +578,11 @@ class Atom(TokenList):
     token_type = 'atom'
 
 
+class Token(TokenList):
+
+    token_type = 'token'
+
+
 class EncodedWord(TokenList):
 
     token_type = 'encoded-word'
@@ -602,13 +618,19 @@ class QuotedString(TokenList):
                 res.append(x.value)
         return ''.join(res)
 
+    @property
+    def stripped_value(self):
+        for token in self:
+            if token.token_type == 'bare-quoted-string':
+                return token.value
+
 
 class BareQuotedString(QuotedString):
 
     token_type = 'bare-quoted-string'
 
     def __str__(self):
-        return quote_string(''.join(self))
+        return quote_string(''.join(str(x) for x in self))
 
     @property
     def value(self):
@@ -987,6 +1009,180 @@ class DomainLiteral(TokenList):
                 return x.value
 
 
+class MIMEVersion(TokenList):
+
+    token_type = 'mime-version'
+    major = None
+    minor = None
+
+
+class Parameter(TokenList):
+
+    token_type = 'parameter'
+    sectioned = False
+    extended = False
+    charset = 'us-ascii'
+
+    @property
+    def section_number(self):
+        # Because the first token, the attribute (name) eats CFWS, the second
+        # token is always the section if there is one.
+        return self[1].number if self.sectioned else 0
+
+    @property
+    def param_value(self):
+        # This is part of the "handle quoted extended parameters" hack.
+        for token in self:
+            if token.token_type == 'value':
+                return token.stripped_value
+            if token.token_type == 'quoted-string':
+                for token in token:
+                    if token.token_type == 'bare-quoted-string':
+                        for token in token:
+                            if token.token_type == 'value':
+                                return token.stripped_value
+        return ''
+
+
+class InvalidParameter(Parameter):
+
+    token_type = 'invalid-parameter'
+
+
+class Attribute(TokenList):
+
+    token_type = 'attribute'
+
+    @property
+    def stripped_value(self):
+        for token in self:
+            if token.token_type.endswith('attrtext'):
+                return token.value
+
+class Section(TokenList):
+
+    token_type = 'section'
+    number = None
+
+
+class Value(TokenList):
+
+    token_type = 'value'
+
+    @property
+    def stripped_value(self):
+        token = self[0]
+        if token.token_type == 'cfws':
+            token = self[1]
+        if token.token_type.endswith(
+                ('quoted-string', 'attribute', 'extended-attribute')):
+            return token.stripped_value
+        return self.value
+
+
+class MimeParameters(TokenList):
+
+    token_type = 'mime-parameters'
+
+    @property
+    def params(self):
+        # The RFC specifically states that the ordering of parameters is not
+        # guaranteed and may be reordered by the transport layer.  So we have
+        # to assume the RFC 2231 pieces can come in any order.  However, we
+        # output them in the order that we first see a given name, which gives
+        # us a stable __str__.
+        params = OrderedDict()
+        for token in self:
+            if not token.token_type.endswith('parameter'):
+                continue
+            if token[0].token_type != 'attribute':
+                continue
+            name = token[0].value.strip()
+            if name not in params:
+                params[name] = []
+            params[name].append((token.section_number, token))
+        for name, parts in params.items():
+            parts = sorted(parts)
+            # XXX: there might be more recovery we could do here if, for
+            # example, this is really a case of a duplicate attribute name.
+            value_parts = []
+            charset = parts[0][1].charset
+            for i, (section_number, param) in enumerate(parts):
+                if section_number != i:
+                    param.defects.append(errors.InvalidHeaderDefect(
+                        "inconsistent multipart parameter numbering"))
+                value = param.param_value
+                if param.extended:
+                    try:
+                        value = urllib.parse.unquote_to_bytes(value)
+                    except UnicodeEncodeError:
+                        # source had surrogate escaped bytes.  What we do now
+                        # is a bit of an open question.  I'm not sure this is
+                        # the best choice, but it is what the old algorithm did
+                        value = urllib.parse.unquote(value, encoding='latin-1')
+                    else:
+                        try:
+                            value = value.decode(charset, 'surrogateescape')
+                        except LookupError:
+                            # XXX: there should really be a custom defect for
+                            # unknown character set to make it easy to find,
+                            # because otherwise unknown charset is a silent
+                            # failure.
+                            value = value.decode('us-ascii', 'surrogateescape')
+                        if utils._has_surrogates(value):
+                            param.defects.append(errors.UndecodableBytesDefect())
+                value_parts.append(value)
+            value = ''.join(value_parts)
+            yield name, value
+
+    def __str__(self):
+        params = []
+        for name, value in self.params:
+            if value:
+                params.append('{}={}'.format(name, quote_string(value)))
+            else:
+                params.append(name)
+        params = '; '.join(params)
+        return ' ' + params if params else ''
+
+
+class ParameterizedHeaderValue(TokenList):
+
+    @property
+    def params(self):
+        for token in reversed(self):
+            if token.token_type == 'mime-parameters':
+                return token.params
+        return {}
+
+    @property
+    def parts(self):
+        if self and self[-1].token_type == 'mime-parameters':
+            # We don't want to start a new line if all of the params don't fit
+            # after the value, so unwrap the parameter list.
+            return TokenList(self[:-1] + self[-1])
+        return TokenList(self).parts
+
+
+class ContentType(ParameterizedHeaderValue):
+
+    token_type = 'content-type'
+    maintype = 'text'
+    subtype = 'plain'
+
+
+class ContentDisposition(ParameterizedHeaderValue):
+
+    token_type = 'content-disposition'
+    content_disposition = None
+
+
+class ContentTransferEncoding(TokenList):
+
+    token_type = 'content-transfer-encoding'
+    cte = '7bit'
+
+
 class HeaderLabel(TokenList):
 
     token_type = 'header-label'
@@ -1145,6 +1341,13 @@ _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
     ''.join(ATOM_ENDS).replace('\\','\\\\').replace(']','\]'))).match
 _non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
+_non_token_end_matcher = re.compile(r"[^{}]+".format(
+    ''.join(TOKEN_ENDS).replace('\\','\\\\').replace(']','\]'))).match
+_non_attribute_end_matcher = re.compile(r"[^{}]+".format(
+    ''.join(ATTRIBUTE_ENDS).replace('\\','\\\\').replace(']','\]'))).match
+_non_extended_attribute_end_matcher = re.compile(r"[^{}]+".format(
+    ''.join(EXTENDED_ATTRIBUTE_ENDS).replace(
+                                    '\\','\\\\').replace(']','\]'))).match
 
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
@@ -2153,3 +2356,598 @@ def get_address_list(value):
             address_list.append(ValueTerminal(',', 'list-separator'))
             value = value[1:]
     return address_list, value
+
+#
+# XXX: As I begin to add additional header parsers, I'm realizing we probably
+# have two level of parser routines: the get_XXX methods that get a token in
+# the grammar, and parse_XXX methods that parse an entire field value.  So
+# get_address_list above should really be a parse_ method, as probably should
+# be get_unstructured.
+#
+
+def parse_mime_version(value):
+    """ mime-version = [CFWS] 1*digit [CFWS] "." [CFWS] 1*digit [CFWS]
+
+    """
+    # The [CFWS] is implicit in the RFC 2045 BNF.
+    # XXX: This routine is a bit verbose, should factor out a get_int method.
+    mime_version = MIMEVersion()
+    if not value:
+        mime_version.defects.append(errors.HeaderMissingRequiredValue(
+            "Missing MIME version number (eg: 1.0)"))
+        return mime_version
+    if value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mime_version.append(token)
+        if not value:
+            mime_version.defects.append(errors.HeaderMissingRequiredValue(
+                "Expected MIME version number but found only CFWS"))
+    digits = ''
+    while value and value[0] != '.' and value[0] not in CFWS_LEADER:
+        digits += value[0]
+        value = value[1:]
+    if not digits.isdigit():
+        mime_version.defects.append(errors.InvalidHeaderDefect(
+            "Expected MIME major version number but found {!r}".format(digits)))
+        mime_version.append(ValueTerminal(digits, 'xtext'))
+    else:
+        mime_version.major = int(digits)
+        mime_version.append(ValueTerminal(digits, 'digits'))
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mime_version.append(token)
+    if not value or value[0] != '.':
+        if mime_version.major is not None:
+            mime_version.defects.append(errors.InvalidHeaderDefect(
+                "Incomplete MIME version; found only major number"))
+        if value:
+            mime_version.append(ValueTerminal(value, 'xtext'))
+        return mime_version
+    mime_version.append(ValueTerminal('.', 'version-separator'))
+    value = value[1:]
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mime_version.append(token)
+    if not value:
+        if mime_version.major is not None:
+            mime_version.defects.append(errors.InvalidHeaderDefect(
+                "Incomplete MIME version; found only major number"))
+        return mime_version
+    digits = ''
+    while value and value[0] not in CFWS_LEADER:
+        digits += value[0]
+        value = value[1:]
+    if not digits.isdigit():
+        mime_version.defects.append(errors.InvalidHeaderDefect(
+            "Expected MIME minor version number but found {!r}".format(digits)))
+        mime_version.append(ValueTerminal(digits, 'xtext'))
+    else:
+        mime_version.minor = int(digits)
+        mime_version.append(ValueTerminal(digits, 'digits'))
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mime_version.append(token)
+    if value:
+        mime_version.defects.append(errors.InvalidHeaderDefect(
+            "Excess non-CFWS text after MIME version"))
+        mime_version.append(ValueTerminal(value, 'xtext'))
+    return mime_version
+
+def get_invalid_parameter(value):
+    """ Read everything up to the next ';'.
+
+    This is outside the formal grammar.  The InvalidParameter TokenList that is
+    returned acts like a Parameter, but the data attributes are None.
+
+    """
+    invalid_parameter = InvalidParameter()
+    while value and value[0] != ';':
+        if value[0] in PHRASE_ENDS:
+            invalid_parameter.append(ValueTerminal(value[0],
+                                                   'misplaced-special'))
+            value = value[1:]
+        else:
+            token, value = get_phrase(value)
+            invalid_parameter.append(token)
+    return invalid_parameter, value
+
+def get_ttext(value):
+    """ttext = <matches _ttext_matcher>
+
+    We allow any non-TOKEN_ENDS in ttext, but add defects to the token's
+    defects list if we find non-ttext characters.  We also register defects for
+    *any* non-printables even though the RFC doesn't exclude all of them,
+    because we follow the spirit of RFC 5322.
+
+    """
+    m = _non_token_end_matcher(value)
+    if not m:
+        raise errors.HeaderParseError(
+            "expected ttext but found '{}'".format(value))
+    ttext = m.group()
+    value = value[len(ttext):]
+    ttext = ValueTerminal(ttext, 'ttext')
+    _validate_xtext(ttext)
+    return ttext, value
+
+def get_token(value):
+    """token = [CFWS] 1*ttext [CFWS]
+
+    The RFC equivalent of ttext is any US-ASCII chars except space, ctls, or
+    tspecials.  We also exclude tabs even though the RFC doesn't.
+
+    The RFC implies the CFWS but is not explicit about it in the BNF.
+
+    """
+    mtoken = Token()
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mtoken.append(token)
+    if value and value[0] in TOKEN_ENDS:
+        raise errors.HeaderParseError(
+            "expected token but found '{}'".format(value))
+    token, value = get_ttext(value)
+    mtoken.append(token)
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        mtoken.append(token)
+    return mtoken, value
+
+def get_attrtext(value):
+    """attrtext = 1*(any non-ATTRIBUTE_ENDS character)
+
+    We allow any non-ATTRIBUTE_ENDS in attrtext, but add defects to the
+    token's defects list if we find non-attrtext characters.  We also register
+    defects for *any* non-printables even though the RFC doesn't exclude all of
+    them, because we follow the spirit of RFC 5322.
+
+    """
+    m = _non_attribute_end_matcher(value)
+    if not m:
+        raise errors.HeaderParseError(
+            "expected attrtext but found {!r}".format(value))
+    attrtext = m.group()
+    value = value[len(attrtext):]
+    attrtext = ValueTerminal(attrtext, 'attrtext')
+    _validate_xtext(attrtext)
+    return attrtext, value
+
+def get_attribute(value):
+    """ [CFWS] 1*attrtext [CFWS]
+
+    This version of the BNF makes the CFWS explicit, and as usual we use a
+    value terminal for the actual run of characters.  The RFC equivalent of
+    attrtext is the token characters, with the subtraction of '*', "'", and '%'.
+    We include tab in the excluded set just as we do for token.
+
+    """
+    attribute = Attribute()
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        attribute.append(token)
+    if value and value[0] in ATTRIBUTE_ENDS:
+        raise errors.HeaderParseError(
+            "expected token but found '{}'".format(value))
+    token, value = get_attrtext(value)
+    attribute.append(token)
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        attribute.append(token)
+    return attribute, value
+
+def get_extended_attrtext(value):
+    """attrtext = 1*(any non-ATTRIBUTE_ENDS character plus '%')
+
+    This is a special parsing routine so that we get a value that
+    includes % escapes as a single string (which we decode as a single
+    string later).
+
+    """
+    m = _non_extended_attribute_end_matcher(value)
+    if not m:
+        raise errors.HeaderParseError(
+            "expected extended attrtext but found {!r}".format(value))
+    attrtext = m.group()
+    value = value[len(attrtext):]
+    attrtext = ValueTerminal(attrtext, 'extended-attrtext')
+    _validate_xtext(attrtext)
+    return attrtext, value
+
+def get_extended_attribute(value):
+    """ [CFWS] 1*extended_attrtext [CFWS]
+
+    This is like the non-extended version except we allow % characters, so that
+    we can pick up an encoded value as a single string.
+
+    """
+    # XXX: should we have an ExtendedAttribute TokenList?
+    attribute = Attribute()
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        attribute.append(token)
+    if value and value[0] in EXTENDED_ATTRIBUTE_ENDS:
+        raise errors.HeaderParseError(
+            "expected token but found '{}'".format(value))
+    token, value = get_extended_attrtext(value)
+    attribute.append(token)
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        attribute.append(token)
+    return attribute, value
+
+def get_section(value):
+    """ '*' digits
+
+    The formal BNF is more complicated because leading 0s are not allowed.  We
+    check for that and add a defect.  We also assume no CFWS is allowed between
+    the '*' and the digits, though the RFC is not crystal clear on that.
+    The caller should already have dealt with leading CFWS.
+
+    """
+    section = Section()
+    if not value or value[0] != '*':
+        raise errors.HeaderParseError("Expected section but found {}".format(
+                                        value))
+    section.append(ValueTerminal('*', 'section-marker'))
+    value = value[1:]
+    if not value or not value[0].isdigit():
+        raise errors.HeaderParseError("Expected section number but "
+                                      "found {}".format(value))
+    digits = ''
+    while value and value[0].isdigit():
+        digits += value[0]
+        value = value[1:]
+    if digits[0] == '0' and digits != '0':
+        section.defects.append(errors.InvalidHeaderError("section number"
+            "has an invalid leading 0"))
+    section.number = int(digits)
+    section.append(ValueTerminal(digits, 'digits'))
+    return section, value
+
+
+def get_value(value):
+    """ quoted-string / attribute
+
+    """
+    v = Value()
+    if not value:
+        raise errors.HeaderParseError("Expected value but found end of string")
+    leader = None
+    if value[0] in CFWS_LEADER:
+        leader, value = get_cfws(value)
+    if not value:
+        raise errors.HeaderParseError("Expected value but found "
+                                      "only {}".format(leader))
+    if value[0] == '"':
+        token, value = get_quoted_string(value)
+    else:
+        token, value = get_extended_attribute(value)
+    if leader is not None:
+        token[:0] = [leader]
+    v.append(token)
+    return v, value
+
+def get_parameter(value):
+    """ attribute [section] ["*"] [CFWS] "=" value
+
+    The CFWS is implied by the RFC but not made explicit in the BNF.  This
+    simplified form of the BNF from the RFC is made to conform with the RFC BNF
+    through some extra checks.  We do it this way because it makes both error
+    recovery and working with the resulting parse tree easier.
+    """
+    # It is possible CFWS would also be implicitly allowed between the section
+    # and the 'extended-attribute' marker (the '*') , but we've never seen that
+    # in the wild and we will therefore ignore the possibility.
+    param = Parameter()
+    token, value = get_attribute(value)
+    param.append(token)
+    if not value or value[0] == ';':
+        param.defects.append(errors.InvalidHeaderDefect("Parameter contains "
+            "name ({}) but no value".format(token)))
+        return param, value
+    if value[0] == '*':
+        try:
+            token, value = get_section(value)
+            param.sectioned = True
+            param.append(token)
+        except errors.HeaderParseError:
+            pass
+        if not value:
+            raise errors.HeaderParseError("Incomplete parameter")
+        if value[0] == '*':
+            param.append(ValueTerminal('*', 'extended-parameter-marker'))
+            value = value[1:]
+            param.extended = True
+    if value[0] != '=':
+        raise errors.HeaderParseError("Parameter not followed by '='")
+    param.append(ValueTerminal('=', 'parameter-separator'))
+    value = value[1:]
+    leader = None
+    if value and value[0] in CFWS_LEADER:
+        token, value = get_cfws(value)
+        param.append(token)
+    remainder = None
+    appendto = param
+    if param.extended and value and value[0] == '"':
+        # Now for some serious hackery to handle the common invalid case of
+        # double quotes around an extended value.  We also accept (with defect)
+        # a value marked as encoded that isn't really.
+        qstring, remainder = get_quoted_string(value)
+        inner_value = qstring.stripped_value
+        semi_valid = False
+        if param.section_number == 0:
+            if inner_value and inner_value[0] == "'":
+                semi_valid = True
+            else:
+                token, rest = get_attrtext(inner_value)
+                if rest and rest[0] == "'":
+                    semi_valid = True
+        else:
+            try:
+                token, rest = get_extended_attrtext(inner_value)
+            except:
+                pass
+            else:
+                if not rest:
+                    semi_valid = True
+        if semi_valid:
+            param.defects.append(errors.InvalidHeaderDefect(
+                "Quoted string value for extended parameter is invalid"))
+            param.append(qstring)
+            for t in qstring:
+                if t.token_type == 'bare-quoted-string':
+                    t[:] = []
+                    appendto = t
+                    break
+            value = inner_value
+        else:
+            remainder = None
+            param.defects.append(errors.InvalidHeaderDefect(
+                "Parameter marked as extended but appears to have a "
+                "quoted string value that is non-encoded"))
+    if value and value[0] == "'":
+        token = None
+    else:
+        token, value = get_value(value)
+    if not param.extended or param.section_number > 0:
+        if not value or value[0] != "'":
+            appendto.append(token)
+            if remainder is not None:
+                assert not value, value
+                value = remainder
+            return param, value
+        param.defects.append(errors.InvalidHeaderDefect(
+            "Apparent initial-extended-value but attribute "
+            "was not marked as extended or was not initial section"))
+    if not value:
+        # Assume the charset/lang is missing and the token is the value.
+        param.defects.append(errors.InvalidHeaderDefect(
+            "Missing required charset/lang delimiters"))
+        appendto.append(token)
+        if remainder is None:
+            return param, value
+    else:
+        if token is not None:
+            for t in token:
+                if t.token_type == 'extended-attrtext':
+                    break
+            t.token_type == 'attrtext'
+            appendto.append(t)
+            param.charset = t.value
+        if value[0] != "'":
+            raise errors.HeaderParseError("Expected RFC2231 char/lang encoding "
+                                          "delimiter, but found {!r}".format(value))
+        appendto.append(ValueTerminal("'", 'RFC2231 delimiter'))
+        value = value[1:]
+        if value and value[0] != "'":
+            token, value = get_attrtext(value)
+            appendto.append(token)
+            param.lang = token.value
+            if not value or value[0] != "'":
+                raise errors.HeaderParseError("Expected RFC2231 char/lang encoding "
+                                  "delimiter, but found {}".format(value))
+        appendto.append(ValueTerminal("'", 'RFC2231 delimiter'))
+        value = value[1:]
+    if remainder is not None:
+        # Treat the rest of value as bare quoted string content.
+        v = Value()
+        while value:
+            if value[0] in WSP:
+                token, value = get_fws(value)
+            else:
+                token, value = get_qcontent(value)
+            v.append(token)
+        token = v
+    else:
+        token, value = get_value(value)
+    appendto.append(token)
+    if remainder is not None:
+        assert not value, value
+        value = remainder
+    return param, value
+
+def parse_mime_parameters(value):
+    """ parameter *( ";" parameter )
+
+    That BNF is meant to indicate this routine should only be called after
+    finding and handling the leading ';'.  There is no corresponding rule in
+    the formal RFC grammar, but it is more convenient for us for the set of
+    parameters to be treated as its own TokenList.
+
+    This is 'parse' routine because it consumes the reminaing value, but it
+    would never be called to parse a full header.  Instead it is called to
+    parse everything after the non-parameter value of a specific MIME header.
+
+    """
+    mime_parameters = MimeParameters()
+    while value:
+        try:
+            token, value = get_parameter(value)
+            mime_parameters.append(token)
+        except errors.HeaderParseError as err:
+            leader = None
+            if value[0] in CFWS_LEADER:
+                leader, value = get_cfws(value)
+            if not value:
+                mime_parameters.append(leader)
+                return mime_parameters
+            if value[0] == ';':
+                if leader is not None:
+                    mime_parameters.append(leader)
+                mime_parameters.defects.append(errors.InvalidHeaderDefect(
+                    "parameter entry with no content"))
+            else:
+                token, value = get_invalid_parameter(value)
+                if leader:
+                    token[:0] = [leader]
+                mime_parameters.append(token)
+                mime_parameters.defects.append(errors.InvalidHeaderDefect(
+                    "invalid parameter {!r}".format(token)))
+        if value and value[0] != ';':
+            # Junk after the otherwise valid parameter.  Mark it as
+            # invalid, but it will have a value.
+            param = mime_parameters[-1]
+            param.token_type = 'invalid-parameter'
+            token, value = get_invalid_parameter(value)
+            param.extend(token)
+            mime_parameters.defects.append(errors.InvalidHeaderDefect(
+                "parameter with invalid trailing text {!r}".format(token)))
+        if value:
+            # Must be a ';' at this point.
+            mime_parameters.append(ValueTerminal(';', 'parameter-separator'))
+            value = value[1:]
+    return mime_parameters
+
+def _find_mime_parameters(tokenlist, value):
+    """Do our best to find the parameters in an invalid MIME header
+
+    """
+    while value and value[0] != ';':
+        if value[0] in PHRASE_ENDS:
+            tokenlist.append(ValueTerminal(value[0], 'misplaced-special'))
+            value = value[1:]
+        else:
+            token, value = get_phrase(value)
+            tokenlist.append(token)
+    if not value:
+        return
+    tokenlist.append(ValueTerminal(';', 'parameter-separator'))
+    tokenlist.append(parse_mime_parameters(value[1:]))
+
+def parse_content_type_header(value):
+    """ maintype "/" subtype *( ";" parameter )
+
+    The maintype and substype are tokens.  Theoretically they could
+    be checked against the official IANA list + x-token, but we
+    don't do that.
+    """
+    ctype = ContentType()
+    recover = False
+    if not value:
+        ctype.defects.append(errors.HeaderMissingRequiredValue(
+            "Missing content type specification"))
+        return ctype
+    try:
+        token, value = get_token(value)
+    except errors.HeaderParseError:
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Expected content maintype but found {!r}".format(value)))
+        _find_mime_parameters(ctype, value)
+        return ctype
+    ctype.append(token)
+    # XXX: If we really want to follow the formal grammer we should make
+    # mantype and subtype specialized TokenLists here.  Probably not worth it.
+    if not value or value[0] != '/':
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Invalid content type"))
+        if value:
+            _find_mime_parameters(ctype, value)
+        return ctype
+    ctype.maintype = token.value.strip().lower()
+    ctype.append(ValueTerminal('/', 'content-type-separator'))
+    value = value[1:]
+    try:
+        token, value = get_token(value)
+    except errors.HeaderParseError:
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Expected content subtype but found {!r}".format(value)))
+        _find_mime_parameters(ctype, value)
+        return ctype
+    ctype.append(token)
+    ctype.subtype = token.value.strip().lower()
+    if not value:
+        return ctype
+    if value[0] != ';':
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Only parameters are valid after content type, but "
+            "found {!r}".format(value)))
+        # The RFC requires that a syntactically invalid content-type be treated
+        # as text/plain.  Perhaps we should postel this, but we should probably
+        # only do that if we were checking the subtype value against IANA.
+        del ctype.maintype, ctype.subtype
+        _find_mime_parameters(ctype, value)
+        return ctype
+    ctype.append(ValueTerminal(';', 'parameter-separator'))
+    ctype.append(parse_mime_parameters(value[1:]))
+    return ctype
+
+def parse_content_disposition_header(value):
+    """ disposition-type *( ";" parameter )
+
+    """
+    disp_header = ContentDisposition()
+    if not value:
+        disp_header.defects.append(errors.HeaderMissingRequiredValue(
+            "Missing content disposition"))
+        return disp_header
+    try:
+        token, value = get_token(value)
+    except errors.HeaderParseError:
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Expected content disposition but found {!r}".format(value)))
+        _find_mime_parameters(disp_header, value)
+        return disp_header
+    disp_header.append(token)
+    disp_header.content_disposition = token.value.strip().lower()
+    if not value:
+        return disp_header
+    if value[0] != ';':
+        disp_header.defects.append(errors.InvalidHeaderDefect(
+            "Only parameters are valid after content disposition, but "
+            "found {!r}".format(value)))
+        _find_mime_parameters(disp_header, value)
+        return disp_header
+    disp_header.append(ValueTerminal(';', 'parameter-separator'))
+    disp_header.append(parse_mime_parameters(value[1:]))
+    return disp_header
+
+def parse_content_transfer_encoding_header(value):
+    """ mechanism
+
+    """
+    # We should probably validate the values, since the list is fixed.
+    cte_header = ContentTransferEncoding()
+    if not value:
+        cte_header.defects.append(errors.HeaderMissingRequiredValue(
+            "Missing content transfer encoding"))
+        return cte_header
+    try:
+        token, value = get_token(value)
+    except errors.HeaderParseError:
+        ctype.defects.append(errors.InvalidHeaderDefect(
+            "Expected content trnasfer encoding but found {!r}".format(value)))
+    else:
+        cte_header.append(token)
+        cte_header.cte = token.value.strip().lower()
+    if not value:
+        return cte_header
+    while value:
+        cte_header.defects.append(errors.InvalidHeaderDefect(
+            "Extra text after content transfer encoding"))
+        if value[0] in PHRASE_ENDS:
+            cte_header.append(ValueTerminal(value[0], 'misplaced-special'))
+            value = value[1:]
+        else:
+            token, value = get_phrase(value)
+            cte_header.append(token)
+    return cte_header

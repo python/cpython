@@ -3,7 +3,7 @@ import unittest
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
-from test.test_email import TestEmailBase
+from test.test_email import TestEmailBase, parameterize
 
 class TestTokens(TestEmailBase):
 
@@ -28,7 +28,32 @@ class TestTokens(TestEmailBase):
         self.assertDefectsEqual(parts[2].all_defects, [errors.UndecodableBytesDefect])
 
 
-class TestParser(TestEmailBase):
+class TestParserMixin:
+
+    def _assert_results(self, tl, rest, string, value, defects, remainder,
+                        comments=None):
+        self.assertEqual(str(tl), string)
+        self.assertEqual(tl.value, value)
+        self.assertDefectsEqual(tl.all_defects, defects)
+        self.assertEqual(rest, remainder)
+        if comments is not None:
+            self.assertEqual(tl.comments, comments)
+
+    def _test_get_x(self, method, source, string, value, defects,
+                          remainder, comments=None):
+        tl, rest = method(source)
+        self._assert_results(tl, rest, string, value, defects, remainder,
+                             comments=None)
+        return tl
+
+    def _test_parse_x(self, method, input, string, value, defects,
+                             comments=None):
+        tl = method(input)
+        self._assert_results(tl, '', string, value, defects, '', comments)
+        return tl
+
+
+class TestParser(TestParserMixin, TestEmailBase):
 
     # _wsp_splitter
 
@@ -48,19 +73,6 @@ class TestParser(TestEmailBase):
         self.assertEqual(parser._wsp_splitter('foo \t def jik', 1),
                                               ['foo', ' \t ', 'def jik'])
 
-
-    # test harness
-
-    def _test_get_x(self, method, input, string, value, defects,
-                          remainder, comments=None):
-        token, rest = method(input)
-        self.assertEqual(str(token), string)
-        self.assertEqual(token.value, value)
-        self.assertDefectsEqual(token.all_defects, defects)
-        self.assertEqual(rest, remainder)
-        if comments is not None:
-            self.assertEqual(token.comments, comments)
-        return token
 
     # get_fws
 
@@ -2388,6 +2400,67 @@ class TestParser(TestEmailBase):
                          'y')
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
+
+
+@parameterize
+class Test_parse_mime_version(TestParserMixin, TestEmailBase):
+
+    def mime_version_as_value(self,
+                              value,
+                              tl_str,
+                              tl_value,
+                              major,
+                              minor,
+                              defects):
+        mime_version = self._test_parse_x(parser.parse_mime_version,
+            value, tl_str, tl_value, defects)
+        self.assertEqual(mime_version.major, major)
+        self.assertEqual(mime_version.minor, minor)
+
+    mime_version_params = {
+
+        'rfc_2045_1': (
+            '1.0',
+            '1.0',
+            '1.0',
+            1,
+            0,
+            []),
+
+        'RFC_2045_2': (
+            '1.0 (produced by MetaSend Vx.x)',
+            '1.0 (produced by MetaSend Vx.x)',
+            '1.0 ',
+            1,
+            0,
+            []),
+
+        'RFC_2045_3': (
+            '(produced by MetaSend Vx.x) 1.0',
+            '(produced by MetaSend Vx.x) 1.0',
+            ' 1.0',
+            1,
+            0,
+            []),
+
+        'RFC_2045_4': (
+            '1.(produced by MetaSend Vx.x)0',
+            '1.(produced by MetaSend Vx.x)0',
+            '1. 0',
+            1,
+            0,
+            []),
+
+        'empty': (
+            '',
+            '',
+            '',
+            None,
+            None,
+            [errors.HeaderMissingRequiredValue]),
+
+        }
+
 
 
 class TestFolding(TestEmailBase):

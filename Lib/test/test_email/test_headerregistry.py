@@ -9,6 +9,9 @@ from email import headerregistry
 from email.headerregistry import Address, Group
 
 
+DITTO = object()
+
+
 class TestHeaderRegistry(TestEmailBase):
 
     def test_arbitrary_name_unstructured(self):
@@ -173,6 +176,789 @@ class TestDateHeader(TestHeaderBase):
         m['Date'] = self.dt
         self.assertEqual(m['Date'], self.datestring)
         self.assertEqual(m['Date'].datetime, self.dt)
+
+
+@parameterize
+class TestContentTypeHeader(TestHeaderBase):
+
+    def content_type_as_value(self,
+                              source,
+                              content_type,
+                              maintype,
+                              subtype,
+                              *args):
+        l = len(args)
+        parmdict = args[0] if l>0 else {}
+        defects =  args[1] if l>1 else []
+        decoded =  args[2] if l>2 and args[2] is not DITTO else source
+        header = 'Content-Type:' + ' ' if source else ''
+        folded = args[3] if l>3 else header + source + '\n'
+        h = self.make_header('Content-Type', source)
+        self.assertEqual(h.content_type, content_type)
+        self.assertEqual(h.maintype, maintype)
+        self.assertEqual(h.subtype, subtype)
+        self.assertEqual(h.params, parmdict)
+        self.assertDefectsEqual(h.defects, defects)
+        self.assertEqual(h, decoded)
+        self.assertEqual(h.fold(policy=policy.default), folded)
+
+    content_type_params = {
+
+        # Examples from RFC 2045.
+
+        'RFC_2045_1': (
+            'text/plain; charset=us-ascii (Plain text)',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii'},
+            [],
+            'text/plain; charset="us-ascii"'),
+
+        'RFC_2045_2': (
+            'text/plain; charset=us-ascii',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii'},
+            [],
+            'text/plain; charset="us-ascii"'),
+
+        'RFC_2045_3': (
+            'text/plain; charset="us-ascii"',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii'}),
+
+        # RFC 2045 5.2 says syntactically invalid values are to be treated as
+        # text/plain.
+
+        'no_subtype_in_content_type': (
+            'text/',
+            'text/plain',
+            'text',
+            'plain',
+            {},
+            [errors.InvalidHeaderDefect]),
+
+        'no_slash_in_content_type': (
+            'foo',
+            'text/plain',
+            'text',
+            'plain',
+            {},
+            [errors.InvalidHeaderDefect]),
+
+        'junk_text_in_content_type': (
+            '<crazy "stuff">',
+            'text/plain',
+            'text',
+            'plain',
+            {},
+            [errors.InvalidHeaderDefect]),
+
+        'too_many_slashes_in_content_type': (
+            'image/jpeg/foo',
+            'text/plain',
+            'text',
+            'plain',
+            {},
+            [errors.InvalidHeaderDefect]),
+
+        # But unknown names are OK.  We could make non-IANA names a defect, but
+        # by not doing so we make ourselves future proof.  The fact that they
+        # are unknown will be detectable by the fact that they don't appear in
+        # the mime_registry...and the application is free to extend that list
+        # to handle them even if the core library doesn't.
+
+        'unknown_content_type': (
+            'bad/names',
+            'bad/names',
+            'bad',
+            'names'),
+
+        # The content type is case insensitive, and CFWS is ignored.
+
+        'mixed_case_content_type': (
+            'ImAge/JPeg',
+            'image/jpeg',
+            'image',
+            'jpeg'),
+
+        'spaces_in_content_type': (
+            '  text  /  plain  ',
+            'text/plain',
+            'text',
+            'plain'),
+
+        'cfws_in_content_type': (
+            '(foo) text (bar)/(baz)plain(stuff)',
+            'text/plain',
+            'text',
+            'plain'),
+
+        # test some parameters (more tests could be added for parameters
+        # associated with other content types, but since parameter parsing is
+        # generic they would be redundant for the current implementation).
+
+        'charset_param': (
+            'text/plain; charset="utf-8"',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8'}),
+
+        'capitalized_charset': (
+            'text/plain; charset="US-ASCII"',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'US-ASCII'}),
+
+        'unknown_charset': (
+            'text/plain; charset="fOo"',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'fOo'}),
+
+        'capitalized_charset_param_name_and_comment': (
+            'text/plain; (interjection) Charset="utf-8"',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8'},
+            [],
+            # Should the parameter name be lowercased here?
+            'text/plain; Charset="utf-8"'),
+
+        # Since this is pretty much the ur-mimeheader, we'll put all the tests
+        # that exercise the parameter parsing and formatting here.
+        #
+        # XXX: question: is minimal quoting preferred?
+
+        'unquoted_param_value': (
+            'text/plain; title=foo',
+            'text/plain',
+            'text',
+            'plain',
+            {'title': 'foo'},
+            [],
+            'text/plain; title="foo"'),
+
+        'param_value_with_tspecials': (
+            'text/plain; title="(bar)foo blue"',
+            'text/plain',
+            'text',
+            'plain',
+            {'title': '(bar)foo blue'}),
+
+        'param_with_extra_quoted_whitespace': (
+            'text/plain; title="  a     loong  way \t home   "',
+            'text/plain',
+            'text',
+            'plain',
+            {'title': '  a     loong  way \t home   '}),
+
+        'bad_params': (
+            'blarg; baz; boo',
+            'text/plain',
+            'text',
+            'plain',
+            {'baz': '', 'boo': ''},
+            [errors.InvalidHeaderDefect]*3),
+
+        'spaces_around_param_equals': (
+            'Multipart/mixed; boundary = "CPIMSSMTPC06p5f3tG"',
+            'multipart/mixed',
+            'multipart',
+            'mixed',
+            {'boundary': 'CPIMSSMTPC06p5f3tG'},
+            [],
+            'Multipart/mixed; boundary="CPIMSSMTPC06p5f3tG"'),
+
+        'spaces_around_semis': (
+            ('image/jpeg; name="wibble.JPG" ; x-mac-type="4A504547" ; '
+                'x-mac-creator="474B4F4E"'),
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': 'wibble.JPG',
+             'x-mac-type': '4A504547',
+             'x-mac-creator': '474B4F4E'},
+            [],
+            ('image/jpeg; name="wibble.JPG"; x-mac-type="4A504547"; '
+                'x-mac-creator="474B4F4E"'),
+            # XXX: it could be that we will eventually prefer to fold starting
+            # from the decoded value, in which case these spaces and similar
+            # spaces in other tests will be wrong.
+            ('Content-Type: image/jpeg; name="wibble.JPG" ; '
+                'x-mac-type="4A504547" ;\n'
+             ' x-mac-creator="474B4F4E"\n'),
+            ),
+
+        'semis_inside_quotes': (
+            'image/jpeg; name="Jim&amp;&amp;Jill"',
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': 'Jim&amp;&amp;Jill'}),
+
+        'single_quotes_inside_quotes': (
+            'image/jpeg; name="Jim \'Bob\' Jill"',
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': "Jim 'Bob' Jill"}),
+
+        'double_quotes_inside_quotes': (
+            r'image/jpeg; name="Jim \"Bob\" Jill"',
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': 'Jim "Bob" Jill'},
+            [],
+            r'image/jpeg; name="Jim \"Bob\" Jill"'),
+
+        # XXX: This test works except for the refolding of the header.  I'll
+        # deal with that bug when I deal with the other folding bugs.
+        #'non_ascii_in_params': (
+        #    ('foo\xa7/bar; b\xa7r=two; '
+        #        'baz=thr\xa7e'.encode('latin-1').decode('us-ascii',
+        #                                                'surrogateescape')),
+        #    'foo\uFFFD/bar',
+        #    'foo\uFFFD',
+        #    'bar',
+        #    {'b\uFFFDr': 'two', 'baz': 'thr\uFFFDe'},
+        #    [errors.UndecodableBytesDefect]*3,
+        #    'foo�/bar; b�r="two"; baz="thr�e"',
+        #    ),
+
+        # RFC 2231 parameter tests.
+
+        'rfc2231_segmented_normal_values': (
+            'image/jpeg; name*0="abc"; name*1=".html"',
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': "abc.html"},
+            [],
+            'image/jpeg; name="abc.html"'),
+
+        'quotes_inside_rfc2231_value': (
+            r'image/jpeg; bar*0="baz\"foobar"; bar*1="\"baz"',
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'bar': 'baz"foobar"baz'},
+            [],
+            r'image/jpeg; bar="baz\"foobar\"baz"'),
+
+        # XXX: This test works except for the refolding of the header.  I'll
+        # deal with that bug when I deal with the other folding bugs.
+        #'non_ascii_rfc2231_value': (
+        #    ('text/plain; charset=us-ascii; '
+        #     "title*=us-ascii'en'This%20is%20"
+        #     'not%20f\xa7n').encode('latin-1').decode('us-ascii',
+        #                                             'surrogateescape'),
+        #    'text/plain',
+        #    'text',
+        #    'plain',
+        #    {'charset': 'us-ascii', 'title': 'This is not f\uFFFDn'},
+        #     [errors.UndecodableBytesDefect],
+        #     'text/plain; charset="us-ascii"; title="This is not f�n"'),
+
+        'rfc2231_encoded_charset': (
+            'text/plain; charset*=ansi-x3.4-1968\'\'us-ascii',
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii'},
+            [],
+            'text/plain; charset="us-ascii"'),
+
+        # This follows the RFC: no double quotes around encoded values.
+        'rfc2231_encoded_no_double_quotes': (
+            ("text/plain;"
+                "\tname*0*=''This%20is%20;"
+                "\tname*1*=%2A%2A%2Afun%2A%2A%2A%20;"
+                '\tname*2="is it not.pdf"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'This is ***fun*** is it not.pdf'},
+            [],
+            'text/plain; name="This is ***fun*** is it not.pdf"',
+            ('Content-Type: text/plain;\tname*0*=\'\'This%20is%20;\n'
+             '\tname*1*=%2A%2A%2Afun%2A%2A%2A%20;\tname*2="is it not.pdf"\n'),
+            ),
+
+        # Make sure we also handle it if there are spurrious double qoutes.
+        'rfc2231_encoded_with_double_quotes': (
+            ("text/plain;"
+                '\tname*0*="us-ascii\'\'This%20is%20even%20more%20";'
+                '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";'
+                '\tname*2="is it not.pdf"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'This is even more ***fun*** is it not.pdf'},
+            [errors.InvalidHeaderDefect]*2,
+            'text/plain; name="This is even more ***fun*** is it not.pdf"',
+            ('Content-Type: text/plain;\t'
+                'name*0*="us-ascii\'\'This%20is%20even%20more%20";\n'
+             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it not.pdf"\n'),
+            ),
+
+        'rfc2231_single_quote_inside_double_quotes': (
+            ('text/plain; charset=us-ascii;'
+               '\ttitle*0*="us-ascii\'en\'This%20is%20really%20";'
+               '\ttitle*1*="%2A%2A%2Afun%2A%2A%2A%20";'
+               '\ttitle*2="isn\'t it!"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii', 'title': "This is really ***fun*** isn't it!"},
+            [errors.InvalidHeaderDefect]*2,
+            ('text/plain; charset="us-ascii"; '
+               'title="This is really ***fun*** isn\'t it!"'),
+            ('Content-Type: text/plain; charset=us-ascii;\n'
+             '\ttitle*0*="us-ascii\'en\'This%20is%20really%20";\n'
+             '\ttitle*1*="%2A%2A%2Afun%2A%2A%2A%20";\ttitle*2="isn\'t it!"\n'),
+            ),
+
+        'rfc2231_single_quote_in_value_with_charset_and_lang': (
+            ('application/x-foo;'
+                "\tname*0*=\"us-ascii'en-us'Frank's\"; name*1*=\" Document\""),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': "Frank's Document"},
+            [errors.InvalidHeaderDefect]*2,
+            'application/x-foo; name="Frank\'s Document"',
+            ('Content-Type: application/x-foo;\t'
+                'name*0*="us-ascii\'en-us\'Frank\'s";\n'
+             ' name*1*=" Document"\n'),
+            ),
+
+        'rfc2231_single_quote_in_non_encoded_value': (
+            ('application/x-foo;'
+                "\tname*0=\"us-ascii'en-us'Frank's\"; name*1=\" Document\""),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': "us-ascii'en-us'Frank's Document"},
+            [],
+            'application/x-foo; name="us-ascii\'en-us\'Frank\'s Document"',
+            ('Content-Type: application/x-foo;\t'
+                'name*0="us-ascii\'en-us\'Frank\'s";\n'
+             ' name*1=" Document"\n'),
+             ),
+
+        'rfc2231_no_language_or_charset': (
+            'text/plain; NAME*0*=english_is_the_default.html',
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'english_is_the_default.html'},
+            [errors.InvalidHeaderDefect],
+            'text/plain; NAME="english_is_the_default.html"'),
+
+        'rfc2231_encoded_no_charset': (
+            ("text/plain;"
+                '\tname*0*="\'\'This%20is%20even%20more%20";'
+                '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";'
+                '\tname*2="is it.pdf"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'This is even more ***fun*** is it.pdf'},
+            [errors.InvalidHeaderDefect]*2,
+            'text/plain; name="This is even more ***fun*** is it.pdf"',
+            ('Content-Type: text/plain;\t'
+                'name*0*="\'\'This%20is%20even%20more%20";\n'
+             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
+            ),
+
+        # XXX: see below...the first name line here should be *0 not *0*.
+        'rfc2231_partly_encoded': (
+            ("text/plain;"
+                '\tname*0*="\'\'This%20is%20even%20more%20";'
+                '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";'
+                '\tname*2="is it.pdf"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'This is even more ***fun*** is it.pdf'},
+            [errors.InvalidHeaderDefect]*2,
+            'text/plain; name="This is even more ***fun*** is it.pdf"',
+            ('Content-Type: text/plain;\t'
+                'name*0*="\'\'This%20is%20even%20more%20";\n'
+             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
+            ),
+
+        'rfc2231_partly_encoded_2': (
+            ("text/plain;"
+                '\tname*0*="\'\'This%20is%20even%20more%20";'
+                '\tname*1="%2A%2A%2Afun%2A%2A%2A%20";'
+                '\tname*2="is it.pdf"'),
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'This is even more %2A%2A%2Afun%2A%2A%2A%20is it.pdf'},
+            [errors.InvalidHeaderDefect],
+            'text/plain; name="This is even more %2A%2A%2Afun%2A%2A%2A%20is it.pdf"',
+            ('Content-Type: text/plain;\t'
+                'name*0*="\'\'This%20is%20even%20more%20";\n'
+             '\tname*1="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
+            ),
+
+        'rfc2231_unknown_charset_treated_as_ascii': (
+            "text/plain; name*0*=bogus'xx'ascii_is_the_default",
+            'text/plain',
+            'text',
+            'plain',
+            {'name': 'ascii_is_the_default'},
+            [],
+            'text/plain; name="ascii_is_the_default"'),
+
+        'rfc2231_bad_character_in_charset_parameter_value': (
+            "text/plain; charset*=ascii''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8\uFFFD\uFFFD\uFFFD'},
+            [errors.UndecodableBytesDefect],
+            'text/plain; charset="utf-8\uFFFD\uFFFD\uFFFD"'),
+
+        'rfc2231_encoded_then_unencoded_segments': (
+            ('application/x-foo;'
+                '\tname*0*="us-ascii\'en-us\'My";'
+                '\tname*1=" Document";'
+                '\tname*2=" For You"'),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': 'My Document For You'},
+            [errors.InvalidHeaderDefect],
+            'application/x-foo; name="My Document For You"',
+            ('Content-Type: application/x-foo;\t'
+                'name*0*="us-ascii\'en-us\'My";\n'
+             '\tname*1=" Document";\tname*2=" For You"\n'),
+            ),
+
+        # My reading of the RFC is that this is an invalid header.  The RFC
+        # says that if charset and language information is given, the first
+        # segment *must* be encoded.
+        'rfc2231_unencoded_then_encoded_segments': (
+            ('application/x-foo;'
+                '\tname*0=us-ascii\'en-us\'My;'
+                '\tname*1*=" Document";'
+                '\tname*2*=" For You"'),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': 'My Document For You'},
+            [errors.InvalidHeaderDefect]*3,
+            'application/x-foo; name="My Document For You"',
+            ("Content-Type: application/x-foo;\tname*0=us-ascii'en-us'My;\t"
+                # XXX: the newline is in the wrong place, come back and fix
+                # this when the rest of tests pass.
+                'name*1*=" Document"\n;'
+             '\tname*2*=" For You"\n'),
+            ),
+
+        # XXX: I would say this one should default to ascii/en for the
+        # "encoded" segment, since the the first segment is not encoded and is
+        # in double quotes, making the value a valid non-encoded string.  The
+        # old parser decodes this just like the previous case, which may be the
+        # better Postel rule, but could equally result in borking headers that
+        # intentially have quoted quotes in them.  We could get this 98% right
+        # if we treat it as a quoted string *unless* it matches the
+        # charset'lang'value pattern exactly *and* there is at least one
+        # encoded segment.  Implementing that algorithm will require some
+        # refactoring, so I haven't done it (yet).
+
+        'rfc2231_qouted_unencoded_then_encoded_segments': (
+            ('application/x-foo;'
+                '\tname*0="us-ascii\'en-us\'My";'
+                '\tname*1*=" Document";'
+                '\tname*2*=" For You"'),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': "us-ascii'en-us'My Document For You"},
+            [errors.InvalidHeaderDefect]*2,
+            'application/x-foo; name="us-ascii\'en-us\'My Document For You"',
+            ('Content-Type: application/x-foo;\t'
+                'name*0="us-ascii\'en-us\'My";\n'
+             '\tname*1*=" Document";\tname*2*=" For You"\n'),
+            ),
+
+    }
+
+
+@parameterize
+class TestContentTransferEncoding(TestHeaderBase):
+
+    def cte_as_value(self,
+                     source,
+                     cte,
+                     *args):
+        l = len(args)
+        defects =  args[0] if l>0 else []
+        decoded =  args[1] if l>1 and args[1] is not DITTO else source
+        header = 'Content-Transfer-Encoding:' + ' ' if source else ''
+        folded = args[2] if l>2 else header + source + '\n'
+        h = self.make_header('Content-Transfer-Encoding', source)
+        self.assertEqual(h.cte, cte)
+        self.assertDefectsEqual(h.defects, defects)
+        self.assertEqual(h, decoded)
+        self.assertEqual(h.fold(policy=policy.default), folded)
+
+    cte_params = {
+
+        'RFC_2183_1': (
+            'base64',
+            'base64',),
+
+        'no_value': (
+            '',
+            '7bit',
+            [errors.HeaderMissingRequiredValue],
+            '',
+            'Content-Transfer-Encoding:\n',
+            ),
+
+        'junk_after_cte': (
+            '7bit and a bunch more',
+            '7bit',
+            [errors.InvalidHeaderDefect]),
+
+    }
+
+
+@parameterize
+class TestContentDisposition(TestHeaderBase):
+
+    def content_disp_as_value(self,
+                              source,
+                              content_disposition,
+                              *args):
+        l = len(args)
+        parmdict = args[0] if l>0 else {}
+        defects =  args[1] if l>1 else []
+        decoded =  args[2] if l>2 and args[2] is not DITTO else source
+        header = 'Content-Disposition:' + ' ' if source else ''
+        folded = args[3] if l>3 else header + source + '\n'
+        h = self.make_header('Content-Disposition', source)
+        self.assertEqual(h.content_disposition, content_disposition)
+        self.assertEqual(h.params, parmdict)
+        self.assertDefectsEqual(h.defects, defects)
+        self.assertEqual(h, decoded)
+        self.assertEqual(h.fold(policy=policy.default), folded)
+
+    content_disp_params = {
+
+        # Examples from RFC 2183.
+
+        'RFC_2183_1': (
+            'inline',
+            'inline',),
+
+        'RFC_2183_2': (
+            ('attachment; filename=genome.jpeg;'
+             '  modification-date="Wed, 12 Feb 1997 16:29:51 -0500";'),
+            'attachment',
+            {'filename': 'genome.jpeg',
+             'modification-date': 'Wed, 12 Feb 1997 16:29:51 -0500'},
+            [],
+            ('attachment; filename="genome.jpeg"; '
+                 'modification-date="Wed, 12 Feb 1997 16:29:51 -0500"'),
+            ('Content-Disposition: attachment; filename=genome.jpeg;\n'
+             '  modification-date="Wed, 12 Feb 1997 16:29:51 -0500";\n'),
+            ),
+
+        'no_value': (
+            '',
+            None,
+            {},
+            [errors.HeaderMissingRequiredValue],
+            '',
+            'Content-Disposition:\n'),
+
+        'invalid_value': (
+            'ab./k',
+            'ab.',
+            {},
+            [errors.InvalidHeaderDefect]),
+
+        'invalid_value_with_params': (
+            'ab./k; filename="foo"',
+            'ab.',
+            {'filename': 'foo'},
+            [errors.InvalidHeaderDefect]),
+
+    }
+
+
+@parameterize
+class TestMIMEVersionHeader(TestHeaderBase):
+
+    def version_string_as_MIME_Version(self,
+                                       source,
+                                       decoded,
+                                       version,
+                                       major,
+                                       minor,
+                                       defects):
+        h = self.make_header('MIME-Version', source)
+        self.assertEqual(h, decoded)
+        self.assertEqual(h.version, version)
+        self.assertEqual(h.major, major)
+        self.assertEqual(h.minor, minor)
+        self.assertDefectsEqual(h.defects, defects)
+        if source:
+            source = ' ' + source
+        self.assertEqual(h.fold(policy=policy.default),
+                        'MIME-Version:' + source + '\n')
+
+    version_string_params = {
+
+        # Examples from the RFC.
+
+        'RFC_2045_1': (
+            '1.0',
+            '1.0',
+            '1.0',
+            1,
+            0,
+            []),
+
+        'RFC_2045_2': (
+            '1.0 (produced by MetaSend Vx.x)',
+            '1.0 (produced by MetaSend Vx.x)',
+            '1.0',
+            1,
+            0,
+            []),
+
+        'RFC_2045_3': (
+            '(produced by MetaSend Vx.x) 1.0',
+            '(produced by MetaSend Vx.x) 1.0',
+            '1.0',
+            1,
+            0,
+            []),
+
+        'RFC_2045_4': (
+            '1.(produced by MetaSend Vx.x)0',
+            '1.(produced by MetaSend Vx.x)0',
+            '1.0',
+            1,
+            0,
+            []),
+
+        # Other valid values.
+
+        '1_1': (
+            '1.1',
+            '1.1',
+            '1.1',
+            1,
+            1,
+            []),
+
+        '2_1': (
+            '2.1',
+            '2.1',
+            '2.1',
+            2,
+            1,
+            []),
+
+        'whitespace': (
+            '1 .0',
+            '1 .0',
+            '1.0',
+            1,
+            0,
+            []),
+
+        'leading_trailing_whitespace_ignored': (
+            '  1.0  ',
+            '  1.0  ',
+            '1.0',
+            1,
+            0,
+            []),
+
+        # Recoverable invalid values.  We can recover here only because we
+        # already have a valid value by the time we encounter the garbage.
+        # Anywhere else, and we don't know where the garbage ends.
+
+        'non_comment_garbage_after': (
+            '1.0 <abc>',
+            '1.0 <abc>',
+            '1.0',
+            1,
+            0,
+            [errors.InvalidHeaderDefect]),
+
+        # Unrecoverable invalid values.  We *could* apply more heuristics to
+        # get someing out of the first two, but doing so is not worth the
+        # effort.
+
+        'non_comment_garbage_before': (
+            '<abc> 1.0',
+            '<abc> 1.0',
+            None,
+            None,
+            None,
+            [errors.InvalidHeaderDefect]),
+
+        'non_comment_garbage_inside': (
+            '1.<abc>0',
+            '1.<abc>0',
+            None,
+            None,
+            None,
+            [errors.InvalidHeaderDefect]),
+
+        'two_periods': (
+            '1..0',
+            '1..0',
+            None,
+            None,
+            None,
+            [errors.InvalidHeaderDefect]),
+
+        '2_x': (
+            '2.x',
+            '2.x',
+            None,  # This could be 2, but it seems safer to make it None.
+            None,
+            None,
+            [errors.InvalidHeaderDefect]),
+
+        'foo': (
+            'foo',
+            'foo',
+            None,
+            None,
+            None,
+            [errors.InvalidHeaderDefect]),
+
+        'missing': (
+            '',
+            '',
+            None,
+            None,
+            None,
+            [errors.HeaderMissingRequiredValue]),
+
+        }
 
 
 @parameterize

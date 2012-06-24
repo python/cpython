@@ -391,24 +391,151 @@ class UniqueSingleAddressHeader(SingleAddressHeader):
     max_count = 1
 
 
+class MIMEVersionHeader:
+
+    max_count = 1
+
+    value_parser = staticmethod(parser.parse_mime_version)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+        kwds['major'] = None if parse_tree.minor is None else parse_tree.major
+        kwds['minor'] = parse_tree.minor
+        if parse_tree.minor is not None:
+            kwds['version'] = '{}.{}'.format(kwds['major'], kwds['minor'])
+        else:
+            kwds['version'] = None
+
+    def init(self, *args, **kw):
+        self._version = kw.pop('version')
+        self._major = kw.pop('major')
+        self._minor = kw.pop('minor')
+        super().init(*args, **kw)
+
+    @property
+    def major(self):
+        return self._major
+
+    @property
+    def minor(self):
+        return self._minor
+
+    @property
+    def version(self):
+        return self._version
+
+
+class ParameterizedMIMEHeader:
+
+    # Mixin that handles the params dict.  Must be subclassed and
+    # a property value_parser for the specific header provided.
+
+    max_count = 1
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+        if parse_tree.params is None:
+            kwds['params'] = {}
+        else:
+            # The MIME RFCs specify that parameter ordering is arbitrary.
+            kwds['params'] = {utils._sanitize(name).lower():
+                                    utils._sanitize(value)
+                               for name, value in parse_tree.params}
+
+    def init(self, *args, **kw):
+        self._params = kw.pop('params')
+        super().init(*args, **kw)
+
+    @property
+    def params(self):
+        return self._params.copy()
+
+
+class ContentTypeHeader(ParameterizedMIMEHeader):
+
+    value_parser = staticmethod(parser.parse_content_type_header)
+
+    def init(self, *args, **kw):
+        super().init(*args, **kw)
+        self._maintype = utils._sanitize(self._parse_tree.maintype)
+        self._subtype = utils._sanitize(self._parse_tree.subtype)
+
+    @property
+    def maintype(self):
+        return self._maintype
+
+    @property
+    def subtype(self):
+        return self._subtype
+
+    @property
+    def content_type(self):
+        return self.maintype + '/' + self.subtype
+
+
+class ContentDispositionHeader(ParameterizedMIMEHeader):
+
+    value_parser = staticmethod(parser.parse_content_disposition_header)
+
+    def init(self, *args, **kw):
+        super().init(*args, **kw)
+        cd = self._parse_tree.content_disposition
+        self._content_disposition = cd if cd is None else utils._sanitize(cd)
+
+    @property
+    def content_disposition(self):
+        return self._content_disposition
+
+
+class ContentTransferEncodingHeader:
+
+    max_count = 1
+
+    value_parser = staticmethod(parser.parse_content_transfer_encoding_header)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+    def init(self, *args, **kw):
+        super().init(*args, **kw)
+        self._cte = utils._sanitize(self._parse_tree.cte)
+
+    @property
+    def cte(self):
+        return self._cte
+
+
 # The header factory #
 
 _default_header_map = {
-    'subject':          UniqueUnstructuredHeader,
-    'date':             UniqueDateHeader,
-    'resent-date':      DateHeader,
-    'orig-date':        UniqueDateHeader,
-    'sender':           UniqueSingleAddressHeader,
-    'resent-sender':    SingleAddressHeader,
-    'to':               UniqueAddressHeader,
-    'resent-to':        AddressHeader,
-    'cc':               UniqueAddressHeader,
-    'resent-cc':        AddressHeader,
-    'bcc':              UniqueAddressHeader,
-    'resent-bcc':       AddressHeader,
-    'from':             UniqueAddressHeader,
-    'resent-from':      AddressHeader,
-    'reply-to':         UniqueAddressHeader,
+    'subject':                      UniqueUnstructuredHeader,
+    'date':                         UniqueDateHeader,
+    'resent-date':                  DateHeader,
+    'orig-date':                    UniqueDateHeader,
+    'sender':                       UniqueSingleAddressHeader,
+    'resent-sender':                SingleAddressHeader,
+    'to':                           UniqueAddressHeader,
+    'resent-to':                    AddressHeader,
+    'cc':                           UniqueAddressHeader,
+    'resent-cc':                    AddressHeader,
+    'bcc':                          UniqueAddressHeader,
+    'resent-bcc':                   AddressHeader,
+    'from':                         UniqueAddressHeader,
+    'resent-from':                  AddressHeader,
+    'reply-to':                     UniqueAddressHeader,
+    'mime-version':                 MIMEVersionHeader,
+    'content-type':                 ContentTypeHeader,
+    'content-disposition':          ContentDispositionHeader,
+    'content-transfer-encoding':    ContentTransferEncodingHeader,
     }
 
 class HeaderRegistry:

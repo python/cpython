@@ -234,9 +234,78 @@ headers.
       result in a :exc:`ValueError`.
 
 
-Each of the above classes also has a ``Unique`` variant (for example,
+Many of the above classes also have a ``Unique`` variant (for example,
 ``UniqueUnstructuredHeader``).  The only difference is that in the ``Unique``
 variant, :attr:`~.BaseHeader.max_count` is set to 1.
+
+
+.. class:: MIMEVersionHeader
+
+   There is really only one valid value for the :mailheader:`MIME-Version`
+   header, and that is ``1.0``.  For future proofing, this header class
+   supports other valid version numbers.  If a version number has a valid value
+   per :rfc:`2045`, then the header object will have non-``None`` values for
+   the following attributes:
+
+   .. attribute:: version
+
+      The version number as a string, with any whitespace and/or comments
+      removed.
+
+   .. attribute:: major
+
+      The major version number as an integer
+
+   .. attribute:: minor
+
+      The minor version number as an integer
+
+
+.. class:: ParameterizedMIMEHeader
+
+    MOME headers all start with the prefix 'Content-'.  Each specific header has
+    a certain value, described under the class for that header.  Some can
+    also take a list of supplemental parameters, which have a common format.
+    This class serves as a base for all the MIME headers that take parameters.
+
+    .. attrbibute:: params
+
+       A dictionary mapping parameter names to parameter values.
+
+
+.. class:: ContentTypeHeader
+
+    A :class:`ParameterizedMIMEHheader` class that handles the
+    :mailheader:`Content-Type` header.
+
+    .. attribute:: content_type
+
+       The content type string, in the form ``maintype/subtype``.
+
+    .. attribute:: maintype
+
+    .. attribute:: subtype
+
+
+.. class:: ContentDispositionHeader
+
+    A :class:`ParameterizedMIMEHheader` class that handles the
+    :mailheader:`Content-Disposition` header.
+
+    .. attribute:: content-disposition
+
+       ``inline`` and ``attachment`` are the only valid values in common use.
+
+
+.. class:: ContentTransferEncoding
+
+   Handles the :mailheader:`Content-Transfer-Encoding` header.
+
+   .. attribute:: cte
+
+      Valid values are ``7bit``, ``8bit``, ``base64``, and
+      ``quoted-printable``.  See :rfc:`2045` for more information.
+
 
 
 .. class:: HeaderRegistry(base_class=BaseHeader, \
