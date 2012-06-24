@@ -62,6 +62,10 @@ Library
 - Issue #15164: Change return value of platform.uname() from a
   plain tuple to a collections.namedtuple.
 
+- Support Mageia Linux in the platform module.
+
+- Issue #11678: Support Arch linux in the platform module.
+
 - Issue #15118: Change return value of os.uname() and os.times() from
   plain tuples to immutable iterable objects with named attributes
   (structseq objects).
