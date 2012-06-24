@@ -1205,7 +1205,7 @@ features:
 * For some functions, the *path* argument can be not only a string giving a path
   name, but also a file descriptor.  The function will then operate on the file
   referred to by the descriptor.  (For POSIX systems, this will use the ``f...``
-  versions of the function.)
+  version of the function.)
 
   You can check whether or not *path* can be specified as a file descriptor on
   your platform using :data:`os.supports_fd`.  If it is unavailable, using it
@@ -1220,7 +1220,7 @@ features:
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
   path is absolute, *dir_fd* is ignored.  (For POSIX systems, this will use the
-  ``f...at`` versions of the function.)
+  ``f...at`` version of the function.)
 
   You can check whether or not *dir_fd* is supported on your platform using
   :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise a
@@ -1231,7 +1231,7 @@ features:
 * For functions ith a *follow_symlinks* parameter: If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself instead of the file the
-  link points to.  (For POSIX systems, this will use the ``l...`` versions of
+  link points to.  (For POSIX systems, this will use the ``l...`` version of
   the function.)
 
   You can check whether or not *follow_symlinks* is supported on your platform
