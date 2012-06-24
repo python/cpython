@@ -72,10 +72,10 @@ This module also provides the following helper function:
 
    Return ``a == b``.  This function uses an approach designed to prevent timing
    analysis by avoiding content based short circuiting behaviour, making it
-   appropriate for cryptography.  *a* and *b*
-   must both be of the same type: either :class:`str` (ASCII only, as e.g.
-   returned by :meth:`HMAC.hexdigest`), or any type that supports the
-   buffer protocol (e.g. :class:`bytes`).
+   appropriate for cryptography.  *a* and *b* must both be of the same type:
+   either :class:`str` (ASCII only, as e.g. returned by
+   :meth:`HMAC.hexdigest`), or any type that supports the buffer protocol
+   (e.g. :class:`bytes`).
 
    Using a short circuiting comparison (that is, one that terminates as soon as
    it finds any difference between the values) to check digests for correctness
