@@ -54,11 +54,10 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      The output of :meth:`hexdigest` should not be compared directly to an
-      externally-supplied digest during a verification routine. Instead, the
-      externally supplied digest should be converted to a :class:`bytes`
-      value and compared to the output of :meth:`digest` with
-      :func:`compare_digest`.
+      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      digest during a verification routine, it is recommended to use the
+      :func:`compare_digest` function instead of the ``==`` operator
+      to reduce the vulnerability to timing attacks.
 
 
 .. method:: HMAC.copy()
@@ -71,32 +70,16 @@ This module also provides the following helper function:
 
 .. function:: compare_digest(a, b)
 
-   Returns the equivalent of ``a == b``, but avoids content based
-   short circuiting behaviour to reduce the vulnerability to timing
-   analysis. The inputs must either both support the buffer protocol (e.g.
-   :class:`bytes` and :class:`bytearray` instances) or be ASCII only
-   :class:`str` instances as returned by :meth:`hexdigest`.
-   :class:`bytes` and :class:`str` instances can't be mixed.
-
-   Using a short circuiting comparison (that is, one that terminates as soon
-   as it finds any difference between the values) to check digests for
-   correctness can be problematic, as it introduces a potential
-   vulnerability when an attacker can control both the message to be checked
-   *and* the purported signature value. By keeping the plaintext consistent
-   and supplying different signature values, an attacker may be able to use
-   timing variations to search the signature space for the expected value in
-   O(n) time rather than the desired O(2**n).
+   Return ``a == b``.  This function uses an approach designed to prevent
+   timing analysis, making it appropriate for cryptography.  *a* and *b*
+   must both be of the same type: either :class:`str` (ASCII only, as e.g.
+   returned by :meth:`HMAC.hexdigest`), or any type that supports the
+   :term:`buffer protocol` (e.g. :class:`bytes`).
 
    .. note::
-
-      While this function reduces the likelihood of leaking the contents of
-      the expected digest via a timing attack, it still may leak some timing
-      information when the input values differ in lengths as well as in error
-      cases like unsupported types or non ASCII strings. When the inputs have
-      different length the timing depends solely on the length of ``b``. It
-      is assumed that the expected length of the digest is not a secret, as
-      it is typically published as part of a file format, network protocol
-      or API definition.
+      If *a* and *b* are different lengths, or if an error occurs,
+      a timing attack may be able to infer information about the types
+      and lengths of *a* and *b*, but not their values.
 
    .. versionadded:: 3.3
 
