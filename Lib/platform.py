@@ -111,6 +111,7 @@ __copyright__ = """
 
 __version__ = '1.0.7'
 
+import collections
 import sys, os, re
 
 ### Globals & Constants
@@ -1027,6 +1028,9 @@ def architecture(executable=sys.executable,bits='',linkage=''):
 
 ### Portable uname() interface
 
+uname_result = collections.namedtuple("uname_result",
+                    "system node release version machine processor")
+
 _uname_cache = None
 
 def uname():
@@ -1161,7 +1165,7 @@ def uname():
         system = 'Windows'
         release = 'Vista'
 
-    _uname_cache = system,node,release,version,machine,processor
+    _uname_cache = uname_result(system,node,release,version,machine,processor)
     return _uname_cache
 
 ### Direct interfaces to some of the uname() return values
@@ -1173,7 +1177,7 @@ def system():
         An empty string is returned if the value cannot be determined.
 
     """
-    return uname()[0]
+    return uname().system
 
 def node():
 
@@ -1183,7 +1187,7 @@ def node():
         An empty string is returned if the value cannot be determined.
 
     """
-    return uname()[1]
+    return uname().node
 
 def release():
 
@@ -1192,7 +1196,7 @@ def release():
         An empty string is returned if the value cannot be determined.
 
     """
-    return uname()[2]
+    return uname().release
 
 def version():
 
@@ -1201,7 +1205,7 @@ def version():
         An empty string is returned if the value cannot be determined.
 
     """
-    return uname()[3]
+    return uname().version
 
 def machine():
 
@@ -1210,7 +1214,7 @@ def machine():
         An empty string is returned if the value cannot be determined.
 
     """
-    return uname()[4]
+    return uname().machine
 
 def processor():
 
@@ -1222,7 +1226,7 @@ def processor():
         e.g.  NetBSD does this.
 
     """
-    return uname()[5]
+    return uname().processor
 
 ### Various APIs for extracting information from sys.version
 

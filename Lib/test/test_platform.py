@@ -133,6 +133,12 @@ class PlatformTest(unittest.TestCase):
     def test_uname(self):
         res = platform.uname()
         self.assertTrue(any(res))
+        self.assertEqual(res[0], res.system)
+        self.assertEqual(res[1], res.node)
+        self.assertEqual(res[2], res.release)
+        self.assertEqual(res[3], res.version)
+        self.assertEqual(res[4], res.machine)
+        self.assertEqual(res[5], res.processor)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
@@ -166,7 +172,7 @@ class PlatformTest(unittest.TestCase):
     def test_mac_ver(self):
         res = platform.mac_ver()
 
-        if platform.uname()[0] == 'Darwin':
+        if platform.uname().system == 'Darwin':
             # We're on a MacOSX system, check that
             # the right version information is returned
             fd = os.popen('sw_vers', 'r')
