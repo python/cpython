@@ -1,6 +1,0 @@
-Metadata-Version: 1.2
-Name: bacon
-Version: 0.1
-Provides-Dist: truffles (2.0)
-Provides-Dist: bacon (0.1)
-Obsoletes-Dist: truffles (>=0.9,<=1.5)

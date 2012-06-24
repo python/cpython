@@ -12,10 +12,6 @@ additional modules into a Python installation.  The new modules may be either
 100%-pure Python, or may be extension modules written in C, or may be
 collections of Python packages which include modules coded in both Python and C.
 
-.. deprecated:: 3.3
-   :mod:`packaging` replaces Distutils.  See :ref:`packaging-index` and
-   :ref:`packaging-install-index`.
-
 
 User documentation and API reference are provided in another document:
 
@@ -27,11 +23,3 @@ User documentation and API reference are provided in another document:
       easily installed into an existing Python installation.  If also contains
       instructions for end-users wanting to install a distutils-based package,
       :ref:`install-index`.
-
-
-.. trick to silence a Sphinx warning
-
-.. toctree::
-   :hidden:
-
-   ../distutils/index

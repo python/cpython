@@ -2063,8 +2063,7 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3", "Tools/scripts/pysetup3",
-                     "Tools/scripts/pyvenv"]
+                     "Tools/scripts/2to3", "Tools/scripts/pyvenv"]
         )
 
 # --install-platlib

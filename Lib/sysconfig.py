@@ -479,7 +479,7 @@ def get_config_vars(*args):
         _CONFIG_VARS = {}
         # Normalized versions of prefix and exec_prefix are handy to have;
         # in fact, these are the standard versions used most places in the
-        # packaging module.
+        # Distutils.
         _CONFIG_VARS['prefix'] = _PREFIX
         _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
         _CONFIG_VARS['py_version'] = _PY_VERSION
