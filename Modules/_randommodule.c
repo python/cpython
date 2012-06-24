@@ -234,10 +234,10 @@ random_seed(RandomObject *self, PyObject *args)
     if (PyLong_Check(arg))
         n = PyNumber_Absolute(arg);
     else {
-        long hash = PyObject_Hash(arg);
+        Py_ssize_t hash = PyObject_Hash(arg);
         if (hash == -1)
             goto Done;
-        n = PyLong_FromUnsignedLong((unsigned long)hash);
+        n = PyLong_FromSsize_t(hash);
     }
     if (n == NULL)
         goto Done;
