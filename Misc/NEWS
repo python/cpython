@@ -76,6 +76,8 @@ Library
   It is used automatically on platforms supporting the necessary os.openat()
   and os.unlinkat() functions. Main code by Martin von Löwis.
 
+- Issue #15156: HTMLParser now uses the new "html.entities.html5" dictionary.
+
 - Issue #11113: add a new "html5" dictionary containing the named character
   references defined by the HTML5 standard and the equivalent Unicode
   character(s) to the html.entities module.
