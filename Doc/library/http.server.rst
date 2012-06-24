@@ -201,7 +201,8 @@ of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
-      .. versionchanged:: 3.2 Headers are stored in an internal buffer.
+      .. versionchanged:: 3.2
+         Headers are stored in an internal buffer.
 
 
    .. method:: send_response_only(code, message=None)

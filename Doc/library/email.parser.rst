@@ -107,7 +107,8 @@ can be much faster in these situations, since they do not attempt to parse the
 message body, instead setting the payload to the raw body as a string.  They
 have the same API as the :class:`Parser` and :class:`BytesParser` classes.
 
-.. versionadded:: 3.3 BytesHeaderParser
+.. versionadded:: 3.3
+   The BytesHeaderParser class.
 
 
 .. class:: Parser(_class=email.message.Message, *, policy=policy.default)

@@ -78,10 +78,9 @@ An explanation of some terminology and conventions is in order.
   See :class:`struct_time` for a description of these objects.
 
   .. versionchanged:: 3.3
-
-  The :class:`struct_time` type was extended to provide the
-  :attr:`tm_gmtoff` and :attr:`tm_zone` attributes when platform
-  supports corresponding ``struct tm`` members.
+     The :class:`struct_time` type was extended to provide the :attr:`tm_gmtoff`
+     and :attr:`tm_zone` attributes when platform supports corresponding
+     ``struct tm`` members.
 
 * Use the following functions to convert between time representations:
 
@@ -558,10 +557,8 @@ The module defines the following functions and data items:
    :exc:`TypeError` is raised.
 
   .. versionchanged:: 3.3
-
-  :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are avaliable on
-  platforms with C library supporting the corresponding fields in
-  ``struct tm``.
+     :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are avaliable on platforms
+     with C library supporting the corresponding fields in ``struct tm``.
 
 .. function:: time()
 
