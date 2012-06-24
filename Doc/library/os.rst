@@ -319,10 +319,11 @@ process and user.
    the id returned is the one of the init process (1), on Windows it is still
    the same id, which may be already reused by another process.
 
-   Availability: Unix, Windows
+   Availability: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added support for Windows.
+
 
 .. function:: getpriority(which, who)
 
@@ -756,7 +757,7 @@ as internal buffering of data.
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
    buffers associated with *f* are written to disk.
 
-   Availability: Unix, and Windows.
+   Availability: Unix, Windows.
 
 
 .. function:: ftruncate(fd, length)
@@ -816,7 +817,9 @@ as internal buffering of data.
           SEEK_END
 
    Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
-   respectively. Availability: Windows, Unix.
+   respectively.
+
+   Availability: Unix, Windows.
 
    .. versionadded:: 3.3
       Some operating systems could support additional values, like
@@ -1391,8 +1394,9 @@ features:
 
 .. function:: chroot(path)
 
-   Change the root directory of the current process to *path*. Availability:
-   Unix.
+   Change the root directory of the current process to *path*.
+
+   Availability: Unix.
 
 
 .. function:: fchdir(fd)
@@ -1636,8 +1640,9 @@ features:
 
    Dictionary mapping names accepted by :func:`pathconf` and :func:`fpathconf` to
    the integer values defined for those names by the host operating system.  This
-   can be used to determine the set of names known to the system. Availability:
-   Unix.
+   can be used to determine the set of names known to the system.
+
+   Availability: Unix.
 
 
 .. function:: readlink(path, *, dir_fd=None)
@@ -1754,7 +1759,7 @@ features:
    you can check whether or not they are available using :data:`os.supports_dir_fd`.
    If they are unavailable, using either will raise a :exc:`NotImplementedError`.
 
-   Availability: Unix, Windows
+   Availability: Unix, Windows.
 
    .. versionadded:: 3.3
 
@@ -2802,7 +2807,7 @@ written in Python, such as a mail server's external command delivery program.
    :manpage:`times(2)` or the corresponding Windows Platform API documentation.
    On Windows, only the first two items are filled, the others are zero.
 
-   Availability: Unix, Windows
+   Availability: Unix, Windows.
 
 
 .. function:: wait()
@@ -2931,7 +2936,7 @@ written in Python, such as a mail server's external command delivery program.
    This option causes child processes to be reported if they have been continued
    from a job control stop since their status was last reported.
 
-   Availability: Some Unix systems.
+   Availability: some Unix systems.
 
 
 .. data:: WUNTRACED
@@ -3181,7 +3186,7 @@ Miscellaneous System Information
    included in ``confstr_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
-   Availability: Unix
+   Availability: Unix.
 
 
 .. data:: confstr_names
