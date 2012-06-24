@@ -499,8 +499,8 @@ def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
 
     env = os.environ
-    if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in env:
-        executable = os.environ['__PYTHONV_LAUNCHER__']
+    if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
+        executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     executable_dir, executable_name = os.path.split(executable)
