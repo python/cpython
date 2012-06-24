@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11678: Support Arch linux in the platform module.
+
 - Issue #15118: Change return value of os.uname() and os.times() from
   plain tuples to immutable iterable objects with named attributes
   (structseq objects).
