@@ -600,15 +600,16 @@ process and user.
 File Object Creation
 --------------------
 
-These functions create new :term:`file objects <file object>`. (See also :func:`open`.)
+These functions create new :term:`file objects <file object>`.  (See also
+:func:`~os.open` for opening file descriptors.)
 
 
 .. function:: fdopen(fd, *args, **kwargs)
 
-   Return an open file object connected to the file descriptor *fd*.
-   This is an alias of :func:`open` and accepts the same arguments.
-   The only difference is that the first argument of :func:`fdopen`
-   must always be an integer.
+   Return an open file object connected to the file descriptor *fd*.  This is an
+   alias of the :func:`open` built-in function and accepts the same arguments.
+   The only difference is that the first argument of :func:`fdopen` must always
+   be an integer.
 
 
 .. _os-fd-ops:
@@ -952,10 +953,10 @@ as internal buffering of data.
    .. note::
 
       This function is intended for low-level I/O and must be applied to a file
-      descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a "file object"
-      returned by the built-in function :func:`open` or by :func:`popen` or
-      :func:`fdopen`, or :data:`sys.stdin`, use its :meth:`~file.read` or
-      :meth:`~file.readline` methods.
+      descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
+      "file object" returned by the built-in function :func:`open` or by
+      :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
+      :meth:`~file.read` or :meth:`~file.readline` methods.
 
 
 .. function:: sendfile(out, in, offset, nbytes)
