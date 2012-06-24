@@ -39,7 +39,7 @@ class CurrentTimeTest(unittest.TestCase):
     def test_python_builders(self):
         # Get the list of builders from the XMLRPC buildbot interface at
         # python.org.
-        server = xmlrpclib.ServerProxy("http://www.python.org/dev/buildbot/all/xmlrpc/")
+        server = xmlrpclib.ServerProxy("http://buildbot.python.org/all/xmlrpc/")
         try:
             builders = server.getAllBuilders()
         except socket.error as e:
