@@ -482,8 +482,14 @@ iobase_readline(PyObject *self, PyObject *args)
 
         if (has_peek) {
             PyObject *readahead = PyObject_CallMethod(self, "peek", "i", 1);
-            if (readahead == NULL)
+            if (readahead == NULL) {
+                /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
+                   when EINTR occurs so we needn't do it ourselves. */
+                if (_PyIO_trap_eintr()) {
+                    continue;
+                }
                 goto fail;
+            }
             if (!PyBytes_Check(readahead)) {
                 PyErr_Format(PyExc_IOError,
                              "peek() should have returned a bytes object, "
@@ -516,8 +522,14 @@ iobase_readline(PyObject *self, PyObject *args)
         }
 
         b = PyObject_CallMethod(self, "read", "n", nreadahead);
-        if (b == NULL)
+        if (b == NULL) {
+            /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
+               when EINTR occurs so we needn't do it ourselves. */
+            if (_PyIO_trap_eintr()) {
+                continue;
+            }
             goto fail;
+        }
         if (!PyBytes_Check(b)) {
             PyErr_Format(PyExc_IOError,
                          "read() should have returned a bytes object, "
@@ -826,6 +838,11 @@ rawiobase_readall(PyObject *self, PyObject *args)
         PyObject *data = PyObject_CallMethod(self, "read",
                                              "i", DEFAULT_BUFFER_SIZE);
         if (!data) {
+            /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
+               when EINTR occurs so we needn't do it ourselves. */
+            if (_PyIO_trap_eintr()) {
+                continue;
+            }
             Py_DECREF(chunks);
             return NULL;
         }

@@ -57,6 +57,11 @@ extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     Py_UNICODE *start, Py_UNICODE *end, Py_ssize_t *consumed);
 
+/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+   clears the error indicator), 0 otherwise.
+   Should only be called when PyErr_Occurred() is true.
+*/
+extern int _PyIO_trap_eintr(void);
 
 #define DEFAULT_BUFFER_SIZE (8 * 1024)  /* bytes */
 
