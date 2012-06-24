@@ -8482,28 +8482,44 @@ posix_ftruncate(PyObject *self, PyObject *args)
 #ifdef HAVE_TRUNCATE
 PyDoc_STRVAR(posix_truncate__doc__,
 "truncate(path, length)\n\n\
-Truncate the file given by path to length bytes.");
+Truncate the file given by path to length bytes.\n\
+On some platforms, path may also be specified as an open file descriptor.\n\
+  If this functionality is unavailable, using it raises an exception.");
 
 static PyObject *
-posix_truncate(PyObject *self, PyObject *args)
+posix_truncate(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *opath;
-    const char *path;
+    path_t path;
     off_t length;
     int res;
+    PyObject *result = NULL;
+    static char *keywords[] = {"path", "length", NULL};
 
-    if (!PyArg_ParseTuple(args, "O&O&:truncate",
-            PyUnicode_FSConverter, &opath, _parse_off_t, &length))
+    memset(&path, 0, sizeof(path));
+#ifdef HAVE_FTRUNCATE
+    path.allow_fd = 1;
+#endif
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&:truncate", keywords,
+                                     path_converter, &path,
+                                     _parse_off_t, &length))
         return NULL;
-    path = PyBytes_AsString(opath);
 
     Py_BEGIN_ALLOW_THREADS
-    res = truncate(path, length);
+#ifdef HAVE_FTRUNCATE
+    if (path.fd != -1)
+        res = ftruncate(path.fd, length);
+    else
+#endif
+        res = truncate(path.narrow, length);
     Py_END_ALLOW_THREADS
-    Py_DECREF(opath);
     if (res < 0)
-        return posix_error();
-    Py_RETURN_NONE;
+        result = path_posix_error("truncate", &path);
+    else {
+        Py_INCREF(Py_None);
+        result = Py_None;
+    }
+    path_cleanup(&path);
+    return result;
 }
 #endif
 
@@ -9219,31 +9235,45 @@ posix_fpathconf(PyObject *self, PyObject *args)
 PyDoc_STRVAR(posix_pathconf__doc__,
 "pathconf(path, name) -> integer\n\n\
 Return the configuration limit name for the file or directory path.\n\
-If there is no limit, return -1.");
+If there is no limit, return -1.\n\
+On some platforms, path may also be specified as an open file descriptor.\n\
+  If this functionality is unavailable, using it raises an exception.");
 
 static PyObject *
-posix_pathconf(PyObject *self, PyObject *args)
+posix_pathconf(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    path_t path;
     PyObject *result = NULL;
     int name;
-    char *path;
+    static char *keywords[] = {"path", "name", NULL};
 
-    if (PyArg_ParseTuple(args, "sO&:pathconf", &path,
-                         conv_path_confname, &name)) {
+    memset(&path, 0, sizeof(path));
+#ifdef HAVE_FPATHCONF
+    path.allow_fd = 1;
+#endif
+    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&:pathconf", keywords,
+                                    path_converter, &path,
+                                    conv_path_confname, &name)) {
     long limit;
 
     errno = 0;
-    limit = pathconf(path, name);
+#ifdef HAVE_FPATHCONF
+    if (path.fd != -1)
+        limit = fpathconf(path.fd, name);
+    else
+#endif
+        limit = pathconf(path.narrow, name);
     if (limit == -1 && errno != 0) {
         if (errno == EINVAL)
             /* could be a path or name problem */
             posix_error();
         else
-            posix_error_with_filename(path);
+            result = path_posix_error("pathconf", &path);
     }
     else
         result = PyLong_FromLong(limit);
     }
+    path_cleanup(&path);
     return result;
 }
 #endif
@@ -11078,7 +11108,9 @@ static PyMethodDef posix_methods[] = {
     {"ftruncate",       posix_ftruncate, METH_VARARGS, posix_ftruncate__doc__},
 #endif
 #ifdef HAVE_TRUNCATE
-    {"truncate",        posix_truncate, METH_VARARGS, posix_truncate__doc__},
+    {"truncate",        (PyCFunction)posix_truncate,
+                        METH_VARARGS | METH_KEYWORDS,
+                        posix_truncate__doc__},
 #endif
 #ifdef HAVE_POSIX_FALLOCATE
     {"posix_fallocate", posix_posix_fallocate, METH_VARARGS, posix_posix_fallocate__doc__},
@@ -11149,7 +11181,9 @@ static PyMethodDef posix_methods[] = {
     {"fpathconf",       posix_fpathconf, METH_VARARGS, posix_fpathconf__doc__},
 #endif
 #ifdef HAVE_PATHCONF
-    {"pathconf",        posix_pathconf, METH_VARARGS, posix_pathconf__doc__},
+    {"pathconf",        (PyCFunction)posix_pathconf,
+                        METH_VARARGS | METH_KEYWORDS,
+                        posix_pathconf__doc__},
 #endif
     {"abort",           posix_abort, METH_NOARGS, posix_abort__doc__},
 #ifdef MS_WINDOWS
@@ -11741,12 +11775,20 @@ static char *have_functions[] = {
     "HAVE_FDOPENDIR",
 #endif
 
+#ifdef HAVE_FPATHCONF
+    "HAVE_FPATHCONF",
+#endif
+
 #ifdef HAVE_FSTATAT
     "HAVE_FSTATAT",
 #endif
 
 #ifdef HAVE_FSTATVFS
     "HAVE_FSTATVFS",
+#endif
+
+#ifdef HAVE_FTRUNCATE
+    "HAVE_FTRUNCATE",
 #endif
 
 #ifdef HAVE_FUTIMENS

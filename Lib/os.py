@@ -172,8 +172,10 @@ if _exists("_have_functions"):
     _add("HAVE_FDOPENDIR",  "listdir")
     _add("HAVE_FEXECVE",    "execve")
     _set.add(stat) # fstat always works
+    _add("HAVE_FTRUNCATE",  "truncate")
     _add("HAVE_FUTIMENS",   "utime")
     _add("HAVE_FUTIMES",    "utime")
+    _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
     supports_fd = _set
