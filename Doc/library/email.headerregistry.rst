@@ -268,7 +268,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     also take a list of supplemental parameters, which have a common format.
     This class serves as a base for all the MIME headers that take parameters.
 
-    .. attrbibute:: params
+    .. attribute:: params
 
        A dictionary mapping parameter names to parameter values.
 
