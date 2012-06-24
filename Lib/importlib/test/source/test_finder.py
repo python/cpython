@@ -110,7 +110,7 @@ class FinderTests(abc.FinderTests):
     def test_package_over_module(self):
         name = '_temp'
         loader = self.run_test(name, {'{0}.__init__'.format(name), name})
-        self.assertTrue('__init__' in loader.get_filename(name))
+        self.assertIn('__init__', loader.get_filename(name))
 
     def test_failure(self):
         with source_util.create_modules('blah') as mapping:

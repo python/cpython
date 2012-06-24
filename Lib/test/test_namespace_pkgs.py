@@ -276,6 +276,14 @@ class ZipWithMissingDirectory(NamespacePackageTest):
         self.assertEqual(bar.two.attr, 'missing_directory foo two')
 
 
+class ModuleAndFileInSameDir(NamespacePackageTest):
+    paths = ['module_and_file']
+
+    def test_module_before_namespace_package(self):
+        import a_test
+        self.assertEqual(a_test.attr, 'in module')
+
+
 def test_main():
     run_unittest(*NamespacePackageTest.__subclasses__())
 

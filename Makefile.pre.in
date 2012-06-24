@@ -991,6 +991,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/namespace_pkgs/project3 \
 		test/namespace_pkgs/project3/parent \
 		test/namespace_pkgs/project3/parent/child \
+                test/namespace_pkgs/module_and_file \
+                test/namespace_pkgs/module_and_file/a_test \
 		collections concurrent concurrent/futures encodings \
 		email email/mime test/test_email test/test_email/data \
 		html json test/json_tests http dbm xmlrpc \
