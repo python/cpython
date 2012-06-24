@@ -1084,10 +1084,12 @@ class TestInvalidFD(unittest.TestCase):
 
     def test_fpathconf(self):
         if hasattr(os, "fpathconf"):
+            self.check(os.pathconf, "PC_NAME_MAX")
             self.check(os.fpathconf, "PC_NAME_MAX")
 
     def test_ftruncate(self):
         if hasattr(os, "ftruncate"):
+            self.check(os.truncate, 0)
             self.check(os.ftruncate, 0)
 
     def test_lseek(self):

@@ -724,6 +724,8 @@ as internal buffering of data.
    included in ``pathconf_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
+   From Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
+
    Availability: Unix.
 
 
@@ -758,8 +760,9 @@ as internal buffering of data.
 
 .. function:: ftruncate(fd, length)
 
-   Truncate the file corresponding to file descriptor *fd*, so that it is at most
-   *length* bytes in size.
+   Truncate the file corresponding to file descriptor *fd*, so that it is at
+   most *length* bytes in size.  From Python 3.3, this is equivalent to
+   ``os.truncate(fd, length)``.
 
    Availability: Unix.
 
@@ -1622,6 +1625,9 @@ features:
    included in ``pathconf_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
+   This function can support :ref:`specifying an open file descriptor
+   <path_fd>`.
+
    Availability: Unix.
 
 
@@ -2053,6 +2059,8 @@ features:
 
    Truncate the file corresponding to *path*, so that it is at most
    *length* bytes in size.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>`.
 
    Availability: Unix.
 
