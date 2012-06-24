@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #14815: Use Py_ssize_t instead of long for the object hash, to
+  preserve all 64 bits of hash on Win64.
+
 - Issue #12268: File readline, readlines and read() or readall() methods
   no longer lose data when an underlying read system call is interrupted.
   IOError is no longer raised due to a read system call returning EINTR
