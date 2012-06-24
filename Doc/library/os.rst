@@ -1179,9 +1179,9 @@ Querying the size of a terminal
 
    Availability: Unix, Windows.
 
-.. class:: terminal_size(tuple)
+.. class:: terminal_size
 
-   A tuple of ``(columns, lines)`` for holding terminal window size.
+   A subclass of tuple, holding ``(columns, lines)`` of the terminal window size.
 
    .. attribute:: columns
 
