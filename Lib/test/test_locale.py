@@ -11,7 +11,7 @@ def get_enUS_locale():
     if sys.platform == 'darwin':
         import os
         tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
-        if int(os.uname()[2].split('.')[0]) < 10:
+        if int(os.uname().release.split('.')[0]) < 10:
             # The locale test work fine on OSX 10.6, I (ronaldoussoren)
             # haven't had time yet to verify if tests work on OSX 10.5
             # (10.4 is known to be bad)

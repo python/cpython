@@ -14,7 +14,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        _get_default_scheme, _expand_vars,
                        get_scheme_names, get_config_var, _main)
 
-
 class TestSysConfig(unittest.TestCase):
 
     def setUp(self):
@@ -26,7 +25,7 @@ class TestSysConfig(unittest.TestCase):
             self._uname = os.uname()
         else:
             self.uname = None
-            self._uname = None
+            self._set_uname(('',)*5)
         os.uname = self._get_uname
         # saving the environment
         self.name = os.name
@@ -70,7 +69,7 @@ class TestSysConfig(unittest.TestCase):
         super(TestSysConfig, self).tearDown()
 
     def _set_uname(self, uname):
-        self._uname = uname
+        self._uname = os.uname_result(uname)
 
     def _get_uname(self):
         return self._uname
