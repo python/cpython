@@ -54,6 +54,10 @@ Library
   It is used automatically on platforms supporting the necessary os.openat()
   and os.unlinkat() functions. Main code by Martin von Löwis.
 
+- Issue #11113: add a new "html5" dictionary containing the named character
+  references defined by the HTML5 standard and the equivalent Unicode
+  character(s) to the html.entities module.
+
 - Issue #15114: the strict mode of HTMLParser and the HTMLParseError exception
   are deprecated now that the parser is able to parse invalid markup.
 
