@@ -645,7 +645,7 @@ as internal buffering of data.
 .. function:: closerange(fd_low, fd_high)
 
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
-   ignoring errors. Equivalent to::
+   ignoring errors. Equivalent to (but much faster than)::
 
       for fd in range(fd_low, fd_high):
           try:
@@ -728,6 +728,7 @@ as internal buffering of data.
    Return status for file descriptor *fd*, like :func:`~os.stat`.
 
    Availability: Unix, Windows.
+
 
 .. function:: fstatvfs(fd)
 
