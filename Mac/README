@@ -1,6 +1,13 @@
-============
-MacOSX Notes
-============
+=========================
+Python on Mac OS X README
+=========================
+
+:Authors:
+    Jack Jansen (2004-07),
+    Ronald Oussoren (2010-04),
+    Ned Deily (2012-06)
+
+:Version: 3.3.0
 
 This document provides a quick overview of some Mac OS X specific features in
 the Python distribution.
@@ -12,11 +19,11 @@ the Python distribution.
   _`Building and using a framework-based Python on Mac OS X` for more 
   information on frameworks.
 
-  If the optional directory argument is specified the framework it installed
+  If the optional directory argument is specified the framework is installed
   into that directory. This can be used to install a python framework into
   your home directory::
 
-     $ configure --enable-framework=/Users/ronald/Library/Frameworks
+     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks
      $ make && make install
 
   This will install the framework itself in ``/Users/ronald/Library/Frameworks``,
@@ -33,9 +40,10 @@ the Python distribution.
   Create a universal binary build of of Python. This can be used with both
   regular and framework builds.
 
-  The optional argument specifies which OSX SDK should be used to perform the
-  build. This defaults to ``/Developer/SDKs/MacOSX.10.4u.sdk``, specify 
-  ``/`` when building on a 10.5 system, especially when building 64-bit code.
+  The optional argument specifies which OS X SDK should be used to perform the
+  build.  If xcodebuild is available and configured, this defaults to
+  the Xcode default MacOS X SDK, otherwise ``/Developer/SDKs/MacOSX.10.4u.sdk``
+  if available or ``/`` if not.
 
   See the section _`Building and using a universal binary of Python on Mac OS X`
   for more information.
@@ -43,7 +51,9 @@ the Python distribution.
 * ``--with-univeral-archs=VALUE``
 
   Specify the kind of universal binary that should be created. This option is 
-  only valid when ``--enable-universalsdk`` is specified.
+  only valid when ``--enable-universalsdk`` is specified.  The default is
+  ``32-bit`` if a building with a SDK that supports PPC, otherwise defaults
+  to ``intel``.
 
 
 Building and using a universal binary of Python on Mac OS X
@@ -52,9 +62,14 @@ Building and using a universal binary of Python on Mac OS X
 1. What is a universal binary
 -----------------------------
 
-A universal binary build of Python contains object code for both PPC and i386
-and can therefore run at native speed on both classic powerpc based macs and
-the newer intel based macs.
+A universal binary build of Python contains object code for more than one
+CPU architecture.  A universal OS X executable file or library combines the
+architecture-specific code into one file and can therefore run at native
+speed on all supported architectures.  Universal files were introduced in
+OS X 10.4 to add support for Intel-based Macs to the existing PowerPC (PPC)
+machines.  In OS X 10.5 support was extended to 64-bit Intel and 64-bit PPC
+architectures.  It is possible to build Python with various combinations
+of architectures depending on the build tools and OS X version in use.
 
 2. How do I build a universal binary
 ------------------------------------
@@ -67,35 +82,52 @@ flag to configure::
   $ make install
 
 This flag can be used with a framework build of python, but also with a classic
-unix build. Either way you will have to build python on Mac OS X 10.4 (or later)
-with Xcode 2.1 (or later). You also have to install the 10.4u SDK when 
-installing Xcode.
+unix build. Universal builds were first supported with OS X 10.4 with Xcode 2.1
+and the 10.4u SDK.  Starting with Xcode 3 and OS X 10.5, more configurations are
+available.
 
-2.1 Flavours of universal binaries
-..................................
+2.1 Flavors of universal binaries
+.................................
 
-It is possible to build a number of flavours of the universal binary build,
-the default is a 32-bit only binary (i386 and ppc). The flavour can be
-specified using the option ``--with-universal-archs=VALUE``. The following
+It is possible to build a number of flavors of the universal binary build,
+the default is a 32-bit only binary (i386 and ppc) in build environments that
+support ppc (10.4 with Xcode 2, 10.5 and 10.6 with Xcode 3) or an
+Intel-32/-64-bit binary (i386 and X86_64) in build environments that do not
+support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
+using the configure option ``--with-universal-archs=VALUE``. The following
 values are available:
 
+  * ``intel``:	  ``i386``, ``x86_64``
+
   * ``32-bit``:   ``ppc``, ``i386``
+
+  * ``3-way``:	  ``i386``, ``x86_64``, ``ppc``
 
   * ``64-bit``:   ``ppc64``, ``x86_64``
 
   * ``all``:      ``ppc``, ``ppc64``, ``i386``, ``x86_64``
 
-  * ``3-way``:	  ``ppc``, ``i386`` and ``x86_64``
-
-  * ``intel``:	  ``i386``, ``x86_64``
-
 To build a universal binary that includes a 64-bit architecture, you must build
-on a system running OSX 10.5 or later. The ``all`` flavour can only be built on
-OSX 10.5.
+on a system running OS X 10.5 or later.  The ``all`` and ``64-bit`` flavors can
+only be built with an 10.5 SDK because ``ppc64`` support was only included with
+OS X 10.5.  Although legacy ``ppc`` support was included with Xcode 3 on OS X
+10.6, it was removed in Xcode 4, versions of which were released on OS X 10.6
+and which is the current standard for OS X 10.7 and 10.8.  To summarize, the
+following combinations of SDKs and universal-archs flavors are available:
 
-The makefile for a framework build will install ``python32`` and ``pythonw32`` 
-binaries when the universal architecures includes at least one 32-bit architecture
-(that is, for all flavours but ``64-bit``).
+  * 10.4u SDK with Xcode 2 supports ``32-bit`` only
+
+  * 10.5 SDK with Xcode 3.1.x supports all flavors
+
+  * 10.6 SDK with Xcode 3.2.x supports ``intel``, ``3-way``, and ``32-bit``
+
+  * 10.6 SDK with Xcode 4 supports ``intel`` only
+
+  * 10.7 and 10.8 SDKs with Xcode 4 support ``intel`` only
+
+The makefile for a framework build will also install ``python3.3-32``
+binaries when the universal architecture includes at least one 32-bit
+architecture (that is, for all flavors but ``64-bit``).
 
 Running a specific archicture
 .............................
@@ -122,17 +154,17 @@ Building and using a framework-based Python on Mac OS X.
 
 The main reason is because you want to create GUI programs in Python. With the
 exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run 
-from a fullblown MacOSX application (a ".app" bundle).
+from a Mac OSX application bundle (".app").
 
 While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
 only two places: "/Library/Framework/Python.framework" and 
-"/Applications/MacPython <VERSION>" where ``<VERSION>`` can be e.g. "2.6",
-"3.1", etc..  This simplifies matters for users installing 
+"/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.3",
+"2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
-due to the way frameworks work a user without admin privileges can install a 
+due to the way frameworks work, a user without admin privileges can install a
 binary distribution in his or her home directory without recompilation.
 
 2. How does a framework Python differ from a normal static Python?
@@ -156,10 +188,10 @@ PyObjC.
 -------------------------------------
 
 This directory contains a Makefile that will create a couple of python-related
-applications (fullblown OSX .app applications, that is) in
-"/Applications/MacPython <VERSION>", and a hidden helper application Python.app 
-inside the Python.framework, and unix tools "python" and "pythonw" into 
-/usr/local/bin.  In addition it has a target "installmacsubtree" that installs 
+applications (full-blown OSX .app applications, that is) in
+"/Applications/Python <VERSION>", and a hidden helper application Python.app
+inside the Python.framework, and unix tools "python" and "pythonw" into
+/usr/local/bin.  In addition it has a target "installmacsubtree" that installs
 the relevant portions of the Mac subtree into the Python.framework.
 
 It is normally invoked indirectly through the main Makefile, as the last step
@@ -171,17 +203,15 @@ in the sequence
  
  3. make install
 
-This sequence will put the framework in /Library/Framework/Python.framework,
-the applications in "/Applications/MacPython <VERSION>" and the unix tools in 
-/usr/local/bin.
+This sequence will put the framework in ``/Library/Framework/Python.framework``,
+the applications in ``/Applications/Python <VERSION>`` and the unix tools in 
+``/usr/local/bin``.
 
-Installing in another place, for instance $HOME/Library/Frameworks if you have
-no admin privileges on your machine, has only been tested very lightly. This
-can be done by configuring with --enable-framework=$HOME/Library/Frameworks.
-The other two directories, "/Applications/MacPython-<VERSION>" and
-/usr/local/bin, will then also be deposited in $HOME. This is sub-optimal for
-the unix tools, which you would want in $HOME/bin, but there is no easy way to
-fix this right now.
+Installing in another place, for instance ``$HOME/Library/Frameworks`` if you
+have no admin privileges on your machine, is possible. This can be accomplished
+by configuring with ``--enable-framework=$HOME/Library/Frameworks``.
+The other two directories will then also be installed in your home directory,
+at ``$HOME/Applications/Python-<VERSION>`` and ``$HOME/bin``.
 
 If you want to install some part, but not all, read the main Makefile. The
 frameworkinstall is composed of a couple of sub-targets that install the
@@ -189,7 +219,7 @@ framework itself, the Mac subtree, the applications and the unix tools.
 
 There is an extra target frameworkinstallextras that is not part of the
 normal frameworkinstall which installs the Tools directory into
-"/Applications/MacPython <VERSION>", this is useful for binary
+"/Applications/Python <VERSION>", this is useful for binary
 distributions.
 
 What do all these programs do?
@@ -202,24 +232,35 @@ debugger, etc.
 double-click a .py, .pyc or .pyw file. For the first two it creates a Terminal
 window and runs the scripts with the normal command-line Python. For the
 latter it runs the script in the Python.app interpreter so the script can do
-GUI-things. Keep the "alt" key depressed while dragging or double-clicking a
-script to set runtime options. These options can be set once and for all
+GUI-things. Keep the ``Option`` key depressed while dragging or double-clicking
+a script to set runtime options. These options can be set persistently
 through PythonLauncher's preferences dialog.
 
-The commandline scripts /usr/local/bin/python and pythonw can be used to run
-non-GUI and GUI python scripts from the command line, respectively.
+The program ``pythonx.x`` runs python scripts from the command line.  Various
+compatibility aliases are also installed, including ``pythonwx.x`` which
+in early releases of Python on OS X was required to run GUI programs.  In
+current releases, the ``pythonx.x`` and ``pythonwx.x`` commands are identical.
 
 How do I create a binary distribution?
 ======================================
 
-Go to the directory "Mac/OSX/BuildScript". There you'll find a script 
-"build-installer.py" that does all the work. This will download and build
+Download and unpack the source release from http://www.python.org/download/.
+Go to the directory ``Mac/BuildScript``. There you will find a script
+``build-installer.py`` that does all the work. This will download and build
 a number of 3rd-party libaries, configures and builds a framework Python,
 installs it, creates the installer package files and then packs this in a
-DMG image.
+DMG image.  The script also builds an HTML copy of the current Python
+documentation set for this release for inclusion in the framework.  The
+installer package will create links to the documentation for use by IDLE,
+pydoc, shell users, and Finder user.
 
-The script will build a universal binary, you'll therefore have to run this
+The script will build a universal binary so you'll therefore have to run this
 script on Mac OS X 10.4 or later and with Xcode 2.1 or later installed.
+However, the Python build process itself has several build dependencies not
+available out of the box with OS X 10.4 so you may have to install
+additional software beyond what is provided with Xcode 2.  OS X 10.5
+provides a recent enough system Python (in ``/usr/bin``) to build
+the Python documentation set.
 
 All of this is normally done completely isolated in /tmp/_py, so it does not
 use your normal build directory nor does it install into /.
@@ -253,7 +294,7 @@ Uninstalling a framework install, including the binary installer
 
 Uninstalling a framework can be done by manually removing all bits that got installed.
 That's true for both installations from source and installations using the binary installer.
-Sadly enough OSX does not have a central uninstaller.
+OS X does not provide a central uninstaller.
 
 The main bit of a framework install is the framework itself, installed in
 ``/Library/Frameworks/Python.framework``. This can contain multiple versions
@@ -267,14 +308,12 @@ A framework install also installs some applications in ``/Applications/Python X.
 And lastly a framework installation installs files in ``/usr/local/bin``, all of
 them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/X.Y/bin``.
 
-Odds and ends
-=============
 
-Something to take note of is that the ".rsrc" files in the distribution are
-not actually resource files, they're AppleSingle encoded resource files. The
-macresource module and the Mac/OSX/Makefile cater for this, and create
-".rsrc.df.rsrc" files on the fly that are normal datafork-based resource
-files.
+Resources
+=========
 
-	Jack Jansen, Jack.Jansen@cwi.nl, 15-Jul-2004.
-	Ronald Oussoren, RonaldOussoren@mac.com, 30-April-2010
+  *  http://www.python.org/download/mac/
+
+  *  http://www.python.org/community/sigs/current/pythonmac-sig/
+
+  *  http://docs.python.org/devguide/
