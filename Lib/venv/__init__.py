@@ -1,7 +1,8 @@
 """
 Virtual environment (venv) package for Python. Based on PEP 405.
 
-Copyright (C) 20011-2012 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2011-2012 Vinay Sajip.
+Licensed to the PSF under a contributor agreement.
 
 usage: python -m venv [-h] [--system-site-packages] [--symlinks] [--clear]
             [--upgrade]
@@ -36,7 +37,6 @@ try:
     import threading
 except ImportError:
     threading = None
-import zipfile
 
 logger = logging.getLogger(__name__)
 
@@ -119,8 +119,8 @@ class EnvBuilder:
         context.prompt = '(%s) ' % context.env_name
         create_if_needed(env_dir)
         env = os.environ
-        if sys.platform == 'darwin' and '__PYTHONV_LAUNCHER__' in env:
-            executable = os.environ['__PYTHONV_LAUNCHER__']
+        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
+            executable = os.environ['__PYVENV_LAUNCHER__']
         else:
             executable = sys.executable
         dirname, exename = os.path.split(os.path.abspath(executable))
@@ -346,8 +346,7 @@ def main(args=None):
     elif not hasattr(sys, 'base_prefix'):
         compatible = False
     if not compatible:
-        raise ValueError('This script is only for use with '
-                         'Python 3.3 (pythonv variant)')
+        raise ValueError('This script is only for use with Python 3.3')
     else:
         import argparse
 

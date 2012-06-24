@@ -159,7 +159,7 @@ main(int argc, char **argv) {
     status = _NSGetExecutablePath(path, &size);
     if (status == 0) {
         if (realpath(path, real_path) != NULL) {
-            setenv("__PYTHONV_LAUNCHER__", real_path, 1);
+            setenv("__PYVENV_LAUNCHER__", real_path, 1);
         }
     }
 
