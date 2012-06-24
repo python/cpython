@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Remove the packaging module, which is not ready for prime time.
+
 - Issue #15154: Add "dir_fd" parameter to os.rmdir, remove "rmdir"
   parameter from os.remove / os.unlink.
 

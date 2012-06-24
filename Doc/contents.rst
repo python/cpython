@@ -11,7 +11,7 @@
    library/index.rst
    extending/index.rst
    c-api/index.rst
-   packaging/index.rst
+   distutils/index.rst
    install/index.rst
    howto/index.rst
    faq/index.rst

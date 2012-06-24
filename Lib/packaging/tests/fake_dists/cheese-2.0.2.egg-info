@@ -1,5 +1,0 @@
-Metadata-Version: 1.2
-Name: cheese
-Version: 2.0.2
-Provides-Dist: truffles (1.0.2)
-Obsoletes-Dist: truffles (!=1.2,<=2.0)

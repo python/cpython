@@ -1,4 +1,0 @@
-#!/usr/bin/env python3
-import sys
-from packaging.run import main
-sys.exit(main())

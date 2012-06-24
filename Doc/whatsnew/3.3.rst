@@ -53,23 +53,28 @@ This article explains the new features in Python 3.3, compared to 3.2.
    release, so it's worth checking back even after reading earlier versions.
 
 
-New packaging infrastructure
-============================
+PEP 405: Virtual Environments
+=============================
 
-The standard library's packaging infrastructure has been updated to adopt
-some of the features developed by the wider community.
+- inspired by ``virtualenv``, a tool widely used by the community
+- change to the interpreter to avoid hacks
 
-* the :mod:`packaging` package and ``pysetup`` script (inspired by
-  ``setuptools``, ``distribute``, ``distutil2`` and ``pip``)
-* the :mod:`venv` module and ``pyvenv`` script (inspired by ``virtualenv``)
-  (Note: at time of writing, :pep:`405` is accepted, but not yet implemented)
-* native support for package directories that don't require ``__init__.py``
-  marker files and can automatically span multiple path segments
-  (inspired by various third party approaches to namespace packages, as
-  described in :pep:`420`)
+The :mod:`venv` module and ``pyvenv`` script (inspired by ``virtualenv``, a
+tool widely used by the community).
+
+.. also mention the interpreter changes that avoid the hacks used in virtualenv
 
 
-.. pep-3118-update:
+PEP 420: Namespace Packages
+===========================
+
+Native support for package directories that don't require ``__init__.py``
+marker files and can automatically span multiple path segments (inspired by
+various third party approaches to namespace packages, as described in
+:pep:`420`)
+
+
+.. _pep-3118-update:
 
 PEP 3118: New memoryview implementation and buffer protocol documentation
 =========================================================================
@@ -1219,20 +1224,6 @@ os
   * :func:`~os.getgrouplist` (:issue:`9344`)
 
 
-packaging
----------
-
-:mod:`distutils` has undergone additions and refactoring under a new name,
-:mod:`packaging`, to allow developers to make far-reaching changes without
-being constrained by backward compatibility.
-:mod:`distutils` is still provided in the standard library, but users are
-encouraged to transition to :mod:`packaging`.  For older versions of Python, a
-backport compatible with Python 2.5 and newer and 3.2 is available on PyPI
-under the name `distutils2 <http://pypi.python.org/pypi/Distutils2>`_.
-
-.. TODO add examples and howto to the packaging docs and link to them
-
-
 pdb
 ---
 
@@ -1560,8 +1551,6 @@ are no longer supported due to maintenance burden.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* The :mod:`distutils` module has been deprecated.  Use the new
-  :mod:`packaging` module instead.
 * The ``unicode_internal`` codec has been deprecated because of the
   :pep:`393`, use UTF-8, UTF-16 (``utf-16-le`` or ``utf-16-be``), or UTF-32
   (``utf-32-le`` or ``utf-32-be``)

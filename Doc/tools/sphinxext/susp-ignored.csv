@@ -243,28 +243,6 @@ license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AN
 license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 license,,`,THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 license,,:zooko,mailto:zooko@zooko.com
-packaging/examples,,`,This is the description of the ``foobar`` project.
-packaging/setupcfg,,::,Development Status :: 3 - Alpha
-packaging/setupcfg,,::,License :: OSI Approved :: Mozilla Public License 1.1 (MPL 1.1)
-packaging/setupscript,,::,"'Development Status :: 4 - Beta',"
-packaging/setupscript,,::,"'Environment :: Console',"
-packaging/setupscript,,::,"'Environment :: Web Environment',"
-packaging/setupscript,,::,"'Intended Audience :: Developers',"
-packaging/setupscript,,::,"'Intended Audience :: End Users/Desktop',"
-packaging/setupscript,,::,"'Intended Audience :: System Administrators',"
-packaging/setupscript,,::,"'License :: OSI Approved :: Python Software Foundation License',"
-packaging/setupscript,,::,"'Operating System :: MacOS :: MacOS X',"
-packaging/setupscript,,::,"'Operating System :: Microsoft :: Windows',"
-packaging/setupscript,,::,"'Operating System :: POSIX',"
-packaging/setupscript,,::,"'Programming Language :: Python',"
-packaging/setupscript,,::,"'Topic :: Communications :: Email',"
-packaging/setupscript,,::,"'Topic :: Office/Business',"
-packaging/setupscript,,::,"'Topic :: Software Development :: Bug Tracking',"
-packaging/tutorial,,::,1) License :: OSI Approved :: GNU General Public License (GPL)
-packaging/tutorial,,::,2) License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
-packaging/tutorial,,::,classifier = Development Status :: 3 - Alpha
-packaging/tutorial,,::,License :: OSI Approved :: GNU General Public License (GPL)
-packaging/tutorial,,::,Type the number of the license you wish to use or ? to try again:: 1
 reference/datamodel,,:max,
 reference/datamodel,,:step,a[i:j:step]
 reference/expressions,,:datum,{key:datum...}

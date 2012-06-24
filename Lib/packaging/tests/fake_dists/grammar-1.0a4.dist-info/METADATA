@@ -1,5 +1,0 @@
-Metadata-Version: 1.2
-Name: grammar
-Version: 1.0a4
-Requires-Dist: truffles (>=1.2)
-Author: Sherlock Holmes
