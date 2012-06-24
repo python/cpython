@@ -214,7 +214,7 @@ Directory and files operations
       Added a symlink attack resistant version that is used automatically
       if platform supports fd-based functions.
 
-   .. data:: rmtree.avoids_symlink_attacks
+   .. attribute:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
       symlink attack resistant version of :func:`rmtree`.  Currently this is
