@@ -88,14 +88,10 @@ This module also provides the following helper function:
 
    .. note::
 
-      While this function reduces the likelihood of leaking the contents of the
-      expected digest via a timing attack, it still may leak some timing
-      information when the input values differ in lengths as well as in error
-      cases like unsupported types or non ASCII strings.  When the inputs have
-      different length the timing depends solely on the length of ``b``.  It is
-      assumed that the expected length of the digest is not a secret, as it is
-      typically published as part of a file format, network protocol or API
-      definition.
+      If *a* and *b* are of different lengths, or if an error occurs,
+      a timing attack may be able to reveal information about the types
+      and lengths of *a* and *b*, but not their values.
+
 
    .. versionadded:: 3.3
 
