@@ -172,8 +172,6 @@ import io
 import json
 import logging
 import os
-import packaging.command
-import packaging.database
 import platform
 import random
 import re
@@ -969,7 +967,6 @@ class saved_test_environment:
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._SCHEMES',
-                 'packaging.command._COMMANDS', 'packaging.database_caches',
                  'support.TESTFN',
                 )
 
@@ -1074,44 +1071,6 @@ class saved_test_environment:
     def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass
-
-    def get_packaging_command__COMMANDS(self):
-        # registry mapping command names to full dotted path or to the actual
-        # class (resolved on demand); this check only looks at the names, not
-        # the types of the values (IOW, if a value changes from a string
-        # (dotted path) to a class it's okay but if a key (i.e. command class)
-        # is added we complain)
-        id_ = id(packaging.command._COMMANDS)
-        keys = set(packaging.command._COMMANDS)
-        return id_, keys
-    def restore_packaging_command__COMMANDS(self, saved):
-        # if command._COMMANDS was bound to another dict object, we can't
-        # restore the previous object and contents, because the get_ method
-        # above does not return the dict object (to ignore changes in values)
-        for key in packaging.command._COMMANDS.keys() - saved[1]:
-            del packaging.command._COMMANDS[key]
-
-    def get_packaging_database_caches(self):
-        # caching system used by the PEP 376 implementation
-        # we have one boolean and four dictionaries, initially empty
-        switch = packaging.database._cache_enabled
-        saved = []
-        for name in ('_cache_name', '_cache_name_egg',
-                     '_cache_path', '_cache_path_egg'):
-            cache = getattr(packaging.database, name)
-            saved.append((id(cache), cache, cache.copy()))
-        return switch, saved
-    def restore_packaging_database_caches(self, saved):
-        switch, saved_caches = saved
-        packaging.database._cache_enabled = switch
-        for offset, name in enumerate(('_cache_name', '_cache_name_egg',
-                                       '_cache_path', '_cache_path_egg')):
-            _, cache, items = saved_caches[offset]
-            # put back the same object in place
-            setattr(packaging.database, name, cache)
-            # now restore its items
-            cache.clear()
-            cache.update(items)
 
     def get_sys_warnoptions(self):
         return id(sys.warnoptions), sys.warnoptions, sys.warnoptions[:]

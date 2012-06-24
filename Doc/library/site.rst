@@ -134,9 +134,9 @@ empty, and the path manipulations are skipped; however the import of
    :func:`getuserbase` hasn't been called yet.  Default value is
    :file:`~/.local` for UNIX and Mac OS X non-framework builds,
    :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
-   :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Packaging to
+   :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the :ref:`user installation scheme <packaging-alt-install-user>`.
+   etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 

@@ -25,5 +25,4 @@ overview:
    inspect.rst
    site.rst
    fpectl.rst
-   packaging.rst
    distutils.rst

@@ -16,8 +16,7 @@ directories that don't exist already) and places a ``pyvenv.cfg`` file
 in it with a ``home`` key pointing to the Python installation the
 command was run from.  It also creates a ``bin`` (or ``Scripts`` on
 Windows) subdirectory containing a copy of the ``python`` binary (or
-binaries, in the case of Windows) and the ``pysetup3`` script (to
-facilitate easy installation of packages from PyPI into the new virtualenv).
+binaries, in the case of Windows).
 It also creates an (initially empty) ``lib/pythonX.Y/site-packages``
 subdirectory (on Windows, this is ``Lib\site-packages``).
 

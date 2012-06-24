@@ -1006,56 +1006,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		importlib importlib/test importlib/test/builtin \
 		importlib/test/extension importlib/test/frozen \
 		importlib/test/import_ importlib/test/source \
-		packaging packaging/command packaging/compiler \
-		packaging/pypi packaging/tests \
-		packaging/tests/fake_dists \
-		packaging/tests/fake_dists/babar-0.1.dist-info \
-		packaging/tests/fake_dists/bacon-0.1.egg-info \
-		packaging/tests/fake_dists/banana-0.4.egg \
-		packaging/tests/fake_dists/banana-0.4.egg/EGG-INFO \
-		packaging/tests/fake_dists/choxie-2.0.0.9 \
-		packaging/tests/fake_dists/choxie-2.0.0.9/choxie \
-		packaging/tests/fake_dists/choxie-2.0.0.9.dist-info \
-		packaging/tests/fake_dists/coconuts-aster-10.3.egg-info \
-		packaging/tests/fake_dists/grammar-1.0a4 \
-		packaging/tests/fake_dists/grammar-1.0a4.dist-info \
-		packaging/tests/fake_dists/grammar-1.0a4/grammar \
-		packaging/tests/fake_dists/towel_stuff-0.1 \
-		packaging/tests/fake_dists/towel_stuff-0.1.dist-info \
-		packaging/tests/fake_dists/towel_stuff-0.1/towel_stuff \
-		packaging/tests/fixer packaging/tests/pypiserver \
-		packaging/tests/pypiserver/downloads_with_md5 \
-		packaging/tests/pypiserver/downloads_with_md5/packages \
-		packaging/tests/pypiserver/downloads_with_md5/packages/source \
-		packaging/tests/pypiserver/downloads_with_md5/packages/source/f \
-		packaging/tests/pypiserver/downloads_with_md5/packages/source/f/foobar \
-		packaging/tests/pypiserver/downloads_with_md5/simple \
-		packaging/tests/pypiserver/downloads_with_md5/simple/badmd5 \
-		packaging/tests/pypiserver/downloads_with_md5/simple/foobar \
-		packaging/tests/pypiserver/foo_bar_baz \
-		packaging/tests/pypiserver/foo_bar_baz/simple \
-		packaging/tests/pypiserver/foo_bar_baz/simple/bar \
-		packaging/tests/pypiserver/foo_bar_baz/simple/baz \
-		packaging/tests/pypiserver/foo_bar_baz/simple/foo \
-		packaging/tests/pypiserver/project_list \
-		packaging/tests/pypiserver/project_list/simple \
-		packaging/tests/pypiserver/test_found_links \
-		packaging/tests/pypiserver/test_found_links/simple \
-		packaging/tests/pypiserver/test_found_links/simple/foobar \
-		packaging/tests/pypiserver/test_pypi_server \
-		packaging/tests/pypiserver/test_pypi_server/external \
-		packaging/tests/pypiserver/test_pypi_server/simple \
-		packaging/tests/pypiserver/with_externals \
-		packaging/tests/pypiserver/with_externals/external \
-		packaging/tests/pypiserver/with_externals/simple \
-		packaging/tests/pypiserver/with_externals/simple/foobar \
-		packaging/tests/pypiserver/with_norel_links \
-		packaging/tests/pypiserver/with_norel_links/external \
-		packaging/tests/pypiserver/with_norel_links/simple \
-		packaging/tests/pypiserver/with_norel_links/simple/foobar \
-		packaging/tests/pypiserver/with_real_externals \
-		packaging/tests/pypiserver/with_real_externals/simple \
-		packaging/tests/pypiserver/with_real_externals/simple/foobar \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
@@ -1120,10 +1070,6 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 	if test -d $(DESTDIR)$(LIBDEST)/distutils/tests; then \
 		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \
 			$(DESTDIR)$(LIBDEST)/distutils/tests ; \
-	fi
-	if test -d $(DESTDIR)$(LIBDEST)/packaging/tests; then \
-		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \
-			$(DESTDIR)$(LIBDEST)/packaging/tests ; \
 	fi
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		./$(BUILDPYTHON) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
