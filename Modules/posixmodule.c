@@ -522,7 +522,7 @@ dir_fd_converter(PyObject *o, void *p) {
  *     or if path was an integer and path.allow_fd was set,
  *     both path.wide and path.narrow will be NULL
  *     and path.length will be 0.
- *   
+ *
  *   path_converter takes care to not write to the path_t
  *   unless it's successful.  However it must reset the
  *   "cleanup" field each time it's called.
@@ -2421,7 +2421,7 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     /*
-     * Access is possible if 
+     * Access is possible if
      *   * we didn't get a -1, and
      *     * write access wasn't requested,
      *     * or the file isn't read-only,
@@ -2578,7 +2578,7 @@ posix_chdir(PyObject *self, PyObject *args, PyObject *kwargs)
 
     return_value = Py_None;
     Py_INCREF(Py_None);
-    
+
 exit:
     path_cleanup(&path);
     return return_value;
@@ -2996,7 +2996,7 @@ posix_chown(PyObject *self, PyObject *args, PyObject *kwargs)
      * (But we still have an lchown symbol because of weak-linking.)
      * It doesn't have fchownat either.  So there's no possibility
      * of a graceful failover.
-     */    
+     */
     if ((!follow_symlinks) && (lchown == NULL)) {
         follow_symlinks_specified("chown", follow_symlinks);
         goto exit;
@@ -3316,7 +3316,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *v;
     DIR *dirp = NULL;
     struct dirent *ep;
-    int arg_is_unicode = 1;    
+    int arg_is_unicode = 1;
 #endif
 
     memset(&path, 0, sizeof(path));
@@ -8511,7 +8511,7 @@ posix_mknod(PyObject *self, PyObject *args, PyObject *kwargs)
 
     return_value = Py_None;
     Py_INCREF(Py_None);
-    
+
 exit:
     path_cleanup(&path);
     return return_value;
