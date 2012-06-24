@@ -12,7 +12,7 @@ from platform import uname
 from test.support import run_unittest
 
 if uname()[0] == "Darwin":
-    maj, min, mic = [int(part) for part in uname().release.split(".")]
+    maj, min, mic = [int(part) for part in uname()[2].split(".")]
     if (maj, min, mic) < (8, 0, 0):
         raise unittest.SkipTest("locale support broken for OS X < 10.4")
 
