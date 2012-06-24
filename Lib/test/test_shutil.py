@@ -156,8 +156,6 @@ class TestShutil(unittest.TestCase):
         # FUSE experienced a failure earlier in the process
         # at os.listdir.  The first failure may legally
         # be either.
-        if support.verbose:
-            print("onerror [%d]: %r" % (self.errorState, (func, arg, exc[1])))
         if self.errorState < 2:
             if func is os.unlink:
                 self.assertEqual(arg, self.child_file_path)
