@@ -528,7 +528,6 @@ depending on the system error code.
 .. seealso::
 
    :pep:`3151` - Reworking the OS and IO exception hierarchy
-      PEP written and implemented by Antoine Pitrou.
 
 
 Warnings
