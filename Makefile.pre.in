@@ -1031,7 +1031,7 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
-	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.cfg ; \
+	@for i in $(srcdir)/Lib/*.py ; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
