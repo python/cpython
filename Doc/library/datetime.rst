@@ -912,7 +912,6 @@ Supported operations:
    offsets (obtained from ``self.utcoffset()``).
 
    .. versionchanged:: 3.3
-
       Equality comparisons between naive and aware :class:`datetime`
       instances don't raise :exc:`TypeError`.
 
@@ -1343,7 +1342,6 @@ Supported operations:
   ``!=``.  The latter cases return :const:`False` or :const:`True`, respectively.
 
   .. versionchanged:: 3.3
-
      Equality comparisons between naive and aware :class:`time` instances
      don't raise :exc:`TypeError`.
 
