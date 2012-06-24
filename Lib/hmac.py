@@ -4,6 +4,7 @@ Implements the HMAC algorithm as described by RFC 2104.
 """
 
 import warnings as _warnings
+from operator import _compare_digest as compare_digest
 
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
 trans_36 = bytes((x ^ 0x36) for x in range(256))
@@ -12,26 +13,6 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 # hashing module used.  Use digest_size from the instance of HMAC instead.
 digest_size = None
 
-
-def compare_digest(a, b):
-    """Returns the equivalent of 'a == b', but avoids content based short
-    circuiting to reduce the vulnerability to timing attacks."""
-    # Consistent timing matters more here than data type flexibility
-    if not (isinstance(a, bytes) and isinstance(b, bytes)):
-        raise TypeError("inputs must be bytes instances")
-
-    # We assume the length of the expected digest is public knowledge,
-    # thus this early return isn't leaking anything an attacker wouldn't
-    # already know
-    if len(a) != len(b):
-        return False
-
-    # We assume that integers in the bytes range are all cached,
-    # thus timing shouldn't vary much due to integer object creation
-    result = 0
-    for x, y in zip(a, b):
-        result |= x ^ y
-    return result == 0
 
 
 class HMAC:
