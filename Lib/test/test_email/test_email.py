@@ -259,6 +259,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertTrue(lines[0].startswith('From '))
         eq(text, NL.join(lines[1:]))
 
+    # test_headerregistry.TestContentTypeHeader.bad_params
     def test_bad_param(self):
         msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
         self.assertEqual(msg.get_param('baz'), '')
@@ -292,6 +293,7 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_params(header='x-header'),
            [('foo', ''), ('bar', 'one'), ('baz', 'two')])
 
+    # test_headerregistry.TestContentTypeHeader.spaces_around_param_equals
     def test_get_param_liberal(self):
         msg = Message()
         msg['Content-Type'] = 'Content-Type: Multipart/mixed; boundary = "CPIMSSMTPC06p5f3tG"'
@@ -314,10 +316,12 @@ class TestMessageAPI(TestEmailBase):
         # msg.get_param("weird")
         # yet.
 
+    # test_headerregistry.TestContentTypeHeader.spaces_around_semis
     def test_get_param_funky_continuation_lines(self):
         msg = self._msgobj('msg_22.txt')
         self.assertEqual(msg.get_payload(1).get_param('name'), 'wibble.JPG')
 
+    # test_headerregistry.TestContentTypeHeader.semis_inside_quotes
     def test_get_param_with_semis_in_quotes(self):
         msg = email.message_from_string(
             'Content-Type: image/pjpeg; name="Jim&amp;&amp;Jill"\n')
@@ -325,6 +329,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.get_param('name', unquote=False),
                          '"Jim&amp;&amp;Jill"')
 
+    # test_headerregistry.TestContentTypeHeader.quotes_inside_rfc2231_value
     def test_get_param_with_quotes(self):
         msg = email.message_from_string(
             'Content-Type: foo; bar*0="baz\\"foobar"; bar*1="\\"baz"')
@@ -1885,6 +1890,7 @@ class TestNonConformant(TestEmailBase):
                     "\nContent-Transfer-Encoding: {}".format(cte)))
             self.assertEqual(len(msg.defects), 0)
 
+    # test_headerregistry.TestContentTyopeHeader invalid_1 and invalid_2.
     def test_invalid_content_type(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual
@@ -3437,6 +3443,7 @@ class Test8BitBytesHandling(unittest.TestCase):
         self.assertEqual(msg.get_content_maintype(), "text")
         self.assertEqual(msg.get_content_subtype(), "pl\uFFFDin")
 
+    # test_headerregistry.TestContentTypeHeader.non_ascii_in_params
     def test_get_params_with_8bit(self):
         msg = email.message_from_bytes(
             'X-Header: foo=\xa7ne; b\xa7r=two; baz=three\n'.encode('latin-1'))
@@ -3446,6 +3453,7 @@ class Test8BitBytesHandling(unittest.TestCase):
         # XXX: someday you might be able to get 'b\xa7r', for now you can't.
         self.assertEqual(msg.get_param('b\xa7r', header='x-header'), None)
 
+    # test_headerregistry.TestContentTypeHeader.non_ascii_in_rfc2231_value
     def test_get_rfc2231_params_with_8bit(self):
         msg = email.message_from_bytes(textwrap.dedent("""\
             Content-Type: text/plain; charset=us-ascii;
@@ -4491,6 +4499,9 @@ A very long line that must get split to something other than at the
 
 # Test RFC 2231 header parameters (en/de)coding
 class TestRFC2231(TestEmailBase):
+
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_with_double_quotes
+    # test_headerregistry.TestContentTypeHeader.rfc2231_single_quote_inside_double_quotes
     def test_get_param(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_29.txt')
@@ -4576,11 +4587,15 @@ Do you like this message?
 -Me
 """)
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_charset
+    # I changed the charset name, though, because the one in the file isn't
+    # a legal charset name.  Should add a test for an illegal charset.
     def test_rfc2231_get_content_charset(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_32.txt')
         eq(msg.get_content_charset(), 'us-ascii')
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_no_double_quotes
     def test_rfc2231_parse_rfc_quoting(self):
         m = textwrap.dedent('''\
             Content-Disposition: inline;
@@ -4594,6 +4609,7 @@ Do you like this message?
                          'This is even more ***fun*** is it not.pdf')
         self.assertEqual(m, msg.as_string())
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_with_double_quotes
     def test_rfc2231_parse_extra_quoting(self):
         m = textwrap.dedent('''\
             Content-Disposition: inline;
@@ -4607,6 +4623,9 @@ Do you like this message?
                          'This is even more ***fun*** is it not.pdf')
         self.assertEqual(m, msg.as_string())
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_no_language_or_charset
+    # but new test uses *0* because otherwise lang/charset is not valid.
+    # test_headerregistry.TestContentTypeHeader.rfc2231_segmented_normal_values
     def test_rfc2231_no_language_or_charset(self):
         m = '''\
 Content-Transfer-Encoding: 8bit
@@ -4621,6 +4640,7 @@ Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOC
             param,
             'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm')
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_no_charset
     def test_rfc2231_no_language_or_charset_in_filename(self):
         m = '''\
 Content-Disposition: inline;
@@ -4633,6 +4653,7 @@ Content-Disposition: inline;
         self.assertEqual(msg.get_filename(),
                          'This is even more ***fun*** is it not.pdf')
 
+    # Duplicate of previous test?
     def test_rfc2231_no_language_or_charset_in_filename_encoded(self):
         m = '''\
 Content-Disposition: inline;
@@ -4645,6 +4666,8 @@ Content-Disposition: inline;
         self.assertEqual(msg.get_filename(),
                          'This is even more ***fun*** is it not.pdf')
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_partly_encoded,
+    # but the test below is wrong (the first part should be decoded).
     def test_rfc2231_partly_encoded(self):
         m = '''\
 Content-Disposition: inline;
@@ -4696,6 +4719,7 @@ Content-Type: text/plain;
         self.assertEqual(msg.get_content_charset(),
                          'this is even more ***fun*** is it not.pdf')
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_unknown_charset_treated_as_ascii
     def test_rfc2231_bad_encoding_in_filename(self):
         m = '''\
 Content-Disposition: inline;
@@ -4762,6 +4786,7 @@ Content-Type: application/x-foo;
         eq(language, None)
         eq(s, "Frank's Document")
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_single_quote_inside_double_quotes
     def test_rfc2231_single_tick_in_filename(self):
         m = """\
 Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
@@ -4772,6 +4797,7 @@ Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
         self.assertFalse(isinstance(param, tuple))
         self.assertEqual(param, "Frank's Document")
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_single_quote_in_value_with_charset_and_lang
     def test_rfc2231_tick_attack_extended(self):
         eq = self.assertEqual
         m = """\
@@ -4785,6 +4811,7 @@ Content-Type: application/x-foo;
         eq(language, 'en-us')
         eq(s, "Frank's Document")
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_single_quote_in_non_encoded_value
     def test_rfc2231_tick_attack(self):
         m = """\
 Content-Type: application/x-foo;
@@ -4796,6 +4823,7 @@ Content-Type: application/x-foo;
         self.assertFalse(isinstance(param, tuple))
         self.assertEqual(param, "us-ascii'en-us'Frank's Document")
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_single_quotes_inside_quotes
     def test_rfc2231_no_extended_values(self):
         eq = self.assertEqual
         m = """\
@@ -4805,6 +4833,7 @@ Content-Type: application/x-foo; name=\"Frank's Document\"
         msg = email.message_from_string(m)
         eq(msg.get_param('name'), "Frank's Document")
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_encoded_then_unencoded_segments
     def test_rfc2231_encoded_then_unencoded_segments(self):
         eq = self.assertEqual
         m = """\
@@ -4820,6 +4849,8 @@ Content-Type: application/x-foo;
         eq(language, 'en-us')
         eq(s, 'My Document For You')
 
+    # test_headerregistry.TestContentTypeHeader.rfc2231_unencoded_then_encoded_segments
+    # test_headerregistry.TestContentTypeHeader.rfc2231_quoted_unencoded_then_encoded_segments
     def test_rfc2231_unencoded_then_encoded_segments(self):
         eq = self.assertEqual
         m = """\
