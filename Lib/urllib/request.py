@@ -785,8 +785,8 @@ class ProxyHandler(BaseHandler):
         self.proxies = proxies
         for type, url in proxies.items():
             setattr(self, '%s_open' % type,
-                    lambda r, proxy=url, type=type, meth=self.proxy_open: \
-                    meth(r, proxy, type))
+                    lambda r, proxy=url, type=type, meth=self.proxy_open:
+                        meth(r, proxy, type))
 
     def proxy_open(self, req, proxy, type):
         orig_type = req.type
@@ -1178,8 +1178,8 @@ class AbstractHTTPHandler(BaseHandler):
         if request.data is not None:  # POST
             data = request.data
             if isinstance(data, str):
-                msg = "POST data should be bytes or an iterable of bytes."\
-                      "It cannot be str"
+                msg = "POST data should be bytes or an iterable of bytes. " \
+                      "It cannot be of type str."
                 raise TypeError(msg)
             if not request.has_header('Content-type'):
                 request.add_unredirected_header(
@@ -1576,7 +1576,7 @@ class URLopener:
 
     # Constructor
     def __init__(self, proxies=None, **x509):
-        msg = "%(class)s style of invoking requests is deprecated."\
+        msg = "%(class)s style of invoking requests is deprecated. " \
               "Use newer urlopen functions/methods" % {'class': self.__class__.__name__}
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
         if proxies is None:
