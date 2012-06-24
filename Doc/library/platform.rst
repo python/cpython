@@ -158,13 +158,19 @@ Cross Platform
 
 .. function:: uname()
 
-   Fairly portable uname interface. Returns a tuple of strings ``(system, node,
-   release, version, machine, processor)`` identifying the underlying platform.
+   Fairly portable uname interface. Returns a :func:`~collections.namedtuple`
+   containing six attributes: :attr:`system`, :attr:`node`, :attr:`release`,
+   :attr:`version`, :attr:`machine`, and :attr:`processor`.
 
-   Note that unlike the :func:`os.uname` function this also returns possible
-   processor information as additional tuple entry.
+   Note that this adds a sixth attribute (:attr:`processor`) not present
+   in the :func:`os.uname` result.  Also, the attribute names are different
+   for the first two attributes; :func:`os.uname` names them
+   :attr:`sysname` and :attr:`nodename`.
 
    Entries which cannot be determined are set to ``''``.
+
+   .. versionchanged:: 3.3
+      Result changed from a tuple to a namedtuple.
 
 
 Java Platform

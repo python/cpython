@@ -553,7 +553,7 @@ def get_config_vars(*args):
                 _CONFIG_VARS['srcdir'] = os.path.normpath(srcdir)
 
         if sys.platform == 'darwin':
-            kernel_version = os.uname()[2]  # Kernel version (8.4.3)
+            kernel_version = os.uname().release  # Kernel version (8.4.3)
             major_version = int(kernel_version.split('.')[0])
 
             if major_version < 8:
