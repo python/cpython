@@ -1422,20 +1422,6 @@ features:
       and the *dir_fd* and *follow_symlinks* arguments.
 
 
-.. function:: getxattr(path, attribute, *, follow_symlinks=True)
-
-   Return the value of the extended filesystem attribute *attribute* for
-   *path*. *attribute* can be bytes or str. If it is str, it is encoded
-   with the filesystem encoding.
-
-   This function can support :ref:`specifying a file descriptor <path_fd>` and
-   :ref:`not following symlinks <follow_symlinks>`.
-
-   Availability: Linux.
-
-   .. versionadded:: 3.3
-
-
 .. function:: lchflags(path, flags)
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do
@@ -1509,21 +1495,6 @@ features:
 
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*.
-
-
-.. function:: listxattr(path=None, *, follow_symlinks=True)
-
-   Return a list of the extended filesystem attributes on *path*.  The
-   attributes in the list are represented as strings decoded with the filesystem
-   encoding.  If *path* is ``None``, :func:`listxattr` will examine the current
-   directory.
-
-   This function can support :ref:`specifying a file descriptor <path_fd>` and
-   :ref:`not following symlinks <follow_symlinks>`.
-
-   Availability: Linux.
-
-   .. versionadded:: 3.3
 
 
 .. function:: lstat(path, *, dir_fd=None)
@@ -1726,20 +1697,6 @@ features:
    successfully removed.
 
 
-.. function:: removexattr(path, attribute, *, follow_symlinks=True)
-
-   Removes the extended filesystem attribute *attribute* from *path*.
-   *attribute* should be bytes or str. If it is a string, it is encoded
-   with the filesystem encoding.
-
-   This function can support :ref:`specifying a file descriptor <path_fd>` and
-   :ref:`not following symlinks <follow_symlinks>`.
-
-   Availability: Linux.
-
-   .. versionadded:: 3.3
-
-
 .. function:: rename(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
    Rename the file or directory *src* to *dst*.  If *dst* is a directory,
@@ -1815,47 +1772,6 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
-
-
-.. data:: XATTR_SIZE_MAX
-
-   The maximum size the value of an extended attribute can be. Currently, this
-   is 64 kilobytes on Linux.
-
-
-.. data:: XATTR_CREATE
-
-   This is a possible value for the flags argument in :func:`setxattr`. It
-   indicates the operation must create an attribute.
-
-
-.. data:: XATTR_REPLACE
-
-   This is a possible value for the flags argument in :func:`setxattr`. It
-   indicates the operation must replace an existing attribute.
-
-
-.. function:: setxattr(path, attribute, value, flags=0, *, follow_symlinks=True)
-
-   Set the extended filesystem attribute *attribute* on *path* to *value*.
-   *attribute* must be a bytes or str with no embedded NULs. If it is a str,
-   it is encoded with the filesystem encoding.  *flags* may be
-   :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
-   given and the attribute does not exist, ``EEXISTS`` will be raised.
-   If :data:`XATTR_CREATE` is given and the attribute already exists, the
-   attribute will not be created and ``ENODATA`` will be raised.
-
-   This function can support :ref:`specifying a file descriptor <path_fd>` and
-   :ref:`not following symlinks <follow_symlinks>`.
-
-   Availability: Linux.
-
-   .. note::
-
-      A bug in Linux kernel versions less than 2.6.39 caused the flags argument
-      to be ignored on some filesystems.
-
-   .. versionadded:: 3.3
 
 
 .. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
@@ -2332,6 +2248,81 @@ features:
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+Linux extended attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.3
+
+These functions are all available on Linux only.
+
+.. function:: getxattr(path, attribute, *, follow_symlinks=True)
+
+   Return the value of the extended filesystem attribute *attribute* for
+   *path*. *attribute* can be bytes or str. If it is str, it is encoded
+   with the filesystem encoding.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+
+.. function:: listxattr(path=None, *, follow_symlinks=True)
+
+   Return a list of the extended filesystem attributes on *path*.  The
+   attributes in the list are represented as strings decoded with the filesystem
+   encoding.  If *path* is ``None``, :func:`listxattr` will examine the current
+   directory.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+
+.. function:: removexattr(path, attribute, *, follow_symlinks=True)
+
+   Removes the extended filesystem attribute *attribute* from *path*.
+   *attribute* should be bytes or str. If it is a string, it is encoded
+   with the filesystem encoding.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+
+.. function:: setxattr(path, attribute, value, flags=0, *, follow_symlinks=True)
+
+   Set the extended filesystem attribute *attribute* on *path* to *value*.
+   *attribute* must be a bytes or str with no embedded NULs. If it is a str,
+   it is encoded with the filesystem encoding.  *flags* may be
+   :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
+   given and the attribute does not exist, ``EEXISTS`` will be raised.
+   If :data:`XATTR_CREATE` is given and the attribute already exists, the
+   attribute will not be created and ``ENODATA`` will be raised.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+   .. note::
+
+      A bug in Linux kernel versions less than 2.6.39 caused the flags argument
+      to be ignored on some filesystems.
+
+
+.. data:: XATTR_SIZE_MAX
+
+   The maximum size the value of an extended attribute can be. Currently, this
+   is 64 kilobytes on Linux.
+
+
+.. data:: XATTR_CREATE
+
+   This is a possible value for the flags argument in :func:`setxattr`. It
+   indicates the operation must create an attribute.
+
+
+.. data:: XATTR_REPLACE
+
+   This is a possible value for the flags argument in :func:`setxattr`. It
+   indicates the operation must replace an existing attribute.
 
 
 .. _os-process:
