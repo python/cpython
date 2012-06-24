@@ -1,5 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir>$(SolutionDir)</OutDir>
+    <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>  
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <_PropertySheetDisplayName>amd64</_PropertySheetDisplayName>
+    <OutDir>$(SolutionDir)amd64\</OutDir>
+    <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Label="UserMacros">
     <PyDllName>python33$(PyDebugExt)</PyDllName>
     <PythonExe>$(OutDir)python$(PyDebugExt).exe</PythonExe>
@@ -15,12 +27,6 @@
     <tcltkLibDebug>$(tcltkDir)\lib\tcl85g.lib;$(tcltkDir)\lib\tk85g.lib</tcltkLibDebug>
     <tcltk64Lib>$(tcltk64Dir)\lib\tcl85.lib;$(tcltk64Dir)\lib\tk85.lib</tcltk64Lib>
     <tcltk64LibDebug>$(tcltk64Dir)\lib\tcl85g.lib;$(tcltk64Dir)\lib\tk85g.lib</tcltk64LibDebug>
-  </PropertyGroup>
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir>$(SolutionDir)</OutDir>
-    <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
-    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
