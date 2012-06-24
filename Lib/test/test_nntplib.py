@@ -178,9 +178,12 @@ class NetworkedNNTPTestsMixin:
         self.assertTrue(resp.startswith("220 "), resp)
         self.check_article_resp(resp, article, art_num)
         # Tolerate running the tests from behind a NNTP virus checker
+        blacklist = lambda line: line.startswith(b'X-Antivirus')
+        filtered_head_lines = [line for line in head.lines
+                               if not blacklist(line)]
         filtered_lines = [line for line in article.lines
-                                  if not line.startswith(b'X-Antivirus')]
-        self.assertEqual(filtered_lines, head.lines + [b''] + body.lines)
+                          if not blacklist(line)]
+        self.assertEqual(filtered_lines, filtered_head_lines + [b''] + body.lines)
 
     def test_capabilities(self):
         # The server under test implements NNTP version 2 and has a
