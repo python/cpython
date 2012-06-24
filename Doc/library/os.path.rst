@@ -254,7 +254,8 @@ applications should use string objects to access all files.
 
    Availability: Unix, Windows.
 
-   .. versionchanged:: 3.2 Added Windows support.
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: samestat(stat1, stat2)

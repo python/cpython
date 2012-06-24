@@ -217,7 +217,7 @@ The :mod:`abc` module also provides the following decorators:
 
    .. versionadded:: 3.2
    .. deprecated:: 3.3
-       Use :class:`classmethod` with :func:`abstractmethod` instead
+       Use :class:`classmethod` with :func:`abstractmethod` instead.
 
 
 .. decorator:: abstractstaticmethod(function)
@@ -234,7 +234,7 @@ The :mod:`abc` module also provides the following decorators:
 
    .. versionadded:: 3.2
    .. deprecated:: 3.3
-       Use :class:`staticmethod` with :func:`abstractmethod` instead
+       Use :class:`staticmethod` with :func:`abstractmethod` instead.
 
 
 .. decorator:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)

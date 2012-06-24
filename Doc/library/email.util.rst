@@ -41,7 +41,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    characters.  Can be an instance of :class:`str` or a
    :class:`~email.charset.Charset`.  Defaults to ``utf-8``.
 
-   .. versionchanged: 3.3 added the *charset* option
+   .. versionchanged:: 3.3
+      Added the *charset* option.
 
 
 .. function:: getaddresses(fieldvalues)
@@ -93,6 +94,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    corresponding a :class:`~datetime.timezone` :class:`~datetime.tzinfo`.
 
    .. versionadded:: 3.3
+
+
 .. function:: mktime_tz(tuple)
 
    Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC timestamp.  It
@@ -164,7 +167,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    may be useful certain cases, such as a constructing distributed system that
    uses a consistent domain name across multiple hosts.
 
-   .. versionchanged:: 3.2 domain keyword added
+   .. versionchanged:: 3.2
+      Added the *domain* keyword.
 
 
 .. function:: decode_rfc2231(s)

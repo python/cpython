@@ -62,7 +62,7 @@ or as base classes.
    tags, if set to *True* they are emitted as a single self-closed tag.
 
    .. versionadded:: 3.2
-      short_empty_elements
+      The *short_empty_elements* parameter.
 
 
 .. class:: XMLFilterBase(base)

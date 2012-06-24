@@ -50,7 +50,6 @@ The module defines the following:
 
 
    .. versionchanged:: 3.3
-
       Added the *flags* parameter.
 
 

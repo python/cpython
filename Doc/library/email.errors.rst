@@ -76,7 +76,7 @@ this class is *not* an exception!
 * :class:`CloseBoundaryNotFoundDefect` -- A start boundary was found, but
   no corresponding close boundary was ever found.
 
-  .. versionadded: 3.3
+  .. versionadded:: 3.3
 
 * :class:`FirstHeaderLineIsContinuationDefect` -- The message had a continuation
   line as its first header line.
@@ -88,7 +88,7 @@ this class is *not* an exception!
   headers that had no leading white space but contained no ':'.  Parsing
   continues assuming that the line represents the first line of the body.
 
-  .. versionadded: 3.3
+  .. versionadded:: 3.3
 
 * :class:`MalformedHeaderDefect` -- A header was found that was missing a colon,
   or was otherwise malformed.
