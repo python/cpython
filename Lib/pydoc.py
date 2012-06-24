@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate Python documentation in HTML or text for interactive use.
 
-In the Python interpreter, do "from pydoc import help" to provide online
+In the Python interpreter, do "from pydoc import help" to provide
 help.  Calling help(thing) on a Python object documents the object.
 
 Or, at the shell command line outside of Python:
@@ -1838,7 +1838,7 @@ has the same effect as typing a particular string at the help> prompt.
 
     def intro(self):
         self.output.write('''
-Welcome to Python %s!  This is the online help utility.
+Welcome to Python %s!  This is the interactive help utility.
 
 If this is your first time using Python, you should definitely check out
 the tutorial on the Internet at http://docs.python.org/%s/tutorial/.
