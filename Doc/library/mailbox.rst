@@ -89,7 +89,8 @@ Maildir, mbox, MH, Babyl, and MMDF.
       format-specific information is used. Otherwise, reasonable defaults for
       format-specific information are used.
 
-      .. versionchanged:: 3.2 support for binary input
+      .. versionchanged:: 3.2
+         Support for binary input was added.
 
 
    .. method:: remove(key)

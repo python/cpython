@@ -902,10 +902,9 @@ FileHandler Objects
    Open the file locally, if there is no host name, or the host name is
    ``'localhost'``.
 
-   This method is applicable only for local hostnames. When a remote hostname
-   is given, an :exc:`URLError` is raised.
-
-.. versionchanged:: 3.2
+   .. versionchanged:: 3.2
+      This method is applicable only for local hostnames.  When a remote
+      hostname is given, an :exc:`URLError` is raised.
 
 
 .. _ftp-handler-objects:
