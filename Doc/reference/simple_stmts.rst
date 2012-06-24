@@ -393,7 +393,6 @@ assignment of an empty slice of the right type (but even this is determined by
 the sliced object).
 
 .. versionchanged:: 3.2
-
    Previously it was illegal to delete a name from the local namespace if it
    occurs as a free variable in a nested block.
 
