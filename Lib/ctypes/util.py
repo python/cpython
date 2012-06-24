@@ -171,9 +171,9 @@ elif os.name == "posix":
         def _findSoname_ldconfig(name):
             import struct
             if struct.calcsize('l') == 4:
-                machine = os.uname()[4] + '-32'
+                machine = os.uname().machine + '-32'
             else:
-                machine = os.uname()[4] + '-64'
+                machine = os.uname().machine + '-64'
             mach_map = {
                 'x86_64-64': 'libc6,x86-64',
                 'ppc64-64': 'libc6,64bit',

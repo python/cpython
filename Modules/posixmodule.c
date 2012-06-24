@@ -4299,28 +4299,76 @@ exit:
 }
 
 
-#ifdef HAVE_UNAME
 PyDoc_STRVAR(posix_uname__doc__,
-"uname() -> (sysname, nodename, release, version, machine)\n\n\
-Return a tuple identifying the current operating system.");
+"uname() -> uname_result\n\n\
+Return an object identifying the current operating system.\n\
+The object behaves like a named tuple with the following fields:\n\
+  (sysname, nodename, release, version, machine)");
 
+static PyStructSequence_Field uname_result_fields[] = {
+    {"sysname",    "operating system name"},
+    {"nodename",   "name of machine on network (implementation-defined)"},
+    {"release",    "operating system release"},
+    {"version",    "operating system version"},
+    {"machine",    "hardware identifier"},
+    {NULL}
+};
+
+PyDoc_STRVAR(uname_result__doc__,
+"uname_result: Result from os.uname().\n\n\
+This object may be accessed either as a tuple of\n\
+  (sysname, nodename, release, version, machine),\n\
+or via the attributes sysname, nodename, release, version, and machine.\n\
+\n\
+See os.uname for more information.");
+
+static PyStructSequence_Desc uname_result_desc = {
+    "uname_result", /* name */
+    uname_result__doc__, /* doc */
+    uname_result_fields,
+    5
+};
+
+static PyTypeObject UnameResultType;
+
+
+#ifdef HAVE_UNAME
 static PyObject *
 posix_uname(PyObject *self, PyObject *noargs)
 {
     struct utsname u;
     int res;
+    PyObject *value;
 
     Py_BEGIN_ALLOW_THREADS
     res = uname(&u);
     Py_END_ALLOW_THREADS
     if (res < 0)
         return posix_error();
-    return Py_BuildValue("(sssss)",
-                         u.sysname,
-                         u.nodename,
-                         u.release,
-                         u.version,
-                         u.machine);
+
+    value = PyStructSequence_New(&UnameResultType);
+    if (value == NULL)
+        return NULL;
+
+#define SET(i, field) \
+    { \
+    PyObject *o = PyUnicode_DecodeASCII(field, strlen(field), NULL); \
+    if (!o) { \
+        Py_DECREF(value); \
+        return NULL; \
+    } \
+    PyStructSequence_SET_ITEM(value, i, o); \
+    } \
+
+    SET(0, u.sysname);
+    SET(1, u.nodename);
+    SET(2, u.release);
+    SET(3, u.version);
+    SET(4, u.machine);
+
+#undef SET
+
+    return value;
 }
 #endif /* HAVE_UNAME */
 
@@ -7366,6 +7414,75 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
 
 
+static PyStructSequence_Field times_result_fields[] = {
+    {"user",    "user time"},
+    {"system",   "system time"},
+    {"children_user",    "user time of children"},
+    {"children_system",    "system time of children"},
+    {"elapsed",    "elapsed time since an arbitrary point in the past"},
+    {NULL}
+};
+
+PyDoc_STRVAR(times_result__doc__,
+"times_result: Result from os.times().\n\n\
+This object may be accessed either as a tuple of\n\
+  (user, system, children_user, children_system, elapsed),\n\
+or via the attributes user, system, children_user, children_system,\n\
+and elapsed.\n\
+\n\
+See os.times for more information.");
+
+static PyStructSequence_Desc times_result_desc = {
+    "times_result", /* name */
+    times_result__doc__, /* doc */
+    times_result_fields,
+    5
+};
+
+static PyTypeObject TimesResultType;
+
+
+#if defined(HAVE_TIMES) || defined(MS_WINDOWS)
+
+static PyObject *
+build_times_result(double user, double system,
+    double children_user, double children_system,
+    double elapsed)
+{
+    PyObject *value = PyStructSequence_New(&TimesResultType);
+    if (value == NULL)
+        return NULL;
+
+#define SET(i, field) \
+    { \
+    PyObject *o = PyFloat_FromDouble(field); \
+    if (!o) { \
+        Py_DECREF(value); \
+        return NULL; \
+    } \
+    PyStructSequence_SET_ITEM(value, i, o); \
+    } \
+
+    SET(0, user);
+    SET(1, system);
+    SET(2, children_user);
+    SET(3, children_system);
+    SET(4, elapsed);
+
+#undef SET
+
+    return value;
+}
+
+PyDoc_STRVAR(posix_times__doc__,
+"times() -> times_result\n\n\
+Return an object containing floating point numbers indicating process\n\
+times.  The object behaves like a named tuple with these fields:\n\
+  (utime, stime, cutime, cstime, elapsed_time)");
+
+#endif
+
+
 #ifdef HAVE_TIMES
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 static long
@@ -7384,7 +7501,7 @@ static PyObject *
 posix_times(PyObject *self, PyObject *noargs)
 {
     /* Currently Only Uptime is Provided -- Others Later */
-    return Py_BuildValue("ddddd",
+    return build_times_result(
                          (double)0 /* t.tms_utime / HZ */,
                          (double)0 /* t.tms_stime / HZ */,
                          (double)0 /* t.tms_cutime / HZ */,
@@ -7403,7 +7520,7 @@ posix_times(PyObject *self, PyObject *noargs)
     c = times(&t);
     if (c == (clock_t) -1)
         return posix_error();
-    return Py_BuildValue("ddddd",
+    return build_times_result(
                          (double)t.tms_utime / ticks_per_second,
                          (double)t.tms_stime / ticks_per_second,
                          (double)t.tms_cutime / ticks_per_second,
@@ -7411,11 +7528,7 @@ posix_times(PyObject *self, PyObject *noargs)
                          (double)c / ticks_per_second);
 }
 #endif /* not OS2 */
-#endif /* HAVE_TIMES */
-
-
-#ifdef MS_WINDOWS
-#define HAVE_TIMES      /* so the method table will pick it up */
+#elif defined(MS_WINDOWS)
 static PyObject *
 posix_times(PyObject *self, PyObject *noargs)
 {
@@ -7428,8 +7541,7 @@ posix_times(PyObject *self, PyObject *noargs)
        1e7 is one second in such units; 1e-7 the inverse.
        429.4967296 is 2**32 / 1e7 or 2**32 * 1e-7.
     */
-    return Py_BuildValue(
-        "ddddd",
+    return build_times_result(
         (double)(user.dwHighDateTime*429.4967296 +
                  user.dwLowDateTime*1e-7),
         (double)(kernel.dwHighDateTime*429.4967296 +
@@ -7438,12 +7550,6 @@ posix_times(PyObject *self, PyObject *noargs)
         (double)0,
         (double)0);
 }
-#endif /* MS_WINDOWS */
-
-#ifdef HAVE_TIMES
-PyDoc_STRVAR(posix_times__doc__,
-"times() -> (utime, stime, cutime, cstime, elapsed_time)\n\n\
-Return a tuple of floating point numbers indicating process times.");
 #endif
 
 
@@ -11964,6 +12070,14 @@ INITFUNC(void)
     Py_INCREF(&SchedParamType);
     PyModule_AddObject(m, "sched_param", (PyObject *)&SchedParamType);
 #endif
+
+    times_result_desc.name = MODNAME ".times_result";
+    PyStructSequence_InitType(&TimesResultType, &times_result_desc);
+    PyModule_AddObject(m, "times_result", (PyObject *)&TimesResultType);
+
+    uname_result_desc.name = MODNAME ".uname_result";
+    PyStructSequence_InitType(&UnameResultType, &uname_result_desc);
+    PyModule_AddObject(m, "uname_result", (PyObject *)&UnameResultType);
 
 #ifdef __APPLE__
     /*
