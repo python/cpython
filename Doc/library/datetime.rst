@@ -913,8 +913,8 @@ Supported operations:
 
    .. versionchanged:: 3.3
 
-   Equality comparisons between naive and aware :class:`datetime`
-   instances don't raise :exc:`TypeError`.
+      Equality comparisons between naive and aware :class:`datetime`
+      instances don't raise :exc:`TypeError`.
 
    .. note::
 
@@ -1344,8 +1344,8 @@ Supported operations:
 
   .. versionchanged:: 3.3
 
-  Equality comparisons between naive and aware :class:`time` instances
-  don't raise :exc:`TypeError`.
+     Equality comparisons between naive and aware :class:`time` instances
+     don't raise :exc:`TypeError`.
 
 * hash, use as dict key
 
