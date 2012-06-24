@@ -700,7 +700,7 @@ def _mac_ver_xml():
     pl = plistlib.readPlist(fn)
     release = pl['ProductVersion']
     versioninfo=('', '', '')
-    machine = os.uname()[4]
+    machine = os.uname().machine
     if machine in ('ppc', 'Power Macintosh'):
         # for compatibility with the gestalt based code
         machine = 'PowerPC'

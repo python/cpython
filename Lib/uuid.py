@@ -440,7 +440,7 @@ try:
     import sys
     if sys.platform == 'darwin':
         import os
-        if int(os.uname()[2].split('.')[0]) >= 9:
+        if int(os.uname().release.split('.')[0]) >= 9:
             _uuid_generate_random = _uuid_generate_time = None
 
     # On Windows prior to 2000, UuidCreate gives a UUID containing the

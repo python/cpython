@@ -570,14 +570,30 @@ process and user.
       single: gethostname() (in module socket)
       single: gethostbyaddr() (in module socket)
 
-   Return a 5-tuple containing information identifying the current operating
-   system.  The tuple contains 5 strings: ``(sysname, nodename, release, version,
-   machine)``.  Some systems truncate the nodename to 8 characters or to the
+   Returns information identifying the current operating system.
+   The return value is an object with five attributes:
+
+   * :attr:`sysname` - operating system name
+   * :attr:`nodename` - name of machine on network (implementation-defined)
+   * :attr:`release` - operating system release
+   * :attr:`version` - operating system version
+   * :attr:`machine` - hardware identifier
+
+   For backwards compatibility, this object is also iterable, behaving
+   like a five-tuple containing :attr:`sysname`, :attr:`nodename`,
+   :attr:`release`, :attr:`version`, and :attr:`machine`
+   in that order.
+
+   Some systems truncate :attr:`nodename` to 8 characters or to the
    leading component; a better way to get the hostname is
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
    Availability: recent flavors of Unix.
+
+   .. versionchanged:: 3.3
+      Return type changed from a tuple to a tuple-like object
+      with named attributes.
 
 
 .. function:: unsetenv(key)
@@ -2801,14 +2817,30 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: times()
 
-   Return a 5-tuple of floating point numbers indicating accumulated (processor
-   or other) times, in seconds.  The items are: user time, system time,
-   children's user time, children's system time, and elapsed real time since a
-   fixed point in the past, in that order.  See the Unix manual page
+   Returns the current global process times.
+   The return value is an object with five attributes:
+
+   * :attr:`user` - user time
+   * :attr:`system` - system time
+   * :attr:`children_user` - user time of all child processes
+   * :attr:`children_system` - system time of all child processes
+   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+
+   For backwards compatibility, this object also behaves like a five-tuple
+   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
+   :attr:`children_system`, and :attr:`elapsed` in that order.
+
+   See the Unix manual page
    :manpage:`times(2)` or the corresponding Windows Platform API documentation.
-   On Windows, only the first two items are filled, the others are zero.
+   On Windows, only :attr:`user` and :attr:`system` are known; the other
+   attributes are zero.
+   On OS/2, only :attr:`elapsed` is known; the other attributes are zero.
 
    Availability: Unix, Windows.
+
+   .. versionchanged:: 3.3
+      Return type changed from a tuple to a tuple-like object
+      with named attributes.
 
 
 .. function:: wait()
