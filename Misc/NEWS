@@ -10,10 +10,6 @@ What's New in Python 3.3.0 Beta 1?
 Core and Builtins
 -----------------
 
-- Issue #15061: Re-implemented hmac.compare_digest() in C to prevent further
-  timing analysis and to support all buffer protocol aware objects as well as
-  ASCII only str instances safely.
-
 - Issue #14815: Use Py_ssize_t instead of long for the object hash, to
   preserve all 64 bits of hash on Win64.
 
@@ -64,6 +60,10 @@ Library
 - Issue #15176: Clarified behavior, documentation, and implementation
   of os.listdir().
   
+- Issue #15061: Re-implemented hmac.compare_digest() in C to prevent further
+  timing analysis and to support all buffer protocol aware objects as well as
+  ASCII only str instances safely.
+
 - Issue #15164: Change return value of platform.uname() from a
   plain tuple to a collections.namedtuple.
 
