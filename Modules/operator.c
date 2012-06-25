@@ -217,8 +217,8 @@ PyDoc_STRVAR(compare_digest__doc__,
 "or any type that supports the buffer protocol (e.g. bytes).\n"
 "\n"
 "Note: If a and b are of different lengths, or if an error occurs,\n"
-"a timing attack may be able to reveal information about the types\n"
-"and lengths of a and b, but not their values.\n");
+"a timing attack could theoretically reveal information about the\n"
+"types and lengths of a and b--but not their values.\n");
 
 static PyObject*
 compare_digest(PyObject *self, PyObject *args)

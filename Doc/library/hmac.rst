@@ -80,8 +80,8 @@ This module also provides the following helper function:
    .. note::
 
       If *a* and *b* are of different lengths, or if an error occurs,
-      a timing attack may be able to reveal information about the types
-      and lengths of *a* and *b*, but not their values.
+      a timing attack could theoretically reveal information about the
+      types and lengths of *a* and *b*--but not their values.
 
 
    .. versionadded:: 3.3
