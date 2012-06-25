@@ -767,6 +767,9 @@ def transient_internet(resource_name, timeout=30.0, errnos=()):
         ('EAI_FAIL', -4),
         ('EAI_NONAME', -2),
         ('EAI_NODATA', -5),
+        # Windows defines EAI_NODATA as 11001 but idiotic getaddrinfo()
+        # implementation actually returns WSANO_DATA i.e. 11004.
+        ('WSANO_DATA', 11004),
     ]
 
     denied = ResourceDenied("Resource '%s' is not available" % resource_name)
