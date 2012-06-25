@@ -3272,14 +3272,16 @@ exit:
 
 
 PyDoc_STRVAR(posix_listdir__doc__,
-"listdir(path='.') -> list_of_strings\n\n\
-Return a list containing the names of the entries in the directory.\n\
-\n\
+"listdir(path='.') -> list_of_filenames\n\n\
+Return a list containing the names of the files in the directory.\n\
 The list is in arbitrary order.  It does not include the special\n\
 entries '.' and '..' even if they are present in the directory.\n\
 \n\
-path can always be specified as a string.\n\
-On some platforms, path may also be specified as an open file descriptor.\n\
+path can be specified as either str or bytes.  If path is bytes,\n\
+  the filenames returned will also be bytes; in all other circumstances\n\
+  the filenames returned will be str.\n\
+On some platforms, path may also be specified as an open file descriptor;\n\
+  the file descriptor must refer to a directory.\n\
   If this functionality is unavailable, using it raises NotImplementedError.");
 
 static PyObject *
@@ -3316,7 +3318,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *v;
     DIR *dirp = NULL;
     struct dirent *ep;
-    int arg_is_unicode = 1;
+    int return_str; /* if false, return bytes */
 #endif
 
     memset(&path, 0, sizeof(path));
@@ -3538,11 +3540,6 @@ exit:
 #else
 
     errno = 0;
-    /* v is never read, so it does not need to be initialized yet. */
-    if (path.narrow && !PyArg_ParseTuple(args, "U:listdir", &v)) {
-        arg_is_unicode = 0;
-        PyErr_Clear();
-    }
 #ifdef HAVE_FDOPENDIR
     if (path.fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
@@ -3555,6 +3552,8 @@ exit:
             goto exit;
         }
 
+        return_str = 1;
+
         Py_BEGIN_ALLOW_THREADS
         dirp = fdopendir(fd);
         Py_END_ALLOW_THREADS
@@ -3562,7 +3561,17 @@ exit:
     else
 #endif
     {
-        char *name = path.narrow ? path.narrow : ".";
+        char *name;
+        if (path.narrow) {
+            name = path.narrow;
+            /* only return bytes if they specified a bytes object */
+            return_str = !(PyBytes_Check(path.object));
+        }
+        else {
+            name = ".";
+            return_str = 1;
+        }
+
         Py_BEGIN_ALLOW_THREADS
         dirp = opendir(name);
         Py_END_ALLOW_THREADS
@@ -3593,7 +3602,7 @@ exit:
             (NAMLEN(ep) == 1 ||
              (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
             continue;
-        if (arg_is_unicode)
+        if (return_str)
             v = PyUnicode_DecodeFSDefaultAndSize(ep->d_name, NAMLEN(ep));
         else
             v = PyBytes_FromStringAndSize(ep->d_name, NAMLEN(ep));
