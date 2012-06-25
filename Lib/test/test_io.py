@@ -2912,7 +2912,7 @@ class SignalsTest(unittest.TestCase):
         try:
             wio = self.io.open(w, **fdopen_kwargs)
             t.start()
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.alarm(1)
             # Fill the pipe enough that the write will be blocking.
             # It will be interrupted by the timer armed above.  Since the
             # other thread has read one byte, the low-level write will
@@ -2957,7 +2957,7 @@ class SignalsTest(unittest.TestCase):
         r, w = os.pipe()
         wio = self.io.open(w, **fdopen_kwargs)
         try:
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.alarm(1)
             # Either the reentrant call to wio.write() fails with RuntimeError,
             # or the signal handler raises ZeroDivisionError.
             with self.assertRaises((ZeroDivisionError, RuntimeError)) as cm:
@@ -2992,7 +2992,7 @@ class SignalsTest(unittest.TestCase):
         try:
             rio = self.io.open(r, **fdopen_kwargs)
             os.write(w, b"foo")
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.alarm(1)
             # Expected behaviour:
             # - first raw read() returns partial b"foo"
             # - second raw read() returns EINTR
@@ -3036,13 +3036,13 @@ class SignalsTest(unittest.TestCase):
         t.daemon = True
         def alarm1(sig, frame):
             signal.signal(signal.SIGALRM, alarm2)
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.alarm(1)
         def alarm2(sig, frame):
             t.start()
         signal.signal(signal.SIGALRM, alarm1)
         try:
             wio = self.io.open(w, **fdopen_kwargs)
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.alarm(1)
             # Expected behaviour:
             # - first raw write() is partial (because of the limited pipe buffer
             #   and the first alarm)
