@@ -448,16 +448,21 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, posix.chdir, support.TESTFN)
 
     def test_listdir(self):
-        if hasattr(posix, 'listdir'):
-            self.assertTrue(support.TESTFN in posix.listdir(os.curdir))
+        self.assertTrue(support.TESTFN in posix.listdir(os.curdir))
 
     def test_listdir_default(self):
-        # When listdir is called without argument, it's the same as listdir(os.curdir)
-        if hasattr(posix, 'listdir'):
-            self.assertTrue(support.TESTFN in posix.listdir())
+        # When listdir is called without argument,
+        # it's the same as listdir(os.curdir).
+        self.assertTrue(support.TESTFN in posix.listdir())
 
-    @unittest.skipUnless(os.listdir in os.supports_fd, "test needs fd support for os.listdir()")
-    def test_flistdir(self):
+    def test_listdir_bytes(self):
+        # When listdir is called with a bytes object,
+        # the returned strings are of type bytes.
+        self.assertTrue(os.fsencode(support.TESTFN) in posix.listdir(b'.'))
+
+    @unittest.skipUnless(posix.listdir in os.supports_fd,
+                         "test needs fd support for posix.listdir()")
+    def test_listdir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         self.addCleanup(posix.close, f)
         self.assertEqual(

@@ -1488,15 +1488,18 @@ features:
 .. function:: listdir(path='.')
 
    Return a list containing the names of the entries in the directory given by
-   *path* (default: ``'.'``).  The list is in arbitrary order.  It does not
-   include the special entries ``'.'`` and ``'..'`` even if they are present in
-   the directory.
+   *path*.  The list is in arbitrary order, and does not include the special
+   entries ``'.'`` and ``'..'`` even if they are present in the directory.
 
-   This function can be called with a bytes or string argument, and returns
-   filenames of the same datatype.
+   *path* may be either of type ``str`` or of type ``bytes``.  If *path*
+   is of type ``bytes``, the filenames returned will also be of type ``bytes``;
+   in all other circumstances, they will be of type ``str``.
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. note::
+      To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
 
    Availability: Unix, Windows.
 
