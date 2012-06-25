@@ -239,6 +239,9 @@ Library
 - Issue #14785: Add sys._debugmallocstats() to help debug low-level memory
   allocation issues
 
+- Issue #14443: Ensure that .py files are byte-compiled with the correct Python
+  executable within bdist_rpm even on older versions of RPM
+
 C-API
 -----
 
