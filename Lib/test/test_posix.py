@@ -1017,7 +1017,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
                          "test needs an OS that reports file holes")
-    @unittest.skipIf(sys.platform == 'freebsd9',
+    @unittest.skipIf(sys.platform in ('freebsd7', 'freebsd8', 'freebsd9'),
             "Skip test because known kernel bug - " \
             "http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html")
     def test_fs_holes(self):
