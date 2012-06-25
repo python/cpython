@@ -31,7 +31,8 @@ main(int argc, char *argv[])
     FILE *infile, *outfile = NULL;
     struct stat st;
     size_t text_size, data_size, n;
-    char *text, *data;
+    char *text;
+    unsigned char *data;
     PyObject *code, *marshalled;
 
     if (argc != 3) {
@@ -85,7 +86,7 @@ main(int argc, char *argv[])
         goto error;
 
     assert(PyBytes_CheckExact(marshalled));
-    data = PyBytes_AS_STRING(marshalled);
+    data = (unsigned char *) PyBytes_AS_STRING(marshalled);
     data_size = PyBytes_GET_SIZE(marshalled);
 
     outfile = fopen(outpath, "wb");
@@ -99,7 +100,7 @@ main(int argc, char *argv[])
         size_t i, end = Py_MIN(n + 16, data_size);
         fprintf(outfile, "    ");
         for (i = n; i < end; i++) {
-            fprintf(outfile, "%d,", (int) data[i]);
+            fprintf(outfile, "%d,", (unsigned int) data[i]);
         }
         fprintf(outfile, "\n");
     }
