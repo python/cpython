@@ -2211,17 +2211,20 @@ features:
               os.rmdir(os.path.join(root, name))
 
 
-.. function:: fwalk(top, topdown=True, onerror=None, followlinks=False)
+.. function:: fwalk(top='.', topdown=True, onerror=None, followlinks=False, *, dir_fd=None)
 
    .. index::
       single: directory; walking
       single: directory; traversal
 
    This behaves exactly like :func:`walk`, except that it yields a 4-tuple
-   ``(dirpath, dirnames, filenames, dirfd)``.
+   ``(dirpath, dirnames, filenames, dirfd)``, and it supports ``dir_fd``.
 
    *dirpath*, *dirnames* and *filenames* are identical to :func:`walk` output,
    and *dirfd* is a file descriptor referring to the directory *dirpath*.
+
+   This function always supports :ref:`paths relative to directory descriptors
+   <dir_fd>`.
 
    .. note::
 

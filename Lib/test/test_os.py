@@ -741,19 +741,38 @@ class WalkTests(unittest.TestCase):
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
 
-    def test_compare_to_walk(self):
-        # compare with walk() results
+    def _compare_to_walk(self, walk_kwargs, fwalk_kwargs):
+        """
+        compare with walk() results.
+        """
         for topdown, followlinks in itertools.product((True, False), repeat=2):
-            args = support.TESTFN, topdown, None, followlinks
+            d = {'topdown': topdown, 'followlinks': followlinks}
+            walk_kwargs.update(d)
+            fwalk_kwargs.update(d)
+
             expected = {}
-            for root, dirs, files in os.walk(*args):
+            for root, dirs, files in os.walk(**walk_kwargs):
                 expected[root] = (set(dirs), set(files))
 
-            for root, dirs, files, rootfd in os.fwalk(*args):
+            for root, dirs, files, rootfd in os.fwalk(**fwalk_kwargs):
                 self.assertIn(root, expected)
                 self.assertEqual(expected[root], (set(dirs), set(files)))
 
+    def test_compare_to_walk(self):
+        kwargs = {'top': support.TESTFN}
+        self._compare_to_walk(kwargs, kwargs)
+
     def test_dir_fd(self):
+        try:
+            fd = os.open(".", os.O_RDONLY)
+            walk_kwargs = {'top': support.TESTFN}
+            fwalk_kwargs = walk_kwargs.copy()
+            fwalk_kwargs['dir_fd'] = fd
+            self._compare_to_walk(walk_kwargs, fwalk_kwargs)
+        finally:
+            os.close(fd)
+
+    def test_yields_correct_dir_fd(self):
         # check returned file descriptors
         for topdown, followlinks in itertools.product((True, False), repeat=2):
             args = support.TESTFN, topdown, None, followlinks

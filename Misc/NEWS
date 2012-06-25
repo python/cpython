@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15177: Added dir_fd parameter to os.fwalk().
+
 - Issue #15176: Clarified behavior, documentation, and implementation
   of os.listdir().
   
