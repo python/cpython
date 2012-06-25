@@ -5971,7 +5971,9 @@ $as_echo "$CC" >&6; }
 	    # Calculate the right deployment target for this build.
 	    #
 	    cur_target=`sw_vers -productVersion | sed 's/\(10\.[0-9]*\).*/\1/'`
-	    if test ${cur_target} '>' 10.2; then
+	    if test ${cur_target} '>' 10.2 && \
+	       test ${cur_target} '<' 10.6
+	    then
 		    cur_target=10.3
 		    if test ${enable_universalsdk}; then
 			    if test "${UNIVERSAL_ARCHS}" = "all"; then
