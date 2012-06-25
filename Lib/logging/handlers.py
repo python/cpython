@@ -761,7 +761,11 @@ class SysLogHandler(logging.Handler):
         except socket.error:
             self.socket.close()
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.socket.connect(address)
+            try:
+                self.socket.connect(address)
+            except socket.error:
+                self.socket.close()
+                raise
 
     def encodePriority(self, facility, priority):
         """
