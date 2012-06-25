@@ -1204,8 +1204,8 @@ features:
 
 * For some functions, the *path* argument can be not only a string giving a path
   name, but also a file descriptor.  The function will then operate on the file
-  referred to by the descriptor.  (For POSIX systems, this will use the ``f...``
-  version of the function.)
+  referred to by the descriptor.  (For POSIX systems, Python will call the
+  ``f...`` version of the function.)
 
   You can check whether or not *path* can be specified as a file descriptor on
   your platform using :data:`os.supports_fd`.  If it is unavailable, using it
@@ -1219,8 +1219,8 @@ features:
 * For functions with a *dir_fd* parameter: If *dir_fd* is not ``None``, it
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
-  path is absolute, *dir_fd* is ignored.  (For POSIX systems, this will use the
-  ``f...at`` version of the function.)
+  path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
+  the ``...at`` version of the function.)
 
   You can check whether or not *dir_fd* is supported on your platform using
   :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise a
@@ -1231,7 +1231,7 @@ features:
 * For functions ith a *follow_symlinks* parameter: If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself instead of the file the
-  link points to.  (For POSIX systems, this will use the ``l...`` version of
+  link points to.  (For POSIX systems, Python will call the ``l...`` version of
   the function.)
 
   You can check whether or not *follow_symlinks* is supported on your platform
@@ -1471,17 +1471,9 @@ features:
 
    Create a hard link pointing to *src* named *dst*.
 
-   If either *src_dir_fd* or *dst_dir_fd* is not ``None``, it should be a file
-   descriptor referring to a directory, and the corresponding path (*src* or
-   *dst*) should be relative; that path will then be relative to that directory.
-   (If *src* is absolute, *src_dir_fd* is ignored; the same goes for *dst* and
-   *dst_dir_fd*.)  *src_dir_fd* and *dst_dir_fd* may not be supported on your
-   platform; you can check whether or not they are available using
-   :data:`os.supports_dir_fd`.  If they are unavailable, using either will raise
-   a :exc:`NotImplementedError`.
-
-   This function can also support :ref:`not following symlinks
-   <follow_symlinks>`.
+   This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
+   supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
+   following symlinks <follow_symlinks>`.
 
    Availability: Unix, Windows.
 
@@ -1729,14 +1721,8 @@ features:
    Windows, if *dst* already exists, :exc:`OSError` will be raised even if it is a
    file.
 
-   If either *src_dir_fd* or *dst_dir_fd* is not ``None``, it should be a
-   file descriptor referring to a directory, and the corresponding path
-   (*src* or *dst*) should be relative; that path will then be relative to
-   that directory.  (If *src* is absolute, *src_dir_fd* is ignored; the same
-   goes for *dst* and *dst_dir_fd*.)
-   *src_dir_fd* and *dst_dir_fd* may not be supported on your platform;
-   you can check whether or not they are available using :data:`os.supports_dir_fd`.
-   If they are unavailable, using either will raise a :exc:`NotImplementedError`.
+   This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
+   supply :ref:`paths relative to directory descriptors <dir_fd>`.
 
    If you want cross-platform overwriting of the destination, use :func:`replace`.
 
@@ -1767,14 +1753,8 @@ features:
    if *src* and *dst* are on different filesystems.  If successful,
    the renaming will be an atomic operation (this is a POSIX requirement).
 
-   If either *src_dir_fd* or *dst_dir_fd* is not ``None``, it should be a
-   file descriptor referring to a directory, and the corresponding path
-   (*src* or *dst*) should be relative; that path will then be relative to
-   that directory.  (If *src* is absolute, *src_dir_fd* is ignored; the same
-   goes for *dst* and *dst_dir_fd*.)
-   *src_dir_fd* and *dst_dir_fd* may not be supported on your platform;
-   you can check whether or not they are available using :data:`os.supports_dir_fd`.
-   If they are unavailable, using either will raise a :exc:`NotImplementedError`.
+   This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
+   supply :ref:`paths relative to directory descriptors <dir_fd>`.
 
    Availability: Unix, Windows.
 
@@ -1955,8 +1935,8 @@ features:
 
 .. data:: supports_dir_fd
 
-   An object implementing collections.Set indicating which functions in the
-   :mod:`os` permit use of their *dir_fd* parameter.  Different platforms
+   A :class:`~collections.Set` object indicating which functions in the
+   :mod:`os` module permit use of their *dir_fd* parameter.  Different platforms
    provide different functionality, and an option that might work on one might
    be unsupported on another.  For consistency's sakes, functions that support
    *dir_fd* always allow specifying the parameter, but will throw an exception
@@ -1977,10 +1957,10 @@ features:
 
 .. data:: supports_effective_ids
 
-   An object implementing collections.Set indicating which functions in the
-   :mod:`os` permit use of the *effective_ids* parameter for :func:`os.access`.
-   If the local platform supports it, the collection will contain
-   :func:`os.access`, otherwise it will be empty.
+   A :class:`~collections.Set` object indicating which functions in the
+   :mod:`os` module permit use of the *effective_ids* parameter for
+   :func:`os.access`.  If the local platform supports it, the collection will
+   contain :func:`os.access`, otherwise it will be empty.
 
    To check whether you can use the *effective_ids* parameter for
    :func:`os.access`, use the ``in`` operator on ``supports_dir_fd``, like so::
@@ -1995,8 +1975,8 @@ features:
 
 .. data:: supports_fd
 
-   An object implementing collections.Set indicating which functions in the
-   :mod:`os` permit specifying their *path* parameter as an open file
+   A :class:`~collections.Set` object indicating which functions in the
+   :mod:`os` module permit specifying their *path* parameter as an open file
    descriptor.  Different platforms provide different functionality, and an
    option that might work on one might be unsupported on another.  For
    consistency's sakes, functions that support *fd* always allow specifying
@@ -2016,8 +1996,8 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   An object implementing collections.Set indicating which functions in the
-   :mod:`os` permit use of their *follow_symlinks* parameter.  Different
+   A :class:`~collections.Set` object indicating which functions in the
+   :mod:`os` module permit use of their *follow_symlinks* parameter.  Different
    platforms provide different functionality, and an option that might work on
    one might be unsupported on another.  For consistency's sakes, functions that
    support *follow_symlinks* always allow specifying the parameter, but will
