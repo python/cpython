@@ -700,7 +700,7 @@ as internal buffering of data.
 .. function:: fchmod(fd, mode)
 
    Change the mode of the file given by *fd* to the numeric *mode*.  See the
-   docs for :func:`chmod` for possible values of *mode*.  From Python 3.3, this
+   docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
    Availability: Unix.
@@ -710,7 +710,7 @@ as internal buffering of data.
 
    Change the owner and group id of the file given by *fd* to the numeric *uid*
    and *gid*.  To leave one of the ids unchanged, set it to -1.  See
-   :func:`chown`.  From Python 3.3, this is equivalent to ``os.chown(fd, uid,
+   :func:`chown`.  As of Python 3.3, this is equivalent to ``os.chown(fd, uid,
    gid)``.
 
    Availability: Unix.
@@ -742,14 +742,14 @@ as internal buffering of data.
    included in ``pathconf_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
-   From Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
+   As of Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
 
    Availability: Unix.
 
 
 .. function:: fstat(fd)
 
-   Return status for file descriptor *fd*, like :func:`~os.stat`.  From Python
+   Return status for file descriptor *fd*, like :func:`~os.stat`.  As of Python
    3.3, this is equivalent to ``os.stat(fd)``.
 
    Availability: Unix, Windows.
@@ -758,7 +758,7 @@ as internal buffering of data.
 .. function:: fstatvfs(fd)
 
    Return information about the filesystem containing the file associated with
-   file descriptor *fd*, like :func:`statvfs`.  From Python 3.3, this is
+   file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
    equivalent to ``os.statvfs(fd)``.
 
    Availability: Unix.
@@ -779,7 +779,7 @@ as internal buffering of data.
 .. function:: ftruncate(fd, length)
 
    Truncate the file corresponding to file descriptor *fd*, so that it is at
-   most *length* bytes in size.  From Python 3.3, this is equivalent to
+   most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
    Availability: Unix.
@@ -1420,7 +1420,7 @@ features:
 
    Change the current working directory to the directory represented by the file
    descriptor *fd*.  The descriptor must refer to an opened directory, not an
-   open file.  From Python 3.3, this is equivalent to ``os.chdir(fd)``.
+   open file.  As of Python 3.3, this is equivalent to ``os.chdir(fd)``.
 
    Availability: Unix.
 
@@ -1442,7 +1442,7 @@ features:
 .. function:: lchflags(path, flags)
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do
-   not follow symbolic links.  From Python 3.3, this is equivalent to
+   not follow symbolic links.  As of Python 3.3, this is equivalent to
    ``os.chflags(path, flags, follow_symlinks=False)``.
 
    Availability: Unix.
@@ -1452,7 +1452,7 @@ features:
 
    Change the mode of *path* to the numeric *mode*. If path is a symlink, this
    affects the symlink rather than the target.  See the docs for :func:`chmod`
-   for possible values of *mode*.  From Python 3.3, this is equivalent to
+   for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
    Availability: Unix.
@@ -1461,7 +1461,7 @@ features:
 .. function:: lchown(path, uid, gid)
 
    Change the owner and group id of *path* to the numeric *uid* and *gid*.  This
-   function will not follow symbolic links.  From Python 3.3, this is equivalent
+   function will not follow symbolic links.  As of Python 3.3, this is equivalent
    to ``os.chown(path, uid, gid, follow_symlinks=False)``.
 
    Availability: Unix.
@@ -1519,7 +1519,7 @@ features:
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links.  On
    platforms that do not support symbolic links, this is an alias for
-   :func:`~os.stat`.  From Python 3.3, this is equivalent to ``os.stat(path,
+   :func:`~os.stat`.  As of Python 3.3, this is equivalent to ``os.stat(path,
    dir_fd=dir_fd, follow_symlinks=False)``.
 
    This function can also support :ref:`paths relative to directory descriptors
