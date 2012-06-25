@@ -426,6 +426,9 @@ def rmtree(path, ignore_errors=False, onerror=None):
         def onerror(*args):
             raise
     if _use_fd_functions:
+        # While the unsafe rmtree works fine on bytes, the fd based does not.
+        if isinstance(path, bytes):
+            path = os.fsdecode(path)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         try:
