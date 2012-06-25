@@ -108,6 +108,15 @@ class TestShutil(unittest.TestCase):
         self.tempdirs.append(d)
         return d
 
+    def test_rmtree_works_on_bytes(self):
+        tmp = self.mkdtemp()
+        victim = os.path.join(tmp, 'killme')
+        os.mkdir(victim)
+        write_file(os.path.join(victim, 'somefile'), 'foo')
+        victim = os.fsencode(victim)
+        self.assertIsInstance(victim, bytes)
+        shutil.rmtree(victim)
+
     def test_rmtree_errors(self):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp()
