@@ -642,7 +642,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
             writer->buffer, writer->pos,
             digits, d_pos, spec->n_remainder);
         writer->pos += spec->n_remainder;
-        d_pos += spec->n_remainder;
+        /* d_pos += spec->n_remainder; */
     }
 
     if (spec->n_rpadding) {
