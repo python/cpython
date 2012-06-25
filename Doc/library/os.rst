@@ -1202,7 +1202,8 @@ features:
 
 .. _path_fd:
 
-* For some functions, the *path* argument can be not only a string giving a path
+* **specifying a file descriptor:**
+  For some functions, the *path* argument can be not only a string giving a path
   name, but also a file descriptor.  The function will then operate on the file
   referred to by the descriptor.  (For POSIX systems, Python will call the
   ``f...`` version of the function.)
@@ -1216,11 +1217,11 @@ features:
 
 .. _dir_fd:
 
-* For functions with a *dir_fd* parameter: If *dir_fd* is not ``None``, it
+* **paths relative to directory descriptors:** If *dir_fd* is not ``None``, it
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
   path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
-  the ``...at`` version of the function.)
+  the ``...at`` or ``f...at`` version of the function.)
 
   You can check whether or not *dir_fd* is supported on your platform using
   :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise a
@@ -1228,7 +1229,7 @@ features:
 
 .. _follow_symlinks:
 
-* For functions ith a *follow_symlinks* parameter: If *follow_symlinks* is
+* **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself instead of the file the
   link points to.  (For POSIX systems, Python will call the ``l...`` version of
@@ -1311,7 +1312,7 @@ features:
 
    Change the current working directory to *path*.
 
-   This function can support :ref:`working on a file descriptor <path_fd>`.  The
+   This function can support :ref:`specifying a file descriptor <path_fd>`.  The
    descriptor must refer to an opened directory, not an open file.
 
    Availability: Unix, Windows.
@@ -1494,8 +1495,8 @@ features:
    This function can be called with a bytes or string argument, and returns
    filenames of the same datatype.
 
-   This function can also support :ref:`specifying an open file descriptor
-   <path_fd>` (referring to a directory).
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
 
    Availability: Unix, Windows.
 
@@ -1639,7 +1640,7 @@ features:
    included in ``pathconf_names``, an :exc:`OSError` is raised with
    :const:`errno.EINVAL` for the error number.
 
-   This function can support :ref:`specifying an open file descriptor
+   This function can support :ref:`specifying a file descriptor
    <path_fd>`.
 
    Availability: Unix.
@@ -1851,7 +1852,7 @@ features:
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
    some implementations.
 
-   This function can support :ref:`specifying an open file descriptor
+   This function can support :ref:`specifying a file descriptor
    <path_fd>`, :ref:`specifying a file descriptor <path_fd>` and :ref:`not
    following symlinks <follow_symlinks>`.
 
