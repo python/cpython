@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15176: Clarified behavior, documentation, and implementation
+  of os.listdir().
+  
 - Issue #15164: Change return value of platform.uname() from a
   plain tuple to a collections.namedtuple.
 
