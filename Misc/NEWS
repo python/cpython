@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15817: Bugfix: remove temporary directories test_shutil was leaving
+  behind.
+
 - Issue #15177: Added dir_fd parameter to os.fwalk().
 
 - Issue #15176: Clarified behavior, documentation, and implementation
