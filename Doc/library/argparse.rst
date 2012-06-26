@@ -1101,6 +1101,9 @@ specifiers include the program name, ``%(prog)s`` and most keyword arguments to
    optional arguments:
     -h, --help  show this help message and exit
 
+As the help string supports %-formatting, if you want a literal ``%`` to appear
+in the help string, you must escape it as ``%%``.
+
 :mod:`argparse` supports silencing the help entry for certain options, by
 setting the ``help`` value to ``argparse.SUPPRESS``::
 
