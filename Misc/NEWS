@@ -1138,6 +1138,9 @@ Library
 - Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
   of the text mode (using the locale encoding) to avoid encoding issues.
 
+- Issue #14443: Ensure that .py files are byte-compiled with the correct Python
+  executable within bdist_rpm even on older versions of RPM
+
 Extension Modules
 -----------------
 
