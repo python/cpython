@@ -1155,73 +1155,75 @@ os
   terminal attached to a file descriptor.
   (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
 
-* "at" functions (:issue:`4761`):
+.. XXX sort out this mess after beta1
 
-  * :func:`~os.faccessat`
-  * :func:`~os.fchmodat`
-  * :func:`~os.fchownat`
-  * :func:`~os.fstatat`
-  * :func:`~os.futimesat`
-  * :func:`~os.linkat`
-  * :func:`~os.mkdirat`
-  * :func:`~os.mkfifoat`
-  * :func:`~os.mknodat`
-  * :func:`~os.openat`
-  * :func:`~os.readlinkat`
-  * :func:`~os.renameat`
-  * :func:`~os.symlinkat`
-  * :func:`~os.unlinkat`
-  * :func:`~os.utimensat`
+  * "at" functions (:issue:`4761`):
 
-* extended attributes (:issue:`12720`):
+    * :func:`~os.faccessat`
+    * :func:`~os.fchmodat`
+    * :func:`~os.fchownat`
+    * :func:`~os.fstatat`
+    * :func:`~os.futimesat`
+    * :func:`~os.linkat`
+    * :func:`~os.mkdirat`
+    * :func:`~os.mkfifoat`
+    * :func:`~os.mknodat`
+    * :func:`~os.openat`
+    * :func:`~os.readlinkat`
+    * :func:`~os.renameat`
+    * :func:`~os.symlinkat`
+    * :func:`~os.unlinkat`
+    * :func:`~os.utimensat`
 
-  * :func:`~os.fgetxattr`
-  * :func:`~os.flistxattr`
-  * :func:`~os.fremovexattr`
-  * :func:`~os.fsetxattr`
-  * :func:`~os.getxattr`
-  * :func:`~os.lgetxattr`
-  * :func:`~os.listxattr`
-  * :func:`~os.llistxattr`
-  * :func:`~os.lremovexattr`
-  * :func:`~os.lsetxattr`
-  * :func:`~os.removexattr`
-  * :func:`~os.setxattr`
+  * extended attributes (:issue:`12720`):
 
-* Scheduler functions (:issue:`12655`):
+    * :func:`~os.fgetxattr`
+    * :func:`~os.flistxattr`
+    * :func:`~os.fremovexattr`
+    * :func:`~os.fsetxattr`
+    * :func:`~os.getxattr`
+    * :func:`~os.lgetxattr`
+    * :func:`~os.listxattr`
+    * :func:`~os.llistxattr`
+    * :func:`~os.lremovexattr`
+    * :func:`~os.lsetxattr`
+    * :func:`~os.removexattr`
+    * :func:`~os.setxattr`
 
-  * :func:`~os.sched_get_priority_max`
-  * :func:`~os.sched_get_priority_min`
-  * :func:`~os.sched_getaffinity`
-  * :func:`~os.sched_getparam`
-  * :func:`~os.sched_getscheduler`
-  * :func:`~os.sched_rr_get_interval`
-  * :func:`~os.sched_setaffinity`
-  * :func:`~os.sched_setparam`
-  * :func:`~os.sched_setscheduler`
-  * :func:`~os.sched_yield`
+  * Scheduler functions (:issue:`12655`):
 
-* Add some extra posix functions to the os module (:issue:`10812`):
+    * :func:`~os.sched_get_priority_max`
+    * :func:`~os.sched_get_priority_min`
+    * :func:`~os.sched_getaffinity`
+    * :func:`~os.sched_getparam`
+    * :func:`~os.sched_getscheduler`
+    * :func:`~os.sched_rr_get_interval`
+    * :func:`~os.sched_setaffinity`
+    * :func:`~os.sched_setparam`
+    * :func:`~os.sched_setscheduler`
+    * :func:`~os.sched_yield`
 
-  * :func:`~os.fexecve`
-  * :func:`~os.futimens`
-  * :func:`~os.futimes`
-  * :func:`~os.lockf`
-  * :func:`~os.lutimes`
-  * :func:`~os.posix_fadvise`
-  * :func:`~os.posix_fallocate`
-  * :func:`~os.pread`
-  * :func:`~os.pwrite`
-  * :func:`~os.readv`
-  * :func:`~os.sync`
-  * :func:`~os.truncate`
-  * :func:`~os.waitid`
-  * :func:`~os.writev`
+  * Add some extra posix functions to the os module (:issue:`10812`):
 
-* Other new functions:
+    * :func:`~os.fexecve`
+    * :func:`~os.futimens`
+    * :func:`~os.futimes`
+    * :func:`~os.lockf`
+    * :func:`~os.lutimes`
+    * :func:`~os.posix_fadvise`
+    * :func:`~os.posix_fallocate`
+    * :func:`~os.pread`
+    * :func:`~os.pwrite`
+    * :func:`~os.readv`
+    * :func:`~os.sync`
+    * :func:`~os.truncate`
+    * :func:`~os.waitid`
+    * :func:`~os.writev`
 
-  * :func:`~os.flistdir` (:issue:`10755`)
-  * :func:`~os.getgrouplist` (:issue:`9344`)
+  * Other new functions:
+
+    * :func:`~os.flistdir` (:issue:`10755`)
+    * :func:`~os.getgrouplist` (:issue:`9344`)
 
 
 pdb
@@ -1306,7 +1308,7 @@ shutil
 
 * :func:`~shutil.rmtree` is now resistant to symlink attacks on platforms
   which support the new ``dir_fd`` parameter in :func:`os.open` and
-  :func:`os.unlinkat`. (Contributed by Martin von Löwis and Hynek Schlawack
+  :func:`os.unlink`. (Contributed by Martin von Löwis and Hynek Schlawack
   in :issue:`4489`.)
 
 
