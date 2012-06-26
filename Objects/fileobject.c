@@ -1080,12 +1080,23 @@ file_read(PyFileObject *f, PyObject *args)
         return NULL;
     bytesread = 0;
     for (;;) {
+        int interrupted;
         FILE_BEGIN_ALLOW_THREADS(f)
         errno = 0;
         chunksize = Py_UniversalNewlineFread(BUF(v) + bytesread,
                   buffersize - bytesread, f->f_fp, (PyObject *)f);
+        interrupted = ferror(f->f_fp) && errno == EINTR;
         FILE_END_ALLOW_THREADS(f)
+        if (interrupted) {
+            clearerr(f->f_fp);
+            if (PyErr_CheckSignals()) {
+                Py_DECREF(v);
+                return NULL;
+            }
+        }
         if (chunksize == 0) {
+            if (interrupted)
+                continue;
             if (!ferror(f->f_fp))
                 break;
             clearerr(f->f_fp);
@@ -1100,7 +1111,7 @@ file_read(PyFileObject *f, PyObject *args)
             return NULL;
         }
         bytesread += chunksize;
-        if (bytesread < buffersize) {
+        if (bytesread < buffersize && !interrupted) {
             clearerr(f->f_fp);
             break;
         }
@@ -1141,12 +1152,23 @@ file_readinto(PyFileObject *f, PyObject *args)
     ntodo = pbuf.len;
     ndone = 0;
     while (ntodo > 0) {
+        int interrupted;
         FILE_BEGIN_ALLOW_THREADS(f)
         errno = 0;
         nnow = Py_UniversalNewlineFread(ptr+ndone, ntodo, f->f_fp,
                                         (PyObject *)f);
+        interrupted = ferror(f->f_fp) && errno == EINTR;
         FILE_END_ALLOW_THREADS(f)
+        if (interrupted) {
+            clearerr(f->f_fp);
+            if (PyErr_CheckSignals()) {
+                PyBuffer_Release(&pbuf);
+                return NULL;
+            }
+        }
         if (nnow == 0) {
+            if (interrupted)
+                continue;
             if (!ferror(f->f_fp))
                 break;
             PyErr_SetFromErrno(PyExc_IOError);
@@ -1434,8 +1456,25 @@ get_line(PyFileObject *f, int n)
                 *buf++ = c;
                 if (c == '\n') break;
             }
-            if ( c == EOF && skipnextlf )
-                newlinetypes |= NEWLINE_CR;
+            if (c == EOF) {
+                if (ferror(fp) && errno == EINTR) {
+                    FUNLOCKFILE(fp);
+                    FILE_ABORT_ALLOW_THREADS(f)
+                    f->f_newlinetypes = newlinetypes;
+                    f->f_skipnextlf = skipnextlf;
+
+                    if (PyErr_CheckSignals()) {
+                        Py_DECREF(v);
+                        return NULL;
+                    }
+                    /* We executed Python signal handlers and got no exception.
+                     * Now back to reading the line where we left off. */
+                    clearerr(fp);
+                    continue;
+                }
+                if (skipnextlf)
+                    newlinetypes |= NEWLINE_CR;
+            }
         } else /* If not universal newlines use the normal loop */
         while ((c = GETC(fp)) != EOF &&
                (*buf++ = c) != '\n' &&
@@ -1449,6 +1488,16 @@ get_line(PyFileObject *f, int n)
             break;
         if (c == EOF) {
             if (ferror(fp)) {
+                if (errno == EINTR) {
+                    if (PyErr_CheckSignals()) {
+                        Py_DECREF(v);
+                        return NULL;
+                    }
+                    /* We executed Python signal handlers and got no exception.
+                     * Now back to reading the line where we left off. */
+                    clearerr(fp);
+                    continue;
+                }
                 PyErr_SetFromErrno(PyExc_IOError);
                 clearerr(fp);
                 Py_DECREF(v);
@@ -1624,7 +1673,7 @@ file_readlines(PyFileObject *f, PyObject *args)
     size_t totalread = 0;
     char *p, *q, *end;
     int err;
-    int shortread = 0;
+    int shortread = 0;  /* bool, did the previous read come up short? */
 
     if (f->f_fp == NULL)
         return err_closed();
@@ -1654,6 +1703,14 @@ file_readlines(PyFileObject *f, PyObject *args)
             sizehint = 0;
             if (!ferror(f->f_fp))
                 break;
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    goto error;
+                }
+                clearerr(f->f_fp);
+                shortread = 0;
+                continue;
+            }
             PyErr_SetFromErrno(PyExc_IOError);
             clearerr(f->f_fp);
             goto error;

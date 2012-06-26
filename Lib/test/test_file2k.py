@@ -2,6 +2,9 @@ import sys
 import os
 import unittest
 import itertools
+import select
+import signal
+import subprocess
 import time
 from array import array
 from weakref import proxy
@@ -602,6 +605,148 @@ class FileThreadingTests(unittest.TestCase):
         self._test_close_open_io(io_func)
 
 
+@unittest.skipUnless(os.name == 'posix', 'test requires a posix system.')
+class TestFileSignalEINTR(unittest.TestCase):
+    def _test_reading(self, data_to_write, read_and_verify_code, method_name,
+                      universal_newlines=False):
+        """Generic buffered read method test harness to verify EINTR behavior.
+
+        Also validates that Python signal handlers are run during the read.
+
+        Args:
+            data_to_write: String to write to the child process for reading
+                before sending it a signal, confirming the signal was handled,
+                writing a final newline char and closing the infile pipe.
+            read_and_verify_code: Single "line" of code to read from a file
+                object named 'infile' and validate the result.  This will be
+                executed as part of a python subprocess fed data_to_write.
+            method_name: The name of the read method being tested, for use in
+                an error message on failure.
+            universal_newlines: If True, infile will be opened in universal
+                newline mode in the child process.
+        """
+        if universal_newlines:
+            # Test the \r\n -> \n conversion while we're at it.
+            data_to_write = data_to_write.replace('\n', '\r\n')
+            infile_setup_code = 'infile = os.fdopen(sys.stdin.fileno(), "rU")'
+        else:
+            infile_setup_code = 'infile = sys.stdin'
+        # Total pipe IO in this function is smaller than the minimum posix OS
+        # pipe buffer size of 512 bytes.  No writer should block.
+        assert len(data_to_write) < 512, 'data_to_write must fit in pipe buf.'
+
+        child_code = (
+             'import os, signal, sys ;'
+             'signal.signal('
+                     'signal.SIGINT, lambda s, f: sys.stderr.write("$\\n")) ;'
+             + infile_setup_code + ' ;' +
+             'assert isinstance(infile, file) ;'
+             'sys.stderr.write("Go.\\n") ;'
+             + read_and_verify_code)
+        reader_process = subprocess.Popen(
+                [sys.executable, '-c', child_code],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        # Wait for the signal handler to be installed.
+        go = reader_process.stderr.read(4)
+        if go != 'Go.\n':
+            reader_process.kill()
+            self.fail('Error from %s process while awaiting "Go":\n%s' % (
+                    method_name, go+reader_process.stderr.read()))
+        reader_process.stdin.write(data_to_write)
+        signals_sent = 0
+        rlist = []
+        # We don't know when the read_and_verify_code in our child is actually
+        # executing within the read system call we want to interrupt.  This
+        # loop waits for a bit before sending the first signal to increase
+        # the likelihood of that.  Implementations without correct EINTR
+        # and signal handling usually fail this test.
+        while not rlist:
+            rlist, _, _ = select.select([reader_process.stderr], (), (), 0.05)
+            reader_process.send_signal(signal.SIGINT)
+            # Give the subprocess time to handle it before we loop around and
+            # send another one.  On OSX the second signal happening close to
+            # immediately after the first was causing the subprocess to crash
+            # via the OS's default SIGINT handler.
+            time.sleep(0.1)
+            signals_sent += 1
+            if signals_sent > 200:
+                reader_process.kill()
+                self.fail("failed to handle signal during %s." % method_name)
+        # This assumes anything unexpected that writes to stderr will also
+        # write a newline.  That is true of the traceback printing code.
+        signal_line = reader_process.stderr.readline()
+        if signal_line != '$\n':
+            reader_process.kill()
+            self.fail('Error from %s process while awaiting signal:\n%s' % (
+                    method_name, signal_line+reader_process.stderr.read()))
+        # We append a newline to our input so that a readline call can
+        # end on its own before the EOF is seen.
+        stdout, stderr = reader_process.communicate(input='\n')
+        if reader_process.returncode != 0:
+            self.fail('%s() process exited rc=%d.\nSTDOUT:\n%s\nSTDERR:\n%s' % (
+                    method_name, reader_process.returncode, stdout, stderr))
+
+    def test_readline(self, universal_newlines=False):
+        """file.readline must handle signals and not lose data."""
+        self._test_reading(
+                data_to_write='hello, world!',
+                read_and_verify_code=(
+                        'line = infile.readline() ;'
+                        'expected_line = "hello, world!\\n" ;'
+                        'assert line == expected_line, ('
+                        '"read %r expected %r" % (line, expected_line))'
+                ),
+                method_name='readline',
+                universal_newlines=universal_newlines)
+
+    def test_readline_with_universal_newlines(self):
+        self.test_readline(universal_newlines=True)
+
+    def test_readlines(self, universal_newlines=False):
+        """file.readlines must handle signals and not lose data."""
+        self._test_reading(
+                data_to_write='hello\nworld!',
+                read_and_verify_code=(
+                        'lines = infile.readlines() ;'
+                        'expected_lines = ["hello\\n", "world!\\n"] ;'
+                        'assert lines == expected_lines, ('
+                        '"readlines returned wrong data.\\n" '
+                        '"got lines %r\\nexpected  %r" '
+                        '% (lines, expected_lines))'
+                ),
+                method_name='readlines',
+                universal_newlines=universal_newlines)
+
+    def test_readlines_with_universal_newlines(self):
+        self.test_readlines(universal_newlines=True)
+
+    def test_readall(self):
+        """Unbounded file.read() must handle signals and not lose data."""
+        self._test_reading(
+                data_to_write='hello, world!abcdefghijklm',
+                read_and_verify_code=(
+                        'data = infile.read() ;'
+                        'expected_data = "hello, world!abcdefghijklm\\n";'
+                        'assert data == expected_data, ('
+                        '"read %r expected %r" % (data, expected_data))'
+                ),
+                method_name='unbounded read')
+
+    def test_readinto(self):
+        """file.readinto must handle signals and not lose data."""
+        self._test_reading(
+                data_to_write='hello, world!',
+                read_and_verify_code=(
+                        'data = bytearray(50) ;'
+                        'num_read = infile.readinto(data) ;'
+                        'expected_data = "hello, world!\\n";'
+                        'assert data[:num_read] == expected_data, ('
+                        '"read %r expected %r" % (data, expected_data))'
+                ),
+                method_name='readinto')
+
+
 class StdoutTests(unittest.TestCase):
 
     def test_move_stdout_on_write(self):
@@ -678,7 +823,7 @@ def test_main():
     # So get rid of it no matter what.
     try:
         run_unittest(AutoFileTests, OtherFileTests, FileSubclassTests,
-            FileThreadingTests, StdoutTests)
+            FileThreadingTests, TestFileSignalEINTR, StdoutTests)
     finally:
         if os.path.exists(TESTFN):
             os.unlink(TESTFN)
