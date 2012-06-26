@@ -58,7 +58,7 @@ The available exception and functions in this module are:
    exception if any error occurs.
 
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY, [zdict])
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
@@ -86,6 +86,10 @@ The available exception and functions in this module are:
    to occur frequently in the data that is to be compressed. Those subsequences
    that are expected to be most common should come at the end of the dictionary.
 
+   .. versionchanged:: 3.3
+      Added the *method*, *wbits*, *memlevel*, *strategy* and *zdict*
+      parameters.
+
 
 .. function:: crc32(data[, value])
 
@@ -103,12 +107,13 @@ The available exception and functions in this module are:
 
    Always returns an unsigned 32-bit integer.
 
-.. note::
-   To generate the same numeric value across all Python versions and
-   platforms use crc32(data) & 0xffffffff.  If you are only using
-   the checksum in packed binary format this is not necessary as the
-   return value is the correct 32bit binary representation
-   regardless of sign.
+   .. note::
+
+      To generate the same numeric value across all Python versions and
+      platforms, use ``crc32(data) & 0xffffffff``.  If you are only using
+      the checksum in packed binary format this is not necessary as the
+      return value is the correct 32-bit binary representation
+      regardless of sign.
 
 
 .. function:: decompress(data[, wbits[, bufsize]])
@@ -135,7 +140,7 @@ The available exception and functions in this module are:
    to :c:func:`malloc`.  The default size is 16384.
 
 
-.. function:: decompressobj([wbits[, zdict]])
+.. function:: decompressobj(wbits=15[, zdict])
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
@@ -146,10 +151,14 @@ The available exception and functions in this module are:
    provided, this must be the same dictionary as was used by the compressor that
    produced the data that is to be decompressed.
 
-.. note::
-   If *zdict* is a mutable object (such as a :class:`bytearray`), you must not
-   modify its contents between the call to :func:`decompressobj` and the first
-   call to the decompressor's ``decompress()`` method.
+   .. note::
+
+      If *zdict* is a mutable object (such as a :class:`bytearray`), you must not
+      modify its contents between the call to :func:`decompressobj` and the first
+      call to the decompressor's ``decompress()`` method.
+
+   .. versionchanged:: 3.3
+      Added the *zdict* parameter.
 
 
 Compression objects support the following methods:
