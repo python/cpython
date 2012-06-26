@@ -1023,6 +1023,15 @@ handle NAT with non-secure FTP without opening fixed ports.
 (Contributed by Giampaolo Rodolà in :issue:`12139`)
 
 
+hmac
+----
+
+A new :func:`~hmac.compare_digest` function has been added to prevent
+side channel attacks on digests through timing analysis.
+
+(Contributed by Nick Coghlan and Christian Heimes in issue:`15061`)
+
+
 imaplib
 -------
 
