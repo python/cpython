@@ -40,7 +40,7 @@ class desktop_platform_32(Platform):
     name = 'mac32'
     triple = 'i386-apple-darwin10'
     sdkroot = desktop_sdk_info['Path']
-    
+
     prefix = "#if defined(__i386__) && !defined(__x86_64__)\n\n"
     suffix = "\n\n#endif"
 
@@ -50,14 +50,14 @@ class desktop_platform_64(Platform):
     name = 'mac'
     triple = 'x86_64-apple-darwin10'
     sdkroot = desktop_sdk_info['Path']
-    
+
     prefix = "#if !defined(__i386__) && defined(__x86_64__)\n\n"
     suffix = "\n\n#endif"
 
 def move_file(src_dir, dst_dir, filename, file_suffix=None, prefix='', suffix=''):
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
-    
+
     out_filename = filename
 
     if file_suffix:
@@ -114,7 +114,7 @@ def build_target(platform):
         return subprocess.check_output(['xcrun', '-sdk', platform.sdkroot, '-find', cmd]).strip()
 
     build_dir = 'build_' + platform.name
-    if not os.path.exists(build_dir):    
+    if not os.path.exists(build_dir):
         os.makedirs(build_dir)
         env = dict(CC=xcrun_cmd('clang'),
                    LD=xcrun_cmd('ld'),
