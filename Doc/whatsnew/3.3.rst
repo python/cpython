@@ -731,7 +731,7 @@ Some smaller changes made to the core Python language are:
   methods of :class:`bytes` and :class:`bytearray` objects now accept an
   integer between 0 and 255 as their first argument.
 
-  (:issue:`12170`)
+  (Contributed by Petri Lehtinen in :issue:`12170`)
 
 * New methods have been added to :class:`list` and :class:`bytearray`:
   ``copy()`` and ``clear()``.
