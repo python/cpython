@@ -125,6 +125,32 @@ library/http.cookies,,`,!#$%&'*+-.^_`|~:
 library/httplib,,:port,host:port
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
 library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
+library/ipaddress,,:db8,>>> ipaddress.ip_address('2001:db8::')
+library/ipaddress,,::,>>> ipaddress.ip_address('2001:db8::')
+library/ipaddress,,:db8,IPv6Address('2001:db8::')
+library/ipaddress,,::,IPv6Address('2001:db8::')
+library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
+library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
+library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
+library/ipaddress,,::,IPv6Address('2001:db8::1000')
+library/ipaddress,,:db8,>>> ipaddress.IPv6Interface('2001:db8::1000/96')
+library/ipaddress,,::,>>> ipaddress.IPv6Interface('2001:db8::1000/96')
+library/ipaddress,,:db8,IPv6Interface('2001:db8::1000/96')
+library/ipaddress,,::,IPv6Interface('2001:db8::1000/96')
+library/ipaddress,,:db8,>>> ipaddress.IPv6Interface('2001:db8::1000/96').network
+library/ipaddress,,::,>>> ipaddress.IPv6Interface('2001:db8::1000/96').network
+library/ipaddress,,:db8,IPv6Network('2001:db8::/96')
+library/ipaddress,,::,IPv6Network('2001:db8::/96')
+library/ipaddress,,:db8,>>> ipaddress.IPv6Network('2001:db8::/96')
+library/ipaddress,,::,>>> ipaddress.IPv6Network('2001:db8::/96')
+library/ipaddress,,:db8,IPv6Network('2001:db8::/96')
+library/ipaddress,,::,IPv6Network('2001:db8::/96')
+library/ipaddress,,:db8,>>> ipaddress.IPv6Network('2001:db8::/96').netmask
+library/ipaddress,,::,>>> ipaddress.IPv6Network('2001:db8::/96').netmask
+library/ipaddress,,:ffff,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
+library/ipaddress,,::,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
+library/ipaddress,,:db8,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
+library/ipaddress,,::,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
