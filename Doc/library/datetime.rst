@@ -999,6 +999,9 @@ Instance methods:
           # Convert from UTC to tz's local time.
           return tz.fromutc(utc)
 
+   .. versionchanged:: 3.3
+      *tz* now can be omitted.
+
 
 .. method:: datetime.utcoffset()
 
