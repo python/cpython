@@ -730,7 +730,7 @@ class PosixTester(unittest.TestCase):
             if os.utime in os.supports_follow_symlinks:
                 try:
                     posix.utime(support.TESTFN, follow_symlinks=False, dir_fd=f)
-                except RuntimeError:
+                except ValueError:
                     # whoops!  using both together not supported on this platform.
                     pass
 
