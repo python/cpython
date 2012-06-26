@@ -61,16 +61,16 @@ int main (void)
   ffi_type cls_struct_type;
   ffi_type* dbl_arg_types[5];
 
-  cls_struct_type.size = 0;
-  cls_struct_type.alignment = 0;
-  cls_struct_type.type = FFI_TYPE_STRUCT;
-  cls_struct_type.elements = cls_struct_fields;
-
   struct cls_struct_24byte e_dbl = { 9.0, 2.0, 6, 5.0 };
   struct cls_struct_24byte f_dbl = { 1.0, 2.0, 3, 7.0 };
   struct cls_struct_24byte g_dbl = { 4.0, 5.0, 7, 9.0 };
   struct cls_struct_24byte h_dbl = { 8.0, 6.0, 1, 4.0 };
   struct cls_struct_24byte res_dbl;
+
+  cls_struct_type.size = 0;
+  cls_struct_type.alignment = 0;
+  cls_struct_type.type = FFI_TYPE_STRUCT;
+  cls_struct_type.elements = cls_struct_fields;
 
   cls_struct_fields[0] = &ffi_type_double;
   cls_struct_fields[1] = &ffi_type_double;

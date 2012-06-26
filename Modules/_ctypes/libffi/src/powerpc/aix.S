@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   aix.S - Copyright (c) 2002,2009 Free Software Foundation, Inc.
+   aix.S - Copyright (c) 2002, 2009 Free Software Foundation, Inc.
    based on darwin.S by John Hornkvist
 
    PowerPC Assembly glue.
@@ -79,6 +79,8 @@
 	.set f20,20
 	.set f21,21
 
+	.extern .ffi_prep_args
+
 #define LIBFFI_ASM
 #include <fficonfig.h>
 #include <ffi.h>
@@ -125,6 +127,7 @@ ffi_call_AIX:
 	/* Call ffi_prep_args.  */
 	mr	r4, r1
 	bl	.ffi_prep_args
+	nop
 
 	/* Now do the call.  */
 	ld	r0, 0(r29)
@@ -226,6 +229,7 @@ L(float_return_value):
 	/* Call ffi_prep_args.  */
 	mr	r4, r1
 	bl	.ffi_prep_args
+	nop
 
 	/* Now do the call.  */
 	lwz	r0, 0(r29)

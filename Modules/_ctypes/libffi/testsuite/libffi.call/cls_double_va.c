@@ -6,6 +6,8 @@
 
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
 /* { dg-output "" { xfail avr32*-*-* } } */
+/* { dg-output "" { xfail mips-sgi-irix6* } } PR libffi/46660 */
+
 #include "ffitest.h"
 
 static void
@@ -34,7 +36,8 @@ int main (void)
 	arg_types[1] = &ffi_type_double;
 	arg_types[2] = NULL;
 
-	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_sint,
+	/* This printf call is variadic */
+	CHECK(ffi_prep_cif_var(&cif, FFI_DEFAULT_ABI, 1, 2, &ffi_type_sint,
 		arg_types) == FFI_OK);
 
 	args[0] = &format;
@@ -45,6 +48,9 @@ int main (void)
 	// { dg-output "7.0" }
 	printf("res: %d\n", (int) res);
 	// { dg-output "\nres: 4" }
+
+	/* The call to cls_double_va_fn is static, so have to use a normal prep_cif */
+	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_sint, arg_types) == FFI_OK);
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_double_va_fn, NULL, code) == FFI_OK);
 

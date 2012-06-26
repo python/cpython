@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.0 Beta 2?
+==================================
+
+*Release date: xx-xxx-2012*
+
+Extension Modules
+-----------------
+
+- Issue #15194: Update libffi to the 3.0.11 release.
+
+
 What's New in Python 3.3.0 Beta 1?
 ==================================
 

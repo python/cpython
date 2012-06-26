@@ -28,11 +28,12 @@ void* cls_pointer_fn2(void* a1, void* a2)
 	char		trample6	= trample4 + ((char*)&a2)[1];
 	long double	trample7	= (intptr_t)trample5 + (intptr_t)trample1;
 	char		trample8	= trample6 + trample2;
+	void*		result;
 
 	dummyVar	= dummy_func(trample1, trample2, trample3, trample4,
 		trample5, trample6, trample7, trample8);
 
-	void*	result	= (void*)((intptr_t)a1 + (intptr_t)a2);
+	result	= (void*)((intptr_t)a1 + (intptr_t)a2);
 
 	printf("0x%08x 0x%08x: 0x%08x\n", 
 	       (unsigned int)(uintptr_t) a1,
@@ -52,11 +53,12 @@ void* cls_pointer_fn1(void* a1, void* a2)
 	char		trample6	= trample4 + ((char*)&a2)[1];
 	long double	trample7	= (intptr_t)trample5 + (intptr_t)trample1;
 	char		trample8	= trample6 + trample2;
+	void*		result;
 
 	dummyVar	= dummy_func(trample1, trample2, trample3, trample4,
 		trample5, trample6, trample7, trample8);
 
-	void*	result	= (void*)((intptr_t)a1 + (intptr_t)a2);
+	result	= (void*)((intptr_t)a1 + (intptr_t)a2);
 
 	printf("0x%08x 0x%08x: 0x%08x\n",
                (unsigned int)(intptr_t) a1,
@@ -129,7 +131,7 @@ int main (void)
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_pointer_gn, NULL, code) == FFI_OK);
 
-	res = (ffi_arg)((void*(*)(void*, void*))(code))(arg1, arg2);
+	res = (ffi_arg)(uintptr_t)((void*(*)(void*, void*))(code))(arg1, arg2);
 
 	printf("res: 0x%08x\n", (unsigned int) res);
 	// { dg-output "\n0x01234567 0x89abcdef: 0x8acf1356" }

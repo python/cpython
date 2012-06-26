@@ -122,22 +122,41 @@ ENTRY(ffi_closure_SYSV)
 	blr
 
 # case FFI_TYPE_FLOAT
+#ifndef __NO_FPRS__
 	lfs %f1,112+0(%r1)
 	mtlr %r0
 	addi %r1,%r1,144
+#else
+	nop
+	nop
+	nop
+#endif
 	blr
 
 # case FFI_TYPE_DOUBLE
+#ifndef __NO_FPRS__
 	lfd %f1,112+0(%r1)
 	mtlr %r0
 	addi %r1,%r1,144
+#else
+	nop
+	nop
+	nop
+#endif
 	blr
 
 # case FFI_TYPE_LONGDOUBLE
+#ifndef __NO_FPRS__
 	lfd %f1,112+0(%r1)
 	lfd %f2,112+8(%r1)
 	mtlr %r0
 	b .Lfinish
+#else
+	nop
+	nop
+	nop
+	blr
+#endif
 
 # case FFI_TYPE_UINT8
 	lbz %r3,112+3(%r1)

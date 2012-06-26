@@ -1,7 +1,7 @@
 /* -----------------------------------------------------------------------
    ffi.c
-   
-   m68k Foreign Function Interface 
+
+   m68k Foreign Function Interface
    ----------------------------------------------------------------------- */
 
 #include <ffi.h>
@@ -9,8 +9,17 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef __rtems__
+void rtems_cache_flush_multiple_data_lines( const void *, size_t );
+#else
 #include <sys/syscall.h>
+#ifdef __MINT__
+#include <mint/mintbind.h>
+#include <mint/ssystem.h>
+#else
 #include <asm/cachectl.h>
+#endif
+#endif
 
 void ffi_call_SYSV (extended_cif *,
 		    unsigned, unsigned,
@@ -35,8 +44,12 @@ ffi_prep_args (void *stack, extended_cif *ecif)
 
   argp = stack;
 
-  if (ecif->cif->rtype->type == FFI_TYPE_STRUCT
-      && !ecif->cif->flags)
+  if (
+#ifdef __MINT__
+      (ecif->cif->rtype->type == FFI_TYPE_LONGDOUBLE) ||
+#endif
+      (((ecif->cif->rtype->type == FFI_TYPE_STRUCT)
+        && !ecif->cif->flags)))
     struct_value_ptr = ecif->rvalue;
   else
     struct_value_ptr = NULL;
@@ -47,12 +60,12 @@ ffi_prep_args (void *stack, extended_cif *ecif)
        i != 0;
        i--, p_arg++)
     {
-      size_t z;
+      size_t z = (*p_arg)->size;
+      int type = (*p_arg)->type;
 
-      z = (*p_arg)->size;
       if (z < sizeof (int))
 	{
-	  switch ((*p_arg)->type)
+	  switch (type)
 	    {
 	    case FFI_TYPE_SINT8:
 	      *(signed int *) argp = (signed int) *(SINT8 *) *p_argv;
@@ -71,7 +84,14 @@ ffi_prep_args (void *stack, extended_cif *ecif)
 	      break;
 
 	    case FFI_TYPE_STRUCT:
+#ifdef __MINT__
+	      if (z == 1 || z == 2)
+		memcpy (argp + 2, *p_argv, z);
+              else
+		memcpy (argp, *p_argv, z);
+#else
 	      memcpy (argp + sizeof (int) - z, *p_argv, z);
+#endif
 	      break;
 
 	    default:
@@ -116,17 +136,34 @@ ffi_prep_cif_machdep (ffi_cif *cif)
       break;
 
     case FFI_TYPE_STRUCT:
+      if (cif->rtype->elements[0]->type == FFI_TYPE_STRUCT &&
+          cif->rtype->elements[1])
+        {
+          cif->flags = 0;
+          break;
+        }
+
       switch (cif->rtype->size)
 	{
 	case 1:
+#ifdef __MINT__
+	  cif->flags = CIF_FLAGS_STRUCT2;
+#else
 	  cif->flags = CIF_FLAGS_STRUCT1;
+#endif
 	  break;
 	case 2:
 	  cif->flags = CIF_FLAGS_STRUCT2;
 	  break;
+#ifdef __MINT__
+	case 3:
+#endif
 	case 4:
 	  cif->flags = CIF_FLAGS_INT;
 	  break;
+#ifdef __MINT__
+	case 7:
+#endif
 	case 8:
 	  cif->flags = CIF_FLAGS_DINT;
 	  break;
@@ -144,9 +181,15 @@ ffi_prep_cif_machdep (ffi_cif *cif)
       cif->flags = CIF_FLAGS_DOUBLE;
       break;
 
+#if (FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE)
     case FFI_TYPE_LONGDOUBLE:
+#ifdef __MINT__
+      cif->flags = 0;
+#else
       cif->flags = CIF_FLAGS_LDOUBLE;
+#endif
       break;
+#endif
 
     case FFI_TYPE_POINTER:
       cif->flags = CIF_FLAGS_POINTER;
@@ -212,6 +255,26 @@ ffi_prep_incoming_args_SYSV (char *stack, void **avalue, ffi_cif *cif)
       size_t z;
 
       z = (*p_arg)->size;
+#ifdef __MINT__
+      if (cif->flags &&
+          cif->rtype->type == FFI_TYPE_STRUCT &&
+          (z == 1 || z == 2))
+ 	{
+	  *p_argv = (void *) (argp + 2);
+
+	  z = 4;
+	}
+      else
+      if (cif->flags &&
+          cif->rtype->type == FFI_TYPE_STRUCT &&
+          (z == 3 || z == 4))
+ 	{
+	  *p_argv = (void *) (argp);
+
+	  z = 4;
+	}
+      else
+#endif
       if (z <= 4)
 	{
 	  *p_argv = (void *) (argp + 4 - z);
@@ -255,19 +318,31 @@ ffi_prep_closure_loc (ffi_closure* closure,
 		      void *user_data,
 		      void *codeloc)
 {
-  FFI_ASSERT (cif->abi == FFI_SYSV);
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
 
   *(unsigned short *)closure->tramp = 0x207c;
   *(void **)(closure->tramp + 2) = codeloc;
   *(unsigned short *)(closure->tramp + 6) = 0x4ef9;
-  if (cif->rtype->type == FFI_TYPE_STRUCT
-      && !cif->flags)
+
+  if (
+#ifdef __MINT__
+      (cif->rtype->type == FFI_TYPE_LONGDOUBLE) ||
+#endif
+      (((cif->rtype->type == FFI_TYPE_STRUCT)
+         && !cif->flags)))
     *(void **)(closure->tramp + 8) = ffi_closure_struct_SYSV;
   else
     *(void **)(closure->tramp + 8) = ffi_closure_SYSV;
 
+#ifdef __rtems__
+  rtems_cache_flush_multiple_data_lines( codeloc, FFI_TRAMPOLINE_SIZE );
+#elif defined(__MINT__)
+  Ssystem(S_FLUSHCACHE, codeloc, FFI_TRAMPOLINE_SIZE);
+#else
   syscall(SYS_cacheflush, codeloc, FLUSH_SCOPE_LINE,
 	  FLUSH_CACHE_BOTH, FFI_TRAMPOLINE_SIZE);
+#endif
 
   closure->cif  = cif;
   closure->user_data = user_data;
@@ -275,4 +350,3 @@ ffi_prep_closure_loc (ffi_closure* closure,
 
   return FFI_OK;
 }
-
