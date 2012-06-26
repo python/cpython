@@ -707,6 +707,11 @@ class AbstractPickleTests(unittest.TestCase):
     def test_getinitargs(self):
         pass
 
+    def test_pop_empty_stack(self):
+        # Test issue7455
+        s = b'0'
+        self.assertRaises((pickle.UnpicklingError, IndexError), self.loads, s)
+
     def test_metaclass(self):
         a = use_metaclass()
         for proto in protocols:
@@ -1383,9 +1388,6 @@ class AbstractPickleModuleTests(unittest.TestCase):
         # Test issue4298
         s = bytes([0x58, 0, 0, 0, 0x54])
         self.assertRaises(EOFError, pickle.loads, s)
-        # Test issue7455
-        s = b'0'
-        self.assertRaises(pickle.UnpicklingError, pickle.loads, s)
 
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
