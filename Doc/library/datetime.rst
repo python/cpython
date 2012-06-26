@@ -1127,14 +1127,14 @@ Using datetime with tzinfo:
 
     >>> from datetime import timedelta, datetime, tzinfo
     >>> class GMT1(tzinfo):
-    ...     def __init__(self):         # DST starts last Sunday in March
+    ...     def utcoffset(self, dt):
+    ...         return timedelta(hours=1) + self.dst(dt)
+    ...     def dst(self, dt):
+    ...         # DST starts last Sunday in March
     ...         d = datetime(dt.year, 4, 1)   # ends last Sunday in October
     ...         self.dston = d - timedelta(days=d.weekday() + 1)
     ...         d = datetime(dt.year, 11, 1)
     ...         self.dstoff = d - timedelta(days=d.weekday() + 1)
-    ...     def utcoffset(self, dt):
-    ...         return timedelta(hours=1) + self.dst(dt)
-    ...     def dst(self, dt):
     ...         if self.dston <=  dt.replace(tzinfo=None) < self.dstoff:
     ...             return timedelta(hours=1)
     ...         else:
@@ -1143,16 +1143,15 @@ Using datetime with tzinfo:
     ...          return "GMT +1"
     ...
     >>> class GMT2(tzinfo):
-    ...     def __init__(self):
+    ...     def utcoffset(self, dt):
+    ...         return timedelta(hours=2) + self.dst(dt)
+    ...     def dst(self, dt):
     ...         d = datetime(dt.year, 4, 1)
     ...         self.dston = d - timedelta(days=d.weekday() + 1)
     ...         d = datetime(dt.year, 11, 1)
     ...         self.dstoff = d - timedelta(days=d.weekday() + 1)
-    ...     def utcoffset(self, dt):
-    ...         return timedelta(hours=1) + self.dst(dt)
-    ...     def dst(self, dt):
     ...         if self.dston <=  dt.replace(tzinfo=None) < self.dstoff:
-    ...             return timedelta(hours=2)
+    ...             return timedelta(hours=1)
     ...         else:
     ...             return timedelta(0)
     ...     def tzname(self,dt):
@@ -1545,7 +1544,7 @@ When DST starts (the "start" line), the local wall clock leaps from 1:59 to
 3:00.  A wall time of the form 2:MM doesn't really make sense on that day, so
 ``astimezone(Eastern)`` won't deliver a result with ``hour == 2`` on the day DST
 begins.  In order for :meth:`astimezone` to make this guarantee, the
-:meth:`rzinfo.dst` method must consider times in the "missing hour" (2:MM for
+:meth:`tzinfo.dst` method must consider times in the "missing hour" (2:MM for
 Eastern) to be in daylight time.
 
 When DST ends (the "end" line), there's a potentially worse problem: there's an
