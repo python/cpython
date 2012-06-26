@@ -324,7 +324,11 @@ ffi_closure_unix64:
 .LUW9:
 	.size	ffi_closure_unix64,.-ffi_closure_unix64
 
+#ifdef HAVE_AS_X86_64_UNWIND_SECTION_TYPE
+	.section	.eh_frame,"a",@unwind
+#else
 	.section	.eh_frame,"a",@progbits
+#endif
 .Lframe1:
 	.long	.LECIE1-.LSCIE1		/* CIE Length */
 .LSCIE1:

@@ -1,35 +1,6 @@
-2010-01-15  Anthony Green  <green@redhat.com>
+2011-02-08  Andreas Tobler  <andreast@fgznet.ch>
 
-	* README: Add notes on building with Microsoft Visual C++.
-
-2010-01-15  Daniel Witte  <dwitte@mozilla.com>
-
-	* msvcc.sh: New file.
-
-	* src/x86/win32.S: Port assembly routines to MSVC and #ifdef.
-	* src/x86/ffi.c: Tweak function declaration and remove excess
-	parens.
-	* include/ffi.h.in: Add __declspec(align(8)) to typedef struct
-	ffi_closure.
-
-	* src/x86/ffi.c: Merge ffi_call_SYSV and ffi_call_STDCALL into new
-	function ffi_call_win32 on X86_WIN32.
-	* src/x86/win32.S (ffi_call_SYSV): Rename to ffi_call_win32.
-	(ffi_call_STDCALL): Remove.
-
-	* src/prep_cif.c (ffi_prep_cif): Move stack space allocation code
-	to ffi_prep_cif_machdep for x86.
-	* src/x86/ffi.c (ffi_prep_cif_machdep): To here.
-
-2010-01-15  Oliver Kiddle  <okiddle@yahoo.co.uk>
-
-	* src/x86/ffitarget.h (ffi_abi): Check for __i386 and __amd64 for
-	Sun Studio compiler compatibility. 
-
-2010-01-12  Conrad Irwin <conrad.irwin@gmail.com>
-
-	* doc/libffi.texi: Add closure example.
-	* doc/libffi.info: Rebuilt.
+	* testsuite/lib/libffi.exp: Tweak for stand-alone mode.
 
 2009-12-25  Samuli Suominen  <ssuominen@gentoo.org>
 

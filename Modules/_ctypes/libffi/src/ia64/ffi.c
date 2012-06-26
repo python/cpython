@@ -1,6 +1,7 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 1998, 2007, 2008 Red Hat, Inc.
+   ffi.c - Copyright (c) 1998, 2007, 2008, 2012 Red Hat, Inc.
 	   Copyright (c) 2000 Hewlett Packard Company
+	   Copyright (c) 2011 Anthony Green
    
    IA64 Foreign Function Interface 
 
@@ -225,7 +226,7 @@ ffi_prep_cif_machdep(ffi_cif *cif)
   int flags;
 
   /* Adjust cif->bytes to include space for the bits of the ia64_args frame
-     that preceeds the integer register portion.  The estimate that the 
+     that precedes the integer register portion.  The estimate that the
      generic bits did for the argument space required is good enough for the
      integer component.  */
   cif->bytes += offsetof(struct ia64_args, gp_regs[0]);
@@ -324,13 +325,17 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 	case FFI_TYPE_FLOAT:
 	  if (gpcount < 8 && fpcount < 8)
 	    stf_spill (&stack->fp_regs[fpcount++], *(float *)avalue[i]);
-	  stack->gp_regs[gpcount++] = *(UINT32 *)avalue[i];
+	  {
+	    UINT32 tmp;
+	    memcpy (&tmp, avalue[i], sizeof (UINT32));
+	    stack->gp_regs[gpcount++] = tmp;
+	  }
 	  break;
 
 	case FFI_TYPE_DOUBLE:
 	  if (gpcount < 8 && fpcount < 8)
 	    stf_spill (&stack->fp_regs[fpcount++], *(double *)avalue[i]);
-	  stack->gp_regs[gpcount++] = *(UINT64 *)avalue[i];
+	  memcpy (&stack->gp_regs[gpcount++], avalue[i], sizeof (UINT64));
 	  break;
 
 	case FFI_TYPE_LONGDOUBLE:
@@ -425,7 +430,8 @@ ffi_prep_closure_loc (ffi_closure* closure,
   struct ffi_ia64_trampoline_struct *tramp;
   struct ia64_fd *fd;
 
-  FFI_ASSERT (cif->abi == FFI_UNIX);
+  if (cif->abi != FFI_UNIX)
+    return FFI_BAD_ABI;
 
   tramp = (struct ffi_ia64_trampoline_struct *)closure->tramp;
   fd = (struct ia64_fd *)(void *)ffi_closure_unix;

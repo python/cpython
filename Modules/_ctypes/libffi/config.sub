@@ -1,10 +1,10 @@
 #! /bin/sh
 # Configuration validation subroutine script.
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-#   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
-#   Free Software Foundation, Inc.
+#   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+#   2011 Free Software Foundation, Inc.
 
-timestamp='2009-11-07'
+timestamp='2011-10-29'
 
 # This file is (in principle) common to ALL GNU software.
 # The presence of a machine in this file suggests that SOME GNU software
@@ -75,8 +75,9 @@ Report bugs and patches to <config-patches@gnu.org>."
 version="\
 GNU config.sub ($timestamp)
 
-Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
-2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free
+Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -123,8 +124,9 @@ esac
 # Here we must recognize all the valid KERNEL-OS combinations.
 maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
 case $maybe_os in
-  nto-qnx* | linux-gnu* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
-  uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* | \
+  nto-qnx* | linux-gnu* | linux-android* | linux-dietlibc | linux-newlib* | \
+  linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+  knetbsd*-gnu* | netbsd*-gnu* | \
   kopensolaris*-gnu* | \
   storm-chaos* | os2-emx* | rtmk-nova*)
     os=-$maybe_os
@@ -156,8 +158,8 @@ case $os in
 		os=
 		basic_machine=$1
 		;;
-        -bluegene*)
-	        os=-cnk
+	-bluegene*)
+		os=-cnk
 		;;
 	-sim | -cisco | -oki | -wec | -winbond)
 		os=
@@ -173,10 +175,10 @@ case $os in
 		os=-chorusos
 		basic_machine=$1
 		;;
- 	-chorusrdb)
- 		os=-chorusrdb
+	-chorusrdb)
+		os=-chorusrdb
 		basic_machine=$1
- 		;;
+		;;
 	-hiux*)
 		os=-hiuxwe2
 		;;
@@ -249,13 +251,17 @@ case $basic_machine in
 	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
 	| am33_2.0 \
 	| arc | arm | arm[bl]e | arme[lb] | armv[2345] | armv[345][lb] | avr | avr32 \
+        | be32 | be64 \
 	| bfin \
 	| c4x | clipper \
 	| d10v | d30v | dlx | dsp16xx \
+	| epiphany \
 	| fido | fr30 | frv \
 	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
+	| hexagon \
 	| i370 | i860 | i960 | ia64 \
 	| ip2k | iq2000 \
+	| le32 | le64 \
 	| lm32 \
 	| m32c | m32r | m32rle | m68000 | m68k | m88k \
 	| maxq | mb | microblaze | mcore | mep | metag \
@@ -281,26 +287,37 @@ case $basic_machine in
 	| moxie \
 	| mt \
 	| msp430 \
+	| nds32 | nds32le | nds32be \
 	| nios | nios2 \
 	| ns16k | ns32k \
+	| open8 \
 	| or32 \
 	| pdp10 | pdp11 | pj | pjl \
-	| powerpc | powerpc64 | powerpc64le | powerpcle | ppcbe \
+	| powerpc | powerpc64 | powerpc64le | powerpcle \
 	| pyramid \
-	| rx \
+	| rl78 | rx \
 	| score \
 	| sh | sh[1234] | sh[24]a | sh[24]aeb | sh[23]e | sh[34]eb | sheb | shbe | shle | sh[1234]le | sh3ele \
 	| sh64 | sh64le \
 	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
-	| spu | strongarm \
-	| tahoe | thumb | tic4x | tic80 | tron \
+	| spu \
+	| tahoe | tic4x | tic54x | tic55x | tic6x | tic80 | tron \
 	| ubicom32 \
-	| v850 | v850e \
+	| v850 | v850e | v850e1 | v850e2 | v850es | v850e2v3 \
 	| we32k \
-	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
+	| x86 | xc16x | xstormy16 | xtensa \
 	| z8k | z80)
 		basic_machine=$basic_machine-unknown
+		;;
+	c54x)
+		basic_machine=tic54x-unknown
+		;;
+	c55x)
+		basic_machine=tic55x-unknown
+		;;
+	c6x)
+		basic_machine=tic6x-unknown
 		;;
 	m6811 | m68hc11 | m6812 | m68hc12 | picochip)
 		# Motorola 68HC11/12.
@@ -311,6 +328,18 @@ case $basic_machine in
 		;;
 	ms1)
 		basic_machine=mt-unknown
+		;;
+
+	strongarm | thumb | xscale)
+		basic_machine=arm-unknown
+		;;
+
+	xscaleeb)
+		basic_machine=armeb-unknown
+		;;
+
+	xscaleel)
+		basic_machine=armel-unknown
 		;;
 
 	# We use `pc' rather than `unknown'
@@ -332,16 +361,19 @@ case $basic_machine in
 	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* \
 	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
 	| avr-* | avr32-* \
+	| be32-* | be64-* \
 	| bfin-* | bs2000-* \
-	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
+	| c[123]* | c30-* | [cjt]90-* | c4x-* \
 	| clipper-* | craynv-* | cydra-* \
 	| d10v-* | d30v-* | dlx-* \
 	| elxsi-* \
 	| f30[01]-* | f700-* | fido-* | fr30-* | frv-* | fx80-* \
 	| h8300-* | h8500-* \
 	| hppa-* | hppa1.[01]-* | hppa2.0-* | hppa2.0[nw]-* | hppa64-* \
+	| hexagon-* \
 	| i*86-* | i860-* | i960-* | ia64-* \
 	| ip2k-* | iq2000-* \
+	| le32-* | le64-* \
 	| lm32-* \
 	| m32c-* | m32r-* | m32rle-* \
 	| m68000-* | m680[012346]0-* | m68360-* | m683?2-* | m68k-* \
@@ -367,25 +399,29 @@ case $basic_machine in
 	| mmix-* \
 	| mt-* \
 	| msp430-* \
+	| nds32-* | nds32le-* | nds32be-* \
 	| nios-* | nios2-* \
 	| none-* | np1-* | ns16k-* | ns32k-* \
+	| open8-* \
 	| orion-* \
 	| pdp10-* | pdp11-* | pj-* | pjl-* | pn-* | power-* \
-	| powerpc-* | powerpc64-* | powerpc64le-* | powerpcle-* | ppcbe-* \
+	| powerpc-* | powerpc64-* | powerpc64le-* | powerpcle-* \
 	| pyramid-* \
-	| romp-* | rs6000-* | rx-* \
+	| rl78-* | romp-* | rs6000-* | rx-* \
 	| sh-* | sh[1234]-* | sh[24]a-* | sh[24]aeb-* | sh[23]e-* | sh[34]eb-* | sheb-* | shbe-* \
 	| shle-* | sh[1234]le-* | sh3ele-* | sh64-* | sh64le-* \
 	| sparc-* | sparc64-* | sparc64b-* | sparc64v-* | sparc86x-* | sparclet-* \
 	| sparclite-* \
-	| sparcv8-* | sparcv9-* | sparcv9b-* | sparcv9v-* | strongarm-* | sv1-* | sx?-* \
-	| tahoe-* | thumb-* \
-	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* | tile-* \
+	| sparcv8-* | sparcv9-* | sparcv9b-* | sparcv9v-* | sv1-* | sx?-* \
+	| tahoe-* \
+	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
+	| tile*-* \
 	| tron-* \
 	| ubicom32-* \
-	| v850-* | v850e-* | vax-* \
+	| v850-* | v850e-* | v850e1-* | v850es-* | v850e2-* | v850e2v3-* \
+	| vax-* \
 	| we32k-* \
-	| x86-* | x86_64-* | xc16x-* | xps100-* | xscale-* | xscalee[bl]-* \
+	| x86-* | x86_64-* | xc16x-* | xps100-* \
 	| xstormy16-* | xtensa*-* \
 	| ymp-* \
 	| z8k-* | z80-*)
@@ -410,7 +446,7 @@ case $basic_machine in
 		basic_machine=a29k-amd
 		os=-udi
 		;;
-    	abacus)
+	abacus)
 		basic_machine=abacus-unknown
 		;;
 	adobe68k)
@@ -480,11 +516,20 @@ case $basic_machine in
 		basic_machine=powerpc-ibm
 		os=-cnk
 		;;
+	c54x-*)
+		basic_machine=tic54x-`echo $basic_machine | sed 's/^[^-]*-//'`
+		;;
+	c55x-*)
+		basic_machine=tic55x-`echo $basic_machine | sed 's/^[^-]*-//'`
+		;;
+	c6x-*)
+		basic_machine=tic6x-`echo $basic_machine | sed 's/^[^-]*-//'`
+		;;
 	c90)
 		basic_machine=c90-cray
 		os=-unicos
 		;;
-        cegcc)
+	cegcc)
 		basic_machine=arm-unknown
 		os=-cegcc
 		;;
@@ -516,7 +561,7 @@ case $basic_machine in
 		basic_machine=craynv-cray
 		os=-unicosmp
 		;;
-	cr16)
+	cr16 | cr16-*)
 		basic_machine=cr16-unknown
 		os=-elf
 		;;
@@ -732,7 +777,7 @@ case $basic_machine in
 		basic_machine=ns32k-utek
 		os=-sysv
 		;;
-        microblaze)
+	microblaze)
 		basic_machine=microblaze-xilinx
 		;;
 	mingw32)
@@ -774,6 +819,10 @@ case $basic_machine in
 	mvs)
 		basic_machine=i370-ibm
 		os=-mvs
+		;;
+	nacl)
+		basic_machine=le32-unknown
+		os=-nacl
 		;;
 	ncr3000)
 		basic_machine=i486-ncr
@@ -838,6 +887,12 @@ case $basic_machine in
 		;;
 	np1)
 		basic_machine=np1-gould
+		;;
+	neo-tandem)
+		basic_machine=neo-tandem
+		;;
+	nse-tandem)
+		basic_machine=nse-tandem
 		;;
 	nsr-tandem)
 		basic_machine=nsr-tandem
@@ -921,9 +976,10 @@ case $basic_machine in
 		;;
 	power)	basic_machine=power-ibm
 		;;
-	ppc)	basic_machine=powerpc-unknown
+	ppc | ppcbe)	basic_machine=powerpc-unknown
 		;;
-	ppc-*)	basic_machine=powerpc-`echo $basic_machine | sed 's/^[^-]*-//'`
+	ppc-* | ppcbe-*)
+		basic_machine=powerpc-`echo $basic_machine | sed 's/^[^-]*-//'`
 		;;
 	ppcle | powerpclittle | ppc-le | powerpc-little)
 		basic_machine=powerpcle-unknown
@@ -1017,6 +1073,9 @@ case $basic_machine in
 		basic_machine=i860-stratus
 		os=-sysv4
 		;;
+	strongarm-* | thumb-*)
+		basic_machine=arm-`echo $basic_machine | sed 's/^[^-]*-//'`
+		;;
 	sun2)
 		basic_machine=m68000-sun
 		;;
@@ -1073,20 +1132,8 @@ case $basic_machine in
 		basic_machine=t90-cray
 		os=-unicos
 		;;
-	tic54x | c54x*)
-		basic_machine=tic54x-unknown
-		os=-coff
-		;;
-	tic55x | c55x*)
-		basic_machine=tic55x-unknown
-		os=-coff
-		;;
-	tic6x | c6x*)
-		basic_machine=tic6x-unknown
-		os=-coff
-		;;
 	tile*)
-		basic_machine=tile-unknown
+		basic_machine=$basic_machine-unknown
 		os=-linux-gnu
 		;;
 	tx39)
@@ -1155,6 +1202,9 @@ case $basic_machine in
 		;;
 	xps | xps100)
 		basic_machine=xps100-honeywell
+		;;
+	xscale-* | xscalee[bl]-*)
+		basic_machine=`echo $basic_machine | sed 's/^xscale/arm/'`
 		;;
 	ymp)
 		basic_machine=ymp-cray
@@ -1253,9 +1303,12 @@ esac
 if [ x"$os" != x"" ]
 then
 case $os in
-        # First match some system type aliases
-        # that might get confused with valid system types.
+	# First match some system type aliases
+	# that might get confused with valid system types.
 	# -solaris* is a basic system type, with this one exception.
+	-auroraux)
+		os=-auroraux
+		;;
 	-solaris1 | -solaris1.*)
 		os=`echo $os | sed -e 's|solaris1|sunos4|'`
 		;;
@@ -1277,8 +1330,8 @@ case $os in
 	# -sysv* is not here because it comes later, after sysvr4.
 	-gnu* | -bsd* | -mach* | -minix* | -genix* | -ultrix* | -irix* \
 	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -cnk* | -sunos | -sunos[34]*\
-	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-	      | -kopensolaris* \
+	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+	      | -sym* | -kopensolaris* \
 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 	      | -aos* | -aros* \
 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
@@ -1291,7 +1344,8 @@ case $os in
 	      | -udi* | -eabi* | -lites* | -ieee* | -go32* | -aux* \
 	      | -chorusos* | -chorusrdb* | -cegcc* \
 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
-	      | -mingw32* | -linux-gnu* | -linux-newlib* | -linux-uclibc* \
+	      | -mingw32* | -linux-gnu* | -linux-android* \
+	      | -linux-newlib* | -linux-uclibc* \
 	      | -uxpv* | -beos* | -mpeix* | -udk* \
 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
@@ -1338,7 +1392,7 @@ case $os in
 	-opened*)
 		os=-openedition
 		;;
-        -os400*)
+	-os400*)
 		os=-os400
 		;;
 	-wince*)
@@ -1387,7 +1441,7 @@ case $os in
 	-sinix*)
 		os=-sysv4
 		;;
-        -tpf*)
+	-tpf*)
 		os=-tpf
 		;;
 	-triton*)
@@ -1432,6 +1486,8 @@ case $os in
 	-dicos*)
 		os=-dicos
 		;;
+	-nacl*)
+		;;
 	-none)
 		;;
 	*)
@@ -1454,10 +1510,10 @@ else
 # system, and we'll never get to this point.
 
 case $basic_machine in
-        score-*)
+	score-*)
 		os=-elf
 		;;
-        spu-*)
+	spu-*)
 		os=-elf
 		;;
 	*-acorn)
@@ -1469,8 +1525,17 @@ case $basic_machine in
 	arm*-semi)
 		os=-aout
 		;;
-        c4x-* | tic4x-*)
-        	os=-coff
+	c4x-* | tic4x-*)
+		os=-coff
+		;;
+	tic54x-*)
+		os=-coff
+		;;
+	tic55x-*)
+		os=-coff
+		;;
+	tic6x-*)
+		os=-coff
 		;;
 	# This must come before the *-dec entry.
 	pdp10-*)
@@ -1497,7 +1562,7 @@ case $basic_machine in
 	m68*-cisco)
 		os=-aout
 		;;
-        mep-*)
+	mep-*)
 		os=-elf
 		;;
 	mips*-cisco)
@@ -1524,7 +1589,7 @@ case $basic_machine in
 	*-ibm)
 		os=-aix
 		;;
-    	*-knuth)
+	*-knuth)
 		os=-mmixware
 		;;
 	*-wec)

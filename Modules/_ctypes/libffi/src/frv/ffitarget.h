@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
-   ffitarget.h - Copyright (c) 1996-2004  Red Hat, Inc.
+   ffitarget.h - Copyright (c) 2012  Anthony Green
+                 Copyright (c) 1996-2004  Red Hat, Inc.
    Target configuration macros for FR-V
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -27,6 +28,10 @@
 #ifndef LIBFFI_TARGET_H
 #define LIBFFI_TARGET_H
 
+#ifndef LIBFFI_H
+#error "Please do not include ffitarget.h directly into your source.  Use ffi.h instead."
+#endif
+
 /* ---- System specific configurations ----------------------------------- */
 
 #ifndef LIBFFI_ASM
@@ -35,13 +40,9 @@ typedef signed long            ffi_sarg;
 
 typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
-
-#ifdef FRV
   FFI_EABI,
-  FFI_DEFAULT_ABI = FFI_EABI,
-#endif
-
-  FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_EABI
 } ffi_abi;
 #endif
 

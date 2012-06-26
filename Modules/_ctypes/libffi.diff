@@ -1,74 +1,14 @@
-diff -urN libffi.orig/configure libffi/configure
---- libffi.orig/configure	2010-03-19 18:29:54.588499862 +0100
-+++ libffi/configure	2010-03-19 18:32:09.113499479 +0100
-@@ -11228,6 +11228,9 @@
-   i?86-*-solaris2.1[0-9]*)
- 	TARGET=X86_64; TARGETDIR=x86
- 	;;
-+  i*86-*-nto-qnx*)
-+        TARGET=X86; TARGETDIR=x86
-+        ;;
-   i?86-*-*)
- 	TARGET=X86; TARGETDIR=x86
- 	;;
-@@ -11245,12 +11248,12 @@
- 	;;
- 
-   mips-sgi-irix5.* | mips-sgi-irix6.*)
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
-   mips*-*-linux*)
- 	# Support 128-bit long double for NewABI.
- 	HAVE_LONG_DOUBLE='defined(__mips64)'
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
- 
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -11307,7 +11310,7 @@
-   as_fn_error "\"libffi has not been ported to $host.\"" "$LINENO" 5
- fi
- 
-- if test x$TARGET = xMIPS; then
-+ if expr x$TARGET : 'xMIPS' > /dev/null; then
-   MIPS_TRUE=
-   MIPS_FALSE='#'
- else
-@@ -12422,6 +12425,12 @@
- ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
- 
- 
-+ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
-+
-+
-+ac_config_files="$ac_config_files fficonfig.py"
-+
-+
- cat >confcache <<\_ACEOF
- # This file is a shell script that caches the results of configure
- # tests run on this system so they can be shared between configure
-@@ -13521,6 +13530,8 @@
-     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
-     "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
-     "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
-+    "include/ffi_common.h") CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
-+    "fficonfig.py") CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
- 
-   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
-   esac
-diff -urN libffi.orig/configure.ac libffi/configure.ac
---- libffi.orig/configure.ac	2010-03-19 18:27:44.988498585 +0100
-+++ libffi/configure.ac	2010-03-19 18:31:29.252505178 +0100
+--- libffi.orig/configure.ac	2012-04-12 05:10:51.000000000 +0200
++++ libffi/configure.ac	2012-06-26 15:42:42.477498938 +0200
 @@ -1,4 +1,7 @@
  dnl Process this with autoconf to create configure
 +#
 +# file from libffi - slightly patched for ctypes
 +#
  
- AC_PREREQ(2.63)
+ AC_PREREQ(2.68)
  
-@@ -91,6 +94,9 @@
+@@ -114,6 +117,9 @@
    i?86-*-solaris2.1[[0-9]]*)
  	TARGET=X86_64; TARGETDIR=x86
  	;;
@@ -76,24 +16,24 @@ diff -urN libffi.orig/configure.ac libffi/configure.ac
 +        TARGET=X86; TARGETDIR=x86
 +        ;;
    i?86-*-*)
- 	TARGET=X86; TARGETDIR=x86
+ 	TARGET=X86_64; TARGETDIR=x86
  	;;
-@@ -108,12 +114,12 @@
+@@ -131,12 +137,12 @@
  	;;
  
-   mips-sgi-irix5.* | mips-sgi-irix6.*)
+   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
 -	TARGET=MIPS; TARGETDIR=mips
 +	TARGET=MIPS_IRIX; TARGETDIR=mips
  	;;
-   mips*-*-linux*)
+   mips*-*-linux* | mips*-*-openbsd*)
  	# Support 128-bit long double for NewABI.
  	HAVE_LONG_DOUBLE='defined(__mips64)'
 -	TARGET=MIPS; TARGETDIR=mips
 +	TARGET=MIPS_IRIX; TARGETDIR=mips
  	;;
  
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -170,7 +176,7 @@
+   moxie-*-*)
+@@ -212,7 +218,7 @@
    AC_MSG_ERROR(["libffi has not been ported to $host."])
  fi
  
@@ -102,7 +42,7 @@ diff -urN libffi.orig/configure.ac libffi/configure.ac
  AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
  AM_CONDITIONAL(X86, test x$TARGET = xX86)
  AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
-@@ -401,4 +407,8 @@
+@@ -499,4 +505,8 @@
  
  AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
  
@@ -111,3 +51,70 @@ diff -urN libffi.orig/configure.ac libffi/configure.ac
 +AC_CONFIG_FILES(fficonfig.py)
 +
  AC_OUTPUT
+--- libffi-3.0.11/fficonfig.py.in	1970-01-01 01:00:00.000000000 +0100
++++ libffi/fficonfig.py.in	2012-03-15 01:04:27.000000000 +0100
+@@ -0,0 +1,35 @@
++ffi_sources = """
++src/prep_cif.c
++src/closures.c
++src/dlmalloc.c
++""".split()
++
++ffi_platforms = {
++    'MIPS_IRIX': ['src/mips/ffi.c', 'src/mips/o32.S', 'src/mips/n32.S'],
++    'MIPS_LINUX': ['src/mips/ffi.c', 'src/mips/o32.S'],
++    'X86': ['src/x86/ffi.c', 'src/x86/sysv.S'],
++    'X86_FREEBSD': ['src/x86/ffi.c', 'src/x86/freebsd.S'],
++    'X86_WIN32': ['src/x86/ffi.c', 'src/x86/win32.S'],
++    'SPARC': ['src/sparc/ffi.c', 'src/sparc/v8.S', 'src/sparc/v9.S'],
++    'ALPHA': ['src/alpha/ffi.c', 'src/alpha/osf.S'],
++    'IA64': ['src/ia64/ffi.c', 'src/ia64/unix.S'],
++    'M32R': ['src/m32r/sysv.S', 'src/m32r/ffi.c'],
++    'M68K': ['src/m68k/ffi.c', 'src/m68k/sysv.S'],
++    'POWERPC': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S', 'src/powerpc/linux64.S', 'src/powerpc/linux64_closure.S'],
++    'POWERPC_AIX': ['src/powerpc/ffi.c', 'src/powerpc/aix.S', 'src/powerpc/aix_closure.S'],
++    'POWERPC_FREEBSD': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S'],
++    'ARM': ['src/arm/sysv.S', 'src/arm/ffi.c'],
++    'LIBFFI_CRIS': ['src/cris/sysv.S', 'src/cris/ffi.c'],
++    'FRV': ['src/frv/eabi.S', 'src/frv/ffi.c'],
++    'S390': ['src/s390/sysv.S', 'src/s390/ffi.c'],
++    'X86_64': ['src/x86/ffi64.c', 'src/x86/unix64.S', 'src/x86/ffi.c', 'src/x86/sysv.S'],
++    'SH': ['src/sh/sysv.S', 'src/sh/ffi.c'],
++    'SH64': ['src/sh64/sysv.S', 'src/sh64/ffi.c'],
++    'PA': ['src/pa/linux.S', 'src/pa/ffi.c'],
++    'PA_LINUX': ['src/pa/linux.S', 'src/pa/ffi.c'],
++    'PA_HPUX': ['src/pa/hpux32.S', 'src/pa/ffi.c'],
++}
++
++ffi_sources += ffi_platforms['@TARGET@']
++
++ffi_cflags = '@CFLAGS@'
+diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
+--- libffi-3.0.11/src/dlmalloc.c	2012-04-12 04:46:06.000000000 +0200
++++ libffi/src/dlmalloc.c	2012-06-26 15:15:58.949547461 +0200
+@@ -457,6 +457,11 @@
+ #define LACKS_ERRNO_H
+ #define MALLOC_FAILURE_ACTION
+ #define MMAP_CLEARS 0 /* WINCE and some others apparently don't clear */
++#elif !defined _GNU_SOURCE
++/* mremap() on Linux requires this via sys/mman.h
++ * See roundup issue 10309
++ */
++#define _GNU_SOURCE 1
+ #endif  /* WIN32 */
+ 
+ #ifdef __OS2__
+diff -urN libffi-3.0.11/src/sparc/v8.S libffi/src/sparc/v8.S
+--- libffi-3.0.11/src/sparc/v8.S	2012-04-12 04:46:06.000000000 +0200
++++ libffi/src/sparc/v8.S	2011-03-13 05:15:04.000000000 +0100
+@@ -213,6 +213,10 @@
+ 	be,a	done1
+ 	 ldd	[%fp-8], %i0
+ 
++	cmp	%o0, FFI_TYPE_UINT64
++	be,a	done1
++	 ldd	[%fp-8], %i0
++
+ 	ld	[%fp-8], %i0
+ done1:
+ 	jmp	%i7+8

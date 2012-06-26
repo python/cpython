@@ -10,29 +10,32 @@ EXTRA_DIST = LICENSE ChangeLog.v1 ChangeLog.libgcj configure.host \
 	src/avr32/ffi.c src/avr32/sysv.S src/avr32/ffitarget.h \
 	src/cris/ffi.c src/cris/sysv.S src/cris/ffitarget.h \
 	src/ia64/ffi.c src/ia64/ffitarget.h src/ia64/ia64_flags.h \
-	src/ia64/unix.S \
-	src/mips/ffi.c src/mips/n32.S src/mips/o32.S \
-	src/mips/ffitarget.h \
-	src/m32r/ffi.c src/m32r/sysv.S src/m32r/ffitarget.h \
-	src/m68k/ffi.c src/m68k/sysv.S src/m68k/ffitarget.h \
-	src/powerpc/ffi.c src/powerpc/sysv.S \
+	src/ia64/unix.S src/mips/ffi.c src/mips/n32.S src/mips/o32.S \
+	src/mips/ffitarget.h src/m32r/ffi.c src/m32r/sysv.S \
+	src/m32r/ffitarget.h src/m68k/ffi.c src/m68k/sysv.S \
+	src/m68k/ffitarget.h src/powerpc/ffi.c src/powerpc/sysv.S \
 	src/powerpc/linux64.S src/powerpc/linux64_closure.S \
-	src/powerpc/ppc_closure.S src/powerpc/asm.h \
-	src/powerpc/aix.S src/powerpc/darwin.S \
-	src/powerpc/aix_closure.S src/powerpc/darwin_closure.S \
-	src/powerpc/ffi_darwin.c src/powerpc/ffitarget.h \
-	src/s390/ffi.c src/s390/sysv.S src/s390/ffitarget.h \
-	src/sh/ffi.c src/sh/sysv.S src/sh/ffitarget.h \
-	src/sh64/ffi.c src/sh64/sysv.S src/sh64/ffitarget.h \
-	src/sparc/v8.S src/sparc/v9.S src/sparc/ffitarget.h \
-	src/sparc/ffi.c src/x86/darwin64.S \
-	src/x86/ffi.c src/x86/sysv.S src/x86/win32.S src/x86/win64.S \
-	src/x86/darwin.S src/x86/freebsd.S \
-	src/x86/ffi64.c src/x86/unix64.S src/x86/ffitarget.h \
-	src/pa/ffitarget.h src/pa/ffi.c src/pa/linux.S src/pa/hpux32.S \
-	src/frv/ffi.c src/frv/eabi.S src/frv/ffitarget.h src/dlmalloc.c \
-	libtool-version ChangeLog.libffi m4/libtool.m4 \
-	m4/lt~obsolete.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4
+	src/powerpc/ppc_closure.S src/powerpc/asm.h src/powerpc/aix.S \
+	src/powerpc/darwin.S src/powerpc/aix_closure.S \
+	src/powerpc/darwin_closure.S src/powerpc/ffi_darwin.c \
+	src/powerpc/ffitarget.h src/s390/ffi.c src/s390/sysv.S \
+	src/s390/ffitarget.h src/sh/ffi.c src/sh/sysv.S	\
+	src/sh/ffitarget.h src/sh64/ffi.c src/sh64/sysv.S \
+	src/sh64/ffitarget.h src/sparc/v8.S src/sparc/v9.S \
+	src/sparc/ffitarget.h src/sparc/ffi.c src/x86/darwin64.S \
+	src/x86/ffi.c src/x86/sysv.S src/x86/win32.S src/x86/darwin.S \
+	src/x86/win64.S src/x86/freebsd.S src/x86/ffi64.c \
+	src/x86/unix64.S src/x86/ffitarget.h src/pa/ffitarget.h	\
+	src/pa/ffi.c src/pa/linux.S src/pa/hpux32.S src/frv/ffi.c \
+	src/frv/eabi.S src/frv/ffitarget.h src/dlmalloc.c \
+	src/moxie/ffi.c src/moxie/eabi.S libtool-version \
+	ChangeLog.libffi m4/libtool.m4 m4/lt~obsolete.m4 \
+	m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 \
+	m4/ltversion.m4 src/arm/gentramp.sh src/debug.c \
+	msvcc.sh generate-ios-source-and-headers.py \
+	generate-osx-source-and-headers.py \
+        libffi.xcodeproj/project.pbxproj \
+	src/arm/trampoline.S
 
 info_TEXINFOS = doc/libffi.texi
 
@@ -69,6 +72,7 @@ AM_MAKEFLAGS = \
 	"exec_prefix=$(exec_prefix)" \
 	"infodir=$(infodir)" \
 	"libdir=$(libdir)" \
+	"mandir=$(mandir)" \
 	"prefix=$(prefix)" \
 	"AR=$(AR)" \
 	"AS=$(AS)" \
@@ -86,13 +90,17 @@ ACLOCAL_AMFLAGS=$(ACLOCAL_AMFLAGS) -I m4
 lib_LTLIBRARIES = libffi.la
 noinst_LTLIBRARIES = libffi_convenience.la
 
-libffi_la_SOURCES = src/debug.c src/prep_cif.c src/types.c \
+libffi_la_SOURCES = src/prep_cif.c src/types.c \
 		src/raw_api.c src/java_raw_api.c src/closures.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libffi.pc
 
 nodist_libffi_la_SOURCES =
+
+if FFI_DEBUG
+nodist_libffi_la_SOURCES += src/debug.c
+endif
 
 if MIPS
 nodist_libffi_la_SOURCES += src/mips/ffi.c src/mips/o32.S src/mips/n32.S
@@ -141,6 +149,9 @@ nodist_libffi_la_SOURCES += src/powerpc/ffi.c src/powerpc/sysv.S src/powerpc/ppc
 endif
 if ARM
 nodist_libffi_la_SOURCES += src/arm/sysv.S src/arm/ffi.c
+if FFI_EXEC_TRAMPOLINE_TABLE
+nodist_libffi_la_SOURCES += src/arm/trampoline.S
+endif
 endif
 if AVR32
 nodist_libffi_la_SOURCES += src/avr32/sysv.S src/avr32/ffi.c
@@ -150,6 +161,9 @@ nodist_libffi_la_SOURCES += src/cris/sysv.S src/cris/ffi.c
 endif
 if FRV
 nodist_libffi_la_SOURCES += src/frv/eabi.S src/frv/ffi.c
+endif
+if MOXIE
+nodist_libffi_la_SOURCES += src/moxie/eabi.S src/moxie/ffi.c
 endif
 if S390
 nodist_libffi_la_SOURCES += src/s390/sysv.S src/s390/ffi.c
@@ -173,12 +187,17 @@ endif
 libffi_convenience_la_SOURCES = $(libffi_la_SOURCES)
 nodist_libffi_convenience_la_SOURCES = $(nodist_libffi_la_SOURCES)
 
-AM_CFLAGS = -Wall -g -fexceptions
+AM_CFLAGS = -g
+if FFI_DEBUG
+# Build debug. Define FFI_DEBUG on the commandline so that, when building with
+# MSVC, it can link against the debug CRT.
+AM_CFLAGS += -DFFI_DEBUG
+endif
 
 libffi_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version` $(LTLDFLAGS) $(AM_LTLDFLAGS)
 
-AM_CPPFLAGS = -I. -I$(top_srcdir)/include -Iinclude -I$(top_srcdir)/src
-AM_CCASFLAGS = $(AM_CPPFLAGS)
+AM_CPPFLAGS = -I. -I$(top_srcdir)/include -Iinclude -I$(top_srcdir)/src -DFFI_BUILDING
+AM_CCASFLAGS = $(AM_CPPFLAGS) -g
 
 # No install-html or install-pdf support in automake yet
 .PHONY: install-html install-pdf
