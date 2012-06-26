@@ -42,7 +42,7 @@
 
 /* If compiled for profiling, call `_mcount' at the start of each function.  */
 #ifdef	PROF
-/* The mcount code relies on a the return address being on the stack
+/* The mcount code relies on the return address being on the stack
    to locate our caller and so it can restore it; so store one just
    for its benefit.  */
 #ifdef PIC

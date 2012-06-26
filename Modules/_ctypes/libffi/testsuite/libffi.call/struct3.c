@@ -27,6 +27,11 @@ int main (void)
   int compare_value;
   ffi_type ts3_type;
   ffi_type *ts3_type_elements[2];
+
+  test_structure_3 ts3_arg;
+  test_structure_3 *ts3_result =
+    (test_structure_3 *) malloc (sizeof(test_structure_3));
+
   ts3_type.size = 0;
   ts3_type.alignment = 0;
   ts3_type.type = FFI_TYPE_STRUCT;
@@ -34,10 +39,6 @@ int main (void)
   ts3_type_elements[0] = &ffi_type_sint;
   ts3_type_elements[1] = NULL;
 
-  test_structure_3 ts3_arg;
-  test_structure_3 *ts3_result = 
-    (test_structure_3 *) malloc (sizeof(test_structure_3));
-  
   args[0] = &ts3_type;
   values[0] = &ts3_arg;
   

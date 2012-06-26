@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2003, 2004, 2006, 2007 Kaz Kojima
+   ffi.c - Copyright (c) 2003, 2004, 2006, 2007, 2012 Kaz Kojima
            Copyright (c) 2008 Anthony Green
    
    SuperH SHmedia Foreign Function Interface 
@@ -302,7 +302,8 @@ ffi_prep_closure_loc (ffi_closure *closure,
 {
   unsigned int *tramp;
 
-  FFI_ASSERT (cif->abi == FFI_GCC_SYSV);
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
 
   tramp = (unsigned int *) &closure->tramp[0];
   /* Since ffi_closure is an aligned object, the ffi trampoline is

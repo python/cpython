@@ -31,6 +31,13 @@ int main (void)
   void *values[MAX_ARGS];
   ffi_type ts8_type;
   ffi_type *ts8_type_elements[5];
+
+  test_structure_8 ts8_arg;
+
+  /* This is a hack to get a properly aligned result buffer */
+  test_structure_8 *ts8_result =
+    (test_structure_8 *) malloc (sizeof(test_structure_8));
+
   ts8_type.size = 0;
   ts8_type.alignment = 0;
   ts8_type.type = FFI_TYPE_STRUCT;
@@ -41,12 +48,6 @@ int main (void)
   ts8_type_elements[3] = &ffi_type_float;
   ts8_type_elements[4] = NULL;
 
-  test_structure_8 ts8_arg;
-  
-  /* This is a hack to get a properly aligned result buffer */
-  test_structure_8 *ts8_result = 
-    (test_structure_8 *) malloc (sizeof(test_structure_8));
-  
   args[0] = &ts8_type;
   values[0] = &ts8_arg;
   

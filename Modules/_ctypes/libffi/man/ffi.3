@@ -16,6 +16,15 @@ libffi, -lffi
 .Fa "ffi_type **atypes"
 .Fc
 .Ft void
+.Fo ffi_prep_cif_var
+.Fa "ffi_cif *cif"
+.Fa "ffi_abi abi"
+.Fa "unsigned int nfixedargs"
+.Fa "unsigned int ntotalargs"
+.Fa "ffi_type *rtype"
+.Fa "ffi_type **atypes"
+.Fc
+.Ft void
 .Fo ffi_call
 .Fa "ffi_cif *cif"
 .Fa "void (*fn)(void)"
@@ -28,4 +37,5 @@ generate a call to another function at runtime without requiring knowledge of
 the called function's interface at compile time.
 .Sh SEE ALSO
 .Xr ffi_prep_cif 3 ,
+.Xr ffi_prep_cif_var 3 ,
 .Xr ffi_call 3

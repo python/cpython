@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.10 was released on XXXXXXXXXX, 2010. Check the libffi web
+libffi-3.0.11 was released on April 11, 2012.  Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -43,7 +43,7 @@ Libffi has been ported to many different platforms.
 For specific configuration details and testing status, please
 refer to the wiki page here:
 
- http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.10
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.11
 
 At the time of release, the following basic configurations have been
 tested:
@@ -54,12 +54,17 @@ tested:
 | Alpha        | Linux            |
 | Alpha        | Tru64            |
 | ARM          | Linux            |
+| ARM          | iOS              |
 | AVR32        | Linux            |
 | HPPA         | HPUX             |
 | IA-64        | Linux            |
+| M68K         | FreeMiNT         |
+| M68K         | RTEMS            |
 | MIPS         | IRIX             |
 | MIPS         | Linux            |
+| MIPS         | RTEMS            |
 | MIPS64       | Linux            |
+| PowerPC      | AMIGA            |
 | PowerPC      | Linux            |
 | PowerPC      | Mac OSX          |
 | PowerPC      | FreeBSD          |
@@ -71,15 +76,18 @@ tested:
 | SPARC64      | Linux            |
 | SPARC64      | FreeBSD          |
 | X86          | FreeBSD          |
+| X86          | Interix          |
 | X86          | kFreeBSD         |
 | X86          | Linux            |
 | X86          | Mac OSX          |
 | X86          | OpenBSD          |
+| X86          | OS/2             |
 | X86          | Solaris          |
 | X86          | Windows/Cygwin   |
 | X86          | Windows/MingW    |
 | X86-64       | FreeBSD          |
 | X86-64       | Linux            |
+| X86-64       | Linux/x32        |
 | X86-64       | OpenBSD          |
 | X86-64       | Windows/MingW    |
 |--------------+------------------|
@@ -113,9 +121,16 @@ It's also possible to build libffi on Windows platforms with
 Microsoft's Visual C++ compiler.  In this case, use the msvcc.sh
 wrapper script during configuration like so:
 
-path/to/configure --enable-shared --enable-static \
-	CC=path/to/msvcc.sh LD=link \
-	CPP=\"cl -nologo -EP\"
+path/to/configure CC=path/to/msvcc.sh LD=link CPP=\"cl -nologo -EP\"
+
+For 64-bit Windows builds, use CC="path/to/msvcc.sh -m64".
+You may also need to specify --build appropriately. When building with MSVC
+under a MingW environment, you may need to remove the line in configure
+that sets 'fix_srcfile_path' to a 'cygpath' command. ('cygpath' is not
+present in MingW, and is not required when using MingW-style paths.)
+
+For iOS builds, run generate-ios-source-and-headers.py and then
+libffi.xcodeproj should work.
 
 Configure has many other options. Use "configure --help" to see them all.
 
@@ -133,11 +148,30 @@ History
 
 See the ChangeLog files for details.
 
-3.0.10 ???-??-??
-        Fix the N64 build on mips-sgi-irix6.5.
-	Testsuite fixes for Tru64 Unix.
+3.0.11 Apr-11-12
+        Add support for variadic functions (ffi_prep_cif_var).
+	Add Linux/x32 support.
+	Add thiscall, fastcall and MSVC cdecl support on Windows.
+        Add Amiga and newer MacOS support.
+	Add m68k FreeMiNT support.
+	Integration with iOS' xcode build tools.
+	Fix Octeon and MC68881 support.
+	Fix code pessimizations.
+        Lots of build fixes.
+
+3.0.10 Aug-23-11
+        Add support for Apple's iOS.
+	Add support for ARM VFP ABI.
+        Add RTEMS support for MIPS and M68K.
+	Fix instruction cache clearing problems on
+	  ARM and SPARC.
+	Fix the N64 build on mips-sgi-irix6.5.
 	Enable builds with Microsoft's compiler.
-	Enable x86 builds with Sun's compiler.
+	Enable x86 builds with Oracle's Solaris compiler.
+	Fix support for calling code compiled with Oracle's Sparc
+	  Solaris compiler.
+	Testsuite fixes for Tru64 Unix.
+	Additional platform support.
 
 3.0.9 Dec-31-09
         Add AVR32 and win64 ports.  Add ARM softfp support.
@@ -267,7 +301,7 @@ See the ChangeLog files for details.
 Authors & Credits
 =================
 
-libffi was originally written by Anthony Green <green@redhat.com>.
+libffi was originally written by Anthony Green <green@moxielogic.com>.
 
 The developers of the GNU Compiler Collection project have made
 innumerable valuable contributions.  See the ChangeLog file for
@@ -318,5 +352,6 @@ Alex Oliva solved the executable page problem for SElinux.
 The list above is almost certainly incomplete and inaccurate.  I'm
 happy to make corrections or additions upon request.
 
-If you have a problem, or have found a bug, please send a note to
-green@redhat.com.
+If you have a problem, or have found a bug, please send a note to the
+author at green@moxielogic.com, or the project mailing list at
+libffi-discuss@sourceware.org.

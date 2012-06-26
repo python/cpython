@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008 Kaz Kojima
+   ffi.c - Copyright (c) 2002-2008, 2012 Kaz Kojima
            Copyright (c) 2008 Red Hat, Inc.
    
    SuperH Foreign Function Interface 
@@ -463,7 +463,8 @@ ffi_prep_closure_loc (ffi_closure* closure,
   unsigned int *tramp;
   unsigned int insn;
 
-  FFI_ASSERT (cif->abi == FFI_GCC_SYSV);
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
 
   tramp = (unsigned int *) &closure->tramp[0];
   /* Set T bit if the function returns a struct pointed with R2.  */
