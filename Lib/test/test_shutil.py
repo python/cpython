@@ -1174,6 +1174,7 @@ class TestShutil(unittest.TestCase):
         # copytree returns its destination path.
         src_dir = self.mkdtemp()
         dst_dir = src_dir + "dest"
+        self.addCleanup(shutil.rmtree, dst_dir, True)
         src = os.path.join(src_dir, 'foo')
         write_file(src, 'foo')
         rv = shutil.copytree(src_dir, dst_dir)
@@ -1184,6 +1185,7 @@ class TestWhich(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.temp_dir, True)
         # Give the temp_file an ".exe" suffix for all.
         # It's needed on Windows and not harmful on other platforms.
         self.temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir,
@@ -1506,6 +1508,7 @@ class TestCopyFile(unittest.TestCase):
         # but a different case.
 
         self.src_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.src_dir, True)
         dst_dir = os.path.join(
                 os.path.dirname(self.src_dir),
                 os.path.basename(self.src_dir).upper())
