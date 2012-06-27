@@ -91,7 +91,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *symlinks* argument.
 
-.. function:: copy(src, dst, symlinks=False))
+.. function:: copy(src, dst, symlinks=False)
 
    Copy the file *src* to the file or directory *dst* and return the file's
    destination.  If *dst* is a directory, a
