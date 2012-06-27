@@ -22,6 +22,15 @@ Extension Modules
 
 - Issue #15194: Update libffi to the 3.0.11 release.
 
+Tools/Demos
+-----------
+
+- Issue #12605: The gdb hooks for debugging CPython (within Tools/gdb) have
+  been enhanced to show information on more C frames relevant to CPython within
+  the "py-bt" and "py-bt-full" commands:
+    * C frames that are waiting on the GIL
+    * C frames that are garbage-collecting
+    * C frames that are due to the invocation of a PyCFunction
 
 What's New in Python 3.3.0 Beta 1?
 ==================================
