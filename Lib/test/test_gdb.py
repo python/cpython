@@ -11,6 +11,12 @@ import sysconfig
 import unittest
 import locale
 
+# Is this Python configured to support threads?
+try:
+    import _thread
+except ImportError:
+    _thread = None
+
 from test.support import run_unittest, findfile, python_is_optimized
 
 try:
@@ -151,7 +157,6 @@ class DebuggerTests(unittest.TestCase):
 
         # Ensure no unexpected error messages:
         self.assertEqual(err, '')
-
         return out
 
     def get_gdb_repr(self, source,
@@ -172,7 +177,7 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match('.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)\)\s+at\s+Python/bltinmodule.c.*',
+        m = re.match('.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)\)\s+at\s+\S*Python/bltinmodule.c.*',
                      gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
@@ -670,6 +675,98 @@ Traceback \(most recent call first\):
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
     foo\(1, 2, 3\)
 ''')
+
+    @unittest.skipUnless(_thread,
+                         "Python was compiled without thread support")
+    def test_threads(self):
+        'Verify that "py-bt" indicates threads that are waiting for the GIL'
+        cmd = '''
+from threading import Thread
+
+class TestThread(Thread):
+    # These threads would run forever, but we'll interrupt things with the
+    # debugger
+    def run(self):
+        i = 0
+        while 1:
+             i += 1
+
+t = {}
+for i in range(4):
+   t[i] = TestThread()
+   t[i].start()
+
+# Trigger a breakpoint on the main thread
+id(42)
+
+'''
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['thread apply all py-bt'])
+        self.assertIn('Waiting for the GIL', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['thread apply all py-bt-full'])
+        self.assertIn('Waiting for the GIL', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    # Some older versions of gdb will fail with
+    #  "Cannot find new threads: generic error"
+    # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
+    @unittest.skipUnless(_thread,
+                         "Python was compiled without thread support")
+    def test_gc(self):
+        'Verify that "py-bt" indicates if a thread is garbage-collecting'
+        cmd = ('from gc import collect\n'
+               'id(42)\n'
+               'def foo():\n'
+               '    collect()\n'
+               'def bar():\n'
+               '    foo()\n'
+               'bar()\n')
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt'],
+                                          )
+        self.assertIn('Garbage-collecting', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt-full'],
+                                          )
+        self.assertIn('Garbage-collecting', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    # Some older versions of gdb will fail with
+    #  "Cannot find new threads: generic error"
+    # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
+    @unittest.skipUnless(_thread,
+                         "Python was compiled without thread support")
+    def test_pycfunction(self):
+        'Verify that "py-bt" displays invocations of PyCFunction instances'
+        cmd = ('from time import sleep\n'
+               'def foo():\n'
+               '    sleep(1)\n'
+               'def bar():\n'
+               '    foo()\n'
+               'bar()\n')
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          breakpoint='time_sleep',
+                                          cmds_after_breakpoint=['bt', 'py-bt'],
+                                          )
+        self.assertIn('<built-in method sleep', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          breakpoint='time_sleep',
+                                          cmds_after_breakpoint=['py-bt-full'],
+                                          )
+        self.assertIn('#0 <built-in method sleep', gdb_output)
+
 
 class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),

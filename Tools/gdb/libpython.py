@@ -1390,6 +1390,23 @@ class Frame(object):
             iter_frame = iter_frame.newer()
         return index
 
+    # We divide frames into:
+    #   - "python frames":
+    #       - "bytecode frames" i.e. PyEval_EvalFrameEx
+    #       - "other python frames": things that are of interest from a python
+    #         POV, but aren't bytecode (e.g. GC, GIL)
+    #   - everything else
+
+    def is_python_frame(self):
+        '''Is this a PyEval_EvalFrameEx frame, or some other important
+        frame? (see is_other_python_frame for what "important" means in this
+        context)'''
+        if self.is_evalframeex():
+            return True
+        if self.is_other_python_frame():
+            return True
+        return False
+
     def is_evalframeex(self):
         '''Is this a PyEval_EvalFrameEx frame?'''
         if self._gdbframe.name() == 'PyEval_EvalFrameEx':
@@ -1405,6 +1422,49 @@ class Frame(object):
                 return True
 
         return False
+
+    def is_other_python_frame(self):
+        '''Is this frame worth displaying in python backtraces?
+        Examples:
+          - waiting on the GIL
+          - garbage-collecting
+          - within a CFunction
+         If it is, return a descriptive string
+         For other frames, return False
+         '''
+        if self.is_waiting_for_gil():
+            return 'Waiting for the GIL'
+        elif self.is_gc_collect():
+            return 'Garbage-collecting'
+        else:
+            # Detect invocations of PyCFunction instances:
+            older = self.older()
+            if older and older._gdbframe.name() == 'PyCFunction_Call':
+                # Within that frame:
+                #   "func" is the local containing the PyObject* of the
+                # PyCFunctionObject instance
+                #   "f" is the same value, but cast to (PyCFunctionObject*)
+                #   "self" is the (PyObject*) of the 'self'
+                try:
+                    # Use the prettyprinter for the func:
+                    func = older._gdbframe.read_var('func')
+                    return str(func)
+                except RuntimeError:
+                    return 'PyCFunction invocation (unable to read "func")'
+
+        # This frame isn't worth reporting:
+        return False
+
+    def is_waiting_for_gil(self):
+        '''Is this frame waiting on the GIL?'''
+        # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
+        name = self._gdbframe.name()
+        if name:
+            return name.startswith('pthread_cond_timedwait')
+
+    def is_gc_collect(self):
+        '''Is this frame "collect" within the the garbage-collector?'''
+        return self._gdbframe.name() == 'collect'
 
     def get_pyop(self):
         try:
@@ -1435,8 +1495,22 @@ class Frame(object):
 
     @classmethod
     def get_selected_python_frame(cls):
-        '''Try to obtain the Frame for the python code in the selected frame,
-        or None'''
+        '''Try to obtain the Frame for the python-related code in the selected
+        frame, or None'''
+        frame = cls.get_selected_frame()
+
+        while frame:
+            if frame.is_python_frame():
+                return frame
+            frame = frame.older()
+
+        # Not found:
+        return None
+
+    @classmethod
+    def get_selected_bytecode_frame(cls):
+        '''Try to obtain the Frame for the python bytecode interpreter in the
+        selected GDB frame, or None'''
         frame = cls.get_selected_frame()
 
         while frame:
@@ -1460,7 +1534,11 @@ class Frame(object):
             else:
                 sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
         else:
-            sys.stdout.write('#%i\n' % self.get_index())
+            info = self.is_other_python_frame()
+            if info:
+                sys.stdout.write('#%i %s\n' % (self.get_index(), info))
+            else:
+                sys.stdout.write('#%i\n' % self.get_index())
 
     def print_traceback(self):
         if self.is_evalframeex():
@@ -1474,7 +1552,11 @@ class Frame(object):
             else:
                 sys.stdout.write('  (unable to read python frame information)\n')
         else:
-            sys.stdout.write('  (not a python frame)\n')
+            info = self.is_other_python_frame()
+            if info:
+                sys.stdout.write('  %s\n' % info)
+            else:
+                sys.stdout.write('  (not a python frame)\n')
 
 class PyList(gdb.Command):
     '''List the current Python source code, if any
@@ -1510,9 +1592,10 @@ class PyList(gdb.Command):
         if m:
             start, end = map(int, m.groups())
 
-        frame = Frame.get_selected_python_frame()
+        # py-list requires an actual PyEval_EvalFrameEx frame:
+        frame = Frame.get_selected_bytecode_frame()
         if not frame:
-            print 'Unable to locate python frame'
+            print 'Unable to locate gdb frame for python bytecode interpreter'
             return
 
         pyop = frame.get_pyop()
@@ -1564,7 +1647,7 @@ def move_in_stack(move_up):
         if not iter_frame:
             break
 
-        if iter_frame.is_evalframeex():
+        if iter_frame.is_python_frame():
             # Result:
             if iter_frame.select():
                 iter_frame.print_summary()
@@ -1618,7 +1701,7 @@ class PyBacktraceFull(gdb.Command):
     def invoke(self, args, from_tty):
         frame = Frame.get_selected_python_frame()
         while frame:
-            if frame.is_evalframeex():
+            if frame.is_python_frame():
                 frame.print_summary()
             frame = frame.older()
 
@@ -1637,7 +1720,7 @@ class PyBacktrace(gdb.Command):
         sys.stdout.write('Traceback (most recent call first):\n')
         frame = Frame.get_selected_python_frame()
         while frame:
-            if frame.is_evalframeex():
+            if frame.is_python_frame():
                 frame.print_traceback()
             frame = frame.older()
 
