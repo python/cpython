@@ -448,7 +448,7 @@ run_profile_task:
 	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 
 build_all_use_profile:
-	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use"
+	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use -fprofile-correction"
 
 coverage:
 	@echo "Building with support for coverage checking:"
