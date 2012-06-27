@@ -20,7 +20,7 @@ class FinderTests(unittest.TestCase):
         # Test None returned upon not finding a suitable finder.
         module = '<test module>'
         with util.import_state():
-            self.assertTrue(machinery.PathFinder.find_module(module) is None)
+            self.assertIs(machinery.PathFinder.find_module(module), None)
 
     def test_sys_path(self):
         # Test that sys.path is used when 'path' is None.
@@ -31,7 +31,7 @@ class FinderTests(unittest.TestCase):
         with util.import_state(path_importer_cache={path: importer},
                                path=[path]):
             loader = machinery.PathFinder.find_module(module)
-            self.assertTrue(loader is importer)
+            self.assertIs(loader, importer)
 
     def test_path(self):
         # Test that 'path' is used when set.
@@ -41,7 +41,7 @@ class FinderTests(unittest.TestCase):
         importer = util.mock_modules(module)
         with util.import_state(path_importer_cache={path: importer}):
             loader = machinery.PathFinder.find_module(module, [path])
-            self.assertTrue(loader is importer)
+            self.assertIs(loader, importer)
 
     def test_empty_list(self):
         # An empty list should not count as asking for sys.path.
@@ -61,9 +61,9 @@ class FinderTests(unittest.TestCase):
         hook = import_util.mock_path_hook(path, importer=importer)
         with util.import_state(path_hooks=[hook]):
             loader = machinery.PathFinder.find_module(module, [path])
-            self.assertTrue(loader is importer)
-            self.assertTrue(path in sys.path_importer_cache)
-            self.assertTrue(sys.path_importer_cache[path] is importer)
+            self.assertIs(loader, importer)
+            self.assertIn(path, sys.path_importer_cache)
+            self.assertIs(sys.path_importer_cache[path], importer)
 
     def test_empty_path_hooks(self):
         # Test that if sys.path_hooks is empty a warning is raised,
