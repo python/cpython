@@ -677,6 +677,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     print(stdout)
                 if stderr:
                     print(stderr, file=sys.stderr)
+                sys.stdout.flush()
+                sys.stderr.flush()
                 if result[0] == INTERRUPTED:
                     assert result[1] == 'KeyboardInterrupt'
                     raise KeyboardInterrupt   # What else?
