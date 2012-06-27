@@ -60,4 +60,3 @@ for _method in (METHOD_SHA512, METHOD_SHA256, METHOD_MD5):
         methods.append(_method)
 methods.append(METHOD_CRYPT)
 del _result, _method
-
