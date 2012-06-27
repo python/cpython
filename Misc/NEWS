@@ -7,6 +7,16 @@ What's New in Python 3.3.0 Beta 2?
 
 *Release date: xx-xxx-2012*
 
+Core and Builtins
+-----------------
+
+
+Library
+-------
+
+- Issue 10924: Fixed mksalt() to use a RNG that is suitable for cryptographic
+  purpose.
+
 Extension Modules
 -----------------
 
