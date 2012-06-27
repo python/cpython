@@ -10344,42 +10344,6 @@ device_encoding(PyObject *self, PyObject *args)
     return _Py_device_encoding(fd);
 }
 
-#ifdef __VMS
-/* Use openssl random routine */
-#include <openssl/rand.h>
-PyDoc_STRVAR(vms_urandom__doc__,
-"urandom(n) -> str\n\n\
-Return n random bytes suitable for cryptographic use.");
-
-static PyObject*
-vms_urandom(PyObject *self, PyObject *args)
-{
-    int howMany;
-    PyObject* result;
-
-    /* Read arguments */
-    if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
-        return NULL;
-    if (howMany < 0)
-        return PyErr_Format(PyExc_ValueError,
-                            "negative argument not allowed");
-
-    /* Allocate bytes */
-    result = PyBytes_FromStringAndSize(NULL, howMany);
-    if (result != NULL) {
-        /* Get random data */
-        if (RAND_pseudo_bytes((unsigned char*)
-                              PyBytes_AS_STRING(result),
-                              howMany) < 0) {
-            Py_DECREF(result);
-            return PyErr_Format(PyExc_ValueError,
-                                "RAND_pseudo_bytes");
-        }
-    }
-    return result;
-}
-#endif
-
 #ifdef HAVE_SETRESUID
 PyDoc_STRVAR(posix_setresuid__doc__,
 "setresuid(ruid, euid, suid)\n\n\
