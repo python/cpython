@@ -64,7 +64,7 @@ class SimpleTest(unittest.TestCase):
         with source_util.create_modules('_temp') as mapping:
             loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
             module = loader.load_module('_temp')
-            self.assertTrue('_temp' in sys.modules)
+            self.assertIn('_temp', sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
                      '__package__': ''}
             for attr, value in check.items():
@@ -75,7 +75,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap.SourceFileLoader('_pkg',
                                                  mapping['_pkg.__init__'])
             module = loader.load_module('_pkg')
-            self.assertTrue('_pkg' in sys.modules)
+            self.assertIn('_pkg', sys.modules)
             check = {'__name__': '_pkg', '__file__': mapping['_pkg.__init__'],
                      '__path__': [os.path.dirname(mapping['_pkg.__init__'])],
                      '__package__': '_pkg'}
@@ -88,7 +88,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap.SourceFileLoader('_pkg.mod',
                                                     mapping['_pkg.mod'])
             module = loader.load_module('_pkg.mod')
-            self.assertTrue('_pkg.mod' in sys.modules)
+            self.assertIn('_pkg.mod', sys.modules)
             check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod'],
                      '__package__': '_pkg'}
             for attr, value in check.items():
@@ -107,7 +107,7 @@ class SimpleTest(unittest.TestCase):
             with open(mapping['_temp'], 'w') as file:
                 file.write("testing_var = 42\n")
             module = loader.load_module('_temp')
-            self.assertTrue('testing_var' in module.__dict__,
+            self.assertIn('testing_var', module.__dict__,
                          "'testing_var' not in "
                             "{0}".format(list(module.__dict__.keys())))
             self.assertEqual(module, sys.modules['_temp'])
@@ -139,7 +139,7 @@ class SimpleTest(unittest.TestCase):
             loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
                 loader.load_module('_temp')
-            self.assertTrue('_temp' not in sys.modules)
+            self.assertNotIn('_temp', sys.modules)
 
     def test_file_from_empty_string_dir(self):
         # Loading a module found from an empty string entry on sys.path should
@@ -189,7 +189,7 @@ class BadBytecodeTest(unittest.TestCase):
     def import_(self, file, module_name):
         loader = self.loader(module_name, file)
         module = loader.load_module(module_name)
-        self.assertTrue(module_name in sys.modules)
+        self.assertIn(module_name, sys.modules)
 
     def manipulate_bytecode(self, name, mapping, manipulator, *,
                             del_source=False):

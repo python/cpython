@@ -14,7 +14,7 @@ class ParentModuleTests(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 module = import_util.import_('pkg.module')
-                self.assertTrue('pkg' in sys.modules)
+                self.assertIn('pkg', sys.modules)
 
     def test_bad_parent(self):
         with util.mock_modules('pkg.module') as mock:
@@ -33,12 +33,12 @@ class ParentModuleTests(unittest.TestCase):
             with util.import_state(meta_path=[mock]):
                 with self.assertRaises(ZeroDivisionError):
                     import_util.import_('pkg')
-                self.assertFalse('pkg' in sys.modules)
-                self.assertTrue('pkg.module' in sys.modules)
+                self.assertNotIn('pkg', sys.modules)
+                self.assertIn('pkg.module', sys.modules)
                 with self.assertRaises(ZeroDivisionError):
                     import_util.import_('pkg.module')
-                self.assertFalse('pkg' in sys.modules)
-                self.assertTrue('pkg.module' in sys.modules)
+                self.assertNotIn('pkg', sys.modules)
+                self.assertIn('pkg.module', sys.modules)
 
     def test_raising_parent_after_relative_importing_child(self):
         def __init__():
@@ -52,12 +52,12 @@ class ParentModuleTests(unittest.TestCase):
                     # This raises ImportError on the "from . import module"
                     # line, not sure why.
                     import_util.import_('pkg')
-                self.assertFalse('pkg' in sys.modules)
+                self.assertNotIn('pkg', sys.modules)
                 with self.assertRaises((ZeroDivisionError, ImportError)):
                     import_util.import_('pkg.module')
-                self.assertFalse('pkg' in sys.modules)
+                self.assertNotIn('pkg', sys.modules)
                 # XXX False
-                #self.assertTrue('pkg.module' in sys.modules)
+                #self.assertIn('pkg.module', sys.modules)
 
     def test_raising_parent_after_double_relative_importing_child(self):
         def __init__():
@@ -72,12 +72,12 @@ class ParentModuleTests(unittest.TestCase):
                     # This raises ImportError on the "from ..subpkg import module"
                     # line, not sure why.
                     import_util.import_('pkg.subpkg')
-                self.assertFalse('pkg.subpkg' in sys.modules)
+                self.assertNotIn('pkg.subpkg', sys.modules)
                 with self.assertRaises((ZeroDivisionError, ImportError)):
                     import_util.import_('pkg.subpkg.module')
-                self.assertFalse('pkg.subpkg' in sys.modules)
+                self.assertNotIn('pkg.subpkg', sys.modules)
                 # XXX False
-                #self.assertTrue('pkg.subpkg.module' in sys.modules)
+                #self.assertIn('pkg.subpkg.module', sys.modules)
 
     def test_module_not_package(self):
         # Try to import a submodule from a non-package should raise ImportError.
