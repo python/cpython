@@ -1,22 +1,22 @@
 """Wrapper to the POSIX crypt library call and associated functionality."""
 
 import _crypt
-import string
-from random import choice
-from collections import namedtuple
+import string as _string
+from random import SystemRandom as _SystemRandom
+from collections import namedtuple as _namedtuple
 
 
-_saltchars = string.ascii_letters + string.digits + './'
+_saltchars = _string.ascii_letters + _string.digits + './'
+_sr = _SystemRandom()
 
 
-class _Method(namedtuple('_Method', 'name ident salt_chars total_size')):
+class _Method(_namedtuple('_Method', 'name ident salt_chars total_size')):
 
     """Class representing a salt method per the Modular Crypt Format or the
     legacy 2-character crypt method."""
 
     def __repr__(self):
         return '<crypt.METHOD_{}>'.format(self.name)
-
 
 
 def mksalt(method=None):
@@ -28,7 +28,7 @@ def mksalt(method=None):
     if method is None:
         method = methods[0]
     s = '${}$'.format(method.ident) if method.ident else ''
-    s += ''.join(choice(_saltchars) for _ in range(method.salt_chars))
+    s += ''.join(_sr.sample(_saltchars, method.salt_chars))
     return s
 
 
@@ -60,3 +60,4 @@ for _method in (METHOD_SHA512, METHOD_SHA256, METHOD_MD5):
         methods.append(_method)
 methods.append(METHOD_CRYPT)
 del _result, _method
+
