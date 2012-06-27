@@ -19,7 +19,7 @@ if not sysconfig.is_python_build():
     # and run the tests in that case too?
     raise unittest.SkipTest('test irrelevant for an installed Python')
 
-srcdir = sysconfig.get_config_var('projectbase')
+srcdir = sysconfig.get_config_var('srcdir')
 basepath = os.path.join(os.getcwd(), srcdir, 'Tools')
 scriptsdir = os.path.join(basepath, 'scripts')
 
