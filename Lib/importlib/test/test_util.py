@@ -29,8 +29,8 @@ class ModuleForLoaderTests(unittest.TestCase):
         module_name = 'a.b.c'
         with test_util.uncache(module_name):
             module = self.return_module(module_name)
-            self.assertTrue(module_name in sys.modules)
-        self.assertTrue(isinstance(module, types.ModuleType))
+            self.assertIn(module_name, sys.modules)
+        self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, module_name)
 
     def test_reload(self):
@@ -48,7 +48,7 @@ class ModuleForLoaderTests(unittest.TestCase):
         name = 'a.b.c'
         with test_util.uncache(name):
             self.raise_exception(name)
-            self.assertTrue(name not in sys.modules)
+            self.assertNotIn(name, sys.modules)
 
     def test_reload_failure(self):
         # Test that a failure on reload leaves the module in-place.
@@ -77,7 +77,7 @@ class ModuleForLoaderTests(unittest.TestCase):
             self.assertFalse(module)
             sys.modules[name] = module
             given = self.return_module(name)
-            self.assertTrue(given is module)
+            self.assertIs(given, module)
 
     def test_attributes_set(self):
         # __name__, __loader__, and __package__ should be set (when

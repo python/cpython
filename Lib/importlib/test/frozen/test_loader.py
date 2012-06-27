@@ -55,7 +55,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache('__hello__'), captured_stdout() as stdout:
             module1 = machinery.FrozenImporter.load_module('__hello__')
             module2 = machinery.FrozenImporter.load_module('__hello__')
-            self.assertTrue(module1 is module2)
+            self.assertIs(module1, module2)
             self.assertEqual(stdout.getvalue(),
                              'Hello world!\nHello world!\n')
 
@@ -93,7 +93,7 @@ class InspectLoaderTests(unittest.TestCase):
     def test_get_source(self):
         # Should always return None.
         result = machinery.FrozenImporter.get_source('__hello__')
-        self.assertTrue(result is None)
+        self.assertIs(result, None)
 
     def test_is_package(self):
         # Should be able to tell what is a package.
@@ -101,7 +101,7 @@ class InspectLoaderTests(unittest.TestCase):
                     ('__phello__.spam', False))
         for name, is_package in test_for:
             result = machinery.FrozenImporter.is_package(name)
-            self.assertTrue(bool(result) == is_package)
+            self.assertEqual(bool(result), is_package)
 
     def test_failure(self):
         # Raise ImportError for modules that are not frozen.

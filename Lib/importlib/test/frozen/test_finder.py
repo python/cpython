@@ -35,7 +35,7 @@ class FinderTests(abc.FinderTests):
 
     def test_failure(self):
         loader = self.find('<not real>')
-        self.assertTrue(loader is None)
+        self.assertIs(loader, None)
 
 
 def test_main():

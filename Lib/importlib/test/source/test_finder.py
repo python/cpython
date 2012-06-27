@@ -115,7 +115,7 @@ class FinderTests(abc.FinderTests):
     def test_failure(self):
         with source_util.create_modules('blah') as mapping:
             nothing = self.import_(mapping['.root'], 'sdfsadsadf')
-            self.assertTrue(nothing is None)
+            self.assertIs(nothing, None)
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.

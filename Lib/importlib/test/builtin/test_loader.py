@@ -18,10 +18,10 @@ class LoaderTests(abc.LoaderTests):
 
     def verify(self, module):
         """Verify that the module matches against what it should have."""
-        self.assertTrue(isinstance(module, types.ModuleType))
+        self.assertIsInstance(module, types.ModuleType)
         for attr, value in self.verification.items():
             self.assertEqual(getattr(module, attr), value)
-        self.assertTrue(module.__name__ in sys.modules)
+        self.assertIn(module.__name__, sys.modules)
 
     load_module = staticmethod(lambda name:
                                 machinery.BuiltinImporter.load_module(name))
@@ -49,7 +49,7 @@ class LoaderTests(abc.LoaderTests):
         with util.uncache(builtin_util.NAME):
             module1 = self.load_module(builtin_util.NAME)
             module2 = self.load_module(builtin_util.NAME)
-            self.assertTrue(module1 is module2)
+            self.assertIs(module1, module2)
 
     def test_unloadable(self):
         name = 'dssdsdfff'
@@ -74,12 +74,12 @@ class InspectLoaderTests(unittest.TestCase):
     def test_get_code(self):
         # There is no code object.
         result = machinery.BuiltinImporter.get_code(builtin_util.NAME)
-        self.assertTrue(result is None)
+        self.assertIs(result, None)
 
     def test_get_source(self):
         # There is no source.
         result = machinery.BuiltinImporter.get_source(builtin_util.NAME)
-        self.assertTrue(result is None)
+        self.assertIs(result, None)
 
     def test_is_package(self):
         # Cannot be a package.
