@@ -108,12 +108,8 @@ class HashLibTestCase(unittest.TestCase):
                                                 _algo.islower()]))
 
     def test_unknown_hash(self):
-        try:
-            hashlib.new('spam spam spam spam spam')
-        except ValueError:
-            pass
-        else:
-            self.assertTrue(0 == "hashlib didn't reject bogus hash name")
+        self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
+        self.assertRaises(TypeError, hashlib.new, 1)
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = hashlib.__dict__[
