@@ -393,6 +393,10 @@ def _rmtree_safe_fd(topfd, path, onerror):
                 try:
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
+                        try:
+                            os.rmdir(name, dir_fd=topfd)
+                        except os.error:
+                            onerror(os.rmdir, fullname, sys.exc_info())
                 finally:
                     os.close(dirfd)
         else:
@@ -400,10 +404,6 @@ def _rmtree_safe_fd(topfd, path, onerror):
                 os.unlink(name, dir_fd=topfd)
             except os.error:
                 onerror(os.unlink, fullname, sys.exc_info())
-    try:
-        os.rmdir(path)
-    except os.error:
-        onerror(os.rmdir, path, sys.exc_info())
 
 _use_fd_functions = (os.unlink in os.supports_dir_fd and
                      os.open in os.supports_dir_fd)
@@ -445,6 +445,10 @@ def rmtree(path, ignore_errors=False, onerror=None):
             if (stat.S_ISDIR(orig_st.st_mode) and
                 os.path.samestat(orig_st, os.fstat(fd))):
                 _rmtree_safe_fd(fd, path, onerror)
+                try:
+                    os.rmdir(path)
+                except os.error:
+                    onerror(os.rmdir, path, sys.exc_info())
             else:
                 raise NotADirectoryError(20,
                                          "Not a directory: '{}'".format(path))
