@@ -14,6 +14,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9559: If messages were only added, a new file is no longer
+  created and renamed over the old file when flush() is called on an
+  mbox, MMDF or Babyl mailbox.
+
 - Issue 10924: Fixed mksalt() to use a RNG that is suitable for cryptographic
   purpose.
 
