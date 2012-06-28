@@ -380,7 +380,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
     for name in names:
         fullname = os.path.join(path, name)
         try:
-            orig_st = os.stat(name, dir_fd=topfd)
+            orig_st = os.stat(name, dir_fd=topfd, follow_symlinks=False)
             mode = orig_st.st_mode
         except os.error:
             mode = 0
@@ -445,7 +445,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             if (stat.S_ISDIR(orig_st.st_mode) and
                 os.path.samestat(orig_st, os.fstat(fd))):
                 _rmtree_safe_fd(fd, path, onerror)
-            elif (stat.S_ISREG(orig_st.st_mode)):
+            else:
                 raise NotADirectoryError(20,
                                          "Not a directory: '{}'".format(path))
         finally:
