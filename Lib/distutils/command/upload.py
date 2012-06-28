@@ -125,7 +125,7 @@ class upload(PyPIRCCommand):
 
         if self.sign:
             data['gpg_signature'] = (os.path.basename(filename) + ".asc",
-                                     open(filename+".asc").read())
+                                     open(filename+".asc", "rb").read())
 
         # set up the authentication
         user_pass = (self.username + ":" + self.password).encode('ascii')
