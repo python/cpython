@@ -93,7 +93,7 @@ class InspectLoaderTests(unittest.TestCase):
     def test_get_source(self):
         # Should always return None.
         result = machinery.FrozenImporter.get_source('__hello__')
-        self.assertIs(result, None)
+        self.assertIsNone(result)
 
     def test_is_package(self):
         # Should be able to tell what is a package.

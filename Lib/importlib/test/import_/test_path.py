@@ -20,7 +20,7 @@ class FinderTests(unittest.TestCase):
         # Test None returned upon not finding a suitable finder.
         module = '<test module>'
         with util.import_state():
-            self.assertIs(machinery.PathFinder.find_module(module), None)
+            self.assertIsNone(machinery.PathFinder.find_module(module))
 
     def test_sys_path(self):
         # Test that sys.path is used when 'path' is None.

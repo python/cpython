@@ -74,12 +74,12 @@ class InspectLoaderTests(unittest.TestCase):
     def test_get_code(self):
         # There is no code object.
         result = machinery.BuiltinImporter.get_code(builtin_util.NAME)
-        self.assertIs(result, None)
+        self.assertIsNone(result)
 
     def test_get_source(self):
         # There is no source.
         result = machinery.BuiltinImporter.get_source(builtin_util.NAME)
-        self.assertIs(result, None)
+        self.assertIsNone(result)
 
     def test_is_package(self):
         # Cannot be a package.
