@@ -36,7 +36,7 @@ class FinderTests(abc.FinderTests):
         pass
 
     def test_failure(self):
-        self.assertIs(self.find_module('asdfjkl;'), None)
+        self.assertIsNone(self.find_module('asdfjkl;'))
 
     # XXX Raise an exception if someone tries to use the 'path' argument?
 

@@ -97,7 +97,7 @@ class LifetimeTests(unittest.TestCase):
         del lock
         support.gc_collect()
         self.assertNotIn(name, _bootstrap._module_locks)
-        self.assertIs(wr(), None)
+        self.assertIsNone(wr())
 
     def test_all_locks(self):
         support.gc_collect()

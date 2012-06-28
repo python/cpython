@@ -82,7 +82,7 @@ class CallSignature(unittest.TestCase):
                 self.assertEqual(len(args), 2)
                 self.assertEqual(len(kwargs), 0)
                 self.assertEqual(args[0], mod_name)
-                self.assertIs(args[1], None)
+                self.assertIsNone(args[1])
 
     def test_with_path(self):
         # [path set]
