@@ -942,7 +942,32 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box._refresh()
         self.assertTrue(refreshed())
 
-class _TestMboxMMDF(TestMailbox):
+
+class _TestSingleFile(TestMailbox):
+    '''Common tests for single-file mailboxes'''
+
+    def test_add_doesnt_rewrite(self):
+        # When only adding messages, flush() should not rewrite the
+        # mailbox file. See issue #9559.
+
+        # Inode number changes if the contents are written to another
+        # file which is then renamed over the original file. So we
+        # must check that the inode number doesn't change.
+        inode_before = os.stat(self._path).st_ino
+
+        self._box.add(self._template % 0)
+        self._box.flush()
+
+        inode_after = os.stat(self._path).st_ino
+        self.assertEqual(inode_before, inode_after)
+
+        # Make sure the message was really added
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(len(self._box), 1)
+
+
+class _TestMboxMMDF(_TestSingleFile):
 
     def tearDown(self):
         super().tearDown()
@@ -1217,7 +1242,7 @@ class TestMH(TestMailbox, unittest.TestCase):
         return os.path.join(self._path, '.mh_sequences.lock')
 
 
-class TestBabyl(TestMailbox, unittest.TestCase):
+class TestBabyl(_TestSingleFile, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
