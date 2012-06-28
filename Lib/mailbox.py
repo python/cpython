@@ -587,16 +587,19 @@ class _singlefileMailbox(Mailbox):
         self._file = f
         self._toc = None
         self._next_key = 0
-        self._pending = False   # No changes require rewriting the file.
+        self._pending = False       # No changes require rewriting the file.
+        self._pending_sync = False  # No need to sync the file
         self._locked = False
-        self._file_length = None        # Used to record mailbox size
+        self._file_length = None    # Used to record mailbox size
 
     def add(self, message):
         """Add message and return assigned key."""
         self._lookup()
         self._toc[self._next_key] = self._append_message(message)
         self._next_key += 1
-        self._pending = True
+        # _append_message appends the message to the mailbox file. We
+        # don't need a full rewrite + rename, sync is enough.
+        self._pending_sync = True
         return self._next_key - 1
 
     def remove(self, key):
@@ -642,6 +645,11 @@ class _singlefileMailbox(Mailbox):
     def flush(self):
         """Write any pending changes to disk."""
         if not self._pending:
+            if self._pending_sync:
+                # Messages have only been added, so syncing the file
+                # is enough.
+                _sync_flush(self._file)
+                self._pending_sync = False
             return
 
         # In order to be writing anything out at all, self._toc must
@@ -695,6 +703,7 @@ class _singlefileMailbox(Mailbox):
         self._file = open(self._path, 'rb+')
         self._toc = new_toc
         self._pending = False
+        self._pending_sync = False
         if self._locked:
             _lock_file(self._file, dotlock=False)
 
@@ -731,6 +740,9 @@ class _singlefileMailbox(Mailbox):
         """Append message to mailbox and return (start, stop) offsets."""
         self._file.seek(0, 2)
         before = self._file.tell()
+        if len(self._toc) == 0:
+            # This is the first message
+            self._pre_mailbox_hook(self._file)
         try:
             self._pre_message_hook(self._file)
             offsets = self._install_message(message)
