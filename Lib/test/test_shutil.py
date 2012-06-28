@@ -117,6 +117,38 @@ class TestShutil(unittest.TestCase):
         self.assertIsInstance(victim, bytes)
         shutil.rmtree(victim)
 
+    @support.skip_unless_symlink
+    def test_rmtree_fails_on_symlink(self):
+        tmp = self.mkdtemp()
+        dir_ = os.path.join(tmp, 'dir')
+        os.mkdir(dir_)
+        link = os.path.join(tmp, 'link')
+        os.symlink(dir_, link)
+        self.assertRaises(OSError, shutil.rmtree, link)
+        self.assertTrue(os.path.exists(dir_))
+
+    @support.skip_unless_symlink
+    def test_rmtree_works_on_symlinks(self):
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        dir2 = os.path.join(dir1, 'dir2')
+        dir3 = os.path.join(tmp, 'dir3')
+        for d in dir1, dir2, dir3:
+            os.mkdir(d)
+        file1 = os.path.join(tmp, 'file1')
+        write_file(file1, 'foo')
+        link1 = os.path.join(dir1, 'link1')
+        os.symlink(dir2, link1)
+        link2 = os.path.join(dir1, 'link2')
+        os.symlink(dir3, link2)
+        link3 = os.path.join(dir1, 'link3')
+        os.symlink(file1, link3)
+        # make sure symlinks are removed but not followed
+        shutil.rmtree(dir1)
+        self.assertFalse(os.path.exists(dir1))
+        self.assertTrue(os.path.exists(dir3))
+        self.assertTrue(os.path.exists(file1))
+
     def test_rmtree_errors(self):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp()
@@ -184,7 +216,7 @@ class TestShutil(unittest.TestCase):
     def test_rmtree_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
-            def raiser(fn):
+            def raiser(fn, *args, **kwargs):
                 if fn != TESTFN:
                     raise OSError()
                 else:
