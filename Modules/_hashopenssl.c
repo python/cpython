@@ -477,6 +477,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     }
 
     if (!PyArg_Parse(name_obj, "s", &name)) {
+        PyBuffer_Release(&view);
         PyErr_SetString(PyExc_TypeError, "name must be a string");
         return NULL;
     }

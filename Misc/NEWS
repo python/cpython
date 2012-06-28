@@ -75,6 +75,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15219: Fix a reference leak when hashlib.new() is called with
+  invalid parameters.
+
 - Issue #9559: If messages were only added, a new file is no longer
   created and renamed over the old file when flush() is called on an
   mbox, MMDF or Babyl mailbox.
