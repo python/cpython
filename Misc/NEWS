@@ -14,6 +14,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10571: Fix the "--sign" option of distutils' upload command.
+  Patch by Jakub Wilk.
+
 - Issue #9559: If messages were only added, a new file is no longer
   created and renamed over the old file when flush() is called on an
   mbox, MMDF or Babyl mailbox.
