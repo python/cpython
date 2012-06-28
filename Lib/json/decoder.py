@@ -169,7 +169,8 @@ def JSONObject(s_and_end, encoding, strict, scan_once, object_hook,
                 pairs = object_hook(pairs)
             return pairs, end + 1
         elif nextchar != '"':
-            raise ValueError(errmsg("Expecting property name", s, end))
+            raise ValueError(errmsg(
+                "Expecting property name enclosed in double quotes", s, end))
     end += 1
     while True:
         key, end = scanstring(s, end, encoding, strict)
@@ -179,8 +180,7 @@ def JSONObject(s_and_end, encoding, strict, scan_once, object_hook,
         if s[end:end + 1] != ':':
             end = _w(s, end).end()
             if s[end:end + 1] != ':':
-                raise ValueError(errmsg("Expecting : delimiter", s, end))
-
+                raise ValueError(errmsg("Expecting ':' delimiter", s, end))
         end += 1
 
         try:
@@ -209,7 +209,7 @@ def JSONObject(s_and_end, encoding, strict, scan_once, object_hook,
         if nextchar == '}':
             break
         elif nextchar != ',':
-            raise ValueError(errmsg("Expecting , delimiter", s, end - 1))
+            raise ValueError(errmsg("Expecting ',' delimiter", s, end - 1))
 
         try:
             nextchar = s[end]
@@ -224,8 +224,8 @@ def JSONObject(s_and_end, encoding, strict, scan_once, object_hook,
 
         end += 1
         if nextchar != '"':
-            raise ValueError(errmsg("Expecting property name", s, end - 1))
-
+            raise ValueError(errmsg(
+                "Expecting property name enclosed in double quotes", s, end - 1))
     if object_pairs_hook is not None:
         result = object_pairs_hook(pairs)
         return result, end
@@ -259,8 +259,7 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         if nextchar == ']':
             break
         elif nextchar != ',':
-            raise ValueError(errmsg("Expecting , delimiter", s, end))
-
+            raise ValueError(errmsg("Expecting ',' delimiter", s, end))
         try:
             if s[end] in _ws:
                 end += 1
