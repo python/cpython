@@ -75,6 +75,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9559: If messages were only added, a new file is no longer
+  created and renamed over the old file when flush() is called on an
+  mbox, MMDF or Babyl mailbox.
+
 - Issue #14653: email.utils.mktime_tz() no longer relies on system
   mktime() when timezone offest is supplied.
 
