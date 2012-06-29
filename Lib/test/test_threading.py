@@ -780,10 +780,10 @@ class ThreadingExceptionTests(BaseTestCase):
             """
         expected_output = "end of main thread\n"
         p = subprocess.Popen([sys.executable, "-c", script],
-                             stdout=subprocess.PIPE)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         data = stdout.decode().replace('\r', '')
-        self.assertEqual(p.returncode, 0, "Unexpected error")
+        self.assertEqual(p.returncode, 0, "Unexpected error: " + stderr.decode())
         self.assertEqual(data, expected_output)
 
 class LockTests(lock_tests.LockTests):
