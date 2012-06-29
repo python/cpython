@@ -691,6 +691,9 @@ class _singlefileMailbox(Mailbox):
         _sync_close(new_file)
         # self._file is about to get replaced, so no need to sync.
         self._file.close()
+        # Make sure the new file's mode is the same as the old file's
+        mode = os.stat(self._path).st_mode
+        os.chmod(new_file.name, mode)
         try:
             os.rename(new_file.name, self._path)
         except OSError as e:
