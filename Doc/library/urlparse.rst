@@ -27,11 +27,11 @@ combine the components back into a URL string, and to convert a "relative URL"
 to an absolute URL given a "base URL."
 
 The module has been designed to match the Internet RFC on Relative Uniform
-Resource Locators (and discovered a bug in an earlier draft!). It supports the
-following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
-``https``, ``imap``, ``mailto``, ``mms``, ``news``,  ``nntp``, ``prospero``,
-``rsync``, ``rtsp``, ``rtspu``,  ``sftp``, ``shttp``, ``sip``, ``sips``,
-``snews``, ``svn``,  ``svn+ssh``, ``telnet``, ``wais``.
+Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
+``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
+``news``,  ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``,  ``sftp``,
+``shttp``, ``sip``, ``sips``, ``snews``, ``svn``,  ``svn+ssh``, ``telnet``,
+``wais``.
 
 .. versionadded:: 2.5
    Support for the ``sftp`` and ``sips`` schemes.
