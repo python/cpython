@@ -279,8 +279,8 @@ def urlparse(url, scheme='', allow_fragments=True):
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
     url, scheme, _coerce_result = _coerce_args(url, scheme)
-    tuple = urlsplit(url, scheme, allow_fragments)
-    scheme, netloc, url, query, fragment = tuple
+    splitresult = urlsplit(url, scheme, allow_fragments)
+    scheme, netloc, url, query, fragment = splitresult
     if scheme in uses_params and ';' in url:
         url, params = _splitparams(url)
     else:
@@ -547,15 +547,15 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
     """
-    dict = {}
+    parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors)
     for name, value in pairs:
-        if name in dict:
-            dict[name].append(value)
+        if name in parsed_result:
+            parsed_result[name].append(value)
         else:
-            dict[name] = [value]
-    return dict
+            parsed_result[name] = [value]
+    return parsed_result
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace'):
