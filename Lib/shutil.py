@@ -405,8 +405,10 @@ def _rmtree_safe_fd(topfd, path, onerror):
             except os.error:
                 onerror(os.unlink, fullname, sys.exc_info())
 
-_use_fd_functions = (os.unlink in os.supports_dir_fd and
-                     os.open in os.supports_dir_fd)
+_use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
+                     os.supports_dir_fd and
+                     os.listdir in os.supports_fd and
+                     os.stat in os.supports_follow_symlinks)
 
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.

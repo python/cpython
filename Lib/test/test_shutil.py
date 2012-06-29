@@ -524,7 +524,11 @@ class TestShutil(unittest.TestCase):
         self.assertFalse(os.path.islink(dst))
 
     def test_rmtree_uses_safe_fd_version_if_available(self):
-        if os.unlink in os.supports_dir_fd and os.open in os.supports_dir_fd:
+        _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
+                             os.supports_dir_fd and
+                             os.listdir in os.supports_fd and
+                             os.stat in os.supports_follow_symlinks)
+        if _use_fd_functions:
             self.assertTrue(shutil._use_fd_functions)
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
