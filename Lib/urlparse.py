@@ -127,8 +127,8 @@ def urlparse(url, scheme='', allow_fragments=True):
     Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
-    tuple = urlsplit(url, scheme, allow_fragments)
-    scheme, netloc, url, query, fragment = tuple
+    splitresult = urlsplit(url, scheme, allow_fragments)
+    scheme, netloc, url, query, fragment = splitresult
     if scheme in uses_params and ';' in url:
         url, params = _splitparams(url)
     else:
@@ -225,7 +225,8 @@ def urlunsplit(data):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, url, query, fragment = data
     if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
-        if url and url[:1] != '/': url = '/' + url
+        if url and url[:1] != '/':
+            url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
         url = scheme + ':' + url
@@ -307,7 +308,7 @@ def urldefrag(url):
 # update it also in urllib.  This code duplication does not existin in Python3.
 
 _hexdig = '0123456789ABCDEFabcdef'
-_hextochr = dict((a+b, chr(int(a+b,16)))
+_hextochr = dict((a+b, chr(int(a+b, 16)))
                  for a in _hexdig for b in _hexdig)
 
 def unquote(s):
@@ -344,13 +345,13 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
     """
-    dict = {}
+    parsed_result = {}
     for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
         if name in dict:
-            dict[name].append(value)
+            parsed_result[name].append(value)
         else:
-            dict[name] = [value]
-    return dict
+            parsed_result[name] = [value]
+    return parsed_result
 
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument.
