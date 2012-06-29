@@ -848,6 +848,23 @@ class _TestSingleFile(TestMailbox):
         self._box = self._factory(self._path)
         self.assertEqual(len(self._box), 1)
 
+    def test_permissions_after_flush(self):
+        # See issue #5346
+
+        # Make the mailbox world writable. It's unlikely that the new
+        # mailbox file would have these permissions after flush(),
+        # because umask usually prevents it.
+        mode = os.stat(self._path).st_mode | 0o666
+        os.chmod(self._path, mode)
+
+        self._box.add(self._template % 0)
+        i = self._box.add(self._template % 1)
+        # Need to remove one message to make flush() create a new file
+        self._box.remove(i)
+        self._box.flush()
+
+        self.assertEqual(os.stat(self._path).st_mode, mode)
+
 
 class _TestMboxMMDF(_TestSingleFile):
 
