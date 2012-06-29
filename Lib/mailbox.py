@@ -740,8 +740,11 @@ class _singlefileMailbox(Mailbox):
         """Append message to mailbox and return (start, stop) offsets."""
         self._file.seek(0, 2)
         before = self._file.tell()
-        if len(self._toc) == 0:
-            # This is the first message
+        if len(self._toc) == 0 and not self._pending:
+            # This is the first message, and the _pre_mailbox_hook
+            # hasn't yet been called. If self._pending is True,
+            # messages have been removed, so _pre_mailbox_hook must
+            # have been called already.
             self._pre_mailbox_hook(self._file)
         try:
             self._pre_message_hook(self._file)
