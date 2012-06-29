@@ -35,6 +35,9 @@ int (*PyOS_InputHook)(void) = NULL;
 static int
 my_fgets(char *buf, int len, FILE *fp)
 {
+#ifdef MS_WINDOWS
+    HANDLE hInterruptEvent;
+#endif
     char *p;
     int err;
     while (1) {
@@ -50,32 +53,28 @@ my_fgets(char *buf, int len, FILE *fp)
             return 0; /* No error */
         err = errno;
 #ifdef MS_WINDOWS
-        /* In the case of a Ctrl+C or some other external event
-           interrupting the operation:
-           Win2k/NT: ERROR_OPERATION_ABORTED is the most recent Win32
-           error code (and feof() returns TRUE).
-           Win9x: Ctrl+C seems to have no effect on fgets() returning
-           early - the signal handler is called, but the fgets()
-           only returns "normally" (ie, when Enter hit or feof())
+        /* Ctrl-C anywhere on the line or Ctrl-Z if the only character
+           on a line will set ERROR_OPERATION_ABORTED. Under normal
+           circumstances Ctrl-C will also have caused the SIGINT handler
+           to fire which will have set the event object returned by
+           _PyOS_SigintEvent. This signal fires in another thread and
+           is not guaranteed to have occurred before this point in the
+           code.
+
+           Therefore: check whether the event is set with a small timeout.
+           If it is, assume this is a Ctrl-C and reset the event. If it
+           isn't set assume that this is a Ctrl-Z on its own and drop
+           through to check for EOF.
         */
         if (GetLastError()==ERROR_OPERATION_ABORTED) {
-            /* Signals come asynchronously, so we sleep a brief
-               moment before checking if the handler has been
-               triggered (we cant just return 1 before the
-               signal handler has been called, as the later
-               signal may be treated as a separate interrupt).
-            */
-            Sleep(1);
-            if (PyOS_InterruptOccurred()) {
+            hInterruptEvent = _PyOS_SigintEvent();
+            switch (WaitForSingleObject(hInterruptEvent, 10)) {
+            case WAIT_OBJECT_0:
+                ResetEvent(hInterruptEvent);
                 return 1; /* Interrupt */
+            case WAIT_FAILED:
+                return -2; /* Error */
             }
-            /* Either the sleep wasn't long enough (need a
-               short loop retrying?) or not interrupted at all
-               (in which case we should revisit the whole thing!)
-               Logging some warning would be nice.  assert is not
-               viable as under the debugger, the various dialogs
-               mean the condition is not true.
-            */
         }
 #endif /* MS_WINDOWS */
         if (feof(fp)) {
@@ -94,7 +93,7 @@ my_fgets(char *buf, int len, FILE *fp)
 #endif
             if (s < 0)
                     return 1;
-	    /* try again */
+        /* try again */
             continue;
         }
 #endif
