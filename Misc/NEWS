@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5346: Preserve permissions of mbox, MMDF and Babyl mailbox
+  files on flush().
+
 - Issue #10571: Fix the "--sign" option of distutils' upload command.
   Patch by Jakub Wilk.
 
