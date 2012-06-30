@@ -234,6 +234,18 @@ class ConstructorTestCase(unittest.TestCase):
         except:
             self.fail("Standard constructor call raised exception.")
 
+    def test_with_str_key(self):
+        # Pass a key of type str, which is an error, because it expects a key
+        # of type bytes
+        with self.assertRaises(TypeError):
+            h = hmac.HMAC("key")
+
+    def test_dot_new_with_str_key(self):
+        # Pass a key of type str, which is an error, because it expects a key
+        # of type bytes
+        with self.assertRaises(TypeError):
+            h = hmac.new("key")
+
     def test_withtext(self):
         # Constructor call with text.
         try:
