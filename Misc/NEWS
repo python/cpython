@@ -42,6 +42,13 @@ Tools/Demos
     * C frames that are garbage-collecting
     * C frames that are due to the invocation of a PyCFunction
 
+Build
+-----
+
+- Issue #14330: For cross builds, don't use host python, use host search paths
+  for host compiler.
+
+
 What's New in Python 3.3.0 Beta 1?
 ==================================
 

@@ -139,8 +139,8 @@ if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
 # set for cross builds
-if "_PROJECT_BASE" in os.environ:
-    _PROJECT_BASE = _safe_realpath(os.environ["_PROJECT_BASE"])
+if "_PYTHON_PROJECT_BASE" in os.environ:
+    _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
 def _is_python_source_dir(d):
     for fn in ("Setup.dist", "Setup.local"):
