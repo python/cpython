@@ -682,6 +682,7 @@ CC
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 SGI_ABI
+_PYTHON_HOST_PLATFORM
 MACHDEP
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -700,6 +701,7 @@ UNIVERSALSDK
 CONFIG_ARGS
 SOVERSION
 VERSION
+PYTHON_FOR_BUILD
 host_os
 host_vendor
 host_cpu
@@ -2880,6 +2882,29 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+if test "$cross_compiling" = yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python interpreter for cross build" >&5
+$as_echo_n "checking for python interpreter for cross build... " >&6; }
+    if test -z "$PYTHON_FOR_BUILD"; then
+        for interp in python$PACKAGE_VERSION python3 python; do
+	    which $interp >/dev/null 2>&1 || continue
+	    if $interp -c 'import sys;sys.exit(not sys.version_info[:2] >= (3,3))'; then
+	        break
+	    fi
+            interp=
+	done
+        if test x$interp = x; then
+	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
+	fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $interp" >&5
+$as_echo "$interp" >&6; }
+	PYTHON_FOR_BUILD="_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+    fi
+else
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+fi
+
+
 
 if test "$prefix" != "/"; then
     prefix=`echo "$prefix" | sed -e 's/\/$//g'`
@@ -3216,6 +3241,29 @@ then
 	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
+fi
+
+
+if test "$cross_compiling" = yes; then
+	case "$host" in
+	*-*-linux*)
+		case "$host_cpu" in
+		arm*)
+			_host_cpu=arm
+			;;
+		*)
+			_host_cpu=$host_cpu
+		esac
+		;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		as_fn_error $? "cross build not supported for $host" "$LINENO" 5
+	esac
+	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -5538,6 +5586,10 @@ else # shared is disabled
           LDLIBRARY='libpython$(LDVERSION).dll.a'
           ;;
   esac
+fi
+
+if test "$cross_compiling" = yes; then
+	RUNSHARED=
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5

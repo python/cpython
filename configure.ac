@@ -35,6 +35,27 @@ AC_CONFIG_HEADER(pyconfig.h)
 
 AC_CANONICAL_HOST
 
+if test "$cross_compiling" = yes; then
+    AC_MSG_CHECKING([for python interpreter for cross build])
+    if test -z "$PYTHON_FOR_BUILD"; then
+        for interp in python$PACKAGE_VERSION python3 python; do
+	    which $interp >/dev/null 2>&1 || continue
+	    if $interp -c 'import sys;sys.exit(not sys.version_info@<:@:2@:>@ >= (3,3))'; then
+	        break
+	    fi
+            interp=
+	done
+        if test x$interp = x; then
+	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
+	fi
+        AC_MSG_RESULT($interp)
+	PYTHON_FOR_BUILD="_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+    fi
+else
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+fi
+AC_SUBST(PYTHON_FOR_BUILD)
+
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
 dnl can cause trouble.
@@ -351,6 +372,29 @@ then
 	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
+fi
+
+AC_SUBST(_PYTHON_HOST_PLATFORM)
+if test "$cross_compiling" = yes; then
+	case "$host" in
+	*-*-linux*)
+		case "$host_cpu" in
+		arm*)
+			_host_cpu=arm
+			;;
+		*)
+			_host_cpu=$host_cpu
+		esac
+		;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		AC_MSG_ERROR([cross build not supported for $host])
+	esac
+	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 	
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -911,6 +955,10 @@ else # shared is disabled
           LDLIBRARY='libpython$(LDVERSION).dll.a'
           ;;
   esac
+fi
+
+if test "$cross_compiling" = yes; then
+	RUNSHARED=
 fi
 
 AC_MSG_RESULT($LDLIBRARY)
