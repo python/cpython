@@ -29,6 +29,10 @@ class SubOSErrorCombinedInitFirst(SubOSErrorWithInit, SubOSErrorWithNew):
 class SubOSErrorCombinedNewFirst(SubOSErrorWithNew, SubOSErrorWithInit):
     pass
 
+class SubOSErrorWithStandaloneInit(OSError):
+    def __init__(self):
+        pass
+
 
 class HierarchyTest(unittest.TestCase):
 
@@ -192,6 +196,12 @@ class ExplicitSubclassingTest(unittest.TestCase):
         self.assertEqual(e.bar, "baz")
         self.assertEqual(e.baz, "baz")
         self.assertEqual(e.args, ("some message",))
+
+    def test_init_standalone(self):
+        # __init__ doesn't propagate to OSError.__init__ (see issue #15229)
+        e = SubOSErrorWithStandaloneInit()
+        self.assertEqual(e.args, ())
+        self.assertEqual(str(e), '')
 
 
 def test_main():
