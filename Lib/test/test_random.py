@@ -57,6 +57,14 @@ class TestBasicOps(unittest.TestCase):
             self.assertRaises(TypeError, self.gen.jumpahead)  # needs an arg
             self.assertRaises(TypeError, self.gen.jumpahead, 2, 3)  # too many
 
+    def test_jumpahead_produces_valid_state(self):
+        # From http://bugs.python.org/issue14591.
+        self.gen.seed(199210368)
+        self.gen.jumpahead(13550674232554645900)
+        for i in range(500):
+            val = self.gen.random()
+            self.assertLess(val, 1.0)
+
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
         # the sample is of the correct length and contains only unique items
