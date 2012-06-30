@@ -438,7 +438,9 @@ class PyBuildExt(build_ext):
         if not cross_compiling:
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
-        self.add_gcc_paths()
+        # only change this for cross builds for 3.3, issues on Mageia
+        if cross_compiling:
+            self.add_gcc_paths()
         self.add_multiarch_paths()
 
         # Add paths specified in the environment variables LDFLAGS and
@@ -489,18 +491,12 @@ class PyBuildExt(build_ext):
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
-        inc_dirs = self.compiler.include_dirs[:]
-        lib_dirs = self.compiler.library_dirs[:]
         if not cross_compiling:
-            for d in (
-                '/usr/include',
-                ):
-                add_dir_to_list(inc_dirs, d)
-            for d in (
+            lib_dirs = self.compiler.library_dirs + [
                 '/lib64', '/usr/lib64',
                 '/lib', '/usr/lib',
-                ):
-                add_dir_to_list(lib_dirs, d)
+                ]
+            inc_dirs = self.compiler.include_dirs + ['/usr/include']
         exts = []
         missing = []
 
