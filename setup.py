@@ -657,7 +657,7 @@ class PyBuildExt(build_ext):
                 ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
             else:
                 ret = 256
-            if ret == 0:
+            if ret >> 8 == 0:
                 with open(tmpfile) as fp:
                     for ln in fp:
                         if 'curses' in ln:
@@ -669,7 +669,8 @@ class PyBuildExt(build_ext):
                         if 'tinfo' in ln:
                             readline_termcap_library = 'tinfo'
                             break
-            os.unlink(tmpfile)
+            if os.path.exists(tmpfile):
+                os.unlink(tmpfile)
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
         if 'curses' in readline_termcap_library:
