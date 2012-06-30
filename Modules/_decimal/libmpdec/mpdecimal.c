@@ -36,7 +36,6 @@
 #include "bits.h"
 #include "convolute.h"
 #include "crt.h"
-#include "errno.h"
 #include "memory.h"
 #include "typearith.h"
 #include "umodarith.h"
@@ -52,9 +51,6 @@
   #endif
 #endif
 
-#if defined(__x86_64__) && defined(__GLIBC__) && !defined(__INTEL_COMPILER)
-  #define USE_80BIT_LONG_DOUBLE
-#endif
 
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE __forceinline
@@ -7567,270 +7563,449 @@ finish:
 /*                              Base conversions                              */
 /******************************************************************************/
 
-/*
- * Returns the space needed to represent an integer mpd_t in base 'base'.
- * The result is undefined for non-integers.
- *
- * Max space needed:
- *
- *   base^n >= 10^(digits+exp)
- *   n >= log10(10^(digits+exp))/log10(base) = (digits+exp) / log10(base)
- */
+/* Space needed to represent an integer mpd_t in base 'base'. */
 size_t
-mpd_sizeinbase(mpd_t *a, uint32_t base)
+mpd_sizeinbase(const mpd_t *a, uint32_t base)
 {
-    size_t x;
+    double x;
+    size_t digits;
 
     assert(mpd_isinteger(a));
+    assert(base >= 2);
+
     if (mpd_iszero(a)) {
         return 1;
     }
 
-    x = a->digits+a->exp;
+    digits = a->digits+a->exp;
+    assert(digits > 0);
 
 #ifdef CONFIG_64
-  #ifdef USE_80BIT_LONG_DOUBLE
-    return (long double)x / log10(base) + 3;
-  #else
-    /* x > floor(((1ULL<<53)-3) * log10(2)) */
-    if (x > 2711437152599294ULL) {
+    /* ceil(2711437152599294 / log10(2)) + 4 == 2**53 */
+    if (digits > 2711437152599294ULL) {
         return SIZE_MAX;
     }
-    return (size_t)((double)x / log10(base) + 3);
-  #endif
-#else /* CONFIG_32 */
-{
-    double y =  x / log10(base) + 3;
-    return (y > SIZE_MAX) ? SIZE_MAX : (size_t)y;
-}
 #endif
+
+    x = (double)digits / log10(base);
+    return (x > SIZE_MAX-1) ? SIZE_MAX : (size_t)x + 1;
 }
 
-/*
- * Returns the space needed to import a base 'base' integer of length 'srclen'.
- */
-static inline mpd_ssize_t
+/* Space needed to import a base 'base' integer of length 'srclen'. */
+static mpd_ssize_t
 _mpd_importsize(size_t srclen, uint32_t base)
 {
-#if SIZE_MAX == UINT64_MAX
-  #ifdef USE_80BIT_LONG_DOUBLE
-    long double x = (long double)srclen * (log10(base)/MPD_RDIGITS) + 3;
-  #else
     double x;
+
+    assert(srclen > 0);
+    assert(base >= 2);
+
+#if SIZE_MAX == UINT64_MAX
     if (srclen > (1ULL<<53)) {
         return MPD_SSIZE_MAX;
     }
-    x = (double)srclen * (log10(base)/MPD_RDIGITS) + 3;
-  #endif
-#else
-    double x = srclen * (log10(base)/MPD_RDIGITS) + 3;
 #endif
-    return (x > MPD_MAXIMPORT) ? MPD_SSIZE_MAX : (mpd_ssize_t)x;
+
+    x = (double)srclen * (log10(base)/MPD_RDIGITS);
+    return (x >= MPD_MAXIMPORT) ? MPD_SSIZE_MAX : (mpd_ssize_t)x + 1;
 }
 
+static uint8_t
+mpd_resize_u16(uint16_t **w, size_t nmemb)
+{
+    uint8_t err = 0;
+    *w = mpd_realloc(*w, nmemb, sizeof **w, &err);
+    return !err;
+}
 
-static inline size_t
-_to_base_u16(uint16_t *w, size_t wlen, mpd_uint_t wbase,
-             mpd_uint_t *u, mpd_ssize_t ulen)
+static uint8_t
+mpd_resize_u32(uint32_t **w, size_t nmemb)
+{
+    uint8_t err = 0;
+    *w = mpd_realloc(*w, nmemb, sizeof **w, &err);
+    return !err;
+}
+
+static size_t
+_baseconv_to_u16(uint16_t **w, size_t wlen, mpd_uint_t wbase,
+                 mpd_uint_t *u, mpd_ssize_t ulen)
 {
     size_t n = 0;
 
     assert(wlen > 0 && ulen > 0);
+    assert(wbase <= (1U<<16));
 
     do {
-        w[n++] = (uint16_t)_mpd_shortdiv(u, u, ulen, wbase);
-        /* ulen will be at least 1. u[ulen-1] can only be zero if ulen == 1 */
+        if (n >= wlen) {
+            if (!mpd_resize_u16(w, n+1)) {
+                return SIZE_MAX;
+            }
+            wlen = n+1;
+        }
+        (*w)[n++] = (uint16_t)_mpd_shortdiv(u, u, ulen, wbase);
+        /* ulen is at least 1. u[ulen-1] can only be zero if ulen == 1. */
         ulen = _mpd_real_size(u, ulen);
 
-    } while (u[ulen-1] != 0 && n < wlen);
-
-    /* proper termination condition */
-    assert(u[ulen-1] == 0);
+    } while (u[ulen-1] != 0);
 
     return n;
 }
 
-static inline void
-_from_base_u16(mpd_uint_t *w, mpd_ssize_t wlen,
-               const mpd_uint_t *u, size_t ulen, uint32_t ubase)
+static size_t
+_coeff_from_u16(mpd_t *w, mpd_ssize_t wlen,
+                const mpd_uint_t *u, size_t ulen, uint32_t ubase,
+                uint32_t *status)
 {
-    mpd_ssize_t m = 1;
+    mpd_ssize_t n = 0;
     mpd_uint_t carry;
 
     assert(wlen > 0 && ulen > 0);
+    assert(ubase <= (1U<<16));
 
-    w[0] = u[--ulen];
-    while (--ulen != SIZE_MAX && m < wlen) {
-        _mpd_shortmul(w, w, m, ubase);
-        m = _mpd_real_size(w, m+1);
-        carry = _mpd_shortadd(w, m, u[ulen]);
-        if (carry) w[m++] = carry;
+    w->data[n++] = u[--ulen];
+    while (--ulen != SIZE_MAX) {
+        carry = _mpd_shortmul_c(w->data, w->data, n, ubase);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_qresize(w, n+1, status)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            w->data[n++] = carry;
+        }
+        carry = _mpd_shortadd(w->data, n, u[ulen]);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_qresize(w, n+1, status)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            w->data[n++] = carry;
+        }
     }
 
-    /* proper termination condition */
-    assert(ulen == SIZE_MAX);
+    return n;
 }
 
-/* target base wbase <= source base ubase */
-static inline size_t
-_baseconv_to_smaller(uint32_t *w, size_t wlen, mpd_uint_t wbase,
+/* target base wbase < source base ubase */
+static size_t
+_baseconv_to_smaller(uint32_t **w, size_t wlen, uint32_t wbase,
                      mpd_uint_t *u, mpd_ssize_t ulen, mpd_uint_t ubase)
 {
     size_t n = 0;
 
     assert(wlen > 0 && ulen > 0);
+    assert(wbase < ubase);
 
     do {
-        w[n++] = (uint32_t)_mpd_shortdiv_b(u, u, ulen, wbase, ubase);
-        /* ulen will be at least 1. u[ulen-1] can only be zero if ulen == 1 */
+        if (n >= wlen) {
+            if (!mpd_resize_u32(w, n+1)) {
+                return SIZE_MAX;
+            }
+            wlen = n+1;
+        }
+        (*w)[n++] = (uint32_t)_mpd_shortdiv_b(u, u, ulen, wbase, ubase);
+        /* ulen is at least 1. u[ulen-1] can only be zero if ulen == 1. */
         ulen = _mpd_real_size(u, ulen);
 
-    } while (u[ulen-1] != 0 && n < wlen);
-
-    /* proper termination condition */
-    assert(u[ulen-1] == 0);
+    } while (u[ulen-1] != 0);
 
     return n;
 }
 
-/* target base wbase >= source base ubase */
-static inline void
-_baseconv_to_larger(mpd_uint_t *w, mpd_ssize_t wlen, mpd_uint_t wbase,
+#ifdef CONFIG_32
+/* target base 'wbase' == source base 'ubase' */
+static size_t
+_copy_equal_base(uint32_t **w, size_t wlen,
+                 const uint32_t *u, size_t ulen)
+{
+    if (wlen < ulen) {
+        if (!mpd_resize_u32(w, ulen)) {
+            return SIZE_MAX;
+        }
+    }
+
+    memcpy(*w, u, ulen * (sizeof **w));
+    return ulen;
+}
+
+/* target base 'wbase' > source base 'ubase' */
+static size_t
+_baseconv_to_larger(uint32_t **w, size_t wlen, mpd_uint_t wbase,
                     const mpd_uint_t *u, size_t ulen, mpd_uint_t ubase)
 {
-    mpd_ssize_t m = 1;
+    size_t n = 0;
     mpd_uint_t carry;
 
     assert(wlen > 0 && ulen > 0);
+    assert(ubase < wbase);
 
-    w[0] = u[--ulen];
-    while (--ulen != SIZE_MAX && m < wlen) {
-        _mpd_shortmul_b(w, w, m, ubase, wbase);
-        m = _mpd_real_size(w, m+1);
-        carry = _mpd_shortadd_b(w, m, u[ulen], wbase);
-        if (carry) w[m++] = carry;
+    (*w)[n++] = u[--ulen];
+    while (--ulen != SIZE_MAX) {
+        carry = _mpd_shortmul_b(*w, *w, n, ubase, wbase);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_resize_u32(w, n+1)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            (*w)[n++] = carry;
+        }
+        carry = _mpd_shortadd_b(*w, n, u[ulen], wbase);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_resize_u32(w, n+1)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            (*w)[n++] = carry;
+        }
     }
 
-    /* proper termination condition */
-    assert(ulen == SIZE_MAX);
+    return n;
 }
 
-
-/*
- * Converts an integer mpd_t to a multiprecision integer with
- * base <= UINT16_MAX+1. The least significant word of the result
- * is rdata[0].
- */
-size_t
-mpd_qexport_u16(uint16_t *rdata, size_t rlen, uint32_t rbase,
-                const mpd_t *src, uint32_t *status)
+/* target base wbase < source base ubase */
+static size_t
+_coeff_from_larger_base(mpd_t *w, size_t wlen, mpd_uint_t wbase,
+                        mpd_uint_t *u, mpd_ssize_t ulen, mpd_uint_t ubase,
+                        uint32_t *status)
 {
-    mpd_t *tsrc;
-    size_t n;
+    size_t n = 0;
 
-    assert(rbase <= (1U<<16));
-    assert(rlen <= SIZE_MAX/(sizeof *rdata));
+    assert(wlen > 0 && ulen > 0);
+    assert(wbase < ubase);
 
-    if (mpd_isspecial(src) || !_mpd_isint(src)) {
-        *status |= MPD_Invalid_operation;
-        return SIZE_MAX;
-    }
+    do {
+        if (n >= wlen) {
+            if (!mpd_qresize(w, n+1, status)) {
+                return SIZE_MAX;
+            }
+            wlen = n+1;
+        }
+        w->data[n++] = (uint32_t)_mpd_shortdiv_b(u, u, ulen, wbase, ubase);
+        /* ulen is at least 1. u[ulen-1] can only be zero if ulen == 1. */
+        ulen = _mpd_real_size(u, ulen);
 
-    memset(rdata, 0, rlen * (sizeof *rdata));
+    } while (u[ulen-1] != 0);
 
-    if (mpd_iszero(src)) {
-        return 1;
-    }
+    return n;
+}
+#endif
 
-    if ((tsrc = mpd_qnew()) == NULL) {
-        *status |= MPD_Malloc_error;
-        return SIZE_MAX;
-    }
+/* target base 'wbase' > source base 'ubase' */
+static size_t
+_coeff_from_smaller_base(mpd_t *w, mpd_ssize_t wlen, mpd_uint_t wbase,
+                         const uint32_t *u, size_t ulen, mpd_uint_t ubase,
+                         uint32_t *status)
+{
+    mpd_ssize_t n = 0;
+    mpd_uint_t carry;
 
-    if (src->exp >= 0) {
-        if (!mpd_qshiftl(tsrc, src, src->exp, status)) {
-            mpd_del(tsrc);
-            return SIZE_MAX;
+    assert(wlen > 0 && ulen > 0);
+    assert(wbase > ubase);
+
+    w->data[n++] = u[--ulen];
+    while (--ulen != SIZE_MAX) {
+        carry = _mpd_shortmul_b(w->data, w->data, n, ubase, wbase);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_qresize(w, n+1, status)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            w->data[n++] = carry;
+        }
+        carry = _mpd_shortadd_b(w->data, n, u[ulen], wbase);
+        if (carry) {
+            if (n >= wlen) {
+                if (!mpd_qresize(w, n+1, status)) {
+                    return SIZE_MAX;
+                }
+                wlen = n+1;
+            }
+            w->data[n++] = carry;
         }
     }
-    else {
-        if (mpd_qshiftr(tsrc, src, -src->exp, status) == MPD_UINT_MAX) {
-            mpd_del(tsrc);
-            return SIZE_MAX;
-        }
-    }
 
-    n = _to_base_u16(rdata, rlen, rbase, tsrc->data, tsrc->len);
-
-    mpd_del(tsrc);
     return n;
 }
 
 /*
- * Converts an integer mpd_t to a multiprecision integer with
- * base <= UINT32_MAX. The least significant word of the result
- * is rdata[0].
+ * Convert an integer mpd_t to a multiprecision integer with base <= 2**16.
+ * The least significant word of the result is (*rdata)[0].
+ *
+ * If rdata is NULL, space is allocated by the function and rlen is irrelevant.
+ * In case of an error any allocated storage is freed and rdata is set back to
+ * NULL.
+ *
+ * If rdata is non-NULL, it MUST be allocated by one of libmpdec's allocation
+ * functions and rlen MUST be correct. If necessary, the function will resize
+ * rdata. In case of an error the caller must free rdata.
+ *
+ * Return value: In case of success, the exact length of rdata, SIZE_MAX
+ * otherwise.
  */
 size_t
-mpd_qexport_u32(uint32_t *rdata, size_t rlen, uint32_t rbase,
+mpd_qexport_u16(uint16_t **rdata, size_t rlen, uint32_t rbase,
                 const mpd_t *src, uint32_t *status)
 {
-    mpd_t *tsrc;
+    MPD_NEW_STATIC(tsrc,0,0,0,0);
+    int alloc = 0; /* rdata == NULL */
+    size_t n;
+
+    assert(rbase <= (1U<<16));
+
+    if (mpd_isspecial(src) || !_mpd_isint(src)) {
+        *status |= MPD_Invalid_operation;
+        return SIZE_MAX;
+    }
+
+    if (*rdata == NULL) {
+        rlen = mpd_sizeinbase(src, rbase);
+        if (rlen == SIZE_MAX) {
+            *status |= MPD_Invalid_operation;
+            return SIZE_MAX;
+        }
+        *rdata = mpd_alloc(rlen, sizeof **rdata);
+        if (*rdata == NULL) {
+            goto malloc_error;
+        }
+        alloc = 1;
+    }
+
+    if (mpd_iszero(src)) {
+        **rdata = 0;
+        return 1;
+    }
+
+    if (src->exp >= 0) {
+        if (!mpd_qshiftl(&tsrc, src, src->exp, status)) {
+            goto malloc_error;
+        }
+    }
+    else {
+        if (mpd_qshiftr(&tsrc, src, -src->exp, status) == MPD_UINT_MAX) {
+            goto malloc_error;
+        }
+    }
+
+    n = _baseconv_to_u16(rdata, rlen, rbase, tsrc.data, tsrc.len);
+    if (n == SIZE_MAX) {
+        goto malloc_error;
+    }
+
+
+out:
+    mpd_del(&tsrc);
+    return n;
+
+malloc_error:
+    if (alloc) {
+        mpd_free(*rdata);
+        *rdata = NULL;
+    }
+    n = SIZE_MAX;
+    *status |= MPD_Malloc_error;
+    goto out;
+}
+
+/*
+ * Convert an integer mpd_t to a multiprecision integer with base<=UINT32_MAX.
+ * The least significant word of the result is (*rdata)[0].
+ *
+ * If rdata is NULL, space is allocated by the function and rlen is irrelevant.
+ * In case of an error any allocated storage is freed and rdata is set back to
+ * NULL.
+ *
+ * If rdata is non-NULL, it MUST be allocated by one of libmpdec's allocation
+ * functions and rlen MUST be correct. If necessary, the function will resize
+ * rdata. In case of an error the caller must free rdata.
+ *
+ * Return value: In case of success, the exact length of rdata, SIZE_MAX
+ * otherwise.
+ */
+size_t
+mpd_qexport_u32(uint32_t **rdata, size_t rlen, uint32_t rbase,
+                const mpd_t *src, uint32_t *status)
+{
+    MPD_NEW_STATIC(tsrc,0,0,0,0);
+    int alloc = 0; /* rdata == NULL */
     size_t n;
 
     if (mpd_isspecial(src) || !_mpd_isint(src)) {
         *status |= MPD_Invalid_operation;
         return SIZE_MAX;
     }
-#if MPD_SIZE_MAX < SIZE_MAX
-    if (rlen > MPD_SSIZE_MAX) {
-        *status |= MPD_Invalid_operation;
-        return SIZE_MAX;
-    }
-#endif
 
-    assert(rlen <= SIZE_MAX/(sizeof *rdata));
-    memset(rdata, 0, rlen * (sizeof *rdata));
+    if (*rdata == NULL) {
+        rlen = mpd_sizeinbase(src, rbase);
+        if (rlen == SIZE_MAX) {
+            *status |= MPD_Invalid_operation;
+            return SIZE_MAX;
+        }
+        *rdata = mpd_alloc(rlen, sizeof **rdata);
+        if (*rdata == NULL) {
+            goto malloc_error;
+        }
+        alloc = 1;
+    }
 
     if (mpd_iszero(src)) {
+        **rdata = 0;
         return 1;
     }
 
-    if ((tsrc = mpd_qnew()) == NULL) {
-        *status |= MPD_Malloc_error;
-        return SIZE_MAX;
-    }
-
     if (src->exp >= 0) {
-        if (!mpd_qshiftl(tsrc, src, src->exp, status)) {
-            mpd_del(tsrc);
-            return SIZE_MAX;
+        if (!mpd_qshiftl(&tsrc, src, src->exp, status)) {
+            goto malloc_error;
         }
     }
     else {
-        if (mpd_qshiftr(tsrc, src, -src->exp, status) == MPD_UINT_MAX) {
-            mpd_del(tsrc);
-            return SIZE_MAX;
+        if (mpd_qshiftr(&tsrc, src, -src->exp, status) == MPD_UINT_MAX) {
+            goto malloc_error;
         }
     }
 
 #ifdef CONFIG_64
     n = _baseconv_to_smaller(rdata, rlen, rbase,
-                             tsrc->data, tsrc->len, MPD_RADIX);
+                             tsrc.data, tsrc.len, MPD_RADIX);
 #else
-    if (rbase <= MPD_RADIX) {
+    if (rbase == MPD_RADIX) {
+        n = _copy_equal_base(rdata, rlen, tsrc.data, tsrc.len);
+    }
+    else if (rbase < MPD_RADIX) {
         n = _baseconv_to_smaller(rdata, rlen, rbase,
-                                 tsrc->data, tsrc->len, MPD_RADIX);
+                                 tsrc.data, tsrc.len, MPD_RADIX);
     }
     else {
-        _baseconv_to_larger(rdata, (mpd_ssize_t)rlen, rbase,
-                            tsrc->data, tsrc->len, MPD_RADIX);
-        n = _mpd_real_size(rdata, (mpd_ssize_t)rlen);
+        n = _baseconv_to_larger(rdata, rlen, rbase,
+                                tsrc.data, tsrc.len, MPD_RADIX);
     }
 #endif
 
-    mpd_del(tsrc);
+    if (n == SIZE_MAX) {
+        goto malloc_error;
+    }
+
+
+out:
+    mpd_del(&tsrc);
     return n;
+
+malloc_error:
+    if (alloc) {
+        mpd_free(*rdata);
+        *rdata = NULL;
+    }
+    n = SIZE_MAX;
+    *status |= MPD_Malloc_error;
+    goto out;
 }
 
 
@@ -7846,20 +8021,19 @@ mpd_qimport_u16(mpd_t *result,
 {
     mpd_uint_t *usrc; /* uint16_t src copied to an mpd_uint_t array */
     mpd_ssize_t rlen; /* length of the result */
-    size_t n = 0;
+    size_t n;
 
     assert(srclen > 0);
     assert(srcbase <= (1U<<16));
 
-    if ((rlen = _mpd_importsize(srclen, srcbase)) == MPD_SSIZE_MAX) {
+    rlen = _mpd_importsize(srclen, srcbase);
+    if (rlen == MPD_SSIZE_MAX) {
         mpd_seterror(result, MPD_Invalid_operation, status);
         return;
     }
-    if (srclen > MPD_SIZE_MAX/(sizeof *usrc)) {
-        mpd_seterror(result, MPD_Invalid_operation, status);
-        return;
-    }
-    if ((usrc = mpd_alloc((mpd_size_t)srclen, sizeof *usrc)) == NULL) {
+
+    usrc = mpd_alloc((mpd_size_t)srclen, sizeof *usrc);
+    if (usrc == NULL) {
         mpd_seterror(result, MPD_Malloc_error, status);
         return;
     }
@@ -7867,16 +8041,18 @@ mpd_qimport_u16(mpd_t *result,
         usrc[n] = srcdata[n];
     }
 
-    /* result->data is initialized to zero */
-    if (!mpd_qresize_zero(result, rlen, status)) {
+    if (!mpd_qresize(result, rlen, status)) {
         goto finish;
     }
 
-    _from_base_u16(result->data, rlen, usrc, srclen, srcbase);
+    n = _coeff_from_u16(result, rlen, usrc, srclen, srcbase, status);
+    if (n == SIZE_MAX) {
+        goto finish;
+    }
 
     mpd_set_flags(result, srcsign);
     result->exp = 0;
-    result->len = _mpd_real_size(result->data, rlen);
+    result->len = n;
     mpd_setdigits(result);
 
     mpd_qresize(result, result->len, status);
@@ -7897,58 +8073,66 @@ mpd_qimport_u32(mpd_t *result,
                 uint8_t srcsign, uint32_t srcbase,
                 const mpd_context_t *ctx, uint32_t *status)
 {
-    mpd_uint_t *usrc; /* uint32_t src copied to an mpd_uint_t array */
     mpd_ssize_t rlen; /* length of the result */
-    size_t n = 0;
+    size_t n;
 
     assert(srclen > 0);
 
-    if ((rlen = _mpd_importsize(srclen, srcbase)) == MPD_SSIZE_MAX) {
+    rlen = _mpd_importsize(srclen, srcbase);
+    if (rlen == MPD_SSIZE_MAX) {
         mpd_seterror(result, MPD_Invalid_operation, status);
         return;
-    }
-    if (srclen > MPD_SIZE_MAX/(sizeof *usrc)) {
-        mpd_seterror(result, MPD_Invalid_operation, status);
-        return;
-    }
-    if ((usrc = mpd_alloc((mpd_size_t)srclen, sizeof *usrc)) == NULL) {
-        mpd_seterror(result, MPD_Malloc_error, status);
-        return;
-    }
-    for (n = 0; n < srclen; n++) {
-        usrc[n] = srcdata[n];
     }
 
-    /* result->data is initialized to zero */
-    if (!mpd_qresize_zero(result, rlen, status)) {
-        goto finish;
+    if (!mpd_qresize(result, rlen, status)) {
+        return;
     }
 
 #ifdef CONFIG_64
-    _baseconv_to_larger(result->data, rlen, MPD_RADIX,
-                        usrc, srclen, srcbase);
+    n = _coeff_from_smaller_base(result, rlen, MPD_RADIX,
+                                 srcdata, srclen, srcbase,
+                                 status);
 #else
-    if (srcbase <= MPD_RADIX) {
-        _baseconv_to_larger(result->data, rlen, MPD_RADIX,
-                            usrc, srclen, srcbase);
+    if (srcbase == MPD_RADIX) {
+        if (!mpd_qresize(result, srclen, status)) {
+            return;
+        }
+        memcpy(result->data, srcdata, srclen * (sizeof *srcdata));
+        n = srclen;
+    }
+    else if (srcbase < MPD_RADIX) {
+        n = _coeff_from_smaller_base(result, rlen, MPD_RADIX,
+                                     srcdata, srclen, srcbase,
+                                     status);
     }
     else {
-        _baseconv_to_smaller(result->data, rlen, MPD_RADIX,
-                             usrc, (mpd_ssize_t)srclen, srcbase);
+        mpd_uint_t *usrc = mpd_alloc((mpd_size_t)srclen, sizeof *usrc);
+        if (usrc == NULL) {
+            mpd_seterror(result, MPD_Malloc_error, status);
+            return;
+        }
+        for (n = 0; n < srclen; n++) {
+            usrc[n] = srcdata[n];
+        }
+
+        n = _coeff_from_larger_base(result, rlen, MPD_RADIX,
+                                    usrc, (mpd_ssize_t)srclen, srcbase,
+                                    status);
+        mpd_free(usrc);
     }
 #endif
 
+    if (n == SIZE_MAX) {
+        return;
+    }
+
     mpd_set_flags(result, srcsign);
     result->exp = 0;
-    result->len = _mpd_real_size(result->data, rlen);
+    result->len = n;
     mpd_setdigits(result);
 
     mpd_qresize(result, result->len, status);
     mpd_qfinalize(result, ctx, status);
-
-
-finish:
-    mpd_free(usrc);
 }
 
 

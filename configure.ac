@@ -35,6 +35,27 @@ AC_CONFIG_HEADER(pyconfig.h)
 
 AC_CANONICAL_HOST
 
+if test "$cross_compiling" = yes; then
+    AC_MSG_CHECKING([for python interpreter for cross build])
+    if test -z "$PYTHON_FOR_BUILD"; then
+        for interp in python$PACKAGE_VERSION python3 python; do
+	    which $interp >/dev/null 2>&1 || continue
+	    if $interp -c 'import sys;sys.exit(not sys.version_info@<:@:2@:>@ >= (3,3))'; then
+	        break
+	    fi
+            interp=
+	done
+        if test x$interp = x; then
+	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
+	fi
+        AC_MSG_RESULT($interp)
+	PYTHON_FOR_BUILD="_PYTHON_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+    fi
+else
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+fi
+AC_SUBST(PYTHON_FOR_BUILD)
+
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
 dnl can cause trouble.
@@ -351,6 +372,29 @@ then
 	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
+fi
+
+AC_SUBST(_PYTHON_HOST_PLATFORM)
+if test "$cross_compiling" = yes; then
+	case "$host" in
+	*-*-linux*)
+		case "$host_cpu" in
+		arm*)
+			_host_cpu=arm
+			;;
+		*)
+			_host_cpu=$host_cpu
+		esac
+		;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		AC_MSG_ERROR([cross build not supported for $host])
+	esac
+	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 	
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -913,6 +957,10 @@ else # shared is disabled
   esac
 fi
 
+if test "$cross_compiling" = yes; then
+	RUNSHARED=
+fi
+
 AC_MSG_RESULT($LDLIBRARY)
 
 AC_PROG_RANLIB
@@ -925,6 +973,16 @@ if test -z "$ARFLAGS"
 then
         ARFLAGS="rc"
 fi
+
+AC_CHECK_TOOLS([READELF], [readelf], [:])
+if test "$cross_compiling" = yes; then
+    case "$READELF" in
+	readelf|:)
+	AC_MSG_ERROR([readelf for the host is required for cross builds])
+	;;
+    esac
+fi
+AC_SUBST(READELF)
 
 AC_SUBST(DISABLE_ASDLGEN)
 DISABLE_ASDLGEN=""
@@ -4202,26 +4260,31 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm
   [AC_MSG_RESULT(no)]
 )
 
-AC_MSG_CHECKING(for /dev/ptmx)
+AC_MSG_NOTICE([checking for device files])
 
-if test -r /dev/ptmx
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTMX, 1,
-  [Define if we have /dev/ptmx.])
-else
-  AC_MSG_RESULT(no)
+dnl NOTE: Inform user how to proceed with files when cross compiling.
+if test "x$cross_compiling" = xyes; then
+  if test "${ac_cv_file__dev_ptmx+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptmx])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
+  if test "${ac_cv_file__dev_ptc+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptc])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
 fi
 
-AC_MSG_CHECKING(for /dev/ptc)
-
-if test -r /dev/ptc
-then
-  AC_MSG_RESULT(yes)
+AC_CHECK_FILE(/dev/ptmx, [], [])
+if test "x$ac_cv_file__dev_ptmx" = xyes; then
+  AC_DEFINE(HAVE_DEV_PTMX, 1,
+  [Define to 1 if you have the /dev/ptmx device file.])
+fi
+AC_CHECK_FILE(/dev/ptc, [], [])
+if test "x$ac_cv_file__dev_ptc" = xyes; then
   AC_DEFINE(HAVE_DEV_PTC, 1,
-  [Define if we have /dev/ptc.])
-else
-  AC_MSG_RESULT(no)
+  [Define to 1 if you have the /dev/ptc device file.])
 fi
 
 if test "$have_long_long" = yes
