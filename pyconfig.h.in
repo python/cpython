@@ -168,10 +168,10 @@
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
-/* Define if we have /dev/ptc. */
+/* Define to 1 if you have the /dev/ptc device file. */
 #undef HAVE_DEV_PTC
 
-/* Define if we have /dev/ptmx. */
+/* Define to 1 if you have the /dev/ptmx device file. */
 #undef HAVE_DEV_PTMX
 
 /* Define to 1 if you have the <direct.h> header file. */
