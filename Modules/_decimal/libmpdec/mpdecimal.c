@@ -7707,7 +7707,7 @@ _baseconv_to_smaller(uint32_t **w, size_t wlen, uint32_t wbase,
             wlen = n+1;
         }
         (*w)[n++] = (uint32_t)_mpd_shortdiv_b(u, u, ulen, wbase, ubase);
-        /* ulen will be at least 1. u[ulen-1] can only be zero if ulen == 1 */
+        /* ulen is at least 1. u[ulen-1] can only be zero if ulen == 1. */
         ulen = _mpd_real_size(u, ulen);
 
     } while (u[ulen-1] != 0);
@@ -8041,7 +8041,7 @@ mpd_qimport_u16(mpd_t *result,
         usrc[n] = srcdata[n];
     }
 
-    if (!mpd_qresize_zero(result, rlen, status)) {
+    if (!mpd_qresize(result, rlen, status)) {
         goto finish;
     }
 
@@ -8084,7 +8084,7 @@ mpd_qimport_u32(mpd_t *result,
         return;
     }
 
-    if (!mpd_qresize_zero(result, rlen, status)) {
+    if (!mpd_qresize(result, rlen, status)) {
         return;
     }
 
@@ -8094,7 +8094,7 @@ mpd_qimport_u32(mpd_t *result,
                                  status);
 #else
     if (srcbase == MPD_RADIX) {
-        if (!mpd_qresize_zero(result, srclen, status)) {
+        if (!mpd_qresize(result, srclen, status)) {
             return;
         }
         memcpy(result->data, srcdata, srclen * (sizeof *srcdata));
