@@ -9860,13 +9860,13 @@ fi
 if test -z "$with_pymalloc"
 then
     with_pymalloc="yes"
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 if test "$with_pymalloc" != "no"
 then
 
 $as_echo "#define WITH_PYMALLOC 1" >>confdefs.h
 
+    ABIFLAGS="${ABIFLAGS}m"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
@@ -9964,8 +9964,13 @@ then
 else
 	MACHDEP_OBJS="$MACHDEP_OBJS $extra_machdep_objs"
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: MACHDEP_OBJS" >&5
-$as_echo "MACHDEP_OBJS" >&6; }
+if test -z "$MACHDEP_OBJS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACHDEP_OBJS" >&5
+$as_echo "$MACHDEP_OBJS" >&6; }
+fi
 
 # checks for library functions
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
@@ -11497,7 +11502,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_buggy_getaddrinfo" >&5
 $as_echo "$ac_cv_buggy_getaddrinfo" >&6; }
 
-if test $have_getaddrinfo = no -o "$ac_cv_buggy_getaddrinfo" = yes
+if test $have_getaddrinfo = no || test "$ac_cv_buggy_getaddrinfo" = yes
 then
 	if test $ipv6 = yes
 	then
