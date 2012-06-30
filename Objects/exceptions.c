@@ -834,6 +834,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 #endif
 
     /* Steals the reference to args */
+    Py_CLEAR(self->args);
     self->args = args;
     args = NULL;
 
@@ -914,6 +915,11 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                          , winerror
 #endif
             ))
+            goto error;
+    }
+    else {
+        self->args = PyTuple_New(0);
+        if (self->args == NULL)
             goto error;
     }
 
