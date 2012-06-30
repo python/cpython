@@ -3904,7 +3904,7 @@ LIBS_no_readline=$LIBS
 # with setup.py.
 py_cv_lib_readline=no
 AC_MSG_CHECKING([how to link readline libs])
-for py_libtermcap in "" ncursesw ncurses curses termcap; do
+for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
   if test -z "$py_libtermcap"; then
     READLINE_LIBS="-lreadline"
   else
