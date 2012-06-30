@@ -3203,7 +3203,8 @@ static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
     PyLongObject *pylong;
-    size_t maxsize, n;
+    digit *ob_digit;
+    size_t n;
     Py_ssize_t i;
     mpd_t *x;
     mpd_context_t workctx;
@@ -3234,31 +3235,32 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return NULL;
     }
 
-    maxsize = mpd_sizeinbase(x, PyLong_BASE);
-    if (maxsize > PY_SSIZE_T_MAX) {
-        mpd_del(x);
+    status = 0;
+    ob_digit = NULL;
+#if PYLONG_BITS_IN_DIGIT == 30
+    n = mpd_qexport_u32(&ob_digit, 0, PyLong_BASE, x, &status);
+#elif PYLONG_BITS_IN_DIGIT == 15
+    n = mpd_qexport_u16(&ob_digit, 0, PyLong_BASE, x, &status);
+#else
+    #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
+#endif
+
+    if (n == SIZE_MAX) {
         PyErr_NoMemory();
-        return NULL;
-    }
-    pylong = _PyLong_New(maxsize);
-    if (pylong == NULL) {
         mpd_del(x);
         return NULL;
     }
 
-    status = 0;
-#if PYLONG_BITS_IN_DIGIT == 30
-    n = mpd_qexport_u32(pylong->ob_digit, maxsize, PyLong_BASE, x, &status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    n = mpd_qexport_u16(pylong->ob_digit, maxsize, PyLong_BASE, x, &status);
-#else
-  #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
-    if (dec_addstatus(context, status)) {
-        Py_DECREF((PyObject *) pylong);
+    assert(n > 0);
+    pylong = _PyLong_New(n);
+    if (pylong == NULL) {
+        mpd_free(ob_digit);
         mpd_del(x);
         return NULL;
     }
+
+    memcpy(pylong->ob_digit, ob_digit, n * sizeof(digit));
+    mpd_free(ob_digit);
 
     i = n;
     while ((i > 0) && (pylong->ob_digit[i-1] == 0)) {

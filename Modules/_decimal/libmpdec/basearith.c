@@ -583,8 +583,30 @@ _mpd_shortadd_b(mpd_uint_t *w, mpd_size_t m, mpd_uint_t v, mpd_uint_t b)
     return carry;
 }
 
+/* w := product of u (len n) and v (single word). Return carry. */
+mpd_uint_t
+_mpd_shortmul_c(mpd_uint_t *w, const mpd_uint_t *u, mpd_size_t n, mpd_uint_t v)
+{
+    mpd_uint_t hi, lo;
+    mpd_uint_t carry = 0;
+    mpd_size_t i;
+
+    assert(n > 0);
+
+    for (i=0; i < n; i++) {
+
+        _mpd_mul_words(&hi, &lo, u[i], v);
+        lo = carry + lo;
+        if (lo < carry) hi++;
+
+        _mpd_div_words_r(&carry, &w[i], hi, lo);
+    }
+
+    return carry;
+}
+
 /* w := product of u (len n) and v (single word) */
-void
+mpd_uint_t
 _mpd_shortmul_b(mpd_uint_t *w, const mpd_uint_t *u, mpd_size_t n,
                 mpd_uint_t v, mpd_uint_t b)
 {
@@ -602,7 +624,8 @@ _mpd_shortmul_b(mpd_uint_t *w, const mpd_uint_t *u, mpd_size_t n,
 
         _mpd_div_words(&carry, &w[i], hi, lo, b);
     }
-    w[i] = carry;
+
+    return carry;
 }
 
 /*
