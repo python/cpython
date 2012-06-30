@@ -49,7 +49,7 @@ if test "$cross_compiling" = yes; then
 	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
 	fi
         AC_MSG_RESULT($interp)
-	PYTHON_FOR_BUILD="_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+	PYTHON_FOR_BUILD="_PYTHON_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
     fi
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
