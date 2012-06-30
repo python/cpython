@@ -13557,7 +13557,7 @@ LIBS_no_readline=$LIBS
 py_cv_lib_readline=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline libs" >&5
 $as_echo_n "checking how to link readline libs... " >&6; }
-for py_libtermcap in "" ncursesw ncurses curses termcap; do
+for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
   if test -z "$py_libtermcap"; then
     READLINE_LIBS="-lreadline"
   else
