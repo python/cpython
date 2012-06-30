@@ -597,7 +597,7 @@ class PyBuildExt(build_ext):
             if not os.path.exists(self.build_temp):
                 os.makedirs(self.build_temp)
             ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for ln in fp:
                         if 'curses' in ln:
