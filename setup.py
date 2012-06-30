@@ -596,6 +596,8 @@ class PyBuildExt(build_ext):
             os.makedirs(self.build_temp)
         # Determine if readline is already linked against curses or tinfo.
         if do_readline:
+            # FIXME: needs patch from issue #14330
+            cross_compiling = False
             if cross_compiling:
                 ret = os.system("%s -d %s | grep '(NEEDED)' > %s" \
                                 % (sysconfig.get_config_var('READELF'),
