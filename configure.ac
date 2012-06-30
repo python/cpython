@@ -608,9 +608,9 @@ preset_cxx="$CXX"
 if test -z "$CXX"
 then
         case "$CC" in
-        gcc)    AC_PATH_PROG(CXX, [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_PROG(CXX, [c++], [c++], [notfound]) ;;
-        clang|*/clang)     AC_PATH_PROG(CXX, [clang++], [clang++], [notfound]) ;;
+        gcc)    AC_PATH_TOOL(CXX, [g++], [g++], [notfound]) ;;
+        cc)     AC_PATH_TOOL(CXX, [c++], [c++], [notfound]) ;;
+        clang|*/clang)     AC_PATH_TOOL(CXX, [clang++], [clang++], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -619,7 +619,7 @@ then
 fi
 if test -z "$CXX"
 then
-	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
+	AC_CHECK_TOOLS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
 	if test "$CXX" = "notfound"
 	then
 		CXX=""
@@ -916,7 +916,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 AC_PROG_RANLIB
 AC_SUBST(AR)
-AC_CHECK_PROGS(AR, ar aal, ar)
+AC_CHECK_TOOLS(AR, ar aal, ar)
 
 # tweak ARFLAGS only if the user didn't set it on the command line
 AC_SUBST(ARFLAGS)
