@@ -3211,7 +3211,7 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-        irix646) MACHDEP="irix6";;
+	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -5424,36 +5424,34 @@ $as_echo "$enable_shared" >&6; }
 $as_echo_n "checking for --enable-profiling... " >&6; }
 # Check whether --enable-profiling was given.
 if test "${enable_profiling+set}" = set; then :
-  enableval=$enable_profiling; ac_save_cc="$CC"
- CC="$CC -pg"
- if test "$cross_compiling" = yes; then :
-  ac_enable_profiling="no"
-else
+  enableval=$enable_profiling;
+fi
+
+if test "x$enable_profiling" = xyes; then
+  ac_save_cc="$CC"
+  CC="$(CC) -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int main() { return 0; }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_enable_profiling="yes"
+if ac_fn_c_try_link "$LINENO"; then :
+
 else
-  ac_enable_profiling="no"
+  enable_profiling=no
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  CC="$ac_save_cc"
+else
+  enable_profiling=no
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_profiling" >&5
+$as_echo "$enable_profiling" >&6; }
 
- CC="$ac_save_cc"
+if test "x$enable_profiling" = xyes; then
+  BASECFLAGS="-pg $BASECFLAGS"
+  LDFLAGS="-pg $LDFLAGS"
 fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_enable_profiling" >&5
-$as_echo "$ac_enable_profiling" >&6; }
-
-case "$ac_enable_profiling" in
-    "yes")
-	BASECFLAGS="-pg $BASECFLAGS"
-	LDFLAGS="-pg $LDFLAGS"
-    ;;
-esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDLIBRARY" >&5
 $as_echo_n "checking LDLIBRARY... " >&6; }
