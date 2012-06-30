@@ -4212,26 +4212,31 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm
   [AC_MSG_RESULT(no)]
 )
 
-AC_MSG_CHECKING(for /dev/ptmx)
+AC_MSG_NOTICE([checking for device files])
 
-if test -r /dev/ptmx
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTMX, 1,
-  [Define if we have /dev/ptmx.])
-else
-  AC_MSG_RESULT(no)
+dnl NOTE: Inform user how to proceed with files when cross compiling.
+if test "x$cross_compiling" = xyes; then
+  if test "${ac_cv_file__dev_ptmx+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptmx])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
+  if test "${ac_cv_file__dev_ptc+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptc])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
 fi
 
-AC_MSG_CHECKING(for /dev/ptc)
-
-if test -r /dev/ptc
-then
-  AC_MSG_RESULT(yes)
+AC_CHECK_FILE(/dev/ptmx, [], [])
+if test "x$ac_cv_file__dev_ptmx" = xyes; then
+  AC_DEFINE(HAVE_DEV_PTMX, 1,
+  [Define to 1 if you have the /dev/ptmx device file.])
+fi
+AC_CHECK_FILE(/dev/ptc, [], [])
+if test "x$ac_cv_file__dev_ptc" = xyes; then
   AC_DEFINE(HAVE_DEV_PTC, 1,
-  [Define if we have /dev/ptc.])
-else
-  AC_MSG_RESULT(no)
+  [Define to 1 if you have the /dev/ptc device file.])
 fi
 
 if test "$have_long_long" = yes
