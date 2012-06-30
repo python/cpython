@@ -35,7 +35,7 @@ class HMAC:
         """
 
         if not isinstance(key, bytes):
-            raise TypeError("expected bytes, but got %r" % type(key).__name__)
+            raise TypeError("key: expected bytes, but got %r" % type(key).__name__)
 
         if digestmod is None:
             import hashlib
