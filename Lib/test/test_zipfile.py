@@ -1134,6 +1134,24 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="r") as zipfr:
             self.assertEqual(zipfr.comment, comment2)
 
+        # check that comments are correctly modified in append mode
+        with zipfile.ZipFile(TESTFN,mode="w") as zipf:
+            zipf.comment = b"original comment"
+            zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        with zipfile.ZipFile(TESTFN,mode="a") as zipf:
+            zipf.comment = b"an updated comment"
+        with zipfile.ZipFile(TESTFN,mode="r") as zipf:
+            self.assertEqual(zipf.comment, b"an updated comment")
+
+        # check that comments are correctly shortened in append mode
+        with zipfile.ZipFile(TESTFN,mode="w") as zipf:
+            zipf.comment = b"original comment that's longer"
+            zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        with zipfile.ZipFile(TESTFN,mode="a") as zipf:
+            zipf.comment = b"shorter comment"
+        with zipfile.ZipFile(TESTFN,mode="r") as zipf:
+            self.assertEqual(zipf.comment, b"shorter comment")
+
     def test_unicode_comment(self):
         with zipfile.ZipFile(TESTFN, "w", zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
