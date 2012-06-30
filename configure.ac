@@ -2594,12 +2594,12 @@ AC_ARG_WITH(pymalloc,
 if test -z "$with_pymalloc"
 then
     with_pymalloc="yes"
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 if test "$with_pymalloc" != "no"
 then
     AC_DEFINE(WITH_PYMALLOC, 1, 
      [Define if you want to compile in Python-specific mallocs])
+    ABIFLAGS="${ABIFLAGS}m"
 fi
 AC_MSG_RESULT($with_pymalloc)
 
@@ -2668,7 +2668,11 @@ then
 else
 	MACHDEP_OBJS="$MACHDEP_OBJS $extra_machdep_objs"
 fi
-AC_MSG_RESULT(MACHDEP_OBJS)
+if test -z "$MACHDEP_OBJS"; then
+  AC_MSG_RESULT([none])
+else
+  AC_MSG_RESULT([$MACHDEP_OBJS])
+fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
@@ -3128,7 +3132,7 @@ fi
 
 AC_MSG_RESULT($ac_cv_buggy_getaddrinfo)
 
-if test $have_getaddrinfo = no -o "$ac_cv_buggy_getaddrinfo" = yes
+if test $have_getaddrinfo = no || test "$ac_cv_buggy_getaddrinfo" = yes
 then
 	if test $ipv6 = yes
 	then
