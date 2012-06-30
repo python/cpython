@@ -12960,7 +12960,28 @@ $as_echo "$ac_cv_cflags_warn_all" >&6; }
 case ".$ac_cv_cflags_warn_all" in
      .ok|.ok,*)  ;;
    .|.no|.no,*)  ;;
-   *) AX_APPEND_FLAG($VAR, ) ;;
+   *) if ${CFLAGS+:} false; then :
+  case " $CFLAGS " in
+    *" $ac_cv_cflags_warn_all "*)
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: : CFLAGS already contains \$ac_cv_cflags_warn_all"; } >&5
+  (: CFLAGS already contains $ac_cv_cflags_warn_all) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+      ;;
+    *)
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: : CFLAGS=\"\$CFLAGS \$ac_cv_cflags_warn_all\""; } >&5
+  (: CFLAGS="$CFLAGS $ac_cv_cflags_warn_all") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+      CFLAGS="$CFLAGS $ac_cv_cflags_warn_all"
+      ;;
+   esac
+else
+  CFLAGS="$ac_cv_cflags_warn_all"
+fi
+ ;;
 esac
 
 ac_ext=c
