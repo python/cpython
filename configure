@@ -646,6 +646,8 @@ INSTALL_SCRIPT
 INSTALL_PROGRAM
 HAS_PYTHON
 DISABLE_ASDLGEN
+ac_ct_READELF
+READELF
 ARFLAGS
 ac_ct_AR
 AR
@@ -680,6 +682,7 @@ CC
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 SGI_ABI
+_PYTHON_HOST_PLATFORM
 MACHDEP
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -698,6 +701,7 @@ UNIVERSALSDK
 CONFIG_ARGS
 SOVERSION
 VERSION
+PYTHON_FOR_BUILD
 host_os
 host_vendor
 host_cpu
@@ -2878,6 +2882,29 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+if test "$cross_compiling" = yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python interpreter for cross build" >&5
+$as_echo_n "checking for python interpreter for cross build... " >&6; }
+    if test -z "$PYTHON_FOR_BUILD"; then
+        for interp in python$PACKAGE_VERSION python3 python; do
+	    which $interp >/dev/null 2>&1 || continue
+	    if $interp -c 'import sys;sys.exit(not sys.version_info[:2] >= (3,3))'; then
+	        break
+	    fi
+            interp=
+	done
+        if test x$interp = x; then
+	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
+	fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $interp" >&5
+$as_echo "$interp" >&6; }
+	PYTHON_FOR_BUILD="_PYTHON_PROJECT_BASE=$srcdir"' _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+    fi
+else
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+fi
+
+
 
 if test "$prefix" != "/"; then
     prefix=`echo "$prefix" | sed -e 's/\/$//g'`
@@ -3214,6 +3241,29 @@ then
 	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
+fi
+
+
+if test "$cross_compiling" = yes; then
+	case "$host" in
+	*-*-linux*)
+		case "$host_cpu" in
+		arm*)
+			_host_cpu=arm
+			;;
+		*)
+			_host_cpu=$host_cpu
+		esac
+		;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		as_fn_error $? "cross build not supported for $host" "$LINENO" 5
+	esac
+	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -5538,6 +5588,10 @@ else # shared is disabled
   esac
 fi
 
+if test "$cross_compiling" = yes; then
+	RUNSHARED=
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
 
@@ -5741,6 +5795,115 @@ if test -z "$ARFLAGS"
 then
         ARFLAGS="rc"
 fi
+
+if test -n "$ac_tool_prefix"; then
+  for ac_prog in readelf
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_READELF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$READELF"; then
+  ac_cv_prog_READELF="$READELF" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_READELF="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+READELF=$ac_cv_prog_READELF
+if test -n "$READELF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
+$as_echo "$READELF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$READELF" && break
+  done
+fi
+if test -z "$READELF"; then
+  ac_ct_READELF=$READELF
+  for ac_prog in readelf
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_READELF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_READELF"; then
+  ac_cv_prog_ac_ct_READELF="$ac_ct_READELF" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_READELF="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_READELF=$ac_cv_prog_ac_ct_READELF
+if test -n "$ac_ct_READELF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_READELF" >&5
+$as_echo "$ac_ct_READELF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_READELF" && break
+done
+
+  if test "x$ac_ct_READELF" = x; then
+    READELF=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    READELF=$ac_ct_READELF
+  fi
+fi
+
+if test "$cross_compiling" = yes; then
+    case "$READELF" in
+	readelf|:)
+	as_fn_error $? "readelf for the host is required for cross builds" "$LINENO" 5
+	;;
+    esac
+fi
+
 
 
 DISABLE_ASDLGEN=""
@@ -14341,34 +14504,73 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
+$as_echo "$as_me: checking for device files" >&6;}
+
+if test "x$cross_compiling" = xyes; then
+  if test "${ac_cv_file__dev_ptmx+set}" != set; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
+$as_echo_n "checking for /dev/ptmx... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+$as_echo "not set" >&6; }
+    as_fn_error $? "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+  fi
+  if test "${ac_cv_file__dev_ptc+set}" != set; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
+$as_echo_n "checking for /dev/ptc... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+$as_echo "not set" >&6; }
+    as_fn_error $? "set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+  fi
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
 $as_echo_n "checking for /dev/ptmx... " >&6; }
+if ${ac_cv_file__dev_ptmx+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/dev/ptmx"; then
+  ac_cv_file__dev_ptmx=yes
+else
+  ac_cv_file__dev_ptmx=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__dev_ptmx" >&5
+$as_echo "$ac_cv_file__dev_ptmx" >&6; }
+if test "x$ac_cv_file__dev_ptmx" = xyes; then :
 
-if test -r /dev/ptmx
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+fi
+
+if test "x$ac_cv_file__dev_ptmx" = xyes; then
 
 $as_echo "#define HAVE_DEV_PTMX 1" >>confdefs.h
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 $as_echo_n "checking for /dev/ptc... " >&6; }
+if ${ac_cv_file__dev_ptc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/dev/ptc"; then
+  ac_cv_file__dev_ptc=yes
+else
+  ac_cv_file__dev_ptc=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__dev_ptc" >&5
+$as_echo "$ac_cv_file__dev_ptc" >&6; }
+if test "x$ac_cv_file__dev_ptc" = xyes; then :
 
-if test -r /dev/ptc
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+fi
+
+if test "x$ac_cv_file__dev_ptc" = xyes; then
 
 $as_echo "#define HAVE_DEV_PTC 1" >>confdefs.h
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 fi
 
 if test "$have_long_long" = yes

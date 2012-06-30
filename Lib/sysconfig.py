@@ -138,6 +138,10 @@ if os.name == "nt" and "\\pc\\v" in _PROJECT_BASE[-10:].lower():
 if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
+# set for cross builds
+if "_PYTHON_PROJECT_BASE" in os.environ:
+    _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
+
 def _is_python_source_dir(d):
     for fn in ("Setup.dist", "Setup.local"):
         if os.path.isfile(os.path.join(d, "Modules", fn)):
@@ -672,6 +676,10 @@ def get_platform():
         # XXX what about the architecture? NT is Intel or Alpha,
         # Mac OS is M68k or PPC, etc.
         return sys.platform
+
+    # Set for cross builds explicitly
+    if "_PYTHON_HOST_PLATFORM" in os.environ:
+        return os.environ["_PYTHON_HOST_PLATFORM"]
 
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()
