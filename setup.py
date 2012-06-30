@@ -1818,7 +1818,7 @@ class PyBuildExt(build_ext):
 
     def _decimal_ext(self):
         extra_compile_args = []
-        undef_macros=['NDEBUG']
+        undef_macros = ['NDEBUG']
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
             libraries = ['mpdec']
