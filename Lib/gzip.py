@@ -129,7 +129,7 @@ class GzipFile(io.BufferedIOBase):
     the exception of the readinto() and truncate() methods.
 
     This class only supports opening files in binary mode. If you need to open a
-    compressed file in text mode, wrap your GzipFile with an io.TextIOWrapper.
+    compressed file in text mode, use the gzip.open() function.
 
     """
 
