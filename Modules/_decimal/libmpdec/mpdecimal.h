@@ -511,16 +511,16 @@ void mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx, uint32_t
 void mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx, uint32_t *status);
 
 
-size_t mpd_sizeinbase(mpd_t *a, uint32_t base);
+size_t mpd_sizeinbase(const mpd_t *a, uint32_t base);
 void mpd_qimport_u16(mpd_t *result, const uint16_t *srcdata, size_t srclen,
                      uint8_t srcsign, uint32_t srcbase,
                      const mpd_context_t *ctx, uint32_t *status);
 void mpd_qimport_u32(mpd_t *result, const uint32_t *srcdata, size_t srclen,
                      uint8_t srcsign, uint32_t srcbase,
                      const mpd_context_t *ctx, uint32_t *status);
-size_t mpd_qexport_u16(uint16_t *rdata, size_t rlen, uint32_t base,
+size_t mpd_qexport_u16(uint16_t **rdata, size_t rlen, uint32_t base,
                        const mpd_t *src, uint32_t *status);
-size_t mpd_qexport_u32(uint32_t *rdata, size_t rlen, uint32_t base,
+size_t mpd_qexport_u32(uint32_t **rdata, size_t rlen, uint32_t base,
                        const mpd_t *src, uint32_t *status);
 
 
@@ -531,8 +531,8 @@ size_t mpd_qexport_u32(uint32_t *rdata, size_t rlen, uint32_t base,
 char * mpd_format(const mpd_t *dec, const char *fmt, mpd_context_t *ctx);
 void mpd_import_u16(mpd_t *result, const uint16_t *srcdata, size_t srclen, uint8_t srcsign, uint32_t base, mpd_context_t *ctx);
 void mpd_import_u32(mpd_t *result, const uint32_t *srcdata, size_t srclen, uint8_t srcsign, uint32_t base, mpd_context_t *ctx);
-size_t mpd_export_u16(uint16_t *rdata, size_t rlen, uint32_t base, const mpd_t *src, mpd_context_t *ctx);
-size_t mpd_export_u32(uint32_t *rdata, size_t rlen, uint32_t base, const mpd_t *src, mpd_context_t *ctx);
+size_t mpd_export_u16(uint16_t **rdata, size_t rlen, uint32_t base, const mpd_t *src, mpd_context_t *ctx);
+size_t mpd_export_u32(uint32_t **rdata, size_t rlen, uint32_t base, const mpd_t *src, mpd_context_t *ctx);
 void mpd_finalize(mpd_t *result, mpd_context_t *ctx);
 int mpd_check_nan(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
 int mpd_check_nans(mpd_t *result, const mpd_t *a, const mpd_t *b, mpd_context_t *ctx);
