@@ -15,7 +15,12 @@ from distutils.command.install_lib import install_lib
 from distutils.command.build_scripts import build_scripts
 from distutils.spawn import find_executable
 
+cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
+
 def get_platform():
+    # cross build
+    if "_PYTHON_HOST_PLATFORM" in os.environ:
+        return os.environ["_PYTHON_HOST_PLATFORM"]
     # Get value of sys.platform
     if sys.platform.startswith('osf1'):
         return 'osf1'
@@ -23,7 +28,7 @@ def get_platform():
 host_platform = get_platform()
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
+COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
 
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
@@ -334,6 +339,10 @@ class PyBuildExt(build_ext):
         # cached.  Clear that cache before trying to import.
         sys.path_importer_cache.clear()
 
+        # Don't try to load extensions for cross builds
+        if cross_compiling:
+            return
+
         try:
             imp.load_dynamic(ext.name, ext_filename)
         except ImportError as why:
@@ -370,12 +379,15 @@ class PyBuildExt(build_ext):
         # https://wiki.ubuntu.com/MultiarchSpec
         if not find_executable('dpkg-architecture'):
             return
+        opt = ''
+        if cross_compiling:
+            opt = '-t' + sysconfig.get_config_var('HOST_GNU_TYPE')
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         ret = os.system(
-            'dpkg-architecture -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
-            tmpfile)
+            'dpkg-architecture %s -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
+            (opt, tmpfile))
         try:
             if ret >> 8 == 0:
                 with open(tmpfile) as fp:
@@ -387,12 +399,46 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def add_gcc_paths(self):
+        gcc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'gccpaths')
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (gcc, tmpfile))
+        is_gcc = False
+        in_incdirs = False
+        inc_dirs = []
+        lib_dirs = []
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    for line in fp.readlines():
+                        if line.startswith("gcc version"):
+                            is_gcc = True
+                        elif line.startswith("#include <...>"):
+                            in_incdirs = True
+                        elif line.startswith("End of search list"):
+                            in_incdirs = False
+                        elif is_gcc and line.startswith("LIBRARY_PATH"):
+                            for d in line.strip().split("=")[1].split(":"):
+                                d = os.path.normpath(d)
+                                if '/gcc/' not in d:
+                                    add_dir_to_list(self.compiler.library_dirs,
+                                                    d)
+                        elif is_gcc and in_incdirs and '/gcc/' not in line:
+                            add_dir_to_list(self.compiler.include_dirs,
+                                            line.strip())
+        finally:
+            os.unlink(tmpfile)
+
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
         # 10520.
-        add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
-        add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+        if not cross_compiling:
+            add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
+            add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+        self.add_gcc_paths()
         self.add_multiarch_paths()
 
         # Add paths specified in the environment variables LDFLAGS and
@@ -443,11 +489,18 @@ class PyBuildExt(build_ext):
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
-        lib_dirs = self.compiler.library_dirs + [
-            '/lib64', '/usr/lib64',
-            '/lib', '/usr/lib',
-            ]
-        inc_dirs = self.compiler.include_dirs + ['/usr/include']
+        inc_dirs = self.compiler.include_dirs[:]
+        lib_dirs = self.compiler.library_dirs[:]
+        if not cross_compiling:
+            for d in (
+                '/usr/include',
+                ):
+                add_dir_to_list(inc_dirs, d)
+            for d in (
+                '/lib64', '/usr/lib64',
+                '/lib', '/usr/lib',
+                ):
+                add_dir_to_list(lib_dirs, d)
         exts = []
         missing = []
 
@@ -596,8 +649,6 @@ class PyBuildExt(build_ext):
             os.makedirs(self.build_temp)
         # Determine if readline is already linked against curses or tinfo.
         if do_readline:
-            # FIXME: needs patch from issue #14330
-            cross_compiling = False
             if cross_compiling:
                 ret = os.system("%s -d %s | grep '(NEEDED)' > %s" \
                                 % (sysconfig.get_config_var('READELF'),
@@ -839,6 +890,9 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/pkg/db-3.%d/include' % x)
             db_inc_paths.append('/opt/db-3.%d/include' % x)
 
+        if cross_compiling:
+            db_inc_paths = []
+
         # Add some common subdirectories for Sleepycat DB to the list,
         # based on the standard include directories. This way DB3/4 gets
         # picked up when it is installed in a non-standard prefix and
@@ -975,7 +1029,9 @@ class PyBuildExt(build_ext):
                              '/usr/local/include',
                              '/usr/local/include/sqlite',
                              '/usr/local/include/sqlite3',
-                           ]
+                             ]
+        if cross_compiling:
+            sqlite_inc_paths = []
         MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
@@ -1710,7 +1766,8 @@ class PyBuildExt(build_ext):
                                          ffi_configfile):
                 from distutils.dir_util import mkpath
                 mkpath(ffi_builddir)
-                config_args = []
+                config_args = [arg for arg in sysconfig.get_config_var("CONFIG_ARGS").split()
+                               if (('--host=' in arg) or ('--build=' in arg))]
 
                 # Pass empty CFLAGS because we'll just append the resulting
                 # CFLAGS to Python's; -g or -O2 is to be avoided.
