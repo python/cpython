@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15229: An OSError subclass whose __init__ doesn't call back
+  OSError.__init__ could produce incomplete instances, leading to crashes
+  when calling str() on them.
 
 Library
 -------
