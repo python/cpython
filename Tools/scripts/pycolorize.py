@@ -66,17 +66,25 @@ default_css = {
 }
 
 default_html = '''\
-<html><head><style type="text/css">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title> Python Code </title>
+<style type="text/css">
 %s
-</style></head>
+</style>
+</head>
 <body>
 %s
-</body></html>
+</body>
+</html>
 '''
 
 def build_page(source, html=default_html, css=default_css):
     'Create a complete HTML page with colorized Python source code'
-    css_str = ''.join(['%s %s\n' % item for item in css.items()])
+    css_str = '\n'.join(['%s %s' % item for item in css.items()])
     result = colorize(source)
     return html % (css_str, result)
 
