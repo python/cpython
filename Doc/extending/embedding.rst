@@ -155,13 +155,13 @@ for data conversion between Python and C, and for error reporting.  The
 interesting part with respect to embedding Python starts with ::
 
    Py_Initialize();
-   pName = PyString_FromString(argv[1]);
+   pName = PyUnicode_FromString(argv[1]);
    /* Error checking of pName left out */
    pModule = PyImport_Import(pName);
 
 After initializing the interpreter, the script is loaded using
 :c:func:`PyImport_Import`.  This routine needs a Python string as its argument,
-which is constructed using the :c:func:`PyString_FromString` data conversion
+which is constructed using the :c:func:`PyUnicode_FromString` data conversion
 routine. ::
 
    pFunc = PyObject_GetAttrString(pModule, argv[2]);
