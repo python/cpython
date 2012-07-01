@@ -79,7 +79,8 @@ To show the individual process IDs involved, here is an expanded example::
     def info(title):
         print(title)
         print('module name:', __name__)
-        print('parent process:', os.getppid())
+        if hasattr(os, 'getppid'):  # only available on Unix
+            print('parent process:', os.getppid())
         print('process id:', os.getpid())
 
     def f(name):
