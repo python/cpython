@@ -2,6 +2,7 @@
 'Convert Python source code to HTML with colorized markup'
 
 __all__ = ['colorize', 'build_page', 'default_css', 'default_html']
+__author__  = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, functools
 
