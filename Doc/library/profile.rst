@@ -607,13 +607,10 @@ The resulting profiler will then call :func:`your_time_func`.
    best results with a custom timer, it might be necessary to hard-code it in the C
    source of the internal :mod:`_lsprof` module.
 
+
 .. rubric:: Footnotes
 
-.. [#] Updated and converted to LaTeX by Guido van Rossum. Further updated by Armin
-   Rigo to integrate the documentation for the new :mod:`cProfile` module of Python
-   2.5.
-
-.. [#] Prior to Python 2.2, it was necessary to edit the profiler source code to embed
-   the bias as a literal number.  You still can, but that method is no longer
+.. [#] Prior to Python 2.2, it was necessary to edit the profiler source code to
+   embed the bias as a literal number.  You still can, but that method is no longer
    described, because no longer needed.
 
