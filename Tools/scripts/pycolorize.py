@@ -28,7 +28,7 @@ def colorize(source):
         kind, prev_kind = '', kind
         if tok_type == tokenize.COMMENT:
             kind = 'comment'
-        elif tok_type == tokenize.OP:
+        elif tok_type == tokenize.OP and tok_str[:1] not in '{}[](),.:;':
             kind = 'operator'
         elif tok_type == tokenize.STRING:
             kind = 'string'
