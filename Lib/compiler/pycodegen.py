@@ -7,7 +7,7 @@ from cStringIO import StringIO
 
 from compiler import ast, parse, walk, syntax
 from compiler import pyassem, misc, future, symbols
-from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICT, \
+from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
      SC_FREE, SC_CELL
 from compiler.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
      CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
@@ -283,7 +283,7 @@ class CodeGenerator:
                 self.emit(prefix + '_NAME', name)
             else:
                 self.emit(prefix + '_FAST', name)
-        elif scope == SC_GLOBAL_EXPLICT:
+        elif scope == SC_GLOBAL_EXPLICIT:
             self.emit(prefix + '_GLOBAL', name)
         elif scope == SC_GLOBAL_IMPLICIT:
             if not self.optimized:

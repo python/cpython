@@ -1,7 +1,7 @@
 """Module symbol-table generator"""
 
 from compiler import ast
-from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICT, \
+from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
     SC_FREE, SC_CELL, SC_UNKNOWN
 from compiler.misc import mangle
 import types
@@ -90,7 +90,7 @@ class Scope:
         The scope of a name could be LOCAL, GLOBAL, FREE, or CELL.
         """
         if name in self.globals:
-            return SC_GLOBAL_EXPLICT
+            return SC_GLOBAL_EXPLICIT
         if name in self.cells:
             return SC_CELL
         if name in self.defs:
