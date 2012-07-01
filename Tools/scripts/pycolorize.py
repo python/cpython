@@ -76,7 +76,7 @@ default_html = '''\
 
 def build_page(source, html=default_html, css=default_css):
     'Create a complete HTML page with colorized Python source code'
-    css_str = ''.join(['%s %s\n' % item for item in default_css.items()])
+    css_str = ''.join(['%s %s\n' % item for item in css.items()])
     result = colorize(source)
     return html % (css_str, result)
 
