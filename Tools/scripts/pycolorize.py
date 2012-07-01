@@ -2,7 +2,7 @@
 'Convert Python source code to HTML with colorized markup'
 
 __all__ = ['colorize', 'build_page', 'default_css', 'default_html']
-__author__  = 'Raymond Hettinger'
+__author__ = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, functools
 
@@ -71,7 +71,7 @@ default_html = '''\
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-<title> Python Code </title>
+<title> %s </title>
 <style type="text/css">
 %s
 </style>
@@ -82,11 +82,12 @@ default_html = '''\
 </html>
 '''
 
-def build_page(source, html=default_html, css=default_css):
+def build_page(source, title='python', css=default_css, html=default_html):
     'Create a complete HTML page with colorized Python source code'
     css_str = '\n'.join(['%s %s' % item for item in css.items()])
     result = colorize(source)
-    return html % (css_str, result)
+    title = cgi.escape(title)
+    return html % (title, css_str, result)
 
 
 if __name__ == '__main__':
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     sourcefile = args.sourcefile[0]
     with open(sourcefile) as f:
         page = f.read()
-    html = colorize(page) if args.standalone else build_page(page)
+    html = colorize(page) if args.standalone else build_page(page, title=sourcefile)
     if args.browser:
         htmlfile = os.path.splitext(os.path.basename(sourcefile))[0] + '.html'
         with open(htmlfile, 'w') as f:
