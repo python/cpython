@@ -7,7 +7,7 @@ import sys
 
 try:
     _bootstrap = sys.modules['_frozen_importlib']
-except ImportError:
+except KeyError:
     from . import _bootstrap
     _bootstrap._setup(sys, imp)
 else:
