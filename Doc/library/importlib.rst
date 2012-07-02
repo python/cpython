@@ -455,6 +455,10 @@ are also provided to help in implementing the core ABCs.
         :class:`PyLoader`. Do note that this solution will not support
         sourceless/bytecode-only loading; only source *and* bytecode loading.
 
+    .. versionchanged:: 3.3
+       Updated to parse (but not use) the new source size field in bytecode
+       files when reading and to write out the field properly when writing.
+
     .. method:: source_mtime(fullname)
 
         An abstract method which returns the modification time for the source

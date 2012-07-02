@@ -282,7 +282,12 @@ class PyPycLoader(PyLoader):
                 if len(raw_timestamp) < 4:
                     raise EOFError("bad timestamp in {}".format(fullname))
                 pyc_timestamp = _bootstrap._r_long(raw_timestamp)
-                bytecode = data[8:]
+                raw_source_size = data[8:12]
+                if len(raw_source_size) != 4:
+                    raise EOFError("bad file size in {}".format(fullname))
+                # Source size is unused as the ABC does not provide a way to
+                # get the size of the source ahead of reading it.
+                bytecode = data[12:]
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
                     raise ImportError(
@@ -318,6 +323,7 @@ class PyPycLoader(PyLoader):
         if not sys.dont_write_bytecode:
             data = bytearray(imp.get_magic())
             data.extend(_bootstrap._w_long(source_timestamp))
+            data.extend(_bootstrap._w_long(len(source) & 0xFFFFFFFF))
             data.extend(marshal.dumps(code_object))
             self.write_bytecode(fullname, data)
         return code_object
