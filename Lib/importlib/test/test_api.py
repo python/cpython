@@ -160,9 +160,30 @@ class InvalidateCacheTests(unittest.TestCase):
         importlib.invalidate_caches()  # Shouldn't trigger an exception.
 
 
+class FrozenImportlibTests(unittest.TestCase):
+
+    def test_no_frozen_importlib(self):
+        # Should be able to import w/o _frozen_importlib being defined.
+        modules = {}
+        for name in ('importlib', 'importlib.__init__', 'importlib._bootstrap',
+                     '_frozen_importlib'):
+            try:
+                modules[name] = sys.modules[name]
+                del sys.modules[name]
+            except KeyError:
+                continue
+        modules['_frozen_importlib'] = None
+        import importlib
+        for name, module in modules.items():
+            sys.modules[name] = module
+
+
 def test_main():
     from test.support import run_unittest
-    run_unittest(ImportModuleTests, FindLoaderTests, InvalidateCacheTests)
+    run_unittest(ImportModuleTests,
+                 FindLoaderTests,
+                 InvalidateCacheTests,
+                 FrozenImportlibTests)
 
 
 if __name__ == '__main__':
