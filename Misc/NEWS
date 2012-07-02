@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15210: Catch KeyError when imprortlib.__init__ can't find
+  _frozen_importlib in sys.modules, not ImportError.
+
 - Issue #15030: importlib.abc.PyPycLoader now supports the new source size
   header field in .pyc files.
 
