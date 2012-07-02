@@ -6,22 +6,29 @@ __author__ = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, functools
 
-def insert(s, i, text):
-    'Insert text at position i in string s'
-    return s[:i] + text + s[i:]
-
 def is_builtin(s):
     'Return True if s is the name of a builtin'
     return s in vars(__builtins__)
 
+def escape_range(lines, start, end):
+    'Return escaped content from a range of lines between start and end'
+    (srow, scol), (erow, ecol) = start, end
+    if srow == erow:
+        rows = [lines[srow-1][scol:ecol]]
+    else:
+        rows = [lines[srow-1][scol:]] + lines[srow: erow-1] + [lines[erow-1][:ecol]]
+    return cgi.escape(''.join(rows)), end
+
 def colorize(source):
     'Convert Python source code to an HTML fragment with colorized markup'
-    text = cgi.escape(source)
-    lines = text.splitlines(True)
+    lines = source.splitlines(True)
+    lines.append('')
     readline = functools.partial(next, iter(lines), '')
     actions = []
     kind = tok_str = ''
     tok_type = tokenize.COMMENT
+    written = (1, 0)
+    result = []
     for tok in tokenize.generate_tokens(readline):
         prev_tok_type, prev_tok_str = tok_type, tok_str
         tok_type, tok_str, (srow, scol), (erow, ecol), logical_lineno = tok
@@ -44,15 +51,17 @@ def colorize(source):
             elif is_builtin(tok_str) and prev_tok_str != '.':
                 kind = 'builtin'
         if kind:
-            actions.append(((srow, scol), (erow, ecol), kind))
+            line_upto_token, written = escape_range(lines, written, (srow, scol))
+            line_thru_token, written = escape_range(lines, written, (erow, ecol))
+            result += [line_upto_token, '<span class="%s">' % kind,
+                       line_thru_token, '</span>']
+        else:
+            line_thru_token, written = escape_range(lines, written, (erow, ecol))
+            result += [line_thru_token]
 
-    for (srow, scol), (erow, ecol), kind in reversed(actions):
-        lines[erow-1] = insert(lines[erow-1], ecol, '</span>')
-        lines[srow-1] = insert(lines[srow-1], scol, '<span class="%s">' % kind)
-
-    lines.insert(0, '<pre class="python">\n')
-    lines.append('</pre>\n')
-    return ''.join(lines)
+    result.insert(0, '<pre class="python">\n')
+    result.append('</pre>\n')
+    return ''.join(result)
 
 default_css = {
     '.comment': '{color: crimson;}',
