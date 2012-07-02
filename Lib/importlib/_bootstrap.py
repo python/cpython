@@ -1452,7 +1452,7 @@ def _setup(sys_module, _imp_module):
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
-    setattr(self_module, '_TAG', _imp.get_tag())
+    setattr(self_module, '_TAG', sys.implementation.cache_tag)
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
 
