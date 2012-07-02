@@ -112,23 +112,11 @@ typedef unsigned short mode_t;
 /* MAGIC must change whenever the bytecode emitted by the compiler may no
    longer be understood by older implementations of the eval loop (usually
    due to the addition of new opcodes)
-   TAG must change for each major Python release. The magic number will take
-   care of any bytecode changes that occur during development.
 */
-#define QUOTE(arg) #arg
-#define STRIFY(name) QUOTE(name)
-#define MAJOR STRIFY(PY_MAJOR_VERSION)
-#define MINOR STRIFY(PY_MINOR_VERSION)
 #define MAGIC (3230 | ((long)'\r'<<16) | ((long)'\n'<<24))
-#define TAG "cpython-" MAJOR MINOR;
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
-static const char *pyc_tag = TAG;
-#undef QUOTE
-#undef STRIFY
-#undef MAJOR
-#undef MINOR
 
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
@@ -534,8 +522,21 @@ PyImport_GetMagicNumber(void)
 const char *
 PyImport_GetMagicTag(void)
 {
-    return pyc_tag;
+    PyObject *impl, *tag;
+    const char *raw_tag;
+
+    /* We could also pull it from imp or importlib. */
+    impl = PySys_GetObject("implementation");
+    if (impl == NULL)
+        return NULL;
+    tag = PyObject_GetAttrString(impl, "cache_tag");
+    if (tag == NULL)
+        return NULL;
+    raw_tag = PyUnicode_DATA(tag);
+    Py_DECREF(tag);
+    return raw_tag;
 }
+
 
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
@@ -1847,12 +1848,6 @@ imp_get_magic(PyObject *self, PyObject *noargs)
 }
 
 static PyObject *
-imp_get_tag(PyObject *self, PyObject *noargs)
-{
-    return PyUnicode_FromString(pyc_tag);
-}
-
-static PyObject *
 imp_extension_suffixes(PyObject *self, PyObject *noargs)
 {
     PyObject *list;
@@ -2002,10 +1997,6 @@ PyDoc_STRVAR(doc_get_magic,
 "get_magic() -> string\n\
 Return the magic number for .pyc or .pyo files.");
 
-PyDoc_STRVAR(doc_get_tag,
-"get_tag() -> string\n\
-Return the magic tag for .pyc or .pyo files.");
-
 PyDoc_STRVAR(doc_extension_suffixes,
 "extension_suffixes() -> list of strings\n\
 Returns the list of file suffixes used to identify extension modules.");
@@ -2029,7 +2020,6 @@ On platforms without threads, this function does nothing.");
 
 static PyMethodDef imp_methods[] = {
     {"get_magic",        imp_get_magic,    METH_NOARGS,  doc_get_magic},
-    {"get_tag",          imp_get_tag,      METH_NOARGS,  doc_get_tag},
     {"extension_suffixes", imp_extension_suffixes, METH_NOARGS,
         doc_extension_suffixes},
     {"lock_held",        imp_lock_held,    METH_NOARGS,  doc_lock_held},

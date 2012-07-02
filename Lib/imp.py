@@ -11,7 +11,7 @@ from _imp import (lock_held, acquire_lock, release_lock,
                   init_builtin, init_frozen, is_builtin, is_frozen,
                   _fix_co_filename, extension_suffixes)
 # Could move out of _imp, but not worth the code
-from _imp import get_magic, get_tag
+from _imp import get_magic
 
 from importlib._bootstrap import new_module
 from importlib._bootstrap import cache_from_source
@@ -35,6 +35,11 @@ C_BUILTIN = 6
 PY_FROZEN = 7
 PY_CODERESOURCE = 8
 IMP_HOOK = 9
+
+
+def get_tag():
+    """Return the magic tag for .pyc or .pyo files."""
+    return sys.implementation.cache_tag
 
 
 def get_suffixes():
