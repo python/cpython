@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15030: importlib.abc.PyPycLoader now supports the new source size
+  header field in .pyc files.
+
 - Issue #5346: Preserve permissions of mbox, MMDF and Babyl mailbox
   files on flush().
 
