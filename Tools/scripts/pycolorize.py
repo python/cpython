@@ -24,7 +24,6 @@ def colorize(source):
     lines = source.splitlines(True)
     lines.append('')
     readline = functools.partial(next, iter(lines), '')
-    actions = []
     kind = tok_str = ''
     tok_type = tokenize.COMMENT
     written = (1, 0)
