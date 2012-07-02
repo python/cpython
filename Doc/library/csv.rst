@@ -40,7 +40,7 @@ using the :class:`DictReader` and :class:`DictWriter` classes.
    This version of the :mod:`csv` module doesn't support Unicode input.  Also,
    there are currently some issues regarding ASCII NUL characters.  Accordingly,
    all input should be UTF-8 or printable ASCII to be safe; see the examples in
-   section :ref:`csv-examples`. These restrictions will be removed in the future.
+   section :ref:`csv-examples`.
 
 
 .. seealso::

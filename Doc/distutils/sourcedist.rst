@@ -51,8 +51,7 @@ Notes:
    of the standard Python library since Python 1.6)
 
 (4)
-   requires the :program:`compress` program. Notice that this format is now
-   pending for deprecation and will be removed in the future versions of Python.
+   requires the :program:`compress` program.
 
 When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or
 ``tar``) under Unix, you can specify the ``owner`` and ``group`` names
