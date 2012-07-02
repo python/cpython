@@ -113,8 +113,8 @@ The :mod:`fpectl` module is not thread-safe.
 .. seealso::
 
    Some files in the source distribution may be interesting in learning more about
-   how this module operates. The include file :file:`Include/pyfpe.h` discusses the
-   implementation of this module at some length. :file:`Modules/fpetestmodule.c`
+   how this module operates. The include file :source:`Include/pyfpe.h` discusses the
+   implementation of this module at some length. :source:`Modules/fpetestmodule.c`
    gives several examples of use. Many additional examples can be found in
-   :file:`Objects/floatobject.c`.
+   :source:`Objects/floatobject.c`.
 
