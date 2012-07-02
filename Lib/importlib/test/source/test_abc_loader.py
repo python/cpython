@@ -148,11 +148,12 @@ class PyPycLoaderMock(abc.PyPycLoader, PyLoaderMock):
             self.bytecode_to_path[name] = data['path']
             magic = data.get('magic', imp.get_magic())
             mtime = importlib._w_long(data.get('mtime', self.default_mtime))
+            source_size = importlib._w_long(len(self.source) & 0xFFFFFFFF)
             if 'bc' in data:
                 bc = data['bc']
             else:
                 bc = self.compile_bc(name)
-            self.module_bytecode[name] = magic + mtime + bc
+            self.module_bytecode[name] = magic + mtime + source_size + bc
 
     def compile_bc(self, name):
         source_path = self.module_paths.get(name, '<test>') or '<test>'
@@ -344,7 +345,10 @@ class PyPycLoaderTests(PyLoaderTests):
         self.assertEqual(magic, imp.get_magic())
         mtime = importlib._r_long(mock.module_bytecode[name][4:8])
         self.assertEqual(mtime, 1)
-        bc = mock.module_bytecode[name][8:]
+        source_size = mock.module_bytecode[name][8:12]
+        self.assertEqual(len(mock.source) & 0xFFFFFFFF,
+                         importlib._r_long(source_size))
+        bc = mock.module_bytecode[name][12:]
         self.assertEqual(bc, mock.compile_bc(name))
 
     def test_module(self):
