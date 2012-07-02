@@ -29,7 +29,8 @@ The primary entry point is a :term:`generator`:
    which must be a callable object which provides the same interface as the
    :meth:`readline` method of built-in file objects (see section
    :ref:`bltin-file-objects`).  Each call to the function should return one line
-   of input as a string.
+   of input as a string. Alternately, *readline* may be a callable object that
+   signals completion by raising :exc:`StopIteration`.
 
    The generator produces 5-tuples with these members: the token type; the token
    string; a 2-tuple ``(srow, scol)`` of ints specifying the row and column
