@@ -63,3 +63,25 @@ Multiple paths can be given to ``pyvenv``, in which case an identical
 virtualenv will be created, according to the given options, at each
 provided path.
 
+.. note:: A virtual environment (also called a ``venv``) is a Python
+   environment such that the Python interpreter, libraries and scripts
+   installed into it are isolated from those installed in other virtual
+   environments, and (by default) any libraries installed in a "system" Python,
+   i.e. one which is installed as part of your operating system.
+
+   A venv is a directory tree which contains Python executable files and
+   other files which indicate that it is a venv.
+
+   Common installation tools such as ``distribute`` and ``pip`` work as
+   expected with venvs - i.e. when a venv is active, they install Python
+   packages into the venv without needing to be told to do so explicitly.
+
+   When a venv is active (i.e. the venv's Python interpreter is running), the
+   attributes :attr:`sys.prefix` and :attr:`sys.exec_prefix` point to the base
+   directory of the venv, whereas :attr:`sys.base_prefix` and
+   :attr:`sys.base_exec_prefix` point to the non-venv Python installation
+   which was used to create the venv. If a venv is not active, then
+   :attr:`sys.prefix` is the same as :attr:`sys.base_prefix` and
+   :attr:`sys.exec_prefix` is the same as :attr:`sys.base_exec_prefix` (they
+   all point to a non-venv Python installation).
+
