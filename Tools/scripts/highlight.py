@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-'Convert Python source code to HTML with colorized markup'
+'Add syntax highlighting to Python source code'
 
-__all__ = ['colorize', 'build_page', 'default_css', 'default_html']
+__all__ = ['colorize', 'build_page', 'default_css', 'default_html',
+           'ansi_colorize', 'default_ansi']
 __author__ = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, functools
@@ -52,7 +53,29 @@ def isolate_tokens(source):
         line_thru_token, written = combine_range(lines, written, (erow, ecol))
         yield kind, line_upto_token, line_thru_token
 
-def colorize(source):
+default_ansi = {
+    'comment': '\033[0;31m',
+    'string': '\033[0;32m',
+    'docstring': '\033[0;32m',
+    'keyword': '\033[0;33m',
+    'builtin': '\033[0;35m',
+    'definition': '\033[0;33m',
+    'defname': '\033[0;34m',
+    'operator': '\033[0;33m',
+}
+
+def colorize_ansi(source, colors=default_ansi):
+    'Add syntax highlighting to Python source code using ANSI escape sequences'
+    # http://en.wikipedia.org/wiki/ANSI_escape_code
+    result = []
+    for kind, line_upto_token, line_thru_token in isolate_tokens(source):
+        if kind:
+            result += [line_upto_token, colors[kind], line_thru_token, '\033[0m']
+        else:
+            result += [line_upto_token, line_thru_token]
+    return ''.join(result)
+
+def colorize_html(source):
     'Convert Python source code to an HTML fragment with colorized markup'
     result = ['<pre class="python">\n']
     for kind, line_upto_token, line_thru_token in isolate_tokens(source):
@@ -98,7 +121,7 @@ default_html = '''\
 def build_page(source, title='python', css=default_css, html=default_html):
     'Create a complete HTML page with colorized Python source code'
     css_str = '\n'.join(['%s %s' % item for item in css.items()])
-    result = colorize(source)
+    result = colorize_html(source)
     title = cgi.escape(title)
     return html.format(title=title, css=css_str, body=result)
 
@@ -107,26 +130,39 @@ if __name__ == '__main__':
     import sys, argparse, webbrowser, os
 
     parser = argparse.ArgumentParser(
-            description = 'Convert Python source code to colorized HTML')
+            description = 'Add syntax highlighting to Python source')
     parser.add_argument('sourcefile', metavar = 'SOURCEFILE',
             help = 'File containing Python sourcecode')
+    parser.add_argument('-a', '--ansi', action = 'store_true',
+            help = 'emit ANSI escape highlighted source')
     parser.add_argument('-b', '--browser', action = 'store_true',
             help = 'launch a browser to show results')
     parser.add_argument('-s', '--section', action = 'store_true',
             help = 'show an HTML section rather than a complete webpage')
     args = parser.parse_args()
+
     if args.browser and args.section:
         parser.error('The -s/--section option is incompatible with '
                      'the -b/--browser option')
+    if args.ansi and (args.browser or args.section):
+        parser.error('The -a/--ansi option is incompatible with '
+                     'the -b/--browser and -s/--section options')
 
     sourcefile = args.sourcefile
     with open(sourcefile) as f:
         page = f.read()
-    html = colorize(page) if args.section else build_page(page, title=sourcefile)
+
+    if args.ansi:
+        encoded = colorize_ansi(page)
+    elif args.section:
+        encoded = colorize_html(page)
+    else:
+        encoded = build_page(page, title=sourcefile)
+
     if args.browser:
         htmlfile = os.path.splitext(os.path.basename(sourcefile))[0] + '.html'
         with open(htmlfile, 'w') as f:
-            f.write(html)
+            f.write(encoded)
         webbrowser.open('file://' + os.path.abspath(htmlfile))
     else:
-        sys.stdout.write(html)
+        sys.stdout.write(encoded)
