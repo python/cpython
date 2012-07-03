@@ -10,24 +10,23 @@ def is_builtin(s):
     'Return True if s is the name of a builtin'
     return s in vars(__builtins__)
 
-def escape_range(lines, start, end):
-    'Return escaped content from a range of lines between start and end'
+def combine_range(lines, start, end):
+    'Join content from a range of lines between start and end'
     (srow, scol), (erow, ecol) = start, end
     if srow == erow:
         rows = [lines[srow-1][scol:ecol]]
     else:
         rows = [lines[srow-1][scol:]] + lines[srow: erow-1] + [lines[erow-1][:ecol]]
-    return cgi.escape(''.join(rows)), end
+    return ''.join(rows), end
 
-def colorize(source):
-    'Convert Python source code to an HTML fragment with colorized markup'
+def isolate_tokens(source):
+    'Generate chunks of source and indentify chunks to be highlighted'
     lines = source.splitlines(True)
     lines.append('')
     readline = functools.partial(next, iter(lines), '')
     kind = tok_str = ''
     tok_type = tokenize.COMMENT
     written = (1, 0)
-    result = []
     for tok in tokenize.generate_tokens(readline):
         prev_tok_type, prev_tok_str = tok_type, tok_str
         tok_type, tok_str, (srow, scol), (erow, ecol), logical_lineno = tok
@@ -49,23 +48,29 @@ def colorize(source):
                 kind = 'keyword'
             elif is_builtin(tok_str) and prev_tok_str != '.':
                 kind = 'builtin'
-        if kind:
-            line_upto_token, written = escape_range(lines, written, (srow, scol))
-            line_thru_token, written = escape_range(lines, written, (erow, ecol))
-            result += [line_upto_token, '<span class="%s">' % kind,
-                       line_thru_token, '</span>']
-        else:
-            line_thru_token, written = escape_range(lines, written, (erow, ecol))
-            result += [line_thru_token]
+        line_upto_token, written = combine_range(lines, written, (srow, scol))
+        line_thru_token, written = combine_range(lines, written, (erow, ecol))
+        yield kind, line_upto_token, line_thru_token
 
-    result.insert(0, '<pre class="python">\n')
-    result.append('</pre>\n')
+def colorize(source):
+    'Convert Python source code to an HTML fragment with colorized markup'
+    result = ['<pre class="python">\n']
+    for kind, line_upto_token, line_thru_token in isolate_tokens(source):
+        if kind:
+            result += [cgi.escape(line_upto_token),
+                       '<span class="%s">' % kind,
+                       cgi.escape(line_thru_token),
+                       '</span>']
+        else:
+            result += [cgi.escape(line_upto_token),
+                       cgi.escape(line_thru_token)]
+    result += ['</pre>\n']
     return ''.join(result)
 
 default_css = {
     '.comment': '{color: crimson;}',
     '.string':  '{color: forestgreen;}',
-    '.docstring': '{color: forestgreen; font-style:italic}',
+    '.docstring': '{color: forestgreen; font-style:italic;}',
     '.keyword': '{color: darkorange;}',
     '.builtin': '{color: purple;}',
     '.definition': '{color: darkorange; font-weight:bold;}',
