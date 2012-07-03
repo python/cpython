@@ -21,7 +21,7 @@ def combine_range(lines, start, end):
     return ''.join(rows), end
 
 def isolate_tokens(source):
-    'Generate chunks of source and indentify chunks to be highlighted'
+    'Generate chunks of source and identify chunks to be highlighted'
     lines = source.splitlines(True)
     lines.append('')
     readline = functools.partial(next, iter(lines), '')
