@@ -21,7 +21,7 @@ def escape_range(lines, start, end):
 
 def colorize(source):
     'Convert Python source code to an HTML fragment with colorized markup'
-    lines = source.splitlines(True)
+    lines = source.splitlines(keepends=True)
     lines.append('')
     readline = functools.partial(next, iter(lines), '')
     kind = tok_str = ''
@@ -31,7 +31,7 @@ def colorize(source):
     for tok in tokenize.generate_tokens(readline):
         prev_tok_type, prev_tok_str = tok_type, tok_str
         tok_type, tok_str, (srow, scol), (erow, ecol), logical_lineno = tok
-        kind, prev_kind = '', kind
+        kind = ''
         if tok_type == tokenize.COMMENT:
             kind = 'comment'
         elif tok_type == tokenize.OP and tok_str[:1] not in '{}[](),.:;':
@@ -102,22 +102,22 @@ if __name__ == '__main__':
     import sys, argparse, webbrowser, os
 
     parser = argparse.ArgumentParser(
-        description = 'Convert Python source code to colorized HTML')
-    parser.add_argument('sourcefile', metavar = 'SOURCEFILE', nargs = 1,
+            description = 'Convert Python source code to colorized HTML')
+    parser.add_argument('sourcefile', metavar = 'SOURCEFILE',
             help = 'File containing Python sourcecode')
     parser.add_argument('-b', '--browser', action = 'store_true',
             help = 'launch a browser to show results')
-    parser.add_argument('-s', '--standalone', action = 'store_true',
-            help = 'show a standalone snippet rather than a complete webpage')
+    parser.add_argument('-s', '--section', action = 'store_true',
+            help = 'show an HTML section rather than a complete webpage')
     args = parser.parse_args()
-    if args.browser and args.standalone:
-        parser.error('The -s/--standalone option is incompatible with '
+    if args.browser and args.section:
+        parser.error('The -s/--section option is incompatible with '
                      'the -b/--browser option')
 
-    sourcefile = args.sourcefile[0]
+    sourcefile = args.sourcefile
     with open(sourcefile) as f:
         page = f.read()
-    html = colorize(page) if args.standalone else build_page(page, title=sourcefile)
+    html = colorize(page) if args.section else build_page(page, title=sourcefile)
     if args.browser:
         htmlfile = os.path.splitext(os.path.basename(sourcefile))[0] + '.html'
         with open(htmlfile, 'w') as f:
