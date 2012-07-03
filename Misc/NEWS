@@ -14,6 +14,9 @@ Core and Builtins
   longer raised due to a read system call returning EINTR from within these
   methods.
 
+- Issue #13512: Create ~/.pypirc securely (CVE-2011-4944).  Initial patch by
+  Philip Jenvey, tested by Mageia and Debian.
+
 - Issue #7719: Make distutils ignore ``.nfs*`` files instead of choking later
   on.  Initial patch by SilentGhost and Jeff Ramnani.
 
