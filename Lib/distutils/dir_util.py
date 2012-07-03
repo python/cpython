@@ -144,6 +144,10 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1,
         src_name = os.path.join(src, n)
         dst_name = os.path.join(dst, n)
 
+        if n.startswith('.nfs'):
+            # skip NFS rename files
+            continue
+
         if preserve_symlinks and os.path.islink(src_name):
             link_dest = os.readlink(src_name)
             if verbose >= 1:
