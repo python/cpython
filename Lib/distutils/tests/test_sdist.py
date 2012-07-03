@@ -91,9 +91,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
 
     @unittest.skipUnless(zlib, "requires zlib")
     def test_prune_file_list(self):
-        # this test creates a package with some vcs dirs in it
-        # and launch sdist to make sure they get pruned
-        # on all systems
+        # this test creates a project with some VCS dirs and an NFS rename
+        # file, then launches sdist to check they get pruned on all systems
 
         # creating VCS directories with some files in them
         os.mkdir(join(self.tmp_dir, 'somecode', '.svn'))
@@ -106,6 +105,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         os.mkdir(join(self.tmp_dir, 'somecode', '.git'))
         self.write_file((self.tmp_dir, 'somecode', '.git',
                          'ok'), 'xxx')
+
+        self.write_file((self.tmp_dir, 'somecode', '.nfs0001'), 'xxx')
 
         # now building a sdist
         dist, cmd = self.get_cmd()
