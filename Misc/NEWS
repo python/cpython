@@ -14,6 +14,9 @@ Core and Builtins
   longer raised due to a read system call returning EINTR from within these
   methods.
 
+- Issue #7719: Make distutils ignore ``.nfs*`` files instead of choking later
+  on.  Initial patch by SilentGhost and Jeff Ramnani.
+
 - Issue #10053: Don't close FDs when FileIO.__init__ fails. Loosely based on
   the work by Hirokazu Yamamoto.
 

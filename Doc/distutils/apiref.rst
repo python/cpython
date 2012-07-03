@@ -973,8 +973,8 @@ directories.
    Copy an entire directory tree *src* to a new location *dst*.  Both *src* and
    *dst* must be directory names.  If *src* is not a directory, raise
    :exc:`DistutilsFileError`.  If *dst* does  not exist, it is created with
-   :func:`mkpath`.  The end result of the  copy is that every file in *src* is
-   copied to *dst*, and  directories under *src* are recursively copied to *dst*.
+   :func:`mkpath`.  The end result of the copy is that every file in *src* is
+   copied to *dst*, and directories under *src* are recursively copied to *dst*.
    Return the list of files that were copied or might have been copied, using their
    output name. The return value is unaffected by *update* or *dry_run*: it is
    simply the list of all files under *src*, with the names changed to be under
@@ -986,6 +986,10 @@ directories.
    symlinks (on platforms that support them!); otherwise (the default), the
    destination of the symlink will be copied.  *update* and *verbose* are the same
    as for :func:`copy_file`.
+
+   Files in *src* that begin with :file:`.nfs` are skipped (more information on
+   these files is available in answer D2 of the `NFS FAQ page
+   <http://nfs.sourceforge.net/#section_d>`_.
 
 
 .. function:: remove_tree(directory[, verbose=0, dry_run=0])
