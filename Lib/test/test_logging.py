@@ -2899,8 +2899,10 @@ class FormatterTest(unittest.TestCase):
 
     def test_time(self):
         r = self.get_record()
-        dt = datetime.datetime(1993,4,21,8,3,0,0,utc)
-        r.created = time.mktime(dt.timetuple()) - time.timezone
+        dt = datetime.datetime(1993, 4, 21, 8, 3, 0, 0, utc)
+        # We use None to indicate we want the local timezone
+        # We're essentially converting a UTC time to local time
+        r.created = time.mktime(dt.astimezone(None).timetuple())
         r.msecs = 123
         f = logging.Formatter('%(asctime)s %(message)s')
         f.converter = time.gmtime
