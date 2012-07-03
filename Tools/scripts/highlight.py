@@ -21,7 +21,7 @@ def escape_range(lines, start, end):
 
 def colorize(source):
     'Convert Python source code to an HTML fragment with colorized markup'
-    lines = source.splitlines(keepends=True)
+    lines = source.splitlines(True)
     lines.append('')
     readline = functools.partial(next, iter(lines), '')
     kind = tok_str = ''
