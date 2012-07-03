@@ -40,7 +40,10 @@ static int
 my_fgets(char *buf, int len, FILE *fp)
 {
     char *p;
+#ifdef MS_WINDOWS
     int i;
+#endif
+
     while (1) {
         if (PyOS_InputHook != NULL)
             (void)(PyOS_InputHook)();
