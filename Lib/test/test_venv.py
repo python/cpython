@@ -8,6 +8,7 @@ Licensed to the PSF under a contributor agreement.
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, run_unittest,
@@ -85,6 +86,30 @@ class BasicTest(BaseTest):
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+
+    def test_prefixes(self):
+        """
+        Test that the prefix values are as expected.
+        """
+        #check our prefixes
+        self.assertEqual(sys.base_prefix, sys.prefix)
+        self.assertEqual(sys.base_exec_prefix, sys.exec_prefix)
+
+        # check a venv's prefixes
+        shutil.rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        cmd = [envpy, '-c', None]
+        for prefix, expected in (
+            ('prefix', self.env_dir),
+            ('prefix', self.env_dir),
+            ('base_prefix', sys.prefix),
+            ('base_exec_prefix', sys.exec_prefix)):
+            cmd[2] = 'import sys; print(sys.%s)' % prefix
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            self.assertEqual(out[:-1], expected.encode())
 
     def test_overwrite_existing(self):
         """
