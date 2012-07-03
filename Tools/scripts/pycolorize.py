@@ -79,13 +79,13 @@ default_html = '''\
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-<title> %s </title>
+<title> {title} </title>
 <style type="text/css">
-%s
+{css}
 </style>
 </head>
 <body>
-%s
+{body}
 </body>
 </html>
 '''
@@ -95,7 +95,7 @@ def build_page(source, title='python', css=default_css, html=default_html):
     css_str = '\n'.join(['%s %s' % item for item in css.items()])
     result = colorize(source)
     title = cgi.escape(title)
-    return html % (title, css_str, result)
+    return html.format(title=title, css=css_str, body=result)
 
 
 if __name__ == '__main__':
