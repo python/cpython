@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
-'Add syntax highlighting to Python source code'
+'''Add syntax highlighting to Python source code
+
+Example command-line calls:
+
+    # Show syntax highlighted code in the terminal window
+    $ ./highlight.py -a myfile.py
+
+    # Colorize myfile.py and display in a browser
+    $ ./highlight.py -b myfile.py
+
+    # Create an HTML section that can be embedded in an existing webpage
+    ./highlight.py -s myfile.py
+
+    # Create a complete HTML file
+    $ ./highlight.py myfile.py > myfile.html
+
+'''
 
 __all__ = ['colorize', 'build_page', 'default_css', 'default_html',
            'ansi_colorize', 'default_ansi']
@@ -150,14 +166,14 @@ if __name__ == '__main__':
 
     sourcefile = args.sourcefile
     with open(sourcefile) as f:
-        page = f.read()
+        source = f.read()
 
     if args.ansi:
-        encoded = colorize_ansi(page)
+        encoded = colorize_ansi(source)
     elif args.section:
-        encoded = colorize_html(page)
+        encoded = colorize_html(source)
     else:
-        encoded = build_page(page, title=sourcefile)
+        encoded = build_page(source, title=sourcefile)
 
     if args.browser:
         htmlfile = os.path.splitext(os.path.basename(sourcefile))[0] + '.html'
