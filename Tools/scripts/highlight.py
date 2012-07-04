@@ -17,8 +17,8 @@ Example command-line calls:
 
 '''
 
-__all__ = ['colorize', 'build_page', 'default_css', 'default_html',
-           'ansi_colorize', 'default_ansi']
+__all__ = ['colorize_html', 'build_page', 'default_css', 'default_html',
+           'colorize_ansi', 'default_ansi']
 __author__ = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, functools
