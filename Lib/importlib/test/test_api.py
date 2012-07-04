@@ -1,7 +1,9 @@
 from . import util
 import imp
 import importlib
+from importlib import machinery
 import sys
+from test import support
 import unittest
 
 
@@ -164,18 +166,9 @@ class FrozenImportlibTests(unittest.TestCase):
 
     def test_no_frozen_importlib(self):
         # Should be able to import w/o _frozen_importlib being defined.
-        modules = {}
-        for name in ('importlib', 'importlib.__init__', 'importlib._bootstrap',
-                     '_frozen_importlib'):
-            try:
-                modules[name] = sys.modules[name]
-                del sys.modules[name]
-            except KeyError:
-                continue
-        modules['_frozen_importlib'] = None
-        import importlib
-        for name, module in modules.items():
-            sys.modules[name] = module
+        module = support.import_fresh_module('importlib', blocked=['_frozen_importlib'])
+        self.assertFalse(isinstance(module.__loader__,
+                                    machinery.FrozenImporter))
 
 
 def test_main():
