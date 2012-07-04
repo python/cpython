@@ -4,7 +4,7 @@
 Example command-line calls:
 
     # Show syntax highlighted code in the terminal window
-    $ ./highlight.py -a myfile.py
+    $ ./highlight.py myfile.py
 
     # Colorize myfile.py and display in a browser
     $ ./highlight.py -b myfile.py
@@ -13,7 +13,7 @@ Example command-line calls:
     ./highlight.py -s myfile.py
 
     # Create a complete HTML file
-    $ ./highlight.py myfile.py > myfile.html
+    $ ./highlight.py -c myfile.py > myfile.html
 
 '''
 
@@ -149,31 +149,28 @@ if __name__ == '__main__':
             description = 'Add syntax highlighting to Python source')
     parser.add_argument('sourcefile', metavar = 'SOURCEFILE',
             help = 'File containing Python sourcecode')
-    parser.add_argument('-a', '--ansi', action = 'store_true',
-            help = 'emit ANSI escape highlighted source')
     parser.add_argument('-b', '--browser', action = 'store_true',
             help = 'launch a browser to show results')
+    parser.add_argument('-c', '--complete', action = 'store_true',
+            help = 'build a complete html webpage')
     parser.add_argument('-s', '--section', action = 'store_true',
             help = 'show an HTML section rather than a complete webpage')
     args = parser.parse_args()
 
-    if args.browser and args.section:
+    if args.section and (args.browser or args.complete):
         parser.error('The -s/--section option is incompatible with '
-                     'the -b/--browser option')
-    if args.ansi and (args.browser or args.section):
-        parser.error('The -a/--ansi option is incompatible with '
-                     'the -b/--browser and -s/--section options')
+                     'the -b/--browser or -c/--complete options')
 
     sourcefile = args.sourcefile
     with open(sourcefile) as f:
         source = f.read()
 
-    if args.ansi:
-        encoded = colorize_ansi(source)
+    if args.complete or args.browser:
+        encoded = build_page(source, title=sourcefile)
     elif args.section:
         encoded = colorize_html(source)
     else:
-        encoded = build_page(source, title=sourcefile)
+        encoded = colorize_ansi(source)
 
     if args.browser:
         htmlfile = os.path.splitext(os.path.basename(sourcefile))[0] + '.html'
