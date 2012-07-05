@@ -583,7 +583,7 @@ Py_Main(int argc, char **argv)
         sts = PyRun_SimpleStringFlags(command, &cf) != 0;
         free(command);
     } else if (module) {
-        sts = RunModule(module, 1);
+        sts = (RunModule(module, 1) != 0);
         free(module);
     }
     else {
