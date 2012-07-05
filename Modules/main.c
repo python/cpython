@@ -673,7 +673,7 @@ Py_Main(int argc, wchar_t **argv)
         sts = run_command(command, &cf);
         free(command);
     } else if (module) {
-        sts = RunModule(module, 1);
+        sts = (RunModule(module, 1) != 0);
     }
     else {
 
