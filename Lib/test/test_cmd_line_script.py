@@ -6,10 +6,13 @@ import os.path
 import test.test_support
 from test.script_helper import (run_python,
                                 temp_dir, make_script, compile_script,
-                                make_pkg, make_zip_script, make_zip_pkg)
+                                assert_python_failure, make_pkg,
+                                make_zip_script, make_zip_pkg)
 
 verbose = test.test_support.verbose
 
+
+example_args = ['test1', 'test2', 'test3']
 
 test_source = """\
 # Script may be run with optimisation enabled, so don't rely on assert
@@ -203,6 +206,19 @@ class CmdLineTest(unittest.TestCase):
                    "be directly executed")
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
             self._check_import_error(launch_name, msg)
+
+    def test_dash_m_error_code_is_one(self):
+        # If a module is invoked with the -m command line flag
+        # and results in an error that the return code to the
+        # shell is '1'
+        with temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            make_pkg(pkg_dir)
+            script_name = _make_test_script(pkg_dir, 'other', "if __name__ == '__main__': raise ValueError")
+            rc, out, err = assert_python_failure('-m', 'test_pkg.other', *example_args)
+            if verbose > 1:
+                print(out)
+            self.assertEqual(rc, 1)
 
 
 def test_main():
