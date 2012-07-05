@@ -279,6 +279,21 @@ class CmdLineTest(unittest.TestCase):
                     self._check_output(script_name, rc, out,
                                       script_name, script_name, '', '')
 
+    def test_dash_m_error_code_is_one(self):
+        # If a module is invoked with the -m command line flag
+        # and results in an error that the return code to the
+        # shell is '1'
+        with temp_dir() as script_dir:
+            with support.temp_cwd(path=script_dir):
+                pkg_dir = os.path.join(script_dir, 'test_pkg')
+                make_pkg(pkg_dir)
+                script_name = _make_test_script(pkg_dir, 'other',
+                                                "if __name__ == '__main__': raise ValueError")
+                rc, out, err = assert_python_failure('-m', 'test_pkg.other', *example_args)
+                if verbose > 1:
+                    print(out)
+                self.assertEqual(rc, 1)
+
 def test_main():
     support.run_unittest(CmdLineTest)
     support.reap_children()
