@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15033: Fix the exit status bug when modules invoked using -m swith,
+  return the proper failure return value (1). Patch contributed by Jeff Knupp.
+
 - Issue #15229: An OSError subclass whose __init__ doesn't call back
   OSError.__init__ could produce incomplete instances, leading to crashes
   when calling str() on them.
