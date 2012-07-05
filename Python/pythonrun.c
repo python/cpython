@@ -696,7 +696,11 @@ Py_EndInterpreter(PyThreadState *tstate)
     PyInterpreterState_Delete(interp);
 }
 
+#ifdef MS_WINDOWS
 static wchar_t *progname = L"python";
+#else
+static wchar_t *progname = L"python3";
+#endif
 
 void
 Py_SetProgramName(wchar_t *pn)
