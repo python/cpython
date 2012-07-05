@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #15020: The program name used to search for Python's path is now
+  "python3" under Unix, not "python".
+
 - Issue #15033: Fix the exit status bug when modules invoked using -m swith,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
