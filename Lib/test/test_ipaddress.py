@@ -42,9 +42,20 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv6Address('::ffff') - (2**16 - 2),
                          ipaddress.IPv6Address('::1'))
 
-    def testInvalidStrings(self):
+    def testInvalidIntToBytes(self):
+        self.assertRaises(ValueError, ipaddress.v4_int_to_packed, -1)
+        self.assertRaises(ValueError, ipaddress.v4_int_to_packed,
+                          2 ** ipaddress.IPV4LENGTH)
+        self.assertRaises(ValueError, ipaddress.v6_int_to_packed, -1)
+        self.assertRaises(ValueError, ipaddress.v6_int_to_packed,
+                          2 ** ipaddress.IPV6LENGTH)
+
+    def testInvalidStringsInAddressFactory(self):
         def AssertInvalidIP(ip_str):
-            self.assertRaises(ValueError, ipaddress.ip_address, ip_str)
+            with self.assertRaises(ValueError) as ex:
+                ipaddress.ip_address(ip_str)
+            self.assertIsNone(ex.exception.__context__)
+
         AssertInvalidIP("")
         AssertInvalidIP("016.016.016.016")
         AssertInvalidIP("016.016.016")
@@ -106,42 +117,36 @@ class IpaddrUnitTest(unittest.TestCase):
         AssertInvalidIP(":1:2:3:4:5:6:7")
         AssertInvalidIP("1:2:3:4:5:6:7:")
         AssertInvalidIP(":1:2:3:4:5:6:")
-
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv4Interface, '')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv4Interface,
-                          'google.com')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv4Interface,
-                          '::1.2.3.4')
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv6Interface, '')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Interface,
-                          'google.com')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Interface,
-                          '1.2.3.4')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Interface,
-                          'cafe:cafe::/128/190')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Interface,
-                          '1234:axy::b')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Address,
-                          '1234:axy::b')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Address,
-                          '2001:db8:::1')
-        self.assertRaises(ipaddress.AddressValueError, ipaddress.IPv6Address,
-                          '2001:888888::1')
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv4Address(1)._ip_int_from_string,
-                          '1.a.2.3')
-        self.assertEqual(False, ipaddress.IPv4Interface(1)._is_hostmask(
-                '1.a.2.3'))
+        AssertInvalidIP("1000")
+        AssertInvalidIP("1000000000000000")
+        AssertInvalidIP("02001:db8::")
         self.assertRaises(ValueError, ipaddress.ip_interface, 'bogus')
-        self.assertRaises(ValueError, ipaddress.IPv4Address, '127.0.0.1/32')
-        self.assertRaises(ValueError, ipaddress.v4_int_to_packed, -1)
-        self.assertRaises(ValueError, ipaddress.v4_int_to_packed,
-                          2 ** ipaddress.IPV4LENGTH)
-        self.assertRaises(ValueError, ipaddress.v6_int_to_packed, -1)
-        self.assertRaises(ValueError, ipaddress.v6_int_to_packed,
-                          2 ** ipaddress.IPV6LENGTH)
+
+    def testInvalidStringsInConstructors(self):
+        def AssertInvalidIP(ip_class, ip_str):
+            with self.assertRaises(ipaddress.AddressValueError) as ex:
+                ip_class(ip_str)
+            if ex.exception.__context__ is not None:
+                # Provide clean tracebacks by default
+                self.assertTrue(ex.exception.__suppress_context__)
+
+        AssertInvalidIP(ipaddress.IPv4Address, '127.0.0.1/32')
+        AssertInvalidIP(ipaddress.IPv4Address(1)._ip_int_from_string,
+                          '1.a.2.3')
+        AssertInvalidIP(ipaddress.IPv4Interface, '')
+        AssertInvalidIP(ipaddress.IPv4Interface, 'google.com')
+        AssertInvalidIP(ipaddress.IPv6Address, '1234:axy::b')
+        AssertInvalidIP(ipaddress.IPv6Address, '2001:db8:::1')
+        AssertInvalidIP(ipaddress.IPv6Address, '2001:888888::1')
+        AssertInvalidIP(ipaddress.IPv4Interface, '::1.2.3.4')
+        AssertInvalidIP(ipaddress.IPv6Interface, '')
+        AssertInvalidIP(ipaddress.IPv6Interface, 'google.com')
+        AssertInvalidIP(ipaddress.IPv6Interface, '1.2.3.4')
+        AssertInvalidIP(ipaddress.IPv6Interface, 'cafe:cafe::/128/190')
+        AssertInvalidIP(ipaddress.IPv6Interface, '1234:axy::b')
+
+    def testInvalidHostmask(self):
+        self.assertFalse(ipaddress.IPv4Interface(1)._is_hostmask('1.a.2.3'))
 
     def testInternals(self):
         first, last = ipaddress._find_address_range([
