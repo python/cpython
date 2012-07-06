@@ -1250,7 +1250,9 @@ class IPv4Address(_BaseV4, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes) and len(address) == 4:
+        if isinstance(address, bytes):
+            if len(address) != 4:
+                raise AddressValueError(address)
             self._ip = struct.unpack('!I', address)[0]
             return
 
@@ -1379,7 +1381,9 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         _BaseNetwork.__init__(self, address)
 
         # Constructing from a packed address
-        if isinstance(address, bytes) and len(address) == 4:
+        if isinstance(address, bytes):
+            if len(address) != 4:
+                raise AddressValueError(address)
             self.network_address = IPv4Address(
                 struct.unpack('!I', address)[0])
             self._prefixlen = self._max_prefixlen
@@ -1864,7 +1868,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes) and len(address) == 16:
+        if isinstance(address, bytes):
+            if len(address) != 16:
+                raise AddressValueError(address)
             tmp = struct.unpack('!QQ', address)
             self._ip = (tmp[0] << 64) | tmp[1]
             return
@@ -1996,7 +2002,9 @@ class IPv6Network(_BaseV6, _BaseNetwork):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes) and len(address) == 16:
+        if isinstance(address, bytes):
+            if len(address) != 16:
+                raise AddressValueError(address)
             tmp = struct.unpack('!QQ', address)
             self.network_address = IPv6Address((tmp[0] << 64) | tmp[1])
             self._prefixlen = self._max_prefixlen
