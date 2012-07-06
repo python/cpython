@@ -473,6 +473,19 @@ class StatAttributeTests(unittest.TestCase):
                     return
                 self.fail("Could not stat pagefile.sys")
 
+        @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+        def test_15261(self):
+            # Verify that stat'ing a closed fd does not cause crash
+            r, w = os.pipe()
+            try:
+                os.stat(r)          # should not raise error
+            finally:
+                os.close(r)
+                os.close(w)
+            with self.assertRaises(OSError) as ctx:
+                os.stat(r)
+            self.assertEqual(ctx.exception.errno, errno.EBADF)
+
 from test import mapping_tests
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):

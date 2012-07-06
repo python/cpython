@@ -1829,7 +1829,10 @@ win32_fstat(int file_number, struct win32_stat *result)
     HANDLE h;
     int type;
 
-    h = (HANDLE)_get_osfhandle(file_number);
+    if (!_PyVerify_fd(file_number))
+        h = INVALID_HANDLE_VALUE;
+    else
+        h = (HANDLE)_get_osfhandle(file_number);
 
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
@@ -8244,8 +8247,6 @@ posix_fstat(PyObject *self, PyObject *args)
     /* on OpenVMS we must ensure that all bytes are written to the file */
     fsync(fd);
 #endif
-    if (!_PyVerify_fd(fd))
-        return posix_error();
     Py_BEGIN_ALLOW_THREADS
     res = FSTAT(fd, &st);
     Py_END_ALLOW_THREADS
