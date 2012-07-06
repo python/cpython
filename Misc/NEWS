@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15247: FileIO now raises an error when given a file descriptor
+  pointing to a directory.
+
 - Issue #14591: Fix bug in Random.jumpahead that could produce an invalid
   Mersenne Twister state on 64-bit machines.
 
