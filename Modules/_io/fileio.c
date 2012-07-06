@@ -166,22 +166,15 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    directories, so we need a check.  */
 
 static int
-dircheck(fileio* self, const char *name)
+dircheck(fileio* self, PyObject *nameobj)
 {
 #if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
     struct stat buf;
     if (self->fd < 0)
         return 0;
     if (fstat(self->fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
-        char *msg = strerror(EISDIR);
-        PyObject *exc;
-        if (internal_close(self))
-            return -1;
-
-        exc = PyObject_CallFunction(PyExc_IOError, "(iss)",
-                                    EISDIR, msg, name);
-        PyErr_SetObject(PyExc_IOError, exc);
-        Py_XDECREF(exc);
+        errno = EISDIR;
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
         return -1;
     }
 #endif
@@ -373,9 +366,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
             goto error;
         }
-        if (dircheck(self, name) < 0)
-            goto error;
     }
+    if (dircheck(self, nameobj) < 0)
+        goto error;
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
     /* don't translate newlines (\r\n <=> \n) */
