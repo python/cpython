@@ -146,6 +146,16 @@ class GenericTest(unittest.TestCase):
                 f.close()
             support.unlink(support.TESTFN)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_exists_fd(self):
+        r, w = os.pipe()
+        try:
+            self.assertTrue(self.pathmodule.exists(r))
+        finally:
+            os.close(r)
+            os.close(w)
+        self.assertFalse(self.pathmodule.exists(r))
+
     def test_isdir(self):
         self.assertIs(self.pathmodule.isdir(support.TESTFN), False)
         f = open(support.TESTFN, "wb")
