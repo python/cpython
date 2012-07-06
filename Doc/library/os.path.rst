@@ -70,10 +70,15 @@ applications should use string objects to access all files.
 
 .. function:: exists(path)
 
-   Return ``True`` if *path* refers to an existing path.  Returns ``False`` for
-   broken symbolic links. On some platforms, this function may return ``False`` if
-   permission is not granted to execute :func:`os.stat` on the requested file, even
+   Return ``True`` if *path* refers to an existing path or an open
+   file descriptor.  Returns ``False`` for broken symbolic links.  On
+   some platforms, this function may return ``False`` if permission is
+   not granted to execute :func:`os.stat` on the requested file, even
    if the *path* physically exists.
+
+   .. versionchanged:: 3.3
+      *path* can now be an integer: ``True`` is returned if it is an
+       open file descriptor, ``False`` otherwise.
 
 
 .. function:: lexists(path)
