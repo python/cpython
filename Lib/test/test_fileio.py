@@ -130,6 +130,14 @@ class AutoFileTests(unittest.TestCase):
         else:
             self.fail("Should have raised IOError")
 
+    @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
+    def testOpenDirFD(self):
+        fd = os.open('.', os.O_RDONLY)
+        with self.assertRaises(IOError) as cm:
+            _FileIO(fd, 'r')
+        os.close(fd)
+        self.assertEqual(cm.exception.errno, errno.EISDIR)
+
     #A set of functions testing that we get expected behaviour if someone has
     #manually closed the internal file descriptor.  First, a decorator:
     def ClosedFD(func):
