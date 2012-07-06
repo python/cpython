@@ -1024,7 +1024,7 @@ class _BaseV4:
             try:
                 packed_ip = (packed_ip << 8) | self._parse_octet(oc)
             except ValueError:
-                raise AddressValueError(ip_str)
+                raise AddressValueError(ip_str) from None
         return packed_ip
 
     def _parse_octet(self, octet_str):
@@ -1041,6 +1041,7 @@ class _BaseV4:
 
         """
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Higher level wrappers convert these to more informative errors
         if not self._DECIMAL_DIGITS.issuperset(octet_str):
             raise ValueError
         octet_int = int(octet_str, 10)
@@ -1497,7 +1498,7 @@ class _BaseV6:
                 [None])
         except ValueError:
             # Can't have more than one '::'
-            raise AddressValueError(ip_str)
+            raise AddressValueError(ip_str) from None
 
         # parts_hi is the number of parts to copy from above/before the '::'
         # parts_lo is the number of parts to copy from below/after the '::'
@@ -1538,7 +1539,7 @@ class _BaseV6:
                 ip_int |= self._parse_hextet(parts[i])
             return ip_int
         except ValueError:
-            raise AddressValueError(ip_str)
+            raise AddressValueError(ip_str) from None
 
     def _parse_hextet(self, hextet_str):
         """Convert an IPv6 hextet string into an integer.
@@ -1555,7 +1556,10 @@ class _BaseV6:
 
         """
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Higher level wrappers convert these to more informative errors
         if not self._HEX_DIGITS.issuperset(hextet_str):
+            raise ValueError
+        if len(hextet_str) > 4:
             raise ValueError
         hextet_int = int(hextet_str, 16)
         if hextet_int > 0xFFFF:
