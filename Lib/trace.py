@@ -48,19 +48,16 @@ Sample use, programmatically
   r.write_results(show_missing=True, coverdir="/tmp")
 """
 __all__ = ['Trace', 'CoverageResults']
-import io
 import linecache
 import os
 import re
 import sys
-import time
 import token
 import tokenize
 import inspect
 import gc
 import dis
 import pickle
-from warnings import warn as _warn
 try:
     from time import monotonic as _time
 except ImportError:
