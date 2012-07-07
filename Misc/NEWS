@@ -74,6 +74,12 @@ Tools/Demos
     * C frames that are garbage-collecting
     * C frames that are due to the invocation of a PyCFunction
 
+Tests
+-----
+
+- Issue #15277: Fix a resource leak in support.py when IPv6 is disabled.
+  Patch by Brian Brazil.
+
 Build
 -----
 

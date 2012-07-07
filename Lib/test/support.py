@@ -493,14 +493,16 @@ def bind_port(sock, host=HOST):
 def _is_ipv6_enabled():
     """Check whether IPv6 is enabled on this host."""
     if socket.has_ipv6:
+        sock = None
         try:
             sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             sock.bind(('::1', 0))
+            return True
         except (socket.error, socket.gaierror):
             pass
-        else:
-            sock.close()
-            return True
+        finally:
+            if sock:
+                sock.close()
     return False
 
 IPV6_ENABLED = _is_ipv6_enabled()
