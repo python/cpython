@@ -8,9 +8,9 @@
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
 #if (SIZEOF_LONG == 8)
-# define ASCII_CHAR_MASK 0x8080808080808080L
+# define ASCII_CHAR_MASK 0x8080808080808080UL
 #elif (SIZEOF_LONG == 4)
-# define ASCII_CHAR_MASK 0x80808080L
+# define ASCII_CHAR_MASK 0x80808080UL
 #else
 # error C 'long' size should be either 4 or 8!
 #endif
