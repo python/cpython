@@ -1,6 +1,5 @@
 "Usage: unparse.py <path to source file>"
 import sys
-import math
 import ast
 import tokenize
 import io

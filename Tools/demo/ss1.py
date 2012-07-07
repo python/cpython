@@ -812,7 +812,6 @@ class SheetGUI:
 
 def test_basic():
     "Basic non-gui self-test."
-    import os
     a = Sheet()
     for x in range(1, 11):
         for y in range(1, 11):
