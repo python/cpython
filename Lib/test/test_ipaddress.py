@@ -126,8 +126,8 @@ class AddressErrors_v4(ErrorReporting):
 
     def test_octet_limit(self):
         def assertBadOctet(addr, octet):
-            msg = "Octet %d > 255 not permitted in %r"
-            with self.assertAddressError(msg, octet, addr):
+            msg = "Octet %d (> 255) not permitted in %r" % (octet, addr)
+            with self.assertAddressError(re.escape(msg)):
                 ipaddress.IPv4Address(addr)
 
         assertBadOctet("12345.67899.-54321.-98765", 12345)
@@ -310,7 +310,7 @@ class NetmaskErrorsMixin_v4:
         assertBadAddress("google.com", "Expected 4 octets")
         assertBadAddress("10/8", "Expected 4 octets")
         assertBadAddress("::1.2.3.4", "Only decimal digits")
-        assertBadAddress("1.2.3.256", "256 > 255")
+        assertBadAddress("1.2.3.256", re.escape("256 (> 255)"))
 
     def test_netmask_errors(self):
         def assertBadNetmask(addr, netmask):

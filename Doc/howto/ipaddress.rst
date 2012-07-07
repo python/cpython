@@ -277,23 +277,49 @@ an integer or string that the other module will accept::
    3221225985
 
 
-Exceptions raised by :mod:`ipaddress`
-=====================================
+Getting more detail when instance creation fails
+================================================
 
 When creating address/network/interface objects using the version-agnostic
-factory functions, any errors will be reported as :exc:`ValueError`.
+factory functions, any errors will be reported as :exc:`ValueError` with
+a generic error message that simply says the passed in value was not
+recognised as an object of that type. The lack of a specific error is
+because it's necessary to know whether the value is *supposed* to be IPv4
+or IPv6 in order to provide more detail on why it has been rejected.
 
-For some use cases, it desirable to know whether it is the address or the
-netmask which is incorrect. To support these use cases, the class
-constructors actually raise the :exc:`ValueError` subclasses
-:exc:`ipaddress.AddressValueError` and :exc:`ipaddress.NetmaskValueError`
-to indicate exactly which part of the definition failed to parse correctly.
+To support use cases where it is useful to have access to this additional
+detail, the individual class constructors actually raise the
+:exc:`ValueError` subclasses :exc:`ipaddress.AddressValueError` and
+:exc:`ipaddress.NetmaskValueError` to indicate exactly which part of
+the definition failed to parse correctly.
 
-Both of the module specific exceptions have :exc:`ValueError` as their
+The error messages are significantly more detailed when using the
+class constructors directly. For example::
+
+   >>> ipaddress.ip_address("192.168.0.256")
+   Traceback (most recent call last):
+     ...
+   ValueError: '192.168.0.256' does not appear to be an IPv4 or IPv6 address
+   >>> ipaddress.IPv4Address("192.168.0.256")
+   Traceback (most recent call last):
+     ...
+   ipaddress.AddressValueError: Octet 256 (> 255) not permitted in '192.168.0.256'
+
+   >>> ipaddress.ip_network("192.168.0.1/64")
+   Traceback (most recent call last):
+     ...
+   ValueError: '192.168.0.1/64' does not appear to be an IPv4 or IPv6 network
+   >>> ipaddress.IPv4Network("192.168.0.1/64")
+   Traceback (most recent call last):
+     ...
+   ipaddress.NetmaskValueError: '64' is not a valid netmask
+
+However, both of the module specific exceptions have :exc:`ValueError` as their
 parent class, so if you're not concerned with the particular type of error,
 you can still write code like the following::
 
    try:
-       ipaddress.IPv4Address(address)
+       network = ipaddress.IPv4Network(address)
    except ValueError:
-       print('address/netmask is invalid:', address)
+       print('address/netmask is invalid for IPv4:', address)
+
