@@ -140,7 +140,7 @@ def _write_atomic(path, data):
 
 
 def _wrap(new, old):
-    """Simple substitute for functools.wraps."""
+    """Simple substitute for functools.update_wrapper."""
     for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
         if hasattr(old, replace):
             setattr(new, replace, getattr(old, replace))
@@ -345,7 +345,7 @@ def set_package(fxn):
     """Set __package__ on the returned module."""
     def set_package_wrapper(*args, **kwargs):
         module = fxn(*args, **kwargs)
-        if not hasattr(module, '__package__') or module.__package__ is None:
+        if getattr(module, '__package__', None) is None:
             module.__package__ = module.__name__
             if not hasattr(module, '__path__'):
                 module.__package__ = module.__package__.rpartition('.')[0]
@@ -438,7 +438,7 @@ def _requires_builtin(fxn):
     """Decorator to verify the named module is built-in."""
     def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
-            raise ImportError("{0} is not a built-in module".format(fullname),
+            raise ImportError("{} is not a built-in module".format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_builtin_wrapper, fxn)
@@ -449,7 +449,7 @@ def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
         if not _imp.is_frozen(fullname):
-            raise ImportError("{0} is not a frozen module".format(fullname),
+            raise ImportError("{} is not a frozen module".format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_frozen_wrapper, fxn)
@@ -511,7 +511,7 @@ class BuiltinImporter:
     @classmethod
     @_requires_builtin
     def is_package(cls, fullname):
-        """Return None as built-in modules are never packages."""
+        """Return False as built-in modules are never packages."""
         return False
 
 
@@ -936,7 +936,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return "_NamespacePath({0!r})".format(self._path)
+        return "_NamespacePath({!r})".format(self._path)
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1198,7 +1198,7 @@ def _resolve_name(name, package, level):
     if len(bits) < level:
         raise ValueError('attempted relative import beyond top-level package')
     base = bits[0]
-    return '{0}.{1}'.format(base, name) if name else base
+    return '{}.{}'.format(base, name) if name else base
 
 
 def _find_module(name, path):
@@ -1228,7 +1228,7 @@ def _sanity_check(name, package, level):
         if not isinstance(package, str):
             raise TypeError("__package__ not set to a string")
         elif package not in sys.modules:
-            msg = ("Parent module {0!r} not loaded, cannot perform relative "
+            msg = ("Parent module {!r} not loaded, cannot perform relative "
                    "import")
             raise SystemError(msg.format(package))
     if not name and level == 0:
@@ -1267,7 +1267,7 @@ def _find_and_load_unlocked(name, import_):
         parent_module = sys.modules[parent]
         setattr(parent_module, name.rpartition('.')[2], module)
     # Set __package__ if the loader did not.
-    if not hasattr(module, '__package__') or module.__package__ is None:
+    if getattr(module, '__package__', None) is None:
         try:
             module.__package__ = module.__name__
             if not hasattr(module, '__path__'):
@@ -1336,11 +1336,12 @@ def _handle_fromlist(module, fromlist, import_):
             fromlist = list(fromlist)
             fromlist.remove('*')
             fromlist.extend(module.__all__)
-        for x in (y for y in fromlist if not hasattr(module, y)):
-            try:
-                import_('{0}.{1}'.format(module.__name__, x))
-            except ImportError:
-                pass
+        for x in fromlist:
+            if not hasattr(module, x):
+                try:
+                    import_('{}.{}'.format(module.__name__, x))
+                except ImportError:
+                    pass
     return module
 
 
