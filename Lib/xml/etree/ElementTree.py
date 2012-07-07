@@ -1597,13 +1597,13 @@ class XMLParser:
                 type = self._doctype[1]
                 if type == "PUBLIC" and n == 4:
                     name, type, pubid, system = self._doctype
+                    if pubid:
+                        pubid = pubid[1:-1]
                 elif type == "SYSTEM" and n == 3:
                     name, type, system = self._doctype
                     pubid = None
                 else:
                     return
-                if pubid:
-                    pubid = pubid[1:-1]
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
                 elif self.doctype != self._XMLParser__doctype:
