@@ -10,7 +10,6 @@ ccbench, a Python concurrency benchmark.
 import time
 import os
 import sys
-import functools
 import itertools
 import threading
 import subprocess
