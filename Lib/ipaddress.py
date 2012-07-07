@@ -1048,7 +1048,7 @@ class _BaseV4:
             raise ValueError("Ambiguous leading zero in %r not permitted" %
                               octet_str)
         if octet_int > 255:
-            raise ValueError("Octet %d > 255 not permitted" % octet_int)
+            raise ValueError("Octet %d (> 255) not permitted" % octet_int)
         return octet_int
 
     def _string_from_ip_int(self, ip_int):
@@ -1591,7 +1591,8 @@ class _BaseV6:
         hextet_int = int(hextet_str, 16)
         if hextet_int > 0xFFFF:
             # This is unreachable due to the string length check above
-            raise ValueError("Part %d > 0xFFFF not permitted" % hextet_int)
+            msg = "Part 0x%X (> 0xFFFF) not permitted"
+            raise ValueError(msg % hextet_int)
         return hextet_int
 
     def _compress_hextets(self, hextets):
