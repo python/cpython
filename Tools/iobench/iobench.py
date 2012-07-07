@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file should be kept compatible with both Python 2.6 and Python >= 3.0.
 
-import functools
-import hashlib
 import itertools
 import os
 import platform

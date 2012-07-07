@@ -32,7 +32,6 @@ import sys
 import zipfile
 
 from textwrap import dedent
-from operator import itemgetter
 
 SCRIPT = sys.argv[0]
 VERSION = "3.2"

@@ -35,7 +35,9 @@ NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 """
 
-import sys, time, operator, platform
+import sys
+import time
+import platform
 from CommandLine import *
 
 try:
@@ -962,8 +964,6 @@ python pybench.py -s p25.pybench -c p21.pybench
                 bench.name = reportfile
                 pickle.dump(bench,f)
                 f.close()
-            except IOError as reason:
-                print('* Error opening/writing reportfile')
             except IOError as reason:
                 print('* Error opening/writing reportfile %s: %s' % (
                     reportfile,
