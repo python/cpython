@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14814: ipaddress now provides more informative error messages when
+  constructing instances directly (changes permitted during beta due to
+  provisional API status)
+
 - Issue #15247: FileIO now raises an error when given a file descriptor
   pointing to a directory.
 
