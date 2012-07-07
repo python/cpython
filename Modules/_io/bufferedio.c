@@ -1759,15 +1759,6 @@ PyTypeObject PyBufferedReader_Type = {
 
 
 
-static int
-complain_about_max_buffer_size(void)
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "max_buffer_size is deprecated", 1) < 0)
-        return 0;
-    return 1;
-}
-
 /*
  * class BufferedWriter
  */
@@ -1776,7 +1767,7 @@ PyDoc_STRVAR(bufferedwriter_doc,
     "\n"
     "The constructor creates a BufferedWriter for the given writeable raw\n"
     "stream. If the buffer_size is not given, it defaults to\n"
-    "DEFAULT_BUFFER_SIZE. max_buffer_size isn't used anymore.\n"
+    "DEFAULT_BUFFER_SIZE.\n"
     );
 
 static void
@@ -1789,22 +1780,17 @@ _bufferedwriter_reset_buf(buffered *self)
 static int
 bufferedwriter_init(buffered *self, PyObject *args, PyObject *kwds)
 {
-    /* TODO: properly deprecate max_buffer_size */
-    char *kwlist[] = {"raw", "buffer_size", "max_buffer_size", NULL};
+    char *kwlist[] = {"raw", "buffer_size", NULL};
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -234;
     PyObject *raw;
 
     self->ok = 0;
     self->detached = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|nn:BufferedReader", kwlist,
-                                     &raw, &buffer_size, &max_buffer_size)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedReader", kwlist,
+                                     &raw, &buffer_size)) {
         return -1;
     }
-
-    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
-        return -1;
 
     if (_PyIOBase_check_writable(raw, Py_True) == NULL)
         return -1;
@@ -2186,15 +2172,11 @@ bufferedrwpair_init(rwpair *self, PyObject *args, PyObject *kwds)
 {
     PyObject *reader, *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -234;
 
-    if (!PyArg_ParseTuple(args, "OO|nn:BufferedRWPair", &reader, &writer,
-                          &buffer_size, &max_buffer_size)) {
+    if (!PyArg_ParseTuple(args, "OO|n:BufferedRWPair", &reader, &writer,
+                          &buffer_size)) {
         return -1;
     }
-
-    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
-        return -1;
 
     if (_PyIOBase_check_readable(reader, Py_True) == NULL)
         return -1;
@@ -2420,27 +2402,23 @@ PyDoc_STRVAR(bufferedrandom_doc,
     "\n"
     "The constructor creates a reader and writer for a seekable stream,\n"
     "raw, given in the first argument. If the buffer_size is omitted it\n"
-    "defaults to DEFAULT_BUFFER_SIZE. max_buffer_size isn't used anymore.\n"
+    "defaults to DEFAULT_BUFFER_SIZE.\n"
     );
 
 static int
 bufferedrandom_init(buffered *self, PyObject *args, PyObject *kwds)
 {
-    char *kwlist[] = {"raw", "buffer_size", "max_buffer_size", NULL};
+    char *kwlist[] = {"raw", "buffer_size", NULL};
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
-    Py_ssize_t max_buffer_size = -234;
     PyObject *raw;
 
     self->ok = 0;
     self->detached = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|nn:BufferedReader", kwlist,
-                                     &raw, &buffer_size, &max_buffer_size)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedReader", kwlist,
+                                     &raw, &buffer_size)) {
         return -1;
     }
-
-    if (max_buffer_size != -234 && !complain_about_max_buffer_size())
-        return -1;
 
     if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
         return -1;

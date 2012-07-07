@@ -604,8 +604,6 @@ than raw I/O does.
    *raw* stream.  If the *buffer_size* is not given, it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
-   A third argument, *max_buffer_size*, is supported, but unused and deprecated.
-
    :class:`BufferedWriter` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
 
@@ -631,8 +629,6 @@ than raw I/O does.
    in the first argument.  If the *buffer_size* is omitted it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
-   A third argument, *max_buffer_size*, is supported, but unused and deprecated.
-
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
    :class:`BufferedWriter` can do.
 
@@ -646,9 +642,6 @@ than raw I/O does.
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
-
-   A fourth argument, *max_buffer_size*, is supported, but unused and
-   deprecated.
 
    :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
    except for :meth:`~BufferedIOBase.detach`, which raises
