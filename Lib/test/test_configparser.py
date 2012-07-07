@@ -1618,6 +1618,42 @@ class ExceptionPicklingTestCase(unittest.TestCase):
         self.assertEqual(repr(e1), repr(e2))
 
 
+class InlineCommentStrippingTestCase(unittest.TestCase):
+    """Tests for issue #14590: ConfigParser doesn't strip inline comment when
+    delimiter occurs earlier without preceding space.."""
+
+    def test_stripping(self):
+        cfg = configparser.ConfigParser(inline_comment_prefixes=(';', '#',
+                '//'))
+        cfg.read_string("""
+        [section]
+        k1 = v1;still v1
+        k2 = v2 ;a comment
+        k3 = v3 ; also a comment
+        k4 = v4;still v4 ;a comment
+        k5 = v5;still v5 ; also a comment
+        k6 = v6;still v6; and still v6 ;a comment
+        k7 = v7;still v7; and still v7 ; also a comment
+
+        [multiprefix]
+        k1 = v1;still v1 #a comment ; yeah, pretty much
+        k2 = v2 // this already is a comment ; continued
+        k3 = v3;#//still v3# and still v3 ; a comment
+        """)
+        s = cfg['section']
+        self.assertEqual(s['k1'], 'v1;still v1')
+        self.assertEqual(s['k2'], 'v2')
+        self.assertEqual(s['k3'], 'v3')
+        self.assertEqual(s['k4'], 'v4;still v4')
+        self.assertEqual(s['k5'], 'v5;still v5')
+        self.assertEqual(s['k6'], 'v6;still v6; and still v6')
+        self.assertEqual(s['k7'], 'v7;still v7; and still v7')
+        s = cfg['multiprefix']
+        self.assertEqual(s['k1'], 'v1;still v1')
+        self.assertEqual(s['k2'], 'v2')
+        self.assertEqual(s['k3'], 'v3;#//still v3# and still v3')
+
+
 def test_main():
     support.run_unittest(
         ConfigParserTestCase,
@@ -1640,4 +1676,5 @@ def test_main():
         ReadFileTestCase,
         CoverageOneHundredTestCase,
         ExceptionPicklingTestCase,
+        InlineCommentStrippingTestCase,
         )
