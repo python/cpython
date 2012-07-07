@@ -609,6 +609,11 @@ input, output, and error streams.
       as :class:`BaseCGIHandler` and :class:`CGIHandler`) that are not HTTP origin
       servers.
 
+      .. versionchanged:: 3.3
+
+      The term "Python" is replaced with implementation specific term like
+      "CPython", "Jython" etc.
+
 
    .. method:: BaseHandler.get_scheme()
 
