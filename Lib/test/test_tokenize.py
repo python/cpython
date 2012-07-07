@@ -674,6 +674,10 @@ class TestTokenizerAdheresToPep0263(TestCase):
         f = 'tokenize_tests-utf8-coding-cookie-and-utf8-bom-sig.txt'
         self.assertTrue(self._testFile(f))
 
+    def test_bad_coding_cookie(self):
+        self.assertRaises(SyntaxError, self._testFile, 'bad_coding.py')
+        self.assertRaises(SyntaxError, self._testFile, 'bad_coding2.py')
+
 
 class Test_Tokenize(TestCase):
 
