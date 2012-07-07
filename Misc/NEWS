@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14814: ipaddress network objects correctly return NotImplemented
+  when compared to arbitrary objects instead of raising TypeError
+
 - Issue #14990: Correctly fail with SyntaxError on invalid encoding
   declaration.
 
