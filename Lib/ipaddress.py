@@ -17,7 +17,6 @@ import struct
 IPV4LENGTH = 32
 IPV6LENGTH = 128
 
-
 class AddressValueError(ValueError):
     """A Value Error related to the address."""
 
@@ -117,7 +116,7 @@ def ip_interface(address):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 network' %
+    raise ValueError('%r does not appear to be an IPv4 or IPv6 interface' %
                      address)
 
 
@@ -156,6 +155,13 @@ def v6_int_to_packed(address):
     except:
         raise ValueError("Address negative or too large for IPv6")
 
+
+def _split_optional_netmask(address):
+    """Helper to split the netmask and raise AddressValueError if needed"""
+    addr = str(address).split('/')
+    if len(addr) > 2:
+        raise AddressValueError("Only one '/' permitted in %r" % address)
+    return addr
 
 def _find_address_range(addresses):
     """Find a sequence of IPv#Address.
@@ -481,7 +487,7 @@ class _BaseAddress(_IPAddressBase):
     def __init__(self, address):
         if (not isinstance(address, bytes)
             and '/' in str(address)):
-            raise AddressValueError(address)
+            raise AddressValueError("Unexpected '/' in %r" % address)
 
     def __index__(self):
         return self._ip
@@ -1014,16 +1020,19 @@ class _BaseV4:
             AddressValueError: if ip_str isn't a valid IPv4 Address.
 
         """
+        if not ip_str:
+            raise AddressValueError('Address cannot be empty')
+
         octets = ip_str.split('.')
         if len(octets) != 4:
-            raise AddressValueError(ip_str)
+            raise AddressValueError("Expected 4 octets in %r" % ip_str)
 
         packed_ip = 0
         for oc in octets:
             try:
                 packed_ip = (packed_ip << 8) | self._parse_octet(oc)
-            except ValueError:
-                raise AddressValueError(ip_str) from None
+            except ValueError as exc:
+                raise AddressValueError("%s in %r" % (exc, ip_str)) from None
         return packed_ip
 
     def _parse_octet(self, octet_str):
@@ -1039,15 +1048,21 @@ class _BaseV4:
             ValueError: if the octet isn't strictly a decimal from [0..255].
 
         """
+        if not octet_str:
+            raise ValueError("Empty octet not permitted")
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
-        # Higher level wrappers convert these to more informative errors
         if not self._DECIMAL_DIGITS.issuperset(octet_str):
-            raise ValueError
+            raise ValueError("Only decimal digits permitted in %r" % octet_str)
+        # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
-        # Disallow leading zeroes, because no clear standard exists on
-        # whether these should be interpreted as decimal or octal.
-        if octet_int > 255 or (octet_str[0] == '0' and len(octet_str) > 1):
-            raise ValueError
+        # Any octets that look like they *might* be written in octal,
+        # and which don't look exactly the same in both octal and
+        # decimal are rejected as ambiguous
+        if octet_int > 7 and octet_str[0] == '0':
+            raise ValueError("Ambiguous leading zero in %r not permitted" %
+                              octet_str)
+        if octet_int > 255:
+            raise ValueError("Octet %d > 255 not permitted" % octet_int)
         return octet_int
 
     def _string_from_ip_int(self, ip_int):
@@ -1080,7 +1095,13 @@ class _BaseV4:
         """
         mask = netmask.split('.')
         if len(mask) == 4:
-            if [x for x in mask if int(x) not in self._valid_mask_octets]:
+            for x in mask:
+                try:
+                    if int(x) in self._valid_mask_octets:
+                        continue
+                except ValueError:
+                    pass
+                # Found something that isn't an integer or isn't valid
                 return False
             if [y for idx, y in enumerate(mask) if idx > 0 and
                 y > mask[idx - 1]]:
@@ -1251,7 +1272,8 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             if len(address) != 4:
-                raise AddressValueError(address)
+                msg = "Packed address %r must be exactly 4 bytes"
+                raise AddressValueError(msg % address)
             self._ip = struct.unpack('!I', address)[0]
             return
 
@@ -1275,9 +1297,7 @@ class IPv4Interface(IPv4Address):
             self._prefixlen = self._max_prefixlen
             return
 
-        addr = str(address).split('/')
-        if len(addr) > 2:
-            raise AddressValueError(address)
+        addr = _split_optional_netmask(address)
         IPv4Address.__init__(self, addr[0])
 
         self.network = IPv4Network(address, strict=False)
@@ -1382,7 +1402,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         # Constructing from a packed address
         if isinstance(address, bytes):
             if len(address) != 4:
-                raise AddressValueError(address)
+                msg = "Packed address %r must be exactly 4 bytes"
+                raise AddressValueError(msg % address)
             self.network_address = IPv4Address(
                 struct.unpack('!I', address)[0])
             self._prefixlen = self._max_prefixlen
@@ -1402,11 +1423,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP prefix string.
-        addr = str(address).split('/')
+        addr = _split_optional_netmask(address)
         self.network_address = IPv4Address(self._ip_int_from_string(addr[0]))
-
-        if len(addr) > 2:
-            raise AddressValueError(address)
 
         if len(addr) == 2:
             mask = addr[1].split('.')
@@ -1420,14 +1438,15 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                     self.netmask = IPv4Address(
                         self._ip_int_from_string(addr[1]) ^ self._ALL_ONES)
                 else:
-                    raise NetmaskValueError('%s is not a valid netmask'
+                    raise NetmaskValueError('%r is not a valid netmask'
                                                      % addr[1])
 
                 self._prefixlen = self._prefix_from_ip_int(int(self.netmask))
             else:
                 # We have a netmask in prefix length form.
                 if not self._is_valid_netmask(addr[1]):
-                    raise NetmaskValueError(addr[1])
+                    raise NetmaskValueError('%r is not a valid netmask'
+                                                     % addr[1])
                 self._prefixlen = int(addr[1])
                 self.netmask = IPv4Address(self._ip_int_from_prefix(
                     self._prefixlen))
@@ -1477,21 +1496,33 @@ class _BaseV6:
             AddressValueError: if ip_str isn't a valid IPv6 Address.
 
         """
+        if not ip_str:
+            raise AddressValueError('Address cannot be empty')
+
         parts = ip_str.split(':')
 
         # An IPv6 address needs at least 2 colons (3 parts).
-        if len(parts) < 3:
-            raise AddressValueError(ip_str)
+        _min_parts = 3
+        if len(parts) < _min_parts:
+            msg = "At least %d parts expected in %r" % (_min_parts, ip_str)
+            raise AddressValueError(msg)
 
         # If the address has an IPv4-style suffix, convert it to hexadecimal.
         if '.' in parts[-1]:
-            ipv4_int = IPv4Address(parts.pop())._ip
+            try:
+                ipv4_int = IPv4Address(parts.pop())._ip
+            except AddressValueError as exc:
+                raise AddressValueError("%s in %r" % (exc, ip_str)) from None
             parts.append('%x' % ((ipv4_int >> 16) & 0xFFFF))
             parts.append('%x' % (ipv4_int & 0xFFFF))
 
         # An IPv6 address can't have more than 8 colons (9 parts).
-        if len(parts) > self._HEXTET_COUNT + 1:
-            raise AddressValueError(ip_str)
+        # The extra colon comes from using the "::" notation for a single
+        # leading or trailing zero part.
+        _max_parts = self._HEXTET_COUNT + 1
+        if len(parts) > _max_parts:
+            msg = "At most %d colons permitted in %r" % (_max_parts-1, ip_str)
+            raise AddressValueError(msg)
 
         # Disregarding the endpoints, find '::' with nothing in between.
         # This indicates that a run of zeroes has been skipped.
@@ -1501,7 +1532,8 @@ class _BaseV6:
                 [None])
         except ValueError:
             # Can't have more than one '::'
-            raise AddressValueError(ip_str) from None
+            msg = "At most one '::' permitted in %r" % ip_str
+            raise AddressValueError(msg) from None
 
         # parts_hi is the number of parts to copy from above/before the '::'
         # parts_lo is the number of parts to copy from below/after the '::'
@@ -1512,20 +1544,30 @@ class _BaseV6:
             if not parts[0]:
                 parts_hi -= 1
                 if parts_hi:
-                    raise AddressValueError(ip_str)  # ^: requires ^::
+                    msg = "Leading ':' only permitted as part of '::' in %r"
+                    raise AddressValueError(msg % ip_str)  # ^: requires ^::
             if not parts[-1]:
                 parts_lo -= 1
                 if parts_lo:
-                    raise AddressValueError(ip_str)  # :$ requires ::$
+                    msg = "Trailing ':' only permitted as part of '::' in %r"
+                    raise AddressValueError(msg % ip_str)  # :$ requires ::$
             parts_skipped = self._HEXTET_COUNT - (parts_hi + parts_lo)
             if parts_skipped < 1:
-                raise AddressValueError(ip_str)
+                msg = "Expected at most %d other parts with '::' in %r"
+                raise AddressValueError(msg % (self._HEXTET_COUNT-1, ip_str))
         else:
             # Otherwise, allocate the entire address to parts_hi.  The
             # endpoints could still be empty, but _parse_hextet() will check
             # for that.
             if len(parts) != self._HEXTET_COUNT:
-                raise AddressValueError(ip_str)
+                msg = "Exactly %d parts expected without '::' in %r"
+                raise AddressValueError(msg % (self._HEXTET_COUNT, ip_str))
+            if not parts[0]:
+                msg = "Leading ':' only permitted as part of '::' in %r"
+                raise AddressValueError(msg % ip_str)  # ^: requires ^::
+            if not parts[-1]:
+                msg = "Trailing ':' only permitted as part of '::' in %r"
+                raise AddressValueError(msg % ip_str)  # :$ requires ::$
             parts_hi = len(parts)
             parts_lo = 0
             parts_skipped = 0
@@ -1541,8 +1583,8 @@ class _BaseV6:
                 ip_int <<= 16
                 ip_int |= self._parse_hextet(parts[i])
             return ip_int
-        except ValueError:
-            raise AddressValueError(ip_str) from None
+        except ValueError as exc:
+            raise AddressValueError("%s in %r" % (exc, ip_str)) from None
 
     def _parse_hextet(self, hextet_str):
         """Convert an IPv6 hextet string into an integer.
@@ -1561,12 +1603,14 @@ class _BaseV6:
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
         # Higher level wrappers convert these to more informative errors
         if not self._HEX_DIGITS.issuperset(hextet_str):
-            raise ValueError
+            raise ValueError("Only hex digits permitted in %r" % hextet_str)
         if len(hextet_str) > 4:
-            raise ValueError
+            msg = "At most 4 characters permitted in %r"
+            raise ValueError(msg % hextet_str)
         hextet_int = int(hextet_str, 16)
         if hextet_int > 0xFFFF:
-            raise ValueError
+            # This is unreachable due to the string length check above
+            raise ValueError("Part %d > 0xFFFF not permitted" % hextet_int)
         return hextet_int
 
     def _compress_hextets(self, hextets):
@@ -1869,7 +1913,8 @@ class IPv6Address(_BaseV6, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             if len(address) != 16:
-                raise AddressValueError(address)
+                msg = "Packed address %r must be exactly 16 bytes"
+                raise AddressValueError(msg % address)
             tmp = struct.unpack('!QQ', address)
             self._ip = (tmp[0] << 64) | tmp[1]
             return
@@ -1877,9 +1922,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
-        if not addr_str:
-            raise AddressValueError('')
-
         self._ip = self._ip_int_from_string(addr_str)
 
     @property
@@ -1897,7 +1939,7 @@ class IPv6Interface(IPv6Address):
             self._prefixlen = self._max_prefixlen
             return
 
-        addr = str(address).split('/')
+        addr = _split_optional_netmask(address)
         IPv6Address.__init__(self, addr[0])
         self.network = IPv6Network(address, strict=False)
         self.netmask = self.network.netmask
@@ -2003,7 +2045,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         # Constructing from a packed address
         if isinstance(address, bytes):
             if len(address) != 16:
-                raise AddressValueError(address)
+                msg = "Packed address %r must be exactly 16 bytes"
+                raise AddressValueError(msg % address)
             tmp = struct.unpack('!QQ', address)
             self.network_address = IPv6Address((tmp[0] << 64) | tmp[1])
             self._prefixlen = self._max_prefixlen
@@ -2012,10 +2055,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP prefix string.
-        addr = str(address).split('/')
-
-        if len(addr) > 2:
-            raise AddressValueError(address)
+        addr = _split_optional_netmask(address)
 
         self.network_address = IPv6Address(self._ip_int_from_string(addr[0]))
 
@@ -2023,7 +2063,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
             if self._is_valid_netmask(addr[1]):
                 self._prefixlen = int(addr[1])
             else:
-                raise NetmaskValueError(addr[1])
+                raise NetmaskValueError('%r is not a valid netmask'
+                                                     % addr[1])
         else:
             self._prefixlen = self._max_prefixlen
 
