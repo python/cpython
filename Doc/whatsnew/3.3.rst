@@ -477,6 +477,18 @@ new, more precise information::
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
 
+PEP 412: Key-Sharing Dictionary
+===============================
+
+:pep:`412` - Key-Sharing Dictionary
+ PEP written and implemented by Mark Shannon.
+
+Dictionaries used for the storage of objects' attributes are now able to
+share part of their internal storage between each other (namely, the part
+which stores the keys and their respective hashes).  This reduces the memory
+consumption of programs creating many instances of non-builtin types.
+
+
 Using importlib as the Implementation of Import
 ===============================================
 :issue:`2377` - Replace __import__ w/ importlib.__import__
