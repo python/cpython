@@ -72,6 +72,8 @@ Build
 
 - Issue #15235: Allow Berkley DB versions up to 5.3 to build the dbm module.
 
+- Issue #15268: Search curses.h in /usr/include/ncursesw.
+
 
 What's New in Python 3.3.0 Beta 1?
 ==================================

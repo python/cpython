@@ -6852,6 +6852,8 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
+ac_save_cppflags="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
 for ac_header in asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h ncurses.h process.h pthread.h \
@@ -6877,6 +6879,7 @@ fi
 
 done
 
+CPPFLAGS=$ac_save_cppflags
 ac_header_dirent=no
 for ac_hdr in dirent.h sys/ndir.h sys/dir.h ndir.h; do
   as_ac_Header=`$as_echo "ac_cv_header_dirent_$ac_hdr" | $as_tr_sh`
@@ -14350,6 +14353,8 @@ $as_echo "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
+ac_save_cppflags="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mvwdelch is an expression" >&5
 $as_echo_n "checking whether mvwdelch is an expression... " >&6; }
@@ -14503,6 +14508,8 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+# last curses configure check
+CPPFLAGS=$ac_save_cppflags
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 $as_echo "$as_me: checking for device files" >&6;}
