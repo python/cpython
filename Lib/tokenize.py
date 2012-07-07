@@ -388,7 +388,7 @@ def detect_encoding(readline):
             raise SyntaxError(msg)
 
         if bom_found:
-            if codec.name != 'utf-8':
+            if encoding != 'utf-8':
                 # This behaviour mimics the Python interpreter
                 if filename is None:
                     msg = 'encoding problem: utf-8'
