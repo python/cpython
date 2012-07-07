@@ -9,11 +9,11 @@ An Introduction to the ipaddress module
 
 .. topic:: Overview
 
-   This document aims to provide a gentle introduction to :mod:`ipaddress`
-   module. It is aimed primarily at users that aren't already familiar with
-   IP networking terminology, but may also be useful to network engineers
-   wanting an overview of how the ipaddress module represents IP network
-   addressing concepts.
+   This document aims to provide a gentle introduction to the
+   :mod:`ipaddress` module. It is aimed primarily at users that aren't
+   already familiar with IP networking terminology, but may also be useful
+   to network engineers wanting an overview of how :mod:`ipaddress`
+   represents IP network addressing concepts.
 
 
 Creating Address/Network/Interface objects
@@ -45,8 +45,9 @@ IP Host Addresses
 
 Addresses, often referred to as "host addresses" are the most basic unit
 when working with IP addressing. The simplest way to create addresses is
-to use the :func:`ipaddress.ip_address` factory function, which automatically determines
-whether to create an IPv4 or IPv6 address based on the passed in value::
+to use the :func:`ipaddress.ip_address` factory function, which automatically
+determines whether to create an IPv4 or IPv6 address based on the passed in
+value::
 
    >>> ipaddress.ip_address('192.0.2.1')
    IPv4Address('192.0.2.1')
@@ -121,8 +122,9 @@ integer, so the network prefix includes the entire network address::
    >>> ipaddress.ip_network(42540766411282592856903984951653826560)
    IPv6Network('2001:db8::/128')
 
-Creation of a particular kind of network can be forced by calling the
-class constructor directly instead of using the factory function.
+As with addresses, creation of a particular kind of network can be forced
+by calling the class constructor directly instead of using the factory
+function.
 
 
 Host Interfaces
@@ -130,7 +132,7 @@ Host Interfaces
 
 As mentioned just above, if you need to describe an address on a particular
 network, neither the address nor the network classes are sufficient.
-Notation like ``192.0.2.1/24`` is commonly used network engineers and the
+Notation like ``192.0.2.1/24`` is commonly used by network engineers and the
 people who write tools for firewalls and routers as shorthand for "the host
 ``192.0.2.1`` on the network ``192.0.2.0/24``", Accordingly, :mod:`ipaddress`
 provides a set of hybrid classes that associate an address with a particular
@@ -213,10 +215,19 @@ the hostmask (any bits that are not part of the netmask):
 
 Exploding or compressing the address::
 
-   >>> net6.exploded
-   '2001:0000:0000:0000:0000:0000:0000:0000/96'
    >>> addr6.exploded
-   '2001:0000:0000:0000:0000:0000:0000:0001'
+   '2001:0db8:0000:0000:0000:0000:0000:0000'
+   >>> addr6.compressed
+   '2001:db8::'
+   >>> net6.exploded
+   '2001:0db8:0000:0000:0000:0000:0000:0000/96'
+   >>> net6.compressed
+   '2001:db8::/96'
+
+While IPv4 doesn't support explosion or compression, the associated objects
+still provide the relevant properties so that version neutral code can
+easily ensure the most concise or most verbose form is used for IPv6
+addresses while still correctly handling IPv4 addresses.
 
 
 Networks as lists of Addresses
