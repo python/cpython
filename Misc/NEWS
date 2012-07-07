@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14990: Correctly fail with SyntaxError on invalid encoding
+  declaration.
+
 - Issue #15247: FileIO now raises an error when given a file descriptor
   pointing to a directory.
 
