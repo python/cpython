@@ -1579,7 +1579,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  usage=None,
                  description=None,
                  epilog=None,
-                 version=None,
                  parents=[],
                  formatter_class=HelpFormatter,
                  prefix_chars='-',
@@ -1587,14 +1586,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  argument_default=None,
                  conflict_handler='error',
                  add_help=True):
-
-        if version is not None:
-            import warnings
-            warnings.warn(
-                """The "version" argument to ArgumentParser is deprecated. """
-                """Please use """
-                """"add_argument(..., action='version', version="N", ...)" """
-                """instead""", DeprecationWarning)
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1609,7 +1600,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.prog = prog
         self.usage = usage
         self.epilog = epilog
-        self.version = version
         self.formatter_class = formatter_class
         self.fromfile_prefix_chars = fromfile_prefix_chars
         self.add_help = add_help
@@ -1624,7 +1614,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             return string
         self.register('type', None, identity)
 
-        # add help and version arguments if necessary
+        # add help argument if necessary
         # (using explicit default to override global argument_default)
         default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
         if self.add_help:
@@ -1632,12 +1622,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 default_prefix+'h', default_prefix*2+'help',
                 action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
-        if self.version:
-            self.add_argument(
-                default_prefix+'v', default_prefix*2+'version',
-                action='version', default=SUPPRESS,
-                version=self.version,
-                help=_("show program's version number and exit"))
 
         # add parent arguments and defaults
         for parent in parents:
@@ -1657,7 +1641,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             'prog',
             'usage',
             'description',
-            'version',
             'formatter_class',
             'conflict_handler',
             'add_help',
@@ -2320,16 +2303,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # determine help from format above
         return formatter.format_help()
 
-    def format_version(self):
-        import warnings
-        warnings.warn(
-            'The format_version method is deprecated -- the "version" '
-            'argument to ArgumentParser is no longer supported.',
-            DeprecationWarning)
-        formatter = self._get_formatter()
-        formatter.add_text(self.version)
-        return formatter.format_help()
-
     def _get_formatter(self):
         return self.formatter_class(prog=self.prog)
 
@@ -2345,14 +2318,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if file is None:
             file = _sys.stdout
         self._print_message(self.format_help(), file)
-
-    def print_version(self, file=None):
-        import warnings
-        warnings.warn(
-            'The print_version method is deprecated -- the "version" '
-            'argument to ArgumentParser is no longer supported.',
-            DeprecationWarning)
-        self._print_message(self.format_version(), file)
 
     def _print_message(self, message, file=None):
         if message:
