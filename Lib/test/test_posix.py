@@ -1017,9 +1017,6 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
                          "test needs an OS that reports file holes")
-    @unittest.skipIf(sys.platform in ('freebsd7', 'freebsd8', 'freebsd9'),
-            "Skip test because known kernel bug - " \
-            "http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html")
     def test_fs_holes(self):
         # Even if the filesystem doesn't report holes,
         # if the OS supports it the SEEK_* constants
@@ -1032,11 +1029,18 @@ class PosixTester(unittest.TestCase):
             fp.flush()
             size = fp.tell()
             fno = fp.fileno()
-            for i in range(size):
-                self.assertEqual(i, os.lseek(fno, i, os.SEEK_DATA))
-                self.assertLessEqual(size, os.lseek(fno, i, os.SEEK_HOLE))
-            self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_DATA)
-            self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_HOLE)
+            try :
+                for i in range(size):
+                    self.assertEqual(i, os.lseek(fno, i, os.SEEK_DATA))
+                    self.assertLessEqual(size, os.lseek(fno, i, os.SEEK_HOLE))
+                self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_DATA)
+                self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_HOLE)
+            except OSError :
+                # Some OSs claim to support SEEK_HOLE/SEEK_DATA
+                # but it is not true.
+                # For instance:
+                # http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html
+                raise unittest.SkipTest("OSError raised!")
 
 class PosixGroupsTester(unittest.TestCase):
 
