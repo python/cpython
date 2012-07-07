@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13248: Remove obsolete argument "version" of argparse.ArgumentParser.
+
 - Issue #14814: implement more consistent ordering and sorting behaviour
   for ipaddress objects
 
