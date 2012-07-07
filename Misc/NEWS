@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14814: implement more consistent ordering and sorting behaviour
+  for ipaddress objects
+
 - Issue #14814: ipaddress network objects correctly return NotImplemented
   when compared to arbitrary objects instead of raising TypeError
 
