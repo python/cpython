@@ -651,12 +651,12 @@ class _BaseNetwork(_IPAddressBase):
         return not lt
 
     def __eq__(self, other):
-        if not isinstance(other, _BaseNetwork):
-            raise TypeError('%s and %s are not of the same type' % (
-                             self, other))
-        return (self._version == other._version and
-                self.network_address == other.network_address and
-                int(self.netmask) == int(other.netmask))
+        try:
+            return (self._version == other._version and
+                    self.network_address == other.network_address and
+                    int(self.netmask) == int(other.netmask))
+        except AttributeError:
+            return NotImplemented
 
     def __ne__(self, other):
         eq = self.__eq__(other)

@@ -462,7 +462,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
         self.assertEqual('0x1020318', hex(self.ipv4_network))
-        self.assertRaises(TypeError, self.ipv4_network.__eq__, object())
 
     def testMissingAddressVersion(self):
         class Broken(ipaddress._BaseAddress):
@@ -495,6 +494,22 @@ class IpaddrUnitTest(unittest.TestCase):
                          '2001:658:22a:cafe::')
         self.assertEqual(str(self.ipv6_network.hostmask),
                          '::ffff:ffff:ffff:ffff')
+
+    def testEqualityChecks(self):
+        # __eq__ should never raise TypeError directly
+        other = object()
+        def assertEqualityNotImplemented(instance):
+            self.assertEqual(instance.__eq__(other), NotImplemented)
+            self.assertEqual(instance.__ne__(other), NotImplemented)
+            self.assertFalse(instance == other)
+            self.assertTrue(instance != other)
+
+        assertEqualityNotImplemented(self.ipv4_address)
+        assertEqualityNotImplemented(self.ipv4_network)
+        assertEqualityNotImplemented(self.ipv4_interface)
+        assertEqualityNotImplemented(self.ipv6_address)
+        assertEqualityNotImplemented(self.ipv6_network)
+        assertEqualityNotImplemented(self.ipv6_interface)
 
     def testBadVersionComparison(self):
         # These should always raise TypeError
