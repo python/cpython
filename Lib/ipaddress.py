@@ -12,7 +12,7 @@ __version__ = '1.0'
 
 
 import struct
-
+import functools
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -405,7 +405,38 @@ def get_mixed_type_key(obj):
     return NotImplemented
 
 
-class _IPAddressBase:
+class _TotalOrderingMixin:
+    # Helper that derives the other comparison operations from
+    # __lt__ and __eq__
+    def __eq__(self, other):
+        raise NotImplementedError
+    def __ne__(self, other):
+        equal = self.__eq__(other)
+        if equal is NotImplemented:
+            return NotImplemented
+        return not equal
+    def __lt__(self, other):
+        raise NotImplementedError
+    def __le__(self, other):
+        less = self.__lt__(other)
+        if less is NotImplemented or not less:
+            return self.__eq__(other)
+        return less
+    def __gt__(self, other):
+        less = self.__lt__(other)
+        if less is NotImplemented:
+            return NotImplemented
+        equal = self.__eq__(other)
+        if equal is NotImplemented:
+            return NotImplemented
+        return not (less or equal)
+    def __ge__(self, other):
+        less = self.__lt__(other)
+        if less is NotImplemented:
+            return NotImplemented
+        return not less
+
+class _IPAddressBase(_TotalOrderingMixin):
 
     """The mother class."""
 
@@ -465,7 +496,6 @@ class _IPAddressBase:
             prefixlen = self._prefixlen
         return self._string_from_ip_int(self._ip_int_from_prefix(prefixlen))
 
-
 class _BaseAddress(_IPAddressBase):
 
     """A generic IP object.
@@ -493,24 +523,6 @@ class _BaseAddress(_IPAddressBase):
         except AttributeError:
             return NotImplemented
 
-    def __ne__(self, other):
-        eq = self.__eq__(other)
-        if eq is NotImplemented:
-            return NotImplemented
-        return not eq
-
-    def __le__(self, other):
-        gt = self.__gt__(other)
-        if gt is NotImplemented:
-            return NotImplemented
-        return not gt
-
-    def __ge__(self, other):
-        lt = self.__lt__(other)
-        if lt is NotImplemented:
-            return NotImplemented
-        return not lt
-
     def __lt__(self, other):
         if self._version != other._version:
             raise TypeError('%s and %s are not of the same version' % (
@@ -520,17 +532,6 @@ class _BaseAddress(_IPAddressBase):
                              self, other))
         if self._ip != other._ip:
             return self._ip < other._ip
-        return False
-
-    def __gt__(self, other):
-        if self._version != other._version:
-            raise TypeError('%s and %s are not of the same version' % (
-                             self, other))
-        if not isinstance(other, _BaseAddress):
-            raise TypeError('%s and %s are not of the same type' % (
-                             self, other))
-        if self._ip != other._ip:
-            return self._ip > other._ip
         return False
 
     # Shorthand for Integer addition and subtraction. This is not
@@ -625,31 +626,6 @@ class _BaseNetwork(_IPAddressBase):
             return self.netmask < other.netmask
         return False
 
-    def __gt__(self, other):
-        if self._version != other._version:
-            raise TypeError('%s and %s are not of the same version' % (
-                             self, other))
-        if not isinstance(other, _BaseNetwork):
-            raise TypeError('%s and %s are not of the same type' % (
-                             self, other))
-        if self.network_address != other.network_address:
-            return self.network_address > other.network_address
-        if self.netmask != other.netmask:
-            return self.netmask > other.netmask
-        return False
-
-    def __le__(self, other):
-        gt = self.__gt__(other)
-        if gt is NotImplemented:
-            return NotImplemented
-        return not gt
-
-    def __ge__(self, other):
-        lt = self.__lt__(other)
-        if lt is NotImplemented:
-            return NotImplemented
-        return not lt
-
     def __eq__(self, other):
         try:
             return (self._version == other._version and
@@ -657,12 +633,6 @@ class _BaseNetwork(_IPAddressBase):
                     int(self.netmask) == int(other.netmask))
         except AttributeError:
             return NotImplemented
-
-    def __ne__(self, other):
-        eq = self.__eq__(other)
-        if eq is NotImplemented:
-            return NotImplemented
-        return not eq
 
     def __hash__(self):
         return hash(int(self.network_address) ^ int(self.netmask))
@@ -1292,11 +1262,27 @@ class IPv4Interface(IPv4Address):
                           self.network.prefixlen)
 
     def __eq__(self, other):
+        address_equal = IPv4Address.__eq__(self, other)
+        if not address_equal or address_equal is NotImplemented:
+            return address_equal
         try:
-            return (IPv4Address.__eq__(self, other) and
-                    self.network == other.network)
+            return self.network == other.network
         except AttributeError:
+            # An interface with an associated network is NOT the
+            # same as an unassociated address. That's why the hash
+            # takes the extra info into account.
+            return False
+
+    def __lt__(self, other):
+        address_less = IPv4Address.__lt__(self, other)
+        if address_less is NotImplemented:
             return NotImplemented
+        try:
+            return self.network < other.network
+        except AttributeError:
+            # We *do* allow addresses and interfaces to be sorted. The
+            # unassociated address is considered less than all interfaces.
+            return False
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
@@ -1928,11 +1914,27 @@ class IPv6Interface(IPv6Address):
                           self.network.prefixlen)
 
     def __eq__(self, other):
+        address_equal = IPv6Address.__eq__(self, other)
+        if not address_equal or address_equal is NotImplemented:
+            return address_equal
         try:
-            return (IPv6Address.__eq__(self, other) and
-                    self.network == other.network)
+            return self.network == other.network
         except AttributeError:
+            # An interface with an associated network is NOT the
+            # same as an unassociated address. That's why the hash
+            # takes the extra info into account.
+            return False
+
+    def __lt__(self, other):
+        address_less = IPv6Address.__lt__(self, other)
+        if address_less is NotImplemented:
             return NotImplemented
+        try:
+            return self.network < other.network
+        except AttributeError:
+            # We *do* allow addresses and interfaces to be sorted. The
+            # unassociated address is considered less than all interfaces.
+            return False
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)

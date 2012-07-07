@@ -415,6 +415,93 @@ class FactoryFunctionErrors(ErrorReporting):
         self.assertFactoryError(ipaddress.ip_network, "network")
 
 
+class ComparisonTests(unittest.TestCase):
+
+    v4addr = ipaddress.IPv4Address(1)
+    v4net = ipaddress.IPv4Network(1)
+    v4intf = ipaddress.IPv4Interface(1)
+    v6addr = ipaddress.IPv6Address(1)
+    v6net = ipaddress.IPv6Network(1)
+    v6intf = ipaddress.IPv6Interface(1)
+
+    v4_addresses = [v4addr, v4intf]
+    v4_objects = v4_addresses + [v4net]
+    v6_addresses = [v6addr, v6intf]
+    v6_objects = v6_addresses + [v6net]
+    objects = v4_objects + v6_objects
+
+    def test_foreign_type_equality(self):
+        # __eq__ should never raise TypeError directly
+        other = object()
+        for obj in self.objects:
+            self.assertNotEqual(obj, other)
+            self.assertFalse(obj == other)
+            self.assertEqual(obj.__eq__(other), NotImplemented)
+            self.assertEqual(obj.__ne__(other), NotImplemented)
+
+    def test_mixed_type_equality(self):
+        # Ensure none of the internal objects accidentally
+        # expose the right set of attributes to become "equal"
+        for lhs in self.objects:
+            for rhs in self.objects:
+                if lhs is rhs:
+                    continue
+                self.assertNotEqual(lhs, rhs)
+
+    def test_containment(self):
+        for obj in self.v4_addresses:
+            self.assertIn(obj, self.v4net)
+        for obj in self.v6_addresses:
+            self.assertIn(obj, self.v6net)
+        for obj in self.v4_objects + [self.v6net]:
+            self.assertNotIn(obj, self.v6net)
+        for obj in self.v6_objects + [self.v4net]:
+            self.assertNotIn(obj, self.v4net)
+
+    def test_mixed_type_ordering(self):
+        for lhs in self.objects:
+            for rhs in self.objects:
+                if isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs)):
+                    continue
+                self.assertRaises(TypeError, lambda: lhs < rhs)
+                self.assertRaises(TypeError, lambda: lhs > rhs)
+                self.assertRaises(TypeError, lambda: lhs <= rhs)
+                self.assertRaises(TypeError, lambda: lhs >= rhs)
+
+    def test_mixed_type_key(self):
+        # with get_mixed_type_key, you can sort addresses and network.
+        v4_ordered = [self.v4addr, self.v4net, self.v4intf]
+        v6_ordered = [self.v6addr, self.v6net, self.v6intf]
+        self.assertEqual(v4_ordered,
+                         sorted(self.v4_objects,
+                                key=ipaddress.get_mixed_type_key))
+        self.assertEqual(v6_ordered,
+                         sorted(self.v6_objects,
+                                key=ipaddress.get_mixed_type_key))
+        self.assertEqual(v4_ordered + v6_ordered,
+                         sorted(self.objects,
+                                key=ipaddress.get_mixed_type_key))
+        self.assertEqual(NotImplemented, ipaddress.get_mixed_type_key(object))
+
+    def test_incompatible_versions(self):
+        # These should always raise TypeError
+        v4addr = ipaddress.ip_address('1.1.1.1')
+        v4net = ipaddress.ip_network('1.1.1.1')
+        v6addr = ipaddress.ip_address('::1')
+        v6net = ipaddress.ip_address('::1')
+
+        self.assertRaises(TypeError, v4addr.__lt__, v6addr)
+        self.assertRaises(TypeError, v4addr.__gt__, v6addr)
+        self.assertRaises(TypeError, v4net.__lt__, v6net)
+        self.assertRaises(TypeError, v4net.__gt__, v6net)
+
+        self.assertRaises(TypeError, v6addr.__lt__, v4addr)
+        self.assertRaises(TypeError, v6addr.__gt__, v4addr)
+        self.assertRaises(TypeError, v6net.__lt__, v4net)
+        self.assertRaises(TypeError, v6net.__gt__, v4net)
+
+
+
 class IpaddrUnitTest(unittest.TestCase):
 
     def setUp(self):
@@ -494,67 +581,6 @@ class IpaddrUnitTest(unittest.TestCase):
                          '2001:658:22a:cafe::')
         self.assertEqual(str(self.ipv6_network.hostmask),
                          '::ffff:ffff:ffff:ffff')
-
-    def testEqualityChecks(self):
-        # __eq__ should never raise TypeError directly
-        other = object()
-        def assertEqualityNotImplemented(instance):
-            self.assertEqual(instance.__eq__(other), NotImplemented)
-            self.assertEqual(instance.__ne__(other), NotImplemented)
-            self.assertFalse(instance == other)
-            self.assertTrue(instance != other)
-
-        assertEqualityNotImplemented(self.ipv4_address)
-        assertEqualityNotImplemented(self.ipv4_network)
-        assertEqualityNotImplemented(self.ipv4_interface)
-        assertEqualityNotImplemented(self.ipv6_address)
-        assertEqualityNotImplemented(self.ipv6_network)
-        assertEqualityNotImplemented(self.ipv6_interface)
-
-    def testBadVersionComparison(self):
-        # These should always raise TypeError
-        v4addr = ipaddress.ip_address('1.1.1.1')
-        v4net = ipaddress.ip_network('1.1.1.1')
-        v6addr = ipaddress.ip_address('::1')
-        v6net = ipaddress.ip_address('::1')
-
-        self.assertRaises(TypeError, v4addr.__lt__, v6addr)
-        self.assertRaises(TypeError, v4addr.__gt__, v6addr)
-        self.assertRaises(TypeError, v4net.__lt__, v6net)
-        self.assertRaises(TypeError, v4net.__gt__, v6net)
-
-        self.assertRaises(TypeError, v6addr.__lt__, v4addr)
-        self.assertRaises(TypeError, v6addr.__gt__, v4addr)
-        self.assertRaises(TypeError, v6net.__lt__, v4net)
-        self.assertRaises(TypeError, v6net.__gt__, v4net)
-
-    def testMixedTypeComparison(self):
-        v4addr = ipaddress.ip_address('1.1.1.1')
-        v4net = ipaddress.ip_network('1.1.1.1/32')
-        v6addr = ipaddress.ip_address('::1')
-        v6net = ipaddress.ip_network('::1/128')
-
-        self.assertFalse(v4net.__contains__(v6net))
-        self.assertFalse(v6net.__contains__(v4net))
-
-        self.assertRaises(TypeError, lambda: v4addr < v4net)
-        self.assertRaises(TypeError, lambda: v4addr > v4net)
-        self.assertRaises(TypeError, lambda: v4net < v4addr)
-        self.assertRaises(TypeError, lambda: v4net > v4addr)
-
-        self.assertRaises(TypeError, lambda: v6addr < v6net)
-        self.assertRaises(TypeError, lambda: v6addr > v6net)
-        self.assertRaises(TypeError, lambda: v6net < v6addr)
-        self.assertRaises(TypeError, lambda: v6net > v6addr)
-
-        # with get_mixed_type_key, you can sort addresses and network.
-        self.assertEqual([v4addr, v4net],
-                         sorted([v4net, v4addr],
-                                key=ipaddress.get_mixed_type_key))
-        self.assertEqual([v6addr, v6net],
-                         sorted([v6net, v6addr],
-                                key=ipaddress.get_mixed_type_key))
-        self.assertEqual(NotImplemented, ipaddress.get_mixed_type_key(object))
 
     def testIpFromInt(self):
         self.assertEqual(self.ipv4_interface._ip,
@@ -1048,6 +1074,16 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_address('::1'))
         self.assertTrue(ipaddress.ip_address('::1') <=
                         ipaddress.ip_address('::2'))
+
+    def testInterfaceComparison(self):
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
+                        ipaddress.ip_interface('1.1.1.1'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
+                        ipaddress.ip_interface('1.1.1.2'))
+        self.assertTrue(ipaddress.ip_interface('::1') <=
+                        ipaddress.ip_interface('::1'))
+        self.assertTrue(ipaddress.ip_interface('::1') <=
+                        ipaddress.ip_interface('::2'))
 
     def testNetworkComparison(self):
         # ip1 and ip2 have the same network address
