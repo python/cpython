@@ -1255,9 +1255,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(IOError, bufio.tell)
         self.assertRaises(IOError, bufio.write, b"abcdef")
 
-    def test_max_buffer_size_deprecation(self):
-        with support.check_warnings(("max_buffer_size is deprecated",
-                                     DeprecationWarning)):
+    def test_max_buffer_size_removal(self):
+        with self.assertRaises(TypeError):
             self.tp(self.MockRawIO(), 8, 12)
 
 
@@ -1313,9 +1312,8 @@ class BufferedRWPairTest(unittest.TestCase):
         pair = self.tp(self.MockRawIO(), self.MockRawIO())
         self.assertRaises(self.UnsupportedOperation, pair.detach)
 
-    def test_constructor_max_buffer_size_deprecation(self):
-        with support.check_warnings(("max_buffer_size is deprecated",
-                                     DeprecationWarning)):
+    def test_constructor_max_buffer_size_removal(self):
+        with self.assertRaises(TypeError):
             self.tp(self.MockRawIO(), self.MockRawIO(), 8, 12)
 
     def test_constructor_with_not_readable(self):

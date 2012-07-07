@@ -5,7 +5,6 @@ Python implementation of the io module.
 import os
 import abc
 import codecs
-import warnings
 import errno
 # Import _thread instead of threading to reduce startup cost
 try:
@@ -1065,19 +1064,13 @@ class BufferedWriter(_BufferedIOMixin):
     DEFAULT_BUFFER_SIZE.
     """
 
-    _warning_stack_offset = 2
-
-    def __init__(self, raw,
-                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         if not raw.writable():
             raise IOError('"raw" argument must be writable.')
 
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
             raise ValueError("invalid buffer size")
-        if max_buffer_size is not None:
-            warnings.warn("max_buffer_size is deprecated", DeprecationWarning,
-                          self._warning_stack_offset)
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
@@ -1167,15 +1160,11 @@ class BufferedRWPair(BufferedIOBase):
     # XXX The usefulness of this (compared to having two separate IO
     # objects) is questionable.
 
-    def __init__(self, reader, writer,
-                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
+    def __init__(self, reader, writer, buffer_size=DEFAULT_BUFFER_SIZE):
         """Constructor.
 
         The arguments are two RawIO instances.
         """
-        if max_buffer_size is not None:
-            warnings.warn("max_buffer_size is deprecated", DeprecationWarning, 2)
-
         if not reader.readable():
             raise IOError('"reader" argument must be readable.')
 
@@ -1232,13 +1221,10 @@ class BufferedRandom(BufferedWriter, BufferedReader):
     defaults to DEFAULT_BUFFER_SIZE.
     """
 
-    _warning_stack_offset = 3
-
-    def __init__(self, raw,
-                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         raw._checkSeekable()
         BufferedReader.__init__(self, raw, buffer_size)
-        BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
+        BufferedWriter.__init__(self, raw, buffer_size)
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
