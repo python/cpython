@@ -490,11 +490,15 @@ class BuiltinImporter:
         """Load a built-in module."""
         is_reload = fullname in sys.modules
         try:
-            return _imp.init_builtin(fullname)
+            return cls._exec_module(fullname)
         except:
             if not is_reload and fullname in sys.modules:
                 del sys.modules[fullname]
             raise
+
+    @classmethod
+    def _exec_module(cls, fullname):
+        return _imp.init_builtin(fullname)
 
     @classmethod
     @_requires_builtin
