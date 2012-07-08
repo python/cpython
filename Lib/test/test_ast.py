@@ -1,8 +1,10 @@
 import os
 import sys
 import unittest
-from test import support
 import ast
+import weakref
+
+from test import support
 
 def to_tuple(t):
     if t is None or isinstance(t, (str, int, complex)):
@@ -206,6 +208,17 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             # "_ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    def test_AST_garbage_collection(self):
+        class X:
+            pass
+        a = ast.AST()
+        a.x = X()
+        a.x.a = a
+        ref = weakref.ref(a.x)
+        del a
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_snippets(self):
         for input, output, kind in ((exec_tests, exec_results, "exec"),
