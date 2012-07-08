@@ -795,7 +795,7 @@ class ImportTracebackTests(unittest.TestCase):
             tb = tb.tb_next
         self.assertEqual(len(deduped_files), len(files), deduped_files)
         for fn, pat in zip(deduped_files, files):
-            self.assertRegex(fn, pat)
+            self.assertIn(pat, fn)
 
     def test_nonexistent_module(self):
         try:
