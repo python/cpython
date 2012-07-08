@@ -285,7 +285,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         co = compile("None", fn, "exec")
         self.assertEqual(inspect.getsourcefile(co), None)
         linecache.cache[co.co_filename] = (1, None, "None", co.co_filename)
-        self.assertEqual(normcase(inspect.getsourcefile(co)), fn)
+        try:
+            self.assertEqual(normcase(inspect.getsourcefile(co)), fn)
+        finally:
+            del linecache.cache[co.co_filename]
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
@@ -407,8 +410,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertRaises(IOError, inspect.findsource, co)
         self.assertRaises(IOError, inspect.getsource, co)
         linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
-        self.assertEqual(inspect.findsource(co), (lines,0))
-        self.assertEqual(inspect.getsource(co), lines[0])
+        try:
+            self.assertEqual(inspect.findsource(co), (lines,0))
+            self.assertEqual(inspect.getsource(co), lines[0])
+        finally:
+            del linecache.cache[co.co_filename]
 
 class TestNoEOL(GetSourceBase):
     def __init__(self, *args, **kwargs):
