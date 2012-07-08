@@ -8,6 +8,7 @@
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
+#include "frameobject.h"
 #include "osdefs.h"
 #include "importdl.h"
 
@@ -1375,6 +1376,69 @@ PyImport_ImportModuleNoBlock(const char *name)
 }
 
 
+/* Remove importlib frames from the traceback,
+ * except in Verbose mode. */
+static void
+remove_importlib_frames(void)
+{
+    const char *importlib_filename = "<frozen importlib._bootstrap>";
+    const char *exec_funcname = "_exec_module";
+    int always_trim = 0;
+    int in_importlib;
+    PyObject *exception, *value, *base_tb, *tb;
+    PyObject **prev_link, **outer_link;
+
+    /* Synopsis: if it's an ImportError, we trim all importlib chunks
+       from the traceback.  Otherwise, we trim only those chunks which
+       end with a call to "_exec_module". */
+
+    PyErr_Fetch(&exception, &value, &base_tb);
+    if (!exception || Py_VerboseFlag)
+        goto done;
+    if (PyType_IsSubtype((PyTypeObject *) exception,
+                         (PyTypeObject *) PyExc_ImportError))
+        always_trim = 1;
+
+    prev_link = &base_tb;
+    tb = base_tb;
+    in_importlib = 0;
+    while (tb != NULL) {
+        PyTracebackObject *traceback = (PyTracebackObject *)tb;
+        PyObject *next = (PyObject *) traceback->tb_next;
+        PyFrameObject *frame = traceback->tb_frame;
+        PyCodeObject *code = frame->f_code;
+        int now_in_importlib;
+
+        assert(PyTraceBack_Check(tb));
+        now_in_importlib = (PyUnicode_CompareWithASCIIString(
+                                code->co_filename,
+                                importlib_filename) == 0);
+        if (now_in_importlib && !in_importlib) {
+            /* This is the link to this chunk of importlib tracebacks */
+            outer_link = prev_link;
+        }
+        in_importlib = now_in_importlib;
+
+        if (in_importlib &&
+            (always_trim ||
+             PyUnicode_CompareWithASCIIString(code->co_name,
+                                              exec_funcname) == 0)) {
+            PyObject *tmp = *outer_link;
+            *outer_link = next;
+            Py_XINCREF(next);
+            Py_DECREF(tmp);
+            prev_link = outer_link;
+        }
+        else {
+            prev_link = (PyObject **) &traceback->tb_next;
+        }
+        tb = next;
+    }
+done:
+    PyErr_Restore(exception, value, base_tb);
+}
+
+
 PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                  PyObject *locals, PyObject *given_fromlist,
@@ -1693,6 +1757,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     Py_XDECREF(package);
     Py_XDECREF(globals);
     Py_XDECREF(fromlist);
+    if (final_mod == NULL)
+        remove_importlib_frames();
     return final_mod;
 }
 
