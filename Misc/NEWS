@@ -98,6 +98,12 @@ Tools/Demos
     * C frames that are garbage-collecting
     * C frames that are due to the invocation of a PyCFunction
 
+Documentation
+-------------
+
+- Issue #13557: Clarify effect of giving two different namespaces to exec or
+  execfile().
+
 Tests
 -----
 
