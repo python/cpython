@@ -93,6 +93,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #15284: Skip {send,recv}msg tests in test_socket when IPv6 is not
+  enabled. Patch by Brian Brazil.
+
 - Issue #15277: Fix a resource leak in support.py when IPv6 is disabled.
   Patch by Brian Brazil.
 
