@@ -1325,6 +1325,12 @@ class RequestTests(unittest.TestCase):
         req = Request("<URL:http://www.python.org>")
         self.assertEqual("www.python.org", req.get_host())
 
+    def test_quoted_full_url(self):
+        Request = urllib2.Request
+        request = Request('http://www.python.org/foo bar')
+        self.assertEqual(request.get_full_url(),
+                'http://www.python.org/foo%20bar')
+
     def test_url_fragment(self):
         req = Request("http://www.python.org/?qs=query#fragment=true")
         self.assertEqual("/?qs=query", req.get_selector())
