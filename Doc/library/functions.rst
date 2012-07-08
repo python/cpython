@@ -430,7 +430,10 @@ available.  They are listed here in alphabetical order.
    The arguments are a file name and two optional dictionaries.  The file is parsed
    and evaluated as a sequence of Python statements (similarly to a module) using
    the *globals* and *locals* dictionaries as global and local namespace. If
-   provided, *locals* can be any mapping object.
+   provided, *locals* can be any mapping object.  Remember that at module level,
+   globals and locals are the same dictionary. If two separate objects are
+   passed as *globals* and *locals*, the code will be executed as if it were
+   embedded in a class definition.
 
    .. versionchanged:: 2.4
       formerly *locals* was required to be a dictionary.

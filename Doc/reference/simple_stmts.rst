@@ -993,6 +993,9 @@ current scope.  If only the first expression after :keyword:`in` is specified,
 it should be a dictionary, which will be used for both the global and the local
 variables.  If two expressions are given, they are used for the global and local
 variables, respectively. If provided, *locals* can be any mapping object.
+Remember that at module level, globals and locals are the same dictionary. If
+two separate objects are given as *globals* and *locals*, the code will be
+executed as if it were embedded in a class definition.
 
 .. versionchanged:: 2.4
    Formerly, *locals* was required to be a dictionary.
