@@ -413,7 +413,10 @@ are always available.  They are listed here in alphabetical order.
    current scope.  If only *globals* is provided, it must be a dictionary, which
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
-   respectively.  If provided, *locals* can be any mapping object.
+   respectively.  If provided, *locals* can be any mapping object.  Remember
+   that at module level, globals and locals are the same dictionary. If exec
+   gets two separate objects as *globals* and *locals*, the code will be
+   executed as if it were embedded in a class definition.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
