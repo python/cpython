@@ -196,7 +196,7 @@ class Request:
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
-        self.__original = unwrap(toBytes(url))
+        self.__original = unwrap(url)
         self.__original = quote(self.__original, safe="%/:=&?~#+!$,;'@()*[]|")
         self.__original, self.__fragment = splittag(self.__original)
         self.type = None
