@@ -768,6 +768,98 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
 
 
+class ImportTracebackTests(unittest.TestCase):
+
+    def setUp(self):
+        os.mkdir(TESTFN)
+        self.old_path = sys.path[:]
+        sys.path.insert(0, TESTFN)
+
+    def tearDown(self):
+        sys.path[:] = self.old_path
+        rmtree(TESTFN)
+
+    def create_module(self, mod, contents):
+        with open(os.path.join(TESTFN, mod + ".py"), "w") as f:
+            f.write(contents)
+        self.addCleanup(unload, mod)
+        importlib.invalidate_caches()
+
+    def assert_traceback(self, tb, files):
+        deduped_files = []
+        while tb:
+            code = tb.tb_frame.f_code
+            fn = code.co_filename
+            if not deduped_files or fn != deduped_files[-1]:
+                deduped_files.append(fn)
+            tb = tb.tb_next
+        self.assertEqual(len(deduped_files), len(files), deduped_files)
+        for fn, pat in zip(deduped_files, files):
+            self.assertRegex(fn, pat)
+
+    def test_nonexistent_module(self):
+        try:
+            # assertRaises() clears __traceback__
+            import nonexistent_xyzzy
+        except ImportError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ImportError should have been raised")
+        self.assert_traceback(tb, [__file__])
+
+    def test_nonexistent_module_nested(self):
+        self.create_module("foo", "import nonexistent_xyzzy")
+        try:
+            import foo
+        except ImportError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ImportError should have been raised")
+        self.assert_traceback(tb, [__file__, 'foo.py'])
+
+    def test_exec_failure(self):
+        self.create_module("foo", "1/0")
+        try:
+            import foo
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ZeroDivisionError should have been raised")
+        self.assert_traceback(tb, [__file__, 'foo.py'])
+
+    def test_exec_failure_nested(self):
+        self.create_module("foo", "import bar")
+        self.create_module("bar", "1/0")
+        try:
+            import foo
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ZeroDivisionError should have been raised")
+        self.assert_traceback(tb, [__file__, 'foo.py', 'bar.py'])
+
+    @cpython_only
+    def test_import_bug(self):
+        # We simulate a bug in importlib and check that it's not stripped
+        # away from the traceback.
+        self.create_module("foo", "")
+        importlib = sys.modules['_frozen_importlib']
+        old_load_module = importlib.SourceLoader.load_module
+        try:
+            def load_module(*args):
+                1/0
+            importlib.SourceLoader.load_module = load_module
+            try:
+                import foo
+            except ZeroDivisionError as e:
+                tb = e.__traceback__
+            else:
+                self.fail("ZeroDivisionError should have been raised")
+            self.assert_traceback(tb, [__file__, '<frozen importlib', __file__])
+        finally:
+            importlib.SourceLoader.load_module = old_load_module
+
+
 def test_main(verbose=None):
     flag = importlib_util.using___import__
     try:
@@ -777,6 +869,7 @@ def test_main(verbose=None):
                      OverridingImportBuiltinTests,
                      ImportlibBootstrapTests,
                      TestSymbolicallyLinkedPackage,
+                     ImportTracebackTests,
                      importlib_import_test_suite())
     finally:
         importlib_util.using___import__ = flag

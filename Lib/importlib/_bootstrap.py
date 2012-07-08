@@ -541,7 +541,7 @@ class FrozenImporter:
         """Load a frozen module."""
         is_reload = fullname in sys.modules
         try:
-            m = _imp.init_frozen(fullname)
+            m = cls._exec_module(fullname)
             # Let our own module_repr() method produce a suitable repr.
             del m.__file__
             return m
@@ -567,6 +567,13 @@ class FrozenImporter:
     def is_package(cls, fullname):
         """Return if the frozen module is a package."""
         return _imp.is_frozen_package(fullname)
+
+    @classmethod
+    def _exec_module(cls, fullname):
+        """Helper for load_module, allowing to isolate easily (when
+        looking at a traceback) whether an error comes from executing
+        an imported module's code."""
+        return _imp.init_frozen(fullname)
 
 
 class _LoaderBasics:
@@ -644,8 +651,14 @@ class _LoaderBasics:
         else:
             module.__package__ = module.__package__.rpartition('.')[0]
         module.__loader__ = self
-        exec(code_object, module.__dict__)
+        self._exec_module(code_object, module.__dict__)
         return module
+
+    def _exec_module(self, code_object, module_dict):
+        """Helper for _load_module, allowing to isolate easily (when
+        looking at a traceback) whether an error comes from executing
+        an imported module's code."""
+        exec(code_object, module_dict)
 
 
 class SourceLoader(_LoaderBasics):
@@ -869,7 +882,7 @@ class ExtensionFileLoader:
         """Load an extension module."""
         is_reload = fullname in sys.modules
         try:
-            module = _imp.load_dynamic(fullname, self.path)
+            module = self._exec_module(fullname, self.path)
             _verbose_message('extension module loaded from {!r}', self.path)
             return module
         except:
@@ -888,6 +901,12 @@ class ExtensionFileLoader:
     def get_source(self, fullname):
         """Return None as extension modules have no source code."""
         return None
+
+    def _exec_module(self, fullname, path):
+        """Helper for load_module, allowing to isolate easily (when
+        looking at a traceback) whether an error comes from executing
+        an imported module's code."""
+        return _imp.load_dynamic(fullname, path)
 
 
 class _NamespacePath:
