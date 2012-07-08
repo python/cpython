@@ -612,6 +612,7 @@ static void
 ast_dealloc(AST_object *self)
 {
     Py_CLEAR(self->dict);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
