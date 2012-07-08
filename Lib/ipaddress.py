@@ -163,6 +163,7 @@ def _split_optional_netmask(address):
         raise AddressValueError("Only one '/' permitted in %r" % address)
     return addr
 
+
 def _find_address_range(addresses):
     """Find a sequence of IPv#Address.
 
@@ -408,6 +409,8 @@ def get_mixed_type_key(obj):
 class _TotalOrderingMixin:
     # Helper that derives the other comparison operations from
     # __lt__ and __eq__
+    # We avoid functools.total_ordering because it doesn't handle
+    # NotImplemented correctly yet (http://bugs.python.org/issue10042)
     def __eq__(self, other):
         raise NotImplementedError
     def __ne__(self, other):
@@ -454,6 +457,22 @@ class _IPAddressBase(_TotalOrderingMixin):
     def version(self):
         msg = '%200s has no version specified' % (type(self),)
         raise NotImplementedError(msg)
+
+    def _check_int_address(self, address):
+        if address < 0:
+            msg = "%d (< 0) is not permitted as an IPv%d address"
+            raise AddressValueError(msg % (address, self._version))
+        if address > self._ALL_ONES:
+            msg = "%d (>= 2**%d) is not permitted as an IPv%d address"
+            raise AddressValueError(msg % (address, self._max_prefixlen,
+                                           self._version))
+
+    def _check_packed_address(self, address, expected_len):
+        address_len = len(address)
+        if address_len != expected_len:
+            msg = "%r (len %d != %d) is not permitted as an IPv%d address"
+            raise AddressValueError(msg % (address, address_len,
+                                           expected_len, self._version))
 
     def _ip_int_from_prefix(self, prefixlen=None):
         """Turn the prefix length netmask into a int for comparison.
@@ -1215,16 +1234,13 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
         # Efficient constructor from integer.
         if isinstance(address, int):
+            self._check_int_address(address)
             self._ip = address
-            if address < 0 or address > self._ALL_ONES:
-                raise AddressValueError(address)
             return
 
         # Constructing from a packed address
         if isinstance(address, bytes):
-            if len(address) != 4:
-                msg = "Packed address %r must be exactly 4 bytes"
-                raise AddressValueError(msg % address)
+            self._check_packed_address(address, 4)
             self._ip = struct.unpack('!I', address)[0]
             return
 
@@ -1368,11 +1384,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         # Constructing from a packed address
         if isinstance(address, bytes):
-            if len(address) != 4:
-                msg = "Packed address %r must be exactly 4 bytes"
-                raise AddressValueError(msg % address)
-            self.network_address = IPv4Address(
-                struct.unpack('!I', address)[0])
+            self.network_address = IPv4Address(address)
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv4Address(self._ALL_ONES)
             #fixme: address/network test here
@@ -1380,11 +1392,9 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         # Efficient constructor from integer.
         if isinstance(address, int):
+            self.network_address = IPv4Address(address)
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv4Address(self._ALL_ONES)
-            if address < 0 or address > self._ALL_ONES:
-                raise AddressValueError(address)
-            self.network_address = IPv4Address(address)
             #fixme: address/network test here.
             return
 
@@ -1868,16 +1878,13 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         # Efficient constructor from integer.
         if isinstance(address, int):
+            self._check_int_address(address)
             self._ip = address
-            if address < 0 or address > self._ALL_ONES:
-                raise AddressValueError(address)
             return
 
         # Constructing from a packed address
         if isinstance(address, bytes):
-            if len(address) != 16:
-                msg = "Packed address %r must be exactly 16 bytes"
-                raise AddressValueError(msg % address)
+            self._check_packed_address(address, 16)
             tmp = struct.unpack('!QQ', address)
             self._ip = (tmp[0] << 64) | tmp[1]
             return
@@ -2014,8 +2021,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         # Efficient constructor from integer.
         if isinstance(address, int):
-            if address < 0 or address > self._ALL_ONES:
-                raise AddressValueError(address)
             self.network_address = IPv6Address(address)
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv6Address(self._ALL_ONES)
@@ -2023,11 +2028,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         # Constructing from a packed address
         if isinstance(address, bytes):
-            if len(address) != 16:
-                msg = "Packed address %r must be exactly 16 bytes"
-                raise AddressValueError(msg % address)
-            tmp = struct.unpack('!QQ', address)
-            self.network_address = IPv6Address((tmp[0] << 64) | tmp[1])
+            self.network_address = IPv6Address(address)
             self._prefixlen = self._max_prefixlen
             self.netmask = IPv6Address(self._ALL_ONES)
             return
