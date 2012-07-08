@@ -960,7 +960,7 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(1000), 'YYY'*100)
         finally:
             fp.close()
-        unlink(TESTFN)
+            unlink(TESTFN)
 
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
@@ -979,6 +979,7 @@ class BuiltinTest(unittest.TestCase):
                 self.assertEqual(fp.encoding, current_locale_encoding)
             finally:
                 fp.close()
+                unlink(TESTFN)
         finally:
             os.environ.clear()
             os.environ.update(old_environ)
