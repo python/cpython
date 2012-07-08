@@ -84,6 +84,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14826: Quote urls in urllib2.Request identically to how they
+  are quoted by urllib.URLopener. Allows urls to spaces in them to work
+  transparently with urllib.request.urlopen(...). Patch contributed by Stephen
+  Thorne.
+
 - Issue #15247: FileIO now raises an error when given a file descriptor
   pointing to a directory.
 
