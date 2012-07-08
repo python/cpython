@@ -3202,28 +3202,28 @@ class SendrecvmsgUDP6TestBase(SendrecvmsgDgramFlagsBase,
     pass
 
 @requireAttrs(socket.socket, "sendmsg")
-@unittest.skipUnless(socket.has_ipv6, "Python not built with IPv6 support")
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgUDP6Test(SendmsgConnectionlessTests, SendrecvmsgUDP6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
-@unittest.skipUnless(socket.has_ipv6, "Python not built with IPv6 support")
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgUDP6Test(RecvmsgTests, SendrecvmsgUDP6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
-@unittest.skipUnless(socket.has_ipv6, "Python not built with IPv6 support")
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoUDP6Test(RecvmsgIntoTests, SendrecvmsgUDP6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
-@unittest.skipUnless(socket.has_ipv6, "Python not built with IPv6 support")
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 @unittest.skipUnless(thread, 'Threading required for this test.')
@@ -3232,7 +3232,7 @@ class RecvmsgRFC3542AncillaryUDP6Test(RFC3542AncillaryTest,
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
-@unittest.skipUnless(socket.has_ipv6, "Python not built with IPv6 support")
+@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
 @unittest.skipUnless(thread, 'Threading required for this test.')
