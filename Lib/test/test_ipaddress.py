@@ -551,7 +551,6 @@ class IpaddrUnitTest(unittest.TestCase):
             ipaddress.IPv4Address('10.10.10.10'),
             ipaddress.IPv4Address('10.10.10.12')])
         self.assertEqual(first, last)
-        self.assertEqual(0, ipaddress._get_prefix_length(2**32, 0, 32))
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
         self.assertEqual('0x1020318', hex(self.ipv4_network))
