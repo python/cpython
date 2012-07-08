@@ -316,7 +316,7 @@ class EnvBuilder:
                     data = self.replace_variables(data, context)
                 with open(dstfile, mode) as f:
                     f.write(data)
-                os.chmod(dstfile, 0o755)
+                shutil.copymode(srcfile, dstfile)
 
 
 def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
@@ -354,7 +354,12 @@ def main(args=None):
                                          description='Creates virtual Python '
                                                      'environments in one or '
                                                      'more target '
-                                                     'directories.')
+                                                     'directories.',
+                                         epilog='Once an environment has been '
+                                                'created, you may wish to '
+                                                'activate it, e.g. by '
+                                                'sourcing an activate script '
+                                                'in its bin directory.')
         parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                             help='A directory to create the environment in.')
         parser.add_argument('--system-site-packages', default=False,
@@ -368,7 +373,9 @@ def main(args=None):
             use_symlinks = True
         parser.add_argument('--symlinks', default=use_symlinks,
                             action='store_true', dest='symlinks',
-                            help="Attempt to symlink rather than copy.")
+                            help='Try to use symlinks rather than copies, '
+                                 'when symlinks are not the default for '
+                                 'the platform.')
         parser.add_argument('--clear', default=False, action='store_true',
                             dest='clear', help='Delete the environment '
                                                'directory if it already '
