@@ -23,6 +23,10 @@ class ErrorReporting(unittest.TestCase):
     # address parts) that don't have an obvious home in the main test
     # suite
 
+    @property
+    def factory(self):
+        raise NotImplementedError
+
     @contextlib.contextmanager
     def assertCleanError(self, exc_type, details, *args):
         """
@@ -49,11 +53,64 @@ class ErrorReporting(unittest.TestCase):
         return self.assertCleanError(ipaddress.NetmaskValueError,
                                 details, *args)
 
-class AddressErrors_v4(ErrorReporting):
+class CommonErrorsMixin:
 
     def test_empty_address(self):
         with self.assertAddressError("Address cannot be empty"):
-            ipaddress.IPv4Address("")
+            self.factory("")
+
+    def test_floats_rejected(self):
+        with self.assertAddressError(re.escape(repr("1.0"))):
+            self.factory(1.0)
+
+class CommonErrorsMixin_v4(CommonErrorsMixin):
+
+    def test_negative_ints_rejected(self):
+        msg = "-1 (< 0) is not permitted as an IPv4 address"
+        with self.assertAddressError(re.escape(msg)):
+            self.factory(-1)
+
+    def test_large_ints_rejected(self):
+        msg = "%d (>= 2**32) is not permitted as an IPv4 address"
+        with self.assertAddressError(re.escape(msg % 2**32)):
+            self.factory(2**32)
+
+    def test_bad_packed_length(self):
+        def assertBadLength(length):
+            addr = b'\x00' * length
+            msg = "%r (len %d != 4) is not permitted as an IPv4 address"
+            with self.assertAddressError(re.escape(msg % (addr, length))):
+                self.factory(addr)
+
+        assertBadLength(3)
+        assertBadLength(5)
+
+class CommonErrorsMixin_v6(CommonErrorsMixin):
+
+    def test_negative_ints_rejected(self):
+        msg = "-1 (< 0) is not permitted as an IPv6 address"
+        with self.assertAddressError(re.escape(msg)):
+            self.factory(-1)
+
+    def test_large_ints_rejected(self):
+        msg = "%d (>= 2**128) is not permitted as an IPv6 address"
+        with self.assertAddressError(re.escape(msg % 2**128)):
+            self.factory(2**128)
+
+    def test_bad_packed_length(self):
+        def assertBadLength(length):
+            addr = b'\x00' * length
+            msg = "%r (len %d != 16) is not permitted as an IPv6 address"
+            with self.assertAddressError(re.escape(msg % (addr, length))):
+                self.factory(addr)
+                self.factory(addr)
+
+        assertBadLength(15)
+        assertBadLength(17)
+
+
+class AddressErrors_v4(ErrorReporting, CommonErrorsMixin_v4):
+    factory = ipaddress.IPv4Address
 
     def test_network_passed_as_address(self):
         addr = "127.0.0.1/24"
@@ -133,22 +190,9 @@ class AddressErrors_v4(ErrorReporting):
         assertBadOctet("12345.67899.-54321.-98765", 12345)
         assertBadOctet("257.0.0.0", 257)
 
-    def test_bad_packed_length(self):
-        def assertBadLength(length):
-            addr = b'\x00' * length
-            msg = "Packed address %r must be exactly 4 bytes" % addr
-            with self.assertAddressError(re.escape(msg)):
-                ipaddress.IPv4Address(addr)
 
-        assertBadLength(3)
-        assertBadLength(5)
-
-
-class AddressErrors_v6(ErrorReporting):
-
-    def test_empty_address(self):
-        with self.assertAddressError("Address cannot be empty"):
-            ipaddress.IPv6Address("")
+class AddressErrors_v6(ErrorReporting, CommonErrorsMixin_v6):
+    factory = ipaddress.IPv6Address
 
     def test_network_passed_as_address(self):
         addr = "::1/24"
@@ -277,23 +321,9 @@ class AddressErrors_v6(ErrorReporting):
         assertBadPart("02001:db8::", "02001")
         assertBadPart('2001:888888::1', "888888")
 
-    def test_bad_packed_length(self):
-        def assertBadLength(length):
-            addr = b'\x00' * length
-            msg = "Packed address %r must be exactly 16 bytes" % addr
-            with self.assertAddressError(re.escape(msg)):
-                ipaddress.IPv6Address(addr)
 
-        assertBadLength(15)
-        assertBadLength(17)
-
-
-class NetmaskErrorsMixin_v4:
+class NetmaskErrorsMixin_v4(CommonErrorsMixin_v4):
     """Input validation on interfaces and networks is very similar"""
-
-    @property
-    def factory(self):
-        raise NotImplementedError
 
     def test_split_netmask(self):
         addr = "1.2.3.4/32/24"
@@ -305,7 +335,8 @@ class NetmaskErrorsMixin_v4:
             with self.assertAddressError(details):
                 self.factory(addr)
 
-        assertBadAddress("", "Address cannot be empty")
+        assertBadAddress("/", "Address cannot be empty")
+        assertBadAddress("/8", "Address cannot be empty")
         assertBadAddress("bogus", "Expected 4 octets")
         assertBadAddress("google.com", "Expected 4 octets")
         assertBadAddress("10/8", "Expected 4 octets")
@@ -325,17 +356,6 @@ class NetmaskErrorsMixin_v4:
         assertBadNetmask("1.1.1.1", "1.a.2.3")
         assertBadNetmask("1.1.1.1", "pudding")
 
-    def test_bad_packed_length(self):
-        def assertBadLength(length):
-            addr = b'\x00' * length
-            msg = "Packed address %r must be exactly 4 bytes" % addr
-            with self.assertAddressError(re.escape(msg)):
-                self.factory(addr)
-
-        assertBadLength(3)
-        assertBadLength(5)
-
-
 class InterfaceErrors_v4(ErrorReporting, NetmaskErrorsMixin_v4):
     factory = ipaddress.IPv4Interface
 
@@ -343,12 +363,8 @@ class NetworkErrors_v4(ErrorReporting, NetmaskErrorsMixin_v4):
     factory = ipaddress.IPv4Network
 
 
-class NetmaskErrorsMixin_v6:
+class NetmaskErrorsMixin_v6(CommonErrorsMixin_v6):
     """Input validation on interfaces and networks is very similar"""
-
-    @property
-    def factory(self):
-        raise NotImplementedError
 
     def test_split_netmask(self):
         addr = "cafe:cafe::/128/190"
@@ -360,7 +376,8 @@ class NetmaskErrorsMixin_v6:
             with self.assertAddressError(details):
                 self.factory(addr)
 
-        assertBadAddress("", "Address cannot be empty")
+        assertBadAddress("/", "Address cannot be empty")
+        assertBadAddress("/8", "Address cannot be empty")
         assertBadAddress("google.com", "At least 3 parts")
         assertBadAddress("1.2.3.4", "At least 3 parts")
         assertBadAddress("10/8", "At least 3 parts")
@@ -377,17 +394,6 @@ class NetmaskErrorsMixin_v6:
         assertBadNetmask("::1", "1::")
         assertBadNetmask("::1", "129")
         assertBadNetmask("::1", "pudding")
-
-    def test_bad_packed_length(self):
-        def assertBadLength(length):
-            addr = b'\x00' * length
-            msg = "Packed address %r must be exactly 16 bytes" % addr
-            with self.assertAddressError(re.escape(msg)):
-                self.factory(addr)
-
-        assertBadLength(15)
-        assertBadLength(17)
-
 
 class InterfaceErrors_v6(ErrorReporting, NetmaskErrorsMixin_v6):
     factory = ipaddress.IPv6Interface
@@ -585,10 +591,6 @@ class IpaddrUnitTest(unittest.TestCase):
     def testIpFromInt(self):
         self.assertEqual(self.ipv4_interface._ip,
                          ipaddress.IPv4Interface(16909060)._ip)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv4Interface, 2**32)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv4Interface, -1)
 
         ipv4 = ipaddress.ip_network('1.2.3.4')
         ipv6 = ipaddress.ip_network('2001:658:22a:cafe:200:0:0:1')
@@ -598,14 +600,6 @@ class IpaddrUnitTest(unittest.TestCase):
         v6_int = 42540616829182469433547762482097946625
         self.assertEqual(self.ipv6_interface._ip,
                          ipaddress.IPv6Interface(v6_int)._ip)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv6Interface, 2**128)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv6Interface, -1)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv6Network, 2**128)
-        self.assertRaises(ipaddress.AddressValueError,
-                          ipaddress.IPv6Network, -1)
 
         self.assertEqual(ipaddress.ip_network(self.ipv4_address._ip).version,
                          4)
