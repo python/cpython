@@ -610,10 +610,8 @@ input, output, and error streams.
       servers.
 
       .. versionchanged:: 3.3
-
-      The term "Python" is replaced with implementation specific term like
-      "CPython", "Jython" etc.
-
+         The term "Python" is replaced with implementation specific term like
+         "CPython", "Jython" etc.
 
    .. method:: BaseHandler.get_scheme()
 
