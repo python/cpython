@@ -616,6 +616,19 @@ ast_dealloc(AST_object *self)
 }
 
 static int
+ast_traverse(AST_object *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->dict);
+    return 0;
+}
+
+static void
+ast_clear(AST_object *self)
+{
+    Py_CLEAR(self->dict);
+}
+
+static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
     _Py_IDENTIFIER(_fields);
@@ -718,10 +731,10 @@ static PyTypeObject AST_type = {
     PyObject_GenericGetAttr, /* tp_getattro */
     PyObject_GenericSetAttr, /* tp_setattro */
     0,                       /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                       /* tp_doc */
-    0,                       /* tp_traverse */
-    0,                       /* tp_clear */
+    (traverseproc)ast_traverse, /* tp_traverse */
+    (inquiry)ast_clear,      /* tp_clear */
     0,                       /* tp_richcompare */
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
@@ -737,7 +750,7 @@ static PyTypeObject AST_type = {
     (initproc)ast_type_init, /* tp_init */
     PyType_GenericAlloc,     /* tp_alloc */
     PyType_GenericNew,       /* tp_new */
-    PyObject_Del,            /* tp_free */
+    PyObject_GC_Del,         /* tp_free */
 };
 
 
