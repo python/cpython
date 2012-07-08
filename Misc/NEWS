@@ -380,13 +380,13 @@ Build
 Documentation
 -------------
 
+- Issue #13557: Clarify effect of giving two different namespaces to exec or
+  execfile().
+
 - Issue #8799: Fix and improve the threading.Condition documentation.
 
 - Issue #14943: Correct a default argument value for winreg.OpenKey
   and correctly list the argument names in the function's explanation.
-
-Documentation
--------------
 
 - Issue #14034: added the argparse tutorial.
 
