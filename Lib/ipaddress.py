@@ -1009,15 +1009,21 @@ class _BaseV4:
             raise ValueError("Empty octet not permitted")
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
         if not self._DECIMAL_DIGITS.issuperset(octet_str):
-            raise ValueError("Only decimal digits permitted in %r" % octet_str)
+            msg = "Only decimal digits permitted in %r"
+            raise ValueError(msg % octet_str)
+        # We do the length check second, since the invalid character error
+        # is likely to be more informative for the user
+        if len(octet_str) > 3:
+            msg = "At most 3 characters permitted in %r"
+            raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
         # Any octets that look like they *might* be written in octal,
         # and which don't look exactly the same in both octal and
         # decimal are rejected as ambiguous
         if octet_int > 7 and octet_str[0] == '0':
-            raise ValueError("Ambiguous leading zero in %r not permitted" %
-                              octet_str)
+            msg = "Ambiguous (octal/decimal) value in %r not permitted"
+            raise ValueError(msg % octet_str)
         if octet_int > 255:
             raise ValueError("Octet %d (> 255) not permitted" % octet_int)
         return octet_int
@@ -1560,18 +1566,15 @@ class _BaseV6:
 
         """
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
-        # Higher level wrappers convert these to more informative errors
         if not self._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
+        # We do the length check second, since the invalid character error
+        # is likely to be more informative for the user
         if len(hextet_str) > 4:
             msg = "At most 4 characters permitted in %r"
             raise ValueError(msg % hextet_str)
-        hextet_int = int(hextet_str, 16)
-        if hextet_int > 0xFFFF:
-            # This is unreachable due to the string length check above
-            msg = "Part 0x%X (> 0xFFFF) not permitted"
-            raise ValueError(msg % hextet_int)
-        return hextet_int
+        # Length check means we can skip checking the integer value
+        return int(hextet_str, 16)
 
     def _compress_hextets(self, hextets):
         """Compresses a list of hextets.

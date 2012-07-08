@@ -9,19 +9,24 @@ import re
 import contextlib
 import ipaddress
 
-class ErrorReporting(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     # One big change in ipaddress over the original ipaddr module is
     # error reporting that tries to assume users *don't know the rules*
     # for what constitutes an RFC compliant IP address
+
+    # Ensuring these errors are emitted correctly in all relevant cases
+    # meant moving to a more systematic test structure that allows the
+    # test structure to map more directly to the module structure
 
     # Note that if the constructors are refactored so that addresses with
     # multiple problems get classified differently, that's OK - just
     # move the affected examples to the newly appropriate test case.
 
-    # The error reporting tests also cover a few corner cases that
-    # specifically *aren't* errors (such as leading zeroes in v6
-    # address parts) that don't have an obvious home in the main test
-    # suite
+    # There is some duplication between the original relatively ad hoc
+    # test suite and the new systematic tests. While some redundancy in
+    # testing is considered preferable to accidentally deleting a valid
+    # test, the original test suite will likely be reduced over time as
+    # redundant tests are identified.
 
     @property
     def factory(self):
@@ -53,7 +58,11 @@ class ErrorReporting(unittest.TestCase):
         return self.assertCleanError(ipaddress.NetmaskValueError,
                                 details, *args)
 
-class CommonErrorsMixin:
+    def assertInstancesEqual(self, lhs, rhs):
+        """Check constructor arguments produce equivalent instances"""
+        self.assertEqual(self.factory(lhs), self.factory(rhs))
+
+class CommonTestMixin:
 
     def test_empty_address(self):
         with self.assertAddressError("Address cannot be empty"):
@@ -63,7 +72,19 @@ class CommonErrorsMixin:
         with self.assertAddressError(re.escape(repr("1.0"))):
             self.factory(1.0)
 
-class CommonErrorsMixin_v4(CommonErrorsMixin):
+class CommonTestMixin_v4(CommonTestMixin):
+
+    def test_leading_zeros(self):
+        self.assertInstancesEqual("000.000.000.000", "0.0.0.0")
+        self.assertInstancesEqual("192.168.000.001", "192.168.0.1")
+
+    def test_int(self):
+        self.assertInstancesEqual(0, "0.0.0.0")
+        self.assertInstancesEqual(3232235521, "192.168.0.1")
+
+    def test_packed(self):
+        self.assertInstancesEqual(bytes.fromhex("00000000"), "0.0.0.0")
+        self.assertInstancesEqual(bytes.fromhex("c0a80001"), "192.168.0.1")
 
     def test_negative_ints_rejected(self):
         msg = "-1 (< 0) is not permitted as an IPv4 address"
@@ -77,7 +98,7 @@ class CommonErrorsMixin_v4(CommonErrorsMixin):
 
     def test_bad_packed_length(self):
         def assertBadLength(length):
-            addr = b'\x00' * length
+            addr = bytes(length)
             msg = "%r (len %d != 4) is not permitted as an IPv4 address"
             with self.assertAddressError(re.escape(msg % (addr, length))):
                 self.factory(addr)
@@ -85,7 +106,23 @@ class CommonErrorsMixin_v4(CommonErrorsMixin):
         assertBadLength(3)
         assertBadLength(5)
 
-class CommonErrorsMixin_v6(CommonErrorsMixin):
+class CommonTestMixin_v6(CommonTestMixin):
+
+    def test_leading_zeros(self):
+        self.assertInstancesEqual("0000::0000", "::")
+        self.assertInstancesEqual("000::c0a8:0001", "::c0a8:1")
+
+    def test_int(self):
+        self.assertInstancesEqual(0, "::")
+        self.assertInstancesEqual(3232235521, "::c0a8:1")
+
+    def test_packed(self):
+        addr = bytes(12) + bytes.fromhex("00000000")
+        self.assertInstancesEqual(addr, "::")
+        addr = bytes(12) + bytes.fromhex("c0a80001")
+        self.assertInstancesEqual(addr, "::c0a8:1")
+        addr = bytes.fromhex("c0a80001") + bytes(12)
+        self.assertInstancesEqual(addr, "c0a8:1::")
 
     def test_negative_ints_rejected(self):
         msg = "-1 (< 0) is not permitted as an IPv6 address"
@@ -99,7 +136,7 @@ class CommonErrorsMixin_v6(CommonErrorsMixin):
 
     def test_bad_packed_length(self):
         def assertBadLength(length):
-            addr = b'\x00' * length
+            addr = bytes(length)
             msg = "%r (len %d != 16) is not permitted as an IPv6 address"
             with self.assertAddressError(re.escape(msg % (addr, length))):
                 self.factory(addr)
@@ -109,7 +146,7 @@ class CommonErrorsMixin_v6(CommonErrorsMixin):
         assertBadLength(17)
 
 
-class AddressErrors_v4(ErrorReporting, CommonErrorsMixin_v4):
+class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     factory = ipaddress.IPv4Address
 
     def test_network_passed_as_address(self):
@@ -162,6 +199,7 @@ class AddressErrors_v4(ErrorReporting, CommonErrorsMixin_v4):
                 ipaddress.IPv4Address(addr)
 
         assertBadOctet("0x0a.0x0a.0x0a.0x0a", "0x0a")
+        assertBadOctet("0xa.0x0a.0x0a.0x0a", "0xa")
         assertBadOctet("42.42.42.-0", "-0")
         assertBadOctet("42.42.42.+0", "+0")
         assertBadOctet("42.42.42.-42", "-42")
@@ -170,16 +208,23 @@ class AddressErrors_v4(ErrorReporting, CommonErrorsMixin_v4):
         assertBadOctet("1.2.3.4::", "4::")
         assertBadOctet("1.a.2.3", "a")
 
-    def test_leading_zeros(self):
+    def test_octal_decimal_ambiguity(self):
         def assertBadOctet(addr, octet):
-            msg = "Ambiguous leading zero in %r not permitted in %r"
-            with self.assertAddressError(msg, octet, addr):
+            msg = "Ambiguous (octal/decimal) value in %r not permitted in %r"
+            with self.assertAddressError(re.escape(msg % (octet, addr))):
                 ipaddress.IPv4Address(addr)
 
         assertBadOctet("016.016.016.016", "016")
         assertBadOctet("001.000.008.016", "008")
-        self.assertEqual(ipaddress.IPv4Address("192.168.000.001"),
-                         ipaddress.IPv4Address("192.168.0.1"))
+
+    def test_octet_length(self):
+        def assertBadOctet(addr, octet):
+            msg = "At most 3 characters permitted in %r in %r"
+            with self.assertAddressError(re.escape(msg % (octet, addr))):
+                ipaddress.IPv4Address(addr)
+
+        assertBadOctet("0000.000.000.000", "0000")
+        assertBadOctet("12345.67899.-54321.-98765", "12345")
 
     def test_octet_limit(self):
         def assertBadOctet(addr, octet):
@@ -187,11 +232,11 @@ class AddressErrors_v4(ErrorReporting, CommonErrorsMixin_v4):
             with self.assertAddressError(re.escape(msg)):
                 ipaddress.IPv4Address(addr)
 
-        assertBadOctet("12345.67899.-54321.-98765", 12345)
         assertBadOctet("257.0.0.0", 257)
+        assertBadOctet("192.168.0.999", 999)
 
 
-class AddressErrors_v6(ErrorReporting, CommonErrorsMixin_v6):
+class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address
 
     def test_network_passed_as_address(self):
@@ -317,12 +362,13 @@ class AddressErrors_v6(ErrorReporting, CommonErrorsMixin_v6):
             with self.assertAddressError(msg, part, addr):
                 ipaddress.IPv6Address(addr)
 
+        assertBadPart("::00000", "00000")
         assertBadPart("3ffe::10000", "10000")
         assertBadPart("02001:db8::", "02001")
         assertBadPart('2001:888888::1', "888888")
 
 
-class NetmaskErrorsMixin_v4(CommonErrorsMixin_v4):
+class NetmaskTestMixin_v4(CommonTestMixin_v4):
     """Input validation on interfaces and networks is very similar"""
 
     def test_split_netmask(self):
@@ -352,18 +398,18 @@ class NetmaskErrorsMixin_v4(CommonErrorsMixin_v4):
         assertBadNetmask("1.2.3.4", "")
         assertBadNetmask("1.2.3.4", "33")
         assertBadNetmask("1.2.3.4", "254.254.255.256")
+        assertBadNetmask("1.1.1.1", "254.xyz.2.3")
         assertBadNetmask("1.1.1.1", "240.255.0.0")
-        assertBadNetmask("1.1.1.1", "1.a.2.3")
         assertBadNetmask("1.1.1.1", "pudding")
 
-class InterfaceErrors_v4(ErrorReporting, NetmaskErrorsMixin_v4):
+class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Interface
 
-class NetworkErrors_v4(ErrorReporting, NetmaskErrorsMixin_v4):
+class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
 
-class NetmaskErrorsMixin_v6(CommonErrorsMixin_v6):
+class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
 
     def test_split_netmask(self):
@@ -395,14 +441,14 @@ class NetmaskErrorsMixin_v6(CommonErrorsMixin_v6):
         assertBadNetmask("::1", "129")
         assertBadNetmask("::1", "pudding")
 
-class InterfaceErrors_v6(ErrorReporting, NetmaskErrorsMixin_v6):
+class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Interface
 
-class NetworkErrors_v6(ErrorReporting, NetmaskErrorsMixin_v6):
+class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Network
 
 
-class FactoryFunctionErrors(ErrorReporting):
+class FactoryFunctionErrors(BaseTestCase):
 
     def assertFactoryError(self, factory, kind):
         """Ensure a clean ValueError with the expected message"""
