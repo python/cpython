@@ -498,6 +498,9 @@ class BuiltinImporter:
 
     @classmethod
     def _exec_module(cls, fullname):
+        """Helper for load_module, allowing to isolate easily (when
+        looking at a traceback) whether an error comes from executing
+        an imported module's code."""
         return _imp.init_builtin(fullname)
 
     @classmethod
