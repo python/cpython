@@ -1761,6 +1761,9 @@ Porting C code
   :c:func:`PyUnicode_FromFormat()`, your code will automatically take
   advantage of the new unicode representations.
 
+* :c:func:`PyImport_GetMagicNumber` now returns -1 upon failure.
+
+
 Building C extensions
 ---------------------
 
