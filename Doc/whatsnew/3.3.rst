@@ -1721,7 +1721,7 @@ Porting Python code
 * Because ``None`` is now inserted into :attr:`sys.path_importer_cache`, if you
   are clearing out entries in the dictionary of paths that do not have a
   finder, you will need to remove keys paired with values of ``None`` **and**
-  :class:`imp.NullImporter` to be backwards-compatible. This will need to extra
+  :class:`imp.NullImporter` to be backwards-compatible. This will lead to extra
   overhead on older versions of Python that re-insert ``None`` into
   :attr:`sys.path_importer_cache` where it repesents the use of implicit
   finders, but semantically it should not change anything.
@@ -1730,6 +1730,12 @@ Porting Python code
   :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
   both the modification time and size of the source file the bytecode file was
   compiled from.
+
+* :func:`pkgutil.iter_modules` and :func:`pkgutil.walk_packages` no longer work
+  with modules imported using the default import system. Both functions have
+  always relied on a non-standard method (``iter_modules()``) to be defined on
+  loaders to work and the import system now always provides a loader for
+  modules but does not implement the non-standard method.
 
 
 Porting C code
