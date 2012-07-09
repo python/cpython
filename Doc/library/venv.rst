@@ -88,7 +88,7 @@ a Posix platform, you would typically do::
 
 whereas on Windows, you might do::
 
-    c:\> <venv>/Scripts/activate
+    C:\> <venv>/Scripts/activate
 
 if you are using the ``cmd.exe`` shell, or perhaps::
 
@@ -107,6 +107,8 @@ mechanism is platform-specific: for example, the Bash activation script defines
 a "deactivate" function, whereas on Windows there are separate scripts called
 ``deactivate.bat`` and ``Deactivate.ps1`` which are installed when the venv is
 created.
+
+.. _venv-def:
 
 .. note:: A virtual environment (also called a ``venv``) is a Python
    environment such that the Python interpreter, libraries and scripts
