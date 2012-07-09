@@ -180,13 +180,18 @@ file paths.
    source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
    value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
    The ``cpython-32`` string comes from the current magic tag (see
-   :func:`get_tag`).  The returned path will end in ``.pyc`` when
-   ``__debug__`` is True or ``.pyo`` for an optimized Python
+   :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
+   :exc:`NotImplementedError` will be raised).  The returned path will end in
+   ``.pyc`` when ``__debug__`` is True or ``.pyo`` for an optimized Python
    (i.e. ``__debug__`` is False).  By passing in True or False for
    *debug_override* you can override the system's value for ``__debug__`` for
    extension selection.
 
    *path* need not exist.
+
+   .. versionchanged:: 3.3
+      If :attr:`sys.implementation.cache_tag` is ``None``, then
+      :exc:`NotImplementedError` is raised.
 
 
 .. function:: source_from_cache(path)
@@ -195,13 +200,23 @@ file paths.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` format, a ``ValueError`` is raised.
+   to :pep:`3147` format, a ``ValueError`` is raised. If
+   :attr:`sys.implementation.cache_tag` is not defined,
+   :exc:`NotImplementedError` is raised.
+
+   .. versionchanged:: 3.3
+      Raise :exc:`NotImplementedError` when
+      :attr:`sys.implementation.cache_tag` is not defined.
 
 
 .. function:: get_tag()
 
    Return the :pep:`3147` magic tag string matching this version of Python's
    magic number, as returned by :func:`get_magic`.
+
+   .. note::
+      You may use :attr:`sys.implementation.cache_tag` directly starting
+      in Python 3.3.
 
 
 The following functions help interact with the import system's internal

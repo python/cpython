@@ -58,9 +58,12 @@ def source_from_cache(path):
 
     The .pyc/.pyo file does not need to exist; this simply returns the path to
     the .py file calculated to correspond to the .pyc/.pyo file.  If path does
-    not conform to PEP 3147 format, ValueError will be raised.
+    not conform to PEP 3147 format, ValueError will be raised. If
+    sys.implementation.cache_tag is None then NotImplementedError is raised.
 
     """
+    if sys.implementation.cache_tag is None:
+        raise NotImplementedError('sys.implementation.cache_tag is None')
     head, pycache_filename = os.path.split(path)
     head, pycache = os.path.split(head)
     if pycache != _bootstrap._PYCACHE:
