@@ -230,7 +230,7 @@ def find_module(name, path=None):
                 continue
             break  # Break out of outer loop when breaking out of inner loop.
     else:
-        raise ImportError('No module name {!r}'.format(name), name=name)
+        raise ImportError(_bootstrap._ERR_MSG.format(name), name=name)
 
     encoding = None
     if mode == 'U':
