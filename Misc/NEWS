@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15294: Fix a regression in pkgutil.extend_path()'s handling of
+  nested namespace packages.
+
 - Issue #15056: imp.cache_from_source() and source_from_cache() raise
   NotImplementedError when sys.implementation.cache_tag is set to None.
 
