@@ -513,12 +513,22 @@ def extend_path(path, name):
         # frozen package.  Return the path unchanged in that case.
         return path
 
-    pname = os.path.join(*name.split('.')) # Reconstitute as relative path
     sname_pkg = name + ".pkg"
 
     path = path[:] # Start with a copy of the existing path
 
-    for dir in sys.path:
+    parent_package, _, final_name = name.rpartition('.')
+    if parent_package:
+        try:
+            search_path = sys.modules[parent_package].__path__
+        except (KeyError, AttributeError):
+            # We can't do anything: find_loader() returns None when
+            # passed a dotted name.
+            return path
+    else:
+        search_path = sys.path
+
+    for dir in search_path:
         if not isinstance(dir, str):
             continue
 
@@ -526,7 +536,7 @@ def extend_path(path, name):
         if finder is not None:
             # Is this finder PEP 420 compliant?
             if hasattr(finder, 'find_loader'):
-                loader, portions = finder.find_loader(name)
+                loader, portions = finder.find_loader(final_name)
             else:
                 # No, no need to call it
                 loader = None

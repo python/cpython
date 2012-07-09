@@ -1,4 +1,4 @@
-from test.support import run_unittest
+from test.support import run_unittest, unload
 import unittest
 import sys
 import imp
@@ -214,8 +214,50 @@ class ExtendPathTests(unittest.TestCase):
     # XXX: test .pkg files
 
 
+class NestedNamespacePackageTest(unittest.TestCase):
+
+    def setUp(self):
+        self.basedir = tempfile.mkdtemp()
+        self.old_path = sys.path[:]
+
+    def tearDown(self):
+        sys.path[:] = self.old_path
+        shutil.rmtree(self.basedir)
+
+    def create_module(self, name, contents):
+        base, final = name.rsplit('.', 1)
+        base_path = os.path.join(self.basedir, base.replace('.', os.path.sep))
+        os.makedirs(base_path, exist_ok=True)
+        with open(os.path.join(base_path, final + ".py"), 'w') as f:
+            f.write(contents)
+
+    def test_nested(self):
+        pkgutil_boilerplate = (
+            'import pkgutil; '
+            '__path__ = pkgutil.extend_path(__path__, __name__)')
+        self.create_module('a.pkg.__init__', pkgutil_boilerplate)
+        self.create_module('b.pkg.__init__', pkgutil_boilerplate)
+        self.create_module('a.pkg.subpkg.__init__', pkgutil_boilerplate)
+        self.create_module('b.pkg.subpkg.__init__', pkgutil_boilerplate)
+        self.create_module('a.pkg.subpkg.c', 'c = 1')
+        self.create_module('b.pkg.subpkg.d', 'd = 2')
+        sys.path.insert(0, os.path.join(self.basedir, 'a'))
+        sys.path.insert(0, os.path.join(self.basedir, 'b'))
+        import pkg
+        self.addCleanup(unload, 'pkg')
+        self.assertEqual(len(pkg.__path__), 2)
+        import pkg.subpkg
+        self.addCleanup(unload, 'pkg.subpkg')
+        self.assertEqual(len(pkg.subpkg.__path__), 2)
+        from pkg.subpkg.c import c
+        from pkg.subpkg.d import d
+        self.assertEqual(c, 1)
+        self.assertEqual(d, 2)
+
+
 def test_main():
-    run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests)
+    run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests,
+                 NestedNamespacePackageTest)
     # this is necessary if test is run repeated (like when finding leaks)
     import zipimport
     zipimport._zip_directory_cache.clear()
