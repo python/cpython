@@ -101,6 +101,11 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15288: Link to the term "loader" in notes in pkgutil about how things
+  won't work as expected in Python 3.3 and mark the requisite functions as
+  "changed" since they will no longer work with modules directly imported by
+  import itself.
+
 - Issue #13557: Clarify effect of giving two different namespaces to exec or
   execfile().
 
