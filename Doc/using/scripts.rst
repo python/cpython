@@ -33,7 +33,7 @@ or equivalently::
 
 The command, if run with ``-h``, will show the available options::
 
-    usage: pyvenv [-h] [--system-site-packages] [--symlink] [--clear]
+    usage: pyvenv [-h] [--system-site-packages] [--symlinks] [--clear]
                   [--upgrade] ENV_DIR [ENV_DIR ...]
 
     Creates virtual Python environments in one or more target directories.
@@ -45,7 +45,8 @@ The command, if run with ``-h``, will show the available options::
       -h, --help             show this help message and exit
       --system-site-packages Give access to the global site-packages dir to the
                              virtual environment.
-      --symlink              Attempt to symlink rather than copy.
+      --symlinks             Try to use symlinks rather than copies, when symlinks
+                             are not the default for the platform.
       --clear                Delete the environment directory if it already exists.
                              If not specified and the directory exists, an error is
                              raised.
@@ -62,6 +63,34 @@ run with the ``--system-site-packages`` option, ``false`` otherwise.
 Multiple paths can be given to ``pyvenv``, in which case an identical
 virtualenv will be created, according to the given options, at each
 provided path.
+
+Once a venv has been created, it can be "activated" using a script in the
+venv's binary directory. The invocation of the script is platform-specific: on
+a Posix platform, you would typically do::
+
+    $ source <venv>/bin/activate
+
+whereas on Windows, you might do::
+
+    c:\> <venv>/Scripts/activate
+
+if you are using the ``cmd.exe`` shell, or perhaps::
+
+    PS C:\> <venv>/Scripts/Activate.ps1
+
+if you use PowerShell.
+
+You don't specifically *need* to activate an environment; activation just
+prepends the venv's binary directory to your path, so that "python" invokes the
+venv's Python interpreter and you can run installed scripts without having to
+use their full path. However, all scripts installed in a venv should be
+runnable without activating it, and run with the venv's Python automatically.
+
+You can deactivate a venv by typing "deactivate" in your shell. The exact
+mechanism is platform-specific: for example, the Bash activation script defines
+a "deactivate" function, whereas on Windows there are separate scripts called
+``deactivate.bat`` and ``Deactivate.ps1`` which are installed when the venv is
+created.
 
 .. note:: A virtual environment (also called a ``venv``) is a Python
    environment such that the Python interpreter, libraries and scripts
