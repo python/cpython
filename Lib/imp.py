@@ -10,11 +10,11 @@ from _imp import (lock_held, acquire_lock, release_lock,
                   load_dynamic, get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
                   _fix_co_filename, extension_suffixes)
-# Could move out of _imp, but not worth the code
-from _imp import get_magic
 
+# Directly exposed by this module
 from importlib._bootstrap import new_module
 from importlib._bootstrap import cache_from_source
+
 
 from importlib import _bootstrap
 from importlib import machinery
@@ -35,6 +35,11 @@ C_BUILTIN = 6
 PY_FROZEN = 7
 PY_CODERESOURCE = 8
 IMP_HOOK = 9
+
+
+def get_magic():
+    """Return the magic number for .pyc or .pyo files."""
+    return _bootstrap._MAGIC_BYTES
 
 
 def get_tag():
