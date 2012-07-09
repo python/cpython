@@ -1272,11 +1272,6 @@ class RequestTests(unittest.TestCase):
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
 
-    def test_quote_url(self):
-        Request = urllib.request.Request
-        request = Request("http://www.python.org/foo bar")
-        self.assertEqual(request.full_url, "http://www.python.org/foo%20bar")
-
 
 def test_main():
     support.run_unittest(
