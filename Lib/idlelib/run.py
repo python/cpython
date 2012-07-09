@@ -1,4 +1,5 @@
 import sys
+import io
 import linecache
 import time
 import socket
@@ -248,6 +249,23 @@ class MyRPCServer(rpc.RPCServer):
             quitting = True
             thread.interrupt_main()
 
+class _RPCFile(io.TextIOBase):
+    """Wrapper class for the RPC proxy to typecheck arguments
+    that may not support pickling."""
+
+    def __init__(self, rpc):
+        super.__setattr__(self, 'rpc', rpc)
+
+    def __getattr__(self, name):
+        return getattr(self.rpc, name)
+
+    def __setattr__(self, name, value):
+        return setattr(self.rpc, name, value)
+
+    def write(self, s):
+        if not isinstance(s, str):
+            raise TypeError('must be str, not ' + type(s).__name__)
+        return self.rpc.write(s)
 
 class MyHandler(rpc.RPCHandler):
 
@@ -255,9 +273,9 @@ class MyHandler(rpc.RPCHandler):
         """Override base method"""
         executive = Executive(self)
         self.register("exec", executive)
-        sys.stdin = self.console = self.get_remote_proxy("stdin")
-        sys.stdout = self.get_remote_proxy("stdout")
-        sys.stderr = self.get_remote_proxy("stderr")
+        sys.stdin = self.console = _RPCFile(self.get_remote_proxy("stdin"))
+        sys.stdout = _RPCFile(self.get_remote_proxy("stdout"))
+        sys.stderr = _RPCFile(self.get_remote_proxy("stderr"))
         from idlelib import IOBinding
         sys.stdin.encoding = sys.stdout.encoding = \
                              sys.stderr.encoding = IOBinding.encoding
