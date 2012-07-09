@@ -10,7 +10,7 @@ import keyword, tokenize, cgi, functools
 
 def is_builtin(s):
     'Return True if s is the name of a builtin'
-    return s in vars(__builtins__)
+    return hasattr(__builtins__, s)
 
 def combine_range(lines, start, end):
     'Join content from a range of lines between start and end'
@@ -161,6 +161,8 @@ if __name__ == '__main__':
             help = 'build a complete html webpage')
     parser.add_argument('-s', '--section', action = 'store_true',
             help = 'show an HTML section rather than a complete webpage')
+    parser.add_argument('-v', '--verbose', action = 'store_true',
+            help = 'display categorized text to stderr')
     args = parser.parse_args()
 
     if args.section and (args.browser or args.complete):
@@ -171,6 +173,12 @@ if __name__ == '__main__':
     with open(sourcefile) as f:
         source = f.read()
     classified_text = analyze_python(source)
+
+    if args.verbose:
+        classified_text = list(classified_text)
+        for line_upto_token, kind, line_thru_token in classified_text:
+            sys.stderr.write('%15s:  %r\n' % ('leadin', line_upto_token))
+            sys.stderr.write('%15s:  %r\n\n' % (kind, line_thru_token))
 
     if args.complete or args.browser:
         encoded = build_html_page(classified_text, title=sourcefile)
