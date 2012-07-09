@@ -150,7 +150,7 @@ Functions for sequences:
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), 60)``.
 
-   If the sample size is larger than the population size, a :exc:``ValueError``
+   If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
 
 The following functions generate specific real-valued distributions. Function
