@@ -87,11 +87,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #14826: Quote urls in urllib.request.Request similar to how they are
-  quoted by urllib.request.URLopener. Allows urls to spaces in them to work
-  transparently with urllib.request.urlopen(...). Patch contributed by Stephen
-  Thorne.
-
 - Issue #14990: Correctly fail with SyntaxError on invalid encoding
   declaration.
 
