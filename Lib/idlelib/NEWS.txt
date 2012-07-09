@@ -1,6 +1,8 @@
 What's New in IDLE 2.7.4?
 =========================
 
+- Issue #13532: Check that arguments to sys.stdout.write are strings.
+
 - Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
 
 - Issue10365: File open dialog now works instead of crashing even when

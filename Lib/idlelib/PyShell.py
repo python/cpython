@@ -1265,6 +1265,8 @@ class PseudoFile(object):
         self.encoding = encoding
 
     def write(self, s):
+        if not isinstance(s, str):
+            raise TypeError('must be str, not ' + type(s).__name__)
         self.shell.write(s, self.tags)
 
     def writelines(self, lines):
