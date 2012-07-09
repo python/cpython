@@ -1289,9 +1289,9 @@ remove_importlib_frames(void)
     const char *importlib_filename = "<frozen importlib._bootstrap>";
     const char *exec_funcname = "_exec_module";
     int always_trim = 0;
-    int in_importlib;
+    int in_importlib = 0;
     PyObject *exception, *value, *base_tb, *tb;
-    PyObject **prev_link, **outer_link;
+    PyObject **prev_link, **outer_link = NULL;
 
     /* Synopsis: if it's an ImportError, we trim all importlib chunks
        from the traceback.  Otherwise, we trim only those chunks which
@@ -1306,7 +1306,6 @@ remove_importlib_frames(void)
 
     prev_link = &base_tb;
     tb = base_tb;
-    in_importlib = 0;
     while (tb != NULL) {
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
