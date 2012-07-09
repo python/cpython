@@ -178,7 +178,8 @@ Importing Modules
 .. c:function:: const char * PyImport_GetMagicTag()
 
    Return the magic tag string for :pep:`3147` format Python bytecode file
-   names.
+   names.  Keep in mind that the value at ``sys.implementation.cache_tag`` is
+   authoritative and should be used instead of this function.
 
    .. versionadded:: 3.2
 

@@ -1478,6 +1478,22 @@ make_version_info(void)
     return version_info;
 }
 
+/* sys.implementation values */
+#define NAME "cpython"
+const char *_PySys_ImplName = NAME;
+#define QUOTE(arg) #arg
+#define STRIFY(name) QUOTE(name)
+#define MAJOR STRIFY(PY_MAJOR_VERSION)
+#define MINOR STRIFY(PY_MINOR_VERSION)
+#define TAG NAME "-" MAJOR MINOR;
+const char *_PySys_ImplCacheTag = TAG;
+#undef NAME
+#undef QUOTE
+#undef STRIFY
+#undef MAJOR
+#undef MINOR
+#undef TAG
+
 static PyObject *
 make_impl_info(PyObject *version_info)
 {
@@ -1490,13 +1506,7 @@ make_impl_info(PyObject *version_info)
 
     /* populate the dict */
 
-#define NAME "cpython"
-#define QUOTE(arg) #arg
-#define STRIFY(name) QUOTE(name)
-#define MAJOR STRIFY(PY_MAJOR_VERSION)
-#define MINOR STRIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR
-    value = PyUnicode_FromString(NAME);
+    value = PyUnicode_FromString(_PySys_ImplName);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "name", value);
@@ -1504,19 +1514,13 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    value = PyUnicode_FromString(TAG);
+    value = PyUnicode_FromString(_PySys_ImplCacheTag);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "cache_tag", value);
     Py_DECREF(value);
     if (res < 0)
         goto error;
-#undef NAME
-#undef QUOTE
-#undef STRIFY
-#undef MAJOR
-#undef MINOR
-#undef TAG
 
     res = PyDict_SetItemString(impl_info, "version", version_info);
     if (res < 0)

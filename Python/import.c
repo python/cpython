@@ -116,7 +116,7 @@ typedef unsigned short mode_t;
 */
 #define MAGIC (3230 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define CACHEDIR "__pycache__"
-/* Current magic word and string tag as globals. */
+/* Current magic word as global. */
 static long pyc_magic = MAGIC;
 
 /* See _PyImport_FixupExtensionObject() below */
@@ -520,22 +520,12 @@ PyImport_GetMagicNumber(void)
 }
 
 
+extern const char * _PySys_ImplCacheTag;
+
 const char *
 PyImport_GetMagicTag(void)
 {
-    PyObject *impl, *tag;
-    const char *raw_tag;
-
-    /* We could also pull it from imp or importlib. */
-    impl = PySys_GetObject("implementation");
-    if (impl == NULL)
-        return NULL;
-    tag = PyObject_GetAttrString(impl, "cache_tag");
-    if (tag == NULL)
-        return NULL;
-    raw_tag = PyUnicode_DATA(tag);
-    Py_DECREF(tag);
-    return raw_tag;
+    return _PySys_ImplCacheTag;
 }
 
 
