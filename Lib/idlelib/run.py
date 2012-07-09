@@ -259,7 +259,7 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
 
 class _RPCFile(io.TextIOBase):
-    """Wrapper class for the RPC proxy to typecheck arguments 
+    """Wrapper class for the RPC proxy to typecheck arguments
     that may not support pickling."""
 
     def __init__(self, rpc):
