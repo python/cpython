@@ -139,8 +139,13 @@ support.
    *prefix* is a string to output on the front of every module name on output.
 
    .. note::
-      Only works for importers which define a ``iter_modules()`` method, which
-      is non-standard but implemented by classes defined in this module.
+      Only works wtih a :term:`loader` which defines a ``iter_modules()``
+      method, which is non-standard but implemented by classes defined in this
+      module.
+
+   .. versionchanged:: 3.3
+      As of Python 3.3, the import system provides loaders by default, but they
+      do not include the ``iter_modules()`` method required by this function.
 
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
@@ -171,8 +176,12 @@ support.
       walk_packages(ctypes.__path__, ctypes.__name__ + '.')
 
    .. note::
-      Only works for importers which define a ``iter_modules()`` method, which
-      is non-standard but implemented by classes defined in this module.
+      Only works for a :term:`loader` which define a ``iter_modules()`` method,
+      which is non-standard but implemented by classes defined in this module.
+
+   .. versionchanged:: 3.3
+      As of Python 3.3, the import system provides loaders by default, but they
+      do not include the ``iter_modules()`` method required by this function.
 
 
 .. function:: get_data(package, resource)
