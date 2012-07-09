@@ -263,8 +263,8 @@ class _RPCFile(io.TextIOBase):
         return setattr(self.rpc, name, value)
 
     def write(self, s):
-        if not isinstance(s, basestring):
-            raise TypeError('must be str, not ' + type(s).__name__)
+        if not isinstance(s, (basestring, bytearray)):
+            raise TypeError('must be string, not ' + type(s).__name__)
         return self.rpc.write(s)
 
 class MyHandler(rpc.RPCHandler):
