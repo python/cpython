@@ -231,6 +231,8 @@ class PEP3147Tests(unittest.TestCase):
 
     tag = imp.get_tag()
 
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
@@ -238,6 +240,12 @@ class PEP3147Tests(unittest.TestCase):
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
                               'qux.{}.pyc'.format(self.tag))
         self.assertEqual(imp.cache_from_source(path, True), expect)
+
+    def test_cache_from_source_no_cache_tag(self):
+        # Non cache tag means NotImplementedError.
+        with support.swap_attr(sys.implementation, 'cache_tag', None):
+            with self.assertRaises(NotImplementedError):
+                imp.cache_from_source('whatever.py')
 
     def test_cache_from_source_no_dot(self):
         # Directory with a dot, filename without dot.
@@ -283,6 +291,9 @@ class PEP3147Tests(unittest.TestCase):
             imp.cache_from_source('\\foo\\bar\\baz/qux.py', True),
             '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag to not be '
+                         'None')
     def test_source_from_cache(self):
         # Given the path to a PEP 3147 defined .pyc file, return the path to
         # its source.  This tests the good path.
@@ -290,6 +301,13 @@ class PEP3147Tests(unittest.TestCase):
                             'qux.{}.pyc'.format(self.tag))
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
         self.assertEqual(imp.source_from_cache(path), expect)
+
+    def test_source_from_cache_no_cache_tag(self):
+        # If sys.implementation.cache_tag is None, raise NotImplementedError.
+        path = os.path.join('blah', '__pycache__', 'whatever.pyc')
+        with support.swap_attr(sys.implementation, 'cache_tag', None):
+            with self.assertRaises(NotImplementedError):
+                imp.source_from_cache(path)
 
     def test_source_from_cache_bad_path(self):
         # When the path to a pyc file is not in PEP 3147 format, a ValueError

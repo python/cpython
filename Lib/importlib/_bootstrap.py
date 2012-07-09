@@ -321,6 +321,8 @@ def cache_from_source(path, debug_override=None):
     If debug_override is not None, then it must be a boolean and is taken as
     the value of __debug__ instead.
 
+    If sys.implementation.cache_tag is None then NotImplementedError is raised.
+
     """
     debug = __debug__ if debug_override is None else debug_override
     if debug:
@@ -329,7 +331,10 @@ def cache_from_source(path, debug_override=None):
         suffixes = OPTIMIZED_BYTECODE_SUFFIXES
     head, tail = _path_split(path)
     base_filename, sep, _ = tail.partition('.')
-    filename = ''.join([base_filename, sep, _TAG, suffixes[0]])
+    tag = sys.implementation.cache_tag
+    if tag is None:
+        raise NotImplementedError('sys.implementation.cache_tag is None')
+    filename = ''.join([base_filename, sep, tag, suffixes[0]])
     return _path_join(head, _PYCACHE, filename)
 
 
@@ -649,7 +654,10 @@ class _LoaderBasics:
         code_object = self.get_code(name)
         module.__file__ = self.get_filename(name)
         if not sourceless:
-            module.__cached__ = cache_from_source(module.__file__)
+            try:
+                module.__cached__ = cache_from_source(module.__file__)
+            except NotImplementedError:
+                module.__cached__ = module.__file__
         else:
             module.__cached__ = module.__file__
         module.__package__ = name
@@ -718,9 +726,12 @@ class SourceLoader(_LoaderBasics):
 
         """
         source_path = self.get_filename(fullname)
-        bytecode_path = cache_from_source(source_path)
         source_mtime = None
-        if bytecode_path is not None:
+        try:
+            bytecode_path = cache_from_source(source_path)
+        except NotImplementedError:
+            bytecode_path = None
+        else:
             try:
                 st = self.path_stats(source_path)
             except NotImplementedError:
@@ -1417,7 +1428,6 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
 
 
 _MAGIC_NUMBER = None  # Set in _setup()
-_TAG = None  # Set in _setup()
 
 
 def _setup(sys_module, _imp_module):
@@ -1479,7 +1489,6 @@ def _setup(sys_module, _imp_module):
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     setattr(self_module, '_MAGIC_NUMBER', _imp_module.get_magic())
-    setattr(self_module, '_TAG', sys.implementation.cache_tag)
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
 
