@@ -117,7 +117,7 @@ def get_entity(expression):
             return None
 
 # The following are used in both get_argspec and tests
-_self_pat = re.compile('self\,?\s*')
+_first_param = re.compile('(?<=\()\w*\,?\s*')
 _default_callable_argspec = "No docstring, see docs."
 
 def get_argspec(ob):
@@ -141,7 +141,7 @@ def get_argspec(ob):
             argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
             if (isinstance(ob, (type, types.MethodType)) or
                     isinstance(ob.__call__, types.MethodType)):
-                argspec = _self_pat.sub("", argspec)
+                argspec = _first_param.sub("", argspec)
 
         if isinstance(ob.__call__, types.MethodType):
             doc = ob.__call__.__doc__
@@ -169,8 +169,7 @@ def main():
     def t2(a, b=None): "(a, b=None)"
     def t3(a, *args): "(a, *args)"
     def t4(*args): "(*args)"
-    def t5(a, *args): "(a, *args)"
-    def t6(a, b=None, *args, **kw): "(a, b=None, *args, **kw)"
+    def t5(a, b=None, *args, **kw): "(a, b=None, *args, **kw)"
 
     class TC(object):
         "(ai=None, *b)"
@@ -179,13 +178,13 @@ def main():
         def t2(self, ai, b=None): "(self, ai, b=None)"
         def t3(self, ai, *args): "(self, ai, *args)"
         def t4(self, *args): "(self, *args)"
-        def t5(self, ai, *args): "(self, ai, *args)"
-        def t6(self, ai, b=None, *args, **kw): "(self, ai, b=None, *args, **kw)"
+        def t5(self, ai, b=None, *args, **kw): "(self, ai, b=None, *args, **kw)"
+        def t6(no, self): "(no, self)"
         @classmethod
         def cm(cls, a): "(cls, a)"
         @staticmethod
         def sm(b): "(b)"
-        def __call__(self, ci): "(ci)"
+        def __call__(self, ci): "(self, ci)"
 
     tc = TC()
 
@@ -228,19 +227,26 @@ def main():
         test('SB()', _default_callable_argspec)
 
     def test_funcs():
-        for func  in (t1, t2, t3, t4, t5, t6, TC,):
+        for func  in (t1, t2, t3, t4, t5, TC,):
             fdoc = func.__doc__
             test(func.__name__, fdoc + "\n" + fdoc)
-        for func in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.cm, TC.sm):
+        for func in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.sm,
+                     TC.__call__):
             fdoc = func.__doc__
             test('TC.'+func.__name__, fdoc + "\n" + fdoc)
+        fdoc = TC.cm.__func__.__doc__
+        test('TC.cm.__func__', fdoc + "\n" + fdoc)
 
     def test_methods():
-        for func  in (tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6):
-            fdoc = func.__doc__
-            test('tc.'+func.__name__, _self_pat.sub("", fdoc) + "\n" + fdoc)
-        fdoc = tc.__call__.__doc__
-        test('tc', fdoc + "\n" + fdoc)
+        # test that first parameter is correctly removed from argspec
+        # using _first_param re to calculate expected masks re errors
+        for meth, mdoc  in ((tc.t1, "()"), (tc.t4, "(*args)"), (tc.t6, "(self)"),
+                            (TC.cm, "(a)"),):
+            test('tc.'+meth.__name__, mdoc + "\n" + meth.__doc__)
+        test('tc', "(ci)" + "\n" + tc.__call__.__doc__)
+        # directly test that re works to delete unicode parameter name
+        uni = "(A\u0391\u0410\u05d0\u0627\u0905\u1e00\u3042, a)"  # various As
+        assert _first_param.sub('', uni) == '(a)'
 
     def test_non_callables():
         # expression evaluates, but not to a callable
