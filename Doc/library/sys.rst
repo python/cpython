@@ -32,10 +32,11 @@ always available.
 .. data:: base_exec_prefix
 
    Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`exec_prefix`. If not running in a virtual environment, the values
-   will stay the same; if ``site.py`` finds that a virtual environment is in
-   use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
-   point to the virtual environment, whereas :data:`base_prefix` and
+   :data:`exec_prefix`. If not running in a
+   :ref:`virtual environment <venv-def>`, the values will stay the same; if
+   ``site.py`` finds that a virtual environment is in use, the values of
+   :data:`prefix` and :data:`exec_prefix` will be changed to point to the
+   virtual environment, whereas :data:`base_prefix` and
    :data:`base_exec_prefix` will remain pointing to the base Python
    installation (the one which the virtual environment was created from).
 
@@ -45,7 +46,7 @@ always available.
 .. data:: base_prefix
 
    Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`prefix`. If not running in a virtual environment, the values
+   :data:`prefix`. If not running in a :ref:`virtual environment <venv-def>`, the values
    will stay the same; if ``site.py`` finds that a virtual environment is in
    use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
    point to the virtual environment, whereas :data:`base_prefix` and
@@ -241,9 +242,10 @@ always available.
    installed in :file:`{exec_prefix}/lib/python{X.Y}/lib-dynload`, where *X.Y*
    is the version number of Python, for example ``3.2``.
 
-   .. note:: If a virtual environment is in effect, this value will be changed
-      in ``site.py`` to point to the virtual environment. The value for the
-      Python installation will still be available, via :data:`base_exec_prefix`.
+   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
+      value will be changed in ``site.py`` to point to the virtual environment.
+      The value for the Python installation will still be available, via
+      :data:`base_exec_prefix`.
 
 
 .. data:: executable
@@ -865,9 +867,10 @@ always available.
    stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
    number of Python, for example ``3.2``.
 
-   .. note:: If a virtual environment is in effect, this value will be changed
-      in ``site.py`` to point to the virtual environment. The value for the
-      Python installation will still be available, via :data:`base_prefix`.
+   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
+      value will be changed in ``site.py`` to point to the virtual
+      environment. The value for the Python installation will still be
+      available, via :data:`base_prefix`.
 
 
 .. data:: ps1
