@@ -1246,11 +1246,6 @@ class URLopener_Tests(unittest.TestCase):
 #         ftp.close()
 
 
-    def test_quote_url(self):
-        Request = urllib.request.Request
-        request = Request("http://www.python.org/foo bar")
-        self.assertEqual(request.full_url, "http://www.python.org/foo%20bar")
-
 
 def test_main():
     support.run_unittest(
