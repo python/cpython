@@ -39,11 +39,9 @@ class HandlingFromlist(unittest.TestCase):
     [object case]. This is even true if the object does not exist [bad object].
 
     If a package is being imported, then what is listed in fromlist may be
-    treated as a module to be imported [module]. But once again, even if
-    something in fromlist does not exist as a module, no error is thrown
-    [no module]. And this extends to what is contained in __all__ when '*' is
-    imported [using *]. And '*' does not need to be the only name in the
-    fromlist [using * with others].
+    treated as a module to be imported [module]. And this extends to what is
+    contained in __all__ when '*' is imported [using *]. And '*' does not need
+    to be the only name in the fromlist [using * with others].
 
     """
 
@@ -70,15 +68,6 @@ class HandlingFromlist(unittest.TestCase):
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
-
-    def test_no_module_from_package(self):
-        # [no module]
-        with util.mock_modules('pkg.__init__') as importer:
-            with util.import_state(meta_path=[importer],
-                                   path_hooks=[imp.NullImporter]):
-                module = import_util.import_('pkg', fromlist='non_existent')
-                self.assertEqual(module.__name__, 'pkg')
-                self.assertTrue(not hasattr(module, 'non_existent'))
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
