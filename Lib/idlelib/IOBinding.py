@@ -485,6 +485,8 @@ class IOBinding:
         ("All files", "*"),
         ]
 
+    defaultextension = '.py' if sys.platform == 'darwin' else ''
+
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
         if not self.opendialog:
@@ -508,8 +510,10 @@ class IOBinding:
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
-            self.savedialog = tkFileDialog.SaveAs(master=self.text,
-                                                  filetypes=self.filetypes)
+            self.savedialog = tkFileDialog.SaveAs(
+                    master=self.text,
+                    filetypes=self.filetypes,
+                    defaultextension=self.defaultextension)
         filename = self.savedialog.show(initialdir=dir, initialfile=base)
         return filename
 
