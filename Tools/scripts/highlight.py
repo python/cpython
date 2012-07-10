@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 '''Add syntax highlighting to Python source code'''
 
-__all__ = ['analyze_python', 'ansi_highlight', 'default_ansi',
-           'html_highlight', 'build_html_page', 'default_css', 'default_html']
-
 __author__ = 'Raymond Hettinger'
 
-import keyword, tokenize, cgi, functools
+import keyword, tokenize, cgi, re, functools
+
+#### Analyze Python Source #################################
 
 def is_builtin(s):
     'Return True if s is the name of a builtin'
@@ -60,6 +59,20 @@ def analyze_python(source):
     line_upto_token, written = combine_range(lines, written, (erow, ecol))
     yield line_upto_token, '', ''
 
+#### Raw Output  ###########################################
+
+def raw_highlight(classified_text):
+    'Straight text display of text classifications'
+    result = []
+    for line_upto_token, kind, line_thru_token in classified_text:
+        if line_upto_token:
+            result.append('          plain:  %r\n' % line_upto_token)
+        if line_thru_token:
+            result.append('%15s:  %r\n' % (kind, line_thru_token))
+    return ''.join(result)
+
+#### ANSI Output ###########################################
+
 default_ansi = {
     'comment': ('\033[0;31m', '\033[0m'),
     'string': ('\033[0;32m', '\033[0m'),
@@ -79,6 +92,8 @@ def ansi_highlight(classified_text, colors=default_ansi):
         opener, closer = colors.get(kind, ('', ''))
         result += [line_upto_token, opener, line_thru_token, closer]
     return ''.join(result)
+
+#### HTML Output ###########################################
 
 def html_highlight(classified_text,opener='<pre class="python">\n', closer='</pre>\n'):
     'Convert classified text to an HTML fragment'
@@ -131,6 +146,59 @@ def build_html_page(classified_text, title='python',
     title = cgi.escape(title)
     return html.format(title=title, css=css_str, body=result)
 
+#### LaTeX Output ##########################################
+
+default_latex_colors = {
+    'comment': 'red',
+    'string': 'green',
+    'docstring': 'green',
+    'keyword': 'orange',
+    'builtin': 'purple',
+    'definition': 'orange',
+    'defname': 'blue',
+    'operator': 'brown',
+}
+
+default_latex_document = r'''
+\documentclass{article}
+\usepackage{alltt}
+\usepackage{color}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[cm]{fullpage}
+\begin{document}
+\center{\LARGE{%(title)s}}
+\begin{alltt}
+%(body)s
+\end{alltt}
+\end{document}
+'''
+
+def latex_escape(s):
+    'Replace LaTeX special characters with their escaped equivalents'
+    # http://en.wikibooks.org/wiki/LaTeX/Basics#Special_Characters
+    xlat = {
+        '#': r'\#', '$': r'\$', '%': r'\%', '^': r'\textasciicircum{}',
+        '&': r'\&', '_': r'\_', '{': r'\{', '}': r'\}', '~': r'\~{}',
+        '\\': r'\textbackslash{}',
+    }
+    return re.sub(r'[\\#$%^&_{}~]', lambda mo: xlat[mo.group()], s)
+
+def latex_highlight(classified_text, title = 'python',
+                    colors = default_latex_colors,
+                    document = default_latex_document):
+    'Create a complete LaTeX document with colorized source code'
+    result = []
+    for line_upto_token, kind, line_thru_token in classified_text:
+        if kind:
+            result += [latex_escape(line_upto_token),
+                       r'{\color{%s}' % colors[kind],
+                       latex_escape(line_thru_token),
+                       '}']
+        else:
+            result += [latex_escape(line_upto_token),
+                       latex_escape(line_thru_token)]
+    return default_latex_document % dict(title=title, body=''.join(result))
+
 
 if __name__ == '__main__':
     import sys, argparse, webbrowser, os, textwrap
@@ -152,6 +220,10 @@ if __name__ == '__main__':
 
                   # Create a complete HTML file
                   $ ./highlight.py -c myfile.py > myfile.html
+
+                  # Create a PDF using LaTeX
+                  $ ./highlight.py -l myfile.py | pdflatex
+
             '''))
     parser.add_argument('sourcefile', metavar = 'SOURCEFILE',
             help = 'file containing Python sourcecode')
@@ -159,10 +231,12 @@ if __name__ == '__main__':
             help = 'launch a browser to show results')
     parser.add_argument('-c', '--complete', action = 'store_true',
             help = 'build a complete html webpage')
+    parser.add_argument('-l', '--latex', action = 'store_true',
+            help = 'build a LaTeX document')
+    parser.add_argument('-r', '--raw', action = 'store_true',
+            help = 'raw parse of categorized text')
     parser.add_argument('-s', '--section', action = 'store_true',
             help = 'show an HTML section rather than a complete webpage')
-    parser.add_argument('-v', '--verbose', action = 'store_true',
-            help = 'display categorized text to stderr')
     args = parser.parse_args()
 
     if args.section and (args.browser or args.complete):
@@ -174,16 +248,14 @@ if __name__ == '__main__':
         source = f.read()
     classified_text = analyze_python(source)
 
-    if args.verbose:
-        classified_text = list(classified_text)
-        for line_upto_token, kind, line_thru_token in classified_text:
-            sys.stderr.write('%15s:  %r\n' % ('leadin', line_upto_token))
-            sys.stderr.write('%15s:  %r\n\n' % (kind, line_thru_token))
-
-    if args.complete or args.browser:
+    if args.raw:
+        encoded = raw_highlight(classified_text)
+    elif args.complete or args.browser:
         encoded = build_html_page(classified_text, title=sourcefile)
     elif args.section:
         encoded = html_highlight(classified_text)
+    elif args.latex:
+        encoded = latex_highlight(classified_text, title=sourcefile)
     else:
         encoded = ansi_highlight(classified_text)
 
