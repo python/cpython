@@ -1459,16 +1459,14 @@ def _handle_fromlist(module, fromlist, import_):
     # The hell that is fromlist ...
     # If a package was imported, try to import stuff from fromlist.
     if hasattr(module, '__path__'):
-        if '*' in fromlist and hasattr(module, '__all__'):
+        if '*' in fromlist:
             fromlist = list(fromlist)
             fromlist.remove('*')
-            fromlist.extend(module.__all__)
+            if hasattr(module, '__all__'):
+                fromlist.extend(module.__all__)
         for x in fromlist:
             if not hasattr(module, x):
-                try:
-                    import_('{}.{}'.format(module.__name__, x))
-                except ImportError:
-                    pass
+                import_('{}.{}'.format(module.__name__, x))
     return module
 
 
