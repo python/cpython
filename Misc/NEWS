@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15111: When a module imported using 'from import' has an ImportError
+  inside itself, don't mask that fact behind a generic ImportError for the
+  module itself.
+
 - Issue #15293: Add GC support to the AST base node type.
 
 - Issue #15291: Fix a memory leak where AST nodes where not properly
