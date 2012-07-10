@@ -426,12 +426,13 @@ PyImport_Cleanup(void)
 long
 PyImport_GetMagicNumber(void)
 {
+    long res;
     PyInterpreterState *interp = PyThreadState_Get()->interp;
     PyObject *pyc_magic = PyObject_GetAttrString(interp->importlib,
                                                  "_RAW_MAGIC_NUMBER");
     if (pyc_magic == NULL)
         return -1;
-    long res = PyLong_AsLong(pyc_magic);
+    res = PyLong_AsLong(pyc_magic);
     Py_DECREF(pyc_magic);
     return res;
 }
