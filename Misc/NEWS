@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15315: Support VS 2010 in distutils cygwincompiler.
+
 - Issue #15294: Fix a regression in pkgutil.extend_path()'s handling of
   nested namespace packages.
 
