@@ -1,6 +1,9 @@
 What's New in IDLE 3.3.0?
 =========================
 
+- Issue #4832: Modify IDLE to save files with .py extension by
+  default on Windows and OS X (Tk 8.5) as it already does with X11 Tk.
+
 - Issue #13532, #15319: Check that arguments to sys.stdout.write are strings.
 
 - Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
