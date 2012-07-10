@@ -431,7 +431,9 @@ PyImport_GetMagicNumber(void)
                                                  "_RAW_MAGIC_NUMBER");
     if (pyc_magic == NULL)
         return -1;
-    return PyLong_AsLong(pyc_magic);
+    long res = PyLong_AsLong(pyc_magic);
+    Py_DECREF(pyc_magic);
+    return res;
 }
 
 
