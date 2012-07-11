@@ -1,7 +1,7 @@
 What's New in IDLE 3.3.0?
 =========================
 
-- Issue #13532: Check that arguments to sys.stdout.write are strings.
+- Issue #13532, #15319: Check that arguments to sys.stdout.write are strings.
 
 - Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
   Erroneous tool tips have been corrected. Default added for callables.
