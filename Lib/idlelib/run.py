@@ -251,12 +251,18 @@ class MyRPCServer(rpc.RPCServer):
 
 class _RPCFile(io.TextIOBase):
     """Wrapper class for the RPC proxy to typecheck arguments
-    that may not support pickling."""
+    that may not support pickling. The base class is there only
+    to support type tests; all implementations come from the remote
+    object."""
 
     def __init__(self, rpc):
         super.__setattr__(self, 'rpc', rpc)
 
-    def __getattr__(self, name):
+    def __getattribute__(self, name):
+        # When accessing the 'rpc' attribute, use ours
+        if name == 'rpc':
+            return io.TextIOBase.__getattribute__(self, name)
+        # Else only look into the remote object only
         return getattr(self.rpc, name)
 
     def __setattr__(self, name, value):
