@@ -121,6 +121,10 @@ Documentation
 Tests
 -----
 
+- Issue #15300: Ensure the temporary test working directories are in the same
+  parent folder when running tests in multiprocess mode from a Python build.
+  Patch by Chris Jerdonek.
+
 - Issue #15284: Skip {send,recv}msg tests in test_socket when IPv6 is not
   enabled. Patch by Brian Brazil.
 
