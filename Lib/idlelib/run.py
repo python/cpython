@@ -282,7 +282,7 @@ class MyHandler(rpc.RPCHandler):
         """Override base method"""
         executive = Executive(self)
         self.register("exec", executive)
-        sys.stdin = self.console = _RPCFile(self.get_remote_proxy("stdin"))
+        sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = _RPCFile(self.get_remote_proxy("stdout"))
         sys.stderr = _RPCFile(self.get_remote_proxy("stderr"))
         sys.displayhook = rpc.displayhook
