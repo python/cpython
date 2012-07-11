@@ -634,10 +634,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         output.put((None, None, None, None))
                         return
                     # -E is needed by some tests, e.g. test_import
+                    # Running the child from the same working directory ensures
+                    # that TEMPDIR for the child is the same when
+                    # sysconfig.is_python_build() is true. See issue 15300.
                     popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=PIPE,
                                    universal_newlines=True,
-                                   close_fds=(os.name != 'nt'))
+                                   close_fds=(os.name != 'nt'),
+                                   cwd=support.SAVEDCWD)
                     stdout, stderr = popen.communicate()
                     retcode = popen.wait()
                     # Strip last refcount output line if it exists, since it
