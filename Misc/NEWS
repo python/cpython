@@ -341,6 +341,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #15300: Ensure the temporary test working directories are in the same
+  parent folder when running tests in multiprocess mode from a Python build.
+  Patch by Chris Jerdonek.
+
 - test_nntplib now tolerates being run from behind NNTP gateways that add
   "X-Antivirus" headers to articles
 
