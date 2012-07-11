@@ -255,8 +255,8 @@ class _RPCFile(io.TextIOBase):
         super.__setattr__(self, 'rpc', rpc)
 
     def __getattribute__(self, name):
-        # When accessing the 'rpc' attribute, use ours
-        if name == 'rpc':
+        # When accessing the 'rpc' attribute, or 'write', use ours
+        if name in ('rpc', 'write'):
             return io.TextIOBase.__getattribute__(self, name)
         # Else only look into the remote object only
         return getattr(self.rpc, name)
