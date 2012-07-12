@@ -276,7 +276,7 @@ immediate playback::
             print('Thank you for using Turtle')
             self.close()
             bye()
-            sys.exit(0)
+            return True
 
         # ----- record and playback -----
         def do_record(self, arg):
