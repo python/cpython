@@ -4298,7 +4298,7 @@ static const mpd_t _mpd_ln10 = {
 /*
  * Set 'result' to log(10).
  *   Ulp error: abs(result - log(10)) < ulp(log(10))
- *   Relative error : abs(result - log(10)) < 5 * 10**-prec * log(10)
+ *   Relative error: abs(result - log(10)) < 5 * 10**-prec * log(10)
  *
  * NOTE: The relative error is not derived from the ulp error, but
  * calculated separately using the fact that 23/10 < log(10) < 24/10.
@@ -7204,6 +7204,19 @@ nanresult:
     mpd_setspecial(r, MPD_POS, MPD_NAN);
 }
 
+/* LIBMPDEC_ONLY */
+/*
+ * Schedule the optimal precision increase for the Newton iteration.
+ *   v := input operand
+ *   z_0 := initial approximation
+ *   initprec := natural number such that abs(sqrt(v) - z_0) < 10**-initprec
+ *   maxprec := target precision
+ *
+ * For convenience the output klist contains the elements in reverse order:
+ *   klist := [k_n-1, ..., k_0], where
+ *     1) k_0 <= initprec and
+ *     2) abs(sqrt(v) - result) < 10**(-2*k_n-1 + 2) <= 10**-maxprec.
+ */
 static inline int
 invroot_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2],
                       mpd_ssize_t maxprec, mpd_ssize_t initprec)
@@ -7224,29 +7237,27 @@ invroot_schedule_prec(mpd_ssize_t klist[MPD_MAX_PREC_LOG2],
 }
 
 /*
- * Initial approximation for the inverse square root.
- *
+ * Initial approximation for the inverse square root function.
  *   Input:
- *     v := 7 or 8 decimal digits with an implicit exponent of 10**-6,
- *          representing a number 1 <= x < 100.
- *
+ *     v := rational number, with 1 <= v < 100
+ *     vhat := floor(v * 10**6)
  *   Output:
- *     An approximation to 1/sqrt(v)
+ *     z := approximation to 1/sqrt(v), such that abs(z - 1/sqrt(v)) < 10**-3.
  */
 static inline void
-_invroot_init_approx(mpd_t *z, mpd_uint_t v)
+_invroot_init_approx(mpd_t *z, mpd_uint_t vhat)
 {
     mpd_uint_t lo = 1000;
     mpd_uint_t hi = 10000;
     mpd_uint_t a, sq;
 
-    assert(v >= lo*lo && v < (hi+1)*(hi+1));
+    assert(lo*lo <= vhat && vhat < (hi+1)*(hi+1));
 
     for(;;) {
         a = (lo + hi) / 2;
         sq = a * a;
-        if (v >= sq) {
-            if (v < sq + 2*a + 1) {
+        if (vhat >= sq) {
+            if (vhat < sq + 2*a + 1) {
                 break;
             }
             lo = a + 1;
@@ -7256,7 +7267,19 @@ _invroot_init_approx(mpd_t *z, mpd_uint_t v)
         }
     }
 
-    /* At this point a/1000 is an approximation to sqrt(v). */
+    /*
+     * After the binary search we have:
+     *  1) a**2 <= floor(v * 10**6) < (a + 1)**2
+     * This implies:
+     *  2) a**2 <= v * 10**6 < (a + 1)**2
+     *  3) a <= sqrt(v) * 10**3 < a + 1
+     * Since 10**3 <= a:
+     *  4) 0 <= 10**prec/a - 1/sqrt(v) < 10**-prec
+     * We have:
+     *  5) 10**3/a - 10**-3 < floor(10**9/a) * 10**-6 <= 10**3/a
+     * Merging 4) and 5):
+     *  6) abs(floor(10**9/a) * 10**-6 - 1/sqrt(v)) < 10**-3
+     */
     mpd_minalloc(z);
     mpd_clear_flags(z);
     z->data[0] = 1000000000UL / a;
@@ -7265,6 +7288,10 @@ _invroot_init_approx(mpd_t *z, mpd_uint_t v)
     mpd_setdigits(z);
 }
 
+/*
+ * Set 'result' to 1/sqrt(a).
+ *   Relative error: abs(result - 1/sqrt(a)) < 10**-prec * 1/sqrt(a)
+ */
 static void
 _mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
               uint32_t *status)
@@ -7282,7 +7309,7 @@ _mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     mpd_ssize_t ideal_exp, shift;
     mpd_ssize_t adj, tz;
     mpd_ssize_t maxprec, fracdigits;
-    mpd_uint_t x, dummy;
+    mpd_uint_t vhat, dummy;
     int i, n;
 
 
@@ -7301,30 +7328,33 @@ _mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         fracdigits = v->digits - 1;
         v->exp = -fracdigits;
         n = (v->digits > 7) ? 7 : (int)v->digits;
-        _mpd_get_msdigits(&dummy, &x, v, n);
+        /* Let vhat := floor(v * 10**(2*initprec)) */
+        _mpd_get_msdigits(&dummy, &vhat, v, n);
         if (n < 7) {
-            x *= mpd_pow10[7-n];
+            vhat *= mpd_pow10[7-n];
         }
     }
     else {
         fracdigits = v->digits - 2;
         v->exp = -fracdigits;
         n = (v->digits > 8) ? 8 : (int)v->digits;
-        _mpd_get_msdigits(&dummy, &x, v, n);
+        /* Let vhat := floor(v * 10**(2*initprec)) */
+        _mpd_get_msdigits(&dummy, &vhat, v, n);
         if (n < 8) {
-            x *= mpd_pow10[8-n];
+            vhat *= mpd_pow10[8-n];
         }
     }
     adj = (a->exp-v->exp) / 2;
 
     /* initial approximation */
-    _invroot_init_approx(z, x);
+    _invroot_init_approx(z, vhat);
 
     mpd_maxcontext(&maxcontext);
     mpd_maxcontext(&varcontext);
     varcontext.round = MPD_ROUND_TRUNC;
-    maxprec = ctx->prec + 2;
+    maxprec = ctx->prec + 1;
 
+    /* initprec == 3 */
     i = invroot_schedule_prec(klist, maxprec, 3);
     for (; i >= 0; i--) {
         varcontext.prec = 2*klist[i]+2;
@@ -7358,15 +7388,14 @@ _mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
     mpd_del(&t);
     if (v != &vtmp) mpd_del(v);
     *status |= (workstatus&MPD_Errors);
-    varcontext = *ctx;
-    varcontext.round = MPD_ROUND_HALF_EVEN;
-    mpd_qfinalize(result, &varcontext, status);
+    *status |= (MPD_Rounded|MPD_Inexact);
 }
 
 void
 mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
              uint32_t *status)
 {
+    mpd_context_t workctx;
 
     if (mpd_isspecial(a)) {
         if (mpd_qcheck_nan(result, a, ctx, status)) {
@@ -7391,75 +7420,29 @@ mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         return;
     }
 
-    _mpd_qinvroot(result, a, ctx, status);
+    workctx = *ctx;
+    workctx.prec += 2;
+    workctx.round = MPD_ROUND_HALF_EVEN;
+    _mpd_qinvroot(result, a, &workctx, status);
+    mpd_qfinalize(result, ctx, status);
 }
+/* END LIBMPDEC_ONLY */
 
-/*
- * Ensure correct rounding. Algorithm after Hull & Abrham, "Properly Rounded
- * Variable Precision Square Root", ACM Transactions on Mathematical Software,
- * Vol. 11, No. 3.
- */
-static void
-_mpd_fix_sqrt(mpd_t *result, const mpd_t *a, mpd_t *tmp,
-              const mpd_context_t *ctx, uint32_t *status)
-{
-    mpd_context_t maxctx;
-    MPD_NEW_CONST(u,0,0,1,1,1,5);
-
-    mpd_maxcontext(&maxctx);
-    u.exp = u.digits - ctx->prec + result->exp - 1;
-
-    _mpd_qsub(tmp, result, &u, &maxctx, status);
-    if (*status&MPD_Errors) goto nanresult;
-
-    _mpd_qmul(tmp, tmp, tmp, &maxctx, status);
-    if (*status&MPD_Errors) goto nanresult;
-
-    if (_mpd_cmp(tmp, a) == 1) {
-        u.exp += 1;
-        u.data[0] = 1;
-        _mpd_qsub(result, result, &u, &maxctx, status);
-    }
-    else {
-        _mpd_qadd(tmp, result, &u, &maxctx, status);
-        if (*status&MPD_Errors) goto nanresult;
-
-        _mpd_qmul(tmp, tmp, tmp, &maxctx, status);
-        if (*status&MPD_Errors) goto nanresult;
-
-        if (_mpd_cmp(tmp, a) == -1) {
-            u.exp += 1;
-            u.data[0] = 1;
-            _mpd_qadd(result, result, &u, &maxctx, status);
-        }
-    }
-
-    return;
-
-nanresult:
-    mpd_setspecial(result, MPD_POS, MPD_NAN);
-}
-
+/* Algorithm from decimal.py */
 void
 mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
           uint32_t *status)
 {
-    uint32_t workstatus = 0;
-    mpd_context_t varcontext;
-    mpd_t *z = result;         /* current approximation */
-    MPD_NEW_STATIC(v,0,0,0,0); /* a, normalized to a number between 1 and 10 */
-    MPD_NEW_STATIC(vtmp,0,0,0,0);
-    MPD_NEW_STATIC(tmp,0,0,0,0);
-    mpd_ssize_t ideal_exp, shift;
-    mpd_ssize_t target_prec, fracdigits;
-    mpd_ssize_t a_exp, a_digits;
-    mpd_ssize_t adj, tz;
-    mpd_uint_t dummy, t;
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(c,0,0,0,0);
+    MPD_NEW_STATIC(q,0,0,0,0);
+    MPD_NEW_STATIC(r,0,0,0,0);
+    MPD_NEW_CONST(two,0,0,1,1,1,2);
+    mpd_ssize_t prec, ideal_exp;
+    mpd_ssize_t l, shift;
     int exact = 0;
 
 
-    varcontext = *ctx;
-    varcontext.round = MPD_ROUND_HALF_EVEN;
     ideal_exp = (a->exp - (a->exp & 1)) / 2;
 
     if (mpd_isspecial(a)) {
@@ -7483,79 +7466,101 @@ mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         return;
     }
 
-    if (!mpd_qcopy(&v, a, status)) {
-        mpd_seterror(result, MPD_Malloc_error, status);
-        goto finish;
+    mpd_maxcontext(&maxcontext);
+    prec = ctx->prec + 1;
+
+    if (!mpd_qcopy(&c, a, status)) {
+        goto malloc_error;
     }
+    c.exp = 0;
 
-    a_exp = a->exp;
-    a_digits = a->digits;
-
-    /* normalize a to 1 <= v < 100 */
-    if ((v.digits+v.exp) & 1) {
-        fracdigits = v.digits - 1;
-        v.exp = -fracdigits;
-        _mpd_get_msdigits(&dummy, &t, &v, 3);
-        t = t < 100 ? t*10 : t;
-        t = t < 100 ? t*10 : t;
+    if (a->exp & 1) {
+        if (!mpd_qshiftl(&c, &c, 1, status)) {
+            goto malloc_error;
+        }
+        l = (a->digits >> 1) + 1;
     }
     else {
-        fracdigits = v.digits - 2;
-        v.exp = -fracdigits;
-        _mpd_get_msdigits(&dummy, &t, &v, 4);
-        t = t < 1000 ? t*10 : t;
-        t = t < 1000 ? t*10 : t;
-        t = t < 1000 ? t*10 : t;
+        l = (a->digits + 1) >> 1;
     }
-    adj = (a_exp-v.exp) / 2;
 
-
-    /* use excess digits */
-    target_prec = (a_digits > ctx->prec) ? a_digits : ctx->prec;
-    target_prec += 2;
-    varcontext.prec = target_prec + 3;
-
-    /* invroot is much faster for large numbers */
-    _mpd_qinvroot(&tmp, &v, &varcontext, &workstatus);
-
-    varcontext.prec = target_prec;
-    _mpd_qdiv(NO_IDEAL_EXP, z, &one, &tmp, &varcontext, &workstatus);
-
-
-    tz = mpd_trail_zeros(result);
-    if ((result->digits-tz)*2-1 <= v.digits) {
-        _mpd_qmul(&tmp, result, result, &varcontext, &workstatus);
-        if (workstatus&MPD_Errors) {
-            mpd_seterror(result, workstatus&MPD_Errors, status);
-            goto finish;
+    shift = prec - l;
+    if (shift >= 0) {
+        if (!mpd_qshiftl(&c, &c, 2*shift, status)) {
+            goto malloc_error;
         }
-        exact = (_mpd_cmp(&tmp, &v) == 0);
+        exact = 1;
     }
-    *status |= (workstatus&MPD_Errors);
-
-    if (!exact && !mpd_isspecial(result) && !mpd_iszero(result)) {
-        _mpd_fix_sqrt(result, &v, &tmp, &varcontext, status);
-        if (mpd_isspecial(result)) goto finish;
-        *status |= (MPD_Rounded|MPD_Inexact);
+    else {
+        exact = !mpd_qshiftr_inplace(&c, -2*shift);
     }
 
-    result->exp += adj;
+    ideal_exp -= shift;
+
+    /* find result = floor(sqrt(c)) using Newton's method */
+    if (!mpd_qshiftl(result, &one, prec, status)) {
+        goto malloc_error;
+    }
+
+    while (1) {
+        _mpd_qdivmod(&q, &r, &c, result, &maxcontext, &maxcontext.status);
+        if (mpd_isspecial(result) || mpd_isspecial(&q)) {
+            mpd_seterror(result, maxcontext.status&MPD_Errors, status);
+            goto out;
+        }
+        if (_mpd_cmp(result, &q) <= 0) {
+            break;
+        }
+        _mpd_qadd_exact(result, result, &q, &maxcontext, &maxcontext.status);
+        if (mpd_isspecial(result)) {
+            mpd_seterror(result, maxcontext.status&MPD_Errors, status);
+            goto out;
+        }
+        _mpd_qdivmod(result, &r, result, &two, &maxcontext, &maxcontext.status);
+    }
+
     if (exact) {
-        shift = ideal_exp - result->exp;
-        shift = (tz > shift) ? shift : tz;
-        if (shift > 0) {
+        _mpd_qmul_exact(&r, result, result, &maxcontext, &maxcontext.status);
+        if (mpd_isspecial(&r)) {
+            mpd_seterror(result, maxcontext.status&MPD_Errors, status);
+            goto out;
+        }
+        exact = (_mpd_cmp(&r, &c) == 0);
+    }
+
+    if (exact) {
+        if (shift >= 0) {
             mpd_qshiftr_inplace(result, shift);
-            result->exp += shift;
+        }
+        else {
+            if (!mpd_qshiftl(result, result, -shift, status)) {
+                goto malloc_error;
+            }
+        }
+        ideal_exp += shift;
+    }
+    else {
+        int lsd = mpd_lsd(result->data[0]);
+        if (lsd == 0 || lsd == 5) {
+            result->data[0] += 1;
         }
     }
 
+    result->exp = ideal_exp;
 
-finish:
-    mpd_del(&v);
-    mpd_del(&vtmp);
-    mpd_del(&tmp);
-    varcontext.prec = ctx->prec;
-    mpd_qfinalize(result, &varcontext, status);
+
+out:
+    mpd_del(&c);
+    mpd_del(&q);
+    mpd_del(&r);
+    maxcontext = *ctx;
+    maxcontext.round = MPD_ROUND_HALF_EVEN;
+    mpd_qfinalize(result, &maxcontext, status);
+    return;
+
+malloc_error:
+    mpd_seterror(result, MPD_Malloc_error, status);
+    goto out;
 }
 
 
