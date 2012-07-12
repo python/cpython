@@ -466,6 +466,7 @@ class PathsTests(unittest.TestCase):
         unc += path[2:]
         sys.path.insert(0, unc)
         try:
+            os.listdir(unc)
             try:
                 mod = __import__("test_unc_path")
             except ImportError as e:
