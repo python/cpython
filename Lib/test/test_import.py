@@ -454,8 +454,8 @@ class PathsTests(unittest.TestCase):
     # Regression test for http://bugs.python.org/issue3677.
     @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific')
     def test_UNC_path(self):
-        with open(os.path.join(self.path, 'test_trailing_slash.py'), 'w') as f:
-            f.write("testdata = 'test_trailing_slash'")
+        with open(os.path.join(self.path, 'test_unc_path.py'), 'w') as f:
+            f.write("testdata = 'test_unc_path'")
         importlib.invalidate_caches()
         # Create the UNC path, like \\myhost\c$\foo\bar.
         path = os.path.abspath(self.path)
@@ -464,15 +464,16 @@ class PathsTests(unittest.TestCase):
         drive = path[0]
         unc = "\\\\%s\\%s$"%(hn, drive)
         unc += path[2:]
-        sys.path.append(unc)
+        sys.path.insert(0, unc)
         try:
             try:
-                mod = __import__("test_trailing_slash")
+                mod = __import__("test_unc_path")
             except ImportError as e:
-                self.fail("could not import 'test_trailing_slash' from %r: %r"
+                self.fail("could not import 'test_unc_path' from %r: %r"
                           % (unc, e))
-            self.assertEqual(mod.testdata, 'test_trailing_slash')
-            unload("test_trailing_slash")
+            self.assertEqual(mod.testdata, 'test_unc_path')
+            self.assertTrue(mod.__file__.startswith(unc), mod.__file__)
+            unload("test_unc_path")
         finally:
             sys.path.remove(unc)
 
