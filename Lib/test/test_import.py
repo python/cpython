@@ -194,6 +194,7 @@ class ImportTests(unittest.TestCase):
         # New in 2.4, we shouldn't be able to import that no matter how often
         # we try.
         sys.path.insert(0, os.curdir)
+        importlib.invalidate_caches()
         if TESTFN in sys.modules:
             del sys.modules[TESTFN]
         try:
@@ -465,7 +466,11 @@ class PathsTests(unittest.TestCase):
         unc += path[2:]
         sys.path.append(unc)
         try:
-            mod = __import__("test_trailing_slash")
+            try:
+                mod = __import__("test_trailing_slash")
+            except ImportError as e:
+                self.fail("could not import 'test_trailing_slash' from %r: %r"
+                          % (unc, e))
             self.assertEqual(mod.testdata, 'test_trailing_slash')
             unload("test_trailing_slash")
         finally:
