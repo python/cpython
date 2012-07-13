@@ -646,7 +646,7 @@ to display *more* text instead::
    if args.verbosity >= 2:
        print "Running '{}'".format(__file__)
    if args.verbosity >= 1:
-       print "{}^{} == ".format(args.x, args.y), end=""
+       print "{}^{} ==".format(args.x, args.y),
    print answer
 
 Output:
