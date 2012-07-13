@@ -461,6 +461,13 @@ class PathsTests(unittest.TestCase):
         drive = path[0]
         unc = "\\\\%s\\%s$"%(hn, drive)
         unc += path[2:]
+        try:
+            os.listdir(unc)
+        except OSError as e:
+            if e.errno in (errno.EPERM, errno.EACCES):
+                # See issue #15338
+                self.skipTest("cannot access administrative share %r" % (unc,))
+            raise
         sys.path.append(path)
         mod = __import__("test_trailing_slash")
         self.assertEqual(mod.testdata, 'test_trailing_slash')
