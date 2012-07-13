@@ -663,8 +663,8 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: task_done()
 
-      Indicate that a formerly enqueued task is complete. Used by queue consumer
-      threads.  For each :meth:`~Queue.get` used to fetch a task, a subsequent
+      Indicate that a formerly enqueued task is complete. Used by queue
+      consumers.  For each :meth:`~Queue.get` used to fetch a task, a subsequent
       call to :meth:`task_done` tells the queue that the processing on the task
       is complete.
 
@@ -681,7 +681,7 @@ For an example of the usage of queues for interprocess communication see
       Block until all items in the queue have been gotten and processed.
 
       The count of unfinished tasks goes up whenever an item is added to the
-      queue.  The count goes down whenever a consumer thread calls
+      queue.  The count goes down whenever a consumer calls
       :meth:`task_done` to indicate that the item was retrieved and all work on
       it is complete.  When the count of unfinished tasks drops to zero,
       :meth:`~Queue.join` unblocks.
@@ -926,12 +926,6 @@ object -- see :ref:`multiprocessing-managers`.
 .. class:: Event()
 
    A clone of :class:`threading.Event`.
-   This method returns the state of the internal semaphore on exit, so it
-   will always return ``True`` except if a timeout is given and the operation
-   times out.
-
-   .. versionchanged:: 3.1
-      Previously, the method always returned ``None``.
 
 .. class:: Lock()
 
@@ -977,7 +971,8 @@ inherited by child processes.
 .. function:: Value(typecode_or_type, *args, lock=True)
 
    Return a :mod:`ctypes` object allocated from shared memory.  By default the
-   return value is actually a synchronized wrapper for the object.
+   return value is actually a synchronized wrapper for the object.  The object
+   itself can be accessed via the *value* attribute of a :class:`Value`.
 
    *typecode_or_type* determines the type of the returned object: it is either a
    ctypes type or a one character typecode of the kind used by the :mod:`array`
@@ -1183,8 +1178,10 @@ Managers
 ~~~~~~~~
 
 Managers provide a way to create data which can be shared between different
-processes. A manager object controls a server process which manages *shared
-objects*.  Other processes can access the shared objects by using proxies.
+processes, including sharing over a network between processes running on
+different machines. A manager object controls a server process which manages
+*shared objects*.  Other processes can access the shared objects by using
+proxies.
 
 .. function:: multiprocessing.Manager()
 
@@ -2211,7 +2208,7 @@ Avoid shared state
 
     It is probably best to stick to using queues or pipes for communication
     between processes rather than using the lower level synchronization
-    primitives from the :mod:`threading` module.
+    primitives.
 
 Picklability
 
