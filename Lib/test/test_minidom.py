@@ -1067,6 +1067,11 @@ class MinidomTest(unittest.TestCase):
             b'<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>')
         self.assertEqual(doc.toxml('iso-8859-15'),
             b'<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>')
+        self.assertEqual(doc.toxml('us-ascii'),
+            b'<?xml version="1.0" encoding="us-ascii"?><foo>&#8364;</foo>')
+        self.assertEqual(doc.toxml('utf-16'),
+            '<?xml version="1.0" encoding="utf-16"?>'
+            '<foo>\u20ac</foo>'.encode('utf-16'))
 
         # Verify that character decoding errors throw exceptions instead
         # of crashing
