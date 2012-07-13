@@ -14,7 +14,6 @@ Todo:
  * SAX 2 namespaces
 """
 
-import codecs
 import io
 import xml.dom
 
@@ -47,19 +46,22 @@ class Node(xml.dom.Node):
         return self.toprettyxml("", "", encoding)
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None):
-        # indent = the indentation string to prepend, per level
-        # newl = the newline string to append
-        use_encoding = "utf-8" if encoding is None else encoding
-        writer = codecs.getwriter(use_encoding)(io.BytesIO())
+        if encoding is None:
+            writer = io.StringIO()
+        else:
+            writer = io.TextIOWrapper(io.BytesIO(),
+                                      encoding=encoding,
+                                      errors="xmlcharrefreplace",
+                                      newline='\n')
         if self.nodeType == Node.DOCUMENT_NODE:
             # Can pass encoding only to document, to put it into XML header
             self.writexml(writer, "", indent, newl, encoding)
         else:
             self.writexml(writer, "", indent, newl)
         if encoding is None:
-            return writer.stream.getvalue().decode(use_encoding)
+            return writer.getvalue()
         else:
-            return writer.stream.getvalue()
+            return writer.detach().getvalue()
 
     def hasChildNodes(self):
         return bool(self.childNodes)
@@ -1788,12 +1790,12 @@ class Document(Node, DocumentLS):
             raise xml.dom.NotSupportedErr("cannot import document type nodes")
         return _clone_node(node, deep, self)
 
-    def writexml(self, writer, indent="", addindent="", newl="",
-                 encoding = None):
+    def writexml(self, writer, indent="", addindent="", newl="", encoding=None):
         if encoding is None:
             writer.write('<?xml version="1.0" ?>'+newl)
         else:
-            writer.write('<?xml version="1.0" encoding="%s"?>%s' % (encoding, newl))
+            writer.write('<?xml version="1.0" encoding="%s"?>%s' % (
+                encoding, newl))
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
 

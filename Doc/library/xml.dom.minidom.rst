@@ -147,12 +147,7 @@ module documentation.  This section lists the differences between the API and
    the DOM node.
 
    With an explicit *encoding* [1]_ argument, the result is a byte
-   string in the specified encoding.  It is recommended that you
-   always specify an encoding; you may use any encoding you like, but
-   an argument of "utf-8" is the most common choice, avoiding
-   :exc:`UnicodeError` exceptions in case of unrepresentable text
-   data.
-
+   string in the specified encoding.
    With no *encoding* argument, the result is a Unicode string, and the
    XML declaration in the resulting string does not specify an
    encoding. Encoding this string in an encoding other than UTF-8 is
