@@ -464,19 +464,22 @@ class PathsTests(unittest.TestCase):
         drive = path[0]
         unc = "\\\\%s\\%s$"%(hn, drive)
         unc += path[2:]
-        sys.path.insert(0, unc)
         try:
             os.listdir(unc)
-            try:
-                mod = __import__("test_unc_path")
-            except ImportError as e:
-                self.fail("could not import 'test_unc_path' from %r: %r"
-                          % (unc, e))
-            self.assertEqual(mod.testdata, 'test_unc_path')
-            self.assertTrue(mod.__file__.startswith(unc), mod.__file__)
-            unload("test_unc_path")
-        finally:
-            sys.path.remove(unc)
+        except OSError as e:
+            if e.errno in (errno.EPERM, errno.EACCES):
+                # See issue #15338
+                self.skipTest("cannot access administrative share %r" % (unc,))
+            raise
+        sys.path.insert(0, unc)
+        try:
+            mod = __import__("test_unc_path")
+        except ImportError as e:
+            self.fail("could not import 'test_unc_path' from %r: %r"
+                      % (unc, e))
+        self.assertEqual(mod.testdata, 'test_unc_path')
+        self.assertTrue(mod.__file__.startswith(unc), mod.__file__)
+        unload("test_unc_path")
 
 
 class RelativeImportTests(unittest.TestCase):
