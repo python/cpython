@@ -1,7 +1,7 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
-import os, sys
+import os, sys, errno
 import unittest
 from test import support
 threading = support.import_module("threading")
@@ -289,11 +289,16 @@ class LocalWinregTests(BaseWinregTests):
             DeleteKey(HKEY_CURRENT_USER, '\\'.join((test_key_name, name)))
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
-    @unittest.skipUnless('PROMPT' in os.environ, "Requires interactive session")
     def test_dynamic_key(self):
         # Issue2810, when the value is dynamically generated, these
         # throw "WindowsError: More data is available" in 2.6 and 3.1
-        EnumValue(HKEY_PERFORMANCE_DATA, 0)
+        try:
+            EnumValue(HKEY_PERFORMANCE_DATA, 0)
+        except OSError as e:
+            if e.errno in (errno.EPERM, errno.EACCES):
+                self.skipTest("access denied to registry key "
+                              "(are you running in a non-interactive session?)")
+            raise
         QueryValueEx(HKEY_PERFORMANCE_DATA, "")
 
     # Reflection requires XP x64/Vista at a minimum. XP doesn't have this stuff
