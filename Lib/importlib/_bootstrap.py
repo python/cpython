@@ -428,6 +428,50 @@ def cache_from_source(path, debug_override=None):
     return _path_join(head, _PYCACHE, filename)
 
 
+def source_from_cache(path):
+    """Given the path to a .pyc./.pyo file, return the path to its .py file.
+
+    The .pyc/.pyo file does not need to exist; this simply returns the path to
+    the .py file calculated to correspond to the .pyc/.pyo file.  If path does
+    not conform to PEP 3147 format, ValueError will be raised. If
+    sys.implementation.cache_tag is None then NotImplementedError is raised.
+
+    """
+    if sys.implementation.cache_tag is None:
+        raise NotImplementedError('sys.implementation.cache_tag is None')
+    head, pycache_filename = _path_split(path)
+    head, pycache = _path_split(head)
+    if pycache != _PYCACHE:
+        raise ValueError('{} not bottom-level directory in '
+                         '{!r}'.format(_PYCACHE, path))
+    if pycache_filename.count('.') != 2:
+        raise ValueError('expected only 2 dots in '
+                         '{!r}'.format(pycache_filename))
+    base_filename = pycache_filename.partition('.')[0]
+    return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
+
+
+def _get_sourcefile(bytecode_path):
+    """Convert a bytecode file path to a source path (if possible).
+
+    This function exists purely for backwards-compatibility for
+    PyImport_ExecCodeModuleWithFilenames() in the C API.
+
+    """
+    if len(bytecode_path) == 0:
+        return None
+    rest, _, extension = bytecode_path.rparition('.')
+    if not rest or extension.lower()[-3:-1] != '.py':
+        return bytecode_path
+
+    try:
+        source_path = source_from_cache(bytecode_path)
+    except (NotImplementedError, ValueError):
+        source_path = bytcode_path[-1:]
+
+    return source_path if _path_isfile(source_stats) else bytecode_path
+
+
 def _verbose_message(message, *args):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose:
