@@ -134,7 +134,6 @@ This module defines the following functions and objects:
 
 
 .. class:: Thread
-   :noindex:
 
    A class that represents a thread of control.  This class can be safely
    subclassed in a limited fashion.
