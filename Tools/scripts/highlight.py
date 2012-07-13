@@ -4,12 +4,16 @@
 __author__ = 'Raymond Hettinger'
 
 import keyword, tokenize, cgi, re, functools
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
 
 #### Analyze Python Source #################################
 
 def is_builtin(s):
     'Return True if s is the name of a builtin'
-    return hasattr(__builtins__, s)
+    return hasattr(builtins, s)
 
 def combine_range(lines, start, end):
     'Join content from a range of lines between start and end'
@@ -21,9 +25,7 @@ def combine_range(lines, start, end):
 
 def analyze_python(source):
     '''Generate and classify chunks of Python for syntax highlighting.
-       Yields tuples in the form: (leadin_text, category, categorized_text).
-       The final tuple has empty strings for the category and categorized text.
-
+       Yields tuples in the form: (category, categorized_text).
     '''
     lines = source.splitlines(True)
     lines.append('')
@@ -37,7 +39,7 @@ def analyze_python(source):
         kind = ''
         if tok_type == tokenize.COMMENT:
             kind = 'comment'
-        elif tok_type == tokenize.OP and tok_str[:1] not in '{}[](),.:;':
+        elif tok_type == tokenize.OP and tok_str[:1] not in '{}[](),.:;@':
             kind = 'operator'
         elif tok_type == tokenize.STRING:
             kind = 'string'
@@ -53,22 +55,20 @@ def analyze_python(source):
             elif is_builtin(tok_str) and prev_tok_str != '.':
                 kind = 'builtin'
         if kind:
-            line_upto_token, written = combine_range(lines, written, (srow, scol))
-            line_thru_token, written = combine_range(lines, written, (erow, ecol))
-            yield line_upto_token, kind, line_thru_token
+            text, written = combine_range(lines, written, (srow, scol))
+            yield '', text
+            text, written = combine_range(lines, written, (erow, ecol))
+            yield kind, text
     line_upto_token, written = combine_range(lines, written, (erow, ecol))
-    yield line_upto_token, '', ''
+    yield '', line_upto_token
 
 #### Raw Output  ###########################################
 
 def raw_highlight(classified_text):
     'Straight text display of text classifications'
     result = []
-    for line_upto_token, kind, line_thru_token in classified_text:
-        if line_upto_token:
-            result.append('          plain:  %r\n' % line_upto_token)
-        if line_thru_token:
-            result.append('%15s:  %r\n' % (kind, line_thru_token))
+    for kind, text in classified_text:
+        result.append('%15s:  %r\n' % (kind or 'plain', text))
     return ''.join(result)
 
 #### ANSI Output ###########################################
@@ -88,9 +88,9 @@ def ansi_highlight(classified_text, colors=default_ansi):
     'Add syntax highlighting to source code using ANSI escape sequences'
     # http://en.wikipedia.org/wiki/ANSI_escape_code
     result = []
-    for line_upto_token, kind, line_thru_token in classified_text:
+    for kind, text in classified_text:
         opener, closer = colors.get(kind, ('', ''))
-        result += [line_upto_token, opener, line_thru_token, closer]
+        result += [opener, text, closer]
     return ''.join(result)
 
 #### HTML Output ###########################################
@@ -98,16 +98,13 @@ def ansi_highlight(classified_text, colors=default_ansi):
 def html_highlight(classified_text,opener='<pre class="python">\n', closer='</pre>\n'):
     'Convert classified text to an HTML fragment'
     result = [opener]
-    for line_upto_token, kind, line_thru_token in classified_text:
+    for kind, text in classified_text:
         if kind:
-            result += [cgi.escape(line_upto_token),
-                       '<span class="%s">' % kind,
-                       cgi.escape(line_thru_token),
-                       '</span>']
-        else:
-            result += [cgi.escape(line_upto_token),
-                       cgi.escape(line_thru_token)]
-    result += [closer]
+            result.append('<span class="%s">' % kind)
+        result.append(cgi.escape(text))
+        if kind:
+            result.append('</span>')
+    result.append(closer)
     return ''.join(result)
 
 default_css = {
@@ -188,15 +185,12 @@ def latex_highlight(classified_text, title = 'python',
                     document = default_latex_document):
     'Create a complete LaTeX document with colorized source code'
     result = []
-    for line_upto_token, kind, line_thru_token in classified_text:
+    for kind, text in classified_text:
         if kind:
-            result += [latex_escape(line_upto_token),
-                       r'{\color{%s}' % colors[kind],
-                       latex_escape(line_thru_token),
-                       '}']
-        else:
-            result += [latex_escape(line_upto_token),
-                       latex_escape(line_thru_token)]
+            result.append(r'{\color{%s}' % colors[kind])
+        result.append(latex_escape(text))
+        if kind:
+            result.append('}')
     return default_latex_document % dict(title=title, body=''.join(result))
 
 
