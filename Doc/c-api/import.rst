@@ -163,9 +163,14 @@ Importing Modules
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname, char *cpathname)
 
    Like :c:func:`PyImport_ExecCodeModuleObject`, but *name*, *pathname* and
-   *cpathname* are UTF-8 encoded strings.
+   *cpathname* are UTF-8 encoded strings. Attempts are also made to figure out
+   what the value for *pathname* should be from *cpathname* if the former is
+   set to ``NULL``.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.3
+      Uses :func:`imp.source_from_cache()` in calculating the source path if
+      only the bytecode path is provided.
 
 
 .. c:function:: long PyImport_GetMagicNumber()

@@ -630,8 +630,6 @@ remove_module(PyObject *name)
                       "sys.modules failed");
 }
 
-static PyObject * get_sourcefile(PyObject *filename);
-static PyObject *make_source_pathname(PyObject *pathname);
 
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
@@ -668,18 +666,37 @@ PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
     if (nameobj == NULL)
         return NULL;
 
-    if (pathname != NULL) {
-        pathobj = PyUnicode_DecodeFSDefault(pathname);
-        if (pathobj == NULL)
-            goto error;
-    } else
-        pathobj = NULL;
     if (cpathname != NULL) {
         cpathobj = PyUnicode_DecodeFSDefault(cpathname);
         if (cpathobj == NULL)
             goto error;
-    } else
+    }
+    else
         cpathobj = NULL;
+
+    if (pathname != NULL) {
+        pathobj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathobj == NULL)
+            goto error;
+    }
+    else if (cpathobj != NULL) {
+        PyInterpreterState *interp = PyThreadState_GET()->interp;
+        _Py_IDENTIFIER(_get_sourcefile);
+
+        if (interp == NULL) {
+            Py_FatalError("PyImport_ExecCodeModuleWithPathnames: "
+                          "no interpreter!");
+        }
+
+        pathobj = _PyObject_CallMethodObjIdArgs(interp->importlib,
+                                                &PyId__get_sourcefile, cpathobj,
+                                                NULL);
+        if (pathobj == NULL)
+            PyErr_Clear();
+    }
+    else
+        pathobj = NULL;
+
     m = PyImport_ExecCodeModuleObject(nameobj, co, pathobj, cpathobj);
 error:
     Py_DECREF(nameobj);
@@ -706,18 +723,13 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                                  PyEval_GetBuiltins()) != 0)
             goto error;
     }
-    /* Remember the filename as the __file__ attribute */
     if (pathname != NULL) {
-        v = get_sourcefile(pathname);
-        if (v == NULL)
-            PyErr_Clear();
+        v = pathname;
     }
-    else
-        v = NULL;
-    if (v == NULL) {
+    else {
         v = ((PyCodeObject *)co)->co_filename;
-        Py_INCREF(v);
     }
+    Py_INCREF(v);
     if (PyDict_SetItemString(d, "__file__", v) != 0)
         PyErr_Clear(); /* Not important enough to report */
     Py_DECREF(v);
@@ -749,100 +761,6 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
   error:
     remove_module(name);
     return NULL;
-}
-
-
-/* Like rightmost_sep, but operate on unicode objects. */
-static Py_ssize_t
-rightmost_sep_obj(PyObject* o, Py_ssize_t start, Py_ssize_t end)
-{
-    Py_ssize_t found, i;
-    Py_UCS4 c;
-    for (found = -1, i = start; i < end; i++) {
-        c = PyUnicode_READ_CHAR(o, i);
-        if (c == SEP
-#ifdef ALTSEP
-            || c == ALTSEP
-#endif
-            )
-        {
-            found = i;
-        }
-    }
-    return found;
-}
-
-
-/* Given a pathname to a Python byte compiled file, return the path to the
-   source file, if the path matches the PEP 3147 format.  This does not check
-   for any file existence, however, if the pyc file name does not match PEP
-   3147 style, NULL is returned.  buf must be at least as big as pathname;
-   the resulting path will always be shorter.
-
-   (...)/__pycache__/foo.<tag>.pyc -> (...)/foo.py */
-
-static PyObject*
-make_source_pathname(PyObject *path)
-{
-    Py_ssize_t left, right, dot0, dot1, len;
-    Py_ssize_t i, j;
-    PyObject *result;
-    int kind;
-    void *data;
-
-    len = PyUnicode_GET_LENGTH(path);
-    if (len > MAXPATHLEN)
-        return NULL;
-
-    /* Look back two slashes from the end.  In between these two slashes
-       must be the string __pycache__ or this is not a PEP 3147 style
-       path.  It's possible for there to be only one slash.
-    */
-    right = rightmost_sep_obj(path, 0, len);
-    if (right == -1)
-        return NULL;
-    left = rightmost_sep_obj(path, 0, right);
-    if (left == -1)
-        left = 0;
-    else
-        left++;
-    if (right-left !=  sizeof(CACHEDIR)-1)
-        return NULL;
-    for (i = 0; i < sizeof(CACHEDIR)-1; i++)
-        if (PyUnicode_READ_CHAR(path, left+i) != CACHEDIR[i])
-            return NULL;
-
-    /* Now verify that the path component to the right of the last slash
-       has two dots in it.
-    */
-    dot0 = PyUnicode_FindChar(path, '.', right+1, len, 1);
-    if (dot0 < 0)
-        return NULL;
-    dot1 = PyUnicode_FindChar(path, '.', dot0+1, len, 1);
-    if (dot1 < 0)
-        return NULL;
-    /* Too many dots? */
-    if (PyUnicode_FindChar(path, '.', dot1+1, len, 1) != -1)
-        return NULL;
-
-    /* This is a PEP 3147 path.  Start by copying everything from the
-       start of pathname up to and including the leftmost slash.  Then
-       copy the file's basename, removing the magic tag and adding a .py
-       suffix.
-    */
-    result = PyUnicode_New(left + (dot0-right) + 2,
-                           PyUnicode_MAX_CHAR_VALUE(path));
-    if (!result)
-        return NULL;
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
-    PyUnicode_CopyCharacters(result, 0, path, 0, (i = left));
-    PyUnicode_CopyCharacters(result, left, path, right+1,
-                             (j = dot0-right));
-    PyUnicode_WRITE(kind, data, i+j,   'p');
-    PyUnicode_WRITE(kind, data, i+j+1, 'y');
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
 }
 
 
@@ -910,61 +828,6 @@ imp_fix_co_filename(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-
-/* Get source file -> unicode or None
- * Returns the path to the py file if available, else the given path
- */
-static PyObject *
-get_sourcefile(PyObject *filename)
-{
-    Py_ssize_t len;
-    PyObject *py;
-    struct stat statbuf;
-    int err;
-    void *data;
-    unsigned int kind;
-
-    len = PyUnicode_GET_LENGTH(filename);
-    if (len == 0)
-        Py_RETURN_NONE;
-
-    /* don't match *.pyc or *.pyo? */
-    data = PyUnicode_DATA(filename);
-    kind = PyUnicode_KIND(filename);
-    if (len < 5
-        || PyUnicode_READ(kind, data, len-4) != '.'
-        || (PyUnicode_READ(kind, data, len-3) != 'p'
-            && PyUnicode_READ(kind, data, len-3) != 'P')
-        || (PyUnicode_READ(kind, data, len-2) != 'y'
-            && PyUnicode_READ(kind, data, len-2) != 'Y'))
-        goto unchanged;
-
-    /* Start by trying to turn PEP 3147 path into source path.  If that
-     * fails, just chop off the trailing character, i.e. legacy pyc path
-     * to py.
-     */
-    py = make_source_pathname(filename);
-    if (py == NULL) {
-        PyErr_Clear();
-        py = PyUnicode_Substring(filename, 0, len - 1);
-    }
-    if (py == NULL)
-        goto error;
-
-    err = _Py_stat(py, &statbuf);
-    if (err == -2)
-        goto error;
-    if (err == 0 && S_ISREG(statbuf.st_mode))
-        return py;
-    Py_DECREF(py);
-    goto unchanged;
-
-error:
-    PyErr_Clear();
-unchanged:
-    Py_INCREF(filename);
-    return filename;
-}
 
 /* Forward */
 static struct _frozen * find_frozen(PyObject *);
