@@ -289,6 +289,7 @@ class LocalWinregTests(BaseWinregTests):
             DeleteKey(HKEY_CURRENT_USER, '\\'.join((test_key_name, name)))
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    @unittest.skipUnless('PROMPT' in os.environ, "Requires interactive session")
     def test_dynamic_key(self):
         # Issue2810, when the value is dynamically generated, these
         # throw "WindowsError: More data is available" in 2.6 and 3.1
