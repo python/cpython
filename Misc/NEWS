@@ -92,6 +92,15 @@ Library
 - Issue 10924: Fixed mksalt() to use a RNG that is suitable for cryptographic
   purpose.
 
+C API
+-----
+
+- Issues #15169, #14599: Strip out the C implementation of
+  imp.source_from_cache() used by PyImport_ExecCodeModuleWithPathnames() and
+  used the Python code instead. Leads to PyImport_ExecCodeModuleObject() to not
+  try to infer the source path from the bytecode path as
+  PyImport_ExecCodeModuleWithPathnames() does.
+
 Extension Modules
 -----------------
 
