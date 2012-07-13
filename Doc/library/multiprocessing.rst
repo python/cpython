@@ -305,14 +305,12 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    should always be ``None``; it exists solely for compatibility with
    :class:`threading.Thread`.  *target* is the callable object to be invoked by
    the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
-   called. *name* is the process name.  By default, a unique name is constructed
-   of the form 'Process-N\ :sub:`1`:N\ :sub:`2`:...:N\ :sub:`k`' where N\
-   :sub:`1`,N\ :sub:`2`,...,N\ :sub:`k` is a sequence of integers whose length
-   is determined by the *generation* of the process.  *args* is the argument
-   tuple for the target invocation.  *kwargs* is a dictionary of keyword
-   arguments for the target invocation.  If provided, the keyword-only *daemon* argument
-   sets the process :attr:`daemon` flag to ``True`` or ``False``.  If ``None``
-   (the default), this flag will be inherited from the creating process.
+   called. *name* is the process name (see :attr:`name` for more details).
+   *args* is the argument tuple for the target invocation.  *kwargs* is a
+   dictionary of keyword arguments for the target invocation.  If provided,
+   the keyword-only *daemon* argument sets the process :attr:`daemon` flag
+   to ``True`` or ``False``.  If ``None`` (the default), this flag will be
+   inherited from the creating process.
 
    By default, no arguments are passed to *target*.
 
@@ -352,11 +350,14 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. attribute:: name
 
-      The process's name.
+      The process's name.  The name is a string used for identification purposes
+      only.  It has no semantics.  Multiple processes may be given the same
+      name.
 
-      The name is a string used for identification purposes only.  It has no
-      semantics.  Multiple processes may be given the same name.  The initial
-      name is set by the constructor.
+      The initial name is set by the constructor.  If no explicit name is
+      provided to the constructor, a name of the form
+      'Process-N\ :sub:`1`:N\ :sub:`2`:...:N\ :sub:`k`' is constructed, where
+      each N\ :sub:`k` is the N-th child of its parent.
 
    .. method:: is_alive
 
@@ -462,6 +463,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> p.exitcode == -signal.SIGTERM
        True
 
+.. exception:: ProcessError
+
+   The base class of all :mod:`multiprocessing` exceptions.
 
 .. exception:: BufferTooShort
 
@@ -471,6 +475,13 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    If ``e`` is an instance of :exc:`BufferTooShort` then ``e.args[0]`` will give
    the message as a byte string.
 
+.. exception:: AuthenticationError
+
+   Raised when there is an authentication error.
+
+.. exception:: TimeoutError
+
+   Raised by methods with a timeout when the timeout expires.
 
 Pipes and Queues
 ~~~~~~~~~~~~~~~~
@@ -1838,15 +1849,15 @@ multiple connections at the same time.
 
    If the reply matches the digest of the message using *authkey* as the key
    then a welcome message is sent to the other end of the connection.  Otherwise
-   :exc:`AuthenticationError` is raised.
+   :exc:`~multiprocessing.AuthenticationError` is raised.
 
 .. function:: answerChallenge(connection, authkey)
 
    Receive a message, calculate the digest of the message using *authkey* as the
    key, and then send the digest back.
 
-   If a welcome message is not received, then :exc:`AuthenticationError` is
-   raised.
+   If a welcome message is not received, then
+   :exc:`~multiprocessing.AuthenticationError` is raised.
 
 .. function:: Client(address[, family[, authenticate[, authkey]]])
 
@@ -1860,7 +1871,8 @@ multiple connections at the same time.
    If *authenticate* is ``True`` or *authkey* is a string then digest
    authentication is used.  The key used for authentication will be either
    *authkey* or ``current_process().authkey)`` if *authkey* is ``None``.
-   If authentication fails then :exc:`AuthenticationError` is raised.  See
+   If authentication fails then
+   :exc:`~multiprocessing.AuthenticationError` is raised.  See
    :ref:`multiprocessing-auth-keys`.
 
 .. class:: Listener([address[, family[, backlog[, authenticate[, authkey]]]]])
@@ -1901,13 +1913,15 @@ multiple connections at the same time.
    ``current_process().authkey`` is used as the authentication key.  If
    *authkey* is ``None`` and *authenticate* is ``False`` then no
    authentication is done.  If authentication fails then
-   :exc:`AuthenticationError` is raised.  See :ref:`multiprocessing-auth-keys`.
+   :exc:`~multiprocessing.AuthenticationError` is raised.
+   See :ref:`multiprocessing-auth-keys`.
 
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
       object and return a :class:`Connection` object.  If authentication is
-      attempted and fails, then :exc:`AuthenticationError` is raised.
+      attempted and fails, then
+      :exc:`~multiprocessing.AuthenticationError` is raised.
 
    .. method:: close()
 
@@ -1964,12 +1978,6 @@ multiple connections at the same time.
    handles are **not** waitable handles.)
 
    .. versionadded:: 3.3
-
-The module defines two exceptions:
-
-.. exception:: AuthenticationError
-
-   Exception raised when there is an authentication error.
 
 
 **Examples**
