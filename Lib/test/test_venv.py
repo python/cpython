@@ -20,7 +20,7 @@ class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
 
     def setUp(self):
-        self.env_dir = tempfile.mkdtemp()
+        self.env_dir = os.path.realpath(tempfile.mkdtemp())
         if os.name == 'nt':
             self.bindir = 'Scripts'
             self.pydocname = 'pydoc.py'
