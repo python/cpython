@@ -224,11 +224,6 @@ locking mechanism.  Locking semantics of imports are an implementation
 detail which may vary from release to release.  However, Python ensures
 that circular imports work without any deadlocks.
 
-.. versionchanged:: 3.3
-   In Python 3.3, the locking scheme has changed to per-module locks for
-   the most part.  A global import lock is kept for some critical tasks,
-   such as initializing the per-module locks.
-
 
 .. function:: lock_held()
 
@@ -243,6 +238,12 @@ that circular imports work without any deadlocks.
    exception is made for circular imports, which by construction have to
    expose an incomplete module object at some point.
 
+.. versionchanged:: 3.3
+   The locking scheme has changed to per-module locks for
+   the most part.  A global import lock is kept for some critical tasks,
+   such as initializing the per-module locks.
+
+
 .. function:: acquire_lock()
 
    Acquire the interpreter's global import lock for the current thread.
@@ -255,11 +256,21 @@ that circular imports work without any deadlocks.
 
    On platforms without threads, this function does nothing.
 
+.. versionchanged:: 3.3
+   The locking scheme has changed to per-module locks for
+   the most part.  A global import lock is kept for some critical tasks,
+   such as initializing the per-module locks.
+
 
 .. function:: release_lock()
 
    Release the interpreter's global import lock. On platforms without
    threads, this function does nothing.
+
+.. versionchanged:: 3.3
+   The locking scheme has changed to per-module locks for
+   the most part.  A global import lock is kept for some critical tasks,
+   such as initializing the per-module locks.
 
 
 The following constants with integer values, defined in this module, are used

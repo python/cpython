@@ -110,6 +110,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15053: Copy Python 3.3 import lock change notice to all relevant
+  functions in imp instead of just at the top of the relevant section.
+
 - Issue #15288: Link to the term "loader" in notes in pkgutil about how things
   won't work as expected in Python 3.3 and mark the requisite functions as
   "changed" since they will no longer work with modules directly imported by
