@@ -139,13 +139,14 @@ support.
    *prefix* is a string to output on the front of every module name on output.
 
    .. note::
-      Only works with a :term:`finder` which defines a ``iter_modules()``
+      Only works with a :term:`finder` which defines an ``iter_modules()``
       method, which is non-standard but implemented by classes defined in this
       module.
 
    .. versionchanged:: 3.3
       As of Python 3.3, the import system provides finders by default, but they
-      do not include the ``iter_modules()`` method required by this function.
+      do not include the non-standard ``iter_modules()`` method required by this
+      function.
 
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
@@ -176,12 +177,13 @@ support.
       walk_packages(ctypes.__path__, ctypes.__name__ + '.')
 
    .. note::
-      Only works for a :term:`finder` which define a ``iter_modules()`` method,
+      Only works for a :term:`finder` which define an ``iter_modules()`` method,
       which is non-standard but implemented by classes defined in this module.
 
    .. versionchanged:: 3.3
       As of Python 3.3, the import system provides finders by default, but they
-      do not include the ``iter_modules()`` method required by this function.
+      do not include the non-standard ``iter_modules()`` method required by this
+      function.
 
 
 .. function:: get_data(package, resource)
