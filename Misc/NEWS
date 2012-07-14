@@ -384,6 +384,9 @@ Build
 Documentation
 -------------
 
+- Issue #15230: Clearly document some of the limitations of the runpy
+  module and nudge readers towards importlib when appropriate.
+
 - Issue #13557: Clarify effect of giving two different namespaces to exec or
   execfile().
 
