@@ -122,6 +122,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15230: Clearly document some of the limitations of the runpy
+  module and nudge readers towards importlib when appropriate.
+
 - Issue #15053: Copy Python 3.3 import lock change notice to all relevant
   functions in imp instead of just at the top of the relevant section.
 
@@ -1184,11 +1187,11 @@ Build
   Based on patch from Hervé Coatanhay.
 
 - Issue #14321: Do not run pgen during the build if files are up to date.
+
 Documentation
 -------------
 
 - Issue #14034: added the argparse tutorial.
-
 
 - Issue #14324: Fix configure tests for cross builds.
 
