@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15230: runpy.run_path now correctly sets __package__ as described
+  in the documentation
+
 - Issue #14990: Correctly fail with SyntaxError on invalid encoding
   declaration.
 
@@ -340,6 +343,8 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #15230: Adopted a more systematic approach in the runpy tests
 
 - Issue #15300: Ensure the temporary test working directories are in the same
   parent folder when running tests in multiprocess mode from a Python build.

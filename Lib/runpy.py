@@ -68,6 +68,7 @@ def _run_code(code, run_globals, init_globals=None,
     run_globals.update(__name__ = mod_name,
                        __file__ = mod_fname,
                        __cached__ = None,
+                       __doc__ = None,
                        __loader__ = mod_loader,
                        __package__ = pkg_name)
     exec(code, run_globals)
@@ -242,12 +243,14 @@ def run_path(path_name, init_globals=None, run_name=None):
     """
     if run_name is None:
         run_name = "<run_path>"
+    pkg_name = run_name.rpartition(".")[0]
     importer = _get_importer(path_name)
     if isinstance(importer, imp.NullImporter):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
         code = _get_code_from_file(path_name)
-        return _run_module_code(code, init_globals, run_name, path_name)
+        return _run_module_code(code, init_globals, run_name, path_name,
+                                pkg_name=pkg_name)
     else:
         # Importer is defined for path, so add it to
         # the start of sys.path
@@ -266,7 +269,6 @@ def run_path(path_name, init_globals=None, run_name=None):
                 mod_name, loader, code, fname = _get_main_module_details()
             finally:
                 sys.modules[main_name] = saved_main
-            pkg_name = ""
             with _TempModule(run_name) as temp_module, \
                  _ModifiedArgv0(path_name):
                 mod_globals = temp_module.module.__dict__
