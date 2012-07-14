@@ -2,6 +2,9 @@
    See the file COPYING for copying permission.
 */
 
+/* This file is included! */
+#ifdef XML_TOK_IMPL_C
+
 #ifndef IS_INVALID_CHAR
 #define IS_INVALID_CHAR(enc, ptr, n) (0)
 #endif
@@ -882,7 +885,7 @@ PREFIX(scanPercent)(const ENCODING *enc, const char *ptr, const char *end,
                     const char **nextTokPtr)
 {
   if (ptr == end)
-    return -XML_TOK_PERCENT;
+    return XML_TOK_PARTIAL;
   switch (BYTE_TYPE(enc, ptr)) {
   CHECK_NMSTRT_CASES(enc, ptr, end, nextTokPtr)
   case BT_S: case BT_LF: case BT_CR: case BT_PERCNT:
@@ -1777,3 +1780,4 @@ PREFIX(updatePosition)(const ENCODING *enc,
 #undef CHECK_NMSTRT_CASE
 #undef CHECK_NMSTRT_CASES
 
+#endif /* XML_TOK_IMPL_C */

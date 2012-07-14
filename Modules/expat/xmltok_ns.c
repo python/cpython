@@ -1,3 +1,10 @@
+/* Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
+   See the file COPYING for copying permission.
+*/
+
+/* This file is included! */
+#ifdef XML_TOK_NS_C
+
 const ENCODING *
 NS(XmlGetUtf8InternalEncoding)(void)
 {
@@ -104,3 +111,5 @@ NS(XmlParseXmlDecl)(int isGeneralTextEntity,
                         encoding,
                         standalone);
 }
+
+#endif /* XML_TOK_NS_C */
