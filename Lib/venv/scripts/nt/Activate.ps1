@@ -19,7 +19,7 @@ if (Test-Path env:_OLD_VIRTUAL_PATH) {
 # Set the prompt to include the env name
 copy-item function:prompt function:_OLD_VIRTUAL_PROMPT
 function prompt {
-    Write-Host -NoNewline -ForegroundColor Green [__VENV_NAME__]
+    Write-Host -NoNewline -ForegroundColor Green '[__VENV_NAME__]'
     _OLD_VIRTUAL_PROMPT
 }
 
