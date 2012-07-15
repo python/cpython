@@ -277,17 +277,17 @@ class TestShutil(unittest.TestCase):
         os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
         # link to link
         os.lchmod(dst_link, stat.S_IRWXO)
-        shutil.copymode(src_link, dst_link, symlinks=True)
+        shutil.copymode(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.lstat(src_link).st_mode,
                          os.lstat(dst_link).st_mode)
         self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # src link - use chmod
         os.lchmod(dst_link, stat.S_IRWXO)
-        shutil.copymode(src_link, dst, symlinks=True)
+        shutil.copymode(src_link, dst, follow_symlinks=False)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # dst link - use chmod
         os.lchmod(dst_link, stat.S_IRWXO)
-        shutil.copymode(src, dst_link, symlinks=True)
+        shutil.copymode(src, dst_link, follow_symlinks=False)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
     @unittest.skipIf(hasattr(os, 'lchmod'), 'requires os.lchmod to be missing')
@@ -302,7 +302,7 @@ class TestShutil(unittest.TestCase):
         write_file(dst, 'foo')
         os.symlink(src, src_link)
         os.symlink(dst, dst_link)
-        shutil.copymode(src_link, dst_link, symlinks=True)  # silent fail
+        shutil.copymode(src_link, dst_link, follow_symlinks=False)  # silent fail
 
     @support.skip_unless_symlink
     def test_copystat_symlinks(self):
@@ -326,10 +326,10 @@ class TestShutil(unittest.TestCase):
         src_link_stat = os.lstat(src_link)
         # follow
         if hasattr(os, 'lchmod'):
-            shutil.copystat(src_link, dst_link, symlinks=False)
+            shutil.copystat(src_link, dst_link, follow_symlinks=True)
             self.assertNotEqual(src_link_stat.st_mode, os.stat(dst).st_mode)
         # don't follow
-        shutil.copystat(src_link, dst_link, symlinks=True)
+        shutil.copystat(src_link, dst_link, follow_symlinks=False)
         dst_link_stat = os.lstat(dst_link)
         if os.utime in os.supports_follow_symlinks:
             for attr in 'st_atime', 'st_mtime':
@@ -341,7 +341,7 @@ class TestShutil(unittest.TestCase):
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
             self.assertEqual(src_link_stat.st_flags, dst_link_stat.st_flags)
         # tell to follow but dst is not a link
-        shutil.copystat(src_link, dst, symlinks=True)
+        shutil.copystat(src_link, dst, follow_symlinks=False)
         self.assertTrue(abs(os.stat(src).st_mtime - os.stat(dst).st_mtime) <
                         00000.1)
 
@@ -439,10 +439,10 @@ class TestShutil(unittest.TestCase):
         dst_link = os.path.join(tmp_dir, 'qux')
         write_file(dst, 'bar')
         os.symlink(dst, dst_link)
-        shutil._copyxattr(src_link, dst_link, symlinks=True)
+        shutil._copyxattr(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.getxattr(dst_link, 'trusted.foo', follow_symlinks=False), b'43')
         self.assertRaises(OSError, os.getxattr, dst, 'trusted.foo')
-        shutil._copyxattr(src_link, dst, symlinks=True)
+        shutil._copyxattr(src_link, dst, follow_symlinks=False)
         self.assertEqual(os.getxattr(dst, 'trusted.foo'), b'43')
 
     @support.skip_unless_symlink
@@ -456,12 +456,12 @@ class TestShutil(unittest.TestCase):
         if hasattr(os, 'lchmod'):
             os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
         # don't follow
-        shutil.copy(src_link, dst, symlinks=False)
+        shutil.copy(src_link, dst, follow_symlinks=True)
         self.assertFalse(os.path.islink(dst))
         self.assertEqual(read_file(src), read_file(dst))
         os.remove(dst)
         # follow
-        shutil.copy(src_link, dst, symlinks=True)
+        shutil.copy(src_link, dst, follow_symlinks=False)
         self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.readlink(dst), os.readlink(src_link))
         if hasattr(os, 'lchmod'):
@@ -483,12 +483,12 @@ class TestShutil(unittest.TestCase):
         src_stat = os.stat(src)
         src_link_stat = os.lstat(src_link)
         # follow
-        shutil.copy2(src_link, dst, symlinks=False)
+        shutil.copy2(src_link, dst, follow_symlinks=True)
         self.assertFalse(os.path.islink(dst))
         self.assertEqual(read_file(src), read_file(dst))
         os.remove(dst)
         # don't follow
-        shutil.copy2(src_link, dst, symlinks=True)
+        shutil.copy2(src_link, dst, follow_symlinks=False)
         self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.readlink(dst), os.readlink(src_link))
         dst_stat = os.lstat(dst)
@@ -526,7 +526,7 @@ class TestShutil(unittest.TestCase):
         write_file(src, 'foo')
         os.symlink(src, link)
         # don't follow
-        shutil.copyfile(link, dst_link, symlinks=True)
+        shutil.copyfile(link, dst_link, follow_symlinks=False)
         self.assertTrue(os.path.islink(dst_link))
         self.assertEqual(os.readlink(link), os.readlink(dst_link))
         # follow

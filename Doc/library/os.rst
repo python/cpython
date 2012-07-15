@@ -2211,7 +2211,7 @@ features:
               os.rmdir(os.path.join(root, name))
 
 
-.. function:: fwalk(top='.', topdown=True, onerror=None, followlinks=False, *, dir_fd=None)
+.. function:: fwalk(top='.', topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None)
 
    .. index::
       single: directory; walking
@@ -2224,7 +2224,9 @@ features:
    and *dirfd* is a file descriptor referring to the directory *dirpath*.
 
    This function always supports :ref:`paths relative to directory descriptors
-   <dir_fd>`.
+   <dir_fd>` and :ref:`not following symlinks <follow_symlinks>`.  Note however
+   that, unlike other functions, the :funk:`fwalk` default value for
+   *follow_symlinks* is ``False``.
 
    .. note::
 
