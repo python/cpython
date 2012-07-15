@@ -87,6 +87,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15180: Clarify posixpath.join() error message when mixing str & bytes
+
 - Issue #15230: runpy.run_path now correctly sets __package__ as described
   in the documentation
 
