@@ -1,4 +1,4 @@
-from test.support import run_unittest, unload
+from test.support import run_unittest, unload, check_warnings
 import unittest
 import sys
 import imp
@@ -255,12 +255,51 @@ class NestedNamespacePackageTest(unittest.TestCase):
         self.assertEqual(d, 2)
 
 
+class ImportlibMigrationTests(unittest.TestCase):
+    # With full PEP 302 support in the standard import machinery, the
+    # PEP 302 emulation in this module is in the process of being
+    # deprecated in favour of importlib proper
+
+    def check_deprecated(self):
+        return check_warnings(
+            ("This emulation is deprecated, use 'importlib' instead",
+             DeprecationWarning))
+
+    def test_importer_deprecated(self):
+        with self.check_deprecated():
+            x = pkgutil.ImpImporter("")
+
+    def test_loader_deprecated(self):
+        with self.check_deprecated():
+            x = pkgutil.ImpLoader("", "", "", "")
+
+    def test_get_loader_avoids_emulation(self):
+        with check_warnings() as w:
+            self.assertIsNotNone(pkgutil.get_loader("sys"))
+            self.assertIsNotNone(pkgutil.get_loader("os"))
+            self.assertIsNotNone(pkgutil.get_loader("test.support"))
+            self.assertEqual(len(w.warnings), 0)
+
+    def test_get_importer_avoids_emulation(self):
+        with check_warnings() as w:
+            self.assertIsNotNone(pkgutil.get_importer(sys.path[0]))
+            self.assertEqual(len(w.warnings), 0)
+
+    def test_iter_importers_avoids_emulation(self):
+        with check_warnings() as w:
+            for importer in pkgutil.iter_importers(): pass
+            self.assertEqual(len(w.warnings), 0)
+
+
 def test_main():
     run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests,
-                 NestedNamespacePackageTest)
+                 NestedNamespacePackageTest, ImportlibMigrationTests)
     # this is necessary if test is run repeated (like when finding leaks)
     import zipimport
+    import importlib
     zipimport._zip_directory_cache.clear()
+    importlib.invalidate_caches()
+
 
 if __name__ == '__main__':
     test_main()

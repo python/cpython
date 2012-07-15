@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15314: __main__.__loader__ is now set correctly during
+  interpreter startup
+
 - Issue #15111: When a module imported using 'from import' has an ImportError
   inside itself, don't mask that fact behind a generic ImportError for the
   module itself.
@@ -31,9 +34,14 @@ Core and Builtins
 - Issue #15229: An OSError subclass whose __init__ doesn't call back
   OSError.__init__ could produce incomplete instances, leading to crashes
   when calling str() on them.
-
+  
 Library
 -------
+
+- Issue #15314: runpy now sets __main__.__loader__ correctly
+
+- Issue #15357: The import emulation in pkgutil is now deprecated. pkgutil
+  uses importlib internally rather than the emulation
 
 - Issue #15233: Python now guarantees that callables registered with
   the atexit module will be called in a deterministic order.
