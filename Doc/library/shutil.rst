@@ -47,7 +47,7 @@ Directory and files operations
    be copied.
 
 
-.. function:: copyfile(src, dst, symlinks=False)
+.. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst*.  *dst* must be the complete target file name; look at

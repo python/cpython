@@ -424,7 +424,7 @@ __all__.append("walk")
 
 if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
 
-    def fwalk(top=".", topdown=True, onerror=None, followlinks=False, *, dir_fd=None):
+    def fwalk(top=".", topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None):
         """Directory tree generator.
 
         This behaves exactly like walk(), except that it yields a 4-tuple
@@ -435,7 +435,7 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
         and `dirfd` is a file descriptor referring to the directory `dirpath`.
 
         The advantage of fwalk() over walk() is that it's safe against symlink
-        races (when followlinks is False).
+        races (when follow_symlinks is False).
 
         If dir_fd is not None, it should be a file descriptor open to a directory,
           and top should be relative; top will then be relative to that directory.
@@ -462,13 +462,13 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
         orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
         topfd = open(top, O_RDONLY, dir_fd=dir_fd)
         try:
-            if (followlinks or (st.S_ISDIR(orig_st.st_mode) and
-                                path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, topdown, onerror, followlinks)
+            if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
+                                    path.samestat(orig_st, stat(topfd)))):
+                yield from _fwalk(topfd, top, topdown, onerror, follow_symlinks)
         finally:
             close(topfd)
 
-    def _fwalk(topfd, toppath, topdown, onerror, followlinks):
+    def _fwalk(topfd, toppath, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
@@ -499,16 +499,16 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
 
         for name in dirs:
             try:
-                orig_st = stat(name, dir_fd=topfd, follow_symlinks=followlinks)
+                orig_st = stat(name, dir_fd=topfd, follow_symlinks=follow_symlinks)
                 dirfd = open(name, O_RDONLY, dir_fd=topfd)
             except error as err:
                 if onerror is not None:
                     onerror(err)
                 return
             try:
-                if followlinks or path.samestat(orig_st, stat(dirfd)):
+                if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                     dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, topdown, onerror, followlinks)
+                    yield from _fwalk(dirfd, dirpath, topdown, onerror, follow_symlinks)
             finally:
                 close(dirfd)
 

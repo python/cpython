@@ -758,10 +758,11 @@ class FwalkTests(WalkTests):
         """
         compare with walk() results.
         """
-        for topdown, followlinks in itertools.product((True, False), repeat=2):
-            d = {'topdown': topdown, 'followlinks': followlinks}
-            walk_kwargs.update(d)
-            fwalk_kwargs.update(d)
+        walk_kwargs = walk_kwargs.copy()
+        fwalk_kwargs = fwalk_kwargs.copy()
+        for topdown, follow_symlinks in itertools.product((True, False), repeat=2):
+            walk_kwargs.update(topdown=topdown, followlinks=follow_symlinks)
+            fwalk_kwargs.update(topdown=topdown, follow_symlinks=follow_symlinks)
 
             expected = {}
             for root, dirs, files in os.walk(**walk_kwargs):
@@ -787,9 +788,9 @@ class FwalkTests(WalkTests):
 
     def test_yields_correct_dir_fd(self):
         # check returned file descriptors
-        for topdown, followlinks in itertools.product((True, False), repeat=2):
-            args = support.TESTFN, topdown, None, followlinks
-            for root, dirs, files, rootfd in os.fwalk(*args):
+        for topdown, follow_symlinks in itertools.product((True, False), repeat=2):
+            args = support.TESTFN, topdown, None
+            for root, dirs, files, rootfd in os.fwalk(*args, follow_symlinks=follow_symlinks):
                 # check that the FD is valid
                 os.fstat(rootfd)
                 # redundant check
