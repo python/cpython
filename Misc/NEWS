@@ -38,6 +38,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15180: Clarify posixpath.join() error message when mixing str & bytes
+
 - Issue #15343: pkgutil now includes an iter_importer_modules implementation
   for importlib.machinery.FileFinder (similar to the way it already handled
   zipimport.zipimporter)

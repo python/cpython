@@ -74,13 +74,21 @@ def join(a, *p):
     will be discarded."""
     sep = _get_sep(a)
     path = a
-    for b in p:
-        if b.startswith(sep):
-            path = b
-        elif not path or path.endswith(sep):
-            path +=  b
+    try:
+        for b in p:
+            if b.startswith(sep):
+                path = b
+            elif not path or path.endswith(sep):
+                path += b
+            else:
+                path += sep + b
+    except TypeError:
+        strs = [isinstance(s, str) for s in (a, ) + p]
+        if any(strs) and not all(strs):
+            raise TypeError("Can't mix strings and bytes in path "
+                            "components.") from None
         else:
-            path += sep + b
+            raise
     return path
 
 
