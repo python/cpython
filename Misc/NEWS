@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15233: Python now guarantees that callables registered with
+  the atexit module will be called in a deterministic order.
+
 - Issue #15238: shutil.copystat now copies Linux "extended attributes".
 
 - Issue #15230: runpy.run_path now correctly sets __package__ as described
