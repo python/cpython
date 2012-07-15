@@ -81,7 +81,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on a package internal PEP 302 import emulation.
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: get_importer(path_item)
@@ -96,7 +96,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on a package internal PEP 302 import emulation.
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: get_loader(module_or_name)
@@ -115,7 +115,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on a package internal PEP 302 import emulation.
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: iter_importers(fullname='')
@@ -133,12 +133,12 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on a package internal PEP 302 import emulation.
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: iter_modules(path=None, prefix='')
 
-   Yields ``(module_loader, name, ispkg)`` for all submodules on *path*, or, if
+   Yields ``(module_finder, name, ispkg)`` for all submodules on *path*, or, if
    path is ``None``, all top-level modules on ``sys.path``.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
@@ -146,19 +146,19 @@ support.
    *prefix* is a string to output on the front of every module name on output.
 
    .. note::
-      Only works with a :term:`finder` which defines an ``iter_modules()``
-      method, which is non-standard but implemented by classes defined in this
-      module.
+      Only works for a :term:`finder` which defines an ``iter_modules()``
+      method. This interface is non-standard, so the module also provides
+      implementations for :class:`importlib.machinery.FileFinder` and
+      :class:`zipimport.zipimporter`.
 
    .. versionchanged:: 3.3
-      As of Python 3.3, the import system provides finders by default, but they
-      do not include the non-standard ``iter_modules()`` method required by this
-      function.
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
 
-   Yields ``(module_loader, name, ispkg)`` for all modules recursively on
+   Yields ``(module_finder, name, ispkg)`` for all modules recursively on
    *path*, or, if path is ``None``, all accessible modules.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
@@ -184,13 +184,14 @@ support.
       walk_packages(ctypes.__path__, ctypes.__name__ + '.')
 
    .. note::
-      Only works for a :term:`finder` which define an ``iter_modules()`` method,
-      which is non-standard but implemented by classes defined in this module.
+      Only works for a :term:`finder` which defines an ``iter_modules()``
+      method. This interface is non-standard, so the module also provides
+      implementations for :class:`importlib.machinery.FileFinder` and
+      :class:`zipimport.zipimporter`.
 
    .. versionchanged:: 3.3
-      As of Python 3.3, the import system provides finders by default, but they
-      do not include the non-standard ``iter_modules()`` method required by this
-      function.
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on the package internal PEP 302 import emulation.
 
 
 .. function:: get_data(package, resource)
