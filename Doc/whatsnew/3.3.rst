@@ -1731,11 +1731,13 @@ Porting Python code
   both the modification time and size of the source file the bytecode file was
   compiled from.
 
-* :func:`pkgutil.iter_modules` and :func:`pkgutil.walk_packages` no longer work
-  with modules imported using the default import system. Both functions have
-  always relied on a non-standard method (``iter_modules()``) to be defined on
-  loaders to work and the import system now always provides a loader for
-  modules but does not implement the non-standard method.
+* :mod:`pkgutil` has been converted to use :mod:`importlib` internally. This
+  eliminates many edge cases where the old behaviour of the PEP 302 import
+  emulation failed to match the behaviour of the real import system. The
+  import emulation itself is still present, but is now deprecated. The
+  :func:`pkgutil.iter_importers` and :func:`pkgutil.walk_packages` functions
+  special case the standard import hooks so they are still supported even
+  though they do not provide the non-standard ``iter_modules()`` method.
 
 
 Porting C code
