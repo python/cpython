@@ -145,23 +145,25 @@ def build_html_page(classified_text, title='python',
 
 #### LaTeX Output ##########################################
 
-default_latex_colors = {
-    'comment': 'red',
-    'string': 'green',
-    'docstring': 'green',
-    'keyword': 'orange',
-    'builtin': 'purple',
-    'definition': 'orange',
-    'defname': 'blue',
-    'operator': 'brown',
+default_latex_commands = {
+    'comment': '{\color{red}#1}',
+    'string': '{\color{ForestGreen}#1}',
+    'docstring': '{\emph{\color{ForestGreen}#1}}',
+    'keyword': '{\color{orange}#1}',
+    'builtin': '{\color{purple}#1}',
+    'definition': '{\color{orange}#1}',
+    'defname': '{\color{blue}#1}',
+    'operator': '{\color{brown}#1}',
 }
 
 default_latex_document = r'''
 \documentclass{article}
 \usepackage{alltt}
+\usepackage{upquote}
 \usepackage{color}
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage[cm]{fullpage}
+%(macros)s
 \begin{document}
 \center{\LARGE{%(title)s}}
 \begin{alltt}
@@ -181,17 +183,18 @@ def latex_escape(s):
     return re.sub(r'[\\#$%^&_{}~]', lambda mo: xlat[mo.group()], s)
 
 def latex_highlight(classified_text, title = 'python',
-                    colors = default_latex_colors,
+                    commands = default_latex_commands,
                     document = default_latex_document):
     'Create a complete LaTeX document with colorized source code'
+    macros = '\n'.join(r'\newcommand{\py%s}[1]{%s}' % c for c in commands.items())
     result = []
     for kind, text in classified_text:
         if kind:
-            result.append(r'{\color{%s}' % colors[kind])
+            result.append(r'\py%s{' % kind)
         result.append(latex_escape(text))
         if kind:
             result.append('}')
-    return default_latex_document % dict(title=title, body=''.join(result))
+    return default_latex_document % dict(title=title, macros=macros, body=''.join(result))
 
 
 if __name__ == '__main__':
