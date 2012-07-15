@@ -59,68 +59,64 @@ Directory and files operations
    such as character or block devices and pipes cannot be copied with this
    function.  *src* and *dst* are path names given as strings.
 
-   If *symlinks* is true and *src* is a symbolic link, a new symbolic link will
-   be created instead of copying the file *src* points to.
+   If *follow_symlinks* is false and *src* is a symbolic link,
+   a new symbolic link will be created instead of copying the
+   file *src* points to.
 
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
-      Added *symlinks* argument.
+      Added *follow_symlinks* argument.
+      Now returns *dst*.
 
-   .. versionchanged:: 3.3
-      Added return of the *dst*.
-
-.. function:: copymode(src, dst, symlinks=False)
+.. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
    group are unaffected.  *src* and *dst* are path names given as strings.  If
-   *symlinks* is true, *src* a symbolic link and the operating system supports
-   modes for symbolic links (for example BSD-based ones), the mode of the link
-   will be copied.
+   *follow_symlinks* is false, *src* is a symbolic link, and the operating
+   system supports modes for symbolic links (for example BSD-based ones),
+   the mode of the link will be copied.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument.
+      Added *follow_symlinks* argument.
 
-.. function:: copystat(src, dst, symlinks=False)
+.. function:: copystat(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits, last access time, last modification time, and flags
    from *src* to *dst*.  The file contents, owner, and group are unaffected.  *src*
-   and *dst* are path names given as strings.  If *src* and *dst* are both
-   symbolic links and *symlinks* true, the stats of the link will be copied as
+   and *dst* are path names given as strings.  If *follow_symlinks* is false, and
+   *src* and *dst* are both symbolic links, the stats of the link will be copied as
    far as the platform allows.  On Linux, :func:`copystat` also copies the
    "extended attributes" where possible.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument and support for Linux extended attributes.
+      Added *follow_symlinks* argument and support for Linux extended attributes.
 
-.. function:: copy(src, dst, symlinks=False)
+.. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copy the file *src* to the file or directory *dst* and return the file's
    destination.  If *dst* is a directory, a
    file with the same basename as *src*  is created (or overwritten) in the
    directory specified.  Permission bits are copied.  *src* and *dst* are path
-   names given as strings.  If *symlinks* is true, symbolic links won't be
-   followed but recreated instead -- this resembles GNU's :program:`cp -P`.
+   names given as strings.  If *follow_symlinks* is false, symbolic
+   links won't be followed but recreated instead -- this resembles GNU's
+   :program:`cp -P`.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument.
+      Added *follow_symlinks* argument.
+      Now returns *dst*.
 
-   .. versionchanged:: 3.3
-      Added return of the *dst*.
-
-.. function:: copy2(src, dst, symlinks=False)
+.. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Similar to :func:`shutil.copy`, including that the destination is
-   returned, but metadata is copied as well. This is
-   similar to the Unix command :program:`cp -p`.  If *symlinks* is true,
+   returned, but metadata is copied as well. This is similar to the Unix
+   command :program:`cp -p`.  If *follow_symlinks* is false,
    symbolic links won't be followed but recreated instead -- this resembles
    GNU's :program:`cp -P`.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument, try to copy extended file system attributes
-      too (currently Linux only).
-
-   .. versionchanged:: 3.3
-      Added return of the *dst*.
+      Added *follow_symlinks* argument, try to copy extended
+      file system attributes too (currently Linux only).
+      Now returns *dst*.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -167,19 +163,15 @@ Directory and files operations
    as arguments. By default, :func:`shutil.copy2` is used, but any function
    that supports the same signature (like :func:`shutil.copy`) can be used.
 
+   .. versionchanged:: 3.3
+      Copy metadata when *symlinks* is false.
+      Now returns *dst*.
+
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
-
-   .. versionchanged:: 3.2
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
       errors when *symlinks* is false.
-
-   .. versionchanged:: 3.3
-      Copy metadata when *symlinks* is false.
-
-   .. versionchanged:: 3.3
-      Added return of the *dst*.
 
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
@@ -244,9 +236,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
       it to the behavior of GNU's :program:`mv`.
-
-   .. versionchanged:: 3.3
-      Added return of the *dst*.
+      Now returns *dst*.
 
 .. function:: disk_usage(path)
 
