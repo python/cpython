@@ -37,7 +37,8 @@ f()
 assertEqual(result, ['Top level assignment', 'Lower level reference'])
 # Check population of magic variables
 assertEqual(__name__, '__main__')
-_loader = __loader__ if isinstance(__loader__, type) else type(__loader__)
+from importlib.machinery import BuiltinImporter
+_loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
 assertEqual(__cached__, None)
