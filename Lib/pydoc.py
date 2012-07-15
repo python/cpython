@@ -2048,7 +2048,7 @@ class ModuleScanner:
                 if hasattr(loader, 'get_source'):
                     try:
                         source = loader.get_source(modname)
-                    except UnicodeDecodeError:
+                    except Exception:
                         if onerror:
                             onerror(modname)
                         continue

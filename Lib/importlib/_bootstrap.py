@@ -845,12 +845,21 @@ class SourceLoader(_LoaderBasics):
         path = self.get_filename(fullname)
         try:
             source_bytes = self.get_data(path)
-        except IOError:
+        except IOError as exc:
             raise ImportError("source not available through get_data()",
-                              name=fullname)
-        encoding = tokenize.detect_encoding(_io.BytesIO(source_bytes).readline)
+                              name=fullname) from exc
+        readsource = _io.BytesIO(source_bytes).readline
+        try:
+            encoding = tokenize.detect_encoding(readsource)
+        except SyntaxError as exc:
+            raise ImportError("Failed to detect encoding",
+                              name=fullname) from exc
         newline_decoder = _io.IncrementalNewlineDecoder(None, True)
-        return newline_decoder.decode(source_bytes.decode(encoding[0]))
+        try:
+            return newline_decoder.decode(source_bytes.decode(encoding[0]))
+        except UnicodeDecodeError as exc:
+            raise ImportError("Failed to decode source file",
+                              name=fullname) from exc
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
