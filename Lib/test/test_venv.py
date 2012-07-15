@@ -87,6 +87,8 @@ class BasicTest(BaseTest):
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
+    @unittest.skipIf(sys.prefix != sys.base_prefix, 'Test not appropriate '
+                     'in a venv')
     def test_prefixes(self):
         """
         Test that the prefix values are as expected.
