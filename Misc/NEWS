@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15202: Consistently use the name "follow_symlinks" for
+  new parameters in os and shutil functions.
+
 - Issue #15314: __main__.__loader__ is now set correctly during
   interpreter startup
 
