@@ -13,11 +13,8 @@ importers when locating support scripts as well as when importing modules.
 import os
 import sys
 import imp
-from pkgutil import read_code
-try:
-    from imp import get_loader
-except ImportError:
-    from pkgutil import get_loader
+import importlib.machinery
+from pkgutil import read_code, get_loader, get_importer
 
 __all__ = [
     "run_module", "run_path",
@@ -154,6 +151,7 @@ def _run_module_as_main(mod_name, alter_argv=True):
             # know what the code was looking for
             info = "can't find '__main__' module in %r" % sys.argv[0]
         msg = "%s: %s" % (sys.executable, info)
+        raise
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
@@ -183,36 +181,23 @@ def run_module(mod_name, init_globals=None,
 def _get_main_module_details():
     # Helper that gives a nicer error message when attempting to
     # execute a zipfile or directory by invoking __main__.py
+    # Also moves the standard __main__ out of the way so that the
+    # preexisting __loader__ entry doesn't cause issues
     main_name = "__main__"
+    saved_main = sys.modules[main_name]
+    del sys.modules[main_name]
     try:
         return _get_module_details(main_name)
     except ImportError as exc:
         if main_name in str(exc):
             raise ImportError("can't find %r module in %r" %
-                              (main_name, sys.path[0]))
+                              (main_name, sys.path[0])) from exc
         raise
+    finally:
+        sys.modules[main_name] = saved_main
 
 
-# XXX (ncoghlan): Perhaps expose the C API function
-# as imp.get_importer instead of reimplementing it in Python?
-def _get_importer(path_name):
-    """Python version of PyImport_GetImporter C API function"""
-    cache = sys.path_importer_cache
-    try:
-        importer = cache[path_name]
-    except KeyError:
-        for hook in sys.path_hooks:
-            try:
-                importer = hook(path_name)
-                break
-            except ImportError:
-                pass
-        else:
-            importer = None
-        cache[path_name] = importer
-    return importer
-
-def _get_code_from_file(fname):
+def _get_code_from_file(run_name, fname):
     # Check for a compiled file first
     with open(fname, "rb") as f:
         code = read_code(f)
@@ -220,7 +205,10 @@ def _get_code_from_file(fname):
         # That didn't work, so try it as normal source code
         with open(fname, "rb") as f:
             code = compile(f.read(), fname, 'exec')
-    return code
+            loader = importlib.machinery.SourceFileLoader(run_name, fname)
+    else:
+        loader = importlib.machinery.SourcelessFileLoader(run_name, fname)
+    return code, loader
 
 def run_path(path_name, init_globals=None, run_name=None):
     """Execute code located at the specified filesystem location
@@ -235,13 +223,13 @@ def run_path(path_name, init_globals=None, run_name=None):
     if run_name is None:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
-    importer = _get_importer(path_name)
+    importer = get_importer(path_name)
     if isinstance(importer, (type(None), imp.NullImporter)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
-        code = _get_code_from_file(path_name)
+        code, mod_loader = _get_code_from_file(run_name, path_name)
         return _run_module_code(code, init_globals, run_name, path_name,
-                                pkg_name=pkg_name)
+                                mod_loader, pkg_name)
     else:
         # Importer is defined for path, so add it to
         # the start of sys.path
@@ -253,13 +241,7 @@ def run_path(path_name, init_globals=None, run_name=None):
             # have no choice and we have to remove it even while we read the
             # code. If we don't do this, a __loader__ attribute in the
             # existing __main__ module may prevent location of the new module.
-            main_name = "__main__"
-            saved_main = sys.modules[main_name]
-            del sys.modules[main_name]
-            try:
-                mod_name, loader, code, fname = _get_main_module_details()
-            finally:
-                sys.modules[main_name] = saved_main
+            mod_name, loader, code, fname = _get_main_module_details()
             with _TempModule(run_name) as temp_module, \
                  _ModifiedArgv0(path_name):
                 mod_globals = temp_module.module.__dict__
