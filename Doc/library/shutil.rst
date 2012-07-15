@@ -86,10 +86,11 @@ Directory and files operations
    from *src* to *dst*.  The file contents, owner, and group are unaffected.  *src*
    and *dst* are path names given as strings.  If *src* and *dst* are both
    symbolic links and *symlinks* true, the stats of the link will be copied as
-   far as the platform allows.
+   far as the platform allows.  On Linux, :func:`copystat` also copies the
+   "extended attributes" where possible.
 
    .. versionchanged:: 3.3
-      Added *symlinks* argument.
+      Added *symlinks* argument and support for Linux extended attributes.
 
 .. function:: copy(src, dst, symlinks=False)
 

@@ -410,6 +410,16 @@ class TestShutil(unittest.TestCase):
         finally:
             os.setxattr = orig_setxattr
 
+        # test that shutil.copystat copies xattrs
+        src = os.path.join(tmp_dir, 'the_original')
+        write_file(src, src)
+        os.setxattr(src, 'user.the_value', b'fiddly')
+        dst = os.path.join(tmp_dir, 'the_copy')
+        write_file(dst, dst)
+        shutil.copystat(src, dst)
+        self.assertEqual(os.listxattr(src), ['user.the_value'])
+        self.assertEqual(os.getxattr(src, 'user.the_value'), b'fiddly')
+
     @support.skip_unless_symlink
     @support.skip_unless_xattr
     @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0,

@@ -132,6 +132,27 @@ def copymode(src, dst, symlinks=False):
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
 
+if hasattr(os, 'listxattr'):
+    def _copyxattr(src, dst, symlinks=False):
+        """Copy extended filesystem attributes from `src` to `dst`.
+
+        Overwrite existing attributes.
+
+        If the optional flag `symlinks` is set, symlinks won't be followed.
+
+        """
+
+        for name in os.listxattr(src, follow_symlinks=symlinks):
+            try:
+                value = os.getxattr(src, name, follow_symlinks=symlinks)
+                os.setxattr(dst, name, value, follow_symlinks=symlinks)
+            except OSError as e:
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
+                    raise
+else:
+    def _copyxattr(*args, **kwargs):
+        pass
+
 def copystat(src, dst, symlinks=False):
     """Copy all stat info (mode bits, atime, mtime, flags) from src to dst.
 
@@ -184,27 +205,7 @@ def copystat(src, dst, symlinks=False):
                     break
             else:
                 raise
-
-if hasattr(os, 'listxattr'):
-    def _copyxattr(src, dst, symlinks=False):
-        """Copy extended filesystem attributes from `src` to `dst`.
-
-        Overwrite existing attributes.
-
-        If the optional flag `symlinks` is set, symlinks won't be followed.
-
-        """
-
-        for name in os.listxattr(src, follow_symlinks=symlinks):
-            try:
-                value = os.getxattr(src, name, follow_symlinks=symlinks)
-                os.setxattr(dst, name, value, follow_symlinks=symlinks)
-            except OSError as e:
-                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA):
-                    raise
-else:
-    def _copyxattr(*args, **kwargs):
-        pass
+    _copyxattr(src, dst, symlinks=follow)
 
 def copy(src, dst, symlinks=False):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
@@ -235,7 +236,6 @@ def copy2(src, dst, symlinks=False):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, symlinks=symlinks)
     copystat(src, dst, symlinks=symlinks)
-    _copyxattr(src, dst, symlinks=symlinks)
     return dst
 
 def ignore_patterns(*patterns):
