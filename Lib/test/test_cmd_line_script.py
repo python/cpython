@@ -146,7 +146,7 @@ class CmdLineTest(unittest.TestCase):
     def test_stdin_loader(self):
         # Unfortunately, there's no way to automatically test the fully
         # interactive REPL, since that code path only gets executed when
-        # stdin in an interactive tty.
+        # stdin is an interactive tty.
         p = spawn_python()
         try:
             p.stdin.write(b"print(__loader__)\n")
