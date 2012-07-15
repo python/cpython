@@ -56,8 +56,15 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.join(b"/foo/", b"bar/", b"baz/"),
                          b"/foo/bar/baz/")
 
-        self.assertRaises(TypeError, posixpath.join, b"bytes", "str")
-        self.assertRaises(TypeError, posixpath.join, "str", b"bytes")
+        with self.assertRaises(TypeError) as e:
+            posixpath.join(b'bytes', 'str')
+            self.assertIn("Can't mix strings and bytes", e.args[0])
+        with self.assertRaises(TypeError) as e:
+            posixpath.join('str', b'bytes')
+            self.assertIn("Can't mix strings and bytes", e.args[0])
+        with self.assertRaises(TypeError) as e:
+            posixpath.join('str', bytearray(b'bytes'))
+            self.assertIn("Can't mix strings and bytes", e.args[0])
 
     def test_split(self):
         self.assertEqual(posixpath.split("/foo/bar"), ("/foo", "bar"))
