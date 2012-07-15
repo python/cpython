@@ -659,7 +659,6 @@ ElementTree Objects
       should be added to the file.  Use False for never, True for always, None
       for only if not US-ASCII or UTF-8 or Unicode (default is None).  *method* is
       either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-      Returns an (optionally) encoded string.
 
 This is the XML file that is going to be manipulated::
 
