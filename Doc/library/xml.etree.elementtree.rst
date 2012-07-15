@@ -650,15 +650,25 @@ ElementTree Objects
       section root element.
 
 
-   .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
+   .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
+                     method="xml")
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
-      :term:`file object` opened for writing.  *encoding* [1]_ is the output encoding
-      (default is US-ASCII).  Use ``encoding="unicode"`` to write a Unicode string.
-      *xml_declaration* controls if an XML declaration
-      should be added to the file.  Use False for never, True for always, None
-      for only if not US-ASCII or UTF-8 or Unicode (default is None).  *method* is
-      either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
+      :term:`file object` opened for writing.  *encoding* [1]_ is the output
+      encoding (default is US-ASCII).
+      *xml_declaration* controls if an XML declaration should be added to the
+      file.  Use ``False`` for never, ``True`` for always, ``None``
+      for only if not US-ASCII or UTF-8 or Unicode (default is ``None``).
+      *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
+      ``"xml"``).
+
+      The output is either a string (:class:`str`) or binary (:class:`bytes`).
+      This is controlled by the *encoding* argument.  If *encoding* is
+      ``"unicode"``, the output is a string; otherwise, it's binary.  Note that
+      this may conflict with the type of *file* if it's an open
+      :term:`file object`; make sure you do not try to write a string to a
+      binary stream and vice versa.
+
 
 This is the XML file that is going to be manipulated::
 
