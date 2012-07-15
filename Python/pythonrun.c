@@ -1356,6 +1356,7 @@ static set_main_loader(PyObject *d, const char *filename, const char *loader_nam
     PyInterpreterState *interp;
     PyThreadState *tstate;
     PyObject *loader_type, *loader;
+    int result = 0;
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     interp = tstate->interp;
@@ -1364,12 +1365,15 @@ static set_main_loader(PyObject *d, const char *filename, const char *loader_nam
         return -1;
     }
     loader = PyObject_CallFunction(loader_type, "ss", "__main__", filename);
-    if (loader == NULL ||
-        (PyDict_SetItemString(d, "__loader__", loader) < 0)) {
+    Py_DECREF(loader_type);
+    if (loader == NULL) {
         return -1;
     }
+    if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
+        result = -1;
+    }
     Py_DECREF(loader);
-    return 0;
+    return result;
 }
 
 int
