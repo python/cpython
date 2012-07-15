@@ -21,7 +21,7 @@ import unittest
 import weakref
 
 from test import support
-from test.support import findfile, import_fresh_module, gc_collect
+from test.support import TESTFN, findfile, unlink, import_fresh_module, gc_collect
 
 pyET = None
 ET = None
@@ -887,65 +887,6 @@ def check_encoding(encoding):
     >>> check_encoding("mac-roman")
     """
     ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
-
-def encoding():
-    r"""
-    Test encoding issues.
-
-    >>> elem = ET.Element("tag")
-    >>> elem.text = "abc"
-    >>> serialize(elem)
-    '<tag>abc</tag>'
-    >>> serialize(elem, encoding="utf-8")
-    b'<tag>abc</tag>'
-    >>> serialize(elem, encoding="us-ascii")
-    b'<tag>abc</tag>'
-    >>> serialize(elem, encoding="iso-8859-1")
-    b"<?xml version='1.0' encoding='iso-8859-1'?>\n<tag>abc</tag>"
-
-    >>> elem.text = "<&\"\'>"
-    >>> serialize(elem)
-    '<tag>&lt;&amp;"\'&gt;</tag>'
-    >>> serialize(elem, encoding="utf-8")
-    b'<tag>&lt;&amp;"\'&gt;</tag>'
-    >>> serialize(elem, encoding="us-ascii") # cdata characters
-    b'<tag>&lt;&amp;"\'&gt;</tag>'
-    >>> serialize(elem, encoding="iso-8859-1")
-    b'<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n<tag>&lt;&amp;"\'&gt;</tag>'
-
-    >>> elem.attrib["key"] = "<&\"\'>"
-    >>> elem.text = None
-    >>> serialize(elem)
-    '<tag key="&lt;&amp;&quot;\'&gt;" />'
-    >>> serialize(elem, encoding="utf-8")
-    b'<tag key="&lt;&amp;&quot;\'&gt;" />'
-    >>> serialize(elem, encoding="us-ascii")
-    b'<tag key="&lt;&amp;&quot;\'&gt;" />'
-    >>> serialize(elem, encoding="iso-8859-1")
-    b'<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n<tag key="&lt;&amp;&quot;\'&gt;" />'
-
-    >>> elem.text = '\xe5\xf6\xf6<>'
-    >>> elem.attrib.clear()
-    >>> serialize(elem)
-    '<tag>\xe5\xf6\xf6&lt;&gt;</tag>'
-    >>> serialize(elem, encoding="utf-8")
-    b'<tag>\xc3\xa5\xc3\xb6\xc3\xb6&lt;&gt;</tag>'
-    >>> serialize(elem, encoding="us-ascii")
-    b'<tag>&#229;&#246;&#246;&lt;&gt;</tag>'
-    >>> serialize(elem, encoding="iso-8859-1")
-    b"<?xml version='1.0' encoding='iso-8859-1'?>\n<tag>\xe5\xf6\xf6&lt;&gt;</tag>"
-
-    >>> elem.attrib["key"] = '\xe5\xf6\xf6<>'
-    >>> elem.text = None
-    >>> serialize(elem)
-    '<tag key="\xe5\xf6\xf6&lt;&gt;" />'
-    >>> serialize(elem, encoding="utf-8")
-    b'<tag key="\xc3\xa5\xc3\xb6\xc3\xb6&lt;&gt;" />'
-    >>> serialize(elem, encoding="us-ascii")
-    b'<tag key="&#229;&#246;&#246;&lt;&gt;" />'
-    >>> serialize(elem, encoding="iso-8859-1")
-    b'<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n<tag key="\xe5\xf6\xf6&lt;&gt;" />'
-    """
 
 def methods():
     r"""
@@ -2166,15 +2107,184 @@ class ElementSlicingTest(unittest.TestCase):
         self.assertEqual(self._subelem_tags(e), ['a1'])
 
 
-class StringIOTest(unittest.TestCase):
+class IOTest(unittest.TestCase):
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_encoding(self):
+        # Test encoding issues.
+        elem = ET.Element("tag")
+        elem.text = "abc"
+        self.assertEqual(serialize(elem), '<tag>abc</tag>')
+        self.assertEqual(serialize(elem, encoding="utf-8"),
+                b'<tag>abc</tag>')
+        self.assertEqual(serialize(elem, encoding="us-ascii"),
+                b'<tag>abc</tag>')
+        for enc in ("iso-8859-1", "utf-16", "utf-32"):
+            self.assertEqual(serialize(elem, encoding=enc),
+                    ("<?xml version='1.0' encoding='%s'?>\n"
+                     "<tag>abc</tag>" % enc).encode(enc))
+
+        elem = ET.Element("tag")
+        elem.text = "<&\"\'>"
+        self.assertEqual(serialize(elem), '<tag>&lt;&amp;"\'&gt;</tag>')
+        self.assertEqual(serialize(elem, encoding="utf-8"),
+                b'<tag>&lt;&amp;"\'&gt;</tag>')
+        self.assertEqual(serialize(elem, encoding="us-ascii"),
+                b'<tag>&lt;&amp;"\'&gt;</tag>')
+        for enc in ("iso-8859-1", "utf-16", "utf-32"):
+            self.assertEqual(serialize(elem, encoding=enc),
+                    ("<?xml version='1.0' encoding='%s'?>\n"
+                     "<tag>&lt;&amp;\"'&gt;</tag>" % enc).encode(enc))
+
+        elem = ET.Element("tag")
+        elem.attrib["key"] = "<&\"\'>"
+        self.assertEqual(serialize(elem), '<tag key="&lt;&amp;&quot;\'&gt;" />')
+        self.assertEqual(serialize(elem, encoding="utf-8"),
+                b'<tag key="&lt;&amp;&quot;\'&gt;" />')
+        self.assertEqual(serialize(elem, encoding="us-ascii"),
+                b'<tag key="&lt;&amp;&quot;\'&gt;" />')
+        for enc in ("iso-8859-1", "utf-16", "utf-32"):
+            self.assertEqual(serialize(elem, encoding=enc),
+                    ("<?xml version='1.0' encoding='%s'?>\n"
+                     "<tag key=\"&lt;&amp;&quot;'&gt;\" />" % enc).encode(enc))
+
+        elem = ET.Element("tag")
+        elem.text = '\xe5\xf6\xf6<>'
+        self.assertEqual(serialize(elem), '<tag>\xe5\xf6\xf6&lt;&gt;</tag>')
+        self.assertEqual(serialize(elem, encoding="utf-8"),
+                b'<tag>\xc3\xa5\xc3\xb6\xc3\xb6&lt;&gt;</tag>')
+        self.assertEqual(serialize(elem, encoding="us-ascii"),
+                b'<tag>&#229;&#246;&#246;&lt;&gt;</tag>')
+        for enc in ("iso-8859-1", "utf-16", "utf-32"):
+            self.assertEqual(serialize(elem, encoding=enc),
+                    ("<?xml version='1.0' encoding='%s'?>\n"
+                     "<tag>åöö&lt;&gt;</tag>" % enc).encode(enc))
+
+        elem = ET.Element("tag")
+        elem.attrib["key"] = '\xe5\xf6\xf6<>'
+        self.assertEqual(serialize(elem), '<tag key="\xe5\xf6\xf6&lt;&gt;" />')
+        self.assertEqual(serialize(elem, encoding="utf-8"),
+                b'<tag key="\xc3\xa5\xc3\xb6\xc3\xb6&lt;&gt;" />')
+        self.assertEqual(serialize(elem, encoding="us-ascii"),
+                b'<tag key="&#229;&#246;&#246;&lt;&gt;" />')
+        for enc in ("iso-8859-1", "utf-16", "utf-16le", "utf-16be", "utf-32"):
+            self.assertEqual(serialize(elem, encoding=enc),
+                    ("<?xml version='1.0' encoding='%s'?>\n"
+                     "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
+
+    def test_write_to_filename(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        tree.write(TESTFN)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site />''')
+
+    def test_write_to_text_file(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        with open(TESTFN, 'w', encoding='utf-8') as f:
+            tree.write(f, encoding='unicode')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site />''')
+
+    def test_write_to_binary_file(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        with open(TESTFN, 'wb') as f:
+            tree.write(f)
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site />''')
+
+    def test_write_to_binary_file_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        # test BOM writing to buffered file
+        with open(TESTFN, 'wb') as f:
+            tree.write(f, encoding='utf-16')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(),
+                    '''<?xml version='1.0' encoding='utf-16'?>\n'''
+                    '''<site />'''.encode("utf-16"))
+        # test BOM writing to non-buffered file
+        with open(TESTFN, 'wb', buffering=0) as f:
+            tree.write(f, encoding='utf-16')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(),
+                    '''<?xml version='1.0' encoding='utf-16'?>\n'''
+                    '''<site />'''.encode("utf-16"))
+
     def test_read_from_stringio(self):
         tree = ET.ElementTree()
-        stream = io.StringIO()
-        stream.write('''<?xml version="1.0"?><site></site>''')
-        stream.seek(0)
+        stream = io.StringIO('''<?xml version="1.0"?><site></site>''')
         tree.parse(stream)
-
         self.assertEqual(tree.getroot().tag, 'site')
+
+    def test_write_to_stringio(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        stream = io.StringIO()
+        tree.write(stream, encoding='unicode')
+        self.assertEqual(stream.getvalue(), '''<site />''')
+
+    def test_read_from_bytesio(self):
+        tree = ET.ElementTree()
+        raw = io.BytesIO(b'''<?xml version="1.0"?><site></site>''')
+        tree.parse(raw)
+        self.assertEqual(tree.getroot().tag, 'site')
+
+    def test_write_to_bytesio(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        tree.write(raw)
+        self.assertEqual(raw.getvalue(), b'''<site />''')
+
+    class dummy:
+        pass
+
+    def test_read_from_user_text_reader(self):
+        stream = io.StringIO('''<?xml version="1.0"?><site></site>''')
+        reader = self.dummy()
+        reader.read = stream.read
+        tree = ET.ElementTree()
+        tree.parse(reader)
+        self.assertEqual(tree.getroot().tag, 'site')
+
+    def test_write_to_user_text_writer(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        stream = io.StringIO()
+        writer = self.dummy()
+        writer.write = stream.write
+        tree.write(writer, encoding='unicode')
+        self.assertEqual(stream.getvalue(), '''<site />''')
+
+    def test_read_from_user_binary_reader(self):
+        raw = io.BytesIO(b'''<?xml version="1.0"?><site></site>''')
+        reader = self.dummy()
+        reader.read = raw.read
+        tree = ET.ElementTree()
+        tree.parse(reader)
+        self.assertEqual(tree.getroot().tag, 'site')
+        tree = ET.ElementTree()
+
+    def test_write_to_user_binary_writer(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        tree.write(writer)
+        self.assertEqual(raw.getvalue(), b'''<site />''')
+
+    def test_write_to_user_binary_writer_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        writer.seekable = lambda: True
+        writer.tell = raw.tell
+        tree.write(writer, encoding="utf-16")
+        self.assertEqual(raw.getvalue(),
+                '''<?xml version='1.0' encoding='utf-16'?>\n'''
+                '''<site />'''.encode("utf-16"))
 
 
 class ParseErrorTest(unittest.TestCase):
@@ -2299,7 +2409,7 @@ def test_main(module=None):
     test_classes = [
         ElementSlicingTest,
         BasicElementTest,
-        StringIOTest,
+        IOTest,
         ParseErrorTest,
         XincludeTest,
         ElementTreeTest,
