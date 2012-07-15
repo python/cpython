@@ -2029,14 +2029,6 @@ class ModuleScanner:
             if self.quit:
                 break
 
-            # XXX Skipping this file is a workaround for a bug
-            # that causes python to crash with a segfault.
-            # http://bugs.python.org/issue9319
-            #
-            # TODO Remove this once the bug is fixed.
-            if modname in {'test.badsyntax_pep3120', 'badsyntax_pep3120'}:
-                continue
-
             if key is None:
                 callback(None, modname, '')
             else:
