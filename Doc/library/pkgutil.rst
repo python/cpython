@@ -56,21 +56,32 @@ support.
    Note that :class:`ImpImporter` does not currently support being used by
    placement on :data:`sys.meta_path`.
 
+   .. deprecated:: 3.3
+      This emulation is no longer needed, as the standard import mechanism
+      is now fully PEP 302 compliant and available in :mod:`importlib`
+
 
 .. class:: ImpLoader(fullname, file, filename, etc)
 
    :pep:`302` Loader that wraps Python's "classic" import algorithm.
 
+   .. deprecated:: 3.3
+      This emulation is no longer needed, as the standard import mechanism
+      is now fully PEP 302 compliant and available in :mod:`importlib`
+
 
 .. function:: find_loader(fullname)
 
-   Find a :pep:`302` "loader" object for *fullname*.
+   Retrieve a :pep:`302` module loader for the given *fullname*.
 
-   If *fullname* contains dots, path must be the containing package's
-   ``__path__``.  Returns ``None`` if the module cannot be found or imported.
-   This function uses :func:`iter_importers`, and is thus subject to the same
-   limitations regarding platform-specific special import locations such as the
-   Windows registry.
+   This is a convenience wrapper around :func:`importlib.find_loader` that
+   sets the *path* argument correctly when searching for submodules, and
+   also ensures parent packages (if any) are imported before searching for
+   submodules.
+
+   .. versionchanged:: 3.3
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on a package internal PEP 302 import emulation.
 
 
 .. function:: get_importer(path_item)
@@ -80,12 +91,12 @@ support.
    The returned importer is cached in :data:`sys.path_importer_cache` if it was
    newly created by a path hook.
 
-   If there is no importer, a wrapper around the basic import machinery is
-   returned.  This wrapper is never inserted into the importer cache (``None``
-   is inserted instead).
-
    The cache (or part of it) can be cleared manually if a rescan of
    :data:`sys.path_hooks` is necessary.
+
+   .. versionchanged:: 3.3
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on a package internal PEP 302 import emulation.
 
 
 .. function:: get_loader(module_or_name)
@@ -102,31 +113,27 @@ support.
    limitations regarding platform-specific special import locations such as the
    Windows registry.
 
+   .. versionchanged:: 3.3
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on a package internal PEP 302 import emulation.
+
 
 .. function:: iter_importers(fullname='')
 
    Yield :pep:`302` importers for the given module name.
 
-   If fullname contains a '.', the importers will be for the package containing
-   fullname, otherwise they will be importers for :data:`sys.meta_path`,
-   :data:`sys.path`, and Python's "classic" import machinery, in that order.  If
-   the named module is in a package, that package is imported as a side effect
-   of invoking this function.
+   If fullname contains a '.', the importers will be for the package
+   containing fullname, otherwise they will be all registered top level
+   importers (i.e. those on both sys.meta_path and sys.path_hooks).
 
-   Non-:pep:`302` mechanisms (e.g. the Windows registry) used by the standard
-   import machinery to find files in alternative locations are partially
-   supported, but are searched *after* :data:`sys.path`.  Normally, these
-   locations are searched *before* :data:`sys.path`, preventing :data:`sys.path`
-   entries from shadowing them.
+   If the named module is in a package, that package is imported as a side
+   effect of invoking this function.
 
-   For this to cause a visible difference in behaviour, there must be a module
-   or package name that is accessible via both :data:`sys.path` and one of the
-   non-:pep:`302` file system mechanisms.  In this case, the emulation will find
-   the former version, while the builtin import mechanism will find the latter.
+   If no module name is specified, all top level importers are produced.
 
-   Items of the following types can be affected by this discrepancy:
-   ``imp.C_EXTENSION``, ``imp.PY_SOURCE``, ``imp.PY_COMPILED``,
-   ``imp.PKG_DIRECTORY``.
+   .. versionchanged:: 3.3
+      Updated to be based directly on :mod:`importlib` rather than relying
+      on a package internal PEP 302 import emulation.
 
 
 .. function:: iter_modules(path=None, prefix='')

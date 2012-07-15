@@ -52,7 +52,7 @@ extern wchar_t *Py_GetPath(void);
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
-static void initmain(void);
+static void initmain(PyInterpreterState *interp);
 static int initfsencoding(PyInterpreterState *interp);
 static void initsite(void);
 static int initstdio(void);
@@ -376,7 +376,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     if (install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
 
-    initmain(); /* Module __main__ */
+    initmain(interp); /* Module __main__ */
     if (initstdio() < 0)
         Py_FatalError(
             "Py_Initialize: can't initialize sys standard streams");
@@ -728,7 +728,7 @@ Py_NewInterpreter(void)
         if (initstdio() < 0)
             Py_FatalError(
             "Py_Initialize: can't initialize sys standard streams");
-        initmain();
+        initmain(interp);
         if (!Py_NoSiteFlag)
             initsite();
     }
@@ -825,7 +825,7 @@ Py_GetPythonHome(void)
 /* Create __main__ module */
 
 static void
-initmain(void)
+initmain(PyInterpreterState *interp)
 {
     PyObject *m, *d;
     m = PyImport_AddModule("__main__");
@@ -834,10 +834,30 @@ initmain(void)
     d = PyModule_GetDict(m);
     if (PyDict_GetItemString(d, "__builtins__") == NULL) {
         PyObject *bimod = PyImport_ImportModule("builtins");
-        if (bimod == NULL ||
-            PyDict_SetItemString(d, "__builtins__", bimod) != 0)
-            Py_FatalError("can't add __builtins__ to __main__");
+        if (bimod == NULL) {
+            Py_FatalError("Failed to retrieve builtins module");
+        }
+        if (PyDict_SetItemString(d, "__builtins__", bimod) < 0) {
+            Py_FatalError("Failed to initialize __main__.__builtins__");
+        }
         Py_DECREF(bimod);
+    }
+    /* Main is a little special - imp.is_builtin("__main__") will return
+     * False, but BuiltinImporter is still the most appropriate initial
+     * setting for its __loader__ attribute. A more suitable value will
+     * be set if __main__ gets further initialized later in the startup
+     * process.
+     */
+    if (PyDict_GetItemString(d, "__loader__") == NULL) {
+        PyObject *loader = PyObject_GetAttrString(interp->importlib,
+                                                  "BuiltinImporter");
+        if (loader == NULL) {
+            Py_FatalError("Failed to retrieve BuiltinImporter");
+        }
+        if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
+            Py_FatalError("Failed to initialize __main__.__loader__");
+        }
+        Py_DECREF(loader);
     }
 }
 
@@ -1331,6 +1351,24 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 }
 
 int
+set_main_loader(PyObject *d, const char *filename, const char *loader_name)
+{
+    PyInterpreterState *interp;
+    PyThreadState *tstate;
+    PyObject *loader;
+    /* Get current thread state and interpreter pointer */
+    tstate = PyThreadState_GET();
+    interp = tstate->interp;
+    loader = PyObject_GetAttrString(interp->importlib, loader_name);
+    if (loader == NULL ||
+        (PyDict_SetItemString(d, "__loader__", loader) < 0)) {
+        return -1;
+    }
+    Py_DECREF(loader);
+    return 0;
+}
+
+int
 PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
                         PyCompilerFlags *flags)
 {
@@ -1373,8 +1411,21 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         /* Turn on optimization if a .pyo file is given */
         if (strcmp(ext, ".pyo") == 0)
             Py_OptimizeFlag = 1;
+
+        if (set_main_loader(d, filename, "SourcelessFileLoader") < 0) {
+            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            ret = -1;
+            goto done;
+        }
         v = run_pyc_file(fp, filename, d, d, flags);
     } else {
+        /* When running from stdin, leave __main__.__loader__ alone */
+        if (strcmp(filename, "<stdin>") != 0 &&
+            set_main_loader(d, filename, "SourceFileLoader") < 0) {
+            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            ret = -1;
+            goto done;
+        }
         v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
                               closeit, flags);
     }
