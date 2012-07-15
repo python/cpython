@@ -13,6 +13,7 @@ from test.support import (
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)
 
+
 import runpy
 from runpy import _run_code, _run_module_code, run_module, run_path
 # Note: This module can't safely test _run_module_as_main as it
@@ -148,7 +149,7 @@ class ExecutionLayerTestCase(unittest.TestCase, CodeExecutionMixin):
                                     mod_package)
         self.check_code_execution(create_ns, expected_ns)
 
-
+# TODO: Use self.addCleanup to get rid of a lot of try-finally blocks
 class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     """Unit tests for runpy.run_module"""
 
@@ -413,6 +414,40 @@ from ..uncle.cousin import nephew
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
 
+    def test_pkgutil_walk_packages(self):
+        # This is a dodgy hack to use the test_runpy infrastructure to test
+        # issue #15343. Issue #15348 declares this is indeed a dodgy hack ;)
+        import pkgutil
+        max_depth = 4
+        base_name = "__runpy_pkg__"
+        package_suffixes = ["uncle", "uncle.cousin"]
+        module_suffixes = ["uncle.cousin.nephew", base_name + ".sibling"]
+        expected_packages = set()
+        expected_modules = set()
+        for depth in range(1, max_depth):
+            pkg_name = ".".join([base_name] * depth)
+            expected_packages.add(pkg_name)
+            for name in package_suffixes:
+                expected_packages.add(pkg_name + "." + name)
+            for name in module_suffixes:
+                expected_modules.add(pkg_name + "." + name)
+        pkg_name = ".".join([base_name] * max_depth)
+        expected_packages.add(pkg_name)
+        expected_modules.add(pkg_name + ".runpy_test")
+        pkg_dir, mod_fname, mod_name = (
+               self._make_pkg("", max_depth))
+        self.addCleanup(self._del_pkg, pkg_dir, max_depth, mod_name)
+        for depth in range(2, max_depth+1):
+            self._add_relative_modules(pkg_dir, "", depth)
+        for finder, mod_name, ispkg in pkgutil.walk_packages([pkg_dir]):
+            self.assertIsInstance(finder,
+                                  importlib.machinery.FileFinder)
+            if ispkg:
+                expected_packages.remove(mod_name)
+            else:
+                expected_modules.remove(mod_name)
+        self.assertEqual(len(expected_packages), 0, expected_packages)
+        self.assertEqual(len(expected_modules), 0, expected_modules)
 
 class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
     """Unit tests for runpy.run_path"""
