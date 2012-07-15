@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15343: pkgutil now includes an iter_importer_modules implementation
+  for importlib.machinery.FileFinder (similar to the way it already handled
+  zipimport.zipimporter)
+
 - Issue #15314: runpy now sets __main__.__loader__ correctly
 
 - Issue #15357: The import emulation in pkgutil is now deprecated. pkgutil
