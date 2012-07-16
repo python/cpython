@@ -980,6 +980,14 @@ class GeneralModuleTests(unittest.TestCase):
                 return
         except ImportError:
             return
+        
+        if sys.platform == "win32":
+            try:
+                inet_pton(AF_INET6, '::')
+            except OSError as e:
+                if e.winerror == 10022:
+                    return # IPv6 might not be installed on this PC
+        
         f = lambda a: inet_pton(AF_INET6, a)
         assertInvalid = lambda a: self.assertRaises(
             (OSError, ValueError), f, a
@@ -1058,6 +1066,14 @@ class GeneralModuleTests(unittest.TestCase):
                 return
         except ImportError:
             return
+
+        if sys.platform == "win32":
+            try:
+                inet_ntop(AF_INET6, b'\x00' * 16)
+            except OSError as e:
+                if e.winerror == 10022:
+                    return # IPv6 might not be installed on this PC
+
         f = lambda a: inet_ntop(AF_INET6, a)
         assertInvalid = lambda a: self.assertRaises(
             (OSError, ValueError), f, a
