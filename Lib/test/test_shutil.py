@@ -417,8 +417,7 @@ class TestShutil(unittest.TestCase):
         dst = os.path.join(tmp_dir, 'the_copy')
         write_file(dst, dst)
         shutil.copystat(src, dst)
-        self.assertEqual(os.listxattr(src), ['user.the_value'])
-        self.assertEqual(os.getxattr(src, 'user.the_value'), b'fiddly')
+        self.assertEqual(os.getxattr(dst, 'user.the_value'), b'fiddly')
 
     @support.skip_unless_symlink
     @support.skip_unless_xattr
