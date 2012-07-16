@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14635: telnetlib will use poll() rather than select() when possible
+  to avoid failing due to the select() file descriptor limit.
+
 - Issue #15180: Clarify posixpath.join() error message when mixing str & bytes
 
 - Issue #15230: runpy.run_path now correctly sets __package__ as described
