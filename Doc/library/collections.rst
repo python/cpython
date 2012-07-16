@@ -84,14 +84,15 @@ The class can be used to simulate nested scopes and is useful in templating.
         creating subcontexts that can be updated without altering values in any
         of the parent mappings.
 
-    .. method:: parents()
+    .. attribute:: parents
 
-        Returns a new :class:`ChainMap` containing all of the maps in the current
-        instance except the first one.  This is useful for skipping the first map
-        in the search.  The use-cases are similar to those for the
-        :keyword:`nonlocal` keyword used in :term:`nested scopes <nested scope>`.
-        The use-cases also parallel those for the builtin :func:`super` function.
-        A reference to  ``d.parents`` is equivalent to: ``ChainMap(*d.maps[1:])``.
+        Proerty returning a new :class:`ChainMap` containing all of the maps in
+        the current instance except the first one.  This is useful for skipping
+        the first map in the search.  Use cases are similar to those for the
+        :keyword:`nonlocal` keyword used in :term:`nested scopes <nested
+        scope>`.  The use cases also parallel those for the built-in
+        :func:`super` function.  A reference to ``d.parents`` is equivalent to:
+        ``ChainMap(*d.maps[1:])``.
 
 
 .. seealso::
