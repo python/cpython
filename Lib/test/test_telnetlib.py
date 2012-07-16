@@ -4,6 +4,7 @@ import telnetlib
 import time
 import contextlib
 
+import unittest
 from unittest import TestCase
 from test import support
 threading = support.import_module('threading')
