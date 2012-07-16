@@ -86,7 +86,7 @@ The class can be used to simulate nested scopes and is useful in templating.
 
     .. attribute:: parents
 
-        Proerty returning a new :class:`ChainMap` containing all of the maps in
+        Property returning a new :class:`ChainMap` containing all of the maps in
         the current instance except the first one.  This is useful for skipping
         the first map in the search.  Use cases are similar to those for the
         :keyword:`nonlocal` keyword used in :term:`nested scopes <nested
