@@ -169,13 +169,14 @@ class ExpectAndReadTestCase(TestCase):
     def setUp(self):
         self.old_select = select.select
         select.select = mock_select
+        self.old_poll = False
         if hasattr(select, 'poll'):
             self.old_poll = select.poll
             select.poll = MockPoller
             MockPoller.test_case = self
 
     def tearDown(self):
-        if hasattr(select, 'poll'):
+        if self.old_poll:
             MockPoller.test_case = None
             select.poll = self.old_poll
         select.select = self.old_select
@@ -210,7 +211,8 @@ class ReadTests(ExpectAndReadTestCase):
         """Use select.select() to implement telnet.read_until()."""
         want = [b'x' * 10, b'match', b'y' * 10]
         telnet = test_telnet(want, use_poll=False)
-        select.poll = lambda *_: self.fail('unexpected poll() call.')
+        if self.old_poll:
+            select.poll = lambda *_: self.fail('unexpected poll() call.')
         data = telnet.read_until(b'match')
         self.assertEqual(data, b''.join(want[:-1]))
 
@@ -428,7 +430,8 @@ class ExpectTests(ExpectAndReadTestCase):
         """Use select.select() to implement telnet.expect()."""
         want = [b'x' * 10, b'match', b'y' * 10]
         telnet = test_telnet(want, use_poll=False)
-        select.poll = lambda *_: self.fail('unexpected poll() call.')
+        if self.old_poll:
+            select.poll = lambda *_: self.fail('unexpected poll() call.')
         (_,_,data) = telnet.expect([b'match'])
         self.assertEqual(data, b''.join(want[:-1]))
 
