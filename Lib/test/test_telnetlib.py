@@ -3,6 +3,7 @@ import telnetlib
 import time
 import Queue
 
+import unittest
 from unittest import TestCase
 from test import test_support
 threading = test_support.import_module('threading')
