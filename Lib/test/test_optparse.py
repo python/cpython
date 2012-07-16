@@ -318,6 +318,22 @@ class TestOptionChecks(BaseTest):
             ["-b"], {'action': 'store',
                      'callback_kwargs': 'foo'})
 
+    def test_no_single_dash(self):
+        self.assertOptionError(
+            "invalid long option string '-debug': "
+            "must start with --, followed by non-dash",
+            ["-debug"])
+
+        self.assertOptionError(
+            "option -d: invalid long option string '-debug': must start with"
+            " --, followed by non-dash",
+            ["-d", "-debug"])
+
+        self.assertOptionError(
+            "invalid long option string '-debug': "
+            "must start with --, followed by non-dash",
+            ["-debug", "--debug"])
+
 class TestOptionParser(BaseTest):
     def setUp(self):
         self.parser = OptionParser()
