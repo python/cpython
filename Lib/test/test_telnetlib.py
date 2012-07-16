@@ -168,14 +168,16 @@ def test_telnet(reads=(), cls=TelnetAlike, use_poll=None):
 class ExpectAndReadTestCase(TestCase):
     def setUp(self):
         self.old_select = select.select
-        self.old_poll = select.poll
         select.select = mock_select
-        select.poll = MockPoller
-        MockPoller.test_case = self
+        if hasattr(select, 'poll'):
+            self.old_poll = select.poll
+            select.poll = MockPoller
+            MockPoller.test_case = self
 
     def tearDown(self):
-        MockPoller.test_case = None
-        select.poll = self.old_poll
+        if hasattr(select, 'poll'):
+            MockPoller.test_case = None
+            select.poll = self.old_poll
         select.select = self.old_select
 
 
