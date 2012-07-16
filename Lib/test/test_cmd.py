@@ -84,11 +84,11 @@ class samplecmdclass(cmd.Cmd):
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
-    add
+    add  help
     <BLANKLINE>
     Undocumented commands:
     ======================
-    exit  help  shell
+    exit  shell
     <BLANKLINE>
 
     Test for the function print_topics():
@@ -125,11 +125,11 @@ class samplecmdclass(cmd.Cmd):
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
-    add
+    add  help
     <BLANKLINE>
     Undocumented commands:
     ======================
-    exit  help  shell
+    exit  shell
     <BLANKLINE>
     help text for add
     Hello from postloop
