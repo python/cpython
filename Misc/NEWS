@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14635: telnetlib will use poll() rather than select() when possible
+  to avoid failing due to the select() file descriptor limit.
+
 - Issue #15247: FileIO now raises an error when given a file descriptor
   pointing to a directory.
 
