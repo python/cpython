@@ -5023,13 +5023,17 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
     return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
 
-#ifdef HAVE_INET_PTON
+#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
 
 PyDoc_STRVAR(inet_pton_doc,
 "inet_pton(af, ip) -> packed IP address string\n\
 \n\
 Convert an IP address from string format to a packed string suitable\n\
 for use with low-level network functions.");
+
+#endif
+
+#ifdef HAVE_INET_PTON
 
 static PyObject *
 socket_inet_pton(PyObject *self, PyObject *args)
@@ -5075,12 +5079,52 @@ socket_inet_pton(PyObject *self, PyObject *args)
         return NULL;
     }
 }
+#elif defined(MS_WINDOWS)
+
+static PyObject *
+socket_inet_pton(PyObject *self, PyObject *args)
+{
+    int af;
+    char* ip;
+    struct sockaddr_in6 addr;
+    INT ret, size;
+
+    if (!PyArg_ParseTuple(args, "is:inet_pton", &af, &ip)) {
+        return NULL;
+    }
+
+    size = sizeof(addr); 
+    ret = WSAStringToAddressA(ip, af, NULL, (LPSOCKADDR)&addr, &size);
+
+    if (ret) {
+        PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
+        return NULL;
+    } else if(af == AF_INET) {
+        struct sockaddr_in *addr4 = (struct sockaddr_in*)&addr;
+        return PyBytes_FromStringAndSize((const char *)&(addr4->sin_addr), 
+                                         sizeof(addr4->sin_addr));
+    } else if (af == AF_INET6) {
+        return PyBytes_FromStringAndSize((const char *)&(addr.sin6_addr), 
+                                          sizeof(addr.sin6_addr));
+    } else {
+        PyErr_SetString(PyExc_OSError, "unknown address family");
+        return NULL;
+    }
+}
+
+#endif
+
+#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
 
 PyDoc_STRVAR(inet_ntop_doc,
 "inet_ntop(af, packed_ip) -> string formatted IP address\n\
 \n\
 Convert a packed IP address of the given family to string format.");
 
+#endif
+
+
+#ifdef HAVE_INET_PTON
 static PyObject *
 socket_inet_ntop(PyObject *self, PyObject *args)
 {
@@ -5132,6 +5176,66 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     /* NOTREACHED */
     PyErr_SetString(PyExc_RuntimeError, "invalid handling of inet_ntop");
     return NULL;
+}
+
+#elif defined(MS_WINDOWS)
+
+static PyObject *
+socket_inet_ntop(PyObject *self, PyObject *args)
+{
+    int af;
+    char* packed;
+    int len;
+    struct sockaddr_in6 addr;
+    DWORD addrlen, ret, retlen;
+    char ip[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+
+    /* Guarantee NUL-termination for PyUnicode_FromString() below */
+    memset((void *) &ip[0], '\0', sizeof(ip));
+
+    if (!PyArg_ParseTuple(args, "iy#:inet_ntop", &af, &packed, &len)) {
+        return NULL;
+    }
+
+    if (af == AF_INET) {
+        struct sockaddr_in * addr4 = (struct sockaddr_in *)&addr;
+
+        if (len != sizeof(struct in_addr)) {
+            PyErr_SetString(PyExc_ValueError,
+                "invalid length of packed IP address string");
+            return NULL;
+        }
+        memset(addr4, 0, sizeof(struct sockaddr_in));
+        addr4->sin_family = AF_INET;
+        memcpy(&(addr4->sin_addr), packed, sizeof(addr4->sin_addr));
+        addrlen = sizeof(struct sockaddr_in);
+    } else if (af == AF_INET6) {
+        if (len != sizeof(struct in6_addr)) {
+            PyErr_SetString(PyExc_ValueError,
+                "invalid length of packed IP address string");
+            return NULL;
+        }
+
+        memset(&addr, 0, sizeof(addr));
+        addr.sin6_family = AF_INET6;
+        memcpy(&(addr.sin6_addr), packed, sizeof(addr.sin6_addr));
+        addrlen = sizeof(addr);
+    } else {
+        PyErr_Format(PyExc_ValueError,
+            "unknown address family %d", af);
+        return NULL;
+    }
+
+    retlen = sizeof(ip);
+    ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL, 
+                              ip, &retlen);
+
+    if (ret) {
+        PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
+        return NULL;
+    } else {
+        return PyUnicode_FromString(ip);
+    }
 }
 
 #endif /* HAVE_INET_PTON */
@@ -5600,7 +5704,7 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, inet_aton_doc},
     {"inet_ntoa",               socket_inet_ntoa,
      METH_VARARGS, inet_ntoa_doc},
-#ifdef HAVE_INET_PTON
+#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
     {"inet_pton",               socket_inet_pton,
      METH_VARARGS, inet_pton_doc},
     {"inet_ntop",               socket_inet_ntop,
