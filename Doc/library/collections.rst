@@ -130,16 +130,22 @@ Example of simulating Python's internal lookup chain::
         import builtins
         pylookup = ChainMap(locals(), globals(), vars(builtins))
 
-Example of letting user specified values take precedence over environment
-variables which in turn take precedence over default values::
+Example of letting user specified command-line arguments take precedence over
+environment variables which in turn take precedence over default values::
 
         import os, argparse
-        defaults = {'color': 'red', 'user': guest}
+
+        defaults = {'color': 'red', 'user': 'guest'}
+
         parser = argparse.ArgumentParser()
         parser.add_argument('-u', '--user')
         parser.add_argument('-c', '--color')
-        user_specified = vars(parser.parse_args())
-        combined = ChainMap(user_specified, os.environ, defaults)
+        namespace = parser.parse_args()
+        command_line_args = {k:v for k, v in vars(namespace).items() if v}
+
+        combined = ChainMap(command_line_args, os.environ, defaults)
+        print(combined['color'])
+        print(combined['user'])
 
 Example patterns for using the :class:`ChainMap` class to simulate nested
 contexts::
