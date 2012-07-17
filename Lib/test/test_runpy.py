@@ -182,7 +182,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     def _make_pkg(self, source, depth, mod_base="runpy_test"):
         pkg_name = "__runpy_pkg__"
         test_fname = mod_base+os.extsep+"py"
-        pkg_dir = sub_dir = tempfile.mkdtemp()
+        pkg_dir = sub_dir = os.path.realpath(tempfile.mkdtemp())
         if verbose > 1: print("  Package tree in:", sub_dir)
         sys.path.insert(0, pkg_dir)
         if verbose > 1: print("  Updated sys.path:", sys.path[0])
