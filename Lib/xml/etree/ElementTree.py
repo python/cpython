@@ -1189,7 +1189,7 @@ class _ListDataStream(io.BufferedIOBase):
     """
     def __init__(self, lst):
         self.lst = lst
-        
+
     def writable(self):
         return True
 
