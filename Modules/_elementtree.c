@@ -3514,12 +3514,8 @@ PyInit__elementtree(void)
             expat_capi = NULL;
         }
     }
-    if (!expat_capi) {
-        PyErr_SetString(
-            PyExc_RuntimeError, "cannot load dispatch table from pyexpat"
-            );
+    if (!expat_capi)
         return NULL;
-    }
 
     elementtree_parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
