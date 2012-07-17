@@ -1190,8 +1190,14 @@ def tostringlist(element, encoding=None, method=None):
         def writable(self):
             return True
 
+        def seekable(self):
+            return True
+
         def write(self, b):
             data.append(b)
+
+        def tell(self):
+            return len(data)
 
     ElementTree(element).write(DataStream(), encoding, method=method)
     return data
