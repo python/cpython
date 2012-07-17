@@ -2286,6 +2286,15 @@ class IOTest(unittest.TestCase):
                 '''<?xml version='1.0' encoding='utf-16'?>\n'''
                 '''<site />'''.encode("utf-16"))
 
+    def test_tostringlist_invariant(self):
+        root = ET.fromstring('<tag>foo</tag>')
+        self.assertEqual(
+            ET.tostring(root, 'unicode'),
+            ''.join(ET.tostringlist(root, 'unicode')))
+        self.assertEqual(
+            ET.tostring(root, 'utf-16'),
+            b''.join(ET.tostringlist(root, 'utf-16')))
+
 
 class ParseErrorTest(unittest.TestCase):
     def test_subclass(self):
