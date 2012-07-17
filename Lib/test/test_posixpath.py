@@ -1,6 +1,7 @@
 import unittest
 from test import support, test_genericpath
 
+import itertools
 import posixpath
 import os
 import sys
@@ -56,18 +57,21 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.join(b"/foo/", b"bar/", b"baz/"),
                          b"/foo/bar/baz/")
 
-        # Check for friendly str/bytes mixing message
-        for args in [[b'bytes', 'str'],
-                     [bytearray(b'bytes'), 'str']]:
-            for _ in range(2):
+        def check_error_msg(list_of_args, msg):
+            """Check posixpath.join raises friendly TypeErrors."""
+            for args in (item for perm in list_of_args
+                              for item in itertools.permutations(perm)):
                 with self.assertRaises(TypeError) as cm:
                     posixpath.join(*args)
-                self.assertEqual(
-                    "Can't mix strings and bytes in path components.",
-                    cm.exception.args[0]
-                )
-                args.reverse()  # check both orders
+                self.assertEqual(msg, cm.exception.args[0])
 
+        check_error_msg([[b'bytes', 'str'], [bytearray(b'bytes'), 'str']],
+                        "Can't mix strings and bytes in path components.")
+        # regression, see #15377
+        with self.assertRaises(TypeError) as cm:
+            os.path.join(None, 'str')
+        self.assertNotEqual("Can't mix strings and bytes in path components.",
+                            cm.exception.args[0])
 
     def test_split(self):
         self.assertEqual(posixpath.split("/foo/bar"), ("/foo", "bar"))
