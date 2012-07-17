@@ -474,6 +474,7 @@ calculate_path(void)
     wchar_t *defpath;
 #ifdef WITH_NEXT_FRAMEWORK
     NSModule pythonModule;
+    const char*    modPath;
 #endif
 #ifdef __APPLE__
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
@@ -568,8 +569,8 @@ calculate_path(void)
     */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
-    buf = (wchar_t *)NSLibraryNameForModule(pythonModule);
-    if (buf != NULL) {
+    modPath = NSLibraryNameForModule(pythonModule);
+    if (modPath != NULL) {
         /* We're in a framework. */
         /* See if we might be in the build directory. The framework in the
         ** build directory is incomplete, it only has the .dylib and a few
@@ -578,7 +579,12 @@ calculate_path(void)
         ** be running the interpreter in the build directory, so we use the
         ** build-directory-specific logic to find Lib and such.
         */
-        wcsncpy(argv0_path, buf, MAXPATHLEN);
+        wchar_t* wbuf = _Py_char2wchar(modPath, NULL);
+        if (wbuf == NULL) {
+            Py_FatalError("Cannot decode framework location");
+        }
+
+        wcsncpy(argv0_path, wbuf, MAXPATHLEN);
         reduce(argv0_path);
         joinpath(argv0_path, lib_python);
         joinpath(argv0_path, LANDMARK);
@@ -589,8 +595,9 @@ calculate_path(void)
         }
         else {
             /* Use the location of the library as the progpath */
-            wcsncpy(argv0_path, buf, MAXPATHLEN);
+            wcsncpy(argv0_path, wbuf, MAXPATHLEN);
         }
+        PyMem_Free(wbuf);
     }
 #endif
 
@@ -629,6 +636,7 @@ calculate_path(void)
         FILE * env_file = NULL;
 
         wcscpy(tmpbuffer, argv0_path);
+
         joinpath(tmpbuffer, env_cfg);
         env_file = _Py_wfopen(tmpbuffer, L"r");
         if (env_file == NULL) {
