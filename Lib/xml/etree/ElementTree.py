@@ -1184,23 +1184,29 @@ def tostring(element, encoding=None, method=None):
 # @defreturn sequence
 # @since 1.3
 
+class _ListDataStream(io.BufferedIOBase):
+    """ An auxiliary stream accumulating into a list reference
+    """
+    def __init__(self, lst):
+        self.lst = lst
+        
+    def writable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def write(self, b):
+        self.lst.append(b)
+
+    def tell(self):
+        return len(self.lst)
+
 def tostringlist(element, encoding=None, method=None):
-    data = []
-    class DataStream(io.BufferedIOBase):
-        def writable(self):
-            return True
-
-        def seekable(self):
-            return True
-
-        def write(self, b):
-            data.append(b)
-
-        def tell(self):
-            return len(data)
-
-    ElementTree(element).write(DataStream(), encoding, method=method)
-    return data
+    lst = []
+    stream = _ListDataStream(lst)
+    ElementTree(element).write(stream, encoding, method=method)
+    return lst
 
 ##
 # Writes an element tree or element structure to sys.stdout.  This
