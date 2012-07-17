@@ -69,7 +69,7 @@ class PosixPathTest(unittest.TestCase):
                         "Can't mix strings and bytes in path components.")
         # regression, see #15377
         with self.assertRaises(TypeError) as cm:
-            os.path.join(None, 'str')
+            posixpath.join(None, 'str')
         self.assertNotEqual("Can't mix strings and bytes in path components.",
                             cm.exception.args[0])
 
