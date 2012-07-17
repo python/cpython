@@ -82,13 +82,6 @@ class EnvBuilder:
         :param env_dir: The target directory to create an environment in.
 
         """
-        if (self.symlinks and
-            sys.platform == 'darwin' and
-            sysconfig.get_config_var('PYTHONFRAMEWORK')):
-            # Symlinking the stub executable in an OSX framework build will
-            # result in a broken virtual environment.
-            raise ValueError(
-                'Symlinking is not supported on OSX framework Python.')
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
         self.create_configuration(context)
@@ -366,8 +359,7 @@ def main(args=None):
                             action='store_true', dest='system_site',
                             help='Give the virtual environment access to the '
                                  'system site-packages dir.')
-        if os.name == 'nt' or (sys.platform == 'darwin' and
-                               sysconfig.get_config_var('PYTHONFRAMEWORK')):
+        if os.name == 'nt':
             use_symlinks = False
         else:
             use_symlinks = True

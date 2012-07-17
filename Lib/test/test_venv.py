@@ -154,17 +154,47 @@ class BasicTest(BaseTest):
         """
         for usl in (False, True):
             builder = venv.EnvBuilder(clear=True, symlinks=usl)
-            if (usl and sys.platform == 'darwin' and
-                '__PYVENV_LAUNCHER__' in os.environ):
-                self.assertRaises(ValueError, builder.create, self.env_dir)
-            else:
-                builder.create(self.env_dir)
-                fn = self.get_env_file(self.bindir, self.exe)
-                # Don't test when False, because e.g. 'python' is always
-                # symlinked to 'python3.3' in the env, even when symlinking in
-                # general isn't wanted.
-                if usl:
-                    self.assertTrue(os.path.islink(fn))
+            builder.create(self.env_dir)
+            fn = self.get_env_file(self.bindir, self.exe)
+            # Don't test when False, because e.g. 'python' is always
+            # symlinked to 'python3.3' in the env, even when symlinking in
+            # general isn't wanted.
+            if usl:
+                self.assertTrue(os.path.islink(fn))
+
+    # If a venv is created from a source build and that venv is used to
+    # run the test, the pyvenv.cfg in the venv created in the test will
+    # point to the venv being used to run the test, and we lose the link
+    # to the source build - so Python can't initialise properly.
+    @unittest.skipIf(sys.prefix != sys.base_prefix, 'Test not appropriate '
+                     'in a venv')
+    def test_executable(self):
+        """
+        Test that the sys.executable value is as expected.
+        """
+        shutil.rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
+        cmd = [envpy, '-c', 'import sys; print(sys.executable)']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertEqual(out[:-1], envpy.encode())
+
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_executable_symlinks(self):
+        """
+        Test that the sys.executable value is as expected.
+        """
+        shutil.rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True, symlinks=True)
+        builder.create(self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
+        cmd = [envpy, '-c', 'import sys; print(sys.executable)']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertEqual(out[:-1], envpy.encode())
 
 def test_main():
     run_unittest(BasicTest)
