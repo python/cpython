@@ -3117,6 +3117,8 @@ PyInit__elementtree(void)
             expat_capi->MICRO_VERSION != XML_MICRO_VERSION)
             expat_capi = NULL;
     }
+    if (!expat_capi)
+        return NULL;
 #endif
 
     elementtree_parseerror_obj = PyErr_NewException(
