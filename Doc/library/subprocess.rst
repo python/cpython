@@ -289,7 +289,7 @@ functions.
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
-   On Windows: the :class:`Popen` class uses CreateProcess() to execute the child
+   On Windows: the :class:`Popen` class uses CreateProcess() to execute the
    child program, which operates on strings.  If *args* is a sequence, it will
    be converted to a string in a manner described in
    :ref:`converting-argument-sequence`.
