@@ -198,9 +198,18 @@ attributes:
 .. function:: getmodulename(path)
 
    Return the name of the module named by the file *path*, without including the
-   names of enclosing packages.  This uses the same algorithm as the interpreter
-   uses when searching for modules.  If the name cannot be matched according to the
-   interpreter's rules, ``None`` is returned.
+   names of enclosing packages. The file extension is checked against all of
+   the entries in :func:`importlib.machinery.all_suffixes`. If it matches,
+   the final path component is returned with the extension removed.
+   Otherwise, ``None`` is returned.
+
+   Note that this function *only* returns a meaningful name for actual
+   Python modules - paths that potentially refer to Python packages will
+   still return ``None``.
+
+   .. versionchanged:: 3.3
+      This function is now based directly on :mod:`importlib` rather than the
+      deprecated :func:`getmoduleinfo`.
 
 
 .. function:: ismodule(object)
