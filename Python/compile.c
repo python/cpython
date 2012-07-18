@@ -387,7 +387,7 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
         Py_DECREF(sorted_keys);
         return NULL;
     }
-    num_keys = PyList_GET_SIZE(src);
+    num_keys = PyList_GET_SIZE(sorted_keys);
 
     for (key_i = 0; key_i < num_keys; key_i++) {
         /* XXX this should probably be a macro in symtable.h */
