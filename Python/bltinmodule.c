@@ -53,8 +53,12 @@ builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(import_doc,
 "__import__(name, globals={}, locals={}, fromlist=[], level=-1) -> module\n\
 \n\
-Import a module.  The globals are only used to determine the context;\n\
-they are not modified.  The locals are currently unused.  The fromlist\n\
+Import a module. Because this function is meant for use by the Python\n\
+interpreter and not for general use it is better to use\n\
+importlib.import_module() to programmatically import a module.\n\
+\n\
+The globals argument is only used to determine the context;\n\
+they are not modified.  The locals argument is unused.  The fromlist\n\
 should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
