@@ -367,7 +367,7 @@ each key.
 static PyObject *
 dictbytype(PyObject *src, int scope_type, int flag, int offset)
 {
-    Py_ssize_t pos = 0, i = offset, scope, num_keys, key_i;
+    Py_ssize_t i = offset, scope, num_keys, key_i;
     PyObject *k, *v, *dest = PyDict_New();
     PyObject *sorted_keys;
 
