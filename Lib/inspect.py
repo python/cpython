@@ -450,8 +450,15 @@ def getmoduleinfo(path):
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
-    info = getmoduleinfo(path)
-    if info: return info[0]
+    fname = os.path.basename(path)
+    # Check for paths that look like an actual module file
+    suffixes = [(-len(suffix), suffix)
+                    for suffix in importlib.machinery.all_suffixes()]
+    suffixes.sort() # try longest suffixes first, in case they overlap
+    for neglen, suffix in suffixes:
+        if fname.endswith(suffix):
+            return fname[:neglen]
+    return None
 
 def getsourcefile(object):
     """Return the filename that can be used to locate an object's source.
