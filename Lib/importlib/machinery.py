@@ -13,3 +13,7 @@ from ._bootstrap import SourcelessFileLoader
 from ._bootstrap import ExtensionFileLoader
 
 EXTENSION_SUFFIXES = _imp.extension_suffixes()
+
+def all_suffixes():
+    """Returns a list of all recognized module suffixes for this process"""
+    return SOURCE_SUFFIXES + BYTECODE_SUFFIXES + EXTENSION_SUFFIXES

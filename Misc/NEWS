@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15397: inspect.getmodulename() is now based directly on importlib
+  via a new importlib.machinery.all_suffixes() API.
+
 - Issue #14635: telnetlib will use poll() rather than select() when possible
   to avoid failing due to the select() file descriptor limit.
 

@@ -533,8 +533,19 @@ find and load modules.
 
 .. attribute:: EXTENSION_SUFFIXES
 
-   A list of strings representing the the recognized file suffixes for
+   A list of strings representing the recognized file suffixes for
    extension modules.
+
+   .. versionadded:: 3.3
+
+
+.. func:: all_suffixes()
+
+   Returns a combined list of strings representing all file suffixes for
+   Python modules recognized by the standard import machinery. This is a
+   helper for code which simply needs to know if a filesystem path
+   potentially represents a Python module (for example,
+   :func:`inspect.getmodulename`)
 
    .. versionadded:: 3.3
 
