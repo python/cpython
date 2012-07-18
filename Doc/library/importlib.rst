@@ -539,13 +539,13 @@ find and load modules.
    .. versionadded:: 3.3
 
 
-.. func:: all_suffixes()
+.. function:: all_suffixes()
 
    Returns a combined list of strings representing all file suffixes for
-   Python modules recognized by the standard import machinery. This is a
+   modules recognized by the standard import machinery. This is a
    helper for code which simply needs to know if a filesystem path
-   potentially represents a Python module (for example,
-   :func:`inspect.getmodulename`)
+   potentially refers to a module without needing any details on the kind
+   of module (for example, :func:`inspect.getmodulename`)
 
    .. versionadded:: 3.3
 
