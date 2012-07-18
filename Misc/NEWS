@@ -1,4 +1,4 @@
-Python News
+,Python News
 +++++++++++
 
 What's New in Python 2.7.4
@@ -8,6 +8,9 @@ What's New in Python 2.7.4
 
 Core and Builtins
 -----------------
+
+- Issue #15368: An issue that caused bytecode generation to be
+  non-deterministic when using randomized hashing (-R) has been fixed.
 
 - Issue #15033: Fix the exit status bug when modules invoked using -m swith,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
