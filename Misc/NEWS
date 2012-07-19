@@ -138,6 +138,9 @@ C API
 Extension Modules
 -----------------
 
+- Issue #6493: An issue in ctypes on Windows that caused structure bitfields
+  of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
+
 - Issue #15194: Update libffi to the 3.0.11 release.
 
 Tools/Demos
