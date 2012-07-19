@@ -344,7 +344,10 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     Py_DECREF(line);
     if (err != 0)
         return err;
-    return _Py_DisplaySourceLine(f, filename, lineno, 4);
+    /* ignore errors since we can't report them, can we? */
+    if (_Py_DisplaySourceLine(f, filename, lineno, 4))
+        PyErr_Clear();
+    return err;
 }
 
 static int
