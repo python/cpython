@@ -117,8 +117,10 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
     d = PyModule_GetDict((PyObject*)m);
     if (module->m_methods != NULL) {
         n = PyUnicode_FromString(name);
-        if (n == NULL)
+        if (n == NULL) {
+            Py_DECREF(m);
             return NULL;
+        }
         for (ml = module->m_methods; ml->ml_name != NULL; ml++) {
             if ((ml->ml_flags & METH_CLASS) ||
                 (ml->ml_flags & METH_STATIC)) {
@@ -126,16 +128,19 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
                                 "module functions cannot set"
                                 " METH_CLASS or METH_STATIC");
                 Py_DECREF(n);
+                Py_DECREF(m);
                 return NULL;
             }
             v = PyCFunction_NewEx(ml, (PyObject*)m, n);
             if (v == NULL) {
                 Py_DECREF(n);
+                Py_DECREF(m);
                 return NULL;
             }
             if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {
                 Py_DECREF(v);
                 Py_DECREF(n);
+                Py_DECREF(m);
                 return NULL;
             }
             Py_DECREF(v);
@@ -146,6 +151,7 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
         v = PyUnicode_FromString(module->m_doc);
         if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0) {
             Py_XDECREF(v);
+            Py_DECREF(m);
             return NULL;
         }
         Py_DECREF(v);
