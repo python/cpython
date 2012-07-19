@@ -42,6 +42,9 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
 class Error(EnvironmentError):
     pass
 
+class SameFileError(Error):
+    """Raised when source and destination are the same file."""
+
 class SpecialFileError(EnvironmentError):
     """Raised when trying to do a kind of operation (e.g. copying) which is
     not supported on a special file (e.g. a named pipe)"""
@@ -90,7 +93,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
 
     """
     if _samefile(src, dst):
-        raise Error("`%s` and `%s` are the same file" % (src, dst))
+        raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
     for fn in [src, dst]:
         try:
@@ -214,6 +217,9 @@ def copy(src, dst, *, follow_symlinks=True):
 
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
+
+    If source and destination are the same file, a SameFileError will be
+    raised.
 
     """
     if os.path.isdir(dst):
