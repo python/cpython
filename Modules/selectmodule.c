@@ -107,7 +107,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 
         /* any intervening fileno() calls could decr this refcnt */
         if (!(o = PySequence_Fast_GET_ITEM(fast_seq, i)))
-            return -1;
+            goto finally;
 
         Py_INCREF(o);
         v = PyObject_AsFileDescriptor( o );
@@ -438,6 +438,7 @@ poll_modify(pollObject *self, PyObject *args)
     if (PyDict_GetItem(self->dict, key) == NULL) {
         errno = ENOENT;
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(key);
         return NULL;
     }
     value = PyLong_FromLong(events);
