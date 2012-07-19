@@ -340,6 +340,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6493: An issue in ctypes on Windows that caused structure bitfields
+  of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
+
 - Issue #15000: Support the "unique" x32 architecture in _posixsubprocess.c.
 
 - Issue #9041: An issue in ctypes.c_longdouble, ctypes.c_double, and
