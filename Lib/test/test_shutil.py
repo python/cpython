@@ -18,8 +18,7 @@ from shutil import (_make_tarball, _make_zipfile, make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
-                    unregister_unpack_format, get_unpack_formats,
-                    SameFileError)
+                    unregister_unpack_format, get_unpack_formats)
 import tarfile
 import warnings
 
@@ -689,7 +688,7 @@ class TestShutil(unittest.TestCase):
             with open(src, 'w') as f:
                 f.write('cheddar')
             os.link(src, dst)
-            self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
+            self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
@@ -709,7 +708,7 @@ class TestShutil(unittest.TestCase):
             # to TESTFN/TESTFN/cheese, while it should point at
             # TESTFN/cheese.
             os.symlink('cheese', dst)
-            self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
+            self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
@@ -1215,14 +1214,6 @@ class TestShutil(unittest.TestCase):
         rv = shutil.copyfile(src_file, dst_file)
         self.assertTrue(os.path.exists(rv))
         self.assertEqual(read_file(src_file), read_file(dst_file))
-
-    def test_copyfile_same_file(self):
-        # copyfile() should raise SameFileError if the source and destination
-        # are the same.
-        src_dir = self.mkdtemp()
-        src_file = os.path.join(src_dir, 'foo')
-        write_file(src_file, 'foo')
-        self.assertRaises(SameFileError, shutil.copyfile, src_file, src_file)
 
     def test_copytree_return_value(self):
         # copytree returns its destination path.

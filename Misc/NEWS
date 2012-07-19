@@ -47,9 +47,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #1492704: shutil.copyfile() raises a distinct SameFileError now if
-  source and destination are the same file. Patch by Atsuo Ishimoto.
-
 - Issue #15397: inspect.getmodulename() is now based directly on importlib
   via a new importlib.machinery.all_suffixes() API.
 
