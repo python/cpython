@@ -52,7 +52,7 @@ Directory and files operations
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst*.  *dst* must be the complete target file name; look at
    :func:`shutil.copy` for a copy that accepts a target directory path.  If
-   *src* and *dst* are the same files, :exc:`Error` is raised.
+   *src* and *dst* are the same files, :exc:`SameFileError` is raised.
 
    The destination location must be writable; otherwise,  an :exc:`OSError` exception
    will be raised. If *dst* already exists, it will be replaced.   Special files
@@ -67,6 +67,16 @@ Directory and files operations
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
       Now returns *dst*.
+      Raise :exc:`SameFileError` instead of :exc:`Error`.
+
+
+.. exception:: SameFileError
+
+   This exception is raised if source and destination in :func:`copyfile`
+   are the same file.
+
+   .. versionadded:: 3.3
+
 
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
