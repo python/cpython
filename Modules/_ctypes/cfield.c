@@ -430,12 +430,8 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 #define LOW_BIT(x)  ((x) & 0xFFFF)
 #define NUM_BITS(x) ((x) >> 16)
 
-/* This seems nore a compiler issue than a Windows/non-Windows one */
-#ifdef MS_WIN32
-#  define BIT_MASK(size) ((1 << NUM_BITS(size))-1)
-#else
-#  define BIT_MASK(size) ((1LL << NUM_BITS(size))-1)
-#endif
+/* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
+#define BIT_MASK(type, size) (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1)
 
 /* This macro CHANGES the first parameter IN PLACE. For proper sign handling,
    we must first shift left, then right.
@@ -447,10 +443,10 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
     }
 
 /* This macro RETURNS the first parameter with the bit field CHANGED. */
-#define SET(x, v, size)                                                 \
+#define SET(type, x, v, size)                                                 \
     (NUM_BITS(size) ?                                                   \
-     ( ( x & ~(BIT_MASK(size) << LOW_BIT(size)) ) | ( (v & BIT_MASK(size)) << LOW_BIT(size) ) ) \
-     : v)
+     ( ( (type)x & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)v & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
+     : (type)v)
 
 /* byte swapping macros */
 #define SWAP_2(v)                               \
@@ -522,7 +518,7 @@ b_set(void *ptr, PyObject *value, Py_ssize_t size)
     long val;
     if (get_long(value, &val) < 0)
         return NULL;
-    *(signed char *)ptr = (signed char)SET(*(signed char *)ptr, (signed char)val, size);
+    *(signed char *)ptr = SET(signed char, *(signed char *)ptr, val, size);
     _RET(value);
 }
 
@@ -541,8 +537,7 @@ B_set(void *ptr, PyObject *value, Py_ssize_t size)
     unsigned long val;
     if (get_ulong(value, &val) < 0)
         return NULL;
-    *(unsigned char *)ptr = (unsigned char)SET(*(unsigned char*)ptr,
-                                               (unsigned short)val, size);
+    *(unsigned char *)ptr = SET(unsigned char, *(unsigned char*)ptr, val, size);
     _RET(value);
 }
 
@@ -563,7 +558,7 @@ h_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_long(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, (short)val, size);
+    x = SET(short, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -578,7 +573,7 @@ h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_2(field);
-    field = SET(field, (short)val, size);
+    field = SET(short, field, val, size);
     field = SWAP_2(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -611,7 +606,7 @@ H_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulong(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, (unsigned short)val, size);
+    x = SET(unsigned short, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -625,7 +620,7 @@ H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_2(field);
-    field = SET(field, (unsigned short)val, size);
+    field = SET(unsigned short, field, val, size);
     field = SWAP_2(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -659,7 +654,7 @@ i_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_long(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, (int)val, size);
+    x = SET(int, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -673,7 +668,7 @@ i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_INT(field);
-    field = SET(field, (int)val, size);
+    field = SET(int, field, val, size);
     field = SWAP_INT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -760,7 +755,7 @@ I_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulong(value, &val) < 0)
         return  NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, (unsigned int)val, size);
+    x = SET(unsigned int, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -773,7 +768,7 @@ I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulong(value, &val) < 0)
         return  NULL;
     memcpy(&field, ptr, sizeof(field));
-    field = (unsigned int)SET(field, (unsigned int)val, size);
+    field = SET(unsigned int, field, (unsigned int)val, size);
     field = SWAP_INT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -807,7 +802,7 @@ l_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_long(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, val, size);
+    x = SET(long, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -821,7 +816,7 @@ l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
-    field = (long)SET(field, val, size);
+    field = SET(long, field, val, size);
     field = SWAP_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -855,7 +850,7 @@ L_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulong(value, &val) < 0)
         return  NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, val, size);
+    x = SET(unsigned long, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -869,7 +864,7 @@ L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return  NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
-    field = (unsigned long)SET(field, val, size);
+    field = SET(unsigned long, field, val, size);
     field = SWAP_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -904,7 +899,7 @@ q_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_longlong(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, val, size);
+    x = SET(PY_LONG_LONG, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -918,7 +913,7 @@ q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_8(field);
-    field = (PY_LONG_LONG)SET(field, val, size);
+    field = SET(PY_LONG_LONG, field, val, size);
     field = SWAP_8(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -951,7 +946,7 @@ Q_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulonglong(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(x, val, size);
+    x = SET(PY_LONG_LONG, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -965,7 +960,7 @@ Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_8(field);
-    field = (unsigned PY_LONG_LONG)SET(field, val, size);
+    field = SET(unsigned PY_LONG_LONG, field, val, size);
     field = SWAP_8(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
