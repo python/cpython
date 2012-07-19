@@ -87,6 +87,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6493: An issue in ctypes on Windows that caused structure bitfields
+  of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
+
 - Issue #14635: telnetlib will use poll() rather than select() when possible
   to avoid failing due to the select() file descriptor limit.
 
