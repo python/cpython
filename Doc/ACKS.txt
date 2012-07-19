@@ -120,6 +120,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Thomas Lamb
    * Detlef Lannert
    * Piers Lauder
+   * Julia Lawall
    * Glyph Lefkowitz
    * Robert Lehmann
    * Marc-André Lemburg
