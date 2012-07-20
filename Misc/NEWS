@@ -181,6 +181,8 @@ Documentation
 Tests
 -----
 
+- Issue #15168: Move importlib.test to test.test_importlib.
+
 - Issue #15091: Reactivate a test on UNIX which was failing thanks to a
   forgotten importlib.invalidate_caches() call.
 

@@ -1,5 +1,6 @@
 import os
 import sys
+from .. import support
 import unittest
 
 def test_suite(package=__package__, directory=os.path.dirname(__file__)):
@@ -23,3 +24,10 @@ def test_suite(package=__package__, directory=os.path.dirname(__file__)):
         else:
             continue
     return suite
+
+
+def test_main():
+    start_dir = os.path.dirname(__file__)
+    top_dir = os.path.dirname(os.path.dirname(start_dir))
+    test_loader = unittest.TestLoader()
+    support.run_unittest(test_loader.discover(start_dir, top_level_dir=top_dir))

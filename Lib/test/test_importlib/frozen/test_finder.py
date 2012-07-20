@@ -1,4 +1,4 @@
-from ... import machinery
+from importlib import machinery
 from .. import abc
 
 import unittest
