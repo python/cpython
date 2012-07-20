@@ -3,7 +3,7 @@ import contextlib
 import unittest
 import os
 
-import importlib.test.util
+from test.test_importlib import util
 from test.support import run_unittest
 
 # needed tests:
@@ -46,7 +46,7 @@ def namespace_tree_context(**kwargs):
     # use default meta_path and path_hooks unless specified otherwise
     kwargs.setdefault('meta_path', sys.meta_path)
     kwargs.setdefault('path_hooks', sys.path_hooks)
-    import_context = importlib.test.util.import_state(**kwargs)
+    import_context = util.import_state(**kwargs)
     with import_context, sys_modules_context():
         yield
 
