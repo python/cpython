@@ -1,4 +1,4 @@
-from ... import _bootstrap
+from importlib import machinery
 import importlib
 import importlib.abc
 from .. import abc
@@ -62,7 +62,7 @@ class SimpleTest(unittest.TestCase):
     # [basic]
     def test_module(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
+            loader = machinery.SourceFileLoader('_temp', mapping['_temp'])
             module = loader.load_module('_temp')
             self.assertIn('_temp', sys.modules)
             check = {'__name__': '_temp', '__file__': mapping['_temp'],
@@ -72,7 +72,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_package(self):
         with source_util.create_modules('_pkg.__init__') as mapping:
-            loader = _bootstrap.SourceFileLoader('_pkg',
+            loader = machinery.SourceFileLoader('_pkg',
                                                  mapping['_pkg.__init__'])
             module = loader.load_module('_pkg')
             self.assertIn('_pkg', sys.modules)
@@ -85,7 +85,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_lacking_parent(self):
         with source_util.create_modules('_pkg.__init__', '_pkg.mod')as mapping:
-            loader = _bootstrap.SourceFileLoader('_pkg.mod',
+            loader = machinery.SourceFileLoader('_pkg.mod',
                                                     mapping['_pkg.mod'])
             module = loader.load_module('_pkg.mod')
             self.assertIn('_pkg.mod', sys.modules)
@@ -100,7 +100,7 @@ class SimpleTest(unittest.TestCase):
 
     def test_module_reuse(self):
         with source_util.create_modules('_temp') as mapping:
-            loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
+            loader = machinery.SourceFileLoader('_temp', mapping['_temp'])
             module = loader.load_module('_temp')
             module_id = id(module)
             module_dict_id = id(module.__dict__)
@@ -125,7 +125,7 @@ class SimpleTest(unittest.TestCase):
                 setattr(orig_module, attr, value)
             with open(mapping[name], 'w') as file:
                 file.write('+++ bad syntax +++')
-            loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
+            loader = machinery.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
                 loader.load_module(name)
             for attr in attributes:
@@ -136,7 +136,7 @@ class SimpleTest(unittest.TestCase):
         with source_util.create_modules('_temp') as mapping:
             with open(mapping['_temp'], 'w') as file:
                 file.write('=')
-            loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
+            loader = machinery.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
                 loader.load_module('_temp')
             self.assertNotIn('_temp', sys.modules)
@@ -149,7 +149,7 @@ class SimpleTest(unittest.TestCase):
             file.write("# test file for importlib")
         try:
             with util.uncache('_temp'):
-                loader = _bootstrap.SourceFileLoader('_temp', file_path)
+                loader = machinery.SourceFileLoader('_temp', file_path)
                 mod = loader.load_module('_temp')
                 self.assertEqual(file_path, mod.__file__)
                 self.assertEqual(imp.cache_from_source(file_path),
@@ -175,7 +175,7 @@ class SimpleTest(unittest.TestCase):
                 if e.errno != getattr(errno, 'EOVERFLOW', None):
                     raise
                 self.skipTest("cannot set modification time to large integer ({})".format(e))
-            loader = _bootstrap.SourceFileLoader('_temp', mapping['_temp'])
+            loader = machinery.SourceFileLoader('_temp', mapping['_temp'])
             mod = loader.load_module('_temp')
             # Sanity checks.
             self.assertEqual(mod.__cached__, compiled)
@@ -290,7 +290,7 @@ class BadBytecodeTest(unittest.TestCase):
 
 class SourceLoaderBadBytecodeTest(BadBytecodeTest):
 
-    loader = _bootstrap.SourceFileLoader
+    loader = machinery.SourceFileLoader
 
     @source_util.writes_bytecode_files
     def test_empty_file(self):
@@ -414,7 +414,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
 
 class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
 
-    loader = _bootstrap.SourcelessFileLoader
+    loader = machinery.SourcelessFileLoader
 
     def test_empty_file(self):
         def test(name, mapping, bytecode_path):
