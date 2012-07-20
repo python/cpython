@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #14579: Fix CVE-2012-2135: vulnerability in the utf-16 decoder after
+  error handling.  Patch by Serhiy Storchaka.
+
 - Issue #15404: Refleak in PyMethodObject repr.
 
 - Issue #15394: An issue in PyModule_Create that caused references to
