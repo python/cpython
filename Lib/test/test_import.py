@@ -2,7 +2,6 @@
 import importlib
 import builtins
 import imp
-from importlib.test.import_ import test_suite as importlib_import_test_suite
 from importlib.test.import_ import util as importlib_util
 import marshal
 import os
@@ -881,18 +880,12 @@ class ImportTracebackTests(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    flag = importlib_util.using___import__
-    try:
-        importlib_util.using___import__ = True
-        run_unittest(ImportTests, PycacheTests,
-                     PycRewritingTests, PathsTests, RelativeImportTests,
-                     OverridingImportBuiltinTests,
-                     ImportlibBootstrapTests,
-                     TestSymbolicallyLinkedPackage,
-                     ImportTracebackTests,
-                     importlib_import_test_suite())
-    finally:
-        importlib_util.using___import__ = flag
+    run_unittest(ImportTests, PycacheTests,
+                 PycRewritingTests, PathsTests, RelativeImportTests,
+                 OverridingImportBuiltinTests,
+                 ImportlibBootstrapTests,
+                 TestSymbolicallyLinkedPackage,
+                 ImportTracebackTests)
 
 
 if __name__ == '__main__':
