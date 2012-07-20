@@ -1,0 +1,6 @@
+Importbench is a set of micro-benchmarks for various import scenarios.
+
+It should not be used as an overall benchmark of import performance, but rather
+an easy way to measure impact of possible code changes. For a real-world
+benchmark of import, use the normal_startup benchmark from
+hg.python.org/benchmarks.

@@ -4,8 +4,8 @@ The assumption is made that this benchmark is run in a fresh interpreter and
 thus has no external changes made to import-related attributes in sys.
 
 """
-from . import util
-from .source import util as source_util
+from test.test_importlib import util
+from test.test_importlib.source import util as source_util
 import decimal
 import imp
 import importlib
