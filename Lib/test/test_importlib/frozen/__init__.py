@@ -1,11 +1,11 @@
-import importlib.test
+from .. import test_suite
 import os.path
 import unittest
 
 
 def test_suite():
     directory = os.path.dirname(__file__)
-    return importlib.test.test_suite('importlib.test.source', directory)
+    return test_suite('importlib.test.frozen', directory)
 
 
 if __name__ == '__main__':
