@@ -2,7 +2,7 @@
 import importlib
 import builtins
 import imp
-from importlib.test.import_ import util as importlib_util
+from test.test_importlib.import_ import util as importlib_util
 import marshal
 import os
 import platform
