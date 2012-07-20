@@ -12,8 +12,8 @@ importers when locating support scripts as well as when importing modules.
 
 import os
 import sys
+import importlib.machinery # importlib first so we can test #15386 via -m
 import imp
-import importlib.machinery
 from pkgutil import read_code, get_loader, get_importer
 
 __all__ = [

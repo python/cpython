@@ -2,8 +2,8 @@
 
 import os
 import sys
-import imp
 import importlib
+import imp
 import os.path
 from warnings import warn
 from types import ModuleType
