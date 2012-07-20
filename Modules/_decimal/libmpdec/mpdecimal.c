@@ -7540,7 +7540,7 @@ mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
         ideal_exp += shift;
     }
     else {
-        int lsd = mpd_lsd(result->data[0]);
+        int lsd = (int)mpd_lsd(result->data[0]);
         if (lsd == 0 || lsd == 5) {
             result->data[0] += 1;
         }
