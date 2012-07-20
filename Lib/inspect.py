@@ -1050,7 +1050,7 @@ def getclosurevars(func):
     """
     Get the mapping of free variables to their current values.
 
-    Returns a named tuple of dics mapping the current nonlocal, global
+    Returns a named tuple of dicts mapping the current nonlocal, global
     and builtin references as seen by the body of the function. A final
     set of unbound names that could not be resolved is also provided.
     """
