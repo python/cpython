@@ -154,6 +154,8 @@ Extension Modules
 Tools/Demos
 -----------
 
+- Move importlib.test.benchmark to Tools/importbench.
+
 - Issue #12605: The gdb hooks for debugging CPython (within Tools/gdb) have
   been enhanced to show information on more C frames relevant to CPython within
   the "py-bt" and "py-bt-full" commands:
