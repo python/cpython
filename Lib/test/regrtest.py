@@ -165,6 +165,9 @@ example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
 """
 
+# We import importlib *ASAP* in order to test #15386
+import importlib
+
 import builtins
 import faulthandler
 import getopt

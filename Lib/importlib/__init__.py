@@ -2,14 +2,21 @@
 __all__ = ['__import__', 'import_module', 'invalidate_caches']
 
 # Bootstrap help #####################################################
-import imp
+
+# Until bootstrapping is complete, DO NOT import any modules that attempt
+# to import importlib._bootstrap (directly or indirectly). Since this
+# partially initialised package would be present in sys.modules, those
+# modules would get an uninitialised copy of the source version, instead
+# of a fully initialised version (either the frozen one or the one
+# initialised below if the frozen one is not available).
+import _imp  # Just the builtin component, NOT the full Python module
 import sys
 
 try:
     import _frozen_importlib as _bootstrap
 except ImportError:
     from . import _bootstrap
-    _bootstrap._setup(sys, imp)
+    _bootstrap._setup(sys, _imp)
 else:
     # importlib._bootstrap is the built-in import, ensure we don't create
     # a second copy of the module.
@@ -22,6 +29,8 @@ else:
 _w_long = _bootstrap._w_long
 _r_long = _bootstrap._r_long
 
+# Fully bootstrapped at this point, import whatever you like, circular
+# dependencies and startup overhead minimisation permitting :)
 
 # Public API #########################################################
 
