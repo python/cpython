@@ -181,7 +181,10 @@ Documentation
 Tests
 -----
 
-- Issue #15230: Adopted a more systematic approach in the runpy tests
+- Issue #15091: Reactivate a test on UNIX which was failing thanks to a
+  forgotten importlib.invalidate_caches() call.
+
+- Issue #15230: Adopted a more systematic approach in the runpy tests.
 
 - Issue #15300: Ensure the temporary test working directories are in the same
   parent folder when running tests in multiprocess mode from a Python build.
