@@ -1,8 +1,9 @@
+# We import importlib *ASAP* in order to test #15386
+import importlib
 import builtins
 import imp
 from importlib.test.import_ import test_suite as importlib_import_test_suite
 from importlib.test.import_ import util as importlib_util
-import importlib
 import marshal
 import os
 import platform
@@ -776,6 +777,15 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertEqual(mod.__name__, 'importlib._bootstrap')
         self.assertEqual(mod.__package__, 'importlib')
         self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
+
+    def test_there_can_be_only_one(self):
+        # Issue #15386 revealed a tricky loophole in the bootstrapping
+        # This test is technically redundant, since the bug caused importing
+        # this test module to crash completely, but it helps prove the point
+        from importlib import machinery
+        mod = sys.modules['_frozen_importlib']
+        self.assertIs(machinery.FileFinder, mod.FileFinder)
+        self.assertIs(imp.new_module, mod.new_module)
 
 
 class ImportTracebackTests(unittest.TestCase):
