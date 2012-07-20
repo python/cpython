@@ -243,8 +243,10 @@ method_repr(PyMethodObject *a)
     else {
         klassname = PyObject_GetAttrString(klass, "__name__");
         if (klassname == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                Py_XDECREF(funcname);
                 return NULL;
+            }
             PyErr_Clear();
         }
         else if (!PyUnicode_Check(klassname)) {
