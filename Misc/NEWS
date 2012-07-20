@@ -45,6 +45,9 @@ Core and Builtins
 - Issue #15229: An OSError subclass whose __init__ doesn't call back
   OSError.__init__ could produce incomplete instances, leading to crashes
   when calling str() on them.
+
+- Issue 15307: Virtual environments now use symlinks with framework builds
+  on Mac OS X, like other POSIX builds.
   
 Library
 -------
