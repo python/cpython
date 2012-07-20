@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15404: Refleak in PyMethodObject repr.
+
 - Issue #15394: An issue in PyModule_Create that caused references to
   be leaked on some error paths has been fixed.  Patch by Julia Lawall.
 
