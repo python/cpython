@@ -1008,9 +1008,9 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		lib2to3/tests/data/fixers/myfixes \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
-		importlib importlib/test importlib/test/builtin \
-		importlib/test/extension importlib/test/frozen \
-		importlib/test/import_ importlib/test/source \
+		importlib test/test_importlib test/test_importlib/builtin \
+		test/test_importlib/extension test/test_importlib/frozen \
+		test/test_importlib/import_ test/test_importlib/source \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
