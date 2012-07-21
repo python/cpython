@@ -20,6 +20,14 @@ class Test_OSXSupport(unittest.TestCase):
         self.maxDiff = None
         self.prog_name = 'bogus_program_xxxx'
         self.temp_path_dir = os.path.abspath(os.getcwd())
+        self.env = test.support.EnvironmentVarGuard()
+        self.addCleanup(self.env.__exit__)
+        for cv in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS',
+                            'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
+                            'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
+                            'PY_CORE_CFLAGS'):
+            if cv in self.env:
+                self.env.unset(cv)
 
     def add_expected_saved_initial_values(self, config_vars, expected_vars):
         # Ensure that the initial values for all modified config vars
@@ -29,31 +37,29 @@ class Test_OSXSupport(unittest.TestCase):
                     if config_vars[k] != expected_vars[k])
 
     def test__find_executable(self):
-        with test.support.EnvironmentVarGuard() as env:
-            if env['PATH']:
-                env['PATH'] = env['PATH'] + ':'
-            env['PATH'] = env['PATH'] + os.path.abspath(self.temp_path_dir)
-            test.support.unlink(self.prog_name)
-            self.assertIsNone(_osx_support._find_executable(self.prog_name))
-            self.addCleanup(test.support.unlink, self.prog_name)
-            with open(self.prog_name, 'w') as f:
-                f.write("#!/bin/sh\n/bin/echo OK\n")
-            os.chmod(self.prog_name, stat.S_IRWXU)
-            self.assertEqual(self.prog_name,
-                                _osx_support._find_executable(self.prog_name))
+        if self.env['PATH']:
+            self.env['PATH'] = self.env['PATH'] + ':'
+        self.env['PATH'] = self.env['PATH'] + os.path.abspath(self.temp_path_dir)
+        test.support.unlink(self.prog_name)
+        self.assertIsNone(_osx_support._find_executable(self.prog_name))
+        self.addCleanup(test.support.unlink, self.prog_name)
+        with open(self.prog_name, 'w') as f:
+            f.write("#!/bin/sh\n/bin/echo OK\n")
+        os.chmod(self.prog_name, stat.S_IRWXU)
+        self.assertEqual(self.prog_name,
+                            _osx_support._find_executable(self.prog_name))
 
     def test__read_output(self):
-        with test.support.EnvironmentVarGuard() as env:
-            if env['PATH']:
-                env['PATH'] = env['PATH'] + ':'
-            env['PATH'] = env['PATH'] + os.path.abspath(self.temp_path_dir)
-            test.support.unlink(self.prog_name)
-            self.addCleanup(test.support.unlink, self.prog_name)
-            with open(self.prog_name, 'w') as f:
-                f.write("#!/bin/sh\n/bin/echo ExpectedOutput\n")
-            os.chmod(self.prog_name, stat.S_IRWXU)
-            self.assertEqual('ExpectedOutput',
-                                _osx_support._read_output(self.prog_name))
+        if self.env['PATH']:
+            self.env['PATH'] = self.env['PATH'] + ':'
+        self.env['PATH'] = self.env['PATH'] + os.path.abspath(self.temp_path_dir)
+        test.support.unlink(self.prog_name)
+        self.addCleanup(test.support.unlink, self.prog_name)
+        with open(self.prog_name, 'w') as f:
+            f.write("#!/bin/sh\n/bin/echo ExpectedOutput\n")
+        os.chmod(self.prog_name, stat.S_IRWXU)
+        self.assertEqual('ExpectedOutput',
+                            _osx_support._read_output(self.prog_name))
 
     def test__find_build_tool(self):
         out = _osx_support._find_build_tool('cc')
@@ -133,18 +139,17 @@ class Test_OSXSupport(unittest.TestCase):
         }
         self.add_expected_saved_initial_values(config_vars, expected_vars)
 
-        with test.support.EnvironmentVarGuard() as env:
-            suffix = (':' + env['PATH']) if env['PATH'] else ''
-            env['PATH'] = os.path.abspath(self.temp_path_dir) + suffix
-            for c_name, c_output in compilers:
-                test.support.unlink(c_name)
-                self.addCleanup(test.support.unlink, c_name)
-                with open(c_name, 'w') as f:
-                    f.write("#!/bin/sh\n/bin/echo " + c_output)
-                os.chmod(c_name, stat.S_IRWXU)
-            self.assertEqual(expected_vars,
-                                _osx_support._find_appropriate_compiler(
-                                        config_vars))
+        suffix = (':' + self.env['PATH']) if self.env['PATH'] else ''
+        self.env['PATH'] = os.path.abspath(self.temp_path_dir) + suffix
+        for c_name, c_output in compilers:
+            test.support.unlink(c_name)
+            self.addCleanup(test.support.unlink, c_name)
+            with open(c_name, 'w') as f:
+                f.write("#!/bin/sh\n/bin/echo " + c_output)
+            os.chmod(c_name, stat.S_IRWXU)
+        self.assertEqual(expected_vars,
+                            _osx_support._find_appropriate_compiler(
+                                    config_vars))
 
     def test__remove_universal_flags(self):
         config_vars = {
@@ -195,31 +200,30 @@ class Test_OSXSupport(unittest.TestCase):
                                     config_vars))
 
     def test__override_all_archs(self):
-        with test.support.EnvironmentVarGuard() as env:
-            env['ARCHFLAGS'] = '-arch x86_64'
-            config_vars = {
-            'CC': 'clang',
-            'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
-            'LDFLAGS': '-arch ppc -arch i386   -g',
-            'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
-            'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
-            'LDSHARED': 'gcc-4.0 -bundle -arch ppc -arch i386 '
-                            '-isysroot /Developer/SDKs/MacOSX10.4u.sdk -g',
-            }
-            expected_vars = {
-            'CC': 'clang',
-            'CFLAGS': '-fno-strict-aliasing  -g -O3     -arch x86_64',
-            'LDFLAGS': '    -g -arch x86_64',
-            'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
-            'BLDSHARED': 'gcc-4.0 -bundle    -g -arch x86_64',
-            'LDSHARED': 'gcc-4.0 -bundle   -isysroot '
-                            '/Developer/SDKs/MacOSX10.4u.sdk -g -arch x86_64',
-            }
-            self.add_expected_saved_initial_values(config_vars, expected_vars)
+        self.env['ARCHFLAGS'] = '-arch x86_64'
+        config_vars = {
+        'CC': 'clang',
+        'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
+        'LDFLAGS': '-arch ppc -arch i386   -g',
+        'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
+        'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
+        'LDSHARED': 'gcc-4.0 -bundle -arch ppc -arch i386 '
+                        '-isysroot /Developer/SDKs/MacOSX10.4u.sdk -g',
+        }
+        expected_vars = {
+        'CC': 'clang',
+        'CFLAGS': '-fno-strict-aliasing  -g -O3     -arch x86_64',
+        'LDFLAGS': '    -g -arch x86_64',
+        'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
+        'BLDSHARED': 'gcc-4.0 -bundle    -g -arch x86_64',
+        'LDSHARED': 'gcc-4.0 -bundle   -isysroot '
+                        '/Developer/SDKs/MacOSX10.4u.sdk -g -arch x86_64',
+        }
+        self.add_expected_saved_initial_values(config_vars, expected_vars)
 
-            self.assertEqual(expected_vars,
-                                _osx_support._override_all_archs(
-                                        config_vars))
+        self.assertEqual(expected_vars,
+                            _osx_support._override_all_archs(
+                                    config_vars))
 
     def test__check_for_unavailable_sdk(self):
         config_vars = {
