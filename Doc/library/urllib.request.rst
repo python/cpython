@@ -537,7 +537,7 @@ request.
 
    Return whether the request is unverifiable, as defined by RFC 2965. See the
    documentation for the :class:`Request` constructor.  Deprecated in 3.3, use
-   :attr:`Request.is_unverifiable`.
+   :attr:`Request.unverifiable`.
 
    .. deprecated:: 3.3
 
