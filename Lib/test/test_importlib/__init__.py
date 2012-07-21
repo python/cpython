@@ -1,6 +1,6 @@
 import os
 import sys
-from .. import support
+from test import support
 import unittest
 
 def test_suite(package=__package__, directory=os.path.dirname(__file__)):
