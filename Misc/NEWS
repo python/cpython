@@ -98,6 +98,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #10017 and #14998: Fix TypeError using pprint on dictionaries with
+  user-defined types as keys or other unorderable keys.
+
 - Issue #14635: telnetlib will use poll() rather than select() when possible
   to avoid failing due to the select() file descriptor limit.
 
