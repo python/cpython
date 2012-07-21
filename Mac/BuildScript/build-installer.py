@@ -900,19 +900,26 @@ def buildPython():
 
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
-    # the end-users system.
-    path =os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework',
-                'Versions', version, 'lib', 'python%s'%(version,),
-                'config' + config_suffix, 'Makefile')
-    fp = open(path, 'r')
-    data = fp.read()
-    fp.close()
+    # the end-users system. Also remove the directories from _sysconfigdata.py
+    # (added in 3.3) if it exists.
 
-    data = data.replace('-L%s/libraries/usr/local/lib'%(WORKDIR,), '')
-    data = data.replace('-I%s/libraries/usr/local/include'%(WORKDIR,), '')
-    fp = open(path, 'w')
-    fp.write(data)
-    fp.close()
+    path_to_lib = os.path.join(rootDir, 'Library', 'Frameworks',
+                                'Python.framework', 'Versions',
+                                version, 'lib', 'python%s'%(version,))
+    paths = [os.path.join(path_to_lib, 'config' + config_suffix, 'Makefile'),
+             os.path.join(path_to_lib, '_sysconfigdata.py')]
+    for path in paths:
+        if not os.path.exists(path):
+            continue
+        fp = open(path, 'r')
+        data = fp.read()
+        fp.close()
+
+        data = data.replace('-L%s/libraries/usr/local/lib'%(WORKDIR,), '')
+        data = data.replace('-I%s/libraries/usr/local/include'%(WORKDIR,), '')
+        fp = open(path, 'w')
+        fp.write(data)
+        fp.close()
 
     # Add symlinks in /usr/local/bin, using relative links
     usr_local_bin = os.path.join(rootDir, 'usr', 'local', 'bin')
