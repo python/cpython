@@ -625,7 +625,7 @@ def request_path(request):
     return path
 
 def request_port(request):
-    host = request.get_host()
+    host = request.host
     i = host.find(':')
     if i >= 0:
         port = host[i+1:]
@@ -949,7 +949,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def set_ok_verifiability(self, cookie, request):
-        if request.is_unverifiable() and is_third_party(request):
+        if request.unverifiable and is_third_party(request):
             if cookie.version > 0 and self.strict_rfc2965_unverifiable:
                 _debug("   third-party RFC 2965 cookie during "
                              "unverifiable transaction")
@@ -1088,7 +1088,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_verifiability(self, cookie, request):
-        if request.is_unverifiable() and is_third_party(request):
+        if request.unverifiable and is_third_party(request):
             if cookie.version > 0 and self.strict_rfc2965_unverifiable:
                 _debug("   third-party RFC 2965 cookie during unverifiable "
                        "transaction")
@@ -1100,7 +1100,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_secure(self, cookie, request):
-        if cookie.secure and request.get_type() != "https":
+        if cookie.secure and request.type != "https":
             _debug("   secure cookie with non-secure request")
             return False
         return True
