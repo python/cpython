@@ -86,7 +86,11 @@ class _safe_key:
         self.obj = obj
 
     def __lt__(self, other):
-        rv = self.obj.__lt__(other.obj)
+        try:
+            rv = self.obj.__lt__(other.obj)
+        except TypeError:
+            rv = NotImplemented
+
         if rv is NotImplemented:
             rv = (str(type(self.obj)), id(self.obj)) < \
                  (str(type(other.obj)), id(other.obj))
