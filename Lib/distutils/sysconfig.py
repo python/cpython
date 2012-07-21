@@ -172,6 +172,21 @@ def customize_compiler(compiler):
     varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
+        if sys.platform == "darwin":
+            # Perform first-time customization of compiler-related
+            # config vars on OS X now that we know we need a compiler.
+            # This is primarily to support Pythons from binary
+            # installers.  The kind and paths to build tools on
+            # the user system may vary significantly from the system
+            # that Python itself was built on.  Also the user OS
+            # version and build tools may not support the same set
+            # of CPU architectures for universal builds.
+            global _config_vars
+            if not _config_vars.get('CUSTOMIZED_OSX_COMPILER', ''):
+                import _osx_support
+                _osx_support.customize_compiler(_config_vars)
+                _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
+
         (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar, ar_flags) = \
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SO', 'AR', 'ARFLAGS')
@@ -494,35 +509,12 @@ def _init_os2():
     _config_vars = g
 
 
-def _read_output(commandstring):
-    """
-    Returns os.popen(commandstring, "r").read(), but
-    without actually using os.popen because that
-    function is not usable during python bootstrap
-    """
-    # NOTE: tempfile is also not useable during
-    # bootstrap
-    import contextlib
-    try:
-        import tempfile
-        fp = tempfile.NamedTemporaryFile()
-    except ImportError:
-        fp = open("/tmp/distutils.%s"%(
-            os.getpid(),), "w+b")
-
-    with contextlib.closing(fp) as fp:
-        cmd = "%s >'%s'"%(commandstring, fp.name)
-        os.system(cmd)
-        data = fp.read()
-
-    return data.decode('utf-8')
-
 def get_config_vars(*args):
     """With no arguments, return a dictionary of all configuration
     variables relevant for the current platform.  Generally this includes
     everything needed to build extensions and install both pure modules and
     extensions.  On Unix, this means every variable defined in Python's
-    installed Makefile; on Windows and Mac OS it's a much smaller set.
+    installed Makefile; on Windows it's a much smaller set.
 
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
@@ -555,153 +547,11 @@ def get_config_vars(*args):
                 srcdir = os.path.join(base, _config_vars['srcdir'])
                 _config_vars['srcdir'] = os.path.normpath(srcdir)
 
+        # OS X platforms require special customization to handle
+        # multi-architecture, multi-os-version installers
         if sys.platform == 'darwin':
-            from distutils.spawn import find_executable
-
-            kernel_version = os.uname()[2] # Kernel version (8.4.3)
-            major_version = int(kernel_version.split('.')[0])
-
-            # Issue #13590:
-            #    The OSX location for the compiler varies between OSX
-            #    (or rather Xcode) releases.  With older releases (up-to 10.5)
-            #    the compiler is in /usr/bin, with newer releases the compiler
-            #    can only be found inside Xcode.app if the "Command Line Tools"
-            #    are not installed.
-            #
-            #    Futhermore, the compiler that can be used varies between
-            #    Xcode releases. Upto Xcode 4 it was possible to use 'gcc-4.2'
-            #    as the compiler, after that 'clang' should be used because
-            #    gcc-4.2 is either not present, or a copy of 'llvm-gcc' that
-            #    miscompiles Python.
-
-            # skip checks if the compiler was overriden with a CC env variable
-            if 'CC' not in os.environ:
-                cc = oldcc = _config_vars['CC']
-                if not find_executable(cc):
-                    # Compiler is not found on the shell search PATH.
-                    # Now search for clang, first on PATH (if the Command LIne
-                    # Tools have been installed in / or if the user has provided
-                    # another location via CC).  If not found, try using xcrun
-                    # to find an uninstalled clang (within a selected Xcode).
-
-                    # NOTE: Cannot use subprocess here because of bootstrap
-                    # issues when building Python itself (and os.popen is
-                    # implemented on top of subprocess and is therefore not
-                    # usable as well)
-
-                    data = (find_executable('clang') or
-                            _read_output(
-                                "/usr/bin/xcrun -find clang 2>/dev/null").strip())
-                    if not data:
-                        raise DistutilsPlatformError(
-                               "Cannot locate working compiler")
-
-                    _config_vars['CC'] = cc = data
-                    _config_vars['CXX'] = cc + '++'
-
-                elif os.path.basename(cc).startswith('gcc'):
-                    # Compiler is GCC, check if it is LLVM-GCC
-                    data = _read_output("'%s' --version 2>/dev/null"
-                                         % (cc.replace("'", "'\"'\"'"),))
-                    if 'llvm-gcc' in data:
-                        # Found LLVM-GCC, fall back to clang
-                        data = (find_executable('clang') or
-                                _read_output(
-                                    "/usr/bin/xcrun -find clang 2>/dev/null").strip())
-                        if find_executable(data):
-                            _config_vars['CC'] = cc = data
-                            _config_vars['CXX'] = cc + '++'
-
-                if (cc != oldcc
-                        and 'LDSHARED' in _config_vars
-                        and 'LDSHARED' not in os.environ):
-                    # modify LDSHARED if we modified CC
-                    ldshared = _config_vars['LDSHARED']
-                    if ldshared.startswith(oldcc):
-                        _config_vars['LDSHARED'] = cc + ldshared[len(oldcc):]
-
-            if major_version < 8:
-                # On Mac OS X before 10.4, check if -arch and -isysroot
-                # are in CFLAGS or LDFLAGS and remove them if they are.
-                # This is needed when building extensions on a 10.3 system
-                # using a universal build of python.
-                for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-                    flags = _config_vars[key]
-                    flags = re.sub('-arch\s+\w+\s', ' ', flags, re.ASCII)
-                    flags = re.sub('-isysroot [^ \t]*', ' ', flags)
-                    _config_vars[key] = flags
-
-            else:
-                # Different Xcode releases support different sets for '-arch'
-                # flags. In particular, Xcode 4.x no longer supports the
-                # PPC architectures.
-                #
-                # This code automatically removes '-arch ppc' and '-arch ppc64'
-                # when these are not supported. That makes it possible to
-                # build extensions on OSX 10.7 and later with the prebuilt
-                # 32-bit installer on the python.org website.
-                flags = _config_vars['CFLAGS']
-                if re.search('-arch\s+ppc', flags) is not None:
-                    # NOTE: Cannot use subprocess here because of bootstrap
-                    # issues when building Python itself
-                    status = os.system("'%s' -arch ppc -x c /dev/null 2>/dev/null"%(
-                        _config_vars['CC'].replace("'", "'\"'\"'"),))
-
-                    if status != 0:
-                        # Compiler doesn't support PPC, remove the related
-                        # '-arch' flags.
-                        for key in ('LDFLAGS', 'BASECFLAGS',
-                            # a number of derived variables. These need to be
-                            # patched up as well.
-                            'CFLAGS', 'PY_CFLAGS', 'BLDSHARED', 'LDSHARED'):
-
-                            flags = _config_vars[key]
-                            flags = re.sub('-arch\s+ppc\w*\s', ' ', flags)
-                            _config_vars[key] = flags
-
-
-                # Allow the user to override the architecture flags using
-                # an environment variable.
-                # NOTE: This name was introduced by Apple in OSX 10.5 and
-                # is used by several scripting languages distributed with
-                # that OS release.
-                if 'ARCHFLAGS' in os.environ:
-                    arch = os.environ['ARCHFLAGS']
-                    for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-
-                        flags = _config_vars[key]
-                        flags = re.sub('-arch\s+\w+\s', ' ', flags)
-                        flags = flags + ' ' + arch
-                        _config_vars[key] = flags
-
-                # If we're on OSX 10.5 or later and the user tries to
-                # compiles an extension using an SDK that is not present
-                # on the current machine it is better to not use an SDK
-                # than to fail.
-                #
-                # The major usecase for this is users using a Python.org
-                # binary installer  on OSX 10.6: that installer uses
-                # the 10.4u SDK, but that SDK is not installed by default
-                # when you install Xcode.
-                #
-                m = re.search('-isysroot\s+(\S+)', _config_vars['CFLAGS'])
-                if m is not None:
-                    sdk = m.group(1)
-                    if not os.path.exists(sdk):
-                        for key in ('LDFLAGS', 'BASECFLAGS', 'LDSHARED',
-                             # a number of derived variables. These need to be
-                             # patched up as well.
-                            'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-
-                            flags = _config_vars[key]
-                            flags = re.sub('-isysroot\s+\S+(\s|$)', ' ', flags)
-                            _config_vars[key] = flags
+            import _osx_support
+            _osx_support.customize_config_vars(_config_vars)
 
     if args:
         vals = []
