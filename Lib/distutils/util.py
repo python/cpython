@@ -98,94 +98,10 @@ def get_platform ():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        #
-        # For our purposes, we'll assume that the system version from
-        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set
-        # to. This makes the compatibility story a bit more sane because the
-        # machine is going to compile and link as if it were
-        # MACOSX_DEPLOYMENT_TARGET.
-        from distutils.sysconfig import get_config_vars
-        cfgvars = get_config_vars()
-
-        macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
-
-        if 1:
-            # Always calculate the release of the running machine,
-            # needed to determine if we can build fat binaries or not.
-
-            macrelease = macver
-            # Get the system version. Reading this plist is a documented
-            # way to get the system version (see the documentation for
-            # the Gestalt Manager)
-            try:
-                f = open('/System/Library/CoreServices/SystemVersion.plist')
-            except IOError:
-                # We're on a plain darwin box, fall back to the default
-                # behaviour.
-                pass
-            else:
-                try:
-                    m = re.search(
-                            r'<key>ProductUserVisibleVersion</key>\s*' +
-                            r'<string>(.*?)</string>', f.read())
-                    if m is not None:
-                        macrelease = '.'.join(m.group(1).split('.')[:2])
-                    # else: fall back to the default behaviour
-                finally:
-                    f.close()
-
-        if not macver:
-            macver = macrelease
-
-        if macver:
-            from distutils.sysconfig import get_config_vars
-            release = macver
-            osname = "macosx"
-
-            if (macrelease + '.') >= '10.4.' and \
-                    '-arch' in get_config_vars().get('CFLAGS', '').strip():
-                # The universal build will build fat binaries, but not on
-                # systems before 10.4
-                #
-                # Try to detect 4-way universal builds, those have machine-type
-                # 'universal' instead of 'fat'.
-
-                machine = 'fat'
-                cflags = get_config_vars().get('CFLAGS')
-
-                archs = re.findall('-arch\s+(\S+)', cflags)
-                archs = tuple(sorted(set(archs)))
-
-                if len(archs) == 1:
-                    machine = archs[0]
-                elif archs == ('i386', 'ppc'):
-                    machine = 'fat'
-                elif archs == ('i386', 'x86_64'):
-                    machine = 'intel'
-                elif archs == ('i386', 'ppc', 'x86_64'):
-                    machine = 'fat3'
-                elif archs == ('ppc64', 'x86_64'):
-                    machine = 'fat64'
-                elif archs == ('i386', 'ppc', 'ppc64', 'x86_64'):
-                    machine = 'universal'
-                else:
-                    raise ValueError(
-                       "Don't know machine value for archs=%r"%(archs,))
-
-            elif machine == 'i386':
-                # On OSX the machine type returned by uname is always the
-                # 32-bit variant, even if the executable architecture is
-                # the 64-bit variant
-                if sys.maxsize >= 2**32:
-                    machine = 'x86_64'
-
-            elif machine in ('PowerPC', 'Power_Macintosh'):
-                # Pick a sane name for the PPC architecture.
-                machine = 'ppc'
-
-                # See 'i386' case
-                if sys.maxsize >= 2**32:
-                    machine = 'ppc64'
+        import _osx_support, distutils.sysconfig
+        osname, release, machine = _osx_support.get_platform_osx(
+                                        distutils.sysconfig.get_config_vars(),
+                                        osname, release, machine)
 
     return "%s-%s-%s" % (osname, release, machine)
 

@@ -23,6 +23,9 @@ from distutils.errors import \
      DistutilsExecError, CompileError, LibError, LinkError
 from distutils import log
 
+if sys.platform == 'darwin':
+    import _osx_support
+
 # XXX Things not currently handled:
 #   * optimization/debug/warning flags; we just use whatever's in Python's
 #     Makefile and live with it.  Is this adequate?  If not, we might
@@ -38,68 +41,6 @@ from distutils import log
 #     should just happily stuff them into the preprocessor/compiler/linker
 #     options and carry on.
 
-def _darwin_compiler_fixup(compiler_so, cc_args):
-    """
-    This function will strip '-isysroot PATH' and '-arch ARCH' from the
-    compile flags if the user has specified one them in extra_compile_flags.
-
-    This is needed because '-arch ARCH' adds another architecture to the
-    build, without a way to remove an architecture. Furthermore GCC will
-    barf if multiple '-isysroot' arguments are present.
-    """
-    stripArch = stripSysroot = False
-
-    compiler_so = list(compiler_so)
-    kernel_version = os.uname()[2] # 8.4.3
-    major_version = int(kernel_version.split('.')[0])
-
-    if major_version < 8:
-        # OSX before 10.4.0, these don't support -arch and -isysroot at
-        # all.
-        stripArch = stripSysroot = True
-    else:
-        stripArch = '-arch' in cc_args
-        stripSysroot = '-isysroot' in cc_args
-
-    if stripArch or 'ARCHFLAGS' in os.environ:
-        while True:
-            try:
-                index = compiler_so.index('-arch')
-                # Strip this argument and the next one:
-                del compiler_so[index:index+2]
-            except ValueError:
-                break
-
-    if 'ARCHFLAGS' in os.environ and not stripArch:
-        # User specified different -arch flags in the environ,
-        # see also distutils.sysconfig
-        compiler_so = compiler_so + os.environ['ARCHFLAGS'].split()
-
-    if stripSysroot:
-        try:
-            index = compiler_so.index('-isysroot')
-            # Strip this argument and the next one:
-            del compiler_so[index:index+2]
-        except ValueError:
-            pass
-
-    # Check if the SDK that is used during compilation actually exists,
-    # the universal build requires the usage of a universal SDK and not all
-    # users have that installed by default.
-    sysroot = None
-    if '-isysroot' in cc_args:
-        idx = cc_args.index('-isysroot')
-        sysroot = cc_args[idx+1]
-    elif '-isysroot' in compiler_so:
-        idx = compiler_so.index('-isysroot')
-        sysroot = compiler_so[idx+1]
-
-    if sysroot and not os.path.isdir(sysroot):
-        log.warn("Compiling with an SDK that doesn't seem to exist: %s",
-                sysroot)
-        log.warn("Please check your Xcode installation")
-
-    return compiler_so
 
 class UnixCCompiler(CCompiler):
 
@@ -168,7 +109,8 @@ class UnixCCompiler(CCompiler):
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
         compiler_so = self.compiler_so
         if sys.platform == 'darwin':
-            compiler_so = _darwin_compiler_fixup(compiler_so, cc_args + extra_postargs)
+            compiler_so = _osx_support.compiler_fixup(compiler_so,
+                                                    cc_args + extra_postargs)
         try:
             self.spawn(compiler_so + cc_args + [src, '-o', obj] +
                        extra_postargs)
@@ -247,7 +189,7 @@ class UnixCCompiler(CCompiler):
                     linker[i] = self.compiler_cxx[i]
 
                 if sys.platform == 'darwin':
-                    linker = _darwin_compiler_fixup(linker, ld_args)
+                    linker = _osx_support.compiler_fixup(linker, ld_args)
 
                 self.spawn(linker + ld_args)
             except DistutilsExecError as msg:
