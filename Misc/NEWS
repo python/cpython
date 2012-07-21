@@ -48,9 +48,12 @@ Core and Builtins
 
 - Issue 15307: Virtual environments now use symlinks with framework builds
   on Mac OS X, like other POSIX builds.
-  
+
 Library
 -------
+
+- Issues #10017 and #14998: Fix TypeError using pprint on dictionaries with
+  user-defined types as keys or other unorderable keys.
 
 - Issue #15397: inspect.getmodulename() is now based directly on importlib
   via a new importlib.machinery.all_suffixes() API.
