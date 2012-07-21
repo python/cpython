@@ -740,10 +740,10 @@ class Action(_AttributeHolder):
 
         - default -- The value to be produced if the option is not specified.
 
-        - type -- The type which the command-line arguments should be converted
-            to, should be one of 'string', 'int', 'float', 'complex' or a
-            callable object that accepts a single string argument. If None,
-            'string' is assumed.
+        - type -- A callable that accepts a single string argument, and
+            returns the converted value.  The standard Python types str, int,
+            float, and complex are useful examples of such callables.  If None,
+            str is used.
 
         - choices -- A container of values that should be allowed. If not None,
             after a command-line argument has been converted to the appropriate
