@@ -467,8 +467,9 @@ class QueryTestCase(unittest.TestCase):
                          '{1: 0, ' + repr(Unorderable) +': 0}')
 
         # Issue 14998: TypeError on tuples with NoneTypes as dict keys.
-        self.assertEqual(pprint.pformat({(1,): 0, (None,): 0}),
-                         '{(1,): 0, (None,): 0}')
+        keys = [(1,), (None,)]
+        self.assertEqual(pprint.pformat(dict.fromkeys(keys, 0)),
+                         '{%r: 0, %r: 0}' % tuple(sorted(keys, key=id)))
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
