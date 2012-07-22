@@ -111,12 +111,8 @@ class HashLibTestCase(unittest.TestCase):
                             issubset(hashlib.algorithms_available))
 
     def test_unknown_hash(self):
-        try:
-            hashlib.new('spam spam spam spam spam')
-        except ValueError:
-            pass
-        else:
-            self.assertTrue(0 == "hashlib didn't reject bogus hash name")
+        self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
+        self.assertRaises(TypeError, hashlib.new, 1)
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = hashlib.__dict__[
@@ -135,6 +131,7 @@ class HashLibTestCase(unittest.TestCase):
                 sys.modules['_md5'] = _md5
             else:
                 del sys.modules['_md5']
+        self.assertRaises(TypeError, get_builtin_constructor, 3)
 
     def test_hexdigest(self):
         for name in self.supported_hash_names:
