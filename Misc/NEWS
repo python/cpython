@@ -90,6 +90,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12353: argparse now correctly handles null argument values.
+
 - Issue #6493: An issue in ctypes on Windows that caused structure bitfields
   of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
 
