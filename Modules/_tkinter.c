@@ -996,8 +996,8 @@ AsObj(PyObject *value)
                              ch);
                 ckfree(FREECAST outbuf);
                 return NULL;
-#endif
             }
+#endif
             outbuf[i] = ch;
         }
         result = Tcl_NewUnicodeObj(outbuf, size);
