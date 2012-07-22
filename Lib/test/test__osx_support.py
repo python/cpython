@@ -173,7 +173,6 @@ class Test_OSXSupport(unittest.TestCase):
                             _osx_support._remove_universal_flags(
                                     config_vars))
 
-    @unittest.skipUnless(shutil.which('clang'),'test requires clang')
     def test__remove_unsupported_archs(self):
         config_vars = {
         'CC': 'clang',
@@ -195,6 +194,15 @@ class Test_OSXSupport(unittest.TestCase):
         }
         self.add_expected_saved_initial_values(config_vars, expected_vars)
 
+        suffix = (':' + self.env['PATH']) if self.env['PATH'] else ''
+        self.env['PATH'] = os.path.abspath(self.temp_path_dir) + suffix
+        c_name = 'clang'
+        test.support.unlink(c_name)
+        self.addCleanup(test.support.unlink, c_name)
+        # exit status 255 means no PPC support in this compiler chain
+        with open(c_name, 'w') as f:
+            f.write("#!/bin/sh\nexit 255")
+        os.chmod(c_name, stat.S_IRWXU)
         self.assertEqual(expected_vars,
                             _osx_support._remove_unsupported_archs(
                                     config_vars))
