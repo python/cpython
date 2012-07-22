@@ -915,8 +915,8 @@ def buildPython():
         data = fp.read()
         fp.close()
 
-        data = data.replace('-L%s/libraries/usr/local/lib'%(WORKDIR,), '')
-        data = data.replace('-I%s/libraries/usr/local/include'%(WORKDIR,), '')
+        data = data.replace(' -L%s/libraries/usr/local/lib'%(WORKDIR,), '')
+        data = data.replace(' -I%s/libraries/usr/local/include'%(WORKDIR,), '')
         fp = open(path, 'w')
         fp.write(data)
         fp.close()
