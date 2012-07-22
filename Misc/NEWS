@@ -9,6 +9,12 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14579: Fix error handling bug in the utf-16 decoder.  Patch by
+  Serhiy Storchaka.
+
+- Issue #15368: An issue that caused bytecode generation to be
+  non-deterministic when using randomized hashing (-R) has been fixed.
+
 - Issue #15033: Fix the exit status bug when modules invoked using -m swith,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
@@ -83,6 +89,14 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #13922: argparse no longer incorrectly strips '--'s that appear
+  after the first one.
+
+- Issue #12353: argparse now correctly handles null argument values.
+
+- Issue #6493: An issue in ctypes on Windows that caused structure bitfields
+  of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
 
 - Issue #14635: telnetlib will use poll() rather than select() when possible
   to avoid failing due to the select() file descriptor limit.
