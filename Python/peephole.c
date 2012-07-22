@@ -347,7 +347,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     codestr = (unsigned char *)memcpy(codestr,
                                       PyString_AS_STRING(code), codelen);
 
-    /* Verify that RETURN_VALUE terminates the codestring.      This allows
+    /* Verify that RETURN_VALUE terminates the codestring. This allows
        the various transformation patterns to look ahead several
        instructions without additional checks to make sure they are not
        looking beyond the end of the code string.
@@ -445,8 +445,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case BUILD_LIST:
                 j = GETARG(codestr, i);
                 h = i - 3 * j;
-                if (h >= 0  &&
-                    j <= lastlc                  &&
+                if (h >= 0 &&
+                    j <= lastlc &&
                     ((opcode == BUILD_TUPLE &&
                       ISBASICBLOCK(blocks, h, 3*(j+1))) ||
                      (opcode == BUILD_LIST &&
@@ -490,8 +490,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case BINARY_AND:
             case BINARY_XOR:
             case BINARY_OR:
-                if (lastlc >= 2                  &&
-                    ISBASICBLOCK(blocks, i-6, 7)  &&
+                if (lastlc >= 2 &&
+                    ISBASICBLOCK(blocks, i-6, 7) &&
                     fold_binops_on_constants(&codestr[i-6], consts)) {
                     i -= 2;
                     assert(codestr[i] == LOAD_CONST);
@@ -500,13 +500,13 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 break;
 
                 /* Fold unary ops on constants.
-                   LOAD_CONST c1  UNARY_OP -->                  LOAD_CONST unary_op(c) */
+                   LOAD_CONST c1  UNARY_OP --> LOAD_CONST unary_op(c) */
             case UNARY_NEGATIVE:
             case UNARY_CONVERT:
             case UNARY_INVERT:
-                if (lastlc >= 1                  &&
-                    ISBASICBLOCK(blocks, i-3, 4)  &&
-                    fold_unaryops_on_constants(&codestr[i-3], consts))                  {
+                if (lastlc >= 1 &&
+                    ISBASICBLOCK(blocks, i-3, 4) &&
+                    fold_unaryops_on_constants(&codestr[i-3], consts)) {
                     i -= 2;
                     assert(codestr[i] == LOAD_CONST);
                     cumlc = 1;
@@ -532,8 +532,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 tgt = GETJUMPTGT(codestr, i);
                 j = codestr[tgt];
                 if (CONDITIONAL_JUMP(j)) {
-                    /* NOTE: all possible jumps here are
-                       absolute! */
+                    /* NOTE: all possible jumps here are absolute! */
                     if (JUMPS_ON_TRUE(j) == JUMPS_ON_TRUE(opcode)) {
                         /* The second jump will be
                            taken iff the first is. */
@@ -544,13 +543,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                         SETARG(codestr, i, tgttgt);
                         goto reoptimize_current;
                     } else {
-                        /* The second jump is not taken
-                           if the first is (so jump past
-                           it), and all conditional
-                           jumps pop their argument when
-                           they're not taken (so change
-                           the first jump to pop its
-                           argument when it's taken). */
+                        /* The second jump is not taken if the first is (so
+                           jump past it), and all conditional jumps pop their
+                           argument when they're not taken (so change the
+                           first jump to pop its argument when it's taken). */
                         if (JUMPS_ON_TRUE(opcode))
                             codestr[i] = POP_JUMP_IF_TRUE;
                         else
@@ -586,8 +582,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 if (opcode == JUMP_FORWARD) /* JMP_ABS can go backwards */
                     opcode = JUMP_ABSOLUTE;
                 if (!ABSOLUTE_JUMP(opcode))
-                    tgttgt -= i + 3;     /* Calc relative jump addr */
-                if (tgttgt < 0)                           /* No backward relative jumps */
+                    tgttgt -= i + 3;        /* Calc relative jump addr */
+                if (tgttgt < 0)             /* No backward relative jumps */
                     continue;
                 codestr[i] = opcode;
                 SETARG(codestr, i, tgttgt);

@@ -1558,7 +1558,7 @@ available.  They are listed here in alphabetical order.
    .. note::
 
       This is an advanced function that is not needed in everyday Python
-      programming.
+      programming, unlike :func:`importlib.import_module`.
 
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`__builtin__` module and assigning to
@@ -1609,15 +1609,8 @@ available.  They are listed here in alphabetical order.
    names.
 
    If you simply want to import a module (potentially within a package) by name,
-   you can call :func:`__import__` and then look it up in :data:`sys.modules`::
+   use :func:`importlib.import_module`.
 
-      >>> import sys
-      >>> name = 'foo.bar.baz'
-      >>> __import__(name)
-      <module 'foo' from ...>
-      >>> baz = sys.modules[name]
-      >>> baz
-      <module 'foo.bar.baz' from ...>
 
    .. versionchanged:: 2.5
       The level parameter was added.
