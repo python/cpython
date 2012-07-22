@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12353: argparse now correctly handles null argument values.
+
 - Issues #10017 and #14998: Fix TypeError using pprint on dictionaries with
   user-defined types as keys or other unorderable keys.
 
