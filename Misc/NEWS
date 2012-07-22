@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15094: Incorrectly placed #endif in _tkinter.c.
+  Patch by Serhiy Storchaka.
+
 - Issue #13922: argparse no longer incorrectly strips '--'s that appear
   after the first one.
 
