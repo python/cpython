@@ -2189,9 +2189,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER args, strip out '--'
+        # for everything but PARSER, REMAINDER args, strip out first '--'
         if action.nargs not in [PARSER, REMAINDER]:
-            arg_strings = [s for s in arg_strings if s != '--']
+            try:
+                arg_strings.remove('--')
+            except ValueError:
+                pass
 
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:

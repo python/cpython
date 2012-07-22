@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13922: argparse no longer incorrectly strips '--'s that appear
+  after the first one.
+
 - Issue #12353: argparse now correctly handles null argument values.
 
 - Issues #10017 and #14998: Fix TypeError using pprint on dictionaries with
