@@ -88,7 +88,7 @@ def __get_builtin_constructor(name):
     except ImportError:
         pass  # no extension module, this hash is unsupported.
 
-    raise ValueError('unsupported hash type %s' % name)
+    raise ValueError('unsupported hash type ' + name)
 
 
 def __get_openssl_constructor(name):
