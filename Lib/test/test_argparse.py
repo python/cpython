@@ -1371,6 +1371,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
         ('X @hello', NS(a=None, x='X', y=['hello world!'])),
         ('-a B @recursive Y Z', NS(a='A', x='hello world!', y=['Y', 'Z'])),
         ('X @recursive Z -a B', NS(a='B', x='X', y=['hello world!', 'Z'])),
+        (["-a", "", "X", "Y"], NS(a='', x='X', y=['Y'])),
     ]
 
 
