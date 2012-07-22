@@ -1762,6 +1762,14 @@ class TestAddSubparsers(TestCase):
         parser2.add_argument('-y', choices='123', help='y help')
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
+        # add third sub-parser
+        parser3_kwargs = dict(description='3 description')
+        if subparser_help:
+            parser3_kwargs['help'] = '3 help'
+        parser3 = subparsers.add_parser('3', **parser3_kwargs)
+        parser3.add_argument('t', type=int, help='t help')
+        parser3.add_argument('u', nargs='...', help='u help')
+
         # return the main parser
         return parser
 
@@ -1790,6 +1798,10 @@ class TestAddSubparsers(TestCase):
         self.assertEqual(
             self.parser.parse_args('--foo 0.125 1 c'.split()),
             NS(foo=True, bar=0.125, w=None, x='c'),
+        )
+        self.assertEqual(
+            self.parser.parse_args('-1.5 3 11 -- a --foo 7 -- b'.split()),
+            NS(foo=False, bar=-1.5, t=11, u=['a', '--foo', '7', '--', 'b']),
         )
 
     def test_parse_known_args(self):
@@ -1825,15 +1837,15 @@ class TestAddSubparsers(TestCase):
 
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
-                         'usage: PROG [-h] [--foo] bar {1,2} ...\n')
+                         'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
         self.assertEqual(self.parser.format_help(), textwrap.dedent('''\
-            usage: PROG [-h] [--foo] bar {1,2} ...
+            usage: PROG [-h] [--foo] bar {1,2,3} ...
 
             main description
 
             positional arguments:
               bar         bar help
-              {1,2}       command help
+              {1,2,3}     command help
 
             optional arguments:
               -h, --help  show this help message and exit
@@ -1844,15 +1856,15 @@ class TestAddSubparsers(TestCase):
         # Make sure - is still used for help if it is a non-first prefix char
         parser = self._get_parser(prefix_chars='+:-')
         self.assertEqual(parser.format_usage(),
-                         'usage: PROG [-h] [++foo] bar {1,2} ...\n')
+                         'usage: PROG [-h] [++foo] bar {1,2,3} ...\n')
         self.assertEqual(parser.format_help(), textwrap.dedent('''\
-            usage: PROG [-h] [++foo] bar {1,2} ...
+            usage: PROG [-h] [++foo] bar {1,2,3} ...
 
             main description
 
             positional arguments:
               bar         bar help
-              {1,2}       command help
+              {1,2,3}     command help
 
             optional arguments:
               -h, --help  show this help message and exit
@@ -1863,15 +1875,15 @@ class TestAddSubparsers(TestCase):
     def test_help_alternate_prefix_chars(self):
         parser = self._get_parser(prefix_chars='+:/')
         self.assertEqual(parser.format_usage(),
-                         'usage: PROG [+h] [++foo] bar {1,2} ...\n')
+                         'usage: PROG [+h] [++foo] bar {1,2,3} ...\n')
         self.assertEqual(parser.format_help(), textwrap.dedent('''\
-            usage: PROG [+h] [++foo] bar {1,2} ...
+            usage: PROG [+h] [++foo] bar {1,2,3} ...
 
             main description
 
             positional arguments:
               bar         bar help
-              {1,2}       command help
+              {1,2,3}     command help
 
             optional arguments:
               +h, ++help  show this help message and exit
@@ -1880,18 +1892,19 @@ class TestAddSubparsers(TestCase):
 
     def test_parser_command_help(self):
         self.assertEqual(self.command_help_parser.format_usage(),
-                         'usage: PROG [-h] [--foo] bar {1,2} ...\n')
+                         'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
         self.assertEqual(self.command_help_parser.format_help(),
                          textwrap.dedent('''\
-            usage: PROG [-h] [--foo] bar {1,2} ...
+            usage: PROG [-h] [--foo] bar {1,2,3} ...
 
             main description
 
             positional arguments:
               bar         bar help
-              {1,2}       command help
+              {1,2,3}     command help
                 1         1 help
                 2         2 help
+                3         3 help
 
             optional arguments:
               -h, --help  show this help message and exit
@@ -2002,6 +2015,7 @@ class TestAddSubparsers(TestCase):
                 1 (1alias1, 1alias2)
                                     1 help
                 2                   2 help
+                3                   3 help
             """))
 
 # ============
