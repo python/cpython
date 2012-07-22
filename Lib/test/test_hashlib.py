@@ -133,6 +133,7 @@ class HashLibTestCase(unittest.TestCase):
                 sys.modules['_md5'] = _md5
             else:
                 del sys.modules['_md5']
+        self.assertRaises(TypeError, get_builtin_constructor, 3)
 
     def test_hexdigest(self):
         for name in self.supported_hash_names:
