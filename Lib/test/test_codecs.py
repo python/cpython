@@ -495,7 +495,19 @@ class UTF16LETest(ReadTest):
         )
 
     def test_errors(self):
-        self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode, "\xff", "strict", True)
+        tests = [
+            (b'\xff', u'\ufffd'),
+            (b'A\x00Z', u'A\ufffd'),
+            (b'A\x00B\x00C\x00D\x00Z', u'ABCD\ufffd'),
+            (b'\x00\xd8', u'\ufffd'),
+            (b'\x00\xd8A', u'\ufffd'),
+            (b'\x00\xd8A\x00', u'\ufffdA'),
+            (b'\x00\xdcA\x00', u'\ufffdA'),
+        ]
+        for raw, expected in tests:
+            self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode,
+                              raw, 'strict', True)
+            self.assertEqual(raw.decode('utf-16le', 'replace'), expected)
 
 class UTF16BETest(ReadTest):
     encoding = "utf-16-be"
@@ -516,7 +528,19 @@ class UTF16BETest(ReadTest):
         )
 
     def test_errors(self):
-        self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode, "\xff", "strict", True)
+        tests = [
+            (b'\xff', u'\ufffd'),
+            (b'\x00A\xff', u'A\ufffd'),
+            (b'\x00A\x00B\x00C\x00DZ', u'ABCD\ufffd'),
+            (b'\xd8\x00', u'\ufffd'),
+            (b'\xd8\x00\xdc', u'\ufffd'),
+            (b'\xd8\x00\x00A', u'\ufffdA'),
+            (b'\xdc\x00\x00A', u'\ufffdA'),
+        ]
+        for raw, expected in tests:
+            self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode,
+                              raw, 'strict', True)
+            self.assertEqual(raw.decode('utf-16be', 'replace'), expected)
 
 class UTF8Test(ReadTest):
     encoding = "utf-8"

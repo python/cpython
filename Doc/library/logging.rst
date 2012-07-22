@@ -629,6 +629,9 @@ format string.
 .. versionchanged:: 2.5
    *funcName* was added.
 
+.. versionchanged:: 2.6
+   *processName* was added.
+
 .. _logger-adapter:
 
 LoggerAdapter Objects
