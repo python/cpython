@@ -1283,6 +1283,28 @@ From the desk of A.A.A.:
 Blah blah blah
 """)
 
+    def test_mangle_from_in_preamble_and_epilog(self):
+        s = StringIO()
+        g = Generator(s, mangle_from_=True)
+        msg = email.message_from_string(textwrap.dedent("""\
+            From: foo@bar.com
+            Mime-Version: 1.0
+            Content-Type: multipart/mixed; boundary=XXX
+
+            From somewhere unknown
+
+            --XXX
+            Content-Type: text/plain
+
+            foo
+
+            --XXX--
+
+            From somewhere unknowable
+            """))
+        g.flatten(msg)
+        self.assertEqual(len([1 for x in s.getvalue().split('\n')
+                                  if x.startswith('>From ')]), 2)
 
 
 # Test the basic MIMEAudio class
