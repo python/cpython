@@ -544,6 +544,16 @@ class StructTest(unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
+    def test_sizeof(self):
+        self.assertGreater(sys.getsizeof(struct.Struct('BHILfdspP')),
+                           sys.getsizeof(struct.Struct('B')))
+        self.assertGreaterEqual(sys.getsizeof(struct.Struct('123B')),
+                                sys.getsizeof(struct.Struct('B')))
+        self.assertGreaterEqual(sys.getsizeof(struct.Struct('B' * 123)),
+                                sys.getsizeof(struct.Struct('123B')))
+        self.assertGreaterEqual(sys.getsizeof(struct.Struct('123xB')),
+                                sys.getsizeof(struct.Struct('B')))
+
 def test_main():
     run_unittest(StructTest)
 
