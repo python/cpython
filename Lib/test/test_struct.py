@@ -575,12 +575,12 @@ class StructTest(unittest.TestCase):
     def test_sizeof(self):
         self.assertGreater(sys.getsizeof(struct.Struct('BHILfdspP')),
                            sys.getsizeof(struct.Struct('B')))
-        self.assertGreaterEqual(sys.getsizeof(struct.Struct('123B')),
+        self.assertGreater(sys.getsizeof(struct.Struct('123B')),
                                 sys.getsizeof(struct.Struct('B')))
-        self.assertGreaterEqual(sys.getsizeof(struct.Struct('B' * 123)),
+        self.assertGreater(sys.getsizeof(struct.Struct('B' * 1234)),
                                 sys.getsizeof(struct.Struct('123B')))
-        self.assertGreaterEqual(sys.getsizeof(struct.Struct('123xB')),
-                                sys.getsizeof(struct.Struct('B')))
+        self.assertGreater(sys.getsizeof(struct.Struct('1234B')),
+                                sys.getsizeof(struct.Struct('123B')))
 
 def test_main():
     run_unittest(StructTest)
