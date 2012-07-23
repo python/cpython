@@ -205,7 +205,6 @@ docs@python.org), and we'll be glad to correct the problem.
    * Anthony Starks
    * Greg Stein
    * Peter Stoehr
-   * Serhiy Storchaka
    * Mark Summerfield
    * Reuben Sumner
    * Kalle Svensson
