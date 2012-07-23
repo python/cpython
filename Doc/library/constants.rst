@@ -19,7 +19,7 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: None
 
-   The sole value of :attr:`types.NoneType`.  ``None`` is frequently used to
+   The sole value of the type ``NoneType``.  ``None`` is frequently used to
    represent the absence of a value, as when default arguments are not passed to a
    function. Assignments to ``None`` are illegal and raise a :exc:`SyntaxError`.
 
