@@ -57,7 +57,7 @@ def analyze_python(source):
         if kind:
             text, written = combine_range(lines, written, (srow, scol))
             yield '', text
-            text, written = combine_range(lines, written, (erow, ecol))
+            text, written = tok_str, (erow, ecol)
             yield kind, text
     line_upto_token, written = combine_range(lines, written, (erow, ecol))
     yield '', line_upto_token
@@ -172,15 +172,10 @@ default_latex_document = r'''
 \end{document}
 '''
 
-def latex_escape(s):
-    'Replace LaTeX special characters with their escaped equivalents'
-    # http://en.wikibooks.org/wiki/LaTeX/Basics#Special_Characters
-    xlat = {
-        '#': r'\#', '$': r'\$', '%': r'\%', '^': r'\textasciicircum{}',
-        '&': r'\&', '_': r'\_', '{': r'\{', '}': r'\}', '~': r'\~{}',
-        '\\': r'\textbackslash{}',
-    }
-    return re.sub(r'[\\#$%^&_{}~]', lambda mo: xlat[mo.group()], s)
+def alltt_escape(s):
+    'Replace backslash and braces with their escaped equivalents'
+    xlat = {'{': r'\{', '}': r'\}', '\\': r'\textbackslash{}'}
+    return re.sub(r'[\\{}]', lambda mo: xlat[mo.group()], s)
 
 def latex_highlight(classified_text, title = 'python',
                     commands = default_latex_commands,
@@ -191,7 +186,7 @@ def latex_highlight(classified_text, title = 'python',
     for kind, text in classified_text:
         if kind:
             result.append(r'\py%s{' % kind)
-        result.append(latex_escape(text))
+        result.append(alltt_escape(text))
         if kind:
             result.append('}')
     return default_latex_document % dict(title=title, macros=macros, body=''.join(result))
