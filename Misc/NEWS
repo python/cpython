@@ -424,6 +424,9 @@ Documentation
 
 - Issue #14034: added the argparse tutorial.
 
+- Issue #15250: Document that filecmp.dircmp compares files shallowly. Patch
+  contributed by Chris Jerdonek.
+
 Tools/Demos
 -----------
 
