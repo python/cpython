@@ -75,6 +75,9 @@ The :class:`dircmp` class
    'tags']``. *hide* is a list of names to hide, and defaults to ``[os.curdir,
    os.pardir]``.
 
+   The :class:`dircmp` class compares files by doing *shallow* comparisons
+   as described for :func:`filecmp.cmp`.
+
    The :class:`dircmp` class provides the following methods:
 
 
@@ -94,7 +97,7 @@ The :class:`dircmp` class
       Print a comparison between *a* and *b* and common subdirectories
       (recursively).
 
-   The :class:`dircmp` offers a number of interesting attributes that may be
+   The :class:`dircmp` class offers a number of interesting attributes that may be
    used to get various bits of information about the directory trees being
    compared.
 
@@ -146,12 +149,14 @@ The :class:`dircmp` class
 
    .. attribute:: same_files
 
-      Files which are identical in both *a* and *b*.
+      Files which are identical in both *a* and *b*, using the class's
+      file comparison operator.
 
 
    .. attribute:: diff_files
 
-      Files which are in both *a* and *b*, whose contents differ.
+      Files which are in both *a* and *b*, whose contents differ according
+      to the class's file comparison operator.
 
 
    .. attribute:: funny_files
