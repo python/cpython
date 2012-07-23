@@ -90,6 +90,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15402: An issue in the struct module that caused sys.getsizeof to
+  return incorrect results for struct.Struct instances has been fixed.
+  Initial patch by Serhiy Storchaka.
+
 - Issue #15232: when mangle_from is True, email.Generator now correctly mangles
   lines that start with 'From' that occur in a MIME preamble or epilog.
 
