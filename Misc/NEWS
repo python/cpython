@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15232: when mangle_from is True, email.Generator now correctly mangles
+  lines that start with 'From' that occur in a MIME preamble or epilogue.
+
 - Issue #15094: Incorrectly placed #endif in _tkinter.c.
   Patch by Serhiy Storchaka.
 

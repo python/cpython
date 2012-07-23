@@ -252,7 +252,11 @@ class Generator:
             msg.set_boundary(boundary)
         # If there's a preamble, write it out, with a trailing CRLF
         if msg.preamble is not None:
-            self.write(msg.preamble + self._NL)
+            if self._mangle_from_:
+                preamble = fcre.sub('>From ', msg.preamble)
+            else:
+                preamble = msg.preamble
+            self.write(preamble + self._NL)
         # dash-boundary transport-padding CRLF
         self.write('--' + boundary + self._NL)
         # body-part
@@ -270,7 +274,11 @@ class Generator:
         self.write(self._NL + '--' + boundary + '--')
         if msg.epilogue is not None:
             self.write(self._NL)
-            self.write(msg.epilogue)
+            if self._mangle_from_:
+                epilogue = fcre.sub('>From ', msg.epilogue)
+            else:
+                epilogue = msg.epilogue
+            self.write(epilogue)
 
     def _handle_multipart_signed(self, msg):
         # The contents of signed parts has to stay unmodified in order to keep
