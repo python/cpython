@@ -7453,8 +7453,11 @@ static PyStructSequence_Desc times_result_desc = {
 
 static PyTypeObject TimesResultType;
 
+#ifdef MS_WINDOWS
+#define HAVE_TIMES  /* mandatory, for the method table */
+#endif
 
-#if defined(HAVE_TIMES) || defined(MS_WINDOWS)
+#ifdef HAVE_TIMES
 
 static PyObject *
 build_times_result(double user, double system,
@@ -7492,10 +7495,6 @@ Return an object containing floating point numbers indicating process\n\
 times.  The object behaves like a named tuple with these fields:\n\
   (utime, stime, cutime, cstime, elapsed_time)");
 
-#endif
-
-
-#ifdef HAVE_TIMES
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 static long
 system_uptime(void)
@@ -7520,26 +7519,6 @@ posix_times(PyObject *self, PyObject *noargs)
                          (double)0 /* t.tms_cstime / HZ */,
                          (double)system_uptime() / 1000);
 }
-#else /* not OS2 */
-#define NEED_TICKS_PER_SECOND
-static long ticks_per_second = -1;
-static PyObject *
-posix_times(PyObject *self, PyObject *noargs)
-{
-    struct tms t;
-    clock_t c;
-    errno = 0;
-    c = times(&t);
-    if (c == (clock_t) -1)
-        return posix_error();
-    return build_times_result(
-                         (double)t.tms_utime / ticks_per_second,
-                         (double)t.tms_stime / ticks_per_second,
-                         (double)t.tms_cutime / ticks_per_second,
-                         (double)t.tms_cstime / ticks_per_second,
-                         (double)c / ticks_per_second);
-}
-#endif /* not OS2 */
 #elif defined(MS_WINDOWS)
 static PyObject *
 posix_times(PyObject *self, PyObject *noargs)
@@ -7562,7 +7541,28 @@ posix_times(PyObject *self, PyObject *noargs)
         (double)0,
         (double)0);
 }
+#else /* Neither Windows nor OS/2 */
+#define NEED_TICKS_PER_SECOND
+static long ticks_per_second = -1;
+static PyObject *
+posix_times(PyObject *self, PyObject *noargs)
+{
+    struct tms t;
+    clock_t c;
+    errno = 0;
+    c = times(&t);
+    if (c == (clock_t) -1)
+        return posix_error();
+    return build_times_result(
+                         (double)t.tms_utime / ticks_per_second,
+                         (double)t.tms_stime / ticks_per_second,
+                         (double)t.tms_cutime / ticks_per_second,
+                         (double)t.tms_cstime / ticks_per_second,
+                         (double)c / ticks_per_second);
+}
 #endif
+
+#endif /* HAVE_TIMES */
 
 
 #ifdef HAVE_GETSID

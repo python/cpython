@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15413: os.times() had disappeared under Windows.
+
 - Issue #15402: An issue in the struct module that caused sys.getsizeof to
   return incorrect results for struct.Struct instances has been fixed.
   Initial patch by Serhiy Storchaka.
