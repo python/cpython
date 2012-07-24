@@ -21,11 +21,8 @@ The :mod:`filecmp` module defines the following functions:
    Compare the files named *f1* and *f2*, returning ``True`` if they seem equal,
    ``False`` otherwise.
 
-   Unless *shallow* is given and is false, files with identical :func:`os.stat`
-   signatures are taken to be equal.
-
-   Files that were compared using this function will not be compared again unless
-   their :func:`os.stat` signature changes.
+   If *shallow* is true, files with identical :func:`os.stat` signatures are
+   taken to be equal.  Otherwise, the contents of the files are compared.
 
    Note that no external programs are called from this function, giving it
    portability and efficiency.
