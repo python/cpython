@@ -402,6 +402,9 @@ Tests
 Build
 -----
 
+- Issue #14197: For OS X framework builds, ensure links to the shared
+  library are created with the proper ABI suffix.
+
 - Issue #14472: Update .gitignore. Patch by Matej Cepl.
 
 - The Windows build now uses OpenSSL 1.0.0j and bzip2 1.0.6.
