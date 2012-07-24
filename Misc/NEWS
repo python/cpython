@@ -229,6 +229,9 @@ Tests
 Build
 -----
 
+- Issue #14197: For OS X framework builds, ensure links to the shared
+  library are created with the proper ABI suffix.
+
 - Issue #14330: For cross builds, don't use host python, use host search paths
   for host compiler.
 
