@@ -48,22 +48,10 @@ The :mod:`filecmp` module defines the following functions:
    one of the three returned lists.
 
 
-Example::
-
-   >>> import filecmp
-   >>> filecmp.cmp('undoc.rst', 'undoc.rst')
-   True
-   >>> filecmp.cmp('undoc.rst', 'index.rst')
-   False
-
-
 .. _dircmp-objects:
 
 The :class:`dircmp` class
 -------------------------
-
-:class:`dircmp` instances are built using this constructor:
-
 
 .. class:: dircmp(a, b, ignore=None, hide=None)
 
@@ -80,7 +68,7 @@ The :class:`dircmp` class
 
    .. method:: report()
 
-      Print (to ``sys.stdout``) a comparison between *a* and *b*.
+      Print (to :data:`sys.stdout`) a comparison between *a* and *b*.
 
 
    .. method:: report_partial_closure()
