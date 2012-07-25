@@ -1,6 +1,8 @@
 What's New in IDLE 3.3.0?
 =========================
 
+- Issue #7163: Propagate return value of sys.stdout.write.
+
 - Issue #15318: Prevent writing to sys.stdin.
 
 - Issue #4832: Modify IDLE to save files with .py extension by
