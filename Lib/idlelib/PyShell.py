@@ -764,7 +764,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def write(self, s):
         "Override base class method"
-        self.tkconsole.stderr.write(s)
+        return self.tkconsole.stderr.write(s)
 
     def display_port_binding_error(self):
         tkMessageBox.showerror(
@@ -1245,7 +1245,7 @@ class PyShell(OutputWindow):
                                      'Non-BMP character not supported in Tk')
         try:
             self.text.mark_gravity("iomark", "right")
-            OutputWindow.write(self, s, tags, "iomark")
+            count = OutputWindow.write(self, s, tags, "iomark")
             self.text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
@@ -1254,6 +1254,7 @@ class PyShell(OutputWindow):
             self.canceled = 0
             if not use_subprocess:
                 raise KeyboardInterrupt
+        return count
 
 class PseudoFile(object):
 
@@ -1265,7 +1266,7 @@ class PseudoFile(object):
     def write(self, s):
         if not isinstance(s, str):
             raise TypeError('must be str, not ' + type(s).__name__)
-        self.shell.write(s, self.tags)
+        return self.shell.write(s, self.tags)
 
     def writelines(self, lines):
         for line in lines:
