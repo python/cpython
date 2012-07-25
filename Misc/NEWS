@@ -211,6 +211,9 @@ Documentation
 Tests
 -----
 
+- Issue #15320: Make iterating the list of tests thread-safe when running
+  tests in multiprocess mode. Patch by Chris Jerdonek.
+
 - Issue #15168: Move importlib.test to test.test_importlib.
 
 - Issue #15091: Reactivate a test on UNIX which was failing thanks to a
