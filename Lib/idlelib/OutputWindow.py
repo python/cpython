@@ -40,6 +40,7 @@ class OutputWindow(EditorWindow):
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()
+        return len(s)
 
     def writelines(self, lines):
         for line in lines:
