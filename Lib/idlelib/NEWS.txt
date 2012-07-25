@@ -1,6 +1,8 @@
 What's New in IDLE 2.7.4?
 =========================
 
+- Issue #15318: Prevent writing to sys.stdin.
+
 - Issue #13532, #15319: Check that arguments to sys.stdout.write are strings.
 
 - Issue # 12510: Attempt to get certain tool tips no longer crashes IDLE.
