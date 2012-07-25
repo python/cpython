@@ -696,10 +696,12 @@ Text I/O
       Read and return at most *n* characters from the stream as a single
       :class:`unicode`.  If *n* is negative or ``None``, reads until EOF.
 
-   .. method:: readline()
+   .. method:: readline(limit=-1)
 
       Read until newline or EOF and return a single ``unicode``.  If the
       stream is already at EOF, an empty string is returned.
+
+      If *limit* is specified, at most *limit* characters will be read.
 
    .. method:: seek(offset, whence=SEEK_SET)
 
