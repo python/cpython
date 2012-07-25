@@ -269,7 +269,7 @@ class _RPCFile(io.TextIOBase):
 
     def __getattribute__(self, name):
         # When accessing the 'rpc' attribute, or 'write', use ours
-        if name in ('rpc', 'write'):
+        if name in ('rpc', 'write', 'writelines'):
             return io.TextIOBase.__getattribute__(self, name)
         # Else only look into the remote object only
         return getattr(self.rpc, name)
@@ -277,10 +277,26 @@ class _RPCFile(io.TextIOBase):
     def __setattr__(self, name, value):
         return setattr(self.rpc, name, value)
 
+    @staticmethod
+    def _ensure_string(func):
+        def f(self, s):
+            if not isinstance(s, str):
+                raise TypeError('must be str, not ' + type(s).__name__)
+            return func(self, s)
+        return f
+
+class _RPCOutputFile(_RPCFile):
+    @_RPCFile._ensure_string
     def write(self, s):
         if not isinstance(s, str):
             raise TypeError('must be str, not ' + type(s).__name__)
         return self.rpc.write(s)
+
+class _RPCInputFile(_RPCFile):
+    @_RPCFile._ensure_string
+    def write(self, s):
+        raise io.UnsupportedOperation("not writable")
+    writelines = write
 
 class MyHandler(rpc.RPCHandler):
 
@@ -288,9 +304,10 @@ class MyHandler(rpc.RPCHandler):
         """Override base method"""
         executive = Executive(self)
         self.register("exec", executive)
-        sys.stdin = self.console = self.get_remote_proxy("stdin")
-        sys.stdout = _RPCFile(self.get_remote_proxy("stdout"))
-        sys.stderr = _RPCFile(self.get_remote_proxy("stderr"))
+        self.console = self.get_remote_proxy("stdin")
+        sys.stdin = _RPCInputFile(self.console)
+        sys.stdout = _RPCOutputFile(self.get_remote_proxy("stdout"))
+        sys.stderr = _RPCOutputFile(self.get_remote_proxy("stderr"))
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
         import pydoc # import must be done here to capture i/o binding
