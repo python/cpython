@@ -12,6 +12,7 @@ import time
 import tokenize
 import traceback
 import types
+import io
 
 import linecache
 from code import InteractiveInterpreter
@@ -410,6 +411,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except socket.timeout as err:
             self.display_no_subprocess_error()
             return None
+        # Can't regiter self.tkconsole.stdin, since run.py wants to
+        # call non-TextIO methods on it (such as getvar)
+        # XXX should be renamed to "console"
         self.rpcclt.register("stdin", self.tkconsole)
         self.rpcclt.register("stdout", self.tkconsole.stdout)
         self.rpcclt.register("stderr", self.tkconsole.stderr)
@@ -850,13 +854,14 @@ class PyShell(OutputWindow):
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
         from idlelib import IOBinding
+        self.stdin = PseudoInputFile(self)
         self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
         self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
         self.console = PseudoFile(self, "console", IOBinding.encoding)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
-            sys.stdin = self
+            sys.stdin = self.stdin
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
@@ -1255,6 +1260,15 @@ class PseudoFile(object):
 
     def isatty(self):
         return True
+
+class PseudoInputFile(object):
+    def __init__(self, shell):
+        self.readline = shell.readline
+        self.isatty = shell.isatty
+
+    def write(self, s):
+        raise io.UnsupportedOperation("not writable")
+    writelines = write
 
 
 usage_msg = """\
