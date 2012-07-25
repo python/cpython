@@ -378,6 +378,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15320: Make iterating the list of tests thread-safe when running
+  tests in multiprocess mode. Patch by Chris Jerdonek.
+
 - Issue #15230: Adopted a more systematic approach in the runpy tests
 
 - Issue #15300: Ensure the temporary test working directories are in the same
