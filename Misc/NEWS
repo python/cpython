@@ -184,6 +184,9 @@ Extension Modules
 Tools/Demos
 -----------
 
+- Issue #15458: python-config gets a new option --configdir to print the
+  $LIBPL value.
+
 - Move importlib.test.benchmark to Tools/importbench.
 
 - Issue #12605: The gdb hooks for debugging CPython (within Tools/gdb) have

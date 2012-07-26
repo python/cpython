@@ -7,7 +7,7 @@ import sys
 import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
-              'ldflags', 'extension-suffix', 'help', 'abiflags']
+              'ldflags', 'extension-suffix', 'help', 'abiflags', 'configdir']
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
@@ -61,3 +61,6 @@ for opt in opt_flags:
 
     elif opt == '--abiflags':
         print(sys.abiflags)
+
+    elif opt == '--configdir':
+        print(sysconfig.get_config_var('LIBPL'))
