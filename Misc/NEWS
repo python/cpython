@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #15041: Update "see also" list in tkinter documentation.
+
 - Issue #14579: Fix error handling bug in the utf-16 decoder.  Patch by
   Serhiy Storchaka.
 
