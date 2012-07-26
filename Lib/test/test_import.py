@@ -721,12 +721,11 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
 
         # now create a symlink to the tagged package
         # sample -> sample-tagged
-        os.symlink(self.tagged, self.package_name)
+        os.symlink(self.tagged, self.package_name, target_is_directory=True)
         self.addCleanup(test.support.unlink, self.package_name)
         importlib.invalidate_caches()
 
-        # disabled because os.isdir currently fails (see issue 15093)
-        # self.assertEqual(os.path.isdir(self.package_name), True)
+        self.assertEqual(os.path.isdir(self.package_name), True)
 
         assert os.path.isfile(os.path.join(self.package_name, '__init__.py'))
 
