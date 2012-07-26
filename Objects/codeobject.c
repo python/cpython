@@ -375,6 +375,17 @@ code_dealloc(PyCodeObject *co)
 }
 
 static PyObject *
+code_sizeof(PyCodeObject *co, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(PyCodeObject);
+    if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
+        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(unsigned char);
+    return PyLong_FromSsize_t(res);
+}
+
+static PyObject *
 code_repr(PyCodeObject *co)
 {
     int lineno;
@@ -480,6 +491,11 @@ code_hash(PyCodeObject *co)
 
 /* XXX code objects need to participate in GC? */
 
+static struct PyMethodDef code_methods[] = {
+    {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
+    {NULL, NULL}                /* sentinel */
+};
+
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "code",
@@ -508,7 +524,7 @@ PyTypeObject PyCode_Type = {
     offsetof(PyCodeObject, co_weakreflist),     /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
-    0,                                  /* tp_methods */
+    code_methods,                       /* tp_methods */
     code_memberlist,                    /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
