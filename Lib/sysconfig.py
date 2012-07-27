@@ -533,28 +533,22 @@ def get_config_vars(*args):
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
 
-        if 'srcdir' not in _CONFIG_VARS:
-            _CONFIG_VARS['srcdir'] = _PROJECT_BASE
-        else:
-            _CONFIG_VARS['srcdir'] = _safe_realpath(_CONFIG_VARS['srcdir'])
-
-        # Convert srcdir into an absolute path if it appears necessary.
-        # Normally it is relative to the build directory.  However, during
-        # testing, for example, we might be running a non-installed python
-        # from a different directory.
-        if _PYTHON_BUILD and os.name == "posix":
-            base = _PROJECT_BASE
-            try:
-                cwd = os.getcwd()
-            except OSError:
-                cwd = None
-            if (not os.path.isabs(_CONFIG_VARS['srcdir']) and
-                base != cwd):
-                # srcdir is relative and we are not in the same directory
-                # as the executable. Assume executable is in the build
-                # directory and make srcdir absolute.
-                srcdir = os.path.join(base, _CONFIG_VARS['srcdir'])
-                _CONFIG_VARS['srcdir'] = os.path.normpath(srcdir)
+        # Always convert srcdir to an absolute path
+        srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
+        if os.name == 'posix':
+            if _PYTHON_BUILD:
+                # If srcdir is a relative path (typically '.' or '..')
+                # then it should be interpreted relative to the directory
+                # containing Makefile.
+                base = os.path.dirname(get_makefile_filename())
+                srcdir = os.path.join(base, srcdir)
+            else:
+                # srcdir is not meaningful since the installation is
+                # spread about the filesystem.  We choose the
+                # directory containing the Makefile since we know it
+                # exists.
+                srcdir = os.path.dirname(get_makefile_filename())
+        _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
 
         # OS X platforms require special customization to handle
         # multi-architecture, multi-os-version installers
