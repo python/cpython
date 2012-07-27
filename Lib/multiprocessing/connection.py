@@ -497,6 +497,8 @@ if sys.platform != 'win32':
         '''
         if duplex:
             s1, s2 = socket.socketpair()
+            s1.setblocking(True)
+            s2.setblocking(True)
             c1 = Connection(s1.detach())
             c2 = Connection(s2.detach())
         else:
@@ -561,6 +563,7 @@ class SocketListener(object):
             if os.name == 'posix':
                 self._socket.setsockopt(socket.SOL_SOCKET,
                                         socket.SO_REUSEADDR, 1)
+            self._socket.setblocking(True)
             self._socket.bind(address)
             self._socket.listen(backlog)
             self._address = self._socket.getsockname()
@@ -579,6 +582,7 @@ class SocketListener(object):
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
+        s.setblocking(True)
         return Connection(s.detach())
 
     def close(self):
@@ -593,6 +597,7 @@ def SocketClient(address):
     '''
     family = address_type(address)
     with socket.socket( getattr(socket, family) ) as s:
+        s.setblocking(True)
         s.connect(address)
         return Connection(s.detach())
 

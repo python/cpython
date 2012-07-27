@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6056: Make multiprocessing use setblocking(True) on the
+  sockets it uses.  Original patch by J Derek Wilson.
+
 - Issue #15364: Fix sysconfig.get_config_var('srcdir') to be an
   absolute path.
 
