@@ -533,6 +533,23 @@ def get_config_vars(*args):
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
 
+        # Always convert srcdir to an absolute path
+        srcdir = _config_vars.get('srcdir', project_base)
+        if os.name == 'posix':
+            if python_build:
+                # If srcdir is a relative path (typically '.' or '..')
+                # then it should be interpreted relative to the directory
+                # containing Makefile.
+                base = os.path.dirname(get_makefile_filename())
+                srcdir = os.path.join(base, srcdir)
+            else:
+                # srcdir is not meaningful since the installation is
+                # spread about the filesystem.  We choose the
+                # directory containing the Makefile since we know it
+                # exists.
+                srcdir = os.path.dirname(get_makefile_filename())
+        _config_vars['srcdir'] = os.path.abspath(os.path.normpath(srcdir))
+
         # Convert srcdir into an absolute path if it appears necessary.
         # Normally it is relative to the build directory.  However, during
         # testing, for example, we might be running a non-installed python
