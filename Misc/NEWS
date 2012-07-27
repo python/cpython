@@ -98,6 +98,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6056: Make multiprocessing use setblocking(True) on the
+  sockets it uses.  Original patch by J Derek Wilson.
+
 - Issue #15041: update "see also" list in tkinter documentation.
 
 - Issue #15402: An issue in the struct module that caused sys.getsizeof to
