@@ -2315,8 +2315,42 @@ class TestStdinBadfiledescriptor(unittest.TestCase):
         flike.flush()
         assert sio.getvalue() == 'foo'
 
+#
+# Test interaction with socket timeouts - see Issue #6056
+#
+
+class TestTimeouts(unittest.TestCase):
+    @classmethod
+    def _test_timeout(cls, child, address):
+        time.sleep(1)
+        child.send(123)
+        child.close()
+        conn = multiprocessing.connection.Client(address)
+        conn.send(456)
+        conn.close()
+
+    def test_timeout(self):
+        old_timeout = socket.getdefaulttimeout()
+        try:
+            socket.setdefaulttimeout(0.1)
+            parent, child = multiprocessing.Pipe(duplex=True)
+            l = multiprocessing.connection.Listener(family='AF_INET')
+            p = multiprocessing.Process(target=self._test_timeout,
+                                        args=(child, l.address))
+            p.start()
+            child.close()
+            self.assertEqual(parent.recv(), 123)
+            parent.close()
+            conn = l.accept()
+            self.assertEqual(conn.recv(), 456)
+            conn.close()
+            l.close()
+            p.join(10)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
+
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
-                   TestStdinBadfiledescriptor]
+                   TestStdinBadfiledescriptor, TestTimeouts]
 
 #
 #

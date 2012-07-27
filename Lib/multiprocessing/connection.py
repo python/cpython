@@ -186,6 +186,8 @@ if sys.platform != 'win32':
         '''
         if duplex:
             s1, s2 = socket.socketpair()
+            s1.setblocking(True)
+            s2.setblocking(True)
             c1 = _multiprocessing.Connection(os.dup(s1.fileno()))
             c2 = _multiprocessing.Connection(os.dup(s2.fileno()))
             s1.close()
@@ -251,6 +253,7 @@ class SocketListener(object):
         self._socket = socket.socket(getattr(socket, family))
         try:
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._socket.setblocking(True)
             self._socket.bind(address)
             self._socket.listen(backlog)
             self._address = self._socket.getsockname()
@@ -269,6 +272,7 @@ class SocketListener(object):
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
+        s.setblocking(True)
         fd = duplicate(s.fileno())
         conn = _multiprocessing.Connection(fd)
         s.close()
@@ -286,6 +290,7 @@ def SocketClient(address):
     '''
     family = address_type(address)
     s = socket.socket( getattr(socket, family) )
+    s.setblocking(True)
     t = _init_timeout()
 
     while 1:
