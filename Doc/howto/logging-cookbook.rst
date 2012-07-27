@@ -1562,7 +1562,7 @@ appear before it.
 
 As this behaviour is broken, the incorrect BOM insertion code is being removed
 from Python 3.2.4 and later. However, it is not being replaced, and if you
-want to produce RFC 5424-compliant messages which includes a BOM, an optional
+want to produce RFC 5424-compliant messages which include a BOM, an optional
 pure-ASCII sequence before it and arbitrary Unicode after it, encoded using
 UTF-8, then you need to do the following:
 
@@ -1580,8 +1580,8 @@ UTF-8, then you need to do the following:
    way, it will remain unchanged after UTF-8 encoding).
 
 #. Replace the Unicode section with whatever placeholders you like; if the data
-   which appears there after substitution is Unicode, that's fine -- it will be
-   encoded using UTF-8.
+   which appears there after substitution contains characters outside the ASCII
+   range, that's fine -- it will be encoded using UTF-8.
 
 The formatted message *will* be encoded using UTF-8 encoding by
 ``SysLogHandler``. If you follow the above rules, you should be able to produce
