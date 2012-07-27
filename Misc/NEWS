@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15364: Fix sysconfig.get_config_var('srcdir') to be an
+  absolute path.
+
 - Issue #15041: update "see also" list in tkinter documentation.
 
 - Issue #15413: os.times() had disappeared under Windows.

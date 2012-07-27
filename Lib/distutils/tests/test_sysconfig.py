@@ -53,6 +53,34 @@ class SysconfigTestCase(support.EnvironGuard,
         self.assertTrue(isinstance(cvars, dict))
         self.assertTrue(cvars)
 
+    def test_srcdir(self):
+        # See Issues #15322, #15364.
+        srcdir = sysconfig.get_config_var('srcdir')
+
+        self.assertTrue(os.path.isabs(srcdir), srcdir)
+        self.assertTrue(os.path.isdir(srcdir), srcdir)
+
+        if sysconfig.python_build:
+            # The python executable has not been installed so srcdir
+            # should be a full source checkout.
+            Python_h = os.path.join(srcdir, 'Include', 'Python.h')
+            self.assertTrue(os.path.exists(Python_h), Python_h)
+            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+        elif os.name == 'posix':
+            self.assertEqual(sysconfig.get_makefile_filename(), srcdir)
+
+    def test_srcdir_independent_of_cwd(self):
+        # srcdir should be independent of the current working directory
+        # See Issues #15322, #15364.
+        srcdir = sysconfig.get_config_var('srcdir')
+        cwd = os.getcwd()
+        try:
+            os.chdir('..')
+            srcdir2 = sysconfig.get_config_var('srcdir')
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(srcdir, srcdir2)
+
     def test_customize_compiler(self):
 
         # not testing if default compiler is not unix
