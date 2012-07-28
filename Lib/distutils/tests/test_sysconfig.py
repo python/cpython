@@ -67,7 +67,8 @@ class SysconfigTestCase(support.EnvironGuard,
             self.assertTrue(os.path.exists(Python_h), Python_h)
             self.assertTrue(sysconfig._is_python_source_dir(srcdir))
         elif os.name == 'posix':
-            self.assertEqual(sysconfig.get_makefile_filename(), srcdir)
+            self.assertEqual(os.path.dirname(sysconfig.get_makefile_filename()),
+                                 srcdir)
 
     def test_srcdir_independent_of_cwd(self):
         # srcdir should be independent of the current working directory
