@@ -789,7 +789,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         size = view.len;
         if (PyByteArray_Resize((PyObject *)self, size) < 0) goto fail;
         if (PyBuffer_ToContiguous(self->ob_bytes, &view, size, 'C') < 0)
-                goto fail;
+            goto fail;
         PyBuffer_Release(&view);
         return 0;
     fail:

@@ -438,15 +438,17 @@ init_fortran_strides_from_shape(Py_buffer *view)
         view->strides[i] = view->strides[i-1] * view->shape[i-1];
 }
 
-/* Copy src to a C-contiguous representation. Assumptions:
+/* Copy src to a contiguous representation. order is one of 'C', 'F' (Fortran)
+   or 'A' (Any). Assumptions: src has PyBUF_FULL information, src->ndim >= 1,
    len(mem) == src->len. */
 static int
-buffer_to_c_contiguous(char *mem, Py_buffer *src)
+buffer_to_contiguous(char *mem, Py_buffer *src, char order)
 {
     Py_buffer dest;
     Py_ssize_t *strides;
     int ret;
 
+    assert(src->ndim >= 1);
     assert(src->shape != NULL);
     assert(src->strides != NULL);
 
@@ -456,12 +458,22 @@ buffer_to_c_contiguous(char *mem, Py_buffer *src)
         return -1;
     }
 
-    /* initialize dest as a C-contiguous buffer */
+    /* initialize dest */
     dest = *src;
     dest.buf = mem;
-    /* shape is constant and shared */
+    /* shape is constant and shared: the logical representation of the
+       array is unaltered. */
+
+    /* The physical representation determined by strides (and possibly
+       suboffsets) may change. */
     dest.strides = strides;
-    init_strides_from_shape(&dest);
+    if (order == 'C' || order == 'A') {
+        init_strides_from_shape(&dest);
+    }
+    else {
+        init_fortran_strides_from_shape(&dest);
+    }
+
     dest.suboffsets = NULL;
 
     ret = copy_buffer(&dest, src);
@@ -918,6 +930,57 @@ memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
     }
 
     return PyMemoryView_FromObject(obj);
+}
+
+
+/****************************************************************************/
+/*                         Previously in abstract.c                         */
+/****************************************************************************/
+
+typedef struct {
+    Py_buffer view;
+    Py_ssize_t array[1];
+} Py_buffer_full;
+
+int
+PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
+{
+    Py_buffer_full *fb = NULL;
+    int ret;
+
+    assert(order == 'C' || order == 'F' || order == 'A');
+
+    if (len != src->len) {
+        PyErr_SetString(PyExc_ValueError,
+            "PyBuffer_ToContiguous: len != view->len");
+        return -1;
+    }
+
+    if (PyBuffer_IsContiguous(src, order)) {
+        memcpy((char *)buf, src->buf, len);
+        return 0;
+    }
+
+    /* buffer_to_contiguous() assumes PyBUF_FULL */
+    fb = PyMem_Malloc(sizeof *fb + 3 * src->ndim * (sizeof *fb->array));
+    if (fb == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    fb->view.ndim = src->ndim;
+    fb->view.shape = fb->array;
+    fb->view.strides = fb->array + src->ndim;
+    fb->view.suboffsets = fb->array + 2 * src->ndim;
+
+    init_shared_values(&fb->view, src);
+    init_shape_strides(&fb->view, src);
+    init_suboffsets(&fb->view, src);
+
+    src = &fb->view;
+
+    ret = buffer_to_contiguous(buf, src, order);
+    PyMem_Free(fb);
+    return ret;
 }
 
 
@@ -1889,7 +1952,7 @@ memory_tobytes(PyMemoryViewObject *self, PyObject *dummy)
     if (bytes == NULL)
         return NULL;
 
-    if (buffer_to_c_contiguous(PyBytes_AS_STRING(bytes), src) < 0) {
+    if (buffer_to_contiguous(PyBytes_AS_STRING(bytes), src, 'C') < 0) {
         Py_DECREF(bytes);
         return NULL;
     }
@@ -2423,7 +2486,7 @@ memory_hash(PyMemoryViewObject *self)
                 PyErr_NoMemory();
                 return -1;
             }
-            if (buffer_to_c_contiguous(mem, view) < 0) {
+            if (buffer_to_contiguous(mem, view, 'C') < 0) {
                 PyMem_Free(mem);
                 return -1;
             }
