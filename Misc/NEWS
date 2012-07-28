@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15466: Stop using TYPE_INT64 in marshal, to make bytecode
+  files 
+
 - Issue #1692335: Move initial args assignment to
   BaseException.__new__ to help pickling of naive subclasses.
 
