@@ -722,6 +722,56 @@ class FrozenImporter:
         return _imp.init_frozen(fullname)
 
 
+class WindowsRegistryImporter:
+
+    """Meta path import for modules declared in the Windows registry.
+    """
+
+    REGISTRY_KEY = (
+        "Software\\Python\\PythonCore\\{sys_version}"
+        "\\Modules\\{fullname}")
+    REGISTRY_KEY_DEBUG = (
+        "Software\\Python\\PythonCore\\{sys_version}"
+        "\\Modules\\{fullname}\\Debug")
+    DEBUG_BUILD = False  # Changed in _setup()
+
+    @classmethod
+    def _open_registry(cls, key):
+        try:
+            return _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, key)
+        except WindowsError:
+            return _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key)
+
+    @classmethod
+    def _search_registry(cls, fullname):
+        if cls.DEBUG_BUILD:
+            registry_key = cls.REGISTRY_KEY_DEBUG
+        else:
+            registry_key = cls.REGISTRY_KEY
+        key = registry_key.format(fullname=fullname,
+                                  sys_version=sys.version[:3])
+        try:
+            with cls._open_registry(key) as hkey:
+                filepath = _winreg.QueryValue(hkey, "")
+        except WindowsError:
+            return None
+        return filepath
+
+    @classmethod
+    def find_module(cls, fullname, path=None):
+        """Find module named in the registry."""
+        filepath = cls._search_registry(fullname)
+        if filepath is None:
+            return None
+        try:
+            _os.stat(filepath)
+        except OSError:
+            return None
+        for loader, suffixes, _ in _get_supported_file_loaders():
+            if filepath.endswith(tuple(suffixes)):
+                return loader(fullname, filepath)
+
+
 class _LoaderBasics:
 
     """Base class of common code needed by both SourceLoader and
@@ -1538,6 +1588,17 @@ def _calc___package__(globals):
     return package
 
 
+def _get_supported_file_loaders():
+    """Returns a list of file-based module loaders.
+
+    Each item is a tuple (loader, suffixes, allow_packages).
+    """
+    extensions = ExtensionFileLoader, _imp.extension_suffixes(), False
+    source = SourceFileLoader, SOURCE_SUFFIXES, True
+    bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES, True
+    return [extensions, source, bytecode]
+
+
 def __import__(name, globals={}, locals={}, fromlist=[], level=0):
     """Import a module.
 
@@ -1620,6 +1681,10 @@ def _setup(sys_module, _imp_module):
         thread_module = None
     weakref_module = BuiltinImporter.load_module('_weakref')
 
+    if builtin_os == 'nt':
+        winreg_module = BuiltinImporter.load_module('winreg')
+        setattr(self_module, '_winreg', winreg_module)
+
     setattr(self_module, '_os', os_module)
     setattr(self_module, '_thread', thread_module)
     setattr(self_module, '_weakref', weakref_module)
@@ -1629,14 +1694,17 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, '_relax_case', _make_relax_case())
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
+        if '_d.pyd' in _imp.extension_suffixes():
+            WindowsRegistryImporter.DEBUG_BUILD = True
 
 
 def _install(sys_module, _imp_module):
     """Install importlib as the implementation of import."""
     _setup(sys_module, _imp_module)
-    extensions = ExtensionFileLoader, _imp_module.extension_suffixes(), False
-    source = SourceFileLoader, SOURCE_SUFFIXES, True
-    bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES, True
-    supported_loaders = [extensions, source, bytecode]
+    supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
-    sys.meta_path.extend([BuiltinImporter, FrozenImporter, PathFinder])
+    sys.meta_path.append(BuiltinImporter)
+    sys.meta_path.append(FrozenImporter)
+    if _os.__name__ == 'nt':
+        sys.meta_path.append(WindowsRegistryImporter)
+    sys.meta_path.append(PathFinder)
