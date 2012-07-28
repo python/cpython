@@ -10,6 +10,15 @@ import errno
 from test.support import (TESTFN, unlink, run_unittest, captured_output,
                           gc_collect, cpython_only, no_tracing)
 
+class NaiveException(Exception):
+    def __init__(self, x):
+        self.x = x
+
+class SlottedNaiveException(Exception):
+    __slots__ = ('x',)
+    def __init__(self, x):
+        self.x = x
+
 # XXX This is not really enough, each *operation* should be tested!
 
 class ExceptionTests(unittest.TestCase):
@@ -296,6 +305,10 @@ class ExceptionTests(unittest.TestCase):
                 {'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
+            (NaiveException, ('foo',),
+                {'args': ('foo',), 'x': 'foo'}),
+            (SlottedNaiveException, ('foo',),
+                {'args': ('foo',), 'x': 'foo'}),
         ]
         try:
             # More tests are in test_WindowsError
@@ -316,7 +329,8 @@ class ExceptionTests(unittest.TestCase):
                 raise
             else:
                 # Verify module name
-                self.assertEqual(type(e).__module__, 'builtins')
+                if not type(e).__name__.endswith('NaiveException'):
+                    self.assertEqual(type(e).__module__, 'builtins')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:

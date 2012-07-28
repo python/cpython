@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #1692335: Move initial args assignment to
+  BaseException.__new__ to help pickling of naive subclasses.
+
 - Issue #12834: Fix PyBuffer_ToContiguous() for non-contiguous arrays.
 
 - Issue #15456: Fix code __sizeof__ after #12399 change.
