@@ -535,11 +535,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 
 
+     /* Implementation in memoryobject.c */
      PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
-                                           Py_ssize_t len, char fort);
+                                           Py_ssize_t len, char order);
 
      PyAPI_FUNC(int) PyBuffer_FromContiguous(Py_buffer *view, void *buf,
-                                             Py_ssize_t len, char fort);
+                                             Py_ssize_t len, char order);
 
 
     /* Copy len bytes of data from the contiguous chunk of memory

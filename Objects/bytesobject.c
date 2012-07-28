@@ -2591,7 +2591,6 @@ PyBytes_FromObject(PyObject *x)
         new = PyBytes_FromStringAndSize(NULL, view.len);
         if (!new)
             goto fail;
-        /* XXX(brett.cannon): Better way to get to internal buffer? */
         if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
                                   &view, view.len, 'C') < 0)
             goto fail;
