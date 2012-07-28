@@ -1019,7 +1019,7 @@ _memory_release(PyMemoryViewObject *self)
 }
 
 static PyObject *
-memory_release(PyMemoryViewObject *self)
+memory_release(PyMemoryViewObject *self, PyObject *noargs)
 {
     if (_memory_release(self) < 0)
         return NULL;
@@ -1064,7 +1064,7 @@ memory_enter(PyObject *self, PyObject *args)
 static PyObject *
 memory_exit(PyObject *self, PyObject *args)
 {
-    return memory_release((PyMemoryViewObject *)self);
+    return memory_release((PyMemoryViewObject *)self, NULL);
 }
 
 
@@ -2639,12 +2639,12 @@ static PyGetSetDef memory_getsetlist[] = {
 
 
 static PyMethodDef memory_methods[] = {
-    {"release",     (PyCFunction)memory_release, METH_NOARGS},
+    {"release",     (PyCFunction)memory_release, METH_NOARGS, NULL},
     {"tobytes",     (PyCFunction)memory_tobytes, METH_NOARGS, NULL},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, NULL},
     {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, NULL},
-    {"__enter__",   memory_enter, METH_NOARGS},
-    {"__exit__",    memory_exit, METH_VARARGS},
+    {"__enter__",   memory_enter, METH_NOARGS, NULL},
+    {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}
 };
 
