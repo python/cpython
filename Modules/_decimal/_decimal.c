@@ -632,7 +632,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static PyObject *
-signaldict_copy(PyObject *self)
+signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
     return flags_as_dict(SdFlags(self));
 }
@@ -1412,7 +1412,7 @@ error:
 #endif
 
 static PyObject *
-context_copy(PyObject *self)
+context_copy(PyObject *self, PyObject *args UNUSED)
 {
     PyObject *copy;
 
@@ -1530,7 +1530,7 @@ current_context(void)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(void)
+PyDec_GetCurrentContext(PyObject *self UNUSED, PyObject *args UNUSED)
 {
     PyObject *context;
 
@@ -1551,7 +1551,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
     if (v == default_context_template ||
         v == basic_context_template ||
         v == extended_context_template) {
-        v = context_copy(v);
+        v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
         }
@@ -1600,7 +1600,7 @@ current_context_from_dict(void)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(default_context_template);
+        tl_context = context_copy(default_context_template, NULL);
         if (tl_context == NULL) {
             return NULL;
         }
@@ -1657,7 +1657,7 @@ current_context(void)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(void)
+PyDec_GetCurrentContext(PyObject *self UNUSED, PyObject *args UNUSED)
 {
     PyObject *context;
 
@@ -1690,7 +1690,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
     if (v == default_context_template ||
         v == basic_context_template ||
         v == extended_context_template) {
-        v = context_copy(v);
+        v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
         }
@@ -1734,7 +1734,7 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args)
         return NULL;
     }
 
-    self->local = context_copy(local);
+    self->local = context_copy(local, NULL);
     if (self->local == NULL) {
         self->global = NULL;
         Py_DECREF(self);
