@@ -31,6 +31,9 @@
 #define TYPE_STOPITER           'S'
 #define TYPE_ELLIPSIS           '.'
 #define TYPE_INT                'i'
+/* TYPE_INT64 is deprecated. It is not
+   generated anymore, and support for reading it
+   will be removed in Python 3.4. */
 #define TYPE_INT64              'I'
 #define TYPE_FLOAT              'f'
 #define TYPE_BINARY_FLOAT       'g'
@@ -121,15 +124,6 @@ w_long(long x, WFILE *p)
     w_byte((char)((x>>24) & 0xff), p);
 }
 
-#if SIZEOF_LONG > 4
-static void
-w_long64(long x, WFILE *p)
-{
-    w_long(x, p);
-    w_long(x>>32, p);
-}
-#endif
-
 /* We assume that Python longs are stored internally in base some power of
    2**15; for the sake of portability we'll always read and write them in base
    exactly 2**15. */
@@ -219,8 +213,8 @@ w_object(PyObject *v, WFILE *p)
 #if SIZEOF_LONG > 4
             long y = Py_ARITHMETIC_RIGHT_SHIFT(long, x, 31);
             if (y && y != -1) {
-                w_byte(TYPE_INT64, p);
-                w_long64(x, p);
+                /* Too large for TYPE_INT */
+                w_PyLong((PyLongObject*)v, p);
             }
             else
 #endif
