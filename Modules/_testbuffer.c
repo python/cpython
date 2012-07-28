@@ -2397,6 +2397,49 @@ get_contiguous(PyObject *self, PyObject *args)
     return PyMemoryView_GetContiguous(obj, (int)type, ord);
 }
 
+/* PyBuffer_ToContiguous() */
+static PyObject *
+py_buffer_to_contiguous(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    PyObject *order;
+    PyObject *ret = NULL;
+    int flags;
+    char ord;
+    Py_buffer view;
+    char *buf = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOi", &obj, &order, &flags)) {
+        return NULL;
+    }
+
+    if (PyObject_GetBuffer(obj, &view, flags) < 0) {
+        return NULL;
+    }
+
+    ord = get_ascii_order(order);
+    if (ord == CHAR_MAX) {
+        goto out;
+    }
+
+    buf = PyMem_Malloc(view.len);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        goto out;
+    }
+
+    if (PyBuffer_ToContiguous(buf, &view, view.len, ord) < 0) {
+        goto out;
+    }
+
+    ret = PyBytes_FromStringAndSize(buf, view.len);
+
+out:
+    PyBuffer_Release(&view);
+    PyMem_XFree(buf);
+    return ret;
+}
+
 static int
 fmtcmp(const char *fmt1, const char *fmt2)
 {
@@ -2734,6 +2777,7 @@ static struct PyMethodDef _testbuffer_functions[] = {
     {"get_pointer", get_pointer, METH_VARARGS, NULL},
     {"get_sizeof_void_p", (PyCFunction)get_sizeof_void_p, METH_NOARGS, NULL},
     {"get_contiguous", get_contiguous, METH_VARARGS, NULL},
+    {"py_buffer_to_contiguous", py_buffer_to_contiguous, METH_VARARGS, NULL},
     {"is_contiguous", is_contiguous, METH_VARARGS, NULL},
     {"cmp_contig", cmp_contig, METH_VARARGS, NULL},
     {NULL, NULL}

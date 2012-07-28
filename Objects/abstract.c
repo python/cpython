@@ -445,62 +445,6 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
-  /* view is not checked for consistency in either of these.  It is
-     assumed that the size of the buffer is view->len in
-     view->len / view->itemsize elements.
-  */
-
-int
-PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
-{
-    int k;
-    void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
-    Py_ssize_t *indices, elements;
-    char *dest, *ptr;
-
-    if (len > view->len) {
-        len = view->len;
-    }
-
-    if (PyBuffer_IsContiguous(view, fort)) {
-        /* simplest copy is all that is needed */
-        memcpy(buf, view->buf, len);
-        return 0;
-    }
-
-    /* Otherwise a more elaborate scheme is needed */
-
-    /* XXX(nnorwitz): need to check for overflow! */
-    indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
-    if (indices == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    for (k=0; k<view->ndim;k++) {
-        indices[k] = 0;
-    }
-
-    if (fort == 'F') {
-        addone = _Py_add_one_to_index_F;
-    }
-    else {
-        addone = _Py_add_one_to_index_C;
-    }
-    dest = buf;
-    /* XXX : This is not going to be the fastest code in the world
-             several optimizations are possible.
-     */
-    elements = len / view->itemsize;
-    while (elements--) {
-        addone(view->ndim, indices, view->shape);
-        ptr = PyBuffer_GetPointer(view, indices);
-        memcpy(dest, ptr, view->itemsize);
-        dest += view->itemsize;
-    }
-    PyMem_Free(indices);
-    return 0;
-}
-
 int
 PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 {
