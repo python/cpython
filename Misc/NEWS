@@ -887,6 +887,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #15467: Move helpers for __sizeof__ tests into test_support.
+  Patch by Serhiy Storchaka.
+
 - Issue #11689: Fix a variable scoping error in an sqlite3 test.
   Initial patch by Torsten Landschoff.
 
