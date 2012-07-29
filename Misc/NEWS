@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15425: Eliminated traceback noise from more situations involving
+  importlib
+
 - Issue #14578: Support modules registered in the Windows registry again.
 
 - Issue #15466: Stop using TYPE_INT64 in marshal, to make importlib.h
