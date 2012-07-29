@@ -748,6 +748,20 @@ class CommonBufferedTests:
             buf.raw = x
 
 
+class SizeofTest:
+
+    @support.cpython_only
+    def test_sizeof(self):
+        bufsize1 = 4096
+        bufsize2 = 8192
+        rawio = self.MockRawIO()
+        bufio = self.tp(rawio, buffer_size=bufsize1)
+        size = sys.getsizeof(bufio) - bufsize1
+        rawio = self.MockRawIO()
+        bufio = self.tp(rawio, buffer_size=bufsize2)
+        self.assertEqual(sys.getsizeof(bufio), size + bufsize2)
+
+
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     read_mode = "rb"
 
@@ -931,7 +945,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
                              "failed for {}: {} != 0".format(n, rawio._extraneous_reads))
 
 
-class CBufferedReaderTest(BufferedReaderTest):
+class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
     def test_constructor(self):
@@ -1194,7 +1208,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             self.tp(self.MockRawIO(), 8, 12)
 
 
-class CBufferedWriterTest(BufferedWriterTest):
+class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
     def test_constructor(self):
@@ -1582,8 +1596,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'1b\n2def\n3\n')
 
-
-class CBufferedRandomTest(CBufferedReaderTest, CBufferedWriterTest, BufferedRandomTest):
+class CBufferedRandomTest(CBufferedReaderTest, CBufferedWriterTest,
+                          BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
     def test_constructor(self):
