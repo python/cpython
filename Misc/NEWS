@@ -10,6 +10,11 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15425: Eliminated traceback noise from more situations involving
+  importlib
+
+- Issue #14578: Support modules registered in the Windows registry again.
+
 - Issue #15466: Stop using TYPE_INT64 in marshal, to make importlib.h
   (and other byte code files) equal between 32-bit and 64-bit systems.
 
@@ -236,6 +241,9 @@ Documentation
 Tests
 -----
 
+- Issue #15467: Move helpers for __sizeof__ tests into test_support.
+  Patch by Serhiy Storchaka.
+
 - Issue #15320: Make iterating the list of tests thread-safe when running
   tests in multiprocess mode. Patch by Chris Jerdonek.
 
@@ -328,6 +336,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
+  Patch by Serhiy Storchaka.
 
 - Issue #15187: Bugfix: remove temporary directories test_shutil was leaving
   behind.

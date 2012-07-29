@@ -1154,14 +1154,27 @@ remove_importlib_frames(void)
 {
     const char *importlib_filename = "<frozen importlib._bootstrap>";
     const char *exec_funcname = "_exec_module";
+    const char *get_code_funcname = "get_code";
+    const char *recursive_import = "_recursive_import";
     int always_trim = 0;
+    int trim_get_code = 0;
     int in_importlib = 0;
     PyObject *exception, *value, *base_tb, *tb;
     PyObject **prev_link, **outer_link = NULL;
 
     /* Synopsis: if it's an ImportError, we trim all importlib chunks
-       from the traceback.  Otherwise, we trim only those chunks which
-       end with a call to "_exec_module". */
+       from the traceback.  If it's a SyntaxError, we trim any chunks that
+       end with a call to "get_code", We always trim chunks
+       which end with a call to "_exec_module". */
+
+    /* Thanks to issue 15425, we also strip any chunk ending with
+     * _recursive_import. This is used when making a recursive call to the
+     * full import machinery which means the inner stack gets stripped early
+     * and the normal heuristics won't fire properly for outer frames. A
+     * more elegant mechanism would be nice, as this one can misfire if
+     * builtins.__import__ has been replaced with a custom implementation.
+     * However, the current approach at least gets the job done.
+     */
 
     PyErr_Fetch(&exception, &value, &base_tb);
     if (!exception || Py_VerboseFlag)
@@ -1169,6 +1182,9 @@ remove_importlib_frames(void)
     if (PyType_IsSubtype((PyTypeObject *) exception,
                          (PyTypeObject *) PyExc_ImportError))
         always_trim = 1;
+    if (PyType_IsSubtype((PyTypeObject *) exception,
+                         (PyTypeObject *) PyExc_SyntaxError))
+        trim_get_code = 1;
 
     prev_link = &base_tb;
     tb = base_tb;
@@ -1191,8 +1207,14 @@ remove_importlib_frames(void)
 
         if (in_importlib &&
             (always_trim ||
-             PyUnicode_CompareWithASCIIString(code->co_name,
-                                              exec_funcname) == 0)) {
+             (PyUnicode_CompareWithASCIIString(code->co_name,
+                                              exec_funcname) == 0) ||
+             (PyUnicode_CompareWithASCIIString(code->co_name,
+                                              recursive_import) == 0) ||
+             (trim_get_code &&
+              PyUnicode_CompareWithASCIIString(code->co_name,
+                                              get_code_funcname) == 0)
+           )) {
             PyObject *tmp = *outer_link;
             *outer_link = next;
             Py_XINCREF(next);
