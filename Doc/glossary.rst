@@ -209,9 +209,9 @@ Glossary
 
    finder
       An object that tries to find the :term:`loader` for a module. It must
-      implement a method named :meth:`find_module`. See :pep:`302` for
-      details and :class:`importlib.abc.Finder` for an
-      :term:`abstract base class`.
+      implement either a method named :meth:`find_loader` or a method named
+      :meth:`find_module`. See :pep:`302` and :pep:`420` for details and
+      :class:`importlib.abc.Finder` for an :term:`abstract base class`.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -314,6 +314,10 @@ Glossary
       be created if a different value has to be stored.  They play an important
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.
+
+   importing
+      The process by which Python code in one module is made available to
+      Python code in another module.
 
    importer
       An object that both finds and loads a module; both a
@@ -440,6 +444,11 @@ Glossary
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
+   meta path finder
+      A finder returned by a search of :data:`sys.meta_path`.  Meta path
+      finders are related to, but different from :term:`sys path finders <sys
+      path finder>`.
+
    metaclass
       The class of a class.  Class definitions create a class name, a class
       dictionary, and a list of base classes.  The metaclass is responsible for
@@ -463,6 +472,11 @@ Glossary
       Method Resolution Order is the order in which base classes are searched
       for a member during lookup. See `The Python 2.3 Method Resolution Order
       <http://www.python.org/download/releases/2.3/mro/>`_.
+
+   module
+      An object that serves as an organizational unit of Python code.  Modules
+      have a namespace contain arbitrary Python objects.  Modules are loaded
+      into Python by the process of :term:`importing`.
 
    MRO
       See :term:`method resolution order`.
@@ -496,6 +510,12 @@ Glossary
       functions are implemented by the :mod:`random` and :mod:`itertools`
       modules, respectively.
 
+   namespace package
+      A :pep:`420` :term:`package` which serves only as a container for
+      subpackages.  Namespace packages may have no physical representation,
+      and specifically are not like a :term:`regular package` because they
+      have no ``__init__.py`` file.
+
    nested scope
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
@@ -516,6 +536,19 @@ Glossary
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
 
+   package
+      A Python module which can contain submodules or recursively,
+      subpackages.  Technically, a package is a Python module with an
+      ``__path__`` attribute.
+
+   path importer
+      A built-in :term:`finder` / :term:`loader` that knows how to find and
+      load modules from the file system.
+
+   portion
+      A set of files in a single directory (possibly stored in a zip file)
+      that contribute to a namespace package, as defined in :pep:`420`.
+
    positional argument
       The arguments assigned to local names inside a function or method,
       determined by the order in which they were given in the call.  ``*`` is
@@ -524,8 +557,8 @@ Glossary
       :term:`argument`.
 
    provisional package
-      A provisional package is one which has been deliberately excluded from the
-      standard library's backwards compatibility guarantees.  While major
+      A provisional package is one which has been deliberately excluded from
+      the standard library's backwards compatibility guarantees.  While major
       changes to such packages are not expected, as long as they are marked
       provisional, backwards incompatible changes (up to and including removal
       of the package) may occur if deemed necessary by core developers.  Such
@@ -533,13 +566,13 @@ Glossary
       flaws are uncovered that were missed prior to the inclusion of the
       package.
 
-      This process allows the standard library to continue to evolve over time,
-      without locking in problematic design errors for extended periods of time.
-      See :pep:`411` for more details.
+      This process allows the standard library to continue to evolve over
+      time, without locking in problematic design errors for extended periods
+      of time.  See :pep:`411` for more details.
 
    Python 3000
-      Nickname for the Python 3.x release line (coined long ago when the release
-      of version 3 was something in the distant future.)  This is also
+      Nickname for the Python 3.x release line (coined long ago when the
+      release of version 3 was something in the distant future.)  This is also
       abbreviated "Py3k".
 
    Pythonic
@@ -576,6 +609,14 @@ Glossary
          >>> C.D.meth.__qualname__
          'C.D.meth'
 
+      When used to refer to modules, the *fully qualified name* means the
+      entire dotted path to the module, including any parent packages,
+      e.g. ``email.mime.text``::
+
+         >>> import email.mime.text
+         >>> email.mime.text.__name__
+         'email.mime.text'
+
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Reference counting is
@@ -583,6 +624,10 @@ Glossary
       :term:`CPython` implementation.  The :mod:`sys` module defines a
       :func:`~sys.getrefcount` function that programmers can call to return the
       reference count for a particular object.
+
+   regular package
+      A traditional :term:`package`, such as a directory containing an
+      ``__init__.py`` file.
 
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
@@ -625,6 +670,11 @@ Glossary
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
       include :data:`sys.float_info` and the return value of :func:`os.stat`.
+
+   sys path finder
+      A finder returned by a search of :data:`sys.path` by the :term:`path
+      importer`.  Sys path finders are related to, but different from
+      :term:`meta path finders <meta path finder>`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark

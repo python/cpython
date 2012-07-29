@@ -128,6 +128,16 @@ are also provided to help in implementing the core ABCs.
     An abstract base class representing a :term:`finder`.
     See :pep:`302` for the exact definition for a finder.
 
+    .. method:: find_loader(self, fullname):
+
+        An abstract method for finding a :term:`loader` for the specified
+        module.  Returns a 2-tuple of ``(loader, portion)`` where portion is a
+        sequence of file system locations contributing to part of a namespace
+        package.  The sequence may be empty.  When present, `find_loader()` is
+        preferred over `find_module()`.
+
+        .. versionadded: 3.3
+
     .. method:: find_module(fullname, path=None)
 
         An abstract method for finding a :term:`loader` for the specified
@@ -189,6 +199,13 @@ are also provided to help in implementing the core ABCs.
             The loader used to load the module.
             (This is not set by the built-in import machinery,
             but it should be set whenever a :term:`loader` is used.)
+
+    .. method:: module_repr(module)
+
+        An abstract method which when implemented calculates and returns the
+        given module's repr, as a string.
+
+        .. versionadded: 3.3
 
 
 .. class:: ResourceLoader
@@ -270,14 +287,13 @@ are also provided to help in implementing the core ABCs.
 
       Path to the file of the module.
 
-   .. method:: load_module(fullname=None)
+   .. method:: load_module(fullname)
 
-      Calls
-      ``super().load_module(fullname if fullname is not None else self.name)``.
+      Calls super's ``load_module()``.
 
    .. method:: get_filename(fullname)
 
-      Returns :attr:`path` when ``fullname`` equals :attr:`name` or ``None``.
+      Returns :attr:`path`.
 
    .. method:: get_data(path)
 
@@ -538,7 +554,6 @@ find and load modules.
 
    .. versionadded:: 3.3
 
-
 .. function:: all_suffixes()
 
    Returns a combined list of strings representing all file suffixes for
@@ -727,7 +742,7 @@ find and load modules.
 
       Path to the extension module.
 
-   .. method:: load_module(fullname=None)
+   .. method:: load_module(fullname)
 
       Loads the extension module if and only if *fullname* is the same as
       :attr:`name` or is ``None``.
