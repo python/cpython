@@ -3,7 +3,7 @@ import unittest
 import struct
 import sys
 
-from test.support import run_unittest, cpython_only
+from test import support
 
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
@@ -30,32 +30,6 @@ def bigendian_to_native(value):
         return string_reverse(value)
 
 class StructTest(unittest.TestCase):
-    def setUp(self):
-        # due to missing size_t information from struct, it is assumed that
-        # sizeof(Py_ssize_t) = sizeof(void*)
-        self.header = 'PP'
-        if hasattr(sys, "gettotalrefcount"):
-            self.header += '2P'
-
-    def check_sizeof(self, format_str, number_of_codes):
-        def size(fmt):
-            """Wrapper around struct.calcsize which enforces the alignment
-            of the end of a structure to the alignment requirement of pointer.
-
-            Note: This wrapper should only be used if a pointer member is
-            included and no member with a size larger than a pointer exists.
-            """
-            return struct.calcsize(fmt + '0P')
-
-        struct_obj = struct.Struct(format_str)
-        # The size of 'PyStructObject'
-        totalsize = size(self.header + '5P')
-        # The size taken up by the 'formatcode' dynamic array
-        totalsize += size('3P') * (number_of_codes + 1)
-        result = sys.getsizeof(struct_obj)
-        msg = 'wrong size for %s: got %d, expected %d' \
-              % (type(struct_obj), result, totalsize)
-        self.assertEqual(result, totalsize, msg)
 
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
@@ -583,7 +557,14 @@ class StructTest(unittest.TestCase):
         s = struct.Struct('i')
         s.__init__('ii')
 
-    @cpython_only
+    def check_sizeof(self, format_str, number_of_codes):
+        # The size of 'PyStructObject'
+        totalsize = support.calcobjsize('5P')
+        # The size taken up by the 'formatcode' dynamic array
+        totalsize += struct.calcsize('3P') * (number_of_codes + 1)
+        support.check_sizeof(self, struct.Struct(format_str), totalsize)
+
+    @support.cpython_only
     def test__sizeof__(self):
         for code in integer_codes:
             self.check_sizeof(code, 1)
@@ -598,7 +579,7 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0c', 0)
 
 def test_main():
-    run_unittest(StructTest)
+    support.run_unittest(StructTest)
 
 if __name__ == '__main__':
     test_main()
