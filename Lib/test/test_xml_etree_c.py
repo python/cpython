@@ -41,38 +41,30 @@ class TestAcceleratorImported(unittest.TestCase):
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
+@support.cpython_only
 class SizeofTest(unittest.TestCase):
     def setUp(self):
-        import _testcapi
-        gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
-        # object header
-        header = 'PP'
-        if hasattr(sys, "gettotalrefcount"):
-            # debug header
-            header = 'PP' + header
-        # fields
-        element = header + '5P'
-        self.elementsize = gc_headsize + struct.calcsize(element)
+        self.elementsize = support.calcobjsize('5P')
         # extra
         self.extra = struct.calcsize('PiiP4P')
 
+    check_sizeof = support.check_sizeof
+
     def test_element(self):
         e = cET.Element('a')
-        self.assertEqual(sys.getsizeof(e), self.elementsize)
+        self.check_sizeof(e, self.elementsize)
 
     def test_element_with_attrib(self):
         e = cET.Element('a', href='about:')
-        self.assertEqual(sys.getsizeof(e),
-                         self.elementsize + self.extra)
+        self.check_sizeof(e, self.elementsize + self.extra)
 
     def test_element_with_children(self):
         e = cET.Element('a')
         for i in range(5):
             cET.SubElement(e, 'span')
         # should have space for 8 children now
-        self.assertEqual(sys.getsizeof(e),
-                         self.elementsize + self.extra +
-                         struct.calcsize('8P'))
+        self.check_sizeof(e, self.elementsize + self.extra +
+                             struct.calcsize('8P'))
 
 def test_main():
     from test import test_xml_etree, test_xml_etree_c
