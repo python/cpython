@@ -33,16 +33,33 @@ class Loader(metaclass=abc.ABCMeta):
         The fullname is a str."""
         raise NotImplementedError
 
+    @abs.abstractmethod
+    def module_repr(self, module):
+        """Abstract method which when implemented calculates and returns the
+        given module's repr."""
+        raise NotImplementedError
+
 
 class Finder(metaclass=abc.ABCMeta):
 
     """Abstract base class for import finders."""
 
+    @abs.abstractmethod
+    def find_loader(self, fullname):
+        """Abstract method which when implemented returns a module loader.
+        The fullname is a str.  Returns a 2-tuple of (Loader, portion) where
+        portion is a sequence of file system locations contributing to part of
+        a namespace package.  The sequence may be empty.  When present,
+        `find_loader()` is preferred over `find_module()`.
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def find_module(self, fullname, path=None):
         """Abstract method which when implemented should find a module.
         The fullname is a str and the optional path is a str or None.
-        Returns a Loader object.
+        Returns a Loader object.  This method is only called if
+        `find_loader()` is not present.
         """
         raise NotImplementedError
 

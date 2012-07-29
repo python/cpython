@@ -660,162 +660,50 @@ The :keyword:`import` statement
    relative_module: "."* `module` | "."+
    name: `identifier`
 
-Import statements are executed in two steps: (1) find a module, and initialize
-it if necessary; (2) define a name or names in the local namespace (of the scope
-where the :keyword:`import` statement occurs). The statement comes in two
-forms differing on whether it uses the :keyword:`from` keyword. The first form
-(without :keyword:`from`) repeats these steps for each identifier in the list.
-The form with :keyword:`from` performs step (1) once, and then performs step
-(2) repeatedly. For a reference implementation of step (1), see the
-:mod:`importlib` module.
+Import statements are executed in two steps: (1) find a module, loading and
+initializing it if necessary; (2) define a name or names in the local
+namespace (of the scope where the :keyword:`import` statement occurs). The
+statement comes in two forms differing on whether it uses the :keyword:`from`
+keyword. The first form (without :keyword:`from`) repeats these steps for each
+identifier in the list.  The form with :keyword:`from` performs step (1) once,
+and then performs step (2) repeatedly.
 
-.. index::
-    single: package
-
-To understand how step (1) occurs, one must first understand how Python handles
-hierarchical naming of modules. To help organize modules and provide a
-hierarchy in naming, Python has a concept of packages. A package can contain
-other packages and modules while modules cannot contain other modules or
-packages. From a file system perspective, packages are directories and modules
-are files. The original `specification for packages
-<http://www.python.org/doc/essays/packages.html>`_ is still available to read,
-although minor details have changed since the writing of that document.
-
-.. index::
-    single: sys.modules
-
-Once the name of the module is known (unless otherwise specified, the term
-"module" will refer to both packages and modules), searching
-for the module or package can begin. The first place checked is
-:data:`sys.modules`, the cache of all modules that have been imported
-previously. If the module is found there then it is used in step (2) of import
-unless ``None`` is found in :data:`sys.modules`, in which case
-:exc:`ImportError` is raised.
-
-.. index::
-    single: sys.meta_path
-    single: finder
-    pair: finder; find_module
-    single: __path__
-
-If the module is not found in the cache, then :data:`sys.meta_path` is searched
-(the specification for :data:`sys.meta_path` can be found in :pep:`302`).
-The object is a list of :term:`finder` objects which are queried in order as to
-whether they know how to load the module by calling their :meth:`find_module`
-method with the name of the module. If the module happens to be contained
-within a package (as denoted by the existence of a dot in the name), then a
-second argument to :meth:`find_module` is given as the value of the
-:attr:`__path__` attribute from the parent package (everything up to the last
-dot in the name of the module being imported). If a finder can find the module
-it returns a :term:`loader` (discussed later) or returns ``None``.
-
-.. index::
-    single: sys.path_hooks
-    single: sys.path_importer_cache
-    single: sys.path
-
-If none of the finders on :data:`sys.meta_path` are able to find the module
-then some implicitly defined finders are queried. Implementations of Python
-vary in what implicit meta path finders are defined. The one they all do
-define, though, is one that handles :data:`sys.path_hooks`,
-:data:`sys.path_importer_cache`, and :data:`sys.path`.
-
-The implicit finder searches for the requested module in the "paths" specified
-in one of two places ("paths" do not have to be file system paths). If the
-module being imported is supposed to be contained within a package then the
-second argument passed to :meth:`find_module`, :attr:`__path__` on the parent
-package, is used as the source of paths. If the module is not contained in a
-package then :data:`sys.path` is used as the source of paths.
-
-Once the source of paths is chosen it is iterated over to find a finder that
-can handle that path. The dict at :data:`sys.path_importer_cache` caches
-finders for paths and is checked for a finder. If the path does not have a
-finder cached then :data:`sys.path_hooks` is searched by calling each object in
-the list with a single argument of the path, returning a finder or raises
-:exc:`ImportError`. If a finder is returned then it is cached in
-:data:`sys.path_importer_cache` and then used for that path entry. If no finder
-can be found but the path exists then a value of ``None`` is
-stored in :data:`sys.path_importer_cache` to signify that an implicit,
-file-based finder that handles modules stored as individual files should be
-used for that path. If the path does not exist then a finder which always
-returns ``None`` is placed in the cache for the path.
-
-.. index::
-    single: loader
-    pair: loader; load_module
-    exception: ImportError
-
-If no finder can find the module then :exc:`ImportError` is raised. Otherwise
-some finder returned a loader whose :meth:`load_module` method is called with
-the name of the module to load (see :pep:`302` for the original definition of
-loaders). A loader has several responsibilities to perform on a module it
-loads. First, if the module already exists in :data:`sys.modules` (a
-possibility if the loader is called outside of the import machinery) then it
-is to use that module for initialization and not a new module. But if the
-module does not exist in :data:`sys.modules` then it is to be added to that
-dict before initialization begins. If an error occurs during loading of the
-module and it was added to :data:`sys.modules` it is to be removed from the
-dict. If an error occurs but the module was already in :data:`sys.modules` it
-is left in the dict.
-
-.. index::
-    single: __name__
-    single: __file__
-    single: __path__
-    single: __package__
-    single: __loader__
-
-The loader must set several attributes on the module. :data:`__name__` is to be
-set to the name of the module. :data:`__file__` is to be the "path" to the file
-unless the module is built-in (and thus listed in
-:data:`sys.builtin_module_names`) in which case the attribute is not set.
-If what is being imported is a package then :data:`__path__` is to be set to a
-list of paths to be searched when looking for modules and packages contained
-within the package being imported. :data:`__package__` is optional but should
-be set to the name of package that contains the module or package (the empty
-string is used for module not contained in a package). :data:`__loader__` is
-also optional but should be set to the loader object that is loading the
-module. While loaders are required to return the module they loaded, import
-itself always retrieves any modules it returns from :data:`sys.modules`.
-
-.. index::
-    exception: ImportError
-
-If an error occurs during loading then the loader raises :exc:`ImportError` if
-some other exception is not already being propagated. Otherwise the loader
-returns the module that was loaded and initialized.
+The details of step (1), finding and loading modules is described in greater
+detail in the section on the :ref:`import machinery <importmachinery>`, which
+also describes the various types of packages and modules that can be imported,
+as well as all the hooks that can be used to customize Python's import.
 
 When step (1) finishes without raising an exception, step (2) can begin.
 
-The first form of :keyword:`import` statement binds the module name in the local
-namespace to the module object, and then goes on to import the next identifier,
-if any.  If the module name is followed by :keyword:`as`, the name following
-:keyword:`as` is used as the local name for the module.
+The first form of :keyword:`import` statement binds the module name in the
+local namespace to the module object, and then goes on to import the next
+identifier, if any.  If the module name is followed by :keyword:`as`, the name
+following :keyword:`as` is used as the local name for the module.
 
 .. index::
    pair: name; binding
    exception: ImportError
 
-The :keyword:`from` form does not bind the module name: it goes through the list
-of identifiers, looks each one of them up in the module found in step (1), and
-binds the name in the local namespace to the object thus found.  As with the
-first form of :keyword:`import`, an alternate local name can be supplied by
-specifying ":keyword:`as` localname".  If a name is not found,
-:exc:`ImportError` is raised.  If the list of identifiers is replaced by a star
-(``'*'``), all public names defined in the module are bound in the local
+The :keyword:`from` form does not bind the module name: it goes through the
+list of identifiers, looks each one of them up in the module found in step
+(1), and binds the name in the local namespace to the object thus found.  As
+with the first form of :keyword:`import`, an alternate local name can be
+supplied by specifying ":keyword:`as` localname".  If a name is not found,
+:exc:`ImportError` is raised.  If the list of identifiers is replaced by a
+star (``'*'``), all public names defined in the module are bound in the local
 namespace of the :keyword:`import` statement.
 
 .. index:: single: __all__ (optional module attribute)
 
 The *public names* defined by a module are determined by checking the module's
-namespace for a variable named ``__all__``; if defined, it must be a sequence of
-strings which are names defined or imported by that module.  The names given in
-``__all__`` are all considered public and are required to exist.  If ``__all__``
-is not defined, the set of public names includes all names found in the module's
-namespace which do not begin with an underscore character (``'_'``).
-``__all__`` should contain the entire public API. It is intended to avoid
-accidentally exporting items that are not part of the API (such as library
-modules which were imported and used within the module).
+namespace for a variable named ``__all__``; if defined, it must be a sequence
+of strings which are names defined or imported by that module.  The names
+given in ``__all__`` are all considered public and are required to exist.  If
+``__all__`` is not defined, the set of public names includes all names found
+in the module's namespace which do not begin with an underscore character
+(``'_'``).  ``__all__`` should contain the entire public API. It is intended
+to avoid accidentally exporting items that are not part of the API (such as
+library modules which were imported and used within the module).
 
 The :keyword:`from` form with ``*`` may only occur in a module scope.  The wild
 card form of import --- ``import *`` --- is only allowed at the module level.
