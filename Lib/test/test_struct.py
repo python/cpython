@@ -3,7 +3,8 @@ import array
 import unittest
 import struct
 import inspect
-from test.test_support import run_unittest, check_warnings, check_py3k_warnings
+from test.test_support import (run_unittest, check_warnings,
+                               check_py3k_warnings, cpython_only)
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
@@ -31,6 +32,33 @@ def bigendian_to_native(value):
         return string_reverse(value)
 
 class StructTest(unittest.TestCase):
+
+    def setUp(self):
+        # due to missing size_t information from struct, it is assumed that
+        # sizeof(Py_ssize_t) = sizeof(void*)
+        self.header = 'PP'
+        if hasattr(sys, "gettotalrefcount"):
+            self.header += '2P'
+
+    def check_sizeof(self, format_str, number_of_codes):
+        def size(fmt):
+            """Wrapper around struct.calcsize which enforces the alignment
+            of the end of a structure to the alignment requirement of pointer.
+
+            Note: This wrapper should only be used if a pointer member is
+            included and no member with a size larger than a pointer exists.
+            """
+            return struct.calcsize(fmt + '0P')
+
+        struct_obj = struct.Struct(format_str)
+        # The size of 'PyStructObject'
+        totalsize = size(self.header + '5P')
+        # The size taken up by the 'formatcode' dynamic array
+        totalsize += size('3P') * (number_of_codes + 1)
+        result = sys.getsizeof(struct_obj)
+        msg = 'wrong size for %s: got %d, expected %d' \
+              % (type(struct_obj), result, totalsize)
+        self.assertEqual(result, totalsize, msg)
 
     def check_float_coerce(self, format, number):
         # SF bug 1530559. struct.pack raises TypeError where it used
@@ -544,15 +572,19 @@ class StructTest(unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
-    def test_sizeof(self):
-        self.assertGreater(sys.getsizeof(struct.Struct('BHILfdspP')),
-                           sys.getsizeof(struct.Struct('B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('123B')),
-                                sys.getsizeof(struct.Struct('B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('B' * 1234)),
-                                sys.getsizeof(struct.Struct('123B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('1234B')),
-                                sys.getsizeof(struct.Struct('123B')))
+    @cpython_only
+    def test__sizeof__(self):
+        for code in integer_codes:
+            self.check_sizeof(code, 1)
+        self.check_sizeof('BHILfdspP', 9)
+        self.check_sizeof('B' * 1234, 1234)
+        self.check_sizeof('fd', 2)
+        self.check_sizeof('xxxxxxxxxxxxxx', 0)
+        self.check_sizeof('100H', 100)
+        self.check_sizeof('187s', 1)
+        self.check_sizeof('20p', 1)
+        self.check_sizeof('0s', 1)
+        self.check_sizeof('0c', 0)
 
 def test_main():
     run_unittest(StructTest)
