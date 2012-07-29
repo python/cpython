@@ -1697,15 +1697,11 @@ PyDoc_STRVAR(s_sizeof__doc__,
 "S.__sizeof__() -> size of S in memory, in bytes");
 
 static PyObject *
-s_sizeof(PyStructObject *self)
+s_sizeof(PyStructObject *self, void *unused)
 {
     Py_ssize_t size;
-    formatcode *code;
 
-    size = sizeof(PyStructObject) + sizeof(formatcode);
-    for (code = self->s_codes; code->fmtdef != NULL; code++) {
-        size += sizeof(formatcode);
-    }
+    size = sizeof(PyStructObject) + sizeof(formatcode) * (self->s_len + 1);
     return PyLong_FromSsize_t(size);
 }
 
