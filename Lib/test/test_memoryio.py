@@ -638,6 +638,17 @@ class CBytesIOTest(PyBytesIOTest):
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, (b"closed", 0, None))
 
+    check_sizeof = support.check_sizeof
+
+    @support.cpython_only
+    def test_sizeof(self):
+        basesize = support.calcobjsize(b'P2PP2P')
+        check = self.check_sizeof
+        self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
+        check(io.BytesIO(), basesize )
+        check(io.BytesIO(b'a'), basesize + 1 + 1 )
+        check(io.BytesIO(b'a' * 1000), basesize + 1000 + 1 )
+
 
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
