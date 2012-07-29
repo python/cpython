@@ -398,6 +398,17 @@ buffered_dealloc(buffered *self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+static PyObject *
+buffered_sizeof(buffered *self, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(buffered);
+    if (self->buffer)
+        res += self->buffer_size;
+    return PyLong_FromSsize_t(res);
+}
+
 static int
 buffered_traverse(buffered *self, visitproc visit, void *arg)
 {
@@ -1699,6 +1710,7 @@ static PyMethodDef bufferedreader_methods[] = {
     {"seek", (PyCFunction)buffered_seek, METH_VARARGS},
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
     {"truncate", (PyCFunction)buffered_truncate, METH_VARARGS},
+    {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2079,6 +2091,7 @@ static PyMethodDef bufferedwriter_methods[] = {
     {"flush", (PyCFunction)buffered_flush, METH_NOARGS},
     {"seek", (PyCFunction)buffered_seek, METH_VARARGS},
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
+    {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2470,6 +2483,7 @@ static PyMethodDef bufferedrandom_methods[] = {
     {"readline", (PyCFunction)buffered_readline, METH_VARARGS},
     {"peek", (PyCFunction)buffered_peek, METH_VARARGS},
     {"write", (PyCFunction)bufferedwriter_write, METH_VARARGS},
+    {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
     {NULL, NULL}
 };
 

@@ -334,6 +334,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
+  Patch by Serhiy Storchaka.
+
 - Issue #15187: Bugfix: remove temporary directories test_shutil was leaving
   behind.
 
