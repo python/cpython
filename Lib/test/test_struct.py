@@ -3,7 +3,7 @@ import unittest
 import struct
 import sys
 
-from test.support import run_unittest
+from test import support
 
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
@@ -572,18 +572,29 @@ class StructTest(unittest.TestCase):
         s = struct.Struct('i')
         s.__init__('ii')
 
-    def test_sizeof(self):
-        self.assertGreater(sys.getsizeof(struct.Struct('BHILfdspP')),
-                           sys.getsizeof(struct.Struct('B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('123B')),
-                                sys.getsizeof(struct.Struct('B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('B' * 1234)),
-                                sys.getsizeof(struct.Struct('123B')))
-        self.assertGreater(sys.getsizeof(struct.Struct('1234B')),
-                                sys.getsizeof(struct.Struct('123B')))
+    def check_sizeof(self, format_str, number_of_codes):
+        # The size of 'PyStructObject'
+        totalsize = support.calcobjsize('2n3P')
+        # The size taken up by the 'formatcode' dynamic array
+        totalsize += struct.calcsize('P2n0P') * (number_of_codes + 1)
+        support.check_sizeof(self, struct.Struct(format_str), totalsize)
+
+    @support.cpython_only
+    def test__sizeof__(self):
+        for code in integer_codes:
+            self.check_sizeof(code, 1)
+        self.check_sizeof('BHILfdspP', 9)
+        self.check_sizeof('B' * 1234, 1234)
+        self.check_sizeof('fd', 2)
+        self.check_sizeof('xxxxxxxxxxxxxx', 0)
+        self.check_sizeof('100H', 100)
+        self.check_sizeof('187s', 1)
+        self.check_sizeof('20p', 1)
+        self.check_sizeof('0s', 1)
+        self.check_sizeof('0c', 0)
 
 def test_main():
-    run_unittest(StructTest)
+    support.run_unittest(StructTest)
 
 if __name__ == '__main__':
     test_main()

@@ -844,6 +844,74 @@ class ImportTracebackTests(unittest.TestCase):
             self.fail("ZeroDivisionError should have been raised")
         self.assert_traceback(tb, [__file__, 'foo.py', 'bar.py'])
 
+    # A few more examples from issue #15425
+    def test_syntax_error(self):
+        self.create_module("foo", "invalid syntax is invalid")
+        try:
+            import foo
+        except SyntaxError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("SyntaxError should have been raised")
+        self.assert_traceback(tb, [__file__])
+
+    def _setup_broken_package(self, parent, child):
+        pkg_name = "_parent_foo"
+        def cleanup():
+            rmtree(pkg_name)
+            unload(pkg_name)
+        os.mkdir(pkg_name)
+        self.addCleanup(cleanup)
+        # Touch the __init__.py
+        init_path = os.path.join(pkg_name, '__init__.py')
+        with open(init_path, 'w') as f:
+            f.write(parent)
+        bar_path = os.path.join(pkg_name, 'bar.py')
+        with open(bar_path, 'w') as f:
+            f.write(child)
+        importlib.invalidate_caches()
+        return init_path, bar_path
+
+    def test_broken_submodule(self):
+        init_path, bar_path = self._setup_broken_package("", "1/0")
+        try:
+            import _parent_foo.bar
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ZeroDivisionError should have been raised")
+        self.assert_traceback(tb, [__file__, bar_path])
+
+    def test_broken_from(self):
+        init_path, bar_path = self._setup_broken_package("", "1/0")
+        try:
+            from _parent_foo import bar
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ImportError should have been raised")
+        self.assert_traceback(tb, [__file__, bar_path])
+
+    def test_broken_parent(self):
+        init_path, bar_path = self._setup_broken_package("1/0", "")
+        try:
+            import _parent_foo.bar
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ZeroDivisionError should have been raised")
+        self.assert_traceback(tb, [__file__, init_path])
+
+    def test_broken_parent_from(self):
+        init_path, bar_path = self._setup_broken_package("1/0", "")
+        try:
+            from _parent_foo import bar
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+        else:
+            self.fail("ZeroDivisionError should have been raised")
+        self.assert_traceback(tb, [__file__, init_path])
+
     @cpython_only
     def test_import_bug(self):
         # We simulate a bug in importlib and check that it's not stripped
