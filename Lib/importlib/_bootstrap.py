@@ -1472,7 +1472,7 @@ def _find_and_load_unlocked(name, import_):
     parent = name.rpartition('.')[0]
     if parent:
         if parent not in sys.modules:
-            import_(parent)
+            _recursive_import(import_, parent)
         # Crazy side-effects!
         if name in sys.modules:
             return sys.modules[name]
@@ -1550,6 +1550,12 @@ def _gcd_import(name, package=None, level=0):
     _lock_unlock_module(name)
     return module
 
+def _recursive_import(import_, name):
+    """Common exit point for recursive calls to the import machinery
+
+    This simplifies the process of stripping importlib from tracebacks
+    """
+    return import_(name)
 
 def _handle_fromlist(module, fromlist, import_):
     """Figure out what __import__ should return.
@@ -1569,7 +1575,8 @@ def _handle_fromlist(module, fromlist, import_):
                 fromlist.extend(module.__all__)
         for x in fromlist:
             if not hasattr(module, x):
-                import_('{}.{}'.format(module.__name__, x))
+                _recursive_import(import_,
+                                  '{}.{}'.format(module.__name__, x))
     return module
 
 
