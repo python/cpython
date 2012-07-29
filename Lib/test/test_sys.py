@@ -490,22 +490,8 @@ class SysModuleTest(unittest.TestCase):
 
 class SizeofTest(unittest.TestCase):
 
-    TPFLAGS_HAVE_GC = 1<<14
-    TPFLAGS_HEAPTYPE = 1L<<9
-
     def setUp(self):
-        self.c = len(struct.pack('c', ' '))
-        self.H = len(struct.pack('H', 0))
-        self.i = len(struct.pack('i', 0))
-        self.l = len(struct.pack('l', 0))
-        self.P = len(struct.pack('P', 0))
-        # due to missing size_t information from struct, it is assumed that
-        # sizeof(Py_ssize_t) = sizeof(void*)
-        self.header = 'PP'
-        self.vheader = self.header + 'P'
-        if hasattr(sys, "gettotalrefcount"):
-            self.header += '2P'
-            self.vheader += '2P'
+        self.P = struct.calcsize('P')
         self.longdigit = sys.long_info.sizeof_digit
         import _testcapi
         self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
@@ -515,128 +501,109 @@ class SizeofTest(unittest.TestCase):
         self.file.close()
         test.test_support.unlink(test.test_support.TESTFN)
 
-    def check_sizeof(self, o, size):
-        result = sys.getsizeof(o)
-        if ((type(o) == type) and (o.__flags__ & self.TPFLAGS_HEAPTYPE) or\
-           ((type(o) != type) and (type(o).__flags__ & self.TPFLAGS_HAVE_GC))):
-            size += self.gc_headsize
-        msg = 'wrong size for %s: got %d, expected %d' \
-                % (type(o), result, size)
-        self.assertEqual(result, size, msg)
-
-    def calcsize(self, fmt):
-        """Wrapper around struct.calcsize which enforces the alignment of the
-        end of a structure to the alignment requirement of pointer.
-
-        Note: This wrapper should only be used if a pointer member is included
-        and no member with a size larger than a pointer exists.
-        """
-        return struct.calcsize(fmt + '0P')
+    check_sizeof = test.test_support.check_sizeof
 
     def test_gc_head_size(self):
         # Check that the gc header size is added to objects tracked by the gc.
-        h = self.header
-        size = self.calcsize
+        size = test.test_support.calcobjsize
         gc_header_size = self.gc_headsize
         # bool objects are not gc tracked
-        self.assertEqual(sys.getsizeof(True), size(h + 'l'))
+        self.assertEqual(sys.getsizeof(True), size('l'))
         # but lists are
-        self.assertEqual(sys.getsizeof([]), size(h + 'P PP') + gc_header_size)
+        self.assertEqual(sys.getsizeof([]), size('P PP') + gc_header_size)
 
     def test_default(self):
-        h = self.header
-        size = self.calcsize
-        self.assertEqual(sys.getsizeof(True, -1), size(h + 'l'))
+        size = test.test_support.calcobjsize
+        self.assertEqual(sys.getsizeof(True, -1), size('l'))
 
     def test_objecttypes(self):
         # check all types defined in Objects/
-        h = self.header
-        vh = self.vheader
-        size = self.calcsize
+        size = test.test_support.calcobjsize
+        vsize = test.test_support.calcvobjsize
         check = self.check_sizeof
         # bool
-        check(True, size(h + 'l'))
+        check(True, size('l'))
         # buffer
         with test.test_support.check_py3k_warnings():
-            check(buffer(''), size(h + '2P2Pil'))
+            check(buffer(''), size('2P2Pil'))
         # builtin_function_or_method
-        check(len, size(h + '3P'))
+        check(len, size('3P'))
         # bytearray
         samples = ['', 'u'*100000]
         for sample in samples:
             x = bytearray(sample)
-            check(x, size(vh + 'iPP') + x.__alloc__() * self.c)
+            check(x, vsize('iPP') + x.__alloc__())
         # bytearray_iterator
-        check(iter(bytearray()), size(h + 'PP'))
+        check(iter(bytearray()), size('PP'))
         # cell
         def get_cell():
             x = 42
             def inner():
                 return x
             return inner
-        check(get_cell().func_closure[0], size(h + 'P'))
+        check(get_cell().func_closure[0], size('P'))
         # classobj (old-style class)
         class class_oldstyle():
             def method():
                 pass
-        check(class_oldstyle, size(h + '7P'))
+        check(class_oldstyle, size('7P'))
         # instance (old-style class)
-        check(class_oldstyle(), size(h + '3P'))
+        check(class_oldstyle(), size('3P'))
         # instancemethod (old-style class)
-        check(class_oldstyle().method, size(h + '4P'))
+        check(class_oldstyle().method, size('4P'))
         # complex
-        check(complex(0,1), size(h + '2d'))
+        check(complex(0,1), size('2d'))
         # code
-        check(get_cell().func_code, size(h + '4i8Pi3P'))
+        check(get_cell().func_code, size('4i8Pi3P'))
         # BaseException
-        check(BaseException(), size(h + '3P'))
+        check(BaseException(), size('3P'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", u"", 0, 0, ""), size(h + '5P2PP'))
+        check(UnicodeEncodeError("", u"", 0, 0, ""), size('5P2PP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", "", 0, 0, ""), size(h + '5P2PP'))
+        check(UnicodeDecodeError("", "", 0, 0, ""), size('5P2PP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError(u"", 0, 1, ""), size(h + '5P2PP'))
+        check(UnicodeTranslateError(u"", 0, 1, ""), size('5P2PP'))
         # method_descriptor (descriptor object)
-        check(str.lower, size(h + '2PP'))
+        check(str.lower, size('2PP'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)
         import datetime
-        check(datetime.timedelta.days, size(h + '2PP'))
+        check(datetime.timedelta.days, size('2PP'))
         # getset_descriptor (descriptor object)
         import __builtin__
-        check(__builtin__.file.closed, size(h + '2PP'))
+        check(__builtin__.file.closed, size('2PP'))
         # wrapper_descriptor (descriptor object)
-        check(int.__add__, size(h + '2P2P'))
+        check(int.__add__, size('2P2P'))
         # dictproxy
         class C(object): pass
-        check(C.__dict__, size(h + 'P'))
+        check(C.__dict__, size('P'))
         # method-wrapper (descriptor object)
-        check({}.__iter__, size(h + '2P'))
+        check({}.__iter__, size('2P'))
         # dict
-        check({}, size(h + '3P2P' + 8*'P2P'))
+        check({}, size('3P2P' + 8*'P2P'))
         x = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(x, size(h + '3P2P' + 8*'P2P') + 16*size('P2P'))
+        check(x, size('3P2P' + 8*'P2P') + 16*struct.calcsize('P2P'))
         # dictionary-keyiterator
-        check({}.iterkeys(), size(h + 'P2PPP'))
+        check({}.iterkeys(), size('P2PPP'))
         # dictionary-valueiterator
-        check({}.itervalues(), size(h + 'P2PPP'))
+        check({}.itervalues(), size('P2PPP'))
         # dictionary-itemiterator
-        check({}.iteritems(), size(h + 'P2PPP'))
+        check({}.iteritems(), size('P2PPP'))
         # ellipses
-        check(Ellipsis, size(h + ''))
+        check(Ellipsis, size(''))
         # EncodingMap
         import codecs, encodings.iso8859_3
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
-        check(x, size(h + '32B2iB'))
+        check(x, size('32B2iB'))
         # enumerate
-        check(enumerate([]), size(h + 'l3P'))
+        check(enumerate([]), size('l3P'))
         # file
-        check(self.file, size(h + '4P2i4P3i3P3i'))
+        check(self.file, size('4P2i4P3i3P3i'))
         # float
-        check(float(0), size(h + 'd'))
+        check(float(0), size('d'))
         # sys.floatinfo
-        check(sys.float_info, size(vh) + self.P * len(sys.float_info))
+        check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
         import inspect
         CO_MAXBLOCKS = 20
@@ -645,10 +612,10 @@ class SizeofTest(unittest.TestCase):
         nfrees = len(x.f_code.co_freevars)
         extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
                  ncells + nfrees - 1
-        check(x, size(vh + '12P3i' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, vsize('12P3i' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        check(func, size(h + '9P'))
+        check(func, size('9P'))
         class c():
             @staticmethod
             def foo():
@@ -657,65 +624,65 @@ class SizeofTest(unittest.TestCase):
             def bar(cls):
                 pass
             # staticmethod
-            check(foo, size(h + 'P'))
+            check(foo, size('P'))
             # classmethod
-            check(bar, size(h + 'P'))
+            check(bar, size('P'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size(h + 'Pi2P'))
+        check(get_gen(), size('Pi2P'))
         # integer
-        check(1, size(h + 'l'))
-        check(100, size(h + 'l'))
+        check(1, size('l'))
+        check(100, size('l'))
         # iterator
-        check(iter('abc'), size(h + 'lP'))
+        check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size(h + '2P'))
+        check(re.finditer('',''), size('2P'))
         # list
         samples = [[], [1,2,3], ['1', '2', '3']]
         for sample in samples:
-            check(sample, size(vh + 'PP') + len(sample)*self.P)
+            check(sample, vsize('PP') + len(sample)*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
         # XXX
         # listiterator (list)
-        check(iter([]), size(h + 'lP'))
+        check(iter([]), size('lP'))
         # listreverseiterator (list)
-        check(reversed([]), size(h + 'lP'))
+        check(reversed([]), size('lP'))
         # long
-        check(0L, size(vh))
-        check(1L, size(vh) + self.longdigit)
-        check(-1L, size(vh) + self.longdigit)
+        check(0L, vsize(''))
+        check(1L, vsize('') + self.longdigit)
+        check(-1L, vsize('') + self.longdigit)
         PyLong_BASE = 2**sys.long_info.bits_per_digit
-        check(long(PyLong_BASE), size(vh) + 2*self.longdigit)
-        check(long(PyLong_BASE**2-1), size(vh) + 2*self.longdigit)
-        check(long(PyLong_BASE**2), size(vh) + 3*self.longdigit)
+        check(long(PyLong_BASE), vsize('') + 2*self.longdigit)
+        check(long(PyLong_BASE**2-1), vsize('') + 2*self.longdigit)
+        check(long(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
-        check(unittest, size(h + 'P'))
+        check(unittest, size('P'))
         # None
-        check(None, size(h + ''))
+        check(None, size(''))
         # object
-        check(object(), size(h + ''))
+        check(object(), size(''))
         # property (descriptor object)
         class C(object):
             def getx(self): return self.__x
             def setx(self, value): self.__x = value
             def delx(self): del self.__x
             x = property(getx, setx, delx, "")
-            check(x, size(h + '4Pi'))
+            check(x, size('4Pi'))
         # PyCObject
         # PyCapsule
         # XXX
         # rangeiterator
-        check(iter(xrange(1)), size(h + '4l'))
+        check(iter(xrange(1)), size('4l'))
         # reverse
-        check(reversed(''), size(h + 'PP'))
+        check(reversed(''), size('PP'))
         # set
         # frozenset
         PySet_MINSIZE = 8
         samples = [[], range(10), range(50)]
-        s = size(h + '3P2P' + PySet_MINSIZE*'lP' + 'lP')
+        s = size('3P2P' + PySet_MINSIZE*'lP' + 'lP')
         for sample in samples:
             minused = len(sample)
             if minused == 0: tmp = 1
@@ -732,23 +699,24 @@ class SizeofTest(unittest.TestCase):
                 check(set(sample), s + newsize*struct.calcsize('lP'))
                 check(frozenset(sample), s + newsize*struct.calcsize('lP'))
         # setiterator
-        check(iter(set()), size(h + 'P3P'))
+        check(iter(set()), size('P3P'))
         # slice
-        check(slice(1), size(h + '3P'))
+        check(slice(1), size('3P'))
         # str
-        check('', struct.calcsize(vh + 'li') + 1)
-        check('abc', struct.calcsize(vh + 'li') + 1 + 3*self.c)
+        vh = test.test_support._vheader
+        check('', struct.calcsize(vh + 'lic'))
+        check('abc', struct.calcsize(vh + 'lic') + 3)
         # super
-        check(super(int), size(h + '3P'))
+        check(super(int), size('3P'))
         # tuple
-        check((), size(vh))
-        check((1,2,3), size(vh) + 3*self.P)
+        check((), vsize(''))
+        check((1,2,3), vsize('') + 3*self.P)
         # tupleiterator
-        check(iter(()), size(h + 'lP'))
+        check(iter(()), size('lP'))
         # type
         # (PyTypeObject + PyNumberMethods +  PyMappingMethods +
         #  PySequenceMethods + PyBufferProcs)
-        s = size(vh + 'P2P15Pl4PP9PP11PI') + size('41P 10P 3P 6P')
+        s = vsize('P2P15Pl4PP9PP11PI') + struct.calcsize('41P 10P 3P 6P')
         class newstyleclass(object):
             pass
         check(newstyleclass, s)
@@ -763,41 +731,40 @@ class SizeofTest(unittest.TestCase):
         # we need to test for both sizes, because we don't know if the string
         # has been cached
         for s in samples:
-            check(s, size(h + 'PPlP') + usize * (len(s) + 1))
+            check(s, size('PPlP') + usize * (len(s) + 1))
         # weakref
         import weakref
-        check(weakref.ref(int), size(h + '2Pl2P'))
+        check(weakref.ref(int), size('2Pl2P'))
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), size(h + '2Pl2P'))
+        check(weakref.proxy(int), size('2Pl2P'))
         # xrange
-        check(xrange(1), size(h + '3l'))
-        check(xrange(66000), size(h + '3l'))
+        check(xrange(1), size('3l'))
+        check(xrange(66000), size('3l'))
 
     def test_pythontypes(self):
         # check all types defined in Python/
-        h = self.header
-        vh = self.vheader
-        size = self.calcsize
+        size = test.test_support.calcobjsize
+        vsize = test.test_support.calcvobjsize
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size(h + ''))
+        check(_ast.AST(), size(''))
         # imp.NullImporter
         import imp
-        check(imp.NullImporter(self.file.name), size(h + ''))
+        check(imp.NullImporter(self.file.name), size(''))
         try:
             raise TypeError
         except TypeError:
             tb = sys.exc_info()[2]
             # traceback
             if tb != None:
-                check(tb, size(h + '2P2i'))
+                check(tb, size('2P2i'))
         # symtable entry
         # XXX
         # sys.flags
-        check(sys.flags, size(vh) + self.P * len(sys.flags))
+        check(sys.flags, vsize('') + self.P * len(sys.flags))
 
 
 def test_main():
