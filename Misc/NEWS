@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15463: the faulthandler module truncates strings to 500 characters,
+  instead of 100, to be able to display long file paths
+
 - Issue #6056: Make multiprocessing use setblocking(True) on the
   sockets it uses.  Original patch by J Derek Wilson.
 
@@ -267,8 +270,10 @@ Tests
 Build
 -----
 
+- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
+
 - Issue #15431: Add _freeze_importlib project to regenerate importlib.h
-  on Windows. Patch by Kristj·n Valur JÛnsson.
+  on Windows. Patch by Kristj√°n Valur J√≥nsson.
 
 - Issue #14197: For OS X framework builds, ensure links to the shared
   library are created with the proper ABI suffix.
@@ -336,6 +341,12 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #12288: Consider '0' and '0.0' as valid initialvalue
+  for tkinter SimpleDialog.
+
+- Issue #15489: Add a __sizeof__ implementation for BytesIO objects.
+  Patch by Serhiy Storchaka.
 
 - Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
   Patch by Serhiy Storchaka.

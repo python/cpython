@@ -161,6 +161,13 @@ USAGE = textwrap.dedent("""\
     --universal-archs=x  universal architectures (options: %(UNIVERSALOPTS)r, default: %(UNIVERSALARCHS)r)
 """)% globals()
 
+# Dict of object file names with shared library names to check after building.
+# This is to ensure that we ended up dynamically linking with the shared
+# library paths and versions we expected.  For example:
+#   EXPECTED_SHARED_LIBS['_tkinter.so'] = [
+#                       '/Library/Frameworks/Tcl.framework/Versions/8.5/Tcl',
+#                       '/Library/Frameworks/Tk.framework/Versions/8.5/Tk']
+EXPECTED_SHARED_LIBS = {}
 
 # Instructions for building libraries that are necessary for building a
 # batteries included python.
@@ -460,26 +467,39 @@ def checkEnvironment():
     # Because we only support dynamic load of only one major/minor version of
     # Tcl/Tk, ensure:
     # 1. there are no user-installed frameworks of Tcl/Tk with version
-    #       higher than the Apple-supplied system version
-    # 2. there is a user-installed framework in /Library/Frameworks with the
-    #       same version as the system version.  This allows users to choose
-    #       to install a newer patch level.
+    #       higher than the Apple-supplied system version in
+    #       SDKROOT/System/Library/Frameworks
+    # 2. there is a user-installed framework (usually ActiveTcl) in (or linked
+    #       in) SDKROOT/Library/Frameworks with the same version as the system
+    #       version. This allows users to choose to install a newer patch level.
 
+    frameworks = {}
     for framework in ['Tcl', 'Tk']:
-        #fw = dict(lower=framework.lower(),
-        #            upper=framework.upper(),
-        #            cap=framework.capitalize())
-        #fwpth = "Library/Frameworks/%(cap)s.framework/%(lower)sConfig.sh" % fw
-        fwpth = 'Library/Frameworks/Tcl.framework/Versions/Current'
+        fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
         sysfw = os.path.join(SDKPATH, 'System', fwpth)
-        libfw = os.path.join('/', fwpth)
+        libfw = os.path.join(SDKPATH, fwpth)
         usrfw = os.path.join(os.getenv('HOME'), fwpth)
-        #version = "%(upper)s_VERSION" % fw
+        frameworks[framework] = os.readlink(sysfw)
+        if not os.path.exists(libfw):
+            fatal("Please install a link to a current %s %s as %s so "
+                    "the user can override the system framework."
+                    % (framework, frameworks[framework], libfw))
         if os.readlink(libfw) != os.readlink(sysfw):
             fatal("Version of %s must match %s" % (libfw, sysfw) )
         if os.path.exists(usrfw):
             fatal("Please rename %s to avoid possible dynamic load issues."
                     % usrfw)
+
+    if frameworks['Tcl'] != frameworks['Tk']:
+        fatal("The Tcl and Tk frameworks are not the same version.")
+
+    # add files to check after build
+    EXPECTED_SHARED_LIBS['_tkinter.so'] = [
+            "/Library/Frameworks/Tcl.framework/Versions/%s/Tcl"
+                % frameworks['Tcl'],
+            "/Library/Frameworks/Tk.framework/Versions/%s/Tk"
+                % frameworks['Tk'],
+            ]
 
     # Remove inherited environment variables which might influence build
     environ_var_prefixes = ['CPATH', 'C_INCLUDE_', 'DYLD_', 'LANG', 'LC_',
@@ -861,11 +881,11 @@ def buildPython():
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     gid = grp.getgrnam('admin').gr_gid
 
+    shared_lib_error = False
     for dirpath, dirnames, filenames in os.walk(frmDir):
         for dn in dirnames:
             os.chmod(os.path.join(dirpath, dn), STAT_0o775)
             os.chown(os.path.join(dirpath, dn), -1, gid)
-
 
         for fn in filenames:
             if os.path.islink(fn):
@@ -876,6 +896,19 @@ def buildPython():
             st = os.stat(p)
             os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IWGRP)
             os.chown(p, -1, gid)
+
+            if fn in EXPECTED_SHARED_LIBS:
+                # check to see that this file was linked with the
+                # expected library path and version
+                data = captureCommand("otool -L %s" % shellQuote(p))
+                for sl in EXPECTED_SHARED_LIBS[fn]:
+                    if ("\t%s " % sl) not in data:
+                        print("Expected shared lib %s was not linked with %s"
+                                % (sl, p))
+                        shared_lib_error = True
+
+    if shared_lib_error:
+        fatal("Unexpected shared library errors.")
 
     if PYTHON_3:
         LDVERSION=None
