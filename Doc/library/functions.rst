@@ -1506,6 +1506,9 @@ are always available.  They are listed here in alphabetical order.
    If you simply want to import a module (potentially within a package) by name,
    use :func:`importlib.import_module`.
 
+   .. versionchanged:: 3.3
+      Negative values for 'level' are no longer supported.
+
 
 .. rubric:: Footnotes
 
