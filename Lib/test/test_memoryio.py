@@ -658,7 +658,7 @@ class CBytesIOTest(PyBytesIOTest):
 
     @support.cpython_only
     def test_sizeof(self):
-        basesize = support.calcobjsize('P2PP2PP')
+        basesize = support.calcobjsize('P2nN2Pn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )
