@@ -435,6 +435,8 @@ Build
 - Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
   Based on patch from Hervé Coatanhay.
 
+- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
+
 Documentation
 -------------
 
