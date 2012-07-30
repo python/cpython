@@ -37,17 +37,21 @@ def isCarbonAquaTk(root):
 def tkVersionWarning(root):
     """
     Returns a string warning message if the Tk version in use appears to
-    be one known to cause problems with IDLE.  The Apple Cocoa-based Tk 8.5
-    that was shipped with Mac OS X 10.6.
+    be one known to cause problems with IDLE.
+    1. Apple Cocoa-based Tk 8.5.7 shipped with Mac OS X 10.6 is unusable.
+    2. Apple Cocoa-based Tk 8.5.9 in OS X 10.7 and 10.8 is better but
+        can still crash unexpectedly.
     """
 
     if (runningAsOSXApp() and
-            ('AppKit' in root.tk.call('winfo', 'server', '.')) and
-            (root.tk.call('info', 'patchlevel') == '8.5.7') ):
-        return (r"WARNING: The version of Tcl/Tk (8.5.7) in use may"
+            ('AppKit' in root.tk.call('winfo', 'server', '.')) ):
+        patchlevel = root.tk.call('info', 'patchlevel')
+        if patchlevel not in ('8.5.7', '8.5.9'):
+            return False
+        return (r"WARNING: The version of Tcl/Tk ({0}) in use may"
                 r" be unstable.\n"
                 r"Visit http://www.python.org/download/mac/tcltk/"
-                r" for current information.")
+                r" for current information.".format(patchlevel))
     else:
         return False
 
