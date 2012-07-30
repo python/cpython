@@ -1677,6 +1677,8 @@ Porting to Python 3.3
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+.. _portingpythoncode:
+
 Porting Python code
 -------------------
 
