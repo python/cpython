@@ -540,6 +540,11 @@ Open issues
 XXX Find a better term than "path importer" for class PathFinder and update
 the glossary.
 
+XXX In the glossary, "though I'd change ":term:`finder` / :term:`loader`" to
+"metapath importer".
+
+XXX Find a better term than "sys path finder".
+
 XXX It would be really nice to have a diagram.
 
 XXX * (import_machinery.rst) how about a section devoted just to the
