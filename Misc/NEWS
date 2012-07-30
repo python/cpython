@@ -309,6 +309,8 @@ Tests
 Build
 -----
 
+- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
+
 - Issue #8767: Restore building with --disable-unicode.
   Patch by Stefano Taschini.
 
