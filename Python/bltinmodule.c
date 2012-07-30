@@ -195,7 +195,7 @@ builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(import_doc,
-"__import__(name, globals={}, locals={}, fromlist=[], level=-1) -> module\n\
+"__import__(name, globals={}, locals={}, fromlist=[], level=0) -> module\n\
 \n\
 Import a module. Because this function is meant for use by the Python\n\
 interpreter and not for general use it is better to use\n\
@@ -208,8 +208,7 @@ empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
 fromlist is not empty.  Level is used to determine whether to perform \n\
-absolute or relative imports.  -1 is the original strategy of attempting\n\
-both absolute and relative imports, 0 is absolute, a positive number\n\
+absolute or relative imports. 0 is absolute while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
