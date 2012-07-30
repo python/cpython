@@ -18,6 +18,10 @@ What's New in IDLE 3.2.4?
 - Issue #14937: Perform auto-completion of filenames in strings even for
   non-ASCII filenames. Likewise for identifiers.
 
+- Issue #14018: Update checks for unstable system Tcl/Tk versions on OS X
+  to include versions shipped with OS X 10.7 and 10.8 in addition to 10.6.
+
+
 What's New in IDLE 3.2.3?
 =========================
 
