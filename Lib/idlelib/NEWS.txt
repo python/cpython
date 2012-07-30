@@ -12,6 +12,9 @@ What's New in IDLE 2.7.4?
 
 - Issue 14876: use user-selected font for highlight configuration.
 
+- Issue #14018: Update checks for unstable system Tcl/Tk versions on OS X
+  to include versions shipped with OS X 10.7 and 10.8 in addition to 10.6.
+
 
 What's New in IDLE 2.7.3?
 =========================
