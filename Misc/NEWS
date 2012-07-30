@@ -10,6 +10,10 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15508: Fix the docstring for __import__ to have the proper default
+  value of 0 for 'level' and to not mention negative levels since they are
+  not supported.
+
 - Issue #15425: Eliminated traceback noise from more situations involving
   importlib
 
