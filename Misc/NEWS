@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12288: Consider '0' and '0.0' as valid initialvalue
+  for tkinter SimpleDialog.
+
 - Issue #15489: Add a __sizeof__ implementation for BytesIO objects.
   Patch by Serhiy Storchaka.
 
