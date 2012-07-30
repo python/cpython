@@ -834,6 +834,17 @@ bytesio_init(bytesio *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static PyObject *
+bytesio_sizeof(bytesio *self, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(bytesio);
+    if (self->buf)
+        res += self->buf_size;
+    return PyLong_FromSsize_t(res);
+}
+
 static int
 bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 {
@@ -876,6 +887,7 @@ static struct PyMethodDef bytesio_methods[] = {
     {"truncate",   (PyCFunction)bytesio_truncate,   METH_VARARGS, truncate_doc},
     {"__getstate__",  (PyCFunction)bytesio_getstate,  METH_NOARGS, NULL},
     {"__setstate__",  (PyCFunction)bytesio_setstate,  METH_O, NULL},
+    {"__sizeof__", (PyCFunction)bytesio_sizeof,     METH_NOARGS, NULL},
     {NULL, NULL}        /* sentinel */
 };
 
