@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15463: the faulthandler module truncates strings to 500 characters,
+  instead of 100, to be able to display long file paths
+
 - Issue #6056: Make multiprocessing use setblocking(True) on the
   sockets it uses.  Original patch by J Derek Wilson.
 
