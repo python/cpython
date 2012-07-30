@@ -265,7 +265,7 @@ Build
 -----
 
 - Issue #15431: Add _freeze_importlib project to regenerate importlib.h
-  on Windows. Patch by Kristj·n Valur JÛnsson.
+  on Windows. Patch by Kristj√°n Valur J√≥nsson.
 
 - Issue #14197: For OS X framework builds, ensure links to the shared
   library are created with the proper ABI suffix.
