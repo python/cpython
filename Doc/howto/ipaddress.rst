@@ -19,7 +19,7 @@ An Introduction to the ipaddress module
 Creating Address/Network/Interface objects
 ==========================================
 
-Since :mod:`ipaddress` is a module for inspecting and manipulating IP address,
+Since :mod:`ipaddress` is a module for inspecting and manipulating IP addresses,
 the first thing you'll want to do is create some objects.  You can use
 :mod:`ipaddress` to create objects from strings and integers.
 
@@ -183,10 +183,10 @@ Finding out how many individual addresses are in a network::
    >>> net6.numhosts
    4294967296
 
-Iterating through the 'usable' addresses on a network::
+Iterating through the "usable" addresses on a network::
 
    >>> net4 = ipaddress.ip_network('192.0.2.0/24')
-   >>> for x in net4.iterhosts():
+   >>> for x in net4.hosts():
           print(x)
    192.0.2.1
    192.0.2.2
@@ -294,7 +294,7 @@ Getting more detail when instance creation fails
 When creating address/network/interface objects using the version-agnostic
 factory functions, any errors will be reported as :exc:`ValueError` with
 a generic error message that simply says the passed in value was not
-recognised as an object of that type. The lack of a specific error is
+recognized as an object of that type. The lack of a specific error is
 because it's necessary to know whether the value is *supposed* to be IPv4
 or IPv6 in order to provide more detail on why it has been rejected.
 
