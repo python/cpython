@@ -652,15 +652,16 @@ Modules
       object: module
 
    Modules are a basic organizational unit of Python code, and are created by
-   the :ref:`importmachinery` as invoked either by the :keyword:`import`
-   statement (see section :ref:`import`) or by calling the built in
-   :func:`__import__` function.  A module object has a namespace implemented
-   by a dictionary object (this is the dictionary referenced by the
-   ``__globals__`` attribute of functions defined in the module).  Attribute
-   references are translated to lookups in this dictionary, e.g., ``m.x`` is
-   equivalent to ``m.__dict__["x"]``. A module object does not contain the
-   code object used to initialize the module (since it isn't needed once the
-   initialization is done).
+   the :ref:`import system <importsystem>` as invoked either by the
+   :keyword:`import` statement (see :keyword:`import`), or by calling
+   functions such as :func:`importlib.import_module` and built-in
+   :func:`__import__`.  A module object has a namespace implemented by a
+   dictionary object (this is the dictionary referenced by the ``__globals__``
+   attribute of functions defined in the module).  Attribute references are
+   translated to lookups in this dictionary, e.g., ``m.x`` is equivalent to
+   ``m.__dict__["x"]``. A module object does not contain the code object used
+   to initialize the module (since it isn't needed once the initialization is
+   done).
 
    Attribute assignment updates the module's namespace dictionary, e.g.,
    ``m.x = 1`` is equivalent to ``m.__dict__["x"] = 1``.
