@@ -24,7 +24,7 @@ interfaces available to C/C++ programmers in detail.
    lexical_analysis.rst
    datamodel.rst
    executionmodel.rst
-   import_machinery.rst
+   import.rst
    expressions.rst
    simple_stmts.rst
    compound_stmts.rst

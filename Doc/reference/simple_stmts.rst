@@ -662,14 +662,17 @@ The :keyword:`import` statement
 
 Import statements are executed in two steps: (1) find a module, loading and
 initializing it if necessary; (2) define a name or names in the local
-namespace (of the scope where the :keyword:`import` statement occurs). The
-statement comes in two forms differing on whether it uses the :keyword:`from`
-keyword. The first form (without :keyword:`from`) repeats these steps for each
-identifier in the list.  The form with :keyword:`from` performs step (1) once,
-and then performs step (2) repeatedly.
+namespace (of the scope where the :keyword:`import` statement occurs).
+Step (1) may be performed recursively if the named module is a submodule or
+subpackage of a parent package.
+
+The :keyword:`import` statement comes in two forms differing on whether it
+uses the :keyword:`from` keyword. The first form (without :keyword:`from`)
+repeats these steps for each identifier in the list.  The form with
+:keyword:`from` performs step (1), and then performs step (2) repeatedly.
 
 The details of step (1), finding and loading modules is described in greater
-detail in the section on the :ref:`import machinery <importmachinery>`, which
+detail in the section on the :ref:`import system <importsystem>`, which
 also describes the various types of packages and modules that can be imported,
 as well as all the hooks that can be used to customize Python's import.
 
