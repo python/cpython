@@ -29,6 +29,7 @@ class SimpleTest(unittest.TestCase):
         # If fullname is not specified that assume self.name is desired.
         class TesterMixin(importlib.abc.Loader):
             def load_module(self, fullname): return fullname
+            def module_repr(self, module): return '<module>'
 
         class Tester(importlib.abc.FileLoader, TesterMixin):
             def get_code(self, _): pass
@@ -49,6 +50,7 @@ class SimpleTest(unittest.TestCase):
             def get_code(self, _): pass
             def get_source(self, _): pass
             def is_package(self, _): pass
+            def module_repr(self, _): pass
 
         path = 'some_path'
         name = 'some_name'
