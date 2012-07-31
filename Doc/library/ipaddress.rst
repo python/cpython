@@ -22,19 +22,18 @@ subnet, as well as checking whether or not a string represents a valid
 IP address or network definition.
 
 
-Defining IP Addresses and Interfaces
-------------------------------------
+Convenience factory functions
+-----------------------------
 
-The :mod:`ipaddress` module provides factory functions to define IP addresses
-and networks:
+The :mod:`ipaddress` module provides factory functions to conveniently create
+IP addresses, networks and interfaces:
 
 .. function:: ip_address(address)
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
-   the IP address passed as argument.  *address* is a string or integer
-   representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  A
-   :exc:`ValueError` is raised if the *address* passed is neither an IPv4 nor
+   the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
+   supplied; integers less than 2**32 will be considered to be IPv4 by default.
+   A :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 
    >>> ipaddress.ip_address('192.168.0.1')
@@ -50,8 +49,8 @@ and networks:
    representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
    integers less than 2**32 will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
-   :exc:`ValueError` is raised if the string passed isn't either an IPv4 or IPv6
-   address, or if the network has host bits set.
+   :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
+   IPv6 address, or if the network has host bits set.
 
    >>> ipaddress.ip_network('192.168.0.0/28')
    IPv4Network('192.168.0.0/28')
@@ -62,45 +61,174 @@ and networks:
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
    on the IP address passed as argument.  *address* is a string or integer
    representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default..  A
-   :exc:`ValueError` is raised if the *address* passed isn't either an IPv4 or
+   integers less than 2**32 will be considered to be IPv4 by default.  A
+   :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 
 
-Representing IP Addresses and Networks
---------------------------------------
+Address objects
+---------------
 
-The module defines the following and classes to represent IP addresses
-and networks:
-
-.. todo: list the properties and methods
+The :class:`IPv4Address` and :class:`IPv6Address` objects share a lot of common
+attributes.  Some attributes that are only meaningful for IPv6 addresses are
+also implemented by :class:`IPv4Address` objects, in order to make it easier to
+write code that handles both IP versions correctly.  To avoid duplication, all
+common attributes will only be documented for :class:`IPv4Address`.
 
 .. class:: IPv4Address(address)
 
-   Construct an IPv4 address.  *address* is a string or integer representing the
-   IP address.  An :exc:`AddressValueError` is raised if *address* is not a
-   valid IPv4 address.
+   Construct an IPv4 address.  An :exc:`AddressValueError` is raised if
+   *address* is not a valid IPv4 address.
+
+   The following constitutes a valid IPv4 address:
+
+   1. A string in decimal-dot notation, consisting of four decimal integers in
+      the inclusive range 0-255, separated by dots (e.g. ``192.168.0.1``). Each
+      integer represents an octet (byte) in the address, big-endian.
+   2. An integer that fits into 32 bits.
+   3. An integer packed into a :class:`bytes` object of length 4, big-endian.
 
    >>> ipaddress.IPv4Address('192.168.0.1')
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address('192.0.2.1') == ipaddress.IPv4Address(3221225985)
    True
 
+   .. attribute:: exploded
 
-.. class:: IPv4Interface(address)
+   The longhand version of the address as a string. Note: the
+   exploded/compressed distinction is meaningful only for IPv6 addresses.
+   For IPv4 addresses it is the same.
 
-   Construct an IPv4 interface.  *address* is a string or integer representing
-   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
-   a valid IPv4 address.
+   .. attribute:: compressed
 
-   The network address for the interface is determined by calling
-   ``IPv4Network(address, strict=False)``.
+   The shorthand version of the address as a string.
 
-   >>> ipaddress.IPv4Interface('192.168.0.0/24')
-   IPv4Interface('192.168.0.0/24')
-   >>> ipaddress.IPv4Interface('192.168.0.0/24').network
-   IPv4Network('192.168.0.0/24')
+   .. attribute:: packed
 
+   The binary representation of this address - a :class:`bytes` object.
+
+   .. attribute:: version
+
+   A numeric version number.
+
+   .. attribute:: max_prefixlen
+
+   Maximal length of the prefix (in bits).  The prefix defines the number of
+   leading bits in an address that are compared to determine whether or not an
+   address is part of a network.
+
+   .. attribute:: is_multicast
+
+   ``True`` if the address is reserved for multicast use.  See :RFC:`3171` (for
+   IPv4) or :RFC:`2373` (for IPv6).
+
+   .. attribute:: is_private
+
+   ``True`` if the address is allocated for private networks.  See :RFC:`1918`
+   (for IPv4) or :RFC:`4193` (for IPv6).
+
+   .. attribute:: is_unspecified
+
+   ``True`` if the address is unspecified.  See :RFC:`5375` (for IPv4) or
+   :RFC:`2373` (for IPv6).
+
+   .. attribute:: is_reserved
+
+   ``True`` if the address is otherwise IETF reserved.
+
+   .. attribute:: is_loopback
+
+   ``True`` if this is a loopback address.  See :RFC:`3330` (for IPv4) or
+   :RFC:`2373` (for IPv6).
+
+   .. attribute:: is_link_local
+
+   ``True`` if the address is reserved for link-local.  See :RFC:`3927`.
+
+.. class:: IPv6Address(address)
+
+   Construct an IPv6 address.  An :exc:`AddressValueError` is raised if
+   *address* is not a valid IPv6 address.
+
+   The following constitutes a valid IPv6 address:
+
+   1. A string consisting of eight groups of four hexadecimal digits, each
+      group representing 16 bits.  The groups are separated by colons.
+      This describes an *exploded* (longhand) notation.  The string can
+      also be *compressed* (shorthand notation) by various means.  See
+      :RFC:`4291` for details.  For example,
+      ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
+      ``"::abc:7:def"``.
+   2. An integer that fits into 128 bits.
+   3. An integer packed into a :class:`bytes` object of length 16, big-endian.
+
+   >>> ipaddress.IPv6Address('2001:db8::1000')
+   IPv6Address('2001:db8::1000')
+
+   All the attributes exposed by :class:`IPv4Address` are supported.  In
+   addition, the following attributs are exposed only by :class:`IPv6Address`.
+
+   .. attribute:: is_site_local
+
+   ``True`` if the address is reserved for site-local.  Note that the site-local
+   address space has been deprecated by :RFC:`3879`.  Use
+   :attr:`~IPv4Address.is_private` to test if this address is in the space of
+   unique local addresses as defined by :RFC:`4193`.
+
+   .. attribute:: ipv4_mapped
+
+   If this address represents a IPv4 mapped address, return the IPv4 mapped
+   address.  Otherwise return ``None``.
+
+   .. attribute:: teredo
+
+   If this address appears to be a teredo address (starts with ``2001::/32``),
+   return a tuple of embedded teredo IPs ``(server, client)`` pairs.  Otherwise
+   return ``None``.
+
+   .. attribute:: sixtofour
+
+   If this address appears to contain a 6to4 embedded address, return the
+   embedded IPv4 address.  Otherwise return ``None``.
+
+
+Operators
+^^^^^^^^^
+
+Address objects support some operators.  Unless stated otherwise, operators can
+only be applied between compatible objects (i.e. IPv4 with IPv4, IPv6 with
+IPv6).
+
+Logical operators
+"""""""""""""""""
+
+Address objects can be compared with the usual set of logical operators.  Some
+examples::
+
+   >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
+   True
+   >>> IPv4Address('127.0.0.2') == IPv4Address('127.0.0.1')
+   False
+   >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
+   True
+
+Arithmetic operators
+""""""""""""""""""""
+
+Integers can be added to or subtracted from address objects.  Some examples::
+
+   >>> IPv4Address('127.0.0.2') + 3
+   IPv4Address('127.0.0.5')
+   >>> IPv4Address('127.0.0.2') - 3
+   IPv4Address('126.255.255.255')
+   >>> IPv4Address('255.255.255.255') + 1
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   ipaddress.AddressValueError: 4294967296 (>= 2**32) is not permitted as an IPv4 address
+
+
+Network objects
+---------------
 
 .. class:: IPv4Network(address, strict=True)
 
@@ -121,31 +249,6 @@ and networks:
    IPv4Network('192.0.2.0/27')
 
 
-.. class:: IPv6Address(address)
-
-   Construct an IPv6 address.  *address* is a string or integer representing the
-   IP address.  An :exc:`AddressValueError` is raised if *address* is not a
-   valid IPv6 address.
-
-   >>> ipaddress.IPv6Address('2001:db8::1000')
-   IPv6Address('2001:db8::1000')
-
-
-.. class:: IPv6Interface(address)
-
-   Construct an IPv6 interface.  *address* is a string or integer representing
-   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
-   a valid IPv6 address.
-
-   The network address for the interface is determined by calling
-   ``IPv6Network(address, strict=False)``.
-
-   >>> ipaddress.IPv6Interface('2001:db8::1000/96')
-   IPv6Interface('2001:db8::1000/96')
-   >>> ipaddress.IPv6Interface('2001:db8::1000/96').network
-   IPv6Network('2001:db8::/96')
-
-
 .. class:: IPv6Network(address, strict=True)
 
    Construct an IPv6 network.  *address* is a string or integer representing the
@@ -162,6 +265,39 @@ and networks:
    >>> ipaddress.IPv6Network('2001:db8::/96').netmask
    IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
    >>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)
+   IPv6Network('2001:db8::/96')
+
+
+Interface objects
+-----------------
+
+.. class:: IPv4Interface(address)
+
+   Construct an IPv4 interface.  *address* is a string or integer representing
+   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
+   a valid IPv4 address.
+
+   The network address for the interface is determined by calling
+   ``IPv4Network(address, strict=False)``.
+
+   >>> ipaddress.IPv4Interface('192.168.0.0/24')
+   IPv4Interface('192.168.0.0/24')
+   >>> ipaddress.IPv4Interface('192.168.0.0/24').network
+   IPv4Network('192.168.0.0/24')
+
+
+.. class:: IPv6Interface(address)
+
+   Construct an IPv6 interface.  *address* is a string or integer representing
+   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
+   a valid IPv6 address.
+
+   The network address for the interface is determined by calling
+   ``IPv6Network(address, strict=False)``.
+
+   >>> ipaddress.IPv6Interface('2001:db8::1000/96')
+   IPv6Interface('2001:db8::1000/96')
+   >>> ipaddress.IPv6Interface('2001:db8::1000/96').network
    IPv6Network('2001:db8::/96')
 
 

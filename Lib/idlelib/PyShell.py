@@ -248,8 +248,8 @@ class PyShellEditorWindow(EditorWindow):
     def ranges_to_linenumbers(self, ranges):
         lines = []
         for index in range(0, len(ranges), 2):
-            lineno = int(float(ranges[index]))
-            end = int(float(ranges[index+1]))
+            lineno = int(float(ranges[index].string))
+            end = int(float(ranges[index+1].string))
             while lineno < end:
                 lines.append(lineno)
                 lineno += 1
