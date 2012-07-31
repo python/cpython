@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support, script_helper
+from test.script_helper import assert_python_ok
 import tempfile
 import unittest
 
@@ -255,6 +256,20 @@ faulthandler._read_null()
                     faulthandler.disable()
         finally:
             sys.stderr = orig_stderr
+
+    def test_disabled_by_default(self):
+        # By default, the module should be disabled
+        code = "import faulthandler; print(faulthandler.is_enabled())"
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        stdout = (stdout + stderr).strip()
+        self.assertEqual(stdout, b"False")
+
+    def test_sys_xoptions(self):
+        # Test python -X faulthandler
+        code = "import faulthandler; print(faulthandler.is_enabled())"
+        rc, stdout, stderr = assert_python_ok("-X", "faulthandler", "-c", code)
+        stdout = (stdout + stderr).strip()
+        self.assertEqual(stdout, b"True")
 
     def check_dump_traceback(self, filename):
         """

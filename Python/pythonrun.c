@@ -356,10 +356,6 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 
     _PyImportHooks_Init();
 
-    /* initialize the faulthandler module */
-    if (_PyFaulthandler_Init())
-        Py_FatalError("Py_Initialize: can't initialize faulthandler");
-
     /* Initialize _warnings. */
     _PyWarnings_Init();
 
@@ -367,6 +363,10 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         return;
 
     import_init(interp, sysmod);
+
+    /* initialize the faulthandler module */
+    if (_PyFaulthandler_Init())
+        Py_FatalError("Py_Initialize: can't initialize faulthandler");
 
     _PyTime_Init();
 
