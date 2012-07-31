@@ -785,11 +785,13 @@ class ImportTracebackTests(unittest.TestCase):
         sys.path[:] = self.old_path
         rmtree(TESTFN)
 
-    def create_module(self, mod, contents):
-        with open(os.path.join(TESTFN, mod + ".py"), "w") as f:
+    def create_module(self, mod, contents, ext=".py"):
+        fname = os.path.join(TESTFN, mod + ext)
+        with open(fname, "w") as f:
             f.write(contents)
         self.addCleanup(unload, mod)
         importlib.invalidate_caches()
+        return fname
 
     def assert_traceback(self, tb, files):
         deduped_files = []
