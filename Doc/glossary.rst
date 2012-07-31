@@ -315,6 +315,13 @@ Glossary
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.
 
+   import path
+      A list of locations (or :term:`path entries <path entry>`) that are
+      searched by the :term:`path importer` for modules to import.  During
+      import, this list of locations usually comes from :data:`sys.path`, but
+      for subpackages it may also come from the parent package's ``__path__``
+      attribute.
+
    importing
       The process by which Python code in one module is made available to
       Python code in another module.
@@ -446,8 +453,8 @@ Glossary
 
    meta path finder
       A finder returned by a search of :data:`sys.meta_path`.  Meta path
-      finders are related to, but different from :term:`sys path finders <sys
-      path finder>`.
+      finders are related to, but different from :term:`path entry finders
+      <path entry finder>`.
 
    metaclass
       The class of a class.  Class definitions create a class name, a class
@@ -541,9 +548,23 @@ Glossary
       subpackages.  Technically, a package is a Python module with an
       ``__path__`` attribute.
 
+   path entry
+      A single location on the :term:`import path` which the :term:`path
+      importer` consults to find modules for importing.
+
+   path entry finder
+      A :term:`finder` returned by a callable on :data:`sys.path_hooks`
+      (i.e. a :term:`path entry hook`) which knows how to locate modules given
+      a :term:`path entry`.
+
+   path entry hook
+      A callable on the :data:`sys.path_hook` list which returns a :term:`path
+      entry finder` if it knows how to find modules on a specific :term:`path
+      entry`.
+
    path importer
-      A built-in :term:`finder` / :term:`loader` that knows how to find and
-      load modules from the file system.
+      One of the default :term:`meta path finders <meta path finder>` which
+      searches an :term:`import path` for modules.
 
    portion
       A set of files in a single directory (possibly stored in a zip file)
@@ -670,11 +691,6 @@ Glossary
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
       include :data:`sys.float_info` and the return value of :func:`os.stat`.
-
-   sys path finder
-      A finder returned by a search of :data:`sys.path` by the :term:`path
-      importer`.  Sys path finders are related to, but different from
-      :term:`meta path finders <meta path finder>`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
