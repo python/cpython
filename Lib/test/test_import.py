@@ -785,11 +785,13 @@ class ImportTracebackTests(unittest.TestCase):
         sys.path[:] = self.old_path
         rmtree(TESTFN)
 
-    def create_module(self, mod, contents):
-        with open(os.path.join(TESTFN, mod + ".py"), "w") as f:
+    def create_module(self, mod, contents, ext=".py"):
+        fname = os.path.join(TESTFN, mod + ext)
+        with open(fname, "w") as f:
             f.write(contents)
         self.addCleanup(unload, mod)
         importlib.invalidate_caches()
+        return fname
 
     def assert_traceback(self, tb, files):
         deduped_files = []
@@ -857,16 +859,14 @@ class ImportTracebackTests(unittest.TestCase):
 
     def _setup_broken_package(self, parent, child):
         pkg_name = "_parent_foo"
-        def cleanup():
-            rmtree(pkg_name)
-            unload(pkg_name)
-        os.mkdir(pkg_name)
-        self.addCleanup(cleanup)
+        self.addCleanup(unload, pkg_name)
+        pkg_path = os.path.join(TESTFN, pkg_name)
+        os.mkdir(pkg_path)
         # Touch the __init__.py
-        init_path = os.path.join(pkg_name, '__init__.py')
+        init_path = os.path.join(pkg_path, '__init__.py')
         with open(init_path, 'w') as f:
             f.write(parent)
-        bar_path = os.path.join(pkg_name, 'bar.py')
+        bar_path = os.path.join(pkg_path, 'bar.py')
         with open(bar_path, 'w') as f:
             f.write(child)
         importlib.invalidate_caches()
