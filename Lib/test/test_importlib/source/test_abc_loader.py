@@ -32,6 +32,9 @@ class SourceOnlyLoaderMock(abc.SourceLoader):
     def get_filename(self, fullname):
         return self.path
 
+    def module_repr(self, module):
+        return '<module>'
+
 
 class SourceLoaderMock(SourceOnlyLoaderMock):
 
@@ -106,6 +109,9 @@ class PyLoaderMock(abc.PyLoader):
             assert len(w) == 1
             assert issubclass(w[0].category, DeprecationWarning)
             return path
+
+    def module_repr(self):
+        return '<module>'
 
 
 class PyLoaderCompatMock(PyLoaderMock):
@@ -779,10 +785,15 @@ class AbstractMethodImplTests(unittest.TestCase):
     class Loader(abc.Loader):
         def load_module(self, fullname):
             super().load_module(fullname)
+        def module_repr(self, module):
+            super().module_repr(module)
 
     class Finder(abc.Finder):
         def find_module(self, _):
             super().find_module(_)
+
+        def find_loader(self, _):
+            super().find_loader(_)
 
     class ResourceLoader(Loader, abc.ResourceLoader):
         def get_data(self, _):
