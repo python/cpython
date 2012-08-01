@@ -55,8 +55,8 @@ def looks_like_python(fullpath):
     if infile is None:
         return False
 
-    line = infile.readline()
-    infile.close()
+    with infile:
+        line = infile.readline()
 
     if binary_re.search(line):
         # file appears to be binary
@@ -76,8 +76,8 @@ def can_be_compiled(fullpath):
     if infile is None:
         return False
 
-    code = infile.read()
-    infile.close()
+    with infile:
+        code = infile.read()
 
     try:
         compile(code, fullpath, "exec")
