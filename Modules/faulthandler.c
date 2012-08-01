@@ -653,9 +653,8 @@ faulthandler_user(int signum)
     if (user->all_threads)
         _Py_DumpTracebackThreads(user->fd, user->interp, tstate);
     else {
-        if (tstate == NULL)
-            return;
-        _Py_DumpTraceback(user->fd, tstate);
+        if (tstate != NULL)
+            _Py_DumpTraceback(user->fd, tstate);
     }
 #ifdef HAVE_SIGACTION
     if (user->chain) {
