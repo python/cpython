@@ -1291,7 +1291,7 @@ Basic customization
 
    .. note::
 
-      Note by default the :meth:`__hash__` values of str, bytes and datetime
+      By default, the :meth:`__hash__` values of str, bytes and datetime
       objects are "salted" with an unpredictable random value.  Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
@@ -1301,9 +1301,9 @@ Basic customization
       dict insertion, O(n^2) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
-      Changing hash values affects the order in which keys are retrieved from a
-      dict.  Note Python has never made guarantees about this ordering (and it
-      typically varies between 32-bit and 64-bit builds).
+      Changing hash values affects the iteration order of dicts, sets and
+      other mappings.  Python has never made guarantees about this ordering
+      (and it typically varies between 32-bit and 64-bit builds).
 
       See also :envvar:`PYTHONHASHSEED`.
 
