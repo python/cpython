@@ -299,8 +299,7 @@ class CommonTest(GenericTest):
 
         unicwd = '\xe7w\xf0'
         try:
-            fsencoding = support.TESTFN_ENCODING or "ascii"
-            unicwd.encode(fsencoding)
+            os.fsencode(unicwd)
         except (AttributeError, UnicodeEncodeError):
             # FS encoding is probably ASCII
             pass
@@ -312,10 +311,19 @@ class CommonTest(GenericTest):
     @unittest.skipIf(sys.platform == 'darwin',
         "Mac OS X denies the creation of a directory with an invalid utf8 name")
     def test_nonascii_abspath(self):
+        name = b'\xe7w\xf0'
+        if sys.platform == 'win32':
+            try:
+                os.fsdecode(name)
+            except UnicodeDecodeError:
+                self.skipTest("the filename %a is not decodable "
+                              "from the ANSI code page %s"
+                              % (name, sys.getfilesystemencoding()))
+
         # Test non-ASCII, non-UTF8 bytes in the path.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with support.temp_cwd(b'\xe7w\xf0'):
+            with support.temp_cwd(name):
                 self.test_abspath()
 
 
