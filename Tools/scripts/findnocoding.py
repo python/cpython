@@ -60,7 +60,6 @@ def needs_declaration(fullpath):
 
         if get_declaration(line1) or get_declaration(line2):
             # the file does have an encoding declaration, so trust it
-            infile.close()
             return False
 
         # check the whole file for non utf-8 characters
