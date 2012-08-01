@@ -156,15 +156,11 @@ class ASDLParser(spark.GenericParser, object):
         if id.value != "attributes":
             raise ASDLSyntaxError(id.lineno,
                                   msg="expected attributes, found %s" % id)
-        if attributes:
-            attributes.reverse()
         return Sum(sum, attributes)
 
     def p_product(self, info):
         " product ::= ( fields ) "
         _0, fields, _1 = info
-        # XXX can't I just construct things in the right order?
-        fields.reverse()
         return Product(fields)
 
     def p_sum_0(self, constructor):
@@ -188,8 +184,6 @@ class ASDLParser(spark.GenericParser, object):
     def p_constructor_1(self, info):
         " constructor ::= Id ( fields ) "
         id, _0, fields, _1 = info
-        # XXX can't I just construct things in the right order?
-        fields.reverse()
         return Constructor(id, fields)
 
     def p_fields_0(self, field):
@@ -197,8 +191,8 @@ class ASDLParser(spark.GenericParser, object):
         return [field[0]]
 
     def p_fields_1(self, info):
-        " fields ::= field , fields "
-        field, _, fields = info
+        " fields ::= fields , field "
+        fields, _, field = info
         return fields + [field]
 
     def p_field_0(self, type_):
