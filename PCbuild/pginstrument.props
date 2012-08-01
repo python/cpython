@@ -24,7 +24,7 @@
     </ClCompile>
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <LinkTimeCodeGeneration>PGInstrument</LinkTimeCodeGeneration>
       <ProfileGuidedDatabase>$(SolutionDir)$(Platform)-pgi\$(TargetName).pgd</ProfileGuidedDatabase>
       <ImportLibrary>$(OutDirPGI)\$(TargetName).lib</ImportLibrary>
