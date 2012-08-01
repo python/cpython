@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15499: Launching a webbrowser in Unix used to sleep for a few
+  seconds.  Original patch by Anton Barkovsky.
+  
 - Issue #15463: the faulthandler module truncates strings to 500 characters,
   instead of 100, to be able to display long file paths
 
