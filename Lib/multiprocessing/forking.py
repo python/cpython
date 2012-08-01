@@ -273,8 +273,8 @@ else:
             if self.returncode is None:
                 try:
                     _winapi.TerminateProcess(int(self._handle), TERMINATE)
-                except WindowsError:
-                    if self.wait(timeout=0.1) is None:
+                except OSError:
+                    if self.wait(timeout=1.0) is None:
                         raise
 
     #
