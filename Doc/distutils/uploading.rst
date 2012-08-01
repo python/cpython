@@ -73,4 +73,8 @@ check the ``long_description`` from the command line::
     $ python setup.py --long-description | rst2html.py > output.html
 
 :mod:`docutils` will display a warning if there's something wrong with your
-syntax.
+syntax.  Because PyPI applies additional checks (e.g. by passing ``--no-raw``
+to ``rst2html.py`` in the command above), being able to run the command above
+without warnings does not guarantee that PyPI will convert the content
+successfully.
+
