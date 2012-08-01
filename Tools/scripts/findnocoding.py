@@ -32,7 +32,7 @@ except ImportError:
                          "no sophisticated Python source file search will be done.", file=sys.stderr)
 
 
-decl_re = re.compile(r"coding[=:]\s*([-\w.]+)")
+decl_re = re.compile(rb"coding[=:]\s*([-\w.]+)")
 
 def get_declaration(line):
     match = decl_re.search(line)
@@ -50,21 +50,21 @@ def has_correct_encoding(text, codec):
 
 def needs_declaration(fullpath):
     try:
-        infile = open(fullpath)
+        infile = open(fullpath, 'rb')
     except IOError: # Oops, the file was removed - ignore it
         return None
 
-    line1 = infile.readline()
-    line2 = infile.readline()
+    with infile:
+        line1 = infile.readline()
+        line2 = infile.readline()
 
-    if get_declaration(line1) or get_declaration(line2):
-        # the file does have an encoding declaration, so trust it
-        infile.close()
-        return False
+        if get_declaration(line1) or get_declaration(line2):
+            # the file does have an encoding declaration, so trust it
+            infile.close()
+            return False
 
-    # check the whole file for non utf-8 characters
-    rest = infile.read()
-    infile.close()
+        # check the whole file for non utf-8 characters
+        rest = infile.read()
 
     if has_correct_encoding(line1+line2+rest, "utf-8"):
         return False
