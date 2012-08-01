@@ -164,6 +164,14 @@ class TupleTest(seq_tests.CommonTest):
         check(10)       # check our checking code
         check(1000000)
 
+    def test_no_comdat_folding(self):
+        # Issue 8847: In the PGO build, the MSVC linker's COMDAT folding
+        # optimization causes failures in code that relies on distinct
+        # function addresses.
+        class T(tuple): pass
+        with self.assertRaises(TypeError):
+            [3,] + T((1,2))
+
 def test_main():
     support.run_unittest(TupleTest)
 
