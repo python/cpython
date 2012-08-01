@@ -316,6 +316,30 @@ funcA()
         with temporary_filename() as filename:
             self.check_dump_traceback(filename)
 
+    def test_truncate(self):
+        maxlen = 500
+        func_name = 'x' * (maxlen + 50)
+        truncated = 'x' * maxlen + '...'
+        code = """
+import faulthandler
+
+def {func_name}():
+    faulthandler.dump_traceback(all_threads=False)
+
+{func_name}()
+""".strip()
+        code = code.format(
+            func_name=func_name,
+        )
+        expected = [
+            'Traceback (most recent call first):',
+            '  File "<string>", line 4 in %s' % truncated,
+            '  File "<string>", line 6 in <module>'
+        ]
+        trace, exitcode = self.get_output(code)
+        self.assertEqual(trace, expected)
+        self.assertEqual(exitcode, 0)
+
     @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def check_dump_traceback_threads(self, filename):
         """
