@@ -162,7 +162,7 @@ are also provided to help in implementing the core ABCs.
 
    .. versionadded:: 3.3
 
-   .. method:: find_loader(self, fullname):
+   .. method:: find_loader(fullname):
 
       An abstract method for finding a :term:`loader` for the specified
       module.  Returns a 2-tuple of ``(loader, portion)`` where portion is a
@@ -336,7 +336,7 @@ are also provided to help in implementing the core ABCs.
     optimization to speed up loading by removing the parsing step of Python's
     compiler, and so no bytecode-specific API is exposed.
 
-    .. method:: path_stats(self, path)
+    .. method:: path_stats(path)
 
         Optional abstract method which returns a :class:`dict` containing
         metadata about the specifed path.  Supported dictionary keys are:
@@ -350,7 +350,7 @@ are also provided to help in implementing the core ABCs.
 
         .. versionadded:: 3.3
 
-    .. method:: path_mtime(self, path)
+    .. method:: path_mtime(path)
 
         Optional abstract method which returns the modification time for the
         specified path.
@@ -360,7 +360,7 @@ are also provided to help in implementing the core ABCs.
            have to implement it, but it is still available for compatibility
            purposes.
 
-    .. method:: set_data(self, path, data)
+    .. method:: set_data(path, data)
 
         Optional abstract method which writes the specified bytes to a file
         path. Any intermediate directories which do not exist are to be created
@@ -369,19 +369,19 @@ are also provided to help in implementing the core ABCs.
         When writing to the path fails because the path is read-only
         (:attr:`errno.EACCES`), do not propagate the exception.
 
-    .. method:: get_code(self, fullname)
+    .. method:: get_code(fullname)
 
         Concrete implementation of :meth:`InspectLoader.get_code`.
 
-    .. method:: load_module(self, fullname)
+    .. method:: load_module(fullname)
 
         Concrete implementation of :meth:`Loader.load_module`.
 
-    .. method:: get_source(self, fullname)
+    .. method:: get_source(fullname)
 
         Concrete implementation of :meth:`InspectLoader.get_source`.
 
-    .. method:: is_package(self, fullname)
+    .. method:: is_package(fullname)
 
         Concrete implementation of :meth:`InspectLoader.is_package`. A module
         is determined to be a package if its file path (as provided by
