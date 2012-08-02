@@ -141,9 +141,10 @@ are also provided to help in implementing the core ABCs.
       longer requires implementation of a ``find_module()`` method.
 
 
-.. class:: MetaPathFinder(Finder)
+.. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder`.
+   An abstract base class representing a :term:`meta path finder` and
+   inheriting from :class:`Finder`.
 
    .. versionadded:: 3.3
 
@@ -156,9 +157,10 @@ are also provided to help in implementing the core ABCs.
       package. If a loader cannot be found, ``None`` is returned.
 
 
-.. class:: PathEntryFinder(Finder)
+.. class:: PathEntryFinder
 
-   An abstract base class representing a :term:`path entry finder`.
+   An abstract base class representing a :term:`path entry finder` and
+   inheriting from :class:`Finder`.
 
    .. versionadded:: 3.3
 
