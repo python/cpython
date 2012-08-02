@@ -720,9 +720,9 @@ class FrozenImporter:
         return _imp.is_frozen_package(fullname)
 
 
-class WindowsRegistryImporter:
+class WindowsRegistryFinder:
 
-    """Meta path import for modules declared in the Windows registry.
+    """Meta path finder for modules declared in the Windows registry.
     """
 
     REGISTRY_KEY = (
@@ -1683,7 +1683,7 @@ def _setup(sys_module, _imp_module):
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
         if '_d.pyd' in _imp.extension_suffixes():
-            WindowsRegistryImporter.DEBUG_BUILD = True
+            WindowsRegistryFinder.DEBUG_BUILD = True
 
 
 def _install(sys_module, _imp_module):
@@ -1694,5 +1694,5 @@ def _install(sys_module, _imp_module):
     sys.meta_path.append(BuiltinImporter)
     sys.meta_path.append(FrozenImporter)
     if _os.__name__ == 'nt':
-        sys.meta_path.append(WindowsRegistryImporter)
+        sys.meta_path.append(WindowsRegistryFinder)
     sys.meta_path.append(PathFinder)

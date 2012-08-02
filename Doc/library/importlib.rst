@@ -603,6 +603,17 @@ find and load modules.
     instantiation.
 
 
+.. class:: WindowsRegistryFinder
+
+   :term:`Finder` for modules declared in the Windows registry.  This class
+   implements the :class:`importlib.abc.MetaPathFinder` ABC.
+
+   Only class methods are defined by this class to alleviate the need for
+   instantiation.
+
+   .. versionadded:: 3.3
+
+
 .. class:: PathFinder
 
     :term:`Finder` for :data:`sys.path`. This class implements the
