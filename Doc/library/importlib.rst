@@ -125,32 +125,49 @@ are also provided to help in implementing the core ABCs.
 
 .. class:: Finder
 
-    An abstract base class representing a :term:`finder`.
-    See :pep:`302` for the exact definition for a finder.
-
-    .. method:: find_loader(self, fullname):
-
-        An abstract method for finding a :term:`loader` for the specified
-        module.  Returns a 2-tuple of ``(loader, portion)`` where portion is a
-        sequence of file system locations contributing to part of a namespace
-        package.  The sequence may be empty.  When present, `find_loader()` is
-        preferred over `find_module()`.
-
-        .. versionadded: 3.3
-
-    .. method:: find_module(fullname, path=None)
-
-        An abstract method for finding a :term:`loader` for the specified
-        module. If the :term:`finder` is found on :data:`sys.meta_path` and the
-        module to be searched for is a subpackage or module then *path* will
-        be the value of :attr:`__path__` from the parent package. If a loader
-        cannot be found, ``None`` is returned.
+   An abstract base class representing a :term:`finder`.  Finder
+   implementations should derive from (or register with) the more specific
+   :class:`MetaPathFinder` or :class:`PathEntryFinder` ABCs.
 
    .. method:: invalidate_caches()
 
-        An optional method which, when called, should invalidate any internal
-        cache used by the finder. Used by :func:`invalidate_caches()` when
-        invalidating the caches of all cached finders.
+      An optional method which, when called, should invalidate any internal
+      cache used by the finder. Used by :func:`invalidate_caches()` when
+      invalidating the caches of all cached finders.
+
+   .. versionchanged:: 3.3
+      The API signatures for meta path finders and path entry finders
+      were separated by PEP 420. Accordingly, the Finder ABC no
+      longer requires implementation of a ``find_module()`` method.
+
+
+.. class:: MetaPathFinder(Finder)
+
+   An abstract base class representing a :term:`meta path finder`.
+
+   .. versionadded:: 3.3
+
+   .. method:: find_module(fullname, path)
+
+      An abstract method for finding a :term:`loader` for the specified
+      module.  If this is a top-level import, *path* will be ``None``.
+      Otheriwse, this is a search for a subpackage or module and *path*
+      will be the value of :attr:`__path__` from the parent
+      package. If a loader cannot be found, ``None`` is returned.
+
+
+.. class:: PathEntryFinder(Finder)
+
+   An abstract base class representing a :term:`path entry finder`.
+
+   .. versionadded:: 3.3
+
+   .. method:: find_loader(self, fullname):
+
+      An abstract method for finding a :term:`loader` for the specified
+      module.  Returns a 2-tuple of ``(loader, portion)`` where portion is a
+      sequence of file system locations contributing to part of a namespace
+      package.  The sequence may be empty.
 
 
 .. class:: Loader
@@ -569,8 +586,8 @@ find and load modules.
 
     An :term:`importer` for built-in modules. All known built-in modules are
     listed in :data:`sys.builtin_module_names`. This class implements the
-    :class:`importlib.abc.Finder` and :class:`importlib.abc.InspectLoader`
-    ABCs.
+    :class:`importlib.abc.MetaPathFinder` and
+    :class:`importlib.abc.InspectLoader` ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
@@ -579,8 +596,8 @@ find and load modules.
 .. class:: FrozenImporter
 
     An :term:`importer` for frozen modules. This class implements the
-    :class:`importlib.abc.Finder` and :class:`importlib.abc.InspectLoader`
-    ABCs.
+    :class:`importlib.abc.MetaPathFinder` and
+    :class:`importlib.abc.InspectLoader` ABCs.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
@@ -589,7 +606,7 @@ find and load modules.
 .. class:: PathFinder
 
     :term:`Finder` for :data:`sys.path`. This class implements the
-    :class:`importlib.abc.Finder` ABC.
+    :class:`importlib.abc.MetaPathFinder` ABC.
 
     This class does not perfectly mirror the semantics of :keyword:`import` in
     terms of :data:`sys.path`. No implicit path hooks are assumed for
@@ -616,8 +633,8 @@ find and load modules.
 
 .. class:: FileFinder(path, \*loader_details)
 
-   A concrete implementation of :class:`importlib.abc.Finder` which caches
-   results from the file system.
+   A concrete implementation of :class:`importlib.abc.PathEntryFinder` which
+   caches results from the file system.
 
    The *path* argument is the directory for which the finder is in charge of
    searching.

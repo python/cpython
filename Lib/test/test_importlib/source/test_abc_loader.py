@@ -778,22 +778,31 @@ class SourceLoaderGetSourceTests(unittest.TestCase):
         expect = io.IncrementalNewlineDecoder(None, True).decode(source)
         self.assertEqual(mock.get_source(name), expect)
 
+
 class AbstractMethodImplTests(unittest.TestCase):
 
     """Test the concrete abstractmethod implementations."""
+
+    class MetaPathFinder(abc.MetaPathFinder):
+        def find_module(self, fullname, path):
+            super().find_module(fullname, path)
+
+    class PathEntryFinder(abc.PathEntryFinder):
+        def find_module(self, _):
+            super().find_module(_)
+
+        def find_loader(self, _):
+            super().find_loader(_)
+
+    class Finder(abc.Finder):
+        def find_module(self, fullname, path):
+            super().find_module(fullname, path)
 
     class Loader(abc.Loader):
         def load_module(self, fullname):
             super().load_module(fullname)
         def module_repr(self, module):
             super().module_repr(module)
-
-    class Finder(abc.Finder):
-        def find_module(self, _):
-            super().find_module(_)
-
-        def find_loader(self, _):
-            super().find_loader(_)
 
     class ResourceLoader(Loader, abc.ResourceLoader):
         def get_data(self, _):

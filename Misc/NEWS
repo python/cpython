@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15502: Bring the importlib ABCs into line with the current state
+  of the import protocols given PEP 420. Original patch by Eric Snow.
+
 - Issue #15499: Launching a webbrowser in Unix used to sleep for a few
   seconds.  Original patch by Anton Barkovsky.
   
