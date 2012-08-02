@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15519: Properly expose WindowsRegistryFinder in importlib (and use
+  the correct term for it). Original patch by Eric Snow.
+
 - Issue #15502: Bring the importlib ABCs into line with the current state
   of the import protocols given PEP 420. Original patch by Eric Snow.
 
