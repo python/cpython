@@ -519,7 +519,15 @@ One of the large benefits of this work is the exposure of what goes into
 making the import statement work. That means the various importers that were
 once implicit are now fully exposed as part of the :mod:`importlib` package.
 
-In terms of finders, * :class:`importlib.machinery.FileFinder` exposes the
+The abstract base classes defined in :mod:`importlib.abc` have been expanded
+to properly delineate between :term:`meta path finders <meta path finder>`
+and :term:`path entry finders <path entry finder>` by introducing
+:class:`importlib.abc.MetaPathFinder` and
+:class:`importlib.abc.PathEntryFinder`, respectively. The old ABC of
+:class:`importlib.abc.Finder` is now only provided for backwards-compatibility
+and does not enforce any method requirements.
+
+In terms of finders, :class:`importlib.machinery.FileFinder` exposes the
 mechanism used to search for source and bytecode files of a module. Previously
 this class was an implicit member of :attr:`sys.path_hooks`.
 
@@ -547,10 +555,10 @@ section]
 
 Beyond the expanse of what :mod:`importlib` now exposes, there are other
 visible changes to import. The biggest is that :attr:`sys.meta_path` and
-:attr:`sys.path_hooks` now store all of the finders used by import explicitly.
-Previously the finders were implicit and hidden within the C code of import
-instead of being directly exposed. This means that one can now easily remove or
-change the order of the various finders to fit one's needs.
+:attr:`sys.path_hooks` now store all of the meta path finders and path entry
+hooks used by import.  Previously the finders were implicit and hidden within
+the C code of import instead of being directly exposed. This means that one can
+now easily remove or change the order of the various finders to fit one's needs.
 
 Another change is that all modules have a ``__loader__`` attribute, storing the
 loader used to create the module. :pep:`302` has been updated to make this
@@ -1732,6 +1740,12 @@ Porting Python code
   :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
   both the modification time and size of the source file the bytecode file was
   compiled from.
+
+* :class:`importlib.abc.Finder` no longer specifies a `find_module()` abstract
+  method that must be implemented. If you were relying on subclasses to
+  implement that method, make sure to check for the method's existence first.
+  You will probably want to check for `find_loader()` first, though, in the
+  case of working with :term:`path entry finders <path entry finder>`.
 
 * :mod:`pkgutil` has been converted to use :mod:`importlib` internally. This
   eliminates many edge cases where the old behaviour of the PEP 302 import
