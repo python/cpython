@@ -606,7 +606,7 @@ find and load modules.
 .. class:: WindowsRegistryFinder
 
    :term:`Finder` for modules declared in the Windows registry.  This class
-   implements the :class:`importlib.abc.MetaPathFinder` ABC.
+   implements the :class:`importlib.abc.Finder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
    instantiation.
@@ -616,14 +616,8 @@ find and load modules.
 
 .. class:: PathFinder
 
-    :term:`Finder` for :data:`sys.path`. This class implements the
-    :class:`importlib.abc.MetaPathFinder` ABC.
-
-    This class does not perfectly mirror the semantics of :keyword:`import` in
-    terms of :data:`sys.path`. No implicit path hooks are assumed for
-    simplification of the class and its semantics. This implies that when
-    ``None`` is found in :data:`sys.path_importer_cache` that it is simply
-    ignored instead of implying a default finder.
+    :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
     Only class methods are defined by this class to alleviate the need for
     instantiation.
@@ -639,7 +633,8 @@ find and load modules.
         :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
         searched for a finder for the path entry and, if found, is stored in
         :data:`sys.path_importer_cache` along with being queried about the
-        module. If no finder is ever found then ``None`` is returned.
+        module. If no finder is ever found then ``None`` is both stored in
+        the cache and returned.
 
 
 .. class:: FileFinder(path, \*loader_details)

@@ -1183,7 +1183,7 @@ class NamespaceLoader:
 
 class PathFinder:
 
-    """Meta path finder for sys.(path|path_hooks|path_importer_cache)."""
+    """Meta path finder for sys.path and package __path__ attributes."""
 
     @classmethod
     def _path_hooks(cls, path):
@@ -1204,10 +1204,10 @@ class PathFinder:
 
     @classmethod
     def _path_importer_cache(cls, path):
-        """Get the finder for the path from sys.path_importer_cache.
+        """Get the finder for the path entry from sys.path_importer_cache.
 
-        If the path is not in the cache, find the appropriate finder and cache
-        it. If no finder is available, store None.
+        If the path entry is not in the cache, find the appropriate finder
+        and cache it. If no finder is available, store None.
 
         """
         if path == '':
