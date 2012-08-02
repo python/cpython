@@ -30,11 +30,16 @@ class InheritanceTests:
                "{0} is not a superclass of {1}".format(superclass, self.__test))
 
 
-class Finder(InheritanceTests, unittest.TestCase):
+class MetaPathFinder(InheritanceTests, unittest.TestCase):
 
+    superclasses = [abc.Finder]
     subclasses = [machinery.BuiltinImporter, machinery.FrozenImporter,
                     machinery.PathFinder]
 
+class PathEntryFinder(InheritanceTests, unittest.TestCase):
+
+    superclasses = [abc.Finder]
+    subclasses = [machinery.FileFinder]
 
 class Loader(InheritanceTests, unittest.TestCase):
 
