@@ -660,41 +660,86 @@ The :keyword:`import` statement
    relative_module: "."* `module` | "."+
    name: `identifier`
 
-Import statements are executed in two steps: (1) find a module, loading and
-initializing it if necessary; (2) define a name or names in the local
-namespace (of the scope where the :keyword:`import` statement occurs).
-Step (1) may be performed recursively if the named module is a submodule or
-subpackage of a parent package.
+The basic import statement (no :keyword:`from` clause) is executed in two
+steps:
 
-The :keyword:`import` statement comes in two forms differing on whether it
-uses the :keyword:`from` keyword. The first form (without :keyword:`from`)
-repeats these steps for each identifier in the list.  The form with
-:keyword:`from` performs step (1), and then performs step (2) repeatedly.
+#. find a module, loading and initializing it if necessary
+#. define a name or names in the local namespace for the scope where
+   the :keyword:`import` statement occurs.
 
-The details of step (1), finding and loading modules is described in greater
-detail in the section on the :ref:`import system <importsystem>`, which
-also describes the various types of packages and modules that can be imported,
-as well as all the hooks that can be used to customize Python's import.
+When the statement contains multiple clauses (separated by
+commas) the two steps are carried out separately for each clause, just
+as though the clauses had been separated out into individiual import
+statements.
 
-When step (1) finishes without raising an exception, step (2) can begin.
+The details of the first step, finding and loading modules is described in
+greater detail in the section on the :ref:`import system <importsystem>`,
+which also describes the various types of packages and modules that can
+be imported, as well as all the hooks that can be used to customize
+the import system. Note that failures in this step may indicate either
+that the module could not be located, *or* that an error occurred while
+initializing the module, which includes execution of the module's code.
 
-The first form of :keyword:`import` statement binds the module name in the
-local namespace to the module object, and then goes on to import the next
-identifier, if any.  If the module name is followed by :keyword:`as`, the name
-following :keyword:`as` is used as the local name for the module.
+If the requested module is retrieved successfully, it will be made
+available in the local namespace in one of three ways:
+
+* If the module name is followed by :keyword:`as`, then the name
+  following :keyword:`as` is bound directly to the imported module.
+* If no other name is specified, and the module being imported is a top
+  level module, the module's name is bound in the local namespace as a
+  reference to the imported module
+* If the module being imported is *not* a top level module, then the name
+  of the top level package that contains the module is bound in the local
+  namespace as a reference to the top level package. The imported module
+  must be accessed using its full qualified name rather than directly
+
 
 .. index::
    pair: name; binding
+   keyword: from
    exception: ImportError
 
-The :keyword:`from` form does not bind the module name: it goes through the
-list of identifiers, looks each one of them up in the module found in step
-(1), and binds the name in the local namespace to the object thus found.  As
-with the first form of :keyword:`import`, an alternate local name can be
-supplied by specifying ":keyword:`as` localname".  If a name is not found,
-:exc:`ImportError` is raised.  If the list of identifiers is replaced by a
-star (``'*'``), all public names defined in the module are bound in the local
-namespace of the :keyword:`import` statement.
+The :keyword:`from` form uses a slightly more complex process:
+
+#. find the module specified in the :keyword:`from` clause loading and
+   initializing it if necessary;
+#. for each of the identifiers specified in the :keyword:`import` clauses:
+
+   #. check if the imported module has an attribute by that name
+   #. if not, attempt to import a submodule with that name and then
+      check the imported module again for that attribute
+   #. if the attribute is not found, :exc:`ImportError` is raised.
+   #. otherwise, a reference to that value is bound in the local namespace,
+      using the name in the :keyword:`as` clause if it is present,
+      otherwise using the attribute name
+
+Examples::
+
+   import foo                 # foo imported and bound locally
+   import foo.bar.baz         # foo.bar.baz imported, foo bound locally
+   import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
+   from foo.bar import baz    # foo.bar.baz imported and bound as baz
+   from foo import attr       # foo imported and foo.attr bound as attr
+
+If the list of identifiers is replaced by a star (``'*'``), all public
+names defined in the module are bound in the local namespace for the scope
+where the :keyword:`import` statement occurs.
+
+.. index:: single: __all__ (optional module attribute)
+
+The *public names* defined by a module are determined by checking the module's
+namespace for a variable named ``__all__``; if defined, it must be a sequence
+of strings which are names defined or imported by that module.  The names
+given in ``__all__`` are all considered public and are required to exist.  If
+``__all__`` is not defined, the set of public names includes all names found
+in the module's namespace which do not begin with an underscore character
+(``'_'``).  ``__all__`` should contain the entire public API. It is intended
+to avoid accidentally exporting items that are not part of the API (such as
+library modules which were imported and used within the module).
+
+The :keyword:`from` form with ``*`` may only occur in a module scope.
+Attempting to use it in class or function definitions will raise a
+:exc:`SyntaxError`.
 
 .. index:: single: __all__ (optional module attribute)
 
