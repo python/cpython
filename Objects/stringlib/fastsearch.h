@@ -48,16 +48,16 @@ STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     } while (0)
 
     if (mode == FAST_SEARCH) {
-        const STRINGLIB_CHAR *_s = s;
+        const STRINGLIB_CHAR *ptr = s;
         const STRINGLIB_CHAR *e = s + n;
-        while (_s < e) {
-            DO_MEMCHR(memchr, _s, needle, e - _s);
+        while (ptr < e) {
+            DO_MEMCHR(memchr, ptr, needle, e - ptr);
             if (found == NULL)
                 return -1;
             if (sizeof(STRINGLIB_CHAR) == 1 || *found == ch)
-                return (found - _s);
+                return (found - s);
             /* False positive */
-            _s = found + 1;
+            ptr = found + 1;
         }
         return -1;
     }

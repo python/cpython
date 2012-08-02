@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15534: Fix the fast-search function for non-ASCII Unicode strings.
+
 - Issue #15508: Fix the docstring for __import__ to have the proper default
   value of 0 for 'level' and to not mention negative levels since they are
   not supported.
@@ -83,7 +85,7 @@ Library
 
 - Issue #15499: Launching a webbrowser in Unix used to sleep for a few
   seconds.  Original patch by Anton Barkovsky.
-  
+
 - Issue #15463: the faulthandler module truncates strings to 500 characters,
   instead of 100, to be able to display long file paths
 
