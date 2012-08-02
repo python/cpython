@@ -59,7 +59,7 @@ class MetaPathFinder(Finder):
         raise NotImplementedError
 
 _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
-          machinery.PathFinder)
+          machinery.PathFinder, machinery.WindowsRegistryFinder)
 
 
 class PathEntryFinder(Finder):

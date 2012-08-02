@@ -6,6 +6,7 @@ from ._bootstrap import (SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,
                          OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES)
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter
+from ._bootstrap import WindowsRegistryFinder
 from ._bootstrap import PathFinder
 from ._bootstrap import FileFinder
 from ._bootstrap import SourceFileLoader
