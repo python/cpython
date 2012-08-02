@@ -72,6 +72,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15538: Fix compilation of the getnameinfo() / getaddrinfo()
+  emulation code.  Patch by Philipp Hagemeister.
+
 - Issue #15519: Properly expose WindowsRegistryFinder in importlib (and use
   the correct term for it). Original patch by Eric Snow.
 
