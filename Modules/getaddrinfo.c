@@ -430,7 +430,7 @@ getaddrinfo(const char*hostname, const char*servname,
                 break;
 #ifdef ENABLE_IPV6
             case AF_INET6:
-                pfx = ((struct in6_addr *)pton)->s6_addr8[0];
+                pfx = ((struct in6_addr *)pton)->s6_addr[0];
                 if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
                     pai->ai_flags &= ~AI_CANONNAME;
                 break;

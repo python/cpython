@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15538: Fix compilation of the getnameinfo() / getaddrinfo()
+  emulation code.  Patch by Philipp Hagemeister.
+
 - Issue #9803: Don't close IDLE on saving if breakpoint is open.
   Patch by Roger Serwy.
 
