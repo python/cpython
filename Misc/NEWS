@@ -104,6 +104,9 @@ Library
 - Issue #15489: Add a __sizeof__ implementation for BytesIO objects.
   Patch by Serhiy Storchaka.
 
+- Issue #15469: Add a __sizeof__ implementation for deque objects.
+  Patch by Serhiy Storchaka.
+
 - Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
   Patch by Serhiy Storchaka.
 
