@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #13119: sys.stdout and sys.stderr are now using "\r\n" newline on
+  Windows, as Python 2.
+
 - Issue #14579: Fix CVE-2012-2135: vulnerability in the utf-16 decoder after
   error handling.  Patch by Serhiy Storchaka.
 
