@@ -610,8 +610,6 @@ class STObjectTestCase(unittest.TestCase):
             children = node[1:-1] if hasstr else node[1:]
             if children:
                 res += XXXROUNDUP(len(children)) * nodesize
-            res1 = res
-            if children:
                 for child in children:
                     res += sizeofchildren(child)
             return res
