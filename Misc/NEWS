@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #13119: sys.stdout and sys.stderr are now using "\r\n" newline on
+  Windows, as Python 2.
+
 - Issue #15534: Fix the fast-search function for non-ASCII Unicode strings.
 
 - Issue #15508: Fix the docstring for __import__ to have the proper default

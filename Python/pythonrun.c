@@ -971,12 +971,15 @@ create_stdio(PyObject* io,
     Py_CLEAR(raw);
     Py_CLEAR(text);
 
-    newline = "\n";
 #ifdef MS_WINDOWS
-    if (!write_mode) {
-        /* translate \r\n to \n for sys.stdin on Windows */
-        newline = NULL;
-    }
+    /* sys.stdin: enable universal newline mode, translate "\r\n" and "\r"
+       newlines to "\n".
+       sys.stdout and sys.stderr: translate "\n" to "\r\n". */
+    newline = NULL;
+#else
+    /* sys.stdin: split lines at "\n".
+       sys.stdout and sys.stderr: don't translate newlines (use "\n"). */
+    newline = "\n";
 #endif
 
     stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssO",
