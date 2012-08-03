@@ -167,6 +167,7 @@ typedef struct {
 
 
 static void parser_free(PyST_Object *st);
+static PyObject* parser_sizeof(PyST_Object *, void *);
 static PyObject* parser_richcompare(PyObject *left, PyObject *right, int op);
 static PyObject* parser_compilest(PyST_Object *, PyObject *, PyObject *);
 static PyObject* parser_isexpr(PyST_Object *, PyObject *, PyObject *);
@@ -187,7 +188,8 @@ static PyMethodDef parser_methods[] = {
         PyDoc_STR("Creates a list-tree representation of this ST.")},
     {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of this ST.")},
-
+    {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
+        PyDoc_STR("Returns size in memory, in bytes.")},
     {NULL, NULL, 0, NULL}
 };
 
@@ -359,6 +361,15 @@ parser_free(PyST_Object *st)
 {
     PyNode_Free(st->st_node);
     PyObject_Del(st);
+}
+
+static PyObject *
+parser_sizeof(PyST_Object *st, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(PyST_Object) + _PyNode_SizeOf(st->st_node);
+    return PyLong_FromSsize_t(res);
 }
 
 

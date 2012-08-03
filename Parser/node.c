@@ -114,6 +114,7 @@ PyNode_AddChild(register node *n1, int type, char *str, int lineno, int col_offs
 
 /* Forward */
 static void freechildren(node *);
+static Py_ssize_t sizeofchildren(node *n);
 
 
 void
@@ -123,6 +124,16 @@ PyNode_Free(node *n)
         freechildren(n);
         PyObject_FREE(n);
     }
+}
+
+Py_ssize_t
+_PyNode_SizeOf(node *n)
+{
+    Py_ssize_t res = 0;
+
+    if (n != NULL)
+        res = sizeof(node) + sizeofchildren(n);
+    return res;
 }
 
 static void
@@ -135,4 +146,19 @@ freechildren(node *n)
         PyObject_FREE(n->n_child);
     if (STR(n) != NULL)
         PyObject_FREE(STR(n));
+}
+
+static Py_ssize_t
+sizeofchildren(node *n)
+{
+    Py_ssize_t res = 0;
+    int i;
+    for (i = NCH(n); --i >= 0; )
+        res += sizeofchildren(CHILD(n, i));
+    if (n->n_child != NULL)
+        /* allocated size of n->n_child array */
+        res += XXXROUNDUP(NCH(n)) * sizeof(node);
+    if (STR(n) != NULL)
+        res += strlen(STR(n)) + 1;
+    return res;
 }
