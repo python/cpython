@@ -370,6 +370,9 @@ Library
 - Issue #15512: Add a __sizeof__ implementation for parser.
   Patch by Serhiy Storchaka.
 
+- Issue #15469: Add a __sizeof__ implementation for deque objects.
+  Patch by Serhiy Storchaka.
+
 - Issue #15489: Add a __sizeof__ implementation for BytesIO objects.
   Patch by Serhiy Storchaka.
 
