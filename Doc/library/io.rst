@@ -780,9 +780,9 @@ Text I/O
 
    * On output, if *newline* is ``None``, any ``'\n'`` characters written are
      translated to the system default line separator, :data:`os.linesep`.  If
-     *newline* is ``''``, no translation takes place.  If *newline* is any of
-     the other legal values, any ``'\n'`` characters written are translated to
-     the given string.
+     *newline* is ``''`` or ``'\n'``, no translation takes place.  If *newline*
+     is any of the other legal values, any ``'\n'`` characters written are
+     translated to the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
    write contains a newline character.
