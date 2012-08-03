@@ -5772,6 +5772,20 @@ cpu_set_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return (PyObject *)make_new_cpu_set(type, size);
 }
 
+PyDoc_STRVAR(cpu_set_sizeof_doc,
+"cpu_set.__sizeof__() -> int\n\n\
+Returns size in memory, in bytes.");
+
+static PyObject *
+cpu_set_sizeof(Py_cpu_set *set, PyObject *noargs)
+{
+    Py_ssize_t res = 0;
+
+    res = sizeof(Py_cpu_set);
+    res += set->size;
+    return PyLong_FromSsize_t(res);
+}
+
 static PyObject *
 cpu_set_repr(Py_cpu_set *set)
 {
@@ -5959,6 +5973,7 @@ static PyMethodDef cpu_set_methods[] = {
     {"isset", (PyCFunction)cpu_set_isset, METH_VARARGS, cpu_set_isset_doc},
     {"set", (PyCFunction)cpu_set_set, METH_VARARGS, cpu_set_set_doc},
     {"zero", (PyCFunction)cpu_set_zero, METH_NOARGS, cpu_set_zero_doc},
+    {"__sizeof__", (PyCFunction)cpu_set_sizeof, METH_NOARGS, cpu_set_sizeof_doc},
     {NULL, NULL}   /* sentinel */
 };
 
