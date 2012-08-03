@@ -6,6 +6,7 @@ import weakref
 import copy
 import cPickle as pickle
 import random
+import struct
 
 BIG = 100000
 
@@ -516,6 +517,21 @@ class TestBasic(unittest.TestCase):
             del obj, container
             gc.collect()
             self.assertTrue(ref() is None, "Cycle was not collected")
+
+    check_sizeof = test_support.check_sizeof
+
+    @test_support.cpython_only
+    def test_sizeof(self):
+        BLOCKLEN = 62
+        basesize = test_support.calcobjsize('2P4PlP')
+        blocksize = struct.calcsize('2P%dP' % BLOCKLEN)
+        self.assertEqual(object.__sizeof__(deque()), basesize)
+        check = self.check_sizeof
+        check(deque(), basesize + blocksize)
+        check(deque('a'), basesize + blocksize)
+        check(deque('a' * (BLOCKLEN // 2)), basesize + blocksize)
+        check(deque('a' * (BLOCKLEN // 2 + 1)), basesize + 2 * blocksize)
+        check(deque('a' * (42 * BLOCKLEN)), basesize + 43 * blocksize)
 
 class TestVariousIteratorArgs(unittest.TestCase):
 
