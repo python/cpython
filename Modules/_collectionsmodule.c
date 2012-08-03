@@ -991,6 +991,23 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 }
 
 static PyObject *
+deque_sizeof(dequeobject *deque, void *unused)
+{
+    Py_ssize_t res;
+    Py_ssize_t blocks;
+
+    res = sizeof(dequeobject);
+    blocks = (deque->leftindex + deque->len + BLOCKLEN - 1) / BLOCKLEN;
+    assert(deque->leftindex + deque->len - 1 ==
+           (blocks - 1) * BLOCKLEN + deque->rightindex);
+    res += blocks * sizeof(block);
+    return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof_doc,
+"D.__sizeof__() -- size of D in memory, in bytes");
+
+static PyObject *
 deque_get_maxlen(dequeobject *deque)
 {
     if (deque->maxlen == -1)
@@ -1053,7 +1070,9 @@ static PyMethodDef deque_methods[] = {
     {"reverse",                 (PyCFunction)deque_reverse,
         METH_NOARGS,             reverse_doc},
     {"rotate",                  (PyCFunction)deque_rotate,
-        METH_VARARGS,           rotate_doc},
+        METH_VARARGS,            rotate_doc},
+    {"__sizeof__",              (PyCFunction)deque_sizeof,
+        METH_NOARGS,             sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
