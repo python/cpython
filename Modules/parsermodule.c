@@ -172,8 +172,30 @@ static void parser_free(PyST_Object *st);
 static PyObject* parser_sizeof(PyST_Object *, void *);
 static int parser_compare(PyST_Object *left, PyST_Object *right);
 static PyObject *parser_getattr(PyObject *self, char *name);
-static PyMethodDef parser_methods[];
+static PyObject* parser_compilest(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_isexpr(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_issuite(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_st2list(PyST_Object *, PyObject *, PyObject *);
+static PyObject* parser_st2tuple(PyST_Object *, PyObject *, PyObject *);
 
+#define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
+
+static PyMethodDef
+parser_methods[] = {
+    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Compile this ST object into a code object.")},
+    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Determines if this ST object was created from an expression.")},
+    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Determines if this ST object was created from a suite.")},
+    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Creates a list-tree representation of this ST.")},
+    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
+        PyDoc_STR("Creates a tuple-tree representation of this ST.")},
+    {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
+        PyDoc_STR("Returns size in memory, in bytes.")},
+    {NULL, NULL, 0, NULL}
+};
 
 static
 PyTypeObject PyST_Type = {
@@ -501,26 +523,6 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
     }
     return (res);
 }
-
-
-#define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
-
-static PyMethodDef
-parser_methods[] = {
-    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Compile this ST object into a code object.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Determines if this ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Determines if this ST object was created from a suite.")},
-    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a list-tree representation of this ST.")},
-    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
-        PyDoc_STR("Creates a tuple-tree representation of this ST.")},
-    {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
-        PyDoc_STR("Returns size in memory, in bytes.")},
-    {NULL, NULL, 0, NULL}
-};
 
 
 static PyObject*
