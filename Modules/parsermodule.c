@@ -169,8 +169,10 @@ typedef struct {
 
 
 static void parser_free(PyST_Object *st);
+static PyObject* parser_sizeof(PyST_Object *, void *);
 static int parser_compare(PyST_Object *left, PyST_Object *right);
 static PyObject *parser_getattr(PyObject *self, char *name);
+static PyMethodDef parser_methods[];
 
 
 static
@@ -200,7 +202,14 @@ PyTypeObject PyST_Type = {
     Py_TPFLAGS_DEFAULT,                 /* tp_flags             */
 
     /* __doc__ */
-    "Intermediate representation of a Python parse tree."
+    "Intermediate representation of a Python parse tree.",
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    parser_methods,                     /* tp_methods */
 };  /* PyST_Type */
 
 
@@ -508,7 +517,8 @@ parser_methods[] = {
         PyDoc_STR("Creates a list-tree representation of this ST.")},
     {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of this ST.")},
-
+    {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
+        PyDoc_STR("Returns size in memory, in bytes.")},
     {NULL, NULL, 0, NULL}
 };
 
@@ -693,6 +703,15 @@ parser_tuple2ast(PyST_Object *self, PyObject *args, PyObject *kw)
     if (PyErr_WarnPy3k("tuple2ast is removed in 3.x; use tuple2st", 1) < 0)
         return NULL;
     return parser_tuple2st(self, args, kw);
+}
+
+static PyObject *
+parser_sizeof(PyST_Object *st, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(PyST_Object) + _PyNode_SizeOf(st->st_node);
+    return PyLong_FromSsize_t(res);
 }
 
 

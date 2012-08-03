@@ -107,6 +107,9 @@ Library
 - Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
   Patch by Serhiy Storchaka.
 
+- Issue #15512: Add a __sizeof__ implementation for parser.
+  Patch by Serhiy Storchaka.
+
 - Issue #15402: An issue in the struct module that caused sys.getsizeof to
   return incorrect results for struct.Struct instances has been fixed.
   Initial patch by Serhiy Storchaka.
