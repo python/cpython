@@ -1008,6 +1008,12 @@ class PosixTester(unittest.TestCase):
         self.assertIs(b, l)
         self.assertEqual(l.count(), 3)
 
+    @requires_sched_affinity
+    @support.cpython_only
+    def test_cpu_set_sizeof(self):
+        self.assertGreater(sys.getsizeof(posix.cpu_set(1000)),
+                           sys.getsizeof(posix.cpu_set(1)))
+
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
