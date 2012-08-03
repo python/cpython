@@ -757,14 +757,22 @@ Text I/O
    sequences) can be used.  Any other error handling name that has been
    registered with :func:`codecs.register_error` is also valid.
 
-   *newline* can be ``None``, ``''``, ``'\n'``, ``'\r'``, or ``'\r\n'``.  It
-   controls the handling of line endings.  If it is ``None``, universal newlines
-   is enabled.  With this enabled, on input, the lines endings ``'\n'``,
-   ``'\r'``, or ``'\r\n'`` are translated to ``'\n'`` before being returned to
-   the caller.  Conversely, on output, ``'\n'`` is translated to the system
-   default line separator, :data:`os.linesep`.  If *newline* is any other of its
-   legal values, that newline becomes the newline when the file is read and it
-   is returned untranslated.  On output, ``'\n'`` is converted to the *newline*.
+   *newline* controls how line endings are handled.  It can be ``None``,
+   ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It works as follows:
+
+   * On input, if *newline* is ``None``, universal newlines mode is enabled.
+     Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``, and these
+     are translated into ``'\n'`` before being returned to the caller.  If it is
+     ``''``, universal newline mode is enabled, but line endings are returned to
+     the caller untranslated.  If it has any of the other legal values, input
+     lines are only terminated by the given string, and the line ending is
+     returned to the caller untranslated.
+
+   * On output, if *newline* is ``None``, any ``'\n'`` characters written are
+     translated to the system default line separator, :data:`os.linesep`.  If
+     *newline* is ``''``, no translation takes place.  If *newline* is any of
+     the other legal values, any ``'\n'`` characters written are translated to
+     the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
    write contains a newline character.
