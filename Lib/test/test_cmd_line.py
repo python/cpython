@@ -265,6 +265,23 @@ class CmdLineTest(unittest.TestCase):
             "print(repr(input()))",
             b"'abc'")
 
+    def test_output_newline(self):
+        # Issue 13119 Newline for print() should be \r\n on Windows.
+        code = """if 1:
+            import sys
+            print(1)
+            print(2)
+            print(3, file=sys.stderr)
+            print(4, file=sys.stderr)"""
+        rc, out, err = assert_python_ok('-c', code)
+
+        if sys.platform == 'win32':
+            self.assertEqual(b'1\r\n2\r\n', out)
+            self.assertEqual(b'3\r\n4', err)
+        else:
+            self.assertEqual(b'1\n2\n', out)
+            self.assertEqual(b'3\n4', err)
+
     def test_unmached_quote(self):
         # Issue #10206: python program starting with unmatched quote
         # spewed spaces to stdout
