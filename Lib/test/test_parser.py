@@ -2,6 +2,7 @@ import parser
 import unittest
 import sys
 import operator
+import struct
 from test import support
 
 #
@@ -674,6 +675,46 @@ class STObjectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.le, False, st1)
         self.assertRaises(TypeError, operator.lt, st1, 1815)
         self.assertRaises(TypeError, operator.gt, b'waterloo', st2)
+
+    check_sizeof = support.check_sizeof
+
+    @support.cpython_only
+    def test_sizeof(self):
+        def XXXROUNDUP(n):
+            if n <= 1:
+                return n
+            if n <= 128:
+                return (n + 3) & ~3
+            return 1 << (n - 1).bit_length()
+
+        basesize = support.calcobjsize('Pii')
+        nodesize = struct.calcsize('hP3iP0h')
+        def sizeofchildren(node):
+            if node is None:
+                return 0
+            res = 0
+            hasstr = len(node) > 1 and isinstance(node[-1], str)
+            if hasstr:
+                res += len(node[-1]) + 1
+            children = node[1:-1] if hasstr else node[1:]
+            if children:
+                res += XXXROUNDUP(len(children)) * nodesize
+            res1 = res
+            if children:
+                for child in children:
+                    res += sizeofchildren(child)
+            return res
+
+        def check_st_sizeof(st):
+            self.check_sizeof(st, basesize + nodesize +
+                                  sizeofchildren(st.totuple()))
+
+        check_st_sizeof(parser.expr('2 + 3'))
+        check_st_sizeof(parser.expr('2 + 3 + 4'))
+        check_st_sizeof(parser.suite('x = 2 + 3'))
+        check_st_sizeof(parser.suite(''))
+        check_st_sizeof(parser.suite('# -*- coding: utf-8 -*-'))
+        check_st_sizeof(parser.expr('[' + '2,' * 1000 + ']'))
 
 
     # XXX tests for pickling and unpickling of ST objects should go here
