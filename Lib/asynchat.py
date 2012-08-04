@@ -49,18 +49,6 @@ import socket
 import asyncore
 from collections import deque
 
-def buffer(obj, start=None, stop=None):
-    # if memoryview objects gain slicing semantics,
-    # this function will change for the better
-    # memoryview used for the TypeError
-    memoryview(obj)
-    if start == None:
-        start = 0
-    if stop == None:
-        stop = len(obj)
-    x = obj[start:stop]
-    ## print("buffer type is: %s"%(type(x),))
-    return x
 
 class async_chat (asyncore.dispatcher):
     """This is an abstract class.  You must derive from this class, and add
@@ -240,7 +228,7 @@ class async_chat (asyncore.dispatcher):
             # handle classic producer behavior
             obs = self.ac_out_buffer_size
             try:
-                data = buffer(first, 0, obs)
+                data = first[:obs]
             except TypeError:
                 data = first.more()
                 if data:
