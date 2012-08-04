@@ -535,7 +535,8 @@ class SysModuleTest(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
                              stdout = subprocess.PIPE, env=env)
         out = p.communicate()[0].strip()
-        self.assertEqual(out, "\xa2\n".encode("cp424"))
+        expected = ("\xa2" + os.linesep).encode("cp424")
+        self.assertEqual(out, expected)
 
         env["PYTHONIOENCODING"] = "ascii:replace"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],

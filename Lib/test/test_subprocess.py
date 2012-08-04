@@ -563,21 +563,22 @@ class ProcessTestCase(BaseTestCase):
     def test_universal_newlines(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;' + SETBINARY +
-                              'sys.stdout.write(sys.stdin.readline());'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line2\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write(sys.stdin.read());'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line4\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line5\\r\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line6\\r");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline7");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline8");'],
+                              'buf = sys.stdout.buffer;'
+                              'buf.write(sys.stdin.readline().encode());'
+                              'buf.flush();'
+                              'buf.write(b"line2\\n");'
+                              'buf.flush();'
+                              'buf.write(sys.stdin.read().encode());'
+                              'buf.flush();'
+                              'buf.write(b"line4\\n");'
+                              'buf.flush();'
+                              'buf.write(b"line5\\r\\n");'
+                              'buf.flush();'
+                              'buf.write(b"line6\\r");'
+                              'buf.flush();'
+                              'buf.write(b"\\nline7");'
+                              'buf.flush();'
+                              'buf.write(b"\\nline8");'],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
@@ -597,17 +598,18 @@ class ProcessTestCase(BaseTestCase):
         # universal newlines through communicate()
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;' + SETBINARY +
-                              'sys.stdout.write("line2\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line4\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line5\\r\\n");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("line6\\r");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline7");'
-                              'sys.stdout.flush();'
-                              'sys.stdout.write("\\nline8");'],
+                              'buf = sys.stdout.buffer;'
+                              'buf.write(b"line2\\n");'
+                              'buf.flush();'
+                              'buf.write(b"line4\\n");'
+                              'buf.flush();'
+                              'buf.write(b"line5\\r\\n");'
+                              'buf.flush();'
+                              'buf.write(b"line6\\r");'
+                              'buf.flush();'
+                              'buf.write(b"\\nline7");'
+                              'buf.flush();'
+                              'buf.write(b"\\nline8");'],
                              stderr=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
