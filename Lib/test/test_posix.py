@@ -855,7 +855,7 @@ class PosixTester(unittest.TestCase):
 
     requires_sched_h = unittest.skipUnless(hasattr(posix, 'sched_yield'),
                                            "don't have scheduling support")
-    requires_sched_affinity = unittest.skipUnless(hasattr(posix, 'cpu_set'),
+    requires_sched_affinity = unittest.skipUnless(hasattr(posix, 'sched_setaffinity'),
                                                   "don't have sched affinity support")
 
     @requires_sched_h
@@ -936,83 +936,28 @@ class PosixTester(unittest.TestCase):
         self.assertLess(interval, 1.)
 
     @requires_sched_affinity
-    def test_sched_affinity(self):
-        mask = posix.sched_getaffinity(0, 1024)
-        self.assertGreaterEqual(mask.count(), 1)
-        self.assertIsInstance(mask, posix.cpu_set)
-        self.assertRaises(OSError, posix.sched_getaffinity, -1, 1024)
-        empty = posix.cpu_set(10)
+    def test_sched_getaffinity(self):
+        mask = posix.sched_getaffinity(0)
+        self.assertIsInstance(mask, set)
+        self.assertGreaterEqual(len(mask), 1)
+        self.assertRaises(OSError, posix.sched_getaffinity, -1)
+        for cpu in mask:
+            self.assertIsInstance(cpu, int)
+            self.assertGreaterEqual(cpu, 0)
+            self.assertLess(cpu, 1 << 32)
+
+    @requires_sched_affinity
+    def test_sched_setaffinity(self):
+        mask = posix.sched_getaffinity(0)
+        if len(mask) > 1:
+            # Empty masks are forbidden
+            mask.pop()
         posix.sched_setaffinity(0, mask)
-        self.assertRaises(OSError, posix.sched_setaffinity, 0, empty)
+        self.assertEqual(posix.sched_getaffinity(0), mask)
+        self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
+        self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
         self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
-
-    @requires_sched_affinity
-    def test_cpu_set_basic(self):
-        s = posix.cpu_set(10)
-        self.assertEqual(len(s), 10)
-        self.assertEqual(s.count(), 0)
-        s.set(0)
-        s.set(9)
-        self.assertTrue(s.isset(0))
-        self.assertTrue(s.isset(9))
-        self.assertFalse(s.isset(5))
-        self.assertEqual(s.count(), 2)
-        s.clear(0)
-        self.assertFalse(s.isset(0))
-        self.assertEqual(s.count(), 1)
-        s.zero()
-        self.assertFalse(s.isset(0))
-        self.assertFalse(s.isset(9))
-        self.assertEqual(s.count(), 0)
-        self.assertRaises(ValueError, s.set, -1)
-        self.assertRaises(ValueError, s.set, 10)
-        self.assertRaises(ValueError, s.clear, -1)
-        self.assertRaises(ValueError, s.clear, 10)
-        self.assertRaises(ValueError, s.isset, -1)
-        self.assertRaises(ValueError, s.isset, 10)
-
-    @requires_sched_affinity
-    def test_cpu_set_cmp(self):
-        self.assertNotEqual(posix.cpu_set(11), posix.cpu_set(12))
-        l = posix.cpu_set(10)
-        r = posix.cpu_set(10)
-        self.assertEqual(l, r)
-        l.set(1)
-        self.assertNotEqual(l, r)
-        r.set(1)
-        self.assertEqual(l, r)
-
-    @requires_sched_affinity
-    def test_cpu_set_bitwise(self):
-        l = posix.cpu_set(5)
-        l.set(0)
-        l.set(1)
-        r = posix.cpu_set(5)
-        r.set(1)
-        r.set(2)
-        b = l & r
-        self.assertEqual(b.count(), 1)
-        self.assertTrue(b.isset(1))
-        b = l | r
-        self.assertEqual(b.count(), 3)
-        self.assertTrue(b.isset(0))
-        self.assertTrue(b.isset(1))
-        self.assertTrue(b.isset(2))
-        b = l ^ r
-        self.assertEqual(b.count(), 2)
-        self.assertTrue(b.isset(0))
-        self.assertFalse(b.isset(1))
-        self.assertTrue(b.isset(2))
-        b = l
-        b |= r
-        self.assertIs(b, l)
-        self.assertEqual(l.count(), 3)
-
-    @requires_sched_affinity
-    @support.cpython_only
-    def test_cpu_set_sizeof(self):
-        self.assertGreater(sys.getsizeof(posix.cpu_set(1000)),
-                           sys.getsizeof(posix.cpu_set(1)))
 
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
