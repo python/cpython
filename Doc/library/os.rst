@@ -3141,47 +3141,17 @@ operating system.
    Voluntarily relinquish the CPU.
 
 
-.. class:: cpu_set(ncpus)
-
-   :class:`cpu_set` represents a set of CPUs on which a process is eligible to
-   run. *ncpus* is the number of CPUs the set should describe. Methods on
-   :class:`cpu_set` allow CPUs to be add or removed.
-
-   :class:`cpu_set` supports the AND, OR, and XOR bitwise operations. For
-   example, given two cpu_sets, ``one`` and ``two``, ``one | two`` returns a
-   :class:`cpu_set` containing the cpus enabled both in ``one`` and ``two``.
-
-   .. method:: set(i)
-
-      Enable CPU *i*.
-
-   .. method:: clear(i)
-
-      Remove CPU *i*.
-
-   .. method:: isset(i)
-
-      Return ``True`` if CPU *i* is enabled in the set.
-
-   .. method:: count()
-
-      Return the number of enabled CPUs in the set.
-
-   .. method:: zero()
-
-      Clear the set completely.
-
-
 .. function:: sched_setaffinity(pid, mask)
 
-   Restrict the process with PID *pid* to a set of CPUs. *mask* is a
-   :class:`cpu_set` instance.
+   Restrict the process with PID *pid* (or the current process if zero) to a
+   set of CPUs.  *mask* is an iterable of integers representing the set of
+   CPUs to which the process should be restricted.
 
 
-.. function:: sched_getaffinity(pid, size)
+.. function:: sched_getaffinity(pid)
 
-   Return the :class:`cpu_set` the process with PID *pid* is restricted to. The
-   result will contain *size* CPUs.
+   Return the set of CPUs the process with PID *pid* (or the current process
+   if zero) is restricted to.
 
 
 .. _os-path:
