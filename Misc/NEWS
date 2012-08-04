@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13052: Fix IDLE crashing when replace string in Search/Replace dialog
+  ended with '\'. Patch by Roger Serwy.
+
 - Issue #12655: Instead of requiring a custom type, os.sched_getaffinity and
   os.sched_setaffinity now use regular sets of integers to represent the CPUs
   a process is restricted to.
