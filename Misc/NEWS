@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13052: Fix IDLE crashing when replace string in Search/Replace dialog
+  ended with '\'. Patch by Roger Serwy.
+
 - Issue #15538: Fix compilation of the getnameinfo() / getaddrinfo()
   emulation code.  Patch by Philipp Hagemeister.
 
