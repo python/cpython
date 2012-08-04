@@ -1155,7 +1155,6 @@ remove_importlib_frames(void)
     const char *importlib_filename = "<frozen importlib._bootstrap>";
     const char *remove_frames = "_call_with_frames_removed";
     int always_trim = 0;
-    int trim_get_code = 0;
     int in_importlib = 0;
     PyObject *exception, *value, *base_tb, *tb;
     PyObject **prev_link, **outer_link = NULL;
@@ -1170,9 +1169,6 @@ remove_importlib_frames(void)
     if (PyType_IsSubtype((PyTypeObject *) exception,
                          (PyTypeObject *) PyExc_ImportError))
         always_trim = 1;
-    if (PyType_IsSubtype((PyTypeObject *) exception,
-                         (PyTypeObject *) PyExc_SyntaxError))
-        trim_get_code = 1;
 
     prev_link = &base_tb;
     tb = base_tb;
