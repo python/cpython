@@ -111,7 +111,7 @@ class BasicTest(BaseTest):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
-            self.assertEqual(out[:-1], expected.encode())
+            self.assertEqual(out.strip(), expected.encode())
 
     def test_overwrite_existing(self):
         """
@@ -179,7 +179,7 @@ class BasicTest(BaseTest):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        self.assertEqual(out[:-1], envpy.encode())
+        self.assertEqual(out.strip(), envpy.encode())
 
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
     def test_executable_symlinks(self):
@@ -194,7 +194,7 @@ class BasicTest(BaseTest):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        self.assertEqual(out[:-1], envpy.encode())
+        self.assertEqual(out.strip(), envpy.encode())
 
 def test_main():
     run_unittest(BasicTest)
