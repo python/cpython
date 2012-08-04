@@ -3153,6 +3153,10 @@ operating system.
    Return the set of CPUs the process with PID *pid* (or the current process
    if zero) is restricted to.
 
+   .. seealso::
+      :func:`multiprocessing.cpu_count` returns the number of CPUs in the
+      system.
+
 
 .. _os-path:
 
