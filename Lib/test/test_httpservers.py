@@ -313,6 +313,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
         pass
 
+    linesep = os.linesep.encode('ascii')
+
     def setUp(self):
         BaseTestCase.setUp(self)
         self.cwd = os.getcwd()
@@ -410,7 +412,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
     def test_headers_and_content(self):
         res = self.request('/cgi-bin/file1.py')
-        self.assertEqual((b'Hello World\n', 'text/html', 200),
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
             (res.read(), res.getheader('Content-type'), res.status))
 
     def test_post(self):
@@ -419,7 +421,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         headers = {'Content-type' : 'application/x-www-form-urlencoded'}
         res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
 
-        self.assertEqual(res.read(), b'1, python, 123456\n')
+        self.assertEqual(res.read(), b'1, python, 123456' + self.linesep)
 
     def test_invaliduri(self):
         res = self.request('/cgi-bin/invalid')
@@ -430,20 +432,20 @@ class CGIHTTPServerTestCase(BaseTestCase):
         headers = {b'Authorization' : b'Basic ' +
                    base64.b64encode(b'username:pass')}
         res = self.request('/cgi-bin/file1.py', 'GET', headers=headers)
-        self.assertEqual((b'Hello World\n', 'text/html', 200),
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
 
     def test_no_leading_slash(self):
         # http://bugs.python.org/issue2254
         res = self.request('cgi-bin/file1.py')
-        self.assertEqual((b'Hello World\n', 'text/html', 200),
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
              (res.read(), res.getheader('Content-type'), res.status))
 
     def test_os_environ_is_not_altered(self):
         signature = "Test CGI Server"
         os.environ['SERVER_SOFTWARE'] = signature
         res = self.request('/cgi-bin/file1.py')
-        self.assertEqual((b'Hello World\n', 'text/html', 200),
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
         self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
 
