@@ -1028,12 +1028,12 @@ class PyBuildExt(build_ext):
         if sys.platform == 'darwin':
             sysroot = macosx_sdk_root()
 
-        for d in inc_dirs + sqlite_inc_paths:
-            f = os.path.join(d, "sqlite3.h")
-
+        for d_ in inc_dirs + sqlite_inc_paths:
+            d = d_
             if sys.platform == 'darwin' and is_macosx_sdk_path(d):
-                f = os.path.join(sysroot, d[1:], "sqlite3.h")
+                d = os.path.join(sysroot, d[1:])
 
+            f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
                 if sqlite_setup_debug: print "sqlite: found %s"%f
                 incf = open(f).read()
