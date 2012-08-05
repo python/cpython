@@ -1243,7 +1243,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     }
     else {
         /* Only have to care what given_globals is if it will be used
-           fortsomething. */
+           for something. */
         if (level > 0 && !PyDict_Check(given_globals)) {
             PyErr_SetString(PyExc_TypeError, "globals must be a dict");
             goto error;
