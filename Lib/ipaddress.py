@@ -1331,10 +1331,6 @@ class IPv4Interface(IPv4Address):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
 
     @property
-    def prefixlen(self):
-        return self._prefixlen
-
-    @property
     def ip(self):
         return IPv4Address(self._ip)
 
@@ -1708,7 +1704,7 @@ class _BaseV6:
         hex_str = '%032x' % ip_int
         parts = [hex_str[x:x+4] for x in range(0, 32, 4)]
         if isinstance(self, (_BaseNetwork, IPv6Interface)):
-            return '%s/%d' % (':'.join(parts), self.prefixlen)
+            return '%s/%d' % (':'.join(parts), self._prefixlen)
         return ':'.join(parts)
 
     @property
@@ -1945,10 +1941,6 @@ class IPv6Interface(IPv6Address):
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
-
-    @property
-    def prefixlen(self):
-        return self._prefixlen
 
     @property
     def ip(self):
