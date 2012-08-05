@@ -511,9 +511,6 @@ class _BaseAddress(_IPAddressBase):
             and '/' in str(address)):
             raise AddressValueError("Unexpected '/' in %r" % address)
 
-    def __index__(self):
-        return self._ip
-
     def __int__(self):
         return self._ip
 
@@ -570,9 +567,6 @@ class _BaseNetwork(_IPAddressBase):
     """
     def __init__(self, address):
         self._cache = {}
-
-    def __index__(self):
-        return int(self.network_address) ^ self.prefixlen
 
     def __int__(self):
         return int(self.network_address)
