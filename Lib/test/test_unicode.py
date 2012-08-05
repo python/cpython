@@ -572,6 +572,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('ﬁ'.casefold(), 'fi')
         self.assertEqual('\u03a3'.casefold(), '\u03c3')
         self.assertEqual('A\u0345\u03a3'.casefold(), 'a\u03b9\u03c3')
+        self.assertEqual('\u00b5'.casefold(), '\u03bc')
 
     def test_upper(self):
         string_tests.CommonTest.test_upper(self)
