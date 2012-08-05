@@ -2248,7 +2248,7 @@ features:
               dirs.remove('CVS')  # don't visit CVS directories
 
    In the next example, walking the tree bottom-up is essential:
-   :func:`unlinkat` doesn't allow deleting a directory before the directory is
+   :func:`rmdir` doesn't allow deleting a directory before the directory is
    empty::
 
       # Delete everything reachable from the directory named in "top",
@@ -2258,9 +2258,9 @@ features:
       import os
       for root, dirs, files, rootfd in os.fwalk(top, topdown=False):
           for name in files:
-              os.unlinkat(rootfd, name)
+              os.unlink(name, dir_fd=rootfd)
           for name in dirs:
-              os.unlinkat(rootfd, name, os.AT_REMOVEDIR)
+              os.rmdir(name, dir_fd=rootfd)
 
    Availability: Unix.
 

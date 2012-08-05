@@ -53,6 +53,18 @@ This article explains the new features in Python 3.3, compared to 3.2.
    release, so it's worth checking back even after reading earlier versions.
 
 
+Summary
+=======
+
+Major changes since Python 3.2:
+
+ * 4 new modules: :mod:`faulthandler`, :mod:`ipaddress`, :mod:`lzma` and :mod:`venv`.
+ * Syntax changes:
+
+   - ``u'unicode'`` syntax is accepted again
+   - Add ``yield from`` syntax
+
+
 PEP 405: Virtual Environments
 =============================
 
@@ -786,8 +798,71 @@ aforementioned annoyances.
 (contributed by Antoine Pitrou in :issue:`9260`.)
 
 
-New and Improved Modules
-========================
+Builtin functions and types
+===========================
+
+* :func:`open` gets a new *opener* parameter: the underlying file descriptor
+  for the file object is then obtained by calling *opener* with (*file*,
+  *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+  example. The ``'x'`` mode was added: open for exclusive creation, failing if
+  the file already exists.
+* :func:`print`: added the *flush* keyword argument. If the *flush* keyword
+  argument is true, the stream is forcibly flushed.
+* :func:`hash`: hash randomization is enabled by default, see
+  :meth:`object.__hash__` and :envvar:`PYTHONHASHSEED`.
+* The :class:`str` type gets a new :meth:`~str.casefold` method: return a
+  casefolded copy of the string, casefolded strings may be used for caseless
+  matching. For example, ``'ß'.casefold()`` returns ``'ss'``.
+
+
+New Modules
+===========
+
+faulthandler
+------------
+
+This new debug module contains functions to dump Python tracebacks explicitly,
+on a fault (a crash like a segmentation fault), after a timeout, or on a user
+signal. Call :func:`faulthandler.enable` to install fault handlers for the
+:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
+:const:`SIGILL` signals. You can also enable them at startup by setting the
+:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
+``faulthandler`` command line option.
+
+Example of a segmentation fault on Linux: ::
+
+    $ python -q -X faulthandler
+    >>> import ctypes
+    >>> ctypes.string_at(0)
+    Fatal Python error: Segmentation fault
+
+    Current thread 0x00007fb899f39700:
+      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+      File "<stdin>", line 1 in <module>
+    Segmentation fault
+
+
+ipaddress
+---------
+
+The new :mod:`ipaddress` module provides tools for creating and manipulating
+objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
+an IP address associated with a specific IP subnet).
+
+(Contributed by Google and Peter Moody in :pep:`3144`)
+
+lzma
+----
+
+The newly-added :mod:`lzma` module provides data compression and decompression
+using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
+file formats.
+
+(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
+
+
+Improved Modules
+================
 
 abc
 ---
@@ -815,11 +890,21 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
+base64, binascii
+----------------
+
+ASCII-only Unicode strings are now accepted by the decoding functions of the
+modern interface. For example, ``base64.b64decode('YWJj')`` returns ``b'abc'``.
+
+
 bz2
 ---
 
 The :mod:`bz2` module has been rewritten from scratch. In the process, several
 new features have been added:
+
+* New :func:`bz2.open` function: open a bzip2-compressed file in binary or
+  text mode.
 
 * :class:`bz2.BZ2File` can now read from and write to arbitrary file-like
   objects, by means of its constructor's *fileobj* argument.
@@ -910,7 +995,7 @@ their ``__init__`` method (for example, file objects) or in their
 crypt
 -----
 
-Addition of salt and modular crypt format and the :func:`~crypt.mksalt`
+Addition of salt and modular crypt format (hashing method) and the :func:`~crypt.mksalt`
 function to the :mod:`crypt` module.
 
 (:issue:`10924`)
@@ -930,6 +1015,17 @@ curses
    it
 
 (Contributed by Iñigo Serna in :issue:`6755`)
+
+datetime
+--------
+
+ * Equality comparisons between naive and aware :class:`~datetime.datetime`
+   instances don't raise :exc:`TypeError`.
+ * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
+   corresponding to the :class:`~datetime.datetime` instance.
+ * The :meth:`datetime.datetime.strftime` method supports formatting years
+   older than 1000.
+
 
 decimal
 -------
@@ -1024,14 +1120,6 @@ API changes
   changed to match the order displayed by :func:`repr`.
 
 
-faulthandler
-------------
-
-New module: :mod:`faulthandler`.
-
- * :envvar:`PYTHONFAULTHANDLER`
- * :option:`-X` ``faulthandler``
-
 ftplib
 ------
 
@@ -1041,6 +1129,13 @@ plaintext.  This can be useful to take advantage of firewalls that know how to
 handle NAT with non-secure FTP without opening fixed ports.
 
 (Contributed by Giampaolo Rodolà in :issue:`12139`)
+
+
+gc
+--
+
+It is now possible to register callbacks invoked by the garbage collector
+before and after collection using the new :`data:`~gc.callbacks` list.
 
 
 hmac
@@ -1087,24 +1182,11 @@ already exists. It is based on the C11 'x' mode to fopen().
 
 (Contributed by David Townshend in :issue:`12760`)
 
-
-ipaddress
----------
-
-The new :mod:`ipaddress` module provides tools for creating and manipulating
-objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
-an IP address associated with a specific IP subnet).
-
-(Contributed by Google and Peter Moody in :pep:`3144`)
-
-lzma
-----
-
-The newly-added :mod:`lzma` module provides data compression and decompression
-using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
-file formats.
-
-(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
+The constructor of the :class:`~io.TextIOWrapper` class has a new
+*write_through* optional argument. If *write_through* is ``True``, calls to
+:meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
+written on the :class:`~io.TextIOWrapper` object is immediately handled to its
+underlying binary buffer.
 
 
 math
@@ -1163,16 +1245,36 @@ os
 
   (Patch submitted by Ross Lagerwall and Giampaolo Rodolà in :issue:`10882`.)
 
+* To avoid race conditions like symlink attacks and issues with temporary
+  files and directories, it is more reliable (and also faster) to manipulate
+  file descriptors instead of file names. Python 3.3 enhances existing functions
+  and introduces new functions to work on file descriptors (:issue:`4761`,
+  :issue:`10755`).
+
+  - The :mod:`os` module has a new :func:`~os.fwalk` function similar to
+    :func:`~os.walk` except that it also yields file descriptors referring to the
+    directories visited. This is especially useful to avoid symlink races.
+
+  - The following functions get new optional *dir_fd* (:ref:`paths relative to
+    directory descriptors <dir_fd>`) and/or *follow_symlinks* (:ref:`not
+    following symlinks <follow_symlinks>`):
+    :func:`~os.access`, :func:`~os.chflags`, :func:`~os.chmod`, :func:`~os.chown`,
+    :func:`~os.link`, :func:`~os.lstat`, :func:`~os.mkdir`, :func:`~os.mkfifo`,
+    :func:`~os.mknod`, :func:`~os.open`, :func:`~os.readlink`, :func:`~os.remove`,
+    :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
+    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.
+
+  - The following functions now support a file descriptor for their path argument:
+    :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
+    :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`, :func:`~os.path.exists`,
+    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.
+
 * The :mod:`os` module has two new functions: :func:`~os.getpriority` and
   :func:`~os.setpriority`. They can be used to get or set process
   niceness/priority in a fashion similar to :func:`os.nice` but extended to all
   processes instead of just the current one.
 
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
-
-* The :mod:`os` module has a new :func:`~os.fwalk` function similar to
-  :func:`~os.walk` except that it also yields file descriptors referring to the
-  directories visited. This is especially useful to avoid symlink races.
 
 * The new :func:`os.replace` function allows cross-platform renaming of a
   file with overwriting the destination.  With :func:`os.rename`, an existing
@@ -1181,78 +1283,51 @@ os
   (Contributed by Antoine Pitrou in :issue:`8828`.)
 
 * The new :func:`os.get_terminal_size` function queries the size of the
-  terminal attached to a file descriptor.
+  terminal attached to a file descriptor. See also
+  :func:`shutil.get_terminal_size`.
   (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
 
 .. XXX sort out this mess after beta1
 
-  * "at" functions (:issue:`4761`):
+* New functions to support Linux extended attributes (:issue:`12720`):
+  :func:`~os.getxattr`, :func:`~os.listxattr`, :func:`~os.removexattr`,
+  :func:`~os.setxattr`.
 
-    * :func:`~os.faccessat`
-    * :func:`~os.fchmodat`
-    * :func:`~os.fchownat`
-    * :func:`~os.fstatat`
-    * :func:`~os.futimesat`
-    * :func:`~os.linkat`
-    * :func:`~os.mkdirat`
-    * :func:`~os.mkfifoat`
-    * :func:`~os.mknodat`
-    * :func:`~os.openat`
-    * :func:`~os.readlinkat`
-    * :func:`~os.renameat`
-    * :func:`~os.symlinkat`
-    * :func:`~os.unlinkat`
-    * :func:`~os.utimensat`
+* New interface to the scheduler. These functions
+  control how a process is allocated CPU time by the operating system. New
+  functions:
+  :func:`~os.sched_get_priority_max`, :func:`~os.sched_get_priority_min`,
+  :func:`~os.sched_getaffinity`, :func:`~os.sched_getparam`,
+  :func:`~os.sched_getscheduler`, :func:`~os.sched_rr_get_interval`,
+  :func:`~os.sched_setaffinity`, :func:`~os.sched_setparam`,
+  :func:`~os.sched_setscheduler`, :func:`~os.sched_yield`,
 
-  * extended attributes (:issue:`12720`):
+* New functions to control the file system:
 
-    * :func:`~os.fgetxattr`
-    * :func:`~os.flistxattr`
-    * :func:`~os.fremovexattr`
-    * :func:`~os.fsetxattr`
-    * :func:`~os.getxattr`
-    * :func:`~os.lgetxattr`
-    * :func:`~os.listxattr`
-    * :func:`~os.llistxattr`
-    * :func:`~os.lremovexattr`
-    * :func:`~os.lsetxattr`
-    * :func:`~os.removexattr`
-    * :func:`~os.setxattr`
+  * :func:`~os.posix_fadvise`: Announces an intention to access data in a
+    specific pattern thus allowing the kernel to make optimizations.
+  * :func:`~os.posix_fallocate`: Ensures that enough disk space is allocated
+    for a file.
+  * :func:`~os.sync`: Force write of everything to disk.
 
-  * Scheduler functions (:issue:`12655`):
+* Add some extra posix functions to the os module:
 
-    * :func:`~os.sched_get_priority_max`
-    * :func:`~os.sched_get_priority_min`
-    * :func:`~os.sched_getaffinity`
-    * :func:`~os.sched_getparam`
-    * :func:`~os.sched_getscheduler`
-    * :func:`~os.sched_rr_get_interval`
-    * :func:`~os.sched_setaffinity`
-    * :func:`~os.sched_setparam`
-    * :func:`~os.sched_setscheduler`
-    * :func:`~os.sched_yield`
+  * :func:`~os.lockf`: Apply, test or remove a POSIX lock on an open file descriptor.
+  * :func:`~os.pread`: Read from a file descriptor at an offset, the file
+    offset remains unchanged.
+  * :func:`~os.pwrite`: Write to a file descriptor from an offset, leaving
+    the file offset unchanged.
+  * :func:`~os.readv`: Read from a file descriptor into a number of writable buffers.
+  * :func:`~os.truncate`: Truncate the file corresponding to *path*, so that
+    it is at most *length* bytes in size.
+  * :func:`~os.waitid`: Wait for the completion of one or more child processes.
+  * :func:`~os.writev`: Write the contents of *buffers* to a file descriptor,
+    where *buffers* is an arbitrary sequence of buffers.
+  * :func:`~os.getgrouplist` (:issue:`9344`): Return list of group ids that
+    specified user belongs to.
 
-  * Add some extra posix functions to the os module (:issue:`10812`):
-
-    * :func:`~os.fexecve`
-    * :func:`~os.futimens`
-    * :func:`~os.futimes`
-    * :func:`~os.lockf`
-    * :func:`~os.lutimes`
-    * :func:`~os.posix_fadvise`
-    * :func:`~os.posix_fallocate`
-    * :func:`~os.pread`
-    * :func:`~os.pwrite`
-    * :func:`~os.readv`
-    * :func:`~os.sync`
-    * :func:`~os.truncate`
-    * :func:`~os.waitid`
-    * :func:`~os.writev`
-
-  * Other new functions:
-
-    * :func:`~os.flistdir` (:issue:`10755`)
-    * :func:`~os.getgrouplist` (:issue:`9344`)
+* :func:`~os.times` and :func:`~os.uname`: Return type changed from a tuple to
+  a tuple-like object with named attributes.
 
 
 pdb
@@ -1614,6 +1689,16 @@ Deprecated Python modules, functions and methods
 * The behaviour of :func:`time.clock` depends on the platform: use the new
   :func:`time.perf_counter` or :func:`time.process_time` function instead,
   depending on your requirements, to have a well defined behaviour.
+* The :func:`os.stat_float_times` function is deprecated.
+* :mod:`abc` module:
+
+  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+    with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractclassmethod` has been deprecated, use
+    :class:`classmethod` with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractstaticmethod` has been deprecated, use
+    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+
 
 
 Deprecated functions and types of the C API
@@ -1690,7 +1775,9 @@ that may require changes to your code.
 Porting Python code
 -------------------
 
-.. XXX add a point about hash randomization and that it's always on in 3.3
+* Hash randomization is enabled by default. Set the :envvar:`PYTHONHASHSEED`
+  environment variable to ``0`` to disable hash randomization. See also the
+  :meth:`object.__hash__` method.
 
 * :issue:`12326`: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
