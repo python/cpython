@@ -174,25 +174,24 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    return PyUnicode_FromOrdinal(((Py_UCS4 *) ap->ob_item)[i]);
+    return PyUnicode_FromUnicode(&((Py_UNICODE *) ap->ob_item)[i], 1);
 }
 
 static int
 u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PyObject *p;
+    Py_UNICODE *p;
+    Py_ssize_t len;
 
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &p))
+    if (!PyArg_Parse(v, "u#;array item must be unicode character", &p, &len))
         return -1;
-    if (PyUnicode_READY(p))
-        return -1;
-    if (PyUnicode_GET_LENGTH(p) != 1) {
+    if (len != 1) {
         PyErr_SetString(PyExc_TypeError,
                         "array item must be unicode character");
         return -1;
     }
     if (i >= 0)
-        ((Py_UCS4 *)ap->ob_item)[i] = PyUnicode_READ_CHAR(p, 0);
+        ((Py_UNICODE *)ap->ob_item)[i] = p[0];
     return 0;
 }
 
@@ -444,13 +443,6 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
-#if SIZEOF_INT == 4
-#  define STRUCT_LONG_FORMAT "I"
-#elif SIZEOF_LONG == 4
-#  define STRUCT_LONG_FORMAT "L"
-#else
-#  error "Unable to get struct format for Py_UCS4"
-#endif
 
 /* Description of types.
  *
@@ -460,7 +452,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static struct arraydescr descriptors[] = {
     {'b', 1, b_getitem, b_setitem, "b", 1, 1},
     {'B', 1, BB_getitem, BB_setitem, "B", 1, 0},
-    {'u', sizeof(Py_UCS4), u_getitem, u_setitem, STRUCT_LONG_FORMAT, 0, 0},
+    {'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "u", 0, 0},
     {'h', sizeof(short), h_getitem, h_setitem, "h", 1, 1},
     {'H', sizeof(short), HH_getitem, HH_setitem, "H", 1, 0},
     {'i', sizeof(int), i_getitem, i_setitem, "i", 1, 1},
@@ -1519,26 +1511,25 @@ This method is deprecated. Use tobytes instead.");
 static PyObject *
 array_fromunicode(arrayobject *self, PyObject *args)
 {
-    PyObject *ustr;
+    Py_UNICODE *ustr;
     Py_ssize_t n;
+    char typecode;
 
-    if (!PyArg_ParseTuple(args, "U:fromunicode", &ustr))
+    if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
         return NULL;
-    if (self->ob_descr->typecode != 'u') {
+    typecode = self->ob_descr->typecode;
+    if ((typecode != 'u')) {
         PyErr_SetString(PyExc_ValueError,
             "fromunicode() may only be called on "
             "unicode type arrays");
         return NULL;
     }
-    if (PyUnicode_READY(ustr))
-        return NULL;
-    n = PyUnicode_GET_LENGTH(ustr);
     if (n > 0) {
         Py_ssize_t old_size = Py_SIZE(self);
         if (array_resize(self, old_size + n) == -1)
             return NULL;
-        if (!PyUnicode_AsUCS4(ustr, (Py_UCS4 *)self->ob_item + old_size, n, 0))
-            return NULL;
+        memcpy(self->ob_item + old_size * sizeof(Py_UNICODE),
+               ustr, n * sizeof(Py_UNICODE));
     }
 
     Py_INCREF(Py_None);
@@ -1557,14 +1548,14 @@ append Unicode data to an array of some other type.");
 static PyObject *
 array_tounicode(arrayobject *self, PyObject *unused)
 {
-    if (self->ob_descr->typecode != 'u') {
+    char typecode;
+    typecode = self->ob_descr->typecode;
+    if ((typecode != 'u')) {
         PyErr_SetString(PyExc_ValueError,
              "tounicode() may only be called on unicode type arrays");
         return NULL;
     }
-    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                     (Py_UCS4 *) self->ob_item,
-                                     Py_SIZE(self));
+    return PyUnicode_FromUnicode((Py_UNICODE *) self->ob_item, Py_SIZE(self));
 }
 
 PyDoc_STRVAR(tounicode_doc,
@@ -1671,7 +1662,13 @@ typecode_to_mformat_code(char typecode)
         return UNSIGNED_INT8;
 
     case 'u':
-        return UTF32_LE + is_big_endian;
+        if (sizeof(Py_UNICODE) == 2) {
+            return UTF16_LE + is_big_endian;
+        }
+        if (sizeof(Py_UNICODE) == 4) {
+            return UTF32_LE + is_big_endian;
+        }
+        return UNKNOWN_FORMAT;
 
     case 'f':
         if (sizeof(float) == 4) {
@@ -2419,8 +2416,14 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
         view->strides = &(view->itemsize);
     view->format = NULL;
     view->internal = NULL;
-    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
+    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
         view->format = self->ob_descr->formats;
+#ifdef Py_UNICODE_WIDE
+        if (self->ob_descr->typecode == 'u') {
+            view->format = "w";
+        }
+#endif
+    }
 
  finish:
     self->ob_exports++;
@@ -2534,25 +2537,29 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(v);
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
+                Py_UNICODE *ustr;
                 Py_ssize_t n;
-                if (PyUnicode_READY(initial)) {
+
+                ustr = PyUnicode_AsUnicode(initial);
+                if (ustr == NULL) {
+                    PyErr_NoMemory();
                     Py_DECREF(a);
                     return NULL;
                 }
-                n = PyUnicode_GET_LENGTH(initial);
+
+                n = PyUnicode_GET_DATA_SIZE(initial);
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
-                    Py_UCS4 *item = (Py_UCS4 *)self->ob_item;
-                    item = (Py_UCS4 *)PyMem_Realloc(item, n * sizeof(Py_UCS4));
+                    char *item = self->ob_item;
+                    item = (char *)PyMem_Realloc(item, n);
                     if (item == NULL) {
                         PyErr_NoMemory();
                         Py_DECREF(a);
                         return NULL;
                     }
-                    self->ob_item = (char*)item;
-                    Py_SIZE(self) = n;
-                    if (!PyUnicode_AsUCS4(initial, item, n, 0))
-                        return NULL;
+                    self->ob_item = item;
+                    Py_SIZE(self) = n / sizeof(Py_UNICODE);
+                    memcpy(item, ustr, n);
                     self->allocated = Py_SIZE(self);
                 }
             }
@@ -2593,7 +2600,7 @@ is a single character.  The following type codes are defined:\n\
     Type code   C Type             Minimum size in bytes \n\
     'b'         signed integer     1 \n\
     'B'         unsigned integer   1 \n\
-    'u'         Unicode character  4 \n\
+    'u'         Unicode character  2 (see note) \n\
     'h'         signed integer     2 \n\
     'H'         unsigned integer   2 \n\
     'i'         signed integer     2 \n\
@@ -2604,6 +2611,9 @@ is a single character.  The following type codes are defined:\n\
     'Q'         unsigned integer   8 (see note) \n\
     'f'         floating point     4 \n\
     'd'         floating point     8 \n\
+\n\
+NOTE: The 'u' typecode corresponds to Python's unicode character. On \n\
+narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 \n\
 NOTE: The 'q' and 'Q' type codes are only available if the platform \n\
 C compiler used to build Python supports 'long long', or, on Windows, \n\
