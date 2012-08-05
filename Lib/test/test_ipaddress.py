@@ -731,8 +731,8 @@ class IpaddrUnitTest(unittest.TestCase):
                          '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
 
     def testGetPrefixlen(self):
-        self.assertEqual(self.ipv4_interface.prefixlen, 24)
-        self.assertEqual(self.ipv6_interface.prefixlen, 64)
+        self.assertEqual(self.ipv4_interface.network.prefixlen, 24)
+        self.assertEqual(self.ipv6_interface.network.prefixlen, 64)
 
     def testGetSupernet(self):
         self.assertEqual(self.ipv4_network.supernet().prefixlen, 23)
