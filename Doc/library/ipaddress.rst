@@ -196,10 +196,6 @@ write code that handles both IP versions correctly.
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
 
-   All the attributes implemented by :class:`IPv4Address` are supported.  In
-   addition, the following attributs are implemented only by
-   :class:`IPv6Address`.
-
    .. attribute:: compressed
 
    The short form of the address representation, with leading zeroes in
@@ -372,119 +368,149 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    then :exc:`ValueError` is raised.  Otherwise, the host bits are masked out
    to determine the appropriate network address.
 
-   This class implements all the attributes of :class:`IPv4Address`, and also
-   the following attributes and methods.  Unless stated otherwise, all methods
-   accepting other network / address objects will raise :exc:`TypeError` if
-   the argument's IP version is incompatible to ``self``:
+   Unless stated otherwise, all network methods accepting other network/address
+   objects will raise :exc:`TypeError` if the argument's IP version is
+   incompatible to ``self``
+
+   .. attribute:: version
+   .. attribute:: max_prefixlen
+
+      Refer to the corresponding attribute documentation in
+      :class:`IPv4Address`
+
+   .. attribute:: is_multicast
+   .. attribute:: is_private
+   .. attribute:: is_unspecified
+   .. attribute:: is_reserved
+   .. attribute:: is_loopback
+   .. attribute:: is_link_local
+
+      These attributes are true for the network as a whole if they are true
+      true for both the network address and the broadcast address
+
+   .. attribute:: network_address
+
+      The broadcast address for the network.
 
    .. attribute:: broadcast_address
 
-   The broadcast address for the network.
+      The broadcast address for the network.
 
    .. attribute:: host mask
 
-   The host mask, as a string.
+      The host mask, as a string.
 
    .. attribute:: with_prefixlen
+   .. attribute:: compressed
+   .. attribute:: exploded
 
-   A string representation of the network, with the mask in prefix notation.
+      A string representation of the network, with the mask in prefix
+      notation.
+
+      ``with_prefixlen`` and ``compressed`` are always the same as
+      ``str(network)``.
+      ``exploded`` uses the exploded form the network address.
 
    .. attribute:: with_netmask
 
-   A string representation of the network, with the mask in net mask notation.
+      A string representation of the network, with the mask in net mask
+      notation.
 
    .. attribute:: with_hostmask
 
-   A string representation of the network, with the mask in host mask notation.
+      A string representation of the network, with the mask in host mask
+      notation.
 
    .. attribute:: num_addresses
 
-   The total number of addresses in the network.
+      The total number of addresses in the network.
 
    .. attribute:: prefixlen
 
-   Length of the prefix, in bits.
+      Length of the network prefix, in bits.
 
    .. method:: hosts()
 
-   Generates an iterator over the usable hosts in the network.  The usable hosts
-   are all the IP addresses that belong to the network, except the network
-   address itself and the network broadcast address.
+      Returns an iterator over the usable hosts in the network.  The usable
+      hosts are all the IP addresses that belong to the network, except the
+      network address itself and the network broadcast address.
 
-      >>> list(ip_network('192.0.2.0/29').hosts())
-      [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
-       IPv4Address('192.0.2.3'), IPv4Address('192.0.2.4'),
-       IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
+         >>> list(ip_network('192.0.2.0/29').hosts())
+         [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
+          IPv4Address('192.0.2.3'), IPv4Address('192.0.2.4'),
+          IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
 
    .. method:: overlaps(other)
 
-   ``True`` if this network is partly contained in *other*.
+      ``True`` if this network is partly or wholly contained in *other* or
+      or *other* is wholly contained in this network.
 
    .. method:: address_exclude(network)
 
-   Computes the network defintions resulting from removing the given *network*
-   from this one.  Returns a generator.  Raises :exc:`ValueError` if *network*
-   is not completely contained in this network.
+      Computes the network definitions resulting from removing the given
+      *network* from this one.  Returns an iterator of network objects.
+      Raises :exc:`ValueError` if *network* is not completely contained in
+      this network.
 
-      >>> n1 = ip_network('192.0.2.0/28')
-      >>> n2 = ip_network('192.0.2.1/32')
-      >>> list(n1.address_exclude(n2))
-      [IPv4Network('192.0.2.8/29'), IPv4Network('192.0.2.4/30'),
-       IPv4Network('192.0.2.2/31'), IPv4Network('192.0.2.0/32')]
+         >>> n1 = ip_network('192.0.2.0/28')
+         >>> n2 = ip_network('192.0.2.1/32')
+         >>> list(n1.address_exclude(n2))
+         [IPv4Network('192.0.2.8/29'), IPv4Network('192.0.2.4/30'),
+          IPv4Network('192.0.2.2/31'), IPv4Network('192.0.2.0/32')]
 
    .. method:: subnets(prefixlen_diff=1, new_prefix=None)
 
-   The subnets that join to make the current network definition, depending on
-   the argument values.  *prefixlen_diff* is the amount our prefix length
-   should be increased by.  *new_prefix* is the desired new prefix of the
-   subnets; it must be larger than our prefix.  One and only one of
-   *prefixlen_diff* and *new_prefix* must be set.  Returns an iterator of
-   network objects.
+      The subnets that join to make the current network definition, depending
+      on the argument values.  *prefixlen_diff* is the amount our prefix
+      length should be increased by.  *new_prefix* is the desired new
+      prefix of the subnets; it must be larger than our prefix.  One and
+      only one of *prefixlen_diff* and *new_prefix* must be set.  Returns an
+      iterator of network objects.
 
-      >>> list(ip_network('192.0.2.0/24').subnets())
-      [IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
-      >>> list(ip_network('192.0.2.0/24').subnets(prefixlen_diff=2))
-      [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
-       IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
-      >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=26))
-      [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
-       IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
-      >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=23))
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-          raise ValueError('new prefix must be longer')
-      ValueError: new prefix must be longer
-      >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=25))
-      [IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
-      >>>
+         >>> list(ip_network('192.0.2.0/24').subnets())
+         [IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
+         >>> list(ip_network('192.0.2.0/24').subnets(prefixlen_diff=2))
+         [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
+          IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
+         >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=26))
+         [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
+          IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
+         >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=23))
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+             raise ValueError('new prefix must be longer')
+         ValueError: new prefix must be longer
+         >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=25))
+         [IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
 
    .. method:: supernet(prefixlen_diff=1, new_prefix=None)
 
-   The supernet containing this network definition, depending on the argument
-   values.  *prefixlen_diff* is the amount our prefix length should be
-   decreased by.  *new_prefix* is the desired new prefix of the supernet; it
-   must be smaller than our prefix.  One and only one of *prefixlen_diff* and
-   *new_prefix* must be set.  Returns a single network object.
+      The supernet containing this network definition, depending on the
+      argument values.  *prefixlen_diff* is the amount our prefix length
+      should be decreased by.  *new_prefix* is the desired new prefix of
+      the supernet; it must be smaller than our prefix.  One and only one
+      of *prefixlen_diff* and *new_prefix* must be set.  Returns a single
+      network object.
 
-      >>> ip_network('192.0.2.0/24').supernet()
-      IPv4Network('192.0.2.0/23')
-      >>> ip_network('192.0.2.0/24').supernet(prefixlen_diff=2)
-      IPv4Network('192.0.0.0/22')
-      >>> ip_network('192.0.2.0/24').supernet(new_prefix=20)
-      IPv4Network('192.0.0.0/20')
+         >>> ip_network('192.0.2.0/24').supernet()
+         IPv4Network('192.0.2.0/23')
+         >>> ip_network('192.0.2.0/24').supernet(prefixlen_diff=2)
+         IPv4Network('192.0.0.0/22')
+         >>> ip_network('192.0.2.0/24').supernet(new_prefix=20)
+         IPv4Network('192.0.0.0/20')
 
    .. method:: compare_networks(other)
 
-   Compare this network to *other*.  In this comparison only the network
-   addresses are considered; host bits aren't.  Returns either ``-1``, ``0``
-   or ``1``.
+      Compare this network to *other*.  In this comparison only the network
+      addresses are considered; host bits aren't.  Returns either ``-1``,
+      ``0`` or ``1``.
 
-      >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.2/32'))
-      -1
-      >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.0/32'))
-      1
-      >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.1/32'))
-      0
+         >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.2/32'))
+         -1
+         >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.0/32'))
+         1
+         >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.1/32'))
+         0
 
 
 .. class:: IPv6Network(address, strict=True)
@@ -492,7 +518,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    Construct an IPv6 network definition.  *address* can be one of the following:
 
    1. A string consisting of an IP address and an optional mask, separated by
-      a slash (``/``).  The IP addrses is the network address, and the mask
+      a slash (``/``).  The IP address is the network address, and the mask
       can be either a single number, which means it's a *prefix*, or a string
       representation of an IPv6 address.  If it's the latter, the mask is
       interpreted as a *net mask*.  If no mask is provided, it's considered to
@@ -516,10 +542,38 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    then :exc:`ValueError` is raised.  Otherwise, the host bits are masked out
    to determine the appropriate network address.
 
-   .. describe:: Attributes and methods
+   .. attribute:: version
+   .. attribute:: max_prefixlen
+   .. attribute:: is_multicast
+   .. attribute:: is_private
+   .. attribute:: is_unspecified
+   .. attribute:: is_reserved
+   .. attribute:: is_loopback
+   .. attribute:: is_link_local
+   .. attribute:: network_address
+   .. attribute:: broadcast_address
+   .. attribute:: host mask
+   .. attribute:: with_prefixlen
+   .. attribute:: compressed
+   .. attribute:: exploded
+   .. attribute:: with_netmask
+   .. attribute:: with_hostmask
+   .. attribute:: num_addresses
+   .. attribute:: prefixlen
+   .. method:: hosts()
+   .. method:: overlaps(other)
+   .. method:: address_exclude(network)
+   .. method:: subnets(prefixlen_diff=1, new_prefix=None)
+   .. method:: supernet(prefixlen_diff=1, new_prefix=None)
+   .. method:: compare_networks(other)
 
-   All attributes and methods implemented by :class:`IPv4Network` and by
-   :class:`IPv6Address` are also implemented by :class:`IPv6Network`.
+      Refer to the corresponding attribute documentation in
+      :class:`IPv4Network`
+
+   .. attribute:: is_site_local
+
+      These attribute is true for the network as a whole if it is true
+      true for both the network address and the broadcast address
 
 
 Operators
@@ -529,11 +583,13 @@ Network objects support some operators.  Unless stated otherwise, operators can
 only be applied between compatible objects (i.e. IPv4 with IPv4, IPv6 with
 IPv6).
 
+
 Logical operators
 """""""""""""""""
 
 Network objects can be compared with the usual set of logical operators,
 similarly to address objects.
+
 
 Iteration
 """""""""
@@ -562,6 +618,7 @@ example::
    IPv4Address('192.0.2.13')
    IPv4Address('192.0.2.14')
    IPv4Address('192.0.2.15')
+
 
 Networks as containers of addresses
 """""""""""""""""""""""""""""""""""
