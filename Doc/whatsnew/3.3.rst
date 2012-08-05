@@ -53,6 +53,18 @@ This article explains the new features in Python 3.3, compared to 3.2.
    release, so it's worth checking back even after reading earlier versions.
 
 
+Summary
+=======
+
+Major changes since Python 3.2:
+
+ * 4 new modules: :mod:`faulthandler`, :mod:`ipaddress`, :mod:`lzma` and :mod:`venv`.
+ * Syntax changes:
+
+   - ``u'unicode'`` syntax is accepted again
+   - Add ``yield from`` syntax
+
+
 PEP 405: Virtual Environments
 =============================
 
@@ -803,8 +815,54 @@ Builtin functions and types
   matching. For example, ``'ß'.casefold()`` returns ``'ss'``.
 
 
-New and Improved Modules
-========================
+New Modules
+===========
+
+faulthandler
+------------
+
+This new debug module contains functions to dump Python tracebacks explicitly,
+on a fault (a crash like a segmentation fault), after a timeout, or on a user
+signal. Call :func:`faulthandler.enable` to install fault handlers for the
+:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
+:const:`SIGILL` signals. You can also enable them at startup by setting the
+:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
+``faulthandler`` command line option.
+
+Example of a segmentation fault on Linux: ::
+
+    $ python -q -X faulthandler
+    >>> import ctypes
+    >>> ctypes.string_at(0)
+    Fatal Python error: Segmentation fault
+
+    Current thread 0x00007fb899f39700:
+      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+      File "<stdin>", line 1 in <module>
+    Segmentation fault
+
+
+ipaddress
+---------
+
+The new :mod:`ipaddress` module provides tools for creating and manipulating
+objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
+an IP address associated with a specific IP subnet).
+
+(Contributed by Google and Peter Moody in :pep:`3144`)
+
+lzma
+----
+
+The newly-added :mod:`lzma` module provides data compression and decompression
+using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
+file formats.
+
+(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
+
+
+Improved Modules
+================
 
 abc
 ---
@@ -1062,30 +1120,6 @@ API changes
   changed to match the order displayed by :func:`repr`.
 
 
-faulthandler
-------------
-
-This new debug module contains functions to dump Python tracebacks explicitly,
-on a fault (a crash like a segmentation fault), after a timeout, or on a user
-signal. Call :func:`faulthandler.enable` to install fault handlers for the
-:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
-:const:`SIGILL` signals. You can also enable them at startup by setting the
-:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
-``faulthandler`` command line option.
-
-Example of a segmentation fault on Linux: ::
-
-    $ python -q -X faulthandler
-    >>> import ctypes
-    >>> ctypes.string_at(0)
-    Fatal Python error: Segmentation fault
-
-    Current thread 0x00007fb899f39700:
-      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
-      File "<stdin>", line 1 in <module>
-    Segmentation fault
-
-
 ftplib
 ------
 
@@ -1153,25 +1187,6 @@ The constructor of the :class:`~io.TextIOWrapper` class has a new
 :meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
 written on the :class:`~io.TextIOWrapper` object is immediately handled to its
 underlying binary buffer.
-
-
-ipaddress
----------
-
-The new :mod:`ipaddress` module provides tools for creating and manipulating
-objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
-an IP address associated with a specific IP subnet).
-
-(Contributed by Google and Peter Moody in :pep:`3144`)
-
-lzma
-----
-
-The newly-added :mod:`lzma` module provides data compression and decompression
-using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
-file formats.
-
-(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
 
 
 math
