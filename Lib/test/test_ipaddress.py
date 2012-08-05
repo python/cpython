@@ -647,8 +647,8 @@ class IpaddrUnitTest(unittest.TestCase):
 
         ipv4 = ipaddress.ip_network('1.2.3.4')
         ipv6 = ipaddress.ip_network('2001:658:22a:cafe:200:0:0:1')
-        self.assertEqual(ipv4, ipaddress.ip_network(int(ipv4)))
-        self.assertEqual(ipv6, ipaddress.ip_network(int(ipv6)))
+        self.assertEqual(ipv4, ipaddress.ip_network(int(ipv4.network_address)))
+        self.assertEqual(ipv6, ipaddress.ip_network(int(ipv6.network_address)))
 
         v6_int = 42540616829182469433547762482097946625
         self.assertEqual(self.ipv6_interface._ip,
