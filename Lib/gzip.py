@@ -385,7 +385,10 @@ class GzipFile(io.BufferedIOBase):
             return b''
 
         try:
-            self._read()
+            # For certain input data, a single call to _read() may not return
+            # any data. In this case, retry until we get some data or reach EOF.
+            while self.extrasize <= 0:
+                self._read()
         except EOFError:
             pass
         if size < 0 or size > self.extrasize:
