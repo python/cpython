@@ -786,18 +786,21 @@ aforementioned annoyances.
 (contributed by Antoine Pitrou in :issue:`9260`.)
 
 
-Builtin functions
-=================
+Builtin functions and types
+===========================
 
- * :func:`open` gets a new *opener* parameter: the underlying file descriptor
-   for the file object is then obtained by calling *opener* with (*file*,
-   *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
-   example. The ``'x'`` mode was added: open for exclusive creation, failing if
-   the file already exists.
- * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
-   argument is true, the stream is forcibly flushed.
- * :func:`hash`: hash randomization is enabled by default, see
-   :meth:`object.__hash__` and :envvar:`PYTHONHASHSEED`.
+* :func:`open` gets a new *opener* parameter: the underlying file descriptor
+  for the file object is then obtained by calling *opener* with (*file*,
+  *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+  example. The ``'x'`` mode was added: open for exclusive creation, failing if
+  the file already exists.
+* :func:`print`: added the *flush* keyword argument. If the *flush* keyword
+  argument is true, the stream is forcibly flushed.
+* :func:`hash`: hash randomization is enabled by default, see
+  :meth:`object.__hash__` and :envvar:`PYTHONHASHSEED`.
+* The :class:`str` type gets a new :meth:`~str.casefold` method: return a
+  casefolded copy of the string, casefolded strings may be used for caseless
+  matching. For example, ``'ß'.casefold()`` returns ``'ss'``.
 
 
 New and Improved Modules
@@ -829,11 +832,21 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
+base64, binascii
+----------------
+
+ASCII-only Unicode strings are now accepted by the decoding functions of the
+modern interface. For example, ``base64.b64decode('YWJj')`` returns ``b'abc'``.
+
+
 bz2
 ---
 
 The :mod:`bz2` module has been rewritten from scratch. In the process, several
 new features have been added:
+
+* New :func:`bz2.open` function: open a bzip2-compressed file in binary or
+  text mode.
 
 * :class:`bz2.BZ2File` can now read from and write to arbitrary file-like
   objects, by means of its constructor's *fileobj* argument.
@@ -924,7 +937,7 @@ their ``__init__`` method (for example, file objects) or in their
 crypt
 -----
 
-Addition of salt and modular crypt format and the :func:`~crypt.mksalt`
+Addition of salt and modular crypt format (hashing method) and the :func:`~crypt.mksalt`
 function to the :mod:`crypt` module.
 
 (:issue:`10924`)
@@ -944,6 +957,17 @@ curses
    it
 
 (Contributed by Iñigo Serna in :issue:`6755`)
+
+datetime
+--------
+
+ * Equality comparisons between naive and aware :class:`~datetime.datetime`
+   instances don't raise :exc:`TypeError`.
+ * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
+   corresponding to the :class:`~datetime.datetime` instance.
+ * The :meth:`datetime.datetime.strftime` method supports formatting years
+   older than 1000.
+
 
 decimal
 -------
@@ -1041,10 +1065,26 @@ API changes
 faulthandler
 ------------
 
-New module: :mod:`faulthandler`.
+This new debug module contains functions to dump Python tracebacks explicitly,
+on a fault (a crash like a segmentation fault), after a timeout, or on a user
+signal. Call :func:`faulthandler.enable` to install fault handlers for the
+:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
+:const:`SIGILL` signals. You can also enable them at startup by setting the
+:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
+``faulthandler`` command line option.
 
- * :envvar:`PYTHONFAULTHANDLER`
- * :option:`-X` ``faulthandler``
+Example of a segmentation fault on Linux: ::
+
+    $ python -q -X faulthandler
+    >>> import ctypes
+    >>> ctypes.string_at(0)
+    Fatal Python error: Segmentation fault
+
+    Current thread 0x00007fb899f39700:
+      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+      File "<stdin>", line 1 in <module>
+    Segmentation fault
+
 
 ftplib
 ------
@@ -1055,6 +1095,13 @@ plaintext.  This can be useful to take advantage of firewalls that know how to
 handle NAT with non-secure FTP without opening fixed ports.
 
 (Contributed by Giampaolo Rodolà in :issue:`12139`)
+
+
+gc
+--
+
+It is now possible to register callbacks invoked by the garbage collector
+before and after collection using the new :`data:`~gc.callbacks` list.
 
 
 hmac
@@ -1100,6 +1147,12 @@ exclusively create a new file, and raise a :exc:`FileExistsError` if the file
 already exists. It is based on the C11 'x' mode to fopen().
 
 (Contributed by David Townshend in :issue:`12760`)
+
+The constructor of the :class:`~io.TextIOWrapper` class has a new
+*write_through* optional argument. If *write_through* is ``True``, calls to
+:meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
+written on the :class:`~io.TextIOWrapper` object is immediately handled to its
+underlying binary buffer.
 
 
 ipaddress
@@ -1180,7 +1233,8 @@ os
 * To avoid race conditions like symlink attacks and issues with temporary
   files and directories, it is more reliable (and also faster) to manipulate
   file descriptors instead of file names. Python 3.3 enhances existing functions
-  and introduces new functions to work on file descriptors.
+  and introduces new functions to work on file descriptors (:issue:`4761`,
+  :issue:`10755`).
 
   - The :mod:`os` module has a new :func:`~os.fwalk` function similar to
     :func:`~os.walk` except that it also yields file descriptors referring to the
@@ -1197,7 +1251,7 @@ os
 
   - The following functions now support a file descriptor for their path argument:
     :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
-    :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`,
+    :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`, :func:`~os.path.exists`,
     :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.
 
 * The :mod:`os` module has two new functions: :func:`~os.getpriority` and
@@ -1220,7 +1274,7 @@ os
 
 .. XXX sort out this mess after beta1
 
-* New functions to support Linux extended attributes:
+* New functions to support Linux extended attributes (:issue:`12720`):
   :func:`~os.getxattr`, :func:`~os.listxattr`, :func:`~os.removexattr`,
   :func:`~os.setxattr`.
 
@@ -1621,6 +1675,15 @@ Deprecated Python modules, functions and methods
   :func:`time.perf_counter` or :func:`time.process_time` function instead,
   depending on your requirements, to have a well defined behaviour.
 * The :func:`os.stat_float_times` function is deprecated.
+* :mod:`abc` module:
+
+  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+    with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractclassmethod` has been deprecated, use
+    :class:`classmethod` with :func:`abc.abstractmethod` instead.
+  * :class:`abc.abstractstaticmethod` has been deprecated, use
+    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+
 
 
 Deprecated functions and types of the C API
