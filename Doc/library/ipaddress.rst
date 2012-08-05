@@ -390,11 +390,13 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    .. attribute:: network_address
 
-      The broadcast address for the network.
+      The network address for the network. The network address and the
+      prefix length together uniquely define a network.
 
    .. attribute:: broadcast_address
 
-      The broadcast address for the network.
+      The broadcast address for the network. Packets sent to the broadcast
+      address should be received by every host on the network.
 
    .. attribute:: host mask
 
