@@ -327,6 +327,8 @@ Tests
 Build
 -----
 
+- Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
+
 - Issue #8847: Disable COMDAT folding in Windows PGO builds.
 
 - Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
