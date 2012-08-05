@@ -77,6 +77,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15559: To avoid a problematic failure mode when passed to the bytes
+  constructor, objects in the ipaddress module no longer implement __index__
+  (they still implement __int__ as appropriate)
+
 - Issue #15546: Fix handling of pathological input data in the read1() method of
   the BZ2File, GzipFile and LZMAFile classes.
 
