@@ -786,6 +786,20 @@ aforementioned annoyances.
 (contributed by Antoine Pitrou in :issue:`9260`.)
 
 
+Builtin functions
+=================
+
+ * :func:`open` gets a new *opener* parameter: the underlying file descriptor
+   for the file object is then obtained by calling *opener* with (*file*,
+   *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+   example. The ``'x'`` mode was added: open for exclusive creation, failing if
+   the file already exists.
+ * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
+   argument is true, the stream is forcibly flushed.
+ * :func:`hash`: hash randomization is enabled by default, see
+   :meth:`object.__hash__` and :envvar:`PYTHONHASHSEED`.
+
+
 New and Improved Modules
 ========================
 
@@ -1163,16 +1177,35 @@ os
 
   (Patch submitted by Ross Lagerwall and Giampaolo Rodolà in :issue:`10882`.)
 
+* To avoid race conditions like symlink attacks and issues with temporary
+  files and directories, it is more reliable (and also faster) to manipulate
+  file descriptors instead of file names. Python 3.3 enhances existing functions
+  and introduces new functions to work on file descriptors.
+
+  - The :mod:`os` module has a new :func:`~os.fwalk` function similar to
+    :func:`~os.walk` except that it also yields file descriptors referring to the
+    directories visited. This is especially useful to avoid symlink races.
+
+  - The following functions get new optional *dir_fd* (:ref:`paths relative to
+    directory descriptors <dir_fd>`) and/or *follow_symlinks* (:ref:`not
+    following symlinks <follow_symlinks>`):
+    :func:`~os.access`, :func:`~os.chflags`, :func:`~os.chmod`, :func:`~os.chown`,
+    :func:`~os.link`, :func:`~os.lstat`, :func:`~os.mkdir`, :func:`~os.mkfifo`,
+    :func:`~os.mknod`, :func:`~os.open`, :func:`~os.readlink`, :func:`~os.remove`,
+    :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
+    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.
+
+  - The following functions now support a file descriptor for their path argument:
+    :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
+    :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`,
+    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.
+
 * The :mod:`os` module has two new functions: :func:`~os.getpriority` and
   :func:`~os.setpriority`. They can be used to get or set process
   niceness/priority in a fashion similar to :func:`os.nice` but extended to all
   processes instead of just the current one.
 
   (Patch submitted by Giampaolo Rodolà in :issue:`10784`.)
-
-* The :mod:`os` module has a new :func:`~os.fwalk` function similar to
-  :func:`~os.walk` except that it also yields file descriptors referring to the
-  directories visited. This is especially useful to avoid symlink races.
 
 * The new :func:`os.replace` function allows cross-platform renaming of a
   file with overwriting the destination.  With :func:`os.rename`, an existing
@@ -1181,78 +1214,51 @@ os
   (Contributed by Antoine Pitrou in :issue:`8828`.)
 
 * The new :func:`os.get_terminal_size` function queries the size of the
-  terminal attached to a file descriptor.
+  terminal attached to a file descriptor. See also
+  :func:`shutil.get_terminal_size`.
   (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
 
 .. XXX sort out this mess after beta1
 
-  * "at" functions (:issue:`4761`):
+* New functions to support Linux extended attributes:
+  :func:`~os.getxattr`, :func:`~os.listxattr`, :func:`~os.removexattr`,
+  :func:`~os.setxattr`.
 
-    * :func:`~os.faccessat`
-    * :func:`~os.fchmodat`
-    * :func:`~os.fchownat`
-    * :func:`~os.fstatat`
-    * :func:`~os.futimesat`
-    * :func:`~os.linkat`
-    * :func:`~os.mkdirat`
-    * :func:`~os.mkfifoat`
-    * :func:`~os.mknodat`
-    * :func:`~os.openat`
-    * :func:`~os.readlinkat`
-    * :func:`~os.renameat`
-    * :func:`~os.symlinkat`
-    * :func:`~os.unlinkat`
-    * :func:`~os.utimensat`
+* New interface to the scheduler. These functions
+  control how a process is allocated CPU time by the operating system. New
+  functions:
+  :func:`~os.sched_get_priority_max`, :func:`~os.sched_get_priority_min`,
+  :func:`~os.sched_getaffinity`, :func:`~os.sched_getparam`,
+  :func:`~os.sched_getscheduler`, :func:`~os.sched_rr_get_interval`,
+  :func:`~os.sched_setaffinity`, :func:`~os.sched_setparam`,
+  :func:`~os.sched_setscheduler`, :func:`~os.sched_yield`,
 
-  * extended attributes (:issue:`12720`):
+* New functions to control the file system:
 
-    * :func:`~os.fgetxattr`
-    * :func:`~os.flistxattr`
-    * :func:`~os.fremovexattr`
-    * :func:`~os.fsetxattr`
-    * :func:`~os.getxattr`
-    * :func:`~os.lgetxattr`
-    * :func:`~os.listxattr`
-    * :func:`~os.llistxattr`
-    * :func:`~os.lremovexattr`
-    * :func:`~os.lsetxattr`
-    * :func:`~os.removexattr`
-    * :func:`~os.setxattr`
+  * :func:`~os.posix_fadvise`: Announces an intention to access data in a
+    specific pattern thus allowing the kernel to make optimizations.
+  * :func:`~os.posix_fallocate`: Ensures that enough disk space is allocated
+    for a file.
+  * :func:`~os.sync`: Force write of everything to disk.
 
-  * Scheduler functions (:issue:`12655`):
+* Add some extra posix functions to the os module:
 
-    * :func:`~os.sched_get_priority_max`
-    * :func:`~os.sched_get_priority_min`
-    * :func:`~os.sched_getaffinity`
-    * :func:`~os.sched_getparam`
-    * :func:`~os.sched_getscheduler`
-    * :func:`~os.sched_rr_get_interval`
-    * :func:`~os.sched_setaffinity`
-    * :func:`~os.sched_setparam`
-    * :func:`~os.sched_setscheduler`
-    * :func:`~os.sched_yield`
+  * :func:`~os.lockf`: Apply, test or remove a POSIX lock on an open file descriptor.
+  * :func:`~os.pread`: Read from a file descriptor at an offset, the file
+    offset remains unchanged.
+  * :func:`~os.pwrite`: Write to a file descriptor from an offset, leaving
+    the file offset unchanged.
+  * :func:`~os.readv`: Read from a file descriptor into a number of writable buffers.
+  * :func:`~os.truncate`: Truncate the file corresponding to *path*, so that
+    it is at most *length* bytes in size.
+  * :func:`~os.waitid`: Wait for the completion of one or more child processes.
+  * :func:`~os.writev`: Write the contents of *buffers* to a file descriptor,
+    where *buffers* is an arbitrary sequence of buffers.
+  * :func:`~os.getgrouplist` (:issue:`9344`): Return list of group ids that
+    specified user belongs to.
 
-  * Add some extra posix functions to the os module (:issue:`10812`):
-
-    * :func:`~os.fexecve`
-    * :func:`~os.futimens`
-    * :func:`~os.futimes`
-    * :func:`~os.lockf`
-    * :func:`~os.lutimes`
-    * :func:`~os.posix_fadvise`
-    * :func:`~os.posix_fallocate`
-    * :func:`~os.pread`
-    * :func:`~os.pwrite`
-    * :func:`~os.readv`
-    * :func:`~os.sync`
-    * :func:`~os.truncate`
-    * :func:`~os.waitid`
-    * :func:`~os.writev`
-
-  * Other new functions:
-
-    * :func:`~os.flistdir` (:issue:`10755`)
-    * :func:`~os.getgrouplist` (:issue:`9344`)
+* :func:`~os.times` and :func:`~os.uname`: Return type changed from a tuple to
+  a tuple-like object with named attributes.
 
 
 pdb
@@ -1614,6 +1620,7 @@ Deprecated Python modules, functions and methods
 * The behaviour of :func:`time.clock` depends on the platform: use the new
   :func:`time.perf_counter` or :func:`time.process_time` function instead,
   depending on your requirements, to have a well defined behaviour.
+* The :func:`os.stat_float_times` function is deprecated.
 
 
 Deprecated functions and types of the C API
@@ -1690,7 +1697,9 @@ that may require changes to your code.
 Porting Python code
 -------------------
 
-.. XXX add a point about hash randomization and that it's always on in 3.3
+* Hash randomization is enabled by default. Set the :envvar:`PYTHONHASHSEED`
+  environment variable to ``0`` to disable hash randomization. See also the
+  :meth:`object.__hash__` method.
 
 * :issue:`12326`: On Linux, sys.platform doesn't contain the major version
   anymore. It is now always 'linux', instead of 'linux2' or 'linux3' depending
