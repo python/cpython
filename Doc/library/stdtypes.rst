@@ -1183,15 +1183,18 @@ string functions based on regular expressions.
 
 .. method:: str.splitlines([keepends])
 
-   Return a list of the lines in the string, breaking at line boundaries.  Line
-   breaks are not included in the resulting list unless *keepends* is given and
-   true. This method uses the universal newlines approach to splitting lines.
-   Unlike :meth:`~str.split`, if the string ends with line boundary characters
-   the returned list does ``not`` have an empty last element.
+   Return a list of the lines in the string, breaking at line boundaries.
+   This method uses the universal newlines approach to splitting lines.
+   Line breaks are not included in the resulting list unless *keepends* is
+   given and true.
 
    For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
    ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splitlines(True)``
    returns ``['ab c\n', '\n, 'de fg\r', 'kl\r\n']``.
+
+   Unlike :meth:`~str.split` when a delimiter string *sep* is given, this
+   method returns an empty list for the empty string, and a terminal line
+   break does not result in an extra line.
 
 
 .. method:: str.startswith(prefix[, start[, end]])
