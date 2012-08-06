@@ -465,6 +465,9 @@ Build
 Documentation
 -------------
 
+- Issue 15482: Properly document the default 'level' value for __import__()
+  while warning about using negative values.
+
 - Issue #15230: Clearly document some of the limitations of the runpy
   module and nudge readers towards importlib when appropriate.
 
