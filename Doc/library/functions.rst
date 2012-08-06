@@ -1443,7 +1443,7 @@ are always available.  They are listed here in alphabetical order.
       True
 
 
-.. function:: __import__(name, globals={}, locals={}, fromlist=[], level=0)
+.. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
       statement: import
