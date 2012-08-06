@@ -1507,7 +1507,8 @@ are always available.  They are listed here in alphabetical order.
    use :func:`importlib.import_module`.
 
    .. versionchanged:: 3.3
-      Negative values for *level* are no longer supported.
+      Negative values for *level* are no longer supported (which also changes
+      the default value to 0).
 
 
 .. rubric:: Footnotes
