@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This script is used to build "official" universal installers on Mac OS X.
-It requires at least Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK for
+It requires at least Mac OS X 10.5, Xcode 3, and the 10.4u SDK for
 32-bit builds.  64-bit or four-way universal builds require at least
 OS X 10.5 and the 10.5 SDK.
 
@@ -9,6 +9,20 @@ Please ensure that this script keeps working with Python 2.5, to avoid
 bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Sphinx,
 which is used to build the documentation, currently requires at least
 Python 2.4.
+
+In addition to what is supplied with OS X 10.5+ and Xcode 3+, the script
+requires an installed version of hg and a third-party version of
+Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
+(for 10.6 or later) installed in /Library/Frameworks.  When installed,
+the Python built by this script will attempt to dynamically link first to
+Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
+back to the ones in /System/Library/Framework.  For the build, we recommend
+installing the most recent ActiveTcl 8.4 or 8.5 version.
+
+32-bit-only installer builds are still possible on OS X 10.4 with Xcode 2.5
+and the installation of additional components, such as a newer Python
+(2.5 is needed for Python parser updates), hg, and svn (for the documentation
+build).
 
 Usage: see USAGE variable in the script.
 """
@@ -342,9 +356,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE. If you have installed Xcode
-                it will also install a link to the documentation in
-                /Developer/Documentation/Python
+                that is useable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -511,7 +523,15 @@ def checkEnvironment():
                                                     ev, os.environ[ev]))
                 del os.environ[ev]
 
-    os.environ['PATH'] = '/bin:/sbin:/usr/bin:/usr/sbin'
+    base_path = '/bin:/sbin:/usr/bin:/usr/sbin'
+    if 'SDK_TOOLS_BIN' in os.environ:
+        base_path = os.environ['SDK_TOOLS_BIN'] + ':' + base_path
+    # Xcode 2.5 on OS X 10.4 does not include SetFile in its usr/bin;
+    # add its fixed location here if it exists
+    OLD_DEVELOPER_TOOLS = '/Developer/Tools'
+    if os.path.isdir(OLD_DEVELOPER_TOOLS):
+        base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
+    os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
 
 
@@ -1204,7 +1224,7 @@ def buildDMG():
     # Custom icon for the DMG, shown when the DMG is mounted.
     shutil.copy("../Icons/Disk Image.icns",
             os.path.join(WORKDIR, "mnt", volname, ".VolumeIcon.icns"))
-    runCommand("/Developer/Tools/SetFile -a C %s/"%(
+    runCommand("SetFile -a C %s/"%(
             shellQuote(os.path.join(WORKDIR, "mnt", volname)),))
 
     runCommand("hdiutil detach %s"%(shellQuote(os.path.join(WORKDIR, "mnt", volname))))
