@@ -1587,7 +1587,7 @@ def _get_supported_file_loaders():
     return [extensions, source, bytecode]
 
 
-def __import__(name, globals={}, locals={}, fromlist=[], level=0):
+def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     """Import a module.
 
     The 'globals' argument is used to infer where the import is occuring from
@@ -1601,7 +1601,8 @@ def __import__(name, globals={}, locals={}, fromlist=[], level=0):
     if level == 0:
         module = _gcd_import(name)
     else:
-        package = _calc___package__(globals)
+        globals_ = globals if globals is not None else {}
+        package = _calc___package__(globals_)
         module = _gcd_import(name, package, level)
     if not fromlist:
         # Return up to the first dot in 'name'. This is complicated by the fact

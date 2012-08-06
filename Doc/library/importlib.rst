@@ -63,7 +63,7 @@ Details on custom importers can be found in :pep:`302`.
 Functions
 ---------
 
-.. function:: __import__(name, globals={}, locals={}, fromlist=list(), level=0)
+.. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
     An implementation of the built-in :func:`__import__` function.
 

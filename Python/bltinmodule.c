@@ -195,7 +195,7 @@ builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(import_doc,
-"__import__(name, globals={}, locals={}, fromlist=[], level=0) -> module\n\
+"__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module\n\
 \n\
 Import a module. Because this function is meant for use by the Python\n\
 interpreter and not for general use it is better to use\n\
