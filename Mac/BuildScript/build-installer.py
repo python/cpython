@@ -198,7 +198,43 @@ def library_recipes():
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
-              )
+              ),
+          dict(
+              name="NCurses 5.9",
+              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz",
+              checksum='8cb9c412e5f2d96bc6f459aa8c6282a1',
+              configure_pre=[
+                  "--enable-widec",
+                  "--without-cxx",
+                  "--without-cxx-binding",
+                  "--without-ada",
+                  "--without-curses-h",
+                  "--enable-shared",
+                  "--with-shared",
+                  "--without-debug",
+                  "--without-normal",
+                  "--without-termlib",
+                  "--without-ticlib",
+                  "--without-tests",
+                  "--without-manpages",
+                  "--datadir=/usr/share",
+                  "--sysconfdir=/etc",
+                  "--sharedstatedir=/usr/com",
+                  "--with-terminfo-dirs=/usr/share/terminfo",
+                  "--with-default-terminfo-dir=/usr/share/terminfo",
+                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
+              ],
+              patchscripts=[
+                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                   "f54bf02a349f96a7c4f0d00922f3a0d4"),
+                   ],
+              useLDFlags=False,
+              install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  getVersion(),
+                  ),
+          ),
           ])
 
     if DEPTARGET < '10.5':
@@ -236,8 +272,10 @@ def library_recipes():
               patches=[
                   # The readline maintainers don't do actual micro releases, but
                   # just ship a set of patches.
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                  'http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
+                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
+                   'c642f2e84d820884b0bf9fd176bc6c3f'),
+                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
+                   '1a76781a1ea734e831588285db7ec9b1'),
               ]
           ),
           dict(
@@ -257,36 +295,6 @@ def library_recipes():
                   '--disable-readline',
                   '--disable-dependency-tracking',
               ]
-          ),
-          dict(
-              name="NCurses 5.5",
-              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
-              checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
-              configure_pre=[
-                  "--enable-widec",
-                  "--without-cxx",
-                  "--without-ada",
-                  "--without-progs",
-                  "--without-curses-h",
-                  "--enable-shared",
-                  "--with-shared",
-                  "--datadir=/usr/share",
-                  "--sysconfdir=/etc",
-                  "--sharedstatedir=/usr/com",
-                  "--with-terminfo-dirs=/usr/share/terminfo",
-                  "--with-default-terminfo-dir=/usr/share/terminfo",
-                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
-                  "--enable-termcap",
-              ],
-              patches=[
-                  "ncurses-5.5.patch",
-              ],
-              useLDFlags=False,
-              install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  getVersion(),
-                  ),
           ),
         ])
 
@@ -660,23 +668,10 @@ def extractArchive(builddir, archiveName):
     finally:
         os.chdir(curdir)
 
-KNOWNSIZES = {
-    "http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz": 7952742,
-    "http://downloads.sleepycat.com/db-4.4.20.tar.gz": 2030276,
-}
-
 def downloadURL(url, fname):
     """
     Download the contents of the url into the file.
     """
-    try:
-        size = os.path.getsize(fname)
-    except OSError:
-        pass
-    else:
-        if KNOWNSIZES.get(url) == size:
-            print("Using existing file for", url)
-            return
     fpIn = urllib_request.urlopen(url)
     fpOut = open(fname, 'wb')
     block = fpIn.read(10240)
@@ -691,6 +686,24 @@ def downloadURL(url, fname):
             os.unlink(fname)
         except:
             pass
+
+def verifyThirdPartyFile(url, checksum, fname):
+    """
+    Download file from url to filename fname if it does not already exist.
+    Abort if file contents does not match supplied md5 checksum.
+    """
+    name = os.path.basename(fname)
+    if os.path.exists(fname):
+        print("Using local copy of %s"%(name,))
+    else:
+        print("Did not find local copy of %s"%(name,))
+        print("Downloading %s"%(name,))
+        downloadURL(url, fname)
+        print("Archive for %s stored as %s"%(name, fname))
+    if os.system(
+            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
+                % (shellQuote(fname), checksum) ):
+        fatal('MD5 checksum mismatch for file %s' % fname)
 
 def buildRecipe(recipe, basedir, archList):
     """
@@ -712,16 +725,7 @@ def buildRecipe(recipe, basedir, archList):
     if not os.path.exists(DEPSRC):
         os.mkdir(DEPSRC)
 
-
-    if os.path.exists(sourceArchive):
-        print("Using local copy of %s"%(name,))
-
-    else:
-        print("Did not find local copy of %s"%(name,))
-        print("Downloading %s"%(name,))
-        downloadURL(url, sourceArchive)
-        print("Archive for %s stored as %s"%(name, sourceArchive))
-
+    verifyThirdPartyFile(url, recipe['checksum'], sourceArchive)
     print("Extracting archive for %s"%(name,))
     buildDir=os.path.join(WORKDIR, '_bld')
     if not os.path.exists(buildDir):
@@ -732,17 +736,30 @@ def buildRecipe(recipe, basedir, archList):
     if 'buildDir' in recipe:
         os.chdir(recipe['buildDir'])
 
-
-    for fn in recipe.get('patches', ()):
-        if fn.startswith('http://'):
-            # Download the patch before applying it.
-            path = os.path.join(DEPSRC, os.path.basename(fn))
-            downloadURL(fn, path)
-            fn = path
-
-        fn = os.path.join(curdir, fn)
+    for patch in recipe.get('patches', ()):
+        if isinstance(patch, tuple):
+            url, checksum = patch
+            fn = os.path.join(DEPSRC, os.path.basename(url))
+            verifyThirdPartyFile(url, checksum, fn)
+        else:
+            # patch is a file in the source directory
+            fn = os.path.join(curdir, patch)
         runCommand('patch -p%s < %s'%(recipe.get('patchlevel', 1),
             shellQuote(fn),))
+
+    for patchscript in recipe.get('patchscripts', ()):
+        if isinstance(patchscript, tuple):
+            url, checksum = patchscript
+            fn = os.path.join(DEPSRC, os.path.basename(url))
+            verifyThirdPartyFile(url, checksum, fn)
+        else:
+            # patch is a file in the source directory
+            fn = os.path.join(curdir, patchscript)
+        if fn.endswith('.bz2'):
+            runCommand('bunzip2 -fk %s' % shellQuote(fn))
+            fn = fn[:-4]
+        runCommand('sh %s' % shellQuote(fn))
+        os.unlink(fn)
 
     if configure is not None:
         configure_args = [
@@ -762,25 +779,28 @@ def buildRecipe(recipe, basedir, archList):
 
         if recipe.get('useLDFlags', 1):
             configure_args.extend([
-                "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
+                "CFLAGS=-mmacosx-version-min=%s -arch %s -isysroot %s -I%s/usr/local/include"%(
+                        DEPTARGET,
                         ' -arch '.join(archList),
                         shellQuote(SDKPATH)[1:-1],
                         shellQuote(basedir)[1:-1],),
-                "LDFLAGS=-syslibroot,%s -L%s/usr/local/lib -arch %s"%(
+                "LDFLAGS=-mmacosx-version-min=%s -syslibroot,%s -L%s/usr/local/lib -arch %s"%(
+                    DEPTARGET,
                     shellQuote(SDKPATH)[1:-1],
                     shellQuote(basedir)[1:-1],
                     ' -arch '.join(archList)),
             ])
         else:
             configure_args.extend([
-                "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
+                "CFLAGS=-mmacosx-version-min=%s -arch %s -isysroot %s -I%s/usr/local/include"%(
+                        DEPTARGET,
                         ' -arch '.join(archList),
                         shellQuote(SDKPATH)[1:-1],
                         shellQuote(basedir)[1:-1],),
             ])
 
         if 'configure_post' in recipe:
-            configure_args = configure_args = list(recipe['configure_post'])
+            configure_args = configure_args + list(recipe['configure_post'])
 
         configure_args.insert(0, configure)
         configure_args = [ shellQuote(a) for a in configure_args ]

@@ -304,6 +304,10 @@ Tests
 Build
 -----
 
+- Issue #15037: Build OS X installers with local copy of ncurses 5.9 libraries
+  to avoid curses.unget_wch bug present in older versions of ncurses such as
+  those shipped with OS X.
+
 - Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
 
 - Issue #8847: Disable COMDAT folding in Windows PGO builds.
