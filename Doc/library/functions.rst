@@ -1410,7 +1410,7 @@ are always available.  They are listed here in alphabetical order.
       True
 
 
-.. function:: __import__(name, globals={}, locals={}, fromlist=[], level=0)
+.. function:: __import__(name, globals={}, locals={}, fromlist=[], level=-1)
 
    .. index::
       statement: import
@@ -1435,10 +1435,13 @@ are always available.  They are listed here in alphabetical order.
    not use its *locals* argument at all, and uses its *globals* only to
    determine the package context of the :keyword:`import` statement.
 
-   *level* specifies whether to use absolute or relative imports. ``0`` (the
-   default) means only perform absolute imports.  Positive values for
-   *level* indicate the number of parent directories to search relative to the
-   directory of the module calling :func:`__import__`.
+   *level* specifies whether to use absolute or relative imports. ``0``
+   means only perform absolute imports. Positive values for *level* indicate the
+   number of parent directories to search relative to the directory of the
+   module calling :func:`__import__`.  Negative values attempt both an implicit
+   relative import and an absolute import (usage of negative values for *level*
+   are strongly discouraged as future versions of Python do not support such
+   values). Import statements only use values of 0 or greater.
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the
