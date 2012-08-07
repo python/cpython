@@ -317,6 +317,9 @@ Build
   those shipped with OS X.
 
 - Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
+  Also, for OS X installers, ensure consistent sqlite3 behavior and feature
+  availability by building a local copy of libsqlite3 rather than
+  depending on the wide range of versions supplied with various OS X releases.
 
 - Issue #8847: Disable COMDAT folding in Windows PGO builds.
 
