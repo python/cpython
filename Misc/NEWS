@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
+- Issue #15568: Fix the return value of "yield from" when StopIteration is
+  raised by a custom iterator.
+
 - Issue #13119: sys.stdout and sys.stderr are now using "\r\n" newline on
   Windows, as Python 2.
 
