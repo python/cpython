@@ -940,6 +940,20 @@ class TestPEP380Operation(unittest.TestCase):
         for stack in spam(eggs(gen())):
             self.assertTrue('spam' in stack and 'eggs' in stack)
 
+    def test_custom_iterator_return(self):
+        # See issue #15568
+        class MyIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise StopIteration(42)
+        def gen():
+            nonlocal ret
+            ret = yield from MyIter()
+        ret = None
+        list(gen())
+        self.assertEqual(ret, 42)
+
 
 def test_main():
     from test import support
