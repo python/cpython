@@ -451,7 +451,7 @@ available.  They are listed here in alphabetical order.
       used reliably to modify a function's locals.
 
 
-.. function:: file(filename[, mode[, bufsize]])
+.. function:: file(name[, mode[, buffering]])
 
    Constructor function for the :class:`file` type, described further in section
    :ref:`bltin-file-objects`.  The constructor's arguments are the same as those
