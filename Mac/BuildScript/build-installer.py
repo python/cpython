@@ -190,6 +190,8 @@ EXPECTED_SHARED_LIBS = {}
 def library_recipes():
     result = []
 
+    LT_10_5 = bool(DEPTARGET < '10.5')
+
     result.extend([
           dict(
               name="XZ 5.0.3",
@@ -235,7 +237,25 @@ def library_recipes():
                   getVersion(),
                   ),
           ),
-          ])
+          dict(
+              name="SQLite 3.7.13",
+              url="http://www.sqlite.org/sqlite-autoconf-3071300.tar.gz",
+              checksum='c97df403e8a3d5b67bb408fcd6aabd8e',
+              extra_cflags=('-Os '
+                            '-DSQLITE_ENABLE_FTS4 '
+                            '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_TCL=0 '
+                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+              configure_pre=[
+                  '--enable-threadsafe',
+                  '--enable-shared=no',
+                  '--enable-static=yes',
+                  '--disable-readline',
+                  '--disable-dependency-tracking',
+              ]
+          ),
+        ])
 
     if DEPTARGET < '10.5':
         result.extend([
@@ -276,24 +296,6 @@ def library_recipes():
                    'c642f2e84d820884b0bf9fd176bc6c3f'),
                   ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
                    '1a76781a1ea734e831588285db7ec9b1'),
-              ]
-          ),
-          dict(
-              name="SQLite 3.7.4",
-              url="http://www.sqlite.org/sqlite-autoconf-3070400.tar.gz",
-              checksum='8f0c690bfb33c3cbbc2471c3d9ba0158',
-              configure_env=('CFLAGS="-Os'
-                                  ' -DSQLITE_ENABLE_FTS3'
-                                  ' -DSQLITE_ENABLE_FTS3_PARENTHESIS'
-                                  ' -DSQLITE_ENABLE_RTREE'
-                                  ' -DSQLITE_TCL=0'
-                                  '"'),
-              configure_pre=[
-                  '--enable-threadsafe',
-                  '--enable-shared=no',
-                  '--enable-static=yes',
-                  '--disable-readline',
-                  '--disable-dependency-tracking',
               ]
           ),
         ])
@@ -779,7 +781,9 @@ def buildRecipe(recipe, basedir, archList):
 
         if recipe.get('useLDFlags', 1):
             configure_args.extend([
-                "CFLAGS=-mmacosx-version-min=%s -arch %s -isysroot %s -I%s/usr/local/include"%(
+                "CFLAGS=%s-mmacosx-version-min=%s -arch %s -isysroot %s "
+                            "-I%s/usr/local/include"%(
+                        recipe.get('extra_cflags', ''),
                         DEPTARGET,
                         ' -arch '.join(archList),
                         shellQuote(SDKPATH)[1:-1],
@@ -792,7 +796,9 @@ def buildRecipe(recipe, basedir, archList):
             ])
         else:
             configure_args.extend([
-                "CFLAGS=-mmacosx-version-min=%s -arch %s -isysroot %s -I%s/usr/local/include"%(
+                "CFLAGS=%s-mmacosx-version-min=%s -arch %s -isysroot %s "
+                            "-I%s/usr/local/include"%(
+                        recipe.get('extra_cflags', ''),
                         DEPTARGET,
                         ' -arch '.join(archList),
                         shellQuote(SDKPATH)[1:-1],
@@ -804,9 +810,6 @@ def buildRecipe(recipe, basedir, archList):
 
         configure_args.insert(0, configure)
         configure_args = [ shellQuote(a) for a in configure_args ]
-
-        if 'configure_env' in recipe:
-            configure_args.insert(0, recipe['configure_env'])
 
         print("Running configure for %s"%(name,))
         runCommand(' '.join(configure_args) + ' 2>&1')
