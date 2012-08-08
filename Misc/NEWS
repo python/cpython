@@ -312,6 +312,9 @@ Tests
 Build
 -----
 
+- Issue #11715: Fix multiarch detection without having Debian development
+  tools (dpkg-dev) installed.
+
 - Issue #15037: Build OS X installers with local copy of ncurses 5.9 libraries
   to avoid curses.unget_wch bug present in older versions of ncurses such as
   those shipped with OS X.
