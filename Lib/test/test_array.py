@@ -3,6 +3,7 @@
    Roger E. Masse
 """
 
+import ctypes
 import unittest
 from test import support
 import weakref
@@ -1041,7 +1042,7 @@ class UnicodeTest(StringTest):
         a.fromunicode('\x11abc\xff\u1234')
         s = a.tounicode()
         self.assertEqual(s, '\xa0\xc2\u1234 \x11abc\xff\u1234')
-        self.assertEqual(a.itemsize, 2)
+        self.assertEqual(a.itemsize, ctypes.sizeof(ctypes.c_wchar))
 
         s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
         a = array.array('u', s)
