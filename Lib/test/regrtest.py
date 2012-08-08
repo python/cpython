@@ -440,8 +440,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             args, kwargs = json.loads(a)
             try:
                 result = runtest(*args, **kwargs)
+            except KeyboardInterrupt:
+                result = INTERRUPTED, ''
             except BaseException as e:
-                result = INTERRUPTED, e.__class__.__name__
+                traceback.print_exc()
+                result = CHILD_ERROR, str(e)
             sys.stdout.flush()
             print()   # Force a newline (just in case)
             print(json.dumps(result))
@@ -684,8 +687,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 sys.stdout.flush()
                 sys.stderr.flush()
                 if result[0] == INTERRUPTED:
-                    assert result[1] == 'KeyboardInterrupt'
-                    raise KeyboardInterrupt   # What else?
+                    raise KeyboardInterrupt
                 if result[0] == CHILD_ERROR:
                     raise Exception("Child error on {}: {}".format(test, result[1]))
                 test_index += 1
