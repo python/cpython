@@ -592,7 +592,10 @@ class MakedirTests(unittest.TestCase):
         try:
             existing_testfn_mode = stat.S_IMODE(
                     os.lstat(support.TESTFN).st_mode)
-            os.chmod(support.TESTFN, existing_testfn_mode | S_ISGID)
+            try:
+                os.chmod(support.TESTFN, existing_testfn_mode | S_ISGID)
+            except OSError:
+                raise unittest.SkipTest('Cannot set S_ISGID for dir.')
             if (os.lstat(support.TESTFN).st_mode & S_ISGID != S_ISGID):
                 raise unittest.SkipTest('No support for S_ISGID dir mode.')
             # The os should apply S_ISGID from the parent dir for us, but
