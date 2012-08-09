@@ -11,7 +11,7 @@ extern "C" {
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
              PyObject *args; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
-             int suppress_context;
+             char suppress_context;
 
 typedef struct {
     PyException_HEAD
