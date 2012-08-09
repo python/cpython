@@ -802,9 +802,6 @@ done:
 /*********** long formatting ********************************************/
 /************************************************************************/
 
-typedef PyObject*
-(*IntOrLongToString)(PyObject *value, int base);
-
 static int
 format_long_internal(PyObject *value, const InternalFormatSpec *format,
                      _PyUnicodeWriter *writer)
