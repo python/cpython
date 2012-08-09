@@ -81,8 +81,8 @@ class TestStringVar(TestBase):
     def test_get(self):
         v = StringVar(self.root, "abc", "name")
         self.assertEqual("abc", v.get())
-        self.root.globalsetvar("name", True)
-        self.assertEqual("1", v.get())
+        self.root.globalsetvar("name", "value")
+        self.assertEqual("value", v.get())
 
 
 class TestIntVar(TestBase):
