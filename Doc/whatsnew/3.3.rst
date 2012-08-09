@@ -1602,6 +1602,18 @@ project and :program:`gvfs-open` which is the default URI handler for GNOME 3.
 (:issue:`13620` and :issue:`14493`)
 
 
+xml.etree.ElementTree
+---------------------
+
+The :mod:`xml.etree.ElementTree` module now imports its C accelerator by
+default; there is no longer a need to explicitly import
+:mod:`xml.etree.cElementTree` (this module stays for backwards compatibility,
+but is now deprecated).  In addition,  the ``iter`` family of methods of
+:class:`~xml.etree.ElementTree.Element` has been optimized (rewritten in C).
+The module's documentation has also been greatly improved with added examples
+and a more detailed reference.
+
+
 Optimizations
 =============
 
