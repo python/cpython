@@ -1210,7 +1210,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     int result;
     PyObject *return_value = NULL;
 
-    char buffers[32][8];
+    double buffers[8][4]; /* double ensures alignment where necessary */
 
     if (!PyArg_ParseTuple(args, "OOyO:parse_tuple_and_keywords",
         &sub_args, &sub_kwargs,
