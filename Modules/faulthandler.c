@@ -659,17 +659,22 @@ faulthandler_user(int signum)
 #ifdef HAVE_SIGACTION
     if (user->chain) {
         (void)sigaction(signum, &user->previous, NULL);
+        errno = save_errno;
+
         /* call the previous signal handler */
         raise(signum);
+
+        save_errno = errno;
         (void)faulthandler_register(signum, user->chain, NULL);
+        errno = save_errno;
     }
 #else
     if (user->chain) {
+        errno = save_errno;
         /* call the previous signal handler */
         user->previous(signum);
     }
 #endif
-    errno = save_errno;
 }
 
 static int
