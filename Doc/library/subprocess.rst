@@ -176,6 +176,26 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    output.
 
 
+.. exception:: CalledProcessError
+
+    Exception raised when a process run by :func:`check_call` or
+    :func:`check_output` returns a non-zero exit status.
+
+    .. attribute:: returncode
+
+        Exit status of the child process.
+
+    .. attribute:: cmd
+
+        Command that was used to spawn the child process.
+
+    .. attribute:: output
+
+        Output of the child process if this exception is raised by
+        :func:`check_output`.  Otherwise, ``None``.
+
+
+
 .. _frequently-used-arguments:
 
 Frequently Used Arguments
