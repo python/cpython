@@ -98,7 +98,7 @@ memory from the Python heap:
 
    Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
    allocated memory, or *NULL* if the request fails. Requesting zero bytes returns
-   a distinct non-*NULL* pointer if possible, as if :c:func:`PyMem_Malloc(1)` had
+   a distinct non-*NULL* pointer if possible, as if ``PyMem_Malloc(1)`` had
    been called instead. The memory will not have been initialized in any way.
 
 
@@ -106,7 +106,7 @@ memory from the Python heap:
 
    Resizes the memory block pointed to by *p* to *n* bytes. The contents will be
    unchanged to the minimum of the old and the new sizes. If *p* is *NULL*, the
-   call is equivalent to :c:func:`PyMem_Malloc(n)`; else if *n* is equal to zero,
+   call is equivalent to ``PyMem_Malloc(n)``; else if *n* is equal to zero,
    the memory block is resized but is not freed, and the returned pointer is
    non-*NULL*.  Unless *p* is *NULL*, it must have been returned by a previous call
    to :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`. If the request fails,
@@ -118,7 +118,7 @@ memory from the Python heap:
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.  Otherwise, or
-   if :c:func:`PyMem_Free(p)` has been called before, undefined behavior occurs. If
+   if ``PyMem_Free(p)`` has been called before, undefined behavior occurs. If
    *p* is *NULL*, no operation is performed.
 
 The following type-oriented macros are provided for convenience.  Note  that
