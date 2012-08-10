@@ -11,7 +11,7 @@ class PathHookTest(unittest.TestCase):
 
     def path_hook(self):
         return machinery.FileFinder.path_hook((machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES, True))
+            machinery.SOURCE_SUFFIXES))
 
     def test_success(self):
         with source_util.create_modules('dummy') as mapping:

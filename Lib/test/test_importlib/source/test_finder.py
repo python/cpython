@@ -37,9 +37,9 @@ class FinderTests(abc.FinderTests):
 
     def import_(self, root, module):
         loader_details = [(machinery.SourceFileLoader,
-                            machinery.SOURCE_SUFFIXES, True),
+                            machinery.SOURCE_SUFFIXES),
                           (machinery.SourcelessFileLoader,
-                            machinery.BYTECODE_SUFFIXES, True)]
+                            machinery.BYTECODE_SUFFIXES)]
         finder = machinery.FileFinder(root, *loader_details)
         return finder.find_module(module)
 
@@ -120,7 +120,7 @@ class FinderTests(abc.FinderTests):
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.
         finder = machinery.FileFinder('', (machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES, True))
+            machinery.SOURCE_SUFFIXES))
         with open('mod.py', 'w') as file:
             file.write("# test file for importlib")
         try:
@@ -132,7 +132,7 @@ class FinderTests(abc.FinderTests):
     def test_invalidate_caches(self):
         # invalidate_caches() should reset the mtime.
         finder = machinery.FileFinder('', (machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES, True))
+            machinery.SOURCE_SUFFIXES))
         finder._path_mtime = 42
         finder.invalidate_caches()
         self.assertEqual(finder._path_mtime, -1)
