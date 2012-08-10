@@ -78,10 +78,7 @@ class PathEntryFinder(Finder):
         """
         raise NotImplementedError
 
-    def find_module(self, fullname):
-        """Compatibility function which is the equivalent of
-        self.find_loader(fullname)[0]."""
-        return self.find_loader(fullname)[0]
+    find_module = _bootstrap._find_module_shim
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
