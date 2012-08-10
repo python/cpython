@@ -44,8 +44,7 @@ Importing Modules
    .. index:: builtin: __import__
 
    Import a module.  This is best described by referring to the built-in Python
-   function :func:`__import__`, as the standard :func:`__import__` function calls
-   this function directly.
+   function :func:`__import__`.
 
    The return value is a new reference to the imported module or top-level
    package, or *NULL* with an exception set on failure.  Like for
@@ -75,6 +74,9 @@ Importing Modules
 
    Similar to :c:func:`PyImport_ImportModuleLevelObject`, but the name is an
    UTF-8 encoded string instead of a Unicode object.
+
+   .. versionchanged:: 3.3
+         Negative values for **level** are no longer accepted.
 
 .. c:function:: PyObject* PyImport_Import(PyObject *name)
 
