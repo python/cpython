@@ -731,7 +731,7 @@ class FrozenImporter:
     @classmethod
     @_requires_frozen
     def is_package(cls, fullname):
-        """Return if the frozen module is a package."""
+        """Return True if the frozen module is a package."""
         return _imp.is_frozen_package(fullname)
 
 
@@ -1025,7 +1025,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
     """Concrete implementation of SourceLoader using the file system."""
 
     def path_stats(self, path):
-        """Return the metadat for the path."""
+        """Return the metadata for the path."""
         st = _os.stat(path)
         return {'mtime': st.st_mtime, 'size': st.st_size}
 
@@ -1117,7 +1117,7 @@ class ExtensionFileLoader:
             raise
 
     def is_package(self, fullname):
-        """Return if the extension module is a package."""
+        """Return True if the extension module is a package."""
         file_name = _path_split(self.path)[1]
         return any(file_name == '__init__' + suffix
                    for suffix in EXTENSION_SUFFIXES)
