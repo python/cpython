@@ -23,11 +23,9 @@ class CaseSensitivityTest(unittest.TestCase):
     def find(self, path):
         finder = machinery.FileFinder(path,
                                       (machinery.SourceFileLoader,
-                                            machinery.SOURCE_SUFFIXES,
-                                            True),
+                                            machinery.SOURCE_SUFFIXES),
                                         (machinery.SourcelessFileLoader,
-                                            machinery.BYTECODE_SUFFIXES,
-                                            True))
+                                            machinery.BYTECODE_SUFFIXES))
         return finder.find_module(self.name)
 
     def sensitivity_test(self):

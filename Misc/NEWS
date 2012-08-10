@@ -80,6 +80,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15576: Allow extension modules to act as a package's __init__ module.
+
 - Issue #15502: Have importlib.invalidate_caches() work on sys.meta_path
   instead of sys.path_importer_cache.
 

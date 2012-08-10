@@ -9,7 +9,7 @@ functionality over this module.
 from _imp import (lock_held, acquire_lock, release_lock,
                   load_dynamic, get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
-                  _fix_co_filename, extension_suffixes)
+                  _fix_co_filename)
 
 # Directly exposed by this module
 from importlib._bootstrap import new_module
@@ -51,7 +51,7 @@ def get_suffixes():
     warnings.warn('imp.get_suffixes() is deprecated; use the constants '
                   'defined on importlib.machinery instead',
                   DeprecationWarning, 2)
-    extensions = [(s, 'rb', C_EXTENSION) for s in extension_suffixes()]
+    extensions = [(s, 'rb', C_EXTENSION) for s in machinery.EXTENSION_SUFFIXES]
     source = [(s, 'U', PY_SOURCE) for s in machinery.SOURCE_SUFFIXES]
     bytecode = [(s, 'rb', PY_COMPILED) for s in machinery.BYTECODE_SUFFIXES]
 

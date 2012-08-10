@@ -1,8 +1,7 @@
-from importlib import _bootstrap
+from importlib import machinery
 from .. import abc
 from . import util
 
-import imp
 import unittest
 
 class FinderTests(abc.FinderTests):
@@ -10,17 +9,16 @@ class FinderTests(abc.FinderTests):
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = _bootstrap.FileFinder(util.PATH,
-                                          (_bootstrap.ExtensionFileLoader,
-                                              imp.extension_suffixes(),
-                                              False))
+        importer = machinery.FileFinder(util.PATH,
+                                        (machinery.ExtensionFileLoader,
+                                         machinery.EXTENSION_SUFFIXES))
         return importer.find_module(fullname)
 
     def test_module(self):
         self.assertTrue(self.find_module(util.NAME))
 
     def test_package(self):
-        # Extension modules cannot be an __init__ for a package.
+        # No extension module as an __init__ available for testing.
         pass
 
     def test_module_in_package(self):
@@ -28,7 +26,7 @@ class FinderTests(abc.FinderTests):
         pass
 
     def test_package_in_package(self):
-        # Extension modules cannot be an __init__ for a package.
+        # No extension module as an __init__ available for testing.
         pass
 
     def test_package_over_module(self):
@@ -37,8 +35,6 @@ class FinderTests(abc.FinderTests):
 
     def test_failure(self):
         self.assertIsNone(self.find_module('asdfjkl;'))
-
-    # XXX Raise an exception if someone tries to use the 'path' argument?
 
 
 def test_main():

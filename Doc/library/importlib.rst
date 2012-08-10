@@ -671,9 +671,8 @@ find and load modules.
    The *path* argument is the directory for which the finder is in charge of
    searching.
 
-   The *loader_details* argument is a variable number of 3-item tuples each
-   containing a loader, file suffixes the loader recognizes, and a boolean
-   representing whether the loader handles packages.
+   The *loader_details* argument is a variable number of 2-item tuples each
+   containing a loader and a sequence of file suffixes the loader recognizes.
 
    The finder will cache the directory contents as necessary, making stat calls
    for each module search to verify the cache is not outdated. Because cache
@@ -798,7 +797,8 @@ find and load modules.
 
    .. method:: is_package(fullname)
 
-      Returns ``False`` as extension modules can never be packages.
+      Returns ``True`` if the file path points to a package's ``__init__``
+      module based on :attr:`EXTENSION_SUFFIXES`.
 
    .. method:: get_code(fullname)
 

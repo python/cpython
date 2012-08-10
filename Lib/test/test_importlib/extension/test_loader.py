@@ -3,6 +3,7 @@ from . import util as ext_util
 from .. import abc
 from .. import util
 
+import os.path
 import sys
 import unittest
 
@@ -38,11 +39,11 @@ class LoaderTests(abc.LoaderTests):
                                   machinery.ExtensionFileLoader)
 
     def test_package(self):
-        # Extensions are not found in packages.
+        # No extension module as __init__ available for testing.
         pass
 
     def test_lacking_parent(self):
-        # Extensions are not found in packages.
+        # No extension module in a package available for testing.
         pass
 
     def test_module_reuse(self):
@@ -60,6 +61,13 @@ class LoaderTests(abc.LoaderTests):
         with self.assertRaises(ImportError) as cm:
             self.load_module(name)
         self.assertEqual(cm.exception.name, name)
+
+    def test_is_package(self):
+        self.assertFalse(self.loader.is_package(ext_util.NAME))
+        for suffix in machinery.EXTENSION_SUFFIXES:
+            path = os.path.join('some', 'path', 'pkg', '__init__' + suffix)
+            loader = machinery.ExtensionFileLoader('pkg', path)
+            self.assertTrue(loader.is_package('pkg'))
 
 
 def test_main():
