@@ -237,6 +237,9 @@ Library
 C API
 -----
 
+- Issue #15610: PyImport_ImportModuleEx() now uses a 'level' of 0 instead of
+  -1.
+
 - Issues #15169, #14599: Strip out the C implementation of
   imp.source_from_cache() used by PyImport_ExecCodeModuleWithPathnames() and
   used the Python code instead. Leads to PyImport_ExecCodeModuleObject() to not
