@@ -607,6 +607,21 @@ def _requires_frozen(fxn):
     return _requires_frozen_wrapper
 
 
+def _find_module_shim(self, fullname):
+    """Try to find a loader for the specified module by delegating to
+    self.find_loader()."""
+    # Call find_loader(). If it returns a string (indicating this
+    # is a namespace package portion), generate a warning and
+    # return None.
+    loader, portions = self.find_loader(fullname)
+    if loader is None and len(portions):
+        msg = "Not importing directory {}: missing __init__"
+        _warnings.warn(msg.format(portions[0]), ImportWarning)
+    return loader
+
+
+
+
 # Loaders #####################################################################
 
 class BuiltinImporter:
@@ -1305,17 +1320,7 @@ class FileFinder:
         """Invalidate the directory mtime."""
         self._path_mtime = -1
 
-    def find_module(self, fullname):
-        """Try to find a loader for the specified module."""
-        # Call find_loader(). If it returns a string (indicating this
-        # is a namespace package portion), generate a warning and
-        # return None.
-        loader, portions = self.find_loader(fullname)
-        assert len(portions) in [0, 1]
-        if loader is None and len(portions):
-            msg = "Not importing directory {}: missing __init__"
-            _warnings.warn(msg.format(portions[0]), ImportWarning)
-        return loader
+    find_module = _find_module_shim
 
     def find_loader(self, fullname):
         """Try to find a loader for the specified module, or the namespace
