@@ -102,12 +102,11 @@ Functions
 
 .. function:: invalidate_caches()
 
-   Invalidate the internal caches of the finders stored at
-   :data:`sys.path_importer_cache`. If a finder implements
-   :meth:`abc.Finder.invalidate_caches()` then it will be called to perform the
-   invalidation.  This function may be needed if some modules are installed
-   while your program is running and you expect the program to notice the
-   changes.
+   Invalidate the internal caches of finders stored at
+   :data:`sys.meta_path`. If a finder implements ``invalidate_caches()`` then it
+   will be called to perform the invalidation.  This function may be needed if
+   some modules are installed while your program is running and you expect the
+   program to notice the changes.
 
    .. versionadded:: 3.3
 
@@ -129,22 +128,17 @@ are also provided to help in implementing the core ABCs.
    implementations should derive from (or register with) the more specific
    :class:`MetaPathFinder` or :class:`PathEntryFinder` ABCs.
 
-   .. method:: invalidate_caches()
+   .. method:: find_module(fullname, path=None)
 
-      An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :func:`invalidate_caches()` when
-      invalidating the caches of all cached finders.
-
-   .. versionchanged:: 3.3
-      The API signatures for meta path finders and path entry finders
-      were separated by PEP 420. Accordingly, the Finder ABC no
-      longer requires implementation of a ``find_module()`` method.
+      An abstact method for finding a :term:`loader` for the specified
+      module.  Originally specified in :pep:`302`, this method was meant
+      for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
 
 .. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder` and
-   inheriting from :class:`Finder`.
+   An abstract base class representing a :term:`meta path finder`. For
+   compatibility, this is a subclass of :class:`Finder`.
 
    .. versionadded:: 3.3
 
@@ -156,20 +150,45 @@ are also provided to help in implementing the core ABCs.
       will be the value of :attr:`__path__` from the parent
       package. If a loader cannot be found, ``None`` is returned.
 
+   .. method:: invalidate_caches()
+
+      An optional method which, when called, should invalidate any internal
+      cache used by the finder. Used by :func:`invalidate_caches()` when
+      invalidating the caches of all finders on :data:`sys.meta_path`.
+
 
 .. class:: PathEntryFinder
 
-   An abstract base class representing a :term:`path entry finder` and
-   inheriting from :class:`Finder`.
+   An abstract base class representing a :term:`path entry finder`.  Though
+   it bears some similarities to :class:`MetaPathFinder`, ``PathEntryFinder``
+   is meant for use only within the path-based import subsystem provided
+   by :class:`PathFinder`. This ABC is a subclass of :class:`Finder` for
+   compatibility.
 
    .. versionadded:: 3.3
 
    .. method:: find_loader(fullname):
 
       An abstract method for finding a :term:`loader` for the specified
-      module.  Returns a 2-tuple of ``(loader, portion)`` where portion is a
-      sequence of file system locations contributing to part of a namespace
-      package.  The sequence may be empty.
+      module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
+      is a sequence of file system locations contributing to part of a namespace
+      package. The loader may be ``None`` while specifying ``portion`` to
+      signify the contribution of the file system locations to a namespace
+      package. An empty list can be used for ``portion`` to signify the loader
+      is not part of a package. If ``loader`` is ``None`` and ``portion`` is
+      the empty list then no loader or location for a namespace package were
+      found (i.e. failure to find anything for the module).
+
+   .. method:: find_module(fullname):
+
+      A concrete implementation of :meth:`Finder.find_module` which is
+      equivalent to ``self.find_loader(fullname)[0]``.
+
+   .. method:: invalidate_caches()
+
+      An optional method which, when called, should invalidate any internal
+      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches()`
+      when invalidating the caches of all cached finders.
 
 
 .. class:: Loader
@@ -637,6 +656,11 @@ find and load modules.
         :data:`sys.path_importer_cache` along with being queried about the
         module. If no finder is ever found then ``None`` is both stored in
         the cache and returned.
+
+   .. classmethod:: invalidate_caches()
+
+        Call :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
+        finders stored in :attr:`sys.path_importer_cache`.
 
 
 .. class:: FileFinder(path, \*loader_details)
