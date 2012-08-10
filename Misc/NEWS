@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15502: Have importlib.invalidate_caches() work on sys.meta_path
+  instead of sys.path_importer_cache.
+
 - Issue #15163: Pydoc shouldn't list __loader__ as module data.
 
 - Issue #15471: Do not use mutable objects as defaults for

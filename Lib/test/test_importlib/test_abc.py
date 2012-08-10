@@ -36,10 +36,12 @@ class MetaPathFinder(InheritanceTests, unittest.TestCase):
     subclasses = [machinery.BuiltinImporter, machinery.FrozenImporter,
                     machinery.PathFinder, machinery.WindowsRegistryFinder]
 
+
 class PathEntryFinder(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.Finder]
     subclasses = [machinery.FileFinder]
+
 
 class Loader(InheritanceTests, unittest.TestCase):
 
