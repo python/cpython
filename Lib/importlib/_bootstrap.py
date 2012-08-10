@@ -1067,6 +1067,10 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
         return None
 
 
+# Filled in by _setup().
+EXTENSION_SUFFIXES = []
+
+
 class ExtensionFileLoader:
 
     """Loader for extension modules.
@@ -1089,6 +1093,8 @@ class ExtensionFileLoader:
             module = _call_with_frames_removed(_imp.load_dynamic,
                                                fullname, self.path)
             _verbose_message('extension module loaded from {!r}', self.path)
+            if self.is_package(fullname):
+                module.__path__ = [_path_split(self.path)[0]]
             return module
         except:
             if not is_reload and fullname in sys.modules:
@@ -1097,7 +1103,12 @@ class ExtensionFileLoader:
 
     def is_package(self, fullname):
         """Return False as an extension module can never be a package."""
-        return False
+        file_name = _path_split(self.path)[1]
+        for suffix in EXTENSION_SUFFIXES:
+            if file_name == '__init__' + suffix:
+                return True
+        else:
+            return False
 
     def get_code(self, fullname):
         """Return None as an extension module cannot create a code object."""
@@ -1283,14 +1294,10 @@ class FileFinder:
         """Initialize with the path to search on and a variable number of
         3-tuples containing the loader, file suffixes the loader recognizes,
         and a boolean of whether the loader handles packages."""
-        packages = []
-        modules = []
-        for loader, suffixes, supports_packages in details:
-            modules.extend((suffix, loader) for suffix in suffixes)
-            if supports_packages:
-                packages.extend((suffix, loader) for suffix in suffixes)
-        self.packages = packages
-        self.modules = modules
+        loaders = []
+        for loader, suffixes in details:
+            loaders.extend((suffix, loader) for suffix in suffixes)
+        self._loaders = loaders
         # Base (directory) path
         self.path = path or '.'
         self._path_mtime = -1
@@ -1336,7 +1343,7 @@ class FileFinder:
         if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
             if _path_isdir(base_path):
-                for suffix, loader in self.packages:
+                for suffix, loader in self._loaders:
                     init_filename = '__init__' + suffix
                     full_path = _path_join(base_path, init_filename)
                     if _path_isfile(full_path):
@@ -1346,7 +1353,7 @@ class FileFinder:
                     #  find a module in the next section.
                     is_namespace = True
         # Check for a file w/ a proper suffix exists.
-        for suffix, loader in self.modules:
+        for suffix, loader in self._loaders:
             if cache_module + suffix in cache:
                 full_path = _path_join(self.path, tail_module + suffix)
                 if _path_isfile(full_path):
@@ -1589,9 +1596,9 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes, allow_packages).
     """
-    extensions = ExtensionFileLoader, _imp.extension_suffixes(), False
-    source = SourceFileLoader, SOURCE_SUFFIXES, True
-    bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES, True
+    extensions = ExtensionFileLoader, _imp.extension_suffixes()
+    source = SourceFileLoader, SOURCE_SUFFIXES
+    bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
     return [extensions, source, bytecode]
 
 
@@ -1689,9 +1696,10 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, 'path_separators', set(path_separators))
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
+    EXTENSION_SUFFIXES.extend(_imp.extension_suffixes())
     if builtin_os == 'nt':
         SOURCE_SUFFIXES.append('.pyw')
-        if '_d.pyd' in _imp.extension_suffixes():
+        if '_d.pyd' in EXTENSION_SUFFIXES:
             WindowsRegistryFinder.DEBUG_BUILD = True
 
 
