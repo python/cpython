@@ -25,25 +25,21 @@ def _register(abstract_cls, *classes):
 
 class Finder(metaclass=abc.ABCMeta):
 
-    """Common abstract base class for import finders.
+    """Legacy abstract base class for import finders.
 
-    Finder implementations should derive from the more specific
-    MetaPathFinder or PathEntryFinder ABCs rather than directly from Finder.
+    It may be subclassed for compatibility with legacy third party
+    reimplementations of the import system.  Otherwise, finder
+    implementations should derive from the more specific MetaPathFinder
+    or PathEntryFinder ABCs.
     """
 
+    @abc.abstractmethod
     def find_module(self, fullname, path=None):
-        """An optional legacy method that should find a module.
+        """An abstract method that should find a module.
         The fullname is a str and the optional path is a str or None.
         Returns a Loader object.
-
-        The path finder will use this method only if find_loader() does
-        not exist. It may optionally be implemented for compatibility
-        with legacy third party reimplementations of the import system.
         """
         raise NotImplementedError
-
-    # invalidate_caches() is a completely optional method, so no default
-    # implementation is provided. See the docs for details.
 
 
 class MetaPathFinder(Finder):
@@ -52,11 +48,17 @@ class MetaPathFinder(Finder):
 
     @abc.abstractmethod
     def find_module(self, fullname, path):
-        """Abstract method which when implemented should find a module.
+        """Abstract method which, when implemented, should find a module.
         The fullname is a str and the path is a str or None.
         Returns a Loader object.
         """
         raise NotImplementedError
+
+    def invalidate_caches(self):
+        """An optional method for clearing the finder's cache, if any.
+        This method is used by importlib.invalidate_caches().
+        """
+        return NotImplemented
 
 _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
@@ -68,12 +70,24 @@ class PathEntryFinder(Finder):
 
     @abc.abstractmethod
     def find_loader(self, fullname):
-        """Abstract method which when implemented returns a module loader.
+        """Abstract method which, when implemented, returns a module loader.
         The fullname is a str.  Returns a 2-tuple of (Loader, portion) where
         portion is a sequence of file system locations contributing to part of
-        a namespace package.  The sequence may be empty.
+        a namespace package.  The sequence may be empty and the loader may be
+        None.
         """
         raise NotImplementedError
+
+    def find_module(self, fullname):
+        """Compatibility function which is the equivalent of
+        self.find_loader(fullname)[0]."""
+        return self.find_loader(fullname)[0]
+
+    def invalidate_caches(self):
+        """An optional method for clearing the finder's cache, if any.
+        This method is used by PathFinder.invalidate_caches().
+        """
+        return NotImplemented
 
 _register(PathEntryFinder, machinery.FileFinder)
 

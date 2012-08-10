@@ -1186,6 +1186,14 @@ class PathFinder:
     """Meta path finder for sys.path and package __path__ attributes."""
 
     @classmethod
+    def invalidate_caches(cls):
+        """Call the invalidate_caches() method on all path entry finders
+        stored in sys.path_importer_caches (where implemented)."""
+        for finder in sys.path_importer_cache.values():
+            if hasattr(finder, 'invalidate_caches'):
+                finder.invalidate_caches()
+
+    @classmethod
     def _path_hooks(cls, path):
         """Search sequence of hooks for a finder for 'path'.
 
@@ -1235,14 +1243,14 @@ class PathFinder:
                     portions = []
                 if loader is not None:
                     # We found a loader: return it immediately.
-                    return (loader, namespace_path)
+                    return loader, namespace_path
                 # This is possibly part of a namespace package.
                 #  Remember these path entries (if any) for when we
                 #  create a namespace package, and continue iterating
                 #  on path.
                 namespace_path.extend(portions)
         else:
-            return (None, namespace_path)
+            return None, namespace_path
 
     @classmethod
     def find_module(cls, fullname, path=None):

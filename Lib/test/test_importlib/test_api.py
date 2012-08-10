@@ -148,11 +148,15 @@ class InvalidateCacheTests(unittest.TestCase):
                 self.called = True
 
         key = 'gobledeegook'
-        ins = InvalidatingNullFinder()
-        sys.path_importer_cache[key] = ins
+        meta_ins = InvalidatingNullFinder()
+        path_ins = InvalidatingNullFinder()
+        sys.meta_path.insert(0, meta_ins)
         self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        sys.path_importer_cache[key] = path_ins
+        self.addCleanup(lambda: sys.meta_path.remove(meta_ins))
         importlib.invalidate_caches()
-        self.assertTrue(ins.called)
+        self.assertTrue(meta_ins.called)
+        self.assertTrue(path_ins.called)
 
     def test_method_lacking(self):
         # There should be no issues if the method is not defined.
