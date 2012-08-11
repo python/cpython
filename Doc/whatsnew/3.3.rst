@@ -1135,7 +1135,7 @@ gc
 --
 
 It is now possible to register callbacks invoked by the garbage collector
-before and after collection using the new :`data:`~gc.callbacks` list.
+before and after collection using the new :data:`~gc.callbacks` list.
 
 
 hmac

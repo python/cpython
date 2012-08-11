@@ -358,7 +358,7 @@ Loaders must satisfy the following requirements:
    iterable, but may be empty if ``__path__`` has no further significance
    to the importer. If ``__path__`` is not empty, it must produce strings
    when iterated over. More details on the semantics of ``__path__`` are
-   given :ref`below <package-path-rules>`.
+   given :ref:`below <package-path-rules>`.
 
  * The ``__loader__`` attribute must be set to the loader object that loaded
    the module.  This is mostly for introspection and reloading, but can be
