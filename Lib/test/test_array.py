@@ -988,6 +988,19 @@ class BaseTest(unittest.TestCase):
         a = array.array('H', b"1234")
         self.assertEqual(len(a) * a.itemsize, 4)
 
+    @support.cpython_only
+    def test_sizeof_with_buffer(self):
+        a = array.array(self.typecode, self.example)
+        basesize = support.calcvobjsize('4Pi')
+        buffer_size = a.buffer_info()[1] * a.itemsize
+        support.check_sizeof(self, a, basesize + buffer_size)
+
+    @support.cpython_only
+    def test_sizeof_without_buffer(self):
+        a = array.array(self.typecode)
+        basesize = support.calcvobjsize('4Pi')
+        support.check_sizeof(self, a, basesize)
+
 
 class StringTest(BaseTest):
 
