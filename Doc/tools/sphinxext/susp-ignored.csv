@@ -64,6 +64,10 @@ howto/ipaddress,,:ffff,IPv6Address('::ffff:ffff')
 howto/ipaddress,,::,IPv6Address('2001::1')
 howto/ipaddress,,::,IPv6Address('2001::ffff:ffff')
 howto/ipaddress,,:ffff,IPv6Address('2001::ffff:ffff')
+howto/ipaddress,,:db8,'2001:db8::'
+howto/ipaddress,,::,'2001:db8::'
+howto/ipaddress,,:db8,'2001:db8::/96'
+howto/ipaddress,,::,'2001:db8::/96'
 howto/logging,,:And,"WARNING:And this, too"
 howto/logging,,:And,"WARNING:root:And this, too"
 howto/logging,,:Doing,INFO:root:Doing something
@@ -151,6 +155,20 @@ library/ipaddress,,:ffff,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
 library/ipaddress,,::,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
 library/ipaddress,,:db8,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
 library/ipaddress,,::,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
+library/ipaddress,,::,"""::abc:7:def"""
+library/ipaddress,,:def,"""::abc:7:def"""
+library/ipaddress,,::,::FFFF/96
+library/ipaddress,,::,2002::/16
+library/ipaddress,,::,2001::/32
+library/ipaddress,,::,>>> str(ipaddress.IPv6Address('::1'))
+library/ipaddress,,::,'::1'
+library/ipaddress,,::,>>> int(ipaddress.IPv6Address('::1'))
+library/ipaddress,,:ff00,ffff:ff00::
+library/ipaddress,,:db00,2001:db00::0/24
+library/ipaddress,,::,2001:db00::0/24
+library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
+library/ipaddress,,::,2001:db00::0/ffff:ff00::
+library/ipaddress,,:ff00,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
