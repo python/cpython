@@ -175,7 +175,7 @@ item for each change.
 
 Hosting of the Python bug tracker is kindly provided by
 `Upfront Systems <http://www.upfrontsystems.co.za/>`__
-of Stellenbosch, South Africa.  Martin von Loewis put a
+of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
 http://svn.python.org/view/tracker/importer/ and may be useful to
@@ -193,7 +193,7 @@ other projects wishing to move from SourceForge to Roundup.
     Roundup downloads and documentation.
 
   http://svn.python.org/view/tracker/importer/
-    Martin von Loewis's conversion scripts.
+    Martin von Löwis's conversion scripts.
 
 New Documentation Format: reStructuredText Using Sphinx
 -----------------------------------------------------------
@@ -1100,7 +1100,7 @@ their own implementations of buffering and text I/O.
    :pep:`3116` - New I/O
       PEP written by Daniel Stutzbach, Mike Verdone, and Guido van Rossum.
       Code by Guido van Rossum, Georg Brandl, Walter Doerwald,
-      Jeremy Hylton, Martin von Loewis, Tony Lownds, and others.
+      Jeremy Hylton, Martin von Löwis, Tony Lownds, and others.
 
 .. ======================================================================
 
@@ -1774,7 +1774,7 @@ The *encoding* part specifies the encoding's name, e.g. ``utf-8`` or
 ``latin-1``; the optional *errorhandler* part specifies
 what to do with characters that can't be handled by the encoding,
 and  should be one of "error", "ignore", or "replace".   (Contributed
-by Martin von Loewis.)
+by Martin von Löwis.)
 
 .. ======================================================================
 
@@ -1792,7 +1792,7 @@ changes, or look through the Subversion logs for all the details.
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
-* The :mod:`bsddb` module also has a new maintainer, Jesús Cea Avion, and the package
+* The :mod:`bsddb` module also has a new maintainer, Jesús Cea Avión, and the package
   is now available as a standalone package.  The web page for the package is
   `www.jcea.es/programacion/pybsddb.htm
   <http://www.jcea.es/programacion/pybsddb.htm>`__.
@@ -2384,7 +2384,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Pedro Werneck and Jeffrey Yasskin;
   :issue:`742598`, :issue:`1193577`.)
 
-* The :mod:`sqlite3` module, maintained by Gerhard Haering,
+* The :mod:`sqlite3` module, maintained by Gerhard Häring,
   has been updated from version 2.3.2 in Python 2.5 to
   version 2.4.1.
 
@@ -2597,7 +2597,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The Unicode database provided by the :mod:`unicodedata` module
   has been updated to version 5.1.0.  (Updated by
-  Martin von Loewis; :issue:`3811`.)
+  Martin von Löwis; :issue:`3811`.)
 
 * The :mod:`warnings` module's :func:`formatwarning` and :func:`showwarning`
   gained an optional *line* argument that can be used to supply the
@@ -3104,7 +3104,7 @@ Port-Specific Changes: Windows
   :file:`PCbuild` directory supports cross compilation for X64, debug
   builds and Profile Guided Optimization (PGO). PGO builds are roughly
   10% faster than normal builds.  (Contributed by Christian Heimes
-  with help from Amaury Forgeot d'Arc and Martin von Loewis.)
+  with help from Amaury Forgeot d'Arc and Martin von Löwis.)
 
 * The :mod:`msvcrt` module now supports
   both the normal and wide char variants of the console I/O

@@ -3,7 +3,7 @@
 
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
-.. moduleauthor:: Marc-Andre Lemburg <mal@egenix.com>
+.. moduleauthor:: Marc-André Lemburg <mal@egenix.com>
 .. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
 
 **Source code:** :source:`Lib/platform.py`
