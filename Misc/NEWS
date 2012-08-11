@@ -94,6 +94,9 @@ Library
 
 - Issue #15567: Fix NameError when running threading._test
 
+- Issue #15424: Add a __sizeof__ implementation for array objects.
+  Patch by Ludwig Hähne.
+
 - Issue #13052: Fix IDLE crashing when replace string in Search/Replace dialog
   ended with '\'. Patch by Roger Serwy.
 
