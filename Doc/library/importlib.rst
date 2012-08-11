@@ -153,8 +153,8 @@ are also provided to help in implementing the core ABCs.
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :func:`invalidate_caches()` when
-      invalidating the caches of all finders on :data:`sys.meta_path`.
+      cache used by the finder. Used by :func:`importlib.invalidate_caches`
+      when invalidating the caches of all finders on :data:`sys.meta_path`.
 
 
 .. class:: PathEntryFinder
@@ -187,7 +187,7 @@ are also provided to help in implementing the core ABCs.
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches()`
+      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
 
 
