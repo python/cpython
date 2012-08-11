@@ -468,6 +468,9 @@ Build
 Documentation
 -------------
 
+- Issue #15444: Use proper spelling for non-ASCII contributor names.  Patch
+  by Serhiy Storchaka.
+
 - Issue 15482: Properly document the default 'level' value for __import__()
   while warning about using negative values.
 

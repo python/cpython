@@ -5,7 +5,7 @@
 Unicode Objects and Codecs
 --------------------------
 
-.. sectionauthor:: Marc-Andre Lemburg <mal@lemburg.com>
+.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
 
 Unicode Objects
 ^^^^^^^^^^^^^^^
