@@ -1510,6 +1510,19 @@ array.tobytes().decode() to obtain a unicode string from\n\
 an array of some other type.");
 
 
+static PyObject *
+array_sizeof(arrayobject *self, PyObject *unused)
+{
+    Py_ssize_t res;
+    res = sizeof(arrayobject) + self->allocated * self->ob_descr->itemsize;
+    return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof_doc,
+"__sizeof__() -> int\n\
+\n\
+Size of the array in memory, in bytes.");
+
 
 /*********************** Pickling support ************************/
 
@@ -2077,6 +2090,8 @@ static PyMethodDef array_methods[] = {
      tobytes_doc},
     {"tounicode",   (PyCFunction)array_tounicode,       METH_NOARGS,
      tounicode_doc},
+    {"__sizeof__",      (PyCFunction)array_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
