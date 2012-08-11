@@ -204,7 +204,7 @@ Each of these magic methods can return anything at all: a Boolean, a matrix, a
 list, or any other Python object.  Alternatively they can raise an exception if
 the comparison is impossible, inconsistent, or otherwise meaningless.
 
-The built-in :func:`cmp(A,B)` function can use the rich comparison machinery,
+The built-in ``cmp(A,B)`` function can use the rich comparison machinery,
 and now accepts an optional argument specifying which comparison operation to
 use; this is given as one of the strings ``"<"``, ``"<="``, ``">"``, ``">="``,
 ``"=="``, or ``"!="``.  If called without the optional third argument,
@@ -350,7 +350,7 @@ where this behaviour is undesirable, object caches being the most common one,
 and another being circular references in data structures such as trees.
 
 For example, consider a memoizing function that caches the results of another
-function :func:`f(x)` by storing the function's argument and its result in a
+function ``f(x)`` by storing the function's argument and its result in a
 dictionary::
 
    _cache = {}
@@ -656,7 +656,7 @@ New and Improved Modules
   use :mod:`ftplib` to retrieve files and then don't work from behind a firewall.
   It's deemed unlikely that this will cause problems for anyone, because Netscape
   defaults to passive mode and few people complain, but if passive mode is
-  unsuitable for your application or network setup, call :meth:`set_pasv(0)` on
+  unsuitable for your application or network setup, call ``set_pasv(0)`` on
   FTP objects to disable passive mode.
 
 * Support for raw socket access has been added to the :mod:`socket` module,
@@ -666,7 +666,7 @@ New and Improved Modules
   for displaying timing profiles for Python programs, invoked when the module is
   run as a script.  Contributed by  Eric S. Raymond.
 
-* A new implementation-dependent function, :func:`sys._getframe([depth])`, has
+* A new implementation-dependent function, ``sys._getframe([depth])``, has
   been added to return a given frame object from the current call stack.
   :func:`sys._getframe` returns the frame at the top of the call stack;  if the
   optional integer argument *depth* is supplied, the function returns the frame
