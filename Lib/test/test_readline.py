@@ -17,9 +17,7 @@ class TestHistoryManipulation (unittest.TestCase):
                      "The history update test cannot be run because the "
                      "clear_history method is not available.")
     def testHistoryUpdates(self):
-        # Some GNU versions of readline do not support clear_history
-        if hasattr('readline', 'clear_history'):
-            readline.clear_history()
+        readline.clear_history()
 
         readline.add_history("first line")
         readline.add_history("second line")
