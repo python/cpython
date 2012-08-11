@@ -1279,7 +1279,7 @@ complete list of changes, or look through the CVS logs for all the details.
   interface, accessed only by :mod:`atexit`.
 
 * The :mod:`tarfile` module now generates GNU-format tar files by default.
-  (Contributed by Lars Gustaebel.)
+  (Contributed by Lars Gustäbel.)
 
 * The :mod:`threading` module now has an elegantly simple way to support
   thread-local data.  The module contains a :class:`local` class whose attribute

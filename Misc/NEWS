@@ -272,6 +272,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15444: Use proper spelling for non-ASCII contributor names.  Patch
+  by Serhiy Storchaka.
+
 - Issue #15295: Reorganize and rewrite the documentation on the import system.
 
 - Issue #15230: Clearly document some of the limitations of the runpy module and
