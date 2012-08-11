@@ -413,7 +413,7 @@ The built-in function :func:`len` returns the length of a string::
 About Unicode
 -------------
 
-.. sectionauthor:: Marc-Andre Lemburg <mal@lemburg.com>
+.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
 
 
 Starting with Python 3.0 all strings support Unicode (see
