@@ -1533,6 +1533,19 @@ array_reduce(arrayobject *array)
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
+array_sizeof(arrayobject *self, PyObject *unused)
+{
+    Py_ssize_t res;
+    res = sizeof(arrayobject) + self->allocated * self->ob_descr->itemsize;
+    return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof_doc,
+"__sizeof__() -> int\n\
+\n\
+Size of the array in memory, in bytes.");
+
+static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
     char tc = a->ob_descr->typecode;
@@ -1606,6 +1619,8 @@ static PyMethodDef array_methods[] = {
 #endif
     {"write",           (PyCFunction)array_tofile_as_write,     METH_O,
      tofile_doc},
+    {"__sizeof__",      (PyCFunction)array_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
