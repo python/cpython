@@ -1108,7 +1108,7 @@ class ExtensionFileLoader:
             module = _call_with_frames_removed(_imp.load_dynamic,
                                                fullname, self.path)
             _verbose_message('extension module loaded from {!r}', self.path)
-            if self.is_package(fullname):
+            if self.is_package(fullname) and not hasattr(module, '__path__'):
                 module.__path__ = [_path_split(self.path)[0]]
             return module
         except:
