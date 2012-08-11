@@ -166,7 +166,7 @@ encoding.  Encodings are named by strings, such as ``'ascii'``, ``'utf-8'``,
 registering new encodings that are then available throughout a Python program.
 If an encoding isn't specified, the default encoding is usually 7-bit ASCII,
 though it can be changed for your Python installation by calling the
-:func:`sys.setdefaultencoding(encoding)` function in a customised version of
+``sys.setdefaultencoding(encoding)`` function in a customised version of
 :file:`site.py`.
 
 Combining 8-bit and Unicode strings always coerces to Unicode, using the default
@@ -203,7 +203,7 @@ U+0660 is an Arabic number.
 
 The :mod:`codecs` module contains functions to look up existing encodings and
 register new ones.  Unless you want to implement a new encoding, you'll most
-often use the :func:`codecs.lookup(encoding)` function, which returns a
+often use the ``codecs.lookup(encoding)`` function, which returns a
 4-element tuple: ``(encode_func, decode_func, stream_reader, stream_writer)``.
 
 * *encode_func* is a function that takes a Unicode string, and returns a 2-tuple
@@ -600,7 +600,7 @@ Python code is found to be improperly indented.
 Changes to Built-in Functions
 -----------------------------
 
-A new built-in, :func:`zip(seq1, seq2, ...)`, has been added.  :func:`zip`
+A new built-in, ``zip(seq1, seq2, ...)``, has been added.  :func:`zip`
 returns a list of tuples where each tuple contains the i-th element from each of
 the argument sequences.  The difference between :func:`zip` and ``map(None,
 seq1, seq2)`` is that :func:`map` pads the sequences with ``None`` if the
@@ -619,7 +619,7 @@ level, serial)`` For example, in a hypothetical 2.0.1beta1, ``sys.version_info``
 would be ``(2, 0, 1, 'beta', 1)``. *level* is a string such as ``"alpha"``,
 ``"beta"``, or ``"final"`` for a final release.
 
-Dictionaries have an odd new method, :meth:`setdefault(key, default)`, which
+Dictionaries have an odd new method, ``setdefault(key, default)``, which
 behaves similarly to the existing :meth:`get` method.  However, if the key is
 missing, :meth:`setdefault` both returns the value of *default* as :meth:`get`
 would do, and also inserts it into the dictionary as the value for *key*.  Thus,
@@ -1038,7 +1038,7 @@ Brian Gallew contributed OpenSSL support for the :mod:`socket` module.  OpenSSL
 is an implementation of the Secure Socket Layer, which encrypts the data being
 sent over a socket.  When compiling Python, you can edit :file:`Modules/Setup`
 to include SSL support, which adds an additional function to the :mod:`socket`
-module: :func:`socket.ssl(socket, keyfile, certfile)`, which takes a socket
+module: ``socket.ssl(socket, keyfile, certfile)``, which takes a socket
 object and returns an SSL socket.  The :mod:`httplib` and :mod:`urllib` modules
 were also changed to support ``https://`` URLs, though no one has implemented
 FTP or SMTP over SSL.
