@@ -2676,7 +2676,7 @@ Core and builtins
   subclasses of str always behaved.  int/long/float, conversion of an instance
   to the base class has been moved to the proper nb_* magic slot and out of
   PyNumber_*().
-  Thanks Walter D�rwald.
+  Thanks Walter Dörwald.
 
 - Descriptors defined in C with a PyGetSetDef structure, where the setter is
   NULL, now raise an AttributeError when attempting to set or delete the
@@ -13998,7 +13998,7 @@ instead of raising an exception on errors; this makes the logic
 required for asynchronous connects simpler and more efficient.
 
 - New "locale" module with (still experimental) interface to the
-standard C library locale interface, courtesy Martin von Loewis.  This
+standard C library locale interface, courtesy Martin von Löwis.  This
 does not repeat my mistake in 1.5a4 of always calling
 setlocale(LC_ALL, "").  In fact, we've pretty much decided that
 Python's standard numerical formatting operations should always use

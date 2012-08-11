@@ -1434,7 +1434,7 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`signal` module no longer re-installs the signal handler
   unless this is truly necessary, which fixes a bug that could make it
   impossible to catch the EINTR signal robustly.  (Fixed by
-  Charles-Francois Natali; :issue:`8354`.)
+  Charles-François Natali; :issue:`8354`.)
 
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
@@ -2331,7 +2331,7 @@ Other Changes and Fixes
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by
-  Ziga Seilnacht and Jean-Paul Calderone; :issue:`1180193`.)
+  Žiga Seilnacht and Jean-Paul Calderone; :issue:`1180193`.)
 
 * The :file:`regrtest.py` script now takes a :option:`--randseed=`
   switch that takes an integer that will be used as the random seed
