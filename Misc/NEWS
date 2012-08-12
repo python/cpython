@@ -13,6 +13,22 @@ Core and Builtins
 Library
 -------
 
+C API
+-----
+
+Extension Modules
+-----------------
+
+Tools/Demos
+-----------
+
+Documentation
+-------------
+
+- Issue #15630: Add an example for "continue" stmt in the tutorial. Patch by
+  Daniel Ellis.
+
+
 
 What's New in Python 3.3.0 Beta 2?
 ==================================
