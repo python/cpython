@@ -98,7 +98,7 @@ The class can be used to simulate nested scopes and is useful in templating.
 .. seealso::
 
     * The `MultiContext class
-      <http://svn.enthought.com/svn/enthought/CodeTools/trunk/enthought/contexts/multi_context.py>`_
+      <https://github.com/enthought/codetools/blob/4.0.0/codetools/contexts/multi_context.py>`_
       in the Enthought `CodeTools package
       <https://github.com/enthought/codetools>`_ has options to support
       writing to any mapping in the chain.
