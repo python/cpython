@@ -36,7 +36,9 @@ The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts an URL as the argument. It accepts the following optional
 parameters: ``-n`` opens the URL in a new browser window, if possible;
 ``-t`` opens the URL in a new browser page ("tab"). The options are,
-naturally, mutually exclusive.
+naturally, mutually exclusive.  Usage example::
+
+   python -m webbrowser -t "http://www.python.org"
 
 The following exception is defined:
 
