@@ -74,7 +74,7 @@ Bookkeeping functions:
 
    *state* should have been obtained from a previous call to :func:`getstate`, and
    :func:`setstate` restores the internal state of the generator to what it was at
-   the time :func:`setstate` was called.
+   the time :func:`getstate` was called.
 
 
 .. function:: getrandbits(k)
