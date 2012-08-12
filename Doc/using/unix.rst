@@ -145,7 +145,7 @@ information on how to code in Python in these editors, look at:
 * http://sourceforge.net/projects/python-mode
 
 Geany is an excellent IDE with support for a lot of languages. For more
-information, read: http://geany.uvena.de/
+information, read: http://www.geany.org/
 
 Komodo edit is another extremely good IDE.  It also has support for a lot of
 languages. For more information, read:
