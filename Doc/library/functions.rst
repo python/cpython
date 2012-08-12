@@ -305,17 +305,18 @@ are always available.  They are listed here in alphabetical order.
 
       >>> import struct
       >>> dir()   # show the names in the module namespace
-      ['__builtins__', '__doc__', '__name__', 'struct']
-      >>> dir(struct)   # show the names in the struct module
-      ['Struct', '__builtins__', '__doc__', '__file__', '__name__',
-       '__package__', '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
+      ['__builtins__', '__name__', 'struct']
+      >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
+      ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
+       '__initializing__', '__loader__', '__name__', '__package__',
+       '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
       >>> class Shape(object):
-              def __dir__(self):
-                  return ['area', 'perimeter', 'location']
+      ...     def __dir__(self):
+      ...         return ['area', 'perimeter', 'location']
       >>> s = Shape()
       >>> dir(s)
-      ['area', 'perimeter', 'location']
+      ['area', 'location', 'perimeter']
 
    .. note::
 
@@ -614,9 +615,9 @@ are always available.  They are listed here in alphabetical order.
    to a string (stripping a trailing newline), and returns that.  When EOF is
    read, :exc:`EOFError` is raised.  Example::
 
-      >>> s = input('--> ')
+      >>> s = input('--> ')  # doctest: +SKIP
       --> Monty Python's Flying Circus
-      >>> s
+      >>> s  # doctest: +SKIP
       "Monty Python's Flying Circus"
 
    If the :mod:`readline` module was loaded, then :func:`input` will use it
