@@ -251,7 +251,7 @@ in the top-level :mod:`email` package namespace.
 Here's an example of how you might use this at an interactive Python prompt::
 
    >>> import email
-   >>> msg = email.message_from_string(myString)
+   >>> msg = email.message_from_string(myString)  # doctest: +SKIP
 
 
 Additional notes
