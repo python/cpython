@@ -31,8 +31,8 @@ For example::
    >>> msg = Message()
    >>> h = Header('p\xf6stal', 'iso-8859-1')
    >>> msg['Subject'] = h
-   >>> print(msg.as_string())
-   Subject: =?iso-8859-1?q?p=F6stal?=
+   >>> msg.as_string()
+   'Subject: =?iso-8859-1?q?p=F6stal?=\n\n'
 
 
 
@@ -176,7 +176,7 @@ The :mod:`email.header` module also provides the following convenient functions.
 
       >>> from email.header import decode_header
       >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
-      [('p\xf6stal', 'iso-8859-1')]
+      [(b'p\xf6stal', 'iso-8859-1')]
 
 
 .. function:: make_header(decoded_seq, maxlinelen=None, header_name=None, continuation_ws=' ')
