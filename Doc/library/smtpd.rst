@@ -109,7 +109,7 @@ SMTPChannel Objects
    .. attribute:: received_lines
 
       Holds a list of the line strings (decoded using UTF-8) received from
-      the client. The lines have their "\r\n" line ending translated to "\n".
+      the client. The lines have their "\\r\\n" line ending translated to "\\n".
 
    .. attribute:: smtp_state
 
