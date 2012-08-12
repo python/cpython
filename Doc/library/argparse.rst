@@ -749,7 +749,7 @@ the Action API.  The easiest way to do this is to extend
 
 * ``values`` - The associated command-line arguments, with any type conversions
   applied.  (Type conversions are specified with the type_ keyword argument to
-  :meth:`~ArgumentParser.add_argument`.
+  :meth:`~ArgumentParser.add_argument`.)
 
 * ``option_string`` - The option string that was used to invoke this action.
   The ``option_string`` argument is optional, and will be absent if the action
