@@ -1334,7 +1334,7 @@ functions based on regular expressions.
 
    For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
    ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splitlines(True)``
-   returns ``['ab c\n', '\n, 'de fg\r', 'kl\r\n']``.
+   returns ``['ab c\n', '\n', 'de fg\r', 'kl\r\n']``.
 
    Unlike :meth:`~str.split` when a delimiter string *sep* is given, this
    method returns an empty list for the empty string, and a terminal line
