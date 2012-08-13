@@ -323,6 +323,9 @@ Library
 Tests
 -----
 
+- Issue #15496: Add directory removal helpers for tests on Windows.
+  Patch by Jeremy Kloth.
+
 - Issue #15043: test_gdb is now skipped entirely if gdb security settings
   block loading of the gdb hooks
 
