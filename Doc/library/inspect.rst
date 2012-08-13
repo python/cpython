@@ -563,7 +563,7 @@ function.
       |                        | definition.                                  |
       +------------------------+----------------------------------------------+
 
-      Print all keyword-only arguments without default values::
+      Example: print all keyword-only arguments without default values::
 
          >>> def foo(a, b, *, c, d=10):
          ...     pass
