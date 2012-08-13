@@ -501,6 +501,23 @@ which stores the keys and their respective hashes).  This reduces the memory
 consumption of programs creating many instances of non-builtin types.
 
 
+PEP 362: Function Signature Object
+==================================
+
+:pep:`362`: -  Function Signature Object
+ PEP written by Brett Cannon, Yury Selivanov, Larry Hastings, Jiwon Seo.
+ Implemented by Yury Selivanov.
+
+A new function :func:`inspect.signature` makes introspection of python
+callables easy and straightforward.  A broad range of callables is supported:
+python functions, decorated or not, classes, and :func:`functools.partial`
+objects.  New classes :class:`inspect.Signature`, :class:`inspect.Parameter`
+and :class:`inspect.BoundArguments` hold information about the call signatures,
+such as, annotations, default values, parameters kinds, and bound arguments,
+which considerably simplifies writing decorators and any code that validates
+or amends calling signatures or arguments.
+
+
 Using importlib as the Implementation of Import
 ===============================================
 :issue:`2377` - Replace __import__ w/ importlib.__import__
