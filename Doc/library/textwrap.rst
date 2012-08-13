@@ -112,9 +112,11 @@ indentation from strings that have unwanted whitespace to the left of the text.
 
    .. attribute:: replace_whitespace
 
-      (default: ``True``) If true, each whitespace character (as defined by
-      ``string.whitespace``) remaining after tab expansion will be replaced by a
-      single space.
+      (default: ``True``) If true, after tab expansion but before wrapping,
+      the :meth:`wrap` method will replace each whitespace character
+      with a single space.  The whitespace characters replaced are
+      as follows: tab, newline, vertical tab, formfeed, and carriage
+      return (``'\t\n\v\f\r'``).
 
       .. note::
 
