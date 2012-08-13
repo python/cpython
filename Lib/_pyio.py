@@ -1461,6 +1461,9 @@ class TextIOWrapper(TextIOBase):
 
     _CHUNK_SIZE = 2048
 
+    # The write_through argument has no effect here since this
+    # implementation always writes through.  The argument is present only
+    # so that the signature can match the signature of the C version.
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
         if newline is not None and not isinstance(newline, str):
