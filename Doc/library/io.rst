@@ -754,7 +754,8 @@ Text I/O
    It inherits :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to ``locale.getpreferredencoding(False)``.
+   encoded with.  It defaults to
+   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
