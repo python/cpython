@@ -413,6 +413,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15496: Add directory removal helpers for tests on Windows.
+  Patch by Jeremy Kloth.
+
 - Issue #15467: Move helpers for __sizeof__ tests into test_support.
   Patch by Serhiy Storchaka.
 
