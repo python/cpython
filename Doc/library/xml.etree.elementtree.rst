@@ -35,10 +35,11 @@ and its sub-elements are done on the :class:`Element` level.
 Parsing XML
 ^^^^^^^^^^^
 
-We'll be using the following XML document contained in a Python string as the
-sample data for this section::
+We'll be using the following XML document as the sample data for this section:
 
-   countrydata = r'''<?xml version="1.0"?>
+.. code-block:: xml
+
+   <?xml version="1.0"?>
    <data>
        <country name="Liechtenshtein">
            <rank>1</rank>
@@ -61,18 +62,20 @@ sample data for this section::
            <neighbor name="Colombia" direction="E"/>
        </country>
    </data>
-   '''
 
-First, import the module and parse the data::
+We can import this data by reading from a file::
 
    import xml.etree.ElementTree as ET
+   tree = ET.parse('country_data.xml')
+   root = tree.getroot()
 
-   root = ET.fromstring(countrydata)
+Or directly from a string::
+
+   root = ET.fromstring(country_data_as_string)
 
 :func:`fromstring` parses XML from a string directly into an :class:`Element`,
 which is the root element of the parsed tree.  Other parsing functions may
-create an :class:`ElementTree`.  Make sure to check the documentation to be
-sure.
+create an :class:`ElementTree`.  Check the documentation to be sure.
 
 As an :class:`Element`, ``root`` has a tag and a dictionary of attributes::
 
@@ -111,19 +114,105 @@ the sub-tree below it (its children, their children, and so on).  For example,
    {'name': 'Costa Rica', 'direction': 'W'}
    {'name': 'Colombia', 'direction': 'E'}
 
+:meth:`Element.findall` finds only elements with a tag which are direct
+children of the current element.  :meth:`Element.find` finds the *first* child
+with a particular tag, and :meth:`Element.text` accesses the element's text
+content.  :meth:`Element.get` accesses the element's attributes::
+
+   >>> for country in root.findall('country'):
+   ...   rank = country.find('rank').text
+   ...   name = country.get('name')
+   ...   print(name, rank)
+   ...
+   Liechtenshtein 1
+   Singapore 4
+   Panama 68
+
 More sophisticated specification of which elements to look for is possible by
 using :ref:`XPath <elementtree-xpath>`.
 
-Building XML documents
-^^^^^^^^^^^^^^^^^^^^^^
+Modifying an XML File
+^^^^^^^^^^^^^^^^^^^^^
 
-``ET`` provides a simple way to build XML documents and write them to files.
+:class:`ElementTree` provides a simple way to build XML documents and write them to files.
 The :meth:`ElementTree.write` method serves this purpose.
 
 Once created, an :class:`Element` object may be manipulated by directly changing
 its fields (such as :attr:`Element.text`), adding and modifying attributes
 (:meth:`Element.set` method), as well as adding new children (for example
 with :meth:`Element.append`).
+
+Let's say we want to add one to each country's rank, and add an ``updated``
+attribute to the rank element::
+
+   >>> for rank in root.iter('rank'):
+   ...   new_rank = int(rank.text) + 1
+   ...   rank.text = str(new_rank)
+   ...   rank.set('updated', 'yes')
+   ...
+   ... tree.write('output.xml')
+
+Our XML now looks like this:
+
+.. code-block:: xml
+
+   <?xml version="1.0"?>
+   <data>
+       <country name="Liechtenshtein">
+           <rank updated="yes">2</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank updated="yes">5</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+       <country name="Panama">
+           <rank updated="yes">69</rank>
+           <year>2011</year>
+           <gdppc>13600</gdppc>
+           <neighbor name="Costa Rica" direction="W"/>
+           <neighbor name="Colombia" direction="E"/>
+       </country>
+   </data>
+
+We can remove elements using :meth:`Element.remove`.  Let's say we want to
+remove all countries with a rank higher than 50::
+
+   >>> for country in root.findall('country'):
+   ...   rank = int(country.find('rank').text)
+   ...   if rank > 50:
+   ...     root.remove(country)
+   ...
+   ... tree.write('output.xml')
+
+Our XML now looks like this:
+
+.. code-block:: xml
+
+   <?xml version="1.0"?>
+   <data>
+       <country name="Liechtenshtein">
+           <rank updated="yes">2</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank updated="yes">5</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+   </data>
+
+Building XML documents
+^^^^^^^^^^^^^^^^^^^^^^
 
 The :func:`SubElement` function also provides a convenient way to create new
 sub-elements for a given element::
