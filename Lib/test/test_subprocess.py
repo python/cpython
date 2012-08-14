@@ -615,8 +615,6 @@ class ProcessTestCase(BaseTestCase):
                              universal_newlines=1)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
-        # BUG: can't give a non-empty stdin because it breaks both the
-        # select- and poll-based communicate() implementations.
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout,
                          "line2\nline4\nline5\nline6\nline7\nline8")
@@ -633,6 +631,18 @@ class ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              universal_newlines=1)
         (stdout, stderr) = p.communicate("line1\nline3\n")
+        self.assertEqual(p.returncode, 0)
+
+    def test_universal_newlines_communicate_input_none(self):
+        # Test communicate(input=None) with universal newlines.
+        #
+        # We set stdout to PIPE because, as of this writing, a different
+        # code path is tested when the number of pipes is zero or one.
+        p = subprocess.Popen([sys.executable, "-c", "pass"],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             universal_newlines=True)
+        p.communicate()
         self.assertEqual(p.returncode, 0)
 
     def test_no_leaking(self):

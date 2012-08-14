@@ -1536,6 +1536,17 @@ class Popen(object):
             return (stdout, stderr)
 
 
+        def _save_input(self, input):
+            # This method is called from the _communicate_with_*() methods
+            # so that if we time out while communicating, we can continue
+            # sending input if we retry.
+            if self.stdin and self._input is None:
+                self._input_offset = 0
+                self._input = input
+                if self.universal_newlines and input is not None:
+                    self._input = self._input.encode(self.stdin.encoding)
+
+
         def _communicate_with_poll(self, input, endtime, orig_timeout):
             stdout = None # Return
             stderr = None # Return
@@ -1572,13 +1583,7 @@ class Popen(object):
                 register_and_append(self.stderr, select_POLLIN_POLLPRI)
                 stderr = self._fd2output[self.stderr.fileno()]
 
-            # Save the input here so that if we time out while communicating,
-            # we can continue sending input if we retry.
-            if self.stdin and self._input is None:
-                self._input_offset = 0
-                self._input = input
-                if self.universal_newlines:
-                    self._input = self._input.encode(self.stdin.encoding)
+            self._save_input(input)
 
             while self._fd2file:
                 timeout = self._remaining_time(endtime)
@@ -1632,11 +1637,7 @@ class Popen(object):
                 if self.stderr:
                     self._read_set.append(self.stderr)
 
-            if self.stdin and self._input is None:
-                self._input_offset = 0
-                self._input = input
-                if self.universal_newlines:
-                    self._input = self._input.encode(self.stdin.encoding)
+            self._save_input(input)
 
             stdout = None # Return
             stderr = None # Return
