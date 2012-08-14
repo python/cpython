@@ -115,7 +115,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 #endif
 
 #ifdef MS_WINDOWS
-int isdir(char *path) {
+static int isdir(char *path) {
     DWORD rv;
     /* see issue1293 and issue3677:
      * stat() on Windows doesn't recognise paths like
@@ -128,7 +128,7 @@ int isdir(char *path) {
 }
 #else
 #ifdef HAVE_STAT
-int isdir(char *path) {
+static int isdir(char *path) {
     struct stat statbuf;
     return stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode);
 }
