@@ -397,25 +397,18 @@ Retrieving source code
 
 .. _inspect-signature-object:
 
-Introspecting callables with Signature Object
----------------------------------------------
-
-Signature object represents the call signature of a callable object and its
-return annotation.  To get a Signature object use the :func:`signature`
-function.
-
+Introspecting callables with the Signature object
+-------------------------------------------------
 
 .. versionadded:: 3.3
 
-.. seealso::
-
-   :pep:`362` - Function Signature Object.
-      The detailed specification, implementation details and examples.
-
+The Signature object represents the call signature of a callable object and its
+return annotation.  To retrieve a Signature object, use the :func:`signature`
+function.
 
 .. function:: signature(callable)
 
-   Returns a :class:`Signature` object for the given ``callable``::
+   Return a :class:`Signature` object for the given ``callable``::
 
       >>> from inspect import signature
       >>> def foo(a, *, b:int, **kwargs):
@@ -432,24 +425,24 @@ function.
       >>> sig.parameters['b'].annotation
       <class 'int'>
 
-   Accepts a wide range of python callables, from plain functions and classes
-   to :func:`functools.partial` objects.
+   Accepts a wide range of python callables, from plain functions and classes to
+   :func:`functools.partial` objects.
 
    .. note::
 
-      Some callables may not be introspectable in certain implementations
-      of Python. For example, in CPython, built-in functions defined in C
-      provide no metadata about their arguments.
+      Some callables may not be introspectable in certain implementations of
+      Python.  For example, in CPython, built-in functions defined in C provide
+      no metadata about their arguments.
 
 
 .. class:: Signature
 
-   A Signature object represents the call signature of a function and its
-   return annotation. For each parameter accepted by the function it
-   stores a :class:`Parameter` object in its :attr:`parameters` collection.
+   A Signature object represents the call signature of a function and its return
+   annotation.  For each parameter accepted by the function it stores a
+   :class:`Parameter` object in its :attr:`parameters` collection.
 
-   Signature objects are *immutable*. Use :meth:`Signature.replace` to make
-   a modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
+   modified copy.
 
    .. attribute:: Signature.empty
 
@@ -462,30 +455,29 @@ function.
 
    .. attribute:: Signature.return_annotation
 
-      The "return" annotation for the callable. If the callable has
-      no "return" annotation, this attribute is set to
-      :attr:`Signature.empty`.
+      The "return" annotation for the callable.  If the callable has no "return"
+      annotation, this attribute is set to :attr:`Signature.empty`.
 
    .. method:: Signature.bind(*args, **kwargs)
 
-      Creates a mapping from positional and keyword arguments to parameters.
-      Returns :class:`BoundArguments` if ``*args`` and ``**kwargs`` match
-      the signature, or raises a :exc:`TypeError`.
+      Create a mapping from positional and keyword arguments to parameters.
+      Returns :class:`BoundArguments` if ``*args`` and ``**kwargs`` match the
+      signature, or raises a :exc:`TypeError`.
 
    .. method:: Signature.bind_partial(*args, **kwargs)
 
-      Works the same way as :meth:`Signature.bind`, but allows the
-      omission of some required arguments (mimics :func:`functools.partial`
-      behavior.) Returns :class:`BoundArguments`, or raises a :exc:`TypeError`
-      if the passed arguments do not match the signature.
+      Works the same way as :meth:`Signature.bind`, but allows the omission of
+      some required arguments (mimics :func:`functools.partial` behavior.)
+      Returns :class:`BoundArguments`, or raises a :exc:`TypeError` if the
+      passed arguments do not match the signature.
 
    .. method:: Signature.replace([parameters], *, [return_annotation])
 
-      Creates a new Signature instance based on the instance replace was
-      invoked on. It is possible to pass different ``parameters`` and/or
-      ``return_annotation`` to override the corresponding properties of
-      the base signature. To remove return_annotation from the copied
-      Signature, pass in :attr:`Signature.empty`.
+      Create a new Signature instance based on the instance replace was invoked
+      on.  It is possible to pass different ``parameters`` and/or
+      ``return_annotation`` to override the corresponding properties of the base
+      signature.  To remove return_annotation from the copied Signature, pass in
+      :attr:`Signature.empty`.
 
       ::
 
@@ -497,38 +489,36 @@ function.
          "(a, b) -> 'new return anno'"
 
 
-
 .. class:: Parameter
 
-   Parameter objects are *immutable*. Instead of modifying a Parameter object,
+   Parameter objects are *immutable*.  Instead of modifying a Parameter object,
    you can use :meth:`Parameter.replace` to create a modified copy.
 
    .. attribute:: Parameter.empty
 
-      A special class-level marker to specify absence of default
-      values and annotations.
+      A special class-level marker to specify absence of default values and
+      annotations.
 
    .. attribute:: Parameter.name
 
-      The name of the parameter as a string. Must be a valid python identifier
-      name (with the exception of ``POSITIONAL_ONLY`` parameters, which can
-      have it set to ``None``.)
+      The name of the parameter as a string.  Must be a valid python identifier
+      name (with the exception of ``POSITIONAL_ONLY`` parameters, which can have
+      it set to ``None``).
 
    .. attribute:: Parameter.default
 
-      The default value for the parameter. If the parameter has no default
+      The default value for the parameter.  If the parameter has no default
       value, this attribute is set to :attr:`Parameter.empty`.
 
    .. attribute:: Parameter.annotation
 
-      The annotation for the parameter. If the parameter has no annotation,
+      The annotation for the parameter.  If the parameter has no annotation,
       this attribute is set to :attr:`Parameter.empty`.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.
-      Possible values (accessible via :class:`Parameter`, like
-      ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  Possible values
+      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
 
       +------------------------+----------------------------------------------+
       |    Name                | Meaning                                      |
@@ -577,10 +567,10 @@ function.
 
    .. method:: Parameter.replace(*, [name], [kind], [default], [annotation])
 
-      Creates a new Parameter instance based on the instance replaced was
-      invoked on. To override a :class:`Parameter` attribute, pass the
-      corresponding argument. To remove a default value or/and an annotation
-      from a Parameter, pass :attr:`Parameter.empty`.
+      Create a new Parameter instance based on the instance replaced was invoked
+      on.  To override a :class:`Parameter` attribute, pass the corresponding
+      argument.  To remove a default value or/and an annotation from a
+      Parameter, pass :attr:`Parameter.empty`.
 
       ::
 
@@ -604,18 +594,18 @@ function.
    .. attribute:: BoundArguments.arguments
 
       An ordered, mutable mapping (:class:`collections.OrderedDict`) of
-      parameters' names to arguments' values. Contains only explicitly
-      bound arguments.  Changes in :attr:`arguments` will reflect in
-      :attr:`args` and :attr:`kwargs`.
+      parameters' names to arguments' values.  Contains only explicitly bound
+      arguments.  Changes in :attr:`arguments` will reflect in :attr:`args` and
+      :attr:`kwargs`.
 
-      Should be used in conjunction with :attr:`Signature.parameters` for
-      any arguments processing purposes.
+      Should be used in conjunction with :attr:`Signature.parameters` for any
+      argument processing purposes.
 
       .. note::
 
          Arguments for which :meth:`Signature.bind` or
          :meth:`Signature.bind_partial` relied on a default value are skipped.
-         However, if needed, it's easy to include them
+         However, if needed, it is easy to include them.
 
       ::
 
@@ -638,15 +628,16 @@ function.
 
    .. attribute:: BoundArguments.args
 
-      Tuple of positional arguments values. Dynamically computed
-      from the :attr:`arguments` attribute.
+      A tuple of positional arguments values.  Dynamically computed from the
+      :attr:`arguments` attribute.
 
    .. attribute:: BoundArguments.kwargs
 
-      Dict of keyword arguments values. Dynamically computed
-      from the :attr:`arguments` attribute.
+      A dict of keyword arguments values.  Dynamically computed from the
+      :attr:`arguments` attribute.
 
-   :attr:`args` and :attr:`kwargs` properties can be used to invoke functions::
+   The :attr:`args` and :attr:`kwargs` properties can be used to invoke
+   functions::
 
       def test(a, *, b):
          ...
@@ -654,6 +645,12 @@ function.
       sig = signature(test)
       ba = sig.bind(10, b=20)
       test(*ba.args, **ba.kwargs)
+
+
+.. seealso::
+
+   :pep:`362` - Function Signature Object.
+      The detailed specification, implementation details and examples.
 
 
 .. _inspect-classes-functions:
