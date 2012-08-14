@@ -101,6 +101,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15646: Prevent equivalent of a fork bomb when using
+  multiprocessing on Windows without the "if __name__ == '__main__'"
+  idiom.
+
 - Issue #15424: Add a __sizeof__ implementation for array objects.
   Patch by Ludwig Hähne.
 
