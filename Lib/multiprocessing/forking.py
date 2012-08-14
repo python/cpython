@@ -331,7 +331,7 @@ else:
         '''
         Returns prefix of command line used for spawning a child process
         '''
-        if process.current_process()._identity==() and is_forking(sys.argv):
+        if getattr(process.current_process(), '_inheriting', False):
             raise RuntimeError('''
             Attempt to start a new process before the current process
             has finished its bootstrapping phase.
