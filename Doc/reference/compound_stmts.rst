@@ -307,12 +307,23 @@ If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
 :keyword:`else` clauses.  If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`finally` clause
-is executed.  If there is a saved exception, it is re-raised at the end of the
-:keyword:`finally` clause. If the :keyword:`finally` clause raises another
-exception or executes a :keyword:`return` or :keyword:`break` statement, the
-saved exception is set as the context of the new exception.  The exception
-information is not available to the program during execution of the
-:keyword:`finally` clause.
+is executed.  If there is a saved exception or :keyword:`break` statement,
+it is re-raised at the end of the :keyword:`finally` clause. If the
+:keyword:`finally` clause raises another exception the saved exception
+is set as the context of the new exception; if the :keyword:`finally` clause
+executes a :keyword:`return` statement, the saved exception is discarded::
+
+    def f():
+        try:
+            1/0
+        finally:
+            return 42
+
+    >>> f()
+    42
+
+The exception information is not available to the program during execution of
+the :keyword:`finally` clause.
 
 .. index::
    statement: return
