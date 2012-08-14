@@ -16,6 +16,7 @@ import socket
 import random
 import logging
 import errno
+import test.script_helper
 from test import test_support
 from StringIO import StringIO
 _multiprocessing = test_support.import_module('_multiprocessing')
@@ -2349,8 +2350,28 @@ class TestTimeouts(unittest.TestCase):
         finally:
             socket.setdefaulttimeout(old_timeout)
 
+#
+# Test what happens with no "if __name__ == '__main__'"
+#
+
+class TestNoForkBomb(unittest.TestCase):
+    def test_noforkbomb(self):
+        name = os.path.join(os.path.dirname(__file__), 'mp_fork_bomb.py')
+        if WIN32:
+            rc, out, err = test.script_helper.assert_python_failure(name)
+            self.assertEqual('', out.decode('ascii'))
+            self.assertIn('RuntimeError', err.decode('ascii'))
+        else:
+            rc, out, err = test.script_helper.assert_python_ok(name)
+            self.assertEqual('123', out.decode('ascii').rstrip())
+            self.assertEqual('', err.decode('ascii'))
+
+#
+#
+#
+
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
-                   TestStdinBadfiledescriptor, TestTimeouts]
+                   TestStdinBadfiledescriptor, TestTimeouts, TestNoForkBomb]
 
 #
 #
