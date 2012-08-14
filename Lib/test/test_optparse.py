@@ -769,6 +769,13 @@ class TestStandard(BaseTest):
         self.assertParseFail(["-test"],
                              "no such option: -e")
 
+    def test_flag_accepts_unicode(self):
+        try:
+            self.parser.add_option(u"-u", u"--unicode")
+            self.parser.parse_args()
+        except TypeError:
+            self.fail("Failed parsing flag passed to add_option() as unicode.")
+
 class TestBool(BaseTest):
     def setUp(self):
         options = [make_option("-v",
