@@ -878,22 +878,19 @@ are always available.  They are listed here in alphabetical order.
    mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
    works as follows:
 
-   * When reading input from the stream, if *newline* is ``None``,
-     universal newlines mode is enabled.  Lines in the input can end
-     in ``'\n'``, ``'\r'``, or ``'\r\n'``, and these are translated
-     into ``'\n'`` before being returned to the caller.  If it is
-     ``''``, universal newline mode is enabled, but line endings are
-     returned to the caller untranslated.  If it has any of the other
-     legal values, input lines are only terminated by the given
-     string, and the line ending is returned to the caller
-     untranslated.
+   * When reading input from the stream, if *newline* is ``None``, universal
+     newlines mode is enabled.  Lines in the input can end in ``'\n'``,
+     ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'`` before
+     being returned to the caller.  If it is ``''``, universal newline mode is
+     enabled, but line endings are returned to the caller untranslated.  If it
+     has any of the other legal values, input lines are only terminated by the
+     given string, and the line ending is returned to the caller untranslated.
 
-   * When writing output to the stream, if *newline* is ``None``, any
-     ``'\n'`` characters written are translated to the system default
-     line separator, :data:`os.linesep`.  If *newline* is ``''`` or
-     ``'\n'``, no translation takes place.  If *newline* is any of the
-     other legal values, any ``'\n'`` characters written are
-     translated to the given string.
+   * When writing output to the stream, if *newline* is ``None``, any ``'\n'``
+     characters written are translated to the system default line separator,
+     :data:`os.linesep`.  If *newline* is ``''`` or ``'\n'``, no translation
+     takes place.  If *newline* is any of the other legal values, any ``'\n'``
+     characters written are translated to the given string.
 
    If *closefd* is ``False`` and a file descriptor rather than a filename was
    given, the underlying file descriptor will be kept open when the file is
