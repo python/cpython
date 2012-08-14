@@ -37,7 +37,7 @@ or :func:`str` functions.
 The :func:`str` function is meant to return representations of values which are
 fairly human-readable, while :func:`repr` is meant to generate representations
 which can be read by the interpreter (or will force a :exc:`SyntaxError` if
-there is not equivalent syntax).  For objects which don't have a particular
+there is no equivalent syntax).  For objects which don't have a particular
 representation for human consumption, :func:`str` will return the same value as
 :func:`repr`.  Many values, such as numbers or structures like lists and
 dictionaries, have the same representation using either function.  Strings and
