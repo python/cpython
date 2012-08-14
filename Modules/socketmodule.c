@@ -840,7 +840,7 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
-PyThread_type_lock netdb_lock;
+static PyThread_type_lock netdb_lock;
 #endif
 
 
