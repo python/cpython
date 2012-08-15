@@ -106,6 +106,16 @@ The :class:`dircmp` class
    to compute are used.
 
 
+   .. attribute:: left
+
+      The directory *a*.
+
+
+   .. attribute:: right
+
+      The directory *b*.
+
+
    .. attribute:: left_list
 
       Files and subdirectories in *a*, filtered by *hide* and *ignore*.
@@ -168,4 +178,19 @@ The :class:`dircmp` class
 
       A dictionary mapping names in :attr:`common_dirs` to :class:`dircmp`
       objects.
+
+
+Here is a simplified example of using the ``subdirs`` attribute to search
+recursively through two directories to show common different files::
+
+    >>> from filecmp import dircmp
+    >>> def print_diff_files(dcmp):
+    ...     for name in dcmp.diff_files:
+    ...         print("diff_file %s found in %s and %s" % (name, dcmp.left,
+    ...               dcmp.right))
+    ...     for sub_dcmp in dcmp.subdirs.values():
+    ...         print_diff_files(sub_dcmp)
+    ...
+    >>> dcmp = dircmp('dir1', 'dir2')
+    >>> print_diff_files(dcmp)
 
