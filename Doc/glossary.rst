@@ -600,6 +600,13 @@ Glossary
       object has a type.  An object's type is accessible as its
       :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
 
+   universal newlines
+      A manner of interpreting text streams in which all of the following are
+      recognized as ending a line: the Unix end-of-line convention ``'\n'``,
+      the Windows convention ``'\r\n'``, and the old Macintosh convention
+      ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
+      :func:`str.splitlines` for an additional use.
+
    view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
       :meth:`dict.items` are called dictionary views.  They are lazy sequences

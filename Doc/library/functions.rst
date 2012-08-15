@@ -819,7 +819,7 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   universal newline mode (for backwards compatibility; should
+   ``'U'``   universal newlines mode (for backwards compatibility; should
              not be used in new code)
    ========= ===============================================================
 
@@ -874,14 +874,18 @@ are always available.  They are listed here in alphabetical order.
    used.  Any other error handling name that has been registered with
    :func:`codecs.register_error` is also valid.
 
-   *newline* controls how universal newlines works (it only applies to text
-   mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
+   .. index::
+      single: universal newlines; open() built-in function
+
+   *newline* controls how :term:`universal newlines` mode works (it only
+   applies to text mode).
+   It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
    works as follows:
 
    * When reading input from the stream, if *newline* is ``None``, universal
      newlines mode is enabled.  Lines in the input can end in ``'\n'``,
      ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'`` before
-     being returned to the caller.  If it is ``''``, universal newline mode is
+     being returned to the caller.  If it is ``''``, universal newlines mode is
      enabled, but line endings are returned to the caller untranslated.  If it
      has any of the other legal values, input lines are only terminated by the
      given string, and the line ending is returned to the caller untranslated.

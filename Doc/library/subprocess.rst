@@ -224,9 +224,12 @@ default values. The arguments that are most commonly needed are:
    the stderr data from the child process should be captured into the same file
    handle as for stdout.
 
+   .. index::
+      single: universal newlines; subprocess module
+
    If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
-   and *stderr* will be opened as text streams with universal newlines support,
-   using the encoding returned by :func:`locale.getpreferredencoding`.
+   and *stderr* will be opened as text streams in :term:`universal newlines`
+   mode using the encoding returned by :func:`locale.getpreferredencoding`.
    For *stdin*, line ending characters ``'\n'`` in the input will be converted
    to the default line separator :data:`os.linesep`.  For *stdout* and
    *stderr*, all line endings in the output will be converted to ``'\n'``.
@@ -440,7 +443,7 @@ functions.
    .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
    If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
-   and *stderr* are opened as text files with universal newlines support, as
+   and *stderr* are opened as text streams in universal newlines mode, as
    described above in :ref:`frequently-used-arguments`.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
