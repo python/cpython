@@ -350,10 +350,14 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
         int lineno = 0;
         int col_offset = 0;
         if (line_option != NULL) {
-            lineno = (PyObject_IsTrue(line_option) != 0) ? 1 : 0;
+            lineno = PyObject_IsTrue(line_option);
+            if (lineno < 0)
+                return NULL;
         }
         if (col_option != NULL) {
-            col_offset = (PyObject_IsTrue(col_option) != 0) ? 1 : 0;
+            col_offset = PyObject_IsTrue(col_option);
+            if (col_offset < 0)
+                return NULL;
         }
         /*
          *  Convert ST into a tuple representation.  Use Guido's function,
@@ -401,10 +405,14 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
         int lineno = 0;
         int col_offset = 0;
         if (line_option != 0) {
-            lineno = PyObject_IsTrue(line_option) ? 1 : 0;
+            lineno = PyObject_IsTrue(line_option);
+            if (lineno < 0)
+                return NULL;
         }
-        if (col_option != NULL) {
-            col_offset = (PyObject_IsTrue(col_option) != 0) ? 1 : 0;
+        if (col_option != 0) {
+            col_offset = PyObject_IsTrue(col_option);
+            if (col_offset < 0)
+                return NULL;
         }
         /*
          *  Convert ST into a tuple representation.  Use Guido's function,

@@ -313,7 +313,7 @@ builtin_filter(PyObject *self, PyObject *args)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (ok) {
+        if (ok > 0) {
             if (j < len)
                 PyList_SET_ITEM(result, j, item);
             else {
@@ -324,8 +324,11 @@ builtin_filter(PyObject *self, PyObject *args)
             }
             ++j;
         }
-        else
+        else {
             Py_DECREF(item);
+            if (ok < 0)
+                goto Fail_result_it;
+        }
     }
 
 
@@ -2784,12 +2787,15 @@ filtertuple(PyObject *func, PyObject *tuple)
         }
         ok = PyObject_IsTrue(good);
         Py_DECREF(good);
-        if (ok) {
+        if (ok > 0) {
             if (PyTuple_SetItem(result, j++, item) < 0)
                 goto Fail_1;
         }
-        else
+        else {
             Py_DECREF(item);
+            if (ok < 0)
+                goto Fail_1;
+        }
     }
 
     if (_PyTuple_Resize(&result, j) < 0)
@@ -2851,7 +2857,7 @@ filterstring(PyObject *func, PyObject *strobj)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (ok) {
+        if (ok > 0) {
             Py_ssize_t reslen;
             if (!PyString_Check(item)) {
                 PyErr_SetString(PyExc_TypeError, "can't filter str to str:"
@@ -2917,6 +2923,8 @@ filterstring(PyObject *func, PyObject *strobj)
                     }
         }
         Py_DECREF(item);
+        if (ok < 0)
+            goto Fail_1;
     }
 
     if (j < outlen)
@@ -2977,7 +2985,7 @@ filterunicode(PyObject *func, PyObject *strobj)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (ok) {
+        if (ok > 0) {
             Py_ssize_t reslen;
             if (!PyUnicode_Check(item)) {
                 PyErr_SetString(PyExc_TypeError,
@@ -3032,6 +3040,8 @@ filterunicode(PyObject *func, PyObject *strobj)
                     }
         }
         Py_DECREF(item);
+        if (ok < 0)
+            goto Fail_1;
     }
 
     if (j < outlen)

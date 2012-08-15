@@ -903,11 +903,13 @@ dropwhile_next(dropwhileobject *lz)
         }
         ok = PyObject_IsTrue(good);
         Py_DECREF(good);
-        if (!ok) {
+        if (ok == 0) {
             lz->start = 1;
             return item;
         }
         Py_DECREF(item);
+        if (ok < 0)
+            return NULL;
     }
 }
 
@@ -1043,10 +1045,11 @@ takewhile_next(takewhileobject *lz)
     }
     ok = PyObject_IsTrue(good);
     Py_DECREF(good);
-    if (ok)
+    if (ok > 0)
         return item;
     Py_DECREF(item);
-    lz->stop = 1;
+    if (ok == 0)
+        lz->stop = 1;
     return NULL;
 }
 
@@ -3001,9 +3004,11 @@ ifilter_next(ifilterobject *lz)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (ok)
+        if (ok > 0)
             return item;
         Py_DECREF(item);
+        if (ok < 0)
+            return NULL;
     }
 }
 
@@ -3144,9 +3149,11 @@ ifilterfalse_next(ifilterfalseobject *lz)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (!ok)
+        if (ok == 0)
             return item;
         Py_DECREF(item);
+        if (ok < 0)
+            return NULL;
     }
 }
 

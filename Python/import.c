@@ -1043,7 +1043,10 @@ load_source_module(char *name, char *pathname, FILE *fp)
                 name, pathname);
         if (cpathname) {
             PyObject *ro = PySys_GetObject("dont_write_bytecode");
-            if (ro == NULL || !PyObject_IsTrue(ro))
+            int b = (ro == NULL) ? 0 : PyObject_IsTrue(ro);
+            if (b < 0)
+                goto error_exit;
+            if (!b)
                 write_compiled_module(co, cpathname, &st);
         }
     }
@@ -2200,7 +2203,13 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
     }
 
     if (fromlist != NULL) {
-        if (fromlist == Py_None || !PyObject_IsTrue(fromlist))
+        int b = (fromlist == Py_None) ? 0 : PyObject_IsTrue(fromlist);
+        if (b < 0) {
+            Py_DECREF(tail);
+            Py_DECREF(head);
+            goto error_exit;
+        }
+        if (!b)
             fromlist = NULL;
     }
 
