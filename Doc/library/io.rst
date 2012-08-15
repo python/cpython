@@ -144,10 +144,9 @@ Module Interface
    .. index::
       single: universal newlines; open() (in module io)
 
-   *newline* controls how :term:`universal newlines` works (it only applies
-   to text
-   mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
-   works as follows:
+   *newline* controls how :term:`universal newlines` works (it only applies to
+   text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.
+   It works as follows:
 
    * On input, if *newline* is ``None``, universal newlines mode is enabled.
      Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``, and these
@@ -765,13 +764,12 @@ Text I/O
    ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It works as follows:
 
    * On input, if *newline* is ``None``, :term:`universal newlines` mode is
-     enabled.
-     Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``, and these
-     are translated into ``'\n'`` before being returned to the caller.  If it is
-     ``''``, universal newlines mode is enabled, but line endings are returned to
-     the caller untranslated.  If it has any of the other legal values, input
-     lines are only terminated by the given string, and the line ending is
-     returned to the caller untranslated.
+     enabled.  Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``,
+     and these are translated into ``'\n'`` before being returned to the
+     caller.  If it is ``''``, universal newlines mode is enabled, but line
+     endings are returned to the caller untranslated.  If it has any of the
+     other legal values, input lines are only terminated by the given string,
+     and the line ending is returned to the caller untranslated.
 
    * On output, if *newline* is ``None``, any ``'\n'`` characters written are
      translated to the system default line separator, :data:`os.linesep`.  If

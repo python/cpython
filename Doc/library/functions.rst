@@ -864,16 +864,15 @@ available.  They are listed here in alphabetical order.
 
    In addition to the standard :c:func:`fopen` values *mode* may be ``'U'`` or
    ``'rU'``.  Python is usually built with :term:`universal newlines` support;
-   supplying
-   ``'U'`` opens the file as a text file, but lines may be terminated by any of the
-   following: the Unix end-of-line convention ``'\n'``,  the Macintosh convention
-   ``'\r'``, or the Windows convention ``'\r\n'``. All of these external
-   representations are seen as ``'\n'`` by the Python program. If Python is built
-   without universal newlines support a *mode* with ``'U'`` is the same as normal
-   text mode.  Note that file objects so opened also have an attribute called
-   :attr:`newlines` which has a value of ``None`` (if no newlines have yet been
-   seen), ``'\n'``, ``'\r'``, ``'\r\n'``, or a tuple containing all the newline
-   types seen.
+   supplying ``'U'`` opens the file as a text file, but lines may be terminated
+   by any of the following: the Unix end-of-line convention ``'\n'``,  the
+   Macintosh convention ``'\r'``, or the Windows convention ``'\r\n'``. All of
+   these external representations are seen as ``'\n'`` by the Python program.
+   If Python is built without universal newlines support a *mode* with ``'U'``
+   is the same as normal text mode.  Note that file objects so opened also have
+   an attribute called :attr:`newlines` which has a value of ``None`` (if no
+   newlines have yet been seen), ``'\n'``, ``'\r'``, ``'\r\n'``, or a tuple
+   containing all the newline types seen.
 
    Python enforces that the mode, after stripping ``'U'``, begins with ``'r'``,
    ``'w'`` or ``'a'``.
