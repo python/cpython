@@ -244,9 +244,9 @@ Built-in functions such as :func:`max` and :func:`min` can take a single
 iterator argument and will return the largest or smallest element.  The ``"in"``
 and ``"not in"`` operators also support iterators: ``X in iterator`` is true if
 X is found in the stream returned by the iterator.  You'll run into obvious
-problems if the iterator is infinite; ``max()``, ``min()``, and ``"not in"``
+problems if the iterator is infinite; ``max()``, ``min()``
 will never return, and if the element X never appears in the stream, the
-``"in"`` operator won't return either.
+``"in"`` and ``"not in"`` operators won't return either.
 
 Note that you can only go forward in an iterator; there's no way to get the
 previous element, reset the iterator, or make a copy of it.  Iterator objects
