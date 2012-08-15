@@ -8,6 +8,7 @@ import email.message
 import re
 import shutil
 import StringIO
+import tempfile
 from test import test_support
 import unittest
 import mailbox
@@ -74,6 +75,18 @@ class TestMailbox(TestBase):
         self.assertEqual(self._box.get_string(keys[0]), self._template % 0)
         for i in (1, 2, 3, 4):
             self._check_sample(self._box[keys[i]])
+
+    def test_add_file(self):
+        with tempfile.TemporaryFile('w+') as f:
+            f.write(_sample_message)
+            f.seek(0)
+            key = self._box.add(f)
+        self.assertEqual(self._box.get_string(key).split('\n'),
+            _sample_message.split('\n'))
+
+    def test_add_StringIO(self):
+        key = self._box.add(StringIO.StringIO(self._template % "0"))
+        self.assertEqual(self._box.get_string(key), self._template % "0")
 
     def test_remove(self):
         # Remove messages using remove()
