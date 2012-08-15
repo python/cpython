@@ -288,15 +288,15 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
-   and *stderr* will be opened as text streams in :term:`universal newlines`
-   mode using the encoding returned by
-   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
-   For *stdin*, line ending characters ``'\n'`` in the input will be converted
-   to the default line separator :data:`os.linesep`.  For *stdout* and
-   *stderr*, all line endings in the output will be converted to ``'\n'``.
-   For more information see the documentation of the :class:`io.TextIOWrapper`
-   class when the *newline* argument to its constructor is ``None``.
+   If *universal_newlines* is ``True``, the file objects *stdin*, *stdout* and
+   *stderr* will be opened as text streams in :term:`universal newlines` mode
+   using the encoding returned by :func:`locale.getpreferredencoding(False)
+   <locale.getpreferredencoding>`.  For *stdin*, line ending characters
+   ``'\n'`` in the input will be converted to the default line separator
+   :data:`os.linesep`.  For *stdout* and *stderr*, all line endings in the
+   output will be converted to ``'\n'``.  For more information see the
+   documentation of the :class:`io.TextIOWrapper` class when the *newline*
+   argument to its constructor is ``None``.
 
    .. note::
 
