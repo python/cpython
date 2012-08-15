@@ -428,9 +428,11 @@ filter_next(filterobject *lz)
             ok = PyObject_IsTrue(good);
             Py_DECREF(good);
         }
-        if (ok)
+        if (ok > 0)
             return item;
         Py_DECREF(item);
+        if (ok < 0)
+            return NULL;
     }
 }
 
