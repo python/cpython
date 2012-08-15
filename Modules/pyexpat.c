@@ -1174,13 +1174,16 @@ static PyObject *
 xmlparse_UseForeignDTD(xmlparseobject *self, PyObject *args)
 {
     PyObject *flagobj = NULL;
-    XML_Bool flag = XML_TRUE;
+    int flag = 1;
     enum XML_Error rc;
-    if (!PyArg_UnpackTuple(args, "UseForeignDTD", 0, 1, &flagobj))
+    if (!PyArg_ParseTuple(args, "O:UseForeignDTD", &flagobj))
         return NULL;
-    if (flagobj != NULL)
-        flag = PyObject_IsTrue(flagobj) ? XML_TRUE : XML_FALSE;
-    rc = XML_UseForeignDTD(self->itself, flag);
+    if (flagobj != NULL) {
+        flag = PyObject_IsTrue(flagobj);
+        if (flag < 0)
+            return NULL;
+    }
+    rc = XML_UseForeignDTD(self->itself, flag ? XML_TRUE : XML_FALSE);
     if (rc != XML_ERROR_NONE) {
         return set_error(self, rc);
     }
@@ -1549,7 +1552,10 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         return -1;
     }
     if (strcmp(name, "buffer_text") == 0) {
-        if (PyObject_IsTrue(v)) {
+        int b = PyObject_IsTrue(v);
+        if (b < 0)
+            return -1;
+        if (b) {
             if (self->buffer == NULL) {
                 self->buffer = malloc(self->buffer_size);
                 if (self->buffer == NULL) {
@@ -1568,39 +1574,39 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         return 0;
     }
     if (strcmp(name, "namespace_prefixes") == 0) {
-        if (PyObject_IsTrue(v))
-            self->ns_prefixes = 1;
-        else
-            self->ns_prefixes = 0;
+        int b = PyObject_IsTrue(v);
+        if (b < 0)
+            return -1;
+        self->ns_prefixes = b;
         XML_SetReturnNSTriplet(self->itself, self->ns_prefixes);
         return 0;
     }
     if (strcmp(name, "ordered_attributes") == 0) {
-        if (PyObject_IsTrue(v))
-            self->ordered_attributes = 1;
-        else
-            self->ordered_attributes = 0;
+        int b = PyObject_IsTrue(v);
+        if (b < 0)
+            return -1;
+        self->ordered_attributes = b;
         return 0;
     }
     if (strcmp(name, "returns_unicode") == 0) {
-        if (PyObject_IsTrue(v)) {
+        int b = PyObject_IsTrue(v);
+        if (b < 0)
+            return -1;
 #ifndef Py_USING_UNICODE
+        if (b) {
             PyErr_SetString(PyExc_ValueError,
                             "Unicode support not available");
             return -1;
-#else
-            self->returns_unicode = 1;
-#endif
         }
-        else
-            self->returns_unicode = 0;
+#endif
+        self->returns_unicode = b;
         return 0;
     }
     if (strcmp(name, "specified_attributes") == 0) {
-        if (PyObject_IsTrue(v))
-            self->specified_attributes = 1;
-        else
-            self->specified_attributes = 0;
+        int b = PyObject_IsTrue(v);
+        if (b < 0)
+            return -1;
+        self->specified_attributes = b;
         return 0;
     }
 

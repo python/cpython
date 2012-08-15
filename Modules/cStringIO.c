@@ -127,12 +127,16 @@ IO_cgetval(PyObject *self) {
 static PyObject *
 IO_getval(IOobject *self, PyObject *args) {
     PyObject *use_pos=Py_None;
+    int b;
     Py_ssize_t s;
 
     if (!IO__opencheck(self)) return NULL;
     if (!PyArg_UnpackTuple(args,"getval", 0, 1,&use_pos)) return NULL;
 
-    if (PyObject_IsTrue(use_pos)) {
+    b = PyObject_IsTrue(use_pos);
+    if (b < 0)
+        return NULL;
+    if (b) {
               s=self->pos;
               if (s > self->string_size) s=self->string_size;
     }
