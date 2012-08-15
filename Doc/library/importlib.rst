@@ -196,10 +196,9 @@ are also provided to help in implementing the core ABCs.
 
         An abstract method to return the source of a module. It is returned as
         a text string using :term:`universal newlines`, translating all
-        recognized line separators into ``'\n'`` characters.
-        Returns ``None`` if no
-        source is available (e.g. a built-in module). Raises :exc:`ImportError`
-        if the loader cannot find the module specified.
+        recognized line separators into ``'\n'`` characters.  Returns ``None``
+        if no source is available (e.g. a built-in module). Raises
+        :exc:`ImportError` if the loader cannot find the module specified.
 
     .. method:: is_package(fullname)
 

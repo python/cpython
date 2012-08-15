@@ -878,9 +878,8 @@ are always available.  They are listed here in alphabetical order.
       single: universal newlines; open() built-in function
 
    *newline* controls how :term:`universal newlines` mode works (it only
-   applies to text mode).
-   It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
-   works as follows:
+   applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
+   ``'\r\n'``.  It works as follows:
 
    * When reading input from the stream, if *newline* is ``None``, universal
      newlines mode is enabled.  Lines in the input can end in ``'\n'``,

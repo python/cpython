@@ -764,13 +764,13 @@ Text I/O
    ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It works as follows:
 
    * When reading input from the stream, if *newline* is ``None``,
-     :term:`universal newlines` mode is enabled.  Lines in the input can end
-     in ``'\n'``,
-     ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'`` before
-     being returned to the caller.  If it is ``''``, universal newlines mode is
-     enabled, but line endings are returned to the caller untranslated.  If it
-     has any of the other legal values, input lines are only terminated by the
-     given string, and the line ending is returned to the caller untranslated.
+     :term:`universal newlines` mode is enabled.  Lines in the input can end in
+     ``'\n'``, ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'``
+     before being returned to the caller.  If it is ``''``, universal newlines
+     mode is enabled, but line endings are returned to the caller untranslated.
+     If it has any of the other legal values, input lines are only terminated
+     by the given string, and the line ending is returned to the caller
+     untranslated.
 
    * When writing output to the stream, if *newline* is ``None``, any ``'\n'``
      characters written are translated to the system default line separator,
