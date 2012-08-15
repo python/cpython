@@ -732,13 +732,18 @@ Philbrick (philbrick@hks.com)::
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
 
-::
+   static struct PyModuleDef keywdargmodule = {
+       PyModuleDef_HEAD_INIT,
+       "keywdarg",
+       NULL,
+       -1,
+       keywdarg_methods
+   };
 
-   void
-   initkeywdarg(void)
+   PyMODINIT_FUNC
+   PyInit_keywdarg(void)
    {
-     /* Create the module and add the functions */
-     Py_InitModule("keywdarg", keywdarg_methods);
+       return PyModule_Create(&keywdargmodule);
    }
 
 
