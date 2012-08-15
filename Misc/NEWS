@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Release Candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #15604: Update uses of PyObject_IsTrue() to check for and handle
+  errors correctly.  Patch by Serhiy Storchaka.
+
 Library
 -------
 

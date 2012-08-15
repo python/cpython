@@ -503,7 +503,7 @@ static PyObject *
 subprocess_fork_exec(PyObject* self, PyObject *args)
 {
     PyObject *gc_module = NULL;
-    PyObject *executable_list, *py_close_fds, *py_fds_to_keep;
+    PyObject *executable_list, *py_fds_to_keep;
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -518,15 +518,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     Py_ssize_t arg_num;
 
     if (!PyArg_ParseTuple(
-            args, "OOOOOOiiiiiiiiiiO:fork_exec",
-            &process_args, &executable_list, &py_close_fds, &py_fds_to_keep,
+            args, "OOpOOOiiiiiiiiiiO:fork_exec",
+            &process_args, &executable_list, &close_fds, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
 
-    close_fds = PyObject_IsTrue(py_close_fds);
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
         return NULL;

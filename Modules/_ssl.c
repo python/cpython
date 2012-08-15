@@ -1037,15 +1037,15 @@ PySSL_peercert(PySSLSocket *self, PyObject *args)
     PyObject *retval = NULL;
     int len;
     int verification;
-    PyObject *binary_mode = Py_None;
+    int binary_mode = 0;
 
-    if (!PyArg_ParseTuple(args, "|O:peer_certificate", &binary_mode))
+    if (!PyArg_ParseTuple(args, "|p:peer_certificate", &binary_mode))
         return NULL;
 
     if (!self->peer_cert)
         Py_RETURN_NONE;
 
-    if (PyObject_IsTrue(binary_mode)) {
+    if (binary_mode) {
         /* return cert in DER-encoded format */
 
         unsigned char *bytes_buf = NULL;

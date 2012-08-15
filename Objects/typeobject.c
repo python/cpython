@@ -383,11 +383,15 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
        abc.ABCMeta.__new__, so this function doesn't do anything
        special to update subclasses.
     */
-    int res;
+    int abstract, res;
     if (value != NULL) {
+        abstract = PyObject_IsTrue(value);
+        if (abstract < 0)
+            return -1;
         res = PyDict_SetItemString(type->tp_dict, "__abstractmethods__", value);
     }
     else {
+        abstract = 0;
         res = PyDict_DelItemString(type->tp_dict, "__abstractmethods__");
         if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
@@ -396,12 +400,10 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
     }
     if (res == 0) {
         PyType_Modified(type);
-        if (value && PyObject_IsTrue(value)) {
+        if (abstract)
             type->tp_flags |= Py_TPFLAGS_IS_ABSTRACT;
-        }
-        else {
+        else
             type->tp_flags &= ~Py_TPFLAGS_IS_ABSTRACT;
-        }
     }
     return res;
 }
