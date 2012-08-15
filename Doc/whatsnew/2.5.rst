@@ -1338,13 +1338,17 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. XXX need to provide some more detail here
 
+  .. index::
+     single: universal newlines; What's new
+
 * The :mod:`fileinput` module was made more flexible. Unicode filenames are now
   supported, and a *mode* parameter that defaults to ``"r"`` was added to the
-  :func:`input` function to allow opening files in binary or universal-newline
-  mode.  Another new parameter, *openhook*, lets you use a function other than
-  :func:`open`  to open the input files.  Once you're iterating over  the set of
-  files, the :class:`FileInput` object's new :meth:`fileno` returns the file
-  descriptor for the currently opened file. (Contributed by Georg Brandl.)
+  :func:`input` function to allow opening files in binary or :term:`universal
+  newlines` mode.  Another new parameter, *openhook*, lets you use a function
+  other than :func:`open`  to open the input files.  Once you're iterating over
+  the set of files, the :class:`FileInput` object's new :meth:`fileno` returns
+  the file descriptor for the currently opened file. (Contributed by Georg
+  Brandl.)
 
 * In the :mod:`gc` module, the new :func:`get_count` function returns a 3-tuple
   containing the current collection counts for the three GC generations.  This is
