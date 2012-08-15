@@ -40,6 +40,9 @@ Here is a summary of the features offered by the bz2 module:
 Handling of compressed files is offered by the :class:`BZ2File` class.
 
 
+.. index::
+   single: universal newlines; bz2.BZ2File class
+
 .. class:: BZ2File(filename, mode='r', buffering=0, compresslevel=9)
 
    Open a bz2 file. Mode can be either ``'r'`` or ``'w'``, for reading (default)
@@ -48,7 +51,7 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
    unbuffered, and larger numbers specify the buffer size; the default is
    ``0``. If *compresslevel* is given, it must be a number between ``1`` and
    ``9``; the default is ``9``. Add a ``'U'`` to mode to open the file for input
-   with universal newline support. Any line ending in the input file will be
+   in :term:`universal newlines` mode.  Any line ending in the input file will be
    seen as a ``'\n'`` in Python.  Also, a file so opened gains the attribute
    :attr:`newlines`; the value for this attribute is one of ``None`` (no newline
    read yet), ``'\r'``, ``'\n'``, ``'\r\n'`` or a tuple containing all the

@@ -1325,10 +1325,13 @@ functions based on regular expressions.
    ``'  1  2   3  '.split(None, 1)`` returns ``['1', '2   3  ']``.
 
 
+.. index::
+   single: universal newlines; str.splitlines method
+
 .. method:: str.splitlines([keepends])
 
    Return a list of the lines in the string, breaking at line boundaries.
-   This method uses the universal newlines approach to splitting lines.
+   This method uses the :term:`universal newlines` approach to splitting lines.
    Line breaks are not included in the resulting list unless *keepends* is
    given and true.
 
