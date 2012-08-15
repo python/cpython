@@ -797,7 +797,7 @@ class Popen(object):
 
         if p2cwrite != -1:
             self.stdin = io.open(p2cwrite, 'wb', bufsize)
-            if self.universal_newlines:
+            if universal_newlines:
                 self.stdin = io.TextIOWrapper(self.stdin, write_through=True)
         if c2pread != -1:
             self.stdout = io.open(c2pread, 'rb', bufsize)
@@ -810,7 +810,7 @@ class Popen(object):
 
         try:
             self._execute_child(args, executable, preexec_fn, close_fds,
-                                pass_fds, cwd, env, universal_newlines,
+                                pass_fds, cwd, env,
                                 startupinfo, creationflags, shell,
                                 p2cread, p2cwrite,
                                 c2pread, c2pwrite,
@@ -1035,7 +1035,7 @@ class Popen(object):
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           pass_fds, cwd, env, universal_newlines,
+                           pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
@@ -1307,7 +1307,7 @@ class Popen(object):
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           pass_fds, cwd, env, universal_newlines,
+                           pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
