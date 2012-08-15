@@ -411,6 +411,9 @@ error streams will be.  You can provide a file object or a file descriptor, or
 you can use the constant ``subprocess.PIPE`` to create a pipe between the
 subprocess and the parent.
 
+.. index::
+   single: universal newlines; What's new
+
 The constructor has a number of handy options:
 
 * *close_fds* requests that all file descriptors be closed before running the
@@ -424,7 +427,7 @@ The constructor has a number of handy options:
 * *preexec_fn* is a function that gets called before the child is started.
 
 * *universal_newlines* opens the child's input and output using Python's
-  universal newline feature.
+  :term:`universal newlines` feature.
 
 Once you've created the :class:`Popen` instance,  you can call its :meth:`wait`
 method to pause until the subprocess has exited, :meth:`poll` to check if it's

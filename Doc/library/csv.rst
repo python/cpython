@@ -46,6 +46,9 @@ Module Contents
 The :mod:`csv` module defines the following functions:
 
 
+.. index::
+   single: universal newlines; csv.reader function
+
 .. function:: reader(csvfile, dialect='excel', **fmtparams)
 
    Return a reader object which will iterate over lines in the given *csvfile*.
@@ -486,4 +489,5 @@ done::
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
    will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
    on write an extra ``\r`` will be added.  It should always be safe to specify
-   ``newline=''``, since the csv module does its own (universal) newline handling.
+   ``newline=''``, since the csv module does its own
+   (:term:`universal <universal newlines>`) newline handling.
