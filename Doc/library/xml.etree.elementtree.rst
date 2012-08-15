@@ -41,7 +41,7 @@ We'll be using the following XML document as the sample data for this section:
 
    <?xml version="1.0"?>
    <data>
-       <country name="Liechtenshtein">
+       <country name="Liechtenstein">
            <rank>1</rank>
            <year>2008</year>
            <gdppc>141100</gdppc>
@@ -89,7 +89,7 @@ It also has children nodes over which we can iterate::
    >>> for child in root:
    ...   print(child.tag, child.attrib)
    ...
-   country {'name': 'Liechtenshtein'}
+   country {'name': 'Liechtenstein'}
    country {'name': 'Singapore'}
    country {'name': 'Panama'}
 
@@ -124,7 +124,7 @@ content.  :meth:`Element.get` accesses the element's attributes::
    ...   name = country.get('name')
    ...   print(name, rank)
    ...
-   Liechtenshtein 1
+   Liechtenstein 1
    Singapore 4
    Panama 68
 
@@ -158,7 +158,7 @@ Our XML now looks like this:
 
    <?xml version="1.0"?>
    <data>
-       <country name="Liechtenshtein">
+       <country name="Liechtenstein">
            <rank updated="yes">2</rank>
            <year>2008</year>
            <gdppc>141100</gdppc>
@@ -196,7 +196,7 @@ Our XML now looks like this:
 
    <?xml version="1.0"?>
    <data>
-       <country name="Liechtenshtein">
+       <country name="Liechtenstein">
            <rank updated="yes">2</rank>
            <year>2008</year>
            <gdppc>141100</gdppc>
