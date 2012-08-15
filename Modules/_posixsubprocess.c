@@ -525,6 +525,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
 
     close_fds = PyObject_IsTrue(py_close_fds);
+    if (close_fds < 0)
+        return NULL;
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
         return NULL;

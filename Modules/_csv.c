@@ -166,8 +166,12 @@ _set_bool(const char *name, int *target, PyObject *src, int dflt)
 {
     if (src == NULL)
         *target = dflt;
-    else
-        *target = PyObject_IsTrue(src);
+    else {
+        int b = PyObject_IsTrue(src);
+        if (b < 0)
+            return -1;
+        *target = b;
+    }
     return 0;
 }
 
