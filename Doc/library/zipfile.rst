@@ -163,13 +163,17 @@ ZipFile Objects
 
    Return a list of archive members by name.
 
+   .. index::
+      single: universal newlines; zipfile.ZipFile.open method
+
 
 .. method:: ZipFile.open(name[, mode[, pwd]])
 
    Extract a member from the archive as a file-like object (ZipExtFile). *name* is
    the name of the file in the archive, or a :class:`ZipInfo` object. The *mode*
-   parameter, if included, must be one of the following: ``'r'`` (the  default),
-   ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable universal newline
+   parameter, if included, must be one of the following: ``'r'`` (the default),
+   ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable
+   :term:`universal newline <universal newlines>`
    support in the read-only object. *pwd* is the password used for encrypted files.
    Calling  :meth:`open` on a closed ZipFile will raise a  :exc:`RuntimeError`.
 

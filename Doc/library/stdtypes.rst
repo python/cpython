@@ -1181,10 +1181,13 @@ string functions based on regular expressions.
    ``'  1  2   3  '.split(None, 1)`` returns ``['1', '2   3  ']``.
 
 
+.. index::
+   single: universal newlines; str.splitlines method
+
 .. method:: str.splitlines([keepends])
 
    Return a list of the lines in the string, breaking at line boundaries.
-   This method uses the universal newlines approach to splitting lines.
+   This method uses the :term:`universal newlines` approach to splitting lines.
    Line breaks are not included in the resulting list unless *keepends* is
    given and true.
 
@@ -2558,16 +2561,19 @@ the particular object.
    form ``<...>``.  This is a read-only attribute and may not be present on all
    file-like objects.
 
+   .. index::
+      single: universal newlines; file.newlines attribute
+
 
 .. attribute:: file.newlines
 
-   If Python was built with universal newlines enabled (the default) this
+   If Python was built with :term:`universal newlines` enabled (the default) this
    read-only attribute exists, and for files opened in universal newline read
    mode it keeps track of the types of newlines encountered while reading the
    file. The values it can take are ``'\r'``, ``'\n'``, ``'\r\n'``, ``None``
    (unknown, no newlines read yet) or a tuple containing all the newline types
    seen, to indicate that multiple newline conventions were encountered. For
-   files not opened in universal newline read mode the value of this attribute
+   files not opened in universal newlines read mode the value of this attribute
    will be ``None``.
 
 
