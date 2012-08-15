@@ -32,16 +32,17 @@ High-level interface
 
 .. function:: urlopen(url[, data[, proxies]])
 
-   Open a network object denoted by a URL for reading.  If the URL does not have a
-   scheme identifier, or if it has :file:`file:` as its scheme identifier, this
-   opens a local file (without :term:`universal newlines`); otherwise it opens a socket to
-   a server somewhere on the network.  If the connection cannot be made the
-   :exc:`IOError` exception is raised.  If all went well, a file-like object is
-   returned.  This supports the following methods: :meth:`read`, :meth:`readline`,
-   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info`, :meth:`getcode` and
-   :meth:`geturl`.  It also has proper support for the :term:`iterator` protocol. One
-   caveat: the :meth:`read` method, if the size argument is omitted or negative,
-   may not read until the end of the data stream; there is no good way to determine
+   Open a network object denoted by a URL for reading.  If the URL does not
+   have a scheme identifier, or if it has :file:`file:` as its scheme
+   identifier, this opens a local file (without :term:`universal newlines`);
+   otherwise it opens a socket to a server somewhere on the network.  If the
+   connection cannot be made the :exc:`IOError` exception is raised.  If all
+   went well, a file-like object is returned.  This supports the following
+   methods: :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`fileno`,
+   :meth:`close`, :meth:`info`, :meth:`getcode` and :meth:`geturl`.  It also
+   has proper support for the :term:`iterator` protocol. One caveat: the
+   :meth:`read` method, if the size argument is omitted or negative, may not
+   read until the end of the data stream; there is no good way to determine
    that the entire stream from a socket has been read in the general case.
 
    Except for the :meth:`info`, :meth:`getcode` and :meth:`geturl` methods,
