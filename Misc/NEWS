@@ -101,6 +101,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11062: Fix adding a message from file to Babyl mailbox.
+
 - Issue #15646: Prevent equivalent of a fork bomb when using
   multiprocessing on Windows without the "if __name__ == '__main__'"
   idiom.
