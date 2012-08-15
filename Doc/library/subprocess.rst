@@ -385,12 +385,11 @@ functions.
 
    .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *universal_newlines* is ``True``, the file objects *stdout* and *stderr* are
-   opened as text files in :term:`universal newlines` mode.  Lines may be
-   terminated by any of ``'\n'``, the Unix
-   end-of-line convention, ``'\r'``, the old Macintosh convention or ``'\r\n'``, the
-   Windows convention. All of these external representations are seen as ``'\n'``
-   by the Python program.
+   If *universal_newlines* is ``True``, the file objects *stdout* and *stderr*
+   are opened as text files in :term:`universal newlines` mode.  Lines may be
+   terminated by any of ``'\n'``, the Unix end-of-line convention, ``'\r'``,
+   the old Macintosh convention or ``'\r\n'``, the Windows convention. All of
+   these external representations are seen as ``'\n'`` by the Python program.
 
    .. note::
 
