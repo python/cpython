@@ -98,7 +98,10 @@ class DirCompareTestCase(unittest.TestCase):
 
     def test_dircmp(self):
         # Check attributes for comparison of two identical directories
-        d = filecmp.dircmp(self.dir, self.dir_same)
+        left_dir, right_dir = self.dir, self.dir_same
+        d = filecmp.dircmp(left_dir, right_dir)
+        self.assertEqual(d.left, left_dir)
+        self.assertEqual(d.right, right_dir)
         if self.caseinsensitive:
             self.assertEqual([d.left_list, d.right_list],[['file'], ['FiLe']])
         else:
@@ -109,7 +112,10 @@ class DirCompareTestCase(unittest.TestCase):
         self.assertEqual(d.diff_files, [])
 
         # Check attributes for comparison of two different directories
-        d = filecmp.dircmp(self.dir, self.dir_diff)
+        left_dir, right_dir = self.dir, self.dir_diff
+        d = filecmp.dircmp(left_dir, right_dir)
+        self.assertEqual(d.left, left_dir)
+        self.assertEqual(d.right, right_dir)
         self.assertEqual(d.left_list, ['file'])
         self.assertTrue(d.right_list == ['file', 'file2'])
         self.assertEqual(d.common, ['file'])
