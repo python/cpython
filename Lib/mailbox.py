@@ -1386,9 +1386,9 @@ class Babyl(_singlefileMailbox):
                 line = message.readline()
                 self._file.write(line.replace('\n', os.linesep))
                 if line == '\n' or line == '':
-                    self._file.write('*** EOOH ***' + os.linesep)
                     if first_pass:
                         first_pass = False
+                        self._file.write('*** EOOH ***' + os.linesep)
                         message.seek(original_pos)
                     else:
                         break
