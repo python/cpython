@@ -189,10 +189,15 @@ are also provided to help in implementing the core ABCs.
         (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
         find the requested module.
 
+        .. index::
+           single: universal newlines; importlib.abc.InspectLoader.get_source method
+
     .. method:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
-        a text string with universal newlines. Returns ``None`` if no
+        a text string using :term:`universal newlines`, translating all
+        recognized line separators into ``'\n'`` characters.
+        Returns ``None`` if no
         source is available (e.g. a built-in module). Raises :exc:`ImportError`
         if the loader cannot find the module specified.
 
