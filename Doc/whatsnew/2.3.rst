@@ -366,6 +366,9 @@ Under MacOS, :func:`os.listdir` may now return Unicode filenames.
 .. ======================================================================
 
 
+.. index::
+   single: universal newlines; What's new
+
 PEP 278: Universal Newline Support
 ==================================
 
@@ -376,12 +379,12 @@ mark the ends of lines in text files.  Unix uses the linefeed (ASCII character
 10), MacOS uses the carriage return (ASCII character 13), and Windows uses a
 two-character sequence of a carriage return plus a newline.
 
-Python's file objects can now support end of line conventions other than the one
-followed by the platform on which Python is running. Opening a file with the
-mode ``'U'`` or ``'rU'`` will open a file for reading in universal newline mode.
-All three line ending conventions will be translated to a ``'\n'`` in the
-strings returned by the various file methods such as :meth:`read` and
-:meth:`readline`.
+Python's file objects can now support end of line conventions other than the
+one followed by the platform on which Python is running. Opening a file with
+the mode ``'U'`` or ``'rU'`` will open a file for reading in :term:`universal
+newlines` mode.  All three line ending conventions will be translated to a
+``'\n'`` in the strings returned by the various file methods such as
+:meth:`read` and :meth:`readline`.
 
 Universal newline support is also used when importing modules and when executing
 a file with the :func:`execfile` function.  This means that Python modules can

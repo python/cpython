@@ -768,16 +768,20 @@ Text I/O
    sequences) can be used.  Any other error handling name that has been
    registered with :func:`codecs.register_error` is also valid.
 
+   .. index::
+      single: universal newlines; io.TextIOWrapper class
+
    *newline* controls how line endings are handled.  It can be ``None``,
    ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It works as follows:
 
-   * When reading input from the stream, if *newline* is ``None``, universal
-     newlines mode is enabled.  Lines in the input can end in ``'\n'``,
-     ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'`` before
-     being returned to the caller.  If it is ``''``, universal newline mode is
-     enabled, but line endings are returned to the caller untranslated.  If it
-     has any of the other legal values, input lines are only terminated by the
-     given string, and the line ending is returned to the caller untranslated.
+   * When reading input from the stream, if *newline* is ``None``,
+     :term:`universal newlines` mode is enabled.  Lines in the input can end in
+     ``'\n'``, ``'\r'``, or ``'\r\n'``, and these are translated into ``'\n'``
+     before being returned to the caller.  If it is ``''``, universal newlines
+     mode is enabled, but line endings are returned to the caller untranslated.
+     If it has any of the other legal values, input lines are only terminated
+     by the given string, and the line ending is returned to the caller
+     untranslated.
 
    * When writing output to the stream, if *newline* is ``None``, any ``'\n'``
      characters written are translated to the system default line separator,
@@ -843,10 +847,13 @@ Text I/O
       output.close()
 
 
+.. index::
+   single: universal newlines; io.IncrementalNewlineDecoder class
+
 .. class:: IncrementalNewlineDecoder
 
-   A helper codec that decodes newlines for universal newlines mode.  It
-   inherits :class:`codecs.IncrementalDecoder`.
+   A helper codec that decodes newlines for :term:`universal newlines` mode.
+   It inherits :class:`codecs.IncrementalDecoder`.
 
 
 Performance
