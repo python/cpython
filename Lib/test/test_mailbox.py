@@ -148,20 +148,16 @@ class TestMailbox(TestBase):
             f.write(_bytes_sample_message)
             f.seek(0)
             key = self._box.add(f)
-        # See issue 11062
-        if not isinstance(self._box, mailbox.Babyl):
-            self.assertEqual(self._box.get_bytes(key).split(b'\n'),
-                _bytes_sample_message.split(b'\n'))
+        self.assertEqual(self._box.get_bytes(key).split(b'\n'),
+            _bytes_sample_message.split(b'\n'))
 
     def test_add_binary_nonascii_file(self):
         with tempfile.TemporaryFile('wb+') as f:
             f.write(self._non_latin_bin_msg)
             f.seek(0)
             key = self._box.add(f)
-        # See issue 11062
-        if not isinstance(self._box, mailbox.Babyl):
-            self.assertEqual(self._box.get_bytes(key).split(b'\n'),
-                self._non_latin_bin_msg.split(b'\n'))
+        self.assertEqual(self._box.get_bytes(key).split(b'\n'),
+            self._non_latin_bin_msg.split(b'\n'))
 
     def test_add_text_file_warns(self):
         with tempfile.TemporaryFile('w+') as f:
@@ -169,10 +165,8 @@ class TestMailbox(TestBase):
             f.seek(0)
             with self.assertWarns(DeprecationWarning):
                 key = self._box.add(f)
-        # See issue 11062
-        if not isinstance(self._box, mailbox.Babyl):
-            self.assertEqual(self._box.get_bytes(key).split(b'\n'),
-                _bytes_sample_message.split(b'\n'))
+        self.assertEqual(self._box.get_bytes(key).split(b'\n'),
+            _bytes_sample_message.split(b'\n'))
 
     def test_add_StringIO_warns(self):
         with self.assertWarns(DeprecationWarning):
