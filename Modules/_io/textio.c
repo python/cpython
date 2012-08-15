@@ -1056,8 +1056,11 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     res = _PyObject_CallMethodId(buffer, &PyId_seekable, NULL);
     if (res == NULL)
         goto error;
-    self->seekable = self->telling = PyObject_IsTrue(res);
+    r = PyObject_IsTrue(res);
     Py_DECREF(res);
+    if (r < 0)
+        goto error;
+    self->seekable = self->telling = r;
 
     self->has_read1 = _PyObject_HasAttrId(buffer, &PyId_read1);
 
