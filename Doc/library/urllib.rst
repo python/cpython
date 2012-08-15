@@ -34,7 +34,7 @@ High-level interface
 
    Open a network object denoted by a URL for reading.  If the URL does not have a
    scheme identifier, or if it has :file:`file:` as its scheme identifier, this
-   opens a local file (without universal newlines); otherwise it opens a socket to
+   opens a local file (without :term:`universal newlines`); otherwise it opens a socket to
    a server somewhere on the network.  If the connection cannot be made the
    :exc:`IOError` exception is raised.  If all went well, a file-like object is
    returned.  This supports the following methods: :meth:`read`, :meth:`readline`,

@@ -859,13 +859,17 @@ available.  They are listed here in alphabetical order.
    binary mode, on systems that differentiate between binary and text files; on
    systems that don't have this distinction, adding the ``'b'`` has no effect.
 
+   .. index::
+      single: universal newlines; open() built-in function
+
    In addition to the standard :c:func:`fopen` values *mode* may be ``'U'`` or
-   ``'rU'``.  Python is usually built with universal newline support; supplying
+   ``'rU'``.  Python is usually built with :term:`universal newlines` support;
+   supplying
    ``'U'`` opens the file as a text file, but lines may be terminated by any of the
    following: the Unix end-of-line convention ``'\n'``,  the Macintosh convention
    ``'\r'``, or the Windows convention ``'\r\n'``. All of these external
    representations are seen as ``'\n'`` by the Python program. If Python is built
-   without universal newline support a *mode* with ``'U'`` is the same as normal
+   without universal newlines support a *mode* with ``'U'`` is the same as normal
    text mode.  Note that file objects so opened also have an attribute called
    :attr:`newlines` which has a value of ``None`` (if no newlines have yet been
    seen), ``'\n'``, ``'\r'``, ``'\r\n'``, or a tuple containing all the newline

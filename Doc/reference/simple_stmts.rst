@@ -1024,5 +1024,5 @@ which may be useful to pass around for use by :keyword:`exec`.
 .. rubric:: Footnotes
 
 .. [#] Note that the parser only accepts the Unix-style end of line convention.
-       If you are reading the code from a file, make sure to use universal
-       newline mode to convert Windows or Mac-style newlines.
+       If you are reading the code from a file, make sure to use
+       :term:`universal newlines` mode to convert Windows or Mac-style newlines.

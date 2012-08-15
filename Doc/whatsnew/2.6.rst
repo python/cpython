@@ -1067,9 +1067,12 @@ the :mod:`io` module:
   The :class:`BytesIO` class supports reading, writing, and seeking
   over an in-memory buffer.
 
+  .. index::
+     single: universal newlines; What's new
+
 * :class:`TextIOBase`: Provides functions for reading and writing
   strings (remember, strings will be Unicode in Python 3.0),
-  and supporting universal newlines.  :class:`TextIOBase` defines
+  and supporting :term:`universal newlines`.  :class:`TextIOBase` defines
   the :meth:`readline` method and supports iteration upon
   objects.
 
