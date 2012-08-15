@@ -220,9 +220,12 @@ default values. The arguments that are most commonly needed are:
    the stderr data from the child process should be captured into the same file
    handle as for stdout.
 
+   .. index::
+      single: universal newlines; subprocess module
+
    When *stdout* or *stderr* are pipes and *universal_newlines* is
-   :const:`True` then all line endings will be converted to ``'\n'`` as
-   described for the universal newlines `'U'`` mode argument to :func:`open`.
+   ``True`` then all line endings will be converted to ``'\n'`` as described
+   for the :term:`universal newlines` `'U'`` mode argument to :func:`open`.
 
    If *shell* is :const:`True`, the specified command will be executed through
    the shell. This can be useful if you are using Python primarily for the
@@ -382,8 +385,9 @@ functions.
 
    .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
-   opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
+   If *universal_newlines* is ``True``, the file objects *stdout* and *stderr* are
+   opened as text files in :term:`universal newlines` mode.  Lines may be
+   terminated by any of ``'\n'``, the Unix
    end-of-line convention, ``'\r'``, the old Macintosh convention or ``'\r\n'``, the
    Windows convention. All of these external representations are seen as ``'\n'``
    by the Python program.
