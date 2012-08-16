@@ -1450,10 +1450,17 @@ class Babyl(_singlefileMailbox):
                     else:
                         break
             while True:
-                buffer = message.read(4096)     # Buffer size is arbitrary.
-                if not buffer:
+                line = message.readline()
+                if not line:
                     break
-                self._file.write(buffer.replace(b'\n', linesep))
+                # Universal newline support.
+                if line.endswith(b'\r\n'):
+                    line = line[:-2] + linesep
+                elif line.endswith(b'\r'):
+                    line = line[:-1] + linesep
+                elif line.endswith(b'\n'):
+                    line = line[:-1] + linesep
+                self._file.write(line)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
         stop = self._file.tell()
