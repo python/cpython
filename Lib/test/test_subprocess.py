@@ -650,15 +650,15 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;' + SETBINARY + '''\nif True:
                                   s = sys.stdin.readline()
-                                  sys.stdout.write(s)
-                                  sys.stdout.write("line2\\r")
-                                  sys.stderr.write("eline2\\n")
+                                  sys.stdout.buffer.write(s.encode())
+                                  sys.stdout.buffer.write(b"line2\\r")
+                                  sys.stderr.buffer.write(b"eline2\\n")
                                   s = sys.stdin.read()
-                                  sys.stdout.write(s+"line4\\n")
-                                  sys.stdout.write(s+"line5\\r\\n")
-                                  sys.stderr.write("eline6\\n")
-                                  sys.stderr.write("eline7\\r")
-                                  sys.stderr.write("eline8\\r\\n")
+                                  sys.stdout.buffer.write(s.encode())
+                                  sys.stdout.buffer.write(b"line4\\n")
+                                  sys.stdout.buffer.write(b"line5\\r\\n")
+                                  sys.stderr.buffer.write(b"eline6\\r")
+                                  sys.stderr.buffer.write(b"eline7\\r\\nz")
                               '''],
                              stdin=subprocess.PIPE,
                              stderr=subprocess.PIPE,
@@ -668,10 +668,11 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stderr.close)
         (stdout, stderr) = p.communicate("line1\nline3\n")
         self.assertEqual(p.returncode, 0)
-        self.assertEqual("line1\nline2\nline3\nline4\nline3\nline5\n", stdout)
+        self.assertEqual("line1\nline2\nline3\nline4\nline5\n", stdout)
         # Python debug build push something like "[42442 refs]\n"
         # to stderr at exit of subprocess.
-        self.assertTrue(stderr.startswith("eline2\neline6\neline7\neline8\n"))
+        # Don't use assertStderrEqual because it strips CR and LF from output.
+        self.assertTrue(stderr.startswith("eline2\neline6\neline7\n"))
 
     def test_no_leaking(self):
         # Make sure we leak no resources
