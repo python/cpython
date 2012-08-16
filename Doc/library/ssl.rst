@@ -427,23 +427,39 @@ SSL sockets also have the following additional methods and attributes:
    If the parameter ``binary_form`` is :const:`False`, and a certificate was
    received from the peer, this method returns a :class:`dict` instance.  If the
    certificate was not validated, the dict is empty.  If the certificate was
-   validated, it returns a dict with the keys ``subject`` (the principal for
-   which the certificate was issued), and ``notAfter`` (the time after which the
-   certificate should not be trusted).  If a certificate contains an instance
-   of the *Subject Alternative Name* extension (see :rfc:`3280`), there will
-   also be a ``subjectAltName`` key in the dictionary.
+   validated, it returns a dict with several keys, amongst them ``subject``
+   (the principal for which the certificate was issued) and ``issuer``
+   (the principal issuing the certificate).  If a certificate contains an
+   instance of the *Subject Alternative Name* extension (see :rfc:`3280`),
+   there will also be a ``subjectAltName`` key in the dictionary.
 
-   The "subject" field is a tuple containing the sequence of relative
-   distinguished names (RDNs) given in the certificate's data structure for the
-   principal, and each RDN is a sequence of name-value pairs::
+   The ``subject`` and ``issuer`` fields are tuples containing the sequence
+   of relative distinguished names (RDNs) given in the certificate's data
+   structure for the respective fields, and each RDN is a sequence of
+   name-value pairs.  Here is a real-world example::
 
-      {'notAfter': 'Feb 16 16:54:50 2013 GMT',
-       'subject': ((('countryName', 'US'),),
-                   (('stateOrProvinceName', 'Delaware'),),
-                   (('localityName', 'Wilmington'),),
-                   (('organizationName', 'Python Software Foundation'),),
-                   (('organizationalUnitName', 'SSL'),),
-                   (('commonName', 'somemachine.python.org'),))}
+      {'issuer': ((('countryName', 'IL'),),
+                  (('organizationName', 'StartCom Ltd.'),),
+                  (('organizationalUnitName',
+                    'Secure Digital Certificate Signing'),),
+                  (('commonName',
+                    'StartCom Class 2 Primary Intermediate Server CA'),)),
+       'notAfter': 'Nov 22 08:15:19 2013 GMT',
+       'notBefore': 'Nov 21 03:09:52 2011 GMT',
+       'serialNumber': '95F0',
+       'subject': ((('description', '571208-SLe257oHY9fVQ07Z'),),
+                   (('countryName', 'US'),),
+                   (('stateOrProvinceName', 'California'),),
+                   (('localityName', 'San Francisco'),),
+                   (('organizationName', 'Electronic Frontier Foundation, Inc.'),),
+                   (('commonName', '*.eff.org'),),
+                   (('emailAddress', 'hostmaster@eff.org'),)),
+       'subjectAltName': (('DNS', '*.eff.org'), ('DNS', 'eff.org')),
+       'version': 3}
+
+   .. note::
+      To validate a certificate for a particular service, you can use the
+      :func:`match_hostname` function.
 
    If the ``binary_form`` parameter is :const:`True`, and a certificate was
    provided, this method returns the DER-encoded form of the entire certificate
