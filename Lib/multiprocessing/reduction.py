@@ -120,16 +120,24 @@ if sys.platform == 'win32':
 
 else:
     # Unix
+
+    # On MacOSX we should acknowledge receipt of fds -- see Issue14669
+    ACKNOWLEDGE = sys.platform == 'darwin'
+
     def send_handle(conn, handle, destination_pid):
         with socket.fromfd(conn.fileno(), socket.AF_UNIX, socket.SOCK_STREAM) as s:
             s.sendmsg([b'x'], [(socket.SOL_SOCKET, socket.SCM_RIGHTS,
                                 struct.pack("@i", handle))])
+        if ACKNOWLEDGE and conn.recv_bytes() != b'ACK':
+            raise RuntimeError('did not receive acknowledgement of fd')
 
     def recv_handle(conn):
         size = struct.calcsize("@i")
         with socket.fromfd(conn.fileno(), socket.AF_UNIX, socket.SOCK_STREAM) as s:
             msg, ancdata, flags, addr = s.recvmsg(1, socket.CMSG_LEN(size))
             try:
+                if ACKNOWLEDGE:
+                    conn.send_bytes(b'ACK')
                 cmsg_level, cmsg_type, cmsg_data = ancdata[0]
                 if (cmsg_level == socket.SOL_SOCKET and
                     cmsg_type == socket.SCM_RIGHTS):

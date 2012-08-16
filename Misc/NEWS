@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14669: Fix pickling of connections and sockets on MacOSX
+  by sending/receiving an acknowledgment after file descriptor transfer.
+  TestPicklingConnection has been reenabled for MacOSX.
+
 - Issue #11062: Fix adding a message from file to Babyl mailbox.
 
 - Issue #15646: Prevent equivalent of a fork bomb when using
