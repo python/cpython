@@ -12,12 +12,22 @@ _appbundle = None
 def runningAsOSXApp():
     """
     Returns True if Python is running from within an app on OSX.
-    If so, assume that Python was built with Aqua Tcl/Tk rather than
-    X11 Tcl/Tk.
+    If so, the various OS X customizations will be triggered later (menu
+    fixup, et al).  (Originally, this test was supposed to condition
+    behavior on whether IDLE was running under Aqua Tk rather than
+    under X11 Tk but that does not work since a framework build
+    could be linked with X11.  For several releases, this test actually
+    differentiates between whether IDLE is running from a framework or
+    not.  As a future enhancement, it should be considered whether there
+    should be a difference based on framework and any needed X11 adaptions
+    should be made dependent on a new function that actually tests for X11.)
     """
     global _appbundle
     if _appbundle is None:
-        _appbundle = (sys.platform == 'darwin' and '.app' in sys.executable)
+        _appbundle = sys.platform == 'darwin'
+        if _appbundle:
+            import sysconfig
+            _appbundle = bool(sysconfig.get_config_var('PYTHONFRAMEWORK'))
     return _appbundle
 
 _carbonaquatk = None
