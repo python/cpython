@@ -124,7 +124,7 @@ are also provided to help in implementing the core ABCs.
 ABC hierarchy::
 
     object
-     +-- Finder
+     +-- Finder (deprecated)
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
@@ -133,15 +133,16 @@ ABC hierarchy::
                +-- ExecutionLoader --+
                                      +-- FileLoader
                                      +-- SourceLoader
-                                          +-- PyLoader
-                                          +-- PyPycLoader
+                                          +-- PyLoader (deprecated)
+                                          +-- PyPycLoader (deprecated)
 
 
 .. class:: Finder
 
-   An abstract base class representing a :term:`finder`.  Finder
-   implementations should derive from (or register with) the more specific
-   :class:`MetaPathFinder` or :class:`PathEntryFinder` ABCs.
+   An abstract base class representing a :term:`finder`.
+
+   .. deprecated:: 3.3
+      Use :class:`MetaPathFinder` or :class:`PathEntryFinder` instead.
 
    .. method:: find_module(fullname, path=None)
 
@@ -656,30 +657,30 @@ find and load modules.
 
 .. class:: PathFinder
 
-    :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
-    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
+   A :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+   This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
-    Only class methods are defined by this class to alleviate the need for
-    instantiation.
+   Only class methods are defined by this class to alleviate the need for
+   instantiation.
 
-    .. classmethod:: find_module(fullname, path=None)
+   .. classmethod:: find_module(fullname, path=None)
 
-        Class method that attempts to find a :term:`loader` for the module
-        specified by *fullname* on :data:`sys.path` or, if defined, on
-        *path*. For each path entry that is searched,
-        :data:`sys.path_importer_cache` is checked. If a non-false object is
-        found then it is used as the :term:`finder` to look for the module
-        being searched for. If no entry is found in
-        :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
-        searched for a finder for the path entry and, if found, is stored in
-        :data:`sys.path_importer_cache` along with being queried about the
-        module. If no finder is ever found then ``None`` is both stored in
-        the cache and returned.
+     Class method that attempts to find a :term:`loader` for the module
+     specified by *fullname* on :data:`sys.path` or, if defined, on
+     *path*. For each path entry that is searched,
+     :data:`sys.path_importer_cache` is checked. If a non-false object is
+     found then it is used as the :term:`finder` to look for the module
+     being searched for. If no entry is found in
+     :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
+     searched for a finder for the path entry and, if found, is stored in
+     :data:`sys.path_importer_cache` along with being queried about the
+     module. If no finder is ever found then ``None`` is both stored in
+     the cache and returned.
 
    .. classmethod:: invalidate_caches()
 
-        Call :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-        finders stored in :attr:`sys.path_importer_cache`.
+     Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
+     finders stored in :attr:`sys.path_importer_cache`.
 
 
 .. class:: FileFinder(path, \*loader_details)
