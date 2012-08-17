@@ -53,12 +53,6 @@ they need -- it's not usually necessary to create your own weak references
 directly.  The low-level machinery used by the weak dictionary implementations
 is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
-.. note::
-
-   Weak references to an object are cleared before the object's :meth:`__del__`
-   is called, to ensure that the weak reference callback (if any) finds the
-   object still alive.
-
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
 frozensets, some :term:`file objects <file object>`, :term:`generator`\s, type
