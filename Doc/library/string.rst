@@ -368,9 +368,9 @@ instead.
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
 
-If the *width* field is preceded by a zero (``'0'``) character, this enables
-zero-padding.  This is equivalent to an *alignment* type of ``'='`` and a *fill*
-character of ``'0'``.
+Preceding the *width* field by a zero (``'0'``) character enables
+sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
+character of ``'0'`` with an *alignment* type of ``'='``.
 
 The *precision* is a decimal number indicating how many digits should be
 displayed after the decimal point for a floating point value formatted with
