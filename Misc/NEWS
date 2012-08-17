@@ -29,6 +29,9 @@ Library
   multiprocessing on Windows without the "if __name__ == '__main__'"
   idiom.
 
+- Issue #15678: Fix IDLE menus when started from OS X command line
+  (3.3.0b2 regression).
+
 C API
 -----
 
