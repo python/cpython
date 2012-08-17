@@ -1573,8 +1573,13 @@ def _handle_fromlist(module, fromlist, import_):
                 fromlist.extend(module.__all__)
         for x in fromlist:
             if not hasattr(module, x):
-                _call_with_frames_removed(import_,
-                                  '{}.{}'.format(module.__name__, x))
+                try:
+                    _call_with_frames_removed(import_,
+                                      '{}.{}'.format(module.__name__, x))
+                except ImportError:
+                    # Backwards-compatibility dictates we ignore failed
+                    # imports triggered by fromlist.
+                    pass
     return module
 
 

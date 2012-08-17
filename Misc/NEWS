@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15715: importlib.__import__() will silence an ImportError when the use
+  of fromlist leads to a failed import.
+
 - Issue #14669: Fix pickling of connections and sockets on MacOSX
   by sending/receiving an acknowledgment after file descriptor transfer.
   TestPicklingConnection has been reenabled for MacOSX.
