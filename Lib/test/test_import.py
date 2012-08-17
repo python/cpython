@@ -334,6 +334,12 @@ class ImportTests(unittest.TestCase):
             del sys.path[0]
             remove_files(TESTFN)
 
+    def test_bogus_fromlist(self):
+        try:
+            __import__('http', fromlist=['blah'])
+        except ImportError:
+            self.fail("fromlist must allow bogus names")
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points
