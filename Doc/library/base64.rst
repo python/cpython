@@ -145,6 +145,8 @@ The legacy interface:
    encoded data, and return a byte string containing the resulting binary data.
    ``decodestring`` is a deprecated alias.
 
+   .. versionadded:: 3.1
+
 
 .. function:: encode(input, output)
 
