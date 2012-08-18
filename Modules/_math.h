@@ -36,10 +36,6 @@ double _Py_log1p(double x);
 #define m_expm1 _Py_expm1
 #endif
 
-#ifdef HAVE_LOG1P
-#define m_log1p log1p
-#else
-/* if the system doesn't have log1p, use the substitute
-   function defined in Modules/_math.c. */
+/* Use the substitute from _math.c on all platforms:
+   it includes workarounds for buggy handling of zeros. */
 #define m_log1p _Py_log1p
-#endif
