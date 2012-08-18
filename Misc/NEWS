@@ -104,6 +104,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15477: In cmath and math modules, add workaround for platforms whose
+  system-supplied log1p function doesn't respect signs of zeros.
+
 - Issue #11062: Fix adding a message from file to Babyl mailbox.
 
 - Issue #15646: Prevent equivalent of a fork bomb when using
