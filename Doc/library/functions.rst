@@ -787,10 +787,13 @@ are always available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
+   .. index::
+      single: file object; open() built-in function
+
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
-   Open *file* and return a corresponding stream.  If the file cannot be opened,
-   an :exc:`OSError` is raised.
+   Open *file* and return a corresponding :term:`file object`.  If the file
+   cannot be opened, an :exc:`OSError` is raised.
 
    *file* is either a string or bytes object giving the pathname (absolute or
    relative to the current working directory) of the file to be opened or
@@ -910,7 +913,8 @@ are always available.  They are listed here in alphabetical order.
       The *opener* parameter was added.
       The ``'x'`` mode was added.
 
-   The type of file object returned by the :func:`open` function depends on the
+   The type of :term:`file object` returned by the :func:`open` function
+   depends on the
    mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
    ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
    :class:`io.TextIOBase` (specifically :class:`io.TextIOWrapper`).  When used
