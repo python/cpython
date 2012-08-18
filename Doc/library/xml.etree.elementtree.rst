@@ -150,7 +150,7 @@ attribute to the rank element::
    ...   rank.text = str(new_rank)
    ...   rank.set('updated', 'yes')
    ...
-   ... tree.write('output.xml')
+   >>> tree.write('output.xml')
 
 Our XML now looks like this:
 
@@ -188,7 +188,7 @@ remove all countries with a rank higher than 50::
    ...   if rank > 50:
    ...     root.remove(country)
    ...
-   ... tree.write('output.xml')
+   >>> tree.write('output.xml')
 
 Our XML now looks like this:
 
