@@ -425,6 +425,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15615: Add some tests for the json module's handling of invalid
+  input data.  Patch by Kushal Das.
+
 - Issue #15496: Add directory removal helpers for tests on Windows.
   Patch by Jeremy Kloth.
 
