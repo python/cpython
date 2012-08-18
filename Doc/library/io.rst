@@ -16,11 +16,15 @@
 Overview
 --------
 
-The :mod:`io` module provides Python's main facilities for dealing for various
-types of I/O.  There are three main types of I/O: *text I/O*, *binary I/O*, *raw
-I/O*.  These are generic categories, and various backing stores can be used for
-each of them.  Concrete objects belonging to any of these categories will often
-be called *streams*; another common term is *file-like objects*.
+.. index::
+   single: file object; io module
+
+The :mod:`io` module provides Python's main facilities for dealing with various
+types of I/O.  There are three main types of I/O: *text I/O*, *binary I/O*
+and *raw I/O*.  These are generic categories, and various backing stores can
+be used for each of them.  A concrete object belonging to any of these
+categories is called a :term:`file object`.  Other common terms are *stream*
+and *file-like object*.
 
 Independently of its category, each concrete stream object will also have
 various capabilities: it can be read-only, write-only, or read-write. It can
