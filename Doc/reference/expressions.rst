@@ -421,8 +421,15 @@ transferred to the generator's caller.
 
 .. index:: object: generator
 
-The following generator's methods can be used to control the execution of a
-generator function:
+
+Generator-iterator methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This subsection describes the methods of a generator iterator.  They can
+be used to control the execution of a generator function.
+
+Note that calling any of the generator methods below when the generator
+is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
 
