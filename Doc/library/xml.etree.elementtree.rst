@@ -46,11 +46,313 @@ the xml.etree.ElementTree.
    `Introducing ElementTree 1.3
    <http://effbot.org/zone/elementtree-13-intro.htm>`_.
 
+Tutorial
+--------
+
+This is a short tutorial for using :mod:`xml.etree.ElementTree` (``ET`` in
+short).  The goal is to demonstrate some of the building blocks and basic
+concepts of the module.
+
+XML tree and elements
+^^^^^^^^^^^^^^^^^^^^^
+
+XML is an inherently hierarchical data format, and the most natural way to
+represent it is with a tree.  ``ET`` has two classes for this purpose -
+:class:`ElementTree` represents the whole XML document as a tree, and
+:class:`Element` represents a single node in this tree.  Interactions with
+the whole document (reading and writing to/from files) are usually done
+on the :class:`ElementTree` level.  Interactions with a single XML element
+and its sub-elements are done on the :class:`Element` level.
+
+.. _elementtree-parsing-xml:
+
+Parsing XML
+^^^^^^^^^^^
+
+We'll be using the following XML document as the sample data for this section:
+
+.. code-block:: xml
+
+   <?xml version="1.0"?>
+   <data>
+       <country name="Liechtenstein">
+           <rank>1</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank>4</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+       <country name="Panama">
+           <rank>68</rank>
+           <year>2011</year>
+           <gdppc>13600</gdppc>
+           <neighbor name="Costa Rica" direction="W"/>
+           <neighbor name="Colombia" direction="E"/>
+       </country>
+   </data>
+
+We have a number of ways to import the data.  Reading the file from disk::
+
+   import xml.etree.ElementTree as ET
+   tree = ET.parse('country_data.xml')
+   root = tree.getroot()
+
+Reading the data from a string::
+
+   root = ET.fromstring(country_data_as_string)
+
+:func:`fromstring` parses XML from a string directly into an :class:`Element`,
+which is the root element of the parsed tree.  Other parsing functions may
+create an :class:`ElementTree`.  Check the documentation to be sure.
+
+As an :class:`Element`, ``root`` has a tag and a dictionary of attributes::
+
+   >>> root.tag
+   'data'
+   >>> root.attrib
+   {}
+
+It also has children nodes over which we can iterate::
+
+   >>> for child in root:
+   ...   print child.tag, child.attrib
+   ...
+   country {'name': 'Liechtenstein'}
+   country {'name': 'Singapore'}
+   country {'name': 'Panama'}
+
+Children are nested, and we can access specific child nodes by index::
+
+   >>> root[0][1].text
+   '2008'
+
+Finding interesting elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:class:`Element` has some useful methods that help iterate recursively over all
+the sub-tree below it (its children, their children, and so on).  For example,
+:meth:`Element.iter`::
+
+   >>> for neighbor in root.iter('neighbor'):
+   ...   print neighbor.attrib
+   ...
+   {'name': 'Austria', 'direction': 'E'}
+   {'name': 'Switzerland', 'direction': 'W'}
+   {'name': 'Malaysia', 'direction': 'N'}
+   {'name': 'Costa Rica', 'direction': 'W'}
+   {'name': 'Colombia', 'direction': 'E'}
+
+:meth:`Element.findall` finds only elements with a tag which are direct
+children of the current element.  :meth:`Element.find` finds the *first* child
+with a particular tag, and :meth:`Element.text` accesses the element's text
+content.  :meth:`Element.get` accesses the element's attributes::
+
+   >>> for country in root.findall('country'):
+   ...   rank = country.find('rank').text
+   ...   name = country.get('name')
+   ...   print name, rank
+   ...
+   Liechtenstein 1
+   Singapore 4
+   Panama 68
+
+More sophisticated specification of which elements to look for is possible by
+using :ref:`XPath <elementtree-xpath>`.
+
+Modifying an XML File
+^^^^^^^^^^^^^^^^^^^^^
+
+:class:`ElementTree` provides a simple way to build XML documents and write them to files.
+The :meth:`ElementTree.write` method serves this purpose.
+
+Once created, an :class:`Element` object may be manipulated by directly changing
+its fields (such as :attr:`Element.text`), adding and modifying attributes
+(:meth:`Element.set` method), as well as adding new children (for example
+with :meth:`Element.append`).
+
+Let's say we want to add one to each country's rank, and add an ``updated``
+attribute to the rank element::
+
+   >>> for rank in root.iter('rank'):
+   ...   new_rank = int(rank.text) + 1
+   ...   rank.text = str(new_rank)
+   ...   rank.set('updated', 'yes')
+   ...
+   >>> tree.write('output.xml')
+
+Our XML now looks like this:
+
+.. code-block:: xml
+
+   <?xml version="1.0"?>
+   <data>
+       <country name="Liechtenstein">
+           <rank updated="yes">2</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank updated="yes">5</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+       <country name="Panama">
+           <rank updated="yes">69</rank>
+           <year>2011</year>
+           <gdppc>13600</gdppc>
+           <neighbor name="Costa Rica" direction="W"/>
+           <neighbor name="Colombia" direction="E"/>
+       </country>
+   </data>
+
+We can remove elements using :meth:`Element.remove`.  Let's say we want to
+remove all countries with a rank higher than 50::
+
+   >>> for country in root.findall('country'):
+   ...   rank = int(country.find('rank').text)
+   ...   if rank > 50:
+   ...     root.remove(country)
+   ...
+   >>> tree.write('output.xml')
+
+Our XML now looks like this:
+
+.. code-block:: xml
+
+   <?xml version="1.0"?>
+   <data>
+       <country name="Liechtenstein">
+           <rank updated="yes">2</rank>
+           <year>2008</year>
+           <gdppc>141100</gdppc>
+           <neighbor name="Austria" direction="E"/>
+           <neighbor name="Switzerland" direction="W"/>
+       </country>
+       <country name="Singapore">
+           <rank updated="yes">5</rank>
+           <year>2011</year>
+           <gdppc>59900</gdppc>
+           <neighbor name="Malaysia" direction="N"/>
+       </country>
+   </data>
+
+Building XML documents
+^^^^^^^^^^^^^^^^^^^^^^
+
+The :func:`SubElement` function also provides a convenient way to create new
+sub-elements for a given element::
+
+   >>> a = ET.Element('a')
+   >>> b = ET.SubElement(a, 'b')
+   >>> c = ET.SubElement(a, 'c')
+   >>> d = ET.SubElement(c, 'd')
+   >>> ET.dump(a)
+   <a><b /><c><d /></c></a>
+
+Additional resources
+^^^^^^^^^^^^^^^^^^^^
+
+See http://effbot.org/zone/element-index.htm for tutorials and links to other
+docs.
+
+.. _elementtree-xpath:
+
+XPath support
+-------------
+
+This module provides limited support for
+`XPath expressions <http://www.w3.org/TR/xpath>`_ for locating elements in a
+tree.  The goal is to support a small subset of the abbreviated syntax; a full
+XPath engine is outside the scope of the module.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates some of the XPath capabilities of the
+module.  We'll be using the ``countrydata`` XML document from the
+:ref:`Parsing XML <elementtree-parsing-xml>` section::
+
+   import xml.etree.ElementTree as ET
+
+   root = ET.fromstring(countrydata)
+
+   # Top-level elements
+   root.findall(".")
+
+   # All 'neighbor' grand-children of 'country' children of the top-level
+   # elements
+   root.findall("./country/neighbor")
+
+   # Nodes with name='Singapore' that have a 'year' child
+   root.findall(".//year/..[@name='Singapore']")
+
+   # 'year' nodes that are children of nodes with name='Singapore'
+   root.findall(".//*[@name='Singapore']/year")
+
+   # All 'neighbor' nodes that are the second child of their parent
+   root.findall(".//neighbor[2]")
+
+Supported XPath syntax
+^^^^^^^^^^^^^^^^^^^^^^
+
++-----------------------+------------------------------------------------------+
+| Syntax                | Meaning                                              |
++=======================+======================================================+
+| ``tag``               | Selects all child elements with the given tag.       |
+|                       | For example, ``spam`` selects all child elements     |
+|                       | named ``spam``, ``spam/egg`` selects all             |
+|                       | grandchildren named ``egg`` in all children named    |
+|                       | ``spam``.                                            |
++-----------------------+------------------------------------------------------+
+| ``*``                 | Selects all child elements.  For example, ``*/egg``  |
+|                       | selects all grandchildren named ``egg``.             |
++-----------------------+------------------------------------------------------+
+| ``.``                 | Selects the current node.  This is mostly useful     |
+|                       | at the beginning of the path, to indicate that it's  |
+|                       | a relative path.                                     |
++-----------------------+------------------------------------------------------+
+| ``//``                | Selects all subelements, on all levels beneath the   |
+|                       | current  element.  For example, ``.//egg`` selects   |
+|                       | all ``egg`` elements in the entire tree.             |
++-----------------------+------------------------------------------------------+
+| ``..``                | Selects the parent element.                          |
++-----------------------+------------------------------------------------------+
+| ``[@attrib]``         | Selects all elements that have the given attribute.  |
++-----------------------+------------------------------------------------------+
+| ``[@attrib='value']`` | Selects all elements for which the given attribute   |
+|                       | has the given value.  The value cannot contain       |
+|                       | quotes.                                              |
++-----------------------+------------------------------------------------------+
+| ``[tag]``             | Selects all elements that have a child named         |
+|                       | ``tag``.  Only immediate children are supported.     |
++-----------------------+------------------------------------------------------+
+| ``[position]``        | Selects all elements that are located at the given   |
+|                       | position.  The position can be either an integer     |
+|                       | (1 is the first position), the expression ``last()`` |
+|                       | (for the last position), or a position relative to   |
+|                       | the last position (e.g. ``last()-1``).               |
++-----------------------+------------------------------------------------------+
+
+Predicates (expressions within square brackets) must be preceded by a tag
+name, an asterisk, or another predicate.  ``position`` predicates must be
+preceded by a tag name.
+
+Reference
+---------
 
 .. _elementtree-functions:
 
 Functions
----------
+^^^^^^^^^
 
 
 .. function:: Comment(text=None)
@@ -196,8 +498,7 @@ Functions
 .. _elementtree-element-objects:
 
 Element Objects
----------------
-
+^^^^^^^^^^^^^^^
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -387,7 +688,7 @@ Element Objects
 .. _elementtree-elementtree-objects:
 
 ElementTree Objects
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: ElementTree(element=None, file=None)
@@ -507,7 +808,7 @@ Example of changing the attribute "target" of every link in first paragraph::
 .. _elementtree-qname-objects:
 
 QName Objects
--------------
+^^^^^^^^^^^^^
 
 
 .. class:: QName(text_or_uri, tag=None)
@@ -523,7 +824,7 @@ QName Objects
 .. _elementtree-treebuilder-objects:
 
 TreeBuilder Objects
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: TreeBuilder(element_factory=None)
@@ -574,7 +875,7 @@ TreeBuilder Objects
 .. _elementtree-xmlparser-objects:
 
 XMLParser Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 
 .. class:: XMLParser(html=0, target=None, encoding=None)
