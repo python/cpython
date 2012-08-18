@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Basic regular expression demostration facility (Perl style syntax)."""
 
 from tkinter import *
