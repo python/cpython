@@ -904,9 +904,8 @@ are always available.  They are listed here in alphabetical order.
    (the default).
 
    The type of :term:`file object` returned by the :func:`open` function
-   depends on the
-   mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
-   ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
+   depends on the mode.  When :func:`open` is used to open a file in a text
+   mode (``'w'``, ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
    :class:`io.TextIOBase` (specifically :class:`io.TextIOWrapper`).  When used
    to open a file in a binary mode with buffering, the returned class is a
    subclass of :class:`io.BufferedIOBase`.  The exact class varies: in read
