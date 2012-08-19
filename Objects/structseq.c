@@ -383,6 +383,8 @@ PyTypeObject*
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
     PyTypeObject *result = (PyTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
-    PyStructSequence_InitType(result, desc);
+    if (result != NULL) {
+        PyStructSequence_InitType(result, desc);
+    }
     return result;
 }
