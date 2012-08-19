@@ -1848,9 +1848,6 @@ class TestBufferProtocol(unittest.TestCase):
                         self.assertEqual(mvlist, ylist)
 
                 if numpy_array:
-                    # XXX NumPy (as far as it compiles with 3.3) currently
-                    # segfaults here. Wait for a stable 3.3 compatible version.
-                    continue
                     shape = t[3]
                     if 0 in shape:
                         continue # http://projects.scipy.org/numpy/ticket/1910
@@ -1930,9 +1927,6 @@ class TestBufferProtocol(unittest.TestCase):
                     self.assertEqual(mr.tolist(), yrlist)
 
                 if numpy_array:
-                    # XXX NumPy (as far as it compiles with 3.3) currently
-                    # segfaults here. Wait for a stable 3.3 compatible version.
-                    continue
                     if 0 in lshape or 0 in rshape:
                         continue # http://projects.scipy.org/numpy/ticket/1910
 
