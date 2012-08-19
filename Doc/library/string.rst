@@ -91,8 +91,8 @@ implementation as the built-in :meth:`format` method.
 
    .. method:: format(format_string, *args, **kwargs)
 
-      :meth:`format` is the primary API method.  It takes a format template
-      string, and an arbitrary set of positional and keyword argument.
+      :meth:`format` is the primary API method.  It takes a format string and
+      an arbitrary set of positional and keyword arguments.
       :meth:`format` is just a wrapper that calls :meth:`vformat`.
 
    .. method:: vformat(format_string, args, kwargs)
@@ -101,8 +101,8 @@ implementation as the built-in :meth:`format` method.
       separate function for cases where you want to pass in a predefined
       dictionary of arguments, rather than unpacking and repacking the
       dictionary as individual arguments using the ``*args`` and ``**kwds``
-      syntax.  :meth:`vformat` does the work of breaking up the format template
-      string into character data and replacement fields.  It calls the various
+      syntax.  :meth:`vformat` does the work of breaking up the format string
+      into character data and replacement fields.  It calls the various
       methods described below.
 
    In addition, the :class:`Formatter` defines a number of methods that are
@@ -173,7 +173,8 @@ implementation as the built-in :meth:`format` method.
 
       Converts the value (returned by :meth:`get_field`) given a conversion type
       (as in the tuple returned by the :meth:`parse` method).  The default
-      version understands 'r' (repr) and 's' (str) conversion types.
+      version understands 's' (str), 'r' (repr) and 'a' (ascii) conversion
+      types.
 
 
 .. _formatstrings:
