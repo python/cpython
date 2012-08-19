@@ -14,6 +14,7 @@ import warnings
 import select
 import shutil
 import gc
+import textwrap
 
 try:
     import resource
@@ -622,12 +623,12 @@ class ProcessTestCase(BaseTestCase):
     def test_universal_newlines_communicate_stdin(self):
         # universal newlines through communicate(), with only stdin
         p = subprocess.Popen([sys.executable, "-c",
-                              'import sys,os;' + SETBINARY + '''\nif True:
-                                  s = sys.stdin.readline()
-                                  assert s == "line1\\n", repr(s)
-                                  s = sys.stdin.read()
-                                  assert s == "line3\\n", repr(s)
-                              '''],
+                              'import sys,os;' + SETBINARY + textwrap.dedent('''
+                               s = sys.stdin.readline()
+                               assert s == "line1\\n", repr(s)
+                               s = sys.stdin.read()
+                               assert s == "line3\\n", repr(s)
+                              ''')],
                              stdin=subprocess.PIPE,
                              universal_newlines=1)
         (stdout, stderr) = p.communicate("line1\nline3\n")
@@ -646,24 +647,24 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_universal_newlines_communicate_stdin_stdout_stderr(self):
-        # universal newlines through communicate(), with only stdin
+        # universal newlines through communicate(), with stdin, stdout, stderr
         p = subprocess.Popen([sys.executable, "-c",
-                              'import sys,os;' + SETBINARY + '''\nif True:
-                                  s = sys.stdin.readline()
-                                  sys.stdout.buffer.write(s.encode())
-                                  sys.stdout.buffer.write(b"line2\\r")
-                                  sys.stderr.buffer.write(b"eline2\\n")
-                                  s = sys.stdin.read()
-                                  sys.stdout.buffer.write(s.encode())
-                                  sys.stdout.buffer.write(b"line4\\n")
-                                  sys.stdout.buffer.write(b"line5\\r\\n")
-                                  sys.stderr.buffer.write(b"eline6\\r")
-                                  sys.stderr.buffer.write(b"eline7\\r\\nz")
-                              '''],
+                              'import sys,os;' + SETBINARY + textwrap.dedent('''
+                               s = sys.stdin.buffer.readline()
+                               sys.stdout.buffer.write(s)
+                               sys.stdout.buffer.write(b"line2\\r")
+                               sys.stderr.buffer.write(b"eline2\\n")
+                               s = sys.stdin.buffer.read()
+                               sys.stdout.buffer.write(s)
+                               sys.stdout.buffer.write(b"line4\\n")
+                               sys.stdout.buffer.write(b"line5\\r\\n")
+                               sys.stderr.buffer.write(b"eline6\\r")
+                               sys.stderr.buffer.write(b"eline7\\r\\nz")
+                              ''')],
                              stdin=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             universal_newlines=1)
+                             universal_newlines=True)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
         (stdout, stderr) = p.communicate("line1\nline3\n")
