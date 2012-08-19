@@ -4,6 +4,7 @@ import subprocess
 import sys
 import signal
 import io
+import locale
 import os
 import errno
 import tempfile
@@ -559,6 +560,38 @@ class ProcessTestCase(BaseTestCase):
                              universal_newlines=True)
         p.communicate()
         self.assertEqual(p.returncode, 0)
+
+    def test_universal_newlines_communicate_encodings(self):
+        # Check that universal newlines mode works for various encodings,
+        # in particular for encodings in the UTF-16 and UTF-32 families.
+        # See issue #15595.
+        #
+        # UTF-16 and UTF-32-BE are sufficient to check both with BOM and
+        # without, and UTF-16 and UTF-32.
+        for encoding in ['utf-16', 'utf-32-be']:
+            old_getpreferredencoding = locale.getpreferredencoding
+            # Indirectly via io.TextIOWrapper, Popen() defaults to
+            # locale.getpreferredencoding(False) and earlier in Python 3.2 to
+            # locale.getpreferredencoding().
+            def getpreferredencoding(do_setlocale=True):
+                return encoding
+            code = ("import sys; "
+                    r"sys.stdout.buffer.write('1\r\n2\r3\n4'.encode('%s'))" %
+                    encoding)
+            args = [sys.executable, '-c', code]
+            try:
+                locale.getpreferredencoding = getpreferredencoding
+                # We set stdin to be non-None because, as of this writing,
+                # a different code path is used when the number of pipes is
+                # zero or one.
+                popen = subprocess.Popen(args, universal_newlines=True,
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE)
+                stdout, stderr = popen.communicate(input='')
+            finally:
+                locale.getpreferredencoding = old_getpreferredencoding
+
+            self.assertEqual(stdout, '1\n2\n3\n4')
 
     def test_no_leaking(self):
         # Make sure we leak no resources
