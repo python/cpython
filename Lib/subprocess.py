@@ -755,8 +755,8 @@ class Popen(object):
 
 
     def _translate_newlines(self, data, encoding):
-        data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-        return data.decode(encoding)
+        data = data.decode(encoding)
+        return data.replace("\r\n", "\n").replace("\r", "\n")
 
     def __enter__(self):
         return self
