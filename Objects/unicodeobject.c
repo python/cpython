@@ -2935,8 +2935,10 @@ PyUnicode_AsWideCharString(PyObject *unicode,
         return NULL;
     }
     buflen = unicode_aswidechar(unicode, buffer, buflen);
-    if (buflen == -1)
+    if (buflen == -1) {
+        PyMem_FREE(buffer);
         return NULL;
+    }
     if (size != NULL)
         *size = buflen;
     return buffer;
