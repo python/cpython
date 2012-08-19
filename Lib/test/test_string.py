@@ -37,6 +37,12 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format("-{arg!r}-", arg='test'), "-'test'-")
         self.assertEqual(fmt.format("{0!s}", 'test'), 'test')
         self.assertRaises(ValueError, fmt.format, "{0!h}", 'test')
+        # issue13579
+        self.assertEqual(fmt.format("{0!a}", 42), '42')
+        self.assertEqual(fmt.format("{0!a}",  string.ascii_letters),
+            "'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'")
+        self.assertEqual(fmt.format("{0!a}",  chr(255)), "'\\xff'")
+        self.assertEqual(fmt.format("{0!a}",  chr(256)), "'\\u0100'")
 
     def test_name_lookup(self):
         fmt = string.Formatter()
