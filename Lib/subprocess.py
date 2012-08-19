@@ -1188,11 +1188,11 @@ class Popen(object):
             # calls communicate again.
             if self.stdout is not None:
                 self.stdout_thread.join(self._remaining_time(endtime))
-                if self.stdout_thread.isAlive():
+                if self.stdout_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
             if self.stderr is not None:
                 self.stderr_thread.join(self._remaining_time(endtime))
-                if self.stderr_thread.isAlive():
+                if self.stderr_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
 
             # Collect the output from and close both pipes, now that we know
