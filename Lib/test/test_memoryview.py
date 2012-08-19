@@ -1,6 +1,7 @@
 """Unit tests for the memoryview
 
-XXX We need more tests! Some tests are in test_bytes
+   Some tests are in test_bytes. Many tests that require _testbuffer.ndarray
+   are in test_buffer.
 """
 
 import unittest
