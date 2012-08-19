@@ -82,6 +82,8 @@ In order to run Python flawlessly, you might have to change certain environment
 settings in Windows.
 
 
+.. _setting-envvars:
+
 Excursus: Setting environment variables
 ---------------------------------------
 
@@ -133,18 +135,28 @@ Consult :command:`set /?` for details on this behaviour.
 Finding the Python executable
 -----------------------------
 
+.. versionchanged:: 3.3
+
 Besides using the automatically created start menu entry for the Python
-interpreter, you might want to start Python in the DOS prompt.  To make this
-work, you need to set your :envvar:`%PATH%` environment variable to include the
-directory of your Python distribution, delimited by a semicolon from other
-entries.  An example variable could look like this (assuming the first two
-entries are Windows' default)::
+interpreter, you might want to start Python in the command prompt. As of
+Python 3.3, the installer has an option to set that up for you.
 
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Python25
+At the "Customize Python 3.3" screen, an option called
+"Add python.exe to search path" can be enabled to have the installer place
+your installation into the :envvar:`%PATH%`. This allows you to type
+:command:`python` to run the interpreter. Thus, you can also execute your
+scripts with command line options, see :ref:`using-on-cmdline` documentation.
 
-Typing :command:`python` on your command prompt will now fire up the Python
-interpreter.  Thus, you can also execute your scripts with command line options,
-see :ref:`using-on-cmdline` documentation.
+If you don't enable this option at install time, you can always re-run the
+installer to choose it.
+
+The alternative is manually modifying the :envvar:`%PATH%` using the
+directions in :ref:`setting-envvars`. You need to set your :envvar:`%PATH%`
+environment variable to include the directory of your Python distribution,
+delimited by a semicolon from other entries. An example variable could look
+like this (assuming the first two entries are Windows' default)::
+
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Python33
 
 
 Finding modules
