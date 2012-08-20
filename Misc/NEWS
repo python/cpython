@@ -86,6 +86,9 @@ Documentation
 Tests
 -----
 
+- Issue #15743: Remove the deprecated method usage in urllib tests. Patch by
+  Jeff Knupp.
+
 - Issue #15615: Add some tests for the json module's handling of invalid
   input data.  Patch by Kushal Das.
 
