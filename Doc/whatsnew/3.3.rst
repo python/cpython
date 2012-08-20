@@ -830,7 +830,10 @@ Builtin functions and types
 * The :class:`str` type gets a new :meth:`~str.casefold` method: return a
   casefolded copy of the string, casefolded strings may be used for caseless
   matching. For example, ``'ß'.casefold()`` returns ``'ss'``.
-
+* The sequence documentation has been substantially rewritten to better
+  explain the binary/text sequence distinction and to provide specific
+  documentation sections for the individual builtin sequence types
+  (:issue:`4966`)
 
 New Modules
 ===========
