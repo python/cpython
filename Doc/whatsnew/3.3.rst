@@ -94,13 +94,22 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 405: Virtual Environments
 =============================
 
-- inspired by ``virtualenv``, a tool widely used by the community
-- change to the interpreter to avoid hacks
+:pep:`405` - Python Virtual Environments
+ PEP written by Carl Meyer, implemented by Carl Meyer and Vinay Sajip.
 
-The :mod:`venv` module and ``pyvenv`` script (inspired by ``virtualenv``, a
-tool widely used by the community).
+Virtual environments help create separate Python setups while sharing a
+system-wide base install, for ease of maintenance.  Virtual environments
+have their own set of private site packages (i.e. locally-installed
+libraries), and are optionally segregated from the system-wide site
+packages.  Their concept and implementation are inspired by the popular
+``virtualenv`` third-party package, but benefit from tighter integration
+with the interpreter core.
 
-.. also mention the interpreter changes that avoid the hacks used in virtualenv
+This PEP adds the :mod:`venv` module for programmatic access, and the
+:ref:`pyvenv <scripts-pyvenv>` script for command-line access and
+administration.  The Python interpreter becomes aware of a ``pvenv.cfg``
+file whose existence signals the base of a virtual environment's directory
+tree.
 
 
 PEP 420: Namespace Packages
