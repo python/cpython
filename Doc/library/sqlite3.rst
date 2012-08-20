@@ -60,7 +60,7 @@ example::
    c.execute("select * from stocks where symbol = '%s'" % symbol)
 
    # Do this instead
-   t = (symbol,)
+   t = ('IBM',)
    c.execute('select * from stocks where symbol=?', t)
 
    # Larger example
