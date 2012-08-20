@@ -429,7 +429,7 @@ def _default_mime_types():
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
         '.jpg'    : 'image/jpeg',
-        '.js'     : 'application/x-javascript',
+        '.js'     : 'application/javascript',
         '.ksh'    : 'text/plain',
         '.latex'  : 'application/x-latex',
         '.m1v'    : 'video/mpeg',
