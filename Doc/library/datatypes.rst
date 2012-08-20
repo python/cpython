@@ -25,8 +25,6 @@ The following modules are documented in this chapter:
    heapq.rst
    bisect.rst
    array.rst
-   sched.rst
-   queue.rst
    weakref.rst
    types.rst
    copy.rst

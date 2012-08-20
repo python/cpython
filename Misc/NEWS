@@ -55,6 +55,13 @@ Tools/Demos
 Documentation
 -------------
 
+- Create a 'Concurrent Execution' section in the docs, and split up the
+  'Optional Operating System Services' section to use a more user-centric
+  classification scheme (splitting them across the new CE section, IPC and
+  text processing). Operating system limitatons can be reflected with
+  the Sphinx :platform: tag, it doesn't make sense as part of the Table of
+  Contents.
+
 - Issue #4966: Bring the sequence docs up to date for the Py3k transition
   and the many language enhancements since they were original written
 
