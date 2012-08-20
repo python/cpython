@@ -523,6 +523,8 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
             mod_ty mod;
 
             arena = PyArena_New();
+            if (arena == NULL)
+                return NULL;
             mod = PyAST_obj2mod(cmd, arena, mode);
             if (mod == NULL) {
                 PyArena_Free(arena);
