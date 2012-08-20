@@ -95,6 +95,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15199: Fix JavaScript's default MIME type to application/javascript.
+  Patch by Bohuslav Kabrda.
+
 - Issue #15477: In cmath and math modules, add workaround for platforms whose
   system-supplied log1p function doesn't respect signs of zeros.
 
