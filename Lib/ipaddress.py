@@ -11,7 +11,6 @@ and networks.
 __version__ = '1.0'
 
 
-import struct
 import functools
 
 IPV4LENGTH = 32
@@ -135,7 +134,7 @@ def v4_int_to_packed(address):
 
     """
     try:
-        return struct.pack('!I', address)
+        return address.to_bytes(4, 'big')
     except:
         raise ValueError("Address negative or too large for IPv4")
 
@@ -151,7 +150,7 @@ def v6_int_to_packed(address):
 
     """
     try:
-        return struct.pack('!QQ', address >> 64, address & (2**64 - 1))
+        return address.to_bytes(16, 'big')
     except:
         raise ValueError("Address negative or too large for IPv6")
 
@@ -1195,7 +1194,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 4)
-            self._ip = struct.unpack('!I', address)[0]
+            self._ip = int.from_bytes(address, 'big')
             return
 
         # Assume input argument to be string or any object representation
@@ -1632,8 +1631,8 @@ class _BaseV6:
         best_doublecolon_len = 0
         doublecolon_start = -1
         doublecolon_len = 0
-        for index in range(len(hextets)):
-            if hextets[index] == '0':
+        for index, hextet in enumerate(hextets):
+            if hextet == '0':
                 doublecolon_len += 1
                 if doublecolon_start == -1:
                     # Start of a sequence of zeros.
@@ -1750,8 +1749,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 16)
-            tmp = struct.unpack('!QQ', address)
-            self._ip = (tmp[0] << 64) | tmp[1]
+            self._ip = int.from_bytes(address, 'big')
             return
 
         # Assume input argument to be string or any object representation
