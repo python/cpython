@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #15604: Update uses of PyObject_IsTrue() to check for and handle
   errors correctly.  Patch by Serhiy Storchaka.
 
+- Issue #14846: importlib.FileFinder now handles the case where the
+  directory being searched is removed after a previous import attempt
+
 Library
 -------
 

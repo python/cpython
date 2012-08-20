@@ -1367,7 +1367,11 @@ class FileFinder:
     def _fill_cache(self):
         """Fill the cache of potential modules and packages for this directory."""
         path = self.path
-        contents = _os.listdir(path)
+        try:
+            contents = _os.listdir(path)
+        except FileNotFoundError:
+            # Directory has been removed since last import
+            contents = []
         # We store two cached versions, to handle runtime changes of the
         # PYTHONCASEOK environment variable.
         if not sys.platform.startswith('win'):
