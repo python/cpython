@@ -1336,7 +1336,8 @@ class IPv4Interface(IPv4Address):
 
     @property
     def with_prefixlen(self):
-        return self
+        return '%s/%s' % (self._string_from_ip_int(self._ip),
+                          self._prefixlen)
 
     @property
     def with_netmask(self):
@@ -1948,11 +1949,13 @@ class IPv6Interface(IPv6Address):
 
     @property
     def with_prefixlen(self):
-        return self
+        return '%s/%s' % (self._string_from_ip_int(self._ip),
+                          self._prefixlen)
 
     @property
     def with_netmask(self):
-        return self.with_prefixlen
+        return '%s/%s' % (self._string_from_ip_int(self._ip),
+                          self.netmask)
 
     @property
     def with_hostmask(self):
