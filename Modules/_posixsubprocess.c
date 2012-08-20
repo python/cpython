@@ -577,6 +577,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         /* Equivalent to:  */
         /*  tuple(PyUnicode_FSConverter(arg) for arg in process_args)  */
         fast_args = PySequence_Fast(process_args, "argv must be a tuple");
+        if (fast_args == NULL)
+            goto cleanup;
         num_args = PySequence_Fast_GET_SIZE(fast_args);
         converted_args = PyTuple_New(num_args);
         if (converted_args == NULL)
