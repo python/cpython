@@ -642,32 +642,73 @@ Interface objects
 
 .. class:: IPv4Interface(address)
 
-   Construct an IPv4 interface.  *address* is a string or integer representing
-   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
-   a valid IPv4 address.
+   Construct an IPv4 interface.  The meaning of *address* is as in the
+   constructor of :class:`IPv4Network`, except that arbitrary host addresses
+   are always accepted.
 
-   The network address for the interface is determined by calling
-   ``IPv4Network(address, strict=False)``.
+   :class:`IPv4Interface` is a subclass of :class:`IPv4Address`, so it inherits
+   all the attributes from that class.  In addition, the following attributes
+   are available:
 
-   >>> ipaddress.IPv4Interface('192.168.0.0/24')
-   IPv4Interface('192.168.0.0/24')
-   >>> ipaddress.IPv4Interface('192.168.0.0/24').network
-   IPv4Network('192.168.0.0/24')
+   .. attribute:: ip
+
+      The address (:class:`IPv4Address`) without network information.
+
+         >>> interface = IPv4Interface('192.0.2.5/24')
+         >>> interface.ip
+         IPv4Address('192.0.2.5')
+
+   .. attribute:: network
+
+      The network (:class:`IPv4Network`) this interface belongs to.
+
+         >>> interface = IPv4Interface('192.0.2.5/24')
+         >>> interface.network
+         IPv4Network('192.0.2.0/24')
+
+   .. attribute:: with_prefixlen
+
+      A string representation of the interface with the mask in prefix notation.
+
+         >>> interface = IPv4Interface('192.0.2.5/24')
+         >>> interface.with_prefixlen
+         '192.0.2.5/24'
+
+   .. attribute:: with_netmask
+
+      A string representation of the interface with the network as a net mask.
+
+         >>> interface = IPv4Interface('192.0.2.5/24')
+         >>> interface.with_netmask
+         '192.0.2.5/255.255.255.0'
+
+   .. attribute:: with_hostmask
+
+      A string representation of the interface with the network as a host mask.
+
+         >>> interface = IPv4Interface('192.0.2.5/24')
+         >>> interface.with_hostmask
+         '192.0.2.5/0.0.0.255'
 
 
 .. class:: IPv6Interface(address)
 
-   Construct an IPv6 interface.  *address* is a string or integer representing
-   the IP interface.  An :exc:`AddressValueError` is raised if *address* is not
-   a valid IPv6 address.
+   Construct an IPv6 interface.  The meaning of *address* is as in the
+   constructor of :class:`IPv6Network`, except that arbitrary host addresses
+   are always accepted.
 
-   The network address for the interface is determined by calling
-   ``IPv6Network(address, strict=False)``.
+   :class:`IPv6Interface` is a subclass of :class:`IPv6Address`, so it inherits
+   all the attributes from that class.  In addition, the following attributes
+   are available:
 
-   >>> ipaddress.IPv6Interface('2001:db8::1000/96')
-   IPv6Interface('2001:db8::1000/96')
-   >>> ipaddress.IPv6Interface('2001:db8::1000/96').network
-   IPv6Network('2001:db8::/96')
+   .. attribute:: ip
+   .. attribute:: network
+   .. attribute:: with_prefixlen
+   .. attribute:: with_netmask
+   .. attribute:: with_hostmask
+
+      Refer to the corresponding attribute documentation in
+      :class:`IPv4Interface`.
 
 
 Other Module Level Functions
