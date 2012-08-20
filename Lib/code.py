@@ -105,9 +105,10 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        type, value, sys.last_traceback = sys.exc_info()
+        type, value, tb = sys.exc_info()
         sys.last_type = type
         sys.last_value = value
+        sys.last_traceback = tb
         if filename and type is SyntaxError:
             # Work hard to stuff the correct filename in the exception
             try:
@@ -119,8 +120,13 @@ class InteractiveInterpreter:
                 # Stuff in the right filename
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_value = value
-        lines = traceback.format_exception_only(type, value)
-        self.write(''.join(lines))
+        if sys.excepthook is sys.__excepthook__:
+            lines = traceback.format_exception_only(type, value)
+            self.write(''.join(lines))
+        else:
+            # If someone has set sys.excepthook, we let that take precedence
+            # over self.write
+            sys.excepthook(type, value, tb)
 
     def showtraceback(self):
         """Display the exception that just occurred.
@@ -143,7 +149,12 @@ class InteractiveInterpreter:
             lines.extend(traceback.format_exception_only(type, value))
         finally:
             tblist = tb = None
-        self.write(''.join(lines))
+        if sys.excepthook is sys.__excepthook__:
+            self.write(''.join(lines))
+        else:
+            # If someone has set sys.excepthook, we let that take precedence
+            # over self.write
+            sys.excepthook(type, value, tb)
 
     def write(self, data):
         """Write a string.

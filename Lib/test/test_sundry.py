@@ -9,7 +9,6 @@ class TestUntestedModules(unittest.TestCase):
         with support.check_warnings(quiet=True):
             import bdb
             import cgitb
-            import code
 
             import distutils.bcppcompiler
             import distutils.ccompiler
