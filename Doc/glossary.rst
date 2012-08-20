@@ -317,7 +317,7 @@ Glossary
 
    import path
       A list of locations (or :term:`path entries <path entry>`) that are
-      searched by the :term:`path importer` for modules to import.  During
+      searched by the :term:`path based finder` for modules to import. During
       import, this list of locations usually comes from :data:`sys.path`, but
       for subpackages it may also come from the parent package's ``__path__``
       attribute.
@@ -550,7 +550,7 @@ Glossary
 
    path entry
       A single location on the :term:`import path` which the :term:`path
-      importer` consults to find modules for importing.
+      based finder` consults to find modules for importing.
 
    path entry finder
       A :term:`finder` returned by a callable on :data:`sys.path_hooks`
@@ -562,7 +562,7 @@ Glossary
       entry finder` if it knows how to find modules on a specific :term:`path
       entry`.
 
-   path importer
+   path based finder
       One of the default :term:`meta path finders <meta path finder>` which
       searches an :term:`import path` for modules.
 
