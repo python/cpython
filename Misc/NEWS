@@ -55,6 +55,10 @@ Tools/Demos
 Documentation
 -------------
 
+- The "path importer" misnomer has been replaced with Eric Snow's
+  more-awkward-but-at-least-not-wrong suggestion of "path based finder" in
+  the import system reference docs
+
 - Issue #15640: Document importlib.abc.Finder as deprecated.
 
 - Issue #15630: Add an example for "continue" stmt in the tutorial. Patch by
