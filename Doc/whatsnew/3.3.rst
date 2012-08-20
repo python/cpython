@@ -53,17 +53,43 @@ This article explains the new features in Python 3.3, compared to 3.2.
    release, so it's worth checking back even after reading earlier versions.
 
 
-Summary
-=======
+Summary -- Release highlights
+=============================
 
-Major changes since Python 3.2:
+.. This section singles out the most important changes in Python 3.3.
+   Brevity is key.
 
- * 4 new modules: :mod:`faulthandler`, :mod:`ipaddress`, :mod:`lzma` and :mod:`venv`.
- * Syntax changes:
+New syntax features:
 
-   - ``u'unicode'`` syntax is accepted again
-   - Add ``yield from`` syntax
+* New ``yield from`` expression for :ref:`generator delegation <pep-380>`.
+* The ``u'unicode'`` syntax is accepted again for :class:`str` objects.
 
+New library modules:
+
+* :mod:`faulthandler` (helps debugging low-level crashes)
+* :mod:`ipaddress` (high-level objects representing IP addresses and masks)
+* :mod:`lzma` (compress data using the XZ / LZMA algorithm)
+* :mod:`venv` (Python :ref:`virtual environments <pep-405>`, as in the
+  popular ``virtualenv`` package)
+
+New built-in features:
+
+* Reworked :ref:`I/O exception hierarchy <pep-3151>`.
+
+Implementation improvements:
+
+* Rewritten :ref:`import machinery <importlib>` based on :mod:`importlib`.
+* More compact :ref:`unicode strings <pep-393>`.
+* More compact :ref:`attribute dictionaries <pep-412>`.
+
+Security improvements:
+
+* Hash randomization is switched on by default.
+
+Please read on for a comprehensive list of user-facing changes.
+
+
+.. _pep-405:
 
 PEP 405: Virtual Environments
 =============================
@@ -220,6 +246,8 @@ bit better than Python 2.7, on a Django benchmark (see the PEP for
 details).
 
 
+.. _pep-3151:
+
 PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
 
@@ -287,6 +315,8 @@ inspection of exception attributes::
     except PermissionError:
         print("You are not allowed to read document.txt")
 
+
+.. _pep-380:
 
 PEP 380: Syntax for Delegating to a Subgenerator
 ================================================
@@ -489,6 +519,8 @@ new, more precise information::
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
 
+.. _pep-412:
+
 PEP 412: Key-Sharing Dictionary
 ===============================
 
@@ -517,6 +549,8 @@ such as, annotations, default values, parameters kinds, and bound arguments,
 which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
 
+
+.. _importlib:
 
 Using importlib as the Implementation of Import
 ===============================================
