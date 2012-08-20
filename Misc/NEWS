@@ -55,6 +55,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #4966: Bring the sequence docs up to date for the Py3k transition
+  and the many language enhancements since they were original written
+
 - The "path importer" misnomer has been replaced with Eric Snow's
   more-awkward-but-at-least-not-wrong suggestion of "path based finder" in
   the import system reference docs
