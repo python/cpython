@@ -3502,6 +3502,8 @@ ast_for_with_stmt(struct compiling *c, const node *n)
 
     n_items = (NCH(n) - 2) / 2;
     items = asdl_seq_new(n_items, c->c_arena);
+    if (!items)
+        return NULL;
     for (i = 1; i < NCH(n) - 2; i += 2) {
         withitem_ty item = ast_for_with_item(c, CHILD(n, i));
         if (!item)
