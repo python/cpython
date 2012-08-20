@@ -67,7 +67,7 @@ example::
    c.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
    # Do this instead
-   t = (symbol,)
+   t = ('RHAT',)
    c.execute('SELECT * FROM stocks WHERE symbol=?', t)
    print c.fetchone()
 
