@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #15726: Fix incorrect bounds checking in PyState_FindModule.
+  Patch by Robin Schreiber.
+
 - Issue #15604: Update uses of PyObject_IsTrue() to check for and handle
   errors correctly.  Patch by Serhiy Storchaka.
 
