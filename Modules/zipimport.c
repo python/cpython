@@ -947,8 +947,6 @@ read_directory(PyObject *archive)
         else
             charset = "cp437";
         nameobj = PyUnicode_Decode(name, name_size, charset, NULL);
-        if (PyUnicode_READY(nameobj) == -1)
-            goto error;
         if (nameobj == NULL) {
             if (bootstrap)
                 PyErr_Format(PyExc_NotImplementedError,
@@ -957,6 +955,8 @@ read_directory(PyObject *archive)
                     PY_MAJOR_VERSION, PY_MINOR_VERSION);
             goto error;
         }
+        if (PyUnicode_READY(nameobj) == -1)
+            goto error;
         path = PyUnicode_FromFormat("%U%c%U", archive, SEP, nameobj);
         if (path == NULL)
             goto error;
