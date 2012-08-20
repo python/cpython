@@ -1558,21 +1558,19 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv6Network(1).version, 6)
 
     def testWithStar(self):
-        self.assertEqual(str(self.ipv4_interface.with_prefixlen), "1.2.3.4/24")
-        self.assertEqual(str(self.ipv4_interface.with_netmask),
+        self.assertEqual(self.ipv4_interface.with_prefixlen, "1.2.3.4/24")
+        self.assertEqual(self.ipv4_interface.with_netmask,
                          "1.2.3.4/255.255.255.0")
-        self.assertEqual(str(self.ipv4_interface.with_hostmask),
+        self.assertEqual(self.ipv4_interface.with_hostmask,
                          "1.2.3.4/0.0.0.255")
 
-        self.assertEqual(str(self.ipv6_interface.with_prefixlen),
+        self.assertEqual(self.ipv6_interface.with_prefixlen,
                          '2001:658:22a:cafe:200::1/64')
-        # rfc3513 sec 2.3 says that ipv6 only uses cidr notation for
-        # subnets
-        self.assertEqual(str(self.ipv6_interface.with_netmask),
-                         '2001:658:22a:cafe:200::1/64')
+        self.assertEqual(self.ipv6_interface.with_netmask,
+                         '2001:658:22a:cafe:200::1/ffff:ffff:ffff:ffff::')
         # this probably don't make much sense, but it's included for
         # compatibility with ipv4
-        self.assertEqual(str(self.ipv6_interface.with_hostmask),
+        self.assertEqual(self.ipv6_interface.with_hostmask,
                          '2001:658:22a:cafe:200::1/::ffff:ffff:ffff:ffff')
 
     def testNetworkElementCaching(self):
