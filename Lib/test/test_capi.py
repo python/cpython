@@ -91,6 +91,16 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
                           1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
 
+    @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
+    def test_subprocess_fork_exec(self):
+        class Z(object):
+            def __len__(self):
+                return 1
+
+        # Issue #15738: crash in subprocess_fork_exec()
+        self.assertRaises(TypeError, _posixsubprocess.fork_exec,
+                          Z(),[b'1'],3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
 
