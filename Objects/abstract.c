@@ -2736,6 +2736,11 @@ _PySequence_BytesToCharpArray(PyObject* self)
     for (i = 0; i < argc; ++i) {
         char *data;
         item = PySequence_GetItem(self, i);
+        if (item == NULL) {
+            /* NULL terminate before freeing. */
+            array[i] = NULL;
+            goto fail;
+        }
         data = PyBytes_AsString(item);
         if (data == NULL) {
             /* NULL terminate before freeing. */
