@@ -35,13 +35,15 @@ class FinderTests(abc.FinderTests):
 
     """
 
-    def import_(self, root, module):
+    def get_finder(self, root):
         loader_details = [(machinery.SourceFileLoader,
                             machinery.SOURCE_SUFFIXES),
                           (machinery.SourcelessFileLoader,
                             machinery.BYTECODE_SUFFIXES)]
-        finder = machinery.FileFinder(root, *loader_details)
-        return finder.find_module(module)
+        return machinery.FileFinder(root, *loader_details)
+
+    def import_(self, root, module):
+        return self.get_finder(root).find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
         """Test the finding of 'test' with the creation of modules listed in
@@ -137,6 +139,13 @@ class FinderTests(abc.FinderTests):
         finder.invalidate_caches()
         self.assertEqual(finder._path_mtime, -1)
 
+    # Regression test for http://bugs.python.org/issue14846
+    def test_dir_removal_handling(self):
+        mod = 'mod'
+        with source_util.create_modules(mod) as mapping:
+            finder = self.get_finder(mapping['.root'])
+            self.assertIsNotNone(finder.find_module(mod))
+        self.assertIsNone(finder.find_module(mod))
 
 def test_main():
     from test.support import run_unittest
