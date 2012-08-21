@@ -436,6 +436,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #15285: Refactor the approach for testing connect timeouts using
+  two external hosts that have been configured specifically for this type
+  of test.
+
 - Issue #15615: Add some tests for the json module's handling of invalid
   input data.  Patch by Kushal Das.
 
