@@ -534,7 +534,17 @@ class PosixTester(unittest.TestCase):
     def _test_chflags_regular_file(self, chflags_func, target_file, **kwargs):
         st = os.stat(target_file)
         self.assertTrue(hasattr(st, 'st_flags'))
-        chflags_func(target_file, st.st_flags | stat.UF_IMMUTABLE, **kwargs)
+
+        # ZFS returns EOPNOTSUPP when attempting to set flag UF_IMMUTABLE.
+        flags = st.st_flags | stat.UF_IMMUTABLE
+        try:
+            chflags_func(target_file, flags, **kwargs)
+        except OSError as err:
+            if err.errno != errno.EOPNOTSUPP:
+                raise
+            msg = 'chflag UF_IMMUTABLE not supported by underlying fs'
+            self.skipTest(msg)
+
         try:
             new_st = os.stat(target_file)
             self.assertEqual(st.st_flags | stat.UF_IMMUTABLE, new_st.st_flags)
@@ -568,8 +578,15 @@ class PosixTester(unittest.TestCase):
             return posix.chflags(path, flags, follow_symlinks=False)
 
         for fn in (posix.lchflags, chflags_nofollow):
-            fn(_DUMMY_SYMLINK,
-                           dummy_symlink_st.st_flags | stat.UF_IMMUTABLE)
+            # ZFS returns EOPNOTSUPP when attempting to set flag UF_IMMUTABLE.
+            flags = dummy_symlink_st.st_flags | stat.UF_IMMUTABLE
+            try:
+                fn(_DUMMY_SYMLINK, flags)
+            except OSError as err:
+                if err.errno != errno.EOPNOTSUPP:
+                    raise
+                msg = 'chflag UF_IMMUTABLE not supported by underlying fs'
+                self.skipTest(msg)
             try:
                 new_testfn_st = os.stat(support.TESTFN)
                 new_dummy_symlink_st = os.lstat(_DUMMY_SYMLINK)
