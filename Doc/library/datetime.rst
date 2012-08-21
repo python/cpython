@@ -25,8 +25,8 @@ information, to locate itself relative to other aware objects.  An aware object
 is used to represent a specific moment in time that is not open to
 interpretation [#]_.
 
-+A naive object does not contain enough information to unambiguously locate
-+itself relative to other date/time objects.  Whether a naive object represents
+A naive object does not contain enough information to unambiguously locate
+itself relative to other date/time objects.  Whether a naive object represents
 Coordinated Universal Time (UTC), local time, or time in some other timezone is
 purely up to the program, just like it's up to the program whether a particular
 number represents metres, miles, or mass.  Naive objects are easy to understand
