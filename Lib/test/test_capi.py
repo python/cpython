@@ -67,6 +67,14 @@ class CAPITest(unittest.TestCase):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
                           1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+        # Issue #15736: overflow in _PySequence_BytesToCharpArray()
+        class Z(object):
+            def __len__(self):
+                return sys.maxsize
+            def __getitem__(self, i):
+                return b'x'
+        self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
+                          1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):

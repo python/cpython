@@ -2728,6 +2728,13 @@ _PySequence_BytesToCharpArray(PyObject* self)
     if (argc == -1)
         return NULL;
 
+    assert(argc >= 0);
+
+    if ((size_t)argc > (PY_SSIZE_T_MAX-sizeof(char *)) / sizeof(char *)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     array = malloc((argc + 1) * sizeof(char *));
     if (array == NULL) {
         PyErr_NoMemory();
