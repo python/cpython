@@ -829,6 +829,20 @@ The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
 operations have the same priority as the corresponding numeric operations.
 
+.. index::
+   triple: operations on; sequence; types
+   builtin: len
+   builtin: min
+   builtin: max
+   pair: concatenation; operation
+   pair: repetition; operation
+   pair: subscript; operation
+   pair: slice; operation
+   operator: in
+   operator: not in
+   single: count() (sequence method)
+   single: index() (sequence method)
+
 +--------------------------+--------------------------------+----------+
 | Operation                | Result                         | Notes    |
 +==========================+================================+==========+
@@ -841,8 +855,8 @@ operations have the same priority as the corresponding numeric operations.
 | ``s + t``                | the concatenation of *s* and   | (6)(7)   |
 |                          | *t*                            |          |
 +--------------------------+--------------------------------+----------+
-| ``s * n, n * s``         | *n* shallow copies of *s*      | (2)(7)   |
-|                          | concatenated                   |          |
+| ``s * n`` or             | *n* shallow copies of *s*      | (2)(7)   |
+| ``n * s``                | concatenated                   |          |
 +--------------------------+--------------------------------+----------+
 | ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
 +--------------------------+--------------------------------+----------+
@@ -857,7 +871,7 @@ operations have the same priority as the corresponding numeric operations.
 +--------------------------+--------------------------------+----------+
 | ``max(s)``               | largest item of *s*            |          |
 +--------------------------+--------------------------------+----------+
-| ``s.index(x, [i[, j]])`` | index of the first occurence   | \(8)     |
+| ``s.index(x[, i[, j]])`` | index of the first occurence   | \(8)     |
 |                          | of *x* in *s* (at or after     |          |
 |                          | index *i* and before index *j*)|          |
 +--------------------------+--------------------------------+----------+
@@ -870,18 +884,6 @@ and lists are compared lexicographically by comparing corresponding elements.
 This means that to compare equal, every element must compare equal and the
 two sequences must be of the same type and have the same length.  (For full
 details see :ref:`comparisons` in the language reference.)
-
-.. index::
-   triple: operations on; sequence; types
-   builtin: len
-   builtin: min
-   builtin: max
-   pair: concatenation; operation
-   pair: repetition; operation
-   pair: subscript; operation
-   pair: slice; operation
-   operator: in
-   operator: not in
 
 Notes:
 
@@ -948,14 +950,14 @@ Notes:
 
    * if concatenating :class:`str` objects, you can build a list and use
      :meth:`str.join` at the end or else write to a :class:`io.StringIO`
-     instance and retrieve its value when complete;
+     instance and retrieve its value when complete
 
    * if concatenating :class:`bytes` objects, you can similarly use
      :meth:`bytes.join` or :class:`io.BytesIO`, or you can do in-place
      concatenation with a :class:`bytearray` object.  :class:`bytearray`
-     objects are mutable and have an efficient overallocation mechanism.
+     objects are mutable and have an efficient overallocation mechanism
 
-   * if concatenating :class:`tuple` objects, extend a :class:`list` instead.
+   * if concatenating :class:`tuple` objects, extend a :class:`list` instead
 
    * for other types, investigate the relevant class documentation
 
@@ -982,6 +984,7 @@ Immutable Sequence Types
 .. index::
    triple: immutable; sequence; types
    object: tuple
+   builtin: hash
 
 The only operation that immutable sequence types generally implement that is
 not also implemented by mutable sequence types is support for the :func:`hash`
@@ -1022,9 +1025,9 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    pair: slice; assignment
    statement: del
    single: append() (sequence method)
+   single: clear() (sequence method)
+   single: copy() (sequence method)
    single: extend() (sequence method)
-   single: count() (sequence method)
-   single: index() (sequence method)
    single: insert() (sequence method)
    single: pop() (sequence method)
    single: remove() (sequence method)
@@ -1048,24 +1051,29 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``del s[i:j:k]``             | removes the elements of        |                     |
 |                              | ``s[i:j:k]`` from the list     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.append(x)``              | same as ``s[len(s):len(s)] =   |                     |
-|                              | [x]``                          |                     |
+| ``s.append(x)``              | appends *x* to the end of the  |                     |
+|                              | sequence (same as              |                     |
+|                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | remove all items from ``s``    | \(5)                |
+| ``s.clear()``                | removes all items from ``s``   | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | return a shallow copy of ``s`` | \(5)                |
+| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.extend(t)``              | same as ``s[len(s):len(s)] =   |                     |
-|                              | t``                            |                     |
+| ``s.extend(t)``              | extends *s* with the           |                     |
+|                              | contents of *t* (same as       |                     |
+|                              | ``s[len(s):len(s)] = t``)      |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.insert(i, x)``           | same as ``s[i:i] = [x]``       |                     |
+| ``s.insert(i, x)``           | inserts *x* into *s* at the    |                     |
+|                              | index given by *i*             |                     |
+|                              | (same as ``s[i:i] = [x]``)     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.pop([i])``               | same as ``x = s[i]; del s[i];  | \(2)                |
-|                              | return x``                     |                     |
+| ``s.pop([i])``               | retrieves the item at *i* and  | \(2)                |
+|                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | same as ``del s[s.index(x)]``  | \(3)                |
+| ``s.remove(x)``              | remove the first item from *s* | \(3)                |
+|                              | where ``s[i] == x``            |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |
@@ -1109,55 +1117,67 @@ Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
 application).
 
-Lists may be constructed in several ways:
+.. class:: list([iterable])
 
-* Using a pair of square brackets to denote the empty list: ``[]``
-* Using square brackets, separating items with commas: ``[a]``, ``[a, b, c]``
-* Using a list comprehension: ``[x for x in iterable]``
-* Using the :func:`list` built-in: ``list()`` or ``list(iterable)``
+   Lists may be constructed in several ways:
 
-Many other operations also produce lists, including the :func:`sorted` built-in.
+   * Using a pair of square brackets to denote the empty list: ``[]``
+   * Using square brackets, separating items with commas: ``[a]``, ``[a, b, c]``
+   * Using a list comprehension: ``[x for x in iterable]``
+   * Using the type constructor: ``list()`` or ``list(iterable)``
 
-Lists implement all of the :ref:`common <typesseq-common>` and
-:ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
-following additional method:
+   The constructor builds a list whose items are the same and in the same
+   order as *iterable*'s items.  *iterable* may be either a sequence, a
+   container that supports iteration, or an iterator object.  If *iterable*
+   is already a list, a copy is made and returned, similar to ``iterable[:]``.
+   For example, ``list('abc')`` returns ``['a', 'b', 'c']`` and
+   ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.
+   If no argument is given, the constructor creates a new empty list, ``[]``.
 
-.. method:: list.sort(*, key=None, reverse=None)
 
-   This method sorts the list in place, using only ``<`` comparisons
-   between items. Exceptions are not suppressed - if any comparison operations
-   fail, the entire sort operation will fail (and the list will likely be left
-   in a partially modified state).
+   Many other operations also produce lists, including the :func:`sorted`
+   built-in.
 
-   *key* specifies a function of one argument that is used to extract a
-   comparison key from each list element (for example, ``key=str.lower``).
-   The key corresponding to each item in the list is calculated once and
-   then used for the entire sorting process. The default value of ``None``
-   means that list items are sorted directly without calculating a separate
-   key value.
+   Lists implement all of the :ref:`common <typesseq-common>` and
+   :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
+   following additional method:
 
-   The :func:`functools.cmp_to_key` utility is available to convert a 2.x
-   style *cmp* function to a *key* function.
+   .. method:: list.sort(*, key=None, reverse=None)
 
-   *reverse* is a boolean value.  If set to ``True``, then the list elements
-   are sorted as if each comparison were reversed.
+      This method sorts the list in place, using only ``<`` comparisons
+      between items. Exceptions are not suppressed - if any comparison operations
+      fail, the entire sort operation will fail (and the list will likely be left
+      in a partially modified state).
 
-   This method modifies the sequence in place for economy of space when
-   sorting a large sequence.  To remind users that it operates by side
-   effect, it does not return the sorted sequence (use :func:`sorted` to
-   explicitly request a new sorted list instance).
+      *key* specifies a function of one argument that is used to extract a
+      comparison key from each list element (for example, ``key=str.lower``).
+      The key corresponding to each item in the list is calculated once and
+      then used for the entire sorting process. The default value of ``None``
+      means that list items are sorted directly without calculating a separate
+      key value.
 
-   The :meth:`sort` method is guaranteed to be stable.  A sort is stable if it
-   guarantees not to change the relative order of elements that compare equal
-   --- this is helpful for sorting in multiple passes (for example, sort by
-   department, then by salary grade).
+      The :func:`functools.cmp_to_key` utility is available to convert a 2.x
+      style *cmp* function to a *key* function.
 
-   .. impl-detail::
+      *reverse* is a boolean value.  If set to ``True``, then the list elements
+      are sorted as if each comparison were reversed.
 
-      While a list is being sorted, the effect of attempting to mutate, or even
-      inspect, the list is undefined.  The C implementation of Python makes the
-      list appear empty for the duration, and raises :exc:`ValueError` if it can
-      detect that the list has been mutated during a sort.
+      This method modifies the sequence in place for economy of space when
+      sorting a large sequence.  To remind users that it operates by side
+      effect, it does not return the sorted sequence (use :func:`sorted` to
+      explicitly request a new sorted list instance).
+
+      The :meth:`sort` method is guaranteed to be stable.  A sort is stable if it
+      guarantees not to change the relative order of elements that compare equal
+      --- this is helpful for sorting in multiple passes (for example, sort by
+      department, then by salary grade).
+
+      .. impl-detail::
+
+         While a list is being sorted, the effect of attempting to mutate, or even
+         inspect, the list is undefined.  The C implementation of Python makes the
+         list appear empty for the duration, and raises :exc:`ValueError` if it can
+         detect that the list has been mutated during a sort.
 
 
 .. _typesseq-tuple:
@@ -1173,22 +1193,35 @@ built-in). Tuples are also used for cases where an immutable sequence of
 homogeneous data is needed (such as allowing storage in a :class:`set` or
 :class:`dict` instance).
 
-Tuples may be constructed in a number of ways:
+.. class:: tuple([iterable])
 
-* Using a pair of parentheses to denote the empty tuple: ``()``
-* Using a trailing comma for a singleton tuple: ``a,`` or ``(a,)``
-* Separating items with commas: ``a, b, c`` or ``(a, b, c)``
-* Using the :func:`tuple` built-in: ``tuple()`` or ``tuple(iterable)``
+   Tuples may be constructed in a number of ways:
 
-Note that the parentheses are optional (except in the empty tuple case, or
-when needed to avoid syntactic ambiguity). It is actually the comma which
-makes a tuple, not the parentheses.
+   * Using a pair of parentheses to denote the empty tuple: ``()``
+   * Using a trailing comma for a singleton tuple: ``a,`` or ``(a,)``
+   * Separating items with commas: ``a, b, c`` or ``(a, b, c)``
+   * Using the :func:`tuple` built-in: ``tuple()`` or ``tuple(iterable)``
 
-Tuples implement all of the :ref:`common <typesseq-common>` sequence
-operations.
+   The constructor builds a tuple whose items are the same and in the same
+   order as *iterable*'s items.  *iterable* may be either a sequence, a
+   container that supports iteration, or an iterator object.  If *iterable*
+   is already a tuple, it is returned unchanged. For example,
+   ``tuple('abc')`` returns ``('a', 'b', 'c')`` and
+   ``tuple( [1, 2, 3] )`` returns ``(1, 2, 3)``.
+   If no argument is given, the constructor creates a new empty tuple, ``()``.
 
-For heterogeneous collections of data, :func:`collections.namedtuple` may
-be more appropriate than a simple tuple object.
+   Note that it is actually the comma which makes a tuple, not the parentheses.
+   The parentheses are optional, except in the empty tuple case, or
+   when they are needed to avoid syntactic ambiguity. For example,
+   ``f(a, b, c)`` is a function call with three arguments, while
+   ``f((a, b, c))`` is a function call with a 3-tuple as the sole argument.
+
+   Tuples implement all of the :ref:`common <typesseq-common>` sequence
+   operations.
+
+For heterogeneous collections of data where access by name is clearer than
+access by index, :func:`collections.namedtuple` may be a more appropriate
+choice than a simple tuple object.
 
 
 .. _typesseq-range:
@@ -1199,17 +1232,69 @@ Ranges
 .. index:: object: range
 
 The :class:`range` type represents an immutable sequence of numbers and is
-commonly used for looping a specific number of times. Instances are created
-using the :func:`range` built-in.
+commonly used for looping a specific number of times in :keyword:`for`
+loops.
 
-For positive indices with results between the defined ``start`` and ``stop``
-values, integers within the range are determined by the formula:
-``r[i] = start + step*i``
+.. class:: range([start, ]stop[, step])
 
-For negative indices and slicing operations, a range instance determines the
-appropriate result for the corresponding tuple and returns either the
-appropriate integer (for negative indices) or an appropriate range object
-(for slicing operations) .
+   The arguments to the range constructor must be integers (either built-in
+   :class:`int` or any object that implements the ``__index__`` special
+   method).  If the *step* argument is omitted, it defaults to ``1``.
+   If the *start* argument is omitted, it defaults to ``0``.
+   If *step* is zero, :exc:`ValueError` is raised.
+
+   For a positive *step*, the contents of a range ``r`` are determined by the
+   formula ``r[i] = start + step*i`` where ``i >= 0`` and
+   ``r[i] < stop``.
+
+   For a negative *step*, the contents of the range are still determined by
+   the formula ``r[i] = start + step*i``, but the constraints are ``i >= 0``
+   and ``r[i] > stop``.
+
+   A range object will be empty if ``r[0]`` does not meant the value
+   constraint. Ranges do support negative indices, but these are interpreted
+   as indexing from the end of the sequence determined by the positive
+   indices.
+
+   Ranges containing absolute values larger than :data:`sys.maxsize` are
+   permitted but some features (such as :func:`len`) may raise
+   :exc:`OverflowError`.
+
+   Range examples::
+
+      >>> list(range(10))
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> list(range(1, 11))
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      >>> list(range(0, 30, 5))
+      [0, 5, 10, 15, 20, 25]
+      >>> list(range(0, 10, 3))
+      [0, 3, 6, 9]
+      >>> list(range(0, -10, -1))
+      [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
+      >>> list(range(0))
+      []
+      >>> list(range(1, 0))
+      []
+
+   Ranges implement all of the :ref:`common <typesseq-common>` sequence operations
+   except concatenation and repetition (due to the fact that range objects can
+   only represent sequences that follow a strict pattern and repetition and
+   concatenation will usually violate that pattern).
+
+   .. data: start
+
+      The value of the *start* parameter (or ``0`` if the parameter was
+      not supplied)
+
+   .. data: stop
+
+      The value of the *stop* parameter
+
+   .. data: step
+
+      The value of the *step* parameter (or ``1`` if the parameter was
+      not supplied)
 
 The advantage of the :class:`range` type over a regular :class:`list` or
 :class:`tuple` is that a :class:`range` object will always take the same
@@ -1217,10 +1302,46 @@ The advantage of the :class:`range` type over a regular :class:`list` or
 only stores the ``start``, ``stop`` and ``step`` values, calculating individual
 items and subranges as needed).
 
-Ranges implement all of the :ref:`common <typesseq-common>` sequence operations
-except concatenation and repetition (due to the fact that range objects can
-only represent sequences that follow a strict pattern and repetition and
-concatenation will usually violate that pattern).
+Range objects implement the :class:`collections.Sequence` ABC, and provide
+features such as containment tests, element index lookup, slicing and
+support for negative indices (see :ref:`typesseq`):
+
+   >>> r = range(0, 20, 2)
+   >>> r
+   range(0, 20, 2)
+   >>> 11 in r
+   False
+   >>> 10 in r
+   True
+   >>> r.index(10)
+   5
+   >>> r[5]
+   10
+   >>> r[:5]
+   range(0, 10, 2)
+   >>> r[-1]
+   18
+
+Testing range objects for equality with ``==`` and ``!=`` compares
+them as sequences.  That is, two range objects are considered equal if
+they represent the same sequence of values.  (Note that two range
+objects that compare equal might have different :attr:`start`,
+:attr:`stop` and :attr:`step` attributes, for example ``range(0) ==
+range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
+
+.. versionchanged:: 3.2
+   Implement the Sequence ABC.
+   Support slicing and negative indices.
+   Test :class:`int` objects for membership in constant time instead of
+   iterating through all items.
+
+.. versionchanged:: 3.3
+   Define '==' and '!=' to compare range objects based on the
+   sequence of values they define (instead of comparing based on
+   object identity).
+
+.. versionadded:: 3.3
+   The :attr:`start`, :attr:`stop` and :attr:`step` attributes.
 
 
 .. _textseq:
@@ -1247,13 +1368,15 @@ Triple quoted strings may span multiple lines - all associated whitespace will
 be included in the string literal.
 
 String literals that are part of a single expression and have only whitespace
-between them will be implicitly converted to a single string literal.
+between them will be implicitly converted to a single string literal. That
+is, ``("spam " "eggs") == "spam eggs"``.
 
 See :ref:`strings` for more about the various forms of string literal,
 including supported escape sequences, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
-Strings may also be created from other objects with the :func:`str` built-in.
+Strings may also be created from other objects with the :ref:`str <func-str>`
+built-in.
 
 Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.
@@ -2002,6 +2125,8 @@ other ways:
 * From an iterable of integers: ``bytes(range(20))``
 * Copying existing binary data via the buffer protocol:  ``bytes(obj)``
 
+Also see the :ref:`bytes <func-bytes>` built-in.
+
 Since bytes objects are sequences of integers, for a bytes object *b*,
 ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes object of
 length 1.  (This contrasts with text strings, where both indexing and
@@ -2042,6 +2167,8 @@ they are always created by calling the constructor:
 As bytearray objects are mutable, they support the
 :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
 common bytes and bytearray operations described in :ref:`bytes-methods`.
+
+Also see the :ref:`bytearray <func-bytearray>` built-in.
 
 
 .. _bytes-methods:
@@ -2097,15 +2224,15 @@ the ASCII character set is assumed (text strings use Unicode semantics).
 
 The search operations (:keyword:`in`, :meth:`count`, :meth:`find`,
 :meth:`index`, :meth:`rfind` and :meth:`rindex`) all accept both integers
-in the range 0 to 255 as well as bytes and byte array sequences.
+in the range 0 to 255 (inclusive) as well as bytes and byte array sequences.
 
 .. versionchanged:: 3.3
-   All of the search methods also accept an integer in range 0 to 255
-   (a byte) as their first argument.
+   All of the search methods also accept an integer in the range 0 to 255
+   (inclusive) as their first argument.
 
 
 Each bytes and bytearray instance provides a :meth:`decode` convenience
-method that is the inverse of "meth:`str.encode`:
+method that is the inverse of :meth:`str.encode`:
 
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
@@ -2563,7 +2690,7 @@ A :dfn:`set` object is an unordered collection of distinct :term:`hashable` obje
 Common uses include membership testing, removing duplicates from a sequence, and
 computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
-(For other containers see the built in :class:`dict`, :class:`list`,
+(For other containers see the built-in :class:`dict`, :class:`list`,
 and :class:`tuple` classes, and the :mod:`collections` module.)
 
 Like other collections, sets support ``x in set``, ``len(set)``, and ``for x in
@@ -2763,7 +2890,7 @@ Mapping Types --- :class:`dict`
 
 A :dfn:`mapping` object maps :term:`hashable` values to arbitrary objects.
 Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built in
+type, the :dfn:`dictionary`.  (For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 

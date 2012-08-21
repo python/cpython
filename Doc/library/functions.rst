@@ -17,9 +17,9 @@ are always available.  They are listed here in alphabetical order.
 :func:`bin`          :func:`eval`       :func:`int`         :func:`open`      :func:`str`
 :func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
 :func:`bytearray`    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-:func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     :func:`tuple`
+:func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
 :func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  :func:`list`        :func:`range`     :func:`vars`
+:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
 :func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
@@ -33,6 +33,9 @@ are always available.  They are listed here in alphabetical order.
 .. |func-frozenset| replace:: ``frozenset()``
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-set| replace:: ``set()``
+.. |func-list| replace:: ``list()``
+.. |func-tuple| replace:: ``tuple()``
+.. |func-range| replace:: ``range()``
 
 
 .. function:: abs(x)
@@ -93,6 +96,7 @@ are always available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
 
+.. _func-bytearray:
 .. function:: bytearray([source[, encoding[, errors]]])
 
    Return a new array of bytes.  The :class:`bytearray` type is a mutable
@@ -119,6 +123,7 @@ are always available.  They are listed here in alphabetical order.
    Without an argument, an array of size 0 is created.
 
 
+.. _func-bytes:
 .. function:: bytes([source[, encoding[, errors]]])
 
    Return a new "bytes" object, which is an immutable sequence of integers in
@@ -692,16 +697,12 @@ are always available.  They are listed here in alphabetical order.
    sequence (string, tuple or list) or a mapping (dictionary).
 
 
+.. _func-list:
 .. function:: list([iterable])
+   :noindex:
 
-   Return a list whose items are the same and in the same order as *iterable*'s
-   items.  *iterable* may be either a sequence, a container that supports
-   iteration, or an iterator object.  If *iterable* is already a list, a copy is
-   made and returned, similar to ``iterable[:]``.  For instance, ``list('abc')``
-   returns ``['a', 'b', 'c']`` and ``list( (1, 2, 3) )`` returns ``[1, 2, 3]``.
-   If no argument is given, returns a new empty list, ``[]``.
-
-   :class:`list` is a mutable sequence type, as documented in :ref:`typesseq`.
+   Rather than being a function, :class:`list` is actually a mutable
+   sequence type, as documented in :ref:`typesseq`.
 
 
 .. function:: locals()
@@ -1059,79 +1060,12 @@ are always available.  They are listed here in alphabetical order.
    ``fdel`` corresponding to the constructor arguments.
 
 
-.. XXX does accept objects with __index__ too
+.. _func-range:
 .. function:: range([start,] stop[, step])
+   :noindex:
 
-   This is a versatile function to create iterables yielding arithmetic
-   progressions.  It is most often used in :keyword:`for` loops.  The arguments
-   must be integers.  If the *step* argument is omitted, it defaults to ``1``.
-   If the *start* argument is omitted, it defaults to ``0``.  The full form
-   returns an iterable of integers ``[start, start + step, start + 2 * step,
-   ...]``.  If *step* is positive, the last element is the largest ``start + i *
-   step`` less than *stop*; if *step* is negative, the last element is the
-   smallest ``start + i * step`` greater than *stop*.  *step* must not be zero
-   (or else :exc:`ValueError` is raised).  Range objects have read-only data
-   attributes :attr:`start`, :attr:`stop` and :attr:`step` which return the
-   argument values (or their default).  Example:
-
-      >>> list(range(10))
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-      >>> list(range(1, 11))
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-      >>> list(range(0, 30, 5))
-      [0, 5, 10, 15, 20, 25]
-      >>> list(range(0, 10, 3))
-      [0, 3, 6, 9]
-      >>> list(range(0, -10, -1))
-      [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
-      >>> list(range(0))
-      []
-      >>> list(range(1, 0))
-      []
-
-   Range objects implement the :class:`collections.Sequence` ABC, and provide
-   features such as containment tests, element index lookup, slicing and
-   support for negative indices (see :ref:`typesseq`):
-
-      >>> r = range(0, 20, 2)
-      >>> r
-      range(0, 20, 2)
-      >>> 11 in r
-      False
-      >>> 10 in r
-      True
-      >>> r.index(10)
-      5
-      >>> r[5]
-      10
-      >>> r[:5]
-      range(0, 10, 2)
-      >>> r[-1]
-      18
-
-   Testing range objects for equality with ``==`` and ``!=`` compares
-   them as sequences.  That is, two range objects are considered equal if
-   they represent the same sequence of values.  (Note that two range
-   objects that compare equal might have different :attr:`start`,
-   :attr:`stop` and :attr:`step` attributes, for example ``range(0) ==
-   range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
-
-   Ranges containing absolute values larger than :data:`sys.maxsize` are permitted
-   but some features (such as :func:`len`) will raise :exc:`OverflowError`.
-
-   .. versionchanged:: 3.2
-      Implement the Sequence ABC.
-      Support slicing and negative indices.
-      Test integers for membership in constant time instead of iterating
-      through all items.
-
-   .. versionchanged:: 3.3
-      Define '==' and '!=' to compare range objects based on the
-      sequence of values they define (instead of comparing based on
-      object identity).
-
-   .. versionadded:: 3.3
-      The :attr:`start`, :attr:`stop` and :attr:`step` attributes.
+   Rather than being a function, :class:`range` is actually an immutable
+   sequence type, as documented in :ref:`typesseq`.
 
 
 .. function:: repr(object)
@@ -1251,6 +1185,7 @@ are always available.  They are listed here in alphabetical order.
    standard type hierarchy in :ref:`types`.
 
 
+.. _func-str:
 .. function:: str([object[, encoding[, errors]]])
 
    Return a string version of an object, using one of the following modes:
@@ -1352,16 +1287,12 @@ are always available.  They are listed here in alphabetical order.
    <http://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
 
+.. _func-tuple:
 .. function:: tuple([iterable])
+   :noindex:
 
-   Return a tuple whose items are the same and in the same order as *iterable*'s
-   items.  *iterable* may be a sequence, a container that supports iteration, or an
-   iterator object. If *iterable* is already a tuple, it is returned unchanged.
-   For instance, ``tuple('abc')`` returns ``('a', 'b', 'c')`` and ``tuple([1, 2,
-   3])`` returns ``(1, 2, 3)``.  If no argument is given, returns a new empty
-   tuple, ``()``.
-
-   :class:`tuple` is an immutable sequence type, as documented in :ref:`typesseq`.
+   Rather than being a function, :class:`tuple` is actually an immutable
+   sequence type, as documented in :ref:`typesseq`.
 
 
 .. function:: type(object)
