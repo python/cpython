@@ -57,12 +57,12 @@ class TestDecode:
     def test_extra_data(self):
         s = '[1, 2, 3]5'
         msg = 'Extra data'
-        self.assertRaisesRegexp(ValueError, msg, self.loads, s)
+        self.assertRaisesRegex(ValueError, msg, self.loads, s)
 
     def test_invalid_escape(self):
         s = '["abc\\y"]'
         msg = 'escape'
-        self.assertRaisesRegexp(ValueError, msg, self.loads, s)
+        self.assertRaisesRegex(ValueError, msg, self.loads, s)
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
