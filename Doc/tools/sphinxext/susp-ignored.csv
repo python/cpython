@@ -129,6 +129,9 @@ library/http.cookies,,`,!#$%&'*+-.^_`|~:
 library/httplib,,:port,host:port
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
 library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
+library/inspect,,:int,">>> def foo(a, *, b:int, **kwargs):"
+library/inspect,,:int,"'(a, *, b:int, **kwargs)'"
+library/inspect,,:int,'b:int'
 library/ipaddress,,:db8,>>> ipaddress.ip_address('2001:db8::')
 library/ipaddress,,::,>>> ipaddress.ip_address('2001:db8::')
 library/ipaddress,,:db8,IPv6Address('2001:db8::')
