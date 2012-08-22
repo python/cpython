@@ -604,7 +604,7 @@ Py_Main(int argc, wchar_t **argv)
        script. */
     if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0') {
         wchar_t* buffer;
-        size_t len = strlen(p);
+        size_t len = strlen(p) + 1;
 
         buffer = malloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
