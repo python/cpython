@@ -4338,6 +4338,11 @@ _dec_hash(PyDecObject *v)
     }
     tmp->exp = 0;
     mpd_set_positive(tmp);
+
+    maxctx.prec = MPD_MAX_PREC + 21;
+    maxctx.emax = MPD_MAX_EMAX + 21;
+    maxctx.emin = MPD_MIN_EMIN - 21;
+
     mpd_qmul(tmp, tmp, exp_hash, &maxctx, &status);
     mpd_qrem(tmp, tmp, &p, &maxctx, &status);
 
@@ -4346,11 +4351,14 @@ _dec_hash(PyDecObject *v)
     result = (result == -1) ? -2 : result;
 
     if (status != 0) {
-        status |= MPD_Invalid_operation;
-        if (dec_addstatus(context, status)) {
-            result = -1;
-            goto finish;
+        if (status & MPD_Malloc_error) {
+            goto malloc_error;
         }
+        else {
+            PyErr_SetString(PyExc_RuntimeError,
+                "dec_hash: internal error: please report");
+        }
+        result = -1;
     }
 
 
