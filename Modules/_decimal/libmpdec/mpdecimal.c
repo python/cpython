@@ -3513,8 +3513,7 @@ _mpd_qdiv(int action, mpd_t *q, const mpd_t *a, const mpd_t *b,
     if (b->len == 1) {
         rem = _mpd_shortdiv(q->data, a->data, a->len, b->data[0]);
     }
-    else if (a->len < 2*MPD_NEWTONDIV_CUTOFF &&
-             b->len < MPD_NEWTONDIV_CUTOFF) {
+    else if (b->len <= MPD_NEWTONDIV_CUTOFF) {
         int ret = _mpd_basedivmod(q->data, NULL, a->data, b->data,
                                   a->len, b->len);
         if (ret < 0) {
@@ -3667,8 +3666,7 @@ _mpd_qdivmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
             r->data[0] = _mpd_shortdiv(q->data, a->data, a->len, b->data[0]);
         }
     }
-    else if (a->len < 2*MPD_NEWTONDIV_CUTOFF &&
-             b->len < MPD_NEWTONDIV_CUTOFF) {
+    else if (b->len <= MPD_NEWTONDIV_CUTOFF) {
         int ret;
         ret = _mpd_basedivmod(q->data, r->data, a->data, b->data,
                               a->len, b->len);
@@ -5544,10 +5542,15 @@ _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
     }
 
 
-    if (small->len == 1) {
+    if (small->len <= 256) {
         rdata = mpd_calloc(rsize, sizeof *rdata);
         if (rdata != NULL) {
-            _mpd_shortmul(rdata, big->data, big->len, small->data[0]);
+            if (small->len == 1) {
+                _mpd_shortmul(rdata, big->data, big->len, small->data[0]);
+            }
+            else {
+                _mpd_basemul(rdata, small->data, big->data, small->len, big->len);
+            }
         }
     }
     else if (rsize <= 1024) {
