@@ -1088,7 +1088,9 @@ datetime
    corresponding to the :class:`~datetime.datetime` instance.
  * The :meth:`datetime.datetime.strftime` method supports formatting years
    older than 1000.
-
+ * XXX The :meth:`datetime.datetime.astimezone` method can now be
+   called without arguments to convert datetime instance to the system
+   timezone.
 
 decimal
 -------
