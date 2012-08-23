@@ -149,15 +149,15 @@ SRCDIR = os.path.dirname(
 DEPTARGET = '10.3'
 
 target_cc_map = {
-        '10.3': 'gcc-4.0',
-        '10.4': 'gcc-4.0',
-        '10.5': 'gcc-4.2',
-        '10.6': 'gcc-4.2',
-        '10.7': 'clang',
-        '10.8': 'clang',
+        '10.3': ('gcc-4.0', 'g++-4.0'),
+        '10.4': ('gcc-4.0', 'g++-4.0'),
+        '10.5': ('gcc-4.2', 'g++-4.2'),
+        '10.6': ('gcc-4.2', 'g++-4.2'),
+        '10.7': ('clang', 'clang++'),
+        '10.8': ('clang', 'clang++'),
 }
 
-CC = target_cc_map[DEPTARGET]
+CC, CXX = target_cc_map[DEPTARGET]
 
 PYTHON_3 = getVersionTuple() >= (3, 0)
 
@@ -264,8 +264,8 @@ def library_recipes():
               url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
               checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
               configure=None,
-              install='make install CC=%s PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-                  CC,
+              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC, CXX,
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
                   ' -arch '.join(ARCHLIST),
                   SDKPATH,
@@ -276,8 +276,8 @@ def library_recipes():
               url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
               checksum='debc62758716a169df9f62e6ab2bc634',
               configure=None,
-              install='make install CC=%s prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-                  CC,
+              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC, CXX,
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
                   ' -arch '.join(ARCHLIST),
                   SDKPATH,
@@ -550,7 +550,7 @@ def parseOptions(args=None):
     Parse arguments and update global settings.
     """
     global WORKDIR, DEPSRC, SDKPATH, SRCDIR, DEPTARGET
-    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC
+    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC, CXX
 
     if args is None:
         args = sys.argv[1:]
@@ -608,7 +608,7 @@ def parseOptions(args=None):
     SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
-    CC=target_cc_map[DEPTARGET]
+    CC, CXX=target_cc_map[DEPTARGET]
 
     print("Settings:")
     print(" * Source directory:", SRCDIR)
@@ -618,6 +618,7 @@ def parseOptions(args=None):
     print(" * Deployment target:", DEPTARGET)
     print(" * Universal architectures:", ARCHLIST)
     print(" * C compiler:", CC)
+    print(" * C++ compiler:", CXX)
     print("")
 
 
@@ -1288,6 +1289,7 @@ def main():
 
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = DEPTARGET
     os.environ['CC'] = CC
+    os.environ['CXX'] = CXX
 
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
