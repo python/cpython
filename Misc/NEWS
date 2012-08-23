@@ -353,6 +353,8 @@ Tests
 Build
 -----
 
+- Issue #15645: Ensure 2to3 grammar pickles are properly installed.
+
 - Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
 
 - Issue #8847: Disable COMDAT folding in Windows PGO builds.
