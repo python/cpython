@@ -386,33 +386,26 @@ def localtime(dt=None, isdst=-1):
 
     """
     if dt is None:
-        seconds = time.time()
-    else:
-        if dt.tzinfo is None:
-            # A naive datetime is given.  Convert to a (localtime)
-            # timetuple and pass to system mktime together with
-            # the isdst hint.  System mktime will return seconds
-            # sysce epoch.
-            tm = dt.timetuple()[:-1] + (isdst,)
-            seconds = time.mktime(tm)
+        dt = datetime.datetime.now(datetime.timezone.utc)
+    if dt.tzinfo is not None:
+        return dt.astimezone()
+    # We have a naive datetime.  Convert to a (localtime) timetuple and pass to
+    # system mktime together with the isdst hint.  System mktime will return
+    # seconds since epoch.
+    tm = dt.timetuple()[:-1] + (isdst,)
+    seconds = time.mktime(tm)
+    localtm = time.localtime(seconds)
+    try:
+        delta = datetime.timedelta(seconds=localtm.tm_gmtoff)
+        tz = datetime.timezone(delta, localtm.tm_zone)
+    except AttributeError:
+        # Compute UTC offset and compare with the value implied by tm_isdst.
+        # If the values match, use the zone name implied by tm_isdst.
+        delta = dt - datetime.datetime(*time.gmtime(ts)[:6])
+        dst = time.daylight and localtm.tm_isdst > 0
+        gmtoff = -(time.altzone if dst else time.timezone)
+        if delta == datetime.timedelta(seconds=gmtoff):
+            tz = datetime.timezone(delta, time.tzname[dst])
         else:
-            # An aware datetime is given.  Use aware datetime
-            # arithmetics to find seconds since epoch.
-            delta = dt - datetime.datetime(1970, 1, 1,
-                                           tzinfo=datetime.timezone.utc)
-            seconds = delta.total_seconds()
-    tm = time.localtime(seconds)
-
-    # XXX: The following logic may not work correctly if UTC
-    # offset has changed since time provided in dt.  This will be
-    # corrected in C implementation for platforms that support
-    # tm_gmtoff.
-    if time.daylight and tm.tm_isdst:
-        offset = time.altzone
-        tzname = time.tzname[1]
-    else:
-        offset = time.timezone
-        tzname = time.tzname[0]
-
-    tz = datetime.timezone(datetime.timedelta(seconds=-offset), tzname)
-    return datetime.datetime.fromtimestamp(seconds, tz)
+            tz = datetime.timezone(delta)
+    return dt.replace(tzinfo=tz)
