@@ -3872,10 +3872,6 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
     else {
         mpd_qpowmod(MPD(result), MPD(a), MPD(b), MPD(c),
                     CTX(context), &status);
-        status = (status == MPD_Clamped) ? 0 : status;
-        /* remove ideal exponent for compatibility with decimal.py */
-        mpd_qquantize(MPD(result), MPD(result), &zero,
-                      CTX(context), &status);
         Py_DECREF(c);
     }
     Py_DECREF(a);
@@ -4905,10 +4901,6 @@ ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
     else {
         mpd_qpowmod(MPD(result), MPD(a), MPD(b), MPD(c),
                     CTX(context), &status);
-        status = (status == MPD_Clamped) ? 0 : status;
-        /* remove ideal exponent for compatibility with decimal.py */
-        mpd_qquantize(MPD(result), MPD(result), &zero,
-                      CTX(context), &status);
         Py_DECREF(c);
     }
     Py_DECREF(a);
