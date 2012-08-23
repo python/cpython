@@ -6372,7 +6372,7 @@ mpd_qpow(mpd_t *result, const mpd_t *base, const mpd_t *exp,
  */
 static inline void
 _mpd_qpowmod_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp,
-                  mpd_t *mod, uint32_t *status)
+                  const mpd_t *mod, uint32_t *status)
 {
     mpd_context_t maxcontext;
 
@@ -6383,10 +6383,10 @@ _mpd_qpowmod_uint(mpd_t *result, mpd_t *base, mpd_uint_t exp,
 
     while (exp > 0) {
         if (exp & 1) {
-            mpd_qmul(result, result, base, &maxcontext, status);
+            _mpd_qmul_exact(result, result, base, &maxcontext, status);
             mpd_qrem(result, result, mod, &maxcontext, status);
         }
-        mpd_qmul(base, base, base, &maxcontext, status);
+        _mpd_qmul_exact(base, base, base, &maxcontext, status);
         mpd_qrem(base, base, mod, &maxcontext, status);
         exp >>= 1;
     }
@@ -6452,27 +6452,30 @@ mpd_qpowmod(mpd_t *result, const mpd_t *base, const mpd_t *exp,
         return;
     }
 
-    if (!mpd_qcopy(&tmod, mod, status)) {
-        goto mpd_errors;
-    }
-    mpd_set_positive(&tmod);
-
     mpd_maxcontext(&maxcontext);
 
-    mpd_qround_to_int(&tbase, base, &maxcontext, status);
-    mpd_qround_to_int(&texp, exp, &maxcontext, status);
-    mpd_qround_to_int(&tmod, &tmod, &maxcontext, status);
+    mpd_qrescale(&tmod, mod, 0, &maxcontext, &maxcontext.status);
+    if (maxcontext.status&MPD_Errors) {
+        mpd_seterror(result, maxcontext.status&MPD_Errors, status);
+        goto out;
+    }
+    maxcontext.status = 0;
+    mpd_set_positive(&tmod);
 
+    mpd_qround_to_int(&tbase, base, &maxcontext, status);
+    mpd_set_positive(&tbase);
     tbase_exp = tbase.exp;
     tbase.exp = 0;
+
+    mpd_qround_to_int(&texp, exp, &maxcontext, status);
     texp_exp = texp.exp;
     texp.exp = 0;
 
     /* base = (base.int % modulo * pow(10, base.exp, modulo)) % modulo */
     mpd_qrem(&tbase, &tbase, &tmod, &maxcontext, status);
-    _settriple(result, MPD_POS, 1, tbase_exp);
+    mpd_qshiftl(result, &one, tbase_exp, status);
     mpd_qrem(result, result, &tmod, &maxcontext, status);
-    mpd_qmul(&tbase, &tbase, result, &maxcontext, status);
+    _mpd_qmul_exact(&tbase, &tbase, result, &maxcontext, status);
     mpd_qrem(&tbase, &tbase, &tmod, &maxcontext, status);
     if (mpd_isspecial(&tbase) ||
         mpd_isspecial(&texp) ||
@@ -6494,10 +6497,10 @@ mpd_qpowmod(mpd_t *result, const mpd_t *base, const mpd_t *exp,
     mpd_qcopy(result, &one, status);
     while (mpd_isfinite(&texp) && !mpd_iszero(&texp)) {
         if (mpd_isodd(&texp)) {
-            mpd_qmul(result, result, &tbase, &maxcontext, status);
+            _mpd_qmul_exact(result, result, &tbase, &maxcontext, status);
             mpd_qrem(result, result, &tmod, &maxcontext, status);
         }
-        mpd_qmul(&tbase, &tbase, &tbase, &maxcontext, status);
+        _mpd_qmul_exact(&tbase, &tbase, &tbase, &maxcontext, status);
         mpd_qrem(&tbase, &tbase, &tmod, &maxcontext, status);
         mpd_qdivint(&texp, &texp, &two, &maxcontext, status);
     }
@@ -6515,7 +6518,6 @@ out:
     mpd_del(&texp);
     mpd_del(&tmod);
     mpd_del(&tmp);
-    mpd_qfinalize(result, ctx, status);
     return;
 
 mpd_errors:
