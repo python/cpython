@@ -386,7 +386,7 @@ def localtime(dt=None, isdst=-1):
 
     """
     if dt is None:
-        dt = datetime.datetime.now(datetime.timezone.utc)
+        return datetime.datetime.now(datetime.timezone.utc).astimezone()
     if dt.tzinfo is not None:
         return dt.astimezone()
     # We have a naive datetime.  Convert to a (localtime) timetuple and pass to
