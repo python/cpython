@@ -1212,6 +1212,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(TypeError, get_contiguous, nd, PyBUF_READ, 961)
         self.assertRaises(UnicodeEncodeError, get_contiguous, nd, PyBUF_READ,
                           '\u2007')
+        self.assertRaises(ValueError, get_contiguous, nd, PyBUF_READ, 'Z')
+        self.assertRaises(ValueError, get_contiguous, nd, 255, 'A')
 
         # cmp_contig()
         nd = ndarray([1], shape=[1])

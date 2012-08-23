@@ -2362,6 +2362,13 @@ get_ascii_order(PyObject *order)
 
     ord = PyBytes_AS_STRING(ascii_order)[0];
     Py_DECREF(ascii_order);
+
+    if (ord != 'C' && ord != 'F' && ord != 'A') {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid order, must be C, F or A");
+        return CHAR_MAX;
+    }
+
     return ord;
 }
 
@@ -2384,15 +2391,20 @@ get_contiguous(PyObject *self, PyObject *args)
             "buffertype must be PyBUF_READ or PyBUF_WRITE");
         return NULL;
     }
+
     type = PyLong_AsLong(buffertype);
     if (type == -1 && PyErr_Occurred()) {
         return NULL;
     }
-
-    ord = get_ascii_order(order);
-    if (ord == CHAR_MAX) {
+    if (type != PyBUF_READ && type != PyBUF_WRITE) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid buffer type");
         return NULL;
     }
+
+    ord = get_ascii_order(order);
+    if (ord == CHAR_MAX)
+        return NULL;
 
     return PyMemoryView_GetContiguous(obj, (int)type, ord);
 }
