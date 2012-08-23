@@ -401,7 +401,7 @@ def localtime(dt=None, isdst=-1):
     except AttributeError:
         # Compute UTC offset and compare with the value implied by tm_isdst.
         # If the values match, use the zone name implied by tm_isdst.
-        delta = dt - datetime.datetime(*time.gmtime(ts)[:6])
+        delta = dt - datetime.datetime(*time.gmtime(seconds)[:6])
         dst = time.daylight and localtm.tm_isdst > 0
         gmtoff = -(time.altzone if dst else time.timezone)
         if delta == datetime.timedelta(seconds=gmtoff):
