@@ -115,6 +115,9 @@ Tests
 Build
 -----
 
+- Issue #15511: Drop explicit dependency on pythonxy.lib from _decimal
+  amd64 configuration.
+
 - Add missing PGI/PGO configurations for pywlauncher.
 
 - Issue #15645: Ensure 2to3 grammar pickles are properly installed.
