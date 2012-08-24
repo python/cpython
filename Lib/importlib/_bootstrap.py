@@ -118,13 +118,14 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
-def _write_atomic(path, data):
+def _write_atomic(path, data, mode=0o666):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
     # id() is used to generate a pseudo-random filename.
     path_tmp = '{}.{}'.format(path, id(path))
-    fd = _os.open(path_tmp, _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, 0o666)
+    fd = _os.open(path_tmp,
+                  _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, mode & 0o666)
     try:
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
@@ -887,6 +888,16 @@ class SourceLoader(_LoaderBasics):
         """
         return {'mtime': self.path_mtime(path)}
 
+    def _cache_bytecode(self, source_path, cache_path, data):
+        """Optional method which writes data (bytes) to a file path (a str).
+
+        Implementing this method allows for the writing of bytecode files.
+
+        The source path is needed in order to correctly transfer permissions
+        """
+        # For backwards compatibility, we delegate to set_data()
+        return self.set_data(cache_path, data)
+
     def set_data(self, path, data):
         """Optional method which writes data (bytes) to a file path (a str).
 
@@ -974,7 +985,7 @@ class SourceLoader(_LoaderBasics):
             data.extend(_w_long(len(source_bytes)))
             data.extend(marshal.dumps(code_object))
             try:
-                self.set_data(bytecode_path, data)
+                self._cache_bytecode(source_path, bytecode_path, data)
                 _verbose_message('wrote {!r}', bytecode_path)
             except NotImplementedError:
                 pass
@@ -1029,7 +1040,11 @@ class SourceFileLoader(FileLoader, SourceLoader):
         st = _os.stat(path)
         return {'mtime': st.st_mtime, 'size': st.st_size}
 
-    def set_data(self, path, data):
+    def _cache_bytecode(self, source_path, bytecode_path, data):
+        # Adapt between the two APIs
+        return self.set_data(bytecode_path, data, source_path=source_path)
+
+    def set_data(self, path, data, *, source_path=None):
         """Write bytes data to a file."""
         parent, filename = _path_split(path)
         path_parts = []
@@ -1049,8 +1064,14 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 # If can't get proper access, then just forget about writing
                 # the data.
                 return
+        mode = 0o666
+        if source_path is not None:
+            try:
+                mode = _os.stat(source_path).st_mode
+            except OSError:
+                pass
         try:
-            _write_atomic(path, data)
+            _write_atomic(path, data, mode)
             _verbose_message('created {!r}', path)
         except (PermissionError, FileExistsError):
             # Don't worry if you can't write bytecode or someone is writing
