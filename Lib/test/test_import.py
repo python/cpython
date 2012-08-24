@@ -120,11 +120,34 @@ class ImportTests(unittest.TestCase):
                 s = os.stat(fn)
                 # Check that the umask is respected, and the executable bits
                 # aren't set.
-                self.assertEqual(stat.S_IMODE(s.st_mode), 0o666 & ~mask)
+                self.assertEqual(oct(stat.S_IMODE(s.st_mode)), oct(0o666 & ~mask))
             finally:
                 del sys.path[0]
                 remove_files(TESTFN)
                 unload(TESTFN)
+
+    @unittest.skipUnless(os.name == 'posix',
+                         "test meaningful only on posix systems")
+    def test_cached_mode_issue_2051(self):
+        mode = 0o600
+        source = TESTFN + ".py"
+        with script_helper.temp_dir() as tempdir:
+            path = script_helper.make_script(tempdir, TESTFN,
+                                             "key='top secret'")
+            os.chmod(path, mode)
+            compiled = imp.cache_from_source(path)
+            sys.path.insert(0, tempdir)
+            try:
+                __import__(TESTFN)
+            finally:
+                sys.path.remove(tempdir)
+
+            if not os.path.exists(compiled):
+                self.fail("__import__ did not result in creation of "
+                          "either a .pyc or .pyo file")
+            stat_info = os.stat(compiled)
+
+        self.assertEqual(oct(stat.S_IMODE(stat_info.st_mode)), oct(mode))
 
     def test_imp_module(self):
         # Verify that the imp module can correctly load and find .py files
