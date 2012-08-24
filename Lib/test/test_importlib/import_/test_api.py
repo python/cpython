@@ -1,5 +1,20 @@
+from .. import util as importlib_test_util
 from . import util
+import imp
+import sys
 import unittest
+
+
+class BadLoaderFinder:
+    bad = 'fine.bogus'
+    @classmethod
+    def find_module(cls, fullname, path):
+        if fullname == cls.bad:
+            return cls
+    @classmethod
+    def load_module(cls, fullname):
+        if fullname == cls.bad:
+            raise ImportError('I cannot be loaded!')
 
 
 class APITest(unittest.TestCase):
@@ -18,6 +33,29 @@ class APITest(unittest.TestCase):
         # absolute/relative imports.
         with self.assertRaises(ValueError):
             util.import_('os', globals(), level=-1)
+
+    def test_nonexistent_fromlist_entry(self):
+        # If something in fromlist doesn't exist, that's okay.
+        # issue15715
+        mod = imp.new_module('fine')
+        mod.__path__ = ['XXX']
+        with importlib_test_util.import_state(meta_path=[BadLoaderFinder]):
+            with importlib_test_util.uncache('fine'):
+                sys.modules['fine'] = mod
+                util.import_('fine', fromlist=['not here'])
+
+    def test_fromlist_load_error_propagates(self):
+        # If something in fromlist triggers an exception not related to not
+        # existing, let that exception propagate.
+        # issue15316
+        mod = imp.new_module('fine')
+        mod.__path__ = ['XXX']
+        with importlib_test_util.import_state(meta_path=[BadLoaderFinder]):
+            with importlib_test_util.uncache('fine'):
+                sys.modules['fine'] = mod
+                with self.assertRaises(ImportError):
+                    util.import_('fine', fromlist=['bogus'])
+
 
 
 def test_main():
