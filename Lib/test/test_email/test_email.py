@@ -21,7 +21,7 @@ import email.policy
 from email.charset import Charset
 from email.header import Header, decode_header, make_header
 from email.parser import Parser, HeaderParser
-from email.generator import Generator, DecodedGenerator
+from email.generator import Generator, DecodedGenerator, BytesGenerator
 from email.message import Message
 from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio
@@ -1305,6 +1305,20 @@ Blah blah blah
         g.flatten(msg)
         self.assertEqual(len([1 for x in s.getvalue().split('\n')
                                   if x.startswith('>From ')]), 2)
+
+    def test_mangled_from_with_bad_bytes(self):
+        source = textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 8bit
+            From: aaa@bbb.org
+
+        """).encode('utf-8')
+        msg = email.message_from_bytes(source + b'From R\xc3\xb6lli\n')
+        b = BytesIO()
+        g = BytesGenerator(b, mangle_from_=True)
+        g.flatten(msg)
+        self.assertEqual(b.getvalue(), source + b'>From R\xc3\xb6lli\n')
 
 
 # Test the basic MIMEAudio class

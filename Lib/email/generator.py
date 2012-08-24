@@ -400,6 +400,8 @@ class BytesGenerator(Generator):
         if msg._payload is None:
             return
         if _has_surrogates(msg._payload) and not self.policy.cte_type=='7bit':
+            if self._mangle_from_:
+                msg._payload = fcre.sub(">From ", msg._payload)
             self.write(msg._payload)
         else:
             super(BytesGenerator,self)._handle_text(msg)
