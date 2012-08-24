@@ -120,7 +120,7 @@ Basic Usage
 .. function:: dump(obj, fp[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, encoding[, default[, **kw]]]]]]]]]])
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
-   file-like object).
+   :term:`file-like object`).
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`unicode`, :class:`int`, :class:`long`,
@@ -185,8 +185,8 @@ Basic Usage
 
 .. function:: load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_constant[, object_pairs_hook[, **kw]]]]]]]])
 
-   Deserialize *fp* (a ``.read()``-supporting file-like object containing a JSON
-   document) to a Python object.
+   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
+   containing a JSON document) to a Python object.
 
    If the contents of *fp* are encoded with an ASCII based encoding other than
    UTF-8 (e.g. latin-1), then an appropriate *encoding* name must be specified.
