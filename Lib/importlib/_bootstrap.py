@@ -1042,9 +1042,13 @@ class SourceFileLoader(FileLoader, SourceLoader):
 
     def _cache_bytecode(self, source_path, bytecode_path, data):
         # Adapt between the two APIs
-        return self.set_data(bytecode_path, data, source_path=source_path)
+        try:
+            mode = _os.stat(source_path).st_mode
+        except OSError:
+            mode = 0o666
+        return self.set_data(bytecode_path, data, _mode=mode)
 
-    def set_data(self, path, data, *, source_path=None):
+    def set_data(self, path, data, *, _mode=0o666):
         """Write bytes data to a file."""
         parent, filename = _path_split(path)
         path_parts = []
@@ -1064,14 +1068,8 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 # If can't get proper access, then just forget about writing
                 # the data.
                 return
-        mode = 0o666
-        if source_path is not None:
-            try:
-                mode = _os.stat(source_path).st_mode
-            except OSError:
-                pass
         try:
-            _write_atomic(path, data, mode)
+            _write_atomic(path, data, _mode)
             _verbose_message('created {!r}', path)
         except (PermissionError, FileExistsError):
             # Don't worry if you can't write bytecode or someone is writing
