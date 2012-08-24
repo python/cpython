@@ -373,6 +373,9 @@ Build
 Documentation
 -------------
 
+- Issue #14674: Add a discussion of the json module's standard compliance.
+  Patch by Chris Rebert.
+
 - Issue #15630: Add an example for "continue" stmt in the tutorial. Patch by
   Daniel Ellis.
 
