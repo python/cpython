@@ -1841,6 +1841,13 @@ Encoders:
    :c:func:`PyUnicode_TransformDecimalToASCII`
 
 
+Deprecated features
+-------------------
+
+The :mod:`array` module's ``'u'`` format code is now deprecated and will be
+removed in Python 4 together with the rest of the (:c:type:`Py_UNICODE`) API.
+
+
 Porting to Python 3.3
 =====================
 
