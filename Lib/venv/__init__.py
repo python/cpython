@@ -105,15 +105,7 @@ class EnvBuilder:
         if os.path.exists(env_dir) and not (self.clear or self.upgrade):
             raise ValueError('Directory exists: %s' % env_dir)
         if os.path.exists(env_dir) and self.clear:
-            # Issue 15776: To support running pyvenv on '.', the venv
-            # directory contents are emptied and recreated, instead of
-            # the venv directory being deleted and recreated.
-            for f in os.listdir(env_dir):
-                f = os.path.join(env_dir, f)
-                if os.path.isdir(f):
-                    shutil.rmtree(f)
-                else:
-                    os.remove(f)
+            shutil.rmtree(env_dir)
         context = Context()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
