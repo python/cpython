@@ -1454,8 +1454,6 @@ class DecimalUsabilityTest(unittest.TestCase):
         for s in ('nan', 'nan1234', '-nan', '-nan2468'):
             f = float(Decimal(s))
             self.assertTrue(math.isnan(f))
-            sign = math.copysign(1.0, f)
-            self.assertEqual(sign, -1.0 if s.startswith('-') else 1.0)
 
     def test_snan_to_float(self):
         for s in ('snan', '-snan', 'snan1357', '-snan1234'):
