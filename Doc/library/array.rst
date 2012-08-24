@@ -47,9 +47,14 @@ defined:
 Notes:
 
 (1)
-   The ``'u'`` type code corresponds to Python's unicode character
+   The ``'u'`` type code corresponds to Python's obsolete unicode character
    (:c:type:`Py_UNICODE` which is :c:type:`wchar_t`). Depending on the
    platform, it can be 16 bits or 32 bits.
+
+   ``'u'`` will be removed together with the rest of the :c:type:`Py_UNICODE`
+   API.
+
+   .. deprecated-removed:: 3.3 4.0
 
 (2)
    The ``'q'`` and ``'Q'`` type codes are available only if
