@@ -974,14 +974,17 @@ def add_files(db):
     # 32-bit installer.
     # XXX does this still allow to install the component on a 32-bit system?
     # Pick up 32-bit binary always
-    launcher = os.path.join(srcdir, "PCBuild", "py.exe")
+    launchersrc = PCBUILD
+    if launchersrc.lower() == 'pcbuild\\x64-pgo':
+        launchersrc = 'PCBuild\\win32-pgo'
+    launcher = os.path.join(srcdir, launchersrc, "py.exe")
     launcherdir.start_component("launcher", flags = 8+256, keyfile="py.exe")
-    launcherdir.add_file("%s/py.exe" % PCBUILD,
+    launcherdir.add_file(launcher,
                          version=installer.FileVersion(launcher, 0),
                          language=installer.FileVersion(launcher, 1))
-    launcherw = os.path.join(srcdir, "PCBuild", "pyw.exe")
+    launcherw = os.path.join(srcdir, launchersrc, "pyw.exe")
     launcherdir.start_component("launcherw", flags = 8+256, keyfile="pyw.exe")
-    launcherdir.add_file("%s/pyw.exe" % PCBUILD,
+    launcherdir.add_file(launcherw,
                          version=installer.FileVersion(launcherw, 0),
                          language=installer.FileVersion(launcherw, 1))
 
