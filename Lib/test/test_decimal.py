@@ -1942,6 +1942,22 @@ class UsabilityTest(unittest.TestCase):
         for d, n, r in test_triples:
             self.assertEqual(str(round(Decimal(d), n)), r)
 
+    def test_nan_to_float(self):
+        # Test conversions of decimal NANs to float.
+        # See http://bugs.python.org/issue15544
+        Decimal = self.decimal.Decimal
+        for s in ('nan', 'nan1234', '-nan', '-nan2468'):
+            f = float(Decimal(s))
+            self.assertTrue(math.isnan(f))
+            sign = math.copysign(1.0, f)
+            self.assertEqual(sign, -1.0 if s.startswith('-') else 1.0)
+
+    def test_snan_to_float(self):
+        Decimal = self.decimal.Decimal
+        for s in ('snan', '-snan', 'snan1357', '-snan1234'):
+            d = Decimal(s)
+            self.assertRaises(ValueError, float, d)
+
     def test_eval_round_trip(self):
         Decimal = self.decimal.Decimal
 
