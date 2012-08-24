@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15249: BytesGenerator now correctly mangles From lines (when
+  requested) even if the body contains undecodable bytes.
+
 - Issue #15777: Fix a refleak in _posixsubprocess.
 
 - Issue ##665194: Update email.utils.localtime to use datetime.astimezone and
