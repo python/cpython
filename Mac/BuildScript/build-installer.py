@@ -215,8 +215,6 @@ def library_recipes():
                   "--with-shared",
                   "--without-debug",
                   "--without-normal",
-                  "--without-termlib",
-                  "--without-ticlib",
                   "--without-tests",
                   "--without-manpages",
                   "--datadir=/usr/share",
