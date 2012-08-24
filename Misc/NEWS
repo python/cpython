@@ -84,6 +84,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #14674: Add a discussion of the json module's standard compliance.
+  Patch by Chris Rebert.
+
 - Create a 'Concurrent Execution' section in the docs, and split up the
   'Optional Operating System Services' section to use a more user-centric
   classification scheme (splitting them across the new CE section, IPC and
