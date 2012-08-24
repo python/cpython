@@ -109,6 +109,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15544: Fix Decimal.__float__ to work with payload-carrying NaNs.
+
 - Issue #15249: BytesGenerator now correctly mangles From lines (when
   requested) even if the body contains undecodable bytes.
 
