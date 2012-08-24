@@ -1581,7 +1581,13 @@ class Decimal(object):
 
     def __float__(self):
         """Float representation."""
-        return float(str(self))
+        if self._isnan():
+            if self.is_snan():
+                raise ValueError("Cannot convert signaling NaN to float")
+            s = "-nan" if self._sign else "nan"
+        else:
+            s = str(self)
+        return float(s)
 
     def __int__(self):
         """Converts self to an int, truncating if necessary."""
