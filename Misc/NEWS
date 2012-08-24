@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15776: Allow pyvenv to work in existing directory with --clean.
+
 - Issue #15249: BytesGenerator now correctly mangles From lines (when
   requested) even if the body contains undecodable bytes.
 
