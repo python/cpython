@@ -10,7 +10,7 @@ What's New in Python 3.3.0 Release Candidate 1?
 Core and Builtins
 -----------------
 
-- Issue #2501: Source file permission bits are once again correctly
+- Issue #2051: Source file permission bits are once again correctly
   copied to the cached bytecode file. (The migration to importlib
   reintroduced this problem because these was no regression test. A test
   has been added as part of this patch)
