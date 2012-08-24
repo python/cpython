@@ -115,6 +115,9 @@ Tests
 Build
 -----
 
+- Drop PC\python_nt.h as it's not used. Add input dependency on custom
+  build step.
+
 - Issue #15511: Drop explicit dependency on pythonxy.lib from _decimal
   amd64 configuration.
 
