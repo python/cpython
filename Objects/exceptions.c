@@ -679,7 +679,7 @@ ImportError_traverse(PyImportErrorObject *self, visitproc visit, void *arg)
 static PyObject *
 ImportError_str(PyImportErrorObject *self)
 {
-    if (self->msg) {
+    if (self->msg && PyUnicode_CheckExact(self->msg)) {
         Py_INCREF(self->msg);
         return self->msg;
     }

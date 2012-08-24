@@ -937,6 +937,11 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
+    def test_non_str_argument(self):
+        # Issue #15778
+        arg = b'abc'
+        exc = ImportError(arg)
+        self.assertEqual(str(arg), str(exc))
 
 
 def test_main():
