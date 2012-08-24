@@ -568,8 +568,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 
     exec_array = _PySequence_BytesToCharpArray(executable_list);
-    if (!exec_array)
+    if (!exec_array) {
+        Py_XDECREF(gc_module);
         return NULL;
+    }
 
     /* Convert args and env into appropriate arguments for exec() */
     /* These conversions are done in the parent process to avoid allocating

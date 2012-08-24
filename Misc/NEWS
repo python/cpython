@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15777: Fix a refleak in _posixsubprocess.
+
 - Issue ##665194: Update email.utils.localtime to use datetime.astimezone and
   correctly handle historic changes in UTC offsets.
 
