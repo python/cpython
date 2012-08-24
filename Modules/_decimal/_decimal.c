@@ -3357,7 +3357,23 @@ PyDec_AsFloat(PyObject *dec)
 {
     PyObject *f, *s;
 
-    s = dec_str(dec);
+    if (mpd_isnan(MPD(dec))) {
+        if (mpd_issnan(MPD(dec))) {
+            PyErr_SetString(PyExc_ValueError,
+                "cannot convert signaling NaN to float");
+            return NULL;
+        }
+        if (mpd_isnegative(MPD(dec))) {
+            s = PyUnicode_FromString("-nan");
+        }
+        else {
+            s = PyUnicode_FromString("nan");
+        }
+    }
+    else {
+        s = dec_str(dec);
+    }
+
     if (s == NULL) {
         return NULL;
     }
