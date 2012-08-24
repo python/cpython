@@ -115,6 +115,8 @@ Tests
 Build
 -----
 
+- Output lib files for PGO build into PGO directory.
+
 - Pick up 32-bit launcher from PGO directory on 64-bit PGO build.
 
 - Drop PC\python_nt.h as it's not used. Add input dependency on custom
