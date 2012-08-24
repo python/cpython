@@ -119,7 +119,7 @@ Basic Usage
 .. function:: dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, cls=None, indent=None, separators=None, default=None, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
-   file-like object).
+   :term:`file-like object`).
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`int`, :class:`float`, :class:`bool`,
@@ -183,8 +183,8 @@ Basic Usage
 
 .. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting file-like object containing a JSON
-   document) to a Python object.
+   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
+   containing a JSON document) to a Python object.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
