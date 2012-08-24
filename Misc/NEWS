@@ -115,6 +115,8 @@ Tests
 Build
 -----
 
+- Add missing PGI/PGO configurations for pywlauncher.
+
 - Issue #15645: Ensure 2to3 grammar pickles are properly installed.
 
 
