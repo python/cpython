@@ -87,6 +87,7 @@
 make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h
 </Command>
       <Outputs>$(SolutionDir)..\PC\pythonnt_rc.h;%(Outputs)</Outputs>
+      <Inputs>$(SolutionDir)make_versioninfo.exe</Inputs>
     </CustomBuildStep>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -104,10 +105,10 @@ make_versioninfo.exe &gt; ..\PC\pythonnt_rc.h
       <SubSystem>Console</SubSystem>
       <BaseAddress>0x1d000000</BaseAddress>
     </Link>
+    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>cd $(SolutionDir)
-make_versioninfo.exe &gt; ..\PC\python_nt.h
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,6 +141,7 @@ make_versioninfo.exe &gt; ..\PC\python_nt.h
 make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h
 </Command>
       <Outputs>$(SolutionDir)..\PC\pythonnt_rc_d.h;%(Outputs)</Outputs>
+      <Inputs>$(SolutionDir)make_versioninfo_d.exe</Inputs>
     </CustomBuildStep>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -158,9 +160,8 @@ make_versioninfo_d.exe &gt; ..\PC\pythonnt_rc_d.h
       <BaseAddress>0x1d000000</BaseAddress>
     </Link>
     <PostBuildEvent>
-      <Command>cd $(SolutionDir)
-make_versioninfo_d.exe &gt; ..\PC\python_nt_d.h
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
