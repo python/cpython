@@ -95,6 +95,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13370: Ensure that ctypes works on Mac OS X when Python is
+  compiled using the clang compiler
+
 - Issue #15544: Fix Decimal.__float__ to work with payload-carrying NaNs.
 
 - Issue #15199: Fix JavaScript's default MIME type to application/javascript.
