@@ -152,12 +152,42 @@ classify_argument(
 		case FFI_TYPE_UINT64:
 		case FFI_TYPE_SINT64:
 		case FFI_TYPE_POINTER:
+#if 0
 			if (byte_offset + type->size <= 4)
 				classes[0] = X86_64_INTEGERSI_CLASS;
 			else
 				classes[0] = X86_64_INTEGER_CLASS;
 
 			return 1;
+#else
+		{
+			int size = byte_offset + type->size;
+
+			if (size <= 4)
+			{
+				classes[0] = X86_64_INTEGERSI_CLASS;
+				return 1;
+			}
+			else if (size <= 8)
+			{
+				classes[0] = X86_64_INTEGER_CLASS;
+				return 1;
+			}
+			else if (size <= 12)
+			{
+				classes[0] = X86_64_INTEGER_CLASS;
+				classes[1] = X86_64_INTEGERSI_CLASS;
+				return 2;
+			}
+			else if (size <= 16)
+			{
+				classes[0] = classes[1] = X86_64_INTEGERSI_CLASS;
+				return 2;
+			}
+			else
+				FFI_ASSERT (0);
+		}
+#endif
 
 		case FFI_TYPE_FLOAT:
 			if (byte_offset == 0)
@@ -213,6 +243,21 @@ classify_argument(
 				byte_offset += (*ptr)->size;
 			}
 
+			if (words > 2)
+			{
+				/* When size > 16 bytes, if the first one isn't
+			           X86_64_SSE_CLASS or any other ones aren't
+			           X86_64_SSEUP_CLASS, everything should be passed in
+			           memory.  */
+				if (classes[0] != X86_64_SSE_CLASS)
+					return 0;
+
+				for (i = 1; i < words; i++)
+					if (classes[i] != X86_64_SSEUP_CLASS)
+						return 0;
+			}
+
+
 			/* Final merger cleanup.  */
 			for (i = 0; i < words; i++)
 			{
@@ -224,13 +269,20 @@ classify_argument(
 				/*	The X86_64_SSEUP_CLASS should be always preceded by
 					X86_64_SSE_CLASS.  */
 				if (classes[i] == X86_64_SSEUP_CLASS
-					&& (i == 0 || classes[i - 1] != X86_64_SSE_CLASS))
+					&& classes[i - 1] != X86_64_SSE_CLASS
+					&& classes[i - 1] != X86_64_SSEUP_CLASS)
+				{
+					FFI_ASSERT(i != 0);
 					classes[i] = X86_64_SSE_CLASS;
+				}
 
 				/*  X86_64_X87UP_CLASS should be preceded by X86_64_X87_CLASS.  */
 				if (classes[i] == X86_64_X87UP_CLASS
-					&& (i == 0 || classes[i - 1] != X86_64_X87_CLASS))
+					&& classes[i - 1] != X86_64_X87_CLASS)
+				{
+					FFI_ASSERT(i != 0);
 					classes[i] = X86_64_SSE_CLASS;
+				}
 			}
 
 			return words;
@@ -369,6 +421,7 @@ ffi_prep_cif_machdep(
 
 	cif->flags = flags;
 	cif->bytes = bytes;
+	cif->bytes = ALIGN(bytes,8);
 
 	return FFI_OK;
 }
@@ -449,7 +502,61 @@ ffi_call(
 					case X86_64_INTEGER_CLASS:
 					case X86_64_INTEGERSI_CLASS:
 						reg_args->gpr[gprcount] = 0;
-						memcpy (&reg_args->gpr[gprcount], a, size < 8 ? size : 8);
+						switch (arg_types[i]->type) {
+						case FFI_TYPE_SINT8:
+						   {
+							int8_t shortval = *(int8_t*)a;
+							int64_t  actval = (int64_t)shortval;
+							reg_args->gpr[gprcount] = actval;
+							/*memcpy (&reg_args->gpr[gprcount], &actval, 8);*/
+							break;
+						   }
+
+						case FFI_TYPE_SINT16:
+						   {
+							int16_t shortval = *(int16_t*)a;
+							int64_t  actval = (int64_t)shortval;
+							memcpy (&reg_args->gpr[gprcount], &actval, 8);
+							break;
+						   }
+
+						case FFI_TYPE_SINT32:
+						   {
+							int32_t shortval = *(int32_t*)a;
+							int64_t  actval = (int64_t)shortval;
+							memcpy (&reg_args->gpr[gprcount], &actval, 8);
+							break;
+						   }
+
+						case FFI_TYPE_UINT8:
+						   {
+							u_int8_t shortval = *(u_int8_t*)a;
+							u_int64_t  actval = (u_int64_t)shortval;
+							/*memcpy (&reg_args->gpr[gprcount], &actval, 8);*/
+							reg_args->gpr[gprcount] = actval;
+							break;
+						   }
+
+						case FFI_TYPE_UINT16:
+						   {
+							u_int16_t shortval = *(u_int16_t*)a;
+							u_int64_t  actval = (u_int64_t)shortval;
+							memcpy (&reg_args->gpr[gprcount], &actval, 8);
+							break;
+						   }
+
+						case FFI_TYPE_UINT32:
+						   {
+							u_int32_t shortval = *(u_int32_t*)a;
+							u_int64_t  actval = (u_int64_t)shortval;
+							memcpy (&reg_args->gpr[gprcount], &actval, 8);
+							break;
+						   }
+
+						default:
+							//memcpy (&reg_args->gpr[gprcount], a, size < 8 ? size : 8);
+							reg_args->gpr[gprcount] = *(int64_t*)a;
+						}
 						gprcount++;
 						break;
 
@@ -505,12 +612,15 @@ ffi_prep_closure(
 	return FFI_OK;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
 int
 ffi_closure_unix64_inner(
 	ffi_closure*	closure,
 	void*			rvalue,
 	RegisterArgs*	reg_args,
 	char*			argp)
+#pragma clang diagnostic pop
 {
 	ffi_cif*	cif = closure->cif;
 	void**		avalue = alloca(cif->nargs * sizeof(void *));
