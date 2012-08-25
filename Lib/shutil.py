@@ -203,7 +203,7 @@ def copytree(src, dst, symlinks=False, ignore=None):
             # Copying file access times may fail on Windows
             pass
         else:
-            errors.extend((src, dst, str(why)))
+            errors.append((src, dst, str(why)))
     if errors:
         raise Error, errors
 
