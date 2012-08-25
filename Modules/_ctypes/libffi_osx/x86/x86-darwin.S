@@ -198,8 +198,12 @@ LCFI7:
 	je	Lcls_retldouble
 	cmpl	$FFI_TYPE_SINT64, %eax
 	je	Lcls_retllong
+	cmpl	$FFI_TYPE_UINT8, %eax
+	je	Lcls_retstruct1
 	cmpl	$FFI_TYPE_SINT8, %eax
 	je	Lcls_retstruct1
+	cmpl	$FFI_TYPE_UINT16, %eax
+	je	Lcls_retstruct2
 	cmpl	$FFI_TYPE_SINT16, %eax
 	je	Lcls_retstruct2
 	cmpl	$FFI_TYPE_STRUCT, %eax
