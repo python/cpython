@@ -262,6 +262,7 @@ library/stdtypes,,:end,s[start:end]
 library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
 library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
+library/stdtypes,,::,>>> z = y[::-2]
 library/string,,:end,s[start:end]
 library/subprocess,,`,"output=`dmesg | grep hda`"
 library/subprocess,,`,"output=`mycmd myarg`"
