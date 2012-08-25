@@ -2405,6 +2405,52 @@ copying.
 
    :class:`memoryview` has several methods:
 
+   .. method:: __eq__(exporter)
+
+      A memoryview and a :pep:`3118` exporter are equal if their shapes are
+      equivalent and if all corresponding values are equal when the operands'
+      respective format codes are interpreted using :mod:`struct` syntax.
+
+      For the subset of :mod:`struct` format strings currently supported by
+      :meth:`tolist`, ``v`` and ``w`` are equal if ``v.tolist() == w.tolist()``::
+
+         >>> import array
+         >>> a = array.array('I', [1, 2, 3, 4, 5])
+         >>> b = array.array('d', [1.0, 2.0, 3.0, 4.0, 5.0])
+         >>> c = array.array('b', [5, 3, 1])
+         >>> x = memoryview(a)
+         >>> y = memoryview(b)
+         >>> x == a == y == b
+         True
+         >>> x.tolist() == a.tolist() == y.tolist() == b.tolist()
+         True
+         >>> z = y[::-2]
+         >>> z == c
+         True
+         >>> z.tolist() == c.tolist()
+         True
+
+      If either format string is not supported by the :mod:`struct` module,
+      then the objects will always compare as unequal (even if the format
+      strings and buffer contents are identical)::
+
+         >>> from ctypes import BigEndianStructure, c_long
+         >>> class BEPoint(BigEndianStructure):
+         ...     _fields_ = [("x", c_long), ("y", c_long)]
+         ...
+         >>> point = BEPoint(100, 200)
+         >>> a = memoryview(point)
+         >>> b = memoryview(point)
+         >>> a == point
+         False
+         >>> a == b
+         False
+
+      Note that, as with floating point numbers, ``v is w`` does *not* imply
+      ``v == w`` for memoryview objects.
+
+      .. versionchanged:: 3.3
+
    .. method:: tobytes()
 
       Return the data in the buffer as a bytestring.  This is equivalent to
@@ -2417,7 +2463,9 @@ copying.
          b'abc'
 
       For non-contiguous arrays the result is equal to the flattened list
-      representation with all elements converted to bytes.
+      representation with all elements converted to bytes. :meth:`tobytes`
+      supports all format strings, including those that are not in
+      :mod:`struct` module syntax.
 
    .. method:: tolist()
 
@@ -2430,6 +2478,9 @@ copying.
          >>> m = memoryview(a)
          >>> m.tolist()
          [1.1, 2.2, 3.3]
+
+      :meth:`tolist` is currently restricted to single character native formats
+      in :mod:`struct` module syntax.
 
    .. method:: release()
 
@@ -2470,7 +2521,10 @@ copying.
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
       the buffer itself is not copied. Supported casts are 1D -> C-contiguous
-      and C-contiguous -> 1D. One of the formats must be a byte format
+      and C-contiguous -> 1D.
+
+      Both formats are restricted to single element native formats in
+      :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
 
@@ -2608,25 +2662,7 @@ copying.
       A string containing the format (in :mod:`struct` module style) for each
       element in the view. A memoryview can be created from exporters with
       arbitrary format strings, but some methods (e.g. :meth:`tolist`) are
-      restricted to native single element formats. Special care must be taken
-      when comparing memoryviews. Since comparisons are required to return a
-      value for ``==`` and ``!=``, two memoryviews referencing the same
-      exporter can compare as not-equal if the exporter's format is not
-      understood::
-
-         >>> from ctypes import BigEndianStructure, c_long
-         >>> class BEPoint(BigEndianStructure):
-         ...     _fields_ = [("x", c_long), ("y", c_long)]
-         ...
-         >>> point = BEPoint(100, 200)
-         >>> a = memoryview(point)
-         >>> b = memoryview(point)
-         >>> a == b
-         False
-         >>> a.tolist()
-         Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-         NotImplementedError: memoryview: unsupported format T{>l:x:>l:y:}
+      restricted to native single element formats.
 
    .. attribute:: itemsize
 
