@@ -10,6 +10,9 @@ What's New in Python 3.3.0 Release Candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #15573: memoryview comparisons are now performed by value with full
+  support for any valid struct module format definition.  
+
 - Issue #15316: When an item in the fromlist for __import__ doesn't exist,
   don't raise an error, but if an exception is raised as part of an import do
   let that propagate.
