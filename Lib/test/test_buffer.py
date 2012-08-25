@@ -32,6 +32,11 @@ except ImportError:
     struct = None
 
 try:
+    import ctypes
+except ImportError:
+    ctypes = None
+
+try:
     with warnings.catch_warnings():
         from numpy import ndarray as numpy_array
 except ImportError:
@@ -835,8 +840,6 @@ class TestBufferProtocol(unittest.TestCase):
                 # test tobytes()
                 self.assertEqual(result.tobytes(), b)
 
-            if not buf_err and is_memoryview_format(fmt):
-
                 # lst := expected multi-dimensional logical representation
                 # flatten(lst) := elements in C-order
                 ff = fmt if fmt else 'B'
@@ -877,8 +880,10 @@ class TestBufferProtocol(unittest.TestCase):
                     # To 'C'
                     contig = py_buffer_to_contiguous(result, 'C', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
-                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)[0]
+                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)
                                for n in range(nmemb)]
+                    if len(initlst[0]) == 1:
+                        initlst = [v[0] for v in initlst]
 
                     y = ndarray(initlst, shape=shape, flags=ro, format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
@@ -886,8 +891,10 @@ class TestBufferProtocol(unittest.TestCase):
                     # To 'F'
                     contig = py_buffer_to_contiguous(result, 'F', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
-                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)[0]
+                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)
                                for n in range(nmemb)]
+                    if len(initlst[0]) == 1:
+                        initlst = [v[0] for v in initlst]
 
                     y = ndarray(initlst, shape=shape, flags=ro|ND_FORTRAN,
                                 format=fmt)
@@ -896,8 +903,10 @@ class TestBufferProtocol(unittest.TestCase):
                     # To 'A'
                     contig = py_buffer_to_contiguous(result, 'A', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
-                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)[0]
+                    initlst = [struct.unpack_from(fmt, contig, n*itemsize)
                                for n in range(nmemb)]
+                    if len(initlst[0]) == 1:
+                        initlst = [v[0] for v in initlst]
 
                     f = ND_FORTRAN if is_contiguous(result, 'F') else 0
                     y = ndarray(initlst, shape=shape, flags=f|ro, format=fmt)
@@ -3025,7 +3034,7 @@ class TestBufferProtocol(unittest.TestCase):
                             self.assertEqual(m.tobytes(), a.tobytes())
                             cmptest(self, a, b, m, singleitem)
 
-    def test_memoryview_compare(self):
+    def test_memoryview_compare_special_cases(self):
 
         a = array.array('L', [1, 2, 3])
         b = array.array('L', [1, 2, 7])
@@ -3054,43 +3063,32 @@ class TestBufferProtocol(unittest.TestCase):
         v = memoryview(a)
         self.assertNotEqual(v, [1, 2, 3])
 
-        # Different formats:
-        c = array.array('l', [1, 2, 3])
-        v = memoryview(a)
-        self.assertNotEqual(v, c)
-        self.assertNotEqual(c, v)
+        # NaNs
+        nd = ndarray([(0, 0)], shape=[1], format='l x d x', flags=ND_WRITABLE)
+        nd[0] = (-1, float('nan'))
+        self.assertNotEqual(memoryview(nd), nd)
 
-        # Not implemented formats. Ugly, but inevitable. This is the same as
-        # issue #2531: equality is also used for membership testing and must
-        # return a result.
-        a = ndarray([(1, 1.5), (2, 2.7)], shape=[2], format='ld')
+        # Depends on issue #15625: the struct module does not understand 'u'.
+        a = array.array('u', 'xyz')
         v = memoryview(a)
-        self.assertNotEqual(v, a)
         self.assertNotEqual(a, v)
-
-        a = ndarray([b'12345'], shape=[1], format="s")
-        v = memoryview(a)
         self.assertNotEqual(v, a)
-        self.assertNotEqual(a, v)
 
-        nd = ndarray([(1,1,1), (2,2,2), (3,3,3)], shape=[3], format='iii')
-        v = memoryview(nd)
-        self.assertNotEqual(v, nd)
-        self.assertNotEqual(nd, v)
+        # Some ctypes format strings are unknown to the struct module.
+        if ctypes:
+            # format: "T{>l:x:>l:y:}"
+            class BEPoint(ctypes.BigEndianStructure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            point = BEPoint(100, 200)
+            a = memoryview(point)
+            b = memoryview(point)
+            self.assertNotEqual(a, b)
+            self.assertNotEqual(a, point)
+            self.assertNotEqual(point, a)
+            self.assertRaises(NotImplementedError, a.tolist)
 
-        # '@' prefix can be dropped:
-        nd1 = ndarray([1,2,3], shape=[3], format='@i')
-        nd2 = ndarray([1,2,3], shape=[3], format='i')
-        v = memoryview(nd1)
-        w = memoryview(nd2)
-        self.assertEqual(v, w)
-        self.assertEqual(w, v)
-        self.assertEqual(v, nd2)
-        self.assertEqual(nd2, v)
-        self.assertEqual(w, nd1)
-        self.assertEqual(nd1, w)
+    def test_memoryview_compare_ndim_zero(self):
 
-        # ndim = 0
         nd1 = ndarray(1729, shape=[], format='@L')
         nd2 = ndarray(1729, shape=[], format='L', flags=ND_WRITABLE)
         v = memoryview(nd1)
@@ -3124,7 +3122,37 @@ class TestBufferProtocol(unittest.TestCase):
         m[9] = 100
         self.assertNotEqual(m, nd)
 
-        # ndim = 1: contiguous
+        # struct module: equal
+        nd1 = ndarray((1729, 1.2, b'12345'), shape=[], format='Lf5s')
+        nd2 = ndarray((1729, 1.2, b'12345'), shape=[], format='hf5s',
+                      flags=ND_WRITABLE)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+        self.assertEqual(v, w)
+        self.assertEqual(w, v)
+        self.assertEqual(v, nd2)
+        self.assertEqual(nd2, v)
+        self.assertEqual(w, nd1)
+        self.assertEqual(nd1, w)
+
+        # struct module: not equal
+        nd1 = ndarray((1729, 1.2, b'12345'), shape=[], format='Lf5s')
+        nd2 = ndarray((-1729, 1.2, b'12345'), shape=[], format='hf5s',
+                      flags=ND_WRITABLE)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+        self.assertNotEqual(v, w)
+        self.assertNotEqual(w, v)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(nd2, v)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(nd1, w)
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+
+    def test_memoryview_compare_ndim_one(self):
+
+        # contiguous
         nd1 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='@h')
         nd2 = ndarray([-529, 576, -625, 676, 729], shape=[5], format='@h')
         v = memoryview(nd1)
@@ -3136,7 +3164,19 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # ndim = 1: non-contiguous
+        # contiguous, struct module
+        nd1 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='<i')
+        nd2 = ndarray([-529, 576, -625, 676, 729], shape=[5], format='>h')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+        # non-contiguous
         nd1 = ndarray([-529, -625, -729], shape=[3], format='@h')
         nd2 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='@h')
         v = memoryview(nd1)
@@ -3147,7 +3187,18 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(v, w[::2])
         self.assertEqual(v[::-1], w[::-2])
 
-        # ndim = 1: non-contiguous, suboffsets
+        # non-contiguous, struct module
+        nd1 = ndarray([-529, -625, -729], shape=[3], format='!h')
+        nd2 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='<l')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd2[::2])
+        self.assertEqual(w[::2], nd1)
+        self.assertEqual(v, w[::2])
+        self.assertEqual(v[::-1], w[::-2])
+
+        # non-contiguous, suboffsets
         nd1 = ndarray([-529, -625, -729], shape=[3], format='@h')
         nd2 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='@h',
                       flags=ND_PIL)
@@ -3159,7 +3210,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(v, w[::2])
         self.assertEqual(v[::-1], w[::-2])
 
-        # ndim = 1: zeros in shape
+        # non-contiguous, suboffsets, struct module
+        nd1 = ndarray([-529, -625, -729], shape=[3], format='h  0c')
+        nd2 = ndarray([-529, 576, -625, 676, -729], shape=[5], format='>  h',
+                      flags=ND_PIL)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd2[::2])
+        self.assertEqual(w[::2], nd1)
+        self.assertEqual(v, w[::2])
+        self.assertEqual(v[::-1], w[::-2])
+
+    def test_memoryview_compare_zero_shape(self):
+
+        # zeros in shape
         nd1 = ndarray([900, 961], shape=[0], format='@h')
         nd2 = ndarray([-900, -961], shape=[0], format='@h')
         v = memoryview(nd1)
@@ -3171,7 +3236,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(w, nd1)
         self.assertEqual(v, w)
 
-        # ndim = 1: zero strides
+        # zeros in shape, struct module
+        nd1 = ndarray([900, 961], shape=[0], format='= h0c')
+        nd2 = ndarray([-900, -961], shape=[0], format='@   i')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_zero_strides(self):
+
+        # zero strides
         nd1 = ndarray([900, 900, 900, 900], shape=[4], format='@L')
         nd2 = ndarray([900], shape=[4], strides=[0], format='L')
         v = memoryview(nd1)
@@ -3183,6 +3262,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(w, nd1)
         self.assertEqual(v, w)
 
+        # zero strides, struct module
+        nd1 = ndarray([(900, 900)]*4, shape=[4], format='@ Li')
+        nd2 = ndarray([(900, 900)], shape=[4], strides=[0], format='!L  h')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_random_formats(self):
+
+        # random single character native formats
         n = 10
         for char in fmtdict['@m']:
             fmt, items, singleitem = randitems(n, 'memoryview', '@', char)
@@ -3195,8 +3289,22 @@ class TestBufferProtocol(unittest.TestCase):
                 m = memoryview(nd)
                 self.assertEqual(m, nd)
 
-        ##### ndim > 1: C-contiguous
-        # different values
+        # random formats
+        n = 10
+        for _ in range(100):
+            fmt, items, singleitem = randitems(n)
+            for flags in (0, ND_PIL):
+                nd = ndarray(items, shape=[n], format=fmt, flags=flags)
+                m = memoryview(nd)
+                self.assertEqual(m, nd)
+
+                nd = nd[::-3]
+                m = memoryview(nd)
+                self.assertEqual(m, nd)
+
+    def test_memoryview_compare_multidim_c(self):
+
+        # C-contiguous, different values
         nd1 = ndarray(list(range(-15, 15)), shape=[3, 2, 5], format='@h')
         nd2 = ndarray(list(range(0, 30)), shape=[3, 2, 5], format='@h')
         v = memoryview(nd1)
@@ -3208,7 +3316,19 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different shape
+        # C-contiguous, different values, struct module
+        nd1 = ndarray([(0, 1, 2)]*30, shape=[3, 2, 5], format='=f q xxL')
+        nd2 = ndarray([(-1.2, 1, 2)]*30, shape=[3, 2, 5], format='< f 2Q')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+        # C-contiguous, different shape
         nd1 = ndarray(list(range(30)), shape=[2, 3, 5], format='L')
         nd2 = ndarray(list(range(30)), shape=[3, 2, 5], format='L')
         v = memoryview(nd1)
@@ -3220,9 +3340,9 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different format
-        nd1 = ndarray(list(range(30)), shape=[2, 3, 5], format='L')
-        nd2 = ndarray(list(range(30)), shape=[2, 3, 5], format='l')
+        # C-contiguous, different shape, struct module
+        nd1 = ndarray([(0, 1, 2)]*21, shape=[3, 7], format='! b B xL')
+        nd2 = ndarray([(0, 1, 2)]*21, shape=[7, 3], format='= Qx l xxL')
         v = memoryview(nd1)
         w = memoryview(nd2)
 
@@ -3232,8 +3352,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        ##### ndim > 1: Fortran contiguous
-        # different values
+        # C-contiguous, different format, struct module
+        nd1 = ndarray(list(range(30)), shape=[2, 3, 5], format='L')
+        nd2 = ndarray(list(range(30)), shape=[2, 3, 5], format='l')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_multidim_fortran(self):
+
+        # Fortran-contiguous, different values
         nd1 = ndarray(list(range(-15, 15)), shape=[5, 2, 3], format='@h',
                       flags=ND_FORTRAN)
         nd2 = ndarray(list(range(0, 30)), shape=[5, 2, 3], format='@h',
@@ -3247,7 +3380,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different shape
+        # Fortran-contiguous, different values, struct module
+        nd1 = ndarray([(2**64-1, -1)]*6, shape=[2, 3], format='=Qq',
+                      flags=ND_FORTRAN)
+        nd2 = ndarray([(-1, 2**64-1)]*6, shape=[2, 3], format='=qQ',
+                      flags=ND_FORTRAN)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+        # Fortran-contiguous, different shape
         nd1 = ndarray(list(range(-15, 15)), shape=[2, 3, 5], format='l',
                       flags=ND_FORTRAN)
         nd2 = ndarray(list(range(-15, 15)), shape=[3, 2, 5], format='l',
@@ -3261,10 +3408,10 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different format
-        nd1 = ndarray(list(range(30)), shape=[5, 2, 3], format='@h',
+        # Fortran-contiguous, different shape, struct module
+        nd1 = ndarray(list(range(-15, 15)), shape=[2, 3, 5], format='0ll',
                       flags=ND_FORTRAN)
-        nd2 = ndarray(list(range(30)), shape=[5, 2, 3], format='@b',
+        nd2 = ndarray(list(range(-15, 15)), shape=[3, 2, 5], format='l',
                       flags=ND_FORTRAN)
         v = memoryview(nd1)
         w = memoryview(nd2)
@@ -3275,7 +3422,23 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        ##### ndim > 1: mixed C/Fortran contiguous
+        # Fortran-contiguous, different format, struct module
+        nd1 = ndarray(list(range(30)), shape=[5, 2, 3], format='@h',
+                      flags=ND_FORTRAN)
+        nd2 = ndarray(list(range(30)), shape=[5, 2, 3], format='@b',
+                      flags=ND_FORTRAN)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_multidim_mixed(self):
+
+        # mixed C/Fortran contiguous
         lst1 = list(range(-15, 15))
         lst2 = transpose(lst1, [3, 2, 5])
         nd1 = ndarray(lst1, shape=[3, 2, 5], format='@l')
@@ -3287,8 +3450,20 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(w, nd2)
         self.assertEqual(v, w)
 
-        ##### ndim > 1: non-contiguous
-        # different values
+        # mixed C/Fortran contiguous, struct module
+        lst1 = [(-3.3, -22, b'x')]*30
+        lst1[5] = (-2.2, -22, b'x')
+        lst2 = transpose(lst1, [3, 2, 5])
+        nd1 = ndarray(lst1, shape=[3, 2, 5], format='d b c')
+        nd2 = ndarray(lst2, shape=[3, 2, 5], format='d h c', flags=ND_FORTRAN)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, w)
+
+        # different values, non-contiguous
         ex1 = ndarray(list(range(40)), shape=[5, 8], format='@I')
         nd1 = ex1[3:1:-1, ::-2]
         ex2 = ndarray(list(range(40)), shape=[5, 8], format='I')
@@ -3301,6 +3476,20 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(v, nd2)
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
+
+        # same values, non-contiguous, struct module
+        ex1 = ndarray([(2**31-1, -2**31)]*22, shape=[11, 2], format='=ii')
+        nd1 = ex1[3:1:-1, ::-2]
+        ex2 = ndarray([(2**31-1, -2**31)]*22, shape=[11, 2], format='>ii')
+        nd2 = ex2[1:3:1, ::-2]
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
 
         # different shape
         ex1 = ndarray(list(range(30)), shape=[2, 3, 5], format='b')
@@ -3316,10 +3505,10 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different format
-        ex1 = ndarray(list(range(30)), shape=[5, 3, 2], format='i')
+        # different shape, struct module
+        ex1 = ndarray(list(range(30)), shape=[2, 3, 5], format='B')
         nd1 = ex1[1:3:, ::-2]
-        nd2 = ndarray(list(range(30)), shape=[5, 3, 2], format='@I')
+        nd2 = ndarray(list(range(30)), shape=[3, 2, 5], format='b')
         nd2 = ex2[1:3:, ::-2]
         v = memoryview(nd1)
         w = memoryview(nd2)
@@ -3330,7 +3519,23 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        ##### ndim > 1: zeros in shape
+        # different format, struct module
+        ex1 = ndarray([(2, b'123')]*30, shape=[5, 3, 2], format='b3s')
+        nd1 = ex1[1:3:, ::-2]
+        nd2 = ndarray([(2, b'123')]*30, shape=[5, 3, 2], format='i3s')
+        nd2 = ex2[1:3:, ::-2]
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+    def test_memoryview_compare_multidim_zero_shape(self):
+
+        # zeros in shape
         nd1 = ndarray(list(range(30)), shape=[0, 3, 2], format='i')
         nd2 = ndarray(list(range(30)), shape=[5, 0, 2], format='@i')
         v = memoryview(nd1)
@@ -3342,7 +3547,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # ndim > 1: zero strides
+        # zeros in shape, struct module
+        nd1 = ndarray(list(range(30)), shape=[0, 3, 2], format='i')
+        nd2 = ndarray(list(range(30)), shape=[5, 0, 2], format='@i')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+    def test_memoryview_compare_multidim_zero_strides(self):
+
+        # zero strides
         nd1 = ndarray([900]*80, shape=[4, 5, 4], format='@L')
         nd2 = ndarray([900], shape=[4, 5, 4], strides=[0, 0, 0], format='L')
         v = memoryview(nd1)
@@ -3355,7 +3574,21 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(v, w)
         self.assertEqual(v.tolist(), w.tolist())
 
-        ##### ndim > 1: suboffsets
+        # zero strides, struct module
+        nd1 = ndarray([(1, 2)]*10, shape=[2, 5], format='=lQ')
+        nd2 = ndarray([(1, 2)], shape=[2, 5], strides=[0, 0], format='<lQ')
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_multidim_suboffsets(self):
+
+        # suboffsets
         ex1 = ndarray(list(range(40)), shape=[5, 8], format='@I')
         nd1 = ex1[3:1:-1, ::-2]
         ex2 = ndarray(list(range(40)), shape=[5, 8], format='I', flags=ND_PIL)
@@ -3369,8 +3602,29 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different shape
-        ex1 = ndarray(list(range(30)), shape=[2, 3, 5], format='b', flags=ND_PIL)
+        # suboffsets, struct module
+        ex1 = ndarray([(2**64-1, -1)]*40, shape=[5, 8], format='=Qq',
+                      flags=ND_WRITABLE)
+        ex1[2][7] = (1, -2)
+        nd1 = ex1[3:1:-1, ::-2]
+
+        ex2 = ndarray([(2**64-1, -1)]*40, shape=[5, 8], format='>Qq',
+                      flags=ND_PIL|ND_WRITABLE)
+        ex2[2][7] = (1, -2)
+        nd2 = ex2[1:3:1, ::-2]
+
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+        # suboffsets, different shape
+        ex1 = ndarray(list(range(30)), shape=[2, 3, 5], format='b',
+                      flags=ND_PIL)
         nd1 = ex1[1:3:, ::-2]
         nd2 = ndarray(list(range(30)), shape=[3, 2, 5], format='b')
         nd2 = ex2[1:3:, ::-2]
@@ -3383,11 +3637,48 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertNotEqual(w, nd1)
         self.assertNotEqual(v, w)
 
-        # different format
+        # suboffsets, different shape, struct module
+        ex1 = ndarray([(2**8-1, -1)]*40, shape=[2, 3, 5], format='Bb',
+                      flags=ND_PIL|ND_WRITABLE)
+        nd1 = ex1[1:2:, ::-2]
+
+        ex2 = ndarray([(2**8-1, -1)]*40, shape=[3, 2, 5], format='Bb')
+        nd2 = ex2[1:2:, ::-2]
+
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertNotEqual(v, nd2)
+        self.assertNotEqual(w, nd1)
+        self.assertNotEqual(v, w)
+
+        # suboffsets, different format
         ex1 = ndarray(list(range(30)), shape=[5, 3, 2], format='i', flags=ND_PIL)
         nd1 = ex1[1:3:, ::-2]
-        nd2 = ndarray(list(range(30)), shape=[5, 3, 2], format='@I', flags=ND_PIL)
+        ex2 = ndarray(list(range(30)), shape=[5, 3, 2], format='@I', flags=ND_PIL)
         nd2 = ex2[1:3:, ::-2]
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, nd2)
+        self.assertEqual(w, nd1)
+        self.assertEqual(v, w)
+
+        # suboffsets, different format, struct module
+        ex1 = ndarray([(b'hello', b'', 1)]*27, shape=[3, 3, 3], format='5s0sP',
+                      flags=ND_PIL|ND_WRITABLE)
+        ex1[1][2][2] = (b'sushi', b'', 1)
+        nd1 = ex1[1:3:, ::-2]
+
+        ex2 = ndarray([(b'hello', b'', 1)]*27, shape=[3, 3, 3], format='5s0sP',
+                      flags=ND_PIL|ND_WRITABLE)
+        ex1[1][2][2] = (b'sushi', b'', 1)
+        nd2 = ex2[1:3:, ::-2]
+
         v = memoryview(nd1)
         w = memoryview(nd2)
 
@@ -3408,6 +3699,50 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(v, nd1)
         self.assertEqual(w, nd2)
         self.assertEqual(v, w)
+
+        # initialize mixed C/Fortran + suboffsets, struct module
+        lst1 = [(b'sashimi', b'sliced', 20.05)]*30
+        lst1[11] = (b'ramen', b'spicy', 9.45)
+        lst2 = transpose(lst1, [3, 2, 5])
+
+        nd1 = ndarray(lst1, shape=[3, 2, 5], format='< 10p 9p d', flags=ND_PIL)
+        nd2 = ndarray(lst2, shape=[3, 2, 5], format='> 10p 9p d',
+                      flags=ND_FORTRAN|ND_PIL)
+        v = memoryview(nd1)
+        w = memoryview(nd2)
+
+        self.assertEqual(v, nd1)
+        self.assertEqual(w, nd2)
+        self.assertEqual(v, w)
+
+    def test_memoryview_compare_not_equal(self):
+
+        # items not equal
+        for byteorder in ['=', '<', '>', '!']:
+            x = ndarray([2**63]*120, shape=[3,5,2,2,2], format=byteorder+'Q')
+            y = ndarray([2**63]*120, shape=[3,5,2,2,2], format=byteorder+'Q',
+                        flags=ND_WRITABLE|ND_FORTRAN)
+            y[2][3][1][1][1] = 1
+            a = memoryview(x)
+            b = memoryview(y)
+            self.assertEqual(a, x)
+            self.assertEqual(b, y)
+            self.assertNotEqual(a, b)
+            self.assertNotEqual(a, y)
+            self.assertNotEqual(b, x)
+
+            x = ndarray([(2**63, 2**31, 2**15)]*120, shape=[3,5,2,2,2],
+                        format=byteorder+'QLH')
+            y = ndarray([(2**63, 2**31, 2**15)]*120, shape=[3,5,2,2,2],
+                        format=byteorder+'QLH', flags=ND_WRITABLE|ND_FORTRAN)
+            y[2][3][1][1][1] = (1, 1, 1)
+            a = memoryview(x)
+            b = memoryview(y)
+            self.assertEqual(a, x)
+            self.assertEqual(b, y)
+            self.assertNotEqual(a, b)
+            self.assertNotEqual(a, y)
+            self.assertNotEqual(b, x)
 
     def test_memoryview_check_released(self):
 
@@ -3452,10 +3787,37 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_tobytes(self):
         # Many implicit tests are already in self.verify().
 
-        nd = ndarray([-529, 576, -625, 676, -729], shape=[5], format='@h')
+        t = (-529, 576, -625, 676, -729)
 
+        nd = ndarray(t, shape=[5], format='@h')
         m = memoryview(nd)
+        self.assertEqual(m, nd)
         self.assertEqual(m.tobytes(), nd.tobytes())
+
+        nd = ndarray([t], shape=[1], format='>hQiLl')
+        m = memoryview(nd)
+        self.assertEqual(m, nd)
+        self.assertEqual(m.tobytes(), nd.tobytes())
+
+        nd = ndarray([t for _ in range(12)], shape=[2,2,3], format='=hQiLl')
+        m = memoryview(nd)
+        self.assertEqual(m, nd)
+        self.assertEqual(m.tobytes(), nd.tobytes())
+
+        nd = ndarray([t for _ in range(120)], shape=[5,2,2,3,2],
+                     format='<hQiLl')
+        m = memoryview(nd)
+        self.assertEqual(m, nd)
+        self.assertEqual(m.tobytes(), nd.tobytes())
+
+        # Unknown formats are handled: tobytes() purely depends on itemsize.
+        if ctypes:
+            # format: "T{>l:x:>l:y:}"
+            class BEPoint(ctypes.BigEndianStructure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            point = BEPoint(100, 200)
+            a = memoryview(point)
+            self.assertEqual(a.tobytes(), bytes(point))
 
     def test_memoryview_get_contiguous(self):
         # Many implicit tests are already in self.verify().

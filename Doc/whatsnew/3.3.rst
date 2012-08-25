@@ -162,7 +162,6 @@ Features
   and the view is read-only. (Contributed by Antoine Pitrou in
   :issue:`13411`)
 
-
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
   is now possible to reverse a memoryview in O(1) by using a negative step.
 
@@ -177,6 +176,12 @@ API changes
 * Accessing a memoryview element with format 'B' (unsigned bytes)
   now returns an integer (in accordance with the struct module syntax).
   For returning a bytes object the view must be cast to 'c' first.
+
+* memoryview comparisons now use the logical structure of the operands
+  and compare all array elements by value. All format strings in struct
+  module syntax are supported. Views with unrecognised format strings
+  are still permitted, but will always compare as unequal, regardless
+  of view contents.
 
 * For further changes see `Build and C API Changes`_ and `Porting C code`_ .
 
