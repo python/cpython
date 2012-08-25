@@ -129,8 +129,8 @@ The makefile for a framework build will also install ``python3.3-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit``).
 
-Running a specific archicture
-.............................
+Running a specific architecture
+...............................
 
 You can run code using a specific architecture using the ``arch`` command::
 
@@ -144,6 +144,14 @@ NOTE: When you're using a framework install of Python this requires at least
 Python 2.7 or 3.2, in earlier versions the python (and pythonw) commands are
 wrapper tools that execute the real interpreter without ensuring that the
 real interpreter runs with the same architecture.
+
+Using ``arch`` is not a perfect solution as the selected architecture will
+not automatically carry through to subprocesses launched by programs and tests
+under that Python.  If you want to ensure that Python interpreters launched in
+subprocesses also run in 32-bit-mode if the main interpreter does, use
+a ``python3.3-32`` binary and use the value of ``sys.executable`` as the
+``subprocess`` ``Popen`` executable value.
+
 
 Building and using a framework-based Python on Mac OS X.
 ========================================================
@@ -180,9 +188,16 @@ Versions/Current and you will see the familiar bin and lib directories.
 ----------------------------
 
 Yes, probably.  If you want Tkinter support you need to get the OSX AquaTk 
-distribution, this is installed by default on Mac OS X 10.4 or later. If
-you want wxPython you need to get that. If you want Cocoa you need to get
-PyObjC. 
+distribution, this is installed by default on Mac OS X 10.4 or later.  Be
+aware, though, that the Cocoa-based AquaTk's supplied starting with OS X
+10.6 have proven to be unstable.  If possible, you should consider
+installing a newer version before building on OS X 10.6 or later, such as
+the ActiveTcl 8.5.  See http://www.python.org/download/mac/tcltk/.  If you
+are building with an SDK, ensure that the newer Tcl and Tk frameworks are
+seen in the SDK's ``Library/Frameworks`` directory; you may need to
+manually create symlinks to their installed location, ``/Library/Frameworks``.
+If you want wxPython you need to get that.
+If you want Cocoa you need to get PyObjC.
 
 4. How do I build a framework Python?
 -------------------------------------
@@ -260,7 +275,13 @@ However, the Python build process itself has several build dependencies not
 available out of the box with OS X 10.4 so you may have to install
 additional software beyond what is provided with Xcode 2.  OS X 10.5
 provides a recent enough system Python (in ``/usr/bin``) to build
-the Python documentation set.
+the Python documentation set.  It should be possible to use SDKs and/or older
+versions of Xcode to build installers that are compatible with older systems
+on a newer system but this may not be completely foolproof so the resulting
+executables, shared libraries, and ``.so`` bundles should be carefully
+examined and tested on all supported systems for proper dynamic linking
+dependencies.  It is safest to build the distribution on a system running the
+minimum OS X version supported.
 
 All of this is normally done completely isolated in /tmp/_py, so it does not
 use your normal build directory nor does it install into /.
@@ -285,7 +306,7 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING:     ## -------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
-Python and have libaries in ``/usr/local`` that don't contain the required
+Python and have libraries in ``/usr/local`` that don't contain the required
 architectures. Temporarily move ``/usr/local`` aside to finish the build.
 
 
