@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13370: Ensure that ctypes works on Mac OS X when Python is
+  compiled using the clang compiler
+
 - Issue #13072: The array module's 'u' format code is now deprecated and
   will be removed in Python 4.0.
 

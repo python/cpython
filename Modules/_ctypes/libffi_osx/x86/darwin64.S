@@ -45,6 +45,7 @@
 _ffi_call_unix64:
 LUW0:
  movq  (%rsp), %r10    /* Load return address.  */
+ movq  %rdi, %r12    /* Save a copy of the register area. */
  leaq  (%rdi, %rsi), %rax  /* Find local stack base.  */
  movq  %rdx, (%rax)    /* Save flags.  */
  movq  %rcx, 8(%rax)   /* Save raddr.  */
@@ -52,7 +53,8 @@ LUW0:
  movq  %r10, 24(%rax)    /* Relocate return address.  */
  movq  %rax, %rbp    /* Finalize local stack frame.  */
 LUW1:
- movq  %rdi, %r10    /* Save a copy of the register area. */
+ /* movq  %rdi, %r10    // Save a copy of the register area. */
+ movq  %r12, %r10
  movq  %r8, %r11   /* Save a copy of the target fn.  */
  movl  %r9d, %eax    /* Set number of SSE registers.  */
 
@@ -255,7 +257,7 @@ Lld_void:
  ret
  .align  3
 Lld_int8:
- movzbl  -24(%rsp), %eax
+ movzbl  -24(%rsp), %eax 
  ret
  .align  3
 Lld_int16:
