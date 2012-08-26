@@ -69,7 +69,7 @@ implement a Python interpreter. It deliberately avoids including some of
 the types that arise only incidentally during processing such as the
 ``listiterator`` type.
 
-Typical use is of these names is for :func:`isinstance` or
+Typical use of these names is for :func:`isinstance` or
 :func:`issubclass` checks.
 
 Standard names are defined for the following types:
