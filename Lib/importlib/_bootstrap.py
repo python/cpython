@@ -268,8 +268,10 @@ def _get_module_lock(name):
 
     Should only be called with the import lock taken."""
     lock = None
-    if name in _module_locks:
+    try:
         lock = _module_locks[name]()
+    except KeyError:
+        pass
     if lock is None:
         if _thread is None:
             lock = _DummyModuleLock(name)
@@ -543,6 +545,9 @@ def module_for_loader(fxn):
             # implicitly imports 'locale' and would otherwise trigger an
             # infinite loop.
             module = new_module(fullname)
+            # This must be done before putting the module in sys.modules
+            # (otherwise an optimization shortcut in import.c becomes wrong)
+            module.__initializing__ = True
             sys.modules[fullname] = module
             module.__loader__ = self
             try:
@@ -554,8 +559,9 @@ def module_for_loader(fxn):
                     module.__package__ = fullname
                 else:
                     module.__package__ = fullname.rpartition('.')[0]
-        try:
+        else:
             module.__initializing__ = True
+        try:
             # If __package__ was not set above, __import__() will do it later.
             return fxn(self, module, *args, **kwargs)
         except:
