@@ -1408,7 +1408,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         int initializing = 0;
 
         Py_INCREF(mod);
-        /* Only call _bootstrap._lock_unlock_module() if __initializing__ is true. */
+        /* Optimization: only call _bootstrap._lock_unlock_module() if
+           __initializing__ is true.
+           NOTE: because of this, __initializing__ must be set *before*
+           stuffing the new module in sys.modules.
+         */
         value = _PyObject_GetAttrId(mod, &PyId___initializing__);
         if (value == NULL)
             PyErr_Clear();
