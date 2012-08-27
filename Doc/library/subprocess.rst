@@ -565,8 +565,8 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`communicate` rather than :attr:`.stdin.write <stdin>`,
-   :attr:`.stdout.read <stdout>` or :attr:`.stderr.read <stderr>` to avoid
+   Use :meth:`~Popen.communicate` rather than :attr:`.stdin.write <Popen.stdin>`,
+   :attr:`.stdout.read <Popen.stdout>` or :attr:`.stderr.read <Popen.stderr>` to avoid
    deadlocks due to any of the other OS pipe buffers filling up and blocking the
    child process.
 
