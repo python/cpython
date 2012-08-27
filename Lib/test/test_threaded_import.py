@@ -224,7 +224,17 @@ class ThreadedImportTests(unittest.TestCase):
 
 @reap_threads
 def test_main():
-    run_unittest(ThreadedImportTests)
+    old_switchinterval = None
+    try:
+        old_switchinterval = sys.getswitchinterval()
+        sys.setswitchinterval(0.00000001)
+    except AttributeError:
+        pass
+    try:
+        run_unittest(ThreadedImportTests)
+    finally:
+        if old_switchinterval is not None:
+            sys.setswitchinterval(old_switchinterval)
 
 if __name__ == "__main__":
     test_main()

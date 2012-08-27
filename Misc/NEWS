@@ -13,6 +13,8 @@ Core and Builtins
 - Issue #15784: Modify OSError.__str__() to better distinguish between
   errno error numbers and Windows error numbers.
 
+- Issue #15781: Fix two small race conditions in import's module locking.
+
 Library
 -------
 
