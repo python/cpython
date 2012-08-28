@@ -8275,7 +8275,7 @@ PyObject *PyUnicode_Format(PyObject *format,
         arglen = -1;
         argidx = -2;
     }
-    if (Py_TYPE(args)->tp_as_mapping && !PyTuple_Check(args) &&
+    if (PyMapping_Check(args) && !PyTuple_Check(args) &&
         !PyObject_TypeCheck(args, &PyBaseString_Type))
         dict = args;
 
