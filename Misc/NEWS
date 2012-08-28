@@ -2,6 +2,36 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.1
+==========================
+
+*Release date: XX-XX-XXXX*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+Extension Modules
+-----------------
+
+Tests
+-----
+
+Build
+-----
+
+Documentation
+-------------
+
+- Issue #11964: Document a change in v3.2 to the behavior of the indent
+  parameter of json encoding operations.
+
+Tools/Demos
+-----------
+
+
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
 
