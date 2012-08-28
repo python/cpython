@@ -378,6 +378,9 @@ Build
 Documentation
 -------------
 
+- Issue #14880: Fix kwargs notation in csv.reader, .writer & .register_dialect.
+  Patch by Chris Rebert.
+
 - Issue #14674: Add a discussion of the json module's standard compliance.
   Patch by Chris Rebert.
 
