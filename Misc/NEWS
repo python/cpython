@@ -519,6 +519,9 @@ Build
 Documentation
 -------------
 
+- Issue #11964: Document a change in v3.2 to the behavior of the indent
+  parameter of json encoding operations.
+
 - Issue #14674: Add a discussion of the json module's standard compliance.
   Patch by Chris Rebert.
 
