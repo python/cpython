@@ -1142,6 +1142,9 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, '%10.*f', '__mod__', ('foo', 42.))
         self.checkraises(ValueError, '%10', '__mod__', (42,))
 
+        class X(object): pass
+        self.checkraises(TypeError, 'abc', '__mod__', X())
+
     def test_floatformatting(self):
         # float formatting
         for prec in range(100):
