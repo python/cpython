@@ -12,6 +12,9 @@ Core and Builtins
 
 - Issue #15761: Fix crash when PYTHONEXECUTABLE is set on Mac OS X.
 
+- Issue #15801: Make sure mappings passed to '%' formatting are actually
+  subscriptable.
+
 - Issue #15726: Fix incorrect bounds checking in PyState_FindModule.
   Patch by Robin Schreiber.
 
