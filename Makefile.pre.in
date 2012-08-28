@@ -475,7 +475,12 @@ $(SYSCONFIGDATA): $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON) $(SYSCONFIGDATA)
-	case $$MAKEFLAGS in *s*) quiet=-q; esac; \
+        if which getopt >/dev/null; then \
+	  mflags=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
+	else \
+	  mflags=" $$MAKEFLAGS "; \
+	fi; \
+	case $$mflags in "* -s *") quiet=-q; esac; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
 
