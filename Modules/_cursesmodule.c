@@ -1203,7 +1203,10 @@ PyCursesWindow_Get_WCh(PyCursesWindowObject *self, PyObject *args)
         PyErr_SetString(PyCursesError, "no input");
         return NULL;
     }
-    return PyLong_FromLong(rtn);
+    if (ct == KEY_CODE_YES)
+        return PyLong_FromLong(rtn);
+    else
+        return PyUnicode_FromOrdinal(rtn);
 }
 #endif
 

@@ -267,8 +267,7 @@ def test_issue6243(stdscr):
 def test_unget_wch(stdscr):
     if not hasattr(curses, 'unget_wch'):
         return
-    import locale
-    encoding = locale.getpreferredencoding()
+    encoding = stdscr.encoding
     for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
         try:
             ch.encode(encoding)
@@ -277,18 +276,17 @@ def test_unget_wch(stdscr):
         try:
             curses.unget_wch(ch)
         except Exception as err:
-            raise Exception("unget_wch(%a) failed with locale encoding %s: %s"
-                            % (ch, encoding, err))
+            raise Exception("unget_wch(%a) failed with encoding %s: %s"
+                            % (ch, stdscr.encoding, err))
         read = stdscr.get_wch()
-        read = chr(read)
         if read != ch:
             raise AssertionError("%r != %r" % (read, ch))
 
         code = ord(ch)
         curses.unget_wch(code)
         read = stdscr.get_wch()
-        if read != code:
-            raise AssertionError("%r != %r" % (read, code))
+        if read != ch:
+            raise AssertionError("%r != %r" % (read, ch))
 
 def test_issue10570():
     b = curses.tparm(curses.tigetstr("cup"), 5, 3)
