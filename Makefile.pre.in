@@ -475,7 +475,7 @@ $(SYSCONFIGDATA): $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON) $(SYSCONFIGDATA)
-        if which getopt >/dev/null; then \
+	if which getopt >/dev/null; then \
 	  mflags=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
 	else \
 	  mflags=" $$MAKEFLAGS "; \
