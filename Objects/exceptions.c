@@ -1016,12 +1016,12 @@ OSError_str(PyOSErrorObject *self)
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
     if (self->winerror && self->filename)
-        return PyUnicode_FromFormat("[Error %S] %S: %R",
+        return PyUnicode_FromFormat("[WinError %S] %S: %R",
                                     self->winerror ? self->winerror: Py_None,
                                     self->strerror ? self->strerror: Py_None,
                                     self->filename);
     if (self->winerror && self->strerror)
-        return PyUnicode_FromFormat("[Error %S] %S",
+        return PyUnicode_FromFormat("[WinError %S] %S",
                                     self->winerror ? self->winerror: Py_None,
                                     self->strerror ? self->strerror: Py_None);
 #endif
