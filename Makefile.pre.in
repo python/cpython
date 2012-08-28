@@ -436,7 +436,7 @@ platform: $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
-        if which getopt >/dev/null; then \
+	if which getopt >/dev/null; then \
 	  mflags=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
 	else \
 	  mflags=" $$MAKEFLAGS "; \
