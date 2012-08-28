@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #15785: Modify window.get_wch() API of the curses module: return
+  a character for most keys, and an integer for special keys, instead of
+  always returning an integer. So it is now possible to distinguish special
+  keys like keypad keys.
+
 
 What's New in Python 3.3.0 Release Candidate 1?
 ===============================================
@@ -23,7 +28,7 @@ Core and Builtins
 -----------------
 
 - Issue #15573: memoryview comparisons are now performed by value with full
-  support for any valid struct module format definition.  
+  support for any valid struct module format definition.
 
 - Issue #15316: When an item in the fromlist for __import__ doesn't exist,
   don't raise an error, but if an exception is raised as part of an import do
