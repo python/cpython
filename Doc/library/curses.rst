@@ -869,8 +869,8 @@ the following methods and attributes:
 
 .. method:: window.get_wch([y, x])
 
-   Get a wide character. Like :meth:`getch`, but the integer returned is the
-   Unicode code point for the key pressed, so it can be passed to :func:`chr`.
+   Get a wide character. Return a character for most keys, or an integer for
+   function keys, keypad keys, and other special keys.
 
    .. versionadded:: 3.3
 
@@ -878,8 +878,9 @@ the following methods and attributes:
 .. method:: window.getkey([y, x])
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
-   does. Function keys, keypad keys and so on return a multibyte string containing
-   the key name.  In no-delay mode, an exception is raised if there is no input.
+   does. Function keys, keypad keys and other special keys return a multibyte
+   string containing the key name.  In no-delay mode, an exception is raised if
+   there is no input.
 
 
 .. method:: window.getmaxyx()
