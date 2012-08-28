@@ -407,8 +407,8 @@ platform: $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
-        if which getopt >/dev/null 2>&1; then \
-	  mflags=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
+	if which getopt >/dev/null 2>&1; then \
+	s=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
 	else \
 	  mflags=" $$MAKEFLAGS "; \
 	fi; \
