@@ -621,9 +621,9 @@ def _test():
             if not chunk:
                 break
             g.write(chunk)
-        if g is not sys.stdout:
+        if g is not sys.stdout.buffer:
             g.close()
-        if f is not sys.stdin:
+        if f is not sys.stdin.buffer:
             f.close()
 
 if __name__ == '__main__':
