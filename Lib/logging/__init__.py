@@ -180,7 +180,7 @@ def addLevelName(level, levelName):
         _releaseLock()
 
 def _checkLevel(level):
-    if isinstance(level, int):
+    if isinstance(level, (int, long)):
         rv = level
     elif str(level) == level:
         if level not in _levelNames:
