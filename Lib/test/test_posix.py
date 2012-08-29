@@ -405,8 +405,16 @@ class PosixTester(unittest.TestCase):
                             _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
                     except OSError as e:
                         expected_errno = errno.ENAMETOOLONG
-                        if 'sunos' in sys.platform or 'openbsd' in sys.platform:
-                            expected_errno = errno.ERANGE # Issue 9185
+                        # The following platforms have quirky getcwd()
+                        # behaviour -- see issue 9185 and 15765 for
+                        # more information.
+                        quirky_platform = (
+                            'sunos' in sys.platform or
+                            'netbsd' in sys.platform or
+                            'openbsd' in sys.platform
+                        )
+                        if quirky_platform:
+                            expected_errno = errno.ERANGE
                         self.assertEqual(e.errno, expected_errno)
                     finally:
                         os.chdir('..')

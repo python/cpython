@@ -346,6 +346,9 @@ Library
 Tests
 -----
 
+- Issue #15765: Extend a previous fix to Solaris and OpenBSD for quirky
+  getcwd() behaviour (issue #9185) to NetBSD as well.
+
 - Issue #15615: Add some tests for the json module's handling of invalid
   input data.  Patch by Kushal Das.
 

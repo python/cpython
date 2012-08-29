@@ -1956,7 +1956,9 @@ PyDoc_STRVAR(posix_getcwd__doc__,
 "getcwd() -> path\n\n\
 Return a string representing the current working directory.");
 
-#if (defined(__sun) && defined(__SVR4)) || defined(__OpenBSD__)
+#if (defined(__sun) && defined(__SVR4)) || \
+     defined(__OpenBSD__)               || \
+     defined(__NetBSD__)
 /* Issue 9185: getcwd() returns NULL/ERANGE indefinitely. */
 static PyObject *
 posix_getcwd(PyObject *self, PyObject *noargs)
