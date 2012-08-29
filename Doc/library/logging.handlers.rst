@@ -698,9 +698,6 @@ should, then :meth:`flush` is expected to do the flushing.
 
 
    .. method:: setTarget(target)
-   .. versionchanged:: 2.6
-      *credentials* was added.
-
 
       Sets the target handler for this handler.
 
