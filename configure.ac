@@ -878,6 +878,7 @@ bsdos*|hp*|HP*)
 	fi
 esac
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 
 # Not every filesystem supports hard links
 AC_SUBST(LN)
