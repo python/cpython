@@ -1190,6 +1190,10 @@ API changes
   changed to match the order displayed by :func:`repr`.
 
 
+* The ``watchexp`` parameter in the :meth:`~decimal.Decimal.quantize` method
+  is deprecated.
+
+
 ftplib
 ------
 
