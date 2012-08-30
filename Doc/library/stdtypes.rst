@@ -2450,6 +2450,8 @@ copying.
       ``v == w`` for memoryview objects.
 
       .. versionchanged:: 3.3
+         Previous versions compared the raw memory disregarding the item format
+         and the logical array structure.
 
    .. method:: tobytes()
 
@@ -2479,8 +2481,10 @@ copying.
          >>> m.tolist()
          [1.1, 2.2, 3.3]
 
-      :meth:`tolist` is currently restricted to single character native formats
-      in :mod:`struct` module syntax.
+      .. versionchanged:: 3.3
+         :meth:`tolist` now supports all single character native formats in
+         :mod:`struct` module syntax as well as multi-dimensional
+         representations.
 
    .. method:: release()
 
@@ -2663,6 +2667,10 @@ copying.
       element in the view. A memoryview can be created from exporters with
       arbitrary format strings, but some methods (e.g. :meth:`tolist`) are
       restricted to native single element formats.
+
+      .. versionchanged:: 3.3
+         format ``'B'`` is now handled according to the struct module syntax.
+         This means that ``memoryview(b'abc')[0] == b'abc'[0] == 97``.
 
    .. attribute:: itemsize
 
