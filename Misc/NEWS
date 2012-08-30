@@ -25,6 +25,9 @@ Tests
 Build
 -----
 
+- Issue #15819: Make sure we can build Python out-of-tree from a readonly
+  source directory.  (Somewhat related to Issue #9860.)
+
 Documentation
 -------------
 
