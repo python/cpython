@@ -229,8 +229,8 @@ IO_OBJS=	\
 
 ##########################################################################
 # Grammar
-GRAMMAR_H=	$(srcdir)/Include/graminit.h
-GRAMMAR_C=	$(srcdir)/Python/graminit.c
+GRAMMAR_H=	Include/graminit.h
+GRAMMAR_C=	Python/graminit.c
 GRAMMAR_INPUT=	$(srcdir)/Grammar/Grammar
 
 
@@ -296,9 +296,9 @@ PGENOBJS=	$(POBJS) $(PGOBJS)
 
 ##########################################################################
 # AST
-AST_H_DIR=	$(srcdir)/Include
+AST_H_DIR=	Include
 AST_H=		$(AST_H_DIR)/Python-ast.h
-AST_C_DIR=	$(srcdir)/Python
+AST_C_DIR=	Python
 AST_C=		$(AST_C_DIR)/Python-ast.c
 AST_ASDL=	$(srcdir)/Parser/Python.asdl
 
@@ -665,9 +665,11 @@ Parser/printgrammar.o: $(srcdir)/Parser/printgrammar.c
 Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
 
 $(AST_H): $(AST_ASDL) $(ASDLGEN_FILES)
+	$(MKDIR_P) $(AST_H_DIR)
 	$(ASDLGEN) -h $(AST_H_DIR) $(AST_ASDL)
 
 $(AST_C): $(AST_H) $(AST_ASDL) $(ASDLGEN_FILES)
+	$(MKDIR_P) $(AST_C_DIR)
 	$(ASDLGEN) -c $(AST_C_DIR) $(AST_ASDL)
 
 Python/compile.o Python/symtable.o Python/ast.o: $(GRAMMAR_H) $(AST_H)
