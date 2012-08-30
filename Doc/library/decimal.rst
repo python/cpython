@@ -737,6 +737,11 @@ Decimal objects
       resulting exponent is greater than :attr:`Emax` or less than
       :attr:`Etiny`.
 
+      .. deprecated:: 3.3
+         *watchexp* is an implementation detail from the pure Python version
+         and is not present in the C version. It will be removed in version
+         3.4, where it defaults to ``True``.
+
    .. method:: radix()
 
       Return ``Decimal(10)``, the radix (base) in which the :class:`Decimal`
