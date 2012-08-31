@@ -186,6 +186,35 @@ class ImportTests(unittest.TestCase):
         self.assertRaises(SyntaxError,
                           imp.find_module, "badsyntax_pep3120", [path])
 
+    def test_load_from_source(self):
+        # Verify that the imp module can correctly load and find .py files
+        # XXX (ncoghlan): It would be nice to use support.CleanImport
+        # here, but that breaks because the os module registers some
+        # handlers in copy_reg on import. Since CleanImport doesn't
+        # revert that registration, the module is left in a broken
+        # state after reversion. Reinitialising the module contents
+        # and just reverting os.environ to its previous state is an OK
+        # workaround
+        orig_path = os.path
+        orig_getenv = os.getenv
+        with support.EnvironmentVarGuard():
+            x = imp.find_module("os")
+            self.addCleanup(x[0].close)
+            new_os = imp.load_module("os", *x)
+            self.assertIs(os, new_os)
+            self.assertIs(orig_path, new_os.path)
+            self.assertIsNot(orig_getenv, new_os.getenv)
+
+    @support.cpython_only
+    def test_issue15828_load_extensions(self):
+        # Issue 15828 picked up that the adapter between the old imp API
+        # and importlib couldn't handle C extensions
+        example = "_heapq"
+        x = imp.find_module(example)
+        self.addCleanup(x[0].close)
+        mod = imp.load_module(example, *x)
+        self.assertEqual(mod.__name__, example)
+
     def test_load_dynamic_ImportError_path(self):
         # Issue #1559549 added `name` and `path` attributes to ImportError
         # in order to provide better detail. Issue #10854 implemented those
