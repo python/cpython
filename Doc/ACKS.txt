@@ -92,6 +92,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Rob Hooft
    * Brian Hooper
    * Randall Hopper
+   * Mike Hoy
    * Michael Hudson
    * Eric Huss
    * Jeremy Hylton

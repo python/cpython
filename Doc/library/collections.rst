@@ -852,7 +852,7 @@ are deleted.  But when new keys are added, the keys are appended
 to the end and the sort is not maintained.
 
 It is also straight-forward to create an ordered dictionary variant
-that the remembers the order the keys were *last* inserted.
+that remembers the order the keys were *last* inserted.
 If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
