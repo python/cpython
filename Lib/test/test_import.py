@@ -149,25 +149,6 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(oct(stat.S_IMODE(stat_info.st_mode)), oct(mode))
 
-    def test_imp_module(self):
-        # Verify that the imp module can correctly load and find .py files
-        # XXX (ncoghlan): It would be nice to use support.CleanImport
-        # here, but that breaks because the os module registers some
-        # handlers in copy_reg on import. Since CleanImport doesn't
-        # revert that registration, the module is left in a broken
-        # state after reversion. Reinitialising the module contents
-        # and just reverting os.environ to its previous state is an OK
-        # workaround
-        orig_path = os.path
-        orig_getenv = os.getenv
-        with EnvironmentVarGuard():
-            x = imp.find_module("os")
-            self.addCleanup(x[0].close)
-            new_os = imp.load_module("os", *x)
-            self.assertIs(os, new_os)
-            self.assertIs(orig_path, new_os.path)
-            self.assertIsNot(orig_getenv, new_os.getenv)
-
     def test_bug7732(self):
         source = TESTFN + '.py'
         os.mkdir(source)
