@@ -129,11 +129,14 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     (``str``, ``unicode``, ``int``, ``long``, ``float``, ``bool``, ``None``)
     will be skipped instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the some chunks written to ``fp``
-    may be ``unicode`` instances, subject to normal Python ``str`` to
-    ``unicode`` coercion rules. Unless ``fp.write()`` explicitly
-    understands ``unicode`` (as in ``codecs.getwriter()``) this is likely
-    to cause an error.
+    If ``ensure_ascii`` is true (the default), all non-ASCII characters in the
+    output are escaped with ``\uXXXX`` sequences, and the result is a ``str``
+    instance consisting of ASCII characters only.  If ``ensure_ascii`` is
+    ``False``, some chunks written to ``fp`` may be ``unicode`` instances.
+    This usually happens because the input contains unicode strings or the
+    ``encoding`` parameter is used. Unless ``fp.write()`` explicitly
+    understands ``unicode`` (as in ``codecs.getwriter``) this is likely to
+    cause an error.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
@@ -191,9 +194,8 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     (``str``, ``unicode``, ``int``, ``long``, ``float``, ``bool``, ``None``)
     will be skipped instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the return value will be a
-    ``unicode`` instance subject to normal Python ``str`` to ``unicode``
-    coercion rules instead of being escaped to an ASCII ``str``.
+    If ``ensure_ascii`` is false, all non-ASCII characters are not escaped, and
+    the return value may be a ``unicode`` instance. See ``dump`` for details.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will

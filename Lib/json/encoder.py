@@ -107,9 +107,12 @@ class JSONEncoder(object):
         encoding of keys that are not str, int, long, float or None.  If
         skipkeys is True, such items are simply skipped.
 
-        If ensure_ascii is true, the output is guaranteed to be str
-        objects with all incoming unicode characters escaped.  If
-        ensure_ascii is false, the output will be unicode object.
+        If *ensure_ascii* is true (the default), all non-ASCII
+        characters in the output are escaped with \uXXXX sequences,
+        and the results are str instances consisting of ASCII
+        characters only.  If ensure_ascii is False, a result may be a
+        unicode instance.  This usually happens if the input contains
+        unicode strings or the *encoding* parameter is used.
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
