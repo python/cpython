@@ -28,6 +28,13 @@ Library
   always returning an integer. So it is now possible to distinguish special
   keys like keypad keys.
 
+- Issue #14223: Fix window.addch() of the curses module for special characters
+  like curses.ACS_HLINE: the Python function addch(int) and addch(bytes) is now
+  calling the C function waddch()/mvwaddch() (as it was done in Python 3.2),
+  instead of wadd_wch()/mvwadd_wch(). The Python function addch(str) is still
+  calling the C function wadd_wch()/mvwadd_wch() if the Python curses is linked
+  to libncursesw.
+
 
 What's New in Python 3.3.0 Release Candidate 1?
 ===============================================
