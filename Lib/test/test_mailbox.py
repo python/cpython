@@ -759,13 +759,13 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             self.assertIsNot(match, None, "Invalid file name: '%s'" % tail)
             groups = match.groups()
             if previous_groups is not None:
-                self.assertTrue(int(groups[0] >= previous_groups[0]),
+                self.assertGreaterEqual(int(groups[0]), int(previous_groups[0]),
                              "Non-monotonic seconds: '%s' before '%s'" %
                              (previous_groups[0], groups[0]))
-                self.assertTrue(int(groups[1] >= previous_groups[1]) or
-                             groups[0] != groups[1],
-                             "Non-monotonic milliseconds: '%s' before '%s'" %
-                             (previous_groups[1], groups[1]))
+                if int(groups[0]) == int(previous_groups[0]):
+                    self.assertGreaterEqual(int(groups[1]), int(previous_groups[1]),
+                                "Non-monotonic milliseconds: '%s' before '%s'" %
+                                (previous_groups[1], groups[1]))
                 self.assertEqual(int(groups[2]), pid,
                              "Process ID mismatch: '%s' should be '%s'" %
                              (groups[2], pid))
