@@ -393,6 +393,9 @@ Build
 Documentation
 -------------
 
+- Issue #13769: Document the effect of ensure_ascii to the return type
+  of JSON decoding functions.
+
 - Issue #14880: Fix kwargs notation in csv.reader, .writer & .register_dialect.
   Patch by Chris Rebert.
 

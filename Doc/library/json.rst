@@ -127,11 +127,14 @@ Basic Usage
    :class:`float`, :class:`bool`, ``None``) will be skipped instead of raising a
    :exc:`TypeError`.
 
-   If *ensure_ascii* is ``False`` (default: ``True``), then some chunks written
-   to *fp* may be :class:`unicode` instances, subject to normal Python
-   :class:`str` to :class:`unicode` coercion rules.  Unless ``fp.write()``
-   explicitly understands :class:`unicode` (as in :func:`codecs.getwriter`) this
-   is likely to cause an error.
+   If *ensure_ascii* is ``True`` (the default), all non-ASCII characters in the
+   output are escaped with ``\uXXXX`` sequences, and the result is a
+   :class:`str` instance consisting of ASCII characters only.  If
+   *ensure_ascii* is ``False``, some chunks written to *fp* may be
+   :class:`unicode` instances.  This usually happens because the input contains
+   unicode strings or the *encoding* parameter is used.  Unless ``fp.write()``
+   explicitly understands :class:`unicode` (as in :func:`codecs.getwriter`)
+   this is likely to cause an error.
 
    If *check_circular* is ``False`` (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
@@ -168,11 +171,11 @@ Basic Usage
 
 .. function:: dumps(obj[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, encoding[, default[, **kw]]]]]]]]]])
 
-   Serialize *obj* to a JSON formatted :class:`str`.
+   Serialize *obj* to a JSON formatted :class:`str`.  If *ensure_ascii* is
+   ``False``, the result may contain non-ASCII characters and the return value
+   may be a :class:`unicode` instance.
 
-   If *ensure_ascii* is ``False``, then the return value will be a
-   :class:`unicode` instance.  The other arguments have the same meaning as in
-   :func:`dump`.
+   The arguments have the same meaning as in :func:`dump`.
 
    .. note::
 
@@ -371,9 +374,12 @@ Encoders and Decoders
    attempt encoding of keys that are not str, int, long, float or None.  If
    *skipkeys* is ``True``, such items are simply skipped.
 
-   If *ensure_ascii* is ``True`` (the default), the output is guaranteed to be
-   :class:`str` objects with all incoming unicode characters escaped.  If
-   *ensure_ascii* is ``False``, the output will be a unicode object.
+   If *ensure_ascii* is ``True`` (the default), all non-ASCII characters in the
+   output are escaped with ``\uXXXX`` sequences, and the results are
+   :class:`str` instances consisting of ASCII characters only. If
+   *ensure_ascii* is ``False``, a result may be a :class:`unicode`
+   instance. This usually happens if the input contains unicode strings or the
+   *encoding* parameter is used.
 
    If *check_circular* is ``True`` (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
