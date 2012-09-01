@@ -280,7 +280,6 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #endif
                           )
 {
-    int ret = 0;
     long value;
 #ifdef HAVE_NCURSESW
     wchar_t buffer[2];
@@ -304,7 +303,6 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
     else if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
         value = (unsigned char)PyBytes_AsString(obj)[0];
-        ret = 1;
     }
     else if (PyLong_CheckExact(obj)) {
         int overflow;
@@ -314,11 +312,6 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
                             "int doesn't fit in long");
             return 0;
         }
-#ifdef HAVE_NCURSESW
-        ret = 2;
-#else
-        ret = 1;
-#endif
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -326,27 +319,14 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
-#ifdef HAVE_NCURSESW
-    if (ret == 2) {
-        memset(wch->chars, 0, sizeof(wch->chars));
-        wch->chars[0] = (wchar_t)value;
-        if ((long)wch->chars[0] != value) {
-            PyErr_Format(PyExc_OverflowError,
-                         "character doesn't fit in wchar_t");
-            return 0;
-        }
+
+    *ch = (chtype)value;
+    if ((long)*ch != value) {
+        PyErr_Format(PyExc_OverflowError,
+                     "byte doesn't fit in chtype");
+        return 0;
     }
-    else
-#endif
-    {
-        *ch = (chtype)value;
-        if ((long)*ch != value) {
-            PyErr_Format(PyExc_OverflowError,
-                         "byte doesn't fit in chtype");
-            return 0;
-        }
-    }
-    return ret;
+    return 1;
 }
 
 /* Convert an object to a byte string (char*) or a wide character string
