@@ -1467,6 +1467,22 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
 
+class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
+    """Test that a file is not created unless the default is needed"""
+    def setUp(self):
+        super(TestFileTypeDefaults, self).setUp()
+        file = open(os.path.join(self.temp_dir, 'good'), 'w')
+        file.write('good')
+        file.close()
+
+    argument_signatures = [
+        Sig('-c', type=argparse.FileType('r'), default='no-file.txt'),
+    ]
+    # should provoke no such file error
+    failures = ['']
+    # should not provoke error because default file is created
+    successes = [('-c good', NS(c=RFile('good')))]
+
 
 class TestFileTypeRB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for reading files"""
@@ -4431,6 +4447,38 @@ class TestArgumentTypeError(TestCase):
             self.assertEqual(expected, msg)
         else:
             self.fail()
+
+# ================================================
+# Check that the type function is called only once
+# ================================================
+
+class TestTypeFunctionCallOnlyOnce(TestCase):
+
+    def test_type_function_call_only_once(self):
+        def spam(string_to_convert):
+            self.assertEqual(string_to_convert, 'spam!')
+            return 'foo_converted'
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', type=spam, default='bar')
+        args = parser.parse_args('--foo spam!'.split())
+        self.assertEqual(NS(foo='foo_converted'), args)
+
+# ================================================================
+# Check that the type function is called with a non-string default
+# ================================================================
+
+class TestTypeFunctionCallWithNonStringDefault(TestCase):
+
+    def test_type_function_call_with_non_string_default(self):
+        def spam(int_to_convert):
+            self.assertEqual(int_to_convert, 0)
+            return 'foo_converted'
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', type=spam, default=0)
+        args = parser.parse_args([])
+        self.assertEqual(NS(foo='foo_converted'), args)
 
 # ======================
 # parse_known_args tests
