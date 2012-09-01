@@ -352,6 +352,9 @@ Library
 Tests
 -----
 
+- Issue #15802: Fix test logic in TestMaildir.test_create_tmp. Patch
+  by Serhiy Storchaka.
+
 - Issue #15765: Extend a previous fix to Solaris and OpenBSD for quirky
   getcwd() behaviour (issue #9185) to NetBSD as well.
 
