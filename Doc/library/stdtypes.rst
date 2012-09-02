@@ -2376,8 +2376,9 @@ copying.
       >>> data
       bytearray(b'z1spam')
 
-   Memoryviews of hashable (read-only) types with formats 'B', 'b' or 'c'
-   are also hashable. The hash is defined as ``hash(m) == hash(m.tobytes())``::
+   One-dimensional memoryviews of hashable (read-only) types with formats
+   'B', 'b' or 'c' are also hashable. The hash is defined as
+   ``hash(m) == hash(m.tobytes())``::
 
       >>> v = memoryview(b'abcefg')
       >>> hash(v) == hash(b'abcefg')
@@ -2388,12 +2389,13 @@ copying.
       True
 
    .. versionchanged:: 3.3
-      Memoryview objects with formats 'B', 'b' or 'c' are now hashable.
+      One-dimensional memoryviews with formats 'B', 'b' or 'c' are now hashable.
 
    .. note::
-      Hashing of memoryviews with formats other than 'B', 'b' or 'c' is
-      possible in version 3.3.0, but will raise an error in 3.3.1 in order
-      to be compatible with the new memoryview equality definition.
+      Hashing of memoryviews with formats other than 'B', 'b' or 'c' as well
+      as hashing of multi-dimensional memoryviews is possible in version 3.3.0,
+      but will raise an error in 3.3.1 in order to be compatible with the new
+      memoryview equality definition.
 
    :class:`memoryview` has several methods:
 
