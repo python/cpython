@@ -89,7 +89,7 @@ new_identifier(const char* n, PyArena *arena)
 static int
 ast_error(const node *n, const char *errstr)
 {
-    PyObject *u = Py_BuildValue("zii", errstr, LINENO(n), n->n_col_offset);
+    PyObject *u = Py_BuildValue("zii", errstr, LINENO(n), n->n_col_offset), *save;
     if (!u)
         return 0;
     /*
@@ -97,7 +97,7 @@ ast_error(const node *n, const char *errstr)
      * exception in order to chain it. ast_error_finish, however, requires the
      * error not to be normalized.
      */
-    PyObject *save = PyThreadState_GET()->exc_value;
+    save = PyThreadState_GET()->exc_value;
     PyThreadState_GET()->exc_value = NULL;
     PyErr_SetObject(PyExc_SyntaxError, u);
     PyThreadState_GET()->exc_value = save;
