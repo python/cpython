@@ -10,6 +10,8 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
+- Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
+
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
   subscriptable.
 
