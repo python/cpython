@@ -115,6 +115,21 @@ class TestSuper(unittest.TestCase):
                 return __class__
         self.assertIs(X.f(), X)
 
+    def test_obscure_super_errors(self):
+        def f():
+            super()
+        self.assertRaises(RuntimeError, f)
+        def f(x):
+            del x
+            super()
+        self.assertRaises(RuntimeError, f, None)
+        class X:
+            def f(x):
+                nonlocal __class__
+                del __class__
+                super()
+        self.assertRaises(RuntimeError, X().f)
+
 
 def test_main():
     support.run_unittest(TestSuper)
