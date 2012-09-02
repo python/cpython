@@ -6497,18 +6497,18 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyCodeObject *co = f->f_code;
         Py_ssize_t i, n;
         if (co == NULL) {
-            PyErr_SetString(PyExc_SystemError,
+            PyErr_SetString(PyExc_RuntimeError,
                             "super(): no code object");
             return -1;
         }
         if (co->co_argcount == 0) {
-            PyErr_SetString(PyExc_SystemError,
+            PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");
             return -1;
         }
         obj = f->f_localsplus[0];
         if (obj == NULL) {
-            PyErr_SetString(PyExc_SystemError,
+            PyErr_SetString(PyExc_RuntimeError,
                             "super(): arg[0] deleted");
             return -1;
         }
@@ -6527,18 +6527,18 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                     PyTuple_GET_SIZE(co->co_cellvars) + i;
                 PyObject *cell = f->f_localsplus[index];
                 if (cell == NULL || !PyCell_Check(cell)) {
-                    PyErr_SetString(PyExc_SystemError,
+                    PyErr_SetString(PyExc_RuntimeError,
                       "super(): bad __class__ cell");
                     return -1;
                 }
                 type = (PyTypeObject *) PyCell_GET(cell);
                 if (type == NULL) {
-                    PyErr_SetString(PyExc_SystemError,
+                    PyErr_SetString(PyExc_RuntimeError,
                       "super(): empty __class__ cell");
                     return -1;
                 }
                 if (!PyType_Check(type)) {
-                    PyErr_Format(PyExc_SystemError,
+                    PyErr_Format(PyExc_RuntimeError,
                       "super(): __class__ is not a type (%s)",
                       Py_TYPE(type)->tp_name);
                     return -1;
@@ -6547,7 +6547,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
             }
         }
         if (type == NULL) {
-            PyErr_SetString(PyExc_SystemError,
+            PyErr_SetString(PyExc_RuntimeError,
                             "super(): __class__ cell not found");
             return -1;
         }
