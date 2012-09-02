@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #15846: Fix SystemError which happened when using ast.parse in an
+  exception handler on code with syntax errors.
+
 - Issue #15761: Fix crash when PYTHONEXECUTABLE is set on Mac OS X.
 
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
