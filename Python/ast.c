@@ -47,9 +47,9 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 #define COMP_SETCOMP  2
 
 static identifier
-new_identifier(const char* n, PyArena *arena)
+new_identifier(const char *n, PyArena *arena)
 {
-    PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     Py_UNICODE *u;
     if (!id)
         return NULL;
