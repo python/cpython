@@ -9146,7 +9146,7 @@ tailmatch(PyObject *self,
             /* We do not need to compare 0 and len(substring)-1 because
                the if statement above ensured already that they are equal
                when we end up here. */
-            // TODO: honor direction and do a forward or backwards search
+            /* TODO: honor direction and do a forward or backwards search */
             for (i = 1; i < end_sub; ++i) {
                 if (PyUnicode_READ(kind_self, data_self, offset + i) !=
                     PyUnicode_READ(kind_sub, data_sub, i))
