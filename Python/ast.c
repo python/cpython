@@ -545,9 +545,9 @@ init_normalization(struct compiling *c)
 }
 
 static identifier
-new_identifier(const char* n, struct compiling *c)
+new_identifier(const char *n, struct compiling *c)
 {
-    PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id)
         return NULL;
     /* PyUnicode_DecodeUTF8 should always return a ready string. */
