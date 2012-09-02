@@ -12,6 +12,9 @@ Core and Builtins
 
 - Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
 
+- Issue #15846: Fix SystemError which happened when using ast.parse in an
+  exception handler on code with syntax errors.
+
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
   subscriptable.
 
