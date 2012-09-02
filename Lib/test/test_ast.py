@@ -411,7 +411,9 @@ class ASTHelpers_Test(unittest.TestCase):
         try:
             1/0
         except Exception:
-            self.assertRaises(SyntaxError, ast.parse, r"'\U'")
+            with self.assertRaises(SyntaxError) as e:
+                ast.literal_eval(r"'\U'")
+            self.assertIsNotNone(e.exception.__context__)
 
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
