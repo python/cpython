@@ -574,87 +574,43 @@ new_identifier(const char* n, struct compiling *c)
 
 #define NEW_IDENTIFIER(n) new_identifier(STR(n), c)
 
-/* This routine provides an invalid object for the syntax error.
-   The outermost routine must unpack this error and create the
-   proper object.  We do this so that we don't have to pass
-   the filename to everything function.
-
-   XXX Maybe we should just pass the filename...
-*/
-
 static int
-ast_error(const node *n, const char *errstr)
+ast_error(struct compiling *c, const node *n, const char *errmsg)
 {
-    PyObject *u = Py_BuildValue("zii", errstr, LINENO(n), n->n_col_offset), *save;
-    if (!u)
-        return 0;
-    /*
-     * Prevent the error from being chained. PyErr_SetObject will normalize the
-     * exception in order to chain it. ast_error_finish, however, requires the
-     * error not to be normalized.
-     */
-    save = PyThreadState_GET()->exc_value;
-    PyThreadState_GET()->exc_value = NULL;
-    PyErr_SetObject(PyExc_SyntaxError, u);
-    PyThreadState_GET()->exc_value = save;
-    Py_DECREF(u);
-    return 0;
-}
-
-static void
-ast_error_finish(const char *filename)
-{
-    PyObject *type, *value, *tback, *errstr, *offset, *loc, *tmp;
+    PyObject *value, *errstr, *loc, *tmp;
     PyObject *filename_obj;
-    long lineno;
 
-    assert(PyErr_Occurred());
-    if (!PyErr_ExceptionMatches(PyExc_SyntaxError))
-        return;
-
-    PyErr_Fetch(&type, &value, &tback);
-    errstr = PyTuple_GetItem(value, 0);
-    if (!errstr)
-        return;
-    Py_INCREF(errstr);
-    lineno = PyLong_AsLong(PyTuple_GetItem(value, 1));
-    if (lineno == -1) {
-        Py_DECREF(errstr);
-        return;
-    }
-    offset = PyTuple_GetItem(value, 2);
-    if (!offset) {
-        Py_DECREF(errstr);
-        return;
-    }
-    Py_DECREF(value);
-
-    loc = PyErr_ProgramText(filename, lineno);
+    loc = PyErr_ProgramText(c->c_filename, LINENO(n));
     if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    if (filename != NULL)
-        filename_obj = PyUnicode_DecodeFSDefault(filename);
-    else {
+    if (c->c_filename) {
+        filename_obj = PyUnicode_DecodeFSDefault(c->c_filename);
+        if (!filename_obj) {
+            Py_DECREF(loc);
+            return 0;
+        }
+    } else {
         Py_INCREF(Py_None);
         filename_obj = Py_None;
     }
-    if (filename_obj != NULL)
-        tmp = Py_BuildValue("(NlOO)", filename_obj, lineno, offset, loc);
-    else
-        tmp = NULL;
-    Py_DECREF(loc);
-    if (!tmp) {
-        Py_DECREF(errstr);
-        return;
+    tmp = Py_BuildValue("(NiiN)", filename_obj, LINENO(n), n->n_col_offset, loc);
+    if (!tmp)
+        return 0;
+    errstr = PyUnicode_FromString(errmsg);
+    if (!errstr) {
+        Py_DECREF(tmp);
+        return 0;
     }
     value = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(errstr);
     Py_DECREF(tmp);
-    if (!value)
-        return;
-    PyErr_Restore(type, value, tback);
+    if (value) {
+        PyErr_SetObject(PyExc_SyntaxError, value);
+        Py_DECREF(value);
+    }
+    return 0;
 }
 
 /* num_stmts() returns number of contained statements.
@@ -732,11 +688,14 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     struct compiling c;
     mod_ty res = NULL;
 
+    c.c_arena = arena;
+    c.c_filename = filename;
+    c.c_normalize = c.c_normalize_args = NULL;
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
         c.c_encoding = "utf-8";
         if (TYPE(n) == encoding_decl) {
 #if 0
-            ast_error(n, "encoding declaration in Unicode string");
+            ast_error(c, n, "encoding declaration in Unicode string");
             goto out;
 #endif
             n = CHILD(n, 0);
@@ -748,9 +707,6 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         /* PEP 3120 */
         c.c_encoding = "utf-8";
     }
-    c.c_arena = arena;
-    c.c_filename = filename;
-    c.c_normalize = c.c_normalize_args = NULL;
 
     k = 0;
     switch (TYPE(n)) {
@@ -843,8 +799,6 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
         Py_DECREF(c.c_normalize_args);
     }
-    if (!res)
-        ast_error_finish(filename);
     return res;
 }
 
@@ -890,18 +844,18 @@ static const char* FORBIDDEN[] = {
 };
 
 static int
-forbidden_name(identifier name, const node *n, int full_checks)
+forbidden_name(struct compiling *c, identifier name, const node *n, int full_checks)
 {
     assert(PyUnicode_Check(name));
     if (PyUnicode_CompareWithASCIIString(name, "__debug__") == 0) {
-        ast_error(n, "assignment to keyword");
+        ast_error(c, n, "assignment to keyword");
         return 1;
     }
     if (full_checks) {
         const char **p;
         for (p = FORBIDDEN; *p; p++) {
             if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
-                ast_error(n, "assignment to keyword");
+                ast_error(c, n, "assignment to keyword");
                 return 1;
             }
         }
@@ -937,7 +891,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
             e->v.Attribute.ctx = ctx;
-            if (ctx == Store && forbidden_name(e->v.Attribute.attr, n, 1))
+            if (ctx == Store && forbidden_name(c, e->v.Attribute.attr, n, 1))
                 return 0;
             break;
         case Subscript_kind:
@@ -950,7 +904,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case Name_kind:
             if (ctx == Store) {
-                if (forbidden_name(e->v.Name.id, n, 1))
+                if (forbidden_name(c, e->v.Name.id, n, 1))
                     return 0; /* forbidden_name() calls ast_error() */
             }
             e->v.Name.ctx = ctx;
@@ -1024,7 +978,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
                       "can't %s %s",
                       ctx == Store ? "assign to" : "delete",
                       expr_name);
-        return ast_error(n, buf);
+        return ast_error(c, n, buf);
     }
 
     /* If the LHS is a list or tuple, we need to set the assignment
@@ -1172,7 +1126,7 @@ ast_for_arg(struct compiling *c, const node *n)
     name = NEW_IDENTIFIER(ch);
     if (!name)
         return NULL;
-    if (forbidden_name(name, ch, 0))
+    if (forbidden_name(c, name, ch, 0))
         return NULL;
 
     if (NCH(n) == 3 && TYPE(CHILD(n, 1)) == COLON) {
@@ -1202,7 +1156,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
     int j = 0; /* index for kwdefaults and kwonlyargs */
 
     if (kwonlyargs == NULL) {
-        ast_error(CHILD(n, start), "named arguments must follow bare *");
+        ast_error(c, CHILD(n, start), "named arguments must follow bare *");
         return -1;
     }
     assert(kwdefaults != NULL);
@@ -1234,7 +1188,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                 argname = NEW_IDENTIFIER(ch);
                 if (!argname)
                     goto error;
-                if (forbidden_name(argname, ch, 0))
+                if (forbidden_name(c, argname, ch, 0))
                     goto error;
                 arg = arg(argname, annotation, c->c_arena);
                 if (!arg)
@@ -1245,7 +1199,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
             case DOUBLESTAR:
                 return i;
             default:
-                ast_error(ch, "unexpected node");
+                ast_error(c, ch, "unexpected node");
                 goto error;
         }
     }
@@ -1337,7 +1291,7 @@ ast_for_arguments(struct compiling *c, const node *n)
         return NULL;
 
     if (nposargs + nkwonlyargs > 255) {
-        ast_error(n, "more than 255 arguments");
+        ast_error(c, n, "more than 255 arguments");
         return NULL;
     }
 
@@ -1365,7 +1319,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     found_default = 1;
                 }
                 else if (found_default) {
-                    ast_error(n,
+                    ast_error(c, n,
                              "non-default argument follows default argument");
                     return NULL;
                 }
@@ -1377,7 +1331,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 break;
             case STAR:
                 if (i+1 >= NCH(n)) {
-                    ast_error(CHILD(n, i),
+                    ast_error(c, CHILD(n, i),
                         "named arguments must follow bare *");
                     return NULL;
                 }
@@ -1394,7 +1348,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     vararg = NEW_IDENTIFIER(CHILD(ch, 0));
                     if (!vararg)
                         return NULL;
-                    if (forbidden_name(vararg, CHILD(ch, 0), 0))
+                    if (forbidden_name(c, vararg, CHILD(ch, 0), 0))
                         return NULL;
                     if (NCH(ch) > 1) {
                         /* there is an annotation on the vararg */
@@ -1425,7 +1379,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     if (!kwargannotation)
                         return NULL;
                 }
-                if (forbidden_name(kwarg, CHILD(ch, 0), 0))
+                if (forbidden_name(c, kwarg, CHILD(ch, 0), 0))
                     return NULL;
                 i += 3;
                 break;
@@ -1544,7 +1498,7 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
         return NULL;
-    if (forbidden_name(name, CHILD(n, name_i), 0))
+    if (forbidden_name(c, name, CHILD(n, name_i), 0))
         return NULL;
     args = ast_for_arguments(c, CHILD(n, name_i + 1));
     if (!args)
@@ -1885,10 +1839,10 @@ ast_for_atom(struct compiling *c, const node *n)
                     char buf[128];
                     s = _PyUnicode_AsString(errstr);
                     PyOS_snprintf(buf, sizeof(buf), "(unicode error) %s", s);
-                    ast_error(n, buf);
+                    ast_error(c, n, buf);
                     Py_DECREF(errstr);
                 } else {
-                    ast_error(n, "(unicode error) unknown error");
+                    ast_error(c, n, "(unicode error) unknown error");
                 }
                 Py_DECREF(type);
                 Py_DECREF(value);
@@ -2473,14 +2427,14 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
         }
     }
     if (ngens > 1 || (ngens && (nargs || nkeywords))) {
-        ast_error(n, "Generator expression must be parenthesized "
+        ast_error(c, n, "Generator expression must be parenthesized "
                   "if not sole argument");
         return NULL;
     }
 
     if (nargs + nkeywords + ngens > 255) {
-      ast_error(n, "more than 255 arguments");
-      return NULL;
+        ast_error(c, n, "more than 255 arguments");
+        return NULL;
     }
 
     args = asdl_seq_new(nargs + ngens, c->c_arena);
@@ -2497,12 +2451,12 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
             expr_ty e;
             if (NCH(ch) == 1) {
                 if (nkeywords) {
-                    ast_error(CHILD(ch, 0),
+                    ast_error(c, CHILD(ch, 0),
                               "non-keyword arg after keyword arg");
                     return NULL;
                 }
                 if (vararg) {
-                    ast_error(CHILD(ch, 0),
+                    ast_error(c, CHILD(ch, 0),
                               "only named arguments may follow *expression");
                     return NULL;
                 }
@@ -2532,19 +2486,19 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                  * then is very confusing.
                  */
                 if (e->kind == Lambda_kind) {
-                    ast_error(CHILD(ch, 0), "lambda cannot contain assignment");
+                    ast_error(c, CHILD(ch, 0), "lambda cannot contain assignment");
                     return NULL;
                 } else if (e->kind != Name_kind) {
-                    ast_error(CHILD(ch, 0), "keyword can't be an expression");
+                    ast_error(c, CHILD(ch, 0), "keyword can't be an expression");
                     return NULL;
-                } else if (forbidden_name(e->v.Name.id, ch, 1)) {
+                } else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
                     return NULL;
                 }
                 key = e->v.Name.id;
                 for (k = 0; k < nkeywords; k++) {
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (!PyUnicode_Compare(tmp, key)) {
-                        ast_error(CHILD(ch, 0), "keyword argument repeated");
+                        ast_error(c, CHILD(ch, 0), "keyword argument repeated");
                         return NULL;
                     }
                 }
@@ -2637,7 +2591,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             case Subscript_kind:
                 break;
             default:
-                ast_error(ch, "illegal expression for augmented assignment");
+                ast_error(c, ch, "illegal expression for augmented assignment");
                 return NULL;
         }
 
@@ -2670,7 +2624,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             expr_ty e;
             node *ch = CHILD(n, i);
             if (TYPE(ch) == yield_expr) {
-                ast_error(ch, "assignment to yield expression not possible");
+                ast_error(c, ch, "assignment to yield expression not possible");
                 return NULL;
             }
             e = ast_for_testlist(c, ch);
@@ -2817,11 +2771,11 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 str = NEW_IDENTIFIER(str_node);
                 if (!str)
                     return NULL;
-                if (store && forbidden_name(str, str_node, 0))
+                if (store && forbidden_name(c, str, str_node, 0))
                     return NULL;
             }
             else {
-                if (forbidden_name(name, name_node, 0))
+                if (forbidden_name(c, name, name_node, 0))
                     return NULL;
             }
             return alias(name, str, c->c_arena);
@@ -2840,7 +2794,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 a->asname = NEW_IDENTIFIER(asname_node);
                 if (!a->asname)
                     return NULL;
-                if (forbidden_name(a->asname, asname_node, 0))
+                if (forbidden_name(c, a->asname, asname_node, 0))
                     return NULL;
                 return a;
             }
@@ -2851,7 +2805,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 name = NEW_IDENTIFIER(name_node);
                 if (!name)
                     return NULL;
-                if (store && forbidden_name(name, name_node, 0))
+                if (store && forbidden_name(c, name, name_node, 0))
                     return NULL;
                 return alias(name, NULL, c->c_arena);
             }
@@ -2980,13 +2934,13 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             n = CHILD(n, idx);
             n_children = NCH(n);
             if (n_children % 2 == 0) {
-                ast_error(n, "trailing comma not allowed without"
+                ast_error(c, n, "trailing comma not allowed without"
                              " surrounding parentheses");
                 return NULL;
             }
             break;
         default:
-            ast_error(n, "Unexpected node-type in from-import");
+            ast_error(c, n, "Unexpected node-type in from-import");
             return NULL;
         }
 
@@ -3392,7 +3346,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         identifier e = NEW_IDENTIFIER(CHILD(exc, 3));
         if (!e)
             return NULL;
-        if (forbidden_name(e, CHILD(exc, 3), 0))
+        if (forbidden_name(c, e, CHILD(exc, 3), 0))
             return NULL;
         expression = ast_for_expr(c, CHILD(exc, 1));
         if (!expression)
@@ -3451,7 +3405,7 @@ ast_for_try_stmt(struct compiling *c, const node *n)
         }
     }
     else if (TYPE(CHILD(n, nch - 3)) != except_clause) {
-        ast_error(n, "malformed 'try' statement");
+        ast_error(c, n, "malformed 'try' statement");
         return NULL;
     }
 
@@ -3543,7 +3497,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
             return NULL;
-        if (forbidden_name(classname, CHILD(n, 3), 0))
+        if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
@@ -3556,7 +3510,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         classname = NEW_IDENTIFIER(CHILD(n, 1));
         if (!classname)
             return NULL;
-        if (forbidden_name(classname, CHILD(n, 3), 0))
+        if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
         return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
                         LINENO(n), n->n_col_offset, c->c_arena);
@@ -3581,7 +3535,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     classname = NEW_IDENTIFIER(CHILD(n, 1));
     if (!classname)
         return NULL;
-    if (forbidden_name(classname, CHILD(n, 1), 0))
+    if (forbidden_name(c, classname, CHILD(n, 1), 0))
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords,
@@ -3840,10 +3794,10 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
     }
     if (*bytesmode) {
         /* Disallow non-ascii characters (but not escapes) */
-        const char *c;
-        for (c = s; *c; c++) {
-            if (Py_CHARMASK(*c) >= 0x80) {
-                ast_error(n, "bytes can only contain ASCII "
+        const char *ch;
+        for (ch = s; *ch; ch++) {
+            if (Py_CHARMASK(*ch) >= 0x80) {
+                ast_error(c, n, "bytes can only contain ASCII "
                           "literal characters.");
                 return NULL;
             }
@@ -3891,7 +3845,7 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
             if (s == NULL)
                 goto onError;
             if (*bytesmode != subbm) {
-                ast_error(n, "cannot mix bytes and nonbytes literals");
+                ast_error(c, n, "cannot mix bytes and nonbytes literals");
                 goto onError;
             }
             if (PyBytes_Check(v) && PyBytes_Check(s)) {
