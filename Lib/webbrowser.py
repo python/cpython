@@ -230,7 +230,7 @@ class UnixBrowser(BaseBrowser):
         cmdline = [self.name] + raise_opt + args
 
         if remote or self.background:
-            inout = io.open(os.devnull, "r+")
+            inout = subprocess.DEVNULL
         else:
             # for TTY browsers, we need stdin/out
             inout = None
@@ -354,7 +354,7 @@ class Konqueror(BaseBrowser):
         else:
             action = "openURL"
 
-        devnull = io.open(os.devnull, "r+")
+        devnull = subprocess.DEVNULL
         # if possible, put browser in separate process group, so
         # keyboard interrupts don't affect browser as well as Python
         setsid = getattr(os, 'setsid', None)

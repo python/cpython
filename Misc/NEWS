@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15447: Use subprocess.DEVNULL in webbrowser, instead of opening
+  os.devnull explicitly and leaving it open.
+
 - Issue #15509: webbrowser.UnixBrowser no longer passes empty arguments to
   Popen when %action substitutions produce empty strings.
 
