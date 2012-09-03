@@ -402,14 +402,33 @@ memory_ndim_get(PyMemoryViewObject *self)
     return PyLong_FromLong(self->view.ndim);
 }
 
-static PyGetSetDef memory_getsetlist[] ={
-    {"format",                (getter)memory_format_get,      NULL, NULL},
-    {"itemsize",        (getter)memory_itemsize_get,    NULL, NULL},
-    {"shape",           (getter)memory_shape_get,       NULL, NULL},
-    {"strides",         (getter)memory_strides_get,     NULL, NULL},
-    {"suboffsets",      (getter)memory_suboffsets_get,  NULL, NULL},
-    {"readonly",        (getter)memory_readonly_get,    NULL, NULL},
-    {"ndim",            (getter)memory_ndim_get,        NULL, NULL},
+PyDoc_STRVAR(memory_format_doc,
+             "A string containing the format (in struct module style)\n"
+             " for each element in the view.");
+PyDoc_STRVAR(memory_itemsize_doc,
+             "The size in bytes of each element of the memoryview.");
+PyDoc_STRVAR(memory_shape_doc,
+             "A tuple of ndim integers giving the shape of the memory\n"
+             " as an N-dimensional array.");
+PyDoc_STRVAR(memory_strides_doc,
+             "A tuple of ndim integers giving the size in bytes to access\n"
+             " each element for each dimension of the array.");
+PyDoc_STRVAR(memory_suboffsets_doc,
+             "A tuple of integers used internally for PIL-style arrays.");
+PyDoc_STRVAR(memory_readonly_doc,
+             "A bool indicating whether the memory is read only.");
+PyDoc_STRVAR(memory_ndim_doc,
+             "An integer indicating how many dimensions of a multi-dimensional\n"
+             " array the memory represents.");
+
+static PyGetSetDef memory_getsetlist[] = {
+    {"format",          (getter)memory_format_get,      NULL, memory_format_doc},
+    {"itemsize",        (getter)memory_itemsize_get,    NULL, memory_itemsize_doc},
+    {"shape",           (getter)memory_shape_get,       NULL, memory_shape_doc},
+    {"strides",         (getter)memory_strides_get,     NULL, memory_strides_doc},
+    {"suboffsets",      (getter)memory_suboffsets_get,  NULL, memory_suboffsets_doc},
+    {"readonly",        (getter)memory_readonly_get,    NULL, memory_readonly_doc},
+    {"ndim",            (getter)memory_ndim_get,        NULL, memory_ndim_doc},
     {NULL, NULL, NULL, NULL},
 };
 
@@ -485,10 +504,23 @@ memory_exit(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(memory_release_doc,
+"M.release() -> None\n\
+\n\
+Release the underlying buffer exposed by the memoryview object.");
+PyDoc_STRVAR(memory_tobytes_doc,
+"M.tobytes() -> bytes\n\
+\n\
+Return the data in the buffer as a byte string.");
+PyDoc_STRVAR(memory_tolist_doc,
+"M.tolist() -> list\n\
+\n\
+Return the data in the buffer as a list of elements.");
+
 static PyMethodDef memory_methods[] = {
-    {"release", memory_exit, METH_NOARGS},
-    {"tobytes", (PyCFunction)memory_tobytes, METH_NOARGS, NULL},
-    {"tolist", (PyCFunction)memory_tolist, METH_NOARGS, NULL},
+    {"release", memory_exit, METH_NOARGS, memory_release_doc},
+    {"tobytes", (PyCFunction)memory_tobytes, METH_NOARGS, memory_tobytes_doc},
+    {"tolist", (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
     {"__enter__", memory_enter, METH_NOARGS},
     {"__exit__", memory_exit, METH_VARARGS},
     {NULL,          NULL}           /* sentinel */
