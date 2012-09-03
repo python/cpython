@@ -2687,12 +2687,18 @@ copying.
    .. attribute:: shape
 
       A tuple of integers the length of :attr:`ndim` giving the shape of the
-      memory as a N-dimensional array.
+      memory as an N-dimensional array.
+
+      .. versionchanged:: 3.3
+         An empty tuple instead of None when ndim = 0.
 
    .. attribute:: strides
 
       A tuple of integers the length of :attr:`ndim` giving the size in bytes to
       access each element for each dimension of the array.
+
+      .. versionchanged:: 3.3
+         An empty tuple instead of None when ndim = 0.
 
    .. attribute:: suboffsets
 
