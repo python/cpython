@@ -2861,11 +2861,21 @@ memory_contiguous(PyMemoryViewObject *self, PyObject *dummy)
     return PyBool_FromLong(MV_ANY_CONTIGUOUS(self->flags));
 }
 
+PyDoc_STRVAR(memory_obj_doc,
+             "The underlying object of the memoryview.");
+PyDoc_STRVAR(memory_nbytes_doc,
+             "The amount of space in bytes that the array would use in\n"
+             " a contiguous representation.");
+PyDoc_STRVAR(memory_readonly_doc,
+             "A bool indicating whether the memory is read only.");
+PyDoc_STRVAR(memory_itemsize_doc,
+             "The size in bytes of each element of the memoryview.");
 PyDoc_STRVAR(memory_format_doc,
              "A string containing the format (in struct module style)\n"
              " for each element in the view.");
-PyDoc_STRVAR(memory_itemsize_doc,
-             "The size in bytes of each element of the memoryview.");
+PyDoc_STRVAR(memory_ndim_doc,
+             "An integer indicating how many dimensions of a multi-dimensional\n"
+             " array the memory represents.");
 PyDoc_STRVAR(memory_shape_doc,
              "A tuple of ndim integers giving the shape of the memory\n"
              " as an N-dimensional array.");
@@ -2874,15 +2884,16 @@ PyDoc_STRVAR(memory_strides_doc,
              " each element for each dimension of the array.");
 PyDoc_STRVAR(memory_suboffsets_doc,
              "A tuple of integers used internally for PIL-style arrays.");
-PyDoc_STRVAR(memory_readonly_doc,
-             "A bool indicating whether the memory is read only.");
-PyDoc_STRVAR(memory_ndim_doc,
-             "An integer indicating how many dimensions of a multi-dimensional\n"
-             " array the memory represents.");
+PyDoc_STRVAR(memory_c_contiguous_doc,
+             "A bool indicating whether the memory is C contiguous.");
+PyDoc_STRVAR(memory_f_contiguous_doc,
+             "A bool indicating whether the memory is Fortran contiguous.");
+PyDoc_STRVAR(memory_contiguous_doc,
+             "A bool indicating whether the memory is contiguous.");
 
 static PyGetSetDef memory_getsetlist[] = {
-    {"obj",             (getter)memory_obj_get,        NULL, NULL},
-    {"nbytes",          (getter)memory_nbytes_get,     NULL, NULL},
+    {"obj",             (getter)memory_obj_get,        NULL, memory_obj_doc},
+    {"nbytes",          (getter)memory_nbytes_get,     NULL, memory_nbytes_doc},
     {"readonly",        (getter)memory_readonly_get,   NULL, memory_readonly_doc},
     {"itemsize",        (getter)memory_itemsize_get,   NULL, memory_itemsize_doc},
     {"format",          (getter)memory_format_get,     NULL, memory_format_doc},
@@ -2890,9 +2901,9 @@ static PyGetSetDef memory_getsetlist[] = {
     {"shape",           (getter)memory_shape_get,      NULL, memory_shape_doc},
     {"strides",         (getter)memory_strides_get,    NULL, memory_strides_doc},
     {"suboffsets",      (getter)memory_suboffsets_get, NULL, memory_suboffsets_doc},
-    {"c_contiguous",    (getter)memory_c_contiguous,   NULL, NULL},
-    {"f_contiguous",    (getter)memory_f_contiguous,   NULL, NULL},
-    {"contiguous",      (getter)memory_contiguous,     NULL, NULL},
+    {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
+    {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
+    {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
     {NULL, NULL, NULL, NULL},
 };
 
@@ -2908,12 +2919,16 @@ PyDoc_STRVAR(memory_tolist_doc,
 "M.tolist() -> list\n\
 \n\
 Return the data in the buffer as a list of elements.");
+PyDoc_STRVAR(memory_cast_doc,
+"M.cast(format[, shape]) -> memoryview\n\
+\n\
+Cast a memoryview to a new format or shape.");
 
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
     {"tobytes",     (PyCFunction)memory_tobytes, METH_NOARGS, memory_tobytes_doc},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
-    {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, NULL},
+    {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}
