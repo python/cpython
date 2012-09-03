@@ -85,6 +85,14 @@ Library
   calling the C function wadd_wch()/mvwadd_wch() if the Python curses is linked
   to libncursesw.
 
+Documentation
+-------------
+
+- Issue #15814: The memoryview enhancements in 3.3.0 accidentally permitted
+  the hashing of multi-dimensional memorviews and memoryviews with multi-byte
+  item formats. The intended restrictions have now been documented - they
+  will be correctly enforced in 3.3.1
+
 
 What's New in Python 3.3.0 Release Candidate 1?
 ===============================================
