@@ -1,8 +1,14 @@
 import unittest
 from test.test_support import verbose, run_unittest
 import sys
+import time
 import gc
 import weakref
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 ### Support code
 ###############################################################################
@@ -298,6 +304,69 @@ class GCTests(unittest.TestCase):
             for i in range(N):
                 v = {1: v, 2: Ouch()}
         gc.disable()
+
+    @unittest.skipUnless(threading, "test meaningless on builds without threads")
+    def test_trashcan_threads(self):
+        # Issue #13992: trashcan mechanism should be thread-safe
+        NESTING = 60
+        N_THREADS = 2
+
+        def sleeper_gen():
+            """A generator that releases the GIL when closed or dealloc'ed."""
+            try:
+                yield
+            finally:
+                time.sleep(0.000001)
+
+        class C(list):
+            # Appending to a list is atomic, which avoids the use of a lock.
+            inits = []
+            dels = []
+            def __init__(self, alist):
+                self[:] = alist
+                C.inits.append(None)
+            def __del__(self):
+                # This __del__ is called by subtype_dealloc().
+                C.dels.append(None)
+                # `g` will release the GIL when garbage-collected.  This
+                # helps assert subtype_dealloc's behaviour when threads
+                # switch in the middle of it.
+                g = sleeper_gen()
+                next(g)
+                # Now that __del__ is finished, subtype_dealloc will proceed
+                # to call list_dealloc, which also uses the trashcan mechanism.
+
+        def make_nested():
+            """Create a sufficiently nested container object so that the
+            trashcan mechanism is invoked when deallocating it."""
+            x = C([])
+            for i in range(NESTING):
+                x = [C([x])]
+            del x
+
+        def run_thread():
+            """Exercise make_nested() in a loop."""
+            while not exit:
+                make_nested()
+
+        old_checkinterval = sys.getcheckinterval()
+        sys.setcheckinterval(3)
+        try:
+            exit = False
+            threads = []
+            for i in range(N_THREADS):
+                t = threading.Thread(target=run_thread)
+                threads.append(t)
+            for t in threads:
+                t.start()
+            time.sleep(1.0)
+            exit = True
+            for t in threads:
+                t.join()
+        finally:
+            sys.setcheckinterval(old_checkinterval)
+        gc.collect()
+        self.assertEqual(len(C.inits), len(C.dels))
 
     def test_boom(self):
         class Boom:

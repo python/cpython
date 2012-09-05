@@ -971,24 +971,33 @@ chain of N deallocations is broken into N / PyTrash_UNWIND_LEVEL pieces,
 with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
 */
 
+/* This is the old private API, invoked by the macros before 2.7.4.
+   Kept for binary compatibility of extensions. */
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
 PyAPI_DATA(int) _PyTrash_delete_nesting;
 PyAPI_DATA(PyObject *) _PyTrash_delete_later;
 
+/* The new thread-safe private API, invoked by the macros below. */
+PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyObject*);
+PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
+
 #define PyTrash_UNWIND_LEVEL 50
 
 #define Py_TRASHCAN_SAFE_BEGIN(op) \
-    if (_PyTrash_delete_nesting < PyTrash_UNWIND_LEVEL) { \
-        ++_PyTrash_delete_nesting;
-        /* The body of the deallocator is here. */
+    do { \
+        PyThreadState *_tstate = PyThreadState_GET(); \
+        if (_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL) { \
+            ++_tstate->trash_delete_nesting;
+            /* The body of the deallocator is here. */
 #define Py_TRASHCAN_SAFE_END(op) \
-        --_PyTrash_delete_nesting; \
-        if (_PyTrash_delete_later && _PyTrash_delete_nesting <= 0) \
-            _PyTrash_destroy_chain(); \
-    } \
-    else \
-        _PyTrash_deposit_object((PyObject*)op);
+            --_tstate->trash_delete_nesting; \
+            if (_tstate->trash_delete_later && _tstate->trash_delete_nesting <= 0) \
+                _PyTrash_thread_destroy_chain(); \
+        } \
+        else \
+            _PyTrash_thread_deposit_object((PyObject*)op); \
+    } while (0);
 
 #ifdef __cplusplus
 }
