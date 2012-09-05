@@ -883,12 +883,18 @@ class BytesIO(BufferedIOBase):
         return pos
 
     def readable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
     def writable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
     def seekable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
 
@@ -1546,6 +1552,8 @@ class TextIOWrapper(TextIOBase):
         return self._buffer
 
     def seekable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return self._seekable
 
     def readable(self):
