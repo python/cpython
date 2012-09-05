@@ -891,6 +891,7 @@ subtype_dealloc(PyObject *self)
 {
     PyTypeObject *type, *base;
     destructor basedealloc;
+    PyThreadState *tstate = PyThreadState_GET();
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
@@ -940,8 +941,10 @@ subtype_dealloc(PyObject *self)
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
     ++_PyTrash_delete_nesting;
+    ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_BEGIN(self);
     --_PyTrash_delete_nesting;
+    -- tstate->trash_delete_nesting;
     /* DO NOT restore GC tracking at this point.  weakref callbacks
      * (if any, and whether directly here or indirectly in something we
      * call) may trigger GC, and if self is tracked at that point, it
@@ -1020,8 +1023,10 @@ subtype_dealloc(PyObject *self)
 
   endlabel:
     ++_PyTrash_delete_nesting;
+    ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_END(self);
     --_PyTrash_delete_nesting;
+    -- tstate->trash_delete_nesting;
 
     /* Explanation of the weirdness around the trashcan macros:
 
