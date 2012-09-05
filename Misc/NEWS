@@ -115,6 +115,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15841: The readable(), writable() and seekable() methods of BytesIO
+  and StringIO objects now raise ValueError when the object has been closed.
+  Patch by Alessandro Moura.
+
 - Issue #15509: webbrowser.UnixBrowser no longer passes empty arguments to
   Popen when %action substitutions produce empty strings.
 
