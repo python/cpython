@@ -632,10 +632,21 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
 }
 
 /* Properties and pseudo-properties */
+
+PyDoc_STRVAR(stringio_readable_doc,
+"readable() -> bool. Returns True if the IO object can be read.");
+
+PyDoc_STRVAR(stringio_writable_doc,
+"writable() -> bool. Returns True if the IO object can be written.");
+
+PyDoc_STRVAR(stringio_seekable_doc,
+"seekable() -> bool. Returns True if the IO object can be seeked.");
+
 static PyObject *
 stringio_seekable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
@@ -643,6 +654,7 @@ static PyObject *
 stringio_readable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
@@ -650,6 +662,7 @@ static PyObject *
 stringio_writable(stringio *self, PyObject *args)
 {
     CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
@@ -817,9 +830,9 @@ static struct PyMethodDef stringio_methods[] = {
     {"seek",     (PyCFunction)stringio_seek,     METH_VARARGS, stringio_seek_doc},
     {"write",    (PyCFunction)stringio_write,    METH_O,       stringio_write_doc},
 
-    {"seekable", (PyCFunction)stringio_seekable, METH_NOARGS},
-    {"readable", (PyCFunction)stringio_readable, METH_NOARGS},
-    {"writable", (PyCFunction)stringio_writable, METH_NOARGS},
+    {"seekable", (PyCFunction)stringio_seekable, METH_NOARGS, stringio_seekable_doc},
+    {"readable", (PyCFunction)stringio_readable, METH_NOARGS, stringio_readable_doc},
+    {"writable", (PyCFunction)stringio_writable, METH_NOARGS, stringio_writable_doc},
 
     {"__getstate__", (PyCFunction)stringio_getstate, METH_NOARGS},
     {"__setstate__", (PyCFunction)stringio_setstate, METH_O},
