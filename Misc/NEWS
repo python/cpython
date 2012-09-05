@@ -10,6 +10,11 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
+- Issue #13992: The trashcan mechanism is now thread-safe.  This eliminates
+  sporadic crashes in multi-thread programs when several long deallocator
+  chains ran concurrently and involved subclasses of built-in container
+  types.
+
 - Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
 
 - Issue #15846: Fix SystemError which happened when using ast.parse in an
