@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15841: The readable(), writable() and seekable() methods of BytesIO
+  and StringIO objects now raise ValueError when the object has been closed.
+  Patch by Alessandro Moura.
+
 - Issue #15447: Use subprocess.DEVNULL in webbrowser, instead of opening
   os.devnull explicitly and leaving it open.
 

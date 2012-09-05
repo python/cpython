@@ -121,7 +121,7 @@ resize_buffer(bytesio *self, size_t size)
 }
 
 /* Internal routine for writing a string of bytes to the buffer of a BytesIO
-   object. Returns the number of bytes wrote, or -1 on error. */
+   object. Returns the number of bytes written, or -1 on error. */
 static Py_ssize_t
 write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
 {
@@ -171,10 +171,20 @@ bytesio_get_closed(bytesio *self)
     }
 }
 
+PyDoc_STRVAR(readable_doc,
+"readable() -> bool. Returns True if the IO object can be read.");
+
+PyDoc_STRVAR(writable_doc,
+"writable() -> bool. Returns True if the IO object can be written.");
+
+PyDoc_STRVAR(seekable_doc,
+"seekable() -> bool. Returns True if the IO object can be seeked.");
+
 /* Generic getter for the writable, readable and seekable properties */
 static PyObject *
-return_true(bytesio *self)
+return_not_closed(bytesio *self)
 {
+    CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
@@ -867,9 +877,9 @@ static PyGetSetDef bytesio_getsetlist[] = {
 };
 
 static struct PyMethodDef bytesio_methods[] = {
-    {"readable",   (PyCFunction)return_true,        METH_NOARGS, NULL},
-    {"seekable",   (PyCFunction)return_true,        METH_NOARGS, NULL},
-    {"writable",   (PyCFunction)return_true,        METH_NOARGS, NULL},
+    {"readable",   (PyCFunction)return_not_closed,  METH_NOARGS, readable_doc},
+    {"seekable",   (PyCFunction)return_not_closed,  METH_NOARGS, seekable_doc},
+    {"writable",   (PyCFunction)return_not_closed,  METH_NOARGS, writable_doc},
     {"close",      (PyCFunction)bytesio_close,      METH_NOARGS, close_doc},
     {"flush",      (PyCFunction)bytesio_flush,      METH_NOARGS, flush_doc},
     {"isatty",     (PyCFunction)bytesio_isatty,     METH_NOARGS, isatty_doc},
