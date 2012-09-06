@@ -564,6 +564,41 @@ which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
 
 
+PEP 421: Adding sys.implementation
+==================================
+
+:pep:`421` - Adding sys.implementation
+ PEP written and implemented by Eric Snow.
+
+A new attribute on the :mod:`sys` module exposes details specific to the
+implementation of the currently running interpreter.  The initial set of
+attributes on :attr:`sys.implementation` are ``name``, ``version``,
+``hexversion``, and ``cache_tag``.
+
+The intention of ``sys.implementation`` is to consolidate into one namespace
+the implementation-specific data used by the standard library.  This allows
+different Python implementations to share a single standard library code base
+much more easily.  In its initial state, ``sys.implementation`` holds only a
+small portion of the implementation-specific data.  Over time that ratio will
+shift in order to make the standard library more portable.
+
+One example of improved standard library portability is ``cache_tag``.  As of
+Python 3.3, ``sys.implementation.cache_tag`` is used by :mod:`importlib` to
+support :pep:`3147` compliance.  Any Python implementation that uses
+``importlib`` for its built-in import system may use ``cache_tag`` to control
+the caching behavior for modules.
+
+SimpleNamespace
+---------------
+
+The implementation of ``sys.implementation`` also introduces a new type to
+Python: :class:`types.SimpleNamespace`.  In contrast to a mapping-based
+namespace, like :class:`dict`, ``SimpleNamespace`` is attribute-based, like
+:class:`object`.  However, unlike ``object``, ``SimpleNamespace`` instances
+are writable.  This means that you can add, remove, and modify the namespace
+through normal attribute access.
+
+
 .. _importlib:
 
 Using importlib as the Implementation of Import
