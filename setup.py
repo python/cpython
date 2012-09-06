@@ -1788,6 +1788,8 @@ class PyBuildExt(build_ext):
                 mkpath(ffi_builddir)
                 config_args = [arg for arg in sysconfig.get_config_var("CONFIG_ARGS").split()
                                if (('--host=' in arg) or ('--build=' in arg))]
+                if not self.verbose:
+                    config_args.append("-q")
 
                 # Pass empty CFLAGS because we'll just append the resulting
                 # CFLAGS to Python's; -g or -O2 is to be avoided.
