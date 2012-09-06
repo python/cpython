@@ -198,6 +198,14 @@ BUILDPYTHON=	python$(BUILDEXE)
 PROFILE_TASK=	$(srcdir)/Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
 #PROFILE_TASK=	$(srcdir)/Lib/test/regrtest.py
 
+# Find the silent flag in MAKEFLAGS. The flags are sorted and normalized
+# by GNU make. The 's' flag is always in the first word.
+ifneq (,$(findstring s,$(word 1,$(MAKEFLAGS))))
+    QUIET=-q
+else
+    QUIET=
+endif
+
 # === Definitions added by makesetup ===
 
 
@@ -438,14 +446,8 @@ platform: $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
-	if which getopt >/dev/null; then \
-	  mflags=`getopt s $$MAKEFLAGS 2>/dev/null | sed 's/ --.*/ /'`; \
-	else \
-	  mflags=" $$MAKEFLAGS "; \
-	fi; \
-	case $$mflags in "* -s *") quiet=-q; esac; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		./$(BUILDPYTHON) -E $(srcdir)/setup.py $$quiet build
+		./$(BUILDPYTHON) -E $(srcdir)/setup.py $(QUIET) build
 
 # Build static library
 # avoid long command lines, same as LIBRARY_OBJS
