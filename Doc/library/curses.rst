@@ -837,7 +837,7 @@ the following methods and attributes:
 .. attribute:: window.encoding
 
    Encoding used to encode method arguments (Unicode strings and characters).
-   The encoding attribute is inherited from by parent window when a subwindow
+   The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`. By default, the locale
    encoding is used (see :func:`locale.getpreferredencoding`).
 
