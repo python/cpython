@@ -1872,6 +1872,8 @@ class PyBuildExt(build_ext):
                 from distutils.dir_util import mkpath
                 mkpath(ffi_builddir)
                 config_args = []
+                if not self.verbose:
+                    config_args.append("-q")
 
                 # Pass empty CFLAGS because we'll just append the resulting
                 # CFLAGS to Python's; -g or -O2 is to be avoided.
