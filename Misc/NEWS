@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15340: Fix importing the random module when /dev/urandom cannot
+  be opened.  This was a regression caused by the hash randomization patch.
+
 - Issue #15828: Restore support for C extensions in imp.load_module()
 
 - Issue #10650: Deprecate the watchexp parameter of the Decimal.quantize()
