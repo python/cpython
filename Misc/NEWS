@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15340: Fix importing the random module when /dev/urandom cannot
+  be opened.  This was a regression caused by the hash randomization patch.
+
 - Issue #15785: Modify window.get_wch() API of the curses module: return
   a character for most keys, and an integer for special keys, instead of
   always returning an integer. So it is now possible to distinguish special
