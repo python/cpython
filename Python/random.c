@@ -165,7 +165,8 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     Py_END_ALLOW_THREADS
     if (fd < 0)
     {
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, "/dev/urandom");
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "/dev/urandom (or equivalent) not found");
         return -1;
     }
 
