@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15340: Fix importing the random module when /dev/urandom cannot
+  be opened.  This was a regression caused by the hash randomization patch.
+
 - Issue #15841: The readable(), writable() and seekable() methods of
   io.BytesIO and io.StringIO objects now raise ValueError when the object has
   been closed.  Patch by Alessandro Moura.
