@@ -66,6 +66,15 @@ class WrapTestCase(BaseTestCase):
                          "I'm glad to hear it!"])
         self.check_wrap(text, 80, [text])
 
+    def test_empty_string(self):
+        # Check that wrapping the empty string returns an empty list.
+        self.check_wrap("", 6, [])
+        self.check_wrap("", 6, [], drop_whitespace=False)
+
+    def test_empty_string_with_initial_indent(self):
+        # Check that the empty string is not indented.
+        self.check_wrap("", 6, [], initial_indent="++")
+        self.check_wrap("", 6, [], initial_indent="++", drop_whitespace=False)
 
     def test_whitespace(self):
         # Whitespace munging and end-of-sentence detection
@@ -323,7 +332,32 @@ What a mess!
                          ["blah", " ", "(ding", " ", "dong),",
                           " ", "wubba"])
 
-    def test_initial_whitespace(self):
+    def test_drop_whitespace_false(self):
+        # Check that drop_whitespace=False preserves whitespace.
+        # SF patch #1581073
+        text = " This is a    sentence with     much whitespace."
+        self.check_wrap(text, 10,
+                        [" This is a", "    ", "sentence ",
+                         "with     ", "much white", "space."],
+                        drop_whitespace=False)
+
+    def test_drop_whitespace_false_whitespace_only(self):
+        # Check that drop_whitespace=False preserves a whitespace-only string.
+        self.check_wrap("   ", 6, ["   "], drop_whitespace=False)
+
+    def test_drop_whitespace_false_whitespace_only_with_indent(self):
+        # Check that a whitespace-only string gets indented (when
+        # drop_whitespace is False).
+        self.check_wrap("   ", 6, ["     "], drop_whitespace=False,
+                        initial_indent="  ")
+
+    def test_drop_whitespace_whitespace_only(self):
+        # Check drop_whitespace on a whitespace-only string.
+        self.check_wrap("  ", 6, [])
+
+    def test_drop_whitespace_leading_whitespace(self):
+        # Check that drop_whitespace does not drop leading whitespace (if
+        # followed by non-whitespace).
         # SF bug #622849 reported inconsistent handling of leading
         # whitespace; let's test that a bit, shall we?
         text = " This is a sentence with leading whitespace."
@@ -332,13 +366,27 @@ What a mess!
         self.check_wrap(text, 30,
                         [" This is a sentence with", "leading whitespace."])
 
-    def test_no_drop_whitespace(self):
-        # SF patch #1581073
-        text = " This is a    sentence with     much whitespace."
-        self.check_wrap(text, 10,
-                        [" This is a", "    ", "sentence ",
-                         "with     ", "much white", "space."],
+    def test_drop_whitespace_whitespace_line(self):
+        # Check that drop_whitespace skips the whole line if a non-leading
+        # line consists only of whitespace.
+        text = "abcd    efgh"
+        # Include the result for drop_whitespace=False for comparison.
+        self.check_wrap(text, 6, ["abcd", "    ", "efgh"],
                         drop_whitespace=False)
+        self.check_wrap(text, 6, ["abcd", "efgh"])
+
+    def test_drop_whitespace_whitespace_only_with_indent(self):
+        # Check that initial_indent is not applied to a whitespace-only
+        # string.  This checks a special case of the fact that dropping
+        # whitespace occurs before indenting.
+        self.check_wrap("  ", 6, [], initial_indent="++")
+
+    def test_drop_whitespace_whitespace_indent(self):
+        # Check that drop_whitespace does not drop whitespace indents.
+        # This checks a special case of the fact that dropping whitespace
+        # occurs before indenting.
+        self.check_wrap("abcd efgh", 6, ["  abcd", "  efgh"],
+                        initial_indent="  ", subsequent_indent="  ")
 
     if test_support.have_unicode:
         def test_unicode(self):
