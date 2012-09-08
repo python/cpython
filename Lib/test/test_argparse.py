@@ -4486,6 +4486,24 @@ class TestTypeFunctionCallWithNonStringDefault(TestCase):
 
 class TestParseKnownArgs(TestCase):
 
+    def test_arguments_tuple(self):
+        parser = argparse.ArgumentParser()
+        parser.parse_args(())
+
+    def test_arguments_list(self):
+        parser = argparse.ArgumentParser()
+        parser.parse_args([])
+
+    def test_arguments_tuple_positional(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('x')
+        parser.parse_args(('x',))
+
+    def test_arguments_list_positional(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('x')
+        parser.parse_args(['x'])
+
     def test_optionals(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--foo')
