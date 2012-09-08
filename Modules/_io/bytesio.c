@@ -692,8 +692,10 @@ bytesio_getstate(bytesio *self)
     }
     else {
         dict = PyDict_Copy(self->dict);
-        if (dict == NULL)
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
             return NULL;
+        }
     }
 
     state = Py_BuildValue("(OnN)", initvalue, self->pos, dict);
