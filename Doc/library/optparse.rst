@@ -1165,6 +1165,17 @@ must specify for any option using that action.
 
      options.tracks.append(int("4"))
 
+  The ``append`` action calls the ``append`` method on the current value of the
+  option.  This means that any default value specified must have an ``append``
+  method.  It also means that if the default value is non-empty, the default
+  elements will be present in the parsed value for the option, with any values
+  from the command line appended after those default values::
+
+     >>> parser.add_option("--files", action="append", default=['~/.mypkg/defaults'])
+     >>> opts, args = parser.parse_args(['--files', 'overrides.mypkg'])
+     >>> opts.files
+     ['~/.mypkg/defaults', 'overrides.mypkg']
+
 * ``"append_const"`` [required: :attr:`~Option.const`; relevant:
   :attr:`~Option.dest`]
 
