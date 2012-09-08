@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15847: Fix a regression in argparse, which did not accept tuples
+  as argument lists anymore.
+
 - Issue #15828: Restore support for C extensions in imp.load_module().
 
 - Issue #15340: Fix importing the random module when /dev/urandom cannot
