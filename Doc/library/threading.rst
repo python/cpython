@@ -255,8 +255,8 @@ daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
-.. class:: Thread(group=None, target=None, name=None, args=(), kwargs={},
-                  verbose=None, *, daemon=None)
+.. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
+                  daemon=None)
 
    This constructor should always be called with keyword arguments.  Arguments
    are:
@@ -274,8 +274,6 @@ since it is impossible to detect the termination of alien threads.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
-
-   *verbose* is a flag used for debugging messages.
 
    If not ``None``, *daemon* explicitly sets whether the thread is daemonic.
    If ``None`` (the default), the daemonic property is inherited from the
