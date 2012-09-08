@@ -158,9 +158,8 @@ Features
 
 * Multi-dimensional comparisons are supported for any array type.
 
-* All array types are hashable if the exporting object is hashable
-  and the view is read-only. (Contributed by Antoine Pitrou in
-  :issue:`13411`)
+* One-dimensional memoryviews of hashable (read-only) types with formats B,
+  b or c are now hashable. (Contributed by Antoine Pitrou in :issue:`13411`)
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
   is now possible to reverse a memoryview in O(1) by using a negative step.
