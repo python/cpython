@@ -1701,9 +1701,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return args
 
     def parse_known_args(self, args=None, namespace=None):
-        # args default to the system args
         if args is None:
+            # args default to the system args
             args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
 
         # default Namespace built from parser defaults
         if namespace is None:
