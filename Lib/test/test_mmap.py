@@ -466,6 +466,22 @@ class MmapTests(unittest.TestCase):
         f.flush ()
         return mmap.mmap (f.fileno(), 0)
 
+    def test_empty_file (self):
+        f = open (TESTFN, 'w+b')
+        f.close()
+        f = open(TESTFN, "rb")
+        try:
+            m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            m.close()
+            f.close()
+            self.fail("should not have been able to mmap empty file")
+        except ValueError as e:
+            f.close()
+            self.assertEqual(e.message, "cannot mmap an empty file")
+        except:
+            f.close()
+            self.fail("unexpected exception: " + str(e))
+
     def test_offset (self):
         f = open (TESTFN, 'w+b')
 

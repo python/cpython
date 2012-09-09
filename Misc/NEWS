@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15676: Now "mmap" check for empty files before doing the
+  offset check.  Patch by Steven Willis.
+
 - Issue #15340: Fix importing the random module when /dev/urandom cannot
   be opened.  This was a regression caused by the hash randomization patch.
 
