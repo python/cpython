@@ -388,7 +388,7 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a readonly
   source directory.  (Somewhat related to Issue #9860.)
 
-- Issue #15645: Ensure 2to3 grammar pickles are properly installed.
+- Issue #15822: Ensure 2to3 grammar pickles are properly installed.
 
 - Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
 
