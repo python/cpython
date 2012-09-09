@@ -141,6 +141,9 @@ Extension Modules
 Tools/Demos
 -----------
 
+- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
+  (replaces fixes for Issue #15645).
+
 Documentation
 -------------
 
