@@ -294,6 +294,8 @@ def _exit_function(info=info, debug=debug, _run_finalizers=_run_finalizers,
     global _exiting
 
     if not _exiting:
+        _exiting = True
+
         info('process shutting down')
         debug('running all "atexit" finalizers with priority >= 0')
         _run_finalizers(0)
