@@ -46,6 +46,12 @@ Library
   calling the C function wadd_wch()/mvwadd_wch() if the Python curses is linked
   to libncursesw.
 
+Build
+-----
+
+- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
+  (replaces fixes for Issue #15645).
+
 
 What's New in Python 3.3.0 Release Candidate 1?
 ===============================================
@@ -140,9 +146,6 @@ Extension Modules
 
 Tools/Demos
 -----------
-
-- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
-  (replaces fixes for Issue #15645).
 
 Documentation
 -------------
