@@ -10,11 +10,6 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
-- Issue #13992: The trashcan mechanism is now thread-safe.  This eliminates
-  sporadic crashes in multi-thread programs when several long deallocator
-  chains ran concurrently and involved subclasses of built-in container
-  types.
-
 - Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
 
 - Issue #15846: Fix SystemError which happened when using ast.parse in an
@@ -62,9 +57,6 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a readonly
   source directory.  (Somewhat related to Issue #9860.)
 
-- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
-  (replaces fixes for Issue #15645).
-
 Documentation
 -------------
 
@@ -75,13 +67,30 @@ Tools/Demos
 -----------
 
 
-What's New in Python 3.3.0 Release Candidate 2?
-===============================================
+What's New in Python 3.3.0?
+===========================
 
 *Release date: XX-Sep-2012*
 
 Core and Builtins
 -----------------
+
+Library
+-------
+
+
+What's New in Python 3.3.0 Release Candidate 2?
+===============================================
+
+*Release date: 09-Sep-2012*
+
+Core and Builtins
+-----------------
+
+- Issue #13992: The trashcan mechanism is now thread-safe.  This eliminates
+  sporadic crashes in multi-thread programs when several long deallocator
+  chains ran concurrently and involved subclasses of built-in container
+  types.
 
 - Issue #15784: Modify OSError.__str__() to better distinguish between
   errno error numbers and Windows error numbers.
@@ -91,10 +100,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #15847: Fix a regression in argparse, which did not accept tuples
+  as argument lists anymore.
+
+- Issue #15828: Restore support for C extensions in imp.load_module().
+
 - Issue #15340: Fix importing the random module when /dev/urandom cannot
   be opened.  This was a regression caused by the hash randomization patch.
-
-- Issue #15828: Restore support for C extensions in imp.load_module()
 
 - Issue #10650: Deprecate the watchexp parameter of the Decimal.quantize()
   method.
@@ -110,6 +122,12 @@ Library
   instead of wadd_wch()/mvwadd_wch(). The Python function addch(str) is still
   calling the C function wadd_wch()/mvwadd_wch() if the Python curses is linked
   to libncursesw.
+
+Build
+-----
+
+- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
+  (replaces fixes for Issue #15645).
 
 Documentation
 -------------
