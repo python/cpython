@@ -463,6 +463,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #15676: Now "mmap" check for empty files before doing the
+  offset check.  Patch by Steven Willis.
+
 - Issue #6493: An issue in ctypes on Windows that caused structure bitfields
   of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
 
