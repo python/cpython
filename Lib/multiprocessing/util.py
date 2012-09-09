@@ -240,7 +240,7 @@ def _run_finalizers(minpriority=None):
         # destroyed.  See the _exit_function function in this module for more
         # notes.
         return
-    
+
     if minpriority is None:
         f = lambda p : p[0][0] is not None
     else:
