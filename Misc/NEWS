@@ -62,6 +62,9 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a readonly
   source directory.  (Somewhat related to Issue #9860.)
 
+- Issue #15822: Really ensure 2to3 grammar pickles are properly installed
+  (replaces fixes for Issue #15645).
+
 Documentation
 -------------
 

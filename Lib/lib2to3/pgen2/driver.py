@@ -138,3 +138,20 @@ def _newer(a, b):
     if not os.path.exists(b):
         return True
     return os.path.getmtime(a) >= os.path.getmtime(b)
+
+
+def main(*args):
+    """Main program, when run as a script: produce grammar pickle files.
+
+    Calls load_grammar for each argument, a path to a grammar text file.
+    """
+    if not args:
+        args = sys.argv[1:]
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout,
+                        format='%(message)s')
+    for gt in args:
+        load_grammar(gt, save=True, force=True)
+    return True
+
+if __name__ == "__main__":
+    sys.exit(int(not main()))
