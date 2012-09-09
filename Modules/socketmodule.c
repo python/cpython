@@ -1674,7 +1674,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             if (len == 0) {
                 ifr.ifr_ifindex = 0;
             } else if (len < sizeof(ifr.ifr_name)) {
-                strcpy(ifr.ifr_name, PyBytes_AS_STRING(interfaceName));
+                strncpy(ifr.ifr_name, PyBytes_AS_STRING(interfaceName), sizeof(ifr.ifr_name));
+                ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
                 if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
                     s->errorhandler();
                     Py_DECREF(interfaceName);
