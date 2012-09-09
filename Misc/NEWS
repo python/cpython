@@ -21,7 +21,14 @@ Core and Builtins
 Library
 -------
 
+
 - Issue #15876: Fix a refleak in the curses module: window.encoding.
+
+- Issue #15881: Fixed atexit hook in multiprocessing.  Original patch
+  by Chris McDonough.
+
+- Issue #15340: Fix importing the random module when /dev/urandom cannot
+  be opened.  This was a regression caused by the hash randomization patch.
 
 - Issue #15841: The readable(), writable() and seekable() methods of BytesIO
   and StringIO objects now raise ValueError when the object has been closed.
