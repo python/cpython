@@ -1060,6 +1060,16 @@ from text files and modules with doctests:
    .. versionchanged:: 2.5
       The parameter *encoding* was added.
 
+   .. note::
+      Unlike :func:`testmod` and :class:`DocTestFinder`, this function raises
+      a :exc:`ValueError` if *module* contains no docstrings.  You can prevent
+      this error by passing a :class:`DocTestFinder` instance as the
+      *test_finder* argument with its *exclude_empty* keyword argument set
+      to ``False``::
+
+         >>> finder = doctest.DocTestFinder(exclude_empty=False)
+         >>> suite = doctest.DocTestSuite(test_finder=finder)
+
 
 .. function:: DocTestSuite([module][, globs][, extraglobs][, test_finder][, setUp][, tearDown][, checker])
 
