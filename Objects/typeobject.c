@@ -686,8 +686,10 @@ type_repr(PyTypeObject *type)
         mod = NULL;
     }
     name = type_name(type, NULL);
-    if (name == NULL)
+    if (name == NULL) {
+        Py_XDECREF(mod);
         return NULL;
+    }
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
         kind = "class";
