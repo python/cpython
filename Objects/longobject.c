@@ -1628,8 +1628,10 @@ long_to_decimal_string_internal(PyObject *aa,
         strlen++;
     }
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1)
+        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
+            Py_DECREF(scratch);
             return -1;
+        }
         kind = writer->kind;
         str = NULL;
     }
