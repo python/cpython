@@ -1024,6 +1024,16 @@ from text files and modules with doctests:
 
    This function uses the same search technique as :func:`testmod`.
 
+   .. note::
+      Unlike :func:`testmod` and :class:`DocTestFinder`, this function raises
+      a :exc:`ValueError` if *module* contains no docstrings.  You can prevent
+      this error by passing a :class:`DocTestFinder` instance as the
+      *test_finder* argument with its *exclude_empty* keyword argument set
+      to ``False``::
+
+         >>> finder = doctest.DocTestFinder(exclude_empty=False)
+         >>> suite = doctest.DocTestSuite(test_finder=finder)
+
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
 of :class:`doctest.DocTestCase` instances, and :class:`DocTestCase` is a
