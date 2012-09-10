@@ -167,6 +167,21 @@ class HashLibTestCase(unittest.TestCase):
                     % (name, hash_object_constructor,
                        computed, len(data), digest))
 
+    def check_update(self, name, data, digest):
+        constructors = self.constructors_to_test[name]
+        # 2 is for hashlib.name(...) and hashlib.new(name, ...)
+        self.assertGreaterEqual(len(constructors), 2)
+        for hash_object_constructor in constructors:
+            h = hash_object_constructor()
+            h.update(data)
+            computed = h.hexdigest()
+            self.assertEqual(
+                    computed, digest,
+                    "Hash algorithm %s using %s when updated returned hexdigest"
+                    " %r for %d byte input data that should have hashed to %r."
+                    % (name, hash_object_constructor,
+                       computed, len(data), digest))
+
     def check_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
         expected = hashlib.new(algorithm_name, str(u'spam')).hexdigest()
@@ -197,6 +212,15 @@ class HashLibTestCase(unittest.TestCase):
         if size == _4G + 5:
             try:
                 self.check('md5', 'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
+            except OverflowError:
+                pass # 32-bit arch
+
+    @precisionbigmemtest(size=_4G + 5, memuse=1)
+    def test_case_md5_huge_update(self, size):
+        if size == _4G + 5:
+            try:
+                self.check_update('md5', 'A'*size,
+                        'c9af2dff37468ce5dfee8f2cfc0a9c6d')
             except OverflowError:
                 pass # 32-bit arch
 
@@ -233,6 +257,15 @@ class HashLibTestCase(unittest.TestCase):
         if size == _4G + 5:
             try:
                 self.check('sha1', 'A'*size,
+                        '87d745c50e6b2879ffa0fb2c930e9fbfe0dc9a5b')
+            except OverflowError:
+                pass # 32-bit arch
+
+    @precisionbigmemtest(size=_4G + 5, memuse=1)
+    def test_case_sha1_huge_update(self, size):
+        if size == _4G + 5:
+            try:
+                self.check_update('sha1', 'A'*size,
                         '87d745c50e6b2879ffa0fb2c930e9fbfe0dc9a5b')
             except OverflowError:
                 pass # 32-bit arch
