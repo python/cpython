@@ -2984,8 +2984,10 @@ object_repr(PyObject *self)
         mod = NULL;
     }
     name = type_name(type, NULL);
-    if (name == NULL)
+    if (name == NULL) {
+        Py_XDECREF(mod);
         return NULL;
+    }
     if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
         rtn = PyString_FromFormat("<%s.%s object at %p>",
                                   PyString_AS_STRING(mod),
