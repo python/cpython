@@ -1992,7 +1992,8 @@ class UsabilityTest(unittest.TestCase):
         d = Decimal("-4.34913534E-17")
         self.assertEqual(d.as_tuple(), (1, (4, 3, 4, 9, 1, 3, 5, 3, 4), -25) )
 
-        # XXX non-compliant infinity payload.
+        # The '0' coefficient is implementation specific to decimal.py.
+        # It has no meaning in the C-version and is ignored there.
         d = Decimal("Infinity")
         self.assertEqual(d.as_tuple(), (0, (0,), 'F') )
 
@@ -2012,12 +2013,14 @@ class UsabilityTest(unittest.TestCase):
         d = Decimal( (1, (), 'n') )
         self.assertEqual(d.as_tuple(), (1, (), 'n') )
 
-        # XXX coefficient in infinity should raise an error
-        if self.decimal == P:
-            d = Decimal( (0, (4, 5, 3, 4), 'F') )
-            self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
-            d = Decimal( (1, (0, 2, 7, 1), 'F') )
-            self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
+        # For infinities, decimal.py has always silently accepted any
+        # coefficient tuple.
+        d = Decimal( (0, (0,), 'F') )
+        self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
+        d = Decimal( (0, (4, 5, 3, 4), 'F') )
+        self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
+        d = Decimal( (1, (0, 2, 7, 1), 'F') )
+        self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
 
     def test_subclassing(self):
         # Different behaviours when subclassing Decimal

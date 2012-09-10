@@ -2364,6 +2364,7 @@ dectuple_as_str(PyObject *dectuple)
     long sign, l;
     mpd_ssize_t exp = 0;
     Py_ssize_t i, mem, tsize;
+    int is_infinite = 0;
     int n;
 
     assert(PyTuple_Check(dectuple));
@@ -2399,6 +2400,7 @@ dectuple_as_str(PyObject *dectuple)
         /* special */
         if (PyUnicode_CompareWithASCIIString(tmp, "F") == 0) {
             strcat(sign_special, "Inf");
+            is_infinite = 1;
         }
         else if (PyUnicode_CompareWithASCIIString(tmp, "n") == 0) {
             strcat(sign_special, "NaN");
@@ -2469,6 +2471,11 @@ dectuple_as_str(PyObject *dectuple)
             PyErr_SetString(PyExc_ValueError,
                 "coefficient must be a tuple of digits");
             goto error;
+        }
+        if (is_infinite) {
+            /* accept but ignore any well-formed coefficient for compatibility
+               with decimal.py */
+            continue;
         }
         *cp++ = (char)l + '0';
     }
