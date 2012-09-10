@@ -1499,8 +1499,10 @@ _bufferedreader_read_all(buffered *self)
     }
 
     chunks = PyList_New(0);
-    if (chunks == NULL)
+    if (chunks == NULL) {
+        Py_XDECREF(data);
         return NULL;
+    }
 
     while (1) {
         if (data) {
