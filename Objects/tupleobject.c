@@ -192,8 +192,10 @@ PyTuple_Pack(Py_ssize_t n, ...)
 
     va_start(vargs, n);
     result = PyTuple_New(n);
-    if (result == NULL)
+    if (result == NULL) {
+        va_end(vargs);
         return NULL;
+    }
     items = ((PyTupleObject *)result)->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
