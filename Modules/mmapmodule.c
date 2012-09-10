@@ -1345,6 +1345,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             if (size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");
+                Py_DECREF(m_obj);
                 return NULL;
             }
             if (offset >= size) {
