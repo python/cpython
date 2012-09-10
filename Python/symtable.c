@@ -28,7 +28,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, int lineno, int col_offset)
 {
     PySTEntryObject *ste = NULL;
-    PyObject *k;
+    PyObject *k = NULL;
 
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
@@ -83,6 +83,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     return ste;
  fail:
+    Py_XDECREF(k);
     Py_XDECREF(ste);
     return NULL;
 }
