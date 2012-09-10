@@ -2381,7 +2381,12 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
     elif not tests:
         # Why do we want to do this? Because it reveals a bug that might
         # otherwise be hidden.
-        raise ValueError(module, "has no tests")
+        # It is probably a bug that this exception is not also raised if the
+        # number of doctest examples in tests is zero (i.e. if no doctest
+        # examples were found).  However, we should probably not be raising
+        # an exception at all here, though it is too late to make this change
+        # for a maintenance release.  See also issue #14649.
+        raise ValueError(module, "has no docstrings")
 
     tests.sort()
     suite = unittest.TestSuite()
