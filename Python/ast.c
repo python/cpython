@@ -3395,6 +3395,7 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
                 goto onError;
             if (*bytesmode != subbm) {
                 ast_error(n, "cannot mix bytes and nonbytes literals");
+                Py_DECREF(s);
                 goto onError;
             }
             if (PyBytes_Check(v) && PyBytes_Check(s)) {
