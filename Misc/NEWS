@@ -247,6 +247,9 @@ Library
 - Issue #15908: Fix misbehaviour of the sha1 module when called on data
   larger than 2**32 bytes.
 
+- Issue #15910: Fix misbehaviour of _md5 and sha1 modules when "updating"
+  on data larger than 2**32 bytes.
+
 - Issue #14875: Use float('inf') instead of float('1e66666') in the json module.
 
 - Issue #14572: Prevent build failures with pre-3.5.0 versions of
