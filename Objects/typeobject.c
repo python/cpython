@@ -3130,8 +3130,10 @@ object_repr(PyObject *self)
         mod = NULL;
     }
     name = type_qualname(type, NULL);
-    if (name == NULL)
+    if (name == NULL) {
+        Py_XDECREF(mod);
         return NULL;
+    }
     if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
         rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
     else
