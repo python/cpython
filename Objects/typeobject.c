@@ -647,8 +647,10 @@ type_repr(PyTypeObject *type)
         mod = NULL;
     }
     name = type_name(type, NULL);
-    if (name == NULL)
+    if (name == NULL) {
+        Py_XDECREF(mod);
         return NULL;
+    }
 
     if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
         rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
