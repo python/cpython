@@ -177,6 +177,7 @@ GLHACK=-Dclear=__GLclear
 #_testcapi _testcapimodule.c    # Python C API test module
 #_random _randommodule.c	# Random number generator
 #_collections _collectionsmodule.c # Container types
+#_heapq _heapqmodule.c		# Heapq type
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #strop stropmodule.c		# String manipulations
 #_functools _functoolsmodule.c	# Tools for working with functions and callable objects
