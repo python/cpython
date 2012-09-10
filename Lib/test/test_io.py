@@ -2887,6 +2887,11 @@ class MiscIOTest(unittest.TestCase):
         with self.open(support.TESTFN, 'rb') as f:
             self.assertEqual(b"spam", f.read())
 
+    def test_open_allargs(self):
+        # there used to be a buffer overflow in the parser for rawmode
+        self.assertRaises(ValueError, self.open, support.TESTFN, 'rwax+')
+
+
 class CMiscIOTest(MiscIOTest):
     io = io
 
