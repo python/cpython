@@ -1093,7 +1093,7 @@ process::
 
        n = Value('i', 7)
        x = Value(c_double, 1.0/3.0, lock=False)
-       s = Array('c', 'hello world', lock=lock)
+       s = Array('c', b'hello world', lock=lock)
        A = Array(Point, [(1.875,-6.25), (-5.75,2.0), (2.375,9.5)], lock=lock)
 
        p = Process(target=modify, args=(n, x, s, A))
