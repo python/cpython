@@ -15,8 +15,8 @@ if not sysconfig.is_python_build():
     # and run the tests in that case too?
     raise unittest.SkipTest('test irrelevant for an installed Python')
 
-srcdir = sysconfig.get_config_var('projectbase')
-basepath = os.path.join(os.getcwd(), srcdir, 'Tools')
+basepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                        'Tools')
 
 
 class ReindentTests(unittest.TestCase):
