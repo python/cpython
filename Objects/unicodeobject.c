@@ -13238,8 +13238,10 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         return -1;
     len = strlen(p);
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
+        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
+            PyMem_Free(p);
             return -1;
+        }
         unicode_write_cstr(writer->buffer, writer->pos, p, len);
         writer->pos += len;
     }
