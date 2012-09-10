@@ -229,7 +229,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
     int text = 0, binary = 0, universal = 0;
 
-    char rawmode[5], *m;
+    char rawmode[6], *m;
     int line_buffering, isatty;
 
     PyObject *raw, *modeobj = NULL, *buffer = NULL, *wrapper = NULL;
