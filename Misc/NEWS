@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15882: Change _decimal to accept any coefficient tuple when
+  constructing infinities. This is done for backwards compatibility
+  with decimal.py: Infinity coefficients are undefined in _decimal
+  (in accordance with the specification).
 
 - Issue #15876: Fix a refleak in the curses module: window.encoding.
 
