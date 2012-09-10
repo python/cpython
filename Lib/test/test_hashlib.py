@@ -228,6 +228,14 @@ class HashLibTestCase(unittest.TestCase):
         self.check('sha1', "a" * 1000000,
                    "34aa973cd4c4daa4f61eeb2bdbad27316534016f")
 
+    @precisionbigmemtest(size=_4G + 5, memuse=1)
+    def test_case_sha1_huge(self, size):
+        if size == _4G + 5:
+            try:
+                self.check('sha1', 'A'*size,
+                        '87d745c50e6b2879ffa0fb2c930e9fbfe0dc9a5b')
+            except OverflowError:
+                pass # 32-bit arch
 
     # use the examples from Federal Information Processing Standards
     # Publication 180-2, Secure Hash Standard,  2002 August 1
