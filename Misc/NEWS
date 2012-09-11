@@ -10,6 +10,8 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
+- Issue #15900: Fixed reference leak in PyUnicode_TranslateCharmap().
+
 - Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
 
 - Issue #15846: Fix SystemError which happened when using ast.parse in an
