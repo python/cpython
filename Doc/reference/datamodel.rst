@@ -1255,22 +1255,22 @@ Basic customization
    by default; with them, all objects compare unequal (except with themselves)
    and ``x.__hash__()`` returns ``id(x)``.
 
-   Classes which inherit a :meth:`__hash__` method from a parent class but
-   change the meaning of :meth:`__eq__` such that the hash value returned is no
-   longer appropriate (e.g. by switching to a value-based concept of equality
-   instead of the default identity based equality) can explicitly flag
-   themselves as being unhashable by setting ``__hash__ = None`` in the class
-   definition. Doing so means that not only will instances of the class raise an
-   appropriate :exc:`TypeError` when a program attempts to retrieve their hash
-   value, but they will also be correctly identified as unhashable when checking
-   ``isinstance(obj, collections.Hashable)`` (unlike classes which define their
-   own :meth:`__hash__` to explicitly raise :exc:`TypeError`).
+   A class that overrides :meth:`__eq__` and does not define :meth:`__hash__`
+   will have its :meth:`__hash__` implicitly set to ``None``.  When the
+   :meth:`__hash__` method of a class is ``None``, instances of the class will
+   raise an appropriate :exc:`TypeError` when a program attempts to retrieve
+   their hash value, and will also be correctly identified as unhashable when
+   checking ``isinstance(obj, collections.Hashable``).
 
    If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
-   explicitly by setting ``__hash__ = <ParentClass>.__hash__``. Otherwise the
-   inheritance of :meth:`__hash__` will be blocked, just as if :attr:`__hash__`
-   had been explicitly set to :const:`None`.
+   explicitly by setting ``__hash__ = <ParentClass>.__hash__``.
+
+   If a class that does not override :meth:`__eq__` wishes to suppress hash
+   support, it should include ``__hash__ = None`` in the class definition.
+   A class which defines its own :meth:`__hash__` that explicitly raises
+   a :exc:`TypeError` would be incorrectly identified as hashable by
+   an ``isinstance(obj, collections.Hashable)`` call.
 
    See also the :option:`-R` command-line option.
 
