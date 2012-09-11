@@ -154,6 +154,9 @@ Library
 
 - Issue #13579: string.Formatter now understands the 'a' conversion specifier.
 
+- Issue #15793: Stack corruption in ssl.RAND_egd().
+  Patch by Serhiy Storchaka.
+
 - Issue #15595: Fix subprocess.Popen(universal_newlines=True)
   for certain locales (utf-16 and utf-32 family). Patch by Chris Jerdonek.
 
