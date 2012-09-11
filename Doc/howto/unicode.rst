@@ -257,13 +257,13 @@ converted according to the encoding's rules.  Legal values for this argument are
 'REPLACEMENT CHARACTER'), or 'ignore' (just leave the character out of the
 Unicode result).  The following examples show the differences::
 
-    >>> b'\x80abc'.decode("utf-8", "strict")
+    >>> b'\x80abc'.decode("utf-8", "strict")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'utf8' codec can't decode byte 0x80 in position 0:
-                        unexpected code byte
+        ...
+    UnicodeDecodeError: 'utf-8' codec can't decode byte 0x80 in position 0:
+      invalid start byte
     >>> b'\x80abc'.decode("utf-8", "replace")
-    '?abc'
+    '�abc'
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
@@ -301,11 +301,11 @@ XML's character references.  The following example shows the different results::
     >>> u = chr(40960) + 'abcd' + chr(1972)
     >>> u.encode('utf-8')
     b'\xea\x80\x80abcd\xde\xb4'
-    >>> u.encode('ascii')
+    >>> u.encode('ascii')  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+        ...
     UnicodeEncodeError: 'ascii' codec can't encode character '\ua000' in
-                        position 0: ordinal not in range(128)
+      position 0: ordinal not in range(128)
     >>> u.encode('ascii', 'ignore')
     b'abcd'
     >>> u.encode('ascii', 'replace')
@@ -331,12 +331,11 @@ point.  The ``\U`` escape sequence is similar, but expects eight hex digits,
 not four::
 
     >>> s = "a\xac\u1234\u20ac\U00008000"
-              ^^^^ two-digit hex escape
-                   ^^^^^ four-digit Unicode escape
-                              ^^^^^^^^^^ eight-digit Unicode escape
-    >>> for c in s:  print(ord(c), end=" ")
-    ...
-    97 172 4660 8364 32768
+    ... #     ^^^^ two-digit hex escape
+    ... #         ^^^^^^ four-digit Unicode escape
+    ... #                     ^^^^^^^^^^ eight-digit Unicode escape
+    >>> [ord(c) for c in s]
+    [97, 172, 4660, 8364, 32768]
 
 Using escape sequences for code points greater than 127 is fine in small doses,
 but becomes an annoyance if you're using many accented characters, as you would
