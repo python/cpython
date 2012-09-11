@@ -1385,7 +1385,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
     PyObject *m, *d, *v;
     const char *ext;
-    int set_file_name = 0, ret;
+    int set_file_name = 0, close_own_fp = 0, ret;
     size_t len;
 
     m = PyImport_AddModule("__main__");
@@ -1419,6 +1419,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
             ret = -1;
             goto done;
         }
+        close_own_fp = 1;
         /* Turn on optimization if a .pyo file is given */
         if (strcmp(ext, ".pyo") == 0)
             Py_OptimizeFlag = 1;
@@ -1449,6 +1450,9 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_DECREF(v);
     ret = 0;
   done:
+    if (close_own_fp) {
+        fclose(fp);
+    }
     if (set_file_name && PyDict_DelItemString(d, "__file__"))
         PyErr_Clear();
     return ret;
