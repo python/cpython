@@ -1917,7 +1917,7 @@ PySSL_RAND_egd(PyObject *self, PyObject *args)
     PyObject *path;
     int bytes;
 
-    if (!PyArg_ParseTuple(args, "O&|i:RAND_egd",
+    if (!PyArg_ParseTuple(args, "O&:RAND_egd",
                           PyUnicode_FSConverter, &path))
         return NULL;
 
