@@ -1385,7 +1385,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
     PyObject *m, *d, *v;
     const char *ext;
-    int set_file_name = 0, close_own_fp = 0, ret;
+    int set_file_name = 0, ret;
     size_t len;
 
     m = PyImport_AddModule("__main__");
@@ -1411,15 +1411,15 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     len = strlen(filename);
     ext = filename + len - (len > 4 ? 4 : 0);
     if (maybe_pyc_file(fp, filename, ext, closeit)) {
+        FILE *pyc_fp;
         /* Try to run a pyc file. First, re-open in binary */
         if (closeit)
             fclose(fp);
-        if ((fp = fopen(filename, "rb")) == NULL) {
+        if ((pyc_fp = fopen(filename, "rb")) == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             ret = -1;
             goto done;
         }
-        close_own_fp = 1;
         /* Turn on optimization if a .pyo file is given */
         if (strcmp(ext, ".pyo") == 0)
             Py_OptimizeFlag = 1;
@@ -1427,9 +1427,11 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         if (set_main_loader(d, filename, "SourcelessFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
             ret = -1;
+            fclose(pyc_fp);
             goto done;
         }
-        v = run_pyc_file(fp, filename, d, d, flags);
+        v = run_pyc_file(pyc_fp, filename, d, d, flags);
+        fclose(pyc_fp);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
         if (strcmp(filename, "<stdin>") != 0 &&
@@ -1450,9 +1452,6 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_DECREF(v);
     ret = 0;
   done:
-    if (close_own_fp) {
-        fclose(fp);
-    }
     if (set_file_name && PyDict_DelItemString(d, "__file__"))
         PyErr_Clear();
     return ret;
@@ -1999,7 +1998,6 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     v = PyMarshal_ReadLastObjectFromFile(fp);
-    fclose(fp);
     if (v == NULL || !PyCode_Check(v)) {
         Py_XDECREF(v);
         PyErr_SetString(PyExc_RuntimeError,

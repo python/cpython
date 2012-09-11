@@ -10,7 +10,8 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
-- Issue #15895: Fix FILE pointer leak in PyRun_SimpleFileExFlags() when
+- Issue #15895: Fix FILE pointer leak in one error branch of
+   PyRun_SimpleFileExFlags() when
   filename points to a pyc/pyo file and closeit is false.
 
 - Issue #15900: Fix reference leak in PyUnicode_TranslateCharmap().
