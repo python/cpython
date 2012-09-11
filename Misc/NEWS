@@ -2,13 +2,17 @@
 Python News
 +++++++++++
 
-What's New in Python 3.3.0?
+What's New in Python 3.3.0 Release Candidate 3?
 ===========================
 
 *Release date: XX-Sep-2012*
 
 Core and Builtins
 -----------------
+
+- Issue #15895: Fix FILE pointer leak in one error branch of
+  PyRun_SimpleFileExFlags() when filename points to a pyc/pyo file, closeit
+  is false an and set_main_loader() fails.
 
 Library
 -------
