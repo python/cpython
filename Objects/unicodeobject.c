@@ -8585,10 +8585,13 @@ PyUnicode_TranslateCharmap(const Py_UNICODE *p,
                            PyObject *mapping,
                            const char *errors)
 {
+    PyObject *result;
     PyObject *unicode = PyUnicode_FromUnicode(p, size);
     if (!unicode)
         return NULL;
-    return _PyUnicode_TranslateCharmap(unicode, mapping, errors);
+    result = _PyUnicode_TranslateCharmap(unicode, mapping, errors);
+    Py_DECREF(unicode);
+    return result;
 }
 
 PyObject *
@@ -8600,14 +8603,10 @@ PyUnicode_Translate(PyObject *str,
 
     str = PyUnicode_FromObject(str);
     if (str == NULL)
-        goto onError;
+        return NULL;
     result = _PyUnicode_TranslateCharmap(str, mapping, errors);
     Py_DECREF(str);
     return result;
-
-  onError:
-    Py_XDECREF(str);
-    return NULL;
 }
 
 static Py_UCS4
