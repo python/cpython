@@ -10,6 +10,8 @@ What's New in Python 3.3.0 Release Candidate 3?
 Core and Builtins
 -----------------
 
+- Issue #15900: Fixed reference leak in PyUnicode_TranslateCharmap().
+
 - Issue #15926: Fix crash after multiple reinitializations of the interpreter.
 
 - Issue #15895: Fix FILE pointer leak in one error branch of
