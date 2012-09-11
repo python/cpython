@@ -254,12 +254,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         char *string;
         Py_ssize_t len;
 
-        if (!PyUnicode_Check(v)) {
-            PyErr_BadArgument();
-            return -1;
-        }
         string = _PyUnicode_AsStringAndSize(v, &len);
-        if (len != 1) {
+        if (string == NULL || len != 1) {
             PyErr_BadArgument();
             return -1;
         }
