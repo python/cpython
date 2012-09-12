@@ -4516,6 +4516,16 @@ class TestTypeFunctionCallWithNonStringDefault(TestCase):
         args = parser.parse_args([])
         self.assertEqual(NS(foo='foo_converted'), args)
 
+    def test_issue_15906(self):
+        # Issue #15906: When action='append', type=str, default=[] are
+        # providing, the dest value was the string representation "[]" when it
+        # should have been an empty list.
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--test', dest='test', type=str,
+                            default=[], action='append')
+        args = parser.parse_args([])
+        self.assertEqual(args.test, [])
+
 # ======================
 # parse_known_args tests
 # ======================
