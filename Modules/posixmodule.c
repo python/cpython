@@ -11852,7 +11852,6 @@ INITFUNC(void)
 
         /* initialize TerminalSize_info */
         PyStructSequence_InitType(&TerminalSizeType, &TerminalSize_desc);
-        Py_INCREF(&TerminalSizeType);
     }
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     Py_INCREF((PyObject*) &WaitidResultType);
@@ -11915,6 +11914,7 @@ INITFUNC(void)
 
 #endif /* __APPLE__ */
 
+    Py_INCREF(&TerminalSizeType);
     PyModule_AddObject(m, "terminal_size", (PyObject*) &TerminalSizeType);
 
     billion = PyLong_FromLong(1000000000);
