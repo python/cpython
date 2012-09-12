@@ -253,11 +253,11 @@ characters greater than 127 will be treated as errors::
     >>> s = unicode('abcdef')
     >>> type(s)
     <type 'unicode'>
-    >>> unicode('abcdef' + chr(255))
+    >>> unicode('abcdef' + chr(255))    #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+    ...
     UnicodeDecodeError: 'ascii' codec can't decode byte 0xff in position 6:
-                        ordinal not in range(128)
+    ordinal not in range(128)
 
 The ``errors`` argument specifies the response when the input string can't be
 converted according to the encoding's rules.  Legal values for this argument are
@@ -265,11 +265,11 @@ converted according to the encoding's rules.  Legal values for this argument are
 'REPLACEMENT CHARACTER'), or 'ignore' (just leave the character out of the
 Unicode result).  The following examples show the differences::
 
-    >>> unicode('\x80abc', errors='strict')
+    >>> unicode('\x80abc', errors='strict')     #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+        ...
     UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0:
-                        ordinal not in range(128)
+    ordinal not in range(128)
     >>> unicode('\x80abc', errors='replace')
     u'\ufffdabc'
     >>> unicode('\x80abc', errors='ignore')
@@ -312,10 +312,11 @@ strings.  8-bit strings will be converted to Unicode before carrying out the
 operation; Python's default ASCII encoding will be used, so characters greater
 than 127 will cause an exception::
 
-    >>> s.find('Was\x9f')
+    >>> s.find('Was\x9f')                   #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0x9f in position 3: ordinal not in range(128)
+        ...
+    UnicodeDecodeError: 'ascii' codec can't decode byte 0x9f in position 3:
+    ordinal not in range(128)
     >>> s.find(u'Was\x9f')
     -1
 
@@ -333,10 +334,11 @@ character references.  The following example shows the different results::
     >>> u = unichr(40960) + u'abcd' + unichr(1972)
     >>> u.encode('utf-8')
     '\xea\x80\x80abcd\xde\xb4'
-    >>> u.encode('ascii')
+    >>> u.encode('ascii')                       #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    UnicodeEncodeError: 'ascii' codec can't encode character '\ua000' in position 0: ordinal not in range(128)
+        ...
+    UnicodeEncodeError: 'ascii' codec can't encode character u'\ua000' in
+    position 0: ordinal not in range(128)
     >>> u.encode('ascii', 'ignore')
     'abcd'
     >>> u.encode('ascii', 'replace')
@@ -384,9 +386,9 @@ arbitrary code point.  Octal escapes can go up to U+01ff, which is octal 777.
 ::
 
     >>> s = u"a\xac\u1234\u20ac\U00008000"
-               ^^^^ two-digit hex escape
-                   ^^^^^^ four-digit Unicode escape
-                               ^^^^^^^^^^ eight-digit Unicode escape
+    ... #      ^^^^ two-digit hex escape
+    ... #          ^^^^^^ four-digit Unicode escape
+    ... #                      ^^^^^^^^^^ eight-digit Unicode escape
     >>> for c in s:  print ord(c),
     ...
     97 172 4660 8364 32768
