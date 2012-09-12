@@ -1957,7 +1957,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # twice (which may fail) if the argument was given, but
                     # only if it was defined already in the namespace
                     if (action.default is not None and
-                            isinstance(action, _StoreAction) and
+                            isinstance(action.default, basestring) and
                             hasattr(namespace, action.dest) and
                             action.default is getattr(namespace, action.dest)):
                         setattr(namespace, action.dest,
