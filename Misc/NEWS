@@ -119,6 +119,9 @@ Library
   especially problematic for the FileType type, as a default file would always
   be opened, even if a file argument was specified on the command line.
 
+- Issue #15906: Fix a regression in argparse caused by the preceding change,
+  when action='append', type='str' and default=[].
+
 - Issue #13370: Ensure that ctypes works on Mac OS X when Python is
   compiled using the clang compiler
 
