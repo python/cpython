@@ -4464,11 +4464,11 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
         args = parser.parse_args('--foo spam!'.split())
         self.assertEqual(NS(foo='foo_converted'), args)
 
-# ================================================================
-# Check that the type function is called with a non-string default
-# ================================================================
+# ==================================================================
+# Check semantics regarding the default argument and type conversion
+# ==================================================================
 
-class TestTypeFunctionCallWithNonStringDefault(TestCase):
+class TestTypeFunctionCalledOnDefault(TestCase):
 
     def test_type_function_call_with_non_string_default(self):
         def spam(int_to_convert):
@@ -4478,7 +4478,30 @@ class TestTypeFunctionCallWithNonStringDefault(TestCase):
         parser = argparse.ArgumentParser()
         parser.add_argument('--foo', type=spam, default=0)
         args = parser.parse_args([])
+        # foo should *not* be converted because its default is not a string.
+        self.assertEqual(NS(foo=0), args)
+
+    def test_type_function_call_with_string_default(self):
+        def spam(int_to_convert):
+            return 'foo_converted'
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', type=spam, default='0')
+        args = parser.parse_args([])
+        # foo is converted because its default is a string.
         self.assertEqual(NS(foo='foo_converted'), args)
+
+    def test_no_double_type_conversion_of_default(self):
+        def extend(str_to_convert):
+            return str_to_convert + '*'
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--test', type=extend, default='*')
+        args = parser.parse_args([])
+        # The test argument will be two stars, one coming from the default
+        # value and one coming from the type conversion being called exactly
+        # once.
+        self.assertEqual(NS(test='**'), args)
 
     def test_issue_15906(self):
         # Issue #15906: When action='append', type=str, default=[] are
