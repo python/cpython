@@ -30,10 +30,12 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     if (k == NULL)
         goto fail;
     ste = PyObject_New(PySTEntryObject, &PySTEntry_Type);
-    if (ste == NULL)
+    if (ste == NULL) {
+        Py_DECREF(k);
         goto fail;
+    }
     ste->ste_table = st;
-    ste->ste_id = k;
+    ste->ste_id = k; /* ste owns reference to k */
 
     ste->ste_name = name;
     Py_INCREF(name);
@@ -79,7 +81,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     return ste;
  fail:
-    Py_XDECREF(k);
     Py_XDECREF(ste);
     return NULL;
 }
