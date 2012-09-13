@@ -290,14 +290,17 @@ def _exit_function(info=info, debug=debug, _run_finalizers=_run_finalizers,
 
         if current_process() is not None:
             # We check if the current process is None here because if
-            # it's None, any call to ``active_children()`` will throw an
-            # AttributeError (active_children winds up trying to get
-            # attributes from util._current_process).  This happens in a
-            # variety of shutdown circumstances that are not well-understood
-            # because module-scope variables are not apparently supposed to
-            # be destroyed until after this function is called.  However,
-            # they are indeed destroyed before this function is called.  See
-            # issues #9775 and #15881.  Also related: #4106, #9205, and #9207.
+            # it's None, any call to ``active_children()`` will throw
+            # an AttributeError (active_children winds up trying to
+            # get attributes from util._current_process).  One
+            # situation where this can happen is if someone has
+            # manipulated sys.modules, causing this module to be
+            # garbage collected.  The destructor for the module type
+            # then replaces all values in the module dict with None.
+            # For instance, after setuptools runs a test it replaces
+            # sys.modules with a copy created earlier.  See issues
+            # #9775 and #15881.  Also related: #4106, #9205, and
+            # #9207.
 
             for p in active_children():
                 if p._daemonic:
