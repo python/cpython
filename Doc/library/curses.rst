@@ -380,7 +380,8 @@ The module :mod:`curses` defines the following functions:
    is to be displayed.
 
 
-.. function:: newwin([nlines, ncols,] begin_y, begin_x)
+.. function:: newwin(begin_y, begin_x)
+              newwin(nlines, ncols, begin_y, begin_x)
 
    Return a new window, whose left-upper corner is at  ``(begin_y, begin_x)``, and
    whose height/width is  *nlines*/*ncols*.
@@ -648,7 +649,8 @@ Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
 the following methods:
 
 
-.. method:: window.addch([y, x,] ch[, attr])
+.. method:: window.addch(ch[, attr])
+            window.addch(y, x, ch[, attr])
 
    .. note::
 
@@ -662,13 +664,15 @@ the following methods:
    position and attributes are the current settings for the window object.
 
 
-.. method:: window.addnstr([y, x,] str, n[, attr])
+.. method:: window.addnstr(str, n[, attr])
+            window.addnstr(y, x, str, n[, attr])
 
    Paint at most *n* characters of the  string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
 
-.. method:: window.addstr([y, x,] str[, attr])
+.. method:: window.addstr(str[, attr])
+            window.addstr(y, x, str[, attr])
 
    Paint the string *str* at ``(y, x)`` with attributes *attr*, overwriting
    anything previously on the display.
@@ -755,7 +759,10 @@ the following methods:
    *bs* are *horch*.  The default corner characters are always used by this function.
 
 
-.. method:: window.chgat([y, x, ] [num,] attr)
+.. method:: window.chgat(attr)
+            window.chgat(num, attr)
+            window.chgat(y, x, attr)
+            window.chgat(y, x, num, attr)
 
    Set the attributes of *num* characters at the current cursor position, or at
    position ``(y, x)`` if supplied. If no value of *num* is given or *num* = -1,
@@ -804,7 +811,8 @@ the following methods:
    Delete the line under the cursor. All following lines are moved up by one line.
 
 
-.. method:: window.derwin([nlines, ncols,] begin_y, begin_x)
+.. method:: window.derwin(begin_y, begin_x)
+            window.derwin(nlines, ncols, begin_y, begin_x)
 
    An abbreviation for "derive window", :meth:`derwin` is the same as calling
    :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
@@ -879,7 +887,8 @@ the following methods:
    upper-left corner.
 
 
-.. method:: window.hline([y, x,] ch, n)
+.. method:: window.hline(ch, n)
+            window.hline(y, x, ch, n)
 
    Display a horizontal line starting at ``(y, x)`` with length *n* consisting of
    the character *ch*.
@@ -913,7 +922,8 @@ the following methods:
    the character proper, and upper bits are the attributes.
 
 
-.. method:: window.insch([y, x,] ch[, attr])
+.. method:: window.insch(ch[, attr])
+            window.insch(y, x, ch[, attr])
 
    Paint character *ch* at ``(y, x)`` with attributes *attr*, moving the line from
    position *x* right by one character.
@@ -934,7 +944,8 @@ the following methods:
    line.
 
 
-.. method:: window.insnstr([y, x,] str, n [, attr])
+.. method:: window.insnstr(str, n[, attr])
+            window.insnstr(y, x, str, n[, attr])
 
    Insert a character string (as many characters as will fit on the line) before
    the character under the cursor, up to *n* characters.   If *n* is zero or
@@ -943,7 +954,8 @@ the following methods:
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
 
-.. method:: window.insstr([y, x, ] str [, attr])
+.. method:: window.insstr(str[, attr])
+            window.insstr(y, x, str[, attr])
 
    Insert a character string (as many characters as will fit on the line) before
    the character under the cursor.  All characters to the right of the cursor are
@@ -951,7 +963,8 @@ the following methods:
    position does not change (after moving to *y*, *x*, if specified).
 
 
-.. method:: window.instr([y, x] [, n])
+.. method:: window.instr([n])
+            window.instr(y, x[, n])
 
    Return a string of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
@@ -1126,13 +1139,15 @@ the following methods:
    Turn on attribute *A_STANDOUT*.
 
 
-.. method:: window.subpad([nlines, ncols,] begin_y, begin_x)
+.. method:: window.subpad(begin_y, begin_x)
+            window.subpad(nlines, ncols, begin_y, begin_x)
 
    Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
    whose width/height is *ncols*/*nlines*.
 
 
-.. method:: window.subwin([nlines, ncols,] begin_y, begin_x)
+.. method:: window.subwin(begin_y, begin_x)
+            window.subwin(nlines, ncols, begin_y, begin_x)
 
    Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
    whose width/height is *ncols*/*nlines*.
@@ -1189,7 +1204,8 @@ the following methods:
    :meth:`refresh`.
 
 
-.. method:: window.vline([y, x,] ch, n)
+.. method:: window.vline(ch, n)
+            window.vline(y, x, ch, n)
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
    character *ch*.
