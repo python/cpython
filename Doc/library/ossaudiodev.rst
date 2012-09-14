@@ -63,7 +63,8 @@ the standard audio interface for Linux and recent versions of FreeBSD.
    ``ossaudiodev.error``.)
 
 
-.. function:: open([device, ]mode)
+.. function:: open(mode)
+              open(device, mode)
 
    Open an audio device and return an OSS audio device object.  This object
    supports many file-like methods, such as :meth:`read`, :meth:`write`, and

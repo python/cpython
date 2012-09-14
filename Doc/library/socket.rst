@@ -745,7 +745,8 @@ correspond to Unix system calls applicable to sockets.
    much data, if any, was successfully sent.
 
 
-.. method:: socket.sendto(bytes[, flags], address)
+.. method:: socket.sendto(bytes, address)
+            socket.sendto(bytes, flags, address)
 
    Send data to the socket.  The socket should not be connected to a remote socket,
    since the destination socket is specified by *address*.  The optional *flags*
