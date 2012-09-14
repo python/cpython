@@ -130,9 +130,12 @@ command-line arguments from :data:`sys.argv`.
 ArgumentParser objects
 ----------------------
 
-.. class:: ArgumentParser([description], [epilog], [prog], [usage], [add_help], \
-                          [argument_default], [parents], [prefix_chars], \
-                          [conflict_handler], [formatter_class])
+.. class:: ArgumentParser(prog=None, usage=None, description=None, \
+                          epilog=None, parents=[], \
+                          formatter_class=argparse.HelpFormatter, \
+                          prefix_chars='-', fromfile_prefix_chars=None, \
+                          argument_default=None, conflict_handler='error', \
+                          add_help=True)
 
    Create a new :class:`ArgumentParser` object.  Each parameter has its own more
    detailed description below, but in short they are:
