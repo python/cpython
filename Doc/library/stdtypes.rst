@@ -1235,7 +1235,8 @@ The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
 loops.
 
-.. class:: range([start, ]stop[, step])
+.. class:: range(stop)
+           range(start, stop[, step])
 
    The arguments to the range constructor must be integers (either built-in
    :class:`int` or any object that implements the ``__index__`` special

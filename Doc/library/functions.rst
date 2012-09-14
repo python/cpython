@@ -725,11 +725,16 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable[, args...], *[, key])
+.. function:: max(iterable, *[, key])
+              max(arg1, arg2, *args[, key])
 
-   With a single argument *iterable*, return the largest item of a non-empty
-   iterable (such as a string, tuple or list).  With more than one argument, return
-   the largest of the arguments.
+   Return the largest item in an iterable or the largest of two or more
+   arguments.
+
+   If one positional argument is provided, *iterable* must be a non-empty
+   iterable (such as a non-empty string, tuple or list).  The largest item
+   in the iterable is returned.  If two or more positional arguments are
+   provided, the largest of the positional arguments is returned.
 
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
@@ -748,11 +753,16 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable[, args...], *[, key])
+.. function:: min(iterable, *[, key])
+              min(arg1, arg2, *args[, key])
 
-   With a single argument *iterable*, return the smallest item of a non-empty
-   iterable (such as a string, tuple or list).  With more than one argument, return
-   the smallest of the arguments.
+   Return the smallest item in an iterable or the smallest of two or more
+   arguments.
+
+   If one positional argument is provided, *iterable* must be a non-empty
+   iterable (such as a non-empty string, tuple or list).  The smallest item
+   in the iterable is returned.  If two or more positional arguments are
+   provided, the smallest of the positional arguments is returned.
 
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
@@ -970,16 +980,16 @@ are always available.  They are listed here in alphabetical order.
    must be of integer types, and *y* must be non-negative.
 
 
-.. function:: print([object, ...], *, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
-   Print *object*\(s) to the stream *file*, separated by *sep* and followed by
+   Print *objects* to the stream *file*, separated by *sep* and followed by
    *end*.  *sep*, *end* and *file*, if present, must be given as keyword
    arguments.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
    written to the stream, separated by *sep* and followed by *end*.  Both *sep*
    and *end* must be strings; they can also be ``None``, which means to use the
-   default values.  If no *object* is given, :func:`print` will just write
+   default values.  If no *objects* are given, :func:`print` will just write
    *end*.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
@@ -1061,7 +1071,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. function:: range([start,] stop[, step])
+.. function:: range(stop)
+              range(start, stop[, step])
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
@@ -1126,7 +1137,8 @@ are always available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice([start,] stop[, step])
+.. function:: slice(stop)
+              slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 

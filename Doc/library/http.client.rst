@@ -27,7 +27,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, strict[, timeout[, source_address]]])
+.. class:: HTTPConnection(host, port=None[, strict][, timeout], \
+                          source_address=None)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -55,7 +56,10 @@ The module provides the following classes:
       are not supported anymore.
 
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None[, strict[, timeout[, source_address]]], *, context=None, check_hostname=None)
+.. class:: HTTPSConnection(host, port=None, key_file=None, \
+                           cert_file=None[, strict][, timeout], \
+                           source_address=None, *, context=None, \
+                           check_hostname=None)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it

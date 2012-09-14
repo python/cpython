@@ -295,7 +295,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 :class:`Process` and exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. class:: Process([group[, target[, name[, args[, kwargs]]]]], *, daemon=None)
+.. class:: Process(group=None, target=None, name=None, args=(), kwargs={}, \
+                   *, daemon=None)
 
    Process objects represent activity that is run in a separate process. The
    :class:`Process` class has equivalents of all the methods of
