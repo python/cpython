@@ -1051,7 +1051,8 @@ ConfigParser Objects
       *fallback*.
 
 
-   .. method:: items([section], raw=False, vars=None)
+   .. method:: items(raw=False, vars=None)
+               items(section, raw=False, vars=None)
 
       When *section* is not given, return a list of *section_name*,
       *section_proxy* pairs, including DEFAULTSECT.
