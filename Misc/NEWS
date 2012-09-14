@@ -120,6 +120,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15842: the SocketIO.{readable,writable,seekable} methods now
+  raise ValueError when the file-like object is closed.  Patch by Alessandro
+  Moura.
+
 - Issue #15881: Fixed atexit hook in multiprocessing.  Original patch
   by Chris McDonough.
 
