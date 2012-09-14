@@ -363,7 +363,8 @@ loops that truncate the stream.
                   self.currkey = self.keyfunc(self.currvalue)
 
 
-.. function:: islice(iterable, [start,] stop [, step])
+.. function:: islice(iterable, stop)
+              islice(iterable, start, stop[, step])
 
    Make an iterator that returns selected elements from the iterable. If *start* is
    non-zero, then elements from the iterable are skipped until start is reached.
