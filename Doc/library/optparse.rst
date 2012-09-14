@@ -275,7 +275,8 @@ You're free to define as many short option strings and as many long option
 strings as you like (including zero), as long as there is at least one option
 string overall.
 
-The option strings passed to :meth:`add_option` are effectively labels for the
+The option strings passed to :meth:`OptionParser.add_option` are effectively
+labels for the
 option defined by that call.  For brevity, we will frequently refer to
 *encountering an option* on the command line; in reality, :mod:`optparse`
 encounters *option strings* and looks up options from them.
@@ -895,7 +896,8 @@ long option strings, but you must specify at least one overall option string.
 The canonical way to create an :class:`Option` instance is with the
 :meth:`add_option` method of :class:`OptionParser`.
 
-.. method:: OptionParser.add_option(opt_str[, ...], attr=value, ...)
+.. method:: OptionParser.add_option(option)
+            OptionParser.add_option(*opt_str, attr=value, ...)
 
    To define an option with only a short option string::
 
