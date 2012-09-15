@@ -10,8 +10,8 @@
 import unittest
 from test import support
 import os
+import sys
 from os import path
-from time import sleep
 
 startfile = support.get_attribute(os, 'startfile')
 
@@ -21,13 +21,12 @@ class TestCase(unittest.TestCase):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
     def test_empty(self):
-        empty = path.join(path.dirname(__file__), "empty.vbs")
-        startfile(empty)
-        startfile(empty, "open")
-        # Give the child process some time to exit before we finish.
-        # Otherwise the cleanup code will not be able to delete the cwd,
-        # because it is still in use.
-        sleep(0.1)
+        # Switch to an existing, but safe, working directory to let the
+        # cleanup code do its thing without permission errors.
+        with support.temp_cwd(path=path.dirname(sys.executable)):
+            empty = path.join(path.dirname(__file__), "empty.vbs")
+            startfile(empty)
+            startfile(empty, "open")
 
 def test_main():
     support.run_unittest(TestCase)
