@@ -227,11 +227,15 @@ default values. The arguments that are most commonly needed are:
    ``True`` then all line endings will be converted to ``'\n'`` as described
    for the :term:`universal newlines` `'U'`` mode argument to :func:`open`.
 
-   If *shell* is :const:`True`, the specified command will be executed through
-   the shell. This can be useful if you are using Python primarily for the
+   If *shell* is ``True``, the specified command will be executed through
+   the shell.  This can be useful if you are using Python primarily for the
    enhanced control flow it offers over most system shells and still want
-   access to other shell features such as filename wildcards, shell pipes and
-   environment variable expansion.
+   convenient access to other shell features such as shell pipes, filename
+   wildcards, environment variable expansion, and expansion of ``~`` to a
+   user's home directory.  However, note that Python itself offers
+   implementations of many shell-like features (in particular, :mod:`glob`,
+   :mod:`fnmatch`, :func:`os.walk`, :func:`os.path.expandvars`,
+   :func:`os.path.expanduser`, and :mod:`shutil`).
 
    .. warning::
 
