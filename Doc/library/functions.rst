@@ -779,7 +779,7 @@ available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, key])
+.. function:: min(iterable[, key])
               min(arg1, arg2, *args[, key])
 
    Return the smallest item in an iterable or the smallest of two or more
