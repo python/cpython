@@ -26,7 +26,7 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python|version|/site-packages` and then :file:`lib/site-python` (on
+:file:`lib/python{X.Y}/site-packages` and then :file:`lib/site-python` (on
 Unix and Macintosh).  For each of the distinct head-tail combinations, it sees
 if it refers to an existing directory, and if so, adds it to ``sys.path`` and
 also inspects the newly added path for configuration files.
