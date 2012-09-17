@@ -265,7 +265,7 @@ performing string substitutions. ::
 
    >>> import re
    >>> p = re.compile('ab*')
-   >>> print p
+   >>> p  #doctest: +ELLIPSIS
    <_sre.SRE_Pattern object at 0x...>
 
 :func:`re.compile` also accepts an optional *flags* argument, used to enable
@@ -378,7 +378,7 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
    Python 2.2.2 (#1, Feb 10 2003, 12:57:01)
    >>> import re
    >>> p = re.compile('[a-z]+')
-   >>> p
+   >>> p  #doctest: +ELLIPSIS
    <_sre.SRE_Pattern object at 0x...>
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
@@ -396,7 +396,7 @@ case, :meth:`match` will return a :class:`MatchObject`, so you should store the
 result in a variable for later use. ::
 
    >>> m = p.match('tempo')
-   >>> print m
+   >>> m  #doctest: +ELLIPSIS
    <_sre.SRE_Match object at 0x...>
 
 Now you can query the :class:`MatchObject` for information about the matching
@@ -435,7 +435,7 @@ case. ::
 
    >>> print p.match('::: message')
    None
-   >>> m = p.search('::: message') ; print m
+   >>> m = p.search('::: message'); print m  #doctest: +ELLIPSIS
    <_sre.SRE_Match object at 0x...>
    >>> m.group()
    'message'
@@ -464,8 +464,8 @@ result.  The :meth:`finditer` method returns a sequence of :class:`MatchObject`
 instances as an :term:`iterator`. [#]_ ::
 
    >>> iterator = p.finditer('12 drummers drumming, 11 ... 10 ...')
-   >>> iterator
-   <callable-iterator object at 0x401833ac>
+   >>> iterator  #doctest: +ELLIPSIS
+   <callable-iterator object at 0x...>
    >>> for match in iterator:
    ...     print match.span()
    ...
@@ -486,7 +486,7 @@ the RE string added as the first argument, and still return either ``None`` or a
 
    >>> print re.match(r'From\s+', 'Fromage amk')
    None
-   >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')
+   >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')  #doctest: +ELLIPSIS
    <_sre.SRE_Match object at 0x...>
 
 Under the hood, these functions simply create a pattern object for you
@@ -687,7 +687,7 @@ given location, they can obviously be matched an infinite number of times.
    For example, if you wish to match the word ``From`` only at the beginning of a
    line, the RE to use is ``^From``. ::
 
-      >>> print re.search('^From', 'From Here to Eternity')
+      >>> print re.search('^From', 'From Here to Eternity')  #doctest: +ELLIPSIS
       <_sre.SRE_Match object at 0x...>
       >>> print re.search('^From', 'Reciting From Memory')
       None
@@ -699,11 +699,11 @@ given location, they can obviously be matched an infinite number of times.
    Matches at the end of a line, which is defined as either the end of the string,
    or any location followed by a newline character.     ::
 
-      >>> print re.search('}$', '{block}')
+      >>> print re.search('}$', '{block}')  #doctest: +ELLIPSIS
       <_sre.SRE_Match object at 0x...>
       >>> print re.search('}$', '{block} ')
       None
-      >>> print re.search('}$', '{block}\n')
+      >>> print re.search('}$', '{block}\n')  #doctest: +ELLIPSIS
       <_sre.SRE_Match object at 0x...>
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
@@ -728,7 +728,7 @@ given location, they can obviously be matched an infinite number of times.
    match when it's contained inside another word. ::
 
       >>> p = re.compile(r'\bclass\b')
-      >>> print p.search('no class at all')
+      >>> print p.search('no class at all')  #doctest: +ELLIPSIS
       <_sre.SRE_Match object at 0x...>
       >>> print p.search('the declassified algorithm')
       None
@@ -746,7 +746,7 @@ given location, they can obviously be matched an infinite number of times.
       >>> p = re.compile('\bclass\b')
       >>> print p.search('no class at all')
       None
-      >>> print p.search('\b' + 'class' + '\b')
+      >>> print p.search('\b' + 'class' + '\b')  #doctest: +ELLIPSIS
       <_sre.SRE_Match object at 0x...>
 
    Second, inside a character class, where there's no use for this assertion,
@@ -1187,9 +1187,9 @@ compute the desired replacement string and return it.
 In the following example, the replacement function translates  decimals into
 hexadecimal::
 
-   >>> def hexrepl( match ):
+   >>> def hexrepl(match):
    ...     "Return the hex string for a decimal number"
-   ...     value = int( match.group() )
+   ...     value = int(match.group())
    ...     return hex(value)
    ...
    >>> p = re.compile(r'\d+')
