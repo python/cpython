@@ -451,7 +451,7 @@ PyDoc_STRVAR(iobase_readline_doc,
     "\n"
     "If limit is specified, at most limit bytes will be read.\n"
     "\n"
-    "The line terminator is always b'\n' for binary files; for text\n"
+    "The line terminator is always b'\\n' for binary files; for text\n"
     "files, the newlines argument to open can be used to select the line\n"
     "terminator(s) recognized.\n");
 
