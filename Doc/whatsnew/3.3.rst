@@ -69,6 +69,7 @@ New library modules:
 * :mod:`faulthandler` (helps debugging low-level crashes)
 * :mod:`ipaddress` (high-level objects representing IP addresses and masks)
 * :mod:`lzma` (compress data using the XZ / LZMA algorithm)
+* :mod:`unittest.mock` (replace parts of your system under test with mock objects)
 * :mod:`venv` (Python :ref:`virtual environments <pep-405>`, as in the
   popular ``virtualenv`` package)
 
@@ -923,7 +924,7 @@ New Modules
 faulthandler
 ------------
 
-This new debug module contains functions to dump Python tracebacks explicitly,
+This new debug module :mod:`faulthandler` contains functions to dump Python tracebacks explicitly,
 on a fault (a crash like a segmentation fault), after a timeout, or on a user
 signal. Call :func:`faulthandler.enable` to install fault handlers for the
 :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
