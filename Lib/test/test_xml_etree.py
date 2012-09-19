@@ -1822,6 +1822,26 @@ def check_issue6565():
 
     """
 
+def check_html_empty_elems_serialization(self):
+    # issue 15970
+    # from http://www.w3.org/TR/html401/index/elements.html
+    """
+
+    >>> empty_elems = ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'FRAME', 'HR',
+    ...                'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM']
+    >>> elems = ''.join('<%s />' % elem for elem in empty_elems)
+    >>> serialize(ET.XML('<html>%s</html>' % elems), method='html')
+    '<html><AREA><BASE><BASEFONT><BR><COL><FRAME><HR><IMG><INPUT><ISINDEX><LINK><META><PARAM></html>'
+    >>> serialize(ET.XML('<html>%s</html>' % elems.lower()), method='html')
+    '<html><area><base><basefont><br><col><frame><hr><img><input><isindex><link><meta><param></html>'
+    >>> elems = ''.join('<%s></%s>' % (elem, elem) for elem in empty_elems)
+    >>> serialize(ET.XML('<html>%s</html>' % elems), method='html')
+    '<html><AREA><BASE><BASEFONT><BR><COL><FRAME><HR><IMG><INPUT><ISINDEX><LINK><META><PARAM></html>'
+    >>> serialize(ET.XML('<html>%s</html>' % elems.lower()), method='html')
+    '<html><area><base><basefont><br><col><frame><hr><img><input><isindex><link><meta><param></html>'
+
+    """
+
 # --------------------------------------------------------------------
 
 

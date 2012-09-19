@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15970: xml.etree.ElementTree now serializes correctly the empty HTML
+  elements 'meta' and 'param'.
+
 - Issue #15676: Now "mmap" check for empty files before doing the
   offset check.  Patch by Steven Willis.
 
