@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15970: xml.etree.ElementTree now serializes correctly the empty HTML
+  elements 'meta' and 'param'.
+
 - Issue #15842: the SocketIO.{readable,writable,seekable} methods now
   raise ValueError when the file-like object is closed.  Patch by Alessandro
   Moura.
