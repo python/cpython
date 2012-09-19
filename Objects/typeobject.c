@@ -5992,7 +5992,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         descr = _PyType_Lookup(type, p->name_strobj);
         if (descr == NULL) {
             if (ptr == (void**)&type->tp_iternext) {
-                specific = _PyObject_NextNotImplemented;
+                specific = (void *)_PyObject_NextNotImplemented;
             }
             continue;
         }
@@ -6039,7 +6039,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             /* We specifically allow __hash__ to be set to None
                to prevent inheritance of the default
                implementation from object.__hash__ */
-            specific = PyObject_HashNotImplemented;
+            specific = (void *)PyObject_HashNotImplemented;
         }
         else {
             use_generic = 1;
@@ -6254,7 +6254,7 @@ add_operators(PyTypeObject *type)
             continue;
         if (PyDict_GetItem(dict, p->name_strobj))
             continue;
-        if (*ptr == PyObject_HashNotImplemented) {
+        if (*ptr == (void *)PyObject_HashNotImplemented) {
             /* Classes may prevent the inheritance of the tp_hash
                slot by storing PyObject_HashNotImplemented in it. Make it
                visible as a None value for the __hash__ attribute. */
