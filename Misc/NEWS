@@ -10,6 +10,9 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
+- Issue #15965: Explicitly cast AT_FDCWD as (int).  Required on Solaris 10
+  (which defines AT_FDCWD as 0xffd19553), harmless on other platforms.
+
 - Issue #15926: Fix crash after multiple reinitializations of the interpreter.
 
 - Issue #15895: Fix FILE pointer leak in one error branch of
