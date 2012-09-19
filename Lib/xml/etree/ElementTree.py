@@ -945,7 +945,7 @@ def _serialize_xml(write, elem, encoding, qnames, namespaces):
         write(_escape_cdata(elem.tail, encoding))
 
 HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta" "param")
+              "img", "input", "isindex", "link", "meta", "param")
 
 try:
     HTML_EMPTY = set(HTML_EMPTY)
