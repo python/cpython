@@ -31,13 +31,13 @@ The module defines the following public class:
    may also contain multiple statements separated by ``;`` or newlines, as long as
    they don't contain multi-line string literals.
 
-   To measure the execution time of the first statement, use the :meth:`timeit`
-   method.  The :meth:`repeat` method is a convenience to call :meth:`timeit`
+   To measure the execution time of the first statement, use the :meth:`Timer.timeit`
+   method.  The :meth:`repeat` method is a convenience to call :meth:`.timeit`
    multiple times and return a list of results.
 
    The *stmt* and *setup* parameters can also take objects that are callable
    without arguments. This will embed calls to them in a timer function that
-   will then be executed by :meth:`timeit`.  Note that the timing overhead is a
+   will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
    little larger in this case because of the extra function calls.
 
 
@@ -60,12 +60,12 @@ The module defines the following public class:
 
 .. method:: Timer.repeat(repeat=3, number=1000000)
 
-   Call :meth:`timeit` a few times.
+   Call :meth:`.timeit` a few times.
 
-   This is a convenience function that calls the :meth:`timeit` repeatedly,
+   This is a convenience function that calls the :meth:`.timeit` repeatedly,
    returning a list of results.  The first argument specifies how many times to
-   call :meth:`timeit`.  The second argument specifies the *number* argument for
-   :func:`timeit`.
+   call :meth:`.timeit`.  The second argument specifies the *number* argument for
+   :meth:`.timeit`.
 
    .. note::
 
@@ -89,7 +89,7 @@ The module defines the following public class:
 
    .. note::
 
-      By default, :meth:`timeit` temporarily turns off :term:`garbage collection`
+      By default, :meth:`.timeit` temporarily turns off :term:`garbage collection`
       during the timing.  The advantage of this approach is that it makes
       independent timings more comparable.  This disadvantage is that GC may be
       an important component of the performance of the function being measured.
@@ -123,7 +123,7 @@ The module also defines three convenience functions:
 .. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000)
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
-   function and run its :meth:`timeit` method with *number* executions.
+   function and run its :meth:`.timeit` method with *number* executions.
 
 
 Command Line Interface
@@ -243,7 +243,7 @@ attributes. ::
    3.15 usec/pass
 
 To give the :mod:`timeit` module access to functions you define, you can pass a
-``setup`` parameter which contains an import statement::
+*setup* parameter which contains an import statement::
 
    def test():
        """Stupid test function"""
