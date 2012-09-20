@@ -1132,18 +1132,18 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(x[, n])
+.. function:: round(number[, ndigits])
 
-   Return the floating point value *x* rounded to *n* digits after the decimal
-   point.  If *n* is omitted, it defaults to zero.  Delegates to
-   ``x.__round__(n)``.
+   Return the floating point value *number* rounded to *ndigits* digits after
+   the decimal point.  If *ndigits* is omitted, it defaults to zero. Delegates
+   to ``number.__round__(ndigits)``.
 
    For the built-in types supporting :func:`round`, values are rounded to the
-   closest multiple of 10 to the power minus *n*; if two multiples are equally
-   close, rounding is done toward the even choice (so, for example, both
-   ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is ``2``).
-   The return value is an integer if called with one argument, otherwise of the
-   same type as *x*.
+   closest multiple of 10 to the power minus *ndigits*; if two multiples are
+   equally close, rounding is done toward the even choice (so, for example,
+   both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
+   ``2``).  The return value is an integer if called with one argument,
+   otherwise of the same type as *number*.
 
    .. note::
 
