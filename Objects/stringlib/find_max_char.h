@@ -2,9 +2,6 @@
 
 #if STRINGLIB_IS_UNICODE
 
-/* Mask to check or force alignment of a pointer to C 'long' boundaries */
-#define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
-
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
 #if (SIZEOF_LONG == 8)
@@ -21,10 +18,11 @@ Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
-    const unsigned char *aligned_end = (const unsigned char *) ((size_t) end & ~LONG_PTR_MASK);
+    const unsigned char *aligned_end =
+            (const unsigned char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
 
     while (p < end) {
-        if (!((size_t) p & LONG_PTR_MASK)) {
+        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
             /* Help register allocation */
             register const unsigned char *_p = p;
             while (_p < aligned_end) {
@@ -43,7 +41,6 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     return 127;
 }
 
-#undef LONG_PTR_MASK
 #undef ASCII_CHAR_MASK
 
 #else /* STRINGLIB_SIZEOF_CHAR == 1 */
@@ -72,7 +69,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     register Py_UCS4 mask;
     Py_ssize_t n = end - begin;
     const STRINGLIB_CHAR *p = begin;
-    const STRINGLIB_CHAR *unrolled_end = begin + (n & ~ (Py_ssize_t) 3);
+    const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 4);
     Py_UCS4 max_char;
 
     max_char = MAX_CHAR_ASCII;
