@@ -1713,6 +1713,9 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     self->ctx = ctx;
+#ifdef OPENSSL_NPN_NEGOTIATED
+    self->npn_protocols = NULL;
+#endif
     /* Defaults */
     SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_options(self->ctx,
@@ -1811,6 +1814,10 @@ _set_npn_protocols(PySSLContext *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "y*:set_npn_protocols", &protos))
         return NULL;
+
+    if (self->npn_protocols != NULL) {
+        PyMem_Free(self->npn_protocols);
+    }
 
     self->npn_protocols = PyMem_Malloc(protos.len);
     if (self->npn_protocols == NULL) {
