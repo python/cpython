@@ -1928,7 +1928,7 @@ Porting Python code
   updated to use the full name of the module instead of just the tail of the
   name.
 
-* The **index** argument to :func:`__import__` now defaults to 0 instead of -1
+* The *index* argument to :func:`__import__` now defaults to 0 instead of -1
   and no longer support negative values. It was an oversight when :pep:`328` was
   implemented that the default value remained -1. If you need to continue to
   perform a relative import followed by an absolute import, then perform the
@@ -1996,9 +1996,9 @@ Porting C code
 
 * :c:func:`PyImport_GetMagicNumber` now returns -1 upon failure.
 
-* As a negative value for the **level** argument to :func:`__import__` is no
+* As a negative value for the *level* argument to :func:`__import__` is no
   longer valid, the same now holds for :c:func:`PyImport_ImportModuleLevel`.
-  This also means that the value of **level** used by
+  This also means that the value of *level* used by
   :c:func:`PyImport_ImportModuleEx` is now 0 instead of -1.
 
 
