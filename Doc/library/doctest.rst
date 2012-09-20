@@ -363,7 +363,7 @@ The fine print:
      Backslashes in a raw docstring: m\n
 
   Otherwise, the backslash will be interpreted as part of the string. For example,
-  the "\\" above would be interpreted as a newline character.  Alternatively, you
+  the ``\n`` above would be interpreted as a newline character.  Alternatively, you
   can double each backslash in the doctest version (and not use a raw string)::
 
      >>> def f(x):
