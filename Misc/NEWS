@@ -10,6 +10,10 @@ What's New in Python 3.3.1
 Core and Builtins
 -----------------
 
+- Issue #15144: Fix possible integer overflow when handling pointers as
+  integer values, by using Py_uintptr_t instead of size_t.  Patch by
+  Serhiy Storchaka.
+
 - Issue #15965: Explicitly cast AT_FDCWD as (int).  Required on Solaris 10
   (which defines AT_FDCWD as 0xffd19553), harmless on other platforms.
 
