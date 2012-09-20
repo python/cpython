@@ -111,12 +111,13 @@ SMTPChannel Objects
    .. attribute:: addr
 
       Holds the address of the client, the second value returned by
-      socket.accept()
+      :func:`socket.accept <socket.socket.accept>`
 
    .. attribute:: received_lines
 
       Holds a list of the line strings (decoded using UTF-8) received from
-      the client. The lines have their "\\r\\n" line ending translated to "\\n".
+      the client. The lines have their ``"\r\n"`` line ending translated to
+      ``"\n"``.
 
    .. attribute:: smtp_state
 
@@ -141,12 +142,12 @@ SMTPChannel Objects
    .. attribute:: received_data
 
       Holds a string containing all of the data sent by the client during the
-      DATA state, up to but not including the terminating "\r\n.\r\n".
+      DATA state, up to but not including the terminating ``"\r\n.\r\n"``.
 
    .. attribute:: fqdn
 
       Holds the fully-qualified domain name of the server as returned by
-      ``socket.getfqdn()``.
+      :func:`socket.getfqdn`.
 
    .. attribute:: peer
 
@@ -170,14 +171,14 @@ SMTPChannel Objects
    MAIL     Accepts the "MAIL FROM:" syntax and stores the supplied address as
             :attr:`mailfrom`.  In extended command mode, accepts the
             :rfc:`1870` SIZE attribute and responds appropriately based on the
-            value of ``data_size_limit``.
+            value of *data_size_limit*.
    RCPT     Accepts the "RCPT TO:" syntax and stores the supplied addresses in
             the :attr:`rcpttos` list.
    RSET     Resets the :attr:`mailfrom`, :attr:`rcpttos`, and
             :attr:`received_data`, but not the greeting.
    DATA     Sets the internal state to :attr:`DATA` and stores remaining lines
             from the client in :attr:`received_data` until the terminator
-            "\r\n.\r\n" is received.
+            ``"\r\n.\r\n"`` is received.
    HELP     Returns minimal information on command syntax
    VRFY     Returns code 252 (the server doesn't know if the address is valid)
    EXPN     Reports that the command is not implemented.
