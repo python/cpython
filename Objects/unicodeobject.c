@@ -159,7 +159,7 @@ extern "C" {
         const from_type *_end = (end);                  \
         Py_ssize_t n = (_end) - (_iter);                \
         const from_type *_unrolled_end =                \
-            _iter + (n & ~ (Py_ssize_t) 3);             \
+            _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
         while (_iter < (_unrolled_end)) {               \
             _to[0] = (to_type) _iter[0];                \
             _to[1] = (to_type) _iter[1];                \
@@ -4635,9 +4635,6 @@ PyUnicode_DecodeUTF8(const char *s,
 #include "stringlib/codecs.h"
 #include "stringlib/undef.h"
 
-/* Mask to check or force alignment of a pointer to C 'long' boundaries */
-#define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
-
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
 #if (SIZEOF_LONG == 8)
@@ -4652,11 +4649,11 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    const char *aligned_end = (const char *) ((size_t) end & ~LONG_PTR_MASK);
+    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
 
 #if SIZEOF_LONG <= SIZEOF_VOID_P
-    assert(!((size_t) dest & LONG_PTR_MASK));
-    if (!((size_t) p & LONG_PTR_MASK)) {
+    assert(_Py_IS_ALIGNED(dest, SIZEOF_LONG));
+    if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help register allocation */
@@ -4682,7 +4679,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (!((size_t) p & LONG_PTR_MASK)) {
+        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
             /* Help register allocation */
             register const char *_p = p;
             while (_p < aligned_end) {
@@ -5390,7 +5387,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
         return NULL;
 
     /* output buffer is 2-bytes aligned */
-    assert(((Py_uintptr_t)PyBytes_AS_STRING(v) & 1) == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(v), 2));
     out = (unsigned short *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
         *out++ = 0xFEFF;

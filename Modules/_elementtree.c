@@ -98,7 +98,7 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
    info. */
 #define JOIN_GET(p) ((Py_uintptr_t) (p) & 1)
 #define JOIN_SET(p, flag) ((void*) ((Py_uintptr_t) (JOIN_OBJ(p)) | (flag)))
-#define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~1))
+#define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~(Py_uintptr_t)1))
 
 /* glue functions (see the init function for details) */
 static PyObject* elementtree_parseerror_obj;

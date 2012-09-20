@@ -181,12 +181,9 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 #endif
 
 #define _PyObject_VAR_SIZE(typeobj, nitems)     \
-    (size_t)                                    \
-    ( ( (typeobj)->tp_basicsize +               \
-        (nitems)*(typeobj)->tp_itemsize +       \
-        (SIZEOF_VOID_P - 1)                     \
-      ) & ~(SIZEOF_VOID_P - 1)                  \
-    )
+    _Py_SIZE_ROUND_UP((typeobj)->tp_basicsize + \
+        (nitems)*(typeobj)->tp_itemsize,        \
+        SIZEOF_VOID_P)
 
 #define PyObject_NEW(type, typeobj) \
 ( (type *) PyObject_Init( \
