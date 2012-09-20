@@ -3215,6 +3215,12 @@ timezone_richcompare(PyDateTime_TimeZone *self,
 {
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
+    if (Py_TYPE(other) != &PyDateTime_TimeZoneType) {
+	if (op == Py_EQ)
+	    Py_RETURN_FALSE;
+	else
+	    Py_RETURN_TRUE;
+    }
     return delta_richcompare(self->offset, other->offset, op);
 }
 
