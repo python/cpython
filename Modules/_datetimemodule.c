@@ -3243,8 +3243,10 @@ static PyObject *
 timezone_richcompare(PyDateTime_TimeZone *self,
                      PyDateTime_TimeZone *other, int op)
 {
-    if (op != Py_EQ && op != Py_NE)
-        Py_RETURN_NOTIMPLEMENTED;
+    if (op != Py_EQ && op != Py_NE) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
     if (Py_TYPE(other) != &PyDateTime_TimeZoneType) {
 	if (op == Py_EQ)
 	    Py_RETURN_FALSE;
