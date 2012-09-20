@@ -1192,13 +1192,14 @@ available.  They are listed here in alphabetical order.
       Added the possibility to write a custom :meth:`__reversed__` method.
 
 
-.. function:: round(x[, n])
+.. function:: round(number[, ndigits])
 
-   Return the floating point value *x* rounded to *n* digits after the decimal
-   point.  If *n* is omitted, it defaults to zero. The result is a floating point
-   number.  Values are rounded to the closest multiple of 10 to the power minus
-   *n*; if two multiples are equally close, rounding is done away from 0 (so. for
-   example, ``round(0.5)`` is ``1.0`` and ``round(-0.5)`` is ``-1.0``).
+   Return the floating point value *number* rounded to *ndigits* digits after
+   the decimal point.  If *ndigits* is omitted, it defaults to zero. The result
+   is a floating point number.  Values are rounded to the closest multiple of
+   10 to the power minus *ndigits*; if two multiples are equally close,
+   rounding is done away from 0 (so. for example, ``round(0.5)`` is ``1.0`` and
+   ``round(-0.5)`` is ``-1.0``).
 
 
    .. note::
