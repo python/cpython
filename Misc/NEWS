@@ -494,6 +494,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15304: Fix warning message when os.chdir() fails inside
+  test.support.temp_cwd().  Patch by Chris Jerdonek.
+
 - Issue #15802: Fix test logic in TestMaildir.test_create_tmp. Patch
   by Serhiy Storchaka.
 
