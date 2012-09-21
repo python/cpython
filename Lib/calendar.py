@@ -161,7 +161,11 @@ class Calendar(object):
         oneday = datetime.timedelta(days=1)
         while True:
             yield date
-            date += oneday
+            try:
+                date += oneday
+            except OverflowError:
+                # Adding one day could fail after datetime.MAXYEAR
+                break
             if date.month != month and date.weekday() == self.firstweekday:
                 break
 
