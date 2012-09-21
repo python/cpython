@@ -50,14 +50,15 @@ Directory and files operations
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst*.  *dst* must be the complete target file name; look at
-   :func:`shutil.copy` for a copy that accepts a target directory path.  If
-   *src* and *dst* are the same files, :exc:`Error` is raised.
+   *dst* and return *dst*.  *src* and *dst* are path names given as strings.
+   *dst* must be the complete target file name; look at :func:`shutil.copy`
+   for a copy that accepts a target directory path.  If *src* and *dst*
+   specify the same file, :exc:`Error` is raised.
 
-   The destination location must be writable; otherwise,  an :exc:`OSError` exception
-   will be raised. If *dst* already exists, it will be replaced.   Special files
-   such as character or block devices and pipes cannot be copied with this
-   function.  *src* and *dst* are path names given as strings.
+   The destination location must be writable; otherwise, an :exc:`OSError`
+   exception will be raised. If *dst* already exists, it will be replaced.
+   Special files such as character or block devices and pipes cannot be
+   copied with this function.
 
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
@@ -71,52 +72,104 @@ Directory and files operations
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path names given as strings.  If
-   *follow_symlinks* is false, *src* is a symbolic link, and the operating
-   system supports modes for symbolic links (for example BSD-based ones),
-   the mode of the link will be copied.
+   group are unaffected.  *src* and *dst* are path names given as strings.
+   If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
+   :func:`copymode` will attempt to modify the mode of *dst* itself (rather
+   than the file it points to).  This functionality is not available on every
+   platform; please see :func:`copystat` for more information.  If
+   :func:`copymode` cannot modify symbolic links on the local platform, and it
+   is asked to do so, it will do nothing and return.
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
 
 .. function:: copystat(src, dst, *, follow_symlinks=True)
 
-   Copy the permission bits, last access time, last modification time, and flags
-   from *src* to *dst*.  The file contents, owner, and group are unaffected.  *src*
-   and *dst* are path names given as strings.  If *follow_symlinks* is false, and
-   *src* and *dst* are both symbolic links, the stats of the link will be copied as
-   far as the platform allows.  On Linux, :func:`copystat` also copies the
-   "extended attributes" where possible.
+   Copy the permission bits, last access time, last modification time, and
+   flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
+   "extended attributes" where possible.  The file contents, owner, and
+   group are unaffected.  *src* and *dst* are path names given as strings.
+
+   If *follow_symlinks* is false, and *src* and *dst* both
+   refer to symbolic links, :func:`copystat` will operate on
+   the symbolic links themselves rather than the files the
+   symbolic links refer to--reading the information from the
+   *src* symbolic link, and writing the information to the
+   *dst* symbolic link.
+
+   .. note::
+
+      Not all platforms provide the ability to examine and
+      modify symbolic links.  Python itself can tell you what
+      functionality is locally available.
+
+      * If ``os.chmod in os.supports_follow_symlinks`` is
+        ``True``, :func:`copystat` can modify the permission
+        bits of a symbolic link.
+
+      * If ``os.utime in os.supports_follow_symlinks`` is
+        ``True``, :func:`copystat` can modify the last access
+        and modification times of a symbolic link.
+
+      * If ``os.chflags in os.supports_follow_symlinks`` is
+        ``True``, :func:`copystat` can modify the flags of
+        a symbolic link.  (``os.chflags`` is not available on
+        all platforms.)
+
+      On platforms where some or all of this functionality
+      is unavailable, when asked to modify a symbolic link,
+      :func:`copystat` will copy everything it can.
+      :func:`copystat` never returns failure.
+
+      Please see :data:`os.supports_follow_symlinks`
+      for more information.
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
-   Copy the file *src* to the file or directory *dst* and return the file's
-   destination.  If *dst* is a directory, a
-   file with the same basename as *src*  is created (or overwritten) in the
-   directory specified.  Permission bits are copied.  *src* and *dst* are path
-   names given as strings.  If *follow_symlinks* is false, symbolic
-   links won't be followed but recreated instead -- this resembles GNU's
-   :program:`cp -P`.
+   Copies the file *src* to the file or directory *dst*.  *src* and *dst*
+   should be strings.  If *dst* specifies a directory, the file will be
+   copied into *dst* using the base filename from *src*.  Returns the
+   path to the newly created file.
+
+   If *follow_symlinks* is false, and *src* is a symbolic link,
+   *dst* will be created as a symbolic link.  If *follow_symlinks*
+   is true and *src* is a symbolic link, *dst* will be a copy of
+   the file *src* refers to.
+
+   :func:`copy` copies the file data and the file's permission
+   mode (see :func:`os.chmod`).  Other metadata, like the
+   file's creation and modification times, is not preserved.
+   To preserve all file metadata from the original, use
+   :func:`~shutil.copy2` instead.
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
-      Now returns *dst*.
+      Now returns path to the newly created file.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
-   Similar to :func:`shutil.copy`, including that the destination is
-   returned, but metadata is copied as well. This is similar to the Unix
-   command :program:`cp -p`.  If *follow_symlinks* is false,
-   symbolic links won't be followed but recreated instead -- this resembles
-   GNU's :program:`cp -P`.
+   Identical to :func:`~shutil.copy` except that :func:`copy2`
+   also attempts to preserve all file metadata.
+
+   When *follow_symlinks* is false, and *src* is a symbolic
+   link, :func:`copy2` attempts to copy all metadata from the
+   *src* symbolic link to the newly-created *dst* symbolic link.
+   However, this functionality is not available on all platforms.
+   On platforms where some or all of this functionality is
+   unavailable, :func:`copy2` will preserve all the metadata
+   it can; :func:`copy2` never returns failure.
+
+   :func:`copy2` uses :func:`copystat` to copy the file metadata.
+   Please see :func:`copystat` for more information
+   about platform support for modifying symbolic link metadata.
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument, try to copy extended
       file system attributes too (currently Linux only).
-      Now returns *dst*.
+      Now returns path to the newly created file.
 
 .. function:: ignore_patterns(\*patterns)
 
