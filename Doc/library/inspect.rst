@@ -675,9 +675,9 @@ Classes and functions
    :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
    returned. *args* is a list of the argument names. *varargs* and *keywords*
    are the names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a
-   tuple of default argument values or None if there are no default arguments;
-   if this tuple has *n* elements, they correspond to the last *n* elements
-   listed in *args*.
+   tuple of default argument values or ``None`` if there are no default
+   arguments; if this tuple has *n* elements, they correspond to the last
+   *n* elements listed in *args*.
 
    .. deprecated:: 3.0
       Use :func:`getfullargspec` instead, which provides information about
@@ -693,8 +693,9 @@ Classes and functions
    annotations)``
 
    *args* is a list of the argument names.  *varargs* and *varkw* are the names
-   of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an n-tuple of
-   the default values of the last n arguments.  *kwonlyargs* is a list of
+   of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an *n*-tuple
+   of the default values of the last *n* arguments, or ``None`` if there are no
+   default arguments.  *kwonlyargs* is a list of
    keyword-only argument names.  *kwonlydefaults* is a dictionary mapping names
    from kwonlyargs to defaults.  *annotations* is a dictionary mapping argument
    names to annotations.
