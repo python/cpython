@@ -1322,7 +1322,7 @@ os
   files and directories, it is more reliable (and also faster) to manipulate
   file descriptors instead of file names. Python 3.3 enhances existing functions
   and introduces new functions to work on file descriptors (:issue:`4761`,
-  :issue:`10755`).
+  :issue:`10755` and :issue:`14626`).
 
   - The :mod:`os` module has a new :func:`~os.fwalk` function similar to
     :func:`~os.walk` except that it also yields file descriptors referring to the
@@ -1354,6 +1354,12 @@ os
   destination file is overwritten under POSIX, but raises an error under
   Windows.
   (Contributed by Antoine Pitrou in :issue:`8828`.)
+
+* The stat family of functions (:func:`~os.stat`, :func:`~os.fstat`,
+  and :func:`~os.lstat`) now support reading a file's timestamps
+  with nanosecond precision.  Symmetrically, :func:`~os.utime`
+  can now write file timestamps with nanosecond precision.  (Contributed by
+  Larry Hastings in :issue:`14127`.)
 
 * The new :func:`os.get_terminal_size` function queries the size of the
   terminal attached to a file descriptor. See also
@@ -1473,6 +1479,11 @@ shutil
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
     ids. (Contributed by Sandro Tosi in :issue:`12191`)
+
+* :func:`~shutil.copy2` and :func:`~shutil.copystat` now preserve file
+  timestamps with nanosecond precision on platforms that support it.
+  They also preserve file "extended attributes" on Linux.  (Contributed
+  by Larry Hastings in :issue:`14127` and  :issue:`15238`.)
 
 * The new :func:`shutil.get_terminal_size` function returns the size of the
   terminal window the interpreter is attached to.
