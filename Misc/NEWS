@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15421: fix an OverflowError in Calendar.itermonthdates() after
+  datetime.MAXYEAR.  Patch by Cédric Krier.
+
 - Issue #15970: xml.etree.ElementTree now serializes correctly the empty HTML
   elements 'meta' and 'param'.
 
