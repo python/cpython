@@ -5,6 +5,7 @@ from test import support
 from test.script_helper import assert_python_ok
 import time
 import locale
+import datetime
 
 result_2004_text = """
                                   2004
@@ -264,6 +265,11 @@ class CalendarTestCase(unittest.TestCase):
         calendar.LocaleHTMLCalendar(locale='').formatmonthname(2010, 10)
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
+
+    def test_itermonthdates(self):
+        # ensure itermonthdates doesn't overflow after datetime.MAXYEAR
+        # see #15421
+        list(calendar.Calendar().itermonthdates(datetime.MAXYEAR, 12))
 
 
 class MonthCalendarTestCase(unittest.TestCase):
