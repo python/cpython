@@ -680,7 +680,7 @@ def temp_cwd(name='tempcwd', quiet=False, path=None):
     except OSError:
         if not quiet:
             raise
-        warnings.warn('tests may fail, unable to change the CWD to ' + name,
+        warnings.warn('tests may fail, unable to change the CWD to ' + path,
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()

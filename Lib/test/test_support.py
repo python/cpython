@@ -95,6 +95,15 @@ class TestSupport(unittest.TestCase):
         self.assertFalse(os.path.exists(TESTFN))
         self.assertTrue(os.path.basename(os.getcwd()), here)
 
+    def test_temp_cwd__chdir_warning(self):
+        """Check the warning message when os.chdir() fails."""
+        path = TESTFN + '_does_not_exist'
+        with support.check_warnings() as recorder:
+            with support.temp_cwd(path=path, quiet=True):
+                pass
+            messages = [str(w.message) for w in recorder.warnings]
+        self.assertEqual(messages, ['tests may fail, unable to change the CWD to ' + path])
+
     def test_sortdict(self):
         self.assertEqual(support.sortdict({3:3, 2:2, 1:1}), "{1: 1, 2: 2, 3: 3}")
 
