@@ -63,7 +63,7 @@ def _bdecode(s):
     """Decodes a base64 string.
 
     This function is equivalent to base64.decodestring and it's retained only
-    for backward compatibility. It used to remove the last \n of the decoded
+    for backward compatibility. It used to remove the last \\n of the decoded
     string, if it had any (see issue 7143).
     """
     if not s:
@@ -73,7 +73,7 @@ def _bdecode(s):
 
 
 def fix_eols(s):
-    """Replace all line-ending characters with \r\n."""
+    """Replace all line-ending characters with \\r\\n."""
     # Fix newlines with no preceding carriage return
     s = re.sub(r'(?<!\r)\n', CRLF, s)
     # Fix carriage returns with no following newline
