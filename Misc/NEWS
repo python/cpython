@@ -541,6 +541,9 @@ Tests
 Build
 -----
 
+- Issue #11715: Fix multiarch detection without having Debian development
+  tools (dpkg-dev) installed.
+
 - Issue #15819: Make sure we can build Python out-of-tree from a readonly
   source directory.  (Somewhat related to Issue #9860.)
 
