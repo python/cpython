@@ -1,4 +1,4 @@
-+++++++++++
+s+++++++++++
 Python News
 +++++++++++
 
@@ -21,6 +21,12 @@ Library
   constructing infinities. This is done for backwards compatibility
   with decimal.py: Infinity coefficients are undefined in _decimal
   (in accordance with the specification).
+
+Extension Modules
+-----------------
+
+- Issue #15977: Fix memory leak in Modules/_ssl.c when the function
+  _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
 
 
 What's New in Python 3.3.0 Release Candidate 2?
@@ -200,9 +206,6 @@ Documentation
 
 - Issue #15630: Add an example for "continue" stmt in the tutorial. Patch by
   Daniel Ellis.
-
-- Issue #15977: Fix memory leak in Modules/_ssl.c when the function
-  _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
 
 Tests
 -----
