@@ -48,6 +48,8 @@ def parsedate_tz(data):
     Accounts for military timezones.
     """
     res = _parsedate_tz(data)
+    if not res:
+        return
     if res[9] is None:
         res[9] = 0
     return tuple(res)
@@ -62,6 +64,8 @@ def _parsedate_tz(data):
     source timezone really was UTC.
 
     """
+    if not data:
+        return
     data = data.split()
     # The FWS after the comma after the day-of-week is optional, so search and
     # adjust for this.

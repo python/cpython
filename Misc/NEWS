@@ -22,6 +22,10 @@ Library
   with decimal.py: Infinity coefficients are undefined in _decimal
   (in accordance with the specification).
 
+- Issue #15925: Fix a regression in email.util where the parsedate() and
+  parsedate_tz() functions did not return None anymore when the argument could
+  not be parsed.
+
 Extension Modules
 -----------------
 
