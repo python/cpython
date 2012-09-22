@@ -37,10 +37,7 @@ from email._parseaddr import quote
 from email._parseaddr import AddressList as _AddressList
 from email._parseaddr import mktime_tz
 
-# We need wormarounds for bugs in these methods in older Pythons (see below)
-from email._parseaddr import parsedate as _parsedate
-from email._parseaddr import parsedate_tz as _parsedate_tz
-from email._parseaddr import _parsedate_tz as __parsedate_tz
+from email._parseaddr import parsedate, parsedate_tz, _parsedate_tz
 
 from quopri import decodestring as _qdecode
 
@@ -222,25 +219,8 @@ def make_msgid(idstring=None, domain=None):
     return msgid
 
 
-
-# These functions are in the standalone mimelib version only because they've
-# subsequently been fixed in the latest Python versions.  We use this to worm
-# around broken older Pythons.
-def parsedate(data):
-    if not data:
-        return None
-    return _parsedate(data)
-
-
-def parsedate_tz(data):
-    if not data:
-        return None
-    return _parsedate_tz(data)
-
 def parsedate_to_datetime(data):
-    if not data:
-        return None
-    *dtuple, tz = __parsedate_tz(data)
+    *dtuple, tz = _parsedate_tz(data)
     if tz is None:
         return datetime.datetime(*dtuple[:6])
     return datetime.datetime(*dtuple[:6],
