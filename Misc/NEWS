@@ -31,6 +31,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #15973: Fix a segmentation fault when comparing datetime timezone
+  objects.
+
 - Issue #15977: Fix memory leak in Modules/_ssl.c when the function
   _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
 
