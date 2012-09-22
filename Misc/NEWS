@@ -28,6 +28,10 @@ Extension Modules
 - Issue #15977: Fix memory leak in Modules/_ssl.c when the function
   _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
 
+- Issue #5969: faulthandler module: rename dump_tracebacks_later() to
+  dump_traceback_later() and cancel_dump_tracebacks_later() to
+  cancel_dump_traceback_later().
+
 
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
