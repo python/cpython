@@ -22,6 +22,7 @@ Library
   with decimal.py: Infinity coefficients are undefined in _decimal
   (in accordance with the specification).
 
+
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
 
