@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15925: fixed regression in email.utils.parsedate and parsedate_tz
+  handling of empty and non-date strings.
+
 - Issue #15421: fix an OverflowError in Calendar.itermonthdates() after
   datetime.MAXYEAR.  Patch by Cédric Krier.
 
