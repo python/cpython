@@ -262,8 +262,8 @@ Unicode result).  The following examples show the differences::
         ...
     UnicodeDecodeError: 'utf-8' codec can't decode byte 0x80 in position 0:
       invalid start byte
-    >>> b'\x80abc'.decode("utf-8", "replace")
-    '�abc'
+    >>> b'\x80abc'.decode("utf-8", "replace")  #doctest: +SKIP
+    '?abc'
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
