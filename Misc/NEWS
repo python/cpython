@@ -18,6 +18,8 @@ Core and Builtins
   PyRun_SimpleFileExFlags() when filename points to a pyc/pyo file, closeit
   is false an and set_main_loader() fails.
 
+- Fixes for a few crash and memory leak regressions found by Coverity.
+
 Library
 -------
 
@@ -43,6 +45,7 @@ Extension Modules
   dump_traceback_later() and cancel_dump_tracebacks_later() to
   cancel_dump_traceback_later().
 
+- _decimal module: use only C 89 style comments.
 
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
