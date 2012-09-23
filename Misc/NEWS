@@ -127,7 +127,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #5969: faulthandler module: rename dump_tracebacks_later() to
+- Issue #15969: faulthandler module: rename dump_tracebacks_later() to
   dump_traceback_later() and cancel_dump_tracebacks_later() to
   cancel_dump_traceback_later().
 
