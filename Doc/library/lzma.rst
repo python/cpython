@@ -336,14 +336,14 @@ Reading in a compressed file::
 
    import lzma
    with lzma.LZMAFile("file.xz") as f:
-      file_content = f.read()
+       file_content = f.read()
 
 Creating a compressed file::
 
    import lzma
    data = b"Insert Data Here"
    with lzma.LZMAFile("file.xz", "w") as f:
-      f.write(data)
+       f.write(data)
 
 Compressing data in memory::
 
