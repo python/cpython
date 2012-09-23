@@ -30,7 +30,7 @@
    error (see Py_BUILD_ASSERT_EXPR).
 
    Written by Rusty Russell, public domain, http://ccodearchive.net/ */
-#if defined(__GNUC__)
+#if (defined(__GNUC__) && !defined(__STRICT_ANSI__))
 /* Two gcc extensions.
    &a[0] degrades to a pointer: a different type from an array */
 #define Py_ARRAY_LENGTH(array) \
