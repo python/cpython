@@ -5063,28 +5063,28 @@ _karatsuba_rec(mpd_uint_t *c, const mpd_uint_t *a, const mpd_uint_t *b,
         return;
     }
 
-    m = (la+1)/2;  // ceil(la/2)
+    m = (la+1)/2;  /* ceil(la/2) */
 
     /* lb <= m < la */
     if (lb <= m) {
 
         /* lb can now be larger than la-m */
         if (lb > la-m) {
-            lt = lb + lb + 1;       // space needed for result array
-            mpd_uint_zero(w, lt);   // clear result array
-            _karatsuba_rec(w, b, a+m, w+lt, lb, la-m); // b*ah
+            lt = lb + lb + 1;       /* space needed for result array */
+            mpd_uint_zero(w, lt);   /* clear result array */
+            _karatsuba_rec(w, b, a+m, w+lt, lb, la-m); /* b*ah */
         }
         else {
-            lt = (la-m) + (la-m) + 1;  // space needed for result array
-            mpd_uint_zero(w, lt);      // clear result array
-            _karatsuba_rec(w, a+m, b, w+lt, la-m, lb); // ah*b
+            lt = (la-m) + (la-m) + 1;  /* space needed for result array */
+            mpd_uint_zero(w, lt);      /* clear result array */
+            _karatsuba_rec(w, a+m, b, w+lt, la-m, lb); /* ah*b */
         }
-        _mpd_baseaddto(c+m, w, (la-m)+lb);      // add ah*b*B**m
+        _mpd_baseaddto(c+m, w, (la-m)+lb);      /* add ah*b*B**m */
 
-        lt = m + m + 1;         // space needed for the result array
-        mpd_uint_zero(w, lt);   // clear result array
-        _karatsuba_rec(w, a, b, w+lt, m, lb);  // al*b
-        _mpd_baseaddto(c, w, m+lb);    // add al*b
+        lt = m + m + 1;         /* space needed for the result array */
+        mpd_uint_zero(w, lt);   /* clear result array */
+        _karatsuba_rec(w, a, b, w+lt, m, lb);  /* al*b */
+        _mpd_baseaddto(c, w, m+lb);    /* add al*b */
 
         return;
     }
@@ -5360,34 +5360,34 @@ _karatsuba_rec_fnt(mpd_uint_t *c, const mpd_uint_t *a, const mpd_uint_t *b,
         return 1;
     }
 
-    m = (la+1)/2;  // ceil(la/2)
+    m = (la+1)/2;  /* ceil(la/2) */
 
     /* lb <= m < la */
     if (lb <= m) {
 
         /* lb can now be larger than la-m */
         if (lb > la-m) {
-            lt = lb + lb + 1;       // space needed for result array
-            mpd_uint_zero(w, lt);   // clear result array
-            if (!_karatsuba_rec_fnt(w, b, a+m, w+lt, lb, la-m)) { // b*ah
+            lt = lb + lb + 1;       /* space needed for result array */
+            mpd_uint_zero(w, lt);   /* clear result array */
+            if (!_karatsuba_rec_fnt(w, b, a+m, w+lt, lb, la-m)) { /* b*ah */
                 return 0; /* GCOV_UNLIKELY */
             }
         }
         else {
-            lt = (la-m) + (la-m) + 1;  // space needed for result array
-            mpd_uint_zero(w, lt);      // clear result array
-            if (!_karatsuba_rec_fnt(w, a+m, b, w+lt, la-m, lb)) { // ah*b
+            lt = (la-m) + (la-m) + 1;  /* space needed for result array */
+            mpd_uint_zero(w, lt);      /* clear result array */
+            if (!_karatsuba_rec_fnt(w, a+m, b, w+lt, la-m, lb)) { /* ah*b */
                 return 0; /* GCOV_UNLIKELY */
             }
         }
-        _mpd_baseaddto(c+m, w, (la-m)+lb); // add ah*b*B**m
+        _mpd_baseaddto(c+m, w, (la-m)+lb); /* add ah*b*B**m */
 
-        lt = m + m + 1;         // space needed for the result array
-        mpd_uint_zero(w, lt);   // clear result array
-        if (!_karatsuba_rec_fnt(w, a, b, w+lt, m, lb)) {  // al*b
+        lt = m + m + 1;         /* space needed for the result array */
+        mpd_uint_zero(w, lt);   /* clear result array */
+        if (!_karatsuba_rec_fnt(w, a, b, w+lt, m, lb)) {  /* al*b */
             return 0; /* GCOV_UNLIKELY */
         }
-        _mpd_baseaddto(c, w, m+lb);       // add al*b
+        _mpd_baseaddto(c, w, m+lb);       /* add al*b */
 
         return 1;
     }
