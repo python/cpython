@@ -71,7 +71,7 @@ Fault handler state
 Dump the tracebacks after a timeout
 -----------------------------------
 
-.. function:: dump_tracebacks_later(timeout, repeat=False, file=sys.stderr, exit=False)
+.. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False)
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
@@ -84,9 +84,9 @@ Dump the tracebacks after a timeout
    This function is implemented using a watchdog thread and therefore is not
    available if Python is compiled with threads disabled.
 
-.. function:: cancel_dump_tracebacks_later()
+.. function:: cancel_dump_traceback_later()
 
-   Cancel the last call to :func:`dump_tracebacks_later`.
+   Cancel the last call to :func:`dump_traceback_later`.
 
 
 Dump the traceback on a user signal
@@ -112,7 +112,7 @@ Dump the traceback on a user signal
 File descriptor issue
 ---------------------
 
-:func:`enable`, :func:`dump_tracebacks_later` and :func:`register` keep the
+:func:`enable`, :func:`dump_traceback_later` and :func:`register` keep the
 file descriptor of their *file* argument. If the file is closed and its file
 descriptor is reused by a new file, or if :func:`os.dup2` is used to replace
 the file descriptor, the traceback will be written into a different file. Call
