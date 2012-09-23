@@ -335,14 +335,14 @@ Examples
 Reading in a compressed file::
 
    import lzma
-   with lzma.LZMAFile("file.xz") as f:
+   with lzma.open("file.xz") as f:
        file_content = f.read()
 
 Creating a compressed file::
 
    import lzma
    data = b"Insert Data Here"
-   with lzma.LZMAFile("file.xz", "w") as f:
+   with lzma.open("file.xz", "w") as f:
        f.write(data)
 
 Compressing data in memory::
@@ -367,7 +367,7 @@ Writing compressed data to an already-open file::
    import lzma
    with open("file.xz", "wb") as f:
        f.write(b"This data will not be compressed\n")
-       with lzma.LZMAFile(f, "w") as lzf:
+       with lzma.open(f, "w") as lzf:
            lzf.write(b"This *will* be compressed\n")
        f.write(b"Not compressed\n")
 
@@ -378,5 +378,5 @@ Creating a compressed file using a custom filter chain::
        {"id": lzma.FILTER_DELTA, "dist": 5},
        {"id": lzma.FILTER_LZMA2, "preset": 7 | lzma.PRESET_EXTREME},
    ]
-   with lzma.LZMAFile("file.xz", "w", filters=my_filters) as f:
+   with lzma.open("file.xz", "w", filters=my_filters) as f:
        f.write(b"blah blah blah")
