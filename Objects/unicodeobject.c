@@ -7525,9 +7525,10 @@ Error:
             /* Apply mapping */
             if (PyLong_Check(x)) {
                 long value = PyLong_AS_LONG(x);
-                if (value < 0 || value > 65535) {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "character mapping must be in range(65536)");
+                if (value < 0 || value > MAX_UNICODE) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "character mapping must be in range(0x%lx)",
+                                 (unsigned long)MAX_UNICODE + 1);
                     Py_DECREF(x);
                     goto onError;
                 }
