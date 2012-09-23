@@ -10488,7 +10488,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         static Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
-            // ERANGE
+            /* ERANGE */
             path_error("listxattr", &path);
             break;
         }
