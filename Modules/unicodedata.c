@@ -1236,8 +1236,8 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
-    // check if code is in the PUA range that we use for named sequences
-    // and convert it
+    /* check if code is in the PUA range that we use for named sequences
+       and convert it */
     if (IS_NAMED_SEQ(code)) {
         index = code-named_sequences_start;
         return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
