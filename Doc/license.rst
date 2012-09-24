@@ -309,7 +309,7 @@ Mersenne Twister
 ----------------
 
 The :mod:`_random` module includes code based on a download from
-http://www.math.keio.ac.jp/ matumoto/MT2002/emt19937ar.html. The following are
+http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
    A C-program for MT19937, with initialization improved 2002/1/26.
@@ -350,8 +350,8 @@ the verbatim comments from the original code::
 
 
    Any feedback is very welcome.
-   http://www.math.keio.ac.jp/matumoto/emt.html
-   email: matumoto@math.keio.ac.jp
+   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 
 
 Sockets
