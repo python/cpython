@@ -482,6 +482,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
+  method doesn't require an argument again.
+
 - Issue #15676: Now "mmap" check for empty files before doing the
   offset check.  Patch by Steven Willis.
 
