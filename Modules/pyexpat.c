@@ -1176,7 +1176,7 @@ xmlparse_UseForeignDTD(xmlparseobject *self, PyObject *args)
     PyObject *flagobj = NULL;
     int flag = 1;
     enum XML_Error rc;
-    if (!PyArg_ParseTuple(args, "O:UseForeignDTD", &flagobj))
+    if (!PyArg_ParseTuple(args, "|O:UseForeignDTD", &flagobj))
         return NULL;
     if (flagobj != NULL) {
         flag = PyObject_IsTrue(flagobj);

@@ -379,6 +379,12 @@ Library
 - Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
   on Windows.
 
+Extension Modules
+-----------------
+
+- Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
+  method doesn't require an argument again.
+
 Tests
 -----
 
