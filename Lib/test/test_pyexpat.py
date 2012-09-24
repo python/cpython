@@ -588,6 +588,58 @@ class MalformedInputText(unittest.TestCase):
         except expat.ExpatError as e:
             self.assertEqual(str(e), 'XML declaration not well-formed: line 1, column 14')
 
+class ForeignDTDTests(unittest.TestCase):
+    """
+    Tests for the UseForeignDTD method of expat parser objects.
+    """
+    def test_use_foreign_dtd(self):
+        """
+        If UseForeignDTD is passed True and a document without an external
+        entity reference is parsed, ExternalEntityRefHandler is first called
+        with None for the public and system ids.
+        """
+        handler_call_args = []
+        def resolve_entity(context, base, system_id, public_id):
+            handler_call_args.append((public_id, system_id))
+            return 1
+
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD(True)
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = resolve_entity
+        parser.Parse("<?xml version='1.0'?><element/>")
+        self.assertEqual(handler_call_args, [(None, None)])
+
+        # test UseForeignDTD() is equal to UseForeignDTD(True)
+        handler_call_args[:] = []
+
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD()
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = resolve_entity
+        parser.Parse("<?xml version='1.0'?><element/>")
+        self.assertEqual(handler_call_args, [(None, None)])
+
+    def test_ignore_use_foreign_dtd(self):
+        """
+        If UseForeignDTD is passed True and a document with an external
+        entity reference is parsed, ExternalEntityRefHandler is called with
+        the public and system ids from the document.
+        """
+        handler_call_args = []
+        def resolve_entity(context, base, system_id, public_id):
+            handler_call_args.append((public_id, system_id))
+            return 1
+
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD(True)
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = resolve_entity
+        parser.Parse(
+            "<?xml version='1.0'?><!DOCTYPE foo PUBLIC 'bar' 'baz'><element/>")
+        self.assertEqual(handler_call_args, [("bar", "baz")])
+
+
 def test_main():
     run_unittest(SetAttributeTest,
                  ParseTest,
@@ -598,7 +650,8 @@ def test_main():
                  PositionTest,
                  sf1296433Test,
                  ChardataBufferTest,
-                 MalformedInputText)
+                 MalformedInputText,
+                 ForeignDTDTests)
 
 if __name__ == "__main__":
     test_main()
