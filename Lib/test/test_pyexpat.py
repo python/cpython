@@ -641,6 +641,16 @@ class ForeignDTDTests(unittest.TestCase):
         parser.Parse("<?xml version='1.0'?><element/>")
         self.assertEqual(handler_call_args, [(None, None)])
 
+        # test UseForeignDTD() is equal to UseForeignDTD(True)
+        handler_call_args[:] = []
+
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD()
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = resolve_entity
+        parser.Parse("<?xml version='1.0'?><element/>")
+        self.assertEqual(handler_call_args, [(None, None)])
+
     def test_ignore_use_foreign_dtd(self):
         """
         If UseForeignDTD is passed True and a document with an external
