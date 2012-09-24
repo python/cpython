@@ -145,7 +145,7 @@ Internet Access
 ===============
 
 There are a number of modules for accessing the internet and processing internet
-protocols. Two of the simplest are :mod:`urllib2` for retrieving data from urls
+protocols. Two of the simplest are :mod:`urllib2` for retrieving data from URLs
 and :mod:`smtplib` for sending mail::
 
    >>> import urllib2
