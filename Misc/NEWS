@@ -13,6 +13,12 @@ Core and Builtins
 Library
 -------
 
+Extension Modules
+-----------------
+
+- Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
+  method doesn't require an argument again.
+
 
 What's New in Python 3.3.0 Release Candidate 3?
 ===============================================
@@ -22,7 +28,7 @@ What's New in Python 3.3.0 Release Candidate 3?
 Core and Builtins
 -----------------
 
-- Issue #15900: Fixed reference leak in PyUnicode_TranslateCharmap().
+- Issue #15900: Fix reference leak in PyUnicode_TranslateCharmap().
 
 - Issue #15926: Fix crash after multiple reinitializations of the interpreter.
 
@@ -58,6 +64,7 @@ Extension Modules
   cancel_dump_traceback_later().
 
 - _decimal module: use only C 89 style comments.
+
 
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
