@@ -2,8 +2,8 @@
 Python News
 +++++++++++
 
-What's New in Python 3.3.1
-==========================
+What's New in Python 3.3.1?
+===========================
 
 *Release date: XX-XX-XXXX*
 
@@ -20,14 +20,6 @@ Core and Builtins
 - Issue #15965: Explicitly cast AT_FDCWD as (int).  Required on Solaris 10
   (which defines AT_FDCWD as 0xffd19553), harmless on other platforms.
 
-- Issue #15926: Fix crash after multiple reinitializations of the interpreter.
-
-- Issue #15895: Fix FILE pointer leak in one error branch of
-  PyRun_SimpleFileExFlags() when filename points to a pyc/pyo file, closeit
-  is false an and set_main_loader() fails.
-
-- Issue #15900: Fix reference leak in PyUnicode_TranslateCharmap().
-
 - Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
 
 - Issue #15846: Fix SystemError which happened when using ast.parse in an
@@ -39,23 +31,15 @@ Core and Builtins
 Library
 -------
 
-- Issue #15925: fixed regression in email.utils.parsedate and parsedate_tz
-  handling of empty and non-date strings.
-
-- Issue #15421: fix an OverflowError in Calendar.itermonthdates() after
+- Issue #15421: Fix an OverflowError in Calendar.itermonthdates() after
   datetime.MAXYEAR.  Patch by Cédric Krier.
 
 - Issue #15970: xml.etree.ElementTree now serializes correctly the empty HTML
   elements 'meta' and 'param'.
 
-- Issue #15842: the SocketIO.{readable,writable,seekable} methods now
+- Issue #15842: The SocketIO.{readable,writable,seekable} methods now
   raise ValueError when the file-like object is closed.  Patch by Alessandro
   Moura.
-
-- Issue #15882: Change _decimal to accept any coefficient tuple when
-  constructing infinities. This is done for backwards compatibility
-  with decimal.py: Infinity coefficients are undefined in _decimal
-  (in accordance with the specification).
 
 - Issue #15876: Fix a refleak in the curses module: window.encoding.
 
@@ -86,9 +70,6 @@ Library
 
 Extension Modules
 -----------------
-
-- Issue #15977: Fix memory leak in Modules/_ssl.c when the function
-  _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
 
 Tests
 -----
@@ -130,9 +111,52 @@ Core and Builtins
 Library
 -------
 
+
+What's New in Python 3.3.0 Release Candidate 3?
+===============================================
+
+*Release date: 23-Sep-2012*
+
+Core and Builtins
+-----------------
+
+- Issue #15900: Fixed reference leak in PyUnicode_TranslateCharmap().
+
+- Issue #15926: Fix crash after multiple reinitializations of the interpreter.
+
+- Issue #15895: Fix FILE pointer leak in one error branch of
+  PyRun_SimpleFileExFlags() when filename points to a pyc/pyo file, closeit
+  is false an and set_main_loader() fails.
+
+- Fixes for a few crash and memory leak regressions found by Coverity.
+
+Library
+-------
+
+- Issue #15882: Change _decimal to accept any coefficient tuple when
+  constructing infinities. This is done for backwards compatibility
+  with decimal.py: Infinity coefficients are undefined in _decimal
+  (in accordance with the specification).
+
+- Issue #15925: Fix a regression in email.util where the parsedate() and
+  parsedate_tz() functions did not return None anymore when the argument could
+  not be parsed.
+
+Extension Modules
+-----------------
+
+- Issue #15973: Fix a segmentation fault when comparing datetime timezone
+  objects.
+
+- Issue #15977: Fix memory leak in Modules/_ssl.c when the function
+  _set_npn_protocols() is called multiple times, thanks to Daniel Sommermann.
+
 - Issue #15969: faulthandler module: rename dump_tracebacks_later() to
   dump_traceback_later() and cancel_dump_tracebacks_later() to
   cancel_dump_traceback_later().
+
+- _decimal module: use only C 89 style comments.
+
 
 What's New in Python 3.3.0 Release Candidate 2?
 ===============================================
