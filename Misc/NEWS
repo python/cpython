@@ -442,6 +442,9 @@ Build
 Documentation
 -------------
 
+- Issue #15935: Clarification of argparse docs, re: add_argument() type and
+  default arguments.  Patch contributed by Chris Jerdonek.
+
 - Issue #13769: Document the effect of ensure_ascii to the return type
   of JSON decoding functions.
 
