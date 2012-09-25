@@ -197,6 +197,9 @@ class Mailbox:
         """Flush and close the mailbox."""
         raise NotImplementedError('Method must be implemented by subclass')
 
+    # Whether each message must end in a newline
+    _append_newline = False
+
     def _dump_message(self, message, target, mangle_from_=False):
         # Most files are opened in binary mode to allow predictable seeking.
         # To get native line endings on disk, the user-friendly \n line endings
@@ -207,13 +210,21 @@ class Mailbox:
             gen = email.generator.Generator(buffer, mangle_from_, 0)
             gen.flatten(message)
             buffer.seek(0)
-            target.write(buffer.read().replace('\n', os.linesep))
+            data = buffer.read().replace('\n', os.linesep)
+            target.write(data)
+            if self._append_newline and not data.endswith(os.linesep):
+                # Make sure the message ends with a newline
+                target.write(os.linesep)
         elif isinstance(message, str):
             if mangle_from_:
                 message = message.replace('\nFrom ', '\n>From ')
             message = message.replace('\n', os.linesep)
             target.write(message)
+            if self._append_newline and not message.endswith(os.linesep):
+                # Make sure the message ends with a newline
+                target.write(os.linesep)
         elif hasattr(message, 'read'):
+            lastline = None
             while True:
                 line = message.readline()
                 if line == '':
@@ -222,6 +233,10 @@ class Mailbox:
                     line = '>From ' + line[5:]
                 line = line.replace('\n', os.linesep)
                 target.write(line)
+                lastline = line
+            if self._append_newline and lastline and not lastline.endswith(os.linesep):
+                # Make sure the message ends with a newline
+                target.write(os.linesep)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
 
@@ -797,30 +812,48 @@ class mbox(_mboxMMDF):
 
     _mangle_from_ = True
 
+    # All messages must end in a newline character, and
+    # _post_message_hooks outputs an empty line between messages.
+    _append_newline = True
+
     def __init__(self, path, factory=None, create=True):
         """Initialize an mbox mailbox."""
         self._message_factory = mboxMessage
         _mboxMMDF.__init__(self, path, factory, create)
 
-    def _pre_message_hook(self, f):
-        """Called before writing each message to file f."""
-        if f.tell() != 0:
-            f.write(os.linesep)
+    def _post_message_hook(self, f):
+        """Called after writing each message to file f."""
+        f.write(os.linesep)
 
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
+        last_was_empty = False
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
             line = self._file.readline()
             if line.startswith('From '):
                 if len(stops) < len(starts):
-                    stops.append(line_pos - len(os.linesep))
+                    if last_was_empty:
+                        stops.append(line_pos - len(os.linesep))
+                    else:
+                        # The last line before the "From " line wasn't
+                        # blank, but we consider it a start of a
+                        # message anyway.
+                        stops.append(line_pos)
                 starts.append(line_pos)
-            elif line == '':
-                stops.append(line_pos)
+                last_was_empty = False
+            elif not line:
+                if last_was_empty:
+                    stops.append(line_pos - len(os.linesep))
+                else:
+                    stops.append(line_pos)
                 break
+            elif line == os.linesep:
+                last_was_empty = True
+            else:
+                last_was_empty = False
         self._toc = dict(enumerate(zip(starts, stops)))
         self._next_key = len(self._toc)
         self._file_length = self._file.tell()
