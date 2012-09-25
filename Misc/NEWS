@@ -99,6 +99,9 @@ Build
 Documentation
 -------------
 
+- Issue #15935: Clarification of argparse docs, re: add_argument() type and
+  default arguments.  Patch contributed by Chris Jerdonek.
+
 - Issue #11964: Document a change in v3.2 to the behavior of the indent
   parameter of json encoding operations.
 
