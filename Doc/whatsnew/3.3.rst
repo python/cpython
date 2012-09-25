@@ -1079,7 +1079,7 @@ collections classes.  Aliases for ABCs are still present in the
 contextlib
 ----------
 
-:class:`~collections.ExitStack` now provides a solid foundation for
+:class:`~contextlib.ExitStack` now provides a solid foundation for
 programmatic manipulation of context managers and similar cleanup
 functionality. Unlike the previous ``contextlib.nested`` API (which was
 deprecated and removed), the new API is designed to work correctly
