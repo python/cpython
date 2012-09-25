@@ -11,9 +11,9 @@
 import time
 from math import log, ceil
 try:
-  from test.support import import_fresh_module
+    from test.support import import_fresh_module
 except ImportError:
-  from test.test_support import import_fresh_module
+    from test.test_support import import_fresh_module
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
@@ -74,7 +74,7 @@ for prec in [9, 19]:
     print("\nPrecision: %d decimal digits\n" % prec)
     to_benchmark = [pi_float, pi_decimal]
     if C is not None:
-      to_benchmark.append(pi_cdecimal)
+        to_benchmark.append(pi_cdecimal)
     for func in to_benchmark:
         start = time.time()
         if C is not None:
@@ -92,26 +92,26 @@ print("#                               Factorial")
 print("# ======================================================================\n")
 
 if C is not None:
-  c = C.getcontext()
-  c.prec = C.MAX_PREC
-  c.Emax = C.MAX_EMAX
-  c.Emin = C.MIN_EMIN
+    c = C.getcontext()
+    c.prec = C.MAX_PREC
+    c.Emax = C.MAX_EMAX
+    c.Emin = C.MIN_EMIN
 
 for n in [100000, 1000000]:
 
     print("n = %d\n" % n)
 
     if C is not None:
-      # C version of decimal
-      start_calc = time.time()
-      x = factorial(C.Decimal(n), 0)
-      end_calc = time.time()
-      start_conv = time.time()
-      sx = str(x)
-      end_conv = time.time()
-      print("cdecimal:")
-      print("calculation time: %fs" % (end_calc-start_calc))
-      print("conversion time: %fs\n" % (end_conv-start_conv))
+        # C version of decimal
+        start_calc = time.time()
+        x = factorial(C.Decimal(n), 0)
+        end_calc = time.time()
+        start_conv = time.time()
+        sx = str(x)
+        end_conv = time.time()
+        print("cdecimal:")
+        print("calculation time: %fs" % (end_calc-start_calc))
+        print("conversion time: %fs\n" % (end_conv-start_conv))
 
     # Python integers
     start_calc = time.time()
@@ -126,4 +126,4 @@ for n in [100000, 1000000]:
     print("conversion time: %fs\n\n" % (end_conv-start_conv))
 
     if C is not None:
-      assert(sx == sy)
+        assert(sx == sy)
