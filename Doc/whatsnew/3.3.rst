@@ -1827,6 +1827,15 @@ Deprecated Python modules, functions and methods
   * :class:`abc.abstractstaticmethod` has been deprecated, use
     :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
+* :mod:`imoprtlib` package:
+
+  * :meth:`importlib.abc.SourceLoader.path_mtime` is now deprecated in favour of
+    :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
+    both the modification time and size of the source file the bytecode file was
+    compiled from.
+
+
+
 
 
 Deprecated functions and types of the C API
@@ -1957,11 +1966,6 @@ Porting Python code
   overhead on older versions of Python that re-insert ``None`` into
   :attr:`sys.path_importer_cache` where it repesents the use of implicit
   finders, but semantically it should not change anything.
-
-* :meth:`importlib.abc.SourceLoader.path_mtime` is now deprecated in favour of
-  :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
-  both the modification time and size of the source file the bytecode file was
-  compiled from.
 
 * :class:`importlib.abc.Finder` no longer specifies a `find_module()` abstract
   method that must be implemented. If you were relying on subclasses to
