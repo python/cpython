@@ -10,6 +10,8 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16046: Fix loading sourceless legacy pyos.
+
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
   decoder (already working as unicode strings).  Patch by Serhiy Storchaka.
 
