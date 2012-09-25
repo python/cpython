@@ -48,7 +48,7 @@ class TestBase:
 class TestMailbox(TestBase):
 
     _factory = None     # Overridden by subclasses to reuse tests
-    _template = 'From: foo\n\n%s'
+    _template = 'From: foo\n\n%s\n'
 
     def setUp(self):
         self._path = test_support.TESTFN
@@ -137,7 +137,7 @@ class TestMailbox(TestBase):
         key0 = self._box.add(self._template % 0)
         msg = self._box.get(key0)
         self.assertEqual(msg['from'], 'foo')
-        self.assertEqual(msg.get_payload(), '0')
+        self.assertEqual(msg.get_payload(), '0\n')
         self.assertIs(self._box.get('foo'), None)
         self.assertFalse(self._box.get('foo', False))
         self._box.close()
@@ -145,14 +145,14 @@ class TestMailbox(TestBase):
         key1 = self._box.add(self._template % 1)
         msg = self._box.get(key1)
         self.assertEqual(msg['from'], 'foo')
-        self.assertEqual(msg.fp.read(), '1')
+        self.assertEqual(msg.fp.read(), '1\n')
 
     def test_getitem(self):
         # Retrieve message using __getitem__()
         key0 = self._box.add(self._template % 0)
         msg = self._box[key0]
         self.assertEqual(msg['from'], 'foo')
-        self.assertEqual(msg.get_payload(), '0')
+        self.assertEqual(msg.get_payload(), '0\n')
         self.assertRaises(KeyError, lambda: self._box['foo'])
         self._box.discard(key0)
         self.assertRaises(KeyError, lambda: self._box[key0])
@@ -164,7 +164,7 @@ class TestMailbox(TestBase):
         msg0 = self._box.get_message(key0)
         self.assertIsInstance(msg0, mailbox.Message)
         self.assertEqual(msg0['from'], 'foo')
-        self.assertEqual(msg0.get_payload(), '0')
+        self.assertEqual(msg0.get_payload(), '0\n')
         self._check_sample(self._box.get_message(key1))
 
     def test_get_string(self):
@@ -333,15 +333,15 @@ class TestMailbox(TestBase):
         self.assertIn(key0, self._box)
         key1 = self._box.add(self._template % 1)
         self.assertIn(key1, self._box)
-        self.assertEqual(self._box.pop(key0).get_payload(), '0')
+        self.assertEqual(self._box.pop(key0).get_payload(), '0\n')
         self.assertNotIn(key0, self._box)
         self.assertIn(key1, self._box)
         key2 = self._box.add(self._template % 2)
         self.assertIn(key2, self._box)
-        self.assertEqual(self._box.pop(key2).get_payload(), '2')
+        self.assertEqual(self._box.pop(key2).get_payload(), '2\n')
         self.assertNotIn(key2, self._box)
         self.assertIn(key1, self._box)
-        self.assertEqual(self._box.pop(key1).get_payload(), '1')
+        self.assertEqual(self._box.pop(key1).get_payload(), '1\n')
         self.assertNotIn(key1, self._box)
         self.assertEqual(len(self._box), 0)
 
@@ -530,7 +530,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         msg_returned = self._box.get_message(key)
         self.assertEqual(msg_returned.get_subdir(), 'new')
         self.assertEqual(msg_returned.get_flags(), '')
-        self.assertEqual(msg_returned.get_payload(), '1')
+        self.assertEqual(msg_returned.get_payload(), '1\n')
         msg2 = mailbox.MaildirMessage(self._template % 2)
         msg2.set_info('2,S')
         self._box[key] = msg2
@@ -538,7 +538,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         msg_returned = self._box.get_message(key)
         self.assertEqual(msg_returned.get_subdir(), 'new')
         self.assertEqual(msg_returned.get_flags(), 'S')
-        self.assertEqual(msg_returned.get_payload(), '3')
+        self.assertEqual(msg_returned.get_payload(), '3\n')
 
     def test_consistent_factory(self):
         # Add a message.
@@ -889,14 +889,14 @@ class _TestMboxMMDF(_TestSingleFile):
 
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
-        key = self._box.add('From foo@bar blah\nFrom: foo\n\n0')
+        key = self._box.add('From foo@bar blah\nFrom: foo\n\n0\n')
         self.assertEqual(self._box[key].get_from(), 'foo@bar blah')
-        self.assertEqual(self._box[key].get_payload(), '0')
+        self.assertEqual(self._box[key].get_payload(), '0\n')
 
     def test_add_mbox_or_mmdf_message(self):
         # Add an mboxMessage or MMDFMessage
         for class_ in (mailbox.mboxMessage, mailbox.MMDFMessage):
-            msg = class_('From foo@bar blah\nFrom: foo\n\n0')
+            msg = class_('From foo@bar blah\nFrom: foo\n\n0\n')
             key = self._box.add(msg)
 
     def test_open_close_open(self):
