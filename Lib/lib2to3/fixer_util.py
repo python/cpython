@@ -274,9 +274,9 @@ def find_root(node):
     """Find the top level namespace."""
     # Scamper up to the top level namespace
     while node.type != syms.file_input:
-        assert node.parent, "Tree is insane! root found before "\
-                           "file_input node was found."
         node = node.parent
+        if not node:
+            raise ValueError("root found before file_input node was found.")
     return node
 
 def does_tree_import(package, name, node):
