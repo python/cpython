@@ -70,11 +70,12 @@ print("\n# =====================================================================
 print("#                   Calculating pi, 10000 iterations")
 print("# ======================================================================\n")
 
+to_benchmark = [pi_float, pi_decimal]
+if C is not None:
+    to_benchmark.insert(1, pi_cdecimal)
+
 for prec in [9, 19]:
     print("\nPrecision: %d decimal digits\n" % prec)
-    to_benchmark = [pi_float, pi_decimal]
-    if C is not None:
-        to_benchmark.append(pi_cdecimal)
     for func in to_benchmark:
         start = time.time()
         if C is not None:
