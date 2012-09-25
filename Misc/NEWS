@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16013: Fix CSV Reader parsing issue with ending quote characters.
+  Patch by Serhiy Storchaka.
+
 - Issue #15421: fix an OverflowError in Calendar.itermonthdates() after
   datetime.MAXYEAR.  Patch by Cédric Krier.
 
