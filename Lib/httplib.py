@@ -362,7 +362,9 @@ class HTTPResponse:
 
     def _read_status(self):
         # Initialize with Simple-Response defaults
-        line = self.fp.readline()
+        line = self.fp.readline(_MAXLINE + 1)
+        if len(line) > _MAXLINE:
+            raise LineTooLong("header line")
         if self.debuglevel > 0:
             print "reply:", repr(line)
         if not line:

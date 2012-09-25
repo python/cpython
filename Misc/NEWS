@@ -9,6 +9,10 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16037: Limit httplib's _read_status() function to work around broken
+  HTTP servers and reduce memory usage. It's actually a backport of a Python
+  3.2 fix. Thanks to Adrien Kunysz.
+
 - Issue #13992: The trashcan mechanism is now thread-safe.  This eliminates
   sporadic crashes in multi-thread programs when several long deallocator
   chains ran concurrently and involved subclasses of built-in container
