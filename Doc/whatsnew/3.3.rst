@@ -1228,13 +1228,18 @@ API changes
 ftplib
 ------
 
-The :class:`~ftplib.FTP_TLS` class now provides a new
-:func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
-plaintext.  This can be useful to take advantage of firewalls that know how to
-handle NAT with non-secure FTP without opening fixed ports.
+* The :class:`~ftplib.FTP_TLS` class now provides a new
+  :func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
+  plaintext.  This can be useful to take advantage of firewalls that know how to
+  handle NAT with non-secure FTP without opening fixed ports.
 
-(Contributed by Giampaolo Rodolà in :issue:`12139`)
+  (Contributed by Giampaolo Rodolà in :issue:`12139`)
 
+* Added :meth:`ftplib.FTP.mlsd` method which provides a parsable directory
+  listing format and deprecates :meth:`ftplib.FTP.nlst` and
+  :meth:`ftplib.FTP.dir`.
+
+  (Contributed by Giampaolo Rodolà in :issue:`11072`)
 
 gc
 --
