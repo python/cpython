@@ -82,8 +82,7 @@ A value can be assigned to several variables simultaneously::
 Variables must be "defined" (assigned a value) before they can be used, or an
 error will occur::
 
-   >>> # try to access an undefined variable
-   ... n
+   >>> n  # try to access an undefined variable
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    NameError: name 'n' is not defined
