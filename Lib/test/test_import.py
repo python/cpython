@@ -575,7 +575,7 @@ class PycacheTests(unittest.TestCase):
         self.assertTrue(os.path.exists('__pycache__'))
         self.assertTrue(os.path.exists(os.path.join(
             '__pycache__', '{}.{}.py{}'.format(
-            TESTFN, self.tag, __debug__ and 'c' or 'o'))))
+            TESTFN, self.tag, 'c' if __debug__ else 'o'))))
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
