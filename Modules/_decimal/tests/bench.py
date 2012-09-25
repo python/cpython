@@ -78,7 +78,7 @@ for prec in [9, 19]:
     for func in to_benchmark:
         start = time.time()
         if C is not None:
-          C.getcontext().prec = prec
+            C.getcontext().prec = prec
         P.getcontext().prec = prec
         for i in range(10000):
             x = func()
