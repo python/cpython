@@ -445,7 +445,7 @@ class RefactoringTool(object):
 
                         try:
                             find_root(node)
-                        except AssertionError:
+                        except ValueError:
                             # this node has been cut off from a
                             # previous transformation ; skip
                             continue
