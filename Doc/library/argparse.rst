@@ -906,6 +906,17 @@ was not present at the command line::
    >>> parser.parse_args(''.split())
    Namespace(foo=42)
 
+If the ``default`` value is a string, the parser parses the value as if it
+were a command-line argument.  In particular, the parser applies any type_
+conversion argument, if provided, before setting the attribute on the
+:class:`Namespace` return value.  Otherwise, the parser uses the value as is::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--length', default='10', type=int)
+   >>> parser.add_argument('--width', default=10.5, type=int)
+   >>> parser.parse_args()
+   Namespace(length=10, width=10.5)
+
 For positional arguments with nargs_ equal to ``?`` or ``*``, the ``default`` value
 is used when no command-line argument was present::
 
@@ -943,6 +954,9 @@ types and functions can be used directly as the value of the ``type`` argument::
    >>> parser.add_argument('bar', type=file)
    >>> parser.parse_args('2 temp.txt'.split())
    Namespace(bar=<open file 'temp.txt', mode 'r' at 0x...>, foo=2)
+
+See the section on the default_ keyword argument for information on when the
+``type`` argument is applied to default arguments.
 
 To ease the use of various types of files, the argparse module provides the
 factory FileType which takes the ``mode=`` and ``bufsize=`` arguments of the
