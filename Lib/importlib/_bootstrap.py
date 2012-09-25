@@ -411,25 +411,21 @@ SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
 
 DEBUG_BYTECODE_SUFFIXES = ['.pyc']
 OPTIMIZED_BYTECODE_SUFFIXES = ['.pyo']
-if __debug__:
-    BYTECODE_SUFFIXES = DEBUG_BYTECODE_SUFFIXES
-else:
-    BYTECODE_SUFFIXES = OPTIMIZED_BYTECODE_SUFFIXES
 
 def cache_from_source(path, debug_override=None):
     """Given the path to a .py file, return the path to its .pyc/.pyo file.
 
     The .py file does not need to exist; this simply returns the path to the
     .pyc/.pyo file calculated as if the .py file were imported.  The extension
-    will be .pyc unless __debug__ is not defined, then it will be .pyo.
+    will be .pyc unless sys.flags.optimize is non-zero, then it will be .pyo.
 
     If debug_override is not None, then it must be a boolean and is taken as
-    the value of __debug__ instead.
+    the value of bool(sys.flags.optimize) instead.
 
     If sys.implementation.cache_tag is None then NotImplementedError is raised.
 
     """
-    debug = __debug__ if debug_override is None else debug_override
+    debug = not sys.flags.optimize if debug_override is None else debug_override
     if debug:
         suffixes = DEBUG_BYTECODE_SUFFIXES
     else:
@@ -1688,9 +1684,14 @@ def _setup(sys_module, _imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global _imp, sys
+    global _imp, sys, BYTECODE_SUFFIXES
     _imp = _imp_module
     sys = sys_module
+
+    if sys.flags.optimize:
+        BYTECODE_SUFFIXES = OPTIMIZED_BYTECODE_SUFFIXES
+    else:
+        BYTECODE_SUFFIXES = DEBUG_BYTECODE_SUFFIXES
 
     for module in (_imp, sys):
         if not hasattr(module, '__loader__'):
