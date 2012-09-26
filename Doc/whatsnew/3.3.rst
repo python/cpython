@@ -1832,7 +1832,7 @@ Deprecated Python modules, functions and methods
   * :class:`abc.abstractstaticmethod` has been deprecated, use
     :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
-* :mod:`imoprtlib` package:
+* :mod:`importlib` package:
 
   * :meth:`importlib.abc.SourceLoader.path_mtime` is now deprecated in favour of
     :meth:`importlib.abc.SourceLoader.path_stats` as bytecode files now store
