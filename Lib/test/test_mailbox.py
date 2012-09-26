@@ -145,7 +145,7 @@ class TestMailbox(TestBase):
         key1 = self._box.add(self._template % 1)
         msg = self._box.get(key1)
         self.assertEqual(msg['from'], 'foo')
-        self.assertEqual(msg.fp.read(), '1\n')
+        self.assertEqual(msg.fp.read(), '1' + os.linesep)
 
     def test_getitem(self):
         # Retrieve message using __getitem__()
