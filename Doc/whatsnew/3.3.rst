@@ -1257,6 +1257,31 @@ side channel attacks on digests through timing analysis.
 (Contributed by Nick Coghlan and Christian Heimes in issue:`15061`)
 
 
+html.entities
+-------------
+
+A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
+references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] == '>'``)
+has been added to the :mod:`html.entities` module.  The dictionary is now also
+used by :class:`~html.parser.HTMLParser`.
+
+(Contributed by Ezio Melotti in :issue:`11113` and :issue:`15156`)
+
+
+html.parser
+-----------
+
+:class:`~html.parser.HTMLParser` is now able to parse broken markup without
+raising errors, therefore the *strict* argument of the constructor and the
+:exc:`~html.parser.HTMLParseError` exception are now deprecated.
+The ability to parse broken markup is the result of a number of bug fixes that
+are also available on the latest bug fix releases of Python 2.7/3.2.
+
+(Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
+:issue:`13993`, :issue:`13960`, :issue:`13358`, :issue:`1745761`,
+:issue:`755670`, :issue:`13357`, :issue:`12629`, :issue:`1200313`,
+:issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`)
+
 imaplib
 -------
 
@@ -1697,6 +1722,16 @@ Add a new :class:`types.MappingProxyType` class: Read-only proxy of a mapping.
 
 The new functions `types.new_class` and `types.prepare_class` provide support
 for PEP 3115 compliant dynamic type creation. (:issue:`14588`)
+
+
+unittest
+--------
+
+:meth:`.assertRaises`, :meth:`.assertRaisesRegex`, :meth:`.assertWarns`, and
+:meth:`.assertWarnsRegex` now accept a keyword argument *msg* when used as
+context managers.
+
+(Contributed by Ezio Melotti and Winston Ewert in :issue:`10775`)
 
 
 urllib
