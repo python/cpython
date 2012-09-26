@@ -419,8 +419,8 @@ def cache_from_source(path, debug_override=None):
     .pyc/.pyo file calculated as if the .py file were imported.  The extension
     will be .pyc unless sys.flags.optimize is non-zero, then it will be .pyo.
 
-    If debug_override is not None, then it must be a boolean and is taken as
-    the value of bool(sys.flags.optimize) instead.
+    If debug_override is not None, then it must be a boolean and is used in
+    place of sys.flags.optimize.
 
     If sys.implementation.cache_tag is None then NotImplementedError is raised.
 
