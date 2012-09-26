@@ -514,23 +514,23 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         return os.environ
 
     # Bug 1110478
+    @unittest.skipUnless(os.path.exists('/bin/sh'), 'requires /bin/sh')
     def test_update2(self):
         os.environ.clear()
-        if os.path.exists("/bin/sh"):
-            os.environ.update(HELLO="World")
-            with os.popen("/bin/sh -c 'echo $HELLO'") as popen:
-                value = popen.read().strip()
-                self.assertEqual(value, "World")
+        os.environ.update(HELLO="World")
+        with os.popen("/bin/sh -c 'echo $HELLO'") as popen:
+            value = popen.read().strip()
+            self.assertEqual(value, "World")
 
+    @unittest.skipUnless(os.path.exists('/bin/sh'), 'requires /bin/sh')
     def test_os_popen_iter(self):
-        if os.path.exists("/bin/sh"):
-            with os.popen(
-                "/bin/sh -c 'echo \"line1\nline2\nline3\"'") as popen:
-                it = iter(popen)
-                self.assertEqual(next(it), "line1\n")
-                self.assertEqual(next(it), "line2\n")
-                self.assertEqual(next(it), "line3\n")
-                self.assertRaises(StopIteration, next, it)
+        with os.popen(
+            "/bin/sh -c 'echo \"line1\nline2\nline3\"'") as popen:
+            it = iter(popen)
+            self.assertEqual(next(it), "line1\n")
+            self.assertEqual(next(it), "line2\n")
+            self.assertEqual(next(it), "line3\n")
+            self.assertRaises(StopIteration, next, it)
 
     # Verify environ keys and values from the OS are of the
     # correct str type.
