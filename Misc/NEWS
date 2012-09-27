@@ -12,6 +12,9 @@ Core and Builtins
 
 - Issue #16046: Fix loading sourceless legacy .pyo files.
 
+- Issue #16060: Fix refcounting bug when __trunc__ returns an object
+  whose __int__ gives a non-integer.  Patch by Serhiy Storchaka.
+
 Library
 -------
 

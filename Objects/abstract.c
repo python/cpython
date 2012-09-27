@@ -1228,11 +1228,10 @@ convert_integral_to_int(PyObject *integral, const char *error_format)
     nb = Py_TYPE(integral)->tp_as_number;
     if (nb->nb_int) {
         PyObject *as_int = nb->nb_int(integral);
-        Py_DECREF(integral);
-        if (!as_int)
-            return NULL;
-        if (PyLong_Check(as_int))
+        if (!as_int || PyLong_Check(as_int)) {
+            Py_DECREF(integral);
             return as_int;
+        }
         Py_DECREF(as_int);
     }
     PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
