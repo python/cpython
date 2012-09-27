@@ -10,6 +10,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16060: Fix refcounting bug when __trunc__ returns an object
+  whose __int__ gives a non-integer.  Patch by Serhiy Storchaka.
+
 - Issue #16046: Fix loading sourceless legacy pyos.
 
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
