@@ -791,7 +791,7 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(C.y, 1)
         self.assertEqual(C.z, 2)
 
-    def test_new_class_exec_body(self):
+    def test_new_class_metaclass_keywords(self):
         #Test that keywords are passed to the metaclass:
         def meta_func(name, bases, ns, **kw):
             return name, bases, ns, kw
