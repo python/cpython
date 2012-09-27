@@ -1121,7 +1121,7 @@ datetime
 --------
 
  * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances don't raise :exc:`TypeError`.
+   instances now return :const:`False` instead of raising :exc:`TypeError`.
  * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
    corresponding to the :class:`~datetime.datetime` instance.
  * The :meth:`datetime.datetime.strftime` method supports formatting years
