@@ -757,11 +757,12 @@ Maildir, mbox, MH, Babyl, and MMDF.
 
 .. class:: Message(message=None)
 
-   A subclass of the :mod:`email.Message` module's :class:`Message`. Subclasses of
-   :class:`mailbox.Message` add mailbox-format-specific state and behavior.
+   A subclass of the :mod:`email.message` module's
+   :class:`~email.message.Message`. Subclasses of :class:`mailbox.Message` add
+   mailbox-format-specific state and behavior.
 
    If *message* is omitted, the new instance is created in a default, empty state.
-   If *message* is an :class:`email.Message.Message` instance, its contents are
+   If *message* is an :class:`email.message.Message` instance, its contents are
    copied; furthermore, any format-specific information is converted insofar as
    possible if *message* is a :class:`Message` instance. If *message* is a string,
    a byte string,
