@@ -1360,9 +1360,9 @@ that the slots are present and should be checked by the interpreter.  (The flag
 bit does not indicate that the slot values are non-*NULL*. The flag may be set
 to indicate the presence of a slot, but a slot may still be unfilled.) ::
 
-   PyNumberMethods   tp_as_number;
-   PySequenceMethods tp_as_sequence;
-   PyMappingMethods  tp_as_mapping;
+   PyNumberMethods   *tp_as_number;
+   PySequenceMethods *tp_as_sequence;
+   PyMappingMethods  *tp_as_mapping;
 
 If you wish your object to be able to act like a number, a sequence, or a
 mapping object, then you place the address of a structure that implements the C
