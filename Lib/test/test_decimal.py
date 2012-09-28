@@ -34,7 +34,8 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754)
-from test.support import check_warnings, import_fresh_module, TestFailed
+from test.support import (check_warnings, import_fresh_module, TestFailed,
+                          run_with_locale)
 import random
 import time
 import warnings
@@ -1136,18 +1137,13 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
                          '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
 
+    @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal
 
-        try:
-            locale.setlocale(locale.LC_ALL, 'ps_AF')
-        except locale.Error:
-            return
-
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
                          '100\u066c000\u066c000\u066b123')
-        locale.resetlocale()
 
 class CFormatTest(FormatTest):
     decimal = C
