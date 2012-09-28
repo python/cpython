@@ -10,9 +10,9 @@
 This module defines two classes, :class:`Mailbox` and :class:`Message`, for
 accessing and manipulating on-disk mailboxes and the messages they contain.
 :class:`Mailbox` offers a dictionary-like mapping from keys to messages.
-:class:`Message` extends the :mod:`email.Message` module's :class:`Message`
-class with format-specific state and behavior. Supported mailbox formats are
-Maildir, mbox, MH, Babyl, and MMDF.
+:class:`Message` extends the :mod:`email.message` module's
+:class:`~email.message.Message` class with format-specific state and behavior.
+Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 
 .. seealso::
@@ -81,7 +81,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       it.
 
       Parameter *message* may be a :class:`Message` instance, an
-      :class:`email.Message.Message` instance, a string, a byte string, or a
+      :class:`email.message.Message` instance, a string, a byte string, or a
       file-like object (which should be open in binary mode). If *message* is
       an instance of the
       appropriate format-specific :class:`Message` subclass (e.g., if it's an
@@ -112,7 +112,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       :exc:`KeyError` exception if no message already corresponds to *key*.
 
       As with :meth:`add`, parameter *message* may be a :class:`Message`
-      instance, an :class:`email.Message.Message` instance, a string, a byte
+      instance, an :class:`email.message.Message` instance, a string, a byte
       string, or a file-like object (which should be open in binary mode). If
       *message* is an
       instance of the appropriate format-specific :class:`Message` subclass
@@ -1268,7 +1268,7 @@ When an :class:`MHMessage` instance is created based upon a
 
       Set the message's visible headers to be the same as the headers in
       *message*.  Parameter *visible* should be a :class:`Message` instance, an
-      :class:`email.Message.Message` instance, a string, or a file-like object
+      :class:`email.message.Message` instance, a string, or a file-like object
       (which should be open in text mode).
 
 
