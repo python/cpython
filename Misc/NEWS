@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16064: unittest -m claims executable is "python", not "python3"
+
 - Issue #15222: Insert blank line after each message in mbox mailboxes
 
 - Issue #16013: Fix CSV Reader parsing issue with ending quote characters.
