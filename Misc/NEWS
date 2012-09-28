@@ -106,6 +106,9 @@ Build
 Documentation
 -------------
 
+- Issue #16036: Improve documentation of built-in int()'s signature and
+  arguments.
+
 - Issue #15935: Clarification of argparse docs, re: add_argument() type and
   default arguments.  Patch contributed by Chris Jerdonek.
 
