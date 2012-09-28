@@ -1029,9 +1029,9 @@ not be removed until Python 3.  The functions defined in this module are:
    reached.  Strings starting with a sign are handled correctly.
 
 
-.. function:: replace(str, old, new[, maxreplace])
+.. function:: replace(s, old, new[, maxreplace])
 
-   Return a copy of string *str* with all occurrences of substring *old* replaced
+   Return a copy of string *s* with all occurrences of substring *old* replaced
    by *new*.  If the optional argument *maxreplace* is given, the first
    *maxreplace* occurrences are replaced.
 
