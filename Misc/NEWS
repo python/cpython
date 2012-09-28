@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15323: improve failure message of Mock.assert_called_once_with
+
 - Issue #16064: unittest -m claims executable is "python", not "python3"
 
 - Issue #12376: Pass on parameters in TextTestResult.__init__ super call
