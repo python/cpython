@@ -1140,7 +1140,13 @@ class FormatTest(unittest.TestCase):
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
+        import locale
         Decimal = self.decimal.Decimal
+
+        decimal_point = locale.localeconv()['decimal_point']
+        thousands_sep = locale.localeconv()['thousands_sep']
+        if decimal_point != '\u066b' or thousands_sep != '\u066c':
+            return
 
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
                          '100\u066c000\u066c000\u066b123')
