@@ -1669,7 +1669,11 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
         elif not name:
             return module
         else:
+            # Figure out where to slice the module's name up to the first dot
+            # in 'name'.
             cut_off = len(name) - len(name.partition('.')[0])
+            # Slice end needs to be positive to alleviate need to special-case
+            # when ``'.' not in name``.
             return sys.modules[module.__name__[:len(module.__name__)-cut_off]]
     else:
         return _handle_fromlist(module, fromlist, _gcd_import)
