@@ -37,6 +37,30 @@ get_len_of_range(long lo, long hi, long step)
     return 0UL;
 }
 
+/* Return a stop value suitable for reconstructing the xrange from
+ * a (start, stop, step) triple.  Used in range_repr and range_reduce.
+ * Computes start + len * step, clipped to the range [LONG_MIN, LONG_MAX].
+ */
+static long
+get_stop_for_range(rangeobject *r)
+{
+    long last;
+
+    if (r->len == 0)
+        return r->start;
+
+    /* The tricky bit is avoiding overflow.  We first compute the last entry in
+       the xrange, start + (len - 1) * step, which is guaranteed to lie within
+       the range of a long, and then add step to it.  See the range_reverse
+       comments for an explanation of the casts below.
+    */
+    last = (long)(r->start + (unsigned long)(r->len - 1) * r->step);
+    if (r->step > 0)
+        return last > LONG_MAX - r->step ? LONG_MAX : last + r->step;
+    else
+        return last < LONG_MIN - r->step ? LONG_MIN : last + r->step;
+}
+
 static PyObject *
 range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -112,17 +136,17 @@ range_repr(rangeobject *r)
 
     if (r->start == 0 && r->step == 1)
         rtn = PyString_FromFormat("xrange(%ld)",
-                                  r->start + r->len * r->step);
+                                  get_stop_for_range(r));
 
     else if (r->step == 1)
         rtn = PyString_FromFormat("xrange(%ld, %ld)",
                                   r->start,
-                                  r->start + r->len * r->step);
+                                  get_stop_for_range(r));
 
     else
         rtn = PyString_FromFormat("xrange(%ld, %ld, %ld)",
                                   r->start,
-                                  r->start + r->len * r->step,
+                                  get_stop_for_range(r),
                                   r->step);
     return rtn;
 }
@@ -131,9 +155,9 @@ range_repr(rangeobject *r)
 static PyObject *
 range_reduce(rangeobject *r, PyObject *args)
 {
-    return Py_BuildValue("(O(iii))", Py_TYPE(r),
+    return Py_BuildValue("(O(lll))", Py_TYPE(r),
                          r->start,
-                         r->start + r->len * r->step,
+                         get_stop_for_range(r),
                          r->step);
 }
 

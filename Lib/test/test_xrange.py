@@ -46,6 +46,28 @@ class XrangeTest(unittest.TestCase):
                 self.fail('{}: wrong element at position {};'
                           'expected {}, got {}'.format(test_id, i, y, x))
 
+    def assert_xranges_equivalent(self, x, y):
+        # Check that two xrange objects are equivalent, in the sense of the
+        # associated sequences being the same.  We want to use this for large
+        # xrange objects, so instead of converting to lists and comparing
+        # directly we do a number of indirect checks.
+        if len(x) != len(y):
+            self.fail('{} and {} have different '
+                      'lengths: {} and {} '.format(x, y, len(x), len(y)))
+        if len(x) >= 1:
+            if x[0] != y[0]:
+                self.fail('{} and {} have different initial '
+                          'elements: {} and {} '.format(x, y, x[0], y[0]))
+            if x[-1] != y[-1]:
+                self.fail('{} and {} have different final '
+                          'elements: {} and {} '.format(x, y, x[-1], y[-1]))
+        if len(x) >= 2:
+            x_step = x[1] - x[0]
+            y_step = y[1] - y[0]
+            if x_step != y_step:
+                self.fail('{} and {} have different step: '
+                          '{} and {} '.format(x, y, x_step, y_step))
+
     def test_xrange(self):
         self.assertEqual(list(xrange(3)), [0, 1, 2])
         self.assertEqual(list(xrange(1, 5)), [1, 2, 3, 4])
@@ -103,6 +125,59 @@ class XrangeTest(unittest.TestCase):
                 r = xrange(*t)
                 self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
                                  list(r))
+
+        M = min(sys.maxint, sys.maxsize)
+        large_testcases = testcases + [
+            (0, M, 1),
+            (M, 0, -1),
+            (0, M, M - 1),
+            (M // 2, M, 1),
+            (0, -M, -1),
+            (0, -M, 1 - M),
+            (-M, M, 2),
+            (-M, M, 1024),
+            (-M, M, 10585),
+            (M, -M, -2),
+            (M, -M, -1024),
+            (M, -M, -10585),
+            ]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for t in large_testcases:
+                r = xrange(*t)
+                r_out = pickle.loads(pickle.dumps(r, proto))
+                self.assert_xranges_equivalent(r_out, r)
+
+    def test_repr(self):
+        # Check that repr of an xrange is a valid representation
+        # of that xrange.
+
+        # Valid xranges have at most min(sys.maxint, sys.maxsize) elements.
+        M = min(sys.maxint, sys.maxsize)
+
+        testcases = [
+            (13,),
+            (0, 11),
+            (-22, 10),
+            (20, 3, -1),
+            (13, 21, 3),
+            (-2, 2, 2),
+            (0, M, 1),
+            (M, 0, -1),
+            (0, M, M - 1),
+            (M // 2, M, 1),
+            (0, -M, -1),
+            (0, -M, 1 - M),
+            (-M, M, 2),
+            (-M, M, 1024),
+            (-M, M, 10585),
+            (M, -M, -2),
+            (M, -M, -1024),
+            (M, -M, -10585),
+            ]
+        for t in testcases:
+            r = xrange(*t)
+            r_out = eval(repr(r))
+            self.assert_xranges_equivalent(r, r_out)
 
     def test_range_iterators(self):
         # see issue 7298
