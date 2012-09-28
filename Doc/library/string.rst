@@ -1025,8 +1025,9 @@ not be removed until Python 3.  The functions defined in this module are:
 
 .. function:: zfill(s, width)
 
-   Pad a numeric string on the left with zero digits until the given width is
-   reached.  Strings starting with a sign are handled correctly.
+   Pad a numeric string *s* on the left with zero digits until the
+   given *width* is reached.  Strings starting with a sign are handled
+   correctly.
 
 
 .. function:: replace(s, old, new[, maxreplace])
