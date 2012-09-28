@@ -149,6 +149,19 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertEqual(runner.resultclass, unittest.TextTestResult)
 
 
+    def test_multiple_inheritance(self):
+        class AResult(unittest.TestResult):
+            def __init__(self, stream, descriptions, verbosity):
+                super(AResult, self).__init__(stream, descriptions, verbosity)
+
+        class ATextResult(unittest.TextTestResult, AResult):
+            pass
+
+        # This used to raise an exception due to TextTestResult not passing
+        # on arguments in its __init__ super call
+        ATextResult(None, None, None)
+
+
     def testBufferAndFailfast(self):
         class Test(unittest.TestCase):
             def testFoo(self):
