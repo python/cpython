@@ -9,6 +9,12 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16030: Fix overflow bug in computing the `repr` of an xrange object
+  with large start, step or length.
+
+- Issue #16029: Fix overflow bug occurring when pickling xranges with large
+  start, step or length.
+
 - Issue #16037: Limit httplib's _read_status() function to work around broken
   HTTP servers and reduce memory usage. It's actually a backport of a Python
   3.2 fix. Thanks to Adrien Kunysz.
