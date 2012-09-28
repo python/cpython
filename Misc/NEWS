@@ -38,6 +38,8 @@ Library
 
 - Issue #16064: unittest -m claims executable is "python", not "python3"
 
+- Issue #12376: Pass on parameters in TextTestResult.__init__ super call
+
 - Issue #15222: Insert blank line after each message in mbox mailboxes
 
 - Issue #16013: Fix CSV Reader parsing issue with ending quote characters.
