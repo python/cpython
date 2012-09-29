@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15756: subprocess.poll() now properly handles errno.ECHILD to
+  return a returncode of 0 when the child has already exited or cannot
+  be waited on.
+
 - Issue #12376: Pass on parameters in TextTestResult.__init__ super call
 
 - Issue #15222: Insert blank line after each message in mbox mailboxes
