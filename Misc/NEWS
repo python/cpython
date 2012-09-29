@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Upgrade Unicode data (UCD) to version 6.2.
+
 Library
 -------
 
