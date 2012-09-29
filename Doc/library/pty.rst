@@ -45,6 +45,9 @@ The :mod:`pty` module defines the following functions:
    a file descriptor. The defaults try to read 1024 bytes each time they are
    called.
 
+   .. versionchanged:: 3.4
+      :func:`spawn` now returns the status value from :func:`os.waitpid`
+      on the child process.
 
 Example
 -------

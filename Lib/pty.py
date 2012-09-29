@@ -178,3 +178,4 @@ def spawn(argv, master_read=_read, stdin_read=_read):
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
 
     os.close(master_fd)
+    return os.waitpid(pid, 0)[1]
