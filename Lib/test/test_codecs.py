@@ -1693,6 +1693,15 @@ class CharmapTest(unittest.TestCase):
         )
 
         self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict", "\U0010FFFFbc"),
+            ("\U0010FFFFbc", 3)
+        )
+
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict", "ab"
+        )
+
+        self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "replace", "ab"),
             ("ab\ufffd", 3)
         )
@@ -1717,6 +1726,113 @@ class CharmapTest(unittest.TestCase):
             codecs.charmap_decode(allbytes, "ignore", ""),
             ("", len(allbytes))
         )
+
+    def test_decode_with_int2str_map(self):
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: 'a', 1: 'b', 2: 'c'}),
+            ("abc", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: 'Aa', 1: 'Bb', 2: 'Cc'}),
+            ("AaBbCc", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: '\U0010FFFF', 1: 'b', 2: 'c'}),
+            ("\U0010FFFFbc", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: 'a', 1: 'b', 2: ''}),
+            ("ab", 3)
+        )
+
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: 'a', 1: 'b'}
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "replace",
+                                  {0: 'a', 1: 'b'}),
+            ("ab\ufffd", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "replace",
+                                  {0: 'a', 1: 'b', 2: None}),
+            ("ab\ufffd", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "ignore",
+                                  {0: 'a', 1: 'b'}),
+            ("ab", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "ignore",
+                                  {0: 'a', 1: 'b', 2: None}),
+            ("ab", 3)
+        )
+
+        allbytes = bytes(range(256))
+        self.assertEqual(
+            codecs.charmap_decode(allbytes, "ignore", {}),
+            ("", len(allbytes))
+        )
+
+    def test_decode_with_int2int_map(self):
+        a = ord('a')
+        b = ord('b')
+        c = ord('c')
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: a, 1: b, 2: c}),
+            ("abc", 3)
+        )
+
+        # Issue #15379
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: 0x10FFFF, 1: b, 2: c}),
+            ("\U0010FFFFbc", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "strict",
+                                  {0: sys.maxunicode, 1: b, 2: c}),
+            (chr(sys.maxunicode) + "bc", 3)
+        )
+
+        self.assertRaises(TypeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: sys.maxunicode + 1, 1: b, 2: c}
+        )
+
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: a, 1: b},
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "replace",
+                                  {0: a, 1: b}),
+            ("ab\ufffd", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "ignore",
+                                  {0: a, 1: b}),
+            ("ab", 3)
+        )
+
 
 class WithStmtTest(unittest.TestCase):
     def test_encodedfile(self):

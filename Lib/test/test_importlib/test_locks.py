@@ -1,4 +1,5 @@
 from importlib import _bootstrap
+import sys
 import time
 import unittest
 import weakref
@@ -41,6 +42,17 @@ else:
 @unittest.skipUnless(threading, "threads needed for this test")
 class DeadlockAvoidanceTests(unittest.TestCase):
 
+    def setUp(self):
+        try:
+            self.old_switchinterval = sys.getswitchinterval()
+            sys.setswitchinterval(0.000001)
+        except AttributeError:
+            self.old_switchinterval = None
+
+    def tearDown(self):
+        if self.old_switchinterval is not None:
+            sys.setswitchinterval(self.old_switchinterval)
+
     def run_deadlock_avoidance_test(self, create_deadlock):
         NLOCKS = 10
         locks = [LockType(str(i)) for i in range(NLOCKS)]
@@ -75,10 +87,12 @@ class DeadlockAvoidanceTests(unittest.TestCase):
 
     def test_deadlock(self):
         results = self.run_deadlock_avoidance_test(True)
-        # One of the threads detected a potential deadlock on its second
-        # acquire() call.
-        self.assertEqual(results.count((True, False)), 1)
-        self.assertEqual(results.count((True, True)), len(results) - 1)
+        # At least one of the threads detected a potential deadlock on its
+        # second acquire() call.  It may be several of them, because the
+        # deadlock avoidance mechanism is conservative.
+        nb_deadlocks = results.count((True, False))
+        self.assertGreaterEqual(nb_deadlocks, 1)
+        self.assertEqual(results.count((True, True)), len(results) - nb_deadlocks)
 
     def test_no_deadlock(self):
         results = self.run_deadlock_avoidance_test(False)

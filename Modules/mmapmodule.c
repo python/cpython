@@ -1163,6 +1163,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
             off_t calc_size;
+            if (st.st_size == 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "cannot mmap an empty file");
+                return NULL;
+            }
             if (offset >= st.st_size) {
                 PyErr_SetString(PyExc_ValueError,
                                 "mmap offset is greater than file size");
@@ -1359,6 +1364,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             }
 
             size = (((PY_LONG_LONG) high) << 32) + low;
+            if (size == 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "cannot mmap an empty file");
+                Py_DECREF(m_obj);
+                return NULL;
+            }
             if (offset >= size) {
                 PyErr_SetString(PyExc_ValueError,
                                 "mmap offset is greater than file size");

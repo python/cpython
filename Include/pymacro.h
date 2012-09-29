@@ -52,4 +52,18 @@
 #define PyDoc_STR(str) ""
 #endif
 
+/* Below "a" is a power of 2. */
+/* Round down size "n" to be a multiple of "a". */
+#define _Py_SIZE_ROUND_DOWN(n, a) ((size_t)(n) & ~(size_t)((a) - 1))
+/* Round up size "n" to be a multiple of "a". */
+#define _Py_SIZE_ROUND_UP(n, a) (((size_t)(n) + \
+        (size_t)((a) - 1)) & ~(size_t)((a) - 1))
+/* Round pointer "p" down to the closest "a"-aligned address <= "p". */
+#define _Py_ALIGN_DOWN(p, a) ((void *)((Py_uintptr_t)(p) & ~(Py_uintptr_t)((a) - 1)))
+/* Round pointer "p" up to the closest "a"-aligned address >= "p". */
+#define _Py_ALIGN_UP(p, a) ((void *)(((Py_uintptr_t)(p) + \
+        (Py_uintptr_t)((a) - 1)) & ~(Py_uintptr_t)((a) - 1)))
+/* Check if pointer "p" is aligned to "a"-bytes boundary. */
+#define _Py_IS_ALIGNED(p, a) (!((Py_uintptr_t)(p) & (Py_uintptr_t)((a) - 1)))
+
 #endif /* Py_PYMACRO_H */

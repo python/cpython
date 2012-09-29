@@ -324,12 +324,23 @@ class SocketIO(io.RawIOBase):
     def readable(self):
         """True if the SocketIO is open for reading.
         """
-        return self._reading and not self.closed
+        if self.closed:
+            raise ValueError("I/O operation on closed socket.")
+        return self._reading
 
     def writable(self):
         """True if the SocketIO is open for writing.
         """
-        return self._writing and not self.closed
+        if self.closed:
+            raise ValueError("I/O operation on closed socket.")
+        return self._writing
+
+    def seekable(self):
+        """True if the SocketIO is open for seeking.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed socket.")
+        return super().seekable()
 
     def fileno(self):
         """Return the file descriptor of the underlying socket.

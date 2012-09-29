@@ -1938,6 +1938,7 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
     if (ascii == NULL)
         return -1;
     encoding = strdup(PyBytes_AS_STRING(ascii));
+    Py_DECREF(ascii);
     if (encoding == NULL) {
         PyErr_NoMemory();
         return -1;

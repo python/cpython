@@ -464,13 +464,13 @@ to console subprocesses which are designed to handle those signals. See
 Why does os.path.isdir() fail on NT shared directories?
 -------------------------------------------------------
 
-The solution appears to be always append the "\\" on the end of shared
-drives.
+In order to work correctly, :func:`os.path.isdir` requires a ``"\\"`` at the
+end of the shared drive::
 
    >>> import os
-   >>> os.path.isdir( '\\\\rorschach\\public')
+   >>> os.path.isdir('\\\\rorschach\\public')
    0
-   >>> os.path.isdir( '\\\\rorschach\\public\\')
+   >>> os.path.isdir('\\\\rorschach\\public\\')
    1
 
 It helps to think of share points as being like drive letters.  Example::
@@ -480,7 +480,7 @@ It helps to think of share points as being like drive letters.  Example::
    k:\media is a directory
    k:\media\ is not a directory
 
-The same rules apply if you substitute "k:" with "\\conky\foo"::
+The same rules apply if you substitute ``"k:"`` with ``"\\conky\foo"``::
 
    \\conky\foo  is not a directory
    \\conky\foo\ is a directory

@@ -402,7 +402,7 @@ otherwise stated.
 .. method:: xmlparser.CommentHandler(data)
 
    Called for comments.  *data* is the text of the comment, excluding the leading
-   '``<!-``\ ``-``' and trailing '``-``\ ``->``'.
+   ``'<!-``\ ``-'`` and trailing ``'-``\ ``->'``.
 
 
 .. method:: xmlparser.StartCdataSectionHandler()

@@ -95,7 +95,7 @@ placeholders unchanged if data is missing::
    >>> d = dict(item='unladen swallow')
    >>> t.substitute(d)
    Traceback (most recent call last):
-     . . .
+     ...
    KeyError: 'owner'
    >>> t.safe_substitute(d)
    'Return the unladen swallow to $owner.'
@@ -220,7 +220,9 @@ At its simplest, log messages are sent to a file or to ``sys.stderr``::
    logging.error('Error occurred')
    logging.critical('Critical error -- shutting down')
 
-This produces the following output::
+This produces the following output:
+
+.. code-block:: none
 
    WARNING:root:Warning:config file server.conf not found
    ERROR:root:Error occurred
@@ -310,6 +312,8 @@ tree searches::
    >>> d.append("task4")
    >>> print("Handling", d.popleft())
    Handling task1
+
+::
 
    unsearched = deque([starting_node])
    def breadth_first_search(unsearched):

@@ -30,7 +30,7 @@
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #ifdef COUNT_ALLOCS
-int quick_int_allocs, quick_neg_int_allocs;
+Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
 #endif
 
 static PyObject *
@@ -1628,8 +1628,10 @@ long_to_decimal_string_internal(PyObject *aa,
         strlen++;
     }
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1)
+        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
+            Py_DECREF(scratch);
             return -1;
+        }
         kind = writer->kind;
         str = NULL;
     }
@@ -4283,8 +4285,8 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             string = PyByteArray_AS_STRING(x);
         else
             string = PyBytes_AS_STRING(x);
-        if (strlen(string) != (size_t)size) {
-            /* We only see this if there's a null byte in x,
+        if (strlen(string) != (size_t)size || !size) {
+            /* We only see this if there's a null byte in x or x is empty,
                x is a bytes or buffer, *and* a base is given. */
             PyErr_Format(PyExc_ValueError,
                          "invalid literal for int() with base %d: %R",
