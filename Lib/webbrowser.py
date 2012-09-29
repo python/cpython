@@ -206,12 +206,18 @@ class UnixBrowser(BaseBrowser):
     """Parent class for all Unix browsers with remote functionality."""
 
     raise_opts = None
+    background = False
+    redirect_stdout = True
+    # In remote_args, %s will be replaced with the requested URL.  %action will
+    # be replaced depending on the value of 'new' passed to open.
+    # remote_action is used for new=0 (open).  If newwin is not None, it is
+    # used for new=1 (open_new).  If newtab is not None, it is used for
+    # new=3 (open_new_tab).  After both substitutions are made, any empty
+    # strings in the transformed remote_args list will be removed.
     remote_args = ['%action', '%s']
     remote_action = None
     remote_action_newwin = None
     remote_action_newtab = None
-    background = False
-    redirect_stdout = True
 
     def _invoke(self, args, remote, autoraise):
         raise_opt = []
@@ -224,7 +230,7 @@ class UnixBrowser(BaseBrowser):
         cmdline = [self.name] + raise_opt + args
 
         if remote or self.background:
-            inout = io.open(os.devnull, "r+")
+            inout = subprocess.DEVNULL
         else:
             # for TTY browsers, we need stdin/out
             inout = None
@@ -264,6 +270,7 @@ class UnixBrowser(BaseBrowser):
 
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
+        args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise)
         if not success:
             # remote invocation failed, try straight way
@@ -347,7 +354,7 @@ class Konqueror(BaseBrowser):
         else:
             action = "openURL"
 
-        devnull = io.open(os.devnull, "r+")
+        devnull = subprocess.DEVNULL
         # if possible, put browser in separate process group, so
         # keyboard interrupts don't affect browser as well as Python
         setsid = getattr(os, 'setsid', None)

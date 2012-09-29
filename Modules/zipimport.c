@@ -236,12 +236,16 @@ make_filename(PyObject *prefix, PyObject *name)
         return NULL;
     }
 
-    if (!PyUnicode_AsUCS4(prefix, p, len, 0))
+    if (!PyUnicode_AsUCS4(prefix, p, len, 0)) {
+        PyMem_Free(buf);
         return NULL;
+    }
     p += PyUnicode_GET_LENGTH(prefix);
     len -= PyUnicode_GET_LENGTH(prefix);
-    if (!PyUnicode_AsUCS4(name, p, len, 1))
+    if (!PyUnicode_AsUCS4(name, p, len, 1)) {
+        PyMem_Free(buf);
         return NULL;
+    }
     for (; *p; p++) {
         if (*p == '.')
             *p = SEP;

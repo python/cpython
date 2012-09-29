@@ -471,7 +471,7 @@ function.
       Returns :class:`BoundArguments`, or raises a :exc:`TypeError` if the
       passed arguments do not match the signature.
 
-   .. method:: Signature.replace([parameters], *, [return_annotation])
+   .. method:: Signature.replace(*[, parameters][, return_annotation])
 
       Create a new Signature instance based on the instance replace was invoked
       on.  It is possible to pass different ``parameters`` and/or
@@ -565,7 +565,7 @@ function.
          ...         print('Parameter:', param)
          Parameter: c
 
-   .. method:: Parameter.replace(*, [name], [kind], [default], [annotation])
+   .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 
       Create a new Parameter instance based on the instance replaced was invoked
       on.  To override a :class:`Parameter` attribute, pass the corresponding

@@ -125,12 +125,8 @@ class BasicSocketTests(unittest.TestCase):
         else:
             self.assertRaises(ssl.SSLError, ssl.RAND_bytes, 16)
 
-        try:
-            ssl.RAND_egd(1)
-        except TypeError:
-            pass
-        else:
-            print("didn't raise TypeError")
+        self.assertRaises(TypeError, ssl.RAND_egd, 1)
+        self.assertRaises(TypeError, ssl.RAND_egd, 'foo', 1)
         ssl.RAND_add("this is a random string", 75.0)
 
     def test_parse_cert(self):

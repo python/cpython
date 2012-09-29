@@ -305,6 +305,18 @@ class IntTestCases(unittest.TestCase):
                     self.fail("Failed to raise TypeError with %s" %
                               ((base, trunc_result_base),))
 
+                # Regression test for bugs.python.org/issue16060.
+                class BadInt(trunc_result_base):
+                    def __int__(self):
+                        return 42.0
+
+                class TruncReturnsBadInt(base):
+                    def __trunc__(self):
+                        return BadInt()
+
+                with self.assertRaises(TypeError):
+                    int(TruncReturnsBadInt())
+
     def test_error_message(self):
         testlist = ('\xbd', '123\xbd', '  123 456  ')
         for s in testlist:

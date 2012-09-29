@@ -407,6 +407,14 @@ class ASTHelpers_Test(unittest.TestCase):
         b = compile('foo(1 + 1)', '<unknown>', 'exec', ast.PyCF_ONLY_AST)
         self.assertEqual(ast.dump(a), ast.dump(b))
 
+    def test_parse_in_error(self):
+        try:
+            1/0
+        except Exception:
+            with self.assertRaises(SyntaxError) as e:
+                ast.literal_eval(r"'\U'")
+            self.assertIsNotNone(e.exception.__context__)
+
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),

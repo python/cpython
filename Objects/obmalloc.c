@@ -138,7 +138,6 @@ static int running_on_valgrind = -1;
  */
 #define ALIGNMENT               8               /* must be 2^N */
 #define ALIGNMENT_SHIFT         3
-#define ALIGNMENT_MASK          (ALIGNMENT - 1)
 
 /* Return the number of bytes in size class I, as a uint. */
 #define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
@@ -314,14 +313,12 @@ struct arena_object {
     struct arena_object* prevarena;
 };
 
-#undef  ROUNDUP
-#define ROUNDUP(x)              (((x) + ALIGNMENT_MASK) & ~ALIGNMENT_MASK)
-#define POOL_OVERHEAD           ROUNDUP(sizeof(struct pool_header))
+#define POOL_OVERHEAD   _Py_SIZE_ROUND_UP(sizeof(struct pool_header), ALIGNMENT)
 
 #define DUMMY_SIZE_IDX          0xffff  /* size class of newly cached pools */
 
 /* Round pointer P down to the closest pool-aligned address <= P, as a poolp */
-#define POOL_ADDR(P) ((poolp)((uptr)(P) & ~(uptr)POOL_SIZE_MASK))
+#define POOL_ADDR(P) ((poolp)_Py_ALIGN_DOWN((P), POOL_SIZE))
 
 /* Return total number of blocks in pool of size index I, as a uint. */
 #define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))

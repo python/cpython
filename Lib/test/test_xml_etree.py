@@ -1809,6 +1809,18 @@ class ElementTreeTest(unittest.TestCase):
         mye = MyElement('joe')
         self.assertEqual(mye.newmethod(), 'joe')
 
+    def test_html_empty_elems_serialization(self):
+        # issue 15970
+        # from http://www.w3.org/TR/html401/index/elements.html
+        for element in ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'FRAME', 'HR',
+                        'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM']:
+            for elem in [element, element.lower()]:
+                expected = '<%s>' % elem
+                serialized = serialize(ET.XML('<%s />' % elem), method='html')
+                self.assertEqual(serialized, expected)
+                serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
+                                       method='html')
+                self.assertEqual(serialized, expected)
 
 class ElementIterTest(unittest.TestCase):
     def _ilist(self, elem, tag=None):

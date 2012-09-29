@@ -146,8 +146,11 @@ Basic Usage
    object members will be pretty-printed with that indent level.  An indent level
    of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
    selects the most compact representation. Using a positive integer indent
-   indents that many spaces per level.  If *indent* is a string (such at '\t'),
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
+
+   .. versionchanged:: 3.2
+      Allow strings for *indent* in addition to integers.
 
    If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
    will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
@@ -371,10 +374,15 @@ Encoders and Decoders
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
 
-   If *indent* is a non-negative integer (it is ``None`` by default), then JSON
-   array elements and object members will be pretty-printed with that indent
-   level.  An indent level of 0 will only insert newlines.  ``None`` is the most
-   compact representation.
+   If *indent* is a non-negative integer or string, then JSON array elements and
+   object members will be pretty-printed with that indent level.  An indent level
+   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
+   selects the most compact representation. Using a positive integer indent
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
+   that string is used to indent each level.
+
+   .. versionchanged:: 3.2
+      Allow strings for *indent* in addition to integers.
 
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')``.  To get the most compact JSON

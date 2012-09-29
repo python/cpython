@@ -831,10 +831,10 @@ setiter_reduce(setiterobject *si)
     if (!list)
         return NULL;
 
-    /* copy the itertor state */
+    /* copy the iterator state */
     tmp = *si;
     Py_XINCREF(tmp.si_set);
-    
+
     /* iterate the temporary into a list */
     for(;;) {
         PyObject *element = setiter_iternext(&tmp);
