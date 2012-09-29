@@ -1855,9 +1855,8 @@ features:
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
    some implementations.
 
-   This function can support :ref:`specifying a file descriptor
-   <path_fd>`, :ref:`specifying a file descriptor <path_fd>` and :ref:`not
-   following symlinks <follow_symlinks>`.
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
 
    .. index:: module: stat
 

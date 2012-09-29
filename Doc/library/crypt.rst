@@ -121,11 +121,14 @@ The :mod:`crypt` module defines the following functions:
 Examples
 --------
 
-A simple example illustrating typical use::
+A simple example illustrating typical use (a constant-time comparison
+operation is needed to limit exposure to timing attacks.
+:func:`hmac.compare_digest` is suitable for this purpose)::
 
    import pwd
    import crypt
    import getpass
+   from hmac import compare_digest as compare_hash
 
    def login():
        username = input('Python login: ')
@@ -134,7 +137,7 @@ A simple example illustrating typical use::
            if cryptedpasswd == 'x' or cryptedpasswd == '*':
                raise ValueError('no support for shadow passwords')
            cleartext = getpass.getpass()
-           return crypt.crypt(cleartext, cryptedpasswd) == cryptedpasswd
+           return compare_hash(crypt.crypt(cleartext, cryptedpasswd), cryptedpasswd)
        else:
            return True
 
@@ -142,7 +145,8 @@ To generate a hash of a password using the strongest available method and
 check it against the original::
 
    import crypt
+   from hmac import compare_digest as compare_hash
 
    hashed = crypt.crypt(plaintext)
-   if hashed != crypt.crypt(plaintext, hashed):
+   if not compare_hash(hashed, crypt.crypt(plaintext, hashed)):
       raise ValueError("hashed version doesn't validate against original")

@@ -12,8 +12,6 @@
 
 #define DEFAULT_BLOCK_SIZE 8192
 #define ALIGNMENT               8
-#define ALIGNMENT_MASK          (ALIGNMENT - 1)
-#define ROUNDUP(x)              (((x) + ALIGNMENT_MASK) & ~ALIGNMENT_MASK)
 
 typedef struct _block {
     /* Total number of bytes owned by this block available to pass out.
@@ -85,8 +83,8 @@ block_new(size_t size)
     b->ab_size = size;
     b->ab_mem = (void *)(b + 1);
     b->ab_next = NULL;
-    b->ab_offset = ROUNDUP((Py_uintptr_t)(b->ab_mem)) -
-      (Py_uintptr_t)(b->ab_mem);
+    b->ab_offset = (char *)_Py_ALIGN_UP(b->ab_mem, ALIGNMENT) -
+            (char *)(b->ab_mem);
     return b;
 }
 
@@ -104,7 +102,7 @@ block_alloc(block *b, size_t size)
 {
     void *p;
     assert(b);
-    size = ROUNDUP(size);
+    size = _Py_SIZE_ROUND_UP(size, ALIGNMENT);
     if (b->ab_offset + size > b->ab_size) {
         /* If we need to allocate more memory than will fit in
            the default block, allocate a one-off block that is

@@ -225,7 +225,6 @@ class Pool(object):
         Apply `func` to each element in `iterable`, collecting the results
         in a list that is returned.
         '''
-        assert self._state == RUN
         return self._map_async(func, iterable, mapstar, chunksize).get()
 
     def starmap(self, func, iterable, chunksize=None):
@@ -234,7 +233,6 @@ class Pool(object):
         be iterables as well and will be unpacked as arguments. Hence
         `func` and (a, b) becomes func(a, b).
         '''
-        assert self._state == RUN
         return self._map_async(func, iterable, starmapstar, chunksize).get()
 
     def starmap_async(self, func, iterable, chunksize=None, callback=None,
@@ -242,7 +240,6 @@ class Pool(object):
         '''
         Asynchronous version of `starmap()` method.
         '''
-        assert self._state == RUN
         return self._map_async(func, iterable, starmapstar, chunksize,
                                callback, error_callback)
 
@@ -250,7 +247,8 @@ class Pool(object):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        assert self._state == RUN
+        if self._state != RUN:
+            raise ValueError("Pool not running")
         if chunksize == 1:
             result = IMapIterator(self._cache)
             self._taskqueue.put((((result._job, i, func, (x,), {})
@@ -268,7 +266,8 @@ class Pool(object):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
-        assert self._state == RUN
+        if self._state != RUN:
+            raise ValueError("Pool not running")
         if chunksize == 1:
             result = IMapUnorderedIterator(self._cache)
             self._taskqueue.put((((result._job, i, func, (x,), {})
@@ -287,7 +286,8 @@ class Pool(object):
         '''
         Asynchronous version of `apply()` method.
         '''
-        assert self._state == RUN
+        if self._state != RUN:
+            raise ValueError("Pool not running")
         result = ApplyResult(self._cache, callback, error_callback)
         self._taskqueue.put(([(result._job, None, func, args, kwds)], None))
         return result
@@ -297,7 +297,6 @@ class Pool(object):
         '''
         Asynchronous version of `map()` method.
         '''
-        assert self._state == RUN
         return self._map_async(func, iterable, mapstar, chunksize)
 
     def _map_async(self, func, iterable, mapper, chunksize=None, callback=None,
@@ -305,6 +304,8 @@ class Pool(object):
         '''
         Helper function to implement map, starmap and their async counterparts.
         '''
+        if self._state != RUN:
+            raise ValueError("Pool not running")
         if not hasattr(iterable, '__len__'):
             iterable = list(iterable)
 

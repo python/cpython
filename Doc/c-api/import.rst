@@ -76,7 +76,7 @@ Importing Modules
    UTF-8 encoded string instead of a Unicode object.
 
    .. versionchanged:: 3.3
-         Negative values for **level** are no longer accepted.
+         Negative values for *level* are no longer accepted.
 
 .. c:function:: PyObject* PyImport_Import(PyObject *name)
 

@@ -145,8 +145,9 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
-   Use the :func:`urllib.parse.urlencode` function to convert such
-   dictionaries into query strings.
+   Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
+   parameter set to ``True``) to convert such dictionaries into query
+   strings.
 
 
    .. versionchanged:: 3.2

@@ -648,7 +648,7 @@ PyDoc_STRVAR(textiowrapper_doc,
     "\n"
     "* On output, if newline is None, any '\\n' characters written are\n"
     "  translated to the system default line separator, os.linesep. If\n"
-    "  newline is '' or '\n', no translation takes place. If newline is any\n"
+    "  newline is '' or '\\n', no translation takes place. If newline is any\n"
     "  of the other legal values, any '\\n' characters written are translated\n"
     "  to the given string.\n"
     "\n"

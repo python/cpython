@@ -239,7 +239,7 @@ select_select(PyObject *self, PyObject *args)
 #else
         /* 64-bit OS X has struct timeval.tv_usec as an int (and thus still 4
            bytes as required), but no longer defined by a long. */
-        long tv_usec = tv.tv_usec;
+        long tv_usec;
         if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv_usec) == -1)
             return NULL;
         tv.tv_usec = tv_usec;

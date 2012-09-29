@@ -504,7 +504,7 @@ Tix Commands
       print(root.tix_configure())
 
 
-.. method:: tixCommand.tix_configure([cnf,] **kw)
+.. method:: tixCommand.tix_configure(cnf=None, **kw)
 
    Query or modify the configuration options of the Tix application context. If no
    option is specified, returns a dictionary all of the available options.  If

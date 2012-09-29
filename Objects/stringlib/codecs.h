@@ -2,9 +2,6 @@
 
 #if STRINGLIB_IS_UNICODE
 
-/* Mask to check or force alignment of a pointer to C 'long' boundaries */
-#define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
-
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
 #if (SIZEOF_LONG == 8)
@@ -25,7 +22,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
 {
     Py_UCS4 ch;
     const char *s = *inptr;
-    const char *aligned_end = (const char *) ((size_t) end & ~LONG_PTR_MASK);
+    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
     STRINGLIB_CHAR *p = dest + *outpos;
 
     while (s < end) {
@@ -39,7 +36,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                First, check if we can do an aligned read, as most CPUs have
                a penalty for unaligned reads.
             */
-            if (!((size_t) s & LONG_PTR_MASK)) {
+            if (_Py_IS_ALIGNED(s, SIZEOF_LONG)) {
                 /* Help register allocation */
                 register const char *_s = s;
                 register STRINGLIB_CHAR *_p = p;
@@ -453,7 +450,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
 {
     Py_UCS4 ch;
     const unsigned char *aligned_end =
-            (const unsigned char *) ((size_t) e & ~LONG_PTR_MASK);
+            (const unsigned char *) _Py_ALIGN_DOWN(e, SIZEOF_LONG);
     const unsigned char *q = *inptr;
     STRINGLIB_CHAR *p = dest + *outpos;
     /* Offsets from q for retrieving byte pairs in the right order. */
@@ -468,7 +465,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         Py_UCS4 ch2;
         /* First check for possible aligned read of a C 'long'. Unaligned
            reads are more expensive, better to defer to another iteration. */
-        if (!((size_t) q & LONG_PTR_MASK)) {
+        if (_Py_IS_ALIGNED(q, SIZEOF_LONG)) {
             /* Fast path for runs of in-range non-surrogate chars. */
             register const unsigned char *_q = q;
             while (_q < aligned_end) {
@@ -565,7 +562,6 @@ IllegalSurrogate:
 #undef FAST_CHAR_MASK
 #undef STRIPPED_MASK
 #undef SWAB
-#undef LONG_PTR_MASK
 
 
 Py_LOCAL_INLINE(void)
@@ -588,7 +584,7 @@ STRINGLIB(utf16_encode)(unsigned short *out,
         _PyUnicode_CONVERT_BYTES(STRINGLIB_CHAR, unsigned short, in, end, out);
 # endif
     } else {
-        const STRINGLIB_CHAR *unrolled_end = in + (len & ~ (Py_ssize_t) 3);
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
         while (in < unrolled_end) {
             out[0] = SWAB2(in[0]);
             out[1] = SWAB2(in[1]);

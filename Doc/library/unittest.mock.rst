@@ -276,7 +276,7 @@ the `new_callable` argument to `patch`.
             >>> mock.assert_called_once_with('foo', bar='baz')
             Traceback (most recent call last):
               ...
-            AssertionError: Expected to be called once. Called 2 times.
+            AssertionError: Expected 'mock' to be called once. Called 2 times.
 
 
     .. method:: assert_any_call(*args, **kwargs)
@@ -2020,7 +2020,7 @@ extremely handy: :meth:`~Mock.assert_called_with` and
     >>> mock.assert_called_once_with(1, 2, 3)
     Traceback (most recent call last):
      ...
-    AssertionError: Expected to be called once. Called 2 times.
+    AssertionError: Expected 'mock' to be called once. Called 2 times.
 
 Because mocks auto-create attributes on demand, and allow you to call them
 with arbitrary arguments, if you misspell one of these assert methods then

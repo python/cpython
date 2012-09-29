@@ -16,6 +16,7 @@ PyObject *calcsize = NULL;
 static const char *simple_fmt = "B";
 PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
+#define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
 
 /**************************************************************************/
@@ -513,10 +514,8 @@ static int
 cmp_structure(Py_buffer *dest, Py_buffer *src)
 {
     Py_ssize_t i;
-    int same_fmt = ((dest->format == NULL && src->format == NULL) || \
-                    (strcmp(dest->format, src->format) == 0));
 
-    if (!same_fmt ||
+    if (strcmp(FIX_FORMAT(dest->format), FIX_FORMAT(src->format)) != 0 ||
         dest->itemsize != src->itemsize ||
         dest->ndim != src->ndim)
         return -1;

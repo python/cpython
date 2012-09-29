@@ -43,8 +43,7 @@ STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
 #define DO_MEMCHR(memchr, s, needle, nchars) do { \
     candidate = memchr((const void *) (s), (needle), (nchars) * sizeof(STRINGLIB_CHAR)); \
-    found = (const STRINGLIB_CHAR *) \
-        ((Py_ssize_t) candidate & (~ ((Py_ssize_t) sizeof(STRINGLIB_CHAR) - 1))); \
+    found = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR)); \
     } while (0)
 
     if (mode == FAST_SEARCH) {
