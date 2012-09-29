@@ -1742,6 +1742,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
     assert(min >= 0);
     assert(min <= max);
     if (!PyTuple_Check(args)) {
+        va_end(vargs);
         PyErr_SetString(PyExc_SystemError,
             "PyArg_UnpackTuple() argument list is not a tuple");
         return 0;

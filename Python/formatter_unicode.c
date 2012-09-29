@@ -1099,7 +1099,7 @@ format_float_internal(PyObject *value,
                          &locale, 0);
 
 done:
-    Py_DECREF(unicode_tmp);
+    Py_XDECREF(unicode_tmp);
     free_locale_info(&locale);
     return result;
 }

@@ -1235,7 +1235,8 @@ The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
 loops.
 
-.. class:: range([start, ]stop[, step])
+.. class:: range(stop)
+           range(start, stop[, step])
 
    The arguments to the range constructor must be integers (either built-in
    :class:`int` or any object that implements the ``__index__`` special
@@ -2687,12 +2688,18 @@ copying.
    .. attribute:: shape
 
       A tuple of integers the length of :attr:`ndim` giving the shape of the
-      memory as a N-dimensional array.
+      memory as an N-dimensional array.
+
+      .. versionchanged:: 3.3
+         An empty tuple instead of None when ndim = 0.
 
    .. attribute:: strides
 
       A tuple of integers the length of :attr:`ndim` giving the size in bytes to
       access each element for each dimension of the array.
+
+      .. versionchanged:: 3.3
+         An empty tuple instead of None when ndim = 0.
 
    .. attribute:: suboffsets
 

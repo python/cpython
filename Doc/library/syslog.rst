@@ -17,7 +17,8 @@ library that can speak to a syslog server is available in the
 The module defines the following functions:
 
 
-.. function:: syslog([priority,] message)
+.. function:: syslog(message)
+              syslog(priority, message)
 
    Send the string *message* to the system logger.  A trailing newline is added
    if necessary.  Each message is tagged with a priority composed of a

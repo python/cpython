@@ -71,7 +71,7 @@ fancy_roundup(int n)
  * capacity.  The code is tricky to avoid that.
  */
 #define XXXROUNDUP(n) ((n) <= 1 ? (n) :                 \
-               (n) <= 128 ? (((n) + 3) & ~3) :          \
+               (n) <= 128 ? _Py_SIZE_ROUND_UP((n), 4) : \
                fancy_roundup(n))
 
 

@@ -225,9 +225,11 @@ class ThreadedImportTests(unittest.TestCase):
 @reap_threads
 def test_main():
     old_switchinterval = None
+    # Issue #15599: FreeBSD/KVM cannot handle gil_interval == 1.
+    new_switchinterval = 0.00001 if 'freebsd' in sys.platform else 0.00000001
     try:
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(0.00000001)
+        sys.setswitchinterval(new_switchinterval)
     except AttributeError:
         pass
     try:

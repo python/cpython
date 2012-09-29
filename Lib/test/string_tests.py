@@ -1206,6 +1206,9 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(ValueError, '%%%df' % (2**64), '__mod__', (3.2))
         self.checkraises(ValueError, '%%.%df' % (2**64), '__mod__', (3.2))
 
+        class X(object): pass
+        self.checkraises(TypeError, 'abc', '__mod__', X())
+
     def test_floatformatting(self):
         # float formatting
         for prec in range(100):

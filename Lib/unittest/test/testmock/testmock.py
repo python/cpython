@@ -463,6 +463,13 @@ class MockTest(unittest.TestCase):
                                 mock.assert_called_with)
 
 
+    def test_assert_called_once_with_message(self):
+        mock = Mock(name='geoffrey')
+        self.assertRaisesRegex(AssertionError,
+                     r"Expected 'geoffrey' to be called once\.",
+                     mock.assert_called_once_with)
+
+
     def test__name__(self):
         mock = Mock()
         self.assertRaises(AttributeError, lambda: mock.__name__)

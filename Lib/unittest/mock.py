@@ -731,8 +731,8 @@ class NonCallableMock(Base):
         arguments."""
         self = _mock_self
         if not self.call_count == 1:
-            msg = ("Expected to be called once. Called %s times." %
-                   self.call_count)
+            msg = ("Expected '%s' to be called once. Called %s times." %
+                   (self._mock_name or 'mock', self.call_count))
             raise AssertionError(msg)
         return self.assert_called_with(*args, **kwargs)
 

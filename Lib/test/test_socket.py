@@ -1245,6 +1245,17 @@ class GeneralModuleTests(unittest.TestCase):
             fp.close()
             self.assertEqual(repr(fp), "<_io.BufferedReader name=-1>")
 
+    def test_unusable_closed_socketio(self):
+        with socket.socket() as sock:
+            fp = sock.makefile("rb", buffering=0)
+            self.assertTrue(fp.readable())
+            self.assertFalse(fp.writable())
+            self.assertFalse(fp.seekable())
+            fp.close()
+            self.assertRaises(ValueError, fp.readable)
+            self.assertRaises(ValueError, fp.writable)
+            self.assertRaises(ValueError, fp.seekable)
+
     def test_pickle(self):
         sock = socket.socket()
         with sock:
