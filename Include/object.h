@@ -962,7 +962,7 @@ with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
 */
 
 /* This is the old private API, invoked by the macros before 3.2.4.
-   Kept for binary compatibility of extensions. */
+   Kept for binary compatibility of extensions using the stable ABI. */
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
 PyAPI_DATA(int) _PyTrash_delete_nesting;

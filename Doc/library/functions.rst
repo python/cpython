@@ -629,14 +629,19 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. function:: int([number | string[, base]])
+.. function:: int(x=0)
+              int(x, base=10)
 
-   Convert a number or string to an integer.  If no arguments are given, return
-   ``0``.  If a number is given, return ``number.__int__()``.  Conversion of
-   floating point numbers to integers truncates towards zero.  A string must be
-   a base-radix integer literal optionally preceded by '+' or '-' (with no space
-   in between) and optionally surrounded by whitespace.  A base-n literal
-   consists of the digits 0 to n-1, with 'a' to 'z' (or 'A' to 'Z') having
+   Convert a number or string *x* to an integer, or return ``0`` if no
+   arguments are given.  If *x* is a number, return :meth:`x.__int__()
+   <object.__int__>`.  For floating point numbers, this truncates towards zero.
+
+   If *x* is not a number or if *base* is given, then *x* must be a string,
+   :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
+   literal <integers>` in radix *base*.  Optionally, the literal can be
+   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
+   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
+   to ``z`` (or ``A`` to ``Z``) having
    values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2-36.
    Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
    ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
@@ -725,11 +730,16 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable[, args...], *[, key])
+.. function:: max(iterable, *[, key])
+              max(arg1, arg2, *args[, key])
 
-   With a single argument *iterable*, return the largest item of a non-empty
-   iterable (such as a string, tuple or list).  With more than one argument, return
-   the largest of the arguments.
+   Return the largest item in an iterable or the largest of two or more
+   arguments.
+
+   If one positional argument is provided, *iterable* must be a non-empty
+   iterable (such as a non-empty string, tuple or list).  The largest item
+   in the iterable is returned.  If two or more positional arguments are
+   provided, the largest of the positional arguments is returned.
 
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
@@ -748,11 +758,16 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable[, args...], *[, key])
+.. function:: min(iterable, *[, key])
+              min(arg1, arg2, *args[, key])
 
-   With a single argument *iterable*, return the smallest item of a non-empty
-   iterable (such as a string, tuple or list).  With more than one argument, return
-   the smallest of the arguments.
+   Return the smallest item in an iterable or the smallest of two or more
+   arguments.
+
+   If one positional argument is provided, *iterable* must be a non-empty
+   iterable (such as a non-empty string, tuple or list).  The smallest item
+   in the iterable is returned.  If two or more positional arguments are
+   provided, the smallest of the positional arguments is returned.
 
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
@@ -970,16 +985,16 @@ are always available.  They are listed here in alphabetical order.
    must be of integer types, and *y* must be non-negative.
 
 
-.. function:: print([object, ...], *, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
-   Print *object*\(s) to the stream *file*, separated by *sep* and followed by
+   Print *objects* to the stream *file*, separated by *sep* and followed by
    *end*.  *sep*, *end* and *file*, if present, must be given as keyword
    arguments.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
    written to the stream, separated by *sep* and followed by *end*.  Both *sep*
    and *end* must be strings; they can also be ``None``, which means to use the
-   default values.  If no *object* is given, :func:`print` will just write
+   default values.  If no *objects* are given, :func:`print` will just write
    *end*.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
@@ -1061,7 +1076,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. function:: range([start,] stop[, step])
+.. function:: range(stop)
+              range(start, stop[, step])
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
@@ -1087,18 +1103,18 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(x[, n])
+.. function:: round(number[, ndigits])
 
-   Return the floating point value *x* rounded to *n* digits after the decimal
-   point.  If *n* is omitted, it defaults to zero.  Delegates to
-   ``x.__round__(n)``.
+   Return the floating point value *number* rounded to *ndigits* digits after
+   the decimal point.  If *ndigits* is omitted, it defaults to zero. Delegates
+   to ``number.__round__(ndigits)``.
 
    For the built-in types supporting :func:`round`, values are rounded to the
-   closest multiple of 10 to the power minus *n*; if two multiples are equally
-   close, rounding is done toward the even choice (so, for example, both
-   ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is ``2``).
-   The return value is an integer if called with one argument, otherwise of the
-   same type as *x*.
+   closest multiple of 10 to the power minus *ndigits*; if two multiples are
+   equally close, rounding is done toward the even choice (so, for example,
+   both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
+   ``2``).  The return value is an integer if called with one argument,
+   otherwise of the same type as *number*.
 
    .. note::
 
@@ -1126,7 +1142,8 @@ are always available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice([start,] stop[, step])
+.. function:: slice(stop)
+              slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 

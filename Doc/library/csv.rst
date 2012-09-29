@@ -71,9 +71,10 @@ The :mod:`csv` module defines the following functions:
    A short usage example::
 
       >>> import csv
-      >>> spamReader = csv.reader(open('eggs.csv', newline=''), delimiter=' ', quotechar='|')
-      >>> for row in spamReader:
-      ...     print(', '.join(row))
+      >>> with open('eggs.csv', newline='') as csvfile:
+      ...     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+      ...     for row in spamreader:
+      ...         print(', '.join(row))
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
 
@@ -99,11 +100,12 @@ The :mod:`csv` module defines the following functions:
 
    A short usage example::
 
-      >>> import csv
-      >>> spamWriter = csv.writer(open('eggs.csv', 'w', newline=''), delimiter=' ',
-      ...                         quotechar='|', quoting=csv.QUOTE_MINIMAL)
-      >>> spamWriter.writerow(['Spam'] * 5 + ['Baked Beans'])
-      >>> spamWriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+      import csv
+      with open('eggs.csv', 'w', newline='') as csvfile:
+          spamwriter = csv.writer(csvfile, delimiter=' ',
+                                  quotechar='|', quoting=csv.QUOTE_MINIMAL)
+          spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+          spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
 .. function:: register_dialect(name[, dialect], **fmtparams)
@@ -221,11 +223,11 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   csvfile = open("example.csv")
-   dialect = csv.Sniffer().sniff(csvfile.read(1024))
-   csvfile.seek(0)
-   reader = csv.reader(csvfile, dialect)
-   # ... process CSV file contents here ...
+   with open('example.csv') as csvfile:
+       dialect = csv.Sniffer().sniff(csvfile.read(1024))
+       csvfile.seek(0)
+       reader = csv.reader(csvfile, dialect)
+       # ... process CSV file contents here ...
 
 
 The :mod:`csv` module defines the following constants:

@@ -219,7 +219,7 @@ method_repr(PyMethodObject *a)
 {
     PyObject *self = a->im_self;
     PyObject *func = a->im_func;
-    PyObject *klass = (PyObject*)Py_TYPE(self);
+    PyObject *klass;
     PyObject *funcname = NULL ,*klassname = NULL, *result = NULL;
     char *defname = "?";
 
@@ -227,6 +227,7 @@ method_repr(PyMethodObject *a)
         PyErr_BadInternalCall();
         return NULL;
     }
+    klass = (PyObject*)Py_TYPE(self);
 
     funcname = _PyObject_GetAttrId(func, &PyId___name__);
     if (funcname == NULL) {

@@ -186,7 +186,7 @@ We can obtain the same result with::
 
    squares = [x**2 for x in range(10)]
 
-This is also equivalent to ``squares = map(lambda x: x**2, range(10))``,
+This is also equivalent to ``squares = list(map(lambda x: x**2, range(10)))``,
 but it's more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed

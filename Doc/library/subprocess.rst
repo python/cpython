@@ -307,10 +307,14 @@ default values. The arguments that are most commonly needed are:
       :meth:`Popen.communicate` method.
 
    If *shell* is ``True``, the specified command will be executed through
-   the shell. This can be useful if you are using Python primarily for the
+   the shell.  This can be useful if you are using Python primarily for the
    enhanced control flow it offers over most system shells and still want
-   access to other shell features such as filename wildcards, shell pipes and
-   environment variable expansion.
+   convenient access to other shell features such as shell pipes, filename
+   wildcards, environment variable expansion, and expansion of ``~`` to a
+   user's home directory.  However, note that Python itself offers
+   implementations of many shell-like features (in particular, :mod:`glob`,
+   :mod:`fnmatch`, :func:`os.walk`, :func:`os.path.expandvars`,
+   :func:`os.path.expanduser`, and :mod:`shutil`).
 
    .. versionchanged:: 3.3
       When *universal_newlines* is ``True``, the class uses the encoding
@@ -669,8 +673,8 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`communicate` rather than :attr:`.stdin.write <stdin>`,
-   :attr:`.stdout.read <stdout>` or :attr:`.stderr.read <stderr>` to avoid
+   Use :meth:`~Popen.communicate` rather than :attr:`.stdin.write <Popen.stdin>`,
+   :attr:`.stdout.read <Popen.stdout>` or :attr:`.stderr.read <Popen.stderr>` to avoid
    deadlocks due to any of the other OS pipe buffers filling up and blocking the
    child process.
 
