@@ -46,7 +46,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.3, compared to 3.2.
-Python 3.3 was released on September 29, 2012.
+Python 3.3 was released on September 29, 2012.  For full details,
+see the :source:`Misc/NEWS` file.
+
+.. seealso::
+
+    :pep:`398` - Python 3.2 Release Schedule
 
 
 Summary -- Release highlights
@@ -79,6 +84,12 @@ Implementation improvements:
 * More compact :ref:`unicode strings <pep-393>`.
 * More compact :ref:`attribute dictionaries <pep-412>`.
 
+Significantly Improved Library Modules:
+
+* C Accelerator for the :ref:`decimal <new-decimal>` module.
+* Better unicode handling in the :ref:`email <new-email>` module
+  (:term:`provisional <provisional package>`).
+
 Security improvements:
 
 * Hash randomization is switched on by default.
@@ -91,9 +102,6 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 405: Virtual Environments
 =============================
 
-:pep:`405` - Python Virtual Environments
- PEP written by Carl Meyer, implemented by Carl Meyer and Vinay Sajip.
-
 Virtual environments help create separate Python setups while sharing a
 system-wide base install, for ease of maintenance.  Virtual environments
 have their own set of private site packages (i.e. locally-installed
@@ -104,9 +112,16 @@ with the interpreter core.
 
 This PEP adds the :mod:`venv` module for programmatic access, and the
 :ref:`pyvenv <scripts-pyvenv>` script for command-line access and
-administration.  The Python interpreter becomes aware of a ``pvenv.cfg``
+administration.  The Python interpreter checks for a ``pvenv.cfg``,
 file whose existence signals the base of a virtual environment's directory
 tree.
+
+(Implemented by Carl Meyer and Vinay Sajip.)
+
+.. seealso::
+
+    :pep:`405` - Python Virtual Environments
+       PEP written by Carl Meyer
 
 
 PEP 420: Namespace Packages
@@ -117,14 +132,19 @@ marker files and can automatically span multiple path segments (inspired by
 various third party approaches to namespace packages, as described in
 :pep:`420`)
 
+.. seealso::
+
+   :pep:`420` - Namespace packages
+      PEP written by Eric V. Smith; implementation by Eric V. Smith
+      and Barry Warsaw
+
 
 .. _pep-3118-update:
 
 PEP 3118: New memoryview implementation and buffer protocol documentation
 =========================================================================
 
-:issue:`10181` - memoryview bug fixes and features.
-  Written by Stefan Krah.
+The implementation of :pep:`3118` has been significantly improved.
 
 The new memoryview implementation comprehensively fixes all ownership and
 lifetime issues of dynamically allocated fields in the Py_buffer struct
@@ -180,6 +200,13 @@ API changes
   of view contents.
 
 * For further changes see `Build and C API Changes`_ and `Porting C code`_ .
+
+(Contributed by Stefan Krah in :issue:`10181`)
+
+.. seealso::
+
+   :pep:`3118` - Revising the Buffer Protocol
+
 
 .. _pep-393:
 
@@ -255,14 +282,17 @@ Python 3.3 is two to three times smaller than Python 3.2, and a little
 bit better than Python 2.7, on a Django benchmark (see the PEP for
 details).
 
+.. seealso::
+
+   :pep:`393` - Flexible String Representation
+      PEP written by Martin von Löwis; implementation by Torsten Becker
+      and Martin von Löwis.
+
 
 .. _pep-3151:
 
 PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
-
-:pep:`3151` - Reworking the OS and IO exception hierarchy
- PEP written and implemented by Antoine Pitrou.
 
 The hierarchy of exceptions raised by operating system errors is now both
 simplified and finer-grained.
@@ -325,14 +355,16 @@ inspection of exception attributes::
     except PermissionError:
         print("You are not allowed to read document.txt")
 
+.. seealso::
+
+   :pep:`3151` - Reworking the OS and IO Exception Hierarchy
+      PEP written and implemented by Antoine Pitrou
+
 
 .. _pep-380:
 
 PEP 380: Syntax for Delegating to a Subgenerator
 ================================================
-
-:pep:`380` - Syntax for Delegating to a Subgenerator
- PEP written by Greg Ewing.
 
 PEP 380 adds the ``yield from`` expression, allowing a generator to delegate
 part of its operations to another generator. This allows a section of code
@@ -389,16 +421,16 @@ designed to be used with the ``send`` and ``throw`` methods to be split into
 multiple subgenerators as easily as a single large function can be split into
 multiple subfunctions.
 
-(Implementation by Greg Ewing, integrated into 3.3 by Renaud Blanch, Ryan
-Kelly and Nick Coghlan, documentation by Zbigniew Jędrzejewski-Szmek and
-Nick Coghlan)
+.. seealso::
+
+   :pep:`380` - Syntax for Delegating to a Subgenerator
+      PEP written by Greg Ewing; implementation by Greg Ewing, integrated into
+      3.3 by Renaud Blanch, Ryan Kelly and Nick Coghlan, documentation by
+      Zbigniew Jędrzejewski-Szmek and Nick Coghlan)
 
 
 PEP 409: Suppressing exception context
 ======================================
-
-:pep:`409` - Suppressing exception context
- PEP written by Ethan Furman, implemented by Ethan Furman and Nick Coghlan.
 
 PEP 409 introduces new syntax that allows the display of the chained
 exception context to be disabled. This allows cleaner error messages in
@@ -454,12 +486,15 @@ suppressed valuable underlying details)::
     ...
     KeyError('x',)
 
+.. seealso::
+
+   :pep:`409` - Suppressing exception context
+      PEP written by Ethan Furman; implemented by Ethan Furman and Nick
+      Coghlan.
+
 
 PEP 414: Explicit Unicode literals
 ======================================
-
-:pep:`414` - Explicit Unicode literals
- PEP written by Armin Ronacher.
 
 To ease the transition from Python 2 for Unicode aware Python applications
 that make heavy use of Unicode literals, Python 3.3 once again supports the
@@ -469,12 +504,14 @@ changes in migrating to Python 3, making it easier for developers to focus on
 the more significant semantic changes (such as the stricter default
 separation of binary and text data).
 
+.. seealso::
+
+   :pep:`414` - Explicit Unicode literals
+      PEP written by Armin Ronacher.
+
 
 PEP 3155: Qualified name for classes and functions
 ==================================================
-
-:pep:`3155` - Qualified name for classes and functions
- PEP written and implemented by Antoine Pitrou.
 
 Functions and class objects have a new ``__qualname__`` attribute representing
 the "path" from the module top-level to their definition.  For global functions
@@ -528,27 +565,30 @@ new, more precise information::
    >>> str(C.D.meth)
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
+.. seealso::
+
+   :pep:`3155` - Qualified name for classes and functions
+      PEP written and implemented by Antoine Pitrou.
+
 
 .. _pep-412:
 
 PEP 412: Key-Sharing Dictionary
 ===============================
 
-:pep:`412` - Key-Sharing Dictionary
- PEP written and implemented by Mark Shannon.
-
 Dictionaries used for the storage of objects' attributes are now able to
 share part of their internal storage between each other (namely, the part
 which stores the keys and their respective hashes).  This reduces the memory
 consumption of programs creating many instances of non-builtin types.
 
+.. seealso::
+
+   :pep:`412` - Key-Sharing Dictionary
+      PEP written and implemented by Mark Shannon.
+
 
 PEP 362: Function Signature Object
 ==================================
-
-:pep:`362`: -  Function Signature Object
- PEP written by Brett Cannon, Yury Selivanov, Larry Hastings, Jiwon Seo.
- Implemented by Yury Selivanov.
 
 A new function :func:`inspect.signature` makes introspection of python
 callables easy and straightforward.  A broad range of callables is supported:
@@ -559,12 +599,15 @@ such as, annotations, default values, parameters kinds, and bound arguments,
 which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
 
+.. seealso::
+
+   :pep:`362`: -  Function Signature Object
+      PEP written by Brett Cannon, Yury Selivanov, Larry Hastings, Jiwon Seo;
+      implemented by Yury Selivanov.
+
 
 PEP 421: Adding sys.implementation
 ==================================
-
-:pep:`421` - Adding sys.implementation
- PEP written and implemented by Eric Snow.
 
 A new attribute on the :mod:`sys` module exposes details specific to the
 implementation of the currently running interpreter.  The initial set of
@@ -594,6 +637,11 @@ namespace, like :class:`dict`, ``SimpleNamespace`` is attribute-based, like
 are writable.  This means that you can add, remove, and modify the namespace
 through normal attribute access.
 
+.. seealso::
+
+   :pep:`421` - Adding sys.implementation
+      PEP written and implemented by Eric Snow.
+
 
 .. _importlib:
 
@@ -603,8 +651,6 @@ Using importlib as the Implementation of Import
 :issue:`13959` - Re-implement parts of :mod:`imp` in pure Python
 :issue:`14605` - Make import machinery explicit
 :issue:`14646` - Require loaders set __loader__ and __package__
-
-(Written by Brett Cannon)
 
 The :func:`__import__` function is now powered by :func:`importlib.__import__`.
 This work leads to the completion of "phase 2" of :pep:`302`. There are
@@ -657,8 +703,9 @@ clean up any stored state as necessary.
 
 Visible Changes
 ---------------
-[For potential required changes to code, see the `Porting Python code`_
-section]
+
+For potential required changes to code, see the `Porting Python code`_
+section.
 
 Beyond the expanse of what :mod:`importlib` now exposes, there are other
 visible changes to import. The biggest is that :attr:`sys.meta_path` and
@@ -686,6 +733,8 @@ All other changes relate to semantic changes which should be taken into
 consideration when updating code for Python 3.3, and thus should be read about
 in the `Porting Python code`_ section of this document.
 
+(Implementation by Brett Cannon)
+
 
 Other Language Changes
 ======================
@@ -702,7 +751,6 @@ Some smaller changes made to the core Python language are:
 
 * Equality comparisons on :func:`range` objects now return a result reflecting
   the equality of the underlying sequences generated by those range objects.
-
   (:issue:`13201`)
 
 * The ``count()``, ``find()``, ``rfind()``, ``index()`` and ``rindex()``
@@ -712,19 +760,21 @@ Some smaller changes made to the core Python language are:
   (Contributed by Petri Lehtinen in :issue:`12170`)
 
 * New methods have been added to :class:`list` and :class:`bytearray`:
-  ``copy()`` and ``clear()``.
-
-  (:issue:`10516`)
+  ``copy()`` and ``clear()``.  (:issue:`10516`)
 
 * Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
+
   (Contributed by Antoine Pitrou in :issue:`13748`.)
 
 * :meth:`dict.setdefault` now does only one lookup for the given key, making
   it atomic when used with built-in types.
+
   (Contributed by Filip Gruszczyński in :issue:`13521`.)
 
+* The error messages produced when a function call does not match the function
+  signature have been significantly improved.
 
-.. XXX mention new error messages for passing wrong number of arguments to functions
+  (Contributed by Benjamin Peterson.)
 
 
 A Finer-Grained Import Lock
@@ -741,7 +791,7 @@ serializes importation of a given module from multiple threads (preventing
 the exposure of incompletely initialized modules), while eliminating the
 aforementioned annoyances.
 
-(contributed by Antoine Pitrou in :issue:`9260`.)
+(Contributed by Antoine Pitrou in :issue:`9260`.)
 
 
 Builtin functions and types
@@ -763,6 +813,7 @@ Builtin functions and types
   explain the binary/text sequence distinction and to provide specific
   documentation sections for the individual builtin sequence types
   (:issue:`4966`)
+
 
 New Modules
 ===========
@@ -978,6 +1029,9 @@ datetime
    called without arguments to convert datetime instance to the system
    timezone.
 
+
+.. _new-decimal:
+
 decimal
 -------
 
@@ -1074,6 +1128,8 @@ API changes
 * The ``watchexp`` parameter in the :meth:`~decimal.Decimal.quantize` method
   is deprecated.
 
+
+.. _new-email:
 
 email
 -----
