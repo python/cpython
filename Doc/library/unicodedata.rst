@@ -15,8 +15,8 @@
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in
-this database is compiled from the `UCD version 6.1.0
-<http://www.unicode.org/Public/6.1.0/ucd>`_.
+this database is compiled from the `UCD version 6.2.0
+<http://www.unicode.org/Public/6.2.0/ucd>`_.
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
