@@ -616,11 +616,10 @@ supporting Python 3.3 to use, helping to end any VM-specific deviations in
 import semantics. And finally it eases the maintenance of import, allowing for
 future growth to occur.
 
-For the common user, this change should result in no visible change in
-semantics. Any possible changes required in one's code to handle this change
-should read the `Porting Python code`_ section of this document to see what
-needs to be changed, but it will only affect those that currently manipulate
-import or try calling it programmatically.
+For the common user, there should be no visible change in semantics.  For
+those whose code currently manipulates import or calls import
+programmatically, the code changes that might possibly be required are covered
+in the `Porting Python code`_ section of this document.
 
 New APIs
 --------
