@@ -2,7 +2,6 @@
   What's New In Python 3.3
 ****************************
 
-:Author: Raymond Hettinger
 :Release: |release|
 :Date: |today|
 
