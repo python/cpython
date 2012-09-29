@@ -62,6 +62,7 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.thread.stop()
+        self.thread = None
         os.environ.__exit__()
         support.threading_cleanup(*self._threads)
 
