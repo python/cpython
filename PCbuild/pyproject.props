@@ -13,7 +13,7 @@
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros">
-    <PyDllName>python33$(PyDebugExt)</PyDllName>
+    <PyDllName>python34$(PyDebugExt)</PyDllName>
     <PythonExe>$(OutDir)python$(PyDebugExt).exe</PythonExe>
     <KillPythonExe>$(OutDir)kill_python$(PyDebugExt).exe</KillPythonExe>
     <externalsDir>..\..</externalsDir>
