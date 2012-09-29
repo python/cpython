@@ -1466,6 +1466,15 @@ sched
   :issue:`13245`)
 
 
+shlex
+-----
+
+* The previously undocumented helper function ``quote`` from the
+  :mod:`pipes` modules has been moved to the :mod:`shlex` module and
+  documented.  :func:`~shlex.quote` properly escapes all characters in a string
+  that might be otherwise given special meaning by the shell.
+
+
 shutil
 ------
 
@@ -1495,7 +1504,6 @@ shutil
   which support the new ``dir_fd`` parameter in :func:`os.open` and
   :func:`os.unlink`. (Contributed by Martin von Löwis and Hynek Schlawack
   in :issue:`4489`.)
-
 
 
 signal
