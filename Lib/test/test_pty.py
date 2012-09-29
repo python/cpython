@@ -196,12 +196,6 @@ class PtyTest(unittest.TestCase):
 
         # pty.fork() passed.
 
-    def test_spawn_returns_status(self):
-        status = pty.spawn([sys.executable, '-c', 'import sys; sys.exit(0)'])
-        self.assertEqual(status, 0)
-        status = pty.spawn([sys.executable, '-c', 'import sys; sys.exit(5)'])
-        self.assertEqual(status, 5 << 8)
-
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
