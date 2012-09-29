@@ -1913,58 +1913,58 @@ removed in Python 4. All functions using this type are deprecated:
 Unicode functions and methods using :c:type:`Py_UNICODE` and
 :c:type:`Py_UNICODE*` types:
 
- * :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
-   :c:func:`PyUnicode_FromKindAndData`
- * :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
-   :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
- * :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
-   :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
- * :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
-   :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
- * :c:macro:`PyUnicode_GET_DATA_SIZE`: use
-   ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
-   strings)
- * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
-   :c:func:`PyUnicode_AsWideCharString`
- * :c:func:`PyUnicode_GetMax`
+* :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
+  :c:func:`PyUnicode_FromKindAndData`
+* :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
+  :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
+* :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
+  :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
+* :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
+  :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
+* :c:macro:`PyUnicode_GET_DATA_SIZE`: use
+  ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
+  strings)
+* :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
+  :c:func:`PyUnicode_AsWideCharString`
+* :c:func:`PyUnicode_GetMax`
 
 
 Functions and macros manipulating Py_UNICODE* strings:
 
- * :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
-   :c:macro:`PyUnicode_GET_LENGTH`
- * :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_FromFormat`
- * :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-   :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_Substring`
- * :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
- * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
- * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
-   :c:func:`PyUnicode_FindChar`
- * :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
- * :c:macro:`Py_UNICODE_MATCH`
+* :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+  :c:macro:`PyUnicode_GET_LENGTH`
+* :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+  :c:func:`PyUnicode_FromFormat`
+* :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
+  :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
+  :c:func:`PyUnicode_Substring`
+* :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
+* :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
+* :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+  :c:func:`PyUnicode_FindChar`
+* :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
+* :c:macro:`Py_UNICODE_MATCH`
 
 Encoders:
 
- * :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
- * :c:func:`PyUnicode_EncodeUTF7`
- * :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
-   :c:func:`PyUnicode_AsUTF8String`
- * :c:func:`PyUnicode_EncodeUTF32`
- * :c:func:`PyUnicode_EncodeUTF16`
- * :c:func:`PyUnicode_EncodeUnicodeEscape:` use
-   :c:func:`PyUnicode_AsUnicodeEscapeString`
- * :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
-   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
- * :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
- * :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
- * :c:func:`PyUnicode_EncodeCharmap`
- * :c:func:`PyUnicode_TranslateCharmap`
- * :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
-   :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
- * :c:func:`PyUnicode_EncodeDecimal`,
-   :c:func:`PyUnicode_TransformDecimalToASCII`
+* :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
+* :c:func:`PyUnicode_EncodeUTF7`
+* :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
+  :c:func:`PyUnicode_AsUTF8String`
+* :c:func:`PyUnicode_EncodeUTF32`
+* :c:func:`PyUnicode_EncodeUTF16`
+* :c:func:`PyUnicode_EncodeUnicodeEscape:` use
+  :c:func:`PyUnicode_AsUnicodeEscapeString`
+* :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
+  :c:func:`PyUnicode_AsRawUnicodeEscapeString`
+* :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
+* :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
+* :c:func:`PyUnicode_EncodeCharmap`
+* :c:func:`PyUnicode_TranslateCharmap`
+* :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
+  :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
+* :c:func:`PyUnicode_EncodeDecimal`,
+  :c:func:`PyUnicode_TransformDecimalToASCII`
 
 
 Deprecated features
