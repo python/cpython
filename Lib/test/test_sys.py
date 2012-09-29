@@ -585,7 +585,7 @@ class SysModuleTest(unittest.TestCase):
     def test_implementation(self):
         # This test applies to all implementations equally.
 
-        levels = {'alpha': 0xA, 'beta': 0xB, 'candidate': 0xC, 'release': 0xF}
+        levels = {'alpha': 0xA, 'beta': 0xB, 'candidate': 0xC, 'final': 0xF}
 
         self.assertTrue(hasattr(sys.implementation, 'name'))
         self.assertTrue(hasattr(sys.implementation, 'version'))
