@@ -1265,7 +1265,7 @@ Test cases
    .. method:: assertListEqual(first, second, msg=None)
                assertTupleEqual(first, second, msg=None)
 
-      Tests that two lists or tuples are equal.  If not an error message is
+      Tests that two lists or tuples are equal.  If not, an error message is
       constructed that shows only the differences between the two.  An error
       is also raised if either of the parameters are of the wrong type.
       These methods are used by default when comparing lists or tuples with

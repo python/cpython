@@ -154,6 +154,11 @@ class DebuggerTests(unittest.TestCase):
         err = err.replace("warning: Cannot initialize thread debugging"
                           " library: Debugger service failed\n",
                           '')
+        err = err.replace('warning: Could not load shared library symbols for '
+                          'linux-vdso.so.1.\n'
+                          'Do you need "set solib-search-path" or '
+                          '"set sysroot"?\n',
+                          '')
 
         # Ensure no unexpected error messages:
         self.assertEqual(err, '')

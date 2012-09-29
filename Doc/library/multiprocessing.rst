@@ -295,7 +295,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 :class:`Process` and exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. class:: Process([group[, target[, name[, args[, kwargs]]]]], *, daemon=None)
+.. class:: Process(group=None, target=None, name=None, args=(), kwargs={}, \
+                   *, daemon=None)
 
    Process objects represent activity that is run in a separate process. The
    :class:`Process` class has equivalents of all the methods of
@@ -1147,7 +1148,7 @@ process::
 
        n = Value('i', 7)
        x = Value(c_double, 1.0/3.0, lock=False)
-       s = Array('c', 'hello world', lock=lock)
+       s = Array('c', b'hello world', lock=lock)
        A = Array(Point, [(1.875,-6.25), (-5.75,2.0), (2.375,9.5)], lock=lock)
 
        p = Process(target=modify, args=(n, x, s, A))

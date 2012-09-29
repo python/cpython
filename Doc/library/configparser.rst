@@ -1007,7 +1007,7 @@ ConfigParser Objects
       .. versionadded:: 3.2
 
 
-   .. method:: get(section, option, raw=False, [vars, fallback])
+   .. method:: get(section, option, *, raw=False, vars=None[, fallback])
 
       Get an *option* value for the named *section*.  If *vars* is provided, it
       must be a dictionary.  The *option* is looked up in *vars* (if provided),
@@ -1025,21 +1025,21 @@ ConfigParser Objects
          (especially when using the mapping protocol).
 
 
-   .. method:: getint(section, option, raw=False, [vars, fallback])
+   .. method:: getint(section, option, *, raw=False, vars=None[, fallback])
 
       A convenience method which coerces the *option* in the specified *section*
       to an integer.  See :meth:`get` for explanation of *raw*, *vars* and
       *fallback*.
 
 
-   .. method:: getfloat(section, option, raw=False, [vars, fallback])
+   .. method:: getfloat(section, option, *, raw=False, vars=None[, fallback])
 
       A convenience method which coerces the *option* in the specified *section*
       to a floating point number.  See :meth:`get` for explanation of *raw*,
       *vars* and *fallback*.
 
 
-   .. method:: getboolean(section, option, raw=False, [vars, fallback])
+   .. method:: getboolean(section, option, *, raw=False, vars=None[, fallback])
 
       A convenience method which coerces the *option* in the specified *section*
       to a Boolean value.  Note that the accepted values for the option are
@@ -1051,7 +1051,8 @@ ConfigParser Objects
       *fallback*.
 
 
-   .. method:: items([section], raw=False, vars=None)
+   .. method:: items(raw=False, vars=None)
+               items(section, raw=False, vars=None)
 
       When *section* is not given, return a list of *section_name*,
       *section_proxy* pairs, including DEFAULTSECT.
@@ -1149,7 +1150,13 @@ ConfigParser Objects
 RawConfigParser Objects
 -----------------------
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configaparser.DEFAULTSECT, interpolation=None)
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, \
+                           allow_no_value=False, *, delimiters=('=', ':'), \
+                           comment_prefixes=('#', ';'), \
+                           inline_comment_prefixes=None, strict=True, \
+                           empty_lines_in_values=True, \
+                           default_section=configparser.DEFAULTSECT[, \
+                           interpolation])
 
    Legacy variant of the :class:`ConfigParser` with interpolation disabled
    by default and unsafe ``add_section`` and ``set`` methods.

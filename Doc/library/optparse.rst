@@ -273,7 +273,8 @@ You're free to define as many short option strings and as many long option
 strings as you like (including zero), as long as there is at least one option
 string overall.
 
-The option strings passed to :meth:`add_option` are effectively labels for the
+The option strings passed to :meth:`OptionParser.add_option` are effectively
+labels for the
 option defined by that call.  For brevity, we will frequently refer to
 *encountering an option* on the command line; in reality, :mod:`optparse`
 encounters *option strings* and looks up options from them.
@@ -892,7 +893,8 @@ long option strings, but you must specify at least one overall option string.
 The canonical way to create an :class:`Option` instance is with the
 :meth:`add_option` method of :class:`OptionParser`.
 
-.. method:: OptionParser.add_option(opt_str[, ...], attr=value, ...)
+.. method:: OptionParser.add_option(option)
+            OptionParser.add_option(*opt_str, attr=value, ...)
 
    To define an option with only a short option string::
 
@@ -1164,6 +1166,17 @@ must specify for any option using that action.
   If, a little later on, ``--tracks=4`` is seen, it does::
 
      options.tracks.append(int("4"))
+
+  The ``append`` action calls the ``append`` method on the current value of the
+  option.  This means that any default value specified must have an ``append``
+  method.  It also means that if the default value is non-empty, the default
+  elements will be present in the parsed value for the option, with any values
+  from the command line appended after those default values::
+
+     >>> parser.add_option("--files", action="append", default=['~/.mypkg/defaults'])
+     >>> opts, args = parser.parse_args(['--files', 'overrides.mypkg'])
+     >>> opts.files
+     ['~/.mypkg/defaults', 'overrides.mypkg']
 
 * ``"append_const"`` [required: :attr:`~Option.const`; relevant:
   :attr:`~Option.dest`]

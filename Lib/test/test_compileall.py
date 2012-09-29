@@ -134,15 +134,21 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTests(unittest.TestCase):
     """Test compileall's CLI."""
 
+    def _get_run_args(self, args):
+        interp_args = ['-S']
+        if sys.flags.optimize:
+            interp_args.append({1 : '-O', 2 : '-OO'}[sys.flags.optimize])
+        return interp_args + ['-m', 'compileall'] + list(args)
+
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-                        '-S', '-m', 'compileall', *args, **env_vars)
+                         *self._get_run_args(args), **env_vars)
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                        '-S', '-m', 'compileall', *args, **env_vars)
+                        *self._get_run_args(args), **env_vars)
         return rc, out, err
 
     def assertCompiled(self, fn):
@@ -198,7 +204,9 @@ class CommandLineTests(unittest.TestCase):
         self.assertRunOK('-b', '-q', self.pkgdir)
         # Verify the __pycache__ directory contents.
         self.assertFalse(os.path.exists(self.pkgdir_cachedir))
-        expected = sorted(['__init__.py', '__init__.pyc', 'bar.py', 'bar.pyc'])
+        opt = 'c' if __debug__ else 'o'
+        expected = sorted(['__init__.py', '__init__.py' + opt, 'bar.py',
+                           'bar.py' + opt])
         self.assertEqual(sorted(os.listdir(self.pkgdir)), expected)
 
     def test_multiple_runs(self):
@@ -326,7 +334,7 @@ class CommandLineTests(unittest.TestCase):
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        p = script_helper.spawn_python('-m', 'compileall', '-i', '-')
+        p = script_helper.spawn_python(*(self._get_run_args(()) + ['-i', '-']))
         p.stdin.write((f3+os.linesep).encode('ascii'))
         script_helper.kill_python(p)
         self.assertNotCompiled(f1)
