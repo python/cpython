@@ -1596,14 +1596,27 @@ signal
 * :func:`signal.signal` and :func:`signal.siginterrupt` raise an OSError,
   instead of a RuntimeError: OSError has an errno attribute.
 
+
+smtpd
+-----
+
+* The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+  (size extension).  Per the standard, these extensions are enabled if and only
+  if the client initiates the session with an ``EHLO`` command.
+
+  (Initial ``ELHO`` support by Alberto Trevino.  Size extension by Juhana
+  Jauhiainen.  Substantial additional work on the patch contributed by Michele
+  Orrù and Dan Boswell.  :issue:`8739`)
+
+
 smtplib
 -------
 
-The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
-method now accept an SSLContext parameter to control parameters of the secure
-channel.
+* The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
+  method now accept an SSLContext parameter to control parameters of the secure
+  channel.
 
-(Contributed by Kasun Herath in :issue:`8809`)
+  (Contributed by Kasun Herath in :issue:`8809`)
 
 
 socket
@@ -2078,14 +2091,16 @@ Building C extensions
   (implemented in :issue:`14040`.)
 
 
-Other issues
-------------
+Command Line Switch Changes
+---------------------------
 
-.. Issue #11591: When :program:`python` was started with :option:`-S`,
-   ``import site`` will not add site-specific paths to the module search
-   paths.  In previous versions, it did.  See changeset for doc changes in
-   various files.  Contributed by Carl Meyer with editions by Éric Araujo.
+* The -Q command-line flag and related artifacts have been removed.  Code
+  checking sys.flags.division_warning will need updating.
 
-.. Issue #10998: the -Q command-line flag and related artifacts have been
-   removed.  Code checking sys.flags.division_warning will need updating.
-   Contributed by Éric Araujo.
+  (:issue:`10998`, contributed by Éric Araujo.)
+
+* When :program:`python` is started with :option:`-S`, ``import site``
+  will no longer add site-specific paths to the module search paths.  In
+  previous versions, it did.
+
+  (:issue:`11591`, contributed by Carl Meyer with editions by Éric Araujo.)
