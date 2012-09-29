@@ -1329,10 +1329,10 @@ underlying binary buffer.
 math
 ----
 
-The :mod:`math` module has a new function:
+The :mod:`math` module has a new function, :func:`~math.log2`,  which returns
+the base-2 logarithm of *x*.
 
-  * :func:`~math.log2`: return the base-2 logarithm of *x*
-    (Written by Mark Dickinson in :issue:`11888`).
+(Written by Mark Dickinson in :issue:`11888`).
 
 
 multiprocessing
@@ -1476,9 +1476,11 @@ os
 pdb
 ---
 
-* Tab-completion is now available not only for command names, but also their
-  arguments.  For example, for the ``break`` command, function and file names
-  are completed.  (Contributed by Georg Brandl in :issue:`14210`)
+Tab-completion is now available not only for command names, but also their
+arguments.  For example, for the ``break`` command, function and file names
+are completed.
+
+(Contributed by Georg Brandl in :issue:`14210`)
 
 
 pickle
@@ -1487,6 +1489,7 @@ pickle
 :class:`pickle.Pickler` objects now have an optional
 :attr:`~pickle.Pickler.dispatch_table` attribute allowing to set per-pickler
 reduction functions.
+
 (Contributed by Richard Oudkerk in :issue:`14166`.)
 
 
@@ -1536,10 +1539,10 @@ sched
 shlex
 -----
 
-* The previously undocumented helper function ``quote`` from the
-  :mod:`pipes` modules has been moved to the :mod:`shlex` module and
-  documented.  :func:`~shlex.quote` properly escapes all characters in a string
-  that might be otherwise given special meaning by the shell.
+The previously undocumented helper function ``quote`` from the
+:mod:`pipes` modules has been moved to the :mod:`shlex` module and
+documented.  :func:`~shlex.quote` properly escapes all characters in a string
+that might be otherwise given special meaning by the shell.
 
 
 shutil
@@ -1599,23 +1602,23 @@ signal
 smtpd
 -----
 
-* The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
-  (size extension).  Per the standard, these extensions are enabled if and only
-  if the client initiates the session with an ``EHLO`` command.
+The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+(size extension).  Per the standard, these extensions are enabled if and only
+if the client initiates the session with an ``EHLO`` command.
 
-  (Initial ``ELHO`` support by Alberto Trevino.  Size extension by Juhana
-  Jauhiainen.  Substantial additional work on the patch contributed by Michele
-  Orrù and Dan Boswell.  :issue:`8739`)
+(Initial ``ELHO`` support by Alberto Trevino.  Size extension by Juhana
+Jauhiainen.  Substantial additional work on the patch contributed by Michele
+Orrù and Dan Boswell.  :issue:`8739`)
 
 
 smtplib
 -------
 
-* The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
-  method now accept an SSLContext parameter to control parameters of the secure
-  channel.
+The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
+method now accept an SSLContext parameter to control parameters of the secure
+channel.
 
-  (Contributed by Kasun Herath in :issue:`8809`)
+(Contributed by Kasun Herath in :issue:`8809`)
 
 
 socket
@@ -1693,28 +1696,28 @@ ssl
 stat
 ----
 
-- The undocumented tarfile.filemode function has been moved to
-  :func:`stat.filemode`. It can be used to convert a file's mode to a string of
-  the form '-rwxrwxrwx'.
+The undocumented tarfile.filemode function has been moved to
+:func:`stat.filemode`. It can be used to convert a file's mode to a string of
+the form '-rwxrwxrwx'.
 
-  (Contributed by Giampaolo Rodolà in :issue:`14807`)
+(Contributed by Giampaolo Rodolà in :issue:`14807`)
 
 sys
 ---
 
-* The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-  sequence` holding informations about the thread implementation.
+The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
+sequence` holding informations about the thread implementation.
 
-  (:issue:`11223`)
+(:issue:`11223`)
 
 textwrap
 --------
 
-* The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
-  it straightforward to add a common prefix to selected lines in a block
-  of text.
+The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
+it straightforward to add a common prefix to selected lines in a block
+of text.
 
-  (:issue:`13857`)
+(:issue:`13857`)
 
 time
 ----
