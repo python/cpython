@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.3.0?
 ===========================
 
-*Release date: XX-Sep-2012*
+*Release date: 29-Sep-2012*
 
 Core and Builtins
 -----------------
@@ -14,9 +14,6 @@ Core and Builtins
 
 - Issue #16060: Fix refcounting bug when __trunc__ returns an object
   whose __int__ gives a non-integer.  Patch by Serhiy Storchaka.
-
-Library
--------
 
 Extension Modules
 -----------------
