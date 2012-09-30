@@ -8,6 +8,23 @@
 {% block extrahead %}
     <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
+    {% if pagename == 'whatsnew/news' %}
+    <script type="text/javascript">
+      function dofilter() {
+        var el = document.getElementById('searchbox');
+        var string = el.value.toLowerCase();
+        var litags = document.getElementsByTagName('li')
+        for (var idx = 0; idx < litags.length; idx++) {
+          var li = litags[idx];
+          if (li.innerHTML.toLowerCase().indexOf(string) >= 0) {
+            li.style.display = '';
+          } else {
+            li.style.display = 'none';
+          }
+        }
+      }
+    </script>
+    {% endif %}
 {{ super() }}
 {% endblock %}
 {% block footer %}
