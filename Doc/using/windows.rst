@@ -132,6 +132,8 @@ Consult :command:`set /?` for details on this behaviour.
       Setting Environment variables, Louis J. Farrugia
 
 
+.. _windows-path-mod:
+
 Finding the Python executable
 -----------------------------
 
