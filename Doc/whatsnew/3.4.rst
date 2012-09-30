@@ -117,7 +117,7 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* None yet.
+* Unicode database updated to UCD version 6.2.
 
 
 
