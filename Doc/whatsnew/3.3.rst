@@ -289,6 +289,43 @@ details).
       and Martin von Löwis.
 
 
+.. _pep-397:
+
+PEP 397: Python Launcher for Windows
+====================================
+
+The Python 3.3 Windows installer now includes a ``py`` launcher application
+that can be used to launch Python applications in a version independent
+fashion.
+
+This launcher is invoked implicitly when double-clicking ``*.py`` files.
+If only a single Python version is installed on the system, that version
+will be used to run the file. If multiple versions are installed, the most
+recent version is used by default, but this can be overridden by including
+a Unix-style "shebang line" in the Python script.
+
+The launcher can also be used explicitly from the command line as the ``py``
+application. Running ``py`` follows the same version selection rules as
+implicitly launching scripts, but a more specific version can be selected
+by passing appropriate arguments (such as ``-3`` to request Python 3 when
+Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
+Python version when a more recent version is installed).
+
+In addition to the launcher, the Windows installer now includes an
+option to add the newly installed Python to the system PATH (contributed
+by Brian Curtain in :issue:`3561`).
+
+.. seealso::
+
+   :pep:`397` - Python Launcher for Windows
+      PEP written by Mark Hammond and Martin v. Löwis; implementation by
+      Vinay Sajip.
+
+   Launcher documentation: :ref:`launcher`
+
+   Installer PATH modification: :ref:`windows-path-mod`
+
+
 .. _pep-3151:
 
 PEP 3151: Reworking the OS and IO exception hierarchy
