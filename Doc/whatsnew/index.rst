@@ -24,3 +24,11 @@ anyone wishing to stay up-to-date after a new release.
    2.2.rst
    2.1.rst
    2.0.rst
+
+The "Python News" is a HTML version of the file :source:`Misc/NEWS` which
+contains *all* nontrivial changes to Python.
+
+.. toctree::
+   :maxdepth: 1
+
+   news.rst
