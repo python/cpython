@@ -106,6 +106,11 @@ extern "C" {
   #endif
 #endif
 
+/* ASM isn't available in strict ansi C mode */
+#if defined(ASM) && defined(__STRICT_ANSI__)
+  #undef ASM
+  #define ANSI
+#endif
 
 /* BEGIN CONFIG_64 */
 #if defined(CONFIG_64)
