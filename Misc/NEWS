@@ -564,6 +564,9 @@ Tests
 Build
 -----
 
+- Issue #15923: fix a mistake in asdl_c.py that resulted in a TypeError after
+  2801bf875a24 (see #15801).
+
 - Issue #11715: Fix multiarch detection without having Debian development
   tools (dpkg-dev) installed.
 
