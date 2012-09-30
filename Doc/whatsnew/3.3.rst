@@ -51,7 +51,7 @@ see the :source:`Misc/NEWS` file.
 
 .. seealso::
 
-    :pep:`398` - Python 3.2 Release Schedule
+    :pep:`398` - Python 3.3 Release Schedule
 
 
 Summary -- Release highlights
