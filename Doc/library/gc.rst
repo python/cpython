@@ -189,13 +189,13 @@ values but should not rebind them):
    after collection.  The callbacks will be called with two arguments,
    *phase* and *info*.
 
-   *phase* can one of two values:
+   *phase* can be one of two values:
 
       "start": The garbage collection is about to start.
 
       "stop": The garbage collection has finished.
 
-   *info* provides more information for the callback.  The following
+   *info* is a dict providing more information for the callback.  The following
    keys are currently defined:
 
       "generation": The oldest generation being collected.
@@ -203,7 +203,7 @@ values but should not rebind them):
       "collected": When *phase* is "stop", the number of objects
       successfully collected.
 
-      "uncollectable": when *phase* is "stop", the number of objects
+      "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
    Applications can add their own callbacks to this list.  The primary
