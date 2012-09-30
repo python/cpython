@@ -2102,6 +2102,22 @@ Porting Python code
   special case the standard import hooks so they are still supported even
   though they do not provide the non-standard ``iter_modules()`` method.
 
+* A longstanding RFC-compliance bug (:issue:`1079`) in the parsing done by
+  :func:`email.header.decode_header` has been fixed.  Code that uses the
+  standard idiom to convert encoded headers into unicode
+  (``str(make_header(decode_header(h))``) will see no change, but code that
+  looks at the individual tuples returned by decode_header will see that
+  whitespace that precedes or follows ``ASCII`` sections is now included in the
+  ``ASCII`` section.  Code that builds headers using ``make_header`` should
+  also continue to work without change, since ``make_header`` continues to add
+  whitespace between ``ASCII`` and non-``ASCII`` sections if it is not already
+  present in the input strings.
+
+* :func:`email.utils.formataddr` now does the correct content transfer
+  encoding when passed non-``ASCII`` display names.  Any code that depended on
+  the previous buggy behavior that preserved the non-``ASCII`` unicode in the
+  formatted output string will need to be changed.
+
 
 Porting C code
 --------------
