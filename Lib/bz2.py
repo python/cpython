@@ -226,7 +226,7 @@ class BZ2File(io.BufferedIOBase):
             data = self._buffer[self._buffer_offset : end]
             self._buffer_offset = end
             self._pos += len(data)
-            return data
+            return data if return_data else None
 
         # The loop assumes that _buffer_offset is 0. Ensure that this is true.
         self._buffer = self._buffer[self._buffer_offset:]
