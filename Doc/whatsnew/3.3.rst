@@ -797,7 +797,9 @@ Some smaller changes made to the core Python language are:
   (Contributed by Petri Lehtinen in :issue:`12170`)
 
 * New methods have been added to :class:`list` and :class:`bytearray`:
-  ``copy()`` and ``clear()``.  (:issue:`10516`)
+  ``copy()`` and ``clear()`` (:issue:`10516`).  Consequently,
+  :class:`~collections.abc.MutableSequence` now also defines a
+  :meth:`~collections.abc.MutableSequence.clear` method (:issue:`11388`).
 
 * Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
 
@@ -917,6 +919,10 @@ property. The built-in descriptors have been updated accordingly.
     :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`)
+
+:meth:`abc.ABCMeta.register` now returns the registered subclass, which means
+it can now be used as a class decorator (:issue:`10868`).
+
 
 array
 -----
@@ -1057,7 +1063,8 @@ datetime
 --------
 
  * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances now return :const:`False` instead of raising :exc:`TypeError`.
+   instances now return :const:`False` instead of raising :exc:`TypeError`
+   (:issue:`15006`).
  * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
    corresponding to the :class:`~datetime.datetime` instance.
  * The :meth:`datetime.datetime.strftime` method supports formatting years
@@ -1322,18 +1329,20 @@ standard Content Transfer Encodings.
 ftplib
 ------
 
+* :class:`ftplib.FTP` now accepts a ``source_address`` keyword argument to
+  specify the ``(host, port)`` to use as the source address in the bind call
+  when creating the outgoing socket.  (Contributed by Giampaolo Rodolà
+  in :issue:`8594`.)
+
 * The :class:`~ftplib.FTP_TLS` class now provides a new
   :func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
-  plaintext.  This can be useful to take advantage of firewalls that know how to
-  handle NAT with non-secure FTP without opening fixed ports.
-
-  (Contributed by Giampaolo Rodolà in :issue:`12139`)
+  plaintext.  This can be useful to take advantage of firewalls that know how
+  to handle NAT with non-secure FTP without opening fixed ports.  (Contributed
+  by Giampaolo Rodolà in :issue:`12139`)
 
 * Added :meth:`ftplib.FTP.mlsd` method which provides a parsable directory
   listing format and deprecates :meth:`ftplib.FTP.nlst` and
-  :meth:`ftplib.FTP.dir`.
-
-  (Contributed by Giampaolo Rodolà in :issue:`11072`)
+  :meth:`ftplib.FTP.dir`.  (Contributed by Giampaolo Rodolà in :issue:`11072`)
 
 gc
 --
@@ -1437,6 +1446,10 @@ multiple objects (such as connections, sockets and pipes) with a timeout.
 :class:`multiprocessing.Connection` objects can now be transferred over
 multiprocessing connections.
 (Contributed by Richard Oudkerk in :issue:`4892`.)
+
+:class:`multiprocessing.Process` now accepts a ``daemon`` keyword argument
+to override the default behavior of inheriting the ``daemon`` flag from
+the parent process (:issue:`6064`).
 
 
 nntplib
@@ -1640,22 +1653,21 @@ that might be otherwise given special meaning by the shell.
 shutil
 ------
 
-* The :mod:`shutil` module has these new fuctions:
+* New functions:
 
   * :func:`~shutil.disk_usage`: provides total, used and free disk space
     statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
     ids. (Contributed by Sandro Tosi in :issue:`12191`)
+  * :func:`shutil.get_terminal_size`: returns the size of the terminal window
+    to which the interpreter is attached.  (Contributed by Zbigniew
+    Jędrzejewski-Szmek in :issue:`13609`.)
 
 * :func:`~shutil.copy2` and :func:`~shutil.copystat` now preserve file
   timestamps with nanosecond precision on platforms that support it.
   They also preserve file "extended attributes" on Linux.  (Contributed
   by Larry Hastings in :issue:`14127` and  :issue:`15238`.)
-
-* The new :func:`shutil.get_terminal_size` function returns the size of the
-  terminal window the interpreter is attached to.
-  (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
 
 * Several functions now take an optional ``symlinks`` argument: when that
   parameter is true, symlinks aren't dereferenced and the operation instead
@@ -1736,6 +1748,10 @@ socket
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
   http://oss.oracle.com/projects/rds/).
 
+* New function :func:`~socket.sethostname` allows the hostname to be set
+  on unix systems if the calling process has sufficient privileges.
+  (Contributed by Ross Lagerwall in :issue:`10866`.)
+
 
 ssl
 ---
@@ -1810,6 +1826,15 @@ it straightforward to add a common prefix to selected lines in a block
 of text.
 
 (:issue:`13857`)
+
+
+threading
+---------
+
+The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
+argument to override the default behavior of inheriting the ``deamon`` flag
+value from the parent thread (:issue:`6064`).
+
 
 time
 ----
@@ -1955,6 +1980,8 @@ OS/2 and VMS are no longer supported due to the lack of a maintainer.
 
 Windows 2000 and Windows platforms which set ``COMSPEC`` to ``command.com``
 are no longer supported due to maintenance burden.
+
+OSF support, which was deprecated in 3.2, has been completely removed.
 
 
 Deprecated Python modules, functions and methods
@@ -2153,7 +2180,12 @@ Porting Python code
 * :func:`email.utils.formataddr` now does the correct content transfer
   encoding when passed non-``ASCII`` display names.  Any code that depended on
   the previous buggy behavior that preserved the non-``ASCII`` unicode in the
-  formatted output string will need to be changed.
+  formatted output string will need to be changed (:issue:`1690608`).
+
+* :meth:`poplib.POP3.quit` may now raise protocol errors like all other
+  ``poplib`` methods.  Code that assumes ``quit`` does not raise
+  :exc:`poplib.error_proto` errors may need to be changed if errors on ``quit``
+  are encountered by a particular application (:issue:`11291`).
 
 
 Porting C code
