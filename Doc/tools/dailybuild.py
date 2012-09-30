@@ -33,17 +33,17 @@ WWWROOT = '/data/ftp.python.org/pub/docs.python.org'
 
 BRANCHES = [
     # checkout, target, isdev
-    (BUILDROOT + '/python33', WWWROOT + '/dev', True),
+    (BUILDROOT + '/python33', WWWROOT + '/py3k', False),
+    (BUILDROOT + '/python34', WWWROOT + '/dev', True),
     (BUILDROOT + '/python27', WWWROOT, False),
-    (BUILDROOT + '/python32', WWWROOT + '/py3k', False),
 ]
 
 
 def build_one(checkout, target, isdev):
     print 'Doc autobuild started in %s' % checkout
     os.chdir(checkout)
-    print 'Running svn update'
-    os.system('svn update')
+    print 'Running hg pull --update'
+    os.system('/usr/local/bin/hg pull --update')
     print 'Running make autobuild'
     if os.WEXITSTATUS(os.system(
         'cd Doc; make autobuild-%s' % (isdev and 'dev' or 'stable'))) == 2:
