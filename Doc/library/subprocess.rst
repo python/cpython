@@ -415,10 +415,10 @@ functions.
    .. versionadded:: 3.2
       The *pass_fds* parameter was added.
 
-   If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
-   before it is executed.  Note that this directory is not considered when
-   searching the executable, so you can't specify the program's path relative to
-   *cwd*.
+   If *cwd* is not ``None``, the function changes the working directory to
+   *cwd* before executing the child.  In particular, the function looks for
+   *executable* (or for the first item in *args*) relative to *cwd* if the
+   executable path is a relative path.
 
    If *restore_signals* is True (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
