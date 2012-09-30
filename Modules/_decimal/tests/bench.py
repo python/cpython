@@ -18,8 +18,13 @@ except ImportError:
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
 
-
-# Pi function from the decimal.py documentation
+#
+# NOTE: This is the pi function from the decimal documentation, modified
+# for benchmarking purposes. Since floats do not have a context, the higher
+# intermediate precision from the original is NOT used, so the modified
+# algorithm only gives an approximation to the correctly rounded result.
+# For serious use, refer to the documentation or the appropriate literature.
+#
 def pi_float():
     """native float"""
     lasts, t, s, n, na, d, da = 0, 3.0, 3, 1, 0, 0, 24
