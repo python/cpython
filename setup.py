@@ -1985,6 +1985,7 @@ class PyBuildExt(build_ext):
                 # solaris: problems with register allocation.
                 # icc >= 11.0 works as well.
                 define_macros = config['ppro']
+                extra_compile_args.append('-Wno-unknown-pragmas')
             else:
                 define_macros = config['ansi32']
         else:
