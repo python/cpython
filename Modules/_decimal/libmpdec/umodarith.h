@@ -402,22 +402,22 @@ ppro_mulmod(mpd_uint_t a, mpd_uint_t b, double *dmod, uint32_t *dinvmod)
 {
     mpd_uint_t retval;
 
-    asm (
-        "fildl  %2\n\t"
-        "fildl  %1\n\t"
-        "fmulp  %%st, %%st(1)\n\t"
-        "fldt   (%4)\n\t"
-        "fmul   %%st(1), %%st\n\t"
-        "flds   %5\n\t"
-        "fadd   %%st, %%st(1)\n\t"
-        "fsubrp %%st, %%st(1)\n\t"
-        "fldl   (%3)\n\t"
-        "fmulp  %%st, %%st(1)\n\t"
-        "fsubrp %%st, %%st(1)\n\t"
-        "fistpl %0\n\t"
-        : "=m" (retval)
-        : "m" (a), "m" (b), "r" (dmod), "r" (dinvmod), "m" (MPD_TWO63)
-        : "st", "memory"
+    __asm__ (
+            "fildl  %2\n\t"
+            "fildl  %1\n\t"
+            "fmulp  %%st, %%st(1)\n\t"
+            "fldt   (%4)\n\t"
+            "fmul   %%st(1), %%st\n\t"
+            "flds   %5\n\t"
+            "fadd   %%st, %%st(1)\n\t"
+            "fsubrp %%st, %%st(1)\n\t"
+            "fldl   (%3)\n\t"
+            "fmulp  %%st, %%st(1)\n\t"
+            "fsubrp %%st, %%st(1)\n\t"
+            "fistpl %0\n\t"
+            : "=m" (retval)
+            : "m" (a), "m" (b), "r" (dmod), "r" (dinvmod), "m" (MPD_TWO63)
+            : "st", "memory"
     );
 
     return retval;
@@ -432,33 +432,33 @@ static inline void
 ppro_mulmod2c(mpd_uint_t *a0, mpd_uint_t *a1, mpd_uint_t w,
               double *dmod, uint32_t *dinvmod)
 {
-    asm (
-        "fildl  %2\n\t"
-        "fildl  (%1)\n\t"
-        "fmul   %%st(1), %%st\n\t"
-        "fxch   %%st(1)\n\t"
-        "fildl  (%0)\n\t"
-        "fmulp  %%st, %%st(1) \n\t"
-        "fldt   (%4)\n\t"
-        "flds   %5\n\t"
-        "fld    %%st(2)\n\t"
-        "fmul   %%st(2)\n\t"
-        "fadd   %%st(1)\n\t"
-        "fsub   %%st(1)\n\t"
-        "fmull  (%3)\n\t"
-        "fsubrp %%st, %%st(3)\n\t"
-        "fxch   %%st(2)\n\t"
-        "fistpl (%0)\n\t"
-        "fmul   %%st(2)\n\t"
-        "fadd   %%st(1)\n\t"
-        "fsubp  %%st, %%st(1)\n\t"
-        "fmull  (%3)\n\t"
-        "fsubrp %%st, %%st(1)\n\t"
-        "fistpl (%1)\n\t"
-        : : "r" (a0), "r" (a1), "m" (w),
-            "r" (dmod), "r" (dinvmod),
-            "m" (MPD_TWO63)
-        : "st", "memory"
+    __asm__ (
+            "fildl  %2\n\t"
+            "fildl  (%1)\n\t"
+            "fmul   %%st(1), %%st\n\t"
+            "fxch   %%st(1)\n\t"
+            "fildl  (%0)\n\t"
+            "fmulp  %%st, %%st(1) \n\t"
+            "fldt   (%4)\n\t"
+            "flds   %5\n\t"
+            "fld    %%st(2)\n\t"
+            "fmul   %%st(2)\n\t"
+            "fadd   %%st(1)\n\t"
+            "fsub   %%st(1)\n\t"
+            "fmull  (%3)\n\t"
+            "fsubrp %%st, %%st(3)\n\t"
+            "fxch   %%st(2)\n\t"
+            "fistpl (%0)\n\t"
+            "fmul   %%st(2)\n\t"
+            "fadd   %%st(1)\n\t"
+            "fsubp  %%st, %%st(1)\n\t"
+            "fmull  (%3)\n\t"
+            "fsubrp %%st, %%st(1)\n\t"
+            "fistpl (%1)\n\t"
+            : : "r" (a0), "r" (a1), "m" (w),
+                "r" (dmod), "r" (dinvmod),
+                "m" (MPD_TWO63)
+            : "st", "memory"
     );
 }
 
@@ -471,41 +471,41 @@ static inline void
 ppro_mulmod2(mpd_uint_t *a0, mpd_uint_t b0, mpd_uint_t *a1, mpd_uint_t b1,
              double *dmod, uint32_t *dinvmod)
 {
-    asm (
-        "fildl  %3\n\t"
-        "fildl  (%2)\n\t"
-        "fmulp  %%st, %%st(1)\n\t"
-        "fildl  %1\n\t"
-        "fildl  (%0)\n\t"
-        "fmulp  %%st, %%st(1)\n\t"
-        "fldt   (%5)\n\t"
-        "fld    %%st(2)\n\t"
-        "fmul   %%st(1), %%st\n\t"
-        "fxch   %%st(1)\n\t"
-        "fmul   %%st(2), %%st\n\t"
-        "flds   %6\n\t"
-        "fldl   (%4)\n\t"
-        "fxch   %%st(3)\n\t"
-        "fadd   %%st(1), %%st\n\t"
-        "fxch   %%st(2)\n\t"
-        "fadd   %%st(1), %%st\n\t"
-        "fxch   %%st(2)\n\t"
-        "fsub   %%st(1), %%st\n\t"
-        "fxch   %%st(2)\n\t"
-        "fsubp  %%st, %%st(1)\n\t"
-        "fxch   %%st(1)\n\t"
-        "fmul   %%st(2), %%st\n\t"
-        "fxch   %%st(1)\n\t"
-        "fmulp  %%st, %%st(2)\n\t"
-        "fsubrp %%st, %%st(3)\n\t"
-        "fsubrp %%st, %%st(1)\n\t"
-        "fxch   %%st(1)\n\t"
-        "fistpl (%2)\n\t"
-        "fistpl (%0)\n\t"
-        : : "r" (a0), "m" (b0), "r" (a1), "m" (b1),
-            "r" (dmod), "r" (dinvmod),
-            "m" (MPD_TWO63)
-        : "st", "memory"
+    __asm__ (
+            "fildl  %3\n\t"
+            "fildl  (%2)\n\t"
+            "fmulp  %%st, %%st(1)\n\t"
+            "fildl  %1\n\t"
+            "fildl  (%0)\n\t"
+            "fmulp  %%st, %%st(1)\n\t"
+            "fldt   (%5)\n\t"
+            "fld    %%st(2)\n\t"
+            "fmul   %%st(1), %%st\n\t"
+            "fxch   %%st(1)\n\t"
+            "fmul   %%st(2), %%st\n\t"
+            "flds   %6\n\t"
+            "fldl   (%4)\n\t"
+            "fxch   %%st(3)\n\t"
+            "fadd   %%st(1), %%st\n\t"
+            "fxch   %%st(2)\n\t"
+            "fadd   %%st(1), %%st\n\t"
+            "fxch   %%st(2)\n\t"
+            "fsub   %%st(1), %%st\n\t"
+            "fxch   %%st(2)\n\t"
+            "fsubp  %%st, %%st(1)\n\t"
+            "fxch   %%st(1)\n\t"
+            "fmul   %%st(2), %%st\n\t"
+            "fxch   %%st(1)\n\t"
+            "fmulp  %%st, %%st(2)\n\t"
+            "fsubrp %%st, %%st(3)\n\t"
+            "fsubrp %%st, %%st(1)\n\t"
+            "fxch   %%st(1)\n\t"
+            "fistpl (%2)\n\t"
+            "fistpl (%0)\n\t"
+            : : "r" (a0), "m" (b0), "r" (a1), "m" (b1),
+                "r" (dmod), "r" (dinvmod),
+                "m" (MPD_TWO63)
+            : "st", "memory"
     );
 }
 /* END PPRO GCC ASM */
