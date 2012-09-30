@@ -51,7 +51,7 @@ see the :source:`Misc/NEWS` file.
 
 .. seealso::
 
-    :pep:`398` - Python 3.2 Release Schedule
+    :pep:`398` - Python 3.3 Release Schedule
 
 
 Summary -- Release highlights
@@ -287,6 +287,43 @@ details).
    :pep:`393` - Flexible String Representation
       PEP written by Martin von Löwis; implementation by Torsten Becker
       and Martin von Löwis.
+
+
+.. _pep-397:
+
+PEP 397: Python Launcher for Windows
+====================================
+
+The Python 3.3 Windows installer now includes a ``py`` launcher application
+that can be used to launch Python applications in a version independent
+fashion.
+
+This launcher is invoked implicitly when double-clicking ``*.py`` files.
+If only a single Python version is installed on the system, that version
+will be used to run the file. If multiple versions are installed, the most
+recent version is used by default, but this can be overridden by including
+a Unix-style "shebang line" in the Python script.
+
+The launcher can also be used explicitly from the command line as the ``py``
+application. Running ``py`` follows the same version selection rules as
+implicitly launching scripts, but a more specific version can be selected
+by passing appropriate arguments (such as ``-3`` to request Python 3 when
+Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
+Python version when a more recent version is installed).
+
+In addition to the launcher, the Windows installer now includes an
+option to add the newly installed Python to the system PATH (contributed
+by Brian Curtain in :issue:`3561`).
+
+.. seealso::
+
+   :pep:`397` - Python Launcher for Windows
+      PEP written by Mark Hammond and Martin v. Löwis; implementation by
+      Vinay Sajip.
+
+   Launcher documentation: :ref:`launcher`
+
+   Installer PATH modification: :ref:`windows-path-mod`
 
 
 .. _pep-3151:
@@ -2101,6 +2138,22 @@ Porting Python code
   :func:`pkgutil.iter_importers` and :func:`pkgutil.walk_packages` functions
   special case the standard import hooks so they are still supported even
   though they do not provide the non-standard ``iter_modules()`` method.
+
+* A longstanding RFC-compliance bug (:issue:`1079`) in the parsing done by
+  :func:`email.header.decode_header` has been fixed.  Code that uses the
+  standard idiom to convert encoded headers into unicode
+  (``str(make_header(decode_header(h))``) will see no change, but code that
+  looks at the individual tuples returned by decode_header will see that
+  whitespace that precedes or follows ``ASCII`` sections is now included in the
+  ``ASCII`` section.  Code that builds headers using ``make_header`` should
+  also continue to work without change, since ``make_header`` continues to add
+  whitespace between ``ASCII`` and non-``ASCII`` sections if it is not already
+  present in the input strings.
+
+* :func:`email.utils.formataddr` now does the correct content transfer
+  encoding when passed non-``ASCII`` display names.  Any code that depended on
+  the previous buggy behavior that preserved the non-``ASCII`` unicode in the
+  formatted output string will need to be changed.
 
 
 Porting C code
