@@ -7,28 +7,42 @@
 
 .. Rules for maintenance:
 
-   * Anyone can add text to this document.  Do not spend very much time
-   on the wording of your changes, because your text will probably
-   get rewritten to some degree.
+   * Anyone can add text to this document, but the maintainer reserves the
+   right to rewrite any additions. In particular, for obscure or esoteric
+   features, the maintainer may reduce any addition to a simple reference to
+   the new documentation rather than explaining the feature inline.
 
-   * The maintainer will go through Misc/NEWS periodically and add
-   changes; it's therefore more important to add your changes to
-   Misc/NEWS than to this file.
+   * While the maintainer will periodically go through Misc/NEWS
+   and add changes, it's best not to rely on this. We know from experience
+   that any changes that aren't in the What's New documentation around the
+   time of the original release will remain largely unknown to the community
+   for years, even if they're added later. We also know from experience that
+   other priorities can arise, and the maintainer will run out of time to do
+   updates - in such cases, end users will be much better served by partial
+   notifications that at least give a hint about new features to
+   investigate.
 
    * This is not a complete list of every single change; completeness
-   is the purpose of Misc/NEWS.  Some changes I consider too small
-   or esoteric to include.  If such a change is added to the text,
-   I'll just remove it.  (This is another reason you shouldn't spend
-   too much time on writing your addition.)
+   is the purpose of Misc/NEWS. The What's New should focus on changes that
+   are visible to Python *users* and that *require* a feature release (i.e.
+   most bug fixes should only be recorded in Misc/NEWS)
+
+   * PEPs should not be marked Final until they have an entry in What's New.
+   A placeholder entry that is just a section header and a link to the PEP
+   (e.g ":pep:`397` has been implemented") is acceptable. If a PEP has been
+   implemented and noted in What's New, don't forget to mark it as Final!
 
    * If you want to draw your new text to the attention of the
    maintainer, add 'XXX' to the beginning of the paragraph or
    section.
 
-   * It's OK to just add a fragmentary note about a change.  For
-   example: "XXX Describe the transmogrify() function added to the
-   socket module."  The maintainer will research the change and
-   write the necessary text.
+   * It's OK to add just a very brief note about a change.  For
+   example: "The :ref:`~socket.transmogrify()` function was added to the
+   :mod:`socket` module."  The maintainer will research the change and
+   write the necessary text (if appropriate). The advantage of doing this
+   is that even if no more descriptive text is ever added, readers will at
+   least have a notification that the new feature exists and a link to the
+   relevant documentation.
 
    * You can comment out your additions if you like, but it's not
    necessary (especially when a final release is some months away).
@@ -38,16 +52,18 @@
 
    * It's helpful to add the bug/patch number as a comment:
 
-   XXX Describe the transmogrify() function added to the socket
-   module.
-   (Contributed by P.Y. Developer in :issue:`12345`.)
+   The :ref:`~socket.transmogrify()` function was added to the
+   :mod:`socket` module. (Contributed by P.Y. Developer in :issue:`12345`.)
 
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
+   * Cross referencing tip: :ref:`mod.attr` will display as ``mod.attr``,
+   while :ref:`~mod.attr` will display as ``attr``.
+
 This article explains the new features in Python 3.4, compared to 3.3.
 
-.. Python 3.4 was released on September 29, 2012.
+.. Python 3.4 was released on TBD.
 
 For full details, see the :source:`Misc/NEWS` file.
 
@@ -58,7 +74,7 @@ For full details, see the :source:`Misc/NEWS` file.
 
 .. seealso::
 
-    .. :pep:`4XX` - Python 3.4 Release Schedule
+   .. :pep:`4XX` - Python 3.4 Release Schedule
 
 
 Summary -- Release highlights
@@ -98,16 +114,16 @@ Please read on for a comprehensive list of user-facing changes.
 
 .. _pep-4XX:
 
-.. PEP 4XX: Virtual Environments
-.. =============================
+.. PEP 4XX: Example PEP
+.. ====================
 
 
 .. (Implemented by Foo Bar.)
 
 .. .. seealso::
 
-    :pep:`4XX` - Python Virtual Environments
-       PEP written by Carl Meyer
+   :pep:`4XX` - Example PEP
+      PEP written by Example Author
 
 
 
