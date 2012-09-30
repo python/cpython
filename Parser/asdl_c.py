@@ -1033,7 +1033,7 @@ class ObjVisitor(PickleVisitor):
             self.emit("case %s:" % t.name, 2)
             self.emit("Py_INCREF(%s_singleton);" % t.name, 3)
             self.emit("return %s_singleton;" % t.name, 3)
-        self.emit("default:" % name, 2)
+        self.emit("default:", 2)
         self.emit('/* should never happen, but just in case ... */', 3)
         code = "PyErr_Format(PyExc_SystemError, \"unknown %s found\");" % name
         self.emit(code, 3, reflow=False)
