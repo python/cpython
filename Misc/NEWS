@@ -78,7 +78,7 @@ Library
 - Issue #15509: webbrowser.UnixBrowser no longer passes empty arguments to
   Popen when %action substitutions produce empty strings.
 
-- Issues #12776, #11839: call argparse type function (specified by add_argument)
+- Issue #12776, issue #11839: call argparse type function (specified by add_argument)
   only once. Before, the type function was called twice in the case where the
   default was specified and the argument was given as well.  This was especially
   problematic for the FileType type, as a default file would always be opened,
