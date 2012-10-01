@@ -313,7 +313,7 @@ Python version when a more recent version is installed).
 
 In addition to the launcher, the Windows installer now includes an
 option to add the newly installed Python to the system PATH (contributed
-by Brian Curtain in :issue:`3561`).
+by Brian Curtin in :issue:`3561`).
 
 .. seealso::
 
