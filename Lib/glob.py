@@ -26,8 +26,7 @@ def iglob(pathname):
         return
     dirname, basename = os.path.split(pathname)
     if not dirname:
-        for name in glob1(None, basename):
-            yield name
+        yield from glob1(None, basename)
         return
     if has_magic(dirname):
         dirs = iglob(dirname)

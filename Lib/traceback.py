@@ -132,8 +132,7 @@ def _iter_chain(exc, custom_tb=None, seen=None):
     its.append([(exc, custom_tb or exc.__traceback__)])
     # itertools.chain is in an extension module and may be unavailable
     for it in its:
-        for x in it:
-            yield x
+        yield from it
 
 
 def print_exception(etype, value, tb, limit=None, file=None, chain=True):

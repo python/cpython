@@ -367,8 +367,7 @@ class TokenList(list):
                 yield (indent + '    !! invalid element in token '
                                         'list: {!r}'.format(token))
             else:
-                for line in token._pp(indent+'    '):
-                    yield line
+                yield from token._pp(indent+'    ')
         if self.defects:
             extra = ' Defects: {}'.format(self.defects)
         else:
