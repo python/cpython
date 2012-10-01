@@ -357,3 +357,15 @@ whatsnew/3.2,,:location,... zope9-location = ${zope9:location}
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,... zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
+whatsnew/news,,:platform,:platform:
+whatsnew/news,,:password,: Unquote before b64encoding user:password during Basic
+whatsnew/news,,:close,Connection:close header.
+whatsnew/news,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused"
+whatsnew/news,,:close,: Connection:close header is sent by requests using URLOpener
+whatsnew/news,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
+whatsnew/news,,:test,: test_subprocess:test_leaking_fds_on_error no longer gives a
+whatsnew/news,,:test,: Fix test_posix:test_getgroups failure under Solaris.  Patch
+whatsnew/news,,:Olimit,Drop -OPT:Olimit compiler option.
+whatsnew/news,,:MAXYEAR,timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
+whatsnew/news,,:bz2,with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
+whatsnew/news,,:db2,: Add configure option --with-dbmliborder=db1:db2:... to specify
