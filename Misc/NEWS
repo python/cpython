@@ -15,16 +15,16 @@ Core and Builtins
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
   decoder (already working as unicode strings).  Patch by Serhiy Storchaka.
 
-- Issue #15144: Fix possible integer overflow when handling pointers as
-  integer values, by using Py_uintptr_t instead of size_t.  Patch by
-  Serhiy Storchaka.
+- Issue #15144: Fix possible integer overflow when handling pointers as integer
+  values, by using `Py_uintptr_t` instead of `size_t`.  Patch by Serhiy
+  Storchaka.
 
-- Issue #15965: Explicitly cast AT_FDCWD as (int).  Required on Solaris 10
-  (which defines AT_FDCWD as 0xffd19553), harmless on other platforms.
+- Issue #15965: Explicitly cast `AT_FDCWD` as (int).  Required on Solaris 10
+  (which defines `AT_FDCWD` as ``0xffd19553``), harmless on other platforms.
 
-- Issue #15839: Convert SystemErrors in super() to RuntimeErrors.
+- Issue #15839: Convert SystemErrors in `super()` to RuntimeErrors.
 
-- Issue #15846: Fix SystemError which happened when using ast.parse in an
+- Issue #15846: Fix SystemError which happened when using `ast.parse()` in an
   exception handler on code with syntax errors.
 
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
@@ -33,95 +33,93 @@ Core and Builtins
 Library
 -------
 
-- Issue #16034: Fix performance regressions in the new BZ2File implementation.
-  Initial patch by Serhiy Storchaka.
+- Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
+  implementation.  Initial patch by Serhiy Storchaka.
 
-- pty.spawn() now returns the child process status returned by os.waitpid().
+- `pty.spawn()` now returns the child process status returned by `os.waitpid()`.
 
-- Issue #15756: subprocess.poll() now properly handles errno.ECHILD to
-  return a returncode of 0 when the child has already exited or cannot
-  be waited on.
+- Issue #15756: `subprocess.poll()` now properly handles `errno.ECHILD` to
+  return a returncode of 0 when the child has already exited or cannot be waited
+  on.
 
-- Issue #15323: improve failure message of Mock.assert_called_once_with
+- Issue #15323: Improve failure message of `Mock.assert_called_once_with()`.
 
-- Issue #16064: unittest -m claims executable is "python", not "python3"
+- Issue #16064: ``unittest -m`` claims executable is "python", not "python3".
 
-- Issue #12376: Pass on parameters in TextTestResult.__init__ super call
+- Issue #12376: Pass on parameters in `TextTestResult.__init__()` super call.
 
-- Issue #15222: Insert blank line after each message in mbox mailboxes
+- Issue #15222: Insert blank line after each message in mbox mailboxes.
 
-- Issue #16013: Fix CSV Reader parsing issue with ending quote characters.
+- Issue #16013: Fix `csv.Reader` parsing issue with ending quote characters.
   Patch by Serhiy Storchaka.
 
-- Issue #15421: Fix an OverflowError in Calendar.itermonthdates() after
-  datetime.MAXYEAR.  Patch by Cédric Krier.
+- Issue #15421: Fix an OverflowError in `Calendar.itermonthdates()` after
+  `datetime.MAXYEAR`.  Patch by Cédric Krier.
 
-- Issue #15970: xml.etree.ElementTree now serializes correctly the empty HTML
+- Issue #15970: `xml.etree.ElementTree` now serializes correctly the empty HTML
   elements 'meta' and 'param'.
 
-- Issue #15842: The SocketIO.{readable,writable,seekable} methods now
-  raise ValueError when the file-like object is closed.  Patch by Alessandro
-  Moura.
+- Issue #15842: The `SocketIO.{readable,writable,seekable}` methods now raise
+  ValueError when the file-like object is closed.  Patch by Alessandro Moura.
 
-- Issue #15876: Fix a refleak in the curses module: window.encoding.
+- Issue #15876: Fix a refleak in the `curses` module: window.encoding.
 
-- Issue #15881: Fixed atexit hook in multiprocessing.  Original patch
-  by Chris McDonough.
+- Issue #15881: Fix `atexit` hook in `multiprocessing`.  Original patch by Chris
+  McDonough.
 
-- Issue #15841: The readable(), writable() and seekable() methods of BytesIO
-  and StringIO objects now raise ValueError when the object has been closed.
-  Patch by Alessandro Moura.
+- Issue #15841: The readable(), writable() and seekable() methods of
+  `io.BytesIO` and `io.StringIO` objects now raise ValueError when the object
+  has been closed.  Patch by Alessandro Moura.
 
-- Issue #15447: Use subprocess.DEVNULL in webbrowser, instead of opening
-  os.devnull explicitly and leaving it open.
+- Issue #15447: Use `subprocess.DEVNULL` in webbrowser, instead of opening
+  `os.devnull` explicitly and leaving it open.
 
-- Issue #15509: webbrowser.UnixBrowser no longer passes empty arguments to
-  Popen when %action substitutions produce empty strings.
+- Issue #15509: `webbrowser.UnixBrowser` no longer passes empty arguments to
+  Popen when ``%action`` substitutions produce empty strings.
 
-- Issue #12776, issue #11839: call argparse type function (specified by add_argument)
-  only once. Before, the type function was called twice in the case where the
-  default was specified and the argument was given as well.  This was especially
-  problematic for the FileType type, as a default file would always be opened,
-  even if a file argument was specified on the command line.
+- Issue #12776, issue #11839: Call `argparse` type function (specified by
+  add_argument) only once. Before, the type function was called twice in the
+  case where the default was specified and the argument was given as well.  This
+  was especially problematic for the FileType type, as a default file would
+  always be opened, even if a file argument was specified on the command line.
 
 - Issue #15906: Fix a regression in argparse caused by the preceding change,
-  when action='append', type='str' and default=[].
+  when ``action='append'``, ``type='str'`` and ``default=[]``.
 
 Extension Modules
 -----------------
 
-
 Tests
 -----
 
-- Issue #15304: Fix warning message when os.chdir() fails inside
-  test.support.temp_cwd().  Patch by Chris Jerdonek.
+- Issue #15304: Fix warning message when `os.chdir()` fails inside
+  `test.support.temp_cwd()`.  Patch by Chris Jerdonek.
 
-- Issue #15802: Fix test logic in TestMaildir.test_create_tmp. Patch
-  by Serhiy Storchaka.
+- Issue #15802: Fix test logic in `TestMaildir.test_create_tmp()`. Patch by
+  Serhiy Storchaka.
 
-- Issue #15557: Added a test suite for the webbrowser module, thanks
-  to Anton Barkovsky.
+- Issue #15557: Added a test suite for the webbrowser module, thanks to Anton
+  Barkovsky.
 
 Build
 -----
 
-- Issue #15923: fix a mistake in asdl_c.py that resulted in a TypeError after
-  2801bf875a24 (see #15801).
+- Issue #15923: Fix a mistake in ``asdl_c.py`` that resulted in a TypeError
+  after 2801bf875a24 (see #15801).
 
-- Issue #15819: Make sure we can build Python out-of-tree from a readonly
-  source directory.  (Somewhat related to Issue #9860.)
+- Issue #15819: Make sure we can build Python out-of-tree from a readonly source
+  directory.  (Somewhat related to Issue #9860.)
 
 Documentation
 -------------
 
-- Issue #15533: Clarify docs and add tests for subprocess.Popen()'s cwd
+- Issue #15533: Clarify docs and add tests for `subprocess.Popen()`'s cwd
   argument.
 
-- Issue #16036: Improve documentation of built-in int()'s signature and
+- Issue #16036: Improve documentation of built-in `int()`'s signature and
   arguments.
 
-- Issue #15935: Clarification of argparse docs, re: add_argument() type and
+- Issue #15935: Clarification of `argparse` docs, re: add_argument() type and
   default arguments.  Patch contributed by Chris Jerdonek.
 
 - Issue #11964: Document a change in v3.2 to the behavior of the indent
