@@ -159,21 +159,18 @@ class BZ2File(io.BufferedIOBase):
             raise ValueError("I/O operation on closed file")
 
     def _check_can_read(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode not in (_MODE_READ, _MODE_READ_EOF):
+            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for reading")
 
     def _check_can_write(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode != _MODE_WRITE:
+            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for writing")
 
     def _check_can_seek(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode not in (_MODE_READ, _MODE_READ_EOF):
+            self._check_not_closed()
             raise io.UnsupportedOperation("Seeking is only supported "
                                           "on files open for reading")
         if not self._fp.seekable():
@@ -322,10 +319,12 @@ class BZ2File(io.BufferedIOBase):
         non-negative, no more than size bytes will be read (in which
         case the line may be incomplete). Returns b'' if already at EOF.
         """
-        if not hasattr(size, "__index__"):
-            raise TypeError("Integer argument expected")
-        size = size.__index__()
+        if not isinstance(size, int):
+            if not hasattr(size, "__index__"):
+                raise TypeError("Integer argument expected")
+            size = size.__index__()
         with self._lock:
+            self._check_can_read()
             # Shortcut for the common case - the whole line is in the buffer.
             if size < 0:
                 end = self._buffer.find(b"\n", self._buffer_offset) + 1
@@ -343,9 +342,10 @@ class BZ2File(io.BufferedIOBase):
         further lines will be read once the total size of the lines read
         so far equals or exceeds size.
         """
-        if not hasattr(size, "__index__"):
-            raise TypeError("Integer argument expected")
-        size = size.__index__()
+        if not isinstance(size, int):
+            if not hasattr(size, "__index__"):
+                raise TypeError("Integer argument expected")
+            size = size.__index__()
         with self._lock:
             return io.BufferedIOBase.readlines(self, size)
 
