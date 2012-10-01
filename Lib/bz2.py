@@ -323,6 +323,7 @@ class BZ2File(io.BufferedIOBase):
             raise TypeError("Integer argument expected")
         size = size.__index__()
         with self._lock:
+            self._check_can_read()
             # Shortcut for the common case - the whole line is in the buffer.
             if size < 0:
                 end = self._buffer.find(b"\n", self._buffer_offset) + 1
