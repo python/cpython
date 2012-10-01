@@ -319,9 +319,10 @@ class BZ2File(io.BufferedIOBase):
         non-negative, no more than size bytes will be read (in which
         case the line may be incomplete). Returns b'' if already at EOF.
         """
-        if not hasattr(size, "__index__"):
-            raise TypeError("Integer argument expected")
-        size = size.__index__()
+        if not isinstance(size, int):
+            if not hasattr(size, "__index__"):
+                raise TypeError("Integer argument expected")
+            size = size.__index__()
         with self._lock:
             self._check_can_read()
             # Shortcut for the common case - the whole line is in the buffer.
@@ -341,9 +342,10 @@ class BZ2File(io.BufferedIOBase):
         further lines will be read once the total size of the lines read
         so far equals or exceeds size.
         """
-        if not hasattr(size, "__index__"):
-            raise TypeError("Integer argument expected")
-        size = size.__index__()
+        if not isinstance(size, int):
+            if not hasattr(size, "__index__"):
+                raise TypeError("Integer argument expected")
+            size = size.__index__()
         with self._lock:
             return io.BufferedIOBase.readlines(self, size)
 
