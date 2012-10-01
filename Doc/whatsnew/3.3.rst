@@ -1325,6 +1325,11 @@ way it ought to:  your application works with unicode strings, and the email
 package transparently encodes and decodes the unicode to and from the RFC
 standard Content Transfer Encodings.
 
+Other API Changes
+~~~~~~~~~~~~~~~~~
+
+Added :class:`email.parser.BytesHeaderParser`.
+
 
 ftplib
 ------
@@ -1371,6 +1376,16 @@ used by :class:`~html.parser.HTMLParser`.
 (Contributed by Ezio Melotti in :issue:`11113` and :issue:`15156`)
 
 
+http
+----
+
+:class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
+them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
+called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
+can be used to directly manage when the accumlated headers are sent.
+(Contributed by Andrew Schaaf in :issue:`3709`.)
+
+
 html.parser
 -----------
 
@@ -1384,6 +1399,7 @@ are also available on the latest bug fix releases of Python 2.7/3.2.
 :issue:`13993`, :issue:`13960`, :issue:`13358`, :issue:`1745761`,
 :issue:`755670`, :issue:`13357`, :issue:`12629`, :issue:`1200313`,
 :issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`)
+
 
 imaplib
 -------
@@ -1425,6 +1441,20 @@ The constructor of the :class:`~io.TextIOWrapper` class has a new
 :meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
 written on the :class:`~io.TextIOWrapper` object is immediately handled to its
 underlying binary buffer.
+
+
+itertools
+---------
+
+:func:`~itertools.accumulate` now takes an optional ``func`` argument for
+providing a user-supplied binary function.
+
+
+logging
+-------
+
+:func:`~logging.basicConfig` now supports an optional ``handlers`` argument
+taking an iterable of handlers to be added to the root logger.
 
 
 math
@@ -1775,6 +1805,15 @@ socket
   (Contributed by Ross Lagerwall in :issue:`10866`.)
 
 
+sqlite3
+-------
+
+New :class:`sqlite3.Connection` method
+:meth:`~sqlite3.Connection.set_trace_callback` can be used to capture a trace of
+all sql commands processed by sqlite.  (Contributed by Torsten Landschoff
+in :issue:`11688`.)
+
+
 ssl
 ---
 
@@ -1788,40 +1827,36 @@ ssl
 
 * The :mod:`ssl` module now exposes a finer-grained exception hierarchy
   in order to make it easier to inspect the various kinds of errors.
-
   (Contributed by Antoine Pitrou in :issue:`11183`)
 
 * :meth:`~ssl.SSLContext.load_cert_chain` now accepts a *password* argument
   to be used if the private key is encrypted.
-
   (Contributed by Adam Simpkins in :issue:`12803`)
 
 * Diffie-Hellman key exchange, both regular and Elliptic Curve-based, is
   now supported through the :meth:`~ssl.SSLContext.load_dh_params` and
   :meth:`~ssl.SSLContext.set_ecdh_curve` methods.
-
   (Contributed by Antoine Pitrou in :issue:`13626` and :issue:`13627`)
 
 * SSL sockets have a new :meth:`~ssl.SSLSocket.get_channel_binding` method
   allowing the implementation of certain authentication mechanisms such as
-  SCRAM-SHA-1-PLUS.
-
-  (Contributed by Jacek Konieczny in :issue:`12551`)
+  SCRAM-SHA-1-PLUS.  (Contributed by Jacek Konieczny in :issue:`12551`)
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
   to its new :meth:`~ssl.SSLSocket.compression` method.
-
   (Contributed by Antoine Pitrou in :issue:`13634`)
 
 * Support has been added for the Next Procotol Negotiation extension using
   the :meth:`ssl.SSLContext.set_npn_protocols` method.
-
   (Contributed by Colin Marc in :issue:`14204`)
 
 * SSL errors can now be introspected more easily thanks to
   :attr:`~ssl.SSLError.library` and :attr:`~ssl.SSLError.reason` attributes.
-
   (Contributed by Antoine Pitrou in :issue:`14837`)
+
+* The :func:`~ssl.get_server_certificate` function now supports IPv6.
+  (Contributed by Charles-François Natali in :issue:`11811`.)
+
 
 stat
 ----
@@ -1837,7 +1872,7 @@ subprocess
 ----------
 
 Command strings can now be bytes objects on posix platforms.  (Contributed by
-Victor Stiner in :issue:`8513`.)
+Victor Stinner in :issue:`8513`.)
 
 A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
 platform-independent fashion.  (Contributed by Ross Lagerwall in
@@ -1848,18 +1883,15 @@ sys
 ---
 
 The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-sequence` holding informations about the thread implementation.
-
-(:issue:`11223`)
+sequence` holding informations about the thread implementation
+(:issue:`11223`).
 
 textwrap
 --------
 
 The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
 it straightforward to add a common prefix to selected lines in a block
-of text.
-
-(:issue:`13857`)
+of text  (:issue:`13857`).
 
 
 threading
@@ -2221,6 +2253,14 @@ Porting Python code
   ``poplib`` methods.  Code that assumes ``quit`` does not raise
   :exc:`poplib.error_proto` errors may need to be changed if errors on ``quit``
   are encountered by a particular application (:issue:`11291`).
+
+* The ``strict`` argument to :class:`email.parser.Parser`, deprecated since
+  Python 2.4, has finally been removed.
+
+* The deprecated method ``unittest.TestCase.assertSameElements`` has been
+  removed.
+
+* The deprecated variable ``time.accept2dyear`` has been removed.
 
 
 Porting C code
