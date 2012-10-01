@@ -305,8 +305,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
                     chunks = _iterencode(value, _current_indent_level)
-                for chunk in chunks:
-                    yield chunk
+                yield from chunks
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
@@ -381,8 +380,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
                     chunks = _iterencode(value, _current_indent_level)
-                for chunk in chunks:
-                    yield chunk
+                yield from chunks
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
@@ -404,11 +402,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, float):
             yield _floatstr(o)
         elif isinstance(o, (list, tuple)):
-            for chunk in _iterencode_list(o, _current_indent_level):
-                yield chunk
+            yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, dict):
-            for chunk in _iterencode_dict(o, _current_indent_level):
-                yield chunk
+            yield from _iterencode_dict(o, _current_indent_level)
         else:
             if markers is not None:
                 markerid = id(o)
@@ -416,8 +412,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
             o = _default(o)
-            for chunk in _iterencode(o, _current_indent_level):
-                yield chunk
+            yield from _iterencode(o, _current_indent_level)
             if markers is not None:
                 del markers[markerid]
     return _iterencode

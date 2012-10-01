@@ -459,8 +459,7 @@ class Element:
         if tag is None or self.tag == tag:
             yield self
         for e in self._children:
-            for e in e.iter(tag):
-                yield e
+            yield from e.iter(tag)
 
     # compatibility
     def getiterator(self, tag=None):
@@ -487,8 +486,7 @@ class Element:
         if self.text:
             yield self.text
         for e in self:
-            for s in e.itertext():
-                yield s
+            yield from e.itertext()
             if e.tail:
                 yield e.tail
 
