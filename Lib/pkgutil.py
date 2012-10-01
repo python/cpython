@@ -121,8 +121,7 @@ def walk_packages(path=None, prefix='', onerror=None):
                 # don't traverse path items we've seen before
                 path = [p for p in path if not seen(p)]
 
-                for item in walk_packages(path, name+'.', onerror):
-                    yield item
+                yield from walk_packages(path, name+'.', onerror)
 
 
 def iter_modules(path=None, prefix=''):

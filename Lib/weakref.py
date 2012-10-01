@@ -153,8 +153,7 @@ class WeakValueDictionary(collections.MutableMapping):
 
         """
         with _IterationGuard(self):
-            for wr in self.data.values():
-                yield wr
+            yield from self.data.values()
 
     def values(self):
         with _IterationGuard(self):

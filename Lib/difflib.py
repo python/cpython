@@ -922,8 +922,7 @@ class Differ:
             else:
                 raise ValueError('unknown tag %r' % (tag,))
 
-            for line in g:
-                yield line
+            yield from g
 
     def _dump(self, tag, x, lo, hi):
         """Generate comparison results for a same-tagged range."""
@@ -942,8 +941,7 @@ class Differ:
             second = self._dump('+', b, blo, bhi)
 
         for g in first, second:
-            for line in g:
-                yield line
+            yield from g
 
     def _fancy_replace(self, a, alo, ahi, b, blo, bhi):
         r"""
@@ -997,8 +995,7 @@ class Differ:
             # no non-identical "pretty close" pair
             if eqi is None:
                 # no identical pair either -- treat it as a straight replace
-                for line in self._plain_replace(a, alo, ahi, b, blo, bhi):
-                    yield line
+                yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
                 return
             # no close pair, but an identical pair -- synch up on that
             best_i, best_j, best_ratio = eqi, eqj, 1.0
@@ -1010,8 +1007,7 @@ class Differ:
         # identical
 
         # pump out diffs from before the synch point
-        for line in self._fancy_helper(a, alo, best_i, b, blo, best_j):
-            yield line
+        yield from self._fancy_helper(a, alo, best_i, b, blo, best_j)
 
         # do intraline marking on the synch pair
         aelt, belt = a[best_i], b[best_j]
@@ -1033,15 +1029,13 @@ class Differ:
                     btags += ' ' * lb
                 else:
                     raise ValueError('unknown tag %r' % (tag,))
-            for line in self._qformat(aelt, belt, atags, btags):
-                yield line
+            yield from self._qformat(aelt, belt, atags, btags)
         else:
             # the synch pair is identical
             yield '  ' + aelt
 
         # pump out diffs from after the synch point
-        for line in self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi):
-            yield line
+        yield from self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi)
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
         g = []
@@ -1053,8 +1047,7 @@ class Differ:
         elif blo < bhi:
             g = self._dump('+', b, blo, bhi)
 
-        for line in g:
-            yield line
+        yield from g
 
     def _qformat(self, aline, bline, atags, btags):
         r"""

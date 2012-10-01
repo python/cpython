@@ -430,8 +430,7 @@ class KeysView(MappingView, Set):
         return key in self._mapping
 
     def __iter__(self):
-        for key in self._mapping:
-            yield key
+        yield from self._mapping
 
 KeysView.register(dict_keys)
 
