@@ -159,21 +159,18 @@ class BZ2File(io.BufferedIOBase):
             raise ValueError("I/O operation on closed file")
 
     def _check_can_read(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode not in (_MODE_READ, _MODE_READ_EOF):
+            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for reading")
 
     def _check_can_write(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode != _MODE_WRITE:
+            self._check_not_closed()
             raise io.UnsupportedOperation("File not open for writing")
 
     def _check_can_seek(self):
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self._mode not in (_MODE_READ, _MODE_READ_EOF):
+            self._check_not_closed()
             raise io.UnsupportedOperation("Seeking is only supported "
                                           "on files open for reading")
         if not self._fp.seekable():
