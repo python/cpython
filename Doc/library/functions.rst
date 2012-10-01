@@ -623,20 +623,26 @@ available.  They are listed here in alphabetical order.
    Consider using the :func:`raw_input` function for general input from users.
 
 
-.. function:: int([x[, base]])
+.. function:: int(x=0)
+              int(x, base=10)
 
-   Convert a string or number to a plain integer.  If the argument is a string,
-   it must contain a possibly signed decimal number representable as a Python
-   integer, possibly embedded in whitespace.  The *base* parameter gives the
-   base for the conversion (which is 10 by default) and may be any integer in
-   the range [2, 36], or zero.  If *base* is zero, the proper radix is
-   determined based on the contents of string; the interpretation is the same as
-   for integer literals.  (See :ref:`numbers`.)  If *base* is specified and *x*
-   is not a string, :exc:`TypeError` is raised. Otherwise, the argument may be a
-   plain or long integer or a floating point number.  Conversion of floating
-   point numbers to integers truncates (towards zero).  If the argument is
-   outside the integer range a long object will be returned instead.  If no
-   arguments are given, returns ``0``.
+   Convert a number or string *x* to an integer, or return ``0`` if no
+   arguments are given.  If *x* is a number, it can be a plain integer, a long
+   integer, or a floating point number.  If *x* is floating point, the conversion
+   truncates towards zero.  If the argument is outside the integer range, the
+   function returns a long object instead.
+
+   If *x* is not a number or if *base* is given, then *x* must be a string or
+   Unicode object representing an :ref:`integer literal <integers>` in radix
+   *base*.  Optionally, the literal can be
+   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
+   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
+   to ``z`` (or ``A`` to ``Z``) having
+   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2-36.
+   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
+   ``0o``/``0O``/``0``, or ``0x``/``0X``, as with integer literals in code.
+   Base 0 means to interpret the string exactly as an integer literal, so that
+   the actual base is 2, 8, 10, or 16.
 
    The integer type is described in :ref:`typesnumeric`.
 
