@@ -307,6 +307,22 @@ class FormatTest(unittest.TestCase):
         finally:
             locale.setlocale(locale.LC_ALL, oldloc)
 
+    @support.cpython_only
+    def test_optimisations(self):
+        text = "abcde" # 5 characters
+
+        self.assertIs("%s" % text, text)
+        self.assertIs("%.5s" % text, text)
+        self.assertIs("%.10s" % text, text)
+        self.assertIs("%1s" % text, text)
+        self.assertIs("%5s" % text, text)
+
+        self.assertIs("{0}".format(text), text)
+        self.assertIs("{0:s}".format(text), text)
+        self.assertIs("{0:.5s}".format(text), text)
+        self.assertIs("{0:.10s}".format(text), text)
+        self.assertIs("{0:1s}".format(text), text)
+        self.assertIs("{0:5s}".format(text), text)
 
 
 def test_main():

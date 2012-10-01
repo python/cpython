@@ -757,7 +757,8 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
     }
 
-    if (format->width == -1 && format->precision == -1) {
+    if ((format->width == -1 || format->width <= len)
+        && (format->precision == -1 || format->precision >= len)) {
         /* Fast path */
         return _PyUnicodeWriter_WriteStr(writer, value);
     }
