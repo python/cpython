@@ -181,7 +181,7 @@ class MiscNews(Directive):
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
-        lines = content.splitlines()[3:]
+        lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
         self.state_machine.insert_input(lines, fname)
         return []
 
