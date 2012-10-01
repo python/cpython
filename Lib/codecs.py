@@ -461,7 +461,7 @@ class StreamReader(Codec):
 
         # read until we get the required number of characters (if available)
         while True:
-            # can the request can be satisfied from the character buffer?
+            # can the request be satisfied from the character buffer?
             if chars < 0:
                 if size < 0:
                     if self.charbuffer:
