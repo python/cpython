@@ -631,8 +631,7 @@ class _singlefileMailbox(Mailbox):
     def iterkeys(self):
         """Return an iterator over keys."""
         self._lookup()
-        for key in self._toc.keys():
-            yield key
+        yield from self._toc.keys()
 
     def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""

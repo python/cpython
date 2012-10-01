@@ -26,8 +26,7 @@ def walk(self):
     yield self
     if self.is_multipart():
         for subpart in self.get_payload():
-            for subsubpart in subpart.walk():
-                yield subsubpart
+            yield from subpart.walk()
 
 
 
@@ -40,8 +39,7 @@ def body_line_iterator(msg, decode=False):
     for subpart in msg.walk():
         payload = subpart.get_payload(decode=decode)
         if isinstance(payload, str):
-            for line in StringIO(payload):
-                yield line
+            yield from StringIO(payload)
 
 
 def typed_subpart_iterator(msg, maintype='text', subtype=None):

@@ -198,8 +198,7 @@ def as_completed(fs, timeout=None):
         waiter = _create_and_install_waiters(fs, _AS_COMPLETED)
 
     try:
-        for future in finished:
-            yield future
+        yield from finished
 
         while pending:
             if timeout is None:
