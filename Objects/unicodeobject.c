@@ -13288,7 +13288,10 @@ formatlong(PyObject *val, int flags, int prec, int type)
     assert(PyLong_Check(val));
 
     switch (type) {
+    default:
+        assert(!"'type' not in [diuoxX]");
     case 'd':
+    case 'i':
     case 'u':
         /* Special-case boolean: we want 0/1 */
         if (PyBool_Check(val))
@@ -13305,8 +13308,6 @@ formatlong(PyObject *val, int flags, int prec, int type)
         numnondigits = 2;
         result = PyNumber_ToBase(val, 16);
         break;
-    default:
-        assert(!"'type' not in [duoxX]");
     }
     if (!result)
         return NULL;
@@ -13379,13 +13380,92 @@ formatlong(PyObject *val, int flags, int prec, int type)
             if (buf[i] >= 'a' && buf[i] <= 'x')
                 buf[i] -= 'a'-'A';
     }
-    if (!PyUnicode_Check(result) || len != PyUnicode_GET_LENGTH(result)) {
+    if (!PyUnicode_Check(result)
+        || buf != PyUnicode_DATA(result)) {
         PyObject *unicode;
         unicode = _PyUnicode_FromASCII(buf, len);
         Py_DECREF(result);
         result = unicode;
     }
+    else if (len != PyUnicode_GET_LENGTH(result)) {
+        if (PyUnicode_Resize(&result, len) < 0)
+            Py_CLEAR(result);
+    }
     return result;
+}
+
+/* Format an integer.
+ * Return 1 if the number has been formatted into the writer,
+ *        0 if the number has been formatted into *p_result
+ *       -1 and raise an exception on error */
+static int
+mainformatlong(_PyUnicodeWriter *writer, PyObject *v,
+               int c, Py_ssize_t width, int prec, int flags,
+               PyObject **p_result)
+{
+    PyObject *iobj, *res;
+
+    if (!PyNumber_Check(v))
+        goto wrongtype;
+
+    if (!PyLong_Check(v)) {
+        iobj = PyNumber_Long(v);
+        if (iobj == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError))
+                goto wrongtype;
+            return -1;
+        }
+        assert(PyLong_Check(iobj));
+    }
+    else {
+        iobj = v;
+        Py_INCREF(iobj);
+    }
+
+    if (PyLong_CheckExact(v)
+        && width == -1 && prec == -1
+        && !(flags & (F_SIGN | F_BLANK))
+        && c != 'X')
+    {
+        /* Fast path */
+        int alternate = flags & F_ALT;
+        int base;
+
+        switch(c)
+        {
+            default:
+                assert(0 && "'type' not in [diuoxX]");
+            case 'd':
+            case 'i':
+            case 'u':
+                base = 10;
+                break;
+            case 'o':
+                base = 8;
+                break;
+            case 'x':
+            case 'X':
+                base = 16;
+                break;
+        }
+
+        if (_PyLong_FormatWriter(writer, v, base, alternate) == -1)
+            return -1;
+        return 1;
+    }
+
+    res = formatlong(iobj, flags, prec, c);
+    Py_DECREF(iobj);
+    if (res == NULL)
+        return -1;
+    *p_result = res;
+    return 0;
+
+wrongtype:
+    PyErr_Format(PyExc_TypeError,
+            "%%%c format: a number is required, "
+            "not %.200s", (char)c, Py_TYPE(v)->tp_name);
+    return -1;
 }
 
 static Py_UCS4
@@ -13493,7 +13573,6 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             Py_UCS4 fill;
             int sign;
             Py_UCS4 signchar;
-            int isnumok;
             PyObject *v = NULL;
             void *pbuf = NULL;
             Py_ssize_t pindex, len;
@@ -13692,64 +13771,18 @@ PyUnicode_Format(PyObject *format, PyObject *args)
             case 'o':
             case 'x':
             case 'X':
-                if (PyLong_CheckExact(v)
-                    && width == -1 && prec == -1
-                    && !(flags & (F_SIGN | F_BLANK)))
-                {
-                    /* Fast path */
-                    switch(c)
-                    {
-                    case 'd':
-                    case 'i':
-                    case 'u':
-                        if (_PyLong_FormatWriter(&writer, v, 10, flags & F_ALT) == -1)
-                            goto onError;
-                        goto nextarg;
-                    case 'x':
-                        if (_PyLong_FormatWriter(&writer, v, 16, flags & F_ALT) == -1)
-                            goto onError;
-                        goto nextarg;
-                    case 'o':
-                        if (_PyLong_FormatWriter(&writer, v, 8, flags & F_ALT) == -1)
-                            goto onError;
-                        goto nextarg;
-                    default:
-                        break;
-                    }
-                }
-
-                isnumok = 0;
-                if (PyNumber_Check(v)) {
-                    PyObject *iobj=NULL;
-
-                    if (PyLong_Check(v)) {
-                        iobj = v;
-                        Py_INCREF(iobj);
-                    }
-                    else {
-                        iobj = PyNumber_Long(v);
-                    }
-                    if (iobj!=NULL) {
-                        if (PyLong_Check(iobj)) {
-                            isnumok = 1;
-                            sign = 1;
-                            temp = formatlong(iobj, flags, prec, (c == 'i'? 'd': c));
-                            Py_DECREF(iobj);
-                        }
-                        else {
-                            Py_DECREF(iobj);
-                        }
-                    }
-                }
-                if (!isnumok) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%%%c format: a number is required, "
-                                 "not %.200s", (char)c, Py_TYPE(v)->tp_name);
+            {
+                int ret = mainformatlong(&writer, v, c, width, prec,
+                                         flags, &temp);
+                if (ret == 1)
+                    goto nextarg;
+                if (ret == -1)
                     goto onError;
-                }
+                sign = 1;
                 if (flags & F_ZERO)
                     fill = '0';
                 break;
+            }
 
             case 'e':
             case 'E':
@@ -13803,7 +13836,14 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 goto onError;
             assert (PyUnicode_Check(temp));
 
-            if (width == -1 && prec == -1
+            if (PyUnicode_READY(temp) == -1) {
+                Py_CLEAR(temp);
+                goto onError;
+            }
+
+            len = PyUnicode_GET_LENGTH(temp);
+            if ((width == -1 || width <= len)
+                && (prec == -1 || prec >= len)
                 && !(flags & (F_SIGN | F_BLANK)))
             {
                 /* Fast path */
@@ -13812,20 +13852,14 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 goto nextarg;
             }
 
-            if (PyUnicode_READY(temp) == -1) {
-                Py_CLEAR(temp);
-                goto onError;
-            }
-            kind = PyUnicode_KIND(temp);
-            pbuf = PyUnicode_DATA(temp);
-            len = PyUnicode_GET_LENGTH(temp);
-
             if (c == 's' || c == 'r' || c == 'a') {
                 if (prec >= 0 && len > prec)
                     len = prec;
             }
 
             /* pbuf is initialized here. */
+            kind = PyUnicode_KIND(temp);
+            pbuf = PyUnicode_DATA(temp);
             pindex = 0;
             if (sign) {
                 Py_UCS4 ch = PyUnicode_READ(kind, pbuf, pindex);
