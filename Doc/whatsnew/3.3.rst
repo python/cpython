@@ -1504,12 +1504,20 @@ os
     :func:`~os.link`, :func:`~os.lstat`, :func:`~os.mkdir`, :func:`~os.mkfifo`,
     :func:`~os.mknod`, :func:`~os.open`, :func:`~os.readlink`, :func:`~os.remove`,
     :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
-    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.
+    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.  Platform
+    support for using these parameters can be checked via the sets
+    :data:`os.supports_dir_fd` and :data:`os.supports_follows_symlinks`.
 
   - The following functions now support a file descriptor for their path argument:
     :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
     :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`, :func:`~os.path.exists`,
-    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.
+    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.  Platform support
+    for this can be checked via the :data:`os.supports_fd` set.
+
+* :func:`~os.access` accepts an ``effective_ids`` keyword argument to turn on
+  using the effective uid/gid rather than the real uid/gid in the access check.
+  Platform support for this can be checked via the
+  :data:`~os.supports_effective_ids` set.
 
 * The :mod:`os` module has two new functions: :func:`~os.getpriority` and
   :func:`~os.setpriority`. They can be used to get or set process
@@ -1558,7 +1566,7 @@ os
     for a file.
   * :func:`~os.sync`: Force write of everything to disk.
 
-* Add some extra posix functions to the os module:
+* Additional new  posix functions:
 
   * :func:`~os.lockf`: Apply, test or remove a POSIX lock on an open file descriptor.
   * :func:`~os.pread`: Read from a file descriptor at an offset, the file
@@ -1576,6 +1584,12 @@ os
 
 * :func:`~os.times` and :func:`~os.uname`: Return type changed from a tuple to
   a tuple-like object with named attributes.
+
+* Some platforms now support additional constants for the :func:`~os.lseek`
+  function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
+
+* :func:`os.symlink` now accepts (and ignores) the ``target_is_directory``
+  keyword argument on non-Windows platforms, to ease cross-platform support.
 
 
 pdb
@@ -1703,6 +1717,14 @@ signal
   instead of a RuntimeError: OSError has an errno attribute.
 
 
+smtp
+----
+
+:class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
+``SMTP`` instance to be used in a ``with`` statement.  (Contributed
+by Giampaolo Rodolà in :issue:`11289`.)
+
+
 smtpd
 -----
 
@@ -1810,6 +1832,18 @@ the form '-rwxrwxrwx'.
 
 (Contributed by Giampaolo Rodolà in :issue:`14807`)
 
+
+subprocess
+----------
+
+Command strings can now be bytes objects on posix platforms.  (Contributed by
+Victor Stiner in :issue:`8513`.)
+
+A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
+platform-independent fashion.  (Contributed by Ross Lagerwall in
+:issue:`5870`.)
+
+
 sys
 ---
 
@@ -1872,10 +1906,11 @@ unittest
 
 :meth:`.assertRaises`, :meth:`.assertRaisesRegex`, :meth:`.assertWarns`, and
 :meth:`.assertWarnsRegex` now accept a keyword argument *msg* when used as
-context managers.
+context managers.  (Contributed by Ezio Melotti and Winston Ewert in
+:issue:`10775`)
 
-(Contributed by Ezio Melotti and Winston Ewert in :issue:`10775`)
-
+:meth:`unittest.TestCase.run` now returns the :class:`~unittest.TestResult`
+object.
 
 urllib
 ------
@@ -1993,7 +2028,7 @@ Deprecated Python modules, functions and methods
 * :meth:`ftplib.FTP.nlst` and :meth:`ftplib.FTP.dir`: use
   :meth:`ftplib.FTP.mlsd`
 * :func:`platform.popen`: use the :mod:`subprocess` module. Check especially
-  the :ref:`subprocess-replacements` section.
+  the :ref:`subprocess-replacements` section (:issue:`11377`).
 * :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
   module. Use Unicode filenames, instead of bytes filenames, to not depend on
   the ANSI code page anymore and to support any filename.
