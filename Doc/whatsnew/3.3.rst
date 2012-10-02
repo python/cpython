@@ -1912,7 +1912,7 @@ argument to override the default behavior of inheriting the ``deamon`` flag
 value from the parent thread (:issue:`6064`).
 
 The formerly private function ``_thread.get_ident`` is now available as the
-public function :func:`~threading.get_ident`.  This eliminates several cases of
+public function :func:`threading.get_ident`.  This eliminates several cases of
 direct access to the ``_thread`` module in the stdlib.  Third party code that
 used ``_thread.get_ident`` should likewise be changed to use the new public
 interface.
