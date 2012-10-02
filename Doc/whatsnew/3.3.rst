@@ -1328,7 +1328,24 @@ standard Content Transfer Encodings.
 Other API Changes
 ~~~~~~~~~~~~~~~~~
 
-Added :class:`email.parser.BytesHeaderParser`.
+New :class:`~email.parser.BytesHeaderParser`, added to the :mod:`~email.parser`
+module to complement :class:`~email.parser.HeaderParser` and complete the Bytes
+API.
+
+New utility functions:
+
+   * :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
+     produce a string formatted for use in an email header.
+
+   * :func:`~email.utils.parsedate_to_datetime`: given a date string from
+     an email header, convert it into an aware :class:`~datetime.datetime`,
+     or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
+
+   * :func:`~email.utils.localtime`: With no argument, returns the
+     current local time as an aware :class:`~datetime.datetime` using the local
+     :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
+     converts it into an aware :class:`~datetime.datetime` using the
+     local :class:`~datetime.timezone`.
 
 
 ftplib
@@ -1453,8 +1470,14 @@ providing a user-supplied binary function.
 logging
 -------
 
-:func:`~logging.basicConfig` now supports an optional ``handlers`` argument
-taking an iterable of handlers to be added to the root logger.
+The :func:`~logging.basicConfig` function now supports an optional ``handlers``
+argument taking an iterable of handlers to be added to the root logger.
+
+A class level attribute :attr:`~logging.handlers.SysLogHandler.append_nul` has
+been added to :class:`~logging.handlers.SysLogHandler` to allow control of the
+appending of the ``NUL`` (``\000``) byte to syslog records, since for some
+deamons it is required while for others it is passed through to the log.
+
 
 
 math
@@ -1464,6 +1487,15 @@ The :mod:`math` module has a new function, :func:`~math.log2`,  which returns
 the base-2 logarithm of *x*.
 
 (Written by Mark Dickinson in :issue:`11888`).
+
+
+mmap
+----
+
+The :meth:`~mmap.mmap.read` method is now more compatible with other file-like
+objects: if the argument is omitted or specified as ``None``, it returns the
+bytes from the current file position to the end of the mapping.  (Contributed
+by Petri Lehtinen in :issue:`12021`.)
 
 
 multiprocessing
@@ -1752,14 +1784,6 @@ signal
   instead of a RuntimeError: OSError has an errno attribute.
 
 
-smtp
-----
-
-:class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
-``SMTP`` instance to be used in a ``with`` statement.  (Contributed
-by Giampaolo Rodolà in :issue:`11289`.)
-
-
 smtpd
 -----
 
@@ -1775,11 +1799,13 @@ Orrù and Dan Boswell.  :issue:`8739`)
 smtplib
 -------
 
+:class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
+``SMTP`` instance to be used in a ``with`` statement.  (Contributed
+by Giampaolo Rodolà in :issue:`11289`.)
+
 The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
 method now accept an SSLContext parameter to control parameters of the secure
-channel.
-
-(Contributed by Kasun Herath in :issue:`8809`)
+channel.  (Contributed by Kasun Herath in :issue:`8809`)
 
 
 socket
@@ -1941,6 +1967,10 @@ Other new functions:
 * :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
   :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
   (Contributed by Victor Stinner in :issue:`10278`)
+
+To improve cross platform consistency, :func:`~time.sleep` now raises a
+:exc:`ValueError` when passed a negative sleep value.  Previously this was an
+error on posix, but produced an infinite sleep on Windows.
 
 
 types
@@ -2283,9 +2313,16 @@ Porting Python code
 
 * The deprecated variable ``time.accept2dyear`` has been removed.
 
-* The undocumented internal helper class ``SSLFakeFile`` has been
-  removed from :mod:`smtplib`, since its functionality has long been
-  provided directly by :meth:`socket.socket.makefile`.
+* The undocumented internal helper class ``SSLFakeFile`` has been removed
+  from :mod:`smtplib`, since its functionality has long been provided directly
+  by :meth:`socket.socket.makefile`.
+
+* Passing a negative value to :func:`time.sleep` on Windows now raises an
+  error instead of sleeping forever.  It has always raised an error on posix.
+
+* The ``ast.__version__`` constant has been removed.  If you need to
+  make decisions affected by the AST version, use :attr:`sys.version_info`
+  to make the decision.
 
 
 Porting C code
