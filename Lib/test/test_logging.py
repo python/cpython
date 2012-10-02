@@ -81,7 +81,7 @@ class BaseTest(unittest.TestCase):
     """Base class for logging tests."""
 
     log_format = "%(name)s -> %(levelname)s: %(message)s"
-    expected_log_pat = r"^([\w.]+) -> ([\w]+): ([\d]+)$"
+    expected_log_pat = r"^([\w.]+) -> (\w+): (\d+)$"
     message_num = 0
 
     def setUp(self):
@@ -438,7 +438,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
     """Test various filtering possibilities with custom logging levels."""
 
     # Skip the logger name group.
-    expected_log_pat = r"^[\w.]+ -> ([\w]+): ([\d]+)$"
+    expected_log_pat = r"^[\w.]+ -> (\w+): (\d+)$"
 
     def setUp(self):
         BaseTest.setUp(self)
@@ -999,7 +999,7 @@ class MemoryHandlerTest(BaseTest):
     """Tests for the MemoryHandler."""
 
     # Do not bother with a logger name group.
-    expected_log_pat = r"^[\w.]+ -> ([\w]+): ([\d]+)$"
+    expected_log_pat = r"^[\w.]+ -> (\w+): (\d+)$"
 
     def setUp(self):
         BaseTest.setUp(self)
@@ -1052,7 +1052,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
-    expected_log_pat = r"^([\w]+) \+\+ ([\w]+)$"
+    expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
     config0 = """
@@ -1795,7 +1795,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
-    expected_log_pat = r"^([\w]+) \+\+ ([\w]+)$"
+    expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
     config0 = {
@@ -2691,7 +2691,7 @@ class ConfigDictTest(BaseTest):
         self.assert_log_lines([
             ('INFO', '1'),
             ('ERROR', '2'),
-        ], pat=r"^[\w.]+ -> ([\w]+): ([\d]+)$")
+        ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
         # Now, perform no verification. Our configuration
         # should take effect.
@@ -2710,7 +2710,7 @@ class ConfigDictTest(BaseTest):
         self.assert_log_lines([
             ('INFO', '1'),
             ('ERROR', '2'),
-        ], pat=r"^[\w.]+ -> ([\w]+): ([\d]+)$")
+        ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
         # Now, perform verification which transforms the bytes.
 
@@ -2728,7 +2728,7 @@ class ConfigDictTest(BaseTest):
         self.assert_log_lines([
             ('INFO', '1'),
             ('ERROR', '2'),
-        ], pat=r"^[\w.]+ -> ([\w]+): ([\d]+)$")
+        ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
     def test_baseconfig(self):
         d = {
@@ -2832,7 +2832,7 @@ class LogRecordFactoryTest(BaseTest):
 
 class QueueHandlerTest(BaseTest):
     # Do not bother with a logger name group.
-    expected_log_pat = r"^[\w.]+ -> ([\w]+): ([\d]+)$"
+    expected_log_pat = r"^[\w.]+ -> (\w+): (\d+)$"
 
     def setUp(self):
         BaseTest.setUp(self)
