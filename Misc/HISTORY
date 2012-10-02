@@ -3187,8 +3187,8 @@ Library
 - Issue #12175: FileIO.readall() now raises a ValueError instead of an IOError
   if the file is closed.
 
-- Issue #11109: New service_action method for BaseServer, used by ForkingMixin
-  class for cleanup. Initial Patch by Justin Wark.
+- Issue #11109: New service_action method for BaseServer, used by ForkingMixIn
+  class for cleanup. Initial Patch by Justin Warkentin.
 
 - Issue #12045: Avoid duplicate execution of command in
   ctypes.util._get_soname().  Patch by Sijin Joseph.
