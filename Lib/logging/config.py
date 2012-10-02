@@ -1,4 +1,4 @@
-# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -782,6 +782,15 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     Returns a Thread object on which you can call start() to start the server,
     and which you can join() when appropriate. To stop the server, call
     stopListening().
+
+    Use the ``verify`` argument to verify any bytes received across the wire
+    from a client. If specified, it should be a callable which receives a
+    single argument - the bytes of configuration data received across the
+    network - and it should return either ``None``, to indicate that the
+    passed in bytes could not be verified and should be discarded, or a
+    byte string which is then passed to the configuration machinery as
+    normal. Note that you can return transformed bytes, e.g. by decrypting
+    the bytes passed in.
     """
     if not thread: #pragma: no cover
         raise NotImplementedError("listen() needs threading to work")
