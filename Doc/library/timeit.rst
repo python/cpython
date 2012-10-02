@@ -14,119 +14,157 @@
 --------------
 
 This module provides a simple way to time small bits of Python code. It has both
-command line as well as callable interfaces.  It avoids a number of common traps
-for measuring execution times.  See also Tim Peters' introduction to the
-"Algorithms" chapter in the Python Cookbook, published by O'Reilly.
+a :ref:`command-line-interface` as well as a :ref:`callable <python-interface>`
+one.  It avoids a number of common traps for measuring execution times.
+See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
+Cookbook*, published by O'Reilly.
 
-The module defines the following public class:
+
+Basic Examples
+--------------
+
+The following example shows how the :ref:`command-line-interface`
+can be used to compare three different expressions:
+
+.. code-block:: sh
+
+   $ python -m timeit '"-".join(str(n) for n in range(100))'
+   10000 loops, best of 3: 40.3 usec per loop
+   $ python -m timeit '"-".join([str(n) for n in range(100)])'
+   10000 loops, best of 3: 33.4 usec per loop
+   $ python -m timeit '"-".join(map(str, range(100)))'
+   10000 loops, best of 3: 25.2 usec per loop
+
+This can be achieved from the :ref:`python-interface` with::
+
+   >>> import timeit
+   >>> timeit.timeit('"-".join(str(n) for n in range(100))', number=10000)
+   0.8187260627746582
+   >>> timeit.timeit('"-".join([str(n) for n in range(100)])', number=10000)
+   0.7288308143615723
+   >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
+   0.5858950614929199
+
+Note however that :mod:`timeit` will automatically determine the number of
+repetitions only when the command-line interface is used.  In the
+:ref:`timeit-examples` section you can find more advanced examples.
+
+
+.. _python-interface:
+
+Python Interface
+----------------
+
+The module defines three convenience functions and a public class:
+
+
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000)
+
+   Create a :class:`Timer` instance with the given statement, *setup* code and
+   *timer* function and run its :meth:`.timeit` method with *number* executions.
+
+
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
+
+   Create a :class:`Timer` instance with the given statement, *setup* code and
+   *timer* function and run its :meth:`.repeat` method with the given *repeat*
+   count and *number* executions.
+
+
+.. function:: default_timer()
+
+   Define a default timer, in a platform-specific manner. On Windows,
+   :func:`time.clock` has microsecond granularity, but :func:`time.time`'s
+   granularity is 1/60th of a second.  On Unix, :func:`time.clock` has 1/100th of
+   a second granularity, and :func:`time.time` is much more precise.  On either
+   platform, :func:`default_timer` measures wall clock time, not the CPU
+   time.  This means that other processes running on the same computer may
+   interfere with the timing.
 
 
 .. class:: Timer(stmt='pass', setup='pass', timer=<timer function>)
 
    Class for timing execution speed of small code snippets.
 
-   The constructor takes a statement to be timed, an additional statement used for
-   setup, and a timer function.  Both statements default to ``'pass'``; the timer
-   function is platform-dependent (see the module doc string).  *stmt* and *setup*
-   may also contain multiple statements separated by ``;`` or newlines, as long as
-   they don't contain multi-line string literals.
+   The constructor takes a statement to be timed, an additional statement used
+   for setup, and a timer function.  Both statements default to ``'pass'``;
+   the timer function is platform-dependent (see the module doc string).
+   *stmt* and *setup* may also contain multiple statements separated by ``;``
+   or newlines, as long as they don't contain multi-line string literals.
 
-   To measure the execution time of the first statement, use the :meth:`Timer.timeit`
-   method.  The :meth:`repeat` method is a convenience to call :meth:`.timeit`
+   To measure the execution time of the first statement, use the :meth:`.timeit`
+   method.  The :meth:`.repeat` method is a convenience to call :meth:`.timeit`
    multiple times and return a list of results.
 
    The *stmt* and *setup* parameters can also take objects that are callable
-   without arguments. This will embed calls to them in a timer function that
+   without arguments.  This will embed calls to them in a timer function that
    will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
    little larger in this case because of the extra function calls.
 
 
-.. method:: Timer.print_exc(file=None)
+   .. method:: Timer.timeit(number=1000000)
 
-   Helper to print a traceback from the timed code.
+      Time *number* executions of the main statement.  This executes the setup
+      statement once, and then returns the time it takes to execute the main
+      statement a number of times, measured in seconds as a float.
+      The argument is the number of times through the loop, defaulting to one
+      million.  The main statement, the setup statement and the timer function
+      to be used are passed to the constructor.
 
-   Typical use::
+      .. note::
 
-      t = Timer(...)       # outside the try/except
-      try:
-          t.timeit(...)    # or t.repeat(...)
-      except:
-          t.print_exc()
+         By default, :meth:`.timeit` temporarily turns off :term:`garbage
+         collection` during the timing.  The advantage of this approach is that
+         it makes independent timings more comparable.  This disadvantage is
+         that GC may be an important component of the performance of the
+         function being measured.  If so, GC can be re-enabled as the first
+         statement in the *setup* string.  For example::
 
-   The advantage over the standard traceback is that source lines in the compiled
-   template will be displayed. The optional *file* argument directs where the
-   traceback is sent; it defaults to ``sys.stderr``.
-
-
-.. method:: Timer.repeat(repeat=3, number=1000000)
-
-   Call :meth:`.timeit` a few times.
-
-   This is a convenience function that calls the :meth:`.timeit` repeatedly,
-   returning a list of results.  The first argument specifies how many times to
-   call :meth:`.timeit`.  The second argument specifies the *number* argument for
-   :meth:`.timeit`.
-
-   .. note::
-
-      It's tempting to calculate mean and standard deviation from the result vector
-      and report these.  However, this is not very useful.  In a typical case, the
-      lowest value gives a lower bound for how fast your machine can run the given
-      code snippet; higher values in the result vector are typically not caused by
-      variability in Python's speed, but by other processes interfering with your
-      timing accuracy.  So the :func:`min` of the result is probably the only number
-      you should be interested in.  After that, you should look at the entire vector
-      and apply common sense rather than statistics.
+            timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-.. method:: Timer.timeit(number=1000000)
+   .. method:: Timer.repeat(repeat=3, number=1000000)
 
-   Time *number* executions of the main statement. This executes the setup
-   statement once, and then returns the time it takes to execute the main statement
-   a number of times, measured in seconds as a float.  The argument is the number
-   of times through the loop, defaulting to one million.  The main statement, the
-   setup statement and the timer function to be used are passed to the constructor.
+      Call :meth:`.timeit` a few times.
 
-   .. note::
+      This is a convenience function that calls the :meth:`.timeit` repeatedly,
+      returning a list of results.  The first argument specifies how many times
+      to call :meth:`.timeit`.  The second argument specifies the *number*
+      argument for :meth:`.timeit`.
 
-      By default, :meth:`.timeit` temporarily turns off :term:`garbage collection`
-      during the timing.  The advantage of this approach is that it makes
-      independent timings more comparable.  This disadvantage is that GC may be
-      an important component of the performance of the function being measured.
-      If so, GC can be re-enabled as the first statement in the *setup* string.
-      For example::
+      .. note::
 
-         timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
-
-
-The module also defines three convenience functions:
-
-
-.. function:: default_timer()
-
-   Define a default timer, in a platform specific manner. On Windows,
-   :func:`time.clock` has microsecond granularity but :func:`time.time`'s
-   granularity is 1/60th of a second; on Unix, :func:`time.clock` has 1/100th of
-   a second granularity and :func:`time.time` is much more precise.  On either
-   platform, :func:`default_timer` measures wall clock time, not the CPU
-   time.  This means that other processes running on the same computer may
-   interfere with the timing.
+         It's tempting to calculate mean and standard deviation from the result
+         vector and report these.  However, this is not very useful.
+         In a typical case, the lowest value gives a lower bound for how fast
+         your machine can run the given code snippet; higher values in the
+         result vector are typically not caused by variability in Python's
+         speed, but by other processes interfering with your timing accuracy.
+         So the :func:`min` of the result is probably the only number you
+         should be interested in.  After that, you should look at the entire
+         vector and apply common sense rather than statistics.
 
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
+   .. method:: Timer.print_exc(file=None)
 
-   Create a :class:`Timer` instance with the given statement, setup code and timer
-   function and run its :meth:`repeat` method with the given repeat count and
-   *number* executions.
+      Helper to print a traceback from the timed code.
+
+      Typical use::
+
+         t = Timer(...)       # outside the try/except
+         try:
+             t.timeit(...)    # or t.repeat(...)
+         except:
+             t.print_exc()
+
+      The advantage over the standard traceback is that source lines in the
+      compiled template will be displayed.  The optional *file* argument directs
+      where the traceback is sent; it defaults to :data:`sys.stderr`.
 
 
-.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000)
+.. _command-line-interface:
 
-   Create a :class:`Timer` instance with the given statement, setup code and timer
-   function and run its :meth:`.timeit` method with *number* executions.
-
-
-Command Line Interface
+Command-Line Interface
 ----------------------
 
 When called as a program from the command line, the following form is used::
@@ -184,25 +222,53 @@ Unix, you can use :func:`time.clock` to measure CPU time.
 
    There is a certain baseline overhead associated with executing a pass statement.
    The code here doesn't try to hide it, but you should be aware of it.  The
-   baseline overhead can be measured by invoking the program without arguments.
+   baseline overhead can be measured by invoking the program without arguments,
+   and it might differ between Python versions.
 
-The baseline overhead differs between Python versions!  Also, to fairly compare
-older Python versions to Python 2.3, you may want to use Python's :option:`-O`
-option for the older versions to avoid timing ``SET_LINENO`` instructions.
 
+.. _timeit-examples:
 
 Examples
 --------
 
-Here are two example sessions (one using the command line, one using the module
-interface) that compare the cost of using :func:`hasattr` vs.
-:keyword:`try`/:keyword:`except` to test for missing and present object
-attributes. ::
+It is possible to provide a setup statement that is executed only once at the beginning:
+
+.. code-block:: sh
+
+   $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
+   10000000 loops, best of 3: 0.0877 usec per loop
+   $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
+   1000000 loops, best of 3: 0.342 usec per loop
+
+::
+
+   >>> import timeit
+   >>> timeit.timeit('char in text', setup='text = "sample string"; char = "g"')
+   0.41440500499993504
+   >>> timeit.timeit('text.find(char)', setup='text = "sample string"; char = "g"')
+   1.7246671520006203
+
+The same can be done using the :class:`Timer` class and its methods::
+
+   >>> import timeit
+   >>> t = timeit.Timer('char in text', setup='text = "sample string"; char = "g"')
+   >>> t.timeit()
+   0.3955516149999312
+   >>> t.repeat()
+   [0.40193588800002544, 0.3960157959998014, 0.39594301399984033]
+
+
+The following examples show how to time expressions that contain multiple lines.
+Here we compare the cost of using :func:`hasattr` vs. :keyword:`try`/:keyword:`except`
+to test for missing and present object attributes:
+
+.. code-block:: sh
 
    $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
    100000 loops, best of 3: 15.7 usec per loop
    $ python -m timeit 'if hasattr(str, "__bool__"): pass'
    100000 loops, best of 3: 4.26 usec per loop
+
    $ python -m timeit 'try:' '  int.__bool__' 'except AttributeError:' '  pass'
    1000000 loops, best of 3: 1.43 usec per loop
    $ python -m timeit 'if hasattr(int, "__bool__"): pass'
@@ -211,36 +277,32 @@ attributes. ::
 ::
 
    >>> import timeit
+   >>> # attribute is missing
    >>> s = """\
    ... try:
    ...     str.__bool__
    ... except AttributeError:
    ...     pass
    ... """
-   >>> t = timeit.Timer(stmt=s)
-   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
-   17.09 usec/pass
-   >>> s = """\
-   ... if hasattr(str, '__bool__'): pass
-   ... """
-   >>> t = timeit.Timer(stmt=s)
-   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
-   4.85 usec/pass
+   >>> timeit.timeit(stmt=s, number=100000)
+   0.9138244460009446
+   >>> s = "if hasattr(str, '__bool__'): pass"
+   >>> timeit.timeit(stmt=s, number=100000)
+   0.5829014980008651
+   >>>
+   >>> # attribute is present
    >>> s = """\
    ... try:
    ...     int.__bool__
    ... except AttributeError:
    ...     pass
    ... """
-   >>> t = timeit.Timer(stmt=s)
-   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
-   1.97 usec/pass
-   >>> s = """\
-   ... if hasattr(int, '__bool__'): pass
-   ... """
-   >>> t = timeit.Timer(stmt=s)
-   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
-   3.15 usec/pass
+   >>> timeit.timeit(stmt=s, number=100000)
+   0.04215312199994514
+   >>> s = "if hasattr(int, '__bool__'): pass"
+   >>> timeit.timeit(stmt=s, number=100000)
+   0.08588060699912603
+
 
 To give the :mod:`timeit` module access to functions you define, you can pass a
 *setup* parameter which contains an import statement::
@@ -250,7 +312,5 @@ To give the :mod:`timeit` module access to functions you define, you can pass a
        L = [i for i in range(100)]
 
    if __name__ == '__main__':
-       from timeit import Timer
-       t = Timer("test()", "from __main__ import test")
-       print(t.timeit())
-
+       import timeit
+       print(timeit.timeit("test()", setup="from __main__ import test"))
