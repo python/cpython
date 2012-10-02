@@ -562,7 +562,7 @@ class ForkingMixIn:
         self.collect_children()
 
     def service_actions(self):
-        """Collect the zombie child processes regularly in the ForkingMixin.
+        """Collect the zombie child processes regularly in the ForkingMixIn.
 
         service_actions is called in the BaseServer's serve_forver loop.
         """
