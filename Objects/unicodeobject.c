@@ -13449,8 +13449,11 @@ mainformatlong(_PyUnicodeWriter *writer, PyObject *v,
                 break;
         }
 
-        if (_PyLong_FormatWriter(writer, v, base, alternate) == -1)
+        if (_PyLong_FormatWriter(writer, v, base, alternate) == -1) {
+            Py_DECREF(iobj);
             return -1;
+        }
+        Py_DECREF(iobj);
         return 1;
     }
 
