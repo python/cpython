@@ -539,6 +539,26 @@ checktm(struct tm* buf)
    /* wcsftime() doesn't format correctly time zones, see issue #10653 */
 #  undef HAVE_WCSFTIME
 #endif
+#define STRFTIME_FORMAT_CODES \
+"Commonly used format codes:\n\
+\n\
+%Y  Year with century as a decimal number.\n\
+%m  Month as a decimal number [01,12].\n\
+%d  Day of the month as a decimal number [01,31].\n\
+%H  Hour (24-hour clock) as a decimal number [00,23].\n\
+%M  Minute as a decimal number [00,59].\n\
+%S  Second as a decimal number [00,61].\n\
+%z  Time zone offset from UTC.\n\
+%a  Locale's abbreviated weekday name.\n\
+%A  Locale's full weekday name.\n\
+%b  Locale's abbreviated month name.\n\
+%B  Locale's full month name.\n\
+%c  Locale's appropriate date and time representation.\n\
+%I  Hour (12-hour clock) as a decimal number [01,12].\n\
+%p  Locale's equivalent of either AM or PM.\n\
+\n\
+Other codes may be available on your platform.  See documentation for\n\
+the C library strftime function.\n"
 
 #ifdef HAVE_STRFTIME
 #ifdef HAVE_WCSFTIME
@@ -683,13 +703,13 @@ time_strftime(PyObject *self, PyObject *args)
 
 #undef time_char
 #undef format_time
-
 PyDoc_STRVAR(strftime_doc,
 "strftime(format[, tuple]) -> string\n\
 \n\
 Convert a time tuple to a string according to a format specification.\n\
 See the library reference manual for formatting codes. When the time tuple\n\
-is not present, current time as returned by localtime() is used.");
+is not present, current time as returned by localtime() is used.\n\
+\n" STRFTIME_FORMAT_CODES);
 #endif /* HAVE_STRFTIME */
 
 static PyObject *
@@ -712,7 +732,9 @@ PyDoc_STRVAR(strptime_doc,
 "strptime(string, format) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
-See the library reference manual for formatting codes (same as strftime()).");
+See the library reference manual for formatting codes (same as\n\
+strftime()).\n\
+\n" STRFTIME_FORMAT_CODES);
 
 static PyObject *
 _asctime(struct tm *timeptr)
