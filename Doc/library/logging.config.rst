@@ -95,7 +95,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     logging configuration.
 
 
-.. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT)
+.. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
    Starts up a socket server on the specified port, and listens for new
    configurations. If no port is specified, the module's default
@@ -104,6 +104,17 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    :class:`Thread` instance on which you can call :meth:`start` to start the
    server, and which you can :meth:`join` when appropriate. To stop the server,
    call :func:`stopListening`.
+
+   The ``verify`` argument, if specified, should be a callable which should
+   verify whether bytes received across the socket are valid and should be
+   processed. This could be done by encrypting and/or signing what is sent
+   across the socket, such that the ``verify`` callable can perform
+   signature verification and/or decryption. The ``verify`` callable is called
+   with a single argument - the bytes received across the socket - and should
+   return the bytes to be processed, or None to indicate that the bytes should
+   be discarded. The returned bytes could be the same as the passed in bytes
+   (e.g. when only verification is done), or they could be completely different
+   (perhaps if decryption were performed).
 
    To send a configuration to the socket, read in the configuration file and
    send it to the socket as a string of bytes preceded by a four-byte length
@@ -121,7 +132,12 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used).
+      different port is used). To avoid the risk of this happening, use the
+      ``verify`` argument to :func:`listen` to prevent unrecognised
+      configurations from being applied.
+
+   .. versionchanged:: 3.4.
+      The ``verify`` argument was added.
 
 .. function:: stopListening()
 
