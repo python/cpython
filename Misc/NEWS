@@ -110,6 +110,8 @@ Documentation
 - Issue #15533: Clarify docs and add tests for `subprocess.Popen()`'s cwd
   argument.
 
+- Issue #15979: Improve timeit documentation.
+
 - Issue #16036: Improve documentation of built-in `int()`'s signature and
   arguments.
 
