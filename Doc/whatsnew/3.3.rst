@@ -1805,6 +1805,16 @@ socket
   (Contributed by Ross Lagerwall in :issue:`10866`.)
 
 
+socketserver
+------------
+
+:class:`~socketserver.BaseServer` now has an overridable method
+:meth:`~socketserver.BaseServer.service_actions` that is called by the
+:meth:`~socketserver.BaseServer.serve_forever` method in the service loop.
+:class:`~socketserver.ForkingMixIn` now uses this to clean up zombie
+child proceses.  (Contributed by Justin Warkentin in :issue:`11109`.)
+
+
 sqlite3
 -------
 
