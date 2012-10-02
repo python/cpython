@@ -459,6 +459,8 @@ Build
 Documentation
 -------------
 
+- Issue #15979: Improve timeit documentation.
+
 - Issue #16036: Improve documentation of built-in int()'s signature and
   arguments.
 
