@@ -773,7 +773,7 @@ def dictConfig(config):
     dictConfigClass(config).configure()
 
 
-def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
+def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     """
     Start up a socket server on the specified port, and listen for new
     configurations.
@@ -809,22 +809,25 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                     chunk = self.connection.recv(slen)
                     while len(chunk) < slen:
                         chunk = chunk + conn.recv(slen - len(chunk))
-                    chunk = chunk.decode("utf-8")
-                    try:
-                        import json
-                        d =json.loads(chunk)
-                        assert isinstance(d, dict)
-                        dictConfig(d)
-                    except:
-                        #Apply new configuration.
-
-                        file = io.StringIO(chunk)
+                    if self.server.verify is not None:
+                        chunk = self.server.verify(chunk)
+                    if chunk is not None:   # verified, can process
+                        chunk = chunk.decode("utf-8")
                         try:
-                            fileConfig(file)
-                        except (KeyboardInterrupt, SystemExit): #pragma: no cover
-                            raise
+                            import json
+                            d =json.loads(chunk)
+                            assert isinstance(d, dict)
+                            dictConfig(d)
                         except:
-                            traceback.print_exc()
+                            #Apply new configuration.
+
+                            file = io.StringIO(chunk)
+                            try:
+                                fileConfig(file)
+                            except (KeyboardInterrupt, SystemExit): #pragma: no cover
+                                raise
+                            except:
+                                traceback.print_exc()
                     if self.server.ready:
                         self.server.ready.set()
             except socket.error as e:
@@ -843,13 +846,14 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
         allow_reuse_address = 1
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
-                     handler=None, ready=None):
+                     handler=None, ready=None, verify=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
             logging._acquireLock()
             self.abort = 0
             logging._releaseLock()
             self.timeout = 1
             self.ready = ready
+            self.verify = verify
 
         def serve_until_stopped(self):
             import select
@@ -867,16 +871,18 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
 
     class Server(threading.Thread):
 
-        def __init__(self, rcvr, hdlr, port):
+        def __init__(self, rcvr, hdlr, port, verify):
             super(Server, self).__init__()
             self.rcvr = rcvr
             self.hdlr = hdlr
             self.port = port
+            self.verify = verify
             self.ready = threading.Event()
 
         def run(self):
             server = self.rcvr(port=self.port, handler=self.hdlr,
-                               ready=self.ready)
+                               ready=self.ready,
+                               verify=self.verify)
             if self.port == 0:
                 self.port = server.server_address[1]
             self.ready.set()
@@ -886,7 +892,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
             logging._releaseLock()
             server.serve_until_stopped()
 
-    return Server(ConfigSocketReceiver, ConfigStreamHandler, port)
+    return Server(ConfigSocketReceiver, ConfigStreamHandler, port, verify)
 
 def stopListening():
     """
