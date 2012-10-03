@@ -13583,8 +13583,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 fmtpos++;
                 fmtcnt--;
             }
-            if (fmtcnt < 0)
+            if (fmtcnt < 0) {
                 fmtpos--;
+                writer.overallocate = 0;
+            }
             sublen = fmtpos - nonfmtpos;
             maxchar = _PyUnicode_FindMaxChar(uformat,
                                              nonfmtpos, nonfmtpos + sublen);
