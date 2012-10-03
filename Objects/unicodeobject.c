@@ -640,6 +640,25 @@ Py_LOCAL_INLINE(Py_ssize_t) findchar(void *s, int kind,
     }
 }
 
+#ifdef Py_DEBUG
+/* Fill the data of an Unicode string with invalid characters to detect bugs
+   earlier.
+
+   _PyUnicode_CheckConsistency(str, 1) detects invalid characters, at least for
+   ASCII and UCS-4 strings. U+00FF is invalid in ASCII and U+FFFFFFFF is an
+   invalid character in Unicode 6.0. */
+static void
+unicode_fill_invalid(PyObject *unicode, Py_ssize_t old_length)
+{
+    int kind = PyUnicode_KIND(unicode);
+    Py_UCS1 *data = PyUnicode_1BYTE_DATA(unicode);
+    Py_ssize_t length = _PyUnicode_LENGTH(unicode);
+    if (length <= old_length)
+        return;
+    memset(data + old_length * kind, 0xff, (length - old_length) * kind);
+}
+#endif
+
 static PyObject*
 resize_compact(PyObject *unicode, Py_ssize_t length)
 {
@@ -648,6 +667,10 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     Py_ssize_t new_size;
     int share_wstr;
     PyObject *new_unicode;
+#ifdef Py_DEBUG
+    Py_ssize_t old_length = _PyUnicode_LENGTH(unicode);
+#endif
+
     assert(unicode_modifiable(unicode));
     assert(PyUnicode_IS_READY(unicode));
     assert(PyUnicode_IS_COMPACT(unicode));
@@ -683,6 +706,9 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         if (!PyUnicode_IS_ASCII(unicode))
             _PyUnicode_WSTR_LENGTH(unicode) = length;
     }
+#ifdef Py_DEBUG
+    unicode_fill_invalid(unicode, old_length);
+#endif
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     length, 0);
     assert(_PyUnicode_CheckConsistency(unicode, 0));
@@ -701,6 +727,9 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
         Py_ssize_t char_size;
         int share_wstr, share_utf8;
         void *data;
+#ifdef Py_DEBUG
+        Py_ssize_t old_length = _PyUnicode_LENGTH(unicode);
+#endif
 
         data = _PyUnicode_DATA_ANY(unicode);
         char_size = PyUnicode_KIND(unicode);
@@ -736,6 +765,9 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
         }
         _PyUnicode_LENGTH(unicode) = length;
         PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
+#ifdef Py_DEBUG
+        unicode_fill_invalid(unicode, old_length);
+#endif
         if (share_wstr || _PyUnicode_WSTR(unicode) == NULL) {
             assert(_PyUnicode_CheckConsistency(unicode, 0));
             return 0;
@@ -1060,11 +1092,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         }
     }
 #ifdef Py_DEBUG
-    /* Fill the data with invalid characters to detect bugs earlier.
-       _PyUnicode_CheckConsistency(str, 1) detects invalid characters,
-       at least for ASCII and UCS-4 strings. U+00FF is invalid in ASCII
-       and U+FFFFFFFF is an invalid character in Unicode 6.0. */
-    memset(data, 0xff, size * kind);
+    unicode_fill_invalid((PyObject*)unicode, 0);
 #endif
     assert(_PyUnicode_CheckConsistency((PyObject*)unicode, 0));
     return obj;
