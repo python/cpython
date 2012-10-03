@@ -27,6 +27,9 @@ Core and Builtins
 - Issue #15846: Fix SystemError which happened when using `ast.parse()` in an
   exception handler on code with syntax errors.
 
+- Issue #15897: zipimport.c doesn't check return value of fseek().
+  Patch by Felipe Cruz.
+
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
   subscriptable.
 
