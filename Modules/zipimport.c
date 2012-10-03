@@ -744,7 +744,7 @@ read_directory(PyObject *archive_obj)
 
     if (fseek(fp, -22, SEEK_END) == -1) {
         fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
+        PyErr_Format(ZipImportError, "can't read Zip file: %U", archive_obj);
         return NULL;
     }
     header_position = ftell(fp);
@@ -861,7 +861,7 @@ fseek_error:
     fclose(fp);
     Py_XDECREF(files);
     Py_XDECREF(nameobj);
-    PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
+    PyErr_Format(ZipImportError, "can't read Zip file: %U", archive_obj);
     return NULL;
 error:
     fclose(fp);
@@ -934,7 +934,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
     /* Check to make sure the local file header is correct */
     if (fseek(fp, file_offset, 0) == -1) {
         fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
+        PyErr_Format(ZipImportError, "can't read Zip file: %U", archive);
         return NULL;
     }
 
@@ -949,7 +949,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
     }
     if (fseek(fp, file_offset + 26, 0) == -1) {
         fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
+        PyErr_Format(ZipImportError, "can't read Zip file: %U", archive);
         return NULL;
     }
 
@@ -973,7 +973,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
         bytes_read = fread(buf, 1, data_size, fp);
     } else {
         fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
+        PyErr_Format(ZipImportError, "can't read Zip file: %U", archive);
         return NULL;
     }
     fclose(fp);
