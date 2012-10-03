@@ -680,6 +680,14 @@ above.
 An example's doctest directives modify doctest's behavior for that single
 example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
+.. note::
+   Due to an `unfortunate bug`_ in our documentation publishing process, the
+   directives in the following examples are not being displayed in the
+   rendered HTML version. Please use the "Show Source" link in the sidebar
+   to view the details of the directive usage examples.
+
+   .. _unfortunate bug: http://bugs.python.org/issue12947
+
 For example, this test passes::
 
    >>> print range(20) #doctest: +NORMALIZE_WHITESPACE
