@@ -10443,7 +10443,8 @@ unicode_compare(PyObject *str1, PyObject *str2)
 {
     int kind1, kind2;
     void *data1, *data2;
-    Py_ssize_t len1, len2, i;
+    Py_ssize_t len1, len2;
+    Py_ssize_t i, len;
 
     /* a string is equal to itself */
     if (str1 == str2)
@@ -10455,17 +10456,33 @@ unicode_compare(PyObject *str1, PyObject *str2)
     data2 = PyUnicode_DATA(str2);
     len1 = PyUnicode_GET_LENGTH(str1);
     len2 = PyUnicode_GET_LENGTH(str2);
+    len = Py_MIN(len1, len2);
 
-    for (i = 0; i < len1 && i < len2; ++i) {
-        Py_UCS4 c1, c2;
-        c1 = PyUnicode_READ(kind1, data1, i);
-        c2 = PyUnicode_READ(kind2, data2, i);
+    if (kind1 == 1 && kind2 == 1) {
+        int cmp = memcmp(data1, data2, len);
+        /* normalize result of memcmp() into the range [-1; 1] */
+        if (cmp < 0)
+            return -1;
+        if (cmp > 0)
+            return 1;
+    }
+    else {
+        for (i = 0; i < len; ++i) {
+            Py_UCS4 c1, c2;
+            c1 = PyUnicode_READ(kind1, data1, i);
+            c2 = PyUnicode_READ(kind2, data2, i);
 
-        if (c1 != c2)
-            return (c1 < c2) ? -1 : 1;
+            if (c1 != c2)
+                return (c1 < c2) ? -1 : 1;
+        }
     }
 
-    return (len1 < len2) ? -1 : (len1 != len2);
+    if (len1 == len2)
+        return 0;
+    if (len1 < len2)
+        return -1;
+    else
+        return 1;
 }
 
 int
