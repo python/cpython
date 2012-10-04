@@ -1997,8 +1997,8 @@ typedef struct {
 
     PyObject *root; /* root node (first created node) */
 
-    ElementObject *this; /* current node */
-    ElementObject *last; /* most recently created node */
+    PyObject *this; /* current node */
+    PyObject *last; /* most recently created node */
 
     PyObject *data; /* data collector (string or list), or NULL */
 
@@ -2030,9 +2030,9 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->root = NULL;
 
         Py_INCREF(Py_None);
-        t->this = (ElementObject *)Py_None;
+        t->this = Py_None;
         Py_INCREF(Py_None);
-        t->last = (ElementObject *)Py_None;
+        t->last = Py_None;
 
         t->data = NULL;
         t->element_factory = NULL;
@@ -2113,6 +2113,64 @@ treebuilder_dealloc(TreeBuilderObject *self)
 }
 
 /* -------------------------------------------------------------------- */
+/* helpers for handling of arbitrary element-like objects */
+
+static int
+treebuilder_set_element_text_or_tail(PyObject *element, PyObject *data,
+                                     PyObject **dest, _Py_Identifier *name)
+{
+    if (Element_CheckExact(element)) {
+        Py_DECREF(JOIN_OBJ(*dest));
+        *dest = JOIN_SET(data, PyList_CheckExact(data));
+        return 0;
+    }
+    else {
+        PyObject *joined = list_join(data);
+        int r;
+        if (joined == NULL)
+            return -1;
+        r = _PyObject_SetAttrId(element, name, joined);
+        Py_DECREF(joined);
+        return r;
+    }
+}
+
+/* These two functions steal a reference to data */
+static int
+treebuilder_set_element_text(PyObject *element, PyObject *data)
+{
+    _Py_IDENTIFIER(text);
+    return treebuilder_set_element_text_or_tail(
+        element, data, &((ElementObject *) element)->text, &PyId_text);
+}
+
+static int
+treebuilder_set_element_tail(PyObject *element, PyObject *data)
+{
+    _Py_IDENTIFIER(tail);
+    return treebuilder_set_element_text_or_tail(
+        element, data, &((ElementObject *) element)->tail, &PyId_tail);
+}
+
+static int
+treebuilder_add_subelement(PyObject *element, PyObject *child)
+{
+    _Py_IDENTIFIER(append);
+    if (Element_CheckExact(element)) {
+        ElementObject *elem = (ElementObject *) element;
+        return element_add_subelement(elem, child);
+    }
+    else {
+        PyObject *res;
+        res = _PyObject_CallMethodId(element, &PyId_append, "O", child);
+        if (res == NULL)
+            return -1;
+        Py_DECREF(res);
+        return 0;
+    }
+}
+
+/* -------------------------------------------------------------------- */
 /* handlers */
 
 LOCAL(PyObject*)
@@ -2124,15 +2182,12 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (self->data) {
         if (self->this == self->last) {
-            Py_DECREF(JOIN_OBJ(self->last->text));
-            self->last->text = JOIN_SET(
-                self->data, PyList_CheckExact(self->data)
-                );
-        } else {
-            Py_DECREF(JOIN_OBJ(self->last->tail));
-            self->last->tail = JOIN_SET(
-                self->data, PyList_CheckExact(self->data)
-                );
+            if (treebuilder_set_element_text(self->last, self->data))
+                return NULL;
+        }
+        else {
+            if (treebuilder_set_element_tail(self->last, self->data))
+                return NULL;
         }
         self->data = NULL;
     }
@@ -2146,10 +2201,10 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
         return NULL;
     }
 
-    this = (PyObject*) self->this;
+    this = self->this;
 
     if (this != Py_None) {
-        if (element_add_subelement((ElementObject*) this, node) < 0)
+        if (treebuilder_add_subelement(this, node) < 0)
             goto error;
     } else {
         if (self->root) {
@@ -2175,11 +2230,11 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     Py_DECREF(this);
     Py_INCREF(node);
-    self->this = (ElementObject*) node;
+    self->this = node;
 
     Py_DECREF(self->last);
     Py_INCREF(node);
-    self->last = (ElementObject*) node;
+    self->last = node;
 
     if (self->start_event_obj) {
         PyObject* res;
@@ -2203,7 +2258,7 @@ LOCAL(PyObject*)
 treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 {
     if (!self->data) {
-        if (self->last == (ElementObject*) Py_None) {
+        if (self->last == Py_None) {
             /* ignore calls to data before the first call to start */
             Py_RETURN_NONE;
         }
@@ -2243,15 +2298,11 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     if (self->data) {
         if (self->this == self->last) {
-            Py_DECREF(JOIN_OBJ(self->last->text));
-            self->last->text = JOIN_SET(
-                self->data, PyList_CheckExact(self->data)
-                );
+            if (treebuilder_set_element_text(self->last, self->data))
+                return NULL;
         } else {
-            Py_DECREF(JOIN_OBJ(self->last->tail));
-            self->last->tail = JOIN_SET(
-                self->data, PyList_CheckExact(self->data)
-                );
+            if (treebuilder_set_element_tail(self->last, self->data))
+                return NULL;
         }
         self->data = NULL;
     }
@@ -2271,8 +2322,8 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     Py_DECREF(self->last);
 
-    self->last = (ElementObject*) self->this;
-    self->this = (ElementObject*) item;
+    self->last = self->this;
+    self->this = item;
 
     if (self->end_event_obj) {
         PyObject* res;
