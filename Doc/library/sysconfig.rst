@@ -83,8 +83,6 @@ Python currently supports seven schemes:
   located under the user home directory.
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
-- *os2*: scheme for OS/2 platforms.
-- *os2_home*: scheme for OS/2 patforms, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:

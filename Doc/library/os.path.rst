@@ -37,7 +37,6 @@ applications should use string objects to access all files.
    * :mod:`posixpath` for UNIX-style paths
    * :mod:`ntpath` for Windows paths
    * :mod:`macpath` for old-style MacOS paths
-   * :mod:`os2emxpath` for OS/2 EMX paths
 
 
 .. function:: abspath(path)
