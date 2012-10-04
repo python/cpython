@@ -13224,16 +13224,39 @@ static PyMappingMethods unicode_as_mapping = {
 
 /* Helpers for PyUnicode_Format() */
 
+struct unicode_formatter_t {
+    PyObject *args;
+    int args_owned;
+    Py_ssize_t arglen, argidx;
+    PyObject *dict;
+
+    enum PyUnicode_Kind fmtkind;
+    Py_ssize_t fmtcnt, fmtpos;
+    void *fmtdata;
+    PyObject *fmtstr;
+
+    _PyUnicodeWriter writer;
+};
+
+struct unicode_format_arg_t {
+    Py_UCS4 ch;
+    int flags;
+    Py_ssize_t width;
+    int prec;
+    int sign;
+};
+
 static PyObject *
-getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
+unicode_format_getnextarg(struct unicode_formatter_t *ctx)
 {
-    Py_ssize_t argidx = *p_argidx;
-    if (argidx < arglen) {
-        (*p_argidx)++;
-        if (arglen < 0)
-            return args;
+    Py_ssize_t argidx = ctx->argidx;
+
+    if (argidx < ctx->arglen) {
+        ctx->argidx++;
+        if (ctx->arglen < 0)
+            return ctx->args;
         else
-            return PyTuple_GetItem(args, argidx);
+            return PyTuple_GetItem(ctx->args, argidx);
     }
     PyErr_SetString(PyExc_TypeError,
                     "not enough arguments for format string");
@@ -13242,23 +13265,34 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 
 /* Returns a new reference to a PyUnicode object, or NULL on failure. */
 
+/* Format a float into the writer if the writer is not NULL, or into *p_output
+   otherwise.
+
+   Return 0 on success, raise an exception and return -1 on error. */
 static int
-formatfloat(PyObject *v, int flags, int prec, int type,
-            PyObject **p_output, _PyUnicodeWriter *writer)
+formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
+            PyObject **p_output,
+            _PyUnicodeWriter *writer)
 {
     char *p;
     double x;
     Py_ssize_t len;
+    int prec;
+    int dtoa_flags;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
         return -1;
 
+    prec = arg->prec;
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (arg->flags & F_ALT)
+        dtoa_flags = Py_DTSF_ALT;
+    else
+        dtoa_flags = 0;
+    p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;
     len = strlen(p);
@@ -13295,7 +13329,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
  * produce a '-' sign, but can for Python's unbounded ints.
  */
 static PyObject*
-formatlong(PyObject *val, int flags, int prec, int type)
+formatlong(PyObject *val, struct unicode_format_arg_t *arg)
 {
     PyObject *result = NULL;
     char *buf;
@@ -13305,6 +13339,8 @@ formatlong(PyObject *val, int flags, int prec, int type)
     Py_ssize_t llen;
     int numdigits;      /* len == numnondigits + numdigits */
     int numnondigits = 0;
+    int prec = arg->prec;
+    int type = arg->ch;
 
     /* Avoid exceeding SSIZE_T_MAX */
     if (prec > INT_MAX-3) {
@@ -13363,7 +13399,7 @@ formatlong(PyObject *val, int flags, int prec, int type)
     assert(numdigits > 0);
 
     /* Get rid of base marker unless F_ALT */
-    if (((flags & F_ALT) == 0 &&
+    if (((arg->flags & F_ALT) == 0 &&
         (type == 'o' || type == 'x' || type == 'X'))) {
         assert(buf[sign] == '0');
         assert(buf[sign+1] == 'x' || buf[sign+1] == 'X' ||
@@ -13424,14 +13460,16 @@ formatlong(PyObject *val, int flags, int prec, int type)
 
 /* Format an integer.
  * Return 1 if the number has been formatted into the writer,
- *        0 if the number has been formatted into *p_result
+ *        0 if the number has been formatted into *p_output
  *       -1 and raise an exception on error */
 static int
-mainformatlong(_PyUnicodeWriter *writer, PyObject *v,
-               int c, Py_ssize_t width, int prec, int flags,
-               PyObject **p_result)
+mainformatlong(PyObject *v,
+               struct unicode_format_arg_t *arg,
+               PyObject **p_output,
+               _PyUnicodeWriter *writer)
 {
     PyObject *iobj, *res;
+    char type = (char)arg->ch;
 
     if (!PyNumber_Check(v))
         goto wrongtype;
@@ -13451,15 +13489,15 @@ mainformatlong(_PyUnicodeWriter *writer, PyObject *v,
     }
 
     if (PyLong_CheckExact(v)
-        && width == -1 && prec == -1
-        && !(flags & (F_SIGN | F_BLANK))
-        && c != 'X')
+        && arg->width == -1 && arg->prec == -1
+        && !(arg->flags & (F_SIGN | F_BLANK))
+        && type != 'X')
     {
         /* Fast path */
-        int alternate = flags & F_ALT;
+        int alternate = arg->flags & F_ALT;
         int base;
 
-        switch(c)
+        switch(type)
         {
             default:
                 assert(0 && "'type' not in [diuoxX]");
@@ -13485,17 +13523,18 @@ mainformatlong(_PyUnicodeWriter *writer, PyObject *v,
         return 1;
     }
 
-    res = formatlong(iobj, flags, prec, c);
+    res = formatlong(iobj, arg);
     Py_DECREF(iobj);
     if (res == NULL)
         return -1;
-    *p_result = res;
+    *p_output = res;
     return 0;
 
 wrongtype:
     PyErr_Format(PyExc_TypeError,
             "%%%c format: a number is required, "
-            "not %.200s", (char)c, Py_TYPE(v)->tp_name);
+            "not %.200s",
+            type, Py_TYPE(v)->tp_name);
     return -1;
 }
 
@@ -13531,494 +13570,588 @@ formatchar(PyObject *v)
     return (Py_UCS4) -1;
 }
 
+/* Parse options of an argument: flags, width, precision.
+   Handle also "%(name)" syntax.
+
+   Return 0 if the argument has been formatted into arg->str.
+   Return 1 if the argument has been written into ctx->writer,
+   Raise an exception and return -1 on error. */
+static int
+unicode_format_arg_parse(struct unicode_formatter_t *ctx,
+                         struct unicode_format_arg_t *arg)
+{
+#define FORMAT_READ(ctx) \
+        PyUnicode_READ((ctx)->fmtkind, (ctx)->fmtdata, (ctx)->fmtpos)
+
+    PyObject *v;
+
+    arg->ch = FORMAT_READ(ctx);
+    if (arg->ch == '(') {
+        /* Get argument value from a dictionary. Example: "%(name)s". */
+        Py_ssize_t keystart;
+        Py_ssize_t keylen;
+        PyObject *key;
+        int pcount = 1;
+
+        if (ctx->dict == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "format requires a mapping");
+            return -1;
+        }
+        ++ctx->fmtpos;
+        --ctx->fmtcnt;
+        keystart = ctx->fmtpos;
+        /* Skip over balanced parentheses */
+        while (pcount > 0 && --ctx->fmtcnt >= 0) {
+            arg->ch = FORMAT_READ(ctx);
+            if (arg->ch == ')')
+                --pcount;
+            else if (arg->ch == '(')
+                ++pcount;
+            ctx->fmtpos++;
+        }
+        keylen = ctx->fmtpos - keystart - 1;
+        if (ctx->fmtcnt < 0 || pcount > 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "incomplete format key");
+            return -1;
+        }
+        key = PyUnicode_Substring(ctx->fmtstr,
+                                  keystart, keystart + keylen);
+        if (key == NULL)
+            return -1;
+        if (ctx->args_owned) {
+            Py_DECREF(ctx->args);
+            ctx->args_owned = 0;
+        }
+        ctx->args = PyObject_GetItem(ctx->dict, key);
+        Py_DECREF(key);
+        if (ctx->args == NULL)
+            return -1;
+        ctx->args_owned = 1;
+        ctx->arglen = -1;
+        ctx->argidx = -2;
+    }
+
+    /* Parse flags. Example: "%+i" => flags=F_SIGN. */
+    arg->flags = 0;
+    while (--ctx->fmtcnt >= 0) {
+        arg->ch = FORMAT_READ(ctx);
+        ctx->fmtpos++;
+        switch (arg->ch) {
+        case '-': arg->flags |= F_LJUST; continue;
+        case '+': arg->flags |= F_SIGN; continue;
+        case ' ': arg->flags |= F_BLANK; continue;
+        case '#': arg->flags |= F_ALT; continue;
+        case '0': arg->flags |= F_ZERO; continue;
+        }
+        break;
+    }
+
+    /* Parse width. Example: "%10s" => width=10 */
+    arg->width = -1;
+    if (arg->ch == '*') {
+        v = unicode_format_getnextarg(ctx);
+        if (v == NULL)
+            return -1;
+        if (!PyLong_Check(v)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "* wants int");
+            return -1;
+        }
+        arg->width = PyLong_AsLong(v);
+        if (arg->width == -1 && PyErr_Occurred())
+            return -1;
+        if (arg->width < 0) {
+            arg->flags |= F_LJUST;
+            arg->width = -arg->width;
+        }
+        if (--ctx->fmtcnt >= 0) {
+            arg->ch = FORMAT_READ(ctx);
+            ctx->fmtpos++;
+        }
+    }
+    else if (arg->ch >= '0' && arg->ch <= '9') {
+        arg->width = arg->ch - '0';
+        while (--ctx->fmtcnt >= 0) {
+            arg->ch = FORMAT_READ(ctx);
+            ctx->fmtpos++;
+            if (arg->ch < '0' || arg->ch > '9')
+                break;
+            /* Since arg->ch is unsigned, the RHS would end up as unsigned,
+               mixing signed and unsigned comparison. Since arg->ch is between
+               '0' and '9', casting to int is safe. */
+            if (arg->width > (PY_SSIZE_T_MAX - ((int)arg->ch - '0')) / 10) {
+                PyErr_SetString(PyExc_ValueError,
+                                "width too big");
+                return -1;
+            }
+            arg->width = arg->width*10 + (arg->ch - '0');
+        }
+    }
+
+    /* Parse precision. Example: "%.3f" => prec=3 */
+    arg->prec = -1;
+    if (arg->ch == '.') {
+        arg->prec = 0;
+        if (--ctx->fmtcnt >= 0) {
+            arg->ch = FORMAT_READ(ctx);
+            ctx->fmtpos++;
+        }
+        if (arg->ch == '*') {
+            v = unicode_format_getnextarg(ctx);
+            if (v == NULL)
+                return -1;
+            if (!PyLong_Check(v)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "* wants int");
+                return -1;
+            }
+            arg->prec = PyLong_AsLong(v);
+            if (arg->prec == -1 && PyErr_Occurred())
+                return -1;
+            if (arg->prec < 0)
+                arg->prec = 0;
+            if (--ctx->fmtcnt >= 0) {
+                arg->ch = FORMAT_READ(ctx);
+                ctx->fmtpos++;
+            }
+        }
+        else if (arg->ch >= '0' && arg->ch <= '9') {
+            arg->prec = arg->ch - '0';
+            while (--ctx->fmtcnt >= 0) {
+                arg->ch = FORMAT_READ(ctx);
+                ctx->fmtpos++;
+                if (arg->ch < '0' || arg->ch > '9')
+                    break;
+                if (arg->prec > (INT_MAX - ((int)arg->ch - '0')) / 10) {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "prec too big");
+                    return -1;
+                }
+                arg->prec = arg->prec*10 + (arg->ch - '0');
+            }
+        }
+    }
+
+    /* Ignore "h", "l" and "L" format prefix (ex: "%hi" or "%ls") */
+    if (ctx->fmtcnt >= 0) {
+        if (arg->ch == 'h' || arg->ch == 'l' || arg->ch == 'L') {
+            if (--ctx->fmtcnt >= 0) {
+                arg->ch = FORMAT_READ(ctx);
+                ctx->fmtpos++;
+            }
+        }
+    }
+    if (ctx->fmtcnt < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "incomplete format");
+        return -1;
+    }
+    return 0;
+
+#undef FORMAT_READ
+}
+
+/* Format one argument. Supported conversion specifiers:
+
+   - "s", "r", "a": any type
+   - "i", "d", "u", "o", "x", "X": int
+   - "e", "E", "f", "F", "g", "G": float
+   - "c": int or str (1 character)
+
+   Return 0 if the argument has been formatted into *p_str,
+          1 if the argument has been written into ctx->writer,
+          -1 on error. */
+static int
+unicode_format_arg_format(struct unicode_formatter_t *ctx,
+                          struct unicode_format_arg_t *arg,
+                          PyObject **p_str)
+{
+    PyObject *v;
+    _PyUnicodeWriter *writer = &ctx->writer;
+
+    if (ctx->fmtcnt == 0)
+        ctx->writer.overallocate = 0;
+
+    if (arg->ch == '%') {
+        if (_PyUnicodeWriter_Prepare(writer, 1, '%') == -1)
+            return -1;
+        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '%');
+        writer->pos += 1;
+        return 1;
+    }
+
+    v = unicode_format_getnextarg(ctx);
+    if (v == NULL)
+        return -1;
+
+    arg->sign = 0;
+
+    switch (arg->ch) {
+
+    case 's':
+    case 'r':
+    case 'a':
+        if (PyLong_CheckExact(v) && arg->width == -1 && arg->prec == -1) {
+            /* Fast path */
+            if (_PyLong_FormatWriter(writer, v, 10, arg->flags & F_ALT) == -1)
+                return -1;
+            return 1;
+        }
+
+        if (PyUnicode_CheckExact(v) && arg->ch == 's') {
+            *p_str = v;
+            Py_INCREF(*p_str);
+        }
+        else {
+            if (arg->ch == 's')
+                *p_str = PyObject_Str(v);
+            else if (arg->ch == 'r')
+                *p_str = PyObject_Repr(v);
+            else
+                *p_str = PyObject_ASCII(v);
+        }
+        break;
+
+    case 'i':
+    case 'd':
+    case 'u':
+    case 'o':
+    case 'x':
+    case 'X':
+    {
+        int ret = mainformatlong(v, arg, p_str, writer);
+        if (ret != 0)
+            return ret;
+        arg->sign = 1;
+        break;
+    }
+
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+        if (arg->width == -1 && arg->prec == -1
+            && !(arg->flags & (F_SIGN | F_BLANK)))
+        {
+            /* Fast path */
+            if (formatfloat(v, arg, NULL, writer) == -1)
+                return -1;
+            return 1;
+        }
+
+        arg->sign = 1;
+        if (formatfloat(v, arg, p_str, NULL) == -1)
+            return -1;
+        break;
+
+    case 'c':
+    {
+        Py_UCS4 ch = formatchar(v);
+        if (ch == (Py_UCS4) -1)
+            return -1;
+        if (arg->width == -1 && arg->prec == -1) {
+            /* Fast path */
+            if (_PyUnicodeWriter_Prepare(writer, 1, ch) == -1)
+                return -1;
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+            writer->pos += 1;
+            return 1;
+        }
+        *p_str = PyUnicode_FromOrdinal(ch);
+        break;
+    }
+
+    default:
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported format character '%c' (0x%x) "
+                     "at index %zd",
+                     (31<=arg->ch && arg->ch<=126) ? (char)arg->ch : '?',
+                     (int)arg->ch,
+                     ctx->fmtpos - 1);
+        return -1;
+    }
+    if (*p_str == NULL)
+        return -1;
+    assert (PyUnicode_Check(*p_str));
+    return 0;
+}
+
+static int
+unicode_format_arg_output(struct unicode_formatter_t *ctx,
+                          struct unicode_format_arg_t *arg,
+                          PyObject *str)
+{
+    Py_ssize_t len;
+    enum PyUnicode_Kind kind;
+    void *pbuf;
+    Py_ssize_t pindex;
+    Py_UCS4 signchar;
+    Py_ssize_t buflen;
+    Py_UCS4 maxchar, bufmaxchar;
+    Py_ssize_t sublen;
+    _PyUnicodeWriter *writer = &ctx->writer;
+    Py_UCS4 fill;
+
+    fill = ' ';
+    if (arg->sign && arg->flags & F_ZERO)
+        fill = '0';
+
+    if (PyUnicode_READY(str) == -1)
+        return -1;
+
+    len = PyUnicode_GET_LENGTH(str);
+    if ((arg->width == -1 || arg->width <= len)
+        && (arg->prec == -1 || arg->prec >= len)
+        && !(arg->flags & (F_SIGN | F_BLANK)))
+    {
+        /* Fast path */
+        if (_PyUnicodeWriter_WriteStr(writer, str) == -1)
+            return -1;
+        return 0;
+    }
+
+    /* Truncate the string for "s", "r" and "a" formats
+       if the precision is set */
+    if (arg->ch == 's' || arg->ch == 'r' || arg->ch == 'a') {
+        if (arg->prec >= 0 && len > arg->prec)
+            len = arg->prec;
+    }
+
+    /* Adjust sign and width */
+    kind = PyUnicode_KIND(str);
+    pbuf = PyUnicode_DATA(str);
+    pindex = 0;
+    signchar = '\0';
+    if (arg->sign) {
+        Py_UCS4 ch = PyUnicode_READ(kind, pbuf, pindex);
+        if (ch == '-' || ch == '+') {
+            signchar = ch;
+            len--;
+            pindex++;
+        }
+        else if (arg->flags & F_SIGN)
+            signchar = '+';
+        else if (arg->flags & F_BLANK)
+            signchar = ' ';
+        else
+            arg->sign = 0;
+    }
+    if (arg->width < len)
+        arg->width = len;
+
+    /* Prepare the writer */
+    bufmaxchar = 127;
+    if (!(arg->flags & F_LJUST)) {
+        if (arg->sign) {
+            if ((arg->width-1) > len)
+                bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
+        }
+        else {
+            if (arg->width > len)
+                bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
+        }
+    }
+    maxchar = _PyUnicode_FindMaxChar(str, 0, pindex+len);
+    bufmaxchar = MAX_MAXCHAR(bufmaxchar, maxchar);
+    buflen = arg->width;
+    if (arg->sign && len == arg->width)
+        buflen++;
+    if (_PyUnicodeWriter_Prepare(writer, buflen, bufmaxchar) == -1)
+        return -1;
+
+    /* Write the sign if needed */
+    if (arg->sign) {
+        if (fill != ' ') {
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, signchar);
+            writer->pos += 1;
+        }
+        if (arg->width > len)
+            arg->width--;
+    }
+
+    /* Write the numeric prefix for "x", "X" and "o" formats
+       if the alternate form is used.
+       For example, write "0x" for the "%#x" format. */
+    if ((arg->flags & F_ALT) && (arg->ch == 'x' || arg->ch == 'X' || arg->ch == 'o')) {
+        assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
+        assert(PyUnicode_READ(kind, pbuf, pindex + 1) == arg->ch);
+        if (fill != ' ') {
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '0');
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos+1, arg->ch);
+            writer->pos += 2;
+            pindex += 2;
+        }
+        arg->width -= 2;
+        if (arg->width < 0)
+            arg->width = 0;
+        len -= 2;
+    }
+
+    /* Pad left with the fill character if needed */
+    if (arg->width > len && !(arg->flags & F_LJUST)) {
+        sublen = arg->width - len;
+        FILL(writer->kind, writer->data, fill, writer->pos, sublen);
+        writer->pos += sublen;
+        arg->width = len;
+    }
+
+    /* If padding with spaces: write sign if needed and/or numeric prefix if
+       the alternate form is used */
+    if (fill == ' ') {
+        if (arg->sign) {
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, signchar);
+            writer->pos += 1;
+        }
+        if ((arg->flags & F_ALT) && (arg->ch == 'x' || arg->ch == 'X' || arg->ch == 'o')) {
+            assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
+            assert(PyUnicode_READ(kind, pbuf, pindex+1) == arg->ch);
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '0');
+            PyUnicode_WRITE(writer->kind, writer->data, writer->pos+1, arg->ch);
+            writer->pos += 2;
+            pindex += 2;
+        }
+    }
+
+    /* Write characters */
+    if (len) {
+        _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
+                                      str, pindex, len);
+        writer->pos += len;
+    }
+
+    /* Pad right with the fill character if needed */
+    if (arg->width > len) {
+        sublen = arg->width - len;
+        FILL(writer->kind, writer->data, ' ', writer->pos, sublen);
+        writer->pos += sublen;
+    }
+    return 0;
+}
+
+/* Helper of PyUnicode_Format(): format one arg.
+   Return 0 on success, raise an exception and return -1 on error. */
+static int
+unicode_format_arg(struct unicode_formatter_t *ctx)
+{
+    struct unicode_format_arg_t arg;
+    PyObject *str;
+    int ret;
+
+    ret = unicode_format_arg_parse(ctx, &arg);
+    if (ret == -1)
+        return -1;
+
+    ret = unicode_format_arg_format(ctx, &arg, &str);
+    if (ret == -1)
+        return -1;
+
+    if (ret != 1) {
+        ret = unicode_format_arg_output(ctx, &arg, str);
+        Py_DECREF(str);
+        if (ret == -1)
+            return -1;
+    }
+
+    if (ctx->dict && (ctx->argidx < ctx->arglen) && arg.ch != '%') {
+        PyErr_SetString(PyExc_TypeError,
+                        "not all arguments converted during string formatting");
+        return -1;
+    }
+    return 0;
+}
+
 PyObject *
 PyUnicode_Format(PyObject *format, PyObject *args)
 {
-    Py_ssize_t fmtcnt, fmtpos, arglen, argidx;
-    int args_owned = 0;
-    PyObject *dict = NULL;
-    PyObject *temp = NULL;
-    PyObject *second = NULL;
-    PyObject *uformat;
-    void *fmt;
-    enum PyUnicode_Kind kind, fmtkind;
-    _PyUnicodeWriter writer;
-    Py_ssize_t sublen;
-    Py_UCS4 maxchar;
+    struct unicode_formatter_t ctx;
 
     if (format == NULL || args == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    uformat = PyUnicode_FromObject(format);
-    if (uformat == NULL)
+
+    ctx.fmtstr = PyUnicode_FromObject(format);
+    if (ctx.fmtstr == NULL)
         return NULL;
-    if (PyUnicode_READY(uformat) == -1)
-        Py_DECREF(uformat);
+    if (PyUnicode_READY(ctx.fmtstr) == -1) {
+        Py_DECREF(ctx.fmtstr);
+        return NULL;
+    }
+    ctx.fmtdata = PyUnicode_DATA(ctx.fmtstr);
+    ctx.fmtkind = PyUnicode_KIND(ctx.fmtstr);
+    ctx.fmtcnt = PyUnicode_GET_LENGTH(ctx.fmtstr);
+    ctx.fmtpos = 0;
 
-    fmt = PyUnicode_DATA(uformat);
-    fmtkind = PyUnicode_KIND(uformat);
-    fmtcnt = PyUnicode_GET_LENGTH(uformat);
-    fmtpos = 0;
-
-    _PyUnicodeWriter_Init(&writer, fmtcnt + 100);
+    _PyUnicodeWriter_Init(&ctx.writer, ctx.fmtcnt + 100);
 
     if (PyTuple_Check(args)) {
-        arglen = PyTuple_Size(args);
-        argidx = 0;
+        ctx.arglen = PyTuple_Size(args);
+        ctx.argidx = 0;
     }
     else {
-        arglen = -1;
-        argidx = -2;
+        ctx.arglen = -1;
+        ctx.argidx = -2;
     }
+    ctx.args_owned = 0;
     if (PyMapping_Check(args) && !PyTuple_Check(args) && !PyUnicode_Check(args))
-        dict = args;
+        ctx.dict = args;
+    else
+        ctx.dict = NULL;
+    ctx.args = args;
 
-    while (--fmtcnt >= 0) {
-        if (PyUnicode_READ(fmtkind, fmt, fmtpos) != '%') {
-            Py_ssize_t nonfmtpos;
-            nonfmtpos = fmtpos++;
-            while (fmtcnt >= 0 &&
-                   PyUnicode_READ(fmtkind, fmt, fmtpos) != '%') {
-                fmtpos++;
-                fmtcnt--;
+    while (--ctx.fmtcnt >= 0) {
+        if (PyUnicode_READ(ctx.fmtkind, ctx.fmtdata, ctx.fmtpos) != '%') {
+            Py_ssize_t nonfmtpos, sublen;
+            Py_UCS4 maxchar;
+
+            nonfmtpos = ctx.fmtpos++;
+            while (ctx.fmtcnt >= 0 &&
+                   PyUnicode_READ(ctx.fmtkind, ctx.fmtdata, ctx.fmtpos) != '%') {
+                ctx.fmtpos++;
+                ctx.fmtcnt--;
             }
-            if (fmtcnt < 0) {
-                fmtpos--;
-                writer.overallocate = 0;
+            if (ctx.fmtcnt < 0) {
+                ctx.fmtpos--;
+                ctx.writer.overallocate = 0;
             }
-            sublen = fmtpos - nonfmtpos;
-            maxchar = _PyUnicode_FindMaxChar(uformat,
+            sublen = ctx.fmtpos - nonfmtpos;
+            maxchar = _PyUnicode_FindMaxChar(ctx.fmtstr,
                                              nonfmtpos, nonfmtpos + sublen);
-            if (_PyUnicodeWriter_Prepare(&writer, sublen, maxchar) == -1)
+            if (_PyUnicodeWriter_Prepare(&ctx.writer, sublen, maxchar) == -1)
                 goto onError;
 
-            _PyUnicode_FastCopyCharacters(writer.buffer, writer.pos,
-                                          uformat, nonfmtpos, sublen);
-            writer.pos += sublen;
+            _PyUnicode_FastCopyCharacters(ctx.writer.buffer, ctx.writer.pos,
+                                          ctx.fmtstr, nonfmtpos, sublen);
+            ctx.writer.pos += sublen;
         }
         else {
-            /* Got a format specifier */
-            int flags = 0;
-            Py_ssize_t width = -1;
-            int prec = -1;
-            Py_UCS4 c = '\0';
-            Py_UCS4 fill;
-            int sign;
-            Py_UCS4 signchar;
-            PyObject *v = NULL;
-            void *pbuf = NULL;
-            Py_ssize_t pindex, len;
-            Py_UCS4 bufmaxchar;
-            Py_ssize_t buflen;
-
-            fmtpos++;
-            c = PyUnicode_READ(fmtkind, fmt, fmtpos);
-            if (c == '(') {
-                Py_ssize_t keystart;
-                Py_ssize_t keylen;
-                PyObject *key;
-                int pcount = 1;
-
-                if (dict == NULL) {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "format requires a mapping");
-                    goto onError;
-                }
-                ++fmtpos;
-                --fmtcnt;
-                keystart = fmtpos;
-                /* Skip over balanced parentheses */
-                while (pcount > 0 && --fmtcnt >= 0) {
-                    c = PyUnicode_READ(fmtkind, fmt, fmtpos);
-                    if (c == ')')
-                        --pcount;
-                    else if (c == '(')
-                        ++pcount;
-                    fmtpos++;
-                }
-                keylen = fmtpos - keystart - 1;
-                if (fmtcnt < 0 || pcount > 0) {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "incomplete format key");
-                    goto onError;
-                }
-                key = PyUnicode_Substring(uformat,
-                                          keystart, keystart + keylen);
-                if (key == NULL)
-                    goto onError;
-                if (args_owned) {
-                    Py_DECREF(args);
-                    args_owned = 0;
-                }
-                args = PyObject_GetItem(dict, key);
-                Py_DECREF(key);
-                if (args == NULL) {
-                    goto onError;
-                }
-                args_owned = 1;
-                arglen = -1;
-                argidx = -2;
-            }
-            while (--fmtcnt >= 0) {
-                c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                switch (c) {
-                case '-': flags |= F_LJUST; continue;
-                case '+': flags |= F_SIGN; continue;
-                case ' ': flags |= F_BLANK; continue;
-                case '#': flags |= F_ALT; continue;
-                case '0': flags |= F_ZERO; continue;
-                }
-                break;
-            }
-            if (c == '*') {
-                v = getnextarg(args, arglen, &argidx);
-                if (v == NULL)
-                    goto onError;
-                if (!PyLong_Check(v)) {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "* wants int");
-                    goto onError;
-                }
-                width = PyLong_AsLong(v);
-                if (width == -1 && PyErr_Occurred())
-                    goto onError;
-                if (width < 0) {
-                    flags |= F_LJUST;
-                    width = -width;
-                }
-                if (--fmtcnt >= 0)
-                    c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-            }
-            else if (c >= '0' && c <= '9') {
-                width = c - '0';
-                while (--fmtcnt >= 0) {
-                    c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                    if (c < '0' || c > '9')
-                        break;
-                    /* Since c is unsigned, the RHS would end up as unsigned,
-                       mixing signed and unsigned comparison. Since c is between
-                       '0' and '9', casting to int is safe. */
-                    if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
-                        PyErr_SetString(PyExc_ValueError,
-                                        "width too big");
-                        goto onError;
-                    }
-                    width = width*10 + (c - '0');
-                }
-            }
-            if (c == '.') {
-                prec = 0;
-                if (--fmtcnt >= 0)
-                    c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                if (c == '*') {
-                    v = getnextarg(args, arglen, &argidx);
-                    if (v == NULL)
-                        goto onError;
-                    if (!PyLong_Check(v)) {
-                        PyErr_SetString(PyExc_TypeError,
-                                        "* wants int");
-                        goto onError;
-                    }
-                    prec = PyLong_AsLong(v);
-                    if (prec == -1 && PyErr_Occurred())
-                        goto onError;
-                    if (prec < 0)
-                        prec = 0;
-                    if (--fmtcnt >= 0)
-                        c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                }
-                else if (c >= '0' && c <= '9') {
-                    prec = c - '0';
-                    while (--fmtcnt >= 0) {
-                        c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                        if (c < '0' || c > '9')
-                            break;
-                        if (prec > (INT_MAX - ((int)c - '0')) / 10) {
-                            PyErr_SetString(PyExc_ValueError,
-                                            "prec too big");
-                            goto onError;
-                        }
-                        prec = prec*10 + (c - '0');
-                    }
-                }
-            } /* prec */
-            if (fmtcnt >= 0) {
-                if (c == 'h' || c == 'l' || c == 'L') {
-                    if (--fmtcnt >= 0)
-                        c = PyUnicode_READ(fmtkind, fmt, fmtpos++);
-                }
-            }
-            if (fmtcnt < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "incomplete format");
+            ctx.fmtpos++;
+            if (unicode_format_arg(&ctx) == -1)
                 goto onError;
-            }
-            if (fmtcnt == 0)
-                writer.overallocate = 0;
+        }
+    }
 
-            if (c == '%') {
-                if (_PyUnicodeWriter_Prepare(&writer, 1, '%') == -1)
-                    goto onError;
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos, '%');
-                writer.pos += 1;
-                continue;
-            }
-
-            v = getnextarg(args, arglen, &argidx);
-            if (v == NULL)
-                goto onError;
-
-            sign = 0;
-            signchar = '\0';
-            fill = ' ';
-            switch (c) {
-
-            case 's':
-            case 'r':
-            case 'a':
-                if (PyLong_CheckExact(v) && width == -1 && prec == -1) {
-                    /* Fast path */
-                    if (_PyLong_FormatWriter(&writer, v, 10, flags & F_ALT) == -1)
-                        goto onError;
-                    goto nextarg;
-                }
-
-                if (PyUnicode_CheckExact(v) && c == 's') {
-                    temp = v;
-                    Py_INCREF(temp);
-                }
-                else {
-                    if (c == 's')
-                        temp = PyObject_Str(v);
-                    else if (c == 'r')
-                        temp = PyObject_Repr(v);
-                    else
-                        temp = PyObject_ASCII(v);
-                }
-                break;
-
-            case 'i':
-            case 'd':
-            case 'u':
-            case 'o':
-            case 'x':
-            case 'X':
-            {
-                int ret = mainformatlong(&writer, v, c, width, prec,
-                                         flags, &temp);
-                if (ret == 1)
-                    goto nextarg;
-                if (ret == -1)
-                    goto onError;
-                sign = 1;
-                if (flags & F_ZERO)
-                    fill = '0';
-                break;
-            }
-
-            case 'e':
-            case 'E':
-            case 'f':
-            case 'F':
-            case 'g':
-            case 'G':
-                if (width == -1 && prec == -1
-                    && !(flags & (F_SIGN | F_BLANK)))
-                {
-                    /* Fast path */
-                    if (formatfloat(v, flags, prec, c, NULL, &writer) == -1)
-                        goto onError;
-                    goto nextarg;
-                }
-
-                sign = 1;
-                if (flags & F_ZERO)
-                    fill = '0';
-                if (formatfloat(v, flags, prec, c, &temp, NULL) == -1)
-                    temp = NULL;
-                break;
-
-            case 'c':
-            {
-                Py_UCS4 ch = formatchar(v);
-                if (ch == (Py_UCS4) -1)
-                    goto onError;
-                if (width == -1 && prec == -1) {
-                    /* Fast path */
-                    if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
-                        goto onError;
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-                    writer.pos += 1;
-                    goto nextarg;
-                }
-                temp = PyUnicode_FromOrdinal(ch);
-                break;
-            }
-
-            default:
-                PyErr_Format(PyExc_ValueError,
-                             "unsupported format character '%c' (0x%x) "
-                             "at index %zd",
-                             (31<=c && c<=126) ? (char)c : '?',
-                             (int)c,
-                             fmtpos - 1);
-                goto onError;
-            }
-            if (temp == NULL)
-                goto onError;
-            assert (PyUnicode_Check(temp));
-
-            if (PyUnicode_READY(temp) == -1) {
-                Py_CLEAR(temp);
-                goto onError;
-            }
-
-            len = PyUnicode_GET_LENGTH(temp);
-            if ((width == -1 || width <= len)
-                && (prec == -1 || prec >= len)
-                && !(flags & (F_SIGN | F_BLANK)))
-            {
-                /* Fast path */
-                if (_PyUnicodeWriter_WriteStr(&writer, temp) == -1)
-                    goto onError;
-                goto nextarg;
-            }
-
-            if (c == 's' || c == 'r' || c == 'a') {
-                if (prec >= 0 && len > prec)
-                    len = prec;
-            }
-
-            /* pbuf is initialized here. */
-            kind = PyUnicode_KIND(temp);
-            pbuf = PyUnicode_DATA(temp);
-            pindex = 0;
-            if (sign) {
-                Py_UCS4 ch = PyUnicode_READ(kind, pbuf, pindex);
-                if (ch == '-' || ch == '+') {
-                    signchar = ch;
-                    len--;
-                    pindex++;
-                }
-                else if (flags & F_SIGN)
-                    signchar = '+';
-                else if (flags & F_BLANK)
-                    signchar = ' ';
-                else
-                    sign = 0;
-            }
-            if (width < len)
-                width = len;
-
-            /* Compute the length and maximum character of the
-               written characters */
-            bufmaxchar = 127;
-            if (!(flags & F_LJUST)) {
-                if (sign) {
-                    if ((width-1) > len)
-                        bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
-                }
-                else {
-                    if (width > len)
-                        bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
-                }
-            }
-            maxchar = _PyUnicode_FindMaxChar(temp, 0, pindex+len);
-            bufmaxchar = MAX_MAXCHAR(bufmaxchar, maxchar);
-
-            buflen = width;
-            if (sign && len == width)
-                buflen++;
-
-            if (_PyUnicodeWriter_Prepare(&writer, buflen, bufmaxchar) == -1)
-                goto onError;
-
-            /* Write characters */
-            if (sign) {
-                if (fill != ' ') {
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, signchar);
-                    writer.pos += 1;
-                }
-                if (width > len)
-                    width--;
-            }
-            if ((flags & F_ALT) && (c == 'x' || c == 'X' || c == 'o')) {
-                assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
-                assert(PyUnicode_READ(kind, pbuf, pindex + 1) == c);
-                if (fill != ' ') {
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, '0');
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos+1, c);
-                    writer.pos += 2;
-                    pindex += 2;
-                }
-                width -= 2;
-                if (width < 0)
-                    width = 0;
-                len -= 2;
-            }
-            if (width > len && !(flags & F_LJUST)) {
-                sublen = width - len;
-                FILL(writer.kind, writer.data, fill, writer.pos, sublen);
-                writer.pos += sublen;
-                width = len;
-            }
-            if (fill == ' ') {
-                if (sign) {
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, signchar);
-                    writer.pos += 1;
-                }
-                if ((flags & F_ALT) && (c == 'x' || c == 'X' || c == 'o')) {
-                    assert(PyUnicode_READ(kind, pbuf, pindex) == '0');
-                    assert(PyUnicode_READ(kind, pbuf, pindex+1) == c);
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, '0');
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos+1, c);
-                    writer.pos += 2;
-                    pindex += 2;
-                }
-            }
-
-            if (len) {
-                _PyUnicode_FastCopyCharacters(writer.buffer, writer.pos,
-                                              temp, pindex, len);
-                writer.pos += len;
-            }
-            if (width > len) {
-                sublen = width - len;
-                FILL(writer.kind, writer.data, ' ', writer.pos, sublen);
-                writer.pos += sublen;
-            }
-
-nextarg:
-            if (dict && (argidx < arglen) && c != '%') {
-                PyErr_SetString(PyExc_TypeError,
-                                "not all arguments converted during string formatting");
-                goto onError;
-            }
-            Py_CLEAR(temp);
-        } /* '%' */
-    } /* until end */
-    if (argidx < arglen && !dict) {
+    if (ctx.argidx < ctx.arglen && !ctx.dict) {
         PyErr_SetString(PyExc_TypeError,
                         "not all arguments converted during string formatting");
         goto onError;
     }
 
-    if (args_owned) {
-        Py_DECREF(args);
+    if (ctx.args_owned) {
+        Py_DECREF(ctx.args);
     }
-    Py_DECREF(uformat);
-    Py_XDECREF(temp);
-    Py_XDECREF(second);
-    return _PyUnicodeWriter_Finish(&writer);
+    Py_DECREF(ctx.fmtstr);
+    return _PyUnicodeWriter_Finish(&ctx.writer);
 
   onError:
-    Py_DECREF(uformat);
-    Py_XDECREF(temp);
-    Py_XDECREF(second);
-    _PyUnicodeWriter_Dealloc(&writer);
-    if (args_owned) {
-        Py_DECREF(args);
+    Py_DECREF(ctx.fmtstr);
+    _PyUnicodeWriter_Dealloc(&ctx.writer);
+    if (ctx.args_owned) {
+        Py_DECREF(ctx.args);
     }
     return NULL;
 }
