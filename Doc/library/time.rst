@@ -557,7 +557,7 @@ The module defines the following functions and data items:
    :exc:`TypeError` is raised.
 
   .. versionchanged:: 3.3
-     :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are avaliable on platforms
+     :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are available on platforms
      with C library supporting the corresponding fields in ``struct tm``.
 
 .. function:: time()
