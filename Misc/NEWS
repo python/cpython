@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16089: Allow ElementTree.TreeBuilder to work again with a non-Element
+  element_factory (fixes a regression in SimpleTAL).
+
 - Issue #9650: List commonly used format codes in time.strftime and
   time.strptime docsttings.  Original patch by Mike Hoy.
 
