@@ -18,10 +18,6 @@
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
-#else
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-#include "dlfcn.h"
-#endif
 #endif
 
 #if (defined(__OpenBSD__) || defined(__NetBSD__)) && !defined(__ELF__)
@@ -40,10 +36,6 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     ".dll",
 #else  /* !__CYGWIN__ */
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-    ".pyd",
-    ".dll",
-#else  /* !(defined(PYOS_OS2) && defined(PYCC_GCC)) */
 #ifdef __VMS
     ".exe",
     ".EXE",
@@ -52,7 +44,6 @@ const char *_PyImport_DynLoadFiletab[] = {
     ".abi" PYTHON_ABI_STRING ".so",
     ".so",
 #endif  /* __VMS */
-#endif  /* defined(PYOS_OS2) && defined(PYCC_GCC) */
 #endif  /* __CYGWIN__ */
     NULL,
 };
@@ -111,9 +102,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
         }
     }
 
-#if !(defined(PYOS_OS2) && defined(PYCC_GCC))
     dlopenflags = PyThreadState_GET()->interp->dlopenflags;
-#endif
 
 #ifdef __VMS
     /* VMS currently don't allow a pathname, use a logical name instead */
