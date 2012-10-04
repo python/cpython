@@ -412,8 +412,6 @@ unicode_result_wchar(PyObject *unicode)
 #ifndef Py_DEBUG
     Py_ssize_t len;
 
-    assert(Py_REFCNT(unicode) == 1);
-
     len = _PyUnicode_WSTR_LENGTH(unicode);
     if (len == 0) {
         Py_INCREF(unicode_empty);
@@ -431,10 +429,12 @@ unicode_result_wchar(PyObject *unicode)
     }
 
     if (_PyUnicode_Ready(unicode) < 0) {
-        Py_XDECREF(unicode);
+        Py_DECREF(unicode);
         return NULL;
     }
 #else
+    assert(Py_REFCNT(unicode) == 1);
+
     /* don't make the result ready in debug mode to ensure that the caller
        makes the string ready before using it */
     assert(_PyUnicode_CheckConsistency(unicode, 1));
