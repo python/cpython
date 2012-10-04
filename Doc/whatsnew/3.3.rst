@@ -1722,6 +1722,13 @@ sched
   :issue:`13245`)
 
 
+select
+------
+
+Solaris and derived platforms have a new class :class:`select.devpoll`
+for high performance asyncronous sockets via :file:`/dev/poll`.
+
+
 shlex
 -----
 
