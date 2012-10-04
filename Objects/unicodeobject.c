@@ -13442,8 +13442,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     uformat = PyUnicode_FromObject(format);
     if (uformat == NULL)
         return NULL;
-    if (PyUnicode_READY(uformat) == -1)
+    if (PyUnicode_READY(uformat) == -1) {
         Py_DECREF(uformat);
+        return NULL;
+    }
 
     fmt = PyUnicode_DATA(uformat);
     fmtkind = PyUnicode_KIND(uformat);
