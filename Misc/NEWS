@@ -125,6 +125,8 @@ Build
 - Issue #15923: Fix a mistake in ``asdl_c.py`` that resulted in a TypeError
   after 2801bf875a24 (see #15801).
 
+- Issue #16135: Remove OS/2 support.
+
 - Issue #15819: Make sure we can build Python out-of-tree from a readonly source
   directory.  (Somewhat related to Issue #9860.)
 

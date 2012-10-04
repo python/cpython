@@ -91,10 +91,6 @@ static size_t _pythread_stacksize = 0;
 #include "thread_nt.h"
 #endif
 
-#ifdef OS2_THREADS
-#define PYTHREAD_NAME "os2"
-#include "thread_os2.h"
-#endif
 
 /*
 #ifdef FOOBAR_THREADS
