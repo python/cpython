@@ -815,6 +815,14 @@ class SizeofTest:
         bufio = self.tp(rawio, buffer_size=bufsize2)
         self.assertEqual(sys.getsizeof(bufio), size + bufsize2)
 
+    @support.cpython_only
+    def test_buffer_freeing(self) :
+        bufsize = 4096
+        rawio = self.MockRawIO()
+        bufio = self.tp(rawio, buffer_size=bufsize)
+        size = sys.getsizeof(bufio) - bufsize
+        bufio.close()
+        self.assertEqual(sys.getsizeof(bufio), size)
 
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     read_mode = "rb"
