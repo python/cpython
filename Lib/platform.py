@@ -113,7 +113,7 @@ __copyright__ = """
 
 __version__ = '1.0.7'
 
-import sys,string,os,re,subprocess
+import sys,string,os,re
 
 ### Globals & Constants
 
@@ -1020,6 +1020,26 @@ def _syscmd_file(target,default=''):
         case the command should fail.
 
     """
+
+    # We do the import here to avoid a bootstrap issue.
+    # See c73b90b6dadd changeset.
+    #
+    # [..]
+    # ranlib libpython2.7.a
+    # gcc   -o python \
+    #        Modules/python.o \
+    #        libpython2.7.a -lsocket -lnsl -ldl    -lm
+    # Traceback (most recent call last):
+    #  File "./setup.py", line 8, in <module>
+    #    from platform import machine as platform_machine
+    #  File "[..]/build/Lib/platform.py", line 116, in <module>
+    #    import sys,string,os,re,subprocess
+    #  File "[..]/build/Lib/subprocess.py", line 429, in <module>
+    #    import select
+    # ImportError: No module named select
+
+    import subprocess
+
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
