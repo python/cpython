@@ -10445,6 +10445,10 @@ unicode_compare(PyObject *str1, PyObject *str2)
     void *data1, *data2;
     Py_ssize_t len1, len2, i;
 
+    /* a string is equal to itself */
+    if (str1 == str2)
+        return 0;
+
     kind1 = PyUnicode_KIND(str1);
     kind2 = PyUnicode_KIND(str2);
     data1 = PyUnicode_DATA(str1);
@@ -10531,10 +10535,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
                 return Py_True;
             }
         }
-        if (left == right)
-            result = 0;
-        else
-            result = unicode_compare(left, right);
+        result = unicode_compare(left, right);
 
         /* Convert the return value to a Boolean */
         switch (op) {
