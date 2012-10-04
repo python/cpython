@@ -56,20 +56,21 @@ virtualenv will be created, according to the given options, at each
 provided path.
 
 Once a venv has been created, it can be "activated" using a script in the
-venv's binary directory. The invocation of the script is platform-specific: on
-a Posix platform, you would typically do::
+venv's binary directory. The invocation of the script is platform-specific:
 
-    $ source <venv>/bin/activate
-
-whereas on Windows, you might do::
-
-    C:\> <venv>/Scripts/activate
-
-if you are using the ``cmd.exe`` shell, or perhaps::
-
-    PS C:\> <venv>/Scripts/Activate.ps1
-
-if you use PowerShell.
++-------------+-----------------+-----------------------------------------+
+| Platform    | Shell           | Command to activate virtual environment |
++=============+=================+=========================================+
+| Posix       | bash/zsh        | $ source <venv>/bin/activate            |
++-------------+-----------------+-----------------------------------------+
+|             | fish            | $ . <venv>/bin/activate.fish            |
++-------------+-----------------+-----------------------------------------+
+|             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
++-------------+-----------------+-----------------------------------------+
+| Windows     | cmd.exe         | C:\> <venv>/Scripts/activate.bat        |
++-------------+-----------------+-----------------------------------------+
+|             | PowerShell      | PS C:\> <venv>/Scripts/Activate.ps1     |
++-------------+-----------------+-----------------------------------------+
 
 You don't specifically *need* to activate an environment; activation just
 prepends the venv's binary directory to your path, so that "python" invokes the
