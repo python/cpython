@@ -316,6 +316,17 @@ class SkipitemTest(unittest.TestCase):
                     c, i, when_skipped, when_not_skipped))
             self.assertIs(when_skipped, when_not_skipped, message)
 
+    def test_parse_tuple_and_keywords(self):
+        # parse_tuple_and_keywords error handling tests
+        self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, 42, [])
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, b'', 42)
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, b'', [''] * 42)
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, b'', [42])
+
 def test_main():
     support.run_unittest(CAPITest, TestPendingCalls,
                          Test6012, EmbeddingTest, SkipitemTest)
