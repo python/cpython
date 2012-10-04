@@ -1651,7 +1651,6 @@ long_to_decimal_string_internal(PyObject *aa,
         else                                                          \
             p = (TYPE*)PyUnicode_DATA(str) + strlen;                  \
                                                                       \
-        *p = '\0';                                                    \
         /* pout[0] through pout[size-2] contribute exactly            \
            _PyLong_DECIMAL_SHIFT digits each */                       \
         for (i=0; i < size - 1; i++) {                                \
