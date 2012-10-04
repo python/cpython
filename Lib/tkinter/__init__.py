@@ -2146,45 +2146,6 @@ class Button(Widget):
         """
         return self.tk.call(self._w, 'invoke')
 
-
-# Indices:
-# XXX I don't like these -- take them away
-def AtEnd():
-    warnings.warn("tkinter.AtEnd will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'end'
-
-
-def AtInsert(*args):
-    warnings.warn("tkinter.AtInsert will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    s = 'insert'
-    for a in args:
-        if a: s = s + (' ' + a)
-    return s
-
-
-def AtSelFirst():
-    warnings.warn("tkinter.AtSelFirst will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'sel.first'
-
-
-def AtSelLast():
-    warnings.warn("tkinter.AtSelLast will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'sel.last'
-
-
-def At(x, y=None):
-    warnings.warn("tkinter.At will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    if y is None:
-        return '@%r' % (x,)
-    else:
-        return '@%r,%r' % (x, y)
-
-
 class Canvas(Widget, XView, YView):
     """Canvas widget to display graphical elements like lines or text."""
     def __init__(self, master=None, cnf={}, **kw):
