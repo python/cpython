@@ -1238,7 +1238,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
         o = PySequence_Fast_GET_ITEM(sub_keywords, i);
         if (!PyUnicode_FSConverter(o, (void *)(converted + i))) {
             PyErr_Format(PyExc_ValueError,
-                "parse_tuple_and_keywords: could not convert keywords[%s] to narrow string", i);
+                "parse_tuple_and_keywords: could not convert keywords[%zd] to narrow string", i);
             goto exit;
         }
         keywords[i] = PyBytes_AS_STRING(converted[i]);
