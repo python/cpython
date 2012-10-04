@@ -303,7 +303,9 @@ class Element:
         self._children.insert(index, element)
 
     def _assert_is_element(self, e):
-        if not isinstance(e, Element):
+        # Need to refer to the actual Python implementation, not the
+        # shadowing C implementation.
+        if not isinstance(e, _Element):
             raise TypeError('expected an Element, not %s' % type(e).__name__)
 
     ##
