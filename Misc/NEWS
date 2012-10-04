@@ -37,6 +37,9 @@ Library
 - Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
   implementation.  Initial patch by Serhiy Storchaka.
 
+- Issue #16112: platform.architecture does not correctly escape argument to
+  /usr/bin/file.  Patch by David Benjamin.
+
 - Issue #15756: `subprocess.poll()` now properly handles `errno.ECHILD` to
   return a returncode of 0 when the child has already exited or cannot be waited
   on.
