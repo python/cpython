@@ -46,6 +46,8 @@ zoom-height=<Alt-Key-2>
 
 [ScriptBinding]
 enable=1
+enable_shell=0
+enable_editor=1
 [ScriptBinding_cfgBindings]
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
