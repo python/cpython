@@ -159,7 +159,7 @@ contexts::
 
         d['x']                # Get first key in the chain of contexts
         d['x'] = 1            # Set value in current context
-        del['x']              # Delete from current context
+        del d['x']            # Delete from current context
         list(d)               # All nested values
         k in d                # Check all nested values
         len(d)                # Number of nested values
