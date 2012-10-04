@@ -1951,7 +1951,8 @@ PyAPI_FUNC(PyObject *) PyUnicode_Replace(
     );
 
 /* Compare two strings and return -1, 0, 1 for less than, equal,
-   greater than resp. */
+   greater than resp.
+   Raise an exception and return -1 on error. */
 
 PyAPI_FUNC(int) PyUnicode_Compare(
     PyObject *left,             /* Left string */
