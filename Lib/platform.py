@@ -113,7 +113,7 @@ __copyright__ = """
 
 __version__ = '1.0.7'
 
-import sys,string,os,re
+import sys,string,os,re,subprocess
 
 ### Globals & Constants
 
@@ -1023,13 +1023,16 @@ def _syscmd_file(target,default=''):
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
-    target = _follow_symlinks(target).replace('"', '\\"')
+    target = _follow_symlinks(target)
     try:
-        f = os.popen('file "%s" 2> %s' % (target, DEV_NULL))
+        with open(DEV_NULL) as dev_null:
+            proc = subprocess.Popen(['file', '-b', '--', target],
+                    stdout=subprocess.PIPE, stderr=dev_null)
+
     except (AttributeError,os.error):
         return default
-    output = string.strip(f.read())
-    rc = f.close()
+    output = proc.stdout.read()
+    rc = proc.wait()
     if not output or rc:
         return default
     else:
