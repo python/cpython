@@ -1332,42 +1332,6 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 
 
 static PyObject *
-Tkapp_GlobalCall(PyObject *self, PyObject *args)
-{
-    /* Could do the same here as for Tkapp_Call(), but this is not used
-       much, so I can't be bothered.  Unfortunately Tcl doesn't export a
-       way for the user to do what all its Global* variants do (save and
-       reset the scope pointer, call the local version, restore the saved
-       scope pointer). */
-
-    char *cmd;
-    PyObject *res = NULL;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "globalcall is deprecated and will be removed in 3.4",
-                     1) < 0)
-        return 0;
-
-    CHECK_TCL_APPARTMENT;
-
-    cmd  = Merge(args);
-    if (cmd) {
-        int err;
-        ENTER_TCL
-        err = Tcl_GlobalEval(Tkapp_Interp(self), cmd);
-        ENTER_OVERLAP
-        if (err == TCL_ERROR)
-            res = Tkinter_Error(self);
-        else
-            res = PyUnicode_FromString(Tkapp_Result(self));
-        LEAVE_OVERLAP_TCL
-        ckfree(cmd);
-    }
-
-    return res;
-}
-
-static PyObject *
 Tkapp_Eval(PyObject *self, PyObject *args)
 {
     char *script;
@@ -1381,34 +1345,6 @@ Tkapp_Eval(PyObject *self, PyObject *args)
 
     ENTER_TCL
     err = Tcl_Eval(Tkapp_Interp(self), script);
-    ENTER_OVERLAP
-    if (err == TCL_ERROR)
-        res = Tkinter_Error(self);
-    else
-        res = PyUnicode_FromString(Tkapp_Result(self));
-    LEAVE_OVERLAP_TCL
-    return res;
-}
-
-static PyObject *
-Tkapp_GlobalEval(PyObject *self, PyObject *args)
-{
-    char *script;
-    PyObject *res = NULL;
-    int err;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "globaleval is deprecated and will be removed in 3.4",
-                     1) < 0)
-        return 0;
-
-    if (!PyArg_ParseTuple(args, "s:globaleval", &script))
-        return NULL;
-
-    CHECK_TCL_APPARTMENT;
-
-    ENTER_TCL
-    err = Tcl_GlobalEval(Tkapp_Interp(self), script);
     ENTER_OVERLAP
     if (err == TCL_ERROR)
         res = Tkinter_Error(self);
@@ -1959,27 +1895,6 @@ Tkapp_Split(PyObject *self, PyObject *args)
     v = Split(list);
     PyMem_Free(list);
     return v;
-}
-
-static PyObject *
-Tkapp_Merge(PyObject *self, PyObject *args)
-{
-    char *s;
-    PyObject *res = NULL;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "merge is deprecated and will be removed in 3.4",
-                     1) < 0)
-        return 0;
-
-    s = Merge(args);
-
-    if (s) {
-        res = PyUnicode_FromString(s);
-        ckfree(s);
-    }
-
-    return res;
 }
 
 
@@ -2695,9 +2610,7 @@ static PyMethodDef Tkapp_methods[] =
     {"willdispatch",       Tkapp_WillDispatch, METH_NOARGS},
     {"wantobjects",            Tkapp_WantObjects, METH_VARARGS},
     {"call",                   Tkapp_Call, METH_VARARGS},
-    {"globalcall",             Tkapp_GlobalCall, METH_VARARGS},
     {"eval",                   Tkapp_Eval, METH_VARARGS},
-    {"globaleval",             Tkapp_GlobalEval, METH_VARARGS},
     {"evalfile",               Tkapp_EvalFile, METH_VARARGS},
     {"record",                 Tkapp_Record, METH_VARARGS},
     {"adderrorinfo",       Tkapp_AddErrorInfo, METH_VARARGS},
@@ -2716,7 +2629,6 @@ static PyMethodDef Tkapp_methods[] =
     {"exprboolean",        Tkapp_ExprBoolean, METH_VARARGS},
     {"splitlist",              Tkapp_SplitList, METH_VARARGS},
     {"split",                  Tkapp_Split, METH_VARARGS},
-    {"merge",                  Tkapp_Merge, METH_VARARGS},
     {"createcommand",      Tkapp_CreateCommand, METH_VARARGS},
     {"deletecommand",      Tkapp_DeleteCommand, METH_VARARGS},
 #ifdef HAVE_CREATEFILEHANDLER
