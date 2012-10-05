@@ -808,7 +808,7 @@ standard libraries, and can be learned in a few days. Many Python
 programmers report substantial productivity gains and feel the language
 encourages the development of higher quality, more maintainable code.
 
-Python runs on Windows, Linux/Unix, Mac OS X, OS/2, Amiga, Palm
+Python runs on Windows, Linux/Unix, Mac OS X, Amiga, Palm
 Handhelds, and Nokia mobile phones. Python has also been ported to the
 Java and .NET virtual machines.
 

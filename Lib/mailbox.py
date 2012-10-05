@@ -22,9 +22,6 @@ import email.generator
 import io
 import contextlib
 try:
-    if sys.platform == 'os2emx':
-        # OS/2 EMX fcntl() not adequate
-        raise ImportError
     import fcntl
 except ImportError:
     fcntl = None

@@ -30,9 +30,6 @@ altsep = '/'
 defpath = '.;C:\\bin'
 if 'ce' in sys.builtin_module_names:
     defpath = '\\Windows'
-elif 'os2' in sys.builtin_module_names:
-    # OS/2 w/ VACPP
-    altsep = '/'
 devnull = 'nul'
 
 def _get_empty(path):
@@ -320,8 +317,7 @@ def dirname(p):
 
 def islink(path):
     """Test whether a path is a symbolic link.
-    This will always return false for Windows prior to 6.0
-    and for OS/2.
+    This will always return false for Windows prior to 6.0.
     """
     try:
         st = os.lstat(path)

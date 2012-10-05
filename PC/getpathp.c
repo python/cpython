@@ -1,6 +1,6 @@
 
 /* Return the initial module search path. */
-/* Used by DOS, OS/2, Windows 3.1, Windows 95/98, Windows NT. */
+/* Used by DOS, Windows 3.1, Windows 95/98, Windows NT. */
 
 /* ----------------------------------------------------------------
    PATH RULES FOR WINDOWS:

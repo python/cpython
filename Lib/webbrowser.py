@@ -638,17 +638,6 @@ if sys.platform == 'darwin':
     register("MacOSX", None, MacOSXOSAScript('default'), -1)
 
 
-#
-# Platform support for OS/2
-#
-
-if sys.platform[:3] == "os2" and _iscommand("netscape"):
-    _tryorder = []
-    _browsers = {}
-    register("os2netscape", None,
-             GenericBrowser(["start", "netscape", "%s"]), -1)
-
-
 # OK, now that we know what the default preference orders for each
 # platform are, allow user to override them with the BROWSER variable.
 if "BROWSER" in os.environ:

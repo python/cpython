@@ -83,8 +83,7 @@ with very clear syntax. It has interfaces to many system calls and
 libraries, as well as to various window systems, and is extensible in C or
 C++. It is also usable as an extension language for applications that need
 a programmable interface.  Finally, Python is portable: it runs on many
-brands of UNIX, on PCs under Windows, MS-DOS, and OS/2, and on the
-Mac.
+brands of UNIX, on PCs under Windows, MS-DOS, and on the Mac.
 
 %package devel
 Summary: The libraries and header files needed for Python extension development.
