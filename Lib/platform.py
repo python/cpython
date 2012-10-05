@@ -1045,8 +1045,8 @@ def _syscmd_file(target,default=''):
         return default
     target = _follow_symlinks(target)
     try:
-        proc = subprocess.Popen(['file', '-b', '--', target],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        proc = subprocess.Popen(['file', target],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     except (AttributeError,os.error):
         return default
