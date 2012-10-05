@@ -106,10 +106,8 @@ def whichdb(filename):
     try:
         f = io.open(filename + ".pag", "rb")
         f.close()
-        # dbm linked with gdbm on OS/2 doesn't have .dir file
-        if not (ndbm.library == "GNU gdbm" and sys.platform == "os2emx"):
-            f = io.open(filename + ".dir", "rb")
-            f.close()
+        f = io.open(filename + ".dir", "rb")
+        f.close()
         return "dbm.ndbm"
     except IOError:
         # some dbm emulations based on Berkeley DB generate a .db file

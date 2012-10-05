@@ -403,13 +403,13 @@ _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
 
 def _syscmd_ver(system='', release='', version='',
 
-               supported_platforms=('win32','win16','dos','os2')):
+               supported_platforms=('win32','win16','dos')):
 
     """ Tries to figure out the OS version used and returns
         a tuple (system,release,version).
 
         It uses the "ver" shell command for this which is known
-        to exists on Windows, DOS and OS/2. XXX Others too ?
+        to exists on Windows, DOS. XXX Others too ?
 
         In case this fails, the given parameters are used as
         defaults.

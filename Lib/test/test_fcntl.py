@@ -1,7 +1,4 @@
 """Test program for the fcntl C module.
-
-OS/2+EMX doesn't support the file locking operations.
-
 """
 import os
 import struct
@@ -35,8 +32,6 @@ def get_lockdata():
                                fcntl.F_WRLCK, 0)
     elif sys.platform in ['aix3', 'aix4', 'hp-uxB', 'unixware7']:
         lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
-    elif sys.platform in ['os2emx']:
-        lockdata = None
     else:
         lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
     if lockdata:
@@ -62,18 +57,16 @@ class TestFcntl(unittest.TestCase):
         rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         if verbose:
             print('Status from fcntl with O_NONBLOCK: ', rv)
-        if sys.platform not in ['os2emx']:
-            rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETLKW, lockdata)
-            if verbose:
-                print('String from fcntl with F_SETLKW: ', repr(rv))
+        rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETLKW, lockdata)
+        if verbose:
+            print('String from fcntl with F_SETLKW: ', repr(rv))
         self.f.close()
 
     def test_fcntl_file_descriptor(self):
         # again, but pass the file rather than numeric descriptor
         self.f = open(TESTFN, 'wb')
         rv = fcntl.fcntl(self.f, fcntl.F_SETFL, os.O_NONBLOCK)
-        if sys.platform not in ['os2emx']:
-            rv = fcntl.fcntl(self.f, fcntl.F_SETLKW, lockdata)
+        rv = fcntl.fcntl(self.f, fcntl.F_SETLKW, lockdata)
         self.f.close()
 
     def test_fcntl_64_bit(self):

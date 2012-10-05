@@ -27,7 +27,7 @@ TEST_STR = b"hello world\n"
 HOST = test.support.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
-HAVE_FORKING = hasattr(os, "fork") and os.name != "os2"
+HAVE_FORKING = hasattr(os, "fork")
 
 def signal_alarm(n):
     """Call signal.alarm when it exists (i.e. not on Windows)."""
@@ -93,21 +93,7 @@ class SocketServerTest(unittest.TestCase):
             # XXX: We need a way to tell AF_UNIX to pick its own name
             # like AF_INET provides port==0.
             dir = None
-            if os.name == 'os2':
-                dir = '\socket'
             fn = tempfile.mktemp(prefix='unix_socket.', dir=dir)
-            if os.name == 'os2':
-                # AF_UNIX socket names on OS/2 require a specific prefix
-                # which can't include a drive letter and must also use
-                # backslashes as directory separators
-                if fn[1] == ':':
-                    fn = fn[2:]
-                if fn[0] in (os.sep, os.altsep):
-                    fn = fn[1:]
-                if os.sep == '/':
-                    fn = fn.replace(os.sep, os.altsep)
-                else:
-                    fn = fn.replace(os.altsep, os.sep)
             self.test_files.append(fn)
             return fn
 
