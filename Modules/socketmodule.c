@@ -223,13 +223,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #endif
 
 
-#if defined(PYOS_OS2)
-# define  INCL_DOS
-# define  INCL_DOSERRORS
-# define  INCL_NOPMAPI
-# include <os2.h>
-#endif
-
 #if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
 /* make sure that the reentrant (gethostbyaddr_r etc)
    functions are declared correctly if compiling with
@@ -286,12 +279,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # include <unistd.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
-# if defined(PYOS_OS2) && defined(PYCC_VACPP)
-#  include <netdb.h>
-typedef size_t socklen_t;
-# else
 #   include <arpa/inet.h>
-# endif
 
 #  include <fcntl.h>
 
@@ -393,11 +381,6 @@ dup_socket(SOCKET handle)
 #undef EAFNOSUPPORT
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
 #define snprintf _snprintf
-#endif
-
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-#define SOCKETCLOSE soclose
-#define NO_DUP /* Sockets are Not Actual File Handles under OS/2 */
 #endif
 
 #ifndef SOCKETCLOSE
@@ -534,42 +517,6 @@ set_error(void)
         return PyErr_SetExcFromWindowsErr(PyExc_OSError, err_no);
 #endif
 
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-    if (sock_errno() != NO_ERROR) {
-        APIRET rc;
-        ULONG  msglen;
-        char outbuf[100];
-        int myerrorcode = sock_errno();
-
-        /* Retrieve socket-related error message from MPTN.MSG file */
-        rc = DosGetMessage(NULL, 0, outbuf, sizeof(outbuf),
-                           myerrorcode - SOCBASEERR + 26,
-                           "mptn.msg",
-                           &msglen);
-        if (rc == NO_ERROR) {
-            PyObject *v;
-
-            /* OS/2 doesn't guarantee a terminator */
-            outbuf[msglen] = '\0';
-            if (strlen(outbuf) > 0) {
-                /* If non-empty msg, trim CRLF */
-                char *lastc = &outbuf[ strlen(outbuf)-1 ];
-                while (lastc > outbuf &&
-                       isspace(Py_CHARMASK(*lastc))) {
-                    /* Trim trailing whitespace (CRLF) */
-                    *lastc-- = '\0';
-                }
-            }
-            v = Py_BuildValue("(is)", myerrorcode, outbuf);
-            if (v != NULL) {
-                PyErr_SetObject(PyExc_OSError, v);
-                Py_DECREF(v);
-            }
-            return NULL;
-        }
-    }
-#endif
-
     return PyErr_SetFromErrno(PyExc_OSError);
 }
 
@@ -658,20 +605,17 @@ internal_setblocking(PySocketSockObject *s, int block)
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-    block = !block;
-    ioctl(s->sock_fd, FIONBIO, (caddr_t)&block, sizeof(block));
-#elif defined(__VMS)
+#if defined(__VMS)
     block = !block;
     ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block);
-#else  /* !PYOS_OS2 && !__VMS */
+#else  /* !__VMS */
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
     if (block)
         delay_flag &= (~O_NONBLOCK);
     else
         delay_flag |= O_NONBLOCK;
     fcntl(s->sock_fd, F_SETFL, delay_flag);
-#endif /* !PYOS_OS2 */
+#endif /* !__VMS */
 #else /* MS_WINDOWS */
     block = !block;
     ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
@@ -1329,11 +1273,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path, len);
-#if defined(PYOS_OS2)
-        *len_ret = sizeof(*addr);
-#else
         *len_ret = len + offsetof(struct sockaddr_un, sun_path);
-#endif
         retval = 1;
     unix_out:
         Py_DECREF(args);
@@ -2820,13 +2760,8 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
     timeout = internal_select_ex(s, 0, interval);
     if (!timeout) {
 #ifndef MS_WINDOWS
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-        n = recvfrom(s->sock_fd, cbuf, len, flags,
-                     SAS2SA(&addrbuf), &addrlen);
-#else
         n = recvfrom(s->sock_fd, cbuf, len, flags,
                      (void *) &addrbuf, &addrlen);
-#endif
 #else
         n = recvfrom(s->sock_fd, cbuf, len, flags,
                      SAS2SA(&addrbuf), &addrlen);
@@ -5508,32 +5443,6 @@ os_init(void)
 
 #endif /* MS_WINDOWS */
 
-
-#ifdef PYOS_OS2
-#define OS_INIT_DEFINED
-
-/* Additional initialization for OS/2 */
-
-static int
-os_init(void)
-{
-#ifndef PYCC_GCC
-    int rc = sock_init();
-
-    if (rc == 0) {
-        return 1; /* Success */
-    }
-
-    PyErr_Format(PyExc_ImportError, "OS/2 TCP/IP Error# %d", sock_errno());
-
-    return 0;  /* Failure */
-#else
-    /* No need to initialize sockets with GCC/EMX */
-    return 1; /* Success */
-#endif
-}
-
-#endif /* PYOS_OS2 */
 
 
 #ifndef OS_INIT_DEFINED

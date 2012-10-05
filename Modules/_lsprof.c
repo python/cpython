@@ -36,12 +36,8 @@ hpTimerUnit(void)
 #error "This module requires gettimeofday() on non-Windows platforms!"
 #endif
 
-#if (defined(PYOS_OS2) && defined(PYCC_GCC))
-#include <sys/time.h>
-#else
 #include <sys/resource.h>
 #include <sys/times.h>
-#endif
 
 static PY_LONG_LONG
 hpTimer(void)

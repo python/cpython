@@ -37,16 +37,6 @@
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(PYOS_OS2)
-#define INCL_DOS
-#define INCL_ERRORS
-#include <os2.h>
-#endif
-
-#if defined(PYCC_VACPP)
-#include <sys/time.h>
-#endif
-
 #if defined(__APPLE__)
 #include <mach/mach_time.h>
 #endif
@@ -1284,19 +1274,11 @@ PyInit_timezone(PyObject *m) {
 #if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
     PyObject *otz0, *otz1;
     tzset();
-#ifdef PYOS_OS2
-    PyModule_AddIntConstant(m, "timezone", _timezone);
-#else /* !PYOS_OS2 */
     PyModule_AddIntConstant(m, "timezone", timezone);
-#endif /* PYOS_OS2 */
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
-#ifdef PYOS_OS2
-    PyModule_AddIntConstant(m, "altzone", _timezone-3600);
-#else /* !PYOS_OS2 */
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
-#endif /* PYOS_OS2 */
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
@@ -1602,15 +1584,6 @@ floatsleep(double secs)
         }
         Py_END_ALLOW_THREADS
     }
-#elif defined(PYOS_OS2)
-    /* This Sleep *IS* Interruptable by Exceptions */
-    Py_BEGIN_ALLOW_THREADS
-    if (DosSleep(secs * 1000) != NO_ERROR) {
-        Py_BLOCK_THREADS
-        PyErr_SetFromErrno(PyExc_IOError);
-        return -1;
-    }
-    Py_END_ALLOW_THREADS
 #else
     /* XXX Can't interrupt this sleep */
     Py_BEGIN_ALLOW_THREADS
