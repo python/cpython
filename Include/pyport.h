@@ -379,9 +379,6 @@ typedef size_t Py_uhash_t;
 #endif
 
 #ifdef HAVE_SYS_STAT_H
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-#include <sys/types.h>
-#endif
 #include <sys/stat.h>
 #elif defined(HAVE_STAT_H)
 #include <stat.h>
