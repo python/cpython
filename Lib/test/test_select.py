@@ -5,8 +5,7 @@ import sys
 import unittest
 from test import support
 
-@unittest.skipIf(sys.platform[:3] in ('win', 'os2') or \
-        sys.platform=='riscos'),
+@unittest.skipIf((sys.platform[:3]=='win') or (sys.platform=='riscos'),
                  "can't easily test on this system")
 class SelectTestCase(unittest.TestCase):
 
