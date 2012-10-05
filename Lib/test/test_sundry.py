@@ -48,7 +48,6 @@ class TestUntestedModules(unittest.TestCase):
             import macurl2path
             import mailcap
             import nturl2path
-            import os2emxpath
             import pstats
             import py_compile
             import sndhdr
