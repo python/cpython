@@ -68,7 +68,7 @@ class ThreadRunningTests(BasicThreadTest):
         thread.stack_size(0)
         self.assertEqual(thread.stack_size(), 0, "stack_size not reset to default")
 
-        if os.name not in ("nt", "os2", "posix"):
+        if os.name not in ("nt", "posix"):
             return
 
         tss_supported = True

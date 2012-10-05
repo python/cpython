@@ -1621,20 +1621,6 @@ _expectations = (
         test_ossaudiodev
         test_socketserver
         """),
-    ('os2emx',
-        """
-        test_audioop
-        test_curses
-        test_epoll
-        test_kqueue
-        test_largefile
-        test_mmap
-        test_openpty
-        test_ossaudiodev
-        test_pty
-        test_resource
-        test_signal
-        """),
     ('freebsd',
         """
         test_devpoll
