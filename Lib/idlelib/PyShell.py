@@ -1009,7 +1009,7 @@ class PyShell(OutputWindow):
                 return False
         else:
             nosub = ("==== No Subprocess ====\n\n" +
-                    "WARNING: Running IDLE without a Subprocess is deprecated\n" + 
+                    "WARNING: Running IDLE without a Subprocess is deprecated\n" +
                     "and will be removed in a later version. See Help/IDLE Help\n" +
                     "for details.\n\n")
             sys.displayhook = rpc.displayhook
