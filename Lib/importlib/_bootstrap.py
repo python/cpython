@@ -1709,7 +1709,7 @@ def _setup(sys_module, _imp_module):
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
 
-    os_details = ('posix', ['/']), ('nt', ['\\', '/']), ('os2', ['\\', '/'])
+    os_details = ('posix', ['/']), ('nt', ['\\', '/'])
     for builtin_os, path_separators in os_details:
         # Assumption made in _path_join()
         assert all(len(sep) == 1 for sep in path_separators)
@@ -1720,9 +1720,6 @@ def _setup(sys_module, _imp_module):
         else:
             try:
                 os_module = BuiltinImporter.load_module(builtin_os)
-                # TODO: rip out os2 code after 3.3 is released as per PEP 11
-                if builtin_os == 'os2' and 'EMX GCC' in sys.version:
-                    path_sep = path_separators[1]
                 break
             except ImportError:
                 continue
