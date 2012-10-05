@@ -160,12 +160,8 @@ pwd_getpwall(PyObject *self)
     struct passwd *p;
     if ((d = PyList_New(0)) == NULL)
         return NULL;
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-    if ((p = getpwuid(0)) != NULL) {
-#else
     setpwent();
     while ((p = getpwent()) != NULL) {
-#endif
         PyObject *v = mkpwent(p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
