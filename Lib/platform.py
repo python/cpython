@@ -924,13 +924,12 @@ def _syscmd_file(target,default=''):
         return default
     target = _follow_symlinks(target)
     try:
-        with open(DEV_NULL) as dev_null:
-            proc = subprocess.Popen(['file', '-b', '--', target],
-                     stdout=subprocess.PIPE, stderr=dev_null)
+        proc = subprocess.Popen(['file', target],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     except (AttributeError,os.error):
         return default
-    output = proc.stdout.read()
+    output = proc.communicate()[0].decode('latin-1')
     rc = proc.wait()
     if not output or rc:
         return default
