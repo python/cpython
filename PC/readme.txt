@@ -79,19 +79,6 @@ Legacy support for older versions of Visual Studio
 The subdirectories VC6, VS7.1 and VS8.0 contain legacy support older
 versions of Microsoft Visual Studio. See PCbuild/readme.txt.
 
-EMX development tools for OS/2
-==============================
-
-See os2emx/readme.txt. This platform is maintained by Andrew MacIntyre.
-
-IBM VisualAge C/C++ for OS/2
-============================
-
-See os2vacpp/readme.txt.  This platform is supported by Jeff Rush.
-
-NOTE: Support for os2vacpp may be dropped in the near future. Please move
-      to EMX.
-
 Note for Windows 3.x and DOS users
 ==================================
 
