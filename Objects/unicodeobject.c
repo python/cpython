@@ -1700,6 +1700,14 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
     switch (kind) {
     case PyUnicode_1BYTE_KIND: {
         assert(index + len <= PyUnicode_GET_LENGTH(unicode));
+#ifdef Py_DEBUG
+        if (PyUnicode_IS_ASCII(unicode)) {
+            Py_UCS4 maxchar = ucs1lib_find_max_char(
+                (const Py_UCS1*)str,
+                (const Py_UCS1*)str + len);
+            assert(maxchar < 128);
+        }
+#endif
         memcpy((char *) data + index, str, len);
         break;
     }
