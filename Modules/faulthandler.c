@@ -79,9 +79,6 @@ typedef struct {
 static user_signal_t *user_signals;
 
 /* the following macros come from Python: Modules/signalmodule.c */
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-#define NSIG 12
-#endif
 #ifndef NSIG
 # if defined(_NSIG)
 #  define NSIG _NSIG            /* For BSD/SysV */

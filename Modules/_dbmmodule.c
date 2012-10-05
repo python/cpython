@@ -14,11 +14,7 @@
  */
 #if defined(HAVE_NDBM_H)
 #include <ndbm.h>
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-static char *which_dbm = "ndbm";
-#else
 static char *which_dbm = "GNU gdbm";  /* EMX port of GDBM */
-#endif
 #elif defined(HAVE_GDBM_NDBM_H)
 #include <gdbm/ndbm.h>
 static char *which_dbm = "GNU gdbm";

@@ -34,11 +34,6 @@
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
 
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-#define NSIG 12
-#include <process.h>
-#endif
-
 #ifndef NSIG
 # if defined(_NSIG)
 #  define NSIG _NSIG            /* For BSD/SysV */

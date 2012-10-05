@@ -47,11 +47,6 @@ extern void bzero(void *, int);
 #include <sys/types.h>
 #endif
 
-#if defined(PYOS_OS2) && !defined(PYCC_GCC)
-#include <sys/time.h>
-#include <utils.h>
-#endif
-
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <winsock.h>
