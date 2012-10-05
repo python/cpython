@@ -122,7 +122,7 @@ try:
 except AttributeError:
     # os.devnull was added in Python 2.4, so emulate it for earlier
     # Python versions
-    if sys.platform in ('dos','win32','win16','os2'):
+    if sys.platform in ('dos','win32','win16'):
         # Use the old CP/M NUL as device name
         DEV_NULL = 'NUL'
     else:
@@ -896,7 +896,7 @@ def _syscmd_uname(option,default=''):
 
     """ Interface to the system's uname command.
     """
-    if sys.platform in ('dos','win32','win16','os2'):
+    if sys.platform in ('dos','win32','win16'):
         # XXX Others too ?
         return default
     try:
@@ -919,7 +919,7 @@ def _syscmd_file(target,default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in ('dos','win32','win16','os2'):
+    if sys.platform in ('dos','win32','win16'):
         # XXX Others too ?
         return default
     target = _follow_symlinks(target)

@@ -1,9 +1,9 @@
 r"""OS routines for Mac, NT, or Posix depending on what system we're on.
 
 This exports:
-  - all functions from posix, nt, os2, or ce, e.g. unlink, stat, etc.
+  - all functions from posix, nt or ce, e.g. unlink, stat, etc.
   - os.path is either posixpath or ntpath
-  - os.name is either 'posix', 'nt', 'os2' or 'ce'.
+  - os.name is either 'posix', 'nt' or 'ce'.
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -78,30 +78,6 @@ elif 'nt' in _names:
 
     try:
         from nt import _have_functions
-    except ImportError:
-        pass
-
-elif 'os2' in _names:
-    name = 'os2'
-    linesep = '\r\n'
-    from os2 import *
-    try:
-        from os2 import _exit
-        __all__.append('_exit')
-    except ImportError:
-        pass
-    if sys.version.find('EMX GCC') == -1:
-        import ntpath as path
-    else:
-        import os2emxpath as path
-        from _emx_link import link
-
-    import os2
-    __all__.extend(_get_exports_list(os2))
-    del os2
-
-    try:
-        from os2 import _have_functions
     except ImportError:
         pass
 
@@ -715,7 +691,7 @@ else:
     __all__.append("unsetenv")
 
 def _createenviron():
-    if name in ('os2', 'nt'):
+    if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
         def check_str(value):
             if not isinstance(value, str):
@@ -755,7 +731,7 @@ def getenv(key, default=None):
     key, default and the result are str."""
     return environ.get(key, default)
 
-supports_bytes_environ = name not in ('os2', 'nt')
+supports_bytes_environ = (name != 'nt')
 __all__.extend(("getenv", "supports_bytes_environ"))
 
 if supports_bytes_environ:
