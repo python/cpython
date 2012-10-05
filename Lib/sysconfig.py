@@ -52,25 +52,6 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    'os2': {
-        'stdlib': '{installed_base}/Lib',
-        'platstdlib': '{base}/Lib',
-        'purelib': '{base}/Lib/site-packages',
-        'platlib': '{base}/Lib/site-packages',
-        'include': '{installed_base}/Include',
-        'platinclude': '{installed_base}/Include',
-        'scripts': '{base}/Scripts',
-        'data': '{base}',
-        },
-    'os2_home': {
-        'stdlib': '{userbase}/lib/python{py_version_short}',
-        'platstdlib': '{userbase}/lib/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
     'nt_user': {
         'stdlib': '{userbase}/Python{py_version_nodot}',
         'platstdlib': '{userbase}/Python{py_version_nodot}',
@@ -210,7 +191,7 @@ def _getuserbase():
     def joinuser(*args):
         return os.path.expanduser(os.path.join(*args))
 
-    # what about 'os2emx', 'riscos' ?
+    # what about 'riscos' ?
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
         if env_base:
@@ -524,7 +505,7 @@ def get_config_vars(*args):
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
 
-        if os.name in ('nt', 'os2'):
+        if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
