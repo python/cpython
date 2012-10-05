@@ -1008,7 +1008,10 @@ class PyShell(OutputWindow):
                 self.close()
                 return False
         else:
-            nosub = "==== No Subprocess ===="
+            nosub = ("==== No Subprocess ====\n\n" +
+                    "WARNING: Running IDLE without a Subprocess is deprecated\n" + 
+                    "and will be removed in a later version. See Help/IDLE Help\n" +
+                    "for details.\n\n")
             sys.displayhook = rpc.displayhook
 
         self.write("Python %s on %s\n%s\n%s" %
@@ -1295,7 +1298,8 @@ USAGE: idle  [-deins] [-t title] [file]*
        idle  [-dns] [-t title] - [arg]*
 
   -h         print this help message and exit
-  -n         run IDLE without a subprocess (see Help/IDLE Help for details)
+  -n         run IDLE without a subprocess (DEPRECATED,
+             see Help/IDLE Help for details)
 
 The following options will override the IDLE 'settings' configuration:
 
@@ -1373,6 +1377,8 @@ def main():
         if o == '-i':
             enable_shell = True
         if o == '-n':
+            print(" Warning: running IDLE without a subprocess is deprecated.",
+                  file=sys.stderr)
             use_subprocess = False
         if o == '-r':
             script = a
