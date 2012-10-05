@@ -299,6 +299,16 @@ class ProcessTestCase(BaseTestCase):
         # argument.  For test runs in the build directory, see #7774.
         self._assert_cwd('', "somethingyoudonthave", executable=sys.executable)
 
+    def test_executable_precedence(self):
+        # To the precedence of executable argument over args[0]
+        # For a normal installation, it should work without 'cwd'
+        # argument. For test runs in the build directory, see #7774.
+        python_dir = os.path.dirname(os.path.realpath(sys.executable))
+        p = subprocess.Popen(["nonexistent","-c",'import sys; sys.exit(42)'],
+                            executable=sys.executable, cwd=python_dir)
+        p.wait()
+        self.assertEqual(p.returncode, 42)
+
     def test_stdin_pipe(self):
         # stdin redirection
         p = subprocess.Popen([sys.executable, "-c",
