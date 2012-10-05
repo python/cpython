@@ -270,12 +270,12 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 .. method:: FTP.storbinary(cmd, file, blocksize=8192, callback=None, rest=None)
 
    Store a file in binary transfer mode.  *cmd* should be an appropriate
-   ``STOR`` command: ``"STOR filename"``. *file* is an open :term:`file object`
-   which is read until EOF using its :meth:`read` method in blocks of size
-   *blocksize* to provide the data to be stored.  The *blocksize* argument
-   defaults to 8192.  *callback* is an optional single parameter callable that
-   is called on each block of data after it is sent. *rest* means the same thing
-   as in the :meth:`transfercmd` method.
+   ``STOR`` command: ``"STOR filename"``. *file* is a :term:`file object`
+   (opened in binary mode) which is read until EOF using its :meth:`read`
+   method in blocks of size *blocksize* to provide the data to be stored.
+   The *blocksize* argument defaults to 8192.  *callback* is an optional single
+   parameter callable that is called on each block of data after it is sent.
+   *rest* means the same thing as in the :meth:`transfercmd` method.
 
    .. versionchanged:: 3.2
       *rest* parameter added.
@@ -285,9 +285,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Store a file in ASCII transfer mode.  *cmd* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
-   open :term:`file object` *file* using its :meth:`readline` method to provide
-   the data to be stored.  *callback* is an optional single parameter callable
-   that is called on each line after it is sent.
+   :term:`file object` *file* (opened in binary mode) using its :meth:`readline`
+   method to provide the data to be stored.  *callback* is an optional single
+   parameter callable that is called on each line after it is sent.
 
 
 .. method:: FTP.transfercmd(cmd, rest=None)
