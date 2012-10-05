@@ -2103,7 +2103,7 @@ is also usable as an extension language for applications that need a
 programmable interface.
 
 The Python implementation is portable: it runs on many brands of UNIX,
-on Windows, DOS, OS/2, Mac, Amiga... If your favorite system isn't
+on Windows, DOS, Mac, Amiga... If your favorite system isn't
 listed here, it may still be supported, if there's a C compiler for
 it. Ask around on comp.lang.python -- or just try compiling Python
 yourself.

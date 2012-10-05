@@ -1,7 +1,0 @@
-#! /bin/sh
-export INCLUDE=$C_INCLUDE_PATH
-set -v
-python.exe ../../Tools/scripts/h2py.py $C_INCLUDE_PATH/fcntl.h
-python.exe ../../Tools/scripts/h2py.py $C_INCLUDE_PATH/sys/socket.h
-python.exe ../../Tools/scripts/h2py.py -i '(u_long)' $C_INCLUDE_PATH/netinet/in.h
-#python.exe ../../Tools/scripts/h2py.py $C_INCLUDE_PATH/termios.h
