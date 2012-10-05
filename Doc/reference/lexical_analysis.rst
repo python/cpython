@@ -538,9 +538,7 @@ Notes:
    this escape sequence.  Exactly four hex digits are required.
 
 (6)
-   Any Unicode character can be encoded this way, but characters outside the Basic
-   Multilingual Plane (BMP) will be encoded using a surrogate pair if Python is
-   compiled to use 16-bit code units (the default).  Exactly eight hex digits
+   Any Unicode character can be encoded this way.  Exactly eight hex digits
    are required.
 
 

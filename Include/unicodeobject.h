@@ -1022,8 +1022,7 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 
 /* Create a Unicode Object from the given Unicode code point ordinal.
 
-   The ordinal must be in range(0x10000) on narrow Python builds
-   (UCS2), and range(0x110000) on wide builds (UCS4). A ValueError is
+   The ordinal must be in range(0x110000). A ValueError is
    raised in case it is not.
 
 */
