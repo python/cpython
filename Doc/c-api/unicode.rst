@@ -1083,8 +1083,6 @@ These are the UTF-32 codec APIs:
    After completion, *\*byteorder* is set to the current byte order at the end
    of input data.
 
-   In a narrow build codepoints outside the BMP will be decoded as surrogate pairs.
-
    If *byteorder* is *NULL*, the codec starts in native order mode.
 
    Return *NULL* if an exception was raised by the codec.

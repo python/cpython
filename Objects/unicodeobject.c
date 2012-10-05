@@ -5772,18 +5772,12 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
     void *data;
     Py_ssize_t expandsize = 0;
 
-    /* Initial allocation is based on the longest-possible unichr
+    /* Initial allocation is based on the longest-possible character
        escape.
 
-       In wide (UTF-32) builds '\U00xxxxxx' is 10 chars per source
-       unichr, so in this case it's the longest unichr escape. In
-       narrow (UTF-16) builds this is five chars per source unichr
-       since there are two unichrs in the surrogate pair, so in narrow
-       (UTF-16) builds it's not the longest unichr escape.
-
-       In wide or narrow builds '\uxxxx' is 6 chars per source unichr,
-       so in the narrow (UTF-16) build case it's the longest unichr
-       escape.
+       For UCS1 strings it's '\xxx', 4 bytes per source character.
+       For UCS2 strings it's '\uxxxx', 6 bytes per source character.
+       For UCS4 strings it's '\U00xxxxxx', 10 bytes per source character.
     */
 
     if (!PyUnicode_Check(unicode)) {
