@@ -194,8 +194,7 @@ class Base(object):
 
     def leaves(self):
         for child in self.children:
-            for x in child.leaves():
-                yield x
+            yield from child.leaves()
 
     def depth(self):
         if self.parent is None:
@@ -274,16 +273,14 @@ class Node(Base):
     def post_order(self):
         """Return a post-order iterator for the tree."""
         for child in self.children:
-            for node in child.post_order():
-                yield node
+            yield from child.post_order()
         yield self
 
     def pre_order(self):
         """Return a pre-order iterator for the tree."""
         yield self
         for child in self.children:
-            for node in child.pre_order():
-                yield node
+            yield from child.pre_order()
 
     def _prefix_getter(self):
         """
