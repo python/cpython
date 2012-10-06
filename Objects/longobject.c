@@ -668,10 +668,9 @@ _PyLong_NumBits(PyObject *vv)
     assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
     if (ndigits > 0) {
         digit msd = v->ob_digit[ndigits - 1];
-
-        result = (ndigits - 1) * PyLong_SHIFT;
-        if (result / PyLong_SHIFT != (size_t)(ndigits - 1))
+        if ((size_t)(ndigits - 1) > PY_SIZE_MAX / (size_t)PyLong_SHIFT)
             goto Overflow;
+        result = (size_t)(ndigits - 1) * (size_t)PyLong_SHIFT;
         do {
             ++result;
             if (result == 0)
