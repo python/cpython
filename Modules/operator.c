@@ -208,6 +208,31 @@ _tscmp(const unsigned char *a, const unsigned char *b,
     return (result == 0);
 }
 
+PyDoc_STRVAR(length_hint__doc__,
+"length_hint(obj, default=0) -> int\n"
+"Return an estimate of the number of items in obj.\n"
+"This is useful for presizing containers when building from an\n"
+"iterable.\n"
+"\n"
+"If the object supports len(), the result will be\n"
+"exact. Otherwise, it may over- or under-estimate by an\n"
+"arbitrary amount. The result will be an integer >= 0.");
+
+static PyObject *length_hint(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t defaultvalue = 0, res;
+    if (!PyArg_ParseTuple(args, "O|n:length_hint", &obj, &defaultvalue)) {
+        return NULL;
+    }
+    res = PyObject_LengthHint(obj, defaultvalue);
+    if (res == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(res);
+}
+
+
 PyDoc_STRVAR(compare_digest__doc__,
 "compare_digest(a, b) -> bool\n"
 "\n"
@@ -366,6 +391,8 @@ spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
     {"_compare_digest", (PyCFunction)compare_digest, METH_VARARGS,
      compare_digest__doc__},
+     {"length_hint", (PyCFunction)length_hint, METH_VARARGS,
+     length_hint__doc__},
     {NULL,              NULL}           /* sentinel */
 
 };

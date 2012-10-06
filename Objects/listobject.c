@@ -826,7 +826,7 @@ listextend(PyListObject *self, PyObject *b)
     iternext = *it->ob_type->tp_iternext;
 
     /* Guess a result list size. */
-    n = _PyObject_LengthHint(b, 8);
+    n = PyObject_LengthHint(b, 8);
     if (n == -1) {
         Py_DECREF(it);
         return NULL;

@@ -1,4 +1,5 @@
 import unittest
+import operator
 import sys
 import pickle
 
@@ -168,15 +169,13 @@ class TestReversed(unittest.TestCase, PickleTest):
         x = range(1)
         self.assertEqual(type(reversed(x)), type(iter(x)))
 
-    @support.cpython_only
     def test_len(self):
         # This is an implementation detail, not an interface requirement
-        from test.test_iterlen import len
         for s in ('hello', tuple('hello'), list('hello'), range(5)):
-            self.assertEqual(len(reversed(s)), len(s))
+            self.assertEqual(operator.length_hint(reversed(s)), len(s))
             r = reversed(s)
             list(r)
-            self.assertEqual(len(r), 0)
+            self.assertEqual(operator.length_hint(r), 0)
         class SeqWithWeirdLen:
             called = False
             def __len__(self):
@@ -187,7 +186,7 @@ class TestReversed(unittest.TestCase, PickleTest):
             def __getitem__(self, index):
                 return index
         r = reversed(SeqWithWeirdLen())
-        self.assertRaises(ZeroDivisionError, len, r)
+        self.assertRaises(ZeroDivisionError, operator.length_hint, r)
 
 
     def test_gc(self):

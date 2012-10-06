@@ -45,31 +45,21 @@ import unittest
 from test import support
 from itertools import repeat
 from collections import deque
-from builtins import len as _len
+from operator import length_hint
 
 n = 10
 
-def len(obj):
-    try:
-        return _len(obj)
-    except TypeError:
-        try:
-            # note: this is an internal undocumented API,
-            # don't rely on it in your own programs
-            return obj.__length_hint__()
-        except AttributeError:
-            raise TypeError
 
 class TestInvariantWithoutMutations(unittest.TestCase):
 
     def test_invariant(self):
         it = self.it
         for i in reversed(range(1, n+1)):
-            self.assertEqual(len(it), i)
+            self.assertEqual(length_hint(it), i)
             next(it)
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
         self.assertRaises(StopIteration, next, it)
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
 
 class TestTemporarilyImmutable(TestInvariantWithoutMutations):
 
@@ -78,12 +68,12 @@ class TestTemporarilyImmutable(TestInvariantWithoutMutations):
         # length immutability  during iteration
 
         it = self.it
-        self.assertEqual(len(it), n)
+        self.assertEqual(length_hint(it), n)
         next(it)
-        self.assertEqual(len(it), n-1)
+        self.assertEqual(length_hint(it), n-1)
         self.mutate()
         self.assertRaises(RuntimeError, next, it)
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
 
 ## ------- Concrete Type Tests -------
 
@@ -91,10 +81,6 @@ class TestRepeat(TestInvariantWithoutMutations):
 
     def setUp(self):
         self.it = repeat(None, n)
-
-    def test_no_len_for_infinite_repeat(self):
-        # The repeat() object can also be infinite
-        self.assertRaises(TypeError, len, repeat(None))
 
 class TestXrange(TestInvariantWithoutMutations):
 
@@ -167,14 +153,15 @@ class TestList(TestInvariantWithoutMutations):
         it = iter(d)
         next(it)
         next(it)
-        self.assertEqual(len(it), n-2)
+        self.assertEqual(length_hint(it), n - 2)
         d.append(n)
-        self.assertEqual(len(it), n-1)  # grow with append
+        self.assertEqual(length_hint(it), n - 1)  # grow with append
         d[1:] = []
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
         self.assertEqual(list(it), [])
         d.extend(range(20))
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
+
 
 class TestListReversed(TestInvariantWithoutMutations):
 
@@ -186,32 +173,41 @@ class TestListReversed(TestInvariantWithoutMutations):
         it = reversed(d)
         next(it)
         next(it)
-        self.assertEqual(len(it), n-2)
+        self.assertEqual(length_hint(it), n - 2)
         d.append(n)
-        self.assertEqual(len(it), n-2)  # ignore append
+        self.assertEqual(length_hint(it), n - 2)  # ignore append
         d[1:] = []
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
         self.assertEqual(list(it), [])  # confirm invariant
         d.extend(range(20))
-        self.assertEqual(len(it), 0)
+        self.assertEqual(length_hint(it), 0)
 
 ## -- Check to make sure exceptions are not suppressed by __length_hint__()
 
 
 class BadLen(object):
-    def __iter__(self): return iter(range(10))
+    def __iter__(self):
+        return iter(range(10))
+
     def __len__(self):
         raise RuntimeError('hello')
 
+
 class BadLengthHint(object):
-    def __iter__(self): return iter(range(10))
+    def __iter__(self):
+        return iter(range(10))
+
     def __length_hint__(self):
         raise RuntimeError('hello')
 
+
 class NoneLengthHint(object):
-    def __iter__(self): return iter(range(10))
+    def __iter__(self):
+        return iter(range(10))
+
     def __length_hint__(self):
-        return None
+        return NotImplemented
+
 
 class TestLengthHintExceptions(unittest.TestCase):
 
