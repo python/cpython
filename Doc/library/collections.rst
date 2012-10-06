@@ -347,24 +347,24 @@ or subtracting from an empty counter.
     this section documents the minimum range and type restrictions.
 
     * The :class:`Counter` class itself is a dictionary subclass with no
-        restrictions on its keys and values.  The values are intended to be numbers
-        representing counts, but you *could* store anything in the value field.
+      restrictions on its keys and values.  The values are intended to be numbers
+      representing counts, but you *could* store anything in the value field.
 
     * The :meth:`most_common` method requires only that the values be orderable.
 
     * For in-place operations such as ``c[key] += 1``, the value type need only
-        support addition and subtraction.  So fractions, floats, and decimals would
-        work and negative values are supported.  The same is also true for
-        :meth:`update` and :meth:`subtract` which allow negative and zero values
-        for both inputs and outputs.
+      support addition and subtraction.  So fractions, floats, and decimals would
+      work and negative values are supported.  The same is also true for
+      :meth:`update` and :meth:`subtract` which allow negative and zero values
+      for both inputs and outputs.
 
     * The multiset methods are designed only for use cases with positive values.
-        The inputs may be negative or zero, but only outputs with positive values
-        are created.  There are no type restrictions, but the value type needs to
-        support addition, subtraction, and comparison.
+      The inputs may be negative or zero, but only outputs with positive values
+      are created.  There are no type restrictions, but the value type needs to
+      support addition, subtraction, and comparison.
 
     * The :meth:`elements` method requires integer counts.  It ignores zero and
-        negative counts.
+      negative counts.
 
 .. seealso::
 
