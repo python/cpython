@@ -410,6 +410,31 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.__ixor__     (c, 5), "ixor")
         self.assertEqual(operator.__iconcat__  (c, c), "iadd")
 
+    def test_length_hint(self):
+        class X(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __length_hint__(self):
+                if type(self.value) is type:
+                    raise self.value
+                else:
+                    return self.value
+
+        self.assertEqual(operator.length_hint([], 2), 0)
+        self.assertEqual(operator.length_hint(iter([1, 2, 3])), 3)
+
+        self.assertEqual(operator.length_hint(X(2)), 2)
+        self.assertEqual(operator.length_hint(X(NotImplemented), 4), 4)
+        self.assertEqual(operator.length_hint(X(TypeError), 12), 12)
+        with self.assertRaises(TypeError):
+            operator.length_hint(X("abc"))
+        with self.assertRaises(ValueError):
+            operator.length_hint(X(-2))
+        with self.assertRaises(LookupError):
+            operator.length_hint(X(LookupError))
+
+
 def test_main(verbose=None):
     import sys
     test_classes = (

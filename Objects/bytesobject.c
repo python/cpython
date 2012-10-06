@@ -2651,7 +2651,7 @@ PyBytes_FromObject(PyObject *x)
     }
 
     /* For iterator version, create a string object and resize as needed */
-    size = _PyObject_LengthHint(x, 64);
+    size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
     /* Allocate an extra byte to prevent PyBytes_FromStringAndSize() from

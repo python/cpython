@@ -2282,7 +2282,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *arg)
         return NULL;
 
     /* Try to determine the length of the argument. 32 is arbitrary. */
-    buf_size = _PyObject_LengthHint(arg, 32);
+    buf_size = PyObject_LengthHint(arg, 32);
     if (buf_size == -1) {
         Py_DECREF(it);
         return NULL;
