@@ -192,6 +192,28 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stderr, None)
 
+    @unittest.skipIf(mswindows, "path not included in Windows message")
+    def test_path_in_arg_not_found_message(self):
+        # Check that the error message displays the path not found when
+        # args[0] is not found.
+        self.assertRaisesRegex(FileNotFoundError, "notfound_blahblah",
+                               subprocess.Popen, ["notfound_blahblah"])
+
+    @unittest.skipIf(mswindows, "path not displayed in Windows message")
+    def test_path_in_executable_not_found_message(self):
+        # Check that the error message displays the executable argument (and
+        # not args[0]) when the executable argument is not found
+        # (issue #16114).
+        #     We call sys.exit() inside the code to prevent the test runner
+        # from hanging if the test fails and finds python.
+        self.assertRaisesRegex(FileNotFoundError, "notfound_blahblah",
+                               subprocess.Popen, [sys.executable, "-c",
+                               "import sys; sys.exit(47)"],
+                               executable="notfound_blahblah")
+        self.assertRaisesRegex(FileNotFoundError, "exenotfound_blahblah",
+                               subprocess.Popen, ["argnotfound_blahblah"],
+                               executable="exenotfound_blahblah")
+
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
         # Normalize an expected cwd (for Tru64 support).
