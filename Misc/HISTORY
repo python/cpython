@@ -2703,7 +2703,7 @@ Library
 
 - Issue #8540: Remove deprecated Context._clamp attribute in Decimal module.
 
-- Issue #13235: Added PendingDeprecationWarning to warn() method and function.
+- Issue #13235: Added DeprecationWarning to logging.warn() method and function.
 
 - Issue #9168: now smtpd is able to bind privileged port.
 
@@ -2724,12 +2724,12 @@ Library
   in order to display the prompt correctly.
 
 - Issue #12454: The mailbox module is now using ASCII, instead of the locale
-  encoding, to read and write MH mailboxes (.mh_sequences files).
+  encoding, to read and write .mh_sequences files.
 
 - Issue #13194: zlib.compressobj().copy() and zlib.decompressobj().copy() are
   now available on Windows.
 
-- issue #1673007: urllib2  to support HEAD request via new method argument.
+- Issue #1673007: urllib.request now supports HEAD request via new method argument.
   Patch contributions by David Stanek, Patrick Westerhoff and Ezio Melotti.
 
 - Issue #12386: packaging does not fail anymore when writing the RESOURCES
@@ -2769,8 +2769,6 @@ Library
 - Issue #7689: Allow pickling of dynamically created classes when their
   metaclass is registered with copyreg.  Patch by Nicolas M. Thiéry and Craig
   Citro.
-
-- Issue #4147: minidom's toprettyxml no longer adds whitespace to text nodes.
 
 - Issue #13034: When decoding some SSL certificates, the subjectAltName
   extension could be unreported.
