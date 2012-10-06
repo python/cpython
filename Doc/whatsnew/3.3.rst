@@ -1945,6 +1945,12 @@ of text  (:issue:`13857`).
 threading
 ---------
 
+:class:`threading.Condition`, :class:`threading.Semaphore`,
+:class:`threading.BoundedSempaphore`, :class:`threading.Event`, and
+:class:`threading.Timer`, all of which used to be factory functions returning a
+class instance, are now classes and may be subclassed. (Contributed by Éric
+Araujo in :issue:`109681`).
+
 The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
 argument to override the default behavior of inheriting the ``deamon`` flag
 value from the parent thread (:issue:`6064`).
@@ -2330,6 +2336,10 @@ Porting Python code
 * The ``ast.__version__`` constant has been removed.  If you need to
   make decisions affected by the AST version, use :attr:`sys.version_info`
   to make the decision.
+
+* Code that used to work around the fact that the :mod:`threading` module used
+  factory functions by subclassing the private classes will need to change to
+  subclass the now-public classes.
 
 
 Porting C code
