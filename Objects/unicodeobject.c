@@ -2301,16 +2301,9 @@ PyUnicode_FromWideChar(register const wchar_t *w, Py_ssize_t size)
 
 static void
 makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
-        int zeropad, int width, int precision, char c)
+        char c)
 {
     *fmt++ = '%';
-    if (width) {
-        if (zeropad)
-            *fmt++ = '0';
-        fmt += sprintf(fmt, "%d", width);
-    }
-    if (precision)
-        fmt += sprintf(fmt, ".%d", precision);
     if (longflag)
         *fmt++ = 'l';
     else if (longlongflag) {
@@ -2335,44 +2328,59 @@ makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
     *fmt = '\0';
 }
 
-/* helper for PyUnicode_FromFormatV() */
+/* maximum number of characters required for output of %ld.  21 characters
+   allows for 64-bit integers (in decimal) and an optional sign. */
+#define MAX_LONG_CHARS 21
+/* maximum number of characters required for output of %lld.
+   We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
+   plus 1 for the sign.  53/22 is an upper bound for log10(256). */
+#define MAX_LONG_LONG_CHARS (2 + (SIZEOF_LONG_LONG*53-1) / 22)
 
 static const char*
-parse_format_flags(const char *f,
-                   int *p_width, int *p_precision,
-                   int *p_longflag, int *p_longlongflag, int *p_size_tflag)
+unicode_fromformat_arg(_PyUnicodeWriter *writer,
+                       const char *f, va_list *vargs)
 {
-    int width, precision, longflag, longlongflag, size_tflag;
+    const char *p;
+    Py_ssize_t len;
+    int zeropad;
+    int width;
+    int precision;
+    int longflag;
+    int longlongflag;
+    int size_tflag;
+    int fill;
+
+    p = f;
+    f++;
+    zeropad = (*f == '0');
 
     /* parse the width.precision part, e.g. "%2.5s" => width=2, precision=5 */
-    f++;
     width = 0;
-    while (Py_ISDIGIT((unsigned)*f))
-        width = (width*10) + *f++ - '0';
+    while (Py_ISDIGIT((unsigned)*f)) {
+        width = (width*10) + (*f - '0');
+        f++;
+    }
     precision = 0;
     if (*f == '.') {
         f++;
-        while (Py_ISDIGIT((unsigned)*f))
-            precision = (precision*10) + *f++ - '0';
+        while (Py_ISDIGIT((unsigned)*f)) {
+            precision = (precision*10) + (*f - '0');
+            f++;
+        }
         if (*f == '%') {
             /* "%.3%s" => f points to "3" */
             f--;
         }
     }
     if (*f == '\0') {
-        /* bogus format "%.1" => go backward, f points to "1" */
+        /* bogus format "%.123" => go backward, f points to "3" */
         f--;
     }
-    if (p_width != NULL)
-        *p_width = width;
-    if (p_precision != NULL)
-        *p_precision = precision;
 
     /* Handle %ld, %lu, %lld and %llu. */
     longflag = 0;
     longlongflag = 0;
     size_tflag = 0;
-
     if (*f == 'l') {
         if (f[1] == 'd' || f[1] == 'u' || f[1] == 'i') {
             longflag = 1;
@@ -2391,494 +2399,321 @@ parse_format_flags(const char *f,
         size_tflag = 1;
         ++f;
     }
-    if (p_longflag != NULL)
-        *p_longflag = longflag;
-    if (p_longlongflag != NULL)
-        *p_longlongflag = longlongflag;
-    if (p_size_tflag != NULL)
-        *p_size_tflag = size_tflag;
+
+    if (f[1] == '\0')
+        writer->overallocate = 0;
+
+    switch (*f) {
+    case 'c':
+    {
+        int ordinal = va_arg(*vargs, int);
+        if (_PyUnicodeWriter_Prepare(writer, 1, ordinal) == -1)
+            return NULL;
+        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ordinal);
+        writer->pos++;
+        break;
+    }
+
+    case 'i':
+    case 'd':
+    case 'u':
+    case 'x':
+    {
+        /* used by sprintf */
+        char fmt[10]; /* should be enough for "%0lld\0" */
+        char small_buffer[MAX_LONG_CHARS];
+        char *buffer;
+        int err;
+
+        if (sizeof(small_buffer) - 1 < precision) {
+            buffer = PyMem_Malloc(precision + 1);
+            if (buffer == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+        }
+        else
+            buffer = small_buffer;
+
+        if (*f == 'u') {
+            makefmt(fmt, longflag, longlongflag, size_tflag, *f);
+
+            if (longflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, unsigned long));
+#ifdef HAVE_LONG_LONG
+            else if (longlongflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, unsigned PY_LONG_LONG));
+#endif
+            else if (size_tflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, size_t));
+            else
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, unsigned int));
+        }
+        else if (*f == 'x') {
+            makefmt(fmt, 0, 0, 0, 'x');
+            len = sprintf(buffer, fmt, va_arg(*vargs, int));
+        }
+        else {
+            makefmt(fmt, longflag, longlongflag, size_tflag, *f);
+
+            if (longflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, long));
+#ifdef HAVE_LONG_LONG
+            else if (longlongflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, PY_LONG_LONG));
+#endif
+            else if (size_tflag)
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, Py_ssize_t));
+            else
+                len = sprintf(buffer, fmt,
+                        va_arg(*vargs, int));
+        }
+        assert(len >= 0);
+
+        err = 0;
+        if (precision < len)
+            precision = len;
+        if (width > precision) {
+            Py_UCS4 fillchar;
+            fill = width - precision;
+            fillchar = zeropad?'0':' ';
+            if (_PyUnicodeWriter_Prepare(writer, fill, fillchar) != -1) {
+                if (PyUnicode_Fill(writer->buffer, writer->pos, fill, fillchar) == -1)
+                    err = 1;
+            }
+            else
+                err = 1;
+            if (!err)
+                writer->pos += fill;
+        }
+        if (!err && precision > len) {
+            fill = precision - len;
+            if (_PyUnicodeWriter_Prepare(writer, fill, '0') != -1) {
+                if (PyUnicode_Fill(writer->buffer, writer->pos, fill, '0') == -1)
+                    err = 1;
+            }
+            else
+                err = 1;
+            if (!err)
+                writer->pos += fill;
+        }
+        if (!err) {
+            if (_PyUnicodeWriter_WriteCstr(writer, buffer, len) == -1)
+                err = 1;
+        }
+
+        if (buffer != small_buffer) {
+            PyMem_Free(buffer);
+            buffer = small_buffer;
+        }
+        if (err)
+            return NULL;
+
+        break;
+    }
+
+    case 'p':
+    {
+        char number[MAX_LONG_LONG_CHARS];
+
+        len = sprintf(number, "%p", va_arg(*vargs, void*));
+        assert(len >= 0);
+
+        /* %p is ill-defined:  ensure leading 0x. */
+        if (number[1] == 'X')
+            number[1] = 'x';
+        else if (number[1] != 'x') {
+            memmove(number + 2, number,
+                    strlen(number) + 1);
+            number[0] = '0';
+            number[1] = 'x';
+            len += 2;
+        }
+
+        if (_PyUnicodeWriter_WriteCstr(writer, number, len) == -1)
+            return NULL;
+        break;
+    }
+
+    case 's':
+    {
+        /* UTF-8 */
+        const char *s = va_arg(*vargs, const char*);
+        PyObject *str = PyUnicode_DecodeUTF8Stateful(s, strlen(s), "replace", NULL);
+        if (!str)
+            return NULL;
+        if (_PyUnicodeWriter_WriteStr(writer, str) == -1) {
+            Py_DECREF(str);
+            return NULL;
+        }
+        Py_DECREF(str);
+        break;
+    }
+
+    case 'U':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        assert(obj && _PyUnicode_CHECK(obj));
+
+        if (_PyUnicodeWriter_WriteStr(writer, obj) == -1)
+            return NULL;
+        break;
+    }
+
+    case 'V':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        const char *str = va_arg(*vargs, const char *);
+        PyObject *str_obj;
+        assert(obj || str);
+        if (obj) {
+            assert(_PyUnicode_CHECK(obj));
+            if (_PyUnicodeWriter_WriteStr(writer, obj) == -1)
+                return NULL;
+        }
+        else {
+            str_obj = PyUnicode_DecodeUTF8Stateful(str, strlen(str), "replace", NULL);
+            if (!str_obj)
+                return NULL;
+            if (_PyUnicodeWriter_WriteStr(writer, str_obj) == -1) {
+                Py_DECREF(str_obj);
+                return NULL;
+            }
+            Py_DECREF(str_obj);
+        }
+        break;
+    }
+
+    case 'S':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyObject *str;
+        assert(obj);
+        str = PyObject_Str(obj);
+        if (!str)
+            return NULL;
+        if (_PyUnicodeWriter_WriteStr(writer, str) == -1) {
+            Py_DECREF(str);
+            return NULL;
+        }
+        Py_DECREF(str);
+        break;
+    }
+
+    case 'R':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyObject *repr;
+        assert(obj);
+        repr = PyObject_Repr(obj);
+        if (!repr)
+            return NULL;
+        if (_PyUnicodeWriter_WriteStr(writer, repr) == -1) {
+            Py_DECREF(repr);
+            return NULL;
+        }
+        Py_DECREF(repr);
+        break;
+    }
+
+    case 'A':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyObject *ascii;
+        assert(obj);
+        ascii = PyObject_ASCII(obj);
+        if (!ascii)
+            return NULL;
+        if (_PyUnicodeWriter_WriteStr(writer, ascii) == -1) {
+            Py_DECREF(ascii);
+            return NULL;
+        }
+        Py_DECREF(ascii);
+        break;
+    }
+
+    case '%':
+        if (_PyUnicodeWriter_Prepare(writer, 1, '%') == 1)
+            return NULL;
+        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '%');
+        writer->pos++;
+        break;
+
+    default:
+        /* if we stumble upon an unknown formatting code, copy the rest
+           of the format string to the output string. (we cannot just
+           skip the code, since there's no way to know what's in the
+           argument list) */
+        len = strlen(p);
+        if (_PyUnicodeWriter_WriteCstr(writer, p, len) == -1)
+            return NULL;
+        f = p+len;
+        return f;
+    }
+
+    f++;
     return f;
 }
-
-/* maximum number of characters required for output of %ld.  21 characters
-   allows for 64-bit integers (in decimal) and an optional sign. */
-#define MAX_LONG_CHARS 21
-/* maximum number of characters required for output of %lld.
-   We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
-   plus 1 for the sign.  53/22 is an upper bound for log10(256). */
-#define MAX_LONG_LONG_CHARS (2 + (SIZEOF_LONG_LONG*53-1) / 22)
 
 PyObject *
 PyUnicode_FromFormatV(const char *format, va_list vargs)
 {
-    va_list count;
-    Py_ssize_t callcount = 0;
-    PyObject **callresults = NULL;
-    PyObject **callresult = NULL;
-    Py_ssize_t n = 0;
-    int width = 0;
-    int precision = 0;
-    int zeropad;
-    const char* f;
-    PyObject *string;
-    /* used by sprintf */
-    char fmt[61]; /* should be enough for %0width.precisionlld */
-    Py_UCS4 maxchar = 127; /* result is ASCII by default */
-    Py_UCS4 argmaxchar;
-    Py_ssize_t numbersize = 0;
-    char *numberresults = NULL;
-    char *numberresult = NULL;
-    Py_ssize_t i;
-    int kind;
-    void *data;
+    va_list vargs2;
+    const char *f;
+    _PyUnicodeWriter writer;
 
-    Py_VA_COPY(count, vargs);
-    /* step 1: count the number of %S/%R/%A/%s format specifications
-     * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII()/
-     * PyUnicode_DecodeUTF8() for these objects once during step 3 and put the
-     * result in an array)
-     * also estimate a upper bound for all the number formats in the string,
-     * numbers will be formatted in step 3 and be kept in a '\0'-separated
-     * buffer before putting everything together. */
-    for (f = format; *f; f++) {
+    _PyUnicodeWriter_Init(&writer, strlen(format) + 100);
+
+    /* va_list may be an array (of 1 item) on some platforms (ex: AMD64).
+       Copy it to be able to pass a reference to a subfunction. */
+    Py_VA_COPY(vargs2, vargs);
+
+    for (f = format; *f; ) {
         if (*f == '%') {
-            int longlongflag;
-            /* skip width or width.precision (eg. "1.2" of "%1.2f") */
-            f = parse_format_flags(f, &width, NULL, NULL, &longlongflag, NULL);
-            if (*f == 's' || *f=='S' || *f=='R' || *f=='A' || *f=='V')
-                ++callcount;
-
-            else if (*f == 'd' || *f=='u' || *f=='i' || *f=='x' || *f=='p') {
-#ifdef HAVE_LONG_LONG
-                if (longlongflag) {
-                    if (width < MAX_LONG_LONG_CHARS)
-                        width = MAX_LONG_LONG_CHARS;
-                }
-                else
-#endif
-                    /* MAX_LONG_CHARS is enough to hold a 64-bit integer,
-                       including sign.  Decimal takes the most space.  This
-                       isn't enough for octal.  If a width is specified we
-                       need more (which we allocate later). */
-                    if (width < MAX_LONG_CHARS)
-                        width = MAX_LONG_CHARS;
-
-                /* account for the size + '\0' to separate numbers
-                   inside of the numberresults buffer */
-                numbersize += (width + 1);
-            }
-        }
-        else if ((unsigned char)*f > 127) {
-            PyErr_Format(PyExc_ValueError,
-                "PyUnicode_FromFormatV() expects an ASCII-encoded format "
-                "string, got a non-ASCII byte: 0x%02x",
-                (unsigned char)*f);
-            return NULL;
-        }
-    }
-    /* step 2: allocate memory for the results of
-     * PyObject_Str()/PyObject_Repr()/PyUnicode_DecodeUTF8() calls */
-    if (callcount) {
-        callresults = PyObject_Malloc(sizeof(PyObject *) * callcount);
-        if (!callresults) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        callresult = callresults;
-    }
-    /* step 2.5: allocate memory for the results of formating numbers */
-    if (numbersize) {
-        numberresults = PyObject_Malloc(numbersize);
-        if (!numberresults) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-        numberresult = numberresults;
-    }
-
-    /* step 3: format numbers and figure out how large a buffer we need */
-    for (f = format; *f; f++) {
-        if (*f == '%') {
-            const char* p;
-            int longflag;
-            int longlongflag;
-            int size_tflag;
-            int numprinted;
-
-            p = f;
-            zeropad = (f[1] == '0');
-            f = parse_format_flags(f, &width, &precision,
-                                   &longflag, &longlongflag, &size_tflag);
-            switch (*f) {
-            case 'c':
-            {
-                Py_UCS4 ordinal = va_arg(count, int);
-                maxchar = MAX_MAXCHAR(maxchar, ordinal);
-                n++;
-                break;
-            }
-            case '%':
-                n++;
-                break;
-            case 'i':
-            case 'd':
-                makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
-                        width, precision, *f);
-                if (longflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, long));
-#ifdef HAVE_LONG_LONG
-                else if (longlongflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, PY_LONG_LONG));
-#endif
-                else if (size_tflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, Py_ssize_t));
-                else
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, int));
-                n += numprinted;
-                /* advance by +1 to skip over the '\0' */
-                numberresult += (numprinted + 1);
-                assert(*(numberresult - 1) == '\0');
-                assert(*(numberresult - 2) != '\0');
-                assert(numprinted >= 0);
-                assert(numberresult <= numberresults + numbersize);
-                break;
-            case 'u':
-                makefmt(fmt, longflag, longlongflag, size_tflag, zeropad,
-                        width, precision, 'u');
-                if (longflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, unsigned long));
-#ifdef HAVE_LONG_LONG
-                else if (longlongflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, unsigned PY_LONG_LONG));
-#endif
-                else if (size_tflag)
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, size_t));
-                else
-                    numprinted = sprintf(numberresult, fmt,
-                                         va_arg(count, unsigned int));
-                n += numprinted;
-                numberresult += (numprinted + 1);
-                assert(*(numberresult - 1) == '\0');
-                assert(*(numberresult - 2) != '\0');
-                assert(numprinted >= 0);
-                assert(numberresult <= numberresults + numbersize);
-                break;
-            case 'x':
-                makefmt(fmt, 0, 0, 0, zeropad, width, precision, 'x');
-                numprinted = sprintf(numberresult, fmt, va_arg(count, int));
-                n += numprinted;
-                numberresult += (numprinted + 1);
-                assert(*(numberresult - 1) == '\0');
-                assert(*(numberresult - 2) != '\0');
-                assert(numprinted >= 0);
-                assert(numberresult <= numberresults + numbersize);
-                break;
-            case 'p':
-                numprinted = sprintf(numberresult, "%p", va_arg(count, void*));
-                /* %p is ill-defined:  ensure leading 0x. */
-                if (numberresult[1] == 'X')
-                    numberresult[1] = 'x';
-                else if (numberresult[1] != 'x') {
-                    memmove(numberresult + 2, numberresult,
-                            strlen(numberresult) + 1);
-                    numberresult[0] = '0';
-                    numberresult[1] = 'x';
-                    numprinted += 2;
-                }
-                n += numprinted;
-                numberresult += (numprinted + 1);
-                assert(*(numberresult - 1) == '\0');
-                assert(*(numberresult - 2) != '\0');
-                assert(numprinted >= 0);
-                assert(numberresult <= numberresults + numbersize);
-                break;
-            case 's':
-            {
-                /* UTF-8 */
-                const char *s = va_arg(count, const char*);
-                PyObject *str = PyUnicode_DecodeUTF8Stateful(s, strlen(s), "replace", NULL);
-                if (!str)
-                    goto fail;
-                /* since PyUnicode_DecodeUTF8 returns already flexible
-                   unicode objects, there is no need to call ready on them */
-                argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                n += PyUnicode_GET_LENGTH(str);
-                /* Remember the str and switch to the next slot */
-                *callresult++ = str;
-                break;
-            }
-            case 'U':
-            {
-                PyObject *obj = va_arg(count, PyObject *);
-                assert(obj && _PyUnicode_CHECK(obj));
-                if (PyUnicode_READY(obj) == -1)
-                    goto fail;
-                argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                n += PyUnicode_GET_LENGTH(obj);
-                break;
-            }
-            case 'V':
-            {
-                PyObject *obj = va_arg(count, PyObject *);
-                const char *str = va_arg(count, const char *);
-                PyObject *str_obj;
-                assert(obj || str);
-                assert(!obj || _PyUnicode_CHECK(obj));
-                if (obj) {
-                    if (PyUnicode_READY(obj) == -1)
-                        goto fail;
-                    argmaxchar = PyUnicode_MAX_CHAR_VALUE(obj);
-                    maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                    n += PyUnicode_GET_LENGTH(obj);
-                    *callresult++ = NULL;
-                }
-                else {
-                    str_obj = PyUnicode_DecodeUTF8Stateful(str, strlen(str), "replace", NULL);
-                    if (!str_obj)
-                        goto fail;
-                    if (PyUnicode_READY(str_obj) == -1) {
-                        Py_DECREF(str_obj);
-                        goto fail;
-                    }
-                    argmaxchar = PyUnicode_MAX_CHAR_VALUE(str_obj);
-                    maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                    n += PyUnicode_GET_LENGTH(str_obj);
-                    *callresult++ = str_obj;
-                }
-                break;
-            }
-            case 'S':
-            {
-                PyObject *obj = va_arg(count, PyObject *);
-                PyObject *str;
-                assert(obj);
-                str = PyObject_Str(obj);
-                if (!str)
-                    goto fail;
-                if (PyUnicode_READY(str) == -1) {
-                    Py_DECREF(str);
-                    goto fail;
-                }
-                argmaxchar = PyUnicode_MAX_CHAR_VALUE(str);
-                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                n += PyUnicode_GET_LENGTH(str);
-                /* Remember the str and switch to the next slot */
-                *callresult++ = str;
-                break;
-            }
-            case 'R':
-            {
-                PyObject *obj = va_arg(count, PyObject *);
-                PyObject *repr;
-                assert(obj);
-                repr = PyObject_Repr(obj);
-                if (!repr)
-                    goto fail;
-                if (PyUnicode_READY(repr) == -1) {
-                    Py_DECREF(repr);
-                    goto fail;
-                }
-                argmaxchar = PyUnicode_MAX_CHAR_VALUE(repr);
-                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                n += PyUnicode_GET_LENGTH(repr);
-                /* Remember the repr and switch to the next slot */
-                *callresult++ = repr;
-                break;
-            }
-            case 'A':
-            {
-                PyObject *obj = va_arg(count, PyObject *);
-                PyObject *ascii;
-                assert(obj);
-                ascii = PyObject_ASCII(obj);
-                if (!ascii)
-                    goto fail;
-                if (PyUnicode_READY(ascii) == -1) {
-                    Py_DECREF(ascii);
-                    goto fail;
-                }
-                argmaxchar = PyUnicode_MAX_CHAR_VALUE(ascii);
-                maxchar = MAX_MAXCHAR(maxchar, argmaxchar);
-                n += PyUnicode_GET_LENGTH(ascii);
-                /* Remember the repr and switch to the next slot */
-                *callresult++ = ascii;
-                break;
-            }
-            default:
-                /* if we stumble upon an unknown
-                   formatting code, copy the rest of
-                   the format string to the output
-                   string. (we cannot just skip the
-                   code, since there's no way to know
-                   what's in the argument list) */
-                n += strlen(p);
-                goto expand;
-            }
-        } else
-            n++;
-    }
-  expand:
-    /* step 4: fill the buffer */
-    /* Since we've analyzed how much space we need,
-       we don't have to resize the string.
-       There can be no errors beyond this point. */
-    string = PyUnicode_New(n, maxchar);
-    if (!string)
-        goto fail;
-    kind = PyUnicode_KIND(string);
-    data = PyUnicode_DATA(string);
-    callresult = callresults;
-    numberresult = numberresults;
-
-    for (i = 0, f = format; *f; f++) {
-        if (*f == '%') {
-            const char* p;
-
-            p = f;
-            f = parse_format_flags(f, NULL, NULL, NULL, NULL, NULL);
-            /* checking for == because the last argument could be a empty
-               string, which causes i to point to end, the assert at the end of
-               the loop */
-            assert(i <= PyUnicode_GET_LENGTH(string));
-
-            switch (*f) {
-            case 'c':
-            {
-                const int ordinal = va_arg(vargs, int);
-                PyUnicode_WRITE(kind, data, i++, ordinal);
-                break;
-            }
-            case 'i':
-            case 'd':
-            case 'u':
-            case 'x':
-            case 'p':
-            {
-                Py_ssize_t len;
-                /* unused, since we already have the result */
-                if (*f == 'p')
-                    (void) va_arg(vargs, void *);
-                else
-                    (void) va_arg(vargs, int);
-                /* extract the result from numberresults and append. */
-                len = strlen(numberresult);
-                unicode_write_cstr(string, i, numberresult, len);
-                /* skip over the separating '\0' */
-                i += len;
-                numberresult += len;
-                assert(*numberresult == '\0');
-                numberresult++;
-                assert(numberresult <= numberresults + numbersize);
-                break;
-            }
-            case 's':
-            {
-                /* unused, since we already have the result */
-                Py_ssize_t size;
-                (void) va_arg(vargs, char *);
-                size = PyUnicode_GET_LENGTH(*callresult);
-                assert(PyUnicode_KIND(*callresult) <= PyUnicode_KIND(string));
-                _PyUnicode_FastCopyCharacters(string, i, *callresult, 0, size);
-                i += size;
-                /* We're done with the unicode()/repr() => forget it */
-                Py_DECREF(*callresult);
-                /* switch to next unicode()/repr() result */
-                ++callresult;
-                break;
-            }
-            case 'U':
-            {
-                PyObject *obj = va_arg(vargs, PyObject *);
-                Py_ssize_t size;
-                assert(PyUnicode_KIND(obj) <= PyUnicode_KIND(string));
-                size = PyUnicode_GET_LENGTH(obj);
-                _PyUnicode_FastCopyCharacters(string, i, obj, 0, size);
-                i += size;
-                break;
-            }
-            case 'V':
-            {
-                Py_ssize_t size;
-                PyObject *obj = va_arg(vargs, PyObject *);
-                va_arg(vargs, const char *);
-                if (obj) {
-                    size = PyUnicode_GET_LENGTH(obj);
-                    assert(PyUnicode_KIND(obj) <= PyUnicode_KIND(string));
-                    _PyUnicode_FastCopyCharacters(string, i, obj, 0, size);
-                    i += size;
-                } else {
-                    size = PyUnicode_GET_LENGTH(*callresult);
-                    assert(PyUnicode_KIND(*callresult) <=
-                           PyUnicode_KIND(string));
-                    _PyUnicode_FastCopyCharacters(string, i, *callresult, 0, size);
-                    i += size;
-                    Py_DECREF(*callresult);
-                }
-                ++callresult;
-                break;
-            }
-            case 'S':
-            case 'R':
-            case 'A':
-            {
-                Py_ssize_t size = PyUnicode_GET_LENGTH(*callresult);
-                /* unused, since we already have the result */
-                (void) va_arg(vargs, PyObject *);
-                assert(PyUnicode_KIND(*callresult) <= PyUnicode_KIND(string));
-                _PyUnicode_FastCopyCharacters(string, i, *callresult, 0,  size);
-                i += size;
-                /* We're done with the unicode()/repr() => forget it */
-                Py_DECREF(*callresult);
-                /* switch to next unicode()/repr() result */
-                ++callresult;
-                break;
-            }
-            case '%':
-                PyUnicode_WRITE(kind, data, i++, '%');
-                break;
-            default:
-            {
-                Py_ssize_t len = strlen(p);
-                unicode_write_cstr(string, i, p, len);
-                i += len;
-                assert(i == PyUnicode_GET_LENGTH(string));
-                goto end;
-            }
-            }
+            f = unicode_fromformat_arg(&writer, f, &vargs2);
+            if (f == NULL)
+                goto fail;
         }
         else {
-            assert(i < PyUnicode_GET_LENGTH(string));
-            PyUnicode_WRITE(kind, data, i++, *f);
-        }
-    }
-    assert(i == PyUnicode_GET_LENGTH(string));
+            const char *p;
+            Py_ssize_t len;
 
-  end:
-    if (callresults)
-        PyObject_Free(callresults);
-    if (numberresults)
-        PyObject_Free(numberresults);
-    return unicode_result(string);
-  fail:
-    if (callresults) {
-        PyObject **callresult2 = callresults;
-        while (callresult2 < callresult) {
-            Py_XDECREF(*callresult2);
-            ++callresult2;
+            p = f;
+            do
+            {
+                if ((unsigned char)*p > 127) {
+                    PyErr_Format(PyExc_ValueError,
+                        "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+                        "string, got a non-ASCII byte: 0x%02x",
+                        (unsigned char)*p);
+                    return NULL;
+                }
+                p++;
+            }
+            while (*p != '\0' && *p != '%');
+            len = p - f;
+
+            if (*p == '\0')
+                writer.overallocate = 0;
+            if (_PyUnicodeWriter_Prepare(&writer, len, 127) == -1)
+                goto fail;
+            unicode_write_cstr(writer.buffer, writer.pos, f, len);
+            writer.pos += len;
+
+            f = p;
         }
-        PyObject_Free(callresults);
     }
-    if (numberresults)
-        PyObject_Free(numberresults);
+    return _PyUnicodeWriter_Finish(&writer);
+
+  fail:
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
@@ -12958,6 +12793,19 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
     }
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, 0, len);
+    writer->pos += len;
+    return 0;
+}
+
+int
+_PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer, const char *str, Py_ssize_t len)
+{
+    Py_UCS4 maxchar;
+
+    maxchar = ucs1lib_find_max_char((Py_UCS1*)str, (Py_UCS1*)str + len);
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)
+        return -1;
+    unicode_write_cstr(writer->buffer, writer->pos, str, len);
     writer->pos += len;
     return 0;
 }

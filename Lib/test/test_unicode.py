@@ -1769,6 +1769,22 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(PyUnicode_FromFormat(b'%llu', c_ulonglong(123)), '123')
         self.assertEqual(PyUnicode_FromFormat(b'%zu', c_size_t(123)), '123')
 
+        # test padding (width and/or precision)
+        self.assertEqual(PyUnicode_FromFormat(b'%010i', c_int(123)), '123'.rjust(10, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100i', c_int(123)), '123'.rjust(100))
+        self.assertEqual(PyUnicode_FromFormat(b'%.100i', c_int(123)), '123'.rjust(100, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100.80i', c_int(123)), '123'.rjust(80, '0').rjust(100))
+
+        self.assertEqual(PyUnicode_FromFormat(b'%010u', c_uint(123)), '123'.rjust(10, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100u', c_uint(123)), '123'.rjust(100))
+        self.assertEqual(PyUnicode_FromFormat(b'%.100u', c_uint(123)), '123'.rjust(100, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100.80u', c_uint(123)), '123'.rjust(80, '0').rjust(100))
+
+        self.assertEqual(PyUnicode_FromFormat(b'%010x', c_int(0x123)), '123'.rjust(10, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100x', c_int(0x123)), '123'.rjust(100))
+        self.assertEqual(PyUnicode_FromFormat(b'%.100x', c_int(0x123)), '123'.rjust(100, '0'))
+        self.assertEqual(PyUnicode_FromFormat(b'%100.80x', c_int(0x123)), '123'.rjust(80, '0').rjust(100))
+
         # test %A
         text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
         self.assertEqual(text, r"%A:'abc\xe9\uabcd\U0010ffff'")
