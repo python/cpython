@@ -78,7 +78,7 @@ _PyObject_HasLen(PyObject *o) {
 Py_ssize_t
 PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
-    PyObject *hint;
+    PyObject *hint, *result;
     Py_ssize_t res;
     _Py_IDENTIFIER(__length_hint__);
     res = PyObject_Length(o);
@@ -98,7 +98,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         }
         return defaultvalue;
     }
-    PyObject *result = PyObject_CallFunctionObjArgs(hint, NULL);
+    result = PyObject_CallFunctionObjArgs(hint, NULL);
     Py_DECREF(hint);
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
