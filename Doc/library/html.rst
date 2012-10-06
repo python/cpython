@@ -19,3 +19,10 @@ This module defines utilities to manipulate HTML.
    attribute value delimited by quotes, as in ``<a href="...">``.
 
    .. versionadded:: 3.2
+
+--------------
+
+Submodules in the ``html`` package are:
+
+* :mod:`html.parser` -- HTML/XHTML parser with lenient parsing mode
+* :mod:`html.entities` -- HTML entity definitions
