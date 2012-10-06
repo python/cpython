@@ -2417,6 +2417,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'c':
     {
         int ordinal = va_arg(*vargs, int);
+        if (ordinal < 0 || ordinal > MAX_UNICODE) {
+            PyErr_SetString(PyExc_ValueError,
+                            "character argument not in range(0x110000)");
+            return NULL;
+        }
         if (_PyUnicodeWriter_Prepare(writer, 1, ordinal) == -1)
             return NULL;
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ordinal);
