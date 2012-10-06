@@ -1524,12 +1524,21 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
+static void
+notimplemented_dealloc(PyObject* ignore)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref NotImplemented out of existence.
+     */
+    Py_FatalError("deallocating NotImplemented");
+}
+
 static PyTypeObject PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
     0,
     0,
-    none_dealloc,       /*tp_dealloc*/ /*never called*/
+    notimplemented_dealloc,       /*tp_dealloc*/ /*never called*/
     0,                  /*tp_print*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
