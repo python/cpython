@@ -1005,19 +1005,19 @@ collections
 -----------
 
 Addition of a new :class:`~collections.ChainMap` class to allow treating a
-number of mappings as a single unit.
-
-(Written by Raymond Hettinger for :issue:`11089`, made public in
-:issue:`11297`)
+number of mappings as a single unit.  (Written by Raymond Hettinger for
+:issue:`11089`, made public in :issue:`11297`)
 
 The abstract base classes have been moved in a new :mod:`collections.abc`
 module, to better differentiate between the abstract and the concrete
 collections classes.  Aliases for ABCs are still present in the
-:mod:`collections` module to preserve existing imports.
-
-(:issue:`11085`)
+:mod:`collections` module to preserve existing imports.  (:issue:`11085`)
 
 .. XXX addition of __slots__ to ABCs not recorded here: internal detail
+
+The :class:`~collections.Counter` class now supports the unary ``+`` and ``-``
+operators, as well as the in-place operators ``+=``, ``-=``, ``|=``, and
+``&=``.  (Contributed by Raymond Hettinger in :issue:`13121`.)
 
 
 contextlib
@@ -1805,6 +1805,12 @@ Orrù and Dan Boswell.  :issue:`8739`)
 
 smtplib
 -------
+
+The :class:`~smtplib.SMTP`, :class:`~smtplib.SMTP_SSL`, and
+:class:`~smtplib.LMTP` classes now accept a ``source_address`` keyword argument
+to specify the ``(host, port)`` to use as the source address in the bind call
+when creating the outgoing socket.  (Contributed by Paulo Scardine in
+:issue:`11281`.)
 
 :class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
 ``SMTP`` instance to be used in a ``with`` statement.  (Contributed
