@@ -1067,16 +1067,10 @@ Comparison of objects of the same type depends on the type:
   another one is made arbitrarily but consistently within one execution of a
   program.
 
-Comparison of objects of the differing types depends on whether either
-of the types provide explicit support for the comparison.  Most numeric types
-can be compared with one another, but comparisons of :class:`float` and
-:class:`Decimal` are not supported to avoid the inevitable confusion arising
-from representation issues such as ``float('1.1')`` being inexactly represented
-and therefore not exactly equal to ``Decimal('1.1')`` which is.  When
-cross-type comparison is not supported, the comparison method returns
-``NotImplemented``.  This can create the illusion of non-transitivity between
-supported cross-type comparisons and unsupported comparisons.  For example,
-``Decimal(2) == 2`` and ``2 == float(2)`` but ``Decimal(2) != float(2)``.
+Comparison of objects of the differing types depends on whether either of the
+types provide explicit support for the comparison.  Most numeric types can be
+compared with one another.  When cross-type comparison is not supported, the
+comparison method returns ``NotImplemented``.
 
 .. _membership-test-details:
 
