@@ -2357,6 +2357,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     /* parse the width.precision part, e.g. "%2.5s" => width=2, precision=5 */
     width = 0;
     while (Py_ISDIGIT((unsigned)*f)) {
+        if (width > (INT_MAX - ((int)*f - '0')) / 10) {
+            PyErr_SetString(PyExc_ValueError,
+                            "width too big");
+            return NULL;
+        }
         width = (width*10) + (*f - '0');
         f++;
     }
@@ -2364,6 +2369,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     if (*f == '.') {
         f++;
         while (Py_ISDIGIT((unsigned)*f)) {
+            if (precision > (INT_MAX - ((int)*f - '0')) / 10) {
+                PyErr_SetString(PyExc_ValueError,
+                                "precision too big");
+                return NULL;
+            }
             precision = (precision*10) + (*f - '0');
             f++;
         }
@@ -13589,7 +13599,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                     break;
                 if (arg->prec > (INT_MAX - ((int)arg->ch - '0')) / 10) {
                     PyErr_SetString(PyExc_ValueError,
-                                    "prec too big");
+                                    "precision too big");
                     return -1;
                 }
                 arg->prec = arg->prec*10 + (arg->ch - '0');
