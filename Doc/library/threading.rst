@@ -21,23 +21,13 @@ The :mod:`dummy_threading` module is provided for situations where
    supported by this module.
 
 
-This module defines the following functions and objects:
+This module defines the following functions:
 
 
 .. function:: active_count()
 
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
-
-
-.. function:: Condition()
-   :noindex:
-
-   A factory function that returns a new condition variable object. A condition
-   variable allows one or more threads to wait until they are notified by another
-   thread.
-
-   See :ref:`condition-objects`.
 
 
 .. function:: current_thread()
@@ -65,88 +55,6 @@ This module defines the following functions and objects:
    includes daemonic threads, dummy thread objects created by
    :func:`current_thread`, and the main thread.  It excludes terminated threads
    and threads that have not yet been started.
-
-
-.. function:: Event()
-   :noindex:
-
-   A factory function that returns a new event object.  An event manages a flag
-   that can be set to true with the :meth:`~Event.set` method and reset to false
-   with the :meth:`clear` method.  The :meth:`wait` method blocks until the flag
-   is true.
-
-   See :ref:`event-objects`.
-
-
-.. class:: local
-
-   A class that represents thread-local data.  Thread-local data are data whose
-   values are thread specific.  To manage thread-local data, just create an
-   instance of :class:`local` (or a subclass) and store attributes on it::
-
-      mydata = threading.local()
-      mydata.x = 1
-
-   The instance's values will be different for separate threads.
-
-   For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module.
-
-
-.. function:: Lock()
-
-   A factory function that returns a new primitive lock object.  Once a thread has
-   acquired it, subsequent attempts to acquire it block, until it is released; any
-   thread may release it.
-
-   See :ref:`lock-objects`.
-
-
-.. function:: RLock()
-
-   A factory function that returns a new reentrant lock object. A reentrant lock
-   must be released by the thread that acquired it. Once a thread has acquired a
-   reentrant lock, the same thread may acquire it again without blocking; the
-   thread must release it once for each time it has acquired it.
-
-   See :ref:`rlock-objects`.
-
-
-.. function:: Semaphore(value=1)
-   :noindex:
-
-   A factory function that returns a new semaphore object.  A semaphore manages a
-   counter representing the number of :meth:`release` calls minus the number of
-   :meth:`acquire` calls, plus an initial value. The :meth:`acquire` method blocks
-   if necessary until it can return without making the counter negative.  If not
-   given, *value* defaults to 1.
-
-   See :ref:`semaphore-objects`.
-
-
-.. function:: BoundedSemaphore(value=1)
-
-   A factory function that returns a new bounded semaphore object.  A bounded
-   semaphore checks to make sure its current value doesn't exceed its initial
-   value.  If it does, :exc:`ValueError` is raised. In most situations semaphores
-   are used to guard resources with limited capacity.  If the semaphore is released
-   too many times it's a sign of a bug.  If not given, *value* defaults to 1.
-
-
-.. class:: Thread
-
-   A class that represents a thread of control.  This class can be safely
-   subclassed in a limited fashion.
-
-   See :ref:`thread-objects`.
-
-
-.. class:: Timer
-   :noindex:
-
-   A thread that executes a function after a specified interval has passed.
-
-   See :ref:`timer-objects`.
 
 
 .. function:: settrace(func)
@@ -197,7 +105,8 @@ This module also defines the following constant:
    .. versionadded:: 3.2
 
 
-Detailed interfaces for the objects are documented below.
+This module defines a number of classes, which are detailed in the sections
+below.
 
 The design of this module is loosely based on Java's threading model. However,
 where Java makes locks and condition variables basic behavior of every object,
@@ -210,17 +119,38 @@ when implemented, are mapped to module-level functions.
 All of the methods described below are executed atomically.
 
 
+Thread-Local Data
+-----------------
+
+Thread-local data is data whose values are thread specific.  To manage
+thread-local data, just create an instance of :class:`local` (or a
+subclass) and store attributes on it::
+
+  mydata = threading.local()
+  mydata.x = 1
+
+The instance's values will be different for separate threads.
+
+
+.. class:: local()
+
+   A class that represents thread-local data.
+
+   For more details and extensive examples, see the documentation string of the
+   :mod:`_threading_local` module.
+
+
 .. _thread-objects:
 
 Thread Objects
 --------------
 
-This class represents an activity that is run in a separate thread of control.
-There are two ways to specify the activity: by passing a callable object to the
-constructor, or by overriding the :meth:`~Thread.run` method in a subclass.
-No other methods (except for the constructor) should be overridden in a
-subclass.  In other words,  *only*  override the :meth:`~Thread.__init__`
-and :meth:`~Thread.run` methods of this class.
+The :class:`Thread` class represents an activity that is run in a separate
+thread of control.  There are two ways to specify the activity: by passing a
+callable object to the constructor, or by overriding the :meth:`~Thread.run`
+method in a subclass.  No other methods (except for the constructor) should be
+overridden in a subclass.  In other words, *only*  override the
+:meth:`~Thread.__init__` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
@@ -419,45 +349,55 @@ is not defined, and may vary across implementations.
 All methods are executed atomically.
 
 
-.. method:: Lock.acquire(blocking=True, timeout=-1)
+.. class:: Lock()
 
-   Acquire a lock, blocking or non-blocking.
+   The class implementing primitive lock objects.  Once a thread has acquired a
+   lock, subsequent attempts to acquire it block, until it is released; any
+   thread may release it.
 
-   When invoked with the *blocking* argument set to ``True`` (the default),
-   block until the lock is unlocked, then set it to locked and return ``True``.
-
-   When invoked with the *blocking* argument set to ``False``, do not block.
-   If a call with *blocking* set to ``True`` would block, return ``False``
-   immediately; otherwise, set the lock to locked and return ``True``.
-
-   When invoked with the floating-point *timeout* argument set to a positive
-   value, block for at most the number of seconds specified by *timeout*
-   and as long as the lock cannot be acquired.  A negative *timeout* argument
-   specifies an unbounded wait.  It is forbidden to specify a *timeout*
-   when *blocking* is false.
-
-   The return value is ``True`` if the lock is acquired successfully,
-   ``False`` if not (for example if the *timeout* expired).
-
-   .. versionchanged:: 3.2
-      The *timeout* parameter is new.
-
-   .. versionchanged:: 3.2
-      Lock acquires can now be interrupted by signals on POSIX.
+   .. versionchanged:: 3.3
+      Changed from a factory function to a class.
 
 
-.. method:: Lock.release()
+   .. method:: acquire(blocking=True, timeout=-1)
 
-   Release a lock.  This can be called from any thread, not only the thread
-   which has acquired the lock.
+      Acquire a lock, blocking or non-blocking.
 
-   When the lock is locked, reset it to unlocked, and return.  If any other threads
-   are blocked waiting for the lock to become unlocked, allow exactly one of them
-   to proceed.
+      When invoked with the *blocking* argument set to ``True`` (the default),
+      block until the lock is unlocked, then set it to locked and return ``True``.
 
-   When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
+      When invoked with the *blocking* argument set to ``False``, do not block.
+      If a call with *blocking* set to ``True`` would block, return ``False``
+      immediately; otherwise, set the lock to locked and return ``True``.
 
-   There is no return value.
+      When invoked with the floating-point *timeout* argument set to a positive
+      value, block for at most the number of seconds specified by *timeout*
+      and as long as the lock cannot be acquired.  A negative *timeout* argument
+      specifies an unbounded wait.  It is forbidden to specify a *timeout*
+      when *blocking* is false.
+
+      The return value is ``True`` if the lock is acquired successfully,
+      ``False`` if not (for example if the *timeout* expired).
+
+      .. versionchanged:: 3.2
+         The *timeout* parameter is new.
+
+      .. versionchanged:: 3.2
+         Lock acquires can now be interrupted by signals on POSIX.
+
+
+   .. method:: release()
+
+      Release a lock.  This can be called from any thread, not only the thread
+      which has acquired the lock.
+
+      When the lock is locked, reset it to unlocked, and return.  If any other threads
+      are blocked waiting for the lock to become unlocked, allow exactly one of them
+      to proceed.
+
+      When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
+
+      There is no return value.
 
 
 .. _rlock-objects:
@@ -481,47 +421,59 @@ allows another thread blocked in :meth:`~Lock.acquire` to proceed.
 Reentrant locks also support the :ref:`context manager protocol <with-locks>`.
 
 
-.. method:: RLock.acquire(blocking=True, timeout=-1)
+.. class:: RLock()
 
-   Acquire a lock, blocking or non-blocking.
+   This class implements reentrant lock objects.  A reentrant lock must be
+   released by the thread that acquired it.  Once a thread has acquired a
+   reentrant lock, the same thread may acquire it again without blocking; the
+   thread must release it once for each time it has acquired it.
 
-   When invoked without arguments: if this thread already owns the lock, increment
-   the recursion level by one, and return immediately.  Otherwise, if another
-   thread owns the lock, block until the lock is unlocked.  Once the lock is
-   unlocked (not owned by any thread), then grab ownership, set the recursion level
-   to one, and return.  If more than one thread is blocked waiting until the lock
-   is unlocked, only one at a time will be able to grab ownership of the lock.
-   There is no return value in this case.
-
-   When invoked with the *blocking* argument set to true, do the same thing as when
-   called without arguments, and return true.
-
-   When invoked with the *blocking* argument set to false, do not block.  If a call
-   without an argument would block, return false immediately; otherwise, do the
-   same thing as when called without arguments, and return true.
-
-   When invoked with the floating-point *timeout* argument set to a positive
-   value, block for at most the number of seconds specified by *timeout*
-   and as long as the lock cannot be acquired.  Return true if the lock has
-   been acquired, false if the timeout has elapsed.
-
-   .. versionchanged:: 3.2
-      The *timeout* parameter is new.
+   Note that ``RLock`` is actually a factory function which returns an instance
+   of the most efficient version of the concrete RLock class that is supported
+   by the platform.
 
 
-.. method:: RLock.release()
+   .. method:: acquire(blocking=True, timeout=-1)
 
-   Release a lock, decrementing the recursion level.  If after the decrement it is
-   zero, reset the lock to unlocked (not owned by any thread), and if any other
-   threads are blocked waiting for the lock to become unlocked, allow exactly one
-   of them to proceed.  If after the decrement the recursion level is still
-   nonzero, the lock remains locked and owned by the calling thread.
+      Acquire a lock, blocking or non-blocking.
 
-   Only call this method when the calling thread owns the lock. A
-   :exc:`RuntimeError` is raised if this method is called when the lock is
-   unlocked.
+      When invoked without arguments: if this thread already owns the lock, increment
+      the recursion level by one, and return immediately.  Otherwise, if another
+      thread owns the lock, block until the lock is unlocked.  Once the lock is
+      unlocked (not owned by any thread), then grab ownership, set the recursion level
+      to one, and return.  If more than one thread is blocked waiting until the lock
+      is unlocked, only one at a time will be able to grab ownership of the lock.
+      There is no return value in this case.
 
-   There is no return value.
+      When invoked with the *blocking* argument set to true, do the same thing as when
+      called without arguments, and return true.
+
+      When invoked with the *blocking* argument set to false, do not block.  If a call
+      without an argument would block, return false immediately; otherwise, do the
+      same thing as when called without arguments, and return true.
+
+      When invoked with the floating-point *timeout* argument set to a positive
+      value, block for at most the number of seconds specified by *timeout*
+      and as long as the lock cannot be acquired.  Return true if the lock has
+      been acquired, false if the timeout has elapsed.
+
+      .. versionchanged:: 3.2
+         The *timeout* parameter is new.
+
+
+   .. method:: release()
+
+      Release a lock, decrementing the recursion level.  If after the decrement it is
+      zero, reset the lock to unlocked (not owned by any thread), and if any other
+      threads are blocked waiting for the lock to become unlocked, allow exactly one
+      of them to proceed.  If after the decrement the recursion level is still
+      nonzero, the lock remains locked and owned by the calling thread.
+
+      Only call this method when the calling thread owns the lock. A
+      :exc:`RuntimeError` is raised if this method is called when the lock is
+      unlocked.
+
+      There is no return value.
 
 
 .. _condition-objects:
@@ -555,10 +507,6 @@ don't release the lock; this means that the thread or threads awakened will
 not return from their :meth:`~Condition.wait` call immediately, but only when
 the thread that called :meth:`~Condition.notify` or :meth:`~Condition.notify_all`
 finally relinquishes ownership of the lock.
-
-
-Usage
-^^^^^
 
 The typical programming style using condition variables uses the lock to
 synchronize access to some shared state; threads that are interested in a
@@ -598,14 +546,17 @@ waiting threads.  E.g. in a typical producer-consumer situation, adding one
 item to the buffer only needs to wake up one consumer thread.
 
 
-Interface
-^^^^^^^^^
-
 .. class:: Condition(lock=None)
+
+   This class implements condition variable objects.  A condition variable
+   allows one or more threads to wait until they are notified by another thread.
 
    If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
    or :class:`RLock` object, and it is used as the underlying lock.  Otherwise,
    a new :class:`RLock` object is created and used as the underlying lock.
+
+   .. versionchanged:: 3.3
+      changed from a factory function to a class.
 
    .. method:: acquire(*args)
 
@@ -716,9 +667,18 @@ Semaphores also support the :ref:`context manager protocol <with-locks>`.
 
 .. class:: Semaphore(value=1)
 
+   This class implements semaphore objects.  A semaphore manages a counter
+   representing the number of :meth:`release` calls minus the number of
+   :meth:`acquire` calls, plus an initial value.  The :meth:`acquire` method
+   blocks if necessary until it can return without making the counter negative.
+   If not given, *value* defaults to 1.
+
    The optional argument gives the initial *value* for the internal counter; it
    defaults to ``1``. If the *value* given is less than 0, :exc:`ValueError` is
    raised.
+
+   .. versionchanged:: 3.3
+      changed from a factory function to a class.
 
    .. method:: acquire(blocking=True, timeout=None)
 
@@ -752,6 +712,18 @@ Semaphores also support the :ref:`context manager protocol <with-locks>`.
       than zero again, wake up that thread.
 
 
+.. class:: BoundedSemaphore(value=1)
+
+   Class implementing bounded semaphore objects.  A bounded semaphore checks to
+   make sure its current value doesn't exceed its initial value.  If it does,
+   :exc:`ValueError` is raised. In most situations semaphores are used to guard
+   resources with limited capacity.  If the semaphore is released too many times
+   it's a sign of a bug.  If not given, *value* defaults to 1.
+
+   .. versionchanged:: 3.3
+      changed from a factory function to a class.
+
+
 .. _semaphore-examples:
 
 :class:`Semaphore` Example
@@ -763,7 +735,7 @@ you should use a bounded semaphore.  Before spawning any worker threads, your
 main thread would initialize the semaphore::
 
    maxconnections = 5
-   ...
+   # ...
    pool_sema = BoundedSemaphore(value=maxconnections)
 
 Once spawned, worker threads call the semaphore's acquire and release methods
@@ -772,7 +744,7 @@ when they need to connect to the server::
    with pool_sema:
        conn = connectdb()
        try:
-           ... use connection ...
+           # ... use connection ...
        finally:
            conn.close()
 
@@ -795,7 +767,13 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
 .. class:: Event()
 
-   The internal flag is initially false.
+   Class implementing event objects.  An event manages a flag that can be set to
+   true with the :meth:`~Event.set` method and reset to false with the
+   :meth:`clear` method.  The :meth:`wait` method blocks until the flag is true.
+   The flag is initially false.
+
+   .. versionchanged:: 3.3
+      changed from a factory function to a class.
 
    .. method:: is_set()
 
@@ -859,6 +837,9 @@ For example::
 
    Create a timer that will run *function* with arguments *args* and  keyword
    arguments *kwargs*, after *interval* seconds have passed.
+
+   .. versionchanged:: 3.3
+      changed from a factory function to a class.
 
    .. method:: cancel()
 

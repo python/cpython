@@ -916,7 +916,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. class:: Condition([lock])
 
-   A condition variable: a clone of :class:`threading.Condition`.
+   A condition variable: an alias for :class:`threading.Condition`.
 
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
