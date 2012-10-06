@@ -23,10 +23,12 @@ is currently supported on most popular platforms.  Here is an overview:
    cgi.rst
    cgitb.rst
    wsgiref.rst
+   urllib.rst
    urllib.request.rst
    urllib.parse.rst
    urllib.error.rst
    urllib.robotparser.rst
+   http.rst
    http.client.rst
    ftplib.rst
    poplib.rst
@@ -40,6 +42,7 @@ is currently supported on most popular platforms.  Here is an overview:
    http.server.rst
    http.cookies.rst
    http.cookiejar.rst
+   xmlrpc.rst
    xmlrpc.client.rst
    xmlrpc.server.rst
    ipaddress.rst
