@@ -148,6 +148,19 @@ class TestCase(unittest.TestCase):
         p2 = d[encodedkey]
         self.assertNotEqual(p1, p2)  # Write creates new object in store
 
+    def test_with(self):
+        d1 = {}
+        with shelve.Shelf(d1, protocol=2, writeback=False) as s:
+            s['key1'] = [1,2,3,4]
+            self.assertEqual(s['key1'], [1,2,3,4])
+            self.assertEqual(len(s), 1)
+        self.assertRaises(ValueError, len, s)
+        try:
+            s['key1']
+        except ValueError:
+            pass
+        else:
+            self.fail('Closed shelf should not find a key')
 
 from test import mapping_tests
 
