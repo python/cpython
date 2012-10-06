@@ -933,12 +933,28 @@ PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar);
 
+/* Append a Unicode string.
+   Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)
-_PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str);
+_PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer,
+    PyObject *str               /* Unicode string */
+    );
 
+/* Append a latin1-encoded byte string.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer,
+    const char *str,            /* latin1-encoded byte string */
+    Py_ssize_t len              /* length in bytes */
+    );
+
+/* Get the value of the write as an Unicode string. Clear the
+   buffer of the writer. Raise an exception and return NULL
+   on error. */
 PyAPI_FUNC(PyObject *)
 _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer);
 
+/* Deallocate memory of a writer (clear its internal buffer). */
 PyAPI_FUNC(void)
 _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
 #endif
