@@ -17,24 +17,6 @@
 #include "structmember.h"
 #include "hashlib.h"
 
-#ifdef WITH_THREAD
-#include "pythread.h"
-    #define ENTER_HASHLIB(obj) \
-        if ((obj)->lock) { \
-            if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-                Py_BEGIN_ALLOW_THREADS \
-                PyThread_acquire_lock((obj)->lock, 1); \
-                Py_END_ALLOW_THREADS \
-            } \
-        }
-    #define LEAVE_HASHLIB(obj) \
-        if ((obj)->lock) { \
-            PyThread_release_lock((obj)->lock); \
-        }
-#else
-    #define ENTER_HASHLIB(obj)
-    #define LEAVE_HASHLIB(obj)
-#endif
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -42,10 +24,6 @@
 #include <openssl/objects.h>
 
 #define MUNCH_SIZE INT_MAX
-
-/* TODO(gps): We should probably make this a module or EVPobject attribute
- * to allow the user to optimize based on the platform they're using. */
-#define HASHLIB_GIL_MINSIZE 2048
 
 #ifndef HASH_OBJ_CONSTRUCTOR
 #define HASH_OBJ_CONSTRUCTOR 0

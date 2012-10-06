@@ -51,9 +51,13 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, and
-:func:`sha512`.  Additional algorithms may also be available depending upon the
-OpenSSL library that Python uses on your platform.
+:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
+:func:`sha512`, :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, and
+:func:`sha3_512`. Additional algorithms may also be available depending upon
+the OpenSSL library that Python uses on your platform.
+
+   .. versionchanged:: 3.4
+      Add sha3 family of hash algorithms.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
