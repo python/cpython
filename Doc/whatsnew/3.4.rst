@@ -101,7 +101,7 @@ Implementation improvements:
 
 Significantly Improved Library Modules:
 
-* None yet.
+* SHA-3 (Keccak) support for :mod:`hashlib`.
 
 Security improvements:
 
