@@ -131,6 +131,12 @@ class Shelf(collections.MutableMapping):
         except KeyError:
             pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def close(self):
         self.sync()
         try:
@@ -147,6 +153,7 @@ class Shelf(collections.MutableMapping):
     def __del__(self):
         if not hasattr(self, 'writeback'):
             # __init__ didn't succeed, so don't bother closing
+            # see http://bugs.python.org/issue1339007 for details
             return
         self.close()
 
