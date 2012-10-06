@@ -1964,6 +1964,14 @@ sequence` holding informations about the thread implementation
 (:issue:`11223`).
 
 
+tempfile
+--------
+
+:class:`tempfile.SpooledTemporaryFile`\'s
+:meth:`~tempfile.SpooledTemporaryFile.trucate` method now accepts
+a ``size`` parameter.  (Contributed by Ryan Kelly in :issue:`9957`.)
+
+
 textwrap
 --------
 

@@ -86,6 +86,9 @@ The module defines the following user-callable items:
    whether :func:`rollover` has been called. This file-like object can be
    used in a :keyword:`with` statement, just like a normal file.
 
+   .. versionchanged:: 3.3
+      the truncate method now accepts a ``size`` argument.
+
 
 .. function:: TemporaryDirectory(suffix='', prefix='tmp', dir=None)
 
