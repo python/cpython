@@ -2328,10 +2328,7 @@ makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
     *fmt = '\0';
 }
 
-/* maximum number of characters required for output of %ld.  21 characters
-   allows for 64-bit integers (in decimal) and an optional sign. */
-#define MAX_LONG_CHARS 21
-/* maximum number of characters required for output of %lld.
+/* maximum number of characters required for output of %lld or %p.
    We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
    plus 1 for the sign.  53/22 is an upper bound for log10(256). */
 #define MAX_LONG_LONG_CHARS (2 + (SIZEOF_LONG_LONG*53-1) / 22)
@@ -2436,19 +2433,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     {
         /* used by sprintf */
         char fmt[10]; /* should be enough for "%0lld\0" */
-        char small_buffer[MAX_LONG_CHARS];
-        char *buffer;
-        int err;
-
-        if (sizeof(small_buffer) - 1 < precision) {
-            buffer = PyMem_Malloc(precision + 1);
-            if (buffer == NULL) {
-                PyErr_NoMemory();
-                return NULL;
-            }
-        }
-        else
-            buffer = small_buffer;
+        char buffer[MAX_LONG_LONG_CHARS];
 
         if (*f == 'u') {
             makefmt(fmt, longflag, longlongflag, size_tflag, *f);
@@ -2492,45 +2477,28 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         assert(len >= 0);
 
-        err = 0;
         if (precision < len)
             precision = len;
         if (width > precision) {
             Py_UCS4 fillchar;
             fill = width - precision;
             fillchar = zeropad?'0':' ';
-            if (_PyUnicodeWriter_Prepare(writer, fill, fillchar) != -1) {
-                if (PyUnicode_Fill(writer->buffer, writer->pos, fill, fillchar) == -1)
-                    err = 1;
-            }
-            else
-                err = 1;
-            if (!err)
-                writer->pos += fill;
+            if (_PyUnicodeWriter_Prepare(writer, fill, fillchar) == -1)
+                return NULL;
+            if (PyUnicode_Fill(writer->buffer, writer->pos, fill, fillchar) == -1)
+                return NULL;
+            writer->pos += fill;
         }
-        if (!err && precision > len) {
+        if (precision > len) {
             fill = precision - len;
-            if (_PyUnicodeWriter_Prepare(writer, fill, '0') != -1) {
-                if (PyUnicode_Fill(writer->buffer, writer->pos, fill, '0') == -1)
-                    err = 1;
-            }
-            else
-                err = 1;
-            if (!err)
-                writer->pos += fill;
+            if (_PyUnicodeWriter_Prepare(writer, fill, '0') == -1)
+                return NULL;
+            if (PyUnicode_Fill(writer->buffer, writer->pos, fill, '0') == -1)
+                return NULL;
+            writer->pos += fill;
         }
-        if (!err) {
-            if (_PyUnicodeWriter_WriteCstr(writer, buffer, len) == -1)
-                err = 1;
-        }
-
-        if (buffer != small_buffer) {
-            PyMem_Free(buffer);
-            buffer = small_buffer;
-        }
-        if (err)
+        if (_PyUnicodeWriter_WriteCstr(writer, buffer, len) == -1)
             return NULL;
-
         break;
     }
 
