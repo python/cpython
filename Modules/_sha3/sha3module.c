@@ -110,7 +110,6 @@
   typedef PY_UINT64_T UINT64;
 #else
   /* 32 or 64bit platforms without unsigned int64 */
-  #warning no uint64_t available, force Keccak opt32 with interleave tables
   #define KeccakImplementation 32
   #define Unrolling 2
   #define UseSchedule 3
