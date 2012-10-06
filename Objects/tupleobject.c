@@ -96,15 +96,11 @@ PyTuple_New(register Py_ssize_t size)
     else
 #endif
     {
-        Py_ssize_t nbytes = size * sizeof(PyObject *);
         /* Check for overflow */
-        if (nbytes / sizeof(PyObject *) != (size_t)size ||
-            (nbytes > PY_SSIZE_T_MAX - sizeof(PyTupleObject) - sizeof(PyObject *)))
-        {
+        if (size > (PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
+                    sizeof(PyObject *)) / sizeof(PyObject *)) {
             return PyErr_NoMemory();
         }
-        /* nbytes += sizeof(PyTupleObject) - sizeof(PyObject *); */
-
         op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
         if (op == NULL)
             return NULL;
@@ -481,9 +477,9 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         if (Py_SIZE(a) == 0)
             return PyTuple_New(0);
     }
-    size = Py_SIZE(a) * n;
-    if (size/Py_SIZE(a) != n)
+    if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
+    size = Py_SIZE(a) * n;
     np = (PyTupleObject *) PyTuple_New(size);
     if (np == NULL)
         return NULL;

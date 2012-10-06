@@ -177,12 +177,12 @@ escape_encode(PyObject *self,
         return NULL;
 
     size = PyBytes_GET_SIZE(str);
-    newsize = 4*size;
-    if (newsize > PY_SSIZE_T_MAX || newsize / 4 != size) {
+    if (size > PY_SSIZE_T_MAX / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "string is too large to encode");
             return NULL;
     }
+    newsize = 4*size;
     v = PyBytes_FromStringAndSize(NULL, newsize);
 
     if (v == NULL) {
