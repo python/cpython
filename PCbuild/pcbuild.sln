@@ -74,6 +74,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pywlauncher", "pywlauncher.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_freeze_importlib", "_freeze_importlib.vcxproj", "{19C0C13F-47CA-4432-AFF3-799A296A4DDC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_sha3", "_sha3.vcxproj", "{254A0C05-6696-4B08-8CB2-EF7D533AEE01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -611,6 +613,21 @@ Global
 		{19C0C13F-47CA-4432-AFF3-799A296A4DDC}.PGUpdate|x64.ActiveCfg = Release|Win32
 		{19C0C13F-47CA-4432-AFF3-799A296A4DDC}.Release|Win32.ActiveCfg = Release|Win32
 		{19C0C13F-47CA-4432-AFF3-799A296A4DDC}.Release|x64.ActiveCfg = Release|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Debug|Win32.ActiveCfg = Release|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Debug|x64.ActiveCfg = Release|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Debug|x64.Build.0 = Release|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Release|Win32.ActiveCfg = Release|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Release|Win32.Build.0 = Release|Win32
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Release|x64.ActiveCfg = Release|x64
+		{254A0C05-6696-4B08-8CB2-EF7D533AEE01}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
