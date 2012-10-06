@@ -1366,6 +1366,16 @@ ftplib
   listing format and deprecates :meth:`ftplib.FTP.nlst` and
   :meth:`ftplib.FTP.dir`.  (Contributed by Giampaolo Rodolà in :issue:`11072`)
 
+
+functools
+---------
+
+The :func:`functools.lru_cache` decorator now accepts a ``typed`` keyword
+argument (that defaults to ``False`` to ensure that it caches values of
+different types that compare equal in separate cache slots.  (Contributed
+by Raymond Hettinger in :issue:`13227`.)
+
+
 gc
 --
 
@@ -1376,21 +1386,9 @@ before and after collection using the new :data:`~gc.callbacks` list.
 hmac
 ----
 
-A new :func:`~hmac.compare_digest` function has been added to prevent
-side channel attacks on digests through timing analysis.
-
-(Contributed by Nick Coghlan and Christian Heimes in issue:`15061`)
-
-
-html.entities
--------------
-
-A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
-references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] == '>'``)
-has been added to the :mod:`html.entities` module.  The dictionary is now also
-used by :class:`~html.parser.HTMLParser`.
-
-(Contributed by Ezio Melotti in :issue:`11113` and :issue:`15156`)
+A new :func:`~hmac.compare_digest` function has been added to prevent side
+channel attacks on digests through timing analysis.  (Contributed by Nick
+Coghlan and Christian Heimes in :issue:`15061`)
 
 
 http
@@ -1402,20 +1400,28 @@ called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
 can be used to directly manage when the accumlated headers are sent.
 (Contributed by Andrew Schaaf in :issue:`3709`.)
 
+:class:`http.server` now produces valid ``HTML 4.01 strict`` output.
+(Contributed by Ezio Melotti in :issue:`13295`.)
 
-html.parser
------------
 
-:class:`~html.parser.HTMLParser` is now able to parse broken markup without
+html
+----
+
+:class:`html.parser.HTMLParser` is now able to parse broken markup without
 raising errors, therefore the *strict* argument of the constructor and the
 :exc:`~html.parser.HTMLParseError` exception are now deprecated.
 The ability to parse broken markup is the result of a number of bug fixes that
 are also available on the latest bug fix releases of Python 2.7/3.2.
-
 (Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
 :issue:`13993`, :issue:`13960`, :issue:`13358`, :issue:`1745761`,
 :issue:`755670`, :issue:`13357`, :issue:`12629`, :issue:`1200313`,
 :issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`)
+
+A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
+references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] ==
+'>'``) has been added to the :mod:`html.entities` module.  The dictionary is
+now also used by :class:`~html.parser.HTMLParser`.  (Contributed by Ezio
+Melotti in :issue:`11113` and :issue:`15156`)
 
 
 imaplib
@@ -1655,6 +1661,14 @@ os
 * Some platforms now support additional constants for the :func:`~os.lseek`
   function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
 
+* New constants :data:`~os.RTLD_LAZY`, :data:`~os.RTLD_NOW`,
+  :data:`~os.RTLD_GLOBAL`, :data:`~os.RTLD_LOCAL`, :data:`~os.RTLD_NODELETE`,
+  :data:`~os.RTLD_NOLOAD`, and :data:`~os.RTLD_DEEPBIND` are available on
+  platforms that support them.   These are for use with the
+  :func:`sys.setdlopenflags` function, and supersede the similar constants
+  defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
+  in :issue:`13226`.)
+
 * :func:`os.symlink` now accepts (and ignores) the ``target_is_directory``
   keyword argument on non-Windows platforms, to ease cross-platform support.
 
@@ -1727,6 +1741,7 @@ select
 
 Solaris and derivatives platforms have a new class :class:`select.devpoll`
 for high performance asynchronous sockets via :file:`/dev/poll`.
+(Contributed by Jesús Cea Avión in :issue:`6397`.)
 
 
 shlex
@@ -1922,6 +1937,14 @@ the form '-rwxrwxrwx'.
 (Contributed by Giampaolo Rodolà in :issue:`14807`)
 
 
+struct
+------
+
+The :mod:`struct` module now supports ``ssize_t`` and ``size_t`` via the
+new codes ``n`` and ``N``, respectively.  (Contributed by Antoine Pitrou
+in :issue:`3163`.)
+
+
 subprocess
 ----------
 
@@ -1939,6 +1962,7 @@ sys
 The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
 sequence` holding informations about the thread implementation
 (:issue:`11223`).
+
 
 textwrap
 --------
@@ -2014,6 +2038,7 @@ context managers.  (Contributed by Ezio Melotti and Winston Ewert in
 :meth:`unittest.TestCase.run` now returns the :class:`~unittest.TestResult`
 object.
 
+
 urllib
 ------
 
@@ -2048,6 +2073,18 @@ but is now deprecated).  In addition,  the ``iter`` family of methods of
 :class:`~xml.etree.ElementTree.Element` has been optimized (rewritten in C).
 The module's documentation has also been greatly improved with added examples
 and a more detailed reference.
+
+
+zlib
+----
+
+New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
+between a properly-formed compressed stream and an incomplete or truncated one.
+(Contributed by Nadeem Vawda in :issue:`12646`.)
+
+New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
+the underlying ``zlib`` library that is loaded at runtime.  (Contributed by
+Torsten Landschoff in :issue:`12306`.)
 
 
 Optimizations
@@ -2331,6 +2368,10 @@ Porting Python code
   removed.
 
 * The deprecated variable ``time.accept2dyear`` has been removed.
+
+* The deprecated ``Context._clamp`` attribute has been removed from the
+  :mod:`decimal` module.  It was previously replaced by the public attribute
+  :attr:`~decimal.Context.clamp`.  (See :issue:`8540`.)
 
 * The undocumented internal helper class ``SSLFakeFile`` has been removed
   from :mod:`smtplib`, since its functionality has long been provided directly
