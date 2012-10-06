@@ -483,11 +483,11 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
         return NULL;
     }
 
-    nbytes = size * descr->itemsize;
     /* Check for overflow */
-    if (nbytes / descr->itemsize != (size_t)size) {
+    if (size > PY_SSIZE_T_MAX / descr->itemsize) {
         return PyErr_NoMemory();
     }
+    nbytes = size * descr->itemsize;
     op = (arrayobject *) type->tp_alloc(type, 0);
     if (op == NULL) {
         return NULL;
@@ -1251,11 +1251,15 @@ array_fromfile(arrayobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
         return NULL;
 
-    nbytes = n * itemsize;
-    if (nbytes < 0 || nbytes/itemsize != n) {
+    if (n < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative count");
+        return NULL;
+    }
+    if (n > PY_SSIZE_T_MAX / itemsize) {
         PyErr_NoMemory();
         return NULL;
     }
+    nbytes = n * itemsize;
 
     b = _PyObject_CallMethodId(f, &PyId_read, "n", nbytes);
     if (b == NULL)
