@@ -2349,7 +2349,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 
     p = f;
     f++;
-    zeropad = (*f == '0');
+    zeropad = 0;
+    if (*f == '0') {
+        zeropad = 1;
+        f++;
+    }
 
     /* parse the width.precision part, e.g. "%2.5s" => width=2, precision=5 */
     width = 0;
