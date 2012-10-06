@@ -474,8 +474,7 @@ SHA3_factory(PyObject *args, PyObject *kwdict, const char *fmt,
 
   error:
     if (newobj) {
-        SHA3_clearstate(newobj->hash_state);
-        /* self->lock is always NULL */
+        SHA3_dealloc(newobj);
     }
     if (data_obj) {
         PyBuffer_Release(&buf);
