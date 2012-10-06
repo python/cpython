@@ -1108,8 +1108,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
         PyErr_SetString(AudioopError, "# of channels should be >= 1");
         return NULL;
     }
-    bytes_per_frame = size * nchannels;
-    if (bytes_per_frame / nchannels != size) {
+    if (size > INT_MAX / nchannels) {
         /* This overflow test is rigorously correct because
            both multiplicands are >= 1.  Use the argument names
            from the docs for the error msg. */
@@ -1117,6 +1116,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
                         "width * nchannels too big for a C int");
         return NULL;
     }
+    bytes_per_frame = size * nchannels;
     if (weightA < 1 || weightB < 0) {
         PyErr_SetString(AudioopError,
             "weightA should be >= 1, weightB should be >= 0");
