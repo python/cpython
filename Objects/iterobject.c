@@ -82,7 +82,7 @@ iter_len(seqiterobject *it)
                 return NULL;
         }
         else {
-            return Py_NotImplemented;
+            Py_RETURN_NOTIMPLEMENTED;
         }
         len = seqsize - it->it_index;
         if (len >= 0)
