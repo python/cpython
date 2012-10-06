@@ -61,7 +61,7 @@ from io import BytesIO
 
 import collections
 
-__all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
+__all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
 
 class _ClosedDict(collections.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
