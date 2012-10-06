@@ -291,8 +291,7 @@ class TestLoader(object):
                         # tests loaded from package file
                         yield tests
                     # recurse into the package
-                    for test in self._find_tests(full_path, pattern):
-                        yield test
+                    yield from self._find_tests(full_path, pattern)
                 else:
                     try:
                         yield load_tests(self, tests, pattern)
