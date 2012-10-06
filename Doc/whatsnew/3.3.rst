@@ -1946,10 +1946,10 @@ threading
 ---------
 
 :class:`threading.Condition`, :class:`threading.Semaphore`,
-:class:`threading.BoundedSempaphore`, :class:`threading.Event`, and
+:class:`threading.BoundedSemaphore`, :class:`threading.Event`, and
 :class:`threading.Timer`, all of which used to be factory functions returning a
 class instance, are now classes and may be subclassed. (Contributed by Éric
-Araujo in :issue:`109681`).
+Araujo in :issue:`10968`).
 
 The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
 argument to override the default behavior of inheriting the ``deamon`` flag
