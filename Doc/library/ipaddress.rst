@@ -42,8 +42,15 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
    the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
    supplied; integers less than 2**32 will be considered to be IPv4 by default.
-   A :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
-   IPv6 address.
+   A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
+   or IPv6 address.
+
+.. testsetup::
+   >>> import ipaddress
+   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
+   ...                        IPv4Network)
+
+::
 
    >>> ipaddress.ip_address('192.168.0.1')
    IPv4Address('192.168.0.1')
@@ -111,7 +118,7 @@ write code that handles both IP versions correctly.
 
    >>> ipaddress.IPv4Address('192.168.0.1')
    IPv4Address('192.168.0.1')
-   >>> ipaddress.IPv4Address(3221225985)
+   >>> ipaddress.IPv4Address(3232235521)
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
@@ -437,7 +444,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       hosts are all the IP addresses that belong to the network, except the
       network address itself and the network broadcast address.
 
-         >>> list(ip_network('192.0.2.0/29').hosts())
+         >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
           IPv4Address('192.0.2.3'), IPv4Address('192.0.2.4'),
           IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
@@ -456,7 +463,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
          >>> n1 = ip_network('192.0.2.0/28')
          >>> n2 = ip_network('192.0.2.1/32')
-         >>> list(n1.address_exclude(n2))
+         >>> list(n1.address_exclude(n2))  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Network('192.0.2.8/29'), IPv4Network('192.0.2.4/30'),
           IPv4Network('192.0.2.2/31'), IPv4Network('192.0.2.0/32')]
 
@@ -471,10 +478,10 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
          >>> list(ip_network('192.0.2.0/24').subnets())
          [IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
-         >>> list(ip_network('192.0.2.0/24').subnets(prefixlen_diff=2))
+         >>> list(ip_network('192.0.2.0/24').subnets(prefixlen_diff=2))  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
           IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
-         >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=26))
+         >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=26))  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
           IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
          >>> list(ip_network('192.0.2.0/24').subnets(new_prefix=23))
