@@ -349,6 +349,8 @@ is considered sufficient for this determination.
    returning the default value. On error ``-1`` is returned. This is the
    equivalent to the Python expression ``operator.length_hint(o, default)``.
 
+   .. versionadded:: 3.4
+
 .. c:function:: PyObject* PyObject_GetItem(PyObject *o, PyObject *key)
 
    Return element of *o* corresponding to the object *key* or *NULL* on failure.
