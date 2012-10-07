@@ -27,7 +27,6 @@
  *  - C++ comments are converted to ANSI C comments.
  *  - All functions and globals are declared static.
  *  - The typedef for UINT64 is commented out.
- *  - brg_endian.h is removed.
  *  - KeccakF-1600-opt[32|64]-settings.h are commented out
  *  - Some unused functions are commented out to silence compiler warnings.
  *
