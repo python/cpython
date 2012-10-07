@@ -609,6 +609,9 @@ Build
 Documentation
 -------------
 
+- Issue #13498: Clarify docs of os.makedirs()'s exist_ok argument.  Done with
+  great native-speaker help from R. David Murray.
+
 - Issue #15533: Clarify docs and add tests for subprocess.Popen()'s cwd
   argument.
 
