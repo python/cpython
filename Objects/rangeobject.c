@@ -136,7 +136,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(range_doc,
-"range([start,] stop[, step]) -> range object\n\
+"range(stop) -> range object\n\
+range(start, stop[, step]) -> range object\n\
 \n\
 Returns a virtual sequence of numbers from start to stop by step.");
 
@@ -969,7 +970,7 @@ rangeiter_reduce(rangeiterobject *r)
 {
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
-    
+
     /* create a range object for pickling */
     start = PyLong_FromLong(r->start);
     if (start == NULL)

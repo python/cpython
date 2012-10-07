@@ -1203,7 +1203,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-str:
-.. function:: str([object[, encoding[, errors]]])
+.. function:: str(object='')
+              str(object[, encoding[, errors]])
 
    Return a string version of an object, using one of the following modes:
 
