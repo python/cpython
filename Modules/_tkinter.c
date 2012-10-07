@@ -2895,7 +2895,7 @@ static struct PyModuleDef _tkintermodule = {
 PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
-    PyObject *m, *d, *uexe, *cexe;
+    PyObject *m, *uexe, *cexe;
 
     if (PyType_Ready(&Tkapp_Type) < 0)
         return NULL;
@@ -2908,32 +2908,32 @@ PyInit__tkinter(void)
     if (m == NULL)
         return NULL;
 
-    d = PyModule_GetDict(m);
     Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
-    PyDict_SetItemString(d, "TclError", Tkinter_TclError);
+    Py_INCREF(Tkinter_TclError);
+    PyModule_AddObject(m, "TclError", Tkinter_TclError);
 
-    ins_long(d, "READABLE", TCL_READABLE);
-    ins_long(d, "WRITABLE", TCL_WRITABLE);
-    ins_long(d, "EXCEPTION", TCL_EXCEPTION);
-    ins_long(d, "WINDOW_EVENTS", TCL_WINDOW_EVENTS);
-    ins_long(d, "FILE_EVENTS", TCL_FILE_EVENTS);
-    ins_long(d, "TIMER_EVENTS", TCL_TIMER_EVENTS);
-    ins_long(d, "IDLE_EVENTS", TCL_IDLE_EVENTS);
-    ins_long(d, "ALL_EVENTS", TCL_ALL_EVENTS);
-    ins_long(d, "DONT_WAIT", TCL_DONT_WAIT);
-    ins_string(d, "TK_VERSION", TK_VERSION);
-    ins_string(d, "TCL_VERSION", TCL_VERSION);
+    PyModule_AddIntConstant(m, "READABLE", TCL_READABLE);
+    PyModule_AddIntConstant(m, "WRITABLE", TCL_WRITABLE);
+    PyModule_AddIntConstant(m, "EXCEPTION", TCL_EXCEPTION);
+    PyModule_AddIntConstant(m, "WINDOW_EVENTS", TCL_WINDOW_EVENTS);
+    PyModule_AddIntConstant(m, "FILE_EVENTS", TCL_FILE_EVENTS);
+    PyModule_AddIntConstant(m, "TIMER_EVENTS", TCL_TIMER_EVENTS);
+    PyModule_AddIntConstant(m, "IDLE_EVENTS", TCL_IDLE_EVENTS);
+    PyModule_AddIntConstant(m, "ALL_EVENTS", TCL_ALL_EVENTS);
+    PyModule_AddIntConstant(m, "DONT_WAIT", TCL_DONT_WAIT);
+    PyModule_AddStringConstant(m, "TK_VERSION", TK_VERSION);
+    PyModule_AddStringConstant(m, "TCL_VERSION", TCL_VERSION);
 
-    PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
+    PyModule_AddObject(m, "TkappType", (PyObject *)&Tkapp_Type);
 
     if (PyType_Ready(&Tktt_Type) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
+    PyModule_AddObject(m, "TkttType", (PyObject *)&Tktt_Type);
 
     Py_TYPE(&PyTclObject_Type) = &PyType_Type;
-    PyDict_SetItemString(d, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
+    PyModule_AddObject(m, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
 
 #ifdef TK_AQUA
     /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
