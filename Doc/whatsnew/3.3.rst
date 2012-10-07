@@ -933,11 +933,12 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
-base64, binascii
-----------------
+base64
+------
 
 ASCII-only Unicode strings are now accepted by the decoding functions of the
-modern interface. For example, ``base64.b64decode('YWJj')`` returns ``b'abc'``.
+:mod:`base64` modern interface. For example, ``base64.b64decode('YWJj')``
+returns ``b'abc'``.  (Contributed by Catalin Iacob in :issue:`13641`.)
 
 
 binascii
@@ -1797,6 +1798,12 @@ shutil
   acts on the symlink itself (or creates one, if relevant).
   (Contributed by Hynek Schlawack in :issue:`12715`.)
 
+* When copying files to a different file system, :func:`~shutil.move` now
+  handles symlinks the way the posix ``mv`` command does, recreating the
+  symlink rather than copying the target file contents.  (Contributed by
+  Jonathan Niehof in :issue:`9993`.)  :func:`~shutil.move` now also returns
+  the ``dst`` argument as its result.
+
 * :func:`~shutil.rmtree` is now resistant to symlink attacks on platforms
   which support the new ``dir_fd`` parameter in :func:`os.open` and
   :func:`os.unlink`. (Contributed by Martin von Löwis and Hynek Schlawack
@@ -1878,6 +1885,9 @@ socket
 * The :class:`~socket.socket` class now supports the PF_RDS protocol family
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
   http://oss.oracle.com/projects/rds/).
+
+* The :class:`~socket.socket` class now supports the ``PF_SYSTEM`` protocol
+  family on OS X.  (Contributed by Michael Goderbauer in :issue:`13777`.)
 
 * New function :func:`~socket.sethostname` allows the hostname to be set
   on unix systems if the calling process has sufficient privileges.
@@ -2094,13 +2104,13 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 webbrowser
 ----------
 
-The :mod:`webbrowser` module supports more browsers: Google Chrome (named
+The :mod:`webbrowser` module supports more "browsers": Google Chrome (named
 :program:`chrome`, :program:`chromium`, :program:`chrome-browser` or
-:program:`chromium-browser` depending on the version and operating system) as
-well as the the generic launchers :program:`xdg-open` from the FreeDesktop.org
-project and :program:`gvfs-open` which is the default URI handler for GNOME 3.
-
-(:issue:`13620` and :issue:`14493`)
+:program:`chromium-browser` depending on the version and operating system),
+and the generic launchers :program:`xdg-open`, from the FreeDesktop.org
+project, and :program:`gvfs-open`, which is the default URI handler for GNOME
+3.  (The former contributed by Arnaud Calmettes in :issue:`13620`, the latter
+by Matthias Klose in :issue:`14493`)
 
 
 xml.etree.ElementTree
