@@ -336,8 +336,7 @@ Split(char *list)
     PyObject *v;
 
     if (list == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
@@ -1308,8 +1307,7 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
     Tcl_AddErrorInfo(Tkapp_Interp(self), msg);
     LEAVE_TCL
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -1976,8 +1974,7 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
         return NULL;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -2018,8 +2015,7 @@ Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
         PyErr_SetString(Tkinter_TclError, "can't delete Tcl command");
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -2123,8 +2119,7 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
     ENTER_TCL
     Tcl_CreateFileHandler(tfile, mask, FileHandler, (ClientData) data);
     LEAVE_TCL
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2148,8 +2143,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
     ENTER_TCL
     Tcl_DeleteFileHandler(tfile);
     LEAVE_TCL
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif /* HAVE_CREATEFILEHANDLER */
 
@@ -2181,8 +2175,7 @@ Tktt_DeleteTimerHandler(PyObject *self, PyObject *args)
         Py_DECREF(func);
         Py_DECREF(v); /* See Tktt_New() */
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef Tktt_methods[] =
@@ -2382,8 +2375,7 @@ Tkapp_MainLoop(PyObject *selfptr, PyObject *args)
         excInCmd = valInCmd = trbInCmd = NULL;
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2409,8 +2401,7 @@ Tkapp_Quit(PyObject *self, PyObject *args)
         return NULL;
 
     quitMainLoop = 1;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2467,8 +2458,7 @@ Tkapp_TkInit(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2482,8 +2472,7 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
         return PyBool_FromLong(((TkappObject*)self)->wantobjects);
     ((TkappObject*)self)->wantobjects = wantobjects;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2492,8 +2481,7 @@ Tkapp_WillDispatch(PyObject *self, PyObject *args)
 
     ((TkappObject*)self)->dispatching = 1;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -2738,8 +2726,7 @@ Tkinter_setbusywaitinterval(PyObject *self, PyObject *args)
         return NULL;
     }
     Tkinter_busywaitinterval = new_val;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static char setbusywaitinterval_doc[] =
