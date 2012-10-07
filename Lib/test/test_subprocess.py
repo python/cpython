@@ -526,6 +526,7 @@ class ProcessTestCase(BaseTestCase):
         finally:
             for h in handles:
                 os.close(h)
+            test_support.unlink(test_support.TESTFN)
 
     def test_list2cmdline(self):
         self.assertEqual(subprocess.list2cmdline(['a b c', 'd', 'e']),
