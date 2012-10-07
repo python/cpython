@@ -2859,27 +2859,6 @@ DisableEventHook(void)
 }
 
 
-/* all errors will be checked in one fell swoop in init_tkinter() */
-static void
-ins_long(PyObject *d, char *name, long val)
-{
-    PyObject *v = PyLong_FromLong(val);
-    if (v) {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
-}
-static void
-ins_string(PyObject *d, char *name, char *val)
-{
-    PyObject *v = PyUnicode_FromString(val);
-    if (v) {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
-}
-
-
 static struct PyModuleDef _tkintermodule = {
     PyModuleDef_HEAD_INIT,
     "_tkinter",
