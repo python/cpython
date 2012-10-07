@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1492704: shutil.copyfile() raises a distinct SameFileError now if
+  source and destination are the same file. Patch by Atsuo Ishimoto.
+
 - Issue #13896: Make shelf instances work with 'with' as context managers.
   Original patch by Filip Gruszczyński.
 

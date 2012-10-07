@@ -53,7 +53,7 @@ Directory and files operations
    *dst* and return *dst*.  *src* and *dst* are path names given as strings.
    *dst* must be the complete target file name; look at :func:`shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
-   specify the same file, :exc:`Error` is raised.
+   specify the same file, :exc:`SameFileError` is raised.
 
    The destination location must be writable; otherwise, an :exc:`OSError`
    exception will be raised. If *dst* already exists, it will be replaced.
@@ -68,6 +68,18 @@ Directory and files operations
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
       Now returns *dst*.
+
+   .. versionchanged:: 3.4
+      Raise :exc:`SameFileError` instead of :exc:`Error`.
+
+
+.. exception:: SameFileError
+
+   This exception is raised if source and destination in :func:`copyfile`
+   are the same file.
+
+   .. versionadded:: 3.4
+
 
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
