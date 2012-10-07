@@ -1,7 +1,7 @@
 .. _ipaddress-howto:
 
 ***************************************
-An Introduction to the ipaddress module
+An introduction to the ipaddress module
 ***************************************
 
 :author: Peter Moody
@@ -47,7 +47,12 @@ Addresses, often referred to as "host addresses" are the most basic unit
 when working with IP addressing. The simplest way to create addresses is
 to use the :func:`ipaddress.ip_address` factory function, which automatically
 determines whether to create an IPv4 or IPv6 address based on the passed in
-value::
+value:
+
+.. testsetup::
+   >>> import ipaddress
+
+::
 
    >>> ipaddress.ip_address('192.0.2.1')
    IPv4Address('192.0.2.1')
@@ -142,7 +147,7 @@ address.
 
    >>> ipaddress.ip_interface('192.0.2.1/24')
    IPv4Interface('192.0.2.1/24')
-   >>> ipaddress.ip_network('2001:db8::1/96')
+   >>> ipaddress.ip_interface('2001:db8::1/96')
    IPv6Interface('2001:db8::1/96')
 
 Integer inputs are accepted (as with networks), and use of a particular IP
@@ -177,22 +182,22 @@ Obtaining the network from an interface::
 Finding out how many individual addresses are in a network::
 
    >>> net4 = ipaddress.ip_network('192.0.2.0/24')
-   >>> net4.numhosts
+   >>> net4.num_addresses
    256
    >>> net6 = ipaddress.ip_network('2001:db8::0/96')
-   >>> net6.numhosts
+   >>> net6.num_addresses
    4294967296
 
 Iterating through the "usable" addresses on a network::
 
    >>> net4 = ipaddress.ip_network('192.0.2.0/24')
    >>> for x in net4.hosts():
-          print(x)
+   ...     print(x)  # doctest: +ELLIPSIS
    192.0.2.1
    192.0.2.2
    192.0.2.3
    192.0.2.4
-   <snip>
+   ...
    192.0.2.252
    192.0.2.253
    192.0.2.254
@@ -216,9 +221,9 @@ the hostmask (any bits that are not part of the netmask):
 Exploding or compressing the address::
 
    >>> addr6.exploded
-   '2001:0db8:0000:0000:0000:0000:0000:0000'
+   '2001:0db8:0000:0000:0000:0000:0000:0001'
    >>> addr6.compressed
-   '2001:db8::'
+   '2001:db8::1'
    >>> net6.exploded
    '2001:0db8:0000:0000:0000:0000:0000:0000/96'
    >>> net6.compressed
@@ -241,9 +246,9 @@ to index them like this::
    >>> net4[-1]
    IPv4Address('192.0.2.255')
    >>> net6[1]
-   IPv6Address('2001::1')
+   IPv6Address('2001:db8::1')
    >>> net6[-1]
-   IPv6Address('2001::ffff:ffff')
+   IPv6Address('2001:db8::ffff:ffff')
 
 
 It also means that network objects lend themselves to using the list
