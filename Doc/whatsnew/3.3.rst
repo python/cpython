@@ -1537,6 +1537,13 @@ program to wait on multiple :class:`~multiprocessing.Process` objects at one
 time using the appropriate OS primitives (for example, :mod:`select` on
 posix systems).
 
+New methods :meth:`multiprocessing.pool.Pool.starmap` and
+:meth:`~multiprocessing.pool.Pool.starmap_async` provide
+:func:`itertools.starmap` equivalents to the existing
+:meth:`multiprocessing.pool.Pool.map` and
+:meth:`~multiprocessing.pool.Pool.map_async` functions.  (Contributed by Hynek
+Schlawack in :issue:`12708`.)
+
 
 nntplib
 -------
