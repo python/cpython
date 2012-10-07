@@ -135,7 +135,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(range_doc,
-"range([start,] stop[, step]) -> range object\n\
+"range(stop) -> range object\n\
+range(start, stop[, step]) -> range object\n\
 \n\
 Returns a virtual sequence of numbers from start to stop by step.");
 

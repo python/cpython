@@ -1236,7 +1236,8 @@ are always available.  They are listed here in alphabetical order.
    standard type hierarchy in :ref:`types`.
 
 
-.. function:: str([object[, encoding[, errors]]])
+.. function:: str(object='')
+              str(object[, encoding[, errors]])
 
    Return a string version of an object, using one of the following modes:
 
