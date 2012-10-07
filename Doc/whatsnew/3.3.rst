@@ -940,6 +940,14 @@ ASCII-only Unicode strings are now accepted by the decoding functions of the
 modern interface. For example, ``base64.b64decode('YWJj')`` returns ``b'abc'``.
 
 
+binascii
+--------
+
+In addition to the binary objects they normally accept, the ``a2b_`` functions
+now all also accept ASCII-only strings as input.  (Contributed by Antoine
+Pitrou in :issue:`13637`.)
+
+
 bz2
 ---
 
@@ -1402,6 +1410,11 @@ can be used to directly manage when the accumlated headers are sent.
 
 :class:`http.server` now produces valid ``HTML 4.01 strict`` output.
 (Contributed by Ezio Melotti in :issue:`13295`.)
+
+:class:`http.client.HTTPResponse` now has a
+:meth:`~http.client.HTTPResponse.readinto` method, which means it can be used
+as a :class:`io.RawIOBase` class.  (Contributed by John Kuhn in
+:issue:`13464`.)
 
 
 html
@@ -1912,7 +1925,8 @@ ssl
   SCRAM-SHA-1-PLUS.  (Contributed by Jacek Konieczny in :issue:`12551`)
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
-  to its new :meth:`~ssl.SSLSocket.compression` method.
+  to its new :meth:`~ssl.SSLSocket.compression` method.  The new attribute
+  :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
   (Contributed by Antoine Pitrou in :issue:`13634`)
 
 * Support has been added for the Next Procotol Negotiation extension using
@@ -1925,6 +1939,10 @@ ssl
 
 * The :func:`~ssl.get_server_certificate` function now supports IPv6.
   (Contributed by Charles-François Natali in :issue:`11811`.)
+
+* New attribute :attr:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
+  SSLv3 server sockets to use the server's cipher ordering preference rather
+  than the client's (:issue:`13635`).
 
 
 stat
@@ -1962,6 +1980,13 @@ sys
 The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
 sequence` holding informations about the thread implementation
 (:issue:`11223`).
+
+
+tarfile
+-------
+
+:mod:`tarfile` now supports ``lzma`` encoding via the :mod:`lzma` module.
+(Contributed by Lars Gustäbel in :issue:`5689`.)
 
 
 tempfile
