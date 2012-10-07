@@ -403,7 +403,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(Py_ssize_t) PyObject_Length(PyObject *o);
 #define PyObject_Length PyObject_Size
 
-PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
+#ifndef Py_LIMITED_API
+     PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
+#endif
 PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
        /*

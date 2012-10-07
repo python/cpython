@@ -1805,6 +1805,15 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    considered to be false in a Boolean context.
 
 
+.. method:: object.__length_hint__(self)
+
+   Called to implement ``operator.length_hint``. Should return an estimated
+   length for the object (which may be greater or less than the actual length).
+   The length must be an integer ``>=`` 0. This method is purely an
+   optimization and is never required for correctness.
+
+   .. versionadded:: 3.4
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::

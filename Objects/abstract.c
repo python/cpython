@@ -71,8 +71,9 @@ _PyObject_HasLen(PyObject *o) {
 }
 
 /* The length hint function returns a non-negative value from o.__len__()
-   or o.__length_hint__().  If those methods aren't found.  If one of the calls
-   fails this function returns -1.
+   or o.__length_hint__(). If those methods aren't found the defaultvalue is
+   returned.  If one of the calls fails with an exception other than TypeError
+   this function returns -1.
 */
 
 Py_ssize_t
@@ -112,21 +113,21 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return defaultvalue;
     }
     if (!PyLong_Check(result)) {
-        PyErr_Format(PyExc_TypeError, "Length hint must be an integer, not %s",
+        PyErr_Format(PyExc_TypeError, "__length_hint__ must be an integer, not %.100s",
             Py_TYPE(result)->tp_name);
         Py_DECREF(result);
         return -1;
     }
-    defaultvalue = PyLong_AsSsize_t(result);
+    res = PyLong_AsSsize_t(result);
     Py_DECREF(result);
-    if (defaultvalue < 0 && PyErr_Occurred()) {
+    if (res < 0 && PyErr_Occurred()) {
         return -1;
     }
-    if (defaultvalue < 0) {
+    if (res < 0) {
         PyErr_Format(PyExc_ValueError, "__length_hint__() should return >= 0");
         return -1;
     }
-    return defaultvalue;
+    return res;
 }
 
 PyObject *
