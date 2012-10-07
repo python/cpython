@@ -2484,11 +2484,6 @@ Library
   make sure two listeners can't bind to the same socket/pipe (or any existing
   socket/pipe).
 
-- Issue #9021: Add an introduction to the copy module documentation.
-
-- Issue #6005: Examples in the socket library documentation use sendall, where
-  relevant, instead send method.
-
 - Issue #10811: Fix recursive usage of cursors. Instead of crashing,
   raise a ProgrammingError now.
 
@@ -2596,8 +2591,6 @@ Library
   symlink itself (or creates one, if relevant).  Patch by Hynek Schlawack.
 
 - Add a flags parameter to select.epoll.
-
-- Issue #12798: Updated the mimetypes documentation.
 
 - Issue #13626: Add support for SSL Diffie-Hellman key exchange, through the
   SSLContext.load_dh_params() method and the ssl.OP_SINGLE_DH_USE option.
@@ -4216,6 +4209,13 @@ Documentation
 - Issue #13402: Document absoluteness of sys.executable.
 
 - Issue #13883: PYTHONCASEOK also works on OS X.
+
+- Issue #9021: Add an introduction to the copy module documentation.
+
+- Issue #6005: Examples in the socket library documentation use sendall, where
+  relevant, instead send method.
+
+- Issue #12798: Updated the mimetypes documentation.
 
 - Issue #12949: Document the kwonlyargcount argument for the PyCode_New
   C API function.
