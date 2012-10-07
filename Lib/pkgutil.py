@@ -455,8 +455,7 @@ def iter_importers(fullname=""):
         if path is None:
             return
     else:
-        for importer in sys.meta_path:
-            yield importer
+        yield from sys.meta_path
         path = sys.path
     for item in path:
         yield get_importer(item)
