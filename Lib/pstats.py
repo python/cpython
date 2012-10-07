@@ -178,7 +178,7 @@ class Stats:
               "module"    : (((4, 1),              ), "file name"),
               "name"      : (((6, 1),              ), "function name"),
               "nfl"       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
-              "pcalls"    : (((0,-1),              ), "call count"),
+              "pcalls"    : (((0,-1),              ), "primitive call count"),
               "stdname"   : (((7, 1),              ), "standard name"),
               "time"      : (((2,-1),              ), "internal time"),
               }
