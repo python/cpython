@@ -9,7 +9,6 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
 
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
-import builtins
 import io
 import warnings
 
@@ -27,6 +26,8 @@ _MODE_READ_EOF = 2
 _MODE_WRITE    = 3
 
 _BUFFER_SIZE = 8192
+
+_builtin_open = open
 
 
 class BZ2File(io.BufferedIOBase):
@@ -90,10 +91,10 @@ class BZ2File(io.BufferedIOBase):
             mode_code = _MODE_WRITE
             self._compressor = BZ2Compressor(compresslevel)
         else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
+            raise ValueError("Invalid mode: %r" % (mode,))
 
         if isinstance(filename, (str, bytes)):
-            self._fp = builtins.open(filename, mode)
+            self._fp = _builtin_open(filename, mode)
             self._closefp = True
             self._mode = mode_code
         elif hasattr(filename, "read") or hasattr(filename, "write"):
@@ -189,15 +190,17 @@ class BZ2File(io.BufferedIOBase):
 
             if not rawblock:
                 if self._decompressor.eof:
+                    # End-of-stream marker and end of file. We're good.
                     self._mode = _MODE_READ_EOF
                     self._size = self._pos
                     return False
                 else:
+                    # Problem - we were expecting more compressed data.
                     raise EOFError("Compressed file ended before the "
                                    "end-of-stream marker was reached")
 
-            # Continue to next stream.
             if self._decompressor.eof:
+                # Continue to next stream.
                 self._decompressor = BZ2Decompressor()
 
             self._buffer = self._decompressor.decompress(rawblock)
@@ -412,7 +415,7 @@ class BZ2File(io.BufferedIOBase):
                     self._read_all(return_data=False)
                 offset = self._size + offset
             else:
-                raise ValueError("Invalid value for whence: {}".format(whence))
+                raise ValueError("Invalid value for whence: %s" % (whence,))
 
             # Make it so that offset is the number of bytes to skip forward.
             if offset < self._pos:
