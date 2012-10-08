@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14783: Improve int() and long() docstrings and switch docstrings for
+  unicode(), slice(), range(), and xrange() to use multi-line signatures.
+
 - Issue #16030: Fix overflow bug in computing the `repr` of an xrange object
   with large start, step or length.
 

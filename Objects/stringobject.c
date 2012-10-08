@@ -3799,7 +3799,7 @@ PyTypeObject PyBaseString_Type = {
 };
 
 PyDoc_STRVAR(string_doc,
-"str(object) -> string\n\
+"str(object='') -> string\n\
 \n\
 Return a nice string representation of the object.\n\
 If the argument is a string, the return value is the same object.");

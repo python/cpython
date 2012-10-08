@@ -4221,13 +4221,19 @@ static PyGetSetDef long_getset[] = {
 };
 
 PyDoc_STRVAR(long_doc,
-"long(x[, base]) -> integer\n\
+"long(x=0) -> long\n\
+long(x, base=10) -> long\n\
 \n\
-Convert a string or number to a long integer, if possible.  A floating\n\
-point argument will be truncated towards zero (this does not include a\n\
-string representation of a floating point number!)  When converting a\n\
-string, use the optional base.  It is an error to supply a base when\n\
-converting a non-string.");
+Convert a number or string to a long integer, or return 0L if no arguments\n\
+are given.  If x is floating point, the conversion truncates towards zero.\n\
+\n\
+If x is not a number or if base is given, then x must be a string or\n\
+Unicode object representing an integer literal in the given base.  The\n\
+literal can be preceded by '+' or '-' and be surrounded by whitespace.\n\
+The base defaults to 10.  Valid bases are 0 and 2-36.  Base 0 means to\n\
+interpret the base from the string as an integer literal.\n\
+>>> int('0b100', base=0)\n\
+4L");
 
 static PyNumberMethods long_as_number = {
     (binaryfunc)long_add,       /*nb_add*/

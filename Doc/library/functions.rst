@@ -733,7 +733,8 @@ available.  They are listed here in alphabetical order.
       affect the values of local and free variables used by the interpreter.
 
 
-.. function:: long([x[, base]])
+.. function:: long(x=0)
+              long(x, base=10)
 
    Convert a string or number to a long integer.  If the argument is a string, it
    must contain a possibly signed number of arbitrary size, possibly embedded in
@@ -1318,7 +1319,7 @@ available.  They are listed here in alphabetical order.
       Function decorator syntax added.
 
 
-.. function:: str([object])
+.. function:: str(object='')
 
    Return a string containing a nicely printable representation of an object.  For
    strings, this returns the string itself.  The difference with ``repr(object)``
@@ -1463,7 +1464,8 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.0
 
 
-.. function:: unicode([object[, encoding [, errors]]])
+.. function:: unicode(object='')
+              unicode(object[, encoding [, errors]])
 
    Return the Unicode string version of *object* using one of the following modes:
 

@@ -2004,7 +2004,8 @@ builtin_range(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(range_doc,
-"range([start,] stop[, step]) -> list of integers\n\
+"range(stop) -> list of integers\n\
+range(start, stop[, step]) -> list of integers\n\
 \n\
 Return a list containing an arithmetic progression of integers.\n\
 range(i, j) returns [i, i+1, i+2, ..., j-1]; start (!) defaults to 0.\n\

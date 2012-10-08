@@ -104,7 +104,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(range_doc,
-"xrange([start,] stop[, step]) -> xrange object\n\
+"xrange(stop) -> xrange object\n\
+xrange(start, stop[, step]) -> xrange object\n\
 \n\
 Like range(), but instead of returning a list, returns an object that\n\
 generates the numbers in the range on demand.  For looping, this is \n\
