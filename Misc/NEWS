@@ -4206,6 +4206,9 @@ C-API
 Documentation
 -------------
 
+- Issue #13498: Clarify docs of os.makedirs()'s exist_ok argument.  Done with
+  great native-speaker help from R. David Murray.
+
 - Issues #13491 and #13995: Fix many errors in sqlite3 documentation.
   Initial patch for #13491 by Johannes Vogel.
 
