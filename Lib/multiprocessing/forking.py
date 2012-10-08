@@ -441,27 +441,17 @@ def prepare(data):
                 dirs = [os.path.dirname(main_path)]
 
             assert main_name not in sys.modules, main_name
+            sys.modules.pop('__mp_main__', None)
             file, path_name, etc = imp.find_module(main_name, dirs)
             try:
-                # We would like to do "imp.load_module('__main__', ...)"
-                # here.  However, that would cause 'if __name__ ==
-                # "__main__"' clauses to be executed.
+                # We should not do 'imp.load_module("__main__", ...)'
+                # since that would execute 'if __name__ == "__main__"'
+                # clauses, potentially causing a psuedo fork bomb.
                 main_module = imp.load_module(
-                    '__parents_main__', file, path_name, etc
+                    '__mp_main__', file, path_name, etc
                     )
             finally:
                 if file:
                     file.close()
 
-            sys.modules['__main__'] = main_module
-            main_module.__name__ = '__main__'
-
-            # Try to make the potentially picklable objects in
-            # sys.modules['__main__'] realize they are in the main
-            # module -- somewhat ugly.
-            for obj in list(main_module.__dict__.values()):
-                try:
-                    if obj.__module__ == '__parents_main__':
-                        obj.__module__ = '__main__'
-                except Exception:
-                    pass
+            sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
