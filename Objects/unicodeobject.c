@@ -1861,7 +1861,7 @@ char utf8_code_length[256] = {
        illegal prefix.  See RFC 3629 for details */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 00-0F */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -2217,7 +2217,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    
+
     q = (unsigned char *)s;
     e = q + size;
 
@@ -8759,7 +8759,8 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(unicode_doc,
-             "unicode(string [, encoding[, errors]]) -> object\n\
+             "unicode(object='') -> unicode object\n\
+unicode(string[, encoding[, errors]]) -> unicode object\n\
 \n\
 Create a new Unicode object from the given encoded string.\n\
 encoding defaults to the current default string encoding.\n\
