@@ -100,6 +100,9 @@ Library
 Tests
 -----
 
+- Issue #16115: Add some tests for the executable argument to
+  subprocess.Popen().  Initial patch by Kushal Das.
+
 - Issue #15304: Fix warning message when `os.chdir()` fails inside
   `test.support.temp_cwd()`.  Patch by Chris Jerdonek.
 
