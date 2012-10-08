@@ -1334,15 +1334,20 @@ static PyGetSetDef int_getset[] = {
 };
 
 PyDoc_STRVAR(int_doc,
-"int(x[, base]) -> integer\n\
+"int(x=0) -> int or long\n\
+int(x, base=10) -> int or long\n\
 \n\
-Convert a string or number to an integer, if possible.  A floating point\n\
-argument will be truncated towards zero (this does not include a string\n\
-representation of a floating point number!)  When converting a string, use\n\
-the optional base.  It is an error to supply a base when converting a\n\
-non-string.  If base is zero, the proper base is guessed based on the\n\
-string content.  If the argument is outside the integer range a\n\
-long object will be returned instead.");
+Convert a number or string to an integer, or return 0 if no arguments\n\
+are given.  If x is floating point, the conversion truncates towards zero.\n\
+If x is outside the integer range, the function returns a long instead.\n\
+\n\
+If x is not a number or if base is given, then x must be a string or\n\
+Unicode object representing an integer literal in the given base.  The\n\
+literal can be preceded by '+' or '-' and be surrounded by whitespace.\n\
+The base defaults to 10.  Valid bases are 0 and 2-36.  Base 0 means to\n\
+interpret the base from the string as an integer literal.\n\
+>>> int('0b100', base=0)\n\
+4");
 
 static PyNumberMethods int_as_number = {
     (binaryfunc)int_add,        /*nb_add*/
