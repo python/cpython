@@ -44,12 +44,13 @@ class BZ2File(io.BufferedIOBase):
     def __init__(self, filename, mode="r", buffering=None, compresslevel=9):
         """Open a bzip2-compressed file.
 
-        If filename is a str or bytes object, is gives the name of the file to
-        be opened. Otherwise, it should be a file object, which will be used to
-        read or write the compressed data.
+        If filename is a str or bytes object, it gives the name
+        of the file to be opened. Otherwise, it should be a file object,
+        which will be used to read or write the compressed data.
 
-        mode can be 'r' for reading (default), 'w' for (over)writing, or 'a' for
-        appending. These can equivalently be given as 'rb', 'wb', and 'ab'.
+        mode can be 'r' for reading (default), 'w' for (over)writing,
+        or 'a' for appending. These can equivalently be given as 'rb',
+        'wb', and 'ab'.
 
         buffering is ignored. Its use is deprecated.
 
@@ -439,20 +440,20 @@ def open(filename, mode="rb", compresslevel=9,
          encoding=None, errors=None, newline=None):
     """Open a bzip2-compressed file in binary or text mode.
 
-    The filename argument can be an actual filename (a str or bytes object), or
-    an existing file object to read from or write to.
+    The filename argument can be an actual filename (a str or bytes
+    object), or an existing file object to read from or write to.
 
-    The mode argument can be "r", "rb", "w", "wb", "a" or "ab" for binary mode,
-    or "rt", "wt" or "at" for text mode. The default mode is "rb", and the
-    default compresslevel is 9.
+    The mode argument can be "r", "rb", "w", "wb", "a" or "ab" for
+    binary mode, or "rt", "wt" or "at" for text mode. The default mode
+    is "rb", and the default compresslevel is 9.
 
-    For binary mode, this function is equivalent to the BZ2File constructor:
-    BZ2File(filename, mode, compresslevel). In this case, the encoding, errors
-    and newline arguments must not be provided.
+    For binary mode, this function is equivalent to the BZ2File
+    constructor: BZ2File(filename, mode, compresslevel). In this case,
+    the encoding, errors and newline arguments must not be provided.
 
     For text mode, a BZ2File object is created, and wrapped in an
-    io.TextIOWrapper instance with the specified encoding, error handling
-    behavior, and line ending(s).
+    io.TextIOWrapper instance with the specified encoding, error
+    handling behavior, and line ending(s).
 
     """
     if "t" in mode:
