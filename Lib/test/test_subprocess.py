@@ -192,6 +192,33 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stderr, None)
 
+    def _assert_python(self, pre_args, **kwargs):
+        # We include sys.exit() to prevent the test runner from hanging
+        # whenever python is found.
+        args = pre_args + ["import sys; sys.exit(47)"]
+        p = subprocess.Popen(args, **kwargs)
+        p.wait()
+        self.assertEqual(47, p.returncode)
+
+    def test_executable(self):
+        # Check that the executable argument works.
+        self._assert_python(["doesnotexist", "-c"], executable=sys.executable)
+
+    def test_executable_takes_precedence(self):
+        # Check that the executable argument takes precedence over args[0].
+        #
+        # Verify first that the call succeeds without the executable arg.
+        pre_args = [sys.executable, "-c"]
+        self._assert_python(pre_args)
+        self.assertRaises(FileNotFoundError, self._assert_python, pre_args,
+                          executable="doesnotexist")
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_executable_replaces_shell(self):
+        # Check that the executable argument replaces the default shell
+        # when shell=True.
+        self._assert_python([], executable=sys.executable, shell=True)
+
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
         # Normalize an expected cwd (for Tru64 support).
@@ -298,16 +325,6 @@ class ProcessTestCase(BaseTestCase):
         # For a normal installation, it should work without 'cwd'
         # argument.  For test runs in the build directory, see #7774.
         self._assert_cwd('', "somethingyoudonthave", executable=sys.executable)
-
-    def test_executable_precedence(self):
-        # To the precedence of executable argument over args[0]
-        # For a normal installation, it should work without 'cwd'
-        # argument. For test runs in the build directory, see #7774.
-        python_dir = os.path.dirname(os.path.realpath(sys.executable))
-        p = subprocess.Popen(["nonexistent","-c",'import sys; sys.exit(42)'],
-                            executable=sys.executable, cwd=python_dir)
-        p.wait()
-        self.assertEqual(p.returncode, 42)
 
     def test_stdin_pipe(self):
         # stdin redirection
