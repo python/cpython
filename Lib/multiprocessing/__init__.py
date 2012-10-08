@@ -40,6 +40,13 @@ from multiprocessing.process import Process, current_process, active_children
 from multiprocessing.util import SUBDEBUG, SUBWARNING
 
 #
+# Alias for main module -- will be reset by bootstrapping child processes
+#
+
+if '__main__' in sys.modules:
+    sys.modules['__mp_main__'] = sys.modules['__main__']
+
+#
 # Exceptions
 #
 
