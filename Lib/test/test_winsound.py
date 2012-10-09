@@ -16,16 +16,12 @@ def has_sound(sound):
     try:
         # Ask the mixer API for the number of devices it knows about.
         # When there are no devices, PlaySound will fail.
-        if ctypes.windll.winmm.mixerGetNumDevs() is 0:
+        if ctypes.windll.winmm.mixerGetNumDevs() == 0:
             return False
 
         key = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER,
                 "AppEvents\Schemes\Apps\.Default\{0}\.Default".format(sound))
-        value = winreg.EnumValue(key, 0)[1]
-        if value is not "":
-            return True
-        else:
-            return False
+        return winreg.EnumValue(key, 0)[1] != ""
     except WindowsError:
         return False
 
