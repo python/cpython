@@ -650,7 +650,16 @@ above.
 An example's doctest directives modify doctest's behavior for that single
 example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
-For example, this test passes::
+.. note::
+   Due to an `unfortunate limitation`_ of our current documentation
+   publishing process, syntax highlighting has been disabled in the examples
+   below in order to ensure the doctest directives are correctly displayed.
+
+   .. _unfortunate limitation: http://bugs.python.org/issue12947
+
+For example, this test passes:
+
+.. code-block:: text
 
    >>> print(list(range(20))) #doctest: +NORMALIZE_WHITESPACE
    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
@@ -659,18 +668,25 @@ For example, this test passes::
 Without the directive it would fail, both because the actual output doesn't have
 two blanks before the single-digit list elements, and because the actual output
 is on a single line.  This test also passes, and also requires a directive to do
-so::
+so:
+
+.. code-block:: text
 
    >>> print(list(range(20))) # doctest: +ELLIPSIS
    [0, 1, ..., 18, 19]
 
-Multiple directives can be used on a single physical line, separated by commas::
+Multiple directives can be used on a single physical line, separated by
+commas:
+
+.. code-block:: text
 
    >>> print(list(range(20))) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 If multiple directive comments are used for a single example, then they are
-combined::
+combined:
+
+.. code-block:: text
 
    >>> print(list(range(20))) # doctest: +ELLIPSIS
    ...                        # doctest: +NORMALIZE_WHITESPACE
@@ -678,7 +694,9 @@ combined::
 
 As the previous example shows, you can add ``...`` lines to your example
 containing only directives.  This can be useful when an example is too long for
-a directive to comfortably fit on the same line::
+a directive to comfortably fit on the same line:
+
+.. code-block:: text
 
    >>> print(list(range(5)) + list(range(10, 20)) + list(range(30, 40)))
    ... # doctest: +ELLIPSIS

@@ -291,7 +291,9 @@ Supported XPath syntax
 |                       | current  element.  For example, ``.//egg`` selects   |
 |                       | all ``egg`` elements in the entire tree.             |
 +-----------------------+------------------------------------------------------+
-| ``..``                | Selects the parent element.                          |
+| ``..``                | Selects the parent element.  Returns ``None`` if the |
+|                       | path attempts to reach the ancestors of the start    |
+|                       | element (the element ``find`` was called on).        |
 +-----------------------+------------------------------------------------------+
 | ``[@attrib]``         | Selects all elements that have the given attribute.  |
 +-----------------------+------------------------------------------------------+
@@ -431,9 +433,9 @@ Functions
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
-   generate a Unicode string.  *method* is either ``"xml"``,
-   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an (optionally)
-   encoded string containing the XML data.
+   generate a Unicode string (otherwise, a bytestring is generated).  *method*
+   is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
+   Returns an (optionally) encoded string containing the XML data.
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml")
@@ -441,11 +443,11 @@ Functions
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
-   generate a Unicode string.  *method* is either ``"xml"``,
-   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns a list of
-   (optionally) encoded strings containing the XML data.  It does not guarantee
-   any specific sequence, except that ``"".join(tostringlist(element)) ==
-   tostring(element)``.
+   generate a Unicode string (otherwise, a bytestring is generated).  *method*
+   is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
+   Returns a list of (optionally) encoded strings containing the XML data.
+   It does not guarantee any specific sequence, except that
+   ``"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
@@ -521,7 +523,7 @@ Element Objects
    .. method:: clear()
 
       Resets an element.  This function removes all subelements, clears all
-      attributes, and sets the text and tail attributes to None.
+      attributes, and sets the text and tail attributes to ``None``.
 
 
    .. method:: get(key, default=None)

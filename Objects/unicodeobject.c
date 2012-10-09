@@ -4492,7 +4492,6 @@ _PyUnicode_EncodeUTF7(PyObject *str,
     void *data;
     Py_ssize_t len;
     PyObject *v;
-    Py_ssize_t allocated;
     int inShift = 0;
     Py_ssize_t i;
     unsigned int base64bits = 0;
@@ -4510,11 +4509,9 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         return PyBytes_FromStringAndSize(NULL, 0);
 
     /* It might be possible to tighten this worst case */
-    allocated = 8 * len;
-    if (allocated / 8 != len)
+    if (len > PY_SSIZE_T_MAX / 8)
         return PyErr_NoMemory();
-
-    v = PyBytes_FromStringAndSize(NULL, allocated);
+    v = PyBytes_FromStringAndSize(NULL, len * 8);
     if (v == NULL)
         return NULL;
 
@@ -5092,7 +5089,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     Py_ssize_t len;
     PyObject *v;
     unsigned char *p;
-    Py_ssize_t nsize, bytesize, i;
+    Py_ssize_t nsize, i;
     /* Offsets from p for storing byte pairs in the right order. */
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
     int iorder[] = {0, 1, 2, 3};
@@ -5120,10 +5117,9 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     len = PyUnicode_GET_LENGTH(str);
 
     nsize = len + (byteorder == 0);
-    bytesize = nsize * 4;
-    if (bytesize / 4 != nsize)
+    if (nsize > PY_SSIZE_T_MAX / 4)
         return PyErr_NoMemory();
-    v = PyBytes_FromStringAndSize(NULL, bytesize);
+    v = PyBytes_FromStringAndSize(NULL, nsize * 4);
     if (v == NULL)
         return NULL;
 
@@ -5772,18 +5768,12 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
     void *data;
     Py_ssize_t expandsize = 0;
 
-    /* Initial allocation is based on the longest-possible unichr
+    /* Initial allocation is based on the longest-possible character
        escape.
 
-       In wide (UTF-32) builds '\U00xxxxxx' is 10 chars per source
-       unichr, so in this case it's the longest unichr escape. In
-       narrow (UTF-16) builds this is five chars per source unichr
-       since there are two unichrs in the surrogate pair, so in narrow
-       (UTF-16) builds it's not the longest unichr escape.
-
-       In wide or narrow builds '\uxxxx' is 6 chars per source unichr,
-       so in the narrow (UTF-16) build case it's the longest unichr
-       escape.
+       For UCS1 strings it's '\xxx', 4 bytes per source character.
+       For UCS2 strings it's '\uxxxx', 6 bytes per source character.
+       For UCS4 strings it's '\U00xxxxxx', 10 bytes per source character.
     */
 
     if (!PyUnicode_Check(unicode)) {
@@ -10165,7 +10155,7 @@ replace(PyObject *self, PyObject *str1,
     }
     else {
         Py_ssize_t n, i, j, ires;
-        Py_ssize_t product, new_size;
+        Py_ssize_t new_size;
         int rkind = skind;
         char *res;
 
@@ -10197,19 +10187,18 @@ replace(PyObject *self, PyObject *str1,
         }
         /* new_size = PyUnicode_GET_LENGTH(self) + n * (PyUnicode_GET_LENGTH(str2) -
            PyUnicode_GET_LENGTH(str1))); */
-        product = n * (len2-len1);
-        if ((product / (len2-len1)) != n) {
+        if (len2 > len1 && len2 - len1 > (PY_SSIZE_T_MAX - slen) / n) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "replace string is too long");
                 goto error;
         }
-        new_size = slen + product;
+        new_size = slen + n * (len2 - len1);
         if (new_size == 0) {
             Py_INCREF(unicode_empty);
             u = unicode_empty;
             goto done;
         }
-        if (new_size < 0 || new_size > (PY_SSIZE_T_MAX >> (rkind-1))) {
+        if (new_size > (PY_SSIZE_T_MAX >> (rkind-1))) {
             PyErr_SetString(PyExc_OverflowError,
                             "replace string is too long");
             goto error;
@@ -13442,8 +13431,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     uformat = PyUnicode_FromObject(format);
     if (uformat == NULL)
         return NULL;
-    if (PyUnicode_READY(uformat) == -1)
+    if (PyUnicode_READY(uformat) == -1) {
         Py_DECREF(uformat);
+        return NULL;
+    }
 
     fmt = PyUnicode_DATA(uformat);
     fmtkind = PyUnicode_KIND(uformat);
@@ -14083,7 +14074,8 @@ onError:
 }
 
 PyDoc_STRVAR(unicode_doc,
-             "str(object[, encoding[, errors]]) -> str\n\
+"str(object='') -> str\n\
+str(bytes_or_buffer[, encoding[, errors]]) -> str\n\
 \n\
 Create a new string object from the given object. If encoding or\n\
 errors is specified, then the object must expose a data buffer\n\

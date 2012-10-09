@@ -284,7 +284,8 @@ random_seed(RandomObject *self, PyObject *args)
         n = newn;
         if (keyused >= keymax) {
             unsigned long bigger = keymax << 1;
-            if ((bigger >> 1) != keymax) {
+            if ((bigger >> 1) != keymax ||
+                bigger > PY_SSIZE_T_MAX / sizeof(*key)) {
                 PyErr_NoMemory();
                 goto Done;
             }

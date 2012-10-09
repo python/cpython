@@ -2,7 +2,6 @@
   What's New In Python 3.3
 ****************************
 
-:Author: Raymond Hettinger
 :Release: |release|
 :Date: |today|
 
@@ -47,7 +46,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.3, compared to 3.2.
-Python 3.3 was released on September 29, 2012.
+Python 3.3 was released on September 29, 2012.  For full details,
+see the :source:`Misc/NEWS` file.
+
+.. seealso::
+
+    :pep:`398` - Python 3.3 Release Schedule
 
 
 Summary -- Release highlights
@@ -80,6 +84,12 @@ Implementation improvements:
 * More compact :ref:`unicode strings <pep-393>`.
 * More compact :ref:`attribute dictionaries <pep-412>`.
 
+Significantly Improved Library Modules:
+
+* C Accelerator for the :ref:`decimal <new-decimal>` module.
+* Better unicode handling in the :ref:`email <new-email>` module
+  (:term:`provisional <provisional package>`).
+
 Security improvements:
 
 * Hash randomization is switched on by default.
@@ -92,9 +102,6 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 405: Virtual Environments
 =============================
 
-:pep:`405` - Python Virtual Environments
- PEP written by Carl Meyer, implemented by Carl Meyer and Vinay Sajip.
-
 Virtual environments help create separate Python setups while sharing a
 system-wide base install, for ease of maintenance.  Virtual environments
 have their own set of private site packages (i.e. locally-installed
@@ -105,9 +112,16 @@ with the interpreter core.
 
 This PEP adds the :mod:`venv` module for programmatic access, and the
 :ref:`pyvenv <scripts-pyvenv>` script for command-line access and
-administration.  The Python interpreter becomes aware of a ``pvenv.cfg``
+administration.  The Python interpreter checks for a ``pvenv.cfg``,
 file whose existence signals the base of a virtual environment's directory
 tree.
+
+(Implemented by Carl Meyer and Vinay Sajip.)
+
+.. seealso::
+
+    :pep:`405` - Python Virtual Environments
+       PEP written by Carl Meyer
 
 
 PEP 420: Namespace Packages
@@ -118,14 +132,19 @@ marker files and can automatically span multiple path segments (inspired by
 various third party approaches to namespace packages, as described in
 :pep:`420`)
 
+.. seealso::
+
+   :pep:`420` - Namespace packages
+      PEP written by Eric V. Smith; implementation by Eric V. Smith
+      and Barry Warsaw
+
 
 .. _pep-3118-update:
 
 PEP 3118: New memoryview implementation and buffer protocol documentation
 =========================================================================
 
-:issue:`10181` - memoryview bug fixes and features.
-  Written by Stefan Krah.
+The implementation of :pep:`3118` has been significantly improved.
 
 The new memoryview implementation comprehensively fixes all ownership and
 lifetime issues of dynamically allocated fields in the Py_buffer struct
@@ -181,6 +200,13 @@ API changes
   of view contents.
 
 * For further changes see `Build and C API Changes`_ and `Porting C code`_ .
+
+(Contributed by Stefan Krah in :issue:`10181`)
+
+.. seealso::
+
+   :pep:`3118` - Revising the Buffer Protocol
+
 
 .. _pep-393:
 
@@ -256,14 +282,54 @@ Python 3.3 is two to three times smaller than Python 3.2, and a little
 bit better than Python 2.7, on a Django benchmark (see the PEP for
 details).
 
+.. seealso::
+
+   :pep:`393` - Flexible String Representation
+      PEP written by Martin von Löwis; implementation by Torsten Becker
+      and Martin von Löwis.
+
+
+.. _pep-397:
+
+PEP 397: Python Launcher for Windows
+====================================
+
+The Python 3.3 Windows installer now includes a ``py`` launcher application
+that can be used to launch Python applications in a version independent
+fashion.
+
+This launcher is invoked implicitly when double-clicking ``*.py`` files.
+If only a single Python version is installed on the system, that version
+will be used to run the file. If multiple versions are installed, the most
+recent version is used by default, but this can be overridden by including
+a Unix-style "shebang line" in the Python script.
+
+The launcher can also be used explicitly from the command line as the ``py``
+application. Running ``py`` follows the same version selection rules as
+implicitly launching scripts, but a more specific version can be selected
+by passing appropriate arguments (such as ``-3`` to request Python 3 when
+Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
+Python version when a more recent version is installed).
+
+In addition to the launcher, the Windows installer now includes an
+option to add the newly installed Python to the system PATH (contributed
+by Brian Curtin in :issue:`3561`).
+
+.. seealso::
+
+   :pep:`397` - Python Launcher for Windows
+      PEP written by Mark Hammond and Martin v. Löwis; implementation by
+      Vinay Sajip.
+
+   Launcher documentation: :ref:`launcher`
+
+   Installer PATH modification: :ref:`windows-path-mod`
+
 
 .. _pep-3151:
 
 PEP 3151: Reworking the OS and IO exception hierarchy
 =====================================================
-
-:pep:`3151` - Reworking the OS and IO exception hierarchy
- PEP written and implemented by Antoine Pitrou.
 
 The hierarchy of exceptions raised by operating system errors is now both
 simplified and finer-grained.
@@ -326,14 +392,16 @@ inspection of exception attributes::
     except PermissionError:
         print("You are not allowed to read document.txt")
 
+.. seealso::
+
+   :pep:`3151` - Reworking the OS and IO Exception Hierarchy
+      PEP written and implemented by Antoine Pitrou
+
 
 .. _pep-380:
 
 PEP 380: Syntax for Delegating to a Subgenerator
 ================================================
-
-:pep:`380` - Syntax for Delegating to a Subgenerator
- PEP written by Greg Ewing.
 
 PEP 380 adds the ``yield from`` expression, allowing a generator to delegate
 part of its operations to another generator. This allows a section of code
@@ -390,16 +458,16 @@ designed to be used with the ``send`` and ``throw`` methods to be split into
 multiple subgenerators as easily as a single large function can be split into
 multiple subfunctions.
 
-(Implementation by Greg Ewing, integrated into 3.3 by Renaud Blanch, Ryan
-Kelly and Nick Coghlan, documentation by Zbigniew Jędrzejewski-Szmek and
-Nick Coghlan)
+.. seealso::
+
+   :pep:`380` - Syntax for Delegating to a Subgenerator
+      PEP written by Greg Ewing; implementation by Greg Ewing, integrated into
+      3.3 by Renaud Blanch, Ryan Kelly and Nick Coghlan, documentation by
+      Zbigniew Jędrzejewski-Szmek and Nick Coghlan)
 
 
 PEP 409: Suppressing exception context
 ======================================
-
-:pep:`409` - Suppressing exception context
- PEP written by Ethan Furman, implemented by Ethan Furman and Nick Coghlan.
 
 PEP 409 introduces new syntax that allows the display of the chained
 exception context to be disabled. This allows cleaner error messages in
@@ -455,12 +523,15 @@ suppressed valuable underlying details)::
     ...
     KeyError('x',)
 
+.. seealso::
+
+   :pep:`409` - Suppressing exception context
+      PEP written by Ethan Furman; implemented by Ethan Furman and Nick
+      Coghlan.
+
 
 PEP 414: Explicit Unicode literals
 ======================================
-
-:pep:`414` - Explicit Unicode literals
- PEP written by Armin Ronacher.
 
 To ease the transition from Python 2 for Unicode aware Python applications
 that make heavy use of Unicode literals, Python 3.3 once again supports the
@@ -470,12 +541,14 @@ changes in migrating to Python 3, making it easier for developers to focus on
 the more significant semantic changes (such as the stricter default
 separation of binary and text data).
 
+.. seealso::
+
+   :pep:`414` - Explicit Unicode literals
+      PEP written by Armin Ronacher.
+
 
 PEP 3155: Qualified name for classes and functions
 ==================================================
-
-:pep:`3155` - Qualified name for classes and functions
- PEP written and implemented by Antoine Pitrou.
 
 Functions and class objects have a new ``__qualname__`` attribute representing
 the "path" from the module top-level to their definition.  For global functions
@@ -529,27 +602,30 @@ new, more precise information::
    >>> str(C.D.meth)
    '<function C.D.meth at 0x7f46b9fe31e0>'
 
+.. seealso::
+
+   :pep:`3155` - Qualified name for classes and functions
+      PEP written and implemented by Antoine Pitrou.
+
 
 .. _pep-412:
 
 PEP 412: Key-Sharing Dictionary
 ===============================
 
-:pep:`412` - Key-Sharing Dictionary
- PEP written and implemented by Mark Shannon.
-
 Dictionaries used for the storage of objects' attributes are now able to
 share part of their internal storage between each other (namely, the part
 which stores the keys and their respective hashes).  This reduces the memory
 consumption of programs creating many instances of non-builtin types.
 
+.. seealso::
+
+   :pep:`412` - Key-Sharing Dictionary
+      PEP written and implemented by Mark Shannon.
+
 
 PEP 362: Function Signature Object
 ==================================
-
-:pep:`362`: -  Function Signature Object
- PEP written by Brett Cannon, Yury Selivanov, Larry Hastings, Jiwon Seo.
- Implemented by Yury Selivanov.
 
 A new function :func:`inspect.signature` makes introspection of python
 callables easy and straightforward.  A broad range of callables is supported:
@@ -560,12 +636,15 @@ such as, annotations, default values, parameters kinds, and bound arguments,
 which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
 
+.. seealso::
+
+   :pep:`362`: -  Function Signature Object
+      PEP written by Brett Cannon, Yury Selivanov, Larry Hastings, Jiwon Seo;
+      implemented by Yury Selivanov.
+
 
 PEP 421: Adding sys.implementation
 ==================================
-
-:pep:`421` - Adding sys.implementation
- PEP written and implemented by Eric Snow.
 
 A new attribute on the :mod:`sys` module exposes details specific to the
 implementation of the currently running interpreter.  The initial set of
@@ -595,6 +674,11 @@ namespace, like :class:`dict`, ``SimpleNamespace`` is attribute-based, like
 are writable.  This means that you can add, remove, and modify the namespace
 through normal attribute access.
 
+.. seealso::
+
+   :pep:`421` - Adding sys.implementation
+      PEP written and implemented by Eric Snow.
+
 
 .. _importlib:
 
@@ -605,8 +689,6 @@ Using importlib as the Implementation of Import
 :issue:`14605` - Make import machinery explicit
 :issue:`14646` - Require loaders set __loader__ and __package__
 
-(Written by Brett Cannon)
-
 The :func:`__import__` function is now powered by :func:`importlib.__import__`.
 This work leads to the completion of "phase 2" of :pep:`302`. There are
 multiple benefits to this change. First, it has allowed for more of the
@@ -616,11 +698,10 @@ supporting Python 3.3 to use, helping to end any VM-specific deviations in
 import semantics. And finally it eases the maintenance of import, allowing for
 future growth to occur.
 
-For the common user, this change should result in no visible change in
-semantics. Any possible changes required in one's code to handle this change
-should read the `Porting Python code`_ section of this document to see what
-needs to be changed, but it will only affect those that currently manipulate
-import or try calling it programmatically.
+For the common user, there should be no visible change in semantics.  For
+those whose code currently manipulates import or calls import
+programmatically, the code changes that might possibly be required are covered
+in the `Porting Python code`_ section of this document.
 
 New APIs
 --------
@@ -659,8 +740,9 @@ clean up any stored state as necessary.
 
 Visible Changes
 ---------------
-[For potential required changes to code, see the `Porting Python code`_
-section]
+
+For potential required changes to code, see the `Porting Python code`_
+section.
 
 Beyond the expanse of what :mod:`importlib` now exposes, there are other
 visible changes to import. The biggest is that :attr:`sys.meta_path` and
@@ -688,156 +770,7 @@ All other changes relate to semantic changes which should be taken into
 consideration when updating code for Python 3.3, and thus should be read about
 in the `Porting Python code`_ section of this document.
 
-
-New Email Package Features
-==========================
-
-Policy Framework
-----------------
-
-The email package now has a :mod:`~email.policy` framework.  A
-:class:`~email.policy.Policy` is an object with several methods and properties
-that control how the email package behaves.  The primary policy for Python 3.3
-is the :class:`~email.policy.Compat32` policy, which provides backward
-compatibility with the email package in Python 3.2.  A ``policy`` can be
-specified when an email message is parsed by a :mod:`~email.parser`, or when a
-:class:`~email.message.Message` object is created, or when an email is
-serialized using a :mod:`~email.generator`.  Unless overridden, a policy passed
-to a ``parser`` is inherited by all the ``Message`` object and sub-objects
-created by the ``parser``.  By default a ``generator`` will use the policy of
-the ``Message`` object it is serializing.  The default policy is
-:data:`~email.policy.compat32`.
-
-The minimum set of controls implemented by all ``policy`` objects are:
-
-    ===============     =======================================================
-    max_line_length     The maximum length, excluding the linesep character(s),
-                        individual lines may have when a ``Message`` is
-                        serialized.  Defaults to 78.
-
-    linesep             The character used to separate individual lines when a
-                        ``Message`` is serialized.  Defaults to ``\n``.
-
-    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
-                        ``Bytes`` ``generator``, and means that non-ASCII may
-                        be used where allowed by the protocol (or where it
-                        exists in the original input).
-
-    raise_on_defect     Causes a ``parser`` to raise error when defects are
-                        encountered instead of adding them to the ``Message``
-                        object's ``defects`` list.
-    ===============     =======================================================
-
-A new policy instance, with new settings, is created using the
-:meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
-any of the above controls as keyword arguments.  Any control not specified in
-the call retains its default value.  Thus you can create a policy that uses
-``\r\n`` linesep characters like this::
-
-    mypolicy = compat32.clone(linesep='\r\n')
-
-Policies can be used to make the generation of messages in the format needed by
-your application simpler.  Instead of having to remember to specify
-``linesep='\r\n'`` in all the places you call a ``generator``, you can specify
-it once, when you set the policy used by the ``parser`` or the ``Message``,
-whichever your program uses to create ``Message`` objects.  On the other hand,
-if you need to generate messages in multiple forms, you can still specify the
-parameters in the appropriate ``generator`` call.  Or you can have custom
-policy instances for your different cases, and pass those in when you create
-the ``generator``.
-
-
-Provisional Policy with New Header API
---------------------------------------
-
-While the policy framework is worthwhile all by itself, the main motivation for
-introducing it is to allow the creation of new policies that implement new
-features for the email package in a way that maintains backward compatibility
-for those who do not use the new policies.  Because the new policies introduce a
-new API, we are releasing them in Python 3.3 as a :term:`provisional policy
-<provisional package>`.  Backwards incompatible changes (up to and including
-removal of the code) may occur if deemed necessary by the core developers.
-
-The new policies are instances of :class:`~email.policy.EmailPolicy`,
-and add the following additional controls:
-
-    ===============     =======================================================
-    refold_source       Controls whether or not headers parsed by a
-                        :mod:`~email.parser` are refolded by the
-                        :mod:`~email.generator`.  It can be ``none``, ``long``,
-                        or ``all``.  The default is ``long``, which means that
-                        source headers with a line longer than
-                        ``max_line_length`` get refolded.  ``none`` means no
-                        line get refolded, and ``all`` means that all lines
-                        get refolded.
-
-    header_factory      A callable that take a ``name`` and ``value`` and
-                        produces a custom header object.
-    ===============     =======================================================
-
-The ``header_factory`` is the key to the new features provided by the new
-policies.  When one of the new policies is used, any header retrieved from
-a ``Message`` object is an object produced by the ``header_factory``, and any
-time you set a header on a ``Message`` it becomes an object produced by
-``header_factory``.  All such header objects have a ``name`` attribute equal
-to the header name.  Address and Date headers have additional attributes
-that give you access to the parsed data of the header.  This means you can now
-do things like this::
-
-    >>> m = Message(policy=SMTP)
-    >>> m['To'] = 'Éric <foo@example.com>'
-    >>> m['to']
-    'Éric <foo@example.com>'
-    >>> m['to'].addresses
-    (Address(display_name='Éric', username='foo', domain='example.com'),)
-    >>> m['to'].addresses[0].username
-    'foo'
-    >>> m['to'].addresses[0].display_name
-    'Éric'
-    >>> m['Date'] = email.utils.localtime()
-    >>> m['Date'].datetime
-    datetime.datetime(2012, 5, 25, 21, 39, 24, 465484, tzinfo=datetime.timezone(datetime.timedelta(-1, 72000), 'EDT'))
-    >>> m['Date']
-    'Fri, 25 May 2012 21:44:27 -0400'
-    >>> print(m)
-    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
-    Date: Fri, 25 May 2012 21:44:27 -0400
-
-You will note that the unicode display name is automatically encoded as
-``utf-8`` when the message is serialized, but that when the header is accessed
-directly, you get the unicode version.  This eliminates any need to deal with
-the :mod:`email.header` :meth:`~email.header.decode_header` or
-:meth:`~email.header.make_header` functions.
-
-You can also create addresses from parts::
-
-    >>> m['cc'] = [Group('pals', [Address('Bob', 'bob', 'example.com'),
-    ...                           Address('Sally', 'sally', 'example.com')]),
-    ...            Address('Bonzo', addr_spec='bonz@laugh.com')]
-    >>> print(m)
-    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
-    Date: Fri, 25 May 2012 21:44:27 -0400
-    cc: pals: Bob <bob@example.com>, Sally <sally@example.com>;, Bonzo <bonz@laugh.com>
-
-Decoding to unicode is done automatically::
-
-    >>> m2 = message_from_string(str(m))
-    >>> m2['to']
-    'Éric <foo@example.com>'
-
-When you parse a message, you can use the ``addresses`` and ``groups``
-attributes of the header objects to access the groups and individual
-addresses::
-
-    >>> m2['cc'].addresses
-    (Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com'), Address(display_name='Bonzo', username='bonz', domain='laugh.com'))
-    >>> m2['cc'].groups
-    (Group(display_name='pals', addresses=(Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com')), Group(display_name=None, addresses=(Address(display_name='Bonzo', username='bonz', domain='laugh.com'),))
-
-In summary, if you use one of the new policies, header manipulation works the
-way it ought to:  your application works with unicode strings, and the email
-package transparently encodes and decodes the unicode to and from the RFC
-standard Content Transfer Encodings.
+(Implementation by Brett Cannon)
 
 
 Other Language Changes
@@ -855,7 +788,6 @@ Some smaller changes made to the core Python language are:
 
 * Equality comparisons on :func:`range` objects now return a result reflecting
   the equality of the underlying sequences generated by those range objects.
-
   (:issue:`13201`)
 
 * The ``count()``, ``find()``, ``rfind()``, ``index()`` and ``rindex()``
@@ -865,19 +797,23 @@ Some smaller changes made to the core Python language are:
   (Contributed by Petri Lehtinen in :issue:`12170`)
 
 * New methods have been added to :class:`list` and :class:`bytearray`:
-  ``copy()`` and ``clear()``.
-
-  (:issue:`10516`)
+  ``copy()`` and ``clear()`` (:issue:`10516`).  Consequently,
+  :class:`~collections.abc.MutableSequence` now also defines a
+  :meth:`~collections.abc.MutableSequence.clear` method (:issue:`11388`).
 
 * Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
+
   (Contributed by Antoine Pitrou in :issue:`13748`.)
 
 * :meth:`dict.setdefault` now does only one lookup for the given key, making
   it atomic when used with built-in types.
+
   (Contributed by Filip Gruszczyński in :issue:`13521`.)
 
+* The error messages produced when a function call does not match the function
+  signature have been significantly improved.
 
-.. XXX mention new error messages for passing wrong number of arguments to functions
+  (Contributed by Benjamin Peterson.)
 
 
 A Finer-Grained Import Lock
@@ -894,7 +830,7 @@ serializes importation of a given module from multiple threads (preventing
 the exposure of incompletely initialized modules), while eliminating the
 aforementioned annoyances.
 
-(contributed by Antoine Pitrou in :issue:`9260`.)
+(Contributed by Antoine Pitrou in :issue:`9260`.)
 
 
 Builtin functions and types
@@ -916,6 +852,7 @@ Builtin functions and types
   explain the binary/text sequence distinction and to provide specific
   documentation sections for the individual builtin sequence types
   (:issue:`4966`)
+
 
 New Modules
 ===========
@@ -983,6 +920,10 @@ property. The built-in descriptors have been updated accordingly.
 
 (Contributed by Darren Dale in :issue:`11610`)
 
+:meth:`abc.ABCMeta.register` now returns the registered subclass, which means
+it can now be used as a class decorator (:issue:`10868`).
+
+
 array
 -----
 
@@ -992,11 +933,20 @@ The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
 
 
-base64, binascii
-----------------
+base64
+------
 
 ASCII-only Unicode strings are now accepted by the decoding functions of the
-modern interface. For example, ``base64.b64decode('YWJj')`` returns ``b'abc'``.
+:mod:`base64` modern interface. For example, ``base64.b64decode('YWJj')``
+returns ``b'abc'``.  (Contributed by Catalin Iacob in :issue:`13641`.)
+
+
+binascii
+--------
+
+In addition to the binary objects they normally accept, the ``a2b_`` functions
+now all also accept ASCII-only strings as input.  (Contributed by Antoine
+Pitrou in :issue:`13637`.)
 
 
 bz2
@@ -1064,19 +1014,19 @@ collections
 -----------
 
 Addition of a new :class:`~collections.ChainMap` class to allow treating a
-number of mappings as a single unit.
-
-(Written by Raymond Hettinger for :issue:`11089`, made public in
-:issue:`11297`)
+number of mappings as a single unit.  (Written by Raymond Hettinger for
+:issue:`11089`, made public in :issue:`11297`)
 
 The abstract base classes have been moved in a new :mod:`collections.abc`
 module, to better differentiate between the abstract and the concrete
 collections classes.  Aliases for ABCs are still present in the
-:mod:`collections` module to preserve existing imports.
-
-(:issue:`11085`)
+:mod:`collections` module to preserve existing imports.  (:issue:`11085`)
 
 .. XXX addition of __slots__ to ABCs not recorded here: internal detail
+
+The :class:`~collections.Counter` class now supports the unary ``+`` and ``-``
+operators, as well as the in-place operators ``+=``, ``-=``, ``|=``, and
+``&=``.  (Contributed by Raymond Hettinger in :issue:`13121`.)
 
 
 contextlib
@@ -1122,7 +1072,8 @@ datetime
 --------
 
  * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances now return :const:`False` instead of raising :exc:`TypeError`.
+   instances now return :const:`False` instead of raising :exc:`TypeError`
+   (:issue:`15006`).
  * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
    corresponding to the :class:`~datetime.datetime` instance.
  * The :meth:`datetime.datetime.strftime` method supports formatting years
@@ -1130,6 +1081,9 @@ datetime
  * The :meth:`datetime.datetime.astimezone` method can now be
    called without arguments to convert datetime instance to the system
    timezone.
+
+
+.. _new-decimal:
 
 decimal
 -------
@@ -1228,21 +1182,208 @@ API changes
   is deprecated.
 
 
+.. _new-email:
+
+email
+-----
+
+Policy Framework
+~~~~~~~~~~~~~~~~
+
+The email package now has a :mod:`~email.policy` framework.  A
+:class:`~email.policy.Policy` is an object with several methods and properties
+that control how the email package behaves.  The primary policy for Python 3.3
+is the :class:`~email.policy.Compat32` policy, which provides backward
+compatibility with the email package in Python 3.2.  A ``policy`` can be
+specified when an email message is parsed by a :mod:`~email.parser`, or when a
+:class:`~email.message.Message` object is created, or when an email is
+serialized using a :mod:`~email.generator`.  Unless overridden, a policy passed
+to a ``parser`` is inherited by all the ``Message`` object and sub-objects
+created by the ``parser``.  By default a ``generator`` will use the policy of
+the ``Message`` object it is serializing.  The default policy is
+:data:`~email.policy.compat32`.
+
+The minimum set of controls implemented by all ``policy`` objects are:
+
+    ===============     =======================================================
+    max_line_length     The maximum length, excluding the linesep character(s),
+                        individual lines may have when a ``Message`` is
+                        serialized.  Defaults to 78.
+
+    linesep             The character used to separate individual lines when a
+                        ``Message`` is serialized.  Defaults to ``\n``.
+
+    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
+                        ``Bytes`` ``generator``, and means that non-ASCII may
+                        be used where allowed by the protocol (or where it
+                        exists in the original input).
+
+    raise_on_defect     Causes a ``parser`` to raise error when defects are
+                        encountered instead of adding them to the ``Message``
+                        object's ``defects`` list.
+    ===============     =======================================================
+
+A new policy instance, with new settings, is created using the
+:meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
+any of the above controls as keyword arguments.  Any control not specified in
+the call retains its default value.  Thus you can create a policy that uses
+``\r\n`` linesep characters like this::
+
+    mypolicy = compat32.clone(linesep='\r\n')
+
+Policies can be used to make the generation of messages in the format needed by
+your application simpler.  Instead of having to remember to specify
+``linesep='\r\n'`` in all the places you call a ``generator``, you can specify
+it once, when you set the policy used by the ``parser`` or the ``Message``,
+whichever your program uses to create ``Message`` objects.  On the other hand,
+if you need to generate messages in multiple forms, you can still specify the
+parameters in the appropriate ``generator`` call.  Or you can have custom
+policy instances for your different cases, and pass those in when you create
+the ``generator``.
+
+
+Provisional Policy with New Header API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While the policy framework is worthwhile all by itself, the main motivation for
+introducing it is to allow the creation of new policies that implement new
+features for the email package in a way that maintains backward compatibility
+for those who do not use the new policies.  Because the new policies introduce a
+new API, we are releasing them in Python 3.3 as a :term:`provisional policy
+<provisional package>`.  Backwards incompatible changes (up to and including
+removal of the code) may occur if deemed necessary by the core developers.
+
+The new policies are instances of :class:`~email.policy.EmailPolicy`,
+and add the following additional controls:
+
+    ===============     =======================================================
+    refold_source       Controls whether or not headers parsed by a
+                        :mod:`~email.parser` are refolded by the
+                        :mod:`~email.generator`.  It can be ``none``, ``long``,
+                        or ``all``.  The default is ``long``, which means that
+                        source headers with a line longer than
+                        ``max_line_length`` get refolded.  ``none`` means no
+                        line get refolded, and ``all`` means that all lines
+                        get refolded.
+
+    header_factory      A callable that take a ``name`` and ``value`` and
+                        produces a custom header object.
+    ===============     =======================================================
+
+The ``header_factory`` is the key to the new features provided by the new
+policies.  When one of the new policies is used, any header retrieved from
+a ``Message`` object is an object produced by the ``header_factory``, and any
+time you set a header on a ``Message`` it becomes an object produced by
+``header_factory``.  All such header objects have a ``name`` attribute equal
+to the header name.  Address and Date headers have additional attributes
+that give you access to the parsed data of the header.  This means you can now
+do things like this::
+
+    >>> m = Message(policy=SMTP)
+    >>> m['To'] = 'Éric <foo@example.com>'
+    >>> m['to']
+    'Éric <foo@example.com>'
+    >>> m['to'].addresses
+    (Address(display_name='Éric', username='foo', domain='example.com'),)
+    >>> m['to'].addresses[0].username
+    'foo'
+    >>> m['to'].addresses[0].display_name
+    'Éric'
+    >>> m['Date'] = email.utils.localtime()
+    >>> m['Date'].datetime
+    datetime.datetime(2012, 5, 25, 21, 39, 24, 465484, tzinfo=datetime.timezone(datetime.timedelta(-1, 72000), 'EDT'))
+    >>> m['Date']
+    'Fri, 25 May 2012 21:44:27 -0400'
+    >>> print(m)
+    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
+    Date: Fri, 25 May 2012 21:44:27 -0400
+
+You will note that the unicode display name is automatically encoded as
+``utf-8`` when the message is serialized, but that when the header is accessed
+directly, you get the unicode version.  This eliminates any need to deal with
+the :mod:`email.header` :meth:`~email.header.decode_header` or
+:meth:`~email.header.make_header` functions.
+
+You can also create addresses from parts::
+
+    >>> m['cc'] = [Group('pals', [Address('Bob', 'bob', 'example.com'),
+    ...                           Address('Sally', 'sally', 'example.com')]),
+    ...            Address('Bonzo', addr_spec='bonz@laugh.com')]
+    >>> print(m)
+    To: =?utf-8?q?=C3=89ric?= <foo@example.com>
+    Date: Fri, 25 May 2012 21:44:27 -0400
+    cc: pals: Bob <bob@example.com>, Sally <sally@example.com>;, Bonzo <bonz@laugh.com>
+
+Decoding to unicode is done automatically::
+
+    >>> m2 = message_from_string(str(m))
+    >>> m2['to']
+    'Éric <foo@example.com>'
+
+When you parse a message, you can use the ``addresses`` and ``groups``
+attributes of the header objects to access the groups and individual
+addresses::
+
+    >>> m2['cc'].addresses
+    (Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com'), Address(display_name='Bonzo', username='bonz', domain='laugh.com'))
+    >>> m2['cc'].groups
+    (Group(display_name='pals', addresses=(Address(display_name='Bob', username='bob', domain='example.com'), Address(display_name='Sally', username='sally', domain='example.com')), Group(display_name=None, addresses=(Address(display_name='Bonzo', username='bonz', domain='laugh.com'),))
+
+In summary, if you use one of the new policies, header manipulation works the
+way it ought to:  your application works with unicode strings, and the email
+package transparently encodes and decodes the unicode to and from the RFC
+standard Content Transfer Encodings.
+
+Other API Changes
+~~~~~~~~~~~~~~~~~
+
+New :class:`~email.parser.BytesHeaderParser`, added to the :mod:`~email.parser`
+module to complement :class:`~email.parser.HeaderParser` and complete the Bytes
+API.
+
+New utility functions:
+
+   * :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
+     produce a string formatted for use in an email header.
+
+   * :func:`~email.utils.parsedate_to_datetime`: given a date string from
+     an email header, convert it into an aware :class:`~datetime.datetime`,
+     or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
+
+   * :func:`~email.utils.localtime`: With no argument, returns the
+     current local time as an aware :class:`~datetime.datetime` using the local
+     :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
+     converts it into an aware :class:`~datetime.datetime` using the
+     local :class:`~datetime.timezone`.
+
+
 ftplib
 ------
 
+* :class:`ftplib.FTP` now accepts a ``source_address`` keyword argument to
+  specify the ``(host, port)`` to use as the source address in the bind call
+  when creating the outgoing socket.  (Contributed by Giampaolo Rodolà
+  in :issue:`8594`.)
+
 * The :class:`~ftplib.FTP_TLS` class now provides a new
   :func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
-  plaintext.  This can be useful to take advantage of firewalls that know how to
-  handle NAT with non-secure FTP without opening fixed ports.
-
-  (Contributed by Giampaolo Rodolà in :issue:`12139`)
+  plaintext.  This can be useful to take advantage of firewalls that know how
+  to handle NAT with non-secure FTP without opening fixed ports.  (Contributed
+  by Giampaolo Rodolà in :issue:`12139`)
 
 * Added :meth:`ftplib.FTP.mlsd` method which provides a parsable directory
   listing format and deprecates :meth:`ftplib.FTP.nlst` and
-  :meth:`ftplib.FTP.dir`.
+  :meth:`ftplib.FTP.dir`.  (Contributed by Giampaolo Rodolà in :issue:`11072`)
 
-  (Contributed by Giampaolo Rodolà in :issue:`11072`)
+
+functools
+---------
+
+The :func:`functools.lru_cache` decorator now accepts a ``typed`` keyword
+argument (that defaults to ``False`` to ensure that it caches values of
+different types that compare equal in separate cache slots.  (Contributed
+by Raymond Hettinger in :issue:`13227`.)
+
 
 gc
 --
@@ -1254,36 +1395,48 @@ before and after collection using the new :data:`~gc.callbacks` list.
 hmac
 ----
 
-A new :func:`~hmac.compare_digest` function has been added to prevent
-side channel attacks on digests through timing analysis.
-
-(Contributed by Nick Coghlan and Christian Heimes in issue:`15061`)
-
-
-html.entities
--------------
-
-A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
-references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] == '>'``)
-has been added to the :mod:`html.entities` module.  The dictionary is now also
-used by :class:`~html.parser.HTMLParser`.
-
-(Contributed by Ezio Melotti in :issue:`11113` and :issue:`15156`)
+A new :func:`~hmac.compare_digest` function has been added to prevent side
+channel attacks on digests through timing analysis.  (Contributed by Nick
+Coghlan and Christian Heimes in :issue:`15061`)
 
 
-html.parser
------------
+http
+----
 
-:class:`~html.parser.HTMLParser` is now able to parse broken markup without
+:class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
+them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
+called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
+can be used to directly manage when the accumlated headers are sent.
+(Contributed by Andrew Schaaf in :issue:`3709`.)
+
+:class:`http.server` now produces valid ``HTML 4.01 strict`` output.
+(Contributed by Ezio Melotti in :issue:`13295`.)
+
+:class:`http.client.HTTPResponse` now has a
+:meth:`~http.client.HTTPResponse.readinto` method, which means it can be used
+as a :class:`io.RawIOBase` class.  (Contributed by John Kuhn in
+:issue:`13464`.)
+
+
+html
+----
+
+:class:`html.parser.HTMLParser` is now able to parse broken markup without
 raising errors, therefore the *strict* argument of the constructor and the
 :exc:`~html.parser.HTMLParseError` exception are now deprecated.
 The ability to parse broken markup is the result of a number of bug fixes that
 are also available on the latest bug fix releases of Python 2.7/3.2.
-
 (Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
 :issue:`13993`, :issue:`13960`, :issue:`13358`, :issue:`1745761`,
 :issue:`755670`, :issue:`13357`, :issue:`12629`, :issue:`1200313`,
 :issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`)
+
+A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
+references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] ==
+'>'``) has been added to the :mod:`html.entities` module.  The dictionary is
+now also used by :class:`~html.parser.HTMLParser`.  (Contributed by Ezio
+Melotti in :issue:`11113` and :issue:`15156`)
+
 
 imaplib
 -------
@@ -1327,13 +1480,42 @@ written on the :class:`~io.TextIOWrapper` object is immediately handled to its
 underlying binary buffer.
 
 
+itertools
+---------
+
+:func:`~itertools.accumulate` now takes an optional ``func`` argument for
+providing a user-supplied binary function.
+
+
+logging
+-------
+
+The :func:`~logging.basicConfig` function now supports an optional ``handlers``
+argument taking an iterable of handlers to be added to the root logger.
+
+A class level attribute :attr:`~logging.handlers.SysLogHandler.append_nul` has
+been added to :class:`~logging.handlers.SysLogHandler` to allow control of the
+appending of the ``NUL`` (``\000``) byte to syslog records, since for some
+deamons it is required while for others it is passed through to the log.
+
+
+
 math
 ----
 
-The :mod:`math` module has a new function:
+The :mod:`math` module has a new function, :func:`~math.log2`,  which returns
+the base-2 logarithm of *x*.
 
-  * :func:`~math.log2`: return the base-2 logarithm of *x*
-    (Written by Mark Dickinson in :issue:`11888`).
+(Written by Mark Dickinson in :issue:`11888`).
+
+
+mmap
+----
+
+The :meth:`~mmap.mmap.read` method is now more compatible with other file-like
+objects: if the argument is omitted or specified as ``None``, it returns the
+bytes from the current file position to the end of the mapping.  (Contributed
+by Petri Lehtinen in :issue:`12021`.)
 
 
 multiprocessing
@@ -1346,6 +1528,22 @@ multiple objects (such as connections, sockets and pipes) with a timeout.
 :class:`multiprocessing.Connection` objects can now be transferred over
 multiprocessing connections.
 (Contributed by Richard Oudkerk in :issue:`4892`.)
+
+:class:`multiprocessing.Process` now accepts a ``daemon`` keyword argument
+to override the default behavior of inheriting the ``daemon`` flag from
+the parent process (:issue:`6064`).
+
+New attribute attribute :data:`multiprocessing.Process.sentinel` allows a
+program to wait on multiple :class:`~multiprocessing.Process` objects at one
+time using the appropriate OS primitives (for example, :mod:`select` on
+posix systems).
+
+New methods :meth:`multiprocessing.pool.Pool.starmap` and
+:meth:`~multiprocessing.pool.Pool.starmap_async` provide
+:func:`itertools.starmap` equivalents to the existing
+:meth:`multiprocessing.pool.Pool.map` and
+:meth:`~multiprocessing.pool.Pool.map_async` functions.  (Contributed by Hynek
+Schlawack in :issue:`12708`.)
 
 
 nntplib
@@ -1400,12 +1598,20 @@ os
     :func:`~os.link`, :func:`~os.lstat`, :func:`~os.mkdir`, :func:`~os.mkfifo`,
     :func:`~os.mknod`, :func:`~os.open`, :func:`~os.readlink`, :func:`~os.remove`,
     :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
-    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.
+    :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.  Platform
+    support for using these parameters can be checked via the sets
+    :data:`os.supports_dir_fd` and :data:`os.supports_follows_symlinks`.
 
   - The following functions now support a file descriptor for their path argument:
     :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
     :func:`~os.execve`, :func:`~os.listdir`, :func:`~os.pathconf`, :func:`~os.path.exists`,
-    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.
+    :func:`~os.stat`, :func:`~os.statvfs`, :func:`~os.utime`.  Platform support
+    for this can be checked via the :data:`os.supports_fd` set.
+
+* :func:`~os.access` accepts an ``effective_ids`` keyword argument to turn on
+  using the effective uid/gid rather than the real uid/gid in the access check.
+  Platform support for this can be checked via the
+  :data:`~os.supports_effective_ids` set.
 
 * The :mod:`os` module has two new functions: :func:`~os.getpriority` and
   :func:`~os.setpriority`. They can be used to get or set process
@@ -1454,7 +1660,7 @@ os
     for a file.
   * :func:`~os.sync`: Force write of everything to disk.
 
-* Add some extra posix functions to the os module:
+* Additional new  posix functions:
 
   * :func:`~os.lockf`: Apply, test or remove a POSIX lock on an open file descriptor.
   * :func:`~os.pread`: Read from a file descriptor at an offset, the file
@@ -1473,13 +1679,29 @@ os
 * :func:`~os.times` and :func:`~os.uname`: Return type changed from a tuple to
   a tuple-like object with named attributes.
 
+* Some platforms now support additional constants for the :func:`~os.lseek`
+  function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
+
+* New constants :data:`~os.RTLD_LAZY`, :data:`~os.RTLD_NOW`,
+  :data:`~os.RTLD_GLOBAL`, :data:`~os.RTLD_LOCAL`, :data:`~os.RTLD_NODELETE`,
+  :data:`~os.RTLD_NOLOAD`, and :data:`~os.RTLD_DEEPBIND` are available on
+  platforms that support them.   These are for use with the
+  :func:`sys.setdlopenflags` function, and supersede the similar constants
+  defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
+  in :issue:`13226`.)
+
+* :func:`os.symlink` now accepts (and ignores) the ``target_is_directory``
+  keyword argument on non-Windows platforms, to ease cross-platform support.
+
 
 pdb
 ---
 
-* Tab-completion is now available not only for command names, but also their
-  arguments.  For example, for the ``break`` command, function and file names
-  are completed.  (Contributed by Georg Brandl in :issue:`14210`)
+Tab-completion is now available not only for command names, but also their
+arguments.  For example, for the ``break`` command, function and file names
+are completed.
+
+(Contributed by Georg Brandl in :issue:`14210`)
 
 
 pickle
@@ -1488,6 +1710,7 @@ pickle
 :class:`pickle.Pickler` objects now have an optional
 :attr:`~pickle.Pickler.dispatch_table` attribute allowing to set per-pickler
 reduction functions.
+
 (Contributed by Richard Oudkerk in :issue:`14166`.)
 
 
@@ -1534,39 +1757,52 @@ sched
   :issue:`13245`)
 
 
+select
+------
+
+Solaris and derivatives platforms have a new class :class:`select.devpoll`
+for high performance asynchronous sockets via :file:`/dev/poll`.
+(Contributed by Jesús Cea Avión in :issue:`6397`.)
+
+
 shlex
 -----
 
-* The previously undocumented helper function ``quote`` from the
-  :mod:`pipes` modules has been moved to the :mod:`shlex` module and
-  documented.  :func:`~shlex.quote` properly escapes all characters in a string
-  that might be otherwise given special meaning by the shell.
+The previously undocumented helper function ``quote`` from the
+:mod:`pipes` modules has been moved to the :mod:`shlex` module and
+documented.  :func:`~shlex.quote` properly escapes all characters in a string
+that might be otherwise given special meaning by the shell.
 
 
 shutil
 ------
 
-* The :mod:`shutil` module has these new fuctions:
+* New functions:
 
   * :func:`~shutil.disk_usage`: provides total, used and free disk space
     statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
     ids. (Contributed by Sandro Tosi in :issue:`12191`)
+  * :func:`shutil.get_terminal_size`: returns the size of the terminal window
+    to which the interpreter is attached.  (Contributed by Zbigniew
+    Jędrzejewski-Szmek in :issue:`13609`.)
 
 * :func:`~shutil.copy2` and :func:`~shutil.copystat` now preserve file
   timestamps with nanosecond precision on platforms that support it.
   They also preserve file "extended attributes" on Linux.  (Contributed
   by Larry Hastings in :issue:`14127` and  :issue:`15238`.)
 
-* The new :func:`shutil.get_terminal_size` function returns the size of the
-  terminal window the interpreter is attached to.
-  (Contributed by Zbigniew Jędrzejewski-Szmek in :issue:`13609`.)
-
 * Several functions now take an optional ``symlinks`` argument: when that
   parameter is true, symlinks aren't dereferenced and the operation instead
   acts on the symlink itself (or creates one, if relevant).
   (Contributed by Hynek Schlawack in :issue:`12715`.)
+
+* When copying files to a different file system, :func:`~shutil.move` now
+  handles symlinks the way the posix ``mv`` command does, recreating the
+  symlink rather than copying the target file contents.  (Contributed by
+  Jonathan Niehof in :issue:`9993`.)  :func:`~shutil.move` now also returns
+  the ``dst`` argument as its result.
 
 * :func:`~shutil.rmtree` is now resistant to symlink attacks on platforms
   which support the new ``dir_fd`` parameter in :func:`os.open` and
@@ -1600,23 +1836,31 @@ signal
 smtpd
 -----
 
-* The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
-  (size extension).  Per the standard, these extensions are enabled if and only
-  if the client initiates the session with an ``EHLO`` command.
+The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+(size extension).  Per the standard, these extensions are enabled if and only
+if the client initiates the session with an ``EHLO`` command.
 
-  (Initial ``ELHO`` support by Alberto Trevino.  Size extension by Juhana
-  Jauhiainen.  Substantial additional work on the patch contributed by Michele
-  Orrù and Dan Boswell.  :issue:`8739`)
+(Initial ``ELHO`` support by Alberto Trevino.  Size extension by Juhana
+Jauhiainen.  Substantial additional work on the patch contributed by Michele
+Orrù and Dan Boswell.  :issue:`8739`)
 
 
 smtplib
 -------
 
-* The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
-  method now accept an SSLContext parameter to control parameters of the secure
-  channel.
+The :class:`~smtplib.SMTP`, :class:`~smtplib.SMTP_SSL`, and
+:class:`~smtplib.LMTP` classes now accept a ``source_address`` keyword argument
+to specify the ``(host, port)`` to use as the source address in the bind call
+when creating the outgoing socket.  (Contributed by Paulo Scardine in
+:issue:`11281`.)
 
-  (Contributed by Kasun Herath in :issue:`8809`)
+:class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
+``SMTP`` instance to be used in a ``with`` statement.  (Contributed
+by Giampaolo Rodolà in :issue:`11289`.)
+
+The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
+method now accept an SSLContext parameter to control parameters of the secure
+channel.  (Contributed by Kasun Herath in :issue:`8809`)
 
 
 socket
@@ -1642,6 +1886,32 @@ socket
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
   http://oss.oracle.com/projects/rds/).
 
+* The :class:`~socket.socket` class now supports the ``PF_SYSTEM`` protocol
+  family on OS X.  (Contributed by Michael Goderbauer in :issue:`13777`.)
+
+* New function :func:`~socket.sethostname` allows the hostname to be set
+  on unix systems if the calling process has sufficient privileges.
+  (Contributed by Ross Lagerwall in :issue:`10866`.)
+
+
+socketserver
+------------
+
+:class:`~socketserver.BaseServer` now has an overridable method
+:meth:`~socketserver.BaseServer.service_actions` that is called by the
+:meth:`~socketserver.BaseServer.serve_forever` method in the service loop.
+:class:`~socketserver.ForkingMixIn` now uses this to clean up zombie
+child proceses.  (Contributed by Justin Warkentin in :issue:`11109`.)
+
+
+sqlite3
+-------
+
+New :class:`sqlite3.Connection` method
+:meth:`~sqlite3.Connection.set_trace_callback` can be used to capture a trace of
+all sql commands processed by sqlite.  (Contributed by Torsten Landschoff
+in :issue:`11688`.)
+
 
 ssl
 ---
@@ -1656,66 +1926,121 @@ ssl
 
 * The :mod:`ssl` module now exposes a finer-grained exception hierarchy
   in order to make it easier to inspect the various kinds of errors.
-
   (Contributed by Antoine Pitrou in :issue:`11183`)
 
 * :meth:`~ssl.SSLContext.load_cert_chain` now accepts a *password* argument
   to be used if the private key is encrypted.
-
   (Contributed by Adam Simpkins in :issue:`12803`)
 
 * Diffie-Hellman key exchange, both regular and Elliptic Curve-based, is
   now supported through the :meth:`~ssl.SSLContext.load_dh_params` and
   :meth:`~ssl.SSLContext.set_ecdh_curve` methods.
-
   (Contributed by Antoine Pitrou in :issue:`13626` and :issue:`13627`)
 
 * SSL sockets have a new :meth:`~ssl.SSLSocket.get_channel_binding` method
   allowing the implementation of certain authentication mechanisms such as
-  SCRAM-SHA-1-PLUS.
-
-  (Contributed by Jacek Konieczny in :issue:`12551`)
+  SCRAM-SHA-1-PLUS.  (Contributed by Jacek Konieczny in :issue:`12551`)
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
-  to its new :meth:`~ssl.SSLSocket.compression` method.
-
+  to its new :meth:`~ssl.SSLSocket.compression` method.  The new attribute
+  :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
   (Contributed by Antoine Pitrou in :issue:`13634`)
 
 * Support has been added for the Next Procotol Negotiation extension using
   the :meth:`ssl.SSLContext.set_npn_protocols` method.
-
   (Contributed by Colin Marc in :issue:`14204`)
 
 * SSL errors can now be introspected more easily thanks to
   :attr:`~ssl.SSLError.library` and :attr:`~ssl.SSLError.reason` attributes.
-
   (Contributed by Antoine Pitrou in :issue:`14837`)
+
+* The :func:`~ssl.get_server_certificate` function now supports IPv6.
+  (Contributed by Charles-François Natali in :issue:`11811`.)
+
+* New attribute :attr:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
+  SSLv3 server sockets to use the server's cipher ordering preference rather
+  than the client's (:issue:`13635`).
+
 
 stat
 ----
 
-- The undocumented tarfile.filemode function has been moved to
-  :func:`stat.filemode`. It can be used to convert a file's mode to a string of
-  the form '-rwxrwxrwx'.
+The undocumented tarfile.filemode function has been moved to
+:func:`stat.filemode`. It can be used to convert a file's mode to a string of
+the form '-rwxrwxrwx'.
 
-  (Contributed by Giampaolo Rodolà in :issue:`14807`)
+(Contributed by Giampaolo Rodolà in :issue:`14807`)
+
+
+struct
+------
+
+The :mod:`struct` module now supports ``ssize_t`` and ``size_t`` via the
+new codes ``n`` and ``N``, respectively.  (Contributed by Antoine Pitrou
+in :issue:`3163`.)
+
+
+subprocess
+----------
+
+Command strings can now be bytes objects on posix platforms.  (Contributed by
+Victor Stinner in :issue:`8513`.)
+
+A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
+platform-independent fashion.  (Contributed by Ross Lagerwall in
+:issue:`5870`.)
+
 
 sys
 ---
 
-* The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-  sequence` holding informations about the thread implementation.
+The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
+sequence` holding informations about the thread implementation
+(:issue:`11223`).
 
-  (:issue:`11223`)
+
+tarfile
+-------
+
+:mod:`tarfile` now supports ``lzma`` encoding via the :mod:`lzma` module.
+(Contributed by Lars Gustäbel in :issue:`5689`.)
+
+
+tempfile
+--------
+
+:class:`tempfile.SpooledTemporaryFile`\'s
+:meth:`~tempfile.SpooledTemporaryFile.trucate` method now accepts
+a ``size`` parameter.  (Contributed by Ryan Kelly in :issue:`9957`.)
+
 
 textwrap
 --------
 
-* The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
-  it straightforward to add a common prefix to selected lines in a block
-  of text.
+The :mod:`textwrap` module has a new :func:`~textwrap.indent` that makes
+it straightforward to add a common prefix to selected lines in a block
+of text  (:issue:`13857`).
 
-  (:issue:`13857`)
+
+threading
+---------
+
+:class:`threading.Condition`, :class:`threading.Semaphore`,
+:class:`threading.BoundedSemaphore`, :class:`threading.Event`, and
+:class:`threading.Timer`, all of which used to be factory functions returning a
+class instance, are now classes and may be subclassed. (Contributed by Éric
+Araujo in :issue:`10968`).
+
+The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
+argument to override the default behavior of inheriting the ``deamon`` flag
+value from the parent thread (:issue:`6064`).
+
+The formerly private function ``_thread.get_ident`` is now available as the
+public function :func:`threading.get_ident`.  This eliminates several cases of
+direct access to the ``_thread`` module in the stdlib.  Third party code that
+used ``_thread.get_ident`` should likewise be changed to use the new public
+interface.
+
 
 time
 ----
@@ -1736,6 +2061,10 @@ Other new functions:
   :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
   (Contributed by Victor Stinner in :issue:`10278`)
 
+To improve cross platform consistency, :func:`~time.sleep` now raises a
+:exc:`ValueError` when passed a negative sleep value.  Previously this was an
+error on posix, but produced an infinite sleep on Windows.
+
 
 types
 -----
@@ -1753,9 +2082,11 @@ unittest
 
 :meth:`.assertRaises`, :meth:`.assertRaisesRegex`, :meth:`.assertWarns`, and
 :meth:`.assertWarnsRegex` now accept a keyword argument *msg* when used as
-context managers.
+context managers.  (Contributed by Ezio Melotti and Winston Ewert in
+:issue:`10775`)
 
-(Contributed by Ezio Melotti and Winston Ewert in :issue:`10775`)
+:meth:`unittest.TestCase.run` now returns the :class:`~unittest.TestResult`
+object.
 
 
 urllib
@@ -1773,13 +2104,13 @@ should be used.  For example, this will send a ``'HEAD'`` request::
 webbrowser
 ----------
 
-The :mod:`webbrowser` module supports more browsers: Google Chrome (named
+The :mod:`webbrowser` module supports more "browsers": Google Chrome (named
 :program:`chrome`, :program:`chromium`, :program:`chrome-browser` or
-:program:`chromium-browser` depending on the version and operating system) as
-well as the the generic launchers :program:`xdg-open` from the FreeDesktop.org
-project and :program:`gvfs-open` which is the default URI handler for GNOME 3.
-
-(:issue:`13620` and :issue:`14493`)
+:program:`chromium-browser` depending on the version and operating system),
+and the generic launchers :program:`xdg-open`, from the FreeDesktop.org
+project, and :program:`gvfs-open`, which is the default URI handler for GNOME
+3.  (The former contributed by Arnaud Calmettes in :issue:`13620`, the latter
+by Matthias Klose in :issue:`14493`)
 
 
 xml.etree.ElementTree
@@ -1792,6 +2123,18 @@ but is now deprecated).  In addition,  the ``iter`` family of methods of
 :class:`~xml.etree.ElementTree.Element` has been optimized (rewritten in C).
 The module's documentation has also been greatly improved with added examples
 and a more detailed reference.
+
+
+zlib
+----
+
+New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
+between a properly-formed compressed stream and an incomplete or truncated one.
+(Contributed by Nadeem Vawda in :issue:`12646`.)
+
+New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
+the underlying ``zlib`` library that is loaded at runtime.  (Contributed by
+Torsten Landschoff in :issue:`12306`.)
 
 
 Optimizations
@@ -1862,6 +2205,8 @@ OS/2 and VMS are no longer supported due to the lack of a maintainer.
 Windows 2000 and Windows platforms which set ``COMSPEC`` to ``command.com``
 are no longer supported due to maintenance burden.
 
+OSF support, which was deprecated in 3.2, has been completely removed.
+
 
 Deprecated Python modules, functions and methods
 ------------------------------------------------
@@ -1872,7 +2217,7 @@ Deprecated Python modules, functions and methods
 * :meth:`ftplib.FTP.nlst` and :meth:`ftplib.FTP.dir`: use
   :meth:`ftplib.FTP.mlsd`
 * :func:`platform.popen`: use the :mod:`subprocess` module. Check especially
-  the :ref:`subprocess-replacements` section.
+  the :ref:`subprocess-replacements` section (:issue:`11377`).
 * :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
   module. Use Unicode filenames, instead of bytes filenames, to not depend on
   the ANSI code page anymore and to support any filename.
@@ -1911,58 +2256,58 @@ removed in Python 4. All functions using this type are deprecated:
 Unicode functions and methods using :c:type:`Py_UNICODE` and
 :c:type:`Py_UNICODE*` types:
 
- * :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
-   :c:func:`PyUnicode_FromKindAndData`
- * :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
-   :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
- * :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
-   :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
- * :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
-   :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
- * :c:macro:`PyUnicode_GET_DATA_SIZE`: use
-   ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
-   strings)
- * :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
-   :c:func:`PyUnicode_AsWideCharString`
- * :c:func:`PyUnicode_GetMax`
+* :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
+  :c:func:`PyUnicode_FromKindAndData`
+* :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
+  :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
+* :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
+  :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
+* :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
+  :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
+* :c:macro:`PyUnicode_GET_DATA_SIZE`: use
+  ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
+  strings)
+* :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
+  :c:func:`PyUnicode_AsWideCharString`
+* :c:func:`PyUnicode_GetMax`
 
 
 Functions and macros manipulating Py_UNICODE* strings:
 
- * :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
-   :c:macro:`PyUnicode_GET_LENGTH`
- * :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_FromFormat`
- * :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-   :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
-   :c:func:`PyUnicode_Substring`
- * :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
- * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
- * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
-   :c:func:`PyUnicode_FindChar`
- * :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
- * :c:macro:`Py_UNICODE_MATCH`
+* :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+  :c:macro:`PyUnicode_GET_LENGTH`
+* :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+  :c:func:`PyUnicode_FromFormat`
+* :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
+  :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
+  :c:func:`PyUnicode_Substring`
+* :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
+* :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
+* :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+  :c:func:`PyUnicode_FindChar`
+* :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
+* :c:macro:`Py_UNICODE_MATCH`
 
 Encoders:
 
- * :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
- * :c:func:`PyUnicode_EncodeUTF7`
- * :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
-   :c:func:`PyUnicode_AsUTF8String`
- * :c:func:`PyUnicode_EncodeUTF32`
- * :c:func:`PyUnicode_EncodeUTF16`
- * :c:func:`PyUnicode_EncodeUnicodeEscape:` use
-   :c:func:`PyUnicode_AsUnicodeEscapeString`
- * :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
-   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
- * :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
- * :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
- * :c:func:`PyUnicode_EncodeCharmap`
- * :c:func:`PyUnicode_TranslateCharmap`
- * :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
-   :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
- * :c:func:`PyUnicode_EncodeDecimal`,
-   :c:func:`PyUnicode_TransformDecimalToASCII`
+* :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
+* :c:func:`PyUnicode_EncodeUTF7`
+* :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
+  :c:func:`PyUnicode_AsUTF8String`
+* :c:func:`PyUnicode_EncodeUTF32`
+* :c:func:`PyUnicode_EncodeUTF16`
+* :c:func:`PyUnicode_EncodeUnicodeEscape:` use
+  :c:func:`PyUnicode_AsUnicodeEscapeString`
+* :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
+  :c:func:`PyUnicode_AsRawUnicodeEscapeString`
+* :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
+* :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
+* :c:func:`PyUnicode_EncodeCharmap`
+* :c:func:`PyUnicode_TranslateCharmap`
+* :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
+  :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
+* :c:func:`PyUnicode_EncodeDecimal`,
+  :c:func:`PyUnicode_TransformDecimalToASCII`
 
 
 Deprecated features
@@ -2044,6 +2389,54 @@ Porting Python code
   :func:`pkgutil.iter_importers` and :func:`pkgutil.walk_packages` functions
   special case the standard import hooks so they are still supported even
   though they do not provide the non-standard ``iter_modules()`` method.
+
+* A longstanding RFC-compliance bug (:issue:`1079`) in the parsing done by
+  :func:`email.header.decode_header` has been fixed.  Code that uses the
+  standard idiom to convert encoded headers into unicode
+  (``str(make_header(decode_header(h))``) will see no change, but code that
+  looks at the individual tuples returned by decode_header will see that
+  whitespace that precedes or follows ``ASCII`` sections is now included in the
+  ``ASCII`` section.  Code that builds headers using ``make_header`` should
+  also continue to work without change, since ``make_header`` continues to add
+  whitespace between ``ASCII`` and non-``ASCII`` sections if it is not already
+  present in the input strings.
+
+* :func:`email.utils.formataddr` now does the correct content transfer
+  encoding when passed non-``ASCII`` display names.  Any code that depended on
+  the previous buggy behavior that preserved the non-``ASCII`` unicode in the
+  formatted output string will need to be changed (:issue:`1690608`).
+
+* :meth:`poplib.POP3.quit` may now raise protocol errors like all other
+  ``poplib`` methods.  Code that assumes ``quit`` does not raise
+  :exc:`poplib.error_proto` errors may need to be changed if errors on ``quit``
+  are encountered by a particular application (:issue:`11291`).
+
+* The ``strict`` argument to :class:`email.parser.Parser`, deprecated since
+  Python 2.4, has finally been removed.
+
+* The deprecated method ``unittest.TestCase.assertSameElements`` has been
+  removed.
+
+* The deprecated variable ``time.accept2dyear`` has been removed.
+
+* The deprecated ``Context._clamp`` attribute has been removed from the
+  :mod:`decimal` module.  It was previously replaced by the public attribute
+  :attr:`~decimal.Context.clamp`.  (See :issue:`8540`.)
+
+* The undocumented internal helper class ``SSLFakeFile`` has been removed
+  from :mod:`smtplib`, since its functionality has long been provided directly
+  by :meth:`socket.socket.makefile`.
+
+* Passing a negative value to :func:`time.sleep` on Windows now raises an
+  error instead of sleeping forever.  It has always raised an error on posix.
+
+* The ``ast.__version__`` constant has been removed.  If you need to
+  make decisions affected by the AST version, use :attr:`sys.version_info`
+  to make the decision.
+
+* Code that used to work around the fact that the :mod:`threading` module used
+  factory functions by subclassing the private classes will need to change to
+  subclass the now-public classes.
 
 
 Porting C code
