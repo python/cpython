@@ -159,15 +159,19 @@ class Stats:
     # along with some printable description
     sort_arg_dict_default = {
               "calls"     : (((1,-1),              ), "call count"),
+              "ncalls"    : (((1,-1),              ), "call count"),
+              "cumtime"   : (((3,-1),              ), "cumulative time"),
               "cumulative": (((3,-1),              ), "cumulative time"),
               "file"      : (((4, 1),              ), "file name"),
+              "filename"  : (((4, 1),              ), "file name"),
               "line"      : (((5, 1),              ), "line number"),
               "module"    : (((4, 1),              ), "file name"),
               "name"      : (((6, 1),              ), "function name"),
               "nfl"       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
-              "pcalls"    : (((0,-1),              ), "call count"),
+              "pcalls"    : (((0,-1),              ), "primitive call count"),
               "stdname"   : (((7, 1),              ), "standard name"),
               "time"      : (((2,-1),              ), "internal time"),
+              "tottime"   : (((2,-1),              ), "internal time"),
               }
 
     def get_sort_arg_defs(self):

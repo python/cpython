@@ -15,6 +15,7 @@ multitasking) Here's an overview:
 
    threading.rst
    multiprocessing.rst
+   concurrent.rst
    concurrent.futures.rst
    subprocess.rst
    sched.rst

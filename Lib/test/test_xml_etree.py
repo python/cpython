@@ -1893,9 +1893,22 @@ class TreeBuilderTest(unittest.TestCase):
     sample1 = ('<!DOCTYPE html PUBLIC'
         ' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
         ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
-        '<html>text</html>')
+        '<html>text<div>subtext</div>tail</html>')
 
     sample2 = '''<toplevel>sometext</toplevel>'''
+
+    def _check_sample1_element(self, e):
+        self.assertEqual(e.tag, 'html')
+        self.assertEqual(e.text, 'text')
+        self.assertEqual(e.tail, None)
+        self.assertEqual(e.attrib, {})
+        children = list(e)
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertEqual(child.tag, 'div')
+        self.assertEqual(child.text, 'subtext')
+        self.assertEqual(child.tail, 'tail')
+        self.assertEqual(child.attrib, {})
 
     def test_dummy_builder(self):
         class BaseDummyBuilder:
@@ -1929,7 +1942,7 @@ class TreeBuilderTest(unittest.TestCase):
         parser.feed(self.sample1)
 
         e = parser.close()
-        self.assertEqual(e.tag, 'html')
+        self._check_sample1_element(e)
 
     def test_element_factory(self):
         lst = []
@@ -1944,6 +1957,33 @@ class TreeBuilderTest(unittest.TestCase):
         parser.close()
 
         self.assertEqual(lst, ['toplevel'])
+
+    def _check_element_factory_class(self, cls):
+        tb = ET.TreeBuilder(element_factory=cls)
+
+        parser = ET.XMLParser(target=tb)
+        parser.feed(self.sample1)
+        e = parser.close()
+        self.assertIsInstance(e, cls)
+        self._check_sample1_element(e)
+
+    def test_element_factory_subclass(self):
+        class MyElement(ET.Element):
+            pass
+        self._check_element_factory_class(MyElement)
+
+    def test_element_factory_pure_python_subclass(self):
+        # Mimick SimpleTAL's behaviour (issue #16089): both versions of
+        # TreeBuilder should be able to cope with a subclass of the
+        # pure Python Element class.
+        base = ET._Element
+        # Not from a C extension
+        self.assertEqual(base.__module__, 'xml.etree.ElementTree')
+        # Force some multiple inheritance with a C class to make things
+        # more interesting.
+        class MyElement(base, ValueError):
+            pass
+        self._check_element_factory_class(MyElement)
 
     def test_doctype(self):
         class DoctypeParser:
