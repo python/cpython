@@ -764,18 +764,12 @@ class SysLogHandler(logging.Handler):
         self.formatter = None
 
     def _connect_unixsocket(self, address):
-        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        # syslog may require either DGRAM or STREAM sockets
+        self.socket = socket.socket(socket.AF_UNIX, self.socktype)
         try:
             self.socket.connect(address)
         except socket.error:
             self.socket.close()
-            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            try:
-                self.socket.connect(address)
-            except socket.error:
-                self.socket.close()
-                raise
+            raise
 
     # curious: when talking to the unix-domain '/dev/log' socket, a
     #   zero-terminator seems to be required.  this string is placed
