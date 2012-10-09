@@ -319,7 +319,7 @@ class TexinfoParser:
 
     # Start saving text in a buffer instead of writing it to a file
     def startsaving(self):
-        if self.savetext != None:
+        if self.savetext is not None:
             self.savestack.append(self.savetext)
             # print '*** Recursively saving text, expect trouble'
         self.savetext = ''
@@ -341,7 +341,7 @@ class TexinfoParser:
         except:
             print(args)
             raise TypeError
-        if self.savetext != None:
+        if self.savetext is not None:
             self.savetext = self.savetext + text
         elif self.nodefp:
             self.nodefp.write(text)
@@ -350,7 +350,7 @@ class TexinfoParser:
 
     # Complete the current node -- write footnotes and close file
     def endnode(self):
-        if self.savetext != None:
+        if self.savetext is not None:
             print('*** Still saving text at end of node')
             dummy = self.collectsavings()
         if self.footnotes:
@@ -804,7 +804,7 @@ class TexinfoParser:
     def close_i(self): self.write('</I>')
 
     def open_footnote(self):
-        # if self.savetext <> None:
+        # if self.savetext is not None:
         #       print '*** Recursive footnote -- expect weirdness'
         id = len(self.footnotes) + 1
         self.write(self.FN_SOURCE_PATTERN % {'id': repr(id)})
@@ -1442,7 +1442,7 @@ class TexinfoParser:
             else:
                 # some other character, e.g. '-'
                 args = self.itemarg + ' ' + args
-        if self.itemnumber != None:
+        if self.itemnumber is not None:
             args = self.itemnumber + '. ' + args
             self.itemnumber = increment(self.itemnumber)
         if self.stack and self.stack[-1] == 'table':

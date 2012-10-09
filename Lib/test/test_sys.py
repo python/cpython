@@ -897,7 +897,7 @@ class SizeofTest(unittest.TestCase):
         except TypeError:
             tb = sys.exc_info()[2]
             # traceback
-            if tb != None:
+            if tb is not None:
                 check(tb, size('2P2i'))
         # symtable entry
         # XXX

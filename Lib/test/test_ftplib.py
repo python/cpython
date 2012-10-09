@@ -342,7 +342,7 @@ if ssl is not None:
                 # http://www.mail-archive.com/openssl-users@openssl.org/msg60710.html
                 pass
             self._ssl_closing = False
-            if getattr(self, '_ccc', False) == False:
+            if getattr(self, '_ccc', False) is False:
                 super(SSLConnection, self).close()
             else:
                 pass
