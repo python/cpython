@@ -985,7 +985,7 @@ def popen(cmd, mode="r", buffering=-1):
         raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
     if mode not in ("r", "w"):
         raise ValueError("invalid mode %r" % mode)
-    if buffering == 0 or buffering == None:
+    if buffering == 0 or buffering is None:
         raise ValueError("popen() does not support unbuffered streams")
     import subprocess, io
     if mode == "r":

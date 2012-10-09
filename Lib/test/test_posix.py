@@ -651,7 +651,7 @@ class PosixTester(unittest.TestCase):
             groups = idg.read().strip()
             ret = idg.close()
 
-        if ret != None or not groups:
+        if ret is not None or not groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         self.assertEqual(
@@ -665,7 +665,7 @@ class PosixTester(unittest.TestCase):
             groups = idg.read().strip()
             ret = idg.close()
 
-        if ret != None or not groups:
+        if ret is not None or not groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         # 'id -G' and 'os.getgroups()' should return the same

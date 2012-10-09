@@ -2551,8 +2551,8 @@ def cli():
             if opt == '-w':
                 writing = True
 
-        if start_server == True:
-            if port == None:
+        if start_server:
+            if port is None:
                 port = 0
             browse(port, open_browser=open_browser)
             return
