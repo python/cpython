@@ -155,6 +155,9 @@ Build
 Documentation
 -------------
 
+- Issue #16115: Improve subprocess.Popen() documentation around args, shell,
+  and executable arguments.
+
 - Issue #13498: Clarify docs of os.makedirs()'s exist_ok argument.  Done with
   great native-speaker help from R. David Murray.
 
