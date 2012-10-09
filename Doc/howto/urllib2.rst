@@ -144,7 +144,7 @@ This is done as follows::
     >>> data['location'] = 'Northampton'
     >>> data['language'] = 'Python'
     >>> url_values = urllib.parse.urlencode(data)
-    >>> print(url_values)
+    >>> print(url_values)  # The order may differ from below.  #doctest: +SKIP
     name=Somebody+Here&language=Python&location=Northampton
     >>> url = 'http://www.example.com/example.cgi'
     >>> full_url = url + '?' + url_values
@@ -214,9 +214,9 @@ e.g. ::
 
     >>> req = urllib.request.Request('http://www.pretend_server.org')
     >>> try: urllib.request.urlopen(req)
-    >>> except urllib.error.URLError as e:
-    >>>    print(e.reason)
-    >>>
+    ... except urllib.error.URLError as e:
+    ...    print(e.reason)      #doctest: +SKIP
+    ...
     (4, 'getaddrinfo failed')
 
 
@@ -322,18 +322,17 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
 
     >>> req = urllib.request.Request('http://www.python.org/fish.html')
     >>> try:
-    >>>     urllib.request.urlopen(req)
-    >>> except urllib.error.HTTPError as e:
-    >>>     print(e.code)
-    >>>     print(e.read())
-    >>>
+    ...     urllib.request.urlopen(req)
+    ... except urllib.error.HTTPError as e:
+    ...     print(e.code)
+    ...     print(e.read())  #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...
     404
-    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
-    <?xml-stylesheet href="./css/ht2html.css"
-        type="text/css"?>
-    <html><head><title>Error 404: File Not Found</title>
-    ...... etc...
+    b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
+      ...
+      <title>Page Not Found</title>\n
+      ...
 
 Wrapping it Up
 --------------
