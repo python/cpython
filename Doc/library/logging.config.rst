@@ -76,11 +76,23 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 .. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
 
-   Reads the logging configuration from a :mod:`configparser`\-format file
-   named *fname*. This function can be called several times from an
-   application, allowing an end user to select from various pre-canned
-   configurations (if the developer provides a mechanism to present the choices
-   and load the chosen configuration).
+   Reads the logging configuration from a :mod:`configparser`\-format file.
+   This function can be called several times from an application, allowing an
+   end user to select from various pre-canned configurations (if the developer
+   provides a mechanism to present the choices and load the chosen
+   configuration).
+
+   :param fname: A filename, or a file-like object, or an instance derived
+                 from :class:`~configparser.RawConfigParser`. If a
+                 ``RawConfigParser``-derived instance is passed, it is used as
+                 is. Otherwise, a :class:`~configparser.Configparser` is
+                 instantiated, and the configuration read by it from the
+                 object passed in ``fname``. If that has a :meth:`readline`
+                 method, it is assumed to be a file-like object and read using
+                 :meth:`~configparser.ConfigParser.read_file`; otherwise,
+                 it is assumed to be a filename and passed to
+                 :meth:`~configparser.ConfigParser.read`.
+
 
    :param defaults: Defaults to be passed to the ConfigParser can be specified
                     in this argument.
@@ -94,6 +106,15 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     their ancestors are explicitly named in the
                                     logging configuration.
 
+   .. versionchanged:: 3.4
+      An instance of a subclass of :class:`~configparser.RawConfigParser` is
+      now accepted as a value for ``fname``. This facilitates:
+
+      * Use of a configuration file where logging configuration is just part
+        of the overall application configuration.
+      * Use of a configuration read from a file, and then modified by the using
+        application (e.g. based on command-line parameters or other aspects
+        of the runtime environment) before being passed to ``fileConfig``.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
