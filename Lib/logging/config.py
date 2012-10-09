@@ -827,15 +827,13 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                             d =json.loads(chunk)
                             assert isinstance(d, dict)
                             dictConfig(d)
-                        except:
+                        except Exception:
                             #Apply new configuration.
 
                             file = io.StringIO(chunk)
                             try:
                                 fileConfig(file)
-                            except (KeyboardInterrupt, SystemExit): #pragma: no cover
-                                raise
-                            except:
+                            except Exception:
                                 traceback.print_exc()
                     if self.server.ready:
                         self.server.ready.set()
