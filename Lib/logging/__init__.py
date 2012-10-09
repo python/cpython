@@ -67,7 +67,7 @@ else: #pragma: no cover
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
-        except:
+        except Exception:
             return sys.exc_info()[2].tb_frame.f_back
 
 # _srcfile is only used in conjunction with sys._getframe().
@@ -938,9 +938,7 @@ class StreamHandler(Handler):
             stream.write(msg)
             stream.write(self.terminator)
             self.flush()
-        except (KeyboardInterrupt, SystemExit): #pragma: no cover
-            raise
-        except:
+        except Exception:
             self.handleError(record)
 
 class FileHandler(StreamHandler):
@@ -1837,7 +1835,7 @@ def shutdown(handlerList=_handlerList):
                     pass
                 finally:
                     h.release()
-        except:
+        except: # ignore everything, as we're shutting down
             if raiseExceptions:
                 raise
             #else, swallow
