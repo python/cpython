@@ -291,7 +291,9 @@ Supported XPath syntax
 |                       | current  element.  For example, ``.//egg`` selects   |
 |                       | all ``egg`` elements in the entire tree.             |
 +-----------------------+------------------------------------------------------+
-| ``..``                | Selects the parent element.                          |
+| ``..``                | Selects the parent element.  Returns ``None`` if the |
+|                       | path attempts to reach the ancestors of the start    |
+|                       | element (the element ``find`` was called on).        |
 +-----------------------+------------------------------------------------------+
 | ``[@attrib]``         | Selects all elements that have the given attribute.  |
 +-----------------------+------------------------------------------------------+
@@ -521,7 +523,7 @@ Element Objects
    .. method:: clear()
 
       Resets an element.  This function removes all subelements, clears all
-      attributes, and sets the text and tail attributes to None.
+      attributes, and sets the text and tail attributes to ``None``.
 
 
    .. method:: get(key, default=None)
