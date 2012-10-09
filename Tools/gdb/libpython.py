@@ -1332,7 +1332,7 @@ that this python file is installed to the same path as the library (or its
   /usr/lib/debug/usr/lib/libpython2.6.so.1.0.debug-gdb.py
 """
 def register (obj):
-    if obj == None:
+    if obj is None:
         obj = gdb
 
     # Wire up the pretty-printer
