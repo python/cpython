@@ -26,6 +26,7 @@ import logging.handlers
 import logging.config
 
 import codecs
+import configparser
 import datetime
 import pickle
 import io
@@ -1268,6 +1269,24 @@ class ConfigFileTest(BaseTest):
         # A simple config file which overrides the default settings.
         with captured_stdout() as output:
             self.apply_config(self.config0)
+            logger = logging.getLogger()
+            # Won't output anything
+            logger.info(self.next_message())
+            # Outputs a message
+            logger.error(self.next_message())
+            self.assert_log_lines([
+                ('ERROR', '2'),
+            ], stream=output)
+            # Original logger output is empty.
+            self.assert_log_lines([])
+
+    def test_config0_using_cp_ok(self):
+        # A simple config file which overrides the default settings.
+        with captured_stdout() as output:
+            file = io.StringIO(textwrap.dedent(self.config0))
+            cp = configparser.ConfigParser()
+            cp.read_file(file)
+            logging.config.fileConfig(cp)
             logger = logging.getLogger()
             # Won't output anything
             logger.info(self.next_message())
