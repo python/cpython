@@ -290,20 +290,15 @@ functions.
 
    Arguments are:
 
-   *args* should be a string, or a sequence of program arguments.  The program
-   to execute is normally the first item in the args sequence or the string if
-   a string is given, but can be explicitly set by using the *executable*
-   argument.  When *executable* is given, the first item in the args sequence
-   is still treated by most programs as the command name, which can then be
-   different from the actual executable name.  On Unix, it becomes the display
-   name for the executing program in utilities such as :program:`ps`.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence and the string itself if *args* is a string.  However, see the
+   *shell* and *executable* arguments for differences from this behavior.
 
-   On Unix, with *shell=False* (default): In this case, the Popen class uses
-   :meth:`os.execvp` like behavior to execute the child program.
-   *args* should normally be a
-   sequence.  If a string is specified for *args*, it will be used as the name
-   or path of the program to execute; this will only work if the program is
-   being given no arguments.
+   On Unix, the :class:`Popen` class uses :meth:`os.execvp`-like behavior to
+   execute the child program.  If *args* is a string, the string is
+   interpreted as the name or path of the program to execute; this only works
+   if the program is being given no arguments.
 
    .. note::
 
@@ -324,13 +319,23 @@ functions.
       used in the shell (such as filenames containing spaces or the *echo* command
       shown above) are single list elements.
 
-   On Unix, with *shell=True*: If args is a string, it specifies the command
-   string to execute through the shell.  This means that the string must be
+   On Windows, the :class:`Popen` class uses ``CreateProcess()`` to
+   execute the child program, which operates on strings.  If *args* is a
+   sequence, it will be converted to a string in a manner described in
+   :ref:`converting-argument-sequence`.
+
+   The *shell* argument (which defaults to *False*) specifies whether to use
+   the shell as the program to execute.  It is recommended to pass *args* as a
+   sequence if *shell* is *False* and as a string if *shell* is *True*.
+
+   On Unix with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
+   *args* is a string, the string specifies the command
+   to execute through the shell.  This means that the string must be
    formatted exactly as it would be when typed at the shell prompt.  This
    includes, for example, quoting or backslash escaping filenames with spaces in
    them.  If *args* is a sequence, the first item specifies the command string, and
    any additional items will be treated as additional arguments to the shell
-   itself.  That is to say, *Popen* does the equivalent of::
+   itself.  That is to say, :class:`Popen` does the equivalent of::
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
@@ -340,10 +345,11 @@ functions.
       input. See the warning under :ref:`frequently-used-arguments`
       for details.
 
-   On Windows: the :class:`Popen` class uses CreateProcess() to execute the
-   child program, which operates on strings.  If *args* is a sequence, it will
-   be converted to a string in a manner described in
-   :ref:`converting-argument-sequence`.
+   On Windows with ``shell=True``, the :envvar:`COMSPEC` environment variable
+   specifies the default shell.  The only time you need to specify
+   ``shell=True`` on Windows is when the command you wish to execute is built
+   into the shell (e.g. :command:`dir` or :command:`copy`).  You do not need
+   ``shell=True`` to run a batch file or console-based executable.
 
    *bufsize*, if given, has the same meaning as the corresponding argument to the
    built-in open() function: :const:`0` means unbuffered, :const:`1` means line
@@ -357,15 +363,14 @@ functions.
       enable buffering by setting *bufsize* to either -1 or a large enough
       positive value (such as 4096).
 
-   The *executable* argument specifies the program to execute. It is very seldom
-   needed: Usually, the program to execute is defined by the *args* argument. If
-   ``shell=True``, the *executable* argument specifies which shell to use. On Unix,
-   the default shell is :file:`/bin/sh`.  On Windows, the default shell is
-   specified by the :envvar:`COMSPEC` environment variable. The only reason you
-   would need to specify ``shell=True`` on Windows is where the command you
-   wish to execute is actually built in to the shell, eg ``dir``, ``copy``.
-   You don't need ``shell=True`` to run a batch file, nor to run a console-based
-   executable.
+   The *executable* argument specifies a replacement program to execute.   It
+   is very seldom needed.  When ``shell=False``, *executable* replaces the
+   program to execute specified by *args*.  However, the *args* program is
+   still treated by most programs as the command name, which can then be
+   different from the program actually executed.  On Unix, the *args* name
+   becomes the display name for the executable in utilities such as
+   :program:`ps`.  If ``shell=True``, on Unix the *executable* argument
+   specifies a replacement shell for the default :file:`/bin/sh`.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
