@@ -736,7 +736,7 @@ class TestCase(object):
             msg: Optional message to use on failure instead of a list of
                     differences.
         """
-        if seq_type != None:
+        if seq_type is not None:
             seq_type_name = seq_type.__name__
             if not isinstance(seq1, seq_type):
                 raise self.failureException('First sequence is not a %s: %s'

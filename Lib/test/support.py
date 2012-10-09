@@ -1232,7 +1232,7 @@ def run_with_tz(tz):
             try:
                 return func(*args, **kwds)
             finally:
-                if orig_tz == None:
+                if orig_tz is None:
                     del os.environ['TZ']
                 else:
                     os.environ['TZ'] = orig_tz
