@@ -456,7 +456,7 @@ if _os.name in ("nt", "ce"):
             code = GetLastError()
         if descr is None:
             descr = FormatError(code).strip()
-        return WindowsError(code, descr)
+        return WindowsError(None, descr, None, code)
 
 if sizeof(c_uint) == sizeof(c_void_p):
     c_size_t = c_uint
