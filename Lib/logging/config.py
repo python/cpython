@@ -61,11 +61,14 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     """
     import configparser
 
-    cp = configparser.ConfigParser(defaults)
-    if hasattr(fname, 'readline'):
-        cp.read_file(fname)
+    if isinstance(fname, configparser.RawConfigParser):
+        cp = fname
     else:
-        cp.read(fname)
+        cp = configparser.ConfigParser(defaults)
+        if hasattr(fname, 'readline'):
+            cp.read_file(fname)
+        else:
+            cp.read(fname)
 
     formatters = _create_formatters(cp)
 
