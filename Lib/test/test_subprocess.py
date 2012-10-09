@@ -200,13 +200,16 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(47, p.returncode)
 
-    # TODO: make this test work on Linux.
-    # This may be failing on Linux because of issue #7774.
-    @unittest.skipIf(sys.platform not in ('win32', 'darwin'),
-                     "possible bug using executable argument on Linux")
     def test_executable(self):
         # Check that the executable argument works.
-        self._assert_python(["doesnotexist", "-c"], executable=sys.executable)
+        #
+        # On Unix (non-Mac and non-Windows), Python looks at args[0] to
+        # determine where its standard library is, so we need the directory
+        # of args[0] to be valid for the Popen() call to Python to succeed.
+        # See also issue #16170 and issue #7774.
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
