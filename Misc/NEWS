@@ -124,6 +124,9 @@ Build
 Documentation
 -------------
 
+- Issue #16115: Improve subprocess.Popen() documentation around args, shell,
+  and executable arguments.
+
 - Issue #15533: Clarify docs and add tests for `subprocess.Popen()`'s cwd
   argument.
 
