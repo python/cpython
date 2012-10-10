@@ -1955,7 +1955,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 }
             }
             PUSH(x);
-            break;
+            DISPATCH();
         }
 
         TARGET(STORE_NAME)
@@ -1977,11 +1977,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(DELETE_NAME)
             w = GETITEM(names, oparg);
             if ((x = f->f_locals) != NULL) {
-                if ((err = PyObject_DelItem(x, w)) != 0)
+                if ((err = PyObject_DelItem(x, w)) != 0) {
                     format_exc_check_arg(PyExc_NameError,
                                          NAME_ERROR_MSG,
                                          w);
-                break;
+                    break;
+                }
+                DISPATCH();
             }
             PyErr_Format(PyExc_SystemError,
                          "no locals when deleting %R", w);
@@ -1999,8 +2001,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     Py_INCREF(w);
                     PUSH(w);
                 }
-                Py_DECREF(v);
-                DISPATCH();
             } else if (PyList_CheckExact(v) &&
                        PyList_GET_SIZE(v) == oparg) {
                 PyObject **items = \
@@ -2016,9 +2016,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             } else {
                 /* unpack_iterable() raised an exception */
                 why = WHY_EXCEPTION;
+                Py_DECREF(v);
+                break;
             }
             Py_DECREF(v);
-            break;
+            DISPATCH();
 
         TARGET(UNPACK_EX)
         {
@@ -2029,10 +2031,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                 stack_pointer + totalargs)) {
                 stack_pointer += totalargs;
             } else {
+                Py_DECREF(v);
                 why = WHY_EXCEPTION;
+                break;
             }
             Py_DECREF(v);
-            break;
+            DISPATCH();
         }
 
         TARGET(STORE_ATTR)
@@ -2052,6 +2056,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             err = PyObject_SetAttr(v, w, (PyObject *)NULL);
                                             /* del v.w */
             Py_DECREF(v);
+            if (err == 0) DISPATCH();
             break;
 
         TARGET(STORE_GLOBAL)
@@ -2064,10 +2069,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(DELETE_GLOBAL)
             w = GETITEM(names, oparg);
-            if ((err = PyDict_DelItem(f->f_globals, w)) != 0)
+            if ((err = PyDict_DelItem(f->f_globals, w)) != 0) {
                 format_exc_check_arg(
                     PyExc_NameError, GLOBAL_NAME_ERROR_MSG, w);
-            break;
+                break;
+            }
+            DISPATCH();
 
         TARGET(LOAD_NAME)
             w = GETITEM(names, oparg);
