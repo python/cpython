@@ -798,9 +798,7 @@ Another bad idea is to print things that embed an object address, like ::
    >>> C()   # the default repr() for instances embeds an address
    <__main__.C instance at 0x00AC18F0>
 
-The :const:`ELLIPSIS` directive gives a nice approach for the last example:
-
-.. code-block:: text
+The :const:`ELLIPSIS` directive gives a nice approach for the last example::
 
    >>> C() #doctest: +ELLIPSIS
    <__main__.C instance at 0x...>
