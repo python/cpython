@@ -32,8 +32,6 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
         _spawn_posix(cmd, search_path, dry_run=dry_run)
     elif os.name == 'nt':
         _spawn_nt(cmd, search_path, dry_run=dry_run)
-    elif os.name == 'os2':
-        _spawn_os2(cmd, search_path, dry_run=dry_run)
     else:
         raise DistutilsPlatformError(
               "don't know how to spawn programs on platform '%s'" % os.name)
@@ -71,26 +69,6 @@ def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
                   "command '%s' failed: %s" % (cmd[0], exc.args[-1]))
         if rc != 0:
             # and this reflects the command running but failing
-            raise DistutilsExecError(
-                  "command '%s' failed with exit status %d" % (cmd[0], rc))
-
-def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
-    executable = cmd[0]
-    if search_path:
-        # either we find one or it stays the same
-        executable = find_executable(executable) or executable
-    log.info(' '.join([executable] + cmd[1:]))
-    if not dry_run:
-        # spawnv for OS/2 EMX requires a full path to the .exe
-        try:
-            rc = os.spawnv(os.P_WAIT, executable, cmd)
-        except OSError as exc:
-            # this seems to happen when the command isn't found
-            raise DistutilsExecError(
-                  "command '%s' failed: %s" % (cmd[0], exc.args[-1]))
-        if rc != 0:
-            # and this reflects the command running but failing
-            log.debug("command '%s' failed with exit status %d" % (cmd[0], rc))
             raise DistutilsExecError(
                   "command '%s' failed with exit status %d" % (cmd[0], rc))
 
@@ -180,7 +158,7 @@ def find_executable(executable, path=None):
     paths = path.split(os.pathsep)
     base, ext = os.path.splitext(executable)
 
-    if (sys.platform == 'win32' or os.name == 'os2') and (ext != '.exe'):
+    if (sys.platform == 'win32') and (ext != '.exe'):
         executable = executable + '.exe'
 
     if not os.path.isfile(executable):

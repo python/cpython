@@ -38,8 +38,7 @@ class bdist_dumb(Command):
     boolean_options = ['keep-temp', 'skip-build', 'relative']
 
     default_format = { 'posix': 'gztar',
-                       'nt': 'zip',
-                       'os2': 'zip' }
+                       'nt': 'zip' }
 
     def initialize_options(self):
         self.bdist_dir = None
@@ -84,11 +83,6 @@ class bdist_dumb(Command):
         # pseudo-installation tree.
         archive_basename = "%s.%s" % (self.distribution.get_fullname(),
                                       self.plat_name)
-
-        # OS/2 objects to any ":" characters in a filename (such as when
-        # a timestamp is used in a version) so change them to hyphens.
-        if os.name == "os2":
-            archive_basename = archive_basename.replace(":", "-")
 
         pseudoinstall_root = os.path.join(self.dist_dir, archive_basename)
         if not self.relative:

@@ -236,7 +236,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertRaises(DistutilsPlatformError,
                           change_root, 'c:\\root', 'its\\here')
 
-        # XXX platforms to be covered: os2, mac
+        # XXX platforms to be covered: mac
 
     def test_check_environ(self):
         util._environ_checked = 0
