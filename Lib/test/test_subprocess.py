@@ -884,26 +884,59 @@ class _SuppressCoreFiles(object):
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
 
-    def test_exceptions(self):
-        nonexistent_dir = "/_this/pa.th/does/not/exist"
+    def setUp(self):
+        super().setUp()
+        self._nonexistent_dir = "/_this/pa.th/does/not/exist"
+
+    def _get_chdir_exception(self):
         try:
-            os.chdir(nonexistent_dir)
+            os.chdir(self._nonexistent_dir)
         except OSError as e:
             # This avoids hard coding the errno value or the OS perror()
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
-            desired_exception.strerror += ': ' + repr(sys.executable)
+            desired_exception.strerror += ': ' + repr(self._nonexistent_dir)
         else:
             self.fail("chdir to nonexistant directory %s succeeded." %
-                      nonexistent_dir)
+                      self._nonexistent_dir)
+        return desired_exception
 
-        # Error in the child re-raised in the parent.
+    def test_exception_cwd(self):
+        """Test error in the child raised in the parent for a bad cwd."""
+        desired_exception = self._get_chdir_exception()
         try:
             p = subprocess.Popen([sys.executable, "-c", ""],
-                                 cwd=nonexistent_dir)
+                                 cwd=self._nonexistent_dir)
         except OSError as e:
             # Test that the child process chdir failure actually makes
+            # it up to the parent process as the correct exception.
+            self.assertEqual(desired_exception.errno, e.errno)
+            self.assertEqual(desired_exception.strerror, e.strerror)
+        else:
+            self.fail("Expected OSError: %s" % desired_exception)
+
+    def test_exception_bad_executable(self):
+        """Test error in the child raised in the parent for a bad executable."""
+        desired_exception = self._get_chdir_exception()
+        try:
+            p = subprocess.Popen([sys.executable, "-c", ""],
+                                 executable=self._nonexistent_dir)
+        except OSError as e:
+            # Test that the child process exec failure actually makes
+            # it up to the parent process as the correct exception.
+            self.assertEqual(desired_exception.errno, e.errno)
+            self.assertEqual(desired_exception.strerror, e.strerror)
+        else:
+            self.fail("Expected OSError: %s" % desired_exception)
+
+    def test_exception_bad_args_0(self):
+        """Test error in the child raised in the parent for a bad args[0]."""
+        desired_exception = self._get_chdir_exception()
+        try:
+            p = subprocess.Popen([self._nonexistent_dir, "-c", ""])
+        except OSError as e:
+            # Test that the child process exec failure actually makes
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
