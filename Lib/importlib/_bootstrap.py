@@ -1602,19 +1602,19 @@ def _handle_fromlist(module, fromlist, import_):
                 fromlist.extend(module.__all__)
         for x in fromlist:
             if not hasattr(module, x):
+                from_name = '{}.{}'.format(module.__name__, x)
                 try:
-                    _call_with_frames_removed(import_,
-                                      '{}.{}'.format(module.__name__, x))
+                    _call_with_frames_removed(import_, from_name)
                 except ImportError as exc:
                     # Backwards-compatibility dictates we ignore failed
                     # imports triggered by fromlist for modules that don't
                     # exist.
                     # TODO(brett): In Python 3.4, have import raise
                     #   ModuleNotFound and catch that.
-                    if hasattr(exc, '_not_found') and exc._not_found:
-                        pass
-                    else:
-                        raise
+                    if getattr(exc, '_not_found', False):
+                        if exc.name == from_name:
+                            continue
+                    raise
     return module
 
 

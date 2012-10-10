@@ -39,6 +39,9 @@ Core and Builtins
 - Issue #15801: Make sure mappings passed to '%' formatting are actually
   subscriptable.
 
+- Issue #15111: __import__ should propagate ImportError when raised as a
+  side-effect of a module triggered from using fromlist.
+
 Library
 -------
 
