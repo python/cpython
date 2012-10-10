@@ -33,9 +33,38 @@ def new_visit_versionmodified(self, node):
     self.body.append('<span class="versionmodified">%s</span> ' % text)
 
 from sphinx.writers.html import HTMLTranslator
+from sphinx.writers.latex import LaTeXTranslator
 from sphinx.locale import versionlabels
 HTMLTranslator.visit_versionmodified = new_visit_versionmodified
+HTMLTranslator.visit_versionmodified = new_visit_versionmodified
 
+# monkey-patch HTML and LaTeX translators to keep doctest blocks in the
+# doctest docs themselves
+orig_visit_literal_block = HTMLTranslator.visit_literal_block
+def new_visit_literal_block(self, node):
+    meta = self.builder.env.metadata[self.builder.current_docname]
+    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
+    if 'keepdoctest' in meta:
+        self.highlighter.trim_doctest_flags = False
+    try:
+        orig_visit_literal_block(self, node)
+    finally:
+        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
+
+HTMLTranslator.visit_literal_block = new_visit_literal_block
+
+orig_depart_literal_block = LaTeXTranslator.depart_literal_block
+def new_depart_literal_block(self, node):
+    meta = self.builder.env.metadata[self.curfilestack[-1]]
+    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
+    if 'keepdoctest' in meta:
+        self.highlighter.trim_doctest_flags = False
+    try:
+        orig_depart_literal_block(self, node)
+    finally:
+        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
+
+LaTeXTranslator.depart_literal_block = new_depart_literal_block
 
 # Support for marking up and linking to bugs.python.org issues
 
