@@ -129,6 +129,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16114: The subprocess module no longer provides a misleading
+  error message stating that args[0] did not exist when either the cwd or
+  executable keyword arguments specified a path that did not exist.
+
 - Issue #15756: subprocess.poll() now properly handles errno.ECHILD to
   return a returncode of 0 when the child has already exited or cannot
   be waited on.
