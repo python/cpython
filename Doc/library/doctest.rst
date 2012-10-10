@@ -552,11 +552,11 @@ doctest decides whether actual output matches an example's expected output:
    both of these variations will work with the flag specified, regardless of
    whether the test is run under Python 2.7 or Python 3.2 (or later versions)::
 
-      >>> raise CustomError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      >>> raise CustomError('message')
       Traceback (most recent call last):
       CustomError: message
 
-      >>> raise CustomError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      >>> raise CustomError('message')
       Traceback (most recent call last):
       my_module.CustomError: message
 
@@ -569,7 +569,7 @@ doctest decides whether actual output matches an example's expected output:
    earlier (those releases do not support :ref:`doctest directives
    <doctest-directives>` and ignore them as irrelevant comments). For example::
 
-      >>> (1, 2)[3] = 'moo' #doctest: +IGNORE_EXCEPTION_DETAIL
+      >>> (1, 2)[3] = 'moo'
       Traceback (most recent call last):
         File "<stdin>", line 1, in ?
       TypeError: object doesn't support item assignment
