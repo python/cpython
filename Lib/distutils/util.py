@@ -154,12 +154,6 @@ def change_root (new_root, pathname):
             path = path[1:]
         return os.path.join(new_root, path)
 
-    elif os.name == 'os2':
-        (drive, path) = os.path.splitdrive(pathname)
-        if path[0] == os.sep:
-            path = path[1:]
-        return os.path.join(new_root, path)
-
     else:
         raise DistutilsPlatformError("nothing known about platform '%s'" % os.name)
 

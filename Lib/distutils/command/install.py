@@ -58,13 +58,6 @@ INSTALL_SCHEMES = {
         'data'   : '$base',
         },
     'nt': WINDOWS_SCHEME,
-    'os2': {
-        'purelib': '$base/Lib/site-packages',
-        'platlib': '$base/Lib/site-packages',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-        },
     }
 
 # user site schemes
@@ -82,14 +75,6 @@ if HAS_USER_SITE:
         'platlib': '$usersite',
         'headers':
             '$userbase/include/python$py_version_short$abiflags/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        }
-
-    INSTALL_SCHEMES['os2_home'] = {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/include/python$py_version_short/$dist_name',
         'scripts': '$userbase/bin',
         'data'   : '$userbase',
         }

@@ -75,8 +75,6 @@ class BuildDumbTestCase(support.TempdirManager,
         # see what we have
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
         base = "%s.%s.zip" % (dist.get_fullname(), cmd.plat_name)
-        if os.name == 'os2':
-            base = base.replace(':', '-')
 
         self.assertEqual(dist_created, [base])
 
