@@ -52,7 +52,7 @@ class HandlingFromlist(unittest.TestCase):
                 module = import_util.import_('module', fromlist=['attr'])
                 self.assertEqual(module.__name__, 'module')
 
-    def test_unexistent_object(self):
+    def test_nonexistent_object(self):
         # [bad object]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
@@ -68,6 +68,19 @@ class HandlingFromlist(unittest.TestCase):
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
+
+    def test_module_from_package_triggers_ImportError(self):
+        # If a submodule causes an ImportError because it tries to import
+        # a module which doesn't exist, that should let the ImportError
+        # propagate.
+        def module_code():
+            import i_do_not_exist
+        with util.mock_modules('pkg.__init__', 'pkg.mod',
+                               module_code={'pkg.mod': module_code}) as importer:
+            with util.import_state(meta_path=[importer]):
+                with self.assertRaises(ImportError) as exc:
+                    import_util.import_('pkg', fromlist=['mod'])
+                self.assertEquals('i_do_not_exist', exc.exception.name)
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
