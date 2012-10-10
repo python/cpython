@@ -13,7 +13,6 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.bcppcompiler
             import distutils.ccompiler
             import distutils.cygwinccompiler
-            import distutils.emxccompiler
             import distutils.filelist
             if sys.platform.startswith('win'):
                 import distutils.msvccompiler
