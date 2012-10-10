@@ -1327,6 +1327,7 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+            orig_executable = executable
 
             # For transferring possible exec failure from child to parent.
             # Data format: "exception name:hex errno:description"
@@ -1409,10 +1410,17 @@ class Popen(object):
                 err_msg = err_msg.decode(errors="surrogatepass")
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno_num = int(hex_errno, 16)
+                    child_exec_never_called = (err_msg == "noexec")
+                    if child_exec_never_called:
+                        err_msg = ""
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
                         if errno_num == errno.ENOENT:
-                            err_msg += ': ' + repr(args[0])
+                            if child_exec_never_called:
+                                # The error must be from chdir(cwd).
+                                err_msg += ': ' + repr(cwd)
+                            else:
+                                err_msg += ': ' + repr(orig_executable)
                     raise child_exception_type(errno_num, err_msg)
                 raise child_exception_type(err_msg)
 
