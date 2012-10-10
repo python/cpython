@@ -356,7 +356,7 @@ child_exec(char *const exec_array[],
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
 {
-    int i, saved_errno, unused;
+    int i, saved_errno, unused, reached_preexec = 0;
     PyObject *result;
     const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
@@ -440,6 +440,7 @@ child_exec(char *const exec_array[],
         POSIX_CALL(setsid());
 #endif
 
+    reached_preexec = 1;
     if (preexec_fn != Py_None && preexec_fn_args_tuple) {
         /* This is where the user has asked us to deadlock their program. */
         result = PyObject_Call(preexec_fn, preexec_fn_args_tuple, NULL);
@@ -489,6 +490,10 @@ error:
         }
         unused = write(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
         unused = write(errpipe_write, ":", 1);
+        if (!reached_preexec) {
+            /* Indicate to the parent that the error happened before exec(). */
+            unused = write(errpipe_write, "noexec", 6);
+        }
         /* We can't call strerror(saved_errno).  It is not async signal safe.
          * The parent process will look the error message up. */
     } else {
