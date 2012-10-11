@@ -668,8 +668,13 @@ def win32_ver(release='',version='',csd='',ptype=''):
                     release = '7'
                 else:
                     release = '2008ServerR2'
+            elif min == 2:
+                if product_type == VER_NT_WORKSTATION:
+                    release = '8'
+                else:
+                    release = '2012Server'
             else:
-                release = 'post2008Server'
+                release = 'post2012Server'
 
     else:
         if not release:
