@@ -92,6 +92,9 @@ class BaseHTTPServerTestCase(BaseTestCase):
         def do_KEYERROR(self):
             self.send_error(999)
 
+        def do_NOTFOUND(self):
+            self.send_error(404)
+
         def do_CUSTOM(self):
             self.send_response(999)
             self.send_header('Content-Type', 'text/html')
@@ -210,6 +213,15 @@ class BaseHTTPServerTestCase(BaseTestCase):
         res = self.con.getresponse()
         self.assertEqual(res.getheader('X-Special'), 'Dängerous Mind')
         self.assertEqual(res.read(), 'Ärger mit Unicode'.encode('utf-8'))
+
+    def test_error_content_length(self):
+        # Issue #16088: standard error responses should have a content-length
+        self.con.request('NOTFOUND', '/')
+        res = self.con.getresponse()
+        self.assertEqual(res.status, 404)
+        data = res.read()
+        import pdb; pdb.set_trace()
+        self.assertEqual(int(res.getheader('Content-Length')), len(data))
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
