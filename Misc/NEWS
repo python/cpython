@@ -119,6 +119,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16176: Properly identify Windows 8 via platform.platform()
+
 - Issue #15756: subprocess.poll() now properly handles errno.ECHILD to
   return a returncode of 0 when the child has already exited or cannot
   be waited on.
