@@ -243,8 +243,8 @@ default values. The arguments that are most commonly needed are:
       untrusted source makes a program vulnerable to `shell injection
       <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_,
       a serious security flaw which can result in arbitrary command execution.
-      For this reason, the use of *shell=True* is **strongly discouraged** in cases
-      where the command string is constructed from external input::
+      For this reason, the use of ``shell=True`` is **strongly discouraged**
+      in cases where the command string is constructed from external input::
 
          >>> from subprocess import call
          >>> filename = input("What file would you like to display?\n")
@@ -334,6 +334,12 @@ functions.
    into the shell (e.g. :command:`dir` or :command:`copy`).  You do not need
    ``shell=True`` to run a batch file or console-based executable.
 
+   .. warning::
+
+      Passing ``shell=True`` can be a security hazard if combined with
+      untrusted input.  See the warning under :ref:`frequently-used-arguments`
+      for details.
+
    *bufsize*, if given, has the same meaning as the corresponding argument to the
    built-in open() function: :const:`0` means unbuffered, :const:`1` means line
    buffered, any other positive value means use a buffer of (approximately) that
@@ -374,15 +380,6 @@ functions.
    Or, on Windows, if *close_fds* is true then no handles will be inherited by the
    child process.  Note that on Windows, you cannot set *close_fds* to true and
    also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
-
-   If *shell* is :const:`True`, the specified command will be executed through the
-   shell.
-
-   .. warning::
-
-      Enabling this option can be a security hazard if combined with untrusted
-      input. See the warning under :ref:`frequently-used-arguments`
-      for details.
 
    If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
    before it is executed.  Note that this directory is not considered when
