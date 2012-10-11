@@ -269,19 +269,26 @@ are able to handle the less common cases not covered by the convenience
 functions.
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0)
+.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, \
+                 stderr=None, preexec_fn=None, close_fds=False, shell=False, \
+                 cwd=None, env=None, universal_newlines=False, \
+                 startupinfo=None, creationflags=0)
 
-   Arguments are:
+   Execute a child program in a new process.  On Unix, the class uses
+   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   the class uses the Windows ``CreateProcess()`` function.  The arguments to
+   :class:`Popen` are as follows.
 
    *args* should be a sequence of program arguments or else a single string.
    By default, the program to execute is the first item in *args* if *args* is
-   a sequence and the string itself if *args* is a string.  However, see the
-   *shell* and *executable* arguments for differences from this behavior.
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
-   On Unix, the :class:`Popen` class uses :meth:`os.execvp`-like behavior to
-   execute the child program.  If *args* is a string, the string is
-   interpreted as the name or path of the program to execute; this only works
-   if the program is being given no arguments.
+   On Unix, if *args* is a string, the string is interpreted as the name or
+   path of the program to execute.  However, this can only be done if not
+   passing arguments to the program.
 
    .. note::
 
@@ -302,14 +309,13 @@ functions.
       used in the shell (such as filenames containing spaces or the *echo* command
       shown above) are single list elements.
 
-   On Windows, the :class:`Popen` class uses ``CreateProcess()`` to
-   execute the child program, which operates on strings.  If *args* is a
-   sequence, it will be converted to a string in a manner described in
-   :ref:`converting-argument-sequence`.
+   On Windows, if *args* is a sequence, it will be converted to a string in a
+   manner described in :ref:`converting-argument-sequence`.  This is because
+   the underlying ``CreateProcess()`` operates on strings.
 
    The *shell* argument (which defaults to *False*) specifies whether to use
-   the shell as the program to execute.  It is recommended to pass *args* as a
-   sequence if *shell* is *False* and as a string if *shell* is *True*.
+   the shell as the program to execute.  If *shell* is *True*, it is
+   recommended to pass *args* as a string rather than as a sequence.
 
    On Unix with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
    *args* is a string, the string specifies the command
@@ -342,9 +348,10 @@ functions.
 
    The *executable* argument specifies a replacement program to execute.   It
    is very seldom needed.  When ``shell=False``, *executable* replaces the
-   program to execute specified by *args*.  However, the *args* program is
-   still treated by most programs as the command name, which can then be
-   different from the program actually executed.  On Unix, the *args* name
+   program to execute specified by *args*.  However, the original *args* is
+   still passed to the program.  Most programs treat the program specified
+   by *args* as the command name, which can then be different from the program
+   actually executed.  On Unix, the *args* name
    becomes the display name for the executable in utilities such as
    :program:`ps`.  If ``shell=True``, on Unix the *executable* argument
    specifies a replacement shell for the default :file:`/bin/sh`.
