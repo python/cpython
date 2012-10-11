@@ -75,8 +75,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
     * ``system_site_packages`` -- a Boolean value indicating that the system Python
       site-packages should be available to the environment (defaults to ``False``).
 
-    * ``clear`` -- a Boolean value which, if True, will delete any existing target
-      directory instead of raising an exception (defaults to ``False``).
+    * ``clear`` -- a Boolean value which, if True, will delete the contents of
+      any existing target directory, before creating the environment.
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
       Python binary (and any necessary DLLs or other binaries,
@@ -86,7 +86,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
     * ``upgrade`` -- a Boolean value which, if True, will upgrade an existing
       environment with the running Python - for use when that Python has been
       upgraded in-place (defaults to ``False``).
-
 
 
     Creators of third-party virtual environment tools will be free to use the
