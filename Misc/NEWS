@@ -129,6 +129,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16176: Properly identify Windows 8 via platform.platform()
+
 - Issue #16114: The subprocess module no longer provides a misleading
   error message stating that args[0] did not exist when either the cwd or
   executable keyword arguments specified a path that did not exist.
