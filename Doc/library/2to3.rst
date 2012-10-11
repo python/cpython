@@ -23,7 +23,7 @@ Using 2to3
 also located in the :file:`Tools/scripts` directory of the Python root.
 
 2to3's basic arguments are a list of files or directories to transform.  The
-directories are to recursively traversed for Python sources.
+directories are recursively traversed for Python sources.
 
 Here is a sample Python 2.x source file, :file:`example.py`::
 
