@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16176: Properly identify Windows 8 via platform.platform()
+
 - Issue #16088: BaseHTTPRequestHandler's send_error method includes a
   Content-Length header in it's response now. Patch by Antoine Pitrou.
 
