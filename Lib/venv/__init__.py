@@ -90,6 +90,14 @@ class EnvBuilder:
             self.setup_scripts(context)
             self.post_setup(context)
 
+    def clear_directory(self, path):
+        for fn in os.listdir(path):
+            fn = os.path.join(path, fn)
+            if os.path.islink(fn) or os.path.isfile(fn):
+                os.remove(fn)
+            elif os.path.isdir(fn):
+                shutil.rmtree(fn)
+
     def ensure_directories(self, env_dir):
         """
         Create the directories for the environment.
@@ -101,11 +109,11 @@ class EnvBuilder:
         def create_if_needed(d):
             if not os.path.exists(d):
                 os.makedirs(d)
+            elif os.path.islink(d) or os.path.isfile(d):
+                raise ValueError('Unable to create directory %r' % d)
 
-        if os.path.exists(env_dir) and not (self.clear or self.upgrade):
-            raise ValueError('Directory exists: %s' % env_dir)
         if os.path.exists(env_dir) and self.clear:
-            shutil.rmtree(env_dir)
+            self.clear_directory(env_dir)
         context = Context()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
@@ -369,11 +377,10 @@ def main(args=None):
                                  'when symlinks are not the default for '
                                  'the platform.')
         parser.add_argument('--clear', default=False, action='store_true',
-                            dest='clear', help='Delete the environment '
-                                               'directory if it already '
-                                               'exists. If not specified and '
-                                               'the directory exists, an error'
-                                               ' is raised.')
+                            dest='clear', help='Delete the contents of the '
+                                               'environment directory if it '
+                                               'already exists, before '
+                                               'environment creation.')
         parser.add_argument('--upgrade', default=False, action='store_true',
                             dest='upgrade', help='Upgrade the environment '
                                                'directory to use this version '
