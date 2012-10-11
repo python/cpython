@@ -328,8 +328,8 @@ default values. The arguments that are most commonly needed are:
       untrusted source makes a program vulnerable to `shell injection
       <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_,
       a serious security flaw which can result in arbitrary command execution.
-      For this reason, the use of *shell=True* is **strongly discouraged** in cases
-      where the command string is constructed from external input::
+      For this reason, the use of ``shell=True`` is **strongly discouraged**
+      in cases where the command string is constructed from external input::
 
          >>> from subprocess import call
          >>> filename = input("What file would you like to display?\n")
@@ -414,17 +414,17 @@ functions.
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
-   .. warning::
-
-      Enabling this option can be a security hazard if combined with untrusted
-      input. See the warning under :ref:`frequently-used-arguments`
-      for details.
-
    On Windows with ``shell=True``, the :envvar:`COMSPEC` environment variable
    specifies the default shell.  The only time you need to specify
    ``shell=True`` on Windows is when the command you wish to execute is built
    into the shell (e.g. :command:`dir` or :command:`copy`).  You do not need
    ``shell=True`` to run a batch file or console-based executable.
+
+   .. warning::
+
+      Passing ``shell=True`` can be a security hazard if combined with
+      untrusted input.  See the warning under :ref:`frequently-used-arguments`
+      for details.
 
    *bufsize*, if given, has the same meaning as the corresponding argument to the
    built-in open() function: :const:`0` means unbuffered, :const:`1` means line
