@@ -177,6 +177,9 @@ of which this module provides three different variants:
       complete set of headers is sent, followed by text composed using the
       :attr:`error_message_format` class variable.
 
+      .. versionchanged:: 3.4
+         The error response includes a Content-Length header.
+
    .. method:: send_response(code, message=None)
 
       Adds a response header to the headers buffer and logs the accepted
