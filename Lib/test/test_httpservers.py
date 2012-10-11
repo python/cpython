@@ -220,7 +220,6 @@ class BaseHTTPServerTestCase(BaseTestCase):
         res = self.con.getresponse()
         self.assertEqual(res.status, 404)
         data = res.read()
-        import pdb; pdb.set_trace()
         self.assertEqual(int(res.getheader('Content-Length')), len(data))
 
 
