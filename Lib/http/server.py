@@ -425,12 +425,14 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
         content = (self.error_message_format %
                    {'code': code, 'message': _quote_html(message), 'explain': explain})
+        body = content.encode('UTF-8', 'replace')
         self.send_response(code, message)
         self.send_header("Content-Type", self.error_content_type)
         self.send_header('Connection', 'close')
+        self.send_header('Content-Length', int(len(body)))
         self.end_headers()
         if self.command != 'HEAD' and code >= 200 and code not in (204, 304):
-            self.wfile.write(content.encode('UTF-8', 'replace'))
+            self.wfile.write(body)
 
     def send_response(self, code, message=None):
         """Add the response header to the headers buffer and log the
