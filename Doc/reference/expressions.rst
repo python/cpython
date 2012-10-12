@@ -294,13 +294,13 @@ for comprehensions, except that it is enclosed in parentheses instead of
 brackets or curly braces.
 
 Variables used in the generator expression are evaluated lazily when the
-:meth:`__next__` method is called for generator object (in the same fashion as
-normal generators).  However, the leftmost :keyword:`for` clause is immediately
-evaluated, so that an error produced by it can be seen before any other possible
-error in the code that handles the generator expression.  Subsequent
-:keyword:`for` clauses cannot be evaluated immediately since they may depend on
-the previous :keyword:`for` loop. For example: ``(x*y for x in range(10) for y
-in bar(x))``.
+:meth:`~generator.__next__` method is called for generator object (in the same
+fashion as normal generators).  However, the leftmost :keyword:`for` clause is
+immediately evaluated, so that an error produced by it can be seen before any
+other possible error in the code that handles the generator expression.
+Subsequent :keyword:`for` clauses cannot be evaluated immediately since they
+may depend on the previous :keyword:`for` loop. For example: ``(x*y for x in
+range(10) for y in bar(x))``.
 
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for the detail.
@@ -394,10 +394,11 @@ is already executing raises a :exc:`ValueError` exception.
 
    Starts the execution of a generator function or resumes it at the last
    executed :keyword:`yield` expression.  When a generator function is resumed
-   with a :meth:`__next__` method, the current :keyword:`yield` expression
-   always evaluates to :const:`None`.  The execution then continues to the next
-   :keyword:`yield` expression, where the generator is suspended again, and the
-   value of the :token:`expression_list` is returned to :meth:`next`'s caller.
+   with a :meth:`~generator.__next__` method, the current :keyword:`yield`
+   expression always evaluates to :const:`None`.  The execution then continues
+   to the next :keyword:`yield` expression, where the generator is suspended
+   again, and the value of the :token:`expression_list` is returned to
+   :meth:`next`'s caller.
    If the generator exits without yielding another value, a :exc:`StopIteration`
    exception is raised.
 
