@@ -250,6 +250,7 @@ class TestTimeit(unittest.TestCase):
         s = self.run_main(seconds_per_increment=60.0, switches=['-r-5'])
         self.assertEqual(s, "10 loops, best of 1: 60 sec per loop\n")
 
+    @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
     def test_main_help(self):
         s = self.run_main(switches=['-h'])
         # Note: It's not clear that the trailing space was intended as part of
