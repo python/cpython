@@ -1357,8 +1357,8 @@ Text Sequence Type --- :class:`str`
    object: io.StringIO
 
 
-Textual data in Python is handled with :class:`str` objects, which are
-immutable sequences of Unicode code points.  String literals are
+Textual data in Python is handled with ``str`` objects, which are immutable
+:ref:`sequences <typesseq>` of Unicode code points.  String literals are
 written in a variety of ways:
 
 * Single quotes: ``'allows embedded "double" quotes'``
@@ -1376,8 +1376,8 @@ See :ref:`strings` for more about the various forms of string literal,
 including supported escape sequences, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
-Strings may also be created from other objects with the :ref:`str <func-str>`
-built-in.
+Strings may also be created from other objects with the built-in
+function :func:`str`.
 
 Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.

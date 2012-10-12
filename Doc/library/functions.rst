@@ -1206,7 +1206,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: str(object='')
               str(object[, encoding[, errors]])
 
-   Return a string version of an object, using one of the following modes:
+   Return a :ref:`string <textseq>` version of an object, using one of the
+   following modes:
 
    If *encoding* and/or *errors* are given, :func:`str` will decode the
    *object* which can either be a byte string or a character buffer using
@@ -1229,11 +1230,9 @@ are always available.  They are listed here in alphabetical order.
    Objects can specify what ``str(object)`` returns by defining a :meth:`__str__`
    special method.
 
-   For more information on strings see :ref:`typesseq` which describes sequence
-   functionality (strings are sequences), and also the string-specific methods
-   described in the :ref:`string-methods` section. To output formatted strings,
-   see the :ref:`string-formatting` section. In addition see the
-   :ref:`stringservices` section.
+   For more information on strings and string methods, see the :ref:`textseq`
+   section.  To output formatted strings, see the :ref:`string-formatting`
+   section.  In addition, see the :ref:`stringservices` section.
 
 
 .. function:: sum(iterable[, start])
