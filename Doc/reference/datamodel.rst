@@ -1173,7 +1173,7 @@ Basic customization
       builtin: print
 
    Called by the :func:`format` built-in function (and by extension, the
-   :meth:`format` method of class :class:`str`) to produce a "formatted"
+   :meth:`str.format` method of class :class:`str`) to produce a "formatted"
    string representation of an object. The ``format_spec`` argument is
    a string that contains a description of the formatting options desired.
    The interpretation of the ``format_spec`` argument is up to the type
