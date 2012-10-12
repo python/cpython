@@ -390,7 +390,7 @@ The built-in function :func:`len` returns the length of a string::
 
 .. seealso::
 
-   :ref:`typesseq`
+   :ref:`textseq`
       Strings are examples of *sequence types*, and support the common
       operations supported by such types.
 
