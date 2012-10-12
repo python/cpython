@@ -771,7 +771,7 @@ Operators And Special Methods
   respectively).
 
 * :pep:`3114`: the standard :meth:`next` method has been renamed to
-  :meth:`__next__`.
+  :meth:`~iterator.__next__`.
 
 * The :meth:`__oct__` and :meth:`__hex__` special methods are removed
   -- :func:`oct` and :func:`hex` use :meth:`__index__` now to convert
@@ -807,7 +807,7 @@ Builtins
   To get the old behavior of :func:`input`, use ``eval(input())``.
 
 * A new built-in function :func:`next` was added to call the
-  :meth:`__next__` method on an object.
+  :meth:`~iterator.__next__` method on an object.
 
 * The :func:`round` function rounding strategy and return type have
   changed.  Exact halfway cases are now rounded to the nearest even

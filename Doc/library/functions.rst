@@ -346,10 +346,10 @@ are always available.  They are listed here in alphabetical order.
 .. function:: enumerate(iterable, start=0)
 
    Return an enumerate object. *iterable* must be a sequence, an
-   :term:`iterator`, or some other object which supports iteration.  The
-   :meth:`__next__` method of the iterator returned by :func:`enumerate` returns a
-   tuple containing a count (from *start* which defaults to 0) and the
-   values obtained from iterating over *iterable*.
+   :term:`iterator`, or some other object which supports iteration.
+   The :meth:`~iterator.__next__` method of the iterator returned by
+   :func:`enumerate` returns a tuple containing a count (from *start* which
+   defaults to 0) and the values obtained from iterating over *iterable*.
 
       >>> seasons = ['Spring', 'Summer', 'Fall', 'Winter']
       >>> list(enumerate(seasons))
@@ -681,9 +681,10 @@ are always available.  They are listed here in alphabetical order.
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
-   will call *object* with no arguments for each call to its :meth:`__next__`
-   method; if the value returned is equal to *sentinel*, :exc:`StopIteration`
-   will be raised, otherwise the value will be returned.
+   will call *object* with no arguments for each call to its
+   :meth:`~iterator.__next__` method; if the value returned is equal to
+   *sentinel*, :exc:`StopIteration` will be raised, otherwise the value will
+   be returned.
 
    One useful application of the second form of :func:`iter` is to read lines of
    a file until a certain line is reached.  The following example reads a file
@@ -781,9 +782,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: next(iterator[, default])
 
-   Retrieve the next item from the *iterator* by calling its :meth:`__next__`
-   method.  If *default* is given, it is returned if the iterator is exhausted,
-   otherwise :exc:`StopIteration` is raised.
+   Retrieve the next item from the *iterator* by calling its
+   :meth:`~iterator.__next__` method.  If *default* is given, it is returned
+   if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
 
 .. function:: object()
