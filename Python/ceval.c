@@ -1834,13 +1834,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(PRINT_EXPR) {
             PyObject *value = POP();
             PyObject *hook = PySys_GetObject("displayhook");
+            PyObject *res;
             if (hook == NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "lost sys.displayhook");
                 Py_DECREF(value);
                 goto error;
             }
-            PyObject *res = PyObject_CallFunctionObjArgs(hook, value, NULL);
+            res = PyObject_CallFunctionObjArgs(hook, value, NULL);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -2394,7 +2395,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             _Py_IDENTIFIER(__import__);
             PyObject *name = GETITEM(names, oparg);
             PyObject *func = _PyDict_GetItemId(f->f_builtins, &PyId___import__);
-            PyObject *from, *level, *args;
+            PyObject *from, *level, *args, *res;
             if (func == NULL) {
                 PyErr_SetString(PyExc_ImportError,
                                 "__import__ not found");
@@ -2426,7 +2427,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 goto error;
             }
             READ_TIMESTAMP(intr0);
-            PyObject *res = PyEval_CallObject(func, args);
+            res = PyEval_CallObject(func, args);
             READ_TIMESTAMP(intr1);
             Py_DECREF(args);
             Py_DECREF(func);
