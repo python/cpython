@@ -523,10 +523,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             with open(filename, 'w', encoding='latin1') as f:
                 f.write("""
 #coding:latin1
-"non-ASCII: h\xe9"
+s = "non-ASCII: h\xe9"
 """)
             result = run_path(filename)
-            self.assertEqual(result['__doc__'], "non-ASCII: h\xe9")
+            self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
 
 def test_main():
