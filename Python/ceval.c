@@ -1402,8 +1402,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(DUP_TOP_TWO) {
             PyObject *top = TOP();
-            Py_INCREF(top);
             PyObject *second = SECOND();
+            Py_INCREF(top);
             Py_INCREF(second);
             STACKADJ(2);
             SET_TOP(top);
