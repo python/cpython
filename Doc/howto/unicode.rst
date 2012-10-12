@@ -414,7 +414,7 @@ References
 ----------
 
 The ``str`` type is described in the Python library reference at
-:ref:`typesseq`.
+:ref:`textseq`.
 
 The documentation for the :mod:`unicodedata` module.
 
