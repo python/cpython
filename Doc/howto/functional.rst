@@ -181,18 +181,18 @@ foundation for writing functional-style programs: iterators.
 
 An iterator is an object representing a stream of data; this object returns the
 data one element at a time.  A Python iterator must support a method called
-``__next__()`` that takes no arguments and always returns the next element of
-the stream.  If there are no more elements in the stream, ``__next__()`` must
-raise the ``StopIteration`` exception.  Iterators don't have to be finite,
-though; it's perfectly reasonable to write an iterator that produces an infinite
-stream of data.
+:meth:`~iterator.__next__` that takes no arguments and always returns the next
+element of the stream.  If there are no more elements in the stream,
+:meth:`~iterator.__next__` must raise the :exc:`StopIteration` exception.
+Iterators don't have to be finite, though; it's perfectly reasonable to write
+an iterator that produces an infinite stream of data.
 
 The built-in :func:`iter` function takes an arbitrary object and tries to return
 an iterator that will return the object's contents or elements, raising
 :exc:`TypeError` if the object doesn't support iteration.  Several of Python's
 built-in data types support iteration, the most common being lists and
-dictionaries.  An object is called an **iterable** object if you can get an
-iterator for it.
+dictionaries.  An object is called :term:`iterable` if you can get an iterator
+for it.
 
 You can experiment with the iteration interface manually:
 
@@ -200,7 +200,7 @@ You can experiment with the iteration interface manually:
     >>> it = iter(L)
     >>> it
     <...iterator object at ...>
-    >>> it.__next__()
+    >>> it.__next__()  # same as next(it)
     1
     >>> next(it)
     2
@@ -213,9 +213,9 @@ You can experiment with the iteration interface manually:
     >>>
 
 Python expects iterable objects in several different contexts, the most
-important being the ``for`` statement.  In the statement ``for X in Y``, Y must
-be an iterator or some object for which ``iter()`` can create an iterator.
-These two statements are equivalent::
+important being the :keyword:`for` statement.  In the statement ``for X in Y``,
+Y must be an iterator or some object for which :func:`iter` can create an
+iterator.  These two statements are equivalent::
 
 
     for i in iter(obj):
@@ -246,16 +246,16 @@ Built-in functions such as :func:`max` and :func:`min` can take a single
 iterator argument and will return the largest or smallest element.  The ``"in"``
 and ``"not in"`` operators also support iterators: ``X in iterator`` is true if
 X is found in the stream returned by the iterator.  You'll run into obvious
-problems if the iterator is infinite; ``max()``, ``min()``
+problems if the iterator is infinite; :func:`max`, :func:`min`
 will never return, and if the element X never appears in the stream, the
 ``"in"`` and ``"not in"`` operators won't return either.
 
 Note that you can only go forward in an iterator; there's no way to get the
 previous element, reset the iterator, or make a copy of it.  Iterator objects
 can optionally provide these additional capabilities, but the iterator protocol
-only specifies the ``next()`` method.  Functions may therefore consume all of
-the iterator's output, and if you need to do something different with the same
-stream, you'll have to create a new iterator.
+only specifies the :meth:`~iterator.__next__` method.  Functions may therefore
+consume all of the iterator's output, and if you need to do something different
+with the same stream, you'll have to create a new iterator.
 
 
 
@@ -296,7 +296,7 @@ ordering of the objects in the dictionary.
 Applying :func:`iter` to a dictionary always loops over the keys, but
 dictionaries have methods that return other iterators.  If you want to iterate
 over values or key/value pairs, you can explicitly call the
-:meth:`values` or :meth:`items` methods to get an appropriate iterator.
+:meth:`~dict.values` or :meth:`~dict.items` methods to get an appropriate iterator.
 
 The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
@@ -305,9 +305,9 @@ of ``(key, value)`` tuples:
     >>> dict(iter(L))
     {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
 
-Files also support iteration by calling the ``readline()`` method until there
-are no more lines in the file.  This means you can read each line of a file like
-this::
+Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
+method until there are no more lines in the file.  This means you can read each
+line of a file like this::
 
     for line in file:
         # do something for each line
@@ -415,7 +415,7 @@ list is 9 elements long:
 
     >>> seq1 = 'abc'
     >>> seq2 = (1,2,3)
-    >>> [(x,y) for x in seq1 for y in seq2]
+    >>> [(x, y) for x in seq1 for y in seq2]
     [('a', 1), ('a', 2), ('a', 3),
      ('b', 1), ('b', 2), ('b', 3),
      ('c', 1), ('c', 2), ('c', 3)]
@@ -425,9 +425,9 @@ creating a tuple, it must be surrounded with parentheses.  The first list
 comprehension below is a syntax error, while the second one is correct::
 
     # Syntax error
-    [ x,y for x in seq1 for y in seq2]
+    [x, y for x in seq1 for y in seq2]
     # Correct
-    [ (x,y) for x in seq1 for y in seq2]
+    [(x, y) for x in seq1 for y in seq2]
 
 
 Generators
@@ -454,9 +454,9 @@ Here's the simplest example of a generator function:
         for i in range(N):
             yield i
 
-Any function containing a ``yield`` keyword is a generator function; this is
-detected by Python's :term:`bytecode` compiler which compiles the function
-specially as a result.
+Any function containing a :keyword:`yield` keyword is a generator function;
+this is detected by Python's :term:`bytecode` compiler which compiles the
+function specially as a result.
 
 When you call a generator function, it doesn't return a single value; instead it
 returns a generator object that supports the iterator protocol.  On executing
@@ -464,7 +464,8 @@ the ``yield`` expression, the generator outputs the value of ``i``, similar to a
 ``return`` statement.  The big difference between ``yield`` and a ``return``
 statement is that on reaching a ``yield`` the generator's state of execution is
 suspended and local variables are preserved.  On the next call to the
-generator's ``.__next__()`` method, the function will resume executing.
+generator's :meth:`~generator.__next__` method, the function will resume
+executing.
 
 Here's a sample usage of the ``generate_ints()`` generator:
 
@@ -491,17 +492,19 @@ value, and signals the end of the procession of values; after executing a
 ``return`` the generator cannot return any further values.  ``return`` with a
 value, such as ``return 5``, is a syntax error inside a generator function.  The
 end of the generator's results can also be indicated by raising
-``StopIteration`` manually, or by just letting the flow of execution fall off
+:exc:`StopIteration` manually, or by just letting the flow of execution fall off
 the bottom of the function.
 
 You could achieve the effect of generators manually by writing your own class
 and storing all the local variables of the generator as instance variables.  For
 example, returning a list of integers could be done by setting ``self.count`` to
-0, and having the ``__next__()`` method increment ``self.count`` and return it.
+0, and having the :meth:`~iterator.__next__` method increment ``self.count`` and
+return it.
 However, for a moderately complicated generator, writing a corresponding class
 can be much messier.
 
-The test suite included with Python's library, ``test_generators.py``, contains
+The test suite included with Python's library,
+:source:`Lib/test/test_generators.py`, contains
 a number of more interesting examples.  Here's one generator that implements an
 in-order traversal of a tree using generators recursively. ::
 
@@ -544,23 +547,23 @@ when you're doing something with the returned value, as in the above example.
 The parentheses aren't always necessary, but it's easier to always add them
 instead of having to remember when they're needed.
 
-(PEP 342 explains the exact rules, which are that a ``yield``-expression must
+(:pep:`342` explains the exact rules, which are that a ``yield``-expression must
 always be parenthesized except when it occurs at the top-level expression on the
 right-hand side of an assignment.  This means you can write ``val = yield i``
 but have to use parentheses when there's an operation, as in ``val = (yield i)
 + 12``.)
 
-Values are sent into a generator by calling its ``send(value)`` method.  This
-method resumes the generator's code and the ``yield`` expression returns the
-specified value.  If the regular ``__next__()`` method is called, the ``yield``
-returns ``None``.
+Values are sent into a generator by calling its :meth:`send(value)
+<generator.send>` method.  This method resumes the generator's code and the
+``yield`` expression returns the specified value.  If the regular
+:meth:`~generator.__next__` method is called, the ``yield`` returns ``None``.
 
 Here's a simple counter that increments by 1 and allows changing the value of
 the internal counter.
 
 .. testcode::
 
-    def counter (maximum):
+    def counter(maximum):
         i = 0
         while i < maximum:
             val = (yield i)
@@ -589,20 +592,23 @@ And here's an example of changing the counter:
 
 Because ``yield`` will often be returning ``None``, you should always check for
 this case.  Don't just use its value in expressions unless you're sure that the
-``send()`` method will be the only method used resume your generator function.
+:meth:`~generator.send` method will be the only method used resume your
+generator function.
 
-In addition to ``send()``, there are two other new methods on generators:
+In addition to :meth:`~generator.send`, there are two other methods on
+generators:
 
-* ``throw(type, value=None, traceback=None)`` is used to raise an exception
-  inside the generator; the exception is raised by the ``yield`` expression
-  where the generator's execution is paused.
+* :meth:`throw(type, value=None, traceback=None) <generator.throw>` is used to
+  raise an exception inside the generator; the exception is raised by the
+  ``yield`` expression where the generator's execution is paused.
 
-* ``close()`` raises a :exc:`GeneratorExit` exception inside the generator to
-  terminate the iteration.  On receiving this exception, the generator's code
-  must either raise :exc:`GeneratorExit` or :exc:`StopIteration`; catching the
-  exception and doing anything else is illegal and will trigger a
-  :exc:`RuntimeError`.  ``close()`` will also be called by Python's garbage
-  collector when the generator is garbage-collected.
+* :meth:`~generator.close` raises a :exc:`GeneratorExit` exception inside the
+  generator to terminate the iteration.  On receiving this exception, the
+  generator's code must either raise :exc:`GeneratorExit` or
+  :exc:`StopIteration`; catching the exception and doing anything else is
+  illegal and will trigger a :exc:`RuntimeError`.  :meth:`~generator.close`
+  will also be called by Python's garbage collector when the generator is
+  garbage-collected.
 
   If you need to run cleanup code when a :exc:`GeneratorExit` occurs, I suggest
   using a ``try: ... finally:`` suite instead of catching :exc:`GeneratorExit`.
@@ -624,12 +630,11 @@ Let's look in more detail at built-in functions often used with iterators.
 Two of Python's built-in functions, :func:`map` and :func:`filter` duplicate the
 features of generator expressions:
 
-``map(f, iterA, iterB, ...)`` returns an iterator over the sequence
+:func:`map(f, iterA, iterB, ...) <map>` returns an iterator over the sequence
  ``f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
 
     >>> def upper(s):
     ...     return s.upper()
-
 
     >>> list(map(upper, ['sentence', 'fragment']))
     ['SENTENCE', 'FRAGMENT']
@@ -638,11 +643,11 @@ features of generator expressions:
 
 You can of course achieve the same effect with a list comprehension.
 
-``filter(predicate, iter)`` returns an iterator over all the sequence elements
-that meet a certain condition, and is similarly duplicated by list
-comprehensions.  A **predicate** is a function that returns the truth value of
-some condition; for use with :func:`filter`, the predicate must take a single
-value.
+:func:`filter(predicate, iter) <filter>` returns an iterator over all the
+sequence elements that meet a certain condition, and is similarly duplicated by
+list comprehensions.  A **predicate** is a function that returns the truth
+value of some condition; for use with :func:`filter`, the predicate must take a
+single value.
 
     >>> def is_even(x):
     ...     return (x % 2) == 0
@@ -657,8 +662,8 @@ This can also be written as a list comprehension:
     [0, 2, 4, 6, 8]
 
 
-``enumerate(iter)`` counts off the elements in the iterable, returning 2-tuples
-containing the count and each element. ::
+:func:`enumerate(iter) <enumerate>` counts off the elements in the iterable,
+returning 2-tuples containing the count and each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
     ...     print(item)
@@ -674,10 +679,10 @@ indexes at which certain conditions are met::
         if line.strip() == '':
             print('Blank line at line #%i' % i)
 
-``sorted(iterable, [key=None], [reverse=False])`` collects all the elements of
-the iterable into a list, sorts the list, and returns the sorted result.  The
-``key``, and ``reverse`` arguments are passed through to the constructed list's
-``.sort()`` method. ::
+:func:`sorted(iterable, key=None, reverse=False) <sorted>` collects all the
+elements of the iterable into a list, sorts the list, and returns the sorted
+result.  The *key*, and *reverse* arguments are passed through to the
+constructed list's :meth:`~list.sort` method. ::
 
     >>> import random
     >>> # Generate 8 random numbers between [0, 10000)
@@ -689,14 +694,13 @@ the iterable into a list, sorts the list, and returns the sorted result.  The
     >>> sorted(rand_list, reverse=True)
     [9878, 9828, 8442, 7953, 6431, 6213, 2207, 769]
 
-(For a more detailed discussion of sorting, see the Sorting mini-HOWTO in the
-Python wiki at http://wiki.python.org/moin/HowTo/Sorting.)
+(For a more detailed discussion of sorting, see the :ref:`sortinghowto`.)
 
 
-The ``any(iter)`` and ``all(iter)`` built-ins look at the truth values of an
-iterable's contents.  :func:`any` returns True if any element in the iterable is
-a true value, and :func:`all` returns True if all of the elements are true
-values:
+The :func:`any(iter) <any>` and :func:`all(iter) <all>` built-ins look at the
+truth values of an iterable's contents.  :func:`any` returns True if any element
+in the iterable is a true value, and :func:`all` returns True if all of the
+elements are true values:
 
     >>> any([0,1,0])
     True
@@ -712,7 +716,7 @@ values:
     True
 
 
-``zip(iterA, iterB, ...)`` takes one element from each iterable and
+:func:`zip(iterA, iterB, ...) <zip>` takes one element from each iterable and
 returns them in a tuple::
 
     zip(['a', 'b', 'c'], (1, 2, 3)) =>
@@ -752,42 +756,44 @@ The module's functions fall into a few broad classes:
 Creating new iterators
 ----------------------
 
-``itertools.count(n)`` returns an infinite stream of integers, increasing by 1
-each time.  You can optionally supply the starting number, which defaults to 0::
+:func:`itertools.count(n) <itertools.count>` returns an infinite stream of
+integers, increasing by 1 each time.  You can optionally supply the starting
+number, which defaults to 0::
 
     itertools.count() =>
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
     itertools.count(10) =>
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
 
-``itertools.cycle(iter)`` saves a copy of the contents of a provided iterable
-and returns a new iterator that returns its elements from first to last.  The
-new iterator will repeat these elements infinitely. ::
+:func:`itertools.cycle(iter) <itertools.cycle>` saves a copy of the contents of
+a provided iterable and returns a new iterator that returns its elements from
+first to last.  The new iterator will repeat these elements infinitely. ::
 
     itertools.cycle([1,2,3,4,5]) =>
       1, 2, 3, 4, 5, 1, 2, 3, 4, 5, ...
 
-``itertools.repeat(elem, [n])`` returns the provided element ``n`` times, or
-returns the element endlessly if ``n`` is not provided. ::
+:func:`itertools.repeat(elem, [n]) <itertools.repeat>` returns the provided
+element *n* times, or returns the element endlessly if *n* is not provided. ::
 
     itertools.repeat('abc') =>
       abc, abc, abc, abc, abc, abc, abc, abc, abc, abc, ...
     itertools.repeat('abc', 5) =>
       abc, abc, abc, abc, abc
 
-``itertools.chain(iterA, iterB, ...)`` takes an arbitrary number of iterables as
-input, and returns all the elements of the first iterator, then all the elements
-of the second, and so on, until all of the iterables have been exhausted. ::
+:func:`itertools.chain(iterA, iterB, ...) <itertools.chain>` takes an arbitrary
+number of iterables as input, and returns all the elements of the first
+iterator, then all the elements of the second, and so on, until all of the
+iterables have been exhausted. ::
 
     itertools.chain(['a', 'b', 'c'], (1, 2, 3)) =>
       a, b, c, 1, 2, 3
 
-``itertools.islice(iter, [start], stop, [step])`` returns a stream that's a
-slice of the iterator.  With a single ``stop`` argument, it will return the
-first ``stop`` elements.  If you supply a starting index, you'll get
-``stop-start`` elements, and if you supply a value for ``step``, elements will
-be skipped accordingly.  Unlike Python's string and list slicing, you can't use
-negative values for ``start``, ``stop``, or ``step``. ::
+:func:`itertools.islice(iter, [start], stop, [step]) <itertools.islice>` returns
+a stream that's a slice of the iterator.  With a single *stop* argument, it
+will return the first *stop* elements.  If you supply a starting index, you'll
+get *stop-start* elements, and if you supply a value for *step*, elements
+will be skipped accordingly.  Unlike Python's string and list slicing, you can't
+use negative values for *start*, *stop*, or *step*. ::
 
     itertools.islice(range(10), 8) =>
       0, 1, 2, 3, 4, 5, 6, 7
@@ -796,9 +802,10 @@ negative values for ``start``, ``stop``, or ``step``. ::
     itertools.islice(range(10), 2, 8, 2) =>
       2, 4, 6
 
-``itertools.tee(iter, [n])`` replicates an iterator; it returns ``n``
-independent iterators that will all return the contents of the source iterator.
-If you don't supply a value for ``n``, the default is 2.  Replicating iterators
+:func:`itertools.tee(iter, [n]) <itertools.tee>` replicates an iterator; it
+returns *n* independent iterators that will all return the contents of the
+source iterator.
+If you don't supply a value for *n*, the default is 2.  Replicating iterators
 requires saving some of the contents of the source iterator, so this can consume
 significant memory if the iterator is large and one of the new iterators is
 consumed more than the others. ::
@@ -816,19 +823,21 @@ consumed more than the others. ::
 Calling functions on elements
 -----------------------------
 
-The ``operator`` module contains a set of functions corresponding to Python's
-operators.  Some examples are ``operator.add(a, b)`` (adds two values),
-``operator.ne(a, b)`` (same as ``a!=b``), and ``operator.attrgetter('id')``
-(returns a callable that fetches the ``"id"`` attribute).
+The :mod:`operator` module contains a set of functions corresponding to Python's
+operators.  Some examples are :func:`operator.add(a, b) <operator.add>` (adds
+two values), :func:`operator.ne(a, b)  <operator.ne>` (same as ``a != b``), and
+:func:`operator.attrgetter('id') <operator.attrgetter>`
+(returns a callable that fetches the ``.id`` attribute).
 
-``itertools.starmap(func, iter)`` assumes that the iterable will return a stream
-of tuples, and calls ``f()`` using these tuples as the arguments::
+:func:`itertools.starmap(func, iter) <itertools.starmap>` assumes that the
+iterable will return a stream of tuples, and calls *func* using these tuples as
+the arguments::
 
     itertools.starmap(os.path.join,
-                      [('/usr', 'bin', 'java'), ('/bin', 'python'),
-                       ('/usr', 'bin', 'perl'),('/usr', 'bin', 'ruby')])
+                      [('/bin', 'python'), ('/usr', 'bin', 'java'),
+                       ('/usr', 'bin', 'perl'), ('/usr', 'bin', 'ruby')])
     =>
-      /usr/bin/java, /bin/python, /usr/bin/perl, /usr/bin/ruby
+      /bin/python, /usr/bin/java, /usr/bin/perl, /usr/bin/ruby
 
 
 Selecting elements
@@ -837,20 +846,18 @@ Selecting elements
 Another group of functions chooses a subset of an iterator's elements based on a
 predicate.
 
-``itertools.filterfalse(predicate, iter)`` is the opposite, returning all
-elements for which the predicate returns false::
+:func:`itertools.filterfalse(predicate, iter) <itertools.filterfalse>` is the
+opposite, returning all elements for which the predicate returns false::
 
     itertools.filterfalse(is_even, itertools.count()) =>
       1, 3, 5, 7, 9, 11, 13, 15, ...
 
-``itertools.takewhile(predicate, iter)`` returns elements for as long as the
-predicate returns true.  Once the predicate returns false, the iterator will
-signal the end of its results.
-
-::
+:func:`itertools.takewhile(predicate, iter) <itertools.takewhile>` returns
+elements for as long as the predicate returns true.  Once the predicate returns
+false, the iterator will signal the end of its results. ::
 
     def less_than_10(x):
-        return (x < 10)
+        return x < 10
 
     itertools.takewhile(less_than_10, itertools.count()) =>
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -858,10 +865,9 @@ signal the end of its results.
     itertools.takewhile(is_even, itertools.count()) =>
       0
 
-``itertools.dropwhile(predicate, iter)`` discards elements while the predicate
-returns true, and then returns the rest of the iterable's results.
-
-::
+:func:`itertools.dropwhile(predicate, iter) <itertools.dropwhile>` discards
+elements while the predicate returns true, and then returns the rest of the
+iterable's results. ::
 
     itertools.dropwhile(less_than_10, itertools.count()) =>
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
@@ -873,14 +879,14 @@ returns true, and then returns the rest of the iterable's results.
 Grouping elements
 -----------------
 
-The last function I'll discuss, ``itertools.groupby(iter, key_func=None)``, is
-the most complicated.  ``key_func(elem)`` is a function that can compute a key
-value for each element returned by the iterable.  If you don't supply a key
-function, the key is simply each element itself.
+The last function I'll discuss, :func:`itertools.groupby(iter, key_func=None)
+<itertools.groupby>`, is the most complicated.  ``key_func(elem)`` is a function
+that can compute a key value for each element returned by the iterable.  If you
+don't supply a key function, the key is simply each element itself.
 
-``groupby()`` collects all the consecutive elements from the underlying iterable
-that have the same key value, and returns a stream of 2-tuples containing a key
-value and an iterator for the elements with that key.
+:func:`~itertools.groupby` collects all the consecutive elements from the
+underlying iterable that have the same key value, and returns a stream of
+2-tuples containing a key value and an iterator for the elements with that key.
 
 ::
 
@@ -890,7 +896,7 @@ value and an iterator for the elements with that key.
                  ...
                 ]
 
-    def get_state (city_state):
+    def get_state(city_state):
         return city_state[1]
 
     itertools.groupby(city_list, get_state) =>
@@ -906,9 +912,9 @@ value and an iterator for the elements with that key.
     iterator-3 =>
       ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ')
 
-``groupby()`` assumes that the underlying iterable's contents will already be
-sorted based on the key.  Note that the returned iterators also use the
-underlying iterable, so you have to consume the results of iterator-1 before
+:func:`~itertools.groupby` assumes that the underlying iterable's contents will
+already be sorted based on the key.  Note that the returned iterators also use
+the underlying iterable, so you have to consume the results of iterator-1 before
 requesting iterator-2 and its corresponding key.
 
 
@@ -926,33 +932,34 @@ Consider a Python function ``f(a, b, c)``; you may wish to create a new function
 ``g(b, c)`` that's equivalent to ``f(1, b, c)``; you're filling in a value for
 one of ``f()``'s parameters.  This is called "partial function application".
 
-The constructor for ``partial`` takes the arguments ``(function, arg1, arg2,
-... kwarg1=value1, kwarg2=value2)``.  The resulting object is callable, so you
-can just call it to invoke ``function`` with the filled-in arguments.
+The constructor for :func:`~functools.partial` takes the arguments
+``(function, arg1, arg2, ..., kwarg1=value1, kwarg2=value2)``.  The resulting
+object is callable, so you can just call it to invoke ``function`` with the
+filled-in arguments.
 
 Here's a small but realistic example::
 
     import functools
 
-    def log (message, subsystem):
-        "Write the contents of 'message' to the specified subsystem."
+    def log(message, subsystem):
+        """Write the contents of 'message' to the specified subsystem."""
         print('%s: %s' % (subsystem, message))
         ...
 
     server_log = functools.partial(log, subsystem='server')
     server_log('Unable to open socket')
 
-``functools.reduce(func, iter, [initial_value])`` cumulatively performs an
-operation on all the iterable's elements and, therefore, can't be applied to
-infinite iterables.  (Note it is not in :mod:`builtins`, but in the
-:mod:`functools` module.)  ``func`` must be a function that takes two elements
-and returns a single value.  :func:`functools.reduce` takes the first two
-elements A and B returned by the iterator and calculates ``func(A, B)``.  It
-then requests the third element, C, calculates ``func(func(A, B), C)``, combines
-this result with the fourth element returned, and continues until the iterable
-is exhausted.  If the iterable returns no values at all, a :exc:`TypeError`
-exception is raised.  If the initial value is supplied, it's used as a starting
-point and ``func(initial_value, A)`` is the first calculation. ::
+:func:`functools.reduce(func, iter, [initial_value]) <functools.reduce>`
+cumulatively performs an operation on all the iterable's elements and,
+therefore, can't be applied to infinite iterables. *func* must be a function
+that takes two elements and returns a single value.  :func:`functools.reduce`
+takes the first two elements A and B returned by the iterator and calculates
+``func(A, B)``.  It then requests the third element, C, calculates
+``func(func(A, B), C)``, combines this result with the fourth element returned,
+and continues until the iterable is exhausted.  If the iterable returns no
+values at all, a :exc:`TypeError` exception is raised.  If the initial value is
+supplied, it's used as a starting point and ``func(initial_value, A)`` is the
+first calculation. ::
 
     >>> import operator, functools
     >>> functools.reduce(operator.concat, ['A', 'BB', 'C'])
@@ -978,8 +985,8 @@ built-in called :func:`sum` to compute it:
     >>> sum([])
     0
 
-For many uses of :func:`functools.reduce`, though, it can be clearer to just write the
-obvious :keyword:`for` loop::
+For many uses of :func:`functools.reduce`, though, it can be clearer to just
+write the obvious :keyword:`for` loop::
 
    import functools
    # Instead of:
@@ -1023,27 +1030,22 @@ need to define a new function at all::
     existing_files = filter(os.path.exists, file_list)
 
 If the function you need doesn't exist, you need to write it.  One way to write
-small functions is to use the ``lambda`` statement.  ``lambda`` takes a number
-of parameters and an expression combining these parameters, and creates a small
-function that returns the value of the expression::
-
-    lowercase = lambda x: x.lower()
-
-    print_assign = lambda name, value: name + '=' + str(value)
+small functions is to use the :keyword:`lambda` statement.  ``lambda`` takes a
+number of parameters and an expression combining these parameters, and creates
+an anonymous function that returns the value of the expression::
 
     adder = lambda x, y: x+y
+
+    print_assign = lambda name, value: name + '=' + str(value)
 
 An alternative is to just use the ``def`` statement and define a function in the
 usual way::
 
-    def lowercase(x):
-        return x.lower()
+    def adder(x, y):
+        return x + y
 
     def print_assign(name, value):
         return name + '=' + str(value)
-
-    def adder(x,y):
-        return x + y
 
 Which alternative is preferable?  That's a style question; my usual course is to
 avoid using ``lambda``.
@@ -1053,9 +1055,7 @@ functions it can define.  The result has to be computable as a single
 expression, which means you can't have multiway ``if... elif... else``
 comparisons or ``try... except`` statements.  If you try to do too much in a
 ``lambda`` statement, you'll end up with an overly complicated expression that's
-hard to read.  Quick, what's the following code doing?
-
-::
+hard to read.  Quick, what's the following code doing? ::
 
     import functools
     total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
@@ -1065,7 +1065,7 @@ out what's going on.  Using a short nested ``def`` statements makes things a
 little bit better::
 
     import functools
-    def combine (a, b):
+    def combine(a, b):
         return 0, a[1] + b[1]
 
     total = functools.reduce(combine, items)[1]
@@ -1085,12 +1085,12 @@ Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
 Fredrik Lundh once suggested the following set of rules for refactoring uses of
 ``lambda``:
 
-1) Write a lambda function.
-2) Write a comment explaining what the heck that lambda does.
-3) Study the comment for a while, and think of a name that captures the essence
+1. Write a lambda function.
+2. Write a comment explaining what the heck that lambda does.
+3. Study the comment for a while, and think of a name that captures the essence
    of the comment.
-4) Convert the lambda to a def statement, using that name.
-5) Remove the comment.
+4. Convert the lambda to a def statement, using that name.
+5. Remove the comment.
 
 I really like these rules, but you're free to disagree
 about whether this lambda-free style is better.
