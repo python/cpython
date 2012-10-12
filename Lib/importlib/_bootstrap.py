@@ -237,7 +237,7 @@ class _ModuleLock:
                     self.wakeup.release()
 
     def __repr__(self):
-        return "_ModuleLock(%r) at %d" % (self.name, id(self))
+        return "_ModuleLock({!r}) at {}".format(self.name, id(self))
 
 
 class _DummyModuleLock:
@@ -258,7 +258,7 @@ class _DummyModuleLock:
         self.count -= 1
 
     def __repr__(self):
-        return "_DummyModuleLock(%r) at %d" % (self.name, id(self))
+        return "_DummyModuleLock({!r}) at {}".format(self.name, id(self))
 
 
 # The following two functions are for consumption by Python/import.c.
@@ -1434,7 +1434,7 @@ class FileFinder:
         return path_hook_for_FileFinder
 
     def __repr__(self):
-        return "FileFinder(%r)" % (self.path,)
+        return "FileFinder({!r})".format(self.path)
 
 
 # Import itself ###############################################################
