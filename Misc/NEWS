@@ -414,6 +414,11 @@ Library
 Extension Modules
 -----------------
 
+- Issue #12268: File readline, readlines and read or readall methods
+  no longer lose data when an underlying read system call is interrupted
+  within an io module object.  IOError is no longer raised due to a read
+  system call returning EINTR from within these methods.
+
 - Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
   method doesn't require an argument again.
 
