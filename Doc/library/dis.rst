@@ -660,10 +660,10 @@ the more significant byte last.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``TOS`` is an :term:`iterator`.  Call its :meth:`__next__` method.  If this
-   yields a new value, push it on the stack (leaving the iterator below it).  If
-   the iterator indicates it is exhausted ``TOS`` is popped, and the byte code
-   counter is incremented by *delta*.
+   ``TOS`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   If this yields a new value, push it on the stack (leaving the iterator below
+   it).  If the iterator indicates it is exhausted ``TOS`` is popped, and the
+   byte code counter is incremented by *delta*.
 
 
 .. opcode:: LOAD_GLOBAL (namei)

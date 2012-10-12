@@ -600,9 +600,9 @@ Callable types
       A function or method which uses the :keyword:`yield` statement (see section
       :ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
       called, always returns an iterator object which can be used to execute the
-      body of the function:  calling the iterator's :meth:`__next__` method will
-      cause the function to execute until it provides a value using the
-      :keyword:`yield` statement.  When the function executes a
+      body of the function:  calling the iterator's :meth:`iterator__next__`
+      method will cause the function to execute until it provides a value
+      using the :keyword:`yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -1189,7 +1189,7 @@ Basic customization
       builtin: print
 
    Called by the :func:`format` built-in function (and by extension, the
-   :meth:`format` method of class :class:`str`) to produce a "formatted"
+   :meth:`str.format` method of class :class:`str`) to produce a "formatted"
    string representation of an object. The ``format_spec`` argument is
    a string that contains a description of the formatting options desired.
    The interpretation of the ``format_spec`` argument is up to the type
