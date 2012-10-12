@@ -198,7 +198,7 @@ You can experiment with the iteration interface manually:
 
     >>> L = [1,2,3]
     >>> it = iter(L)
-    >>> it
+    >>> it  #doctest: +ELLIPSIS
     <...iterator object at ...>
     >>> it.__next__()  # same as next(it)
     1
@@ -267,15 +267,11 @@ sequence type, such as strings, will automatically support creation of an
 iterator.
 
 Calling :func:`iter` on a dictionary returns an iterator that will loop over the
-dictionary's keys:
-
-.. not a doctest since dict ordering varies across Pythons
-
-::
+dictionary's keys::
 
     >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
     ...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
-    >>> for key in m:
+    >>> for key in m:  #doctest: +SKIP
     ...     print(key, m[key])
     Mar 3
     Feb 2
@@ -303,7 +299,7 @@ The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
 
     >>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
-    >>> dict(iter(L))
+    >>> dict(iter(L))  #doctest: +SKIP
     {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
 
 Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
@@ -411,12 +407,9 @@ clauses, the length of the resulting output will be equal to the product of the
 lengths of all the sequences.  If you have two lists of length 3, the output
 list is 9 elements long:
 
-.. doctest::
-    :options: +NORMALIZE_WHITESPACE
-
     >>> seq1 = 'abc'
     >>> seq2 = (1,2,3)
-    >>> [(x, y) for x in seq1 for y in seq2]
+    >>> [(x, y) for x in seq1 for y in seq2]  #doctest: +NORMALIZE_WHITESPACE
     [('a', 1), ('a', 2), ('a', 3),
      ('b', 1), ('b', 2), ('b', 3),
      ('c', 1), ('c', 2), ('c', 3)]
@@ -449,11 +442,9 @@ is what generators provide; they can be thought of as resumable functions.
 
 Here's the simplest example of a generator function:
 
-.. testcode::
-
-    def generate_ints(N):
-        for i in range(N):
-            yield i
+    >>> def generate_ints(N):
+    ...    for i in range(N):
+    ...        yield i
 
 Any function containing a :keyword:`yield` keyword is a generator function;
 this is detected by Python's :term:`bytecode` compiler which compiles the
@@ -471,7 +462,7 @@ executing.
 Here's a sample usage of the ``generate_ints()`` generator:
 
     >>> gen = generate_ints(3)
-    >>> gen
+    >>> gen  #doctest: +ELLIPSIS
     <generator object generate_ints at ...>
     >>> next(gen)
     0
@@ -576,16 +567,16 @@ the internal counter.
 
 And here's an example of changing the counter:
 
-    >>> it = counter(10)
-    >>> next(it)
+    >>> it = counter(10)  #doctest: +SKIP
+    >>> next(it)  #doctest: +SKIP
     0
-    >>> next(it)
+    >>> next(it)  #doctest: +SKIP
     1
-    >>> it.send(8)
+    >>> it.send(8)  #doctest: +SKIP
     8
-    >>> next(it)
+    >>> next(it)  #doctest: +SKIP
     9
-    >>> next(it)
+    >>> next(it)  #doctest: +SKIP
     Traceback (most recent call last):
       File "t.py", line 15, in ?
         it.next()
@@ -688,11 +679,11 @@ constructed list's :meth:`~list.sort` method. ::
     >>> import random
     >>> # Generate 8 random numbers between [0, 10000)
     >>> rand_list = random.sample(range(10000), 8)
-    >>> rand_list
+    >>> rand_list  #doctest: +SKIP
     [769, 7953, 9828, 6431, 8442, 9878, 6213, 2207]
-    >>> sorted(rand_list)
+    >>> sorted(rand_list)  #doctest: +SKIP
     [769, 2207, 6213, 6431, 7953, 8442, 9828, 9878]
-    >>> sorted(rand_list, reverse=True)
+    >>> sorted(rand_list, reverse=True)  #doctest: +SKIP
     [9878, 9828, 8442, 7953, 6431, 6213, 2207, 769]
 
 (For a more detailed discussion of sorting, see the :ref:`sortinghowto`.)
