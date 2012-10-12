@@ -122,6 +122,8 @@ are always available.  They are listed here in alphabetical order.
 
    Without an argument, an array of size 0 is created.
 
+   See also :ref:`binaryseq` and :ref:`typebytearray`.
+
 
 .. _func-bytes:
 .. function:: bytes([source[, encoding[, errors]]])
@@ -134,6 +136,8 @@ are always available.  They are listed here in alphabetical order.
    Accordingly, constructor arguments are interpreted as for :func:`bytearray`.
 
    Bytes objects can also be created with literals, see :ref:`strings`.
+
+   See also :ref:`binaryseq`, :ref:`typebytes`, and :ref:`bytes-methods`.
 
 
 .. function:: callable(object)
@@ -687,6 +691,8 @@ are always available.  They are listed here in alphabetical order.
    method; if the value returned is equal to *sentinel*, :exc:`StopIteration`
    will be raised, otherwise the value will be returned.
 
+   See also :ref:`typeiter`.
+
    One useful application of the second form of :func:`iter` is to read lines of
    a file until a certain line is reached.  The following example reads a file
    until the :meth:`readline` method returns an empty string::
@@ -707,7 +713,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
-   sequence type, as documented in :ref:`typesseq`.
+   sequence type, as documented in :ref:`typesseq-list` and :ref:`typesseq`.
 
 
 .. function:: locals()
@@ -1081,7 +1087,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
-   sequence type, as documented in :ref:`typesseq`.
+   sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
 
 
 .. function:: repr(object)
@@ -1309,7 +1315,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
-   sequence type, as documented in :ref:`typesseq`.
+   sequence type, as documented in :ref:`typesseq-tuple` and :ref:`typesseq`.
 
 
 .. function:: type(object)
@@ -1341,6 +1347,8 @@ are always available.  They are listed here in alphabetical order.
       ...     a = 1
       ...
       >>> X = type('X', (object,), dict(a=1))
+
+   See also :ref:`bltin-type-objects`.
 
 
 .. function:: vars([object])

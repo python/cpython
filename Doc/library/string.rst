@@ -10,7 +10,7 @@
 
 .. seealso::
 
-   :ref:`typesseq`
+   :ref:`textseq`
 
    :ref:`string-methods`
 
