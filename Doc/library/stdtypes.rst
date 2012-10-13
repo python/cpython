@@ -2114,33 +2114,41 @@ Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 'jack', 4127: 'sjoerd'}``, or by the :class:`dict` constructor.
 
-.. class:: dict([arg])
+.. class:: dict(**kwarg)
+           dict(mapping, **kwarg)
+           dict(iterable, **kwarg)
 
-   Return a new dictionary initialized from an optional positional argument or
-   from a set of keyword arguments.  If no arguments are given, return a new
-   empty dictionary.  If the positional argument *arg* is a mapping object,
-   return a dictionary mapping the same keys to the same values as does the
-   mapping object.  Otherwise the positional argument must be a sequence, a
-   container that supports iteration, or an iterator object.  The elements of
-   the argument must each also be of one of those kinds, and each must in turn
-   contain exactly two objects.  The first is used as a key in the new
-   dictionary, and the second as the key's value.  If a given key is seen more
-   than once, the last value associated with it is retained in the new
+   Return a new dictionary initialized from an optional positional argument
+   and a possibly empty set of keyword arguments.
+
+   If no positional argument is given, an empty dictionary is created.
+   If a positional argument is given and it is a mapping object, a dictionary
+   is created with the same key-value pairs as the mapping object.  Otherwise,
+   the positional argument must be an :term:`iterator` object.  Each item in
+   the iterable must itself be an iterator with exactly two objects.  The
+   first object of each item becomes a key in the new dictionary, and the
+   second object the corresponding value.  If a key occurs more than once, the
+   last value for that key becomes the corresponding value in the new
    dictionary.
 
-   If keyword arguments are given, the keywords themselves with their associated
-   values are added as items to the dictionary.  If a key is specified both in
-   the positional argument and as a keyword argument, the value associated with
-   the keyword is retained in the dictionary.  For example, these all return a
-   dictionary equal to ``{"one": 1, "two": 2}``:
+   If keyword arguments are given, the keyword arguments and their values are
+   added to the dictionary created from the positional argument.  If a key
+   being added is already present, the value from the keyword argument
+   replaces the value from the positional argument.
 
-   * ``dict(one=1, two=2)``
-   * ``dict({'one': 1, 'two': 2})``
-   * ``dict(zip(('one', 'two'), (1, 2)))``
-   * ``dict([['two', 2], ['one', 1]])``
+   To illustrate, the following examples all return a dictionary equal to
+   ``{"one": 1, "two": 2}``::
 
-   The first example only works for keys that are valid Python identifiers; the
-   others work with any valid keys.
+      >>> a = dict(one=1, two=2)
+      >>> b = dict({'one': 1, 'two': 2})
+      >>> c = dict(zip(('one', 'two'), (1, 2)))
+      >>> d = dict([['two', 2], ['one', 1]])
+      >>> e = {"one": 1, "two": 2}
+      >>> a == b == c == d == e
+      True
+
+   Providing keyword arguments as in the first example only works for keys that
+   are valid Python identifiers.  Otherwise, any valid keys can be used.
 
 
    These are the operations that dictionaries support (and therefore, custom
