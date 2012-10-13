@@ -275,14 +275,17 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-dict:
-.. function:: dict([arg])
+.. function:: dict(**kwarg)
+              dict(mapping, **kwarg)
+              dict(iterable, **kwarg)
    :noindex:
 
-   Create a new data dictionary, optionally with items taken from *arg*.
-   The dictionary type is described in :ref:`typesmapping`.
+   Create a new dictionary.  The :class:`dict` object is the dictionary class.
+   See :class:`dict` and :ref:`typesmapping` for documentation about this
+   class.
 
-   For other containers see the built in :class:`list`, :class:`set`, and
-   :class:`tuple` classes, and the :mod:`collections` module.
+   For other containers see the built-in :class:`list`, :class:`set`, and
+   :class:`tuple` classes, as well as the :mod:`collections` module.
 
 
 .. function:: dir([object])
