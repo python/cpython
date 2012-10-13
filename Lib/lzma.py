@@ -55,7 +55,7 @@ class LZMAFile(io.BufferedIOBase):
         be an existing file object to read from or write to.
 
         mode can be "r" for reading (default), "w" for (over)writing, or
-        "a" for appending. These can equivalently be given as "rb", "wb",
+        "a" for appending. These can equivalently be given as "rb", "wb"
         and "ab" respectively.
 
         format specifies the container format to use for the file.
@@ -381,23 +381,24 @@ def open(filename, mode="rb", *,
          encoding=None, errors=None, newline=None):
     """Open an LZMA-compressed file in binary or text mode.
 
-    filename can be either an actual file name (given as a str or bytes object),
-    in which case the named file is opened, or it can be an existing file object
-    to read from or write to.
+    filename can be either an actual file name (given as a str or bytes
+    object), in which case the named file is opened, or it can be an
+    existing file object to read from or write to.
 
-    The mode argument can be "r", "rb" (default), "w", "wb", "a", or "ab" for
-    binary mode, or "rt", "wt" or "at" for text mode.
+    The mode argument can be "r", "rb" (default), "w", "wb", "a" or "ab"
+    for binary mode, or "rt", "wt" or "at" for text mode.
 
-    The format, check, preset and filters arguments specify the compression
-    settings, as for LZMACompressor, LZMADecompressor and LZMAFile.
+    The format, check, preset and filters arguments specify the
+    compression settings, as for LZMACompressor, LZMADecompressor and
+    LZMAFile.
 
-    For binary mode, this function is equivalent to the LZMAFile constructor:
-    LZMAFile(filename, mode, ...). In this case, the encoding, errors and
-    newline arguments must not be provided.
+    For binary mode, this function is equivalent to the LZMAFile
+    constructor: LZMAFile(filename, mode, ...). In this case, the
+    encoding, errors and newline arguments must not be provided.
 
     For text mode, a LZMAFile object is created, and wrapped in an
-    io.TextIOWrapper instance with the specified encoding, error handling
-    behavior, and line ending(s).
+    io.TextIOWrapper instance with the specified encoding, error
+    handling behavior, and line ending(s).
 
     """
     if "t" in mode:
@@ -427,7 +428,7 @@ def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None):
     Refer to LZMACompressor's docstring for a description of the
     optional arguments *format*, *check*, *preset* and *filters*.
 
-    For incremental compression, use an LZMACompressor object instead.
+    For incremental compression, use an LZMACompressor instead.
     """
     comp = LZMACompressor(format, check, preset, filters)
     return comp.compress(data) + comp.flush()
@@ -439,7 +440,7 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
     Refer to LZMADecompressor's docstring for a description of the
     optional arguments *format*, *check* and *filters*.
 
-    For incremental decompression, use a LZMADecompressor object instead.
+    For incremental decompression, use an LZMADecompressor instead.
     """
     results = []
     while True:
