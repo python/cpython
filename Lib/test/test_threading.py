@@ -753,7 +753,8 @@ class ThreadingExceptionTests(BaseTestCase):
         lock = threading.Lock()
         self.assertRaises(RuntimeError, lock.release)
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'test macosx problem')
+    @unittest.skipUnless(sys.platform == 'darwin' and test.support.python_is_optimized(),
+                         'test macosx problem')
     def test_recursion_limit(self):
         # Issue 9670
         # test that excessive recursion within a non-main thread causes
