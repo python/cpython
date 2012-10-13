@@ -292,13 +292,14 @@ ordering of the objects in the dictionary.
 Applying :func:`iter` to a dictionary always loops over the keys, but
 dictionaries have methods that return other iterators.  If you want to iterate
 over values or key/value pairs, you can explicitly call the
-:meth:`~dict.values` or :meth:`~dict.items` methods to get an appropriate iterator.
+:meth:`~dict.values` or :meth:`~dict.items` methods to get an appropriate
+iterator.
 
 The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
 
     >>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
-    >>> dict(iter(L))
+    >>> dict(iter(L))  #doctest: +SKIP
     {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
 
 Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
