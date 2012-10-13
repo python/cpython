@@ -324,7 +324,7 @@ static void KeccakPermutation(unsigned char *state)
     KeccakPermutationOnWords((UINT64*)state);
 }
 
-/*
+#if (PLATFORM_BYTE_ORDER == IS_BIG_ENDIAN)
 static void fromBytesToWord(UINT64 *word, const UINT8 *bytes)
 {
     unsigned int i;
@@ -333,7 +333,8 @@ static void fromBytesToWord(UINT64 *word, const UINT8 *bytes)
     for(i=0; i<(64/8); i++)
         *word |= (UINT64)(bytes[i]) << (8*i);
 }
-*/
+#endif
+
 
 #ifdef ProvideFast576
 static void KeccakAbsorb576bits(unsigned char *state, const unsigned char *data)
@@ -445,7 +446,7 @@ static void KeccakAbsorb(unsigned char *state, const unsigned char *data, unsign
 #endif
 }
 
-/*
+#if (PLATFORM_BYTE_ORDER == IS_BIG_ENDIAN)
 static void fromWordToBytes(UINT8 *bytes, const UINT64 word)
 {
     unsigned int i;
@@ -453,7 +454,8 @@ static void fromWordToBytes(UINT8 *bytes, const UINT64 word)
     for(i=0; i<(64/8); i++)
         bytes[i] = (word >> (8*i)) & 0xFF;
 }
-*/
+#endif
+
 
 #ifdef ProvideFast1024
 static void KeccakExtract1024bits(const unsigned char *state, unsigned char *data)
