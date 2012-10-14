@@ -230,7 +230,7 @@ static PyThreadState *tcl_tstate = NULL;
 
 /**** Tkapp Object Declaration ****/
 
-static PyTypeObject Tkapp_Type;
+static PyObject *Tkapp_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -250,7 +250,6 @@ typedef struct {
     Tcl_ObjType *StringType;
 } TkappObject;
 
-#define Tkapp_Check(v) (Py_TYPE(v) == &Tkapp_Type)
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 #define Tkapp_Result(v) Tcl_GetStringResult(Tkapp_Interp(v))
 
@@ -487,7 +486,7 @@ Tkapp_New(char *screenName, char *className,
     TkappObject *v;
     char *argv0;
 
-    v = PyObject_New(TkappObject, &Tkapp_Type);
+    v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
 
@@ -637,14 +636,14 @@ typedef struct {
     PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
-static PyTypeObject PyTclObject_Type;
-#define PyTclObject_Check(v)    ((v)->ob_type == &PyTclObject_Type)
+static PyObject *PyTclObject_Type;
+#define PyTclObject_Check(v) ((v)->ob_type == (PyTypeObject *) PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
 {
     PyTclObject *self;
-    self = PyObject_New(PyTclObject, &PyTclObject_Type);
+    self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
     Tcl_IncrRefCount(arg);
@@ -778,49 +777,24 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
     {0},
 };
 
-static PyTypeObject PyTclObject_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_tkinter.Tcl_Obj",                 /*tp_name*/
-    sizeof(PyTclObject),                /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    /* methods */
-    (destructor)PyTclObject_dealloc,/*tp_dealloc*/
-    0,                                  /*tp_print*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
-    (reprfunc)PyTclObject_repr,         /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    (reprfunc)PyTclObject_str,          /*tp_str*/
-    PyObject_GenericGetAttr,            /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                 /*tp_flags*/
-    0,                                  /*tp_doc*/
-    0,                                  /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    PyTclObject_richcompare,            /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    0,                                  /*tp_methods*/
-    0,                                  /*tp_members*/
-    PyTclObject_getsetlist,             /*tp_getset*/
-    0,                                  /*tp_base*/
-    0,                                  /*tp_dict*/
-    0,                                  /*tp_descr_get*/
-    0,                                  /*tp_descr_set*/
-    0,                                  /*tp_dictoffset*/
-    0,                                  /*tp_init*/
-    0,                                  /*tp_alloc*/
-    0,                                  /*tp_new*/
-    0,                                  /*tp_free*/
-    0,                                  /*tp_is_gc*/
+static PyType_Slot PyTclObject_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
+    {Py_tp_repr, (reprfunc)PyTclObject_repr},
+    {Py_tp_str, (reprfunc)PyTclObject_str},
+    {Py_tp_getattro, NULL},
+    {Py_tp_richcompare, PyTclObject_richcompare},
+    {Py_tp_getset, PyTclObject_getsetlist},
+    {0, 0}
 };
+
+static PyType_Spec PyTclObject_Type_spec = {
+    "_tkinter.Tcl_Obj",
+    sizeof(PyTclObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PyTclObject_Type_slots,
+};
+
 
 static Tcl_Obj*
 AsObj(PyObject *value)
@@ -2150,7 +2124,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 
 /**** Tktt Object (timer token) ****/
 
-static PyTypeObject Tktt_Type;
+static PyObject *Tktt_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -2189,7 +2163,7 @@ Tktt_New(PyObject *func)
 {
     TkttObject *v;
 
-    v = PyObject_New(TkttObject, &Tktt_Type);
+    v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
 
@@ -2222,38 +2196,20 @@ Tktt_Repr(PyObject *self)
                                 v->func == NULL ? ", handler deleted" : "");
 }
 
-static PyTypeObject Tktt_Type =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "tktimertoken",                          /*tp_name */
-    sizeof(TkttObject),                      /*tp_basicsize */
-    0,                                       /*tp_itemsize */
-    Tktt_Dealloc,                            /*tp_dealloc */
-    0,                                       /*tp_print */
-    0,                                       /*tp_getattr */
-    0,                                       /*tp_setattr */
-    0,                                       /*tp_reserved */
-    Tktt_Repr,                               /*tp_repr */
-    0,                                       /*tp_as_number */
-    0,                                       /*tp_as_sequence */
-    0,                                       /*tp_as_mapping */
-    0,                                       /*tp_hash */
-    0,                                       /*tp_call*/
-    0,                                       /*tp_str*/
-    0,                                       /*tp_getattro*/
-    0,                                       /*tp_setattro*/
-    0,                                       /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                      /*tp_flags*/
-    0,                                       /*tp_doc*/
-    0,                                       /*tp_traverse*/
-    0,                                       /*tp_clear*/
-    0,                                       /*tp_richcompare*/
-    0,                                       /*tp_weaklistoffset*/
-    0,                                       /*tp_iter*/
-    0,                                       /*tp_iternext*/
-    Tktt_methods,                            /*tp_methods*/
+static PyType_Slot Tktt_Type_slots[] = {
+    {Py_tp_dealloc, Tktt_Dealloc},
+    {Py_tp_repr, Tktt_Repr},
+    {Py_tp_methods, Tktt_methods},
+    {0, 0}
 };
 
+static PyType_Spec Tktt_Type_spec = {
+    "tktimertoken",
+    sizeof(TkttObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    Tktt_Type_slots,
+};
 
 
 /** Timer Handler **/
@@ -2541,36 +2497,19 @@ Tkapp_Dealloc(PyObject *self)
     DisableEventHook();
 }
 
-static PyTypeObject Tkapp_Type =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "tkapp",                                 /*tp_name */
-    sizeof(TkappObject),                     /*tp_basicsize */
-    0,                                       /*tp_itemsize */
-    Tkapp_Dealloc,                           /*tp_dealloc */
-    0,                                       /*tp_print */
-    0,                                       /*tp_getattr */
-    0,                                       /*tp_setattr */
-    0,                                       /*tp_reserved */
-    0,                                       /*tp_repr */
-    0,                                       /*tp_as_number */
-    0,                                       /*tp_as_sequence */
-    0,                                       /*tp_as_mapping */
-    0,                                       /*tp_hash */
-    0,                                       /*tp_call*/
-    0,                                       /*tp_str*/
-    0,                                       /*tp_getattro*/
-    0,                                       /*tp_setattro*/
-    0,                                       /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                      /*tp_flags*/
-    0,                                       /*tp_doc*/
-    0,                                       /*tp_traverse*/
-    0,                                       /*tp_clear*/
-    0,                                       /*tp_richcompare*/
-    0,                                       /*tp_weaklistoffset*/
-    0,                                       /*tp_iter*/
-    0,                                       /*tp_iternext*/
-    Tkapp_methods,                           /*tp_methods*/
+static PyType_Slot Tkapp_Type_slots[] = {
+    {Py_tp_dealloc, Tkapp_Dealloc},
+    {Py_tp_methods, Tkapp_methods},
+    {0, 0}
+};
+
+
+static PyType_Spec Tkapp_Type_spec = {
+    "tkapp",
+    sizeof(TkappObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    Tkapp_Type_slots,
 };
 
 
@@ -2874,45 +2813,116 @@ static struct PyModuleDef _tkintermodule = {
 PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
-    PyObject *m, *uexe, *cexe;
+  PyObject *m, *uexe, *cexe, *o;
 
-    if (PyType_Ready(&Tkapp_Type) < 0)
-        return NULL;
+    /* Due to cross platform compiler issues the slots must be filled
+     * here. It's required for portability to Windows without requiring
+     * C++. See xxxlimited.c*/
+    PyTclObject_Type_slots[3].pfunc = PyObject_GenericGetAttr;
 
 #ifdef WITH_THREAD
     tcl_lock = PyThread_allocate_lock();
+    if (tcl_lock == NULL)
+        return NULL;
 #endif
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
         return NULL;
 
-    Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
-    Py_INCREF(Tkinter_TclError);
-    PyModule_AddObject(m, "TclError", Tkinter_TclError);
-
-    PyModule_AddIntConstant(m, "READABLE", TCL_READABLE);
-    PyModule_AddIntConstant(m, "WRITABLE", TCL_WRITABLE);
-    PyModule_AddIntConstant(m, "EXCEPTION", TCL_EXCEPTION);
-    PyModule_AddIntConstant(m, "WINDOW_EVENTS", TCL_WINDOW_EVENTS);
-    PyModule_AddIntConstant(m, "FILE_EVENTS", TCL_FILE_EVENTS);
-    PyModule_AddIntConstant(m, "TIMER_EVENTS", TCL_TIMER_EVENTS);
-    PyModule_AddIntConstant(m, "IDLE_EVENTS", TCL_IDLE_EVENTS);
-    PyModule_AddIntConstant(m, "ALL_EVENTS", TCL_ALL_EVENTS);
-    PyModule_AddIntConstant(m, "DONT_WAIT", TCL_DONT_WAIT);
-    PyModule_AddStringConstant(m, "TK_VERSION", TK_VERSION);
-    PyModule_AddStringConstant(m, "TCL_VERSION", TCL_VERSION);
-
-    PyModule_AddObject(m, "TkappType", (PyObject *)&Tkapp_Type);
-
-    if (PyType_Ready(&Tktt_Type) < 0) {
+    o = PyErr_NewException("_tkinter.TclError", NULL, NULL);
+    if (o == NULL) {
         Py_DECREF(m);
         return NULL;
     }
-    PyModule_AddObject(m, "TkttType", (PyObject *)&Tktt_Type);
+    Py_INCREF(o);
+    if (PyModule_AddObject(m, "TclError", o)) {
+        Py_DECREF(o);
+        Py_DECREF(m);
+        return NULL;
+    }
+    Tkinter_TclError = o;
 
-    Py_TYPE(&PyTclObject_Type) = &PyType_Type;
-    PyModule_AddObject(m, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
+    if (PyModule_AddIntConstant(m, "READABLE", TCL_READABLE)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "WRITABLE", TCL_WRITABLE)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "EXCEPTION", TCL_EXCEPTION)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "WINDOW_EVENTS", TCL_WINDOW_EVENTS)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "FILE_EVENTS", TCL_FILE_EVENTS)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "TIMER_EVENTS", TCL_TIMER_EVENTS)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "IDLE_EVENTS", TCL_IDLE_EVENTS)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "ALL_EVENTS", TCL_ALL_EVENTS)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(m, "DONT_WAIT", TCL_DONT_WAIT)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddStringConstant(m, "TK_VERSION", TK_VERSION)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddStringConstant(m, "TCL_VERSION", TCL_VERSION)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    o = PyType_FromSpec(&Tkapp_Type_spec);
+    if (o == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "TkappType", o)) {
+        Py_DECREF(o);
+        Py_DECREF(m);
+        return NULL;
+    }
+    Tkapp_Type = o;
+
+    o = PyType_FromSpec(&Tktt_Type_spec);
+    if (o == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "TkttType", o)) {
+        Py_DECREF(o);
+        Py_DECREF(m);
+        return NULL;
+    }
+    Tktt_Type = o;
+
+    o = PyType_FromSpec(&PyTclObject_Type_spec);
+    if (o == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "Tcl_Obj", o)) {
+        Py_DECREF(o);
+        Py_DECREF(m);
+        return NULL;
+    }
+    PyTclObject_Type = o;
 
 #ifdef TK_AQUA
     /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
