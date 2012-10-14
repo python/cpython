@@ -140,7 +140,7 @@
   #include "keccak/KeccakF-1600-opt32.c"
 #endif
 
-#define SHA3_BLOCKSIZE 200 /* 1600 bits  */
+/* #define SHA3_BLOCKSIZE 200 // 1600 bits  */
 #define SHA3_MAX_DIGESTSIZE 64 /* 512 bits */
 #define SHA3_state hashState
 #define SHA3_init Init
@@ -367,7 +367,11 @@ static PyMethodDef SHA3_methods[] = {
 static PyObject *
 SHA3_get_block_size(SHA3object *self, void *closure)
 {
-    return PyLong_FromLong(SHA3_BLOCKSIZE);
+    /* HMAC-SHA3 hasn't been specified yet and no official test vectors are
+     * available. Thus block_size returns NotImplemented to prevent people
+     * from using SHA3 with the hmac module.
+     */
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyObject *
