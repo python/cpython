@@ -96,7 +96,8 @@
  * *************************************************************************/
 
 #ifdef __sparc
-  /* On SPARC with Solaris CC opt64 fails with 'invalid address alignment' */
+  /* opt64 uses un-aligned memory access that causes a BUS error with msg
+   * 'invalid address alignment' on SPARC. */
   #define KeccakOpt 32
 #elif SIZEOF_VOID_P == 8 && defined(PY_UINT64_T)
   /* opt64 works only for 64bit platforms with unsigned int64 */
