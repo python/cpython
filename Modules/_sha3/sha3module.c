@@ -95,21 +95,27 @@
  *
  * *************************************************************************/
 
-#if SIZEOF_VOID_P == 8 && defined(PY_UINT64_T)
- /* 64bit platforms with unsigned int64 */
-  #define KeccakImplementation 64
+#ifdef __sparc
+  /* On SPARC with Solaris CC opt64 fails with 'invalid address alignment' */
+  #define KeccakOpt 32
+#elif SIZEOF_VOID_P == 8
+  #define KeccakOpt 64
+#elif SIZEOF_VOID_P == 4
+  #define KeccakOpt 32
+#endif
+
+#if KeccakOpt == 64 && defined(PY_UINT64_T)
+  /* 64bit platforms with unsigned int64 */
   #define Unrolling 24
   #define UseBebigokimisa
   typedef PY_UINT64_T UINT64;
-#elif SIZEOF_VOID_P == 4  && defined(PY_UINT64_T)
+#elif KeccakOpt == 32  && defined(PY_UINT64_T)
   /* 32bit platforms with unsigned int64 */
-  #define KeccakImplementation 32
   #define Unrolling 2
   #define UseSchedule 3
   typedef PY_UINT64_T UINT64;
 #else
   /* 32 or 64bit platforms without unsigned int64 */
-  #define KeccakImplementation 32
   #define Unrolling 2
   #define UseSchedule 3
   #define UseInterleaveTables
@@ -125,9 +131,9 @@
 #include "keccak/KeccakNISTInterface.h"
 #include "keccak/KeccakNISTInterface.c"
 #include "keccak/KeccakSponge.c"
-#if KeccakImplementation == 64
+#if KeccakOpt == 64
   #include "keccak/KeccakF-1600-opt64.c"
-#elif KeccakImplementation == 32
+#elif KeccakOpt == 32
   #include "keccak/KeccakF-1600-opt32.c"
 #endif
 
