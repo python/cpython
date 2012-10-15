@@ -496,15 +496,7 @@ class SocketHandler(logging.Handler):
         A factory method which allows subclasses to define the precise
         type of socket they want.
         """
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if hasattr(s, 'settimeout'):
-            s.settimeout(timeout)
-        try:
-            s.connect((self.host, self.port))
-            return s
-        except socket.error:
-            s.close()
-            raise
+        return socket.create_connection((self.host, self.port), timeout=timeout)
 
     def createSocket(self):
         """
