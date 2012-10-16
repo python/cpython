@@ -9,6 +9,24 @@ AC_PREREQ(2.65)
 
 AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
 
+BUILDDIR="`pwd`"
+AC_SUBST(BUILDDIR)
+AC_SUBST(BASECPPFLAGS)
+if test "$srcdir" != "$BUILDDIR"; then
+    # If we're building out-of-tree, we need to make sure the following
+    # resources get picked up before their $srcdir counterparts.
+    #   Objects/ -> typeslots.inc
+    #   Include/ -> Python-ast.h, graminit.h
+    #   Python/  -> importlib.h
+    # (A side effect of this is that these resources will automatically be
+    #  regenerated when building out-of-tree, regardless of whether or not
+    #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
+    #  off.)
+    BASECPPFLAGS="-IObjects -IInclude -IPython"
+else
+    BASECPPFLAGS=""
+fi
+
 AC_SUBST(HGVERSION)
 AC_SUBST(HGTAG)
 AC_SUBST(HGBRANCH)
