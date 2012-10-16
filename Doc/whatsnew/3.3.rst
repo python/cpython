@@ -112,7 +112,7 @@ with the interpreter core.
 
 This PEP adds the :mod:`venv` module for programmatic access, and the
 :ref:`pyvenv <scripts-pyvenv>` script for command-line access and
-administration.  The Python interpreter checks for a ``pvenv.cfg``,
+administration.  The Python interpreter checks for a ``pyvenv.cfg``,
 file whose existence signals the base of a virtual environment's directory
 tree.
 
