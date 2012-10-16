@@ -144,11 +144,9 @@ ThreadPoolExecutor Example
    # We can use a with statement to ensure threads are cleaned up promptly
    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
        # Start the load operations and mark each future with its URL
-       load_urls = [executor.submit(load_url, url, 60) for url in URLS]
-       for future, url in zip(load_urls, URLS):
-           future.url = url
-       for future in concurrent.futures.as_completed(load_urls):
-           url = future.url
+       future_to_url = {executor.submit(load_url, url, 60):url for url in URLS}
+       for future in concurrent.futures.as_completed(future_to_url):
+           url = future_to_url[url]
            try:
                data = future.result()
            except Exception as exc:
