@@ -390,12 +390,21 @@ def _generate_posix_vars():
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
 
-    destfile = os.path.join(os.path.dirname(__file__), '_sysconfigdata.py')
+    pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
+    if hasattr(sys, "gettotalrefcount"):
+        pybuilddir += '-pydebug'
+    os.makedirs(pybuilddir, exist_ok=True)
+    destfile = os.path.join(pybuilddir, '_sysconfigdata.py')
+
     with open(destfile, 'w', encoding='utf8') as f:
         f.write('# system configuration generated and used by'
                 ' the sysconfig module\n')
         f.write('build_time_vars = ')
         pprint.pprint(vars, stream=f)
+
+    # Create file used for sys.path fixup -- see Modules/getpath.c
+    with open('pybuilddir.txt', 'w', encoding='ascii') as f:
+        f.write(pybuilddir)
 
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""

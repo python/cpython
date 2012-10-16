@@ -33,10 +33,6 @@ COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_AR
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
 
-# File which contains the directory for shared mods (for sys.path fixup
-# when running from the build dir, see Modules/getpath.c)
-_BUILDDIR_COOKIE = "pybuilddir.txt"
-
 def add_dir_to_list(dirlist, dir):
     """Add the directory 'dir' to the list 'dirlist' (after any relative
     directories) if:
@@ -251,16 +247,6 @@ class PyBuildExt(build_ext):
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
         self.compiler.set_executables(**args)
-
-        # Not only do we write the builddir cookie, but we manually install
-        # the shared modules directory if it isn't already in sys.path.
-        # Otherwise trying to import the extensions after building them
-        # will fail.
-        with open(_BUILDDIR_COOKIE, "wb") as f:
-            f.write(self.build_lib.encode('utf-8', 'surrogateescape'))
-        abs_build_lib = os.path.join(os.getcwd(), self.build_lib)
-        if abs_build_lib not in sys.path:
-            sys.path.append(abs_build_lib)
 
         build_ext.build_extensions(self)
 
