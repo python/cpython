@@ -136,20 +136,25 @@ ThreadPoolExecutor Example
            'http://www.bbc.co.uk/',
            'http://some-made-up-domain.com/']
 
+   # Retrieve a single page and report the url and contents
    def load_url(url, timeout):
-       return urllib.request.urlopen(url, timeout=timeout).read()
+       conn = urllib.request.urlopen(url, timeout=timeout)
+       return conn.readall()
 
+   # We can use a with statement to ensure threads are cleaned up promptly
    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-       future_to_url = dict((executor.submit(load_url, url, 60), url)
-                            for url in URLS)
-
-       for future in concurrent.futures.as_completed(future_to_url):
-           url = future_to_url[future]
-           if future.exception() is not None:
-               print('%r generated an exception: %s' % (url,
-                                                        future.exception()))
+       # Start the load operations and mark each future with its URL
+       load_urls = [executor.submit(load_url, url, 60) for url in URLS]
+       for future, url in zip(load_urls, URLS):
+           future.url = url
+       for future in concurrent.futures.as_completed(load_urls):
+           url = future.url
+           try:
+               data = future.result()
+           except Exception as exc:
+               print('%r generated an exception: %s' % (url, exc))
            else:
-               print('%r page is %d bytes' % (url, len(future.result())))
+               print('%r page is %d bytes' % (url, len(data)))
 
 
 ProcessPoolExecutor
