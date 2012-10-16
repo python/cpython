@@ -410,8 +410,6 @@ OBJECT_OBJS=	\
 		Objects/unicodectype.o \
 		Objects/weakrefobject.o
 
-SYSCONFIGDATA=$(srcdir)/Lib/_sysconfigdata.py
-
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS_OMIT_FROZEN=	\
@@ -432,7 +430,7 @@ LIBRARY_OBJS=	\
 
 # Default target
 all:		build_all
-build_all:	$(BUILDPYTHON) $(SYSCONFIGDATA) oldsharedmods sharedmods gdbhooks Modules/_testembed
+build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Modules/_testembed
 
 # Compile a binary with gcc profile guided optimization.
 profile-opt:
@@ -466,17 +464,19 @@ coverage:
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
-platform: $(BUILDPYTHON) $(SYSCONFIGDATA)
+platform: $(BUILDPYTHON) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print(get_platform()+"-"+sys.version[0:3])' >platform
 
-# Generate the sysconfig build-time data
-$(SYSCONFIGDATA): $(BUILDPYTHON)
+# Create build directory and generate the sysconfig build-time data there.
+# pybuilddir.txt contains the name of the build dir and is used for
+# sys.path fixup -- see Modules/getpath.c.
+pybuilddir.txt: $(BUILDPYTHON)
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars
 
 # Build the shared modules
 # MAKEFLAGS are sorted and normalized. Under GNU make the 's' for
 # -s, --silent or --quiet is always the first char.
-sharedmods: $(BUILDPYTHON) $(SYSCONFIGDATA)
+sharedmods: $(BUILDPYTHON) pybuilddir.txt
 	@case "$$MAKEFLAGS" in \
 	    s*) quiet="-q";; \
 	    *) quiet="";; \
@@ -1043,7 +1043,7 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
-	@for i in $(srcdir)/Lib/*.py ; \
+	@for i in $(srcdir)/Lib/*.py `cat pybuilddir.txt`/_sysconfigdata.py; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
@@ -1203,6 +1203,8 @@ sharedinstall: sharedmods
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED) \
 		--root=$(DESTDIR)/
+	-rm $(DESTDIR)$(DESTSHARED)/_sysconfigdata.py
+	-rm -r $(DESTDIR)$(DESTSHARED)/__pycache__
 
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
@@ -1348,9 +1350,10 @@ clean: pycremoval
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
-	find build -name 'fficonfig.py' -exec rm -f {} ';' || true
+	find build -name '*.py' -exec rm -f {} ';' || true
+	find build -name '*.py[co]' -exec rm -f {} ';' || true
+	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f $(SYSCONFIGDATA)
 	-rm -f Modules/_testembed Modules/_freeze_importlib
 
 profile-removal:
@@ -1374,7 +1377,6 @@ distclean: clobber
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc
 	-rm -f python*-gdb.py
-	-rm -f pybuilddir.txt
 	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
 			   -o -name '[@,#]*' -o -name '*.old' \
 			   -o -name '*.orig' -o -name '*.rej' \
