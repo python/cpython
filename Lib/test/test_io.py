@@ -32,7 +32,7 @@ import errno
 import warnings
 import pickle
 from itertools import cycle, count
-from collections import deque
+from collections import deque, UserList
 from test import support
 
 import codecs
@@ -1176,6 +1176,29 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         bufio.write(b"abc")
         bufio.flush()
         self.assertEqual(b"abc", writer._write_stack[0])
+
+    def test_writelines(self):
+        l = [b'ab', b'cd', b'ef']
+        writer = self.MockRawIO()
+        bufio = self.tp(writer, 8)
+        bufio.writelines(l)
+        bufio.flush()
+        self.assertEqual(b''.join(writer._write_stack), b'abcdef')
+
+    def test_writelines_userlist(self):
+        l = UserList([b'ab', b'cd', b'ef'])
+        writer = self.MockRawIO()
+        bufio = self.tp(writer, 8)
+        bufio.writelines(l)
+        bufio.flush()
+        self.assertEqual(b''.join(writer._write_stack), b'abcdef')
+
+    def test_writelines_error(self):
+        writer = self.MockRawIO()
+        bufio = self.tp(writer, 8)
+        self.assertRaises(TypeError, bufio.writelines, [1, 2, 3])
+        self.assertRaises(TypeError, bufio.writelines, None)
+        self.assertRaises(TypeError, bufio.writelines, 'abc')
 
     def test_destructor(self):
         writer = self.MockRawIO()
