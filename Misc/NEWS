@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #15958: bytes.join and bytearray.join now accept arbitrary buffer
+  objects.
+
 - Issue #14783: Improve int() docstring and switch docstrings for str(),
   range(), and slice() to use multi-line signatures.
 
