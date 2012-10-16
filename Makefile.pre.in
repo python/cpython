@@ -27,6 +27,7 @@ MODLIBS=        _MODLIBS_
 VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
+BUILDDIR=	@BUILDDIR@
 
 CC=		@CC@
 CXX=		@CXX@
