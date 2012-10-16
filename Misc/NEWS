@@ -176,6 +176,9 @@ Build
 Documentation
 -------------
 
+- Additional comments and some style changes in the concurrent.futures URL
+  retrieval example
+
 - Issue #16115: Improve subprocess.Popen() documentation around args, shell,
   and executable arguments.
 
