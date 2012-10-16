@@ -1066,17 +1066,17 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except FileExistsError:
                 # Probably another Python process already created the dir.
                 continue
-            except PermissionError:
-                # If can't get proper access, then just forget about writing
-                # the data.
+            except OSError as exc:
+                # Could be a permission error, read-only filesystem: just forget
+                # about writing the data.
+                _verbose_message('could not create {!r}: {!r}', parent, exc)
                 return
         try:
             _write_atomic(path, data, _mode)
             _verbose_message('created {!r}', path)
-        except (PermissionError, FileExistsError):
-            # Don't worry if you can't write bytecode or someone is writing
-            # it at the same time.
-            pass
+        except OSError as exc:
+            # Same as above: just don't write the bytecode.
+            _verbose_message('could not create {!r}: {!r}', path, exc)
 
 
 class SourcelessFileLoader(FileLoader, _LoaderBasics):
