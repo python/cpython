@@ -12,7 +12,7 @@ AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
 BUILDDIR="`pwd`"
 AC_SUBST(BUILDDIR)
 AC_SUBST(BASECPPFLAGS)
-if test "$srcdir" != "$BUILDDIR"; then
+if test "$srcdir" != "." -a "$srcdir" != "$BUILDDIR"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
