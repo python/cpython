@@ -6,8 +6,8 @@
 
 This HOWTO discusses Python 2.x's support for Unicode, and explains
 various problems that people commonly encounter when trying to work
-with Unicode.  (This HOWTO has not yet been updated to cover the 3.x
-versions of Python.)
+with Unicode.  For the Python 3 version, see
+<http://docs.python.org/py3k/howto/unicode.html>.
 
 Introduction to Unicode
 =======================
