@@ -182,7 +182,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
             deprecations = []
             if __debug__:
                 # Ignore all warnings about the use of class Tester in this module.
-                depcreations.append(("class Tester is deprecated", DeprecationWarning))
+                deprecations.append(("class Tester is deprecated", DeprecationWarning))
             if sys.py3kwarning:
                 deprecations += [
                     ("backquote not supported", SyntaxWarning),
