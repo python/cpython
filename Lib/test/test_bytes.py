@@ -288,8 +288,22 @@ class BaseBytesTest(unittest.TestCase):
             self.assertEqual(self.type2test(b"").join(lst), b"abc")
             self.assertEqual(self.type2test(b"").join(tuple(lst)), b"abc")
             self.assertEqual(self.type2test(b"").join(iter(lst)), b"abc")
-        self.assertEqual(self.type2test(b".").join([b"ab", b"cd"]), b"ab.cd")
-        # XXX more...
+        dot_join = self.type2test(b".:").join
+        self.assertEqual(dot_join([b"ab", b"cd"]), b"ab.:cd")
+        self.assertEqual(dot_join([memoryview(b"ab"), b"cd"]), b"ab.:cd")
+        self.assertEqual(dot_join([b"ab", memoryview(b"cd")]), b"ab.:cd")
+        self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
+        self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
+        # Stress it with many items
+        seq = [b"abc"] * 1000
+        expected = b"abc" + b".:abc" * 999
+        self.assertEqual(dot_join(seq), expected)
+        # Error handling and cleanup when some item in the middle of the
+        # sequence has the wrong type.
+        with self.assertRaises(TypeError):
+            dot_join([bytearray(b"ab"), "cd", b"ef"])
+        with self.assertRaises(TypeError):
+            dot_join([memoryview(b"ab"), "cd", b"ef"])
 
     def test_count(self):
         b = self.type2test(b'mississippi')
@@ -1249,6 +1263,11 @@ class BytearrayPEP3137Test(unittest.TestCase,
             self.assertEqual(val, newval)
             self.assertTrue(val is not newval,
                             expr+' returned val on a mutable object')
+        sep = self.marshal(b'')
+        newval = sep.join([val])
+        self.assertEqual(val, newval)
+        self.assertIsNot(val, newval)
+
 
 class FixedStringTest(test.string_tests.BaseTest):
 

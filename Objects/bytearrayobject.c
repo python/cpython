@@ -1032,6 +1032,7 @@ bytearray_dealloc(PyByteArrayObject *self)
 #define FASTSEARCH fastsearch
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
+#define STRINGLIB_SIZEOF_CHAR 1
 #define STRINGLIB_LEN PyByteArray_GET_SIZE
 #define STRINGLIB_STR PyByteArray_AS_STRING
 #define STRINGLIB_NEW PyByteArray_FromStringAndSize
@@ -1043,6 +1044,7 @@ bytearray_dealloc(PyByteArrayObject *self)
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/join.h"
 #include "stringlib/partition.h"
 #include "stringlib/split.h"
 #include "stringlib/ctype.h"
@@ -2569,73 +2571,9 @@ Concatenate any number of bytes/bytearray objects, with B\n\
 in between each pair, and return the result as a new bytearray.");
 
 static PyObject *
-bytearray_join(PyByteArrayObject *self, PyObject *it)
+bytearray_join(PyObject *self, PyObject *iterable)
 {
-    PyObject *seq;
-    Py_ssize_t mysize = Py_SIZE(self);
-    Py_ssize_t i;
-    Py_ssize_t n;
-    PyObject **items;
-    Py_ssize_t totalsize = 0;
-    PyObject *result;
-    char *dest;
-
-    seq = PySequence_Fast(it, "can only join an iterable");
-    if (seq == NULL)
-        return NULL;
-    n = PySequence_Fast_GET_SIZE(seq);
-    items = PySequence_Fast_ITEMS(seq);
-
-    /* Compute the total size, and check that they are all bytes */
-    /* XXX Shouldn't we use _getbuffer() on these items instead? */
-    for (i = 0; i < n; i++) {
-        PyObject *obj = items[i];
-        if (!PyByteArray_Check(obj) && !PyBytes_Check(obj)) {
-            PyErr_Format(PyExc_TypeError,
-                         "can only join an iterable of bytes "
-                         "(item %ld has type '%.100s')",
-                         /* XXX %ld isn't right on Win64 */
-                         (long)i, Py_TYPE(obj)->tp_name);
-            goto error;
-        }
-        if (i > 0)
-            totalsize += mysize;
-        totalsize += Py_SIZE(obj);
-        if (totalsize < 0) {
-            PyErr_NoMemory();
-            goto error;
-        }
-    }
-
-    /* Allocate the result, and copy the bytes */
-    result = PyByteArray_FromStringAndSize(NULL, totalsize);
-    if (result == NULL)
-        goto error;
-    dest = PyByteArray_AS_STRING(result);
-    for (i = 0; i < n; i++) {
-        PyObject *obj = items[i];
-        Py_ssize_t size = Py_SIZE(obj);
-        char *buf;
-        if (PyByteArray_Check(obj))
-           buf = PyByteArray_AS_STRING(obj);
-        else
-           buf = PyBytes_AS_STRING(obj);
-        if (i) {
-            memcpy(dest, self->ob_bytes, mysize);
-            dest += mysize;
-        }
-        memcpy(dest, buf, size);
-        dest += size;
-    }
-
-    /* Done */
-    Py_DECREF(seq);
-    return result;
-
-    /* Error handling */
-  error:
-    Py_DECREF(seq);
-    return NULL;
+    return stringlib_bytes_join(self, iterable);
 }
 
 PyDoc_STRVAR(splitlines__doc__,
