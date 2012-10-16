@@ -3309,3 +3309,6 @@ Miscellaneous Functions
    though its exact quality depends on the OS implementation.  On a Unix-like
    system this will query /dev/urandom, and on Windows it will use CryptGenRandom.
    If a randomness source is not found, :exc:`NotImplementedError` will be raised.
+
+   For easy to use interface to system randomness please see
+   :class:`random.SystemRandom`.
