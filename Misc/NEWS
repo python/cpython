@@ -158,6 +158,9 @@ Tests
 Build
 -----
 
+- Issue #15298: ensure _sysconfigdata is generated in build directory, not
+  source directory.
+
 - Issue #15833: Fix a regression in 3.3 that resulted in exceptions being
   raised if importlib failed to write byte-compiled files.  This affected
   attempts to build Python out-of-tree from a read-only source directory.
@@ -167,8 +170,8 @@ Build
 
 - Issue #16135: Remove OS/2 support.
 
-- Issue #15819: Make sure we can build Python out-of-tree from a readonly source
-  directory.  (Somewhat related to Issue #9860.)
+- Issue #15819: Make sure we can build Python out-of-tree from a read-only
+  source directory.  (Somewhat related to issue #9860.)
 
 Documentation
 -------------
