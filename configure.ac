@@ -857,7 +857,7 @@ fi
 BUILDDIR="`pwd`"
 AC_SUBST(BUILDDIR)
 AC_SUBST(BASECPPFLAGS)
-if test "$srcdir" != "$BUILDDIR"; then
+if test "$srcdir" != "." -a "$srcdir" != "$BUILDDIR"; then
     # If we're building out-of-tree make sure Include (in the current dir)
     # gets picked up before its $srcdir counterpart in order for Python-ast.h
     # and graminit.h to get picked up from the correct directory.
