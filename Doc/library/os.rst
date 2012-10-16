@@ -2506,7 +2506,7 @@ Miscellaneous Functions
    system this will query /dev/urandom, and on Windows it will use CryptGenRandom.
    If a randomness source is not found, :exc:`NotImplementedError` will be raised.
 
-   For easy to use interface to system randomness please see
-   :class:`random.SystemRandom`.
+   For an easy-to-use interface to the random number generator
+   provided by your platform, please see :class:`random.SystemRandom`.
 
    .. versionadded:: 2.4
