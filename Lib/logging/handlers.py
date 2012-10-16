@@ -170,7 +170,6 @@ class RotatingFileHandler(BaseRotatingHandler):
             if os.path.exists(dfn):
                 os.remove(dfn)
             self.rotate(self.baseFilename, dfn)
-        self.mode = 'w'
         self.stream = self._open()
 
     def shouldRollover(self, record):
@@ -379,7 +378,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
-        self.mode = 'w'
         self.stream = self._open()
         newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
