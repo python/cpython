@@ -27,6 +27,8 @@ MODLIBS=        _MODLIBS_
 VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
+BUILDDIR=	@BUILDDIR@
+
 
 CC=		@CC@
 CXX=		@CXX@
@@ -66,6 +68,7 @@ MAKESETUP=      $(srcdir)/Modules/makesetup
 # Compiler options
 OPT=		@OPT@
 BASECFLAGS=	@BASECFLAGS@
+BASECPPFLAGS=	@BASECPPFLAGS@
 CONFIGURE_CFLAGS=	@CFLAGS@
 CONFIGURE_CPPFLAGS=	@CPPFLAGS@
 CONFIGURE_LDFLAGS=	@LDFLAGS@
@@ -76,7 +79,7 @@ PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
-PY_CPPFLAGS=	-I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
+PY_CPPFLAGS=	$(BASECPPFLAGS) -I. -IInclude -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
 LDLAST=		@LDLAST@
@@ -310,7 +313,7 @@ ASDLGEN=	@DISABLE_ASDLGEN@ $(srcdir)/Parser/asdl_c.py
 # Python
 
 OPCODETARGETS_H= \
-		$(srcdir)/Python/opcode_targets.h
+		Python/opcode_targets.h
 
 OPCODETARGETGEN= \
 		$(srcdir)/Python/makeopcodetargets.py
@@ -725,11 +728,11 @@ Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
 				$(BYTESTR_DEPS)
 
-Python/frozen.o: $(srcdir)/Python/importlib.h
+Python/frozen.o: Python/importlib.h
 
-Objects/typeobject.o: $(srcdir)/Objects/typeslots.inc
-$(srcdir)/Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
-	$(PYTHON) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h > $(srcdir)/Objects/typeslots.inc
+Objects/typeobject.o: Objects/typeslots.inc
+Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
+	$(PYTHON) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h > Objects/typeslots.inc
 
 ############################################################################
 # Header files
