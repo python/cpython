@@ -90,9 +90,10 @@ class CookieTests(unittest.TestCase):
 
 def test_main():
     run_unittest(CookieTests)
-    with check_warnings(('.+Cookie class is insecure; do not use it',
-                         DeprecationWarning)):
-        run_doctest(Cookie)
+    if Cookie.__doc__ is not None:
+        with check_warnings(('.+Cookie class is insecure; do not use it',
+                             DeprecationWarning)):
+            run_doctest(Cookie)
 
 if __name__ == '__main__':
     test_main()
