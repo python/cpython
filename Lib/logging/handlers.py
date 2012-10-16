@@ -139,7 +139,6 @@ class RotatingFileHandler(BaseRotatingHandler):
                 os.remove(dfn)
             os.rename(self.baseFilename, dfn)
             #print "%s -> %s" % (self.baseFilename, dfn)
-        self.mode = 'w'
         self.stream = self._open()
 
     def shouldRollover(self, record):
@@ -354,7 +353,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             for s in self.getFilesToDelete():
                 os.remove(s)
         #print "%s -> %s" % (self.baseFilename, dfn)
-        self.mode = 'w'
         self.stream = self._open()
         newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
