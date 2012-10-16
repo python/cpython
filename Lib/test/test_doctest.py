@@ -2673,7 +2673,9 @@ def test_main():
     from test import test_doctest
 
     # Ignore all warnings about the use of class Tester in this module.
-    deprecations = [("class Tester is deprecated", DeprecationWarning)]
+    deprecations = []
+    if __debug__:
+        deprecations.append(("class Tester is deprecated", DeprecationWarning))
     if sys.py3kwarning:
         deprecations += [("backquote not supported", SyntaxWarning),
                          ("execfile.. not supported", DeprecationWarning)]
