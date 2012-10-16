@@ -59,24 +59,24 @@ they appear in the sequence.  For example (no pun intended):
 ::
 
    >>> # Measure some strings:
-   ... a = ['cat', 'window', 'defenestrate']
-   >>> for x in a:
-   ...     print x, len(x)
+   ... words = ['cat', 'window', 'defenestrate']
+   >>> for w in words:
+   ...     print w, len(w)
    ...
    cat 3
    window 6
    defenestrate 12
 
-It is not safe to modify the sequence being iterated over in the loop (this can
-only happen for mutable sequence types, such as lists).  If you need to modify
-the list you are iterating over (for example, to duplicate selected items) you
-must iterate over a copy.  The slice notation makes this particularly
-convenient::
+If you need to modify the sequence you are iterating over while inside the loop
+(for example to duplicate selected items), it is recommended that you first
+make a copy.  Iterating over a sequence does not implicitly make a copy.  The
+slice notation makes this especially convenient::
 
-   >>> for x in a[:]: # make a slice copy of the entire list
-   ...    if len(x) > 6: a.insert(0, x)
+   >>> for w in words[:]:  # Loop over a slice copy of the entire list.
+   ...     if len(w) > 6:
+   ...         words.insert(0, w)
    ...
-   >>> a
+   >>> words
    ['defenestrate', 'cat', 'window', 'defenestrate']
 
 
