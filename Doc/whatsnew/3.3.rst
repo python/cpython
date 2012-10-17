@@ -796,6 +796,10 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Petri Lehtinen in :issue:`12170`)
 
+* The ``rjust()``, ``ljust()``, and ``center()`` methods of :class:`bytes`
+  and :class:`bytearray` now accept a :class:`bytearray` for the ``fill``
+  argument.  (Contributed by Petri Lehtinen in :issue:`12380`.)
+
 * New methods have been added to :class:`list` and :class:`bytearray`:
   ``copy()`` and ``clear()`` (:issue:`10516`).  Consequently,
   :class:`~collections.abc.MutableSequence` now also defines a
@@ -2192,6 +2196,9 @@ Changes to Python's build process and to the C API include:
     * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
     * :c:macro:`PyUnicode_MAX_CHAR_VALUE`
 
+* :c:macro:`PyArg_ParseTuple` now accepts a :class:`bytearray` for the ``c``
+  format (:issue:`12380`).
+
 
 
 Deprecated
@@ -2211,6 +2218,8 @@ OSF support, which was deprecated in 3.2, has been completely removed.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
+* Passing a non-empty string to ``object.__format__()`` is deprecated, and
+  will produce a :exc:`TypeError` in Python 3.4 (:issue:`9856`).
 * The ``unicode_internal`` codec has been deprecated because of the
   :pep:`393`, use UTF-8, UTF-16 (``utf-16-le`` or ``utf-16-be``), or UTF-32
   (``utf-32-le`` or ``utf-32-be``)
@@ -2437,6 +2446,11 @@ Porting Python code
 * Code that used to work around the fact that the :mod:`threading` module used
   factory functions by subclassing the private classes will need to change to
   subclass the now-public classes.
+
+* The undocumented debugging machinery in the threading module has been
+  removed, simplifying the code.  This should have no effect on production
+  code, but is mentioned here in case any application debug frameworks were
+  interacting with it (:issue:`13550`).
 
 
 Porting C code
