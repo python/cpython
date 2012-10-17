@@ -666,6 +666,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
 - Issue #14695: Fix missing support for starred assignments in
   Tools/parser/unparse.py.
 
