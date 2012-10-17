@@ -168,6 +168,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
 
 What's New in Python 3.3.0?
 ===========================
