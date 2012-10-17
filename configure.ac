@@ -830,10 +830,8 @@ else
 	SVNVERSION="echo Unversioned directory"
 fi
 
-BUILDDIR="`pwd`"
-AC_SUBST(BUILDDIR)
 AC_SUBST(BASECPPFLAGS)
-if test "$srcdir" != "." -a "$srcdir" != "$BUILDDIR"; then
+if test "$abs_srcdir" != "$abs_builddir"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
