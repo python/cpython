@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16166: Add PY_LITTLE_ENDIAN and PY_BIG_ENDIAN macros and unified
+  endianess detection and handling.
+
 - Issue #15958: bytes.join and bytearray.join now accept arbitrary buffer
   objects.
 
