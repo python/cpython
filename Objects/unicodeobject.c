@@ -47,14 +47,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-/* Endianness switches; defaults to little endian */
-
-#ifdef WORDS_BIGENDIAN
-# define BYTEORDER_IS_BIG_ENDIAN
-#else
-# define BYTEORDER_IS_LITTLE_ENDIAN
-#endif
-
 /* --- Globals ------------------------------------------------------------
 
    The globals are initialized by the _PyUnicode_Init() API and should
@@ -4813,7 +4805,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     int bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
     /* Offsets from q for retrieving bytes in the right order. */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
     int iorder[] = {0, 1, 2, 3};
 #else
     int iorder[] = {3, 2, 1, 0};
@@ -4835,7 +4827,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         if (size >= 4) {
             const Py_UCS4 bom = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
                 (q[iorder[1]] << 8) | q[iorder[0]];
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
             if (bom == 0x0000FEFF) {
                 q += 4;
                 bo = -1;
@@ -4949,7 +4941,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     unsigned char *p;
     Py_ssize_t nsize, i;
     /* Offsets from p for storing byte pairs in the right order. */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
     int iorder[] = {0, 1, 2, 3};
 #else
     int iorder[] = {3, 2, 1, 0};
@@ -5092,7 +5084,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
         return unicode_empty;
     }
 
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
     native_ordering = bo <= 0;
 #else
     native_ordering = bo >= 0;
@@ -5209,7 +5201,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
     unsigned short *out;
     Py_ssize_t bytesize;
     Py_ssize_t pairs;
-#ifdef WORDS_BIGENDIAN
+#if PY_BIG_ENDIAN
     int native_ordering = byteorder >= 0;
 #else
     int native_ordering = byteorder <= 0;

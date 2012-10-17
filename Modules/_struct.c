@@ -1199,12 +1199,11 @@ whichtable(char **pfmt)
     case '!': /* Network byte order is big-endian */
         return bigendian_table;
     case '=': { /* Host byte order -- different from native in alignment! */
-        int n = 1;
-        char *p = (char *) &n;
-        if (*p == 1)
-            return lilendian_table;
-        else
-            return bigendian_table;
+#if PY_LITTLE_ENDIAN
+        return lilendian_table;
+#else
+        return bigendian_table;
+#endif
     }
     default:
         --*pfmt; /* Back out of pointer increment */
@@ -2088,13 +2087,13 @@ PyInit__struct(void)
 
     /* Check endian and swap in faster functions */
     {
-        int one = 1;
         formatdef *native = native_table;
         formatdef *other, *ptr;
-        if ((int)*(unsigned char*)&one)
-            other = lilendian_table;
-        else
-            other = bigendian_table;
+#if PY_LITTLE_ENDIAN
+        other = lilendian_table;
+#else
+        other = bigendian_table;
+#endif
         /* Scan through the native table, find a matching
            entry in the endian table and swap in the
            native implementations whenever possible
