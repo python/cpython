@@ -207,5 +207,7 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
 
 **(For information about older versions, consult the HISTORY file.)**
