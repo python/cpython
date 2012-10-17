@@ -5751,6 +5751,11 @@ if test $ac_cv_opt_olimit_ok = yes; then
 	# environment?
         Darwin*)
 	    ;;
+        # XXX thankfully this useless troublemaker of a flag has been
+        # eradicated in the 3.x line.  For now, make sure it isn't picked
+        # up by any of our other platforms that use CC.
+        AIX*|SunOS*|HP-UX*|IRIX*)
+            ;;
         *)
 	    BASECFLAGS="$BASECFLAGS -OPT:Olimit=0"
 	    ;;
