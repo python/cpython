@@ -1450,7 +1450,7 @@ class SocketHandlerTest(BaseTest):
             self.root_logger.exception('Never sent')
         self.root_logger.error('Never sent, either')
         now = time.time()
-        self.assertTrue(self.sock_hdlr.retryTime > now)
+        self.assertGreater(self.sock_hdlr.retryTime, now)
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
 
@@ -1776,7 +1776,7 @@ class WarningsTest(BaseTest):
             logger.removeHandler(h)
             s = stream.getvalue()
             h.close()
-            self.assertTrue(s.find("UserWarning: I'm warning you...\n") > 0)
+            self.assertGreater(s.find("UserWarning: I'm warning you...\n"), 0)
 
             #See if an explicit file uses the original implementation
             a_file = io.StringIO()
@@ -2801,14 +2801,14 @@ class ChildLoggerTest(BaseTest):
         l2 = logging.getLogger('def.ghi')
         c1 = r.getChild('xyz')
         c2 = r.getChild('uvw.xyz')
-        self.assertTrue(c1 is logging.getLogger('xyz'))
-        self.assertTrue(c2 is logging.getLogger('uvw.xyz'))
+        self.assertIs(c1, logging.getLogger('xyz'))
+        self.assertIs(c2, logging.getLogger('uvw.xyz'))
         c1 = l1.getChild('def')
         c2 = c1.getChild('ghi')
         c3 = l1.getChild('def.ghi')
-        self.assertTrue(c1 is logging.getLogger('abc.def'))
-        self.assertTrue(c2 is logging.getLogger('abc.def.ghi'))
-        self.assertTrue(c2 is c3)
+        self.assertIs(c1, logging.getLogger('abc.def'))
+        self.assertIs(c2, logging.getLogger('abc.def.ghi'))
+        self.assertIs(c2, c3)
 
 
 class DerivedLogRecord(logging.LogRecord):
@@ -3889,7 +3889,7 @@ class NTEventLogHandlerTest(BaseTest):
         h.handle(r)
         h.close()
         # Now see if the event is recorded
-        self.assertTrue(num_recs < win32evtlog.GetNumberOfEventLogRecords(elh))
+        self.assertLess(num_recs, win32evtlog.GetNumberOfEventLogRecords(elh))
         flags = win32evtlog.EVENTLOG_BACKWARDS_READ | \
                 win32evtlog.EVENTLOG_SEQUENTIAL_READ
         found = False
