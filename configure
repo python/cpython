@@ -735,7 +735,6 @@ HGBRANCH
 HGTAG
 HGVERSION
 BASECPPFLAGS
-BUILDDIR
 target_alias
 host_alias
 build_alias
@@ -2747,10 +2746,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-BUILDDIR="`pwd`"
 
-
-if test "$srcdir" != "." -a "$srcdir" != "$BUILDDIR"; then
+if test "$abs_srcdir" != "$abs_builddir"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
