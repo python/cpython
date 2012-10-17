@@ -396,24 +396,29 @@ def _generate_posix_vars():
     # `make pybuilddir.txt` target -- which is a precursor to the
     # _sysconfigdata.py module being constructed.  Unfortunately,
     # get_config_vars() eventually calls _init_posix(), which attempts
-    # to import _sysconfigdata, which we won't have built yet.  So,
-    # write out _sysconfigdata.py to the current directory first,
-    # then call get_platform() to get the pybuilddir, then move it.
-    destfile = '_sysconfigdata.py'
-    with open(destfile, 'w', encoding='utf8') as f:
-        f.write('# system configuration generated and used by'
-                ' the sysconfig module\n')
-        f.write('build_time_vars = ')
-        pprint.pprint(vars, stream=f)
+    # to import _sysconfigdata, which we won't have built yet.  In order
+    # for _init_posix() to work, if we're on Darwin, just mock up the
+    # _sysconfigdata module manually and populate it with the build vars.
+    # This is more than sufficient for ensuring the subsequent call to
+    # get_platform() succeeds.
+    name = '_sysconfigdata'
+    if 'darwin' in sys.platform:
+        import imp
+        module = imp.new_module(name)
+        module.build_time_vars = vars
+        sys.modules[name] = module
 
     pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
     if hasattr(sys, "gettotalrefcount"):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
-    target = os.path.join(pybuilddir, destfile)
+    destfile = os.path.join(pybuilddir, name + '.py')
 
-    # Relocate _sysconfigdata.py into its final home.
-    os.rename(destfile, target)
+    with open(destfile, 'w', encoding='utf8') as f:
+        f.write('# system configuration generated and used by'
+                ' the sysconfig module\n')
+        f.write('build_time_vars = ')
+        pprint.pprint(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='ascii') as f:
