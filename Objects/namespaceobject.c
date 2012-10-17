@@ -21,19 +21,19 @@ static PyMemberDef namespace_members[] = {
 static PyObject *
 namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _PyNamespaceObject *ns;
-    ns = PyObject_GC_New(_PyNamespaceObject, &_PyNamespace_Type);
-    if (ns == NULL)
-        return NULL;
+    PyObject *self;
 
-    ns->ns_dict = PyDict_New();
-    if (ns->ns_dict == NULL) {
-        Py_DECREF(ns);
-        return NULL;
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = type->tp_alloc(type, 0);
+    if (self != NULL) {
+        _PyNamespaceObject *ns = (_PyNamespaceObject *)self;
+        ns->ns_dict = PyDict_New();
+        if (ns->ns_dict == NULL) {
+            Py_DECREF(ns);
+            return NULL;
+        }
     }
-
-    PyObject_GC_Track(ns);
-    return (PyObject *)ns;
+    return self;
 }
 
 

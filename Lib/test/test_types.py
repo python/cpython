@@ -1135,6 +1135,15 @@ class SimpleNamespaceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ns['spam']
 
+    def test_subclass(self):
+        class Spam(types.SimpleNamespace):
+            pass
+
+        spam = Spam(ham=8, eggs=9)
+
+        self.assertIs(type(spam), Spam)
+        self.assertEqual(vars(spam), {'ham': 8, 'eggs': 9})
+
 
 def test_main():
     run_unittest(TypesTests, MappingProxyTests, ClassCreationTests,
