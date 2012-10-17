@@ -16,6 +16,8 @@ Core and Builtins
 - Issue #14783: Improve int() docstring and switch docstrings for str(),
   range(), and slice() to use multi-line signatures.
 
+- Issue #16160: Subclass support now works for types.SimpleNamespace.
+
 - Upgrade Unicode data (UCD) to version 6.2.
 
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
