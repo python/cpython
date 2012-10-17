@@ -168,6 +168,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
 
 What's New in Python 3.3.0?
 ===========================
@@ -2426,6 +2428,324 @@ Library
 
 - Issue #8033: sqlite3: Fix 64-bit integer handling in user functions
   on 32-bit architectures. Initial patch by Philippe Devalkeneer.
+
+Extension Modules
+-----------------
+
+- Issue #15676: Now "mmap" check for empty files before doing the
+  offset check.  Patch by Steven Willis.
+
+- Issue #6493: An issue in ctypes on Windows that caused structure bitfields
+  of type ctypes.c_uint32 and width 32 to incorrectly be set has been fixed.
+
+- Issue #15000: Support the "unique" x32 architecture in _posixsubprocess.c.
+
+- Issue #9041: An issue in ctypes.c_longdouble, ctypes.c_double, and
+  ctypes.c_float that caused an incorrect exception to be returned in the
+  case of overflow has been fixed.
+
+- Issue #14212: The re module didn't retain a reference to buffers it was
+  scanning, resulting in segfaults.
+
+Tests
+-----
+
+- Issue #15304: Fix warning message when os.chdir() fails inside
+  test.support.temp_cwd().  Patch by Chris Jerdonek.
+
+- Issue #15802: Fix test logic in TestMaildir.test_create_tmp. Patch
+  by Serhiy Storchaka.
+
+- Issue #15747: ZFS always returns EOPNOTSUPP when attempting to set the
+  UF_IMMUTABLE flag (via either chflags or lchflags); refactor affected
+  tests in test_posix.py to account for this.
+
+- Issue #15285: Refactor the approach for testing connect timeouts using
+  two external hosts that have been configured specifically for this type
+  of test.
+
+- Issue #15615: Add some tests for the json module's handling of invalid
+  input data.  Patch by Kushal Das.
+
+- Issue #15496: Add directory removal helpers for tests on Windows.
+  Patch by Jeremy Kloth.
+
+- Issue #15467: Move helpers for __sizeof__ tests into test_support.
+  Patch by Serhiy Storchaka.
+
+- Issue #15320: Make iterating the list of tests thread-safe when running
+  tests in multiprocess mode. Patch by Chris Jerdonek.
+
+- Issue #15230: Adopted a more systematic approach in the runpy tests
+
+- Issue #15300: Ensure the temporary test working directories are in the same
+  parent folder when running tests in multiprocess mode from a Python build.
+  Patch by Chris Jerdonek.
+
+- test_nntplib now tolerates being run from behind NNTP gateways that add
+  "X-Antivirus" headers to articles
+
+- Issue #15043: test_gdb is now skipped entirely if gdb security settings
+  block loading of the gdb hooks
+
+- Issue #14026: In test_cmd_line_script, check that sys.argv is populated
+  correctly for the various invocation approaches (Patch by Jason Yeo)
+
+- Issue #14032: Fix incorrect variable name in test_cmd_line_script debugging
+  message (Patch by Jason Yeo)
+
+- Issue #14589: Update certificate chain for sha256.tbs-internet.com, fixing
+  a test failure in test_ssl.
+
+Build
+-----
+
+- Issue #15923: fix a mistake in asdl_c.py that resulted in a TypeError after
+  2801bf875a24 (see #15801).
+
+- Issue #11715: Fix multiarch detection without having Debian development
+  tools (dpkg-dev) installed.
+
+- Issue #15819: Make sure we can build Python out-of-tree from a readonly
+  source directory.  (Somewhat related to Issue #9860.)
+
+- Issue #15822: Ensure 2to3 grammar pickles are properly installed.
+
+- Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.
+
+- Issue #8847: Disable COMDAT folding in Windows PGO builds.
+
+- Issue #14197: For OS X framework builds, ensure links to the shared
+  library are created with the proper ABI suffix.
+
+- Issue #14472: Update .gitignore. Patch by Matej Cepl.
+
+- The Windows build now uses OpenSSL 1.0.0j and bzip2 1.0.6.
+
+- Issue #14557: Fix extensions build on HP-UX. Patch by Adi Roiban.
+
+- Issue #14437: Fix building the _io module under Cygwin.
+
+- Issue #14387: Do not include accu.h from Python.h.
+
+- Issue #14359: Only use O_CLOEXEC in _posixmodule.c if it is defined.
+  Based on patch from Hervé Coatanhay.
+
+- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
+
+Documentation
+-------------
+
+- Issue #16115: Improve subprocess.Popen() documentation around args, shell,
+  and executable arguments.
+
+- Issue #13498: Clarify docs of os.makedirs()'s exist_ok argument.  Done with
+  great native-speaker help from R. David Murray.
+
+- Issue #15533: Clarify docs and add tests for subprocess.Popen()'s cwd
+  argument.
+
+- Issue #15979: Improve timeit documentation.
+
+- Issue #16036: Improve documentation of built-in int()'s signature and
+  arguments.
+
+- Issue #15935: Clarification of argparse docs, re: add_argument() type and
+  default arguments.  Patch contributed by Chris Jerdonek.
+
+- Issue #11964: Document a change in v3.2 to the behavior of the indent
+  parameter of json encoding operations.
+
+- Issue #14674: Add a discussion of the json module's standard compliance.
+  Patch by Chris Rebert.
+
+- Issue #15630: Add an example for "continue" stmt in the tutorial. Patch by
+  Daniel Ellis.
+
+- Issue #15444: Use proper spelling for non-ASCII contributor names.  Patch
+  by Serhiy Storchaka.
+
+- Issue 15482: Properly document the default 'level' value for __import__()
+  while warning about using negative values.
+
+- Issue #15230: Clearly document some of the limitations of the runpy
+  module and nudge readers towards importlib when appropriate.
+
+- Issue #13557: Clarify effect of giving two different namespaces to exec or
+  execfile().
+
+- Issue #8799: Fix and improve the threading.Condition documentation.
+
+- Issue #14943: Correct a default argument value for winreg.OpenKey
+  and correctly list the argument names in the function's explanation.
+
+- Issue #14034: added the argparse tutorial.
+
+- Issue #15250: Document that filecmp.dircmp compares files shallowly. Patch
+  contributed by Chris Jerdonek.
+
+Tools/Demos
+-----------
+
+- Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
+- Issue #14695: Fix missing support for starred assignments in
+  Tools/parser/unparse.py.
+
+
+What's New in Python 3.2.3?
+===========================
+
+*Release date: 10-Apr-2012*
+
+Build
+-----
+
+- Issue #14387: Work around a problem building extension modules under Windows
+  by undefining ``small`` before use in the Python headers.
+
+
+What's New in Python 3.2.3 release candidate 2?
+===============================================
+
+*Release date: 18-Mar-2012*
+
+Library
+-------
+
+- Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
+  on Windows.
+
+Extension Modules
+-----------------
+
+- Issue #14234: CVE-2012-0876: Randomize hashes of xml attributes in the hash
+  table internal to the pyexpat module's copy of the expat library to avoid a
+  denial of service due to hash collisions.  Patch by David Malcolm with some
+  modifications by the expat project.
+
+
+What's New in Python 3.2.3 release candidate 1?
+===============================================
+
+*Release date: 24-Feb-2012*
+
+Core and Builtins
+-----------------
+
+- Issue #13703: oCERT-2011-003: add -R command-line option and PYTHONHASHSEED
+  environment variable, to provide an opt-in way to protect against denial of
+  service attacks due to hash collisions within the dict and set types.  Patch
+  by David Malcolm, based on work by Victor Stinner.
+
+- Issue #14084: Fix a file descriptor leak when importing a module with a
+  bad encoding.
+
+- Issue #13020: Fix a reference leak when allocating a structsequence object
+  fails.  Patch by Suman Saha.
+
+- Issue #13908: Ready types returned from PyType_FromSpec.
+
+- Issue #11235: Fix OverflowError when trying to import a source file whose
+  modification time doesn't fit in a 32-bit timestamp.
+
+- Fix the builtin module initialization code to store the init function for
+  future reinitialization.
+
+- Issue #8052: The posix subprocess module would take a long time closing
+  all possible file descriptors in the child process rather than just open
+  file descriptors.  It now closes only the open fds if possible for the
+  default close_fds=True behavior.
+
+- Issue #13629: Renumber the tokens in token.h so that they match the indexes
+  into _PyParser_TokenNames.
+
+- Fix the fix for issue #12149: it was incorrect, although it had the side
+  effect of appearing to resolve the issue.  Thanks to Mark Shannon for
+  noticing.
+
+- Issue #13505: Pickle bytes objects in a way that is compatible with
+  Python 2 when using protocols <= 2.
+
+- Issue #11147: Fix an unused argument in _Py_ANNOTATE_MEMORY_ORDER.  (Fix
+  given by Campbell Barton).
+
+- Issue #7111: Python can now be run without a stdin, stdout or stderr
+  stream.  It was already the case with Python 2.  However, the corresponding
+  sys module entries are now set to None (instead of an unusable file object).
+
+- Issue #13436: Fix a bogus error message when an AST object was passed
+  an invalid integer value.
+
+- Issue #13338: Handle all enumerations in _Py_ANNOTATE_MEMORY_ORDER
+  to allow compiling extension modules with -Wswitch-enum on gcc.
+  Initial patch by Floris Bruynooghe.
+
+- Issue #13333: The UTF-7 decoder now accepts lone surrogates (the encoder
+  already accepts them).
+
+- Issue #13342: input() used to ignore sys.stdin's and sys.stdout's unicode
+  error handler in interactive mode (when calling into PyOS_Readline()).
+
+- Issue #13343: Fix a SystemError when a lambda expression uses a global
+  variable in the default value of a keyword-only argument:
+  (lambda *, arg=GLOBAL_NAME: None)
+
+- Issue #10519: Avoid unnecessary recursive function calls in
+  setobject.c.
+
+- Issue #10363: Deallocate global locks in Py_Finalize().
+
+- Issue #13018: Fix reference leaks in error paths in dictobject.c.
+  Patch by Suman Saha.
+
+- Issue #1294232: In a few cases involving metaclass inheritance, the
+  interpreter would sometimes invoke the wrong metaclass when building a new
+  class object. These cases now behave correctly. Patch by Daniel Urban.
+
+- Issue #12604: VTRACE macro expanded to no-op in _sre.c to avoid compiler
+  warnings. Patch by Josh Triplett and Petri Lehtinen.
+
+- Issue #13188: When called without an explicit traceback argument,
+  generator.throw() now gets the traceback from the passed exception's
+  ``__traceback__`` attribute.  Patch by Petri Lehtinen.
+
+- Issue #7833: Extension modules built using distutils on Windows will no
+  longer include a "manifest" to prevent them failing at import time in some
+  embedded situations.
+
+- Issue #13063: the Windows error ERROR_NO_DATA (numbered 232 and described
+  as "The pipe is being closed") is now mapped to POSIX errno EPIPE
+  (previously EINVAL).
+
+- Issue #12911: Fix memory consumption when calculating the repr() of huge
+  tuples or lists.
+
+- Issue #7732: Don't open a directory as a file anymore while importing a
+  module. Ignore the direcotry if its name matchs the module name (e.g.
+  "__init__.py") and raise a ImportError instead.
+
+- Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
+  finding the bug and providing a patch.
+
+- Issue #12973: Fix overflow checks that relied on undefined behaviour in
+  list_repeat (listobject.c) and islice_next (itertoolsmodule.c).  These bugs
+  caused test failures with recent versions of Clang.
+
+- Issue #12802: the Windows error ERROR_DIRECTORY (numbered 267) is now
+  mapped to POSIX errno ENOTDIR (previously EINVAL).
+
+- Issue #9200: The str.is* methods now work with strings that contain non-BMP
+  characters even in narrow Unicode builds.
+
+- Issue #12791: Break reference cycles early when a generator exits with
+  an exception.
+
+- Issue #12266: Fix str.capitalize() to correctly uppercase/lowercase
+  titlecased and cased non-letter characters.
+
+Library
+-------
 
 - HTMLParser is now able to handle slashes in the start tag.
 
