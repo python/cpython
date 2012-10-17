@@ -22,13 +22,6 @@
 
 #ifdef PY_LONG_LONG /* If no PY_LONG_LONG, don't compile anything! */
 
-/* Endianness testing and definitions */
-#define TestEndianness(variable) {int i=1; variable=PCT_BIG_ENDIAN;\
-        if (*((char*)&i)==1) variable=PCT_LITTLE_ENDIAN;}
-
-#define PCT_LITTLE_ENDIAN 1
-#define PCT_BIG_ENDIAN 0
-
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
@@ -52,7 +45,6 @@ typedef struct {
     SHA_INT64 digest[8];                /* Message digest */
     SHA_INT32 count_lo, count_hi;       /* 64-bit bit count */
     SHA_BYTE data[SHA_BLOCKSIZE];       /* SHA data buffer */
-    int Endianness;
     int local;                          /* unprocessed amount in data */
     int digestsize;
 } SHAobject;
@@ -60,12 +52,10 @@ typedef struct {
 /* When run on a little-endian CPU we need to perform byte reversal on an
    array of longwords. */
 
-static void longReverse(SHA_INT64 *buffer, int byteCount, int Endianness)
+#if PY_LITTLE_ENDIAN
+static void longReverse(SHA_INT64 *buffer, int byteCount)
 {
     SHA_INT64 value;
-
-    if ( Endianness == PCT_BIG_ENDIAN )
-        return;
 
     byteCount /= sizeof(*buffer);
     while (byteCount--) {
@@ -83,10 +73,10 @@ static void longReverse(SHA_INT64 *buffer, int byteCount, int Endianness)
                 buffer++;
     }
 }
+#endif
 
 static void SHAcopy(SHAobject *src, SHAobject *dest)
 {
-    dest->Endianness = src->Endianness;
     dest->local = src->local;
     dest->digestsize = src->digestsize;
     dest->count_lo = src->count_lo;
@@ -141,7 +131,9 @@ sha512_transform(SHAobject *sha_info)
     SHA_INT64 S[8], W[80], t0, t1;
 
     memcpy(W, sha_info->data, sizeof(sha_info->data));
-    longReverse(W, (int)sizeof(sha_info->data), sha_info->Endianness);
+#if PY_LITTLE_ENDIAN
+    longReverse(W, (int)sizeof(sha_info->data));
+#endif
 
     for (i = 16; i < 80; ++i) {
                 W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
@@ -254,7 +246,6 @@ sha512_transform(SHAobject *sha_info)
 static void
 sha512_init(SHAobject *sha_info)
 {
-    TestEndianness(sha_info->Endianness)
     sha_info->digest[0] = Py_ULL(0x6a09e667f3bcc908);
     sha_info->digest[1] = Py_ULL(0xbb67ae8584caa73b);
     sha_info->digest[2] = Py_ULL(0x3c6ef372fe94f82b);
@@ -272,7 +263,6 @@ sha512_init(SHAobject *sha_info)
 static void
 sha384_init(SHAobject *sha_info)
 {
-    TestEndianness(sha_info->Endianness)
     sha_info->digest[0] = Py_ULL(0xcbbb9d5dc1059ed8);
     sha_info->digest[1] = Py_ULL(0x629a292a367cd507);
     sha_info->digest[2] = Py_ULL(0x9159015a3070dd17);

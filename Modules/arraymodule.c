@@ -1664,11 +1664,8 @@ static const struct mformatdescr {
 static enum machine_format_code
 typecode_to_mformat_code(char typecode)
 {
-#ifdef WORDS_BIGENDIAN
-    const int is_big_endian = 1;
-#else
-    const int is_big_endian = 0;
-#endif
+    const int is_big_endian = PY_BIG_ENDIAN;
+
     size_t intsize;
     int is_signed;
 

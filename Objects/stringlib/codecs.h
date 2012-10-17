@@ -47,7 +47,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     unsigned long value = *(unsigned long *) _s;
                     if (value & ASCII_CHAR_MASK)
                         break;
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
                     _p[0] = (STRINGLIB_CHAR)(value & 0xFFu);
                     _p[1] = (STRINGLIB_CHAR)((value >> 8) & 0xFFu);
                     _p[2] = (STRINGLIB_CHAR)((value >> 16) & 0xFFu);
@@ -454,7 +454,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
     const unsigned char *q = *inptr;
     STRINGLIB_CHAR *p = dest + *outpos;
     /* Offsets from q for retrieving byte pairs in the right order. */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
     int ihi = !!native_ordering, ilo = !native_ordering;
 #else
     int ihi = !native_ordering, ilo = !!native_ordering;
@@ -485,7 +485,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
                     block = SWAB(block);
 #endif
                 }
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
 # if SIZEOF_LONG == 4
                 p[0] = (STRINGLIB_CHAR)(block & 0xFFFFu);
                 p[1] = (STRINGLIB_CHAR)(block >> 16);

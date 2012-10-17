@@ -988,7 +988,6 @@ PyLong_AsVoidPtr(PyObject *vv)
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-#define IS_LITTLE_ENDIAN (int)*(unsigned char*)&one
 #define PY_ABS_LLONG_MIN (0-(unsigned PY_LONG_LONG)PY_LLONG_MIN)
 
 /* Create a new long int object from a C PY_LONG_LONG int. */
@@ -1141,7 +1140,6 @@ PyLong_AsLongLong(PyObject *vv)
 {
     PyLongObject *v;
     PY_LONG_LONG bytes;
-    int one = 1;
     int res;
 
     if (vv == NULL) {
@@ -1176,7 +1174,7 @@ PyLong_AsLongLong(PyObject *vv)
     case 1: return v->ob_digit[0];
     }
     res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
-                              SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
+                              SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1);
 
     /* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
     if (res < 0)
@@ -1193,7 +1191,6 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 {
     PyLongObject *v;
     unsigned PY_LONG_LONG bytes;
-    int one = 1;
     int res;
 
     if (vv == NULL) {
@@ -1212,7 +1209,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     }
 
     res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
-                              SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
+                              SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 0);
 
     /* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
     if (res < 0)
@@ -1288,7 +1285,6 @@ PyLong_AsUnsignedLongLongMask(register PyObject *op)
         return (unsigned PY_LONG_LONG)-1;
     }
 }
-#undef IS_LITTLE_ENDIAN
 
 /* Get a C long long int from a long int object or any object that has an
    __int__ method.
