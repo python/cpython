@@ -32,10 +32,10 @@ def cleanup(f):
         if line.startswith("typedef unsigned long long int"):
             buf.append("/* %s */\n" % line.strip())
             continue
-        ## remove #include "brg_endian.h"
-        #if "brg_endian.h" in line:
-        #    buf.append("/* %s */\n" % line.strip())
-        #    continue
+        # remove #include "brg_endian.h"
+        if "brg_endian.h" in line:
+            buf.append("/* %s */\n" % line.strip())
+            continue
         # transform C++ comments into ANSI C comments
         line = CPP1.sub(r"/* \1 */", line)
         line = CPP2.sub(r" /* \1 */", line)

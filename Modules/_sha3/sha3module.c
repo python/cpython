@@ -124,11 +124,14 @@
   #define UseInterleaveTables
 #endif
 
-/* replacement for brg_endian.h
-#define IS_BIG_ENDIAN BIG_ENDIAN
-#define IS_LITTLE_ENDIAN LITTLE_ENDIAN
-#define PLATFORM_BYTE_ORDER BYTE_ORDER
-*/
+/* replacement for brg_endian.h */
+#define IS_BIG_ENDIAN 4321
+#define IS_LITTLE_ENDIAN 1234
+#if PY_BIG_ENDIAN
+#  define PLATFORM_BYTE_ORDER IS_BIG_ENDIAN
+#else
+#  define PLATFORM_BYTE_ORDER IS_LITTLE_ENDIAN
+#endif
 
 /* inline all Keccak dependencies */
 #include "keccak/KeccakNISTInterface.h"
