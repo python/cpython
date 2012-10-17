@@ -1638,7 +1638,26 @@ class NetworkConnectionNoServer(unittest.TestCase):
         port = support.find_unused_port()
         with self.assertRaises(socket.error) as cm:
             socket.create_connection((HOST, port))
-        self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
+
+        # Issue #16257: create_connection() calls getaddrinfo() against
+        # 'localhost'.  This may result in an IPV6 addr being returned
+        # as well as an IPV4 one:
+        #   >>> socket.getaddrinfo('localhost', port, 0, SOCK_STREAM)
+        #   >>> [(2,  2, 0, '', ('127.0.0.1', 41230)),
+        #        (26, 2, 0, '', ('::1', 41230, 0, 0))]
+        #
+        # create_connection() enumerates through all the addresses returned
+        # and if it doesn't successfully bind to any of them, it propagates
+        # the last exception it encountered.
+        #
+        # On Solaris, ENETUNREACH is returned in this circumstance instead
+        # of ECONNREFUSED.  So, if that errno exists, add it to our list of
+        # expected errnos.
+        expected_errnos = [ errno.ECONNREFUSED, ]
+        if hasattr(errno, 'ENETUNREACH'):
+            expected_errnos.append(errno.ENETUNREACH)
+
+        self.assertIn(cm.exception.errno, expected_errnos)
 
     def test_create_connection_timeout(self):
         # Issue #9792: create_connection() should not recast timeout errors
