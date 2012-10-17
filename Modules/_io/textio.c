@@ -747,7 +747,7 @@ utf16_encode(textio *self, PyObject *text)
 {
     if (!self->encoding_start_of_stream) {
         /* Skip the BOM and use native byte ordering */
-#if defined(WORDS_BIGENDIAN)
+#if PY_BIG_ENDIAN
         return utf16be_encode(self, text);
 #else
         return utf16le_encode(self, text);
@@ -776,7 +776,7 @@ utf32_encode(textio *self, PyObject *text)
 {
     if (!self->encoding_start_of_stream) {
         /* Skip the BOM and use native byte ordering */
-#if defined(WORDS_BIGENDIAN)
+#if PY_BIG_ENDIAN
         return utf32be_encode(self, text);
 #else
         return utf32le_encode(self, text);
@@ -1913,10 +1913,7 @@ typedef struct {
 
 #define COOKIE_BUF_LEN      (sizeof(Py_off_t) + 3 * sizeof(int) + sizeof(char))
 
-#if defined(WORDS_BIGENDIAN)
-
-# define IS_LITTLE_ENDIAN   0
-
+#if PY_BIG_ENDIAN
 /* We want the least significant byte of start_pos to also be the least
    significant byte of the cookie, which means that in big-endian mode we
    must copy the fields in reverse order. */
@@ -1928,9 +1925,6 @@ typedef struct {
 # define OFF_NEED_EOF       0
 
 #else
-
-# define IS_LITTLE_ENDIAN   1
-
 /* Little-endian mode: the least significant byte of start_pos will
    naturally end up the least significant byte of the cookie. */
 
@@ -1951,7 +1945,7 @@ textiowrapper_parse_cookie(cookie_type *cookie, PyObject *cookieObj)
         return -1;
 
     if (_PyLong_AsByteArray(cookieLong, buffer, sizeof(buffer),
-                            IS_LITTLE_ENDIAN, 0) < 0) {
+                            PY_LITTLE_ENDIAN, 0) < 0) {
         Py_DECREF(cookieLong);
         return -1;
     }
@@ -1977,9 +1971,9 @@ textiowrapper_build_cookie(cookie_type *cookie)
     memcpy(buffer + OFF_CHARS_TO_SKIP, &cookie->chars_to_skip, sizeof(cookie->chars_to_skip));
     memcpy(buffer + OFF_NEED_EOF, &cookie->need_eof, sizeof(cookie->need_eof));
 
-    return _PyLong_FromByteArray(buffer, sizeof(buffer), IS_LITTLE_ENDIAN, 0);
+    return _PyLong_FromByteArray(buffer, sizeof(buffer),
+                                 PY_LITTLE_ENDIAN, 0);
 }
-#undef IS_LITTLE_ENDIAN
 
 static int
 _textiowrapper_decoder_setstate(textio *self, cookie_type *cookie)

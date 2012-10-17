@@ -1561,7 +1561,6 @@ PyObject *
 _PySys_Init(void)
 {
     PyObject *m, *v, *sysdict, *version_info;
-    char *s;
 
     m = PyModule_Create(&sysmodule);
     if (m == NULL)
@@ -1638,20 +1637,14 @@ _PySys_Init(void)
                         PyLong_FromLong(0x10FFFF));
     SET_SYS_FROM_STRING("builtin_module_names",
                         list_builtin_module_names());
-    {
-        /* Assumes that longs are at least 2 bytes long.
-           Should be safe! */
-        unsigned long number = 1;
-        char *value;
+#if PY_BIG_ENDIAN
+    SET_SYS_FROM_STRING("byteorder",
+                        PyUnicode_FromString("big"));
+#else
+    SET_SYS_FROM_STRING("byteorder",
+                        PyUnicode_FromString("little"));
+#endif
 
-        s = (char *) &number;
-        if (s[0] == 0)
-            value = "big";
-        else
-            value = "little";
-        SET_SYS_FROM_STRING("byteorder",
-                            PyUnicode_FromString(value));
-    }
 #ifdef MS_COREDLL
     SET_SYS_FROM_STRING("dllhandle",
                         PyLong_FromVoidPtr(PyWin_DLLhModule));
