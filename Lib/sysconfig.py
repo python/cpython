@@ -371,17 +371,30 @@ def _generate_posix_vars():
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
 
-    pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
-    if hasattr(sys, "gettotalrefcount"):
-        pybuilddir += '-pydebug'
-    os.makedirs(pybuilddir, exist_ok=True)
-    destfile = os.path.join(pybuilddir, '_sysconfigdata.py')
-
+    # There's a chicken-and-egg situation on OS X with regards to the
+    # _sysconfigdata module after the changes introduced by #15298:
+    # get_config_vars() is called by get_platform() as part of the
+    # `make pybuilddir.txt` target -- which is a precursor to the
+    # _sysconfigdata.py module being constructed.  Unfortunately,
+    # get_config_vars() eventually calls _init_posix(), which attempts
+    # to import _sysconfigdata, which we won't have built yet.  So,
+    # write out _sysconfigdata.py to the current directory first,
+    # then call get_platform() to get the pybuilddir, then move it.
+    destfile = '_sysconfigdata.py'
     with open(destfile, 'w', encoding='utf8') as f:
         f.write('# system configuration generated and used by'
                 ' the sysconfig module\n')
         f.write('build_time_vars = ')
         pprint.pprint(vars, stream=f)
+
+    pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
+    if hasattr(sys, "gettotalrefcount"):
+        pybuilddir += '-pydebug'
+    os.makedirs(pybuilddir, exist_ok=True)
+    target = os.path.join(pybuilddir, destfile)
+
+    # Relocate _sysconfigdata.py into its final home.
+    os.rename(destfile, target)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='ascii') as f:
