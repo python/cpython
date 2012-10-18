@@ -256,9 +256,10 @@ default being UTF-8).  ``'b'`` appended to the mode opens the file in
 :dfn:`binary mode`: now the data is read and written in the form of bytes
 objects.  This mode should be used for all files that don't contain text.
 
-In text mode, the default is to convert platform-specific line endings (``\n``
-on Unix, ``\r\n`` on Windows) to just ``\n`` on reading and ``\n`` back to
-platform-specific line endings on writing.  This behind-the-scenes modification
+In text mode, the default when reading is to convert platform-specific line
+endings (``\n`` on Unix, ``\r\n`` on Windows) to just ``\n``.  When writing in
+text mode, the default is to convert occurrences of ``\n`` back to
+platform-specific line endings.  This behind-the-scenes modification
 to file data is fine for text files, but will corrupt binary data like that in
 :file:`JPEG` or :file:`EXE` files.  Be very careful to use binary mode when
 reading and writing such files.
