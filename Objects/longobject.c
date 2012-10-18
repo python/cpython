@@ -926,6 +926,13 @@ _PyLong_AsByteArray(PyLongObject* v,
 PyObject *
 PyLong_FromVoidPtr(void *p)
 {
+#if SIZEOF_VOID_P <= SIZEOF_LONG
+    /* special-case null pointer */
+    if (!p)
+        return PyLong_FromLong(0);
+    return PyLong_FromUnsignedLong((unsigned long)(Py_uintptr_t)p);
+#else
+
 #ifndef HAVE_LONG_LONG
 #   error "PyLong_FromVoidPtr: sizeof(void*) > sizeof(long), but no long long"
 #endif
@@ -936,6 +943,7 @@ PyLong_FromVoidPtr(void *p)
     if (!p)
         return PyLong_FromLong(0);
     return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)(Py_uintptr_t)p);
+#endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
 }
 
