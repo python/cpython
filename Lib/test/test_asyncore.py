@@ -296,7 +296,6 @@ class DispatcherTests(unittest.TestCase):
             d.handle_read()
             d.handle_write()
             d.handle_connect()
-            d.handle_accept()
         finally:
             sys.stdout = stdout
 
@@ -304,8 +303,7 @@ class DispatcherTests(unittest.TestCase):
         expected = ['warning: unhandled incoming priority event',
                     'warning: unhandled read event',
                     'warning: unhandled write event',
-                    'warning: unhandled connect event',
-                    'warning: unhandled accept event']
+                    'warning: unhandled connect event']
         self.assertEqual(lines, expected)
 
     def test_issue_8594(self):
@@ -453,6 +451,9 @@ class BaseTestHandler(asyncore.dispatcher):
     def handle_accept(self):
         raise Exception("handle_accept not supposed to be called")
 
+    def handle_accepted(self):
+        raise Exception("handle_accepted not supposed to be called")
+
     def handle_connect(self):
         raise Exception("handle_connect not supposed to be called")
 
@@ -483,8 +484,7 @@ class TCPServer(asyncore.dispatcher):
     def address(self):
         return self.socket.getsockname()[:2]
 
-    def handle_accept(self):
-        sock, addr = self.accept()
+    def handle_accepted(self, sock, addr):
         self.handler(sock)
 
     def handle_error(self):
@@ -542,6 +542,29 @@ class BaseTestAPI(unittest.TestCase):
                 self.address = self.socket.getsockname()[:2]
 
             def handle_accept(self):
+                self.flag = True
+
+        server = TestListener()
+        client = BaseClient(server.address)
+        self.loop_waiting_for_flag(server)
+
+    def test_handle_accepted(self):
+        # make sure handle_accepted() is called when a client connects
+
+        class TestListener(BaseTestHandler):
+
+            def __init__(self):
+                BaseTestHandler.__init__(self)
+                self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.bind((HOST, 0))
+                self.listen(5)
+                self.address = self.socket.getsockname()[:2]
+
+            def handle_accept(self):
+                asyncore.dispatcher.handle_accept(self)
+
+            def handle_accepted(self, sock, addr):
+                sock.close()
                 self.flag = True
 
         server = TestListener()
@@ -671,7 +694,8 @@ class BaseTestAPI(unittest.TestCase):
         s = asyncore.dispatcher()
         s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, socket.AF_INET)
-        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
+        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
 
     def test_bind(self):
         s1 = asyncore.dispatcher()
@@ -697,6 +721,7 @@ class BaseTestAPI(unittest.TestCase):
             s = asyncore.dispatcher(socket.socket())
             self.assertFalse(s.socket.getsockopt(socket.SOL_SOCKET,
                                                  socket.SO_REUSEADDR))
+            s.socket.close()
             s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             s.set_reuse_addr()
             self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,

@@ -515,7 +515,13 @@ class dispatcher:
         self.log_info('unhandled connect event', 'warning')
 
     def handle_accept(self):
-        self.log_info('unhandled accept event', 'warning')
+        pair = self.accept()
+        if pair is not None:
+            self.handle_accepted(*pair)
+
+    def handle_accepted(self, sock, addr):
+        sock.close()
+        self.log_info('unhandled accepted event', 'warning')
 
     def handle_close(self):
         self.log_info('unhandled close event', 'warning')
