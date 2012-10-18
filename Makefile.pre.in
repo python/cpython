@@ -695,6 +695,7 @@ BYTESTR_DEPS = \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
+		$(srcdir)/Objects/stringlib/join.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/split.h \
 		$(srcdir)/Objects/stringlib/stringdefs.h \
