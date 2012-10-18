@@ -936,9 +936,6 @@ PyObject *
 PyLong_FromVoidPtr(void *p)
 {
 #if SIZEOF_VOID_P <= SIZEOF_LONG
-    /* special-case null pointer */
-    if (!p)
-        return PyLong_FromLong(0);
     return PyLong_FromUnsignedLong((unsigned long)(Py_uintptr_t)p);
 #else
 
@@ -948,9 +945,6 @@ PyLong_FromVoidPtr(void *p)
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_FromVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
-    /* special-case null pointer */
-    if (!p)
-        return PyLong_FromLong(0);
     return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)(Py_uintptr_t)p);
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
