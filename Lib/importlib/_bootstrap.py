@@ -1048,6 +1048,9 @@ class SourceFileLoader(FileLoader, SourceLoader):
             mode = _os.stat(source_path).st_mode
         except OSError:
             mode = 0o666
+        # We always ensure write access so we can update cached files
+        # later even when the source files are read-only on Windows (#6074)
+        mode |= 0o200
         return self.set_data(bytecode_path, data, _mode=mode)
 
     def set_data(self, path, data, *, _mode=0o666):
