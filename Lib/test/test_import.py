@@ -15,7 +15,6 @@ import textwrap
 import errno
 import shutil
 import contextlib
-import time
 
 import test.support
 from test.support import (
