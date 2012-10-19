@@ -75,7 +75,7 @@ class DirBrowserTreeItem(TreeItem):
         suffixes += importlib.machinery.SOURCE_SUFFIXES[:]
         suffixes += importlib.machinery.BYTECODE_SUFFIXES[:]
         sorted = []
-        for suff, mode, flag in suffixes:
+        for suff in suffixes:
             i = -len(suff)
             for name in allnames[:]:
                 normed_name = os.path.normcase(name)
