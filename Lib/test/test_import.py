@@ -20,12 +20,24 @@ from test.support import (
 from test import script_helper
 
 
-def remove_files(name):
-    for f in (name + ".py",
-              name + ".pyc",
-              name + ".pyo",
-              name + ".pyw",
+def _iter_files(name):
+    for f in (name + os.extsep + "py",
+              name + os.extsep + "pyc",
+              name + os.extsep + "pyo",
+              name + os.extsep + "pyw",
               name + "$py.class"):
+        yield f
+
+def chmod_files(name):
+    for f in _iter_files(name):
+        try:
+            os.chmod(f, 0o600)
+        except OSError as exc:
+            if exc.errno != errno.ENOENT:
+                raise
+
+def remove_files(name):
+    for f in _iter_files(name):
         unlink(f)
     rmtree('__pycache__')
 
@@ -121,6 +133,40 @@ class ImportTests(unittest.TestCase):
                 del sys.path[0]
                 remove_files(TESTFN)
                 unload(TESTFN)
+
+    def test_rewrite_pyc_with_read_only_source(self):
+        # Issue 6074: a long time ago on posix, and more recently on Windows,
+        # a read only source file resulted in a read only pyc file, which
+        # led to problems with updating it later
+        sys.path.insert(0, os.curdir)
+        fname = TESTFN + os.extsep + "py"
+        try:
+            # Write a Python file, make it read-only and import it
+            with open(fname, 'w') as f:
+                f.write("x = 'original'\n")
+            # Tweak the mtime of the source to ensure pyc gets updated later
+            s = os.stat(fname)
+            os.utime(fname, (s.st_atime, s.st_mtime-100000000))
+            os.chmod(fname, 0o400)
+            m1 = __import__(TESTFN)
+            self.assertEqual(m1.x, 'original')
+            # Change the file and then reimport it
+            os.chmod(fname, 0o600)
+            with open(fname, 'w') as f:
+                f.write("x = 'rewritten'\n")
+            unload(TESTFN)
+            m2 = __import__(TESTFN)
+            self.assertEqual(m2.x, 'rewritten')
+            # Now delete the source file and check the pyc was rewritten
+            unlink(TESTFN)
+            unload(TESTFN)
+            m3 = __import__(TESTFN)
+            self.assertEqual(m3.x, 'rewritten')
+        finally:
+            chmod_files(TESTFN)
+            remove_files(TESTFN)
+            unload(TESTFN)
+            del sys.path[0]
 
     def test_imp_module(self):
         # Verify that the imp module can correctly load and find .py files
