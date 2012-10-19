@@ -456,7 +456,7 @@ Examples:
 In addition to environment variables, the same settings can be configured
 in the .INI file used by the launcher.  The section in the INI file is
 called ``[defaults]`` and the key name will be the same as the
-environment variables without the leading ``PY\_`` prefix (and note that
+environment variables without the leading ``PY_`` prefix (and note that
 the key names in the INI file are case insensitive.)  The contents of
 an environment variable will override things specified in the INI file.
 
