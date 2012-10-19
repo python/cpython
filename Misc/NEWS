@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6074: Ensure cached bytecode files can always be updated by the
+  user that created them, even when the source file is read-only.
+
 - Issue #16166: Add PY_LITTLE_ENDIAN and PY_BIG_ENDIAN macros and unified
   endianess detection and handling.
 
