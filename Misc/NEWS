@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #6074: Ensure cached bytecode files can always be updated by the
+  user that created them, even when the source file is read-only.
+
 - Issue #14783: Improve int() and long() docstrings and switch docstrings for
   unicode(), slice(), range(), and xrange() to use multi-line signatures.
 
