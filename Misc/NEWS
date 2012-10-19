@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #6074: Ensure cached bytecode files can always be updated by the
+  user that created them, even when the source file is read-only.
+
 - Issue #14783: Improve int() docstring and switch docstrings for str(),
   range(), and slice() to use multi-line signatures.
 
