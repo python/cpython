@@ -20,16 +20,15 @@ from test.support import (
 from test import script_helper
 
 
-def _iter_files(name):
-    for f in (name + os.extsep + "py",
-              name + os.extsep + "pyc",
-              name + os.extsep + "pyo",
-              name + os.extsep + "pyw",
-              name + "$py.class"):
-        yield f
+def _files(name):
+    return (name + os.extsep + "py",
+            name + os.extsep + "pyc",
+            name + os.extsep + "pyo",
+            name + os.extsep + "pyw",
+            name + "$py.class")
 
 def chmod_files(name):
-    for f in _iter_files(name):
+    for f in _files(name):
         try:
             os.chmod(f, 0o600)
         except OSError as exc:
@@ -37,7 +36,7 @@ def chmod_files(name):
                 raise
 
 def remove_files(name):
-    for f in _iter_files(name):
+    for f in _files(name):
         unlink(f)
     rmtree('__pycache__')
 
@@ -160,6 +159,11 @@ class ImportTests(unittest.TestCase):
             # Now delete the source file and check the pyc was rewritten
             unlink(fname)
             unload(TESTFN)
+            if __debug__:
+                bytecode_name = fname + "c"
+            else:
+                bytecode_name = fname + "o"
+            os.rename(imp.cache_from_source(fname), bytecode_name)
             m3 = __import__(TESTFN)
             self.assertEqual(m3.x, 'rewritten')
         finally:
