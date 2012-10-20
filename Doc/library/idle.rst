@@ -154,25 +154,54 @@ The rest of this menu lists the names of all open windows; select one to bring
 it to the foreground (deiconifying it if necessary).
 
 
-Debug menu (in the Python Shell window only)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Debug menu
+^^^^^^^^^^
+
+* in the Python Shell window only
 
 Go to file/line
-   look around the insert point for a filename and linenumber, open the file, and
-   show the line.
+   Look around the insert point for a filename and line number, open the file,
+   and show the line.  Useful to view the source lines referenced in an
+   exception traceback.
 
-Open stack viewer
-   show the stack traceback of the last exception
+Debugger
+   Run commands in the shell under the debugger.
 
-Debugger toggle
-   Run commands in the shell under the debugger
+Stack viewer
+   Show the stack traceback of the last exception.
 
-JIT Stack viewer toggle
-   Open stack viewer on traceback
+Auto-open Stack Viewer
+   Open stack viewer on traceback.
 
 .. index::
    single: stack viewer
    single: debugger
+
+
+Edit context menu
+^^^^^^^^^^^^^^^^^
+
+* Right-click in Edit window (Control-click on OS X)
+
+Set Breakpoint
+   Sets a breakpoint.  Breakpoints are only enabled when the debugger is open.
+
+Clear Breakpoint
+   Clears the breakpoint on that line.
+
+.. index::
+   single: Set Breakpoint
+   single: Clear Breakpoint
+   single: breakpoints
+
+
+Shell context menu
+^^^^^^^^^^^^^^^^^^
+
+* Right-click in Python Shell window (Control-click on OS X)
+
+Go to file/line
+   Same as in Debug menu.
 
 
 Basic editing and navigation
