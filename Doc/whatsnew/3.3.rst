@@ -460,8 +460,8 @@ multiple subfunctions.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
       PEP written by Greg Ewing; implementation by Greg Ewing, integrated into
-      3.3 by Renaud Blanch, Ryan Kelly and Nick Coghlan, documentation by
-      Zbigniew Jędrzejewski-Szmek and Nick Coghlan)
+      3.3 by Renaud Blanch, Ryan Kelly and Nick Coghlan; documentation by
+      Zbigniew Jędrzejewski-Szmek and Nick Coghlan
 
 
 PEP 409: Suppressing exception context
