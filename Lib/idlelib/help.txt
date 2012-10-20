@@ -80,7 +80,7 @@ Shell Menu (only in Shell window):
 Debug Menu (only in Shell window):
 
 	Go to File/Line   -- look around the insert point for a filename
-		             and linenumber, open the file, and show the line
+		             and line number, open the file, and show the line
 	Debugger (toggle) -- Run commands in the shell under the debugger
 	Stack Viewer      -- Show the stack traceback of the last exception
 	Auto-open Stack Viewer (toggle) -- Open stack viewer on traceback
@@ -92,7 +92,7 @@ Options Menu:
                           Startup Preferences may be set, and Additional Help
                           Sources can be specified.
 			  
-			  On MacOS X this menu is not present, use
+			  On OS X this menu is not present, use
 			  menu 'IDLE -> Preferences...' instead.
 	---
 	Code Context --	  Open a pane at the top of the edit window which
@@ -119,6 +119,15 @@ Help Menu:
 		       installed.  Otherwise, access www.python.org.
 	---
 	(Additional Help Sources may be added here)
+
+Edit context menu (Right-click / Control-click in Edit window):
+
+	Set Breakpoint   -- Sets a breakpoint (when debugger open)
+	Clear Breakpoint -- Clears the breakpoint on that line
+
+Shell context menu (Right-click / Control-click in Shell window):
+
+	Go to file/line -- Same as in Debug menu
 
 
 ** TIPS **
@@ -222,7 +231,7 @@ Python Shell window:
 
 	Alt-p retrieves previous command matching what you have typed.
 	Alt-n retrieves next.
-	      (These are Control-p, Control-n on the Mac)
+	      (These are Control-p, Control-n on OS X)
 	Return while cursor is on a previous command retrieves that command.
 	Expand word is also useful to reduce typing.
 
