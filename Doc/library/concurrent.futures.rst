@@ -146,7 +146,7 @@ ThreadPoolExecutor Example
        # Start the load operations and mark each future with its URL
        future_to_url = {executor.submit(load_url, url, 60):url for url in URLS}
        for future in concurrent.futures.as_completed(future_to_url):
-           url = future_to_url[url]
+           url = future_to_url[future]
            try:
                data = future.result()
            except Exception as exc:
