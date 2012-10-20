@@ -94,6 +94,16 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 
     /* Catenate everything. */
     p = STRINGLIB_STR(res);
+    if (!seplen) {
+        /* fast path */
+        for (i = 0; i < nbufs; i++) {
+            Py_ssize_t n = buffers[i].len;
+            char *q = buffers[i].buf;
+            Py_MEMCPY(p, q, n);
+            p += n;
+        }
+        goto done;
+    }
     for (i = 0; i < nbufs; i++) {
         Py_ssize_t n;
         char *q;
