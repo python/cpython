@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12805: Make bytes.join and bytearray.join faster when the separator
+  is empty.  Patch by Serhiy Storchaka.
+
 - Issue #6074: Ensure cached bytecode files can always be updated by the
   user that created them, even when the source file is read-only.
 
