@@ -40,7 +40,7 @@ Local worker thread:
 
 Process #1..n:
 - reads _CallItems from "Call Q", executes the calls, and puts the resulting
-  _ResultItems in "Request Q"
+  _ResultItems in "Result Q"
 """
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
