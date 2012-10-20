@@ -116,12 +116,10 @@ administration.  The Python interpreter checks for a ``pyvenv.cfg``,
 file whose existence signals the base of a virtual environment's directory
 tree.
 
-(Implemented by Carl Meyer and Vinay Sajip.)
-
 .. seealso::
 
     :pep:`405` - Python Virtual Environments
-       PEP written by Carl Meyer
+       PEP written by Carl Meyer; implementation by Carl Meyer and Vinay Sajip
 
 
 PEP 420: Namespace Packages
