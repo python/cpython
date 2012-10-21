@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14398: Fix size truncation and overflow bugs in the bz2 module.
+
 - Issue #12692: Fix resource leak in urllib.request when talking to an HTTP
   server that does not include a "Connection: close" header in its responses.
 
