@@ -1390,7 +1390,7 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *
 }
 
 /* Grab GetFinalPathNameByHandle dynamically from kernel32 */
-static int has_GetFinalPathNameByHandle = 0;
+static int has_GetFinalPathNameByHandle = -1;
 static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
                                                       DWORD);
 static int
@@ -1401,7 +1401,7 @@ check_GetFinalPathNameByHandle()
                                                    DWORD);
 
     /* only recheck */
-    if (!has_GetFinalPathNameByHandle)
+    if (-1 == has_GetFinalPathNameByHandle)
     {
         hKernel32 = GetModuleHandleW(L"KERNEL32");
         *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
