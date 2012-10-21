@@ -123,7 +123,14 @@ grow_buffer(PyObject **buf)
        giving us amortized linear-time behavior. Use a less-than-double
        growth factor to avoid excessive allocation. */
     size_t size = PyBytes_GET_SIZE(*buf);
-    return _PyBytes_Resize(buf, size + (size >> 3) + 6);
+    size_t new_size = size + (size >> 3) + 6;
+    if (new_size > size) {
+        return _PyBytes_Resize(buf, new_size);
+    } else {  /* overflow */
+        PyErr_SetString(PyExc_OverflowError,
+                        "Unable to allocate buffer - output too large");
+        return -1;
+    }
 }
 
 
@@ -169,10 +176,14 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
             break;
 
         if (c->bzs.avail_out == 0) {
-            if (grow_buffer(&result) < 0)
-                goto error;
-            c->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
-            c->bzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
+            size_t buffer_left = PyBytes_GET_SIZE(result) - data_size;
+            if (buffer_left == 0) {
+                if (grow_buffer(&result) < 0)
+                    goto error;
+                c->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
+                buffer_left = PyBytes_GET_SIZE(result) - data_size;
+            }
+            c->bzs.avail_out = MIN(buffer_left, UINT_MAX);
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
@@ -390,10 +401,14 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
             len -= d->bzs.avail_in;
         }
         if (d->bzs.avail_out == 0) {
-            if (grow_buffer(&result) < 0)
-                goto error;
-            d->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
-            d->bzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
+            size_t buffer_left = PyBytes_GET_SIZE(result) - data_size;
+            if (buffer_left == 0) {
+                if (grow_buffer(&result) < 0)
+                    goto error;
+                d->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
+                buffer_left = PyBytes_GET_SIZE(result) - data_size;
+            }
+            d->bzs.avail_out = MIN(buffer_left, UINT_MAX);
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
