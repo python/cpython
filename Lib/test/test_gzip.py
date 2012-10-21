@@ -53,6 +53,13 @@ class TestGzip(unittest.TestCase):
             d = f.read()
         self.assertEqual(d, data1*50)
 
+    def test_read_universal_newlines(self):
+        # Issue #5148: Reading breaks when mode contains 'U'.
+        self.test_write()
+        with gzip.GzipFile(self.filename, 'rU') as f:
+            d = f.read()
+        self.assertEqual(d, data1*50)
+
     def test_io_on_closed_object(self):
         # Test that I/O operations on closed GzipFile objects raise a
         # ValueError, just like the corresponding functions on file objects.
