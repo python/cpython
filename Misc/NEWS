@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12692: Fix resource leak in urllib.request when talking to an HTTP
+  server that does not include a "Connection: close" header in its responses.
+
 - Issue #12034: Fix bogus caching of result in check_GetFinalPathNameByHandle.
   Patch by Atsuo Ishimoto.
 
