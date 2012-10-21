@@ -268,6 +268,11 @@ Content-Type: text/html; charset=iso-8859-1
         finally:
             self.unfakehttp()
 
+    def test_missing_localfile(self):
+        # Test for #10836
+        with self.assertRaises(urllib.error.URLError):
+            urlopen('file://localhost/a/file/which/doesnot/exists.py')
+
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
         try:

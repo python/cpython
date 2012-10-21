@@ -1664,7 +1664,7 @@ class URLopener:
                 return getattr(self, name)(url)
             else:
                 return getattr(self, name)(url, data)
-        except HTTPError:
+        except (HTTPError, URLError):
             raise
         except socket.error as msg:
             raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
@@ -1891,7 +1891,7 @@ class URLopener:
         try:
             stats = os.stat(localname)
         except OSError as e:
-            raise URLError(e.errno, e.strerror, e.filename)
+            raise URLError(e.strerror, e.filename)
         size = stats.st_size
         modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
