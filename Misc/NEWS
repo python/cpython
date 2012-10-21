@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12034: Fix bogus caching of result in check_GetFinalPathNameByHandle.
+  Patch by Atsuo Ishimoto.
+
 - Issue #16220: wsgiref now always calls close() on an iterable response.
   Patch by Brent Tubbs.
 
