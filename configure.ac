@@ -867,12 +867,12 @@ else
     HGBRANCH=""
 fi
 
-AC_SUBST(DISABLE_ASDLGEN)
-DISABLE_ASDLGEN=""
-AC_CHECK_PROG(HAS_PYTHON, python, found, not-found)
-if test $HAS_HG != found -o $HAS_PYTHON != found
-then
-    DISABLE_ASDLGEN="@echo hg: $HAS_HG, python: $HAS_PYTHON! cannot run \$(srcdir)/Parser/asdl_c.py #"
+AC_SUBST(ASDLGEN)
+AC_CHECK_PROGS(PYTHON, python$PACKAGE_VERSION python3 python, not-found)
+if $PYTHON = not-found; then
+    ASDLGEN="@echo python: $PYTHON! cannot run \$(srcdir)/Parser/asdl_c.py #"
+else
+    ASDLGEN="$PYTHON"
 fi
 
 
