@@ -81,6 +81,10 @@ class GzipFile(io.BufferedIOBase):
 
         """
 
+        # Make sure we don't inadvertently enable universal newlines on the
+        # underlying file object - in read mode, this causes data corruption.
+        if mode:
+            mode = mode.replace('U', '')
         # guarantee the file is opened in binary mode on platforms
         # that care about that sort of thing
         if mode and 'b' not in mode:
