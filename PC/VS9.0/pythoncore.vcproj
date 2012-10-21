@@ -1151,10 +1151,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_sha3\sha3module.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\signalmodule.c"
 				>
 			</File>
