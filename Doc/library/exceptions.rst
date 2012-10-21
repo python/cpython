@@ -449,34 +449,35 @@ depending on the system error code.
 
 .. exception:: ConnectionError
 
-   A base class for connection-related issues.  Subclasses are
-   :exc:`BrokenPipeError`, :exc:`ConnectionAbortedError`,
+   A base class for connection-related issues.
+
+   Subclasses are :exc:`BrokenPipeError`, :exc:`ConnectionAbortedError`,
    :exc:`ConnectionRefusedError` and :exc:`ConnectionResetError`.
 
-   .. exception:: BrokenPipeError
+.. exception:: BrokenPipeError
 
-      A subclass of :exc:`ConnectionError`, raised when trying to write on a
-      pipe while the other end has been closed, or trying to write on a socket
-      which has been shutdown for writing.
-      Corresponds to :c:data:`errno` ``EPIPE`` and ``ESHUTDOWN``.
+   A subclass of :exc:`ConnectionError`, raised when trying to write on a
+   pipe while the other end has been closed, or trying to write on a socket
+   which has been shutdown for writing.
+   Corresponds to :c:data:`errno` ``EPIPE`` and ``ESHUTDOWN``.
 
-   .. exception:: ConnectionAbortedError
+.. exception:: ConnectionAbortedError
 
-      A subclass of :exc:`ConnectionError`, raised when a connection attempt
-      is aborted by the peer.
-      Corresponds to :c:data:`errno` ``ECONNABORTED``.
+   A subclass of :exc:`ConnectionError`, raised when a connection attempt
+   is aborted by the peer.
+   Corresponds to :c:data:`errno` ``ECONNABORTED``.
 
-   .. exception:: ConnectionRefusedError
+.. exception:: ConnectionRefusedError
 
-      A subclass of :exc:`ConnectionError`, raised when a connection attempt
-      is refused by the peer.
-      Corresponds to :c:data:`errno` ``ECONNREFUSED``.
+   A subclass of :exc:`ConnectionError`, raised when a connection attempt
+   is refused by the peer.
+   Corresponds to :c:data:`errno` ``ECONNREFUSED``.
 
-   .. exception:: ConnectionResetError
+.. exception:: ConnectionResetError
 
-      A subclass of :exc:`ConnectionError`, raised when a connection is
-      reset by the peer.
-      Corresponds to :c:data:`errno` ``ECONNRESET``.
+   A subclass of :exc:`ConnectionError`, raised when a connection is
+   reset by the peer.
+   Corresponds to :c:data:`errno` ``ECONNRESET``.
 
 .. exception:: FileExistsError
 
