@@ -1441,9 +1441,12 @@ class SocketHandlerTest(BaseTest):
         self.assertEqual(self.log_output, "spam\neggs\n")
 
     def test_noserver(self):
+        # Avoid timing-related failures due to SocketHandler's own hard-wired
+        # one-second timeout on socket.create_connection() (issue #16264).
+        self.sock_hdlr.retryStart = 2.5
         # Kill the server
         self.server.stop(2.0)
-        #The logging call should try to connect, which should fail
+        # The logging call should try to connect, which should fail
         try:
             raise RuntimeError('Deliberate mistake')
         except RuntimeError:
