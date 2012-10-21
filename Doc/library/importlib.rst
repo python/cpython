@@ -162,7 +162,7 @@ ABC hierarchy::
 
       An abstract method for finding a :term:`loader` for the specified
       module.  If this is a top-level import, *path* will be ``None``.
-      Otheriwse, this is a search for a subpackage or module and *path*
+      Otherwise, this is a search for a subpackage or module and *path*
       will be the value of :attr:`__path__` from the parent
       package. If a loader cannot be found, ``None`` is returned.
 
