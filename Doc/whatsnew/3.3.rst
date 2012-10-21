@@ -122,8 +122,8 @@ tree.
        PEP written by Carl Meyer; implementation by Carl Meyer and Vinay Sajip
 
 
-PEP 420: Namespace Packages
-===========================
+PEP 420: Implicit Namespace Packages
+====================================
 
 Native support for package directories that don't require ``__init__.py``
 marker files and can automatically span multiple path segments (inspired by
@@ -132,7 +132,7 @@ various third party approaches to namespace packages, as described in
 
 .. seealso::
 
-   :pep:`420` - Namespace packages
+   :pep:`420` - Implicit Namespace Packages
       PEP written by Eric V. Smith; implementation by Eric V. Smith
       and Barry Warsaw
 
