@@ -1255,6 +1255,12 @@ class AbstractHTTPHandler(BaseHandler):
             raise URLError(err)
         else:
             r = h.getresponse()
+            # If the server does not send us a 'Connection: close' header,
+            # HTTPConnection assumes the socket should be left open. Manually
+            # mark the socket to be closed when this response object goes away.
+            if h.sock:
+                h.sock.close()
+                h.sock = None
 
         r.url = req.get_full_url()
         # This line replaces the .msg attribute of the HTTPResponse
