@@ -5,7 +5,6 @@
 # handle fields that have a type but no name
 
 import os, sys
-import subprocess
 
 import asdl
 
