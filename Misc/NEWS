@@ -140,6 +140,8 @@ Tests
 Build
 -----
 
+- Issue #16262: fix out-of-src-tree builds, if mercurial is not installed.
+
 - Issue #15298: ensure _sysconfigdata is generated in build directory, not
   source directory.
 
