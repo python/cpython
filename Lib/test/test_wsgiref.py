@@ -591,40 +591,28 @@ class HandlerTests(TestCase):
                             (stdpat%(version,sw), h.stdout.getvalue())
                         )
 
-# This epilogue is needed for compatibility with the Python 2.5 regrtest module
+    def testCloseOnError(self):
+        side_effects = {'close_called': False}
+        MSG = b"Some output has been sent"
+        def error_app(e,s):
+            s("200 OK",[])(MSG)
+            class CrashyIterable(object):
+                def __iter__(self):
+                    while True:
+                        yield b'blah'
+                        raise AssertionError("This should be caught by handler")
+
+                def close(self):
+                    side_effects['close_called'] = True
+            return CrashyIterable()
+
+        h = ErrorHandler()
+        h.run(error_app)
+        self.assertEqual(side_effects['close_called'], True)
+
 
 def test_main():
     test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# the above lines intentionally left blank
