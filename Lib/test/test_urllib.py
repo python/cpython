@@ -277,7 +277,7 @@ Content-Type: text/html; charset=iso-8859-1
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_fileurl = 'file://' + tmp_file
+        tmp_fileurl = 'file://localhost' + tmp_file
 
         self.assertTrue(os.path.exists(tmp_file))
         self.assertTrue(urlopen(tmp_fileurl))
