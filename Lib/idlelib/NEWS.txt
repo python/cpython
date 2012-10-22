@@ -15,6 +15,9 @@ What's New in IDLE 2.7.4?
 - Issue #14018: Update checks for unstable system Tcl/Tk versions on OS X
   to include versions shipped with OS X 10.7 and 10.8 in addition to 10.6.
 
+- Issue #15853: Prevent IDLE crash on OS X when opening Preferences menu
+  with certain versions of Tk 8.5.  Initial patch by Kevin Walzer.
+
 
 What's New in IDLE 2.7.3?
 =========================
