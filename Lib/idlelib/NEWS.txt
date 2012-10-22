@@ -4,6 +4,9 @@ What's New in IDLE 3.3.1?
 - Issue #16226: Fix IDLE Path Browser crash.
   (Patch by Roger Serwy)
 
+- Issue #15853: Prevent IDLE crash on OS X when opening Preferences menu
+  with certain versions of Tk 8.5.  Initial patch by Kevin Walzer.
+
 
 What's New in IDLE 3.3.0?
 =========================
