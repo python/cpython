@@ -1905,7 +1905,7 @@ class URLopener:
             return addinfourl(open(localname, 'rb'), headers, urlfile)
         host, port = splitport(host)
         if (not port
-           and socket.gethostbyname(host) in (localhost() + thishost())):
+           and socket.gethostbyname(host) in ((localhost(),) + thishost())):
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
