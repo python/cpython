@@ -270,8 +270,36 @@ Content-Type: text/html; charset=iso-8859-1
 
     def test_missing_localfile(self):
         # Test for #10836
-        with self.assertRaises(urllib.error.URLError):
+        with self.assertRaises(urllib.error.URLError) as e:
             urlopen('file://localhost/a/file/which/doesnot/exists.py')
+        self.assertTrue(e.exception.filename)
+        self.assertTrue(e.exception.reason)
+
+    def test_file_notexists(self):
+        fd, tmp_file = tempfile.mkstemp()
+        tmp_fileurl = 'file://' + tmp_file
+
+        self.assertTrue(os.path.exists(tmp_file))
+        self.assertTrue(urlopen(tmp_fileurl))
+
+        os.unlink(tmp_file)
+        self.assertFalse(os.path.exists(tmp_file))
+        with self.assertRaises(urllib.error.URLError):
+            urlopen(tmp_fileurl)
+
+    def test_ftp_nohost(self):
+        test_ftp_url = 'ftp:///path'
+        with self.assertRaises(urllib.error.URLError) as e:
+            urlopen(test_ftp_url)
+        self.assertFalse(e.exception.filename)
+        self.assertTrue(e.exception.reason)
+
+    def test_ftp_nonexisting(self):
+        with self.assertRaises(urllib.error.URLError) as e:
+            urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
+        self.assertFalse(e.exception.filename)
+        self.assertTrue(e.exception.reason)
+
 
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
@@ -305,7 +333,7 @@ Content-Type: text/html; charset=iso-8859-1
 
     def test_URLopener_deprecation(self):
         with support.check_warnings(('',DeprecationWarning)):
-            warn = urllib.request.URLopener()
+            urllib.request.URLopener()
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
