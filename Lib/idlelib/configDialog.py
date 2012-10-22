@@ -832,10 +832,9 @@ class ConfigDialog(Toplevel):
             fontWeight=tkFont.BOLD
         else:
             fontWeight=tkFont.NORMAL
-        size=self.fontSize.get()
-        self.editFont.config(size=size,
-                weight=fontWeight,family=fontName)
-        self.textHighlightSample.configure(font=(fontName, size, fontWeight))
+        newFont = (fontName, self.fontSize.get(), fontWeight)
+        self.labelFontSample.config(font=newFont)
+        self.textHighlightSample.configure(font=newFont)
 
     def SetHighlightTarget(self):
         if self.highlightTarget.get()=='Cursor': #bg not possible
