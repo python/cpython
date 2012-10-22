@@ -99,7 +99,8 @@ extensions = [
     '_multiprocessing.pyd',
     '_lzma.pyd',
     '_decimal.pyd',
-    '_testbuffer.pyd'
+    '_testbuffer.pyd',
+    '_sha3.pyd',
 ]
 
 # Well-known component UUIDs
