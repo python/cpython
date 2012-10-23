@@ -3573,17 +3573,19 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
 
 int
-_PyUnicode_HasNULChars(PyObject* s)
+_PyUnicode_HasNULChars(PyObject* str)
 {
-    static PyObject *nul = NULL;
+    Py_ssize_t pos;
 
-    if (nul == NULL)
-        nul = PyUnicode_FromStringAndSize("\0", 1);
-    if (nul == NULL)
+    if (PyUnicode_READY(str) == -1)
         return -1;
-    return PyUnicode_Contains(s, nul);
+    pos = findchar(PyUnicode_DATA(str), PyUnicode_KIND(str),
+                   PyUnicode_GET_LENGTH(str), '\0', 1);
+    if (pos == -1)
+        return 0;
+    else
+        return 1;
 }
-
 
 int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
