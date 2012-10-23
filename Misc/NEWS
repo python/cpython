@@ -435,6 +435,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #15040: Close files in mailbox tests for PyPy compatibility.
+  Original patch by Matti Picus.
+
 - Issue #15802: Fix test logic in TestMaildir.test_create_tmp. Patch
   by Serhiy Storchaka.
 
