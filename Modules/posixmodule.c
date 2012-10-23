@@ -2568,7 +2568,7 @@ posix_chdir(PyObject *self, PyObject *args, PyObject *kwargs)
         result = win32_wchdir(path.wide);
     else
         result = win32_chdir(path.narrow);
-	result = !result; /* on unix, success = 0, on windows, success = !0 */
+    result = !result; /* on unix, success = 0, on windows, success = !0 */
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
     result = _chdir2(path.narrow);
 #else
@@ -7116,12 +7116,12 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!check_CreateSymbolicLink()) {
         PyErr_SetString(PyExc_NotImplementedError,
             "CreateSymbolicLink functions not found");
-		return NULL;
-	}
+                return NULL;
+        }
     if (!win32_can_symlink) {
         PyErr_SetString(PyExc_OSError, "symbolic link privilege not held");
-		return NULL;
-	}
+                return NULL;
+        }
 #endif
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|i$O&:symlink",
@@ -7197,7 +7197,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     DWORD n_bytes_returned;
     DWORD io_result;
     PyObject *po, *result;
-	int dir_fd;
+        int dir_fd;
     HANDLE reparse_point_handle;
 
     char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
