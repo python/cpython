@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16116: Fix include and library paths to be correctwhen  building C
+  extensions in venvs.
+
 - Issue #16245: Fix the value of a few entities in html.entities.html5.
 
 - Issue #16301: Fix the localhost verification in urllib/request.py for file://
