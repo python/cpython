@@ -812,8 +812,8 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
             return NULL;
         copy_length = _PyUnicode_WSTR_LENGTH(unicode);
         copy_length = Py_MIN(copy_length, length);
-        Py_UNICODE_COPY(_PyUnicode_WSTR(w), _PyUnicode_WSTR(unicode),
-                        copy_length);
+        Py_MEMCPY(_PyUnicode_WSTR(w), _PyUnicode_WSTR(unicode),
+                  copy_length * sizeof(wchar_t));
         return w;
     }
 }
