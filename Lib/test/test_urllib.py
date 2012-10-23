@@ -275,6 +275,7 @@ Content-Type: text/html; charset=iso-8859-1
         self.assertTrue(e.exception.filename)
         self.assertTrue(e.exception.reason)
 
+    @unittest.skipIf(sys.platform == "win32", "Skip on Windows: issue16300")
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
         tmp_fileurl = 'file://localhost' + tmp_file
