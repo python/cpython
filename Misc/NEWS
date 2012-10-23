@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16245: Fix the value of a few entities in html.entities.html5.
+
 - Issue #14398: Fix size truncation and overflow bugs in the bz2 module.
 
 - Issue #16220: wsgiref now always calls close() on an iterable response.
