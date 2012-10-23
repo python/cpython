@@ -160,6 +160,11 @@ class build_ext(Command):
         if isinstance(self.include_dirs, str):
             self.include_dirs = self.include_dirs.split(os.pathsep)
 
+        # If in a virtualenv, add its include directory
+        # Issue 16116
+        if sys.exec_prefix != sys.base_exec_prefix:
+            self.include_dirs.append(os.path.join(sys.exec_prefix, 'include'))
+
         # Put the Python "system" include dir at the end, so that
         # any local include dirs take precedence.
         self.include_dirs.append(py_include)
@@ -190,6 +195,8 @@ class build_ext(Command):
             # must be the *native* platform.  But we don't really support
             # cross-compiling via a binary install anyway, so we let it go.
             self.library_dirs.append(os.path.join(sys.exec_prefix, 'libs'))
+            if sys.base_exec_prefix != sys.prefix:  # Issue 16116
+                self.library_dirs.append(os.path.join(sys.base_exec_prefix, 'libs'))
             if self.debug:
                 self.build_temp = os.path.join(self.build_temp, "Debug")
             else:
