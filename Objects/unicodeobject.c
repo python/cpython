@@ -8064,19 +8064,6 @@ make_translate_exception(PyObject **exceptionObject,
     }
 }
 
-/* raises a UnicodeTranslateError */
-static void
-raise_translate_exception(PyObject **exceptionObject,
-                          PyObject *unicode,
-                          Py_ssize_t startpos, Py_ssize_t endpos,
-                          const char *reason)
-{
-    make_translate_exception(exceptionObject,
-                             unicode, startpos, endpos, reason);
-    if (*exceptionObject != NULL)
-        PyCodec_StrictErrors(*exceptionObject);
-}
-
 /* error handling callback helper:
    build arguments, call the callback and check the arguments,
    put the result into newpos and return the replacement string, which
@@ -8352,8 +8339,10 @@ _PyUnicode_TranslateCharmap(PyObject *input,
             }
             switch (known_errorHandler) {
             case 1: /* strict */
-                raise_translate_exception(&exc, input, collstart,
-                                          collend, reason);
+                make_translate_exception(&exc,
+                                         input, collstart, collend, reason);
+                if (exc != NULL)
+                    PyCodec_StrictErrors(exc);
                 goto onError;
             case 2: /* replace */
                 /* No need to check for space, this is a 1:1 replacement */
