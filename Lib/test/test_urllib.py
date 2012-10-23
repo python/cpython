@@ -278,12 +278,13 @@ Content-Type: text/html; charset=iso-8859-1
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
         tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
-
-        self.assertTrue(os.path.exists(tmp_file))
-        with urlopen(tmp_fileurl) as fobj:
-            self.assertTrue(fobj)
-
-        os.unlink(tmp_file)
+        try:
+            self.assertTrue(os.path.exists(tmp_file))
+            with urlopen(tmp_fileurl) as fobj:
+                self.assertTrue(fobj)
+        finally:
+            os.close(fd)
+            os.unlink(tmp_file)
         self.assertFalse(os.path.exists(tmp_file))
         with self.assertRaises(urllib.error.URLError):
             urlopen(tmp_fileurl)
