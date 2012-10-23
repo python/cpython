@@ -280,7 +280,8 @@ Content-Type: text/html; charset=iso-8859-1
         tmp_fileurl = 'file://localhost' + tmp_file
 
         self.assertTrue(os.path.exists(tmp_file))
-        self.assertTrue(urlopen(tmp_fileurl))
+        with urlopen(tmp_fileurl) as fobj:
+            self.assertTrue(fobj)
 
         os.unlink(tmp_file)
         self.assertFalse(os.path.exists(tmp_file))
