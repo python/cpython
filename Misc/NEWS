@@ -245,6 +245,9 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #16245: Add the Tools/scripts/parse_html5_entities.py script to parse
+  the list of HTML5 entities and update the html.entities.html5 dictionary.
+
 - Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
 
 
