@@ -10296,6 +10296,32 @@ unicode_compare(PyObject *str1, PyObject *str2)
         return 1;
 }
 
+static int
+unicode_compare_eq(PyObject *str1, PyObject *str2)
+{
+    int kind;
+    void *data1, *data2;
+    Py_ssize_t len;
+    int cmp;
+
+    /* a string is equal to itself */
+    if (str1 == str2)
+        return 1;
+
+    len = PyUnicode_GET_LENGTH(str1);
+    if (PyUnicode_GET_LENGTH(str2) != len)
+        return 0;
+    kind = PyUnicode_KIND(str1);
+    if (PyUnicode_KIND(str2) != kind)
+        return 0;
+    data1 = PyUnicode_DATA(str1);
+    data2 = PyUnicode_DATA(str2);
+
+    cmp = memcmp(data1, data2, len * kind);
+    return (cmp == 0);
+}
+
+
 int
 PyUnicode_Compare(PyObject *left, PyObject *right)
 {
@@ -10346,33 +10372,27 @@ PyObject *
 PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
 {
     int result;
+    PyObject *v;
 
-    if (PyUnicode_Check(left) && PyUnicode_Check(right)) {
-        PyObject *v;
-        if (PyUnicode_READY(left) == -1 ||
-            PyUnicode_READY(right) == -1)
-            return NULL;
-        if (PyUnicode_GET_LENGTH(left) != PyUnicode_GET_LENGTH(right) ||
-            PyUnicode_KIND(left) != PyUnicode_KIND(right)) {
-            if (op == Py_EQ) {
-                Py_INCREF(Py_False);
-                return Py_False;
-            }
-            if (op == Py_NE) {
-                Py_INCREF(Py_True);
-                return Py_True;
-            }
-        }
+    if (!PyUnicode_Check(left) || !PyUnicode_Check(right))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    if (PyUnicode_READY(left) == -1 ||
+        PyUnicode_READY(right) == -1)
+        return NULL;
+
+    if (op == Py_EQ || op == Py_NE) {
+        result = unicode_compare_eq(left, right);
+        if (op == Py_EQ)
+            v = TEST_COND(result);
+        else
+            v = TEST_COND(!result);
+    }
+    else {
         result = unicode_compare(left, right);
 
         /* Convert the return value to a Boolean */
         switch (op) {
-        case Py_EQ:
-            v = TEST_COND(result == 0);
-            break;
-        case Py_NE:
-            v = TEST_COND(result != 0);
-            break;
         case Py_LE:
             v = TEST_COND(result <= 0);
             break;
@@ -10389,11 +10409,9 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
             PyErr_BadArgument();
             return NULL;
         }
-        Py_INCREF(v);
-        return v;
     }
-
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_INCREF(v);
+    return v;
 }
 
 int
