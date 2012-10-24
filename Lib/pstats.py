@@ -120,8 +120,8 @@ class Stats:
             self.stats = arg.stats
             arg.stats = {}
         if not self.stats:
-            raise TypeError,  "Cannot create or construct a %r object from '%r''" % (
-                              self.__class__, arg)
+            raise TypeError("Cannot create or construct a %r object from %r"
+                            % (self.__class__, arg))
         return
 
     def get_top_level_stats(self):
