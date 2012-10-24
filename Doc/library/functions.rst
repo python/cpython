@@ -1323,29 +1323,25 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: type(object)
+              type(name, bases, dict)
 
    .. index:: object: type
 
-   Return the type of an *object*.  The return value is a type object and
-   generally the same object as returned by ``object.__class__``.
+
+   With one argument, return the type of an *object*.  The return value is a
+   type object and generally the same object as returned by ``object.__class__``.
 
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
 
-   With three arguments, :func:`type` functions as a constructor as detailed
-   below.
 
-
-.. function:: type(name, bases, dict)
-   :noindex:
-
-   Return a new type object.  This is essentially a dynamic form of the
-   :keyword:`class` statement. The *name* string is the class name and becomes the
-   :attr:`__name__` attribute; the *bases* tuple itemizes the base classes and
-   becomes the :attr:`__bases__` attribute; and the *dict* dictionary is the
-   namespace containing definitions for class body and becomes the :attr:`__dict__`
-   attribute.  For example, the following two statements create identical
-   :class:`type` objects:
+   With three arguments, return a new type object.  This is essentially a
+   dynamic form of the :keyword:`class` statement. The *name* string is the
+   class name and becomes the :attr:`__name__` attribute; the *bases* tuple
+   itemizes the base classes and becomes the :attr:`__bases__` attribute;
+   and the *dict* dictionary is the namespace containing definitions for class
+   body and becomes the :attr:`__dict__` attribute.  For example, the
+   following two statements create identical :class:`type` objects:
 
       >>> class X:
       ...     a = 1
