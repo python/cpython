@@ -47,7 +47,7 @@ static void tok_backup(struct tok_state *tok, int c);
 
 /* Token names */
 
-char *_PyParser_TokenNames[] = {
+const char *_PyParser_TokenNames[] = {
     "ENDMARKER",
     "NAME",
     "NUMBER",
