@@ -879,6 +879,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16305: Fix a segmentation fault occurring when interrupting
+  math.factorial.
+
 - Issue #9803: Don't close IDLE on saving if breakpoint is open.
   Patch by Roger Serwy.
 
