@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16305: Fix a segmentation fault occurring when interrupting
+  math.factorial.
+
 - Issue #16116: Fix include and library paths to be correct when building C
   extensions in venvs.
 

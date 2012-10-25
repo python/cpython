@@ -1381,14 +1381,13 @@ factorial_odd_part(unsigned long n)
         Py_DECREF(outer);
         outer = tmp;
     }
-
-    goto done;
+    Py_DECREF(inner);
+    return outer;
 
   error:
     Py_DECREF(outer);
-  done:
     Py_DECREF(inner);
-    return outer;
+    return NULL;
 }
 
 /* Lookup table for small factorial values */
