@@ -25,6 +25,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
+Modules/_freeze_importlib
 Modules/_testembed
 PCbuild/*.bsc
 PCbuild/*.dll
