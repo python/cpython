@@ -2137,13 +2137,13 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    replaces the value from the positional argument.
 
    To illustrate, the following examples all return a dictionary equal to
-   ``{"one": 1, "two": 2}``::
+   ``{"one": 1, "two": 2, "three": 3}``::
 
-      >>> a = dict(one=1, two=2)
-      >>> b = dict({'one': 1, 'two': 2})
-      >>> c = dict(zip(('one', 'two'), (1, 2)))
-      >>> d = dict([['two', 2], ['one', 1]])
-      >>> e = {"one": 1, "two": 2}
+      >>> a = dict(one=1, two=2, three=3)
+      >>> b = {'one': 1, 'two': 2, 'three': 3}
+      >>> c = dict(zip(['one', 'two', 'three'], [1, 2, 3]))
+      >>> d = dict([('two', 2), ('one', 1), ('three', 3)])
+      >>> e = dict({'three': 3, 'one': 1, 'two': 2})
       >>> a == b == c == d == e
       True
 
