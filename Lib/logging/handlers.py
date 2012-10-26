@@ -538,15 +538,7 @@ class SocketHandler(logging.Handler):
         #but are still unable to connect.
         if self.sock:
             try:
-                if hasattr(self.sock, "sendall"):
-                    self.sock.sendall(s)
-                else: #pragma: no cover
-                    sentsofar = 0
-                    left = len(s)
-                    while left > 0:
-                        sent = self.sock.send(s[sentsofar:])
-                        sentsofar = sentsofar + sent
-                        left = left - sent
+                self.sock.sendall(s)
             except socket.error: #pragma: no cover
                 self.sock.close()
                 self.sock = None  # so we can call createSocket next time
