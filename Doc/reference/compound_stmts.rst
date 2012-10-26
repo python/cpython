@@ -442,8 +442,7 @@ A function definition defines a user-defined function object (see section
    decorator: "@" `dotted_name` ["(" [`parameter_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: (`defparameter` ",")*
-                 : (  "*" [`parameter`] ("," `defparameter`)*
-                 : [, "**" `parameter`]
+                 : ( "*" [`parameter`] ("," `defparameter`)* ["," "**" `parameter`]
                  : | "**" `parameter`
                  : | `defparameter` [","] )
    parameter: `identifier` [":" `expression`]
