@@ -203,7 +203,7 @@ Data Compression
 ================
 
 Common data archiving and compression formats are directly supported by modules
-including: :mod:`zlib`, :mod:`gzip`, :mod:`bz2`, :mod:`zipfile` and
+including: :mod:`zlib`, :mod:`gzip`, :mod:`bz2`, :mod:`lzma`, :mod:`zipfile` and
 :mod:`tarfile`. ::
 
    >>> import zlib
