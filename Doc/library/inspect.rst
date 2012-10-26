@@ -716,7 +716,7 @@ Classes and functions
    locals dictionary of the given frame.
 
 
-.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations])
+.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
 
    Format a pretty argument spec from the values returned by
    :func:`getargspec` or :func:`getfullargspec`.
@@ -725,7 +725,14 @@ Classes and functions
    ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``). The
    other five arguments are the corresponding optional formatting functions
    that are called to turn names and values into strings. The last argument
-   is an optional function to format the sequence of arguments.
+   is an optional function to format the sequence of arguments. For example::
+
+    >>> from inspect import formatargspec, getfullargspec
+    >>> def f(a: int, b: float):
+    ...     pass
+    ...
+    >>> formatargspec(*getfullargspec(f))
+    '(a: int, b: float)'
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
