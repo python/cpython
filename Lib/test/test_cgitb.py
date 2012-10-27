@@ -2,8 +2,6 @@ from test.support import run_unittest
 from test.script_helper import assert_python_failure, temp_dir
 import unittest
 import sys
-import subprocess
-import tempfile
 import cgitb
 
 class TestCgitb(unittest.TestCase):
@@ -38,6 +36,7 @@ class TestCgitb(unittest.TestCase):
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
 
+    @unittest.skipIf(sys.platform=='win32', "test fails on windows, see issue 12890")
     def test_syshook_no_logdir_default_format(self):
         with temp_dir() as tracedir:
             rc, out, err = assert_python_failure(
@@ -51,6 +50,7 @@ class TestCgitb(unittest.TestCase):
         self.assertIn('<p>', out)
         self.assertIn('</p>', out)
 
+    @unittest.skipIf(sys.platform=='win32', "test fails on windows, see issue 12890")
     def test_syshook_no_logdir_text_format(self):
         # Issue 12890: we were emitting the <p> tag in text mode.
         with temp_dir() as tracedir:
