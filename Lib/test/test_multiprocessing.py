@@ -1642,6 +1642,23 @@ class _TestPool(BaseTestCase):
         self.assertEqual(self.pool.starmap_async(mul, tuples).get(),
                          list(itertools.starmap(mul, tuples)))
 
+    def test_map_async(self):
+        self.assertEqual(self.pool.map_async(sqr, list(range(10))).get(),
+                         list(map(sqr, list(range(10)))))
+
+    def test_map_async_callbacks(self):
+        call_args = self.manager.list() if self.TYPE == 'manager' else []
+        self.pool.map_async(int, ['1'],
+                            callback=call_args.append,
+                            error_callback=call_args.append).wait()
+        self.assertEqual(1, len(call_args))
+        self.assertEqual([1], call_args[0])
+        self.pool.map_async(int, ['a'],
+                            callback=call_args.append,
+                            error_callback=call_args.append).wait()
+        self.assertEqual(2, len(call_args))
+        self.assertIsInstance(call_args[1], ValueError)
+
     def test_map_chunksize(self):
         try:
             self.pool.map_async(sqr, [], chunksize=1).get(timeout=TIMEOUT1)
