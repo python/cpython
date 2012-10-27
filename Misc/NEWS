@@ -234,6 +234,9 @@ Build
 Documentation
 -------------
 
+- Issue #8040: added a version switcher to the documentation.  Patch by
+  Yury Selivanov.
+
 - Additional comments and some style changes in the concurrent.futures URL
   retrieval example
 
