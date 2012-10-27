@@ -132,6 +132,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16250: Fix URLError invocation with proper args.
+
 - Issue #16305: Fix a segmentation fault occurring when interrupting
   math.factorial.
 
