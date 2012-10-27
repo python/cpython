@@ -645,6 +645,8 @@ class UTF8Test(ReadTest):
         self.assertEqual(b"abc\xed\xa0\x80def".decode("utf-8", "surrogatepass"),
                          "abc\ud800def")
         self.assertTrue(codecs.lookup_error("surrogatepass"))
+        with self.assertRaises(UnicodeDecodeError):
+            b"abc\xed\xa0".decode("utf-8", "surrogatepass")
 
 class UTF7Test(ReadTest):
     encoding = "utf-7"
