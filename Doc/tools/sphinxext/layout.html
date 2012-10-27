@@ -2,18 +2,27 @@
 {% block rootrellink %}
         <li><img src="{{ pathto('_static/py.png', 1) }}" alt=""
                  style="vertical-align: middle; margin-top: -1px"/></li>
-        <li><a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}</li>
+        <li><a href="http://www.python.org/">Python</a>{{ reldelim1 }}</li>
+        <li>
+          {%- if versionswitcher is defined %}
+          <span class="version_switcher_placeholder">{{ release }}</span>
+          <a href="{{ pathto('index') }}">Documentation</a>{{ reldelim1 }}
+          {%- else %}
+          <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
+          {%- endif %}
+        </li>
 {% endblock %}
 {% block extrahead %}
     <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
+    {% if versionswitcher is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/version_switch.js', 1) }}"></script>{% endif %}
 {{ super() }}
 {% endblock %}
 {% block footer %}
     <div class="footer">
     &copy; <a href="{{ pathto('copyright') }}">Copyright</a> {{ copyright|e }}.
     <br />
-    The Python Software Foundation is a non-profit corporation.  
+    The Python Software Foundation is a non-profit corporation.
     <a href="http://www.python.org/psf/donations/">Please donate.</a>
     <br />
     Last updated on {{ last_updated|e }}.
