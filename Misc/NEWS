@@ -493,6 +493,9 @@ Build
 Documentation
 -------------
 
+- Issue #8040: added a version switcher to the documentation.  Patch by
+  Yury Selivanov.
+
 - Issue #16115: Improve subprocess.Popen() documentation around args, shell,
   and executable arguments.
 
