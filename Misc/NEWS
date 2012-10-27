@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16307: Fix multiprocessing.Pool.map_async not calling its callbacks.
+  Patch by Janne Karila.
+
 - Issue #16250: Fix URLError invocation with proper args.
 
 - Issue #16116: Fix include and library paths to be correct when building C
