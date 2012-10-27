@@ -52,8 +52,12 @@
   }
 
   $(document).ready(function() {
-    var select = build_select(DOCUMENTATION_OPTIONS.VERSION,
-                              DOCUMENTATION_OPTIONS.RELEASE);
+    var version = DOCUMENTATION_OPTIONS.VERSION.split('.'),
+        release = DOCUMENTATION_OPTIONS.RELEASE || DOCUMENTATION_OPTIONS.VERSION;
+
+    version = version[0] + '.' + version[1];
+    var select = build_select(version, release);
+
     $('.version_switcher_placeholder').html(select);
     $('.version_switcher_placeholder select').bind('change', on_switch);
   });
