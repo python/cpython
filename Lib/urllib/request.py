@@ -1300,9 +1300,9 @@ class FileHandler(BaseHandler):
                 else:
                     origurl = 'file://' + filename
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
-        except OSError as msg:
+        except OSError as exp:
             # users shouldn't expect OSErrors coming from urlopen()
-            raise URLError(msg)
+            raise URLError(exp)
         raise URLError('file not on local host')
 
 def _safe_gethostbyname(host):
@@ -1361,8 +1361,8 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as msg:
-            exc = URLError('ftp error: %s' % msg)
+        except ftplib.all_errors as exp:
+            exc = URLError('ftp error: %r' % exp)
             raise exc.with_traceback(sys.exc_info()[2])
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
@@ -1662,7 +1662,6 @@ class URLopener:
                 if proxy_bypass(realhost):
                     host = realhost
 
-            #print "proxy via http:", host, selector
         if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
@@ -1753,7 +1752,7 @@ class URLopener:
     def open_file(self, url):
         """Use local file or FTP depending on form of URL."""
         if not isinstance(url, str):
-            raise URLError('file error', 'proxy support for file protocol currently not implemented')
+            raise URLError('file error: proxy support for file protocol currently not implemented')
         if url[:2] == '//' and url[2:3] != '/' and url[2:12].lower() != 'localhost/':
             raise ValueError("file:// scheme is supported only on localhost")
         else:
@@ -1768,7 +1767,7 @@ class URLopener:
         try:
             stats = os.stat(localname)
         except OSError as e:
-            raise URLError(e.errno, e.strerror, e.filename)
+            raise URLError(e.strerror, e.filename)
         size = stats.st_size
         modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
@@ -1782,23 +1781,22 @@ class URLopener:
             return addinfourl(open(localname, 'rb'), headers, urlfile)
         host, port = splitport(host)
         if (not port
-           and socket.gethostbyname(host) in (localhost() + thishost())):
+           and socket.gethostbyname(host) in ((localhost(),) + thishost())):
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
             elif file[:2] == './':
                 raise ValueError("local file url may start with / or file:. Unknown url of type: %s" % url)
             return addinfourl(open(localname, 'rb'), headers, urlfile)
-        raise URLError('local file error', 'not on local host')
+        raise URLError('local file error: not on local host')
 
     def open_ftp(self, url):
         """Use FTP protocol."""
         if not isinstance(url, str):
-            raise URLError('ftp error', 'proxy support for ftp protocol currently not implemented')
+            raise URLError('ftp error: proxy support for ftp protocol currently not implemented')
         import mimetypes
-        from io import StringIO
         host, path = splithost(url)
-        if not host: raise URLError('ftp error', 'no host given')
+        if not host: raise URLError('ftp error: no host given')
         host, port = splitport(host)
         user, host = splituser(host)
         if user: user, passwd = splitpasswd(user)
@@ -1847,13 +1845,13 @@ class URLopener:
                 headers += "Content-Length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
-        except ftperrors() as msg:
-            raise URLError('ftp error', msg).with_traceback(sys.exc_info()[2])
+        except ftperrors() as exp:
+            raise URLError('ftp error %r' % exp).with_traceback(sys.exc_info()[2])
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
         if not isinstance(url, str):
-            raise URLError('data error', 'proxy support for data protocol currently not implemented')
+            raise URLError('data error: proxy support for data protocol currently not implemented')
         # ignore POSTed data
         #
         # syntax of data URLs:
@@ -2184,7 +2182,7 @@ class ftpwrapper:
                 conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise URLError('ftp error', reason).with_traceback(
+                    raise URLError('ftp error: %d' % reason).with_traceback(
                         sys.exc_info()[2])
         if not conn:
             # Set transfer mode to ASCII!
@@ -2196,7 +2194,7 @@ class ftpwrapper:
                     try:
                         self.ftp.cwd(file)
                     except ftplib.error_perm as reason:
-                        raise URLError('ftp error', reason) from reason
+                        raise URLError('ftp error: %d' % reason) from reason
                 finally:
                     self.ftp.cwd(pwd)
                 cmd = 'LIST ' + file
@@ -2464,7 +2462,6 @@ elif os.name == 'nt':
             test = test.replace("*", r".*")     # change glob sequence
             test = test.replace("?", r".")      # change glob char
             for val in host:
-                # print "%s <--> %s" %( test, val )
                 if re.match(test, val, re.I):
                     return 1
         return 0
