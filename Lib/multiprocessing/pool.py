@@ -297,7 +297,8 @@ class Pool(object):
         '''
         Asynchronous version of `map()` method.
         '''
-        return self._map_async(func, iterable, mapstar, chunksize)
+        return self._map_async(func, iterable, mapstar, chunksize, callback,
+            error_callback)
 
     def _map_async(self, func, iterable, mapper, chunksize=None, callback=None,
             error_callback=None):

@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16307: Fix multiprocessing.Pool.map_async not calling its callbacks.
+  Patch by Janne Karila.
+
 - Issue #16305: Fix a segmentation fault occurring when interrupting
   math.factorial.
 
