@@ -791,9 +791,10 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         /* Try decoding a single surrogate character. If
            there are more, let the codec call us again. */
         p += start;
-        if ((p[0] & 0xf0) == 0xe0 ||
-            (p[1] & 0xc0) == 0x80 ||
-            (p[2] & 0xc0) == 0x80) {
+        if (strlen(p) > 2 &&
+            ((p[0] & 0xf0) == 0xe0 ||
+             (p[1] & 0xc0) == 0x80 ||
+             (p[2] & 0xc0) == 0x80)) {
             /* it's a three-byte code */
             ch = ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6) + (p[2] & 0x3f);
             if (ch < 0xd800 || ch > 0xdfff)
