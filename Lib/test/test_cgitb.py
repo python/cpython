@@ -1,7 +1,9 @@
 from test.support import run_unittest
+from test.script_helper import assert_python_failure, temp_dir
 import unittest
 import sys
 import subprocess
+import tempfile
 import cgitb
 
 class TestCgitb(unittest.TestCase):
@@ -36,16 +38,31 @@ class TestCgitb(unittest.TestCase):
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
 
-    def test_hook(self):
-        proc = subprocess.Popen([sys.executable, '-c',
-                                 ('import cgitb;'
-                                  'cgitb.enable();'
-                                  'raise ValueError("Hello World")')],
-                                stdout=subprocess.PIPE)
-        out = proc.stdout.read().decode(sys.getfilesystemencoding())
-        self.addCleanup(proc.stdout.close)
+    def test_syshook_no_logdir_default_format(self):
+        with temp_dir() as tracedir:
+            rc, out, err = assert_python_failure(
+                  '-c',
+                  ('import cgitb; cgitb.enable(logdir="%s"); '
+                   'raise ValueError("Hello World")') % tracedir)
+        out = out.decode(sys.getfilesystemencoding())
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
+        # By default we emit HTML markup.
+        self.assertIn('<p>', out)
+        self.assertIn('</p>', out)
+
+    def test_syshook_no_logdir_text_format(self):
+        # Issue 12890: we were emitting the <p> tag in text mode.
+        with temp_dir() as tracedir:
+            rc, out, err = assert_python_failure(
+                  '-c',
+                  ('import cgitb; cgitb.enable(format="text", logdir="%s"); '
+                   'raise ValueError("Hello World")') % tracedir)
+        out = out.decode(sys.getfilesystemencoding())
+        self.assertIn("ValueError", out)
+        self.assertIn("Hello World", out)
+        self.assertNotIn('<p>', out)
+        self.assertNotIn('</p>', out)
 
 
 def test_main():
