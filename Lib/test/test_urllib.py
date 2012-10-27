@@ -222,6 +222,27 @@ Content-Type: text/html; charset=iso-8859-1
         finally:
             self.unfakehttp()
 
+    def test_missing_localfile(self):
+        self.assertRaises(IOError, urllib.urlopen,
+                'file://localhost/a/missing/file.py')
+        fd, tmp_file = tempfile.mkstemp()
+        tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
+        try:
+            self.assertTrue(os.path.exists(tmp_file))
+            fp = urllib.urlopen(tmp_fileurl)
+        finally:
+            os.close(fd)
+            fp.close()
+        os.unlink(tmp_file)
+
+        self.assertFalse(os.path.exists(tmp_file))
+        self.assertRaises(IOError, urllib.urlopen, tmp_fileurl)
+
+    def test_ftp_nonexisting(self):
+        self.assertRaises(IOError, urllib.urlopen,
+                'ftp://localhost/not/existing/file.py')
+
+
     def test_userpass_inurl(self):
         self.fakehttp('Hello!')
         try:
