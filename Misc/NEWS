@@ -122,6 +122,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12890: cgitb no longer prints spurious <p> tags in text
+  mode when the logdir option is specified.
+
 - Issue #14398: Fix size truncation and overflow bugs in the bz2 module.
 
 - Issue #5148: Ignore 'U' in mode given to gzip.open() and gzip.GzipFile().
