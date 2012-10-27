@@ -556,10 +556,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
-    # Remove all the tests that precede start if it's set.
+    # Remove all the selected tests that precede start if it's set.
     if start:
         try:
-            del tests[:tests.index(start)]
+            del selected[:selected.index(start)]
         except ValueError:
             print("Couldn't find starting test (%s), using all tests" % start)
     if randomize:
