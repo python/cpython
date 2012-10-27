@@ -2164,7 +2164,7 @@ they are always created by calling the constructor:
 * Creating an empty instance: ``bytearray()``
 * Creating a zero-filled instance with a given length: ``bytearray(10)``
 * From an iterable of integers: ``bytearray(range(20))``
-* Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!)``
+* Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
 
 As bytearray objects are mutable, they support the
 :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
