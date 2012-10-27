@@ -268,6 +268,39 @@ Content-Type: text/html; charset=iso-8859-1
         finally:
             self.unfakehttp()
 
+    def test_missing_localfile(self):
+        # Test for #10836
+        # 3.3 - URLError is not captured, explicit IOError is raised.
+        with self.assertRaises(IOError):
+            urlopen('file://localhost/a/file/which/doesnot/exists.py')
+
+    def test_file_notexists(self):
+        fd, tmp_file = tempfile.mkstemp()
+        tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
+        try:
+            self.assertTrue(os.path.exists(tmp_file))
+            with urlopen(tmp_fileurl) as fobj:
+                self.assertTrue(fobj)
+        finally:
+            os.close(fd)
+            os.unlink(tmp_file)
+        self.assertFalse(os.path.exists(tmp_file))
+        # 3.3 - IOError instead of URLError
+        with self.assertRaises(IOError):
+            urlopen(tmp_fileurl)
+
+    def test_ftp_nohost(self):
+        test_ftp_url = 'ftp:///path'
+        # 3.3 - IOError instead of URLError
+        with self.assertRaises(IOError):
+            urlopen(test_ftp_url)
+
+    def test_ftp_nonexisting(self):
+        # 3.3 - IOError instead of URLError
+        with self.assertRaises(IOError):
+            urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
+
+
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
         try:
@@ -300,7 +333,7 @@ Content-Type: text/html; charset=iso-8859-1
 
     def test_URLopener_deprecation(self):
         with support.check_warnings(('',DeprecationWarning)):
-            warn = urllib.request.URLopener()
+            urllib.request.URLopener()
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
