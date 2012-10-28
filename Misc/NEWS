@@ -20,7 +20,7 @@ Core and Builtins
   user that created them, even when the source file is read-only.
 
 - Issue #16166: Add PY_LITTLE_ENDIAN and PY_BIG_ENDIAN macros and unified
-  endianess detection and handling.
+  endianness detection and handling.
 
 - Issue #15958: bytes.join and bytearray.join now accept arbitrary buffer
   objects.
@@ -61,6 +61,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #16316: mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
+  Patch by Serhiy Storchaka.
 
 - Issue #12890: cgitb no longer prints spurious <p> tags in text
   mode when the logdir option is specified.
