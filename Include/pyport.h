@@ -866,7 +866,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif
 
 /*
- * Convenient macros to deal with endianess of the platform. WORDS_BIGENDIAN is
+ * Convenient macros to deal with endianness of the platform. WORDS_BIGENDIAN is
  * detected by configure and defined in pyconfig.h. The code in pyconfig.h
  * also also takes care of Apple's universal builds.
  */
