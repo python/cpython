@@ -5,12 +5,12 @@
 #
 # Usages:
 #
-#   dailybuild.py
+#   dailybuild.py [-q]
 #
 # without any arguments builds docs for all branches configured in the global
-# BRANCHES value.
+# BRANCHES value. -q selects "quick build", which means to build only HTML.
 #
-#   dailybuild.py [-d] <checkout> <target>
+#   dailybuild.py [-q] [-d] <checkout> <target>
 #
 # builds one version, where <checkout> is an SVN checkout directory of the
 # Python branch to build docs for, and <target> is the directory where the
@@ -39,21 +39,23 @@ BRANCHES = [
 ]
 
 
-def build_one(checkout, target, isdev):
+def build_one(checkout, target, isdev, quick):
     print 'Doc autobuild started in %s' % checkout
     os.chdir(checkout)
     print 'Running hg pull --update'
     os.system('/usr/local/bin/hg pull --update')
     print 'Running make autobuild'
-    if os.WEXITSTATUS(os.system(
-        'cd Doc; make autobuild-%s' % (isdev and 'dev' or 'stable'))) == 2:
+    maketarget = 'autobuild-' + ('html' if quick else
+                                 ('dev' if isdev else 'stable'))
+    if os.WEXITSTATUS(os.system('cd Doc; make %s' % maketarget)) == 2:
         print '*' * 80
         return
-    print 'Copying HTML files'
+    print 'Copying HTML files to %s' % target
     os.system('cp -a Doc/build/html/* %s' % target)
-    print 'Copying dist files'
-    os.system('mkdir -p %s/archives' % target)
-    os.system('cp -a Doc/dist/* %s/archives' % target)
+    if not quick:
+        print 'Copying dist files'
+        os.system('mkdir -p %s/archives' % target)
+        os.system('cp -a Doc/dist/* %s/archives' % target)
     print 'Finished'
     print '=' * 80
 
@@ -67,15 +69,21 @@ def usage():
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'd')
+        opts, args = getopt.getopt(sys.argv[1:], 'dq')
     except getopt.error:
         usage()
-    if opts and not args:
+    quick = devel = False
+    for opt, _ in opts:
+        if opt == '-q':
+            quick = True
+        if opt == '-d':
+            devel = True
+    if devel and not args:
         usage()
     if args:
         if len(args) != 2:
             usage()
-        build_one(args[0], args[1], bool(opts))
+        build_one(args[0], args[1], devel, quick)
     else:
-        for branch in BRANCHES:
-            build_one(*branch)
+        for checkout, dest, devel in BRANCHES:
+            build_one(checkout, dest, devel, quick)
