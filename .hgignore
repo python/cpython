@@ -47,7 +47,6 @@ libpython*.so*
 *.pyd
 *.cover
 *~
-Lib/_sysconfigdata.py
 Lib/lib2to3/*.pickle
 Lib/test/data/*
 Misc/*.wpu
