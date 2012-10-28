@@ -117,7 +117,10 @@ Using json.tool from the shell to validate and pretty-print::
 Basic Usage
 -----------
 
-.. function:: dump(obj, fp[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, encoding[, default[, **kw]]]]]]]]]])
+.. function:: dump(obj, fp, skipkeys=False, ensure_ascii=True, \
+                   check_circular=True, allow_nan=True, cls=None, \
+                   indent=None, separators=None, encoding="utf-8", \
+                   default=None, sort_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
    :term:`file-like object`).
@@ -159,6 +162,9 @@ Basic Usage
    *default(obj)* is a function that should return a serializable version of
    *obj* or raise :exc:`TypeError`.  The default simply raises :exc:`TypeError`.
 
+   If *sort_keys* is ``True`` (default: ``False``), then the output of
+   dictionaries will be sorted by key.
+
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
    :meth:`default` method to serialize additional types), specify it with the
    *cls* kwarg; otherwise :class:`JSONEncoder` is used.
@@ -169,7 +175,10 @@ Basic Usage
       trying to serialize more objects with repeated calls to :func:`dump` and
       the same *fp* will result in an invalid JSON file.
 
-.. function:: dumps(obj[, skipkeys[, ensure_ascii[, check_circular[, allow_nan[, cls[, indent[, separators[, encoding[, default[, **kw]]]]]]]]]])
+.. function:: dumps(obj, skipkeys=False, ensure_ascii=True, \
+                    check_circular=True, allow_nan=True, cls=None, \
+                    indent=None, separators=None, encoding="utf-8", \
+                    default=None, sort_keys=False, **kw)
 
    Serialize *obj* to a JSON formatted :class:`str`.  If *ensure_ascii* is
    ``False``, the result may contain non-ASCII characters and the return value
