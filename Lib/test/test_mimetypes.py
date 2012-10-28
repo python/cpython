@@ -22,6 +22,8 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("foo.tgz"), ("application/x-tar", "gzip"))
         eq(self.db.guess_type("foo.tar.gz"), ("application/x-tar", "gzip"))
         eq(self.db.guess_type("foo.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
+        eq(self.db.guess_type("foo.tar.xz"), ("application/x-tar", "xz"))
 
     def test_data_urls(self):
         eq = self.assertEqual
