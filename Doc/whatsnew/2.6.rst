@@ -7,8 +7,6 @@
 .. XXX add trademark info for Apple, Microsoft, SourceForge.
 
 :Author: A.M. Kuchling (amk at amk.ca)
-:Release: |release|
-:Date: |today|
 
 .. $Id$
    Rules for maintenance:
