@@ -3,8 +3,6 @@
 ****************************
 
 :Author: A.M. Kuchling (amk at amk.ca)
-:Release: |release|
-:Date: |today|
 
 ..  hyperlink all the methods & functions.
 
