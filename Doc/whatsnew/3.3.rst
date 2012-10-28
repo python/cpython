@@ -2,9 +2,6 @@
   What's New In Python 3.3
 ****************************
 
-:Release: |release|
-:Date: |today|
-
 .. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
