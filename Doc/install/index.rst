@@ -7,8 +7,6 @@
 *****************************
 
 :Author: Greg Ward
-:Release: |version|
-:Date: |today|
 
 .. TODO: Fill in XXX comments
 

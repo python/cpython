@@ -4,9 +4,6 @@
   The Python Standard Library
 ###############################
 
-:Release: |version|
-:Date: |today|
-
 While :ref:`reference-index` describes the exact syntax and
 semantics of the Python language, this library reference manual
 describes the standard library that is distributed with Python. It also
