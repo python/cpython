@@ -5,8 +5,6 @@
 .. XXX Add trademark info for Apple, Microsoft.
 
 :Author: Guido van Rossum
-:Release: |release|
-:Date: |today|
 
 .. $Id$
    Rules for maintenance:
