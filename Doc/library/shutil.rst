@@ -70,7 +70,8 @@ Directory and files operations
       Now returns *dst*.
 
    .. versionchanged:: 3.4
-      Raise :exc:`SameFileError` instead of :exc:`Error`.
+      Raise :exc:`SameFileError` instead of :exc:`Error`.  Since the former is
+      a subclass of the latter, this change is backward compatible.
 
 
 .. exception:: SameFileError
