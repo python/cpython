@@ -35,6 +35,18 @@ class StrTest(
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
 
+    @test_support.cpython_only
+    def test_formatting_huge_precision(self):
+        from _testcapi import INT_MAX
+        format_string = "%.{}f".format(INT_MAX + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
+    def test_formatting_huge_width(self):
+        format_string = "%{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
     def test_conversion(self):
         # Make sure __str__() behaves properly
         class Foo0:
@@ -370,6 +382,21 @@ class StrTest(
         self.assertRaises(ValueError, "{0:-s}".format, '')
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
+
+    def test_format_huge_precision(self):
+        format_string = ".{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_width(self):
+        format_string = "{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_item_number(self):
+        format_string = "{{{}:.6f}}".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string.format(2.34)
 
     def test_format_auto_numbering(self):
         class C:

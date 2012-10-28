@@ -644,6 +644,18 @@ class UnicodeTest(
                 return u'\u1234'
         self.assertEqual('%s' % Wrapper(), u'\u1234')
 
+    @test_support.cpython_only
+    def test_formatting_huge_precision(self):
+        from _testcapi import INT_MAX
+        format_string = u"%.{}f".format(INT_MAX + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
+    def test_formatting_huge_width(self):
+        format_string = u"%{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
     def test_startswith_endswith_errors(self):
         for meth in (u'foo'.startswith, u'foo'.endswith):
             with self.assertRaises(UnicodeDecodeError):
@@ -1555,6 +1567,21 @@ class UnicodeTest(
         # This will try to convert the argument from unicode to str, which
         #  will fail
         self.assertRaises(UnicodeEncodeError, "foo{0}".format, u'\u1000bar')
+
+    def test_format_huge_precision(self):
+        format_string = u".{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_width(self):
+        format_string = u"{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_item_number(self):
+        format_string = u"{{{}:.6f}}".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string.format(2.34)
 
     def test_format_auto_numbering(self):
         class C:

@@ -4369,7 +4369,7 @@ PyString_Format(PyObject *format, PyObject *args)
                     c = Py_CHARMASK(*fmt++);
                     if (!isdigit(c))
                         break;
-                    if ((width*10) / 10 != width) {
+                    if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
                         PyErr_SetString(
                             PyExc_ValueError,
                             "width too big");
@@ -4404,7 +4404,7 @@ PyString_Format(PyObject *format, PyObject *args)
                         c = Py_CHARMASK(*fmt++);
                         if (!isdigit(c))
                             break;
-                        if ((prec*10) / 10 != prec) {
+                        if (prec > (INT_MAX - ((int)c - '0')) / 10) {
                             PyErr_SetString(
                                 PyExc_ValueError,
                                 "prec too big");
