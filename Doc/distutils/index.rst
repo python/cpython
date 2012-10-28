@@ -6,8 +6,6 @@
 
 :Authors: Greg Ward, Anthony Baxter
 :Email: distutils-sig@python.org
-:Release: |version|
-:Date: |today|
 
 This document describes the Python Distribution Utilities ("Distutils") from
 the module developer's point of view, describing how to use the Distutils to
