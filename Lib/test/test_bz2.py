@@ -398,6 +398,7 @@ class BZ2DecompressorTest(BaseTest):
         bz2d = BZ2Decompressor()
         text = bz2d.decompress(self.DATA)
         self.assertRaises(EOFError, bz2d.decompress, "anything")
+        self.assertRaises(EOFError, bz2d.decompress, "")
 
     @bigmemtest(_4G, memuse=1.25)
     def testBigmem(self, size):
