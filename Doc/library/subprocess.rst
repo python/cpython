@@ -256,6 +256,10 @@ default values. The arguments that are most commonly needed are:
       from this vulnerability; see the Note in the :class:`Popen` constructor
       documentation for helpful hints in getting ``shell=False`` to work.
 
+      When using ``shell=True``, :func:`pipes.quote` can be used to properly
+      escape whitespace and shell metacharacters in strings that are going to
+      be used to construct shell commands.
+
 These options, along with all of the other options, are described in more
 detail in the :class:`Popen` constructor documentation.
 
