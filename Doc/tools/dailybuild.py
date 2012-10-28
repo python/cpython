@@ -33,9 +33,9 @@ WWWROOT = '/data/ftp.python.org/pub/docs.python.org'
 
 BRANCHES = [
     # checkout, target, isdev
-    (BUILDROOT + '/python33', WWWROOT + '/py3k', False),
-    (BUILDROOT + '/python34', WWWROOT + '/dev', True),
-    (BUILDROOT + '/python27', WWWROOT, False),
+    (BUILDROOT + '/python33', WWWROOT + '/3.3', False),
+    (BUILDROOT + '/python34', WWWROOT + '/3.4', True),
+    (BUILDROOT + '/python27', WWWROOT + '/2.7', False),
 ]
 
 
