@@ -1223,6 +1223,8 @@ class TestShutil(unittest.TestCase):
         src_file = os.path.join(src_dir, 'foo')
         write_file(src_file, 'foo')
         self.assertRaises(SameFileError, shutil.copyfile, src_file, src_file)
+        # But Error should work too, to stay backward compatible.
+        self.assertRaises(Error, shutil.copyfile, src_file, src_file)
 
     def test_copytree_return_value(self):
         # copytree returns its destination path.
