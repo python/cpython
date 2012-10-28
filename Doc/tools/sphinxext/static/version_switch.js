@@ -43,19 +43,21 @@
 
     if (new_url != url) {
       // check beforehand if url exists, else redirect to version's start page
-      $.get(new_url, function() {
-        window.location.href = new_url;
-      }).error(function() {
-        window.location.href = 'http://docs.python.org/' + selected;
+      $.ajax({
+        url: new_url,
+        success: function() {
+           window.location.href = new_url;
+        },
+        error: function() {
+           window.location.href = 'http://docs.python.org/' + selected;
+        }
       });
     }
   }
 
   $(document).ready(function() {
-    var version = DOCUMENTATION_OPTIONS.VERSION.split('.'),
-        release = DOCUMENTATION_OPTIONS.RELEASE || DOCUMENTATION_OPTIONS.VERSION;
-
-    version = version[0] + '.' + version[1];
+    var release = DOCUMENTATION_OPTIONS.VERSION;
+    var version = release.substr(0, 3);
     var select = build_select(version, release);
 
     $('.version_switcher_placeholder').html(select);
