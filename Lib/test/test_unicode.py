@@ -906,6 +906,21 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, '{}'.format_map, 'a')
         self.assertRaises(ValueError, '{a} {}'.format_map, {"a" : 2, "b" : 1})
 
+    def test_format_huge_precision(self):
+        format_string = ".{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_width(self):
+        format_string = "{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format(2.34, format_string)
+
+    def test_format_huge_item_number(self):
+        format_string = "{{{}:.6f}}".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string.format(2.34)
+
     def test_format_auto_numbering(self):
         class C:
             def __init__(self, x=100):
@@ -989,6 +1004,18 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%F' % NAN, 'NAN')
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
+
+    @support.cpython_only
+    def test_formatting_huge_precision(self):
+        from _testcapi import INT_MAX
+        format_string = "%.{}f".format(INT_MAX + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
+    def test_formatting_huge_width(self):
+        format_string = "%{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
 
     def test_startswith_endswith_errors(self):
         for meth in ('foo'.startswith, 'foo'.endswith):
