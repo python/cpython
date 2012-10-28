@@ -3,8 +3,6 @@
 ****************************
 
 :Author: Raymond Hettinger
-:Release: |release|
-:Date: |today|
 
 .. $Id$
    Rules for maintenance:
