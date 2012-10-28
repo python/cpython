@@ -164,7 +164,7 @@ check:
 # for development releases: always build
 autobuild-dev:
 	make update
-	make dist SPHINXOPTS='-A daily=1'
+	make dist SPHINXOPTS='-A daily=1 -A versionswitcher=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta, rc)
 autobuild-stable:
