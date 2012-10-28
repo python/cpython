@@ -4,9 +4,6 @@
   Extending and Embedding the Python Interpreter
 ##################################################
 
-:Release: |version|
-:Date: |today|
-
 This document describes how to write modules in C or C++ to extend the Python
 interpreter with new modules.  Those modules can define new functions but also
 new object types and their methods.  The document also describes how to embed
