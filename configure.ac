@@ -869,7 +869,7 @@ fi
 
 AC_SUBST(ASDLGEN)
 AC_CHECK_PROGS(PYTHON, python$PACKAGE_VERSION python3 python, not-found)
-if $PYTHON = not-found; then
+if test "$PYTHON" = not-found; then
     ASDLGEN="@echo python: $PYTHON! cannot run \$(srcdir)/Parser/asdl_c.py #"
 else
     ASDLGEN="$PYTHON"
