@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16197: Update winreg docstrings and documentation to match code.
+  Patch by Zachary Ware.
+
 - Issue #16241: Document -X faulthandler command line option.
   Patch by Marek Šuppa.
 
