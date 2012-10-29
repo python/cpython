@@ -50,8 +50,8 @@ PyDoc_STRVAR(module_doc,
 "FlushKey() - Writes all the attributes of the specified key to the registry.\n"
 "LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and stores\n"
 "            registration information from a specified file into that subkey.\n"
-"OpenKey() - Alias for <om win32api.RegOpenKeyEx>\n"
-"OpenKeyEx() - Opens the specified key.\n"
+"OpenKey() - Opens the specified key.\n"
+"OpenKeyEx() - Alias of OpenKey().\n"
 "QueryValue() - Retrieves the value associated with the unnamed value for a\n"
 "               specified key in the registry.\n"
 "QueryValueEx() - Retrieves the type and data for a specified value name\n"
@@ -72,7 +72,8 @@ PyDoc_STRVAR(module_doc,
 
 
 PyDoc_STRVAR(CloseKey_doc,
-"CloseKey(hkey) - Closes a previously opened registry key.\n"
+"CloseKey(hkey)\n"
+"Closes a previously opened registry key.\n"
 "\n"
 "The hkey argument specifies a previously opened key.\n"
 "\n"
@@ -80,79 +81,91 @@ PyDoc_STRVAR(CloseKey_doc,
 "closed when the hkey object is destroyed by Python.");
 
 PyDoc_STRVAR(ConnectRegistry_doc,
-"key = ConnectRegistry(computer_name, key) - "
+"ConnectRegistry(computer_name, key) -> key\n"
 "Establishes a connection to a predefined registry handle on another computer.\n"
 "\n"
 "computer_name is the name of the remote computer, of the form \\\\computername.\n"
-" If None, the local computer is used.\n"
+"              If None, the local computer is used.\n"
 "key is the predefined handle to connect to.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
 "If the function fails, a WindowsError exception is raised.");
 
 PyDoc_STRVAR(CreateKey_doc,
-"key = CreateKey(key, sub_key) - Creates or opens the specified key.\n"
+"CreateKey(key, sub_key) -> key\n"
+"Creates or opens the specified key.\n"
 "\n"
-"key is an already open key, or one of the predefined HKEY_* constants\n"
+"key is an already open key, or one of the predefined HKEY_* constants.\n"
 "sub_key is a string that names the key this method opens or creates.\n"
-" If key is one of the predefined keys, sub_key may be None. In that case,\n"
-" the handle returned is the same key handle passed in to the function.\n"
 "\n"
-"If the key already exists, this function opens the existing key\n"
+"If key is one of the predefined keys, sub_key may be None. In that case,\n"
+"the handle returned is the same key handle passed in to the function.\n"
+"\n"
+"If the key already exists, this function opens the existing key.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, an exception is raised.");
+"If the function fails, a WindowsError exception is raised.");
 
 PyDoc_STRVAR(CreateKeyEx_doc,
-"key = CreateKeyEx(key, sub_key, res, sam) - Creates or opens the specified key.\n"
+"CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE) -> key\n"
+"Creates or opens the specified key.\n"
 "\n"
 "key is an already open key, or one of the predefined HKEY_* constants\n"
 "sub_key is a string that names the key this method opens or creates.\n"
-"res is a reserved integer, and must be zero.  Default is zero.\n"
-"sam is an integer that specifies an access mask that describes the desired\n"
-" If key is one of the predefined keys, sub_key may be None. In that case,\n"
-" the handle returned is the same key handle passed in to the function.\n"
+"reserved is a reserved integer, and must be zero.  Default is zero.\n"
+"access is an integer that specifies an access mask that describes the \n"
+"       desired security access for the key. Default is KEY_WRITE.\n"
+"\n"
+"If key is one of the predefined keys, sub_key may be None. In that case,\n"
+"the handle returned is the same key handle passed in to the function.\n"
 "\n"
 "If the key already exists, this function opens the existing key\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, an exception is raised.");
+"If the function fails, a WindowsError exception is raised.");
 
 PyDoc_STRVAR(DeleteKey_doc,
-"DeleteKey(key, sub_key) - Deletes the specified key.\n"
+"DeleteKey(key, sub_key)\n"
+"Deletes the specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that must be a subkey of the key identified by the key parameter.\n"
-" This value must not be None, and the key may not have subkeys.\n"
+"sub_key is a string that must be a subkey of the key identified by the key\n"
+"        parameter. This value must not be None, and the key may not have\n"
+"        subkeys.\n"
 "\n"
 "This method can not delete keys with subkeys.\n"
 "\n"
-"If the method succeeds, the entire key, including all of its values,\n"
-"is removed.  If the method fails, a WindowsError exception is raised.");
+"If the function succeeds, the entire key, including all of its values,\n"
+"is removed.  If the function fails, a WindowsError exception is raised.");
 
 PyDoc_STRVAR(DeleteKeyEx_doc,
-"DeleteKeyEx(key, sub_key, sam, res) - Deletes the specified key.\n"
+"DeleteKeyEx(key, sub_key, access=KEY_WOW64_64KEY, reserved=0)\n"
+"Deletes the specified key (64-bit OS only).\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that must be a subkey of the key identified by the key parameter.\n"
-"res is a reserved integer, and must be zero.  Default is zero.\n"
-"sam is an integer that specifies an access mask that describes the desired\n"
-" This value must not be None, and the key may not have subkeys.\n"
+"sub_key is a string that must be a subkey of the key identified by the key\n"
+"        parameter. This value must not be None, and the key may not have\n"
+"        subkeys.\n"
+"reserved is a reserved integer, and must be zero.  Default is zero.\n"
+"access is an integer that specifies an access mask that describes the \n"
+"       desired security access for the key. Default is KEY_WOW64_64KEY.\n"
 "\n"
 "This method can not delete keys with subkeys.\n"
 "\n"
-"If the method succeeds, the entire key, including all of its values,\n"
-"is removed.  If the method fails, a WindowsError exception is raised.\n"
+"If the function succeeds, the entire key, including all of its values,\n"
+"is removed.  If the function fails, a WindowsError exception is raised.\n"
 "On unsupported Windows versions, NotImplementedError is raised.");
 
 PyDoc_STRVAR(DeleteValue_doc,
-"DeleteValue(key, value) - Removes a named value from a registry key.\n"
+"DeleteValue(key, value)\n"
+"Removes a named value from a registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "value is a string that identifies the value to remove.");
 
 PyDoc_STRVAR(EnumKey_doc,
-"string = EnumKey(key, index) - Enumerates subkeys of an open registry key.\n"
+"EnumKey(key, index) -> string\n"
+"Enumerates subkeys of an open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "index is an integer that identifies the index of the key to retrieve.\n"
@@ -162,7 +175,8 @@ PyDoc_STRVAR(EnumKey_doc,
 "raised, indicating no more values are available.");
 
 PyDoc_STRVAR(EnumValue_doc,
-"tuple = EnumValue(key, index) - Enumerates values of an open registry key.\n"
+"EnumValue(key, index) -> tuple\n"
+"Enumerates values of an open registry key.\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "index is an integer that identifies the index of the value to retrieve.\n"
 "\n"
@@ -173,35 +187,39 @@ PyDoc_STRVAR(EnumValue_doc,
 "The result is a tuple of 3 items:\n"
 "value_name is a string that identifies the value.\n"
 "value_data is an object that holds the value data, and whose type depends\n"
-" on the underlying registry type.\n"
+"           on the underlying registry type.\n"
 "data_type is an integer that identifies the type of the value data.");
 
 PyDoc_STRVAR(ExpandEnvironmentStrings_doc,
-"string = ExpandEnvironmentStrings(string) - Expand environment vars.\n");
+"ExpandEnvironmentStrings(string) -> string\n"
+"Expand environment vars.\n");
 
 PyDoc_STRVAR(FlushKey_doc,
-"FlushKey(key) - Writes all the attributes of a key to the registry.\n"
+"FlushKey(key)\n"
+"Writes all the attributes of a key to the registry.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"It is not necessary to call RegFlushKey to change a key.\n"
-"Registry changes are flushed to disk by the registry using its lazy flusher.\n"
-"Registry changes are also flushed to disk at system shutdown.\n"
-"Unlike CloseKey(), the FlushKey() method returns only when all the data has\n"
-"been written to the registry.\n"
-"An application should only call FlushKey() if it requires absolute certainty that registry changes are on disk.\n"
-"If you don't know whether a FlushKey() call is required, it probably isn't.");
+"It is not necessary to call FlushKey to change a key.  Registry changes are\n"
+"flushed to disk by the registry using its lazy flusher.  Registry changes are\n"
+"also flushed to disk at system shutdown.  Unlike CloseKey(), the FlushKey()\n"
+"method returns only when all the data has been written to the registry.\n"
+"\n"
+"An application should only call FlushKey() if it requires absolute certainty\n"
+"that registry changes are on disk.  If you don't know whether a FlushKey()\n"
+"call is required, it probably isn't.");
 
 PyDoc_STRVAR(LoadKey_doc,
-"LoadKey(key, sub_key, file_name) - Creates a subkey under the specified key\n"
-"and stores registration information from a specified file into that subkey.\n"
+"LoadKey(key, sub_key, file_name)\n"
+"Creates a subkey under the specified key and stores registration information\n"
+"from a specified file into that subkey.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that identifies the sub_key to load\n"
-"file_name is the name of the file to load registry data from.\n"
-" This file must have been created with the SaveKey() function.\n"
-" Under the file allocation table (FAT) file system, the filename may not\n"
-"have an extension.\n"
+"sub_key is a string that identifies the sub_key to load.\n"
+"file_name is the name of the file to load registry data from.  This file must\n"
+"          have been created with the SaveKey() function.  Under the file\n"
+"          allocation table (FAT) file system, the filename may not have an\n"
+"          extension.\n"
 "\n"
 "A call to LoadKey() fails if the calling process does not have the\n"
 "SE_RESTORE_PRIVILEGE privilege.\n"
@@ -212,13 +230,14 @@ PyDoc_STRVAR(LoadKey_doc,
 "The docs imply key must be in the HKEY_USER or HKEY_LOCAL_MACHINE tree");
 
 PyDoc_STRVAR(OpenKey_doc,
-"key = OpenKey(key, sub_key, res = 0, sam = KEY_READ) - Opens the specified key.\n"
+"OpenKey(key, sub_key, reserved=0, access=KEY_READ) -> key\n"
+"Opens the specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that identifies the sub_key to open\n"
-"res is a reserved integer, and must be zero.  Default is zero.\n"
-"sam is an integer that specifies an access mask that describes the desired\n"
-" security access for the key.  Default is KEY_READ\n"
+"sub_key is a string that identifies the sub_key to open.\n"
+"reserved is a reserved integer, and must be zero.  Default is zero.\n"
+"access is an integer that specifies an access mask that describes the desired\n"
+"       security access for the key.  Default is KEY_READ\n"
 "\n"
 "The result is a new handle to the specified key\n"
 "If the function fails, a WindowsError exception is raised.");
@@ -226,7 +245,8 @@ PyDoc_STRVAR(OpenKey_doc,
 PyDoc_STRVAR(OpenKeyEx_doc, "See OpenKey()");
 
 PyDoc_STRVAR(QueryInfoKey_doc,
-"tuple = QueryInfoKey(key) - Returns information about a key.\n"
+"QueryInfoKey(key) -> tuple\n"
+"Returns information about a key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
@@ -237,44 +257,51 @@ PyDoc_STRVAR(QueryInfoKey_doc,
 " as 100's of nanoseconds since Jan 1, 1600.");
 
 PyDoc_STRVAR(QueryValue_doc,
-"string = QueryValue(key, sub_key) - retrieves the unnamed value for a key.\n"
+"QueryValue(key, sub_key) -> string\n"
+"Retrieves the unnamed value for a key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "sub_key is a string that holds the name of the subkey with which the value\n"
-" is associated.  If this parameter is None or empty, the function retrieves\n"
-" the value set by the SetValue() method for the key identified by key."
+"        is associated.  If this parameter is None or empty, the function\n"
+"        retrieves the value set by the SetValue() method for the key\n"
+"        identified by key."
 "\n"
 "Values in the registry have name, type, and data components. This method\n"
 "retrieves the data for a key's first value that has a NULL name.\n"
 "But the underlying API call doesn't return the type, Lame Lame Lame, DONT USE THIS!!!");
 
 PyDoc_STRVAR(QueryValueEx_doc,
-"value,type_id = QueryValueEx(key, value_name) - Retrieves the type and data for a specified value name associated with an open registry key.\n"
+"QueryValueEx(key, value_name) -> (value, type_id)\n"
+"Retrieves the type and data for a specified value name associated with an\n"
+"open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "value_name is a string indicating the value to query");
 
 PyDoc_STRVAR(SaveKey_doc,
-"SaveKey(key, file_name) - Saves the specified key, and all its subkeys to the specified file.\n"
+"SaveKey(key, file_name)\n"
+"Saves the specified key, and all its subkeys to the specified file.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"file_name is the name of the file to save registry data to.\n"
-" This file cannot already exist. If this filename includes an extension,\n"
-" it cannot be used on file allocation table (FAT) file systems by the\n"
-" LoadKey(), ReplaceKey() or RestoreKey() methods.\n"
+"file_name is the name of the file to save registry data to.  This file cannot\n"
+"          already exist. If this filename includes an extension, it cannot be\n"
+"          used on file allocation table (FAT) file systems by the LoadKey(),\n"
+"          ReplaceKey() or RestoreKey() methods.\n"
 "\n"
-"If key represents a key on a remote computer, the path described by\n"
-"file_name is relative to the remote computer.\n"
-"The caller of this method must possess the SeBackupPrivilege security privilege.\n"
-"This function passes NULL for security_attributes to the API.");
+"If key represents a key on a remote computer, the path described by file_name\n"
+"is relative to the remote computer.\n"
+"\n"
+"The caller of this method must possess the SeBackupPrivilege security\n"
+"privilege.  This function passes NULL for security_attributes to the API.");
 
 PyDoc_STRVAR(SetValue_doc,
-"SetValue(key, sub_key, type, value) - Associates a value with a specified key.\n"
+"SetValue(key, sub_key, type, value)\n"
+"Associates a value with a specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "sub_key is a string that names the subkey with which the value is associated.\n"
-"type is an integer that specifies the type of the data.  Currently this\n"
-" must be REG_SZ, meaning only strings are supported.\n"
+"type is an integer that specifies the type of the data.  Currently this must\n"
+"     be REG_SZ, meaning only strings are supported.\n"
 "value is a string that specifies the new value.\n"
 "\n"
 "If the key specified by the sub_key parameter does not exist, the SetValue\n"
@@ -288,10 +315,12 @@ PyDoc_STRVAR(SetValue_doc,
 "KEY_SET_VALUE access.");
 
 PyDoc_STRVAR(SetValueEx_doc,
-"SetValueEx(key, value_name, reserved, type, value) - Stores data in the value field of an open registry key.\n"
+"SetValueEx(key, value_name, reserved, type, value)\n"
+"Stores data in the value field of an open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value_name is a string containing the name of the value to set, or None\n"
+"value_name is a string containing the name of the value to set, or None.\n"
+"reserved can be anything - zero is always passed to the API.\n"
 "type is an integer that specifies the type of the data.  This should be one of:\n"
 "  REG_BINARY -- Binary data in any form.\n"
 "  REG_DWORD -- A 32-bit number.\n"
@@ -306,7 +335,6 @@ PyDoc_STRVAR(SetValueEx_doc,
 "  REG_NONE -- No defined value type.\n"
 "  REG_RESOURCE_LIST -- A device-driver resource list.\n"
 "  REG_SZ -- A null-terminated string.\n"
-"reserved can be anything - zero is always passed to the API.\n"
 "value is a string that specifies the new value.\n"
 "\n"
 "This method can also set additional value and type information for the\n"
@@ -323,6 +351,7 @@ PyDoc_STRVAR(DisableReflectionKey_doc,
 "Disables registry reflection for 32-bit processes running on a 64-bit\n"
 "Operating System.  Will generally raise NotImplemented if executed on\n"
 "a 32-bit Operating System.\n"
+"\n"
 "If the key is not on the reflection list, the function succeeds but has no effect.\n"
 "Disabling reflection for a key does not affect reflection of any subkeys.");
 
@@ -332,7 +361,8 @@ PyDoc_STRVAR(EnableReflectionKey_doc,
 "Restoring reflection for a key does not affect reflection of any subkeys.");
 
 PyDoc_STRVAR(QueryReflectionKey_doc,
-"bool = QueryReflectionKey(hkey) - Determines the reflection state for the specified key.\n"
+"QueryReflectionKey(hkey) -> bool\n"
+"Determines the reflection state for the specified key.\n"
 "Will generally raise NotImplemented if executed on a 32-bit Operating System.\n");
 
 /* PyHKEY docstrings */
@@ -360,12 +390,14 @@ PyDoc_STRVAR(PyHKEY_doc,
 
 
 PyDoc_STRVAR(PyHKEY_Close_doc,
-"key.Close() - Closes the underlying Windows handle.\n"
+"key.Close()\n"
+"Closes the underlying Windows handle.\n"
 "\n"
 "If the handle is already closed, no error is raised.");
 
 PyDoc_STRVAR(PyHKEY_Detach_doc,
-"int = key.Detach() - Detaches the Windows handle from the handle object.\n"
+"key.Detach() -> int\n"
+"Detaches the Windows handle from the handle object.\n"
 "\n"
 "The result is the value of the handle before it is detached.  If the\n"
 "handle is already detached, this will return zero.\n"

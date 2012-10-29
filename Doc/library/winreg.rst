@@ -68,7 +68,7 @@ This module offers the following functions:
       alias of :exc:`OSError`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_ALL_ACCESS)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -78,10 +78,10 @@ This module offers the following functions:
 
    *sub_key* is a string that names the key this method opens or creates.
 
-   *res* is a reserved integer, and must be zero. The default is zero.
+   *reserved* is a reserved integer, and must be zero. The default is zero.
 
-   *sam* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_ALL_ACCESS`.  See
+   *access* is an integer that specifies an access mask that describes the desired
+   security access for the key.  Default is :const:`KEY_WRITE`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
@@ -119,7 +119,7 @@ This module offers the following functions:
       alias of :exc:`OSError`.
 
 
-.. function:: DeleteKeyEx(key, sub_key, access=KEY_ALL_ACCESS, reserved=0)
+.. function:: DeleteKeyEx(key, sub_key, access=KEY_WOW64_64KEY, reserved=0)
 
    Deletes the specified key.
 
@@ -136,9 +136,9 @@ This module offers the following functions:
    *key* parameter. This value must not be ``None``, and the key may not have
    subkeys.
 
-   *res* is a reserved integer, and must be zero. The default is zero.
+   *reserved* is a reserved integer, and must be zero. The default is zero.
 
-   *sam* is an integer that specifies an access mask that describes the desired
+   *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_ALL_ACCESS`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
@@ -272,6 +272,7 @@ This module offers the following functions:
 
 
 .. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
+              OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -296,12 +297,6 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       This function used to raise a :exc:`WindowsError`, which is now an
       alias of :exc:`OSError`.
-
-
-.. function:: OpenKeyEx()
-
-   The functionality of :func:`OpenKeyEx` is provided via :func:`OpenKey`,
-   by the use of default arguments.
 
 
 .. function:: QueryInfoKey(key)
@@ -427,10 +422,10 @@ This module offers the following functions:
    *value_name* is a string that names the subkey with which the value is
    associated.
 
+   *reserved* can be anything -- zero is always passed to the API.
+
    *type* is an integer that specifies the type of the data. See
    :ref:`Value Types <value-types>` for the available types.
-
-   *reserved* can be anything -- zero is always passed to the API.
 
    *value* is a string that specifies the new value.
 
