@@ -1575,7 +1575,7 @@ s_pack(PyObject *self, PyObject *args)
     if (PyTuple_GET_SIZE(args) != soself->s_len)
     {
         PyErr_Format(StructError,
-            "pack requires exactly %zd arguments", soself->s_len);
+            "pack expected %zd items for packing (got %zd)", soself->s_len, PyTuple_GET_SIZE(args));
         return NULL;
     }
 
@@ -1614,9 +1614,19 @@ s_pack_into(PyObject *self, PyObject *args)
     assert(soself->s_codes != NULL);
     if (PyTuple_GET_SIZE(args) != (soself->s_len + 2))
     {
-        PyErr_Format(StructError,
-                     "pack_into requires exactly %zd arguments",
-                     (soself->s_len + 2));
+        if (PyTuple_GET_SIZE(args) == 0) {
+            PyErr_Format(StructError,
+                        "pack_into expected buffer argument");
+        }
+        else if (PyTuple_GET_SIZE(args) == 1) {
+            PyErr_Format(StructError,
+                        "pack_into expected offset argument");
+        }
+        else {
+            PyErr_Format(StructError,
+                        "pack_into expected %zd items for packing (got %zd)",
+                        soself->s_len, (PyTuple_GET_SIZE(args) - 2));
+        }
         return NULL;
     }
 
