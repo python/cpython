@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14897: Enhance error messages of struct.pack and
+  struct.pack_into. Patch by Matti Mäki.
+
 - Issue #16316: mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
   Patch by Serhiy Storchaka.
 
