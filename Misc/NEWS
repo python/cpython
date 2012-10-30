@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16351: New function gc.get_stats() returns per-generation collection
+  statistics.
+
 - Issue #14897: Enhance error messages of struct.pack and
   struct.pack_into. Patch by Matti Mäki.
 
