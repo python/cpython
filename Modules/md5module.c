@@ -246,7 +246,7 @@ md5_process(struct md5_state *md5, const unsigned char *in, Py_ssize_t inlen)
         } else {
            n = MIN(inlen, (Py_ssize_t)(MD5_BLOCKSIZE - md5->curlen));
            memcpy(md5->buf + md5->curlen, in, (size_t)n);
-           md5->curlen    += n;
+           md5->curlen    += (MD5_INT32)n;
            in             += n;
            inlen          -= n;
            if (md5->curlen == MD5_BLOCKSIZE) {
