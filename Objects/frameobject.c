@@ -466,7 +466,7 @@ static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     PyObject **fastlocals, **p;
-    int i, slots;
+    Py_ssize_t i, slots;
 
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_code);
@@ -496,7 +496,7 @@ static void
 frame_clear(PyFrameObject *f)
 {
     PyObject **fastlocals, **p, **oldtop;
-    int i, slots;
+    Py_ssize_t i, slots;
 
     /* Before anything else, make sure that this frame is clearly marked
      * as being defunct!  Else, e.g., a generator reachable from this
@@ -848,7 +848,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     Py_ssize_t j;
-    int ncells, nfreevars;
+    Py_ssize_t ncells, nfreevars;
     if (f == NULL)
         return;
     locals = f->f_locals;
@@ -900,7 +900,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     Py_ssize_t j;
-    int ncells, nfreevars;
+    Py_ssize_t ncells, nfreevars;
     if (f == NULL)
         return;
     locals = f->f_locals;
