@@ -361,7 +361,7 @@ SSLSocket Objects
             try:
                 s.do_handshake()
                 break
-            except ssl.SSLError, err:
+            except ssl.SSLError as err:
                 if err.args[0] == ssl.SSL_ERROR_WANT_READ:
                     select.select([s], [], [])
                 elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
