@@ -161,7 +161,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
         goto error;
     }
     input = pinput.buf;
-    length = pinput.len;
+    length = (unsigned int)pinput.len;
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
@@ -251,7 +251,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
         goto error;
     }
     input = pinput.buf;
-    length = pinput.len;
+    length = (unsigned int)pinput.len;
 
     if (r_strlen <= 0)
         r_strlen = 1;
