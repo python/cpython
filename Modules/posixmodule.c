@@ -2720,7 +2720,6 @@ static PyObject *
 posix_lchflags(PyObject *self, PyObject *args)
 {
     path_t path;
-    char *path;
     unsigned long flags;
     int res;
     memset(&path, 0, sizeof(path));
