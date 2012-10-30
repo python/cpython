@@ -180,9 +180,9 @@ typedef unsigned char Py_UCS1;
     } while (0)
 
 /* macros to work with surrogates */
-#define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= ch && ch <= 0xDFFF)
-#define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= ch && ch <= 0xDBFF)
-#define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= ch && ch <= 0xDFFF)
+#define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
+#define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDBFF)
+#define Py_UNICODE_IS_LOW_SURROGATE(ch) (0xDC00 <= (ch) && (ch) <= 0xDFFF)
 /* Join two surrogate characters and return a single Py_UCS4 value. */
 #define Py_UNICODE_JOIN_SURROGATES(high, low)  \
     (((((Py_UCS4)(high) & 0x03FF) << 10) |      \

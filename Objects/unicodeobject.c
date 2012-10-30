@@ -4412,7 +4412,7 @@ encode_char:
 
             /* code first surrogate */
             base64bits += 16;
-            base64buffer = (base64buffer << 16) | 0xd800 | ((ch-0x10000) >> 10);
+            base64buffer = (base64buffer << 16) | Py_UNICODE_HIGH_SURROGATE(ch);
             while (base64bits >= 6) {
                 *out++ = TO_BASE64(base64buffer >> (base64bits-6));
                 base64bits -= 6;
@@ -7052,9 +7052,8 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             charsize = 1;
         }
         else {
-            ch -= 0x10000;
-            chars[0] = 0xd800 + (ch >> 10);
-            chars[1] = 0xdc00 + (ch & 0x3ff);
+            chars[0] = Py_UNICODE_HIGH_SURROGATE(ch);
+            chars[1] = Py_UNICODE_LOW_SURROGATE(ch);
             charsize = 2;
         }
 

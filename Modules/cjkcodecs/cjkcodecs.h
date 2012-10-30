@@ -148,8 +148,8 @@ static const struct dbcs_map *mapping_list;
 #if Py_UNICODE_SIZE == 2
 # define WRITEUCS4(c)                                           \
     REQUIRE_OUTBUF(2)                                           \
-    (*outbuf)[0] = 0xd800 + (((c) - 0x10000) >> 10);            \
-    (*outbuf)[1] = 0xdc00 + (((c) - 0x10000) & 0x3ff);          \
+    (*outbuf)[0] = Py_UNICODE_HIGH_SURROGATE(c);                \
+    (*outbuf)[1] = Py_UNICODE_LOW_SURROGATE(c);                 \
     NEXT_OUT(2)
 #else
 # define WRITEUCS4(c)                                           \
@@ -188,11 +188,10 @@ static const struct dbcs_map *mapping_list;
 
 #if Py_UNICODE_SIZE == 2
 #define DECODE_SURROGATE(c)                                     \
-    if (c >> 10 == 0xd800 >> 10) { /* high surrogate */         \
+    if (Py_UNICODE_IS_HIGH_SURROGATE(c)) {                      \
         REQUIRE_INBUF(2)                                        \
-        if (IN2 >> 10 == 0xdc00 >> 10) { /* low surrogate */ \
-            c = 0x10000 + ((ucs4_t)(c - 0xd800) << 10) + \
-            ((ucs4_t)(IN2) - 0xdc00);                           \
+        if (Py_UNICODE_IS_LOW_SURROGATE(IN2)) {                 \
+            c = Py_UNICODE_JOIN_SURROGATES(c, IN2)              \
         }                                                       \
     }
 #define GET_INSIZE(c)   ((c) > 0xffff ? 2 : 1)

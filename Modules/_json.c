@@ -174,14 +174,13 @@ ascii_escape_unichar(Py_UCS4 c, unsigned char *output, Py_ssize_t chars)
         default:
             if (c >= 0x10000) {
                 /* UTF-16 surrogate pair */
-                Py_UCS4 v = c - 0x10000;
-                c = 0xd800 | ((v >> 10) & 0x3ff);
+                Py_UCS4 v = Py_UNICODE_HIGH_SURROGATE(c);
                 output[chars++] = 'u';
-                output[chars++] = Py_hexdigits[(c >> 12) & 0xf];
-                output[chars++] = Py_hexdigits[(c >>  8) & 0xf];
-                output[chars++] = Py_hexdigits[(c >>  4) & 0xf];
-                output[chars++] = Py_hexdigits[(c      ) & 0xf];
-                c = 0xdc00 | (v & 0x3ff);
+                output[chars++] = Py_hexdigits[(v >> 12) & 0xf];
+                output[chars++] = Py_hexdigits[(v >>  8) & 0xf];
+                output[chars++] = Py_hexdigits[(v >>  4) & 0xf];
+                output[chars++] = Py_hexdigits[(v      ) & 0xf];
+                c = Py_UNICODE_LOW_SURROGATE(c);
                 output[chars++] = '\\';
             }
             output[chars++] = 'u';
@@ -431,7 +430,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 }
             }
             /* Surrogate pair */
-            if ((c & 0xfc00) == 0xd800) {
+            if (Py_UNICODE_IS_HIGH_SURROGATE(c)) {
                 Py_UCS4 c2 = 0;
                 if (end + 6 >= len) {
                     raise_errmsg("Unpaired high surrogate", pystr, end - 5);
@@ -462,13 +461,13 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                             goto bail;
                     }
                 }
-                if ((c2 & 0xfc00) != 0xdc00) {
+                if (!Py_UNICODE_IS_LOW_SURROGATE(c2)) {
                     raise_errmsg("Unpaired high surrogate", pystr, end - 5);
                     goto bail;
                 }
-                c = 0x10000 + (((c - 0xd800) << 10) | (c2 - 0xdc00));
+                c = Py_UNICODE_JOIN_SURROGATES(c, c2);
             }
-            else if ((c & 0xfc00) == 0xdc00) {
+            else if (Py_UNICODE_IS_LOW_SURROGATE(c)) {
                 raise_errmsg("Unpaired low surrogate", pystr, end - 5);
                 goto bail;
             }
