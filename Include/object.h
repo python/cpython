@@ -362,7 +362,7 @@ typedef struct _typeobject {
     PyBufferProcs *tp_as_buffer;
 
     /* Flags to define presence of optional/expanded features */
-    long tp_flags;
+    unsigned long tp_flags;
 
     const char *tp_doc; /* Documentation string */
 
@@ -428,7 +428,7 @@ typedef struct{
     const char* name;
     int basicsize;
     int itemsize;
-    int flags;
+    unsigned int flags;
     PyType_Slot *slots; /* terminated by slot==0. */
 } PyType_Spec;
 
@@ -470,7 +470,7 @@ PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
 PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
-PyAPI_FUNC(long) PyType_GetFlags(PyTypeObject*);
+PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
 
 #define PyType_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
@@ -603,44 +603,44 @@ given type object has a specified feature.
 */
 
 /* Set if the type object is dynamically allocated */
-#define Py_TPFLAGS_HEAPTYPE (1L<<9)
+#define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 
 /* Set if the type allows subclassing */
-#define Py_TPFLAGS_BASETYPE (1L<<10)
+#define Py_TPFLAGS_BASETYPE (1UL << 10)
 
 /* Set if the type is 'ready' -- fully initialized */
-#define Py_TPFLAGS_READY (1L<<12)
+#define Py_TPFLAGS_READY (1UL << 12)
 
 /* Set while the type is being 'readied', to prevent recursive ready calls */
-#define Py_TPFLAGS_READYING (1L<<13)
+#define Py_TPFLAGS_READYING (1UL << 13)
 
 /* Objects support garbage collection (see objimp.h) */
-#define Py_TPFLAGS_HAVE_GC (1L<<14)
+#define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
 /* These two bits are preserved for Stackless Python, next after this is 17 */
 #ifdef STACKLESS
-#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3L<<15)
+#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3UL << 15)
 #else
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
 
 /* Objects support type attribute cache */
-#define Py_TPFLAGS_HAVE_VERSION_TAG   (1L<<18)
-#define Py_TPFLAGS_VALID_VERSION_TAG  (1L<<19)
+#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
+#define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
-#define Py_TPFLAGS_IS_ABSTRACT (1L<<20)
+#define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
 /* These flags are used to determine if a type is a subclass. */
-#define Py_TPFLAGS_INT_SUBCLASS         (1L<<23)
-#define Py_TPFLAGS_LONG_SUBCLASS        (1L<<24)
-#define Py_TPFLAGS_LIST_SUBCLASS        (1L<<25)
-#define Py_TPFLAGS_TUPLE_SUBCLASS       (1L<<26)
-#define Py_TPFLAGS_BYTES_SUBCLASS       (1L<<27)
-#define Py_TPFLAGS_UNICODE_SUBCLASS     (1L<<28)
-#define Py_TPFLAGS_DICT_SUBCLASS        (1L<<29)
-#define Py_TPFLAGS_BASE_EXC_SUBCLASS    (1L<<30)
-#define Py_TPFLAGS_TYPE_SUBCLASS        (1L<<31)
+#define Py_TPFLAGS_INT_SUBCLASS         (1UL << 23)
+#define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
+#define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
+#define Py_TPFLAGS_TUPLE_SUBCLASS       (1UL << 26)
+#define Py_TPFLAGS_BYTES_SUBCLASS       (1UL << 27)
+#define Py_TPFLAGS_UNICODE_SUBCLASS     (1UL << 28)
+#define Py_TPFLAGS_DICT_SUBCLASS        (1UL << 29)
+#define Py_TPFLAGS_BASE_EXC_SUBCLASS    (1UL << 30)
+#define Py_TPFLAGS_TYPE_SUBCLASS        (1UL << 31)
 
 #define Py_TPFLAGS_DEFAULT  ( \
                  Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
