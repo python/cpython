@@ -514,8 +514,8 @@ dir_fd_converter(PyObject *o, void *p) {
  * path_cleanup().  However it is safe to do so.)
  */
 typedef struct {
-    char *function_name;
-    char *argument_name;
+    const char *function_name;
+    const char *argument_name;
     int nullable;
     int allow_fd;
     wchar_t *wide;
@@ -1017,25 +1017,6 @@ posix_error(void)
 {
     return PyErr_SetFromErrno(PyExc_OSError);
 }
-static PyObject *
-posix_error_with_filename(char* name)
-{
-    return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
-}
-
-
-static PyObject *
-posix_error_with_allocated_filename(PyObject* name)
-{
-    PyObject *name_str, *rc;
-    name_str = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AsString(name),
-                                                PyBytes_GET_SIZE(name));
-    Py_DECREF(name);
-    rc = PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
-                                              name_str);
-    Py_XDECREF(name_str);
-    return rc;
-}
 
 #ifdef MS_WINDOWS
 static PyObject *
@@ -1080,29 +1061,14 @@ win32_error_object(char* function, PyObject* filename)
 
 #endif /* MS_WINDOWS */
 
-/*
- * Some functions return Win32 errors, others only ever use posix_error
- * (this is for backwards compatibility with exceptions)
- */
 static PyObject *
-path_posix_error(char *function_name, path_t *path)
-{
-    if (path->narrow)
-        return posix_error_with_filename(path->narrow);
-    return posix_error();
-}
-
-static PyObject *
-path_error(char *function_name, path_t *path)
+path_error(path_t *path)
 {
 #ifdef MS_WINDOWS
-    if (path->narrow)
-        return win32_error(function_name, path->narrow);
-    if (path->wide)
-        return win32_error_unicode(function_name, path->wide);
-    return win32_error(function_name, NULL);
+    return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
+                                                        0, path->object);
 #else
-    return path_posix_error(function_name, path);
+    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
 #endif
 }
 
@@ -1128,21 +1094,25 @@ posix_fildes(PyObject *fdobj, int (*func)(int))
 }
 
 static PyObject *
-posix_1str(PyObject *args, char *format, int (*func)(const char*))
+posix_1str(const char *func_name, PyObject *args, char *format,
+           int (*func)(const char*))
 {
-    PyObject *opath1 = NULL;
-    char *path1;
+    path_t path;
     int res;
+    memset(&path, 0, sizeof(path));
+    path.function_name = func_name;
     if (!PyArg_ParseTuple(args, format,
-                          PyUnicode_FSConverter, &opath1))
+                          path_converter, &path))
         return NULL;
-    path1 = PyBytes_AsString(opath1);
     Py_BEGIN_ALLOW_THREADS
-    res = (*func)(path1);
+    res = (*func)(path.narrow);
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error_with_allocated_filename(opath1);
-    Py_DECREF(opath1);
+    if (res < 0) {
+        path_error(&path);
+        path_cleanup(&path);
+        return NULL;
+    }
+    path_cleanup(&path);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -2158,8 +2128,9 @@ posix_do_stat(char *function_name, path_t *path,
         result = STAT(path->narrow, &st);
     Py_END_ALLOW_THREADS
 
-    if (result != 0)
-        return path_error("stat", path);
+    if (result != 0) {
+        return path_error(path);
+    }
 
     return _pystat_fromstructstat(&st);
 }
@@ -2190,6 +2161,7 @@ posix_stat(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "stat";
     path.allow_fd = 1;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&p:stat", keywords,
         path_converter, &path,
@@ -2220,6 +2192,7 @@ posix_lstat(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "lstat";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:lstat", keywords,
         path_converter, &path,
 #ifdef HAVE_FSTATAT
@@ -2428,6 +2401,7 @@ posix_chdir(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "chdir";
 #ifdef HAVE_FCHDIR
     path.allow_fd = 1;
 #endif
@@ -2454,7 +2428,7 @@ posix_chdir(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error("chdir", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -2518,6 +2492,7 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "chmod";
 #ifdef HAVE_FCHMOD
     path.allow_fd = 1;
 #endif
@@ -2612,7 +2587,7 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         else
 #endif
-            return_value = path_error("chmod", &path);
+            return_value = path_error(&path);
         goto exit;
     }
 #endif
@@ -2656,20 +2631,23 @@ Equivalent to chmod(path, mode, follow_symlinks=False).");
 static PyObject *
 posix_lchmod(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
-    char *path;
+    path_t path;
     int i;
     int res;
-    if (!PyArg_ParseTuple(args, "O&i:lchmod", PyUnicode_FSConverter,
-                          &opath, &i))
+    memset(&path, 0, sizeof(path));
+    path.function_name = "lchmod";
+    if (!PyArg_ParseTuple(args, "O&i:lchmod",
+                          path_converter, &path, &i))
         return NULL;
-    path = PyBytes_AsString(opath);
     Py_BEGIN_ALLOW_THREADS
-    res = lchmod(path, i);
+    res = lchmod(path.narrow, i);
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error_with_allocated_filename(opath);
-    Py_DECREF(opath);
+    if (res < 0) {
+        path_error(&path);
+        path_cleanup(&path);
+        return NULL;
+    }
+    path_cleanup(&path);
     Py_RETURN_NONE;
 }
 #endif /* HAVE_LCHMOD */
@@ -2697,6 +2675,7 @@ posix_chflags(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "flags", "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "chflags";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&k|$i:chflags", keywords,
                           path_converter, &path,
                           &flags, &follow_symlinks))
@@ -2717,7 +2696,7 @@ posix_chflags(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_posix_error("chflags", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -2740,22 +2719,25 @@ Equivalent to chflags(path, flags, follow_symlinks=False).");
 static PyObject *
 posix_lchflags(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
+    path_t path;
     char *path;
     unsigned long flags;
     int res;
+    memset(&path, 0, sizeof(path));
+    path.function_name = "lchflags";
     if (!PyArg_ParseTuple(args, "O&k:lchflags",
-                          PyUnicode_FSConverter, &opath, &flags))
+                          path_converter, &path, &flags))
         return NULL;
-    path = PyBytes_AsString(opath);
     Py_BEGIN_ALLOW_THREADS
-    res = lchflags(path, flags);
+    res = lchflags(path.narrow, flags);
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error_with_allocated_filename(opath);
-    Py_DECREF(opath);
-    Py_INCREF(Py_None);
-    return Py_None;
+    if (res < 0) {
+        path_error(&path);
+        path_cleanup(&path);
+        return NULL;
+    }
+    path_cleanup(&path);
+    Py_RETURN_NONE;
 }
 #endif /* HAVE_LCHFLAGS */
 
@@ -2767,7 +2749,7 @@ Change root directory to path.");
 static PyObject *
 posix_chroot(PyObject *self, PyObject *args)
 {
-    return posix_1str(args, "O&:chroot", chroot);
+    return posix_1str("chroot", args, "O&:chroot", chroot);
 }
 #endif
 
@@ -2850,6 +2832,7 @@ posix_chown(PyObject *self, PyObject *args, PyObject *kwargs)
                                "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "chown";
 #ifdef HAVE_FCHOWN
     path.allow_fd = 1;
 #endif
@@ -2908,7 +2891,7 @@ posix_chown(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_posix_error("chown", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -2954,21 +2937,24 @@ Equivalent to os.chown(path, uid, gid, follow_symlinks=False).");
 static PyObject *
 posix_lchown(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
-    char *path;
+    path_t path;
     long uid, gid;
     int res;
+    memset(&path, 0, sizeof(path));
+    path.function_name = "lchown";
     if (!PyArg_ParseTuple(args, "O&ll:lchown",
-                          PyUnicode_FSConverter, &opath,
+                          path_converter, &path,
                           &uid, &gid))
         return NULL;
-    path = PyBytes_AsString(opath);
     Py_BEGIN_ALLOW_THREADS
-    res = lchown(path, (uid_t) uid, (gid_t) gid);
+    res = lchown(path.narrow, (uid_t) uid, (gid_t) gid);
     Py_END_ALLOW_THREADS
-    if (res < 0)
-        return posix_error_with_allocated_filename(opath);
-    Py_DECREF(opath);
+    if (res < 0) {
+        path_error(&path);
+        path_cleanup(&path);
+        return NULL;
+    }
+    path_cleanup(&path);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -3084,6 +3070,8 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
 
     memset(&src, 0, sizeof(src));
     memset(&dst, 0, sizeof(dst));
+    src.function_name = "link";
+    dst.function_name = "link";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|O&O&p:link", keywords,
             path_converter, &src,
             path_converter, &dst,
@@ -3132,7 +3120,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error("link", &dst);
+        return_value = path_error(&src);
         goto exit;
     }
 #endif
@@ -3189,6 +3177,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "listdir";
     path.nullable = 1;
 #ifdef HAVE_FDOPENDIR
     path.allow_fd = 1;
@@ -3383,7 +3372,7 @@ exit:
     }
 
     if (dirp == NULL) {
-        list = path_error("listdir", &path);
+        list = path_error(&path);
         goto exit;
     }
     if ((list = PyList_New(0)) == NULL) {
@@ -3399,7 +3388,7 @@ exit:
                 break;
             } else {
                 Py_DECREF(list);
-                list = path_error("listdir", &path);
+                list = path_error(&path);
                 goto exit;
             }
         }
@@ -3650,6 +3639,7 @@ posix_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
     int result;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "mkdir";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i$O&:mkdir", keywords,
         path_converter, &path, &mode,
 #ifdef HAVE_MKDIRAT
@@ -3686,7 +3676,7 @@ posix_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
     Py_END_ALLOW_THREADS
     if (result < 0) {
-        return_value = path_error("mkdir", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 #endif
@@ -3804,6 +3794,8 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
 
     memset(&src, 0, sizeof(src));
     memset(&dst, 0, sizeof(dst));
+    src.function_name = function_name;
+    dst.function_name = function_name;
     strcpy(format, "O&O&|$O&O&:");
     strcat(format, function_name);
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, format, keywords,
@@ -3852,7 +3844,7 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(function_name, &dst);
+        return_value = path_error(&src);
         goto exit;
     }
 #endif
@@ -3916,6 +3908,7 @@ posix_rmdir(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "rmdir";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:rmdir", keywords,
             path_converter, &path,
 #ifdef HAVE_UNLINKAT
@@ -3944,7 +3937,7 @@ posix_rmdir(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error("rmdir", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -4072,6 +4065,7 @@ posix_unlink(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "unlink";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:unlink", keywords,
             path_converter, &path,
 #ifdef HAVE_UNLINKAT
@@ -4100,7 +4094,7 @@ posix_unlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error("unlink", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -4787,6 +4781,7 @@ posix_execve(PyObject *self, PyObject *args, PyObject *kwargs)
        like posix.environ. */
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "execve";
 #ifdef HAVE_FEXECVE
     path.allow_fd = 1;
 #endif
@@ -4826,7 +4821,7 @@ posix_execve(PyObject *self, PyObject *args, PyObject *kwargs)
 
     /* If we get here it's definitely an error */
 
-    path_posix_error("execve", &path);
+    path_error(&path);
 
     while (--envc >= 0)
         PyMem_DEL(envlist[envc]);
@@ -6602,6 +6597,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "dir_fd", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "readlink";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:readlink", keywords,
                           path_converter, &path,
 #ifdef HAVE_READLINKAT
@@ -6622,7 +6618,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (length < 0) {
-        return_value = path_posix_error("readlink", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -6692,8 +6688,10 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
 
     memset(&src, 0, sizeof(src));
+    src.function_name = "symlink";
     src.argument_name = "src";
     memset(&dst, 0, sizeof(dst));
+    dst.function_name = "symlink";
     dst.argument_name = "dst";
 
 #ifdef MS_WINDOWS
@@ -6755,7 +6753,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error("symlink", &dst);
+        return_value = path_error(&dst);
         goto exit;
     }
 #endif
@@ -7080,6 +7078,7 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "open";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i|i$O&:open", keywords,
         path_converter, &path,
         &flags, &mode,
@@ -7112,7 +7111,7 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
             return_value = posix_error();
         else
 #endif
-        return_value = path_error("open", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -7999,6 +7998,7 @@ posix_truncate(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "length", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "truncate";
 #ifdef HAVE_FTRUNCATE
     path.allow_fd = 1;
 #endif
@@ -8016,7 +8016,7 @@ posix_truncate(PyObject *self, PyObject *args, PyObject *kwargs)
         res = truncate(path.narrow, length);
     Py_END_ALLOW_THREADS
     if (res < 0)
-        result = path_posix_error("truncate", &path);
+        result = path_error(&path);
     else {
         Py_INCREF(Py_None);
         result = Py_None;
@@ -8488,6 +8488,7 @@ posix_statvfs(PyObject *self, PyObject *args, PyObject *kwargs)
     struct statvfs st;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "statvfs";
 #ifdef HAVE_FSTATVFS
     path.allow_fd = 1;
 #endif
@@ -8514,7 +8515,7 @@ posix_statvfs(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_posix_error("statvfs", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -8751,6 +8752,7 @@ posix_pathconf(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "name", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "pathconf";
 #ifdef HAVE_FPATHCONF
     path.allow_fd = 1;
 #endif
@@ -8771,7 +8773,7 @@ posix_pathconf(PyObject *self, PyObject *args, PyObject *kwargs)
             /* could be a path or name problem */
             posix_error();
         else
-            result = path_posix_error("pathconf", &path);
+            result = path_error(&path);
     }
     else
         result = PyLong_FromLong(limit);
@@ -9831,6 +9833,8 @@ posix_getxattr(PyObject *self, PyObject *args, PyObject *kwargs)
 
     memset(&path, 0, sizeof(path));
     memset(&attribute, 0, sizeof(attribute));
+    path.function_name = "getxattr";
+    attribute.function_name = "getxattr";
     path.allow_fd = 1;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$p:getxattr", keywords,
         path_converter, &path,
@@ -9847,7 +9851,7 @@ posix_getxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         static Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
-            path_error("getxattr", &path);
+            path_error(&path);
             goto exit;
         }
         buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
@@ -9869,7 +9873,7 @@ posix_getxattr(PyObject *self, PyObject *args, PyObject *kwargs)
             buffer = NULL;
             if (errno == ERANGE)
                 continue;
-            path_error("getxattr", &path);
+            path_error(&path);
             goto exit;
         }
 
@@ -9908,6 +9912,7 @@ posix_setxattr(PyObject *self, PyObject *args, PyObject *kwargs)
                                "flags", "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "setxattr";
     path.allow_fd = 1;
     memset(&attribute, 0, sizeof(attribute));
     memset(&value, 0, sizeof(value));
@@ -9935,7 +9940,7 @@ posix_setxattr(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS;
 
     if (result) {
-        return_value = path_error("setxattr", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -9969,7 +9974,9 @@ posix_removexattr(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "attribute", "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "removexattr";
     memset(&attribute, 0, sizeof(attribute));
+    attribute.function_name = "removexattr";
     path.allow_fd = 1;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$p:removexattr",
                                      keywords,
@@ -9991,7 +9998,7 @@ posix_removexattr(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS;
 
     if (result) {
-        return_value = path_error("removexattr", &path);
+        return_value = path_error(&path);
         goto exit;
     }
 
@@ -10027,6 +10034,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"path", "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "listxattr";
     path.allow_fd = 1;
     path.fd = -1;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&$p:listxattr", keywords,
@@ -10045,7 +10053,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
             /* ERANGE */
-            path_error("listxattr", &path);
+            path_error(&path);
             break;
         }
         buffer = PyMem_MALLOC(buffer_size);
@@ -10066,7 +10074,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         if (length < 0) {
             if (errno == ERANGE)
                 continue;
-            path_error("listxattr", &path);
+            path_error(&path);
             break;
         }
 
