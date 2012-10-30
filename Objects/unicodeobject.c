@@ -4804,14 +4804,8 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     Py_ssize_t outpos;
     PyObject *unicode;
     const unsigned char *q, *e;
-    int bo = 0;       /* assume native ordering by default */
+    int le, bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
-    /* Offsets from q for retrieving bytes in the right order. */
-#if PY_LITTLE_ENDIAN
-    int iorder[] = {0, 1, 2, 3};
-#else
-    int iorder[] = {3, 2, 1, 0};
-#endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
@@ -4825,83 +4819,88 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
        byte order setting accordingly. In native mode, the leading BOM
        mark is skipped, in all other modes, it is copied to the output
        stream as-is (giving a ZWNBSP character). */
-    if (bo == 0) {
-        if (size >= 4) {
-            const Py_UCS4 bom = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
-                (q[iorder[1]] << 8) | q[iorder[0]];
-#if PY_LITTLE_ENDIAN
-            if (bom == 0x0000FEFF) {
-                q += 4;
-                bo = -1;
-            }
-            else if (bom == 0xFFFE0000) {
-                q += 4;
-                bo = 1;
-            }
-#else
-            if (bom == 0x0000FEFF) {
-                q += 4;
-                bo = 1;
-            }
-            else if (bom == 0xFFFE0000) {
-                q += 4;
-                bo = -1;
-            }
-#endif
+    if (bo == 0 && size >= 4) {
+        Py_UCS4 bom = (q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
+        if (bom == 0x0000FEFF) {
+            bo = -1;
+            q += 4;
         }
+        else if (bom == 0xFFFE0000) {
+            bo = 1;
+            q += 4;
+        }
+        if (byteorder)
+            *byteorder = bo;
     }
 
-    if (bo == -1) {
-        /* force LE */
-        iorder[0] = 0;
-        iorder[1] = 1;
-        iorder[2] = 2;
-        iorder[3] = 3;
-    }
-    else if (bo == 1) {
-        /* force BE */
-        iorder[0] = 3;
-        iorder[1] = 2;
-        iorder[2] = 1;
-        iorder[3] = 0;
+    if (q == e) {
+        if (consumed)
+            *consumed = size;
+        Py_INCREF(unicode_empty);
+        return unicode_empty;
     }
 
-    /* This might be one to much, because of a BOM */
-    unicode = PyUnicode_New((size+3)/4, 127);
+#ifdef WORDS_BIGENDIAN
+    le = bo < 0;
+#else
+    le = bo <= 0;
+#endif
+
+    unicode = PyUnicode_New((e - q + 3) / 4, 127);
     if (!unicode)
         return NULL;
-    if (size == 0)
-        return unicode;
+
     outpos = 0;
+    while (1) {
+        Py_UCS4 ch = 0;
+        Py_UCS4 maxch = PyUnicode_MAX_CHAR_VALUE(unicode);
 
-    while (q < e) {
-        Py_UCS4 ch;
-        /* remaining bytes at the end? (size should be divisible by 4) */
-        if (e-q<4) {
-            if (consumed)
+        if (e - q >= 4) {
+            enum PyUnicode_Kind kind = PyUnicode_KIND(unicode);
+            void *data = PyUnicode_DATA(unicode);
+            const unsigned char *last = e - 4;
+            if (le) {
+                do {
+                    ch = (q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
+                    if (ch > maxch)
+                        break;
+                    PyUnicode_WRITE(kind, data, outpos++, ch);
+                    q += 4;
+                } while (q <= last);
+            }
+            else {
+                do {
+                    ch = (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
+                    if (ch > maxch)
+                        break;
+                    PyUnicode_WRITE(kind, data, outpos++, ch);
+                    q += 4;
+                } while (q <= last);
+            }
+        }
+
+        if (ch <= maxch) {
+            if (q == e || consumed)
                 break;
+            /* remaining bytes at the end? (size should be divisible by 4) */
             errmsg = "truncated data";
-            startinpos = ((const char *)q)-starts;
-            endinpos = ((const char *)e)-starts;
-            goto utf32Error;
-            /* The remaining input chars are ignored if the callback
-               chooses to skip the input */
+            startinpos = ((const char *)q) - starts;
+            endinpos = ((const char *)e) - starts;
         }
-        ch = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
-            (q[iorder[1]] << 8) | q[iorder[0]];
-
-        if (ch >= 0x110000)
-        {
+        else {
+            if (ch < 0x110000) {
+                if (unicode_putchar(&unicode, &outpos, ch) < 0)
+                    goto onError;
+                q += 4;
+                continue;
+            }
             errmsg = "codepoint not in range(0x110000)";
-            startinpos = ((const char *)q)-starts;
-            endinpos = startinpos+4;
-            goto utf32Error;
+            startinpos = ((const char *)q) - starts;
+            endinpos = startinpos + 4;
         }
-        if (unicode_putchar(&unicode, &outpos, ch) < 0)
-            goto onError;
-        q += 4;
-        continue;
-      utf32Error:
+
+        /* The remaining input chars are ignored if the callback
+           chooses to skip the input */
         if (unicode_decode_call_errorhandler(
                 errors, &errorHandler,
                 "utf32", errmsg,
@@ -4909,9 +4908,6 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
                 &unicode, &outpos))
             goto onError;
     }
-
-    if (byteorder)
-        *byteorder = bo;
 
     if (consumed)
         *consumed = (const char *)q-starts;

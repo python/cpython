@@ -157,7 +157,7 @@ Optimizations
 
 Major performance enhancements have been added:
 
-* None yet.
+* The UTF-32 decoder is now 3x to 4x faster.
 
 
 Build and C API Changes
