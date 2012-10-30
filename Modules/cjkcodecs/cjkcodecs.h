@@ -191,7 +191,7 @@ static const struct dbcs_map *mapping_list;
     if (Py_UNICODE_IS_HIGH_SURROGATE(c)) {                      \
         REQUIRE_INBUF(2)                                        \
         if (Py_UNICODE_IS_LOW_SURROGATE(IN2)) {                 \
-            c = Py_UNICODE_JOIN_SURROGATES(c, IN2)              \
+            c = Py_UNICODE_JOIN_SURROGATES(c, IN2);             \
         }                                                       \
     }
 #define GET_INSIZE(c)   ((c) > 0xffff ? 2 : 1)
