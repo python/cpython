@@ -274,6 +274,5 @@ Here is an example of how you would catch one of these exceptions::
    p = xdrlib.Packer()
    try:
        p.pack_double(8.01)
-   except xdrlib.ConversionError, instance:
+   except xdrlib.ConversionError as instance:
        print 'packing the double failed:', instance.msg
-
