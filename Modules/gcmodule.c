@@ -168,6 +168,18 @@ static Py_ssize_t long_lived_pending = 0;
 static int debug;
 static PyObject *tmod = NULL;
 
+/* Running stats per generation */
+struct gc_generation_stats {
+    /* total number of collections */
+    Py_ssize_t collections;
+    /* total number of collected objects */
+    Py_ssize_t collected;
+    /* total number of uncollectable objects (put into gc.garbage) */
+    Py_ssize_t uncollectable;
+};
+
+static struct gc_generation_stats generation_stats[NUM_GENERATIONS];
+
 /*--------------------------------------------------------------------------
 gc_refs values.
 
@@ -852,6 +864,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable)
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc;
     double t1 = 0.0;
+    struct gc_generation_stats *stats = &generation_stats[generation];
 
     if (debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n",
@@ -993,10 +1006,14 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable)
         Py_FatalError("unexpected exception during garbage collection");
     }
 
+    /* Update stats */
     if (n_collected)
         *n_collected = m;
     if (n_uncollectable)
         *n_uncollectable = n;
+    stats->collections++;
+    stats->collected += m;
+    stats->uncollectable += n;
     return n+m;
 }
 
@@ -1343,6 +1360,52 @@ gc_get_objects(PyObject *self, PyObject *noargs)
     return result;
 }
 
+PyDoc_STRVAR(gc_get_stats__doc__,
+"get_stats() -> [...]\n"
+"\n"
+"Return a list of dictionaries containing per-generation statistics.\n");
+
+static PyObject *
+gc_get_stats(PyObject *self, PyObject *noargs)
+{
+    int i;
+    PyObject *result;
+    struct gc_generation_stats stats[NUM_GENERATIONS], *st;
+
+    /* To get consistent values despite allocations while constructing
+       the result list, we use a snapshot of the running stats. */
+    for (i = 0; i < NUM_GENERATIONS; i++) {
+        stats[i] = generation_stats[i];
+    }
+
+    result = PyList_New(0);
+    if (result == NULL)
+        return NULL;
+
+    for (i = 0; i < NUM_GENERATIONS; i++) {
+        PyObject *dict;
+        st = &stats[i];
+        dict = Py_BuildValue("{snsnsn}",
+                             "collections", st->collections,
+                             "collected", st->collected,
+                             "uncollectable", st->uncollectable
+                            );
+        if (dict == NULL)
+            goto error;
+        if (PyList_Append(result, dict)) {
+            Py_DECREF(dict);
+            goto error;
+        }
+        Py_DECREF(dict);
+    }
+    return result;
+
+error:
+    Py_XDECREF(result);
+    return NULL;
+}
+
+
 PyDoc_STRVAR(gc_is_tracked__doc__,
 "is_tracked(obj) -> bool\n"
 "\n"
@@ -1393,6 +1456,7 @@ static PyMethodDef GcMethods[] = {
     {"collect",            (PyCFunction)gc_collect,
         METH_VARARGS | METH_KEYWORDS,           gc_collect__doc__},
     {"get_objects",    gc_get_objects,METH_NOARGS,  gc_get_objects__doc__},
+    {"get_stats",      gc_get_stats, METH_NOARGS, gc_get_stats__doc__},
     {"is_tracked",     gc_is_tracked, METH_O,       gc_is_tracked__doc__},
     {"get_referrers",  gc_get_referrers, METH_VARARGS,
         gc_get_referrers__doc__},

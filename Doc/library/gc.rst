@@ -67,6 +67,24 @@ The :mod:`gc` module provides the following functions:
    returned.
 
 
+.. function:: get_stats()
+
+   Return a list of 3 per-generation dictionaries containing collection
+   statistics since interpreter start.  At this moment, each dictionary will
+   contain the following items:
+
+   * ``collections`` is the number of times this generation was collected;
+
+   * ``collected`` is the total number of objects collected inside this
+     generation;
+
+   * ``uncollectable`` is the total number of objects which were found
+     to be uncollectable (and were therefore moved to the :data:`garbage`
+     list) inside this generation.
+
+   .. versionadded:: 3.4
+
+
 .. function:: set_threshold(threshold0[, threshold1[, threshold2]])
 
    Set the garbage collection thresholds (the collection frequency). Setting
