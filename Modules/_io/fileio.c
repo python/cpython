@@ -391,12 +391,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
         fd_is_own = 1;
         if (self->fd < 0) {
-#ifdef MS_WINDOWS
-            if (widename != NULL)
-                PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
-            else
-#endif
-                PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
             goto error;
         }
     }

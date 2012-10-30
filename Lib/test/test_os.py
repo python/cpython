@@ -2046,6 +2046,76 @@ class TermsizeTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
+class OSErrorTests(unittest.TestCase):
+    def setUp(self):
+        class Str(str):
+            pass
+
+        self.filenames = []
+        if support.TESTFN_UNENCODABLE is not None:
+            decoded = support.TESTFN_UNENCODABLE
+        else:
+            decoded = support.TESTFN
+        self.filenames.append(decoded)
+        self.filenames.append(Str(decoded))
+        if support.TESTFN_UNDECODABLE is not None:
+            encoded = support.TESTFN_UNDECODABLE
+        else:
+            encoded = os.fsencode(support.TESTFN)
+        self.filenames.append(encoded)
+        self.filenames.append(memoryview(encoded))
+
+    def test_oserror_filename(self):
+        funcs = [
+            (os.chdir,),
+            (os.chmod, 0o777),
+            (os.chown, 0, 0),
+            (os.lchown, 0, 0),
+            (os.listdir,),
+            (os.lstat,),
+            (os.open, os.O_RDONLY),
+            (os.rename, "dst"),
+            (os.replace, "dst"),
+            (os.rmdir,),
+            (os.stat,),
+            (os.truncate, 0),
+            (os.unlink,),
+        ]
+        if sys.platform == "win32":
+            funcs.extend((
+                (os._getfullpathname,),
+                (os._isdir,),
+            ))
+        if hasattr(os, "chflags"):
+            funcs.extend((
+                (os.chflags, 0),
+                (os.lchflags, 0),
+            ))
+        if hasattr(os, "chroot"):
+            funcs.append((os.chroot,))
+        if hasattr(os, "link"):
+            funcs.append((os.link, "dst"))
+        if hasattr(os, "listxattr"):
+            funcs.extend((
+                (os.listxattr,),
+                (os.getxattr, "user.test"),
+                (os.setxattr, "user.test", b'user'),
+                (os.removexattr, "user.test"),
+            ))
+        if hasattr(os, "lchmod"):
+            funcs.append((os.lchmod, 0o777))
+        if hasattr(os, "readlink"):
+            funcs.append((os.readlink,))
+
+        for func, *func_args in funcs:
+            for name in self.filenames:
+                try:
+                    func(name, *func_args)
+                except FileNotFoundError as err:
+                    self.assertIs(err.filename, name)
+                else:
+                    self.fail("No exception thrown by {}".format(func))
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -2074,6 +2144,7 @@ def test_main():
         ExtendedAttributeTests,
         Win32DeprecatedBytesAPI,
         TermsizeTests,
+        OSErrorTests,
     )
 
 if __name__ == "__main__":

@@ -246,6 +246,12 @@ The following exceptions are the exceptions that are usually raised.
       :exc:`VMSError`, :exc:`socket.error`, :exc:`select.error` and
       :exc:`mmap.error` have been merged into :exc:`OSError`.
 
+   .. versionchanged:: 3.4
+
+      The :attr:`filename` attribute is now the original file name passed to
+      the function, instead of the name encoded to or decoded from the
+      filesystem encoding.
+
 
 .. exception:: OverflowError
 
