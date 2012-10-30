@@ -794,7 +794,7 @@ static PyType_Slot PyTclObject_Type_slots[] = {
     {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
     {Py_tp_repr, (reprfunc)PyTclObject_repr},
     {Py_tp_str, (reprfunc)PyTclObject_str},
-    {Py_tp_getattro, NULL},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_richcompare, PyTclObject_richcompare},
     {Py_tp_getset, PyTclObject_getsetlist},
     {0, 0}
@@ -2830,11 +2830,6 @@ PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
   PyObject *m, *uexe, *cexe, *o;
-
-    /* Due to cross platform compiler issues the slots must be filled
-     * here. It's required for portability to Windows without requiring
-     * C++. See xxxlimited.c*/
-    PyTclObject_Type_slots[3].pfunc = PyObject_GenericGetAttr;
 
 #ifdef WITH_THREAD
     tcl_lock = PyThread_allocate_lock();
