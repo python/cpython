@@ -35,7 +35,7 @@ Usage: %prog [options] msgfile
 
     try:
         os.mkdir(opts.directory)
-    except OSError, e:
+    except OSError as e:
         # Ignore directory exists error
         if e.errno != errno.EEXIST:
             raise

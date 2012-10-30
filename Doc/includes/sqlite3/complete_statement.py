@@ -23,7 +23,7 @@ while True:
 
             if buffer.lstrip().upper().startswith("SELECT"):
                 print cur.fetchall()
-        except sqlite3.Error, e:
+        except sqlite3.Error as e:
             print "An error occurred:", e.args[0]
         buffer = ""
 

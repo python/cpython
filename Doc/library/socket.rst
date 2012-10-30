@@ -920,13 +920,13 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error, msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.bind(sa)
            s.listen(1)
-       except socket.error, msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue
@@ -955,12 +955,12 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error, msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.connect(sa)
-       except socket.error, msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue

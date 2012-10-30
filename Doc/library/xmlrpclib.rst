@@ -380,7 +380,7 @@ The client code for the preceding server::
    proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
    try:
        proxy.add(2, 5)
-   except xmlrpclib.Fault, err:
+   except xmlrpclib.Fault as err:
        print "A fault occurred"
        print "Fault code: %d" % err.faultCode
        print "Fault string: %s" % err.faultString
@@ -427,7 +427,7 @@ by providing an URI that doesn't point to an XMLRPC server::
 
    try:
        proxy.some_method()
-   except xmlrpclib.ProtocolError, err:
+   except xmlrpclib.ProtocolError as err:
        print "A protocol error occurred"
        print "URL: %s" % err.url
        print "HTTP/HTTPS headers: %s" % err.headers
@@ -545,7 +545,7 @@ Example of Client Usage
 
    try:
        print server.examples.getStateName(41)
-   except Error, v:
+   except Error as v:
        print "ERROR", v
 
 To access an XML-RPC server through a proxy, you need to define  a custom
