@@ -647,6 +647,17 @@ elif sys.platform != 'darwin':
         # the byte 0xff. Skip some unicode filename tests.
         pass
 
+# TESTFN_UNDECODABLE is a filename (bytes type) that should *not* be able to be
+# decoded from the filesystem encoding (in strict mode). It can be None if we
+# cannot generate such filename.
+TESTFN_UNDECODABLE = None
+for name in (b'abc\xff', b'\xe7w\xf0'):
+    try:
+        os.fsdecode(name)
+    except UnicodeDecodeErorr:
+        TESTFN_UNDECODABLE = name
+        break
+
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
 
