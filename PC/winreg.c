@@ -89,7 +89,7 @@ PyDoc_STRVAR(ConnectRegistry_doc,
 "key is the predefined handle to connect to.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, a WindowsError exception is raised.");
+"If the function fails, an OSError exception is raised.");
 
 PyDoc_STRVAR(CreateKey_doc,
 "CreateKey(key, sub_key) -> key\n"
@@ -104,7 +104,7 @@ PyDoc_STRVAR(CreateKey_doc,
 "If the key already exists, this function opens the existing key.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, a WindowsError exception is raised.");
+"If the function fails, an OSError exception is raised.");
 
 PyDoc_STRVAR(CreateKeyEx_doc,
 "CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE) -> key\n"
@@ -122,7 +122,7 @@ PyDoc_STRVAR(CreateKeyEx_doc,
 "If the key already exists, this function opens the existing key\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, a WindowsError exception is raised.");
+"If the function fails, an OSError exception is raised.");
 
 PyDoc_STRVAR(DeleteKey_doc,
 "DeleteKey(key, sub_key)\n"
@@ -136,7 +136,7 @@ PyDoc_STRVAR(DeleteKey_doc,
 "This method can not delete keys with subkeys.\n"
 "\n"
 "If the function succeeds, the entire key, including all of its values,\n"
-"is removed.  If the function fails, a WindowsError exception is raised.");
+"is removed.  If the function fails, an OSError exception is raised.");
 
 PyDoc_STRVAR(DeleteKeyEx_doc,
 "DeleteKeyEx(key, sub_key, access=KEY_WOW64_64KEY, reserved=0)\n"
@@ -153,7 +153,7 @@ PyDoc_STRVAR(DeleteKeyEx_doc,
 "This method can not delete keys with subkeys.\n"
 "\n"
 "If the function succeeds, the entire key, including all of its values,\n"
-"is removed.  If the function fails, a WindowsError exception is raised.\n"
+"is removed.  If the function fails, an OSError exception is raised.\n"
 "On unsupported Windows versions, NotImplementedError is raised.");
 
 PyDoc_STRVAR(DeleteValue_doc,
@@ -171,7 +171,7 @@ PyDoc_STRVAR(EnumKey_doc,
 "index is an integer that identifies the index of the key to retrieve.\n"
 "\n"
 "The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly until a WindowsError exception is\n"
+"It is typically called repeatedly until an OSError exception is\n"
 "raised, indicating no more values are available.");
 
 PyDoc_STRVAR(EnumValue_doc,
@@ -181,7 +181,7 @@ PyDoc_STRVAR(EnumValue_doc,
 "index is an integer that identifies the index of the value to retrieve.\n"
 "\n"
 "The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly, until a WindowsError exception\n"
+"It is typically called repeatedly, until an OSError exception\n"
 "is raised, indicating no more values.\n"
 "\n"
 "The result is a tuple of 3 items:\n"
@@ -240,7 +240,7 @@ PyDoc_STRVAR(OpenKey_doc,
 "       security access for the key.  Default is KEY_READ\n"
 "\n"
 "The result is a new handle to the specified key\n"
-"If the function fails, a WindowsError exception is raised.");
+"If the function fails, an OSError exception is raised.");
 
 PyDoc_STRVAR(OpenKeyEx_doc, "See OpenKey()");
 
