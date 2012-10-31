@@ -242,7 +242,7 @@ class TestInsort(unittest.TestCase):
                 else:
                     f = self.module.insort_right
                 f(insorted, digit)
-        self.assertEqual(sorted(insorted), insorted)
+            self.assertEqual(sorted(insorted), insorted)
 
     def test_backcompatibility(self):
         self.assertEqual(self.module.insort, self.module.insort_right)
