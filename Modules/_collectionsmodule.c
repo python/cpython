@@ -1077,7 +1077,7 @@ static PyMethodDef deque_methods[] = {
 };
 
 PyDoc_STRVAR(deque_doc,
-"deque(iterable[, maxlen]) --> deque object\n\
+"deque([iterable[, maxlen]]) --> deque object\n\
 \n\
 Build an ordered collection with optimized access from its endpoints.");
 
