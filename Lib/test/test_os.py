@@ -2069,7 +2069,6 @@ class OSErrorTests(unittest.TestCase):
         funcs = [
             (os.chdir,),
             (os.chmod, 0o777),
-            (os.lchown, 0, 0),
             (os.listdir,),
             (os.lstat,),
             (os.open, os.O_RDONLY),
@@ -2077,15 +2076,19 @@ class OSErrorTests(unittest.TestCase):
             (os.replace, "dst"),
             (os.rmdir,),
             (os.stat,),
-            (os.truncate, 0),
             (os.unlink,),
         ]
         if hasattr(os, "chown"):
             funcs.append((os.chown, 0, 0))
+        if hasattr(os, "lchown"):
+            funcs.append((os.lchown, 0, 0))
+        if hasattr(os, "truncate"):
+            funcs.append((os.truncate, 0))
         if sys.platform == "win32":
+            import nt
             funcs.extend((
-                (os._getfullpathname,),
-                (os._isdir,),
+                (nt._getfullpathname,),
+                (nt._isdir,),
             ))
         if hasattr(os, "chflags"):
             funcs.extend((
