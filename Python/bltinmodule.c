@@ -2405,6 +2405,12 @@ PyObject *
 _PyBuiltin_Init(void)
 {
     PyObject *mod, *dict, *debug;
+
+    if (PyType_Ready(&PyFilter_Type) < 0 ||
+        PyType_Ready(&PyMap_Type) < 0 ||
+        PyType_Ready(&PyZip_Type) < 0)
+        return NULL;
+
     mod = PyModule_Create(&builtinsmodule);
     if (mod == NULL)
         return NULL;
