@@ -1035,17 +1035,6 @@ win32_error(char* function, const char* filename)
 }
 
 static PyObject *
-win32_error_unicode(char* function, wchar_t* filename)
-{
-    /* XXX - see win32_error for comments on 'function' */
-    errno = GetLastError();
-    if (filename)
-        return PyErr_SetFromWindowsErrWithUnicodeFilename(errno, filename);
-    else
-        return PyErr_SetFromWindowsErr(errno);
-}
-
-static PyObject *
 win32_error_object(char* function, PyObject* filename)
 {
     /* XXX - see win32_error for comments on 'function' */
@@ -1119,44 +1108,6 @@ posix_1str(const char *func_name, PyObject *args, char *format,
 
 
 #ifdef MS_WINDOWS
-static PyObject*
-win32_1str(PyObject* args, char* func,
-           char* format, BOOL (__stdcall *funcA)(LPCSTR),
-           char* wformat, BOOL (__stdcall *funcW)(LPWSTR))
-{
-    PyObject *uni;
-    const char *ansi;
-    BOOL result;
-
-    if (PyArg_ParseTuple(args, wformat, &uni))
-    {
-        wchar_t *wstr = PyUnicode_AsUnicode(uni);
-        if (wstr == NULL)
-            return NULL;
-        Py_BEGIN_ALLOW_THREADS
-        result = funcW(wstr);
-        Py_END_ALLOW_THREADS
-        if (!result)
-            return win32_error_object(func, uni);
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    PyErr_Clear();
-
-    if (!PyArg_ParseTuple(args, format, &ansi))
-        return NULL;
-    if (win32_warn_bytes_api())
-        return NULL;
-    Py_BEGIN_ALLOW_THREADS
-    result = funcA(ansi);
-    Py_END_ALLOW_THREADS
-    if (!result)
-        return win32_error(func, ansi);
-    Py_INCREF(Py_None);
-    return Py_None;
-
-}
-
 /* This is a reimplementation of the C library's chdir function,
    but one that produces Win32 errors instead of DOS error codes.
    chdir is essentially a wrapper around SetCurrentDirectory; however,
@@ -2533,7 +2484,7 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = win32_error_object("chmod", path.object);
+        return_value = path_error(&path);
         goto exit;
     }
 #else /* MS_WINDOWS */
@@ -2989,11 +2940,13 @@ posix_getcwd(int use_bytes)
             return NULL;
         }
         if (!len) {
-            if (wbuf2 != wbuf) free(wbuf2);
-            return win32_error("getcwdu", NULL);
+            if (wbuf2 != wbuf)
+                free(wbuf2);
+            return PyErr_SetFromWindowsErr(0);
         }
         resobj = PyUnicode_FromWideChar(wbuf2, len);
-        if (wbuf2 != wbuf) free(wbuf2);
+        if (wbuf2 != wbuf)
+            free(wbuf2);
         return resobj;
     }
 
@@ -3101,7 +3054,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = win32_error_object("link", dst.object);
+        return_value = path_error(&src);
         goto exit;
     }
 #else
@@ -3225,8 +3178,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
             if (error == ERROR_FILE_NOT_FOUND)
                 goto exit;
             Py_DECREF(list);
-            list = NULL;
-            win32_error_unicode("FindFirstFileW", wnamebuf);
+            list = path_error(&path);
             goto exit;
         }
         do {
@@ -3255,7 +3207,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
                it got to the end of the directory. */
             if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
                 Py_DECREF(list);
-                list = win32_error_unicode("FindNextFileW", wnamebuf);
+                list = path_error(&path);
                 goto exit;
             }
         } while (result == TRUE);
@@ -3282,7 +3234,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
         Py_DECREF(list);
-        list = win32_error("FindFirstFile", namebuf);
+        list = path_error(&path);
         goto exit;
     }
     do {
@@ -3310,7 +3262,7 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
             Py_DECREF(list);
-            list = win32_error("FindNextFile", namebuf);
+            list = path_error(&path);
             goto exit;
         }
     } while (result == TRUE);
@@ -3320,7 +3272,7 @@ exit:
         if (FindClose(hFindFile) == FALSE) {
             if (list != NULL) {
                 Py_DECREF(list);
-                list = win32_error_object("FindClose", path.object);
+                list = path_error(&path);
             }
         }
     }
@@ -3569,7 +3521,7 @@ posix__getfileinformation(PyObject *self, PyObject *args)
         return posix_error();
 
     if (!GetFileInformationByHandle(hFile, &info))
-        return win32_error("_getfileinformation", NULL);
+        return PyErr_SetFromWindowsErr(0);
 
     return Py_BuildValue("iii", info.dwVolumeSerialNumber,
                                 info.nFileIndexHigh,
@@ -3658,7 +3610,7 @@ posix_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = win32_error_object("mkdir", path.object);
+        return_value = path_error(&path);
         goto exit;
     }
 #else
@@ -3828,7 +3780,7 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = win32_error_object(function_name, dst.object);
+        return_value = path_error(&src);
         goto exit;
     }
 
@@ -4396,6 +4348,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
 
     memset(&path, 0, sizeof(path));
+    path.function_name = "utime";
 #if UTIME_HAVE_FD
     path.allow_fd = 1;
 #endif
@@ -4484,7 +4437,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
                             FILE_FLAG_BACKUP_SEMANTICS, NULL);
     Py_END_ALLOW_THREADS
     if (hFile == INVALID_HANDLE_VALUE) {
-        win32_error_object("utime", path.object);
+        path_error(&path);
         goto exit;
     }
 
@@ -4493,7 +4446,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
         GetSystemTime(&now);
         if (!SystemTimeToFileTime(&now, &mtime) ||
             !SystemTimeToFileTime(&now, &atime)) {
-            win32_error("utime", NULL);
+            PyErr_SetFromWindowsErr(0);
             goto exit;
         }
     }
@@ -4506,7 +4459,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
            as that may confuse the user into believing that
            something is wrong with the file, when it also
            could be the time stamp that gives a problem. */
-        win32_error("utime", NULL);
+        PyErr_SetFromWindowsErr(0);
         goto exit;
     }
 #else /* MS_WINDOWS */
@@ -6736,7 +6689,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = win32_error_object("symlink", src.object);
+        return_value = path_error(&src);
         goto exit;
     }
 
@@ -6752,7 +6705,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(&dst);
+        return_value = path_error(&src);
         goto exit;
     }
 #endif
@@ -7104,12 +7057,6 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (fd == -1) {
-#ifdef MS_WINDOWS
-        /* force use of posix_error here for exact backwards compatibility */
-        if (path.wide)
-            return_value = posix_error();
-        else
-#endif
         return_value = path_error(&path);
         goto exit;
     }
@@ -7648,7 +7595,7 @@ posix_fstat(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     if (res != 0) {
 #ifdef MS_WINDOWS
-        return win32_error("fstat", NULL);
+        return PyErr_SetFromWindowsErr(0);
 #else
         return posix_error();
 #endif
@@ -7694,7 +7641,7 @@ posix_pipe(PyObject *self, PyObject *noargs)
     BOOL ok;
     ok = CreatePipe(&read, &write, NULL, 0);
     if (!ok)
-        return win32_error("CreatePipe", NULL);
+        return PyErr_SetFromWindowsErr(0);
     read_fd = _open_osfhandle((Py_intptr_t)read, 0);
     write_fd = _open_osfhandle((Py_intptr_t)write, 1);
     return Py_BuildValue("(ii)", read_fd, write_fd);
