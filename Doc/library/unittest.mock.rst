@@ -1,3 +1,4 @@
+
 :mod:`unittest.mock` --- mock object library
 ============================================
 
@@ -646,7 +647,7 @@ the `new_callable` argument to `patch`.
     which have no meaning on a non-callable mock.
 
 Mock objects that use a class or an instance as a `spec` or `spec_set` are able
-to pass `isintance` tests:
+to pass `isinstance` tests:
 
     >>> mock = Mock(spec=SomeClass)
     >>> isinstance(mock, SomeClass)
