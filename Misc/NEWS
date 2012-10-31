@@ -50,6 +50,8 @@ Core and Builtins
 - Issue #15897: zipimport.c doesn't check return value of fseek().
   Patch by Felipe Cruz.
 
+- Issue #16369: Global PyTypeObjects not initialized with PyType_Ready(...).
+
 - Issue #15033: Fix the exit status bug when modules invoked using -m swith,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
