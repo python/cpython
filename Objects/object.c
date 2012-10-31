@@ -1719,6 +1719,30 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&_PyNamespace_Type) < 0)
         Py_FatalError("Can't initialize namespace type");
+
+    if (PyType_Ready(&PyCapsule_Type) < 0)
+        Py_FatalError("Can't initialize capsule type");
+
+    if (PyType_Ready(&PyLongRangeIter_Type) < 0)
+        Py_FatalError("Can't initialize long range iterator type");
+
+    if (PyType_Ready(&PyCell_Type) < 0)
+        Py_FatalError("Can't initialize cell type");
+
+    if (PyType_Ready(&PyInstanceMethod_Type) < 0)
+        Py_FatalError("Can't initialize instance method type");
+
+    if (PyType_Ready(&PyClassMethodDescr_Type) < 0)
+        Py_FatalError("Can't initialize class method descr type");
+
+    if (PyType_Ready(&PyMethodDescr_Type) < 0)
+        Py_FatalError("Can't initialize method descr type");
+
+    if (PyType_Ready(&PyCallIter_Type) < 0)
+        Py_FatalError("Can't initialize call iter type");
+
+    if (PyType_Ready(&PySeqIter_Type) < 0)
+        Py_FatalError("Can't initialize sequence iterator type");
 }
 
 
