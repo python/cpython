@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #16345: Fix an infinite loop when ``fromkeys`` on a dict subclass
+  recieved a nonempty dict from the constructor.
+
 - Issue #16197: Update winreg docstrings and documentation to match code.
   Patch by Zachary Ware.
 
