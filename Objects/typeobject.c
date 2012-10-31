@@ -311,6 +311,8 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 {
     PyHeapTypeObject* et;
 
+    if (!check_set_special_type_attr(type, value, "__qualname__"))
+        return -1;
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "can only assign string to %s.__qualname__, not '%s'",
