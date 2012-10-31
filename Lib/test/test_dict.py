@@ -254,6 +254,14 @@ class DictTest(unittest.TestCase):
         d = dict(zip(range(6), range(6)))
         self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
 
+        class baddict3(dict):
+            def __new__(cls):
+                return d
+        d = {i : i for i in range(10)}
+        res = d.copy()
+        res.update(a=None, b=None, c=None)
+        self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
+
     def test_copy(self):
         d = {1:1, 2:2, 3:3}
         self.assertEqual(d.copy(), {1:1, 2:2, 3:3})

@@ -12,6 +12,9 @@ Core and Builtins
 - Issue #14700: Fix buggy overflow checks for large width and precision
   in string formatting operations.
 
+- Issue #16345: Fix an infinite loop when ``fromkeys`` on a dict subclass
+  recieved a nonempty dict from the constructor.
+
 - Issue #6074: Ensure cached bytecode files can always be updated by the
   user that created them, even when the source file is read-only.
 
