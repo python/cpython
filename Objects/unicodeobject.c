@@ -14167,6 +14167,12 @@ int _PyUnicode_Init(void)
 
     PyType_Ready(&EncodingMapType);
 
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0)
+        Py_FatalError("Can't initialize field name iterator type");
+
+    if (PyType_Ready(&PyFormatterIter_Type) < 0)
+        Py_FatalError("Can't initialize formatter iter type");
+
 #ifdef HAVE_MBCS
     winver.dwOSVersionInfoSize = sizeof(winver);
     if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
