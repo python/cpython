@@ -3054,7 +3054,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = path_error(&dst);
+        return_value = path_error(&src);
         goto exit;
     }
 #else
@@ -3234,7 +3234,6 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
         Py_DECREF(list);
-        path.func = "FindFirstFile";
         list = path_error(&path);
         goto exit;
     }
@@ -3263,7 +3262,6 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
             Py_DECREF(list);
-            path.func = "FindNextFile";
             list = path_error(&path);
             goto exit;
         }
@@ -3782,7 +3780,7 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = path_error(&dst);
+        return_value = path_error(&src);
         goto exit;
     }
 
@@ -6707,7 +6705,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(&dst);
+        return_value = path_error(&src);
         goto exit;
     }
 #endif
@@ -7059,12 +7057,6 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (fd == -1) {
-#ifdef MS_WINDOWS
-        /* force use of posix_error here for exact backwards compatibility */
-        if (path.wide)
-            return_value = posix_error();
-        else
-#endif
         return_value = path_error(&path);
         goto exit;
     }
