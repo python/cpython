@@ -1707,7 +1707,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
     if (d == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(d) && PyDict_Size(d) == 0) {
+    if (PyDict_CheckExact(d) && ((PyDictObject *)d)->ma_used == 0) {
         if (PyDict_CheckExact(seq)) {
             PyDictObject *mp = (PyDictObject *)d;
             PyObject *oldvalue;
