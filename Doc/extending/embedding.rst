@@ -61,6 +61,7 @@ perform some operation on a file. ::
    int
    main(int argc, char *argv[])
    {
+     Py_SetProgramName(argv[0]);  /* optional but recommended */
      Py_Initialize();
      PyRun_SimpleString("from time import time,ctime\n"
                         "print 'Today is',ctime(time())\n");
@@ -68,14 +69,18 @@ perform some operation on a file. ::
      return 0;
    }
 
-The above code first initializes the Python interpreter with
-:c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
-that print the date and time.  Afterwards, the :c:func:`Py_Finalize` call shuts
-the interpreter down, followed by the end of the program.  In a real program,
-you may want to get the Python script from another source, perhaps a text-editor
-routine, a file, or a database.  Getting the Python code from a file can better
-be done by using the :c:func:`PyRun_SimpleFile` function, which saves you the
-trouble of allocating memory space and loading the file contents.
+Function :c:func:`Py_SetProgramName` should be called before
+:c:func:`Py_Initialize` to inform the interpreter about paths to
+Python run-time libraries.  Next initialize the Python interpreter
+with :c:func:`Py_Initialize`, followed by the execution of a
+hard-coded Python script that prints the date and time.  Afterwards,
+the :c:func:`Py_Finalize` call shuts the interpreter down, followed by
+the end of the program.  In a real program, you may want to get the
+Python script from another source, perhaps a text-editor routine, a
+file, or a database.  Getting the Python code from a file can better
+be done by using the :c:func:`PyRun_SimpleFile` function, which saves
+you the trouble of allocating memory space and loading the file
+contents.
 
 
 .. _lower-level-embedding:
