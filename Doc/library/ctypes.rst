@@ -1094,8 +1094,8 @@ testing. Try it out with ``import __hello__`` for example.
 Surprises
 ^^^^^^^^^
 
-There are some edges in :mod:`ctypes` where you may be expect something else than
-what actually happens.
+There are some edges in :mod:`ctypes` where you might expect something other
+than what actually happens.
 
 Consider the following example::
 
