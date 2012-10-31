@@ -30,7 +30,7 @@ PyGrammar_FindDFA(grammar *g, register int type)
 #endif
 }
 
-char *
+const char *
 PyGrammar_LabelRepr(label *lb)
 {
     static char buf[100];
