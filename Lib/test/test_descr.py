@@ -4502,6 +4502,14 @@ order (MRO) for bases """
         self.assertEqual(float.real.__qualname__, 'float.real')
         self.assertEqual(int.__add__.__qualname__, 'int.__add__')
 
+        class X:
+            pass
+        with self.assertRaises(TypeError):
+            del X.__qualname__
+
+        self.assertRaises(TypeError, type.__dict__['__qualname__'].__set__,
+                          str, 'Oink')
+
     def test_qualname_dict(self):
         ns = {'__qualname__': 'some.name'}
         tp = type('Foo', (), ns)
