@@ -710,12 +710,21 @@ Decimal objects
 
    .. method:: remainder_near(other[, context])
 
-      Compute the modulo as either a positive or negative value depending on
-      which is closest to zero.  For instance, ``Decimal(10).remainder_near(6)``
-      returns ``Decimal('-2')`` which is closer to zero than ``Decimal('4')``.
+      Return the remainder from dividing *self* by *other*.  This differs from
+      ``self % other`` in that the sign of the remainder is chosen so as to
+      minimize its absolute value.  More precisely, the return value is
+      ``self - n * other`` where ``n`` is the integer nearest to the exact
+      value of ``self / other``, and if two integers are equally near then the
+      even one is chosen.
 
-      If both are equally close, the one chosen will have the same sign as
-      *self*.
+      If the result is zero then its sign will be the sign of *self*.
+
+      >>> Decimal(18).remainder_near(Decimal(10))
+      Decimal('-2')
+      >>> Decimal(25).remainder_near(Decimal(10))
+      Decimal('5')
+      >>> Decimal(35).remainder_near(Decimal(10))
+      Decimal('-5')
 
    .. method:: rotate(other[, context])
 
