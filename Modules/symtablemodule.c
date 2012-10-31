@@ -52,6 +52,9 @@ init_symtable(void)
 {
     PyObject *m;
 
+    if (PyType_Ready(&PySTEntry_Type) < 0)
+        return;
+
     m = Py_InitModule("_symtable", symtable_methods);
     if (m == NULL)
         return;
