@@ -58,6 +58,8 @@ Core and Builtins
 - Issue #15368: An issue that caused bytecode generation to be
   non-deterministic when using randomized hashing (-R) has been fixed.
 
+- Issue #16369: Global PyTypeObjects not initialized with PyType_Ready(...).
+
 - Issue #15020: The program name used to search for Python's path is now
   "python3" under Unix, not "python".
 
