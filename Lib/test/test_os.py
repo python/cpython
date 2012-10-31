@@ -2112,7 +2112,7 @@ class OSErrorTests(unittest.TestCase):
             for name in self.filenames:
                 try:
                     func(name, *func_args)
-                except FileNotFoundError as err:
+                except OSError as err:
                     self.assertIs(err.filename, name)
                 else:
                     self.fail("No exception thrown by {}".format(func))
