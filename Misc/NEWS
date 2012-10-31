@@ -15,8 +15,14 @@ Core and Builtins
   Py_TPFLAGS_TYPE_SUBCLASS ((1 << 31). PyType_GetFlags() result type is
   now unsigned too (unsigned long, instead of long).
 
+- Fix segfaults on setting __qualname__ on builtin types and attempting to
+  delete it on any type.
+
 - Issue #14625: Rewrite the UTF-32 decoder. It is now 3x to 4x faster. Patch
   written by Serhiy Storchaka.
+
+- Issue #16271: Fix strange bugs that resulted from __qualname__ appearing in a
+  class's __dict__ and on type.
 
 - Issue #16197: Update winreg docstrings and documentation to match code.
   Patch by Zachary Ware.

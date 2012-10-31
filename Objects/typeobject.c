@@ -311,6 +311,8 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 {
     PyHeapTypeObject* et;
 
+    if (!check_set_special_type_attr(type, value, "__qualname__"))
+        return -1;
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "can only assign string to %s.__qualname__, not '%s'",
@@ -2250,11 +2252,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             goto error;
         }
     }
-    else {
-        qualname = et->ht_name;
-    }
-    Py_INCREF(qualname);
-    et->ht_qualname = qualname;
+    et->ht_qualname = qualname ? qualname : et->ht_name;
+    Py_INCREF(et->ht_qualname);
+    if (qualname != NULL && PyDict_DelItem(dict, PyId___qualname__.object) < 0)
+        goto error;
 
     /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
        and is a string.  The __doc__ accessor will first look for tp_doc;
