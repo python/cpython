@@ -16,7 +16,7 @@ Core and Builtins
   delete it on any type.
 
 - Issue #16345: Fix an infinite loop when ``fromkeys`` on a dict subclass
-  recieved a nonempty dict from the constructor.
+  received a nonempty dict from the constructor.
 
 - Issue #16271: Fix strange bugs that resulted from __qualname__ appearing in a
   class's __dict__ and on type.
