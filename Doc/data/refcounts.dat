@@ -1315,10 +1315,6 @@ PySys_AddWarnOption:char*:s::
 PySys_AddXOption:void:::
 PySys_AddXOption:const wchar_t*:s::
 
-PySys_GetFile:FILE*:::
-PySys_GetFile:char*:name::
-PySys_GetFile:FILE*:def::
-
 PySys_GetObject:PyObject*::0:
 PySys_GetObject:char*:name::
 
