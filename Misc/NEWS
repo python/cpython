@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16271: Fix strange bugs that resulted from __qualname__ appearing in a
+  class's __dict__ and on type.
+
 - Issue #16197: Update winreg docstrings and documentation to match code.      
   Patch by Zachary Ware.
 
