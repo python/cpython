@@ -61,12 +61,6 @@ accessible to C code.  They all work with the current interpreter thread's
    Return the object *name* from the :mod:`sys` module or *NULL* if it does
    not exist, without setting an exception.
 
-.. c:function:: FILE *PySys_GetFile(char *name, FILE *def)
-
-   Return the :c:type:`FILE*` associated with the object *name* in the
-   :mod:`sys` module, or *def* if *name* is not in the module or is not associated
-   with a :c:type:`FILE*`.
-
 .. c:function:: int PySys_SetObject(char *name, PyObject *v)
 
    Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
