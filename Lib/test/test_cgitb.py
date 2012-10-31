@@ -36,13 +36,12 @@ class TestCgitb(unittest.TestCase):
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
 
-    @unittest.skipIf(sys.platform=='win32', "test fails on windows, see issue 12890")
     def test_syshook_no_logdir_default_format(self):
         with temp_dir() as tracedir:
             rc, out, err = assert_python_failure(
                   '-c',
-                  ('import cgitb; cgitb.enable(logdir="%s"); '
-                   'raise ValueError("Hello World")') % tracedir)
+                  ('import cgitb; cgitb.enable(logdir=%s); '
+                   'raise ValueError("Hello World")') % repr(tracedir))
         out = out.decode(sys.getfilesystemencoding())
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
@@ -50,14 +49,13 @@ class TestCgitb(unittest.TestCase):
         self.assertIn('<p>', out)
         self.assertIn('</p>', out)
 
-    @unittest.skipIf(sys.platform=='win32', "test fails on windows, see issue 12890")
     def test_syshook_no_logdir_text_format(self):
         # Issue 12890: we were emitting the <p> tag in text mode.
         with temp_dir() as tracedir:
             rc, out, err = assert_python_failure(
                   '-c',
-                  ('import cgitb; cgitb.enable(format="text", logdir="%s"); '
-                   'raise ValueError("Hello World")') % tracedir)
+                  ('import cgitb; cgitb.enable(format="text", logdir=%s); '
+                   'raise ValueError("Hello World")') % repr(tracedir))
         out = out.decode(sys.getfilesystemencoding())
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
