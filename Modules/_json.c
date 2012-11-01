@@ -2224,8 +2224,6 @@ encoder_listencode_list(PyEncoderObject *s, PyObject *rval, PyObject *seq, Py_ss
     static PyObject *empty_array = NULL;
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
-    Py_ssize_t num_items;
-    PyObject **seq_items;
     Py_ssize_t i;
 
     if (open_array == NULL || close_array == NULL || empty_array == NULL) {
@@ -2239,8 +2237,7 @@ encoder_listencode_list(PyEncoderObject *s, PyObject *rval, PyObject *seq, Py_ss
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
-    num_items = PySequence_Fast_GET_SIZE(s_fast);
-    if (num_items == 0) {
+    if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
         return PyList_Append(rval, empty_array);
     }
@@ -2261,7 +2258,6 @@ encoder_listencode_list(PyEncoderObject *s, PyObject *rval, PyObject *seq, Py_ss
         }
     }
 
-    seq_items = PySequence_Fast_ITEMS(s_fast);
     if (PyList_Append(rval, open_array))
         goto bail;
     if (s->indent != Py_None) {
@@ -2273,8 +2269,8 @@ encoder_listencode_list(PyEncoderObject *s, PyObject *rval, PyObject *seq, Py_ss
             buf += newline_indent
         */
     }
-    for (i = 0; i < num_items; i++) {
-        PyObject *obj = seq_items[i];
+    for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
+        PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
         if (i) {
             if (PyList_Append(rval, s->item_separator))
                 goto bail;
