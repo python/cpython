@@ -656,6 +656,40 @@ Here is an example of a multi-line docstring::
        No, really, it doesn't do anything.
 
 
+.. _tut-annotations:
+
+Function Annotations
+--------------------
+
+.. sectionauthor:: Zachary Ware <zachary.ware@gmail.com>
+.. index::
+   pair: function; annotations
+   single: -> (return annotation assignment)
+
+:ref:`Function annotations <function>` are completely optional,
+arbitrary metadata information about user-defined functions.  Neither Python
+itself nor the standard library use function annotations in any way; this
+section just shows the syntax. Third-party projects are free to use function
+annotations for documentation, type checking, and other uses.
+
+Annotations are stored in the :attr:`__annotations__` attribute of the function
+as a dictionary and have no effect on any other part of the function.  Parameter
+annotations are defined by a colon after the parameter name, followed by an
+expression evaluating to the value of the annotation.  Return annotations are
+defined by a literal ``->``, followed by an expression, between the parameter
+list and the colon denoting the end of the :keyword:`def` statement.  The
+following example has a positional argument, a keyword argument, and the return
+value annotated with nonsense::
+
+   >>> def f(ham: 42, eggs: int = 'spam') -> "Nothing to see here":
+   ...     print("Annotations:", f.__annotations__)
+   ...     print("Arguments:", ham, eggs)
+   ...
+   >>> f('wonderful')
+   Annotations: {'eggs': <class 'int'>, 'return': 'Nothing to see here', 'ham': 42}
+   Arguments: wonderful spam
+
+
 .. _tut-codingstyle:
 
 Intermezzo: Coding Style
