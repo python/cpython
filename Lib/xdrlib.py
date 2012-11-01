@@ -13,7 +13,7 @@ __all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
 class Error(Exception):
     """Exception class for this module. Use:
 
-    except xdrlib.Error, var:
+    except xdrlib.Error as var:
         # var has the Error instance for the exception
 
     Public ivars:
