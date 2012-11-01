@@ -184,12 +184,12 @@ class Set(Sized, Iterable, Container):
     def __gt__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        return other < self
+        return other.__lt__(self)
 
     def __ge__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        return other <= self
+        return other.__le__(self)
 
     def __eq__(self, other):
         if not isinstance(other, Set):
