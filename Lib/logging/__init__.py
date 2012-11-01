@@ -879,16 +879,27 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions and sys.stderr:  # see issue 13807
-            ei = sys.exc_info()
+            t, v, tb = sys.exc_info()
             try:
-                traceback.print_exception(ei[0], ei[1], ei[2],
-                                          None, sys.stderr)
-                sys.stderr.write('Logged from file %s, line %s\n' % (
-                                 record.filename, record.lineno))
+                sys.stderr.write('--- Logging error ---\n')
+                traceback.print_exception(t, v, tb, None, sys.stderr)
+                sys.stderr.write('Call stack:\n')
+                # Walk the stack frame up until we're out of logging,
+                # so as to print the calling context.
+                frame = tb.tb_frame
+                while (frame and os.path.dirname(frame.f_code.co_filename) ==
+                       __path__[0]):
+                    frame = frame.f_back
+                if frame:
+                    traceback.print_stack(frame, file=sys.stderr)
+                else:
+                    # couldn't find the right stack frame, for some reason
+                    sys.stderr.write('Logged from file %s, line %s\n' % (
+                                     record.filename, record.lineno))
             except IOError: #pragma: no cover
                 pass    # see issue 5971
             finally:
-                del ei
+                del t, v, tb
 
 class StreamHandler(Handler):
     """
