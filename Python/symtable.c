@@ -56,6 +56,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     if (ste->ste_children == NULL)
         goto fail;
 
+    ste->ste_directives = NULL;
+
     ste->ste_type = block;
     ste->ste_unoptimized = 0;
     ste->ste_nested = 0;
@@ -102,6 +104,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_symbols);
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
+    Py_XDECREF(ste->ste_directives);
     PyObject_Del(ste);
 }
 
@@ -319,6 +322,24 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
     return (PyLong_AS_LONG(v) >> SCOPE_OFFSET) & SCOPE_MASK;
 }
 
+static int
+error_at_directive(PySTEntryObject *ste, PyObject *name)
+{
+    Py_ssize_t i;
+    PyObject *data;
+    assert(ste->ste_directives);
+    for (i = 0; ; i++) {
+        data = PyList_GET_ITEM(ste->ste_directives, i);
+        assert(PyTuple_CheckExact(data));
+        if (PyTuple_GET_ITEM(data, 0) == name)
+            break;
+    }
+    PyErr_SyntaxLocationEx(ste->ste_table->st_filename,
+                           PyLong_AsLong(PyTuple_GET_ITEM(data, 1)),
+                           PyLong_AsLong(PyTuple_GET_ITEM(data, 2)));
+    return 0;
+}
+
 
 /* Analyze raw symbol information to determine scope of each name.
 
@@ -393,16 +414,13 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             PyErr_Format(PyExc_SyntaxError,
                         "name '%U' is parameter and global",
                         name);
-            PyErr_SyntaxLocationEx(ste->ste_table->st_filename,
-                                   ste->ste_lineno, ste->ste_col_offset);
-
-            return 0;
+            return error_at_directive(ste, name);
         }
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
                          "name '%U' is nonlocal and global",
                          name);
-            return 0;
+            return error_at_directive(ste, name);
         }
         SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
         if (PySet_Add(global, name) < 0)
@@ -416,19 +434,19 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             PyErr_Format(PyExc_SyntaxError,
                          "name '%U' is parameter and nonlocal",
                          name);
-            return 0;
+            return error_at_directive(ste, name);
         }
         if (!bound) {
             PyErr_Format(PyExc_SyntaxError,
                          "nonlocal declaration not allowed at module level");
-            return 0;
+            return error_at_directive(ste, name);
         }
         if (!PySet_Contains(bound, name)) {
             PyErr_Format(PyExc_SyntaxError,
                          "no binding for nonlocal '%U' found",
                          name);
 
-            return 0;
+            return error_at_directive(ste, name);
         }
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
@@ -1069,6 +1087,25 @@ symtable_new_tmpname(struct symtable *st)
 
 
 static int
+symtable_record_directive(struct symtable *st, identifier name, stmt_ty s)
+{
+    PyObject *data;
+    int res;
+    if (!st->st_cur->ste_directives) {
+        st->st_cur->ste_directives = PyList_New(0);
+        if (!st->st_cur->ste_directives)
+            return 0;
+    }
+    data = Py_BuildValue("(Oii)", name, s->lineno, s->col_offset);
+    if (!data)
+        return 0;
+    res = PyList_Append(st->st_cur->ste_directives, data);
+    Py_DECREF(data);
+    return res == 0;
+}
+
+
+static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
     switch (s->kind) {
@@ -1223,6 +1260,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL))
                 return 0;
+            if (!symtable_record_directive(st, name, s))
+                return 0;
         }
         break;
     }
@@ -1251,6 +1290,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     return 0;
             }
             if (!symtable_add_def(st, name, DEF_NONLOCAL))
+                return 0;
+            if (!symtable_record_directive(st, name, s))
                 return 0;
         }
         break;
