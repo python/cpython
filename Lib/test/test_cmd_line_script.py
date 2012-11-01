@@ -363,6 +363,15 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
 
+    def test_non_utf8(self):
+        # Issue #16218
+        with temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir,
+                    '\udcf1\udcea\udcf0\udce8\udcef\udcf2')
+            self._check_script(script_name, script_name, script_name,
+                               script_dir, None,
+                               importlib.machinery.SourceFileLoader)
+
 def test_main():
     support.run_unittest(CmdLineTest)
     support.reap_children()

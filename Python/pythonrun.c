@@ -1358,16 +1358,21 @@ static set_main_loader(PyObject *d, const char *filename, const char *loader_nam
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
-    PyObject *loader_type, *loader;
+    PyObject *filename_obj, *loader_type, *loader;
     int result = 0;
+
+    filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename_obj == NULL)
+        return -1;
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     interp = tstate->interp;
     loader_type = PyObject_GetAttrString(interp->importlib, loader_name);
     if (loader_type == NULL) {
+        Py_DECREF(filename_obj);
         return -1;
     }
-    loader = PyObject_CallFunction(loader_type, "ss", "__main__", filename);
+    loader = PyObject_CallFunction(loader_type, "sN", "__main__", filename_obj);
     Py_DECREF(loader_type);
     if (loader == NULL) {
         return -1;
