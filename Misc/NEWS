@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10189: Improve the error reporting of SyntaxErrors related to global
+  and nonlocal statements.
+
 - Issue #16086: PyTypeObject.tp_flags and PyType_Spec.flags are now unsigned
   (unsigned long and unsigned int) to avoid an undefined behaviour with
   Py_TPFLAGS_TYPE_SUBCLASS ((1 << 31). PyType_GetFlags() result type is
