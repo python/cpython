@@ -49,6 +49,15 @@ class SelectTestCase(unittest.TestCase):
             self.fail('Unexpected return values from select():', rfd, wfd, xfd)
         p.close()
 
+    # Issue 16230: Crash on select resized list
+    def test_select_mutated(self):
+        a = []
+        class F:
+            def fileno(self):
+                del a[-1]
+                return sys.__stdout__.fileno()
+        a[:] = [F()] * 10
+        self.assertEqual(select.select([], a, []), ([], a[:5], []))
 
 def test_main():
     test_support.run_unittest(SelectTestCase)
