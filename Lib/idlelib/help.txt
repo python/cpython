@@ -120,14 +120,23 @@ Help Menu:
 	---
 	(Additional Help Sources may be added here)
 
-Edit context menu (Right-click / Control-click in Edit window):
+Edit context menu (Right-click / Control-click on OS X in Edit window):
 
+	Cut              -- Copy a selection into system-wide clipboard,
+                            then delete the selection
+	Copy             -- Copy selection into system-wide clipboard
+	Paste            -- Insert system-wide clipboard into window
 	Set Breakpoint   -- Sets a breakpoint (when debugger open)
 	Clear Breakpoint -- Clears the breakpoint on that line
 
-Shell context menu (Right-click / Control-click in Shell window):
+Shell context menu (Right-click / Control-click on OS X in Shell window):
 
-	Go to file/line -- Same as in Debug menu
+	Cut              -- Copy a selection into system-wide clipboard,
+                            then delete the selection
+	Copy             -- Copy selection into system-wide clipboard
+	Paste            -- Insert system-wide clipboard into window
+	---
+	Go to file/line  -- Same as in Debug menu
 
 
 ** TIPS **
