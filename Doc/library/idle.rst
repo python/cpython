@@ -183,6 +183,15 @@ Edit context menu
 
 * Right-click in Edit window (Control-click on OS X)
 
+Cut
+   Copy selection into system-wide clipboard; then delete selection
+
+Copy
+   Copy selection into system-wide clipboard
+
+Paste
+   Insert system-wide clipboard into window
+
 Set Breakpoint
    Sets a breakpoint.  Breakpoints are only enabled when the debugger is open.
 
@@ -190,6 +199,9 @@ Clear Breakpoint
    Clears the breakpoint on that line.
 
 .. index::
+   single: Cut
+   single: Copy
+   single: Paste
    single: Set Breakpoint
    single: Clear Breakpoint
    single: breakpoints
@@ -199,6 +211,15 @@ Shell context menu
 ^^^^^^^^^^^^^^^^^^
 
 * Right-click in Python Shell window (Control-click on OS X)
+
+Cut
+   Copy selection into system-wide clipboard; then delete selection
+
+Copy
+   Copy selection into system-wide clipboard
+
+Paste
+   Insert system-wide clipboard into window
 
 Go to file/line
    Same as in Debug menu.
