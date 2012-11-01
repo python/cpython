@@ -83,7 +83,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 {
     int max = -1;
     int index = 0;
-    Py_ssize_t i, len = -1;
+    Py_ssize_t i;
     PyObject* fast_seq = NULL;
     PyObject* o = NULL;
 
@@ -94,9 +94,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
     if (!fast_seq)
         return -1;
 
-    len = PySequence_Fast_GET_SIZE(fast_seq);
-
-    for (i = 0; i < len; i++)  {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(fast_seq); i++)  {
         SOCKET v;
 
         /* any intervening fileno() calls could decr this refcnt */
