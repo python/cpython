@@ -663,6 +663,39 @@ class TestCollectionABCs(ABCTestCase):
         s |= s
         self.assertEqual(s, full)
 
+    def test_issue16373(self):
+        # Recursion error comparing comparable and noncomparable
+        # Set instances
+        class MyComparableSet(Set):
+            def __contains__(self, x):
+                return False
+            def __len__(self):
+                return 0
+            def __iter__(self):
+                return iter([])
+        class MyNonComparableSet(Set):
+            def __contains__(self, x):
+                return False
+            def __len__(self):
+                return 0
+            def __iter__(self):
+                return iter([])
+            def __le__(self, x):
+                return NotImplemented
+            def __lt__(self, x):
+                return NotImplemented
+
+        cs = MyComparableSet()
+        ncs = MyNonComparableSet()
+        with self.assertRaises(TypeError):
+            ncs < cs
+        with self.assertRaises(TypeError):
+            ncs <= cs
+        with self.assertRaises(TypeError):
+            cs > ncs
+        with self.assertRaises(TypeError):
+            cs >= ncs
+
     def test_Mapping(self):
         for sample in [dict]:
             self.assertIsInstance(sample(), Mapping)
