@@ -130,6 +130,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16228: Fix a crash in the json module where a list changes size
+  while it is being encoded.  Patch by Serhiy Storchaka.
+
 - Issue #14897: Enhance error messages of struct.pack and
   struct.pack_into. Patch by Matti Mäki.
 
