@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
+  Patch by Todd Rovito.
+
 - Issue #16230: Fix a crash in select.select() when one the lists changes
   size while iterated on.  Patch by Serhiy Storchaka.
 

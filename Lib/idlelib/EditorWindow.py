@@ -464,7 +464,6 @@ class EditorWindow(object):
     rmenu = None
 
     def right_menu_event(self, event):
-        self.text.tag_remove("sel", "1.0", "end")
         self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
         if not self.rmenu:
             self.make_rmenu()
@@ -473,22 +472,52 @@ class EditorWindow(object):
         iswin = sys.platform[:3] == 'win'
         if iswin:
             self.text.config(cursor="arrow")
+
+        for label, eventname, verify_state in self.rmenu_specs:
+            if verify_state is None:
+                continue
+            state = getattr(self, verify_state)()
+            rmenu.entryconfigure(label, state=state)
+
+
         rmenu.tk_popup(event.x_root, event.y_root)
         if iswin:
             self.text.config(cursor="ibeam")
 
     rmenu_specs = [
-        # ("Label", "<<virtual-event>>"), ...
-        ("Close", "<<close-window>>"), # Example
+        # ("Label", "<<virtual-event>>", "statefuncname"), ...
+        ("Close", "<<close-window>>", None), # Example
     ]
 
     def make_rmenu(self):
         rmenu = Menu(self.text, tearoff=0)
-        for label, eventname in self.rmenu_specs:
-            def command(text=self.text, eventname=eventname):
-                text.event_generate(eventname)
-            rmenu.add_command(label=label, command=command)
+        for label, eventname, _ in self.rmenu_specs:
+            if label is not None:
+                def command(text=self.text, eventname=eventname):
+                    text.event_generate(eventname)
+                rmenu.add_command(label=label, command=command)
+            else:
+                rmenu.add_separator()
         self.rmenu = rmenu
+
+    def rmenu_check_cut(self):
+        return self.rmenu_check_copy()
+
+    def rmenu_check_copy(self):
+        try:
+            indx = self.text.index('sel.first')
+        except TclError:
+            return 'disabled'
+        else:
+            return 'normal' if indx else 'disabled'
+
+    def rmenu_check_paste(self):
+        try:
+            self.text.tk.call('tk::GetSelection', self.text, 'CLIPBOARD')
+        except TclError:
+            return 'disabled'
+        else:
+            return 'normal'
 
     def about_dialog(self, event=None):
         aboutDialog.AboutDialog(self.top,'About IDLE')
