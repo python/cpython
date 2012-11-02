@@ -1521,6 +1521,29 @@ unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_legacy_string(PyObject *self, PyObject *args)
+{
+    Py_UNICODE *data;
+    Py_ssize_t len;
+    PyObject *u;
+
+    if (!PyArg_ParseTuple(args, "u#", &data, &len))
+        return NULL;
+
+    u = PyUnicode_FromUnicode(NULL, len);
+    if (u == NULL)
+        return NULL;
+
+    memcpy(PyUnicode_AS_UNICODE(u), data, len * sizeof(Py_UNICODE));
+
+    if (len > 0) { /* The empty string is always ready. */
+        assert(!PyUnicode_IS_READY(u));
+    }
+
+    return u;
+}
+
+static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
 {
     Py_buffer buffer;
@@ -2506,6 +2529,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
+    {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #ifdef WITH_THREAD
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
