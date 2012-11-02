@@ -741,9 +741,7 @@ the basis for code meeting your own specific requirements::
                     break
                 logger = logging.getLogger(record.name)
                 logger.handle(record) # No level or filter logic applied - just do it!
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
+            except Exception:
                 import sys, traceback
                 print('Whoops! Problem:', file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)

@@ -151,7 +151,7 @@ The module defines three convenience functions and a public class:
          t = Timer(...)       # outside the try/except
          try:
              t.timeit(...)    # or t.repeat(...)
-         except:
+         except Exception:
              t.print_exc()
 
       The advantage over the standard traceback is that source lines in the
