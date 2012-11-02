@@ -3999,14 +3999,42 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(x)
         self.assertEqual(hash(m), hash(x))
 
+        # equality-hash invariant
+        x = ndarray(list(range(12)), shape=[12], format='B')
+        a = memoryview(nd)
+
+        y = ndarray(list(range(12)), shape=[12], format='b')
+        b = memoryview(nd)
+
+        z = ndarray(list(bytes(chr(x), 'latin-1') for x in range(12)),
+                    shape=[12], format='c')
+        c = memoryview(nd)
+
+        if (a == b):
+            self.assertEqual(hash(a), hash(b))
+
+        if (a == c):
+            self.assertEqual(hash(a), hash(c))
+
+        if (b == c):
+            self.assertEqual(hash(b), hash(c))
+
         # non-byte formats
         nd = ndarray(list(range(12)), shape=[2,2,3], format='L')
         m = memoryview(nd)
-        self.assertEqual(hash(m), hash(nd.tobytes()))
+        self.assertRaises(ValueError, m.__hash__)
 
         nd = ndarray(list(range(-6, 6)), shape=[2,2,3], format='h')
         m = memoryview(nd)
-        self.assertEqual(hash(m), hash(nd.tobytes()))
+        self.assertRaises(ValueError, m.__hash__)
+
+        nd = ndarray(list(range(12)), shape=[2,2,3], format='= L')
+        m = memoryview(nd)
+        self.assertRaises(ValueError, m.__hash__)
+
+        nd = ndarray(list(range(-6, 6)), shape=[2,2,3], format='< h')
+        m = memoryview(nd)
+        self.assertRaises(ValueError, m.__hash__)
 
     def test_memoryview_release(self):
 
