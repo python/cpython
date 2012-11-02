@@ -146,7 +146,7 @@ module. ::
        source = input(">>> ")
        try:
            exec(source, envdir)
-       except:
+       except Exception:
            print("Exception in user code:")
            print("-"*60)
            traceback.print_exc(file=sys.stdout)
