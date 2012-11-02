@@ -2707,12 +2707,20 @@ memory_hash(PyMemoryViewObject *self)
     if (self->hash == -1) {
         Py_buffer *view = &self->view;
         char *mem = view->buf;
+        Py_ssize_t ret;
+        char fmt;
 
         CHECK_RELEASED_INT(self);
 
         if (!view->readonly) {
             PyErr_SetString(PyExc_ValueError,
                 "cannot hash writable memoryview object");
+            return -1;
+        }
+        ret = get_native_fmtchar(&fmt, view->format);
+        if (ret < 0 || !IS_BYTE_FORMAT(fmt)) {
+            PyErr_SetString(PyExc_ValueError,
+                "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
         if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
