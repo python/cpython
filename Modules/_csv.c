@@ -13,8 +13,6 @@ module instead.
 #include "Python.h"
 #include "structmember.h"
 
-#define IS_BASESTRING(o) \
-    PyUnicode_Check(o)
 
 typedef struct {
     PyObject *error_obj;   /* CSV exception */
@@ -248,6 +246,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
                     name);
                 return -1;
             }
+            /* PyUnicode_READY() is called in PyUnicode_GetLength() */
             if (len > 0)
                 *target = PyUnicode_READ_CHAR(src, 0);
         }
@@ -263,12 +262,14 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
     else {
         if (src == Py_None)
             *target = NULL;
-        else if (!IS_BASESTRING(src)) {
+        else if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be a string", name);
             return -1;
         }
         else {
+            if (PyUnicode_READY(src) == -1)
+                return -1;
             Py_XDECREF(*target);
             Py_INCREF(src);
             *target = src;
@@ -357,7 +358,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
 
     if (dialect != NULL) {
-        if (IS_BASESTRING(dialect)) {
+        if (PyUnicode_Check(dialect)) {
             dialect = get_dialect_from_registry(dialect);
             if (dialect == NULL)
                 return NULL;
@@ -808,6 +809,10 @@ Reader_iternext(ReaderObj *self)
             Py_DECREF(lineobj);
             return NULL;
         }
+        if (PyUnicode_READY(lineobj) == -1) {
+            Py_DECREF(lineobj);
+            return NULL;
+        }
         ++self->line_num;
         kind = PyUnicode_KIND(lineobj);
         data = PyUnicode_DATA(lineobj);
@@ -1108,6 +1113,8 @@ join_append(WriterObj *self, PyObject *field, int *quoted, int quote_empty)
     Py_ssize_t rec_len;
 
     if (field != NULL) {
+        if (PyUnicode_READY(field) == -1)
+            return 0;
         field_kind = PyUnicode_KIND(field);
         field_data = PyUnicode_DATA(field);
         field_len = PyUnicode_GET_LENGTH(field);
@@ -1403,11 +1410,13 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
         return NULL;
-    if (!IS_BASESTRING(name_obj)) {
+    if (!PyUnicode_Check(name_obj)) {
         PyErr_SetString(PyExc_TypeError,
-                        "dialect name must be a string or unicode");
+                        "dialect name must be a string");
         return NULL;
     }
+    if (PyUnicode_READY(name_obj) == -1)
+        return NULL;
     dialect = _call_dialect(dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
