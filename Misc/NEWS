@@ -91,6 +91,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16152: fix tokenize to ignore whitespace at the end of the code when
+  no newline is found.  Patch by Ned Batchelder.
+
 - Issue #16284: Prevent keeping unnecessary references to worker functions
   in concurrent.futures ThreadPoolExecutor.
 
