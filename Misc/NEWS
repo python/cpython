@@ -72,7 +72,7 @@ Core and Builtins
 - Issue #15897: zipimport.c doesn't check return value of fseek().
   Patch by Felipe Cruz.
 
-- Issue #15033: Fix the exit status bug when modules invoked using -m swith,
+- Issue #15033: Fix the exit status bug when modules invoked using -m switch,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
 - Issue #12268: File readline, readlines and read() or readall() methods
@@ -700,7 +700,7 @@ Documentation
 - Issue #15444: Use proper spelling for non-ASCII contributor names.  Patch
   by Serhiy Storchaka.
 
-- Issue 15482: Properly document the default 'level' value for __import__()
+- Issue #15482: Properly document the default 'level' value for __import__()
   while warning about using negative values.
 
 - Issue #15230: Clearly document some of the limitations of the runpy
