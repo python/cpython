@@ -253,8 +253,8 @@ table.docutils {
 
 table.docutils td, table.docutils th {
     padding: 2px 5px 2px 5px;
-    border-left: 0;    
-    background-color: #eef;    
+    border-left: 0;
+    background-color: #eef;
 }
 
 table.docutils td p.last, table.docutils th p.last {
@@ -270,7 +270,7 @@ table.footnote td, table.footnote th {
 }
 
 table.docutils th {
-    border-top: 1px solid #cac;    
+    border-top: 1px solid #cac;
     background-color: #ede;
 }
 
@@ -280,7 +280,7 @@ th {
 }
 
 th.head {
-    text-align: center;    
+    text-align: center;
 }
 
 /* -- other body styles ----------------------------------------------------- */
