@@ -143,6 +143,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16152: fix tokenize to ignore whitespace at the end of the code when
+  no newline is found.  Patch by Ned Batchelder.
+
 - Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
   Patch by Todd Rovito.
 
