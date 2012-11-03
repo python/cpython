@@ -58,7 +58,7 @@ Core and Builtins
 
 - Issue #16369: Global PyTypeObjects not initialized with PyType_Ready(...).
 
-- Issue #15033: Fix the exit status bug when modules invoked using -m swith,
+- Issue #15033: Fix the exit status bug when modules invoked using -m switch,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
 - Issue #12268: File readline, readlines and read() methods no longer lose
@@ -1349,7 +1349,7 @@ Library
 - Issue #11927: SMTP_SSL now uses port 465 by default as documented.  Patch
   by Kasun Herath.
 
-- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
+- Issue #11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
   detect mtime changes by comparing to the system clock instead of to the
   previous value of the mtime.
 
@@ -4923,7 +4923,7 @@ Library
 - Restore Python 2.3 compatibility for decimal.py.
 
 - Issue #1702551: distutils sdist was not excluding VCS directories under
-  Windows. Inital solution by Guy Dalberto.
+  Windows. Initial solution by Guy Dalberto.
 
 - The _tkinter module functions "createfilehandler", "deletefilehandler",
   "createtimerhandler", "mainloop", "dooneevent" and "quit" have been deprecated
