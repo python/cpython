@@ -366,11 +366,18 @@ class CmdLineTest(unittest.TestCase):
     def test_non_utf8(self):
         # Issue #16218
         with temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir,
-                    '\udcf1\udcea\udcf0\udce8\udcef\udcf2')
-            self._check_script(script_name, script_name, script_name,
-                               script_dir, None,
-                               importlib.machinery.SourceFileLoader)
+            script_basename = '\udcf1\udcea\udcf0\udce8\udcef\udcf2'
+            source = 'print("test output")\n'
+            script_name = _make_test_script(script_dir, script_basename, source)
+            if not __debug__:
+                run_args = ('-' + 'O' * sys.flags.optimize, script_name)
+            else:
+                run_args = (script_name,)
+            rc, out, _ = assert_python_ok(*run_args)
+            self.assertEqual(0, rc)
+            expected = ("test output" + os.linesep).encode('ascii')
+            self.assertEqual(expected, out)
+
 
 def test_main():
     support.run_unittest(CmdLineTest)
