@@ -310,7 +310,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(b'', out)
         self.assertRegex(err.decode('ascii', 'ignore'),
-                         'Exception OSError: .* ignored')
+                         'Exception ignored in.*\nOSError: .*')
 
     def test_closed_stdout(self):
         # Issue #13444: if stdout has been explicitly closed, we should
