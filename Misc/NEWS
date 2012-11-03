@@ -581,14 +581,14 @@ Core and Builtins
 - Issue #15897: zipimport.c doesn't check return value of fseek().
   Patch by Felipe Cruz.
 
-- Issue #15033: Fix the exit status bug when modules invoked using -m swith,
+- Issue #15033: Fix the exit status bug when modules invoked using -m switch,
   return the proper failure return value (1). Patch contributed by Jeff Knupp.
 
 - Issue #15229: An `OSError` subclass whose __init__ doesn't call back
   OSError.__init__ could produce incomplete instances, leading to crashes when
   calling str() on them.
 
-- Issue 15307: Virtual environments now use symlinks with framework builds on
+- Issue #15307: Virtual environments now use symlinks with framework builds on
   Mac OS X, like other POSIX builds.
 
 Library
@@ -742,7 +742,7 @@ Library
   renamed over the old file when flush() is called on an mbox, MMDF or Babyl
   mailbox.
 
-- Issue 10924: Fixed `crypt.mksalt()` to use a RNG that is suitable for
+- Issue #10924: Fixed `crypt.mksalt()` to use a RNG that is suitable for
   cryptographic purpose.
 
 - Issue #15184: Ensure consistent results of OS X configuration tailoring for
