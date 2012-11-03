@@ -63,6 +63,8 @@ def _worker(executor_reference, work_queue):
             work_item = work_queue.get(block=True)
             if work_item is not None:
                 work_item.run()
+                # Delete references to object. See issue16284
+                del work_item
                 continue
             executor = executor_reference()
             # Exit if:

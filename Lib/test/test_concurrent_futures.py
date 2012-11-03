@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 import unittest
+import weakref
 
 from concurrent import futures
 from concurrent.futures._base import (
@@ -50,6 +51,11 @@ def sleep_and_print(t, msg):
     time.sleep(t)
     print(msg)
     sys.stdout.flush()
+
+
+class MyObject(object):
+    def my_method(self):
+        pass
 
 
 class ExecutorMixin:
@@ -395,6 +401,22 @@ class ExecutorTest(unittest.TestCase):
         # have exited).
         self.executor.map(str, [2] * (self.worker_count + 1))
         self.executor.shutdown()
+
+    @test.support.cpython_only
+    def test_no_stale_references(self):
+        # Issue #16284: check that the executors don't unnecessarily hang onto
+        # references.
+        my_object = MyObject()
+        my_object_collected = threading.Event()
+        my_object_callback = weakref.ref(
+            my_object, lambda obj: my_object_collected.set())
+        # Deliberately discarding the future.
+        self.executor.submit(my_object.my_method)
+        del my_object
+
+        collected = my_object_collected.wait(timeout=5.0)
+        self.assertTrue(collected,
+                        "Stale reference not collected within timeout.")
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest):
