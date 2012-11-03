@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8401: assigning an int to a bytearray slice (e.g. b[3:4] = 5) now
+  raises an error.
+
 - Issue #7317: Display full tracebacks when an error occurs asynchronously.
   Patch by Alon Horev with update by Alexey Kachayev.
 
