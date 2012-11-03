@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16284: Prevent keeping unnecessary references to worker functions
+  in concurrent.futures ThreadPoolExecutor.
+
 - Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
   Patch by Todd Rovito.
 

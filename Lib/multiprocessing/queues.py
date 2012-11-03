@@ -243,10 +243,14 @@ class Queue(object):
 
                         if wacquire is None:
                             send(obj)
+                            # Delete references to object. See issue16284
+                            del obj
                         else:
                             wacquire()
                             try:
                                 send(obj)
+                                # Delete references to object. See issue16284
+                                del obj
                             finally:
                                 wrelease()
                 except IndexError:
