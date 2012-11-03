@@ -1109,6 +1109,10 @@ class TestTokenize(TestCase):
                                   token.NAME, token.AMPER, token.NUMBER,
                                   token.RPAR)
 
+    def test_pathological_trailing_whitespace(self):
+        # See http://bugs.python.org/issue16152
+        self.assertExactTypeEqual('@          ', token.AT)
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():

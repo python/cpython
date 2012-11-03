@@ -162,7 +162,7 @@ ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
                 StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
-PseudoExtras = group(r'\\\r?\n', Comment, Triple)
+PseudoExtras = group(r'\\\r?\n|\Z', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
 def _compile(expr):
@@ -555,6 +555,8 @@ def _tokenize(readline, encoding):
             if pseudomatch:                                # scan for tokens
                 start, end = pseudomatch.span(1)
                 spos, epos, pos = (lnum, start), (lnum, end), end
+                if start == end:
+                    continue
                 token, initial = line[start:end], line[start]
 
                 if (initial in numchars or                  # ordinary number
