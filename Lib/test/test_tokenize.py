@@ -550,6 +550,10 @@ Evil tabs
     NAME       'pass'        (3, 9) (3, 13)
     DEDENT     ''            (4, 0) (4, 0)
     DEDENT     ''            (4, 0) (4, 0)
+
+Pathological whitespace (http://bugs.python.org/issue16152)
+    >>> dump_tokens("@          ")
+    OP         '@'           (1, 0) (1, 1)
 """
 
 
