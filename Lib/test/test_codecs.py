@@ -668,6 +668,8 @@ class UTF8Test(ReadTest):
         self.assertTrue(codecs.lookup_error("surrogatepass"))
         with self.assertRaises(UnicodeDecodeError):
             b"abc\xed\xa0".decode("utf-8", "surrogatepass")
+        with self.assertRaises(UnicodeDecodeError):
+            b"abc\xed\xa0z".decode("utf-8", "surrogatepass")
 
 @unittest.skipUnless(sys.platform == 'win32',
                      'cp65001 is a Windows-only codec')
