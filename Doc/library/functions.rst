@@ -958,12 +958,13 @@ are always available.  They are listed here in alphabetical order.
       ...     dir_fd = os.open(dirname, os.O_RDONLY)
       ...     def opener(path, flags):
       ...         return os.open(path, flags, dir_fd=dir_fd)
-      ...     return opener
+      ...     return opener, dir_fd
       ...
-      >>> opener = open_relative('somedir')
+      >>> opener, dir_fd = open_relative('somedir')
       >>> with open('spamspam.txt', 'w', opener=opener) as f:
       ...     print('This will be written to somedir/spamspam.txt', file=f)
       ...
+      >>> os.close(dir_fd)  # don't leak a file descriptor
 
    .. versionchanged:: 3.3
       The *opener* parameter was added.
