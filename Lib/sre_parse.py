@@ -541,6 +541,8 @@ def _parse(source, state):
                                 break
                             name = name + char
                         group = 1
+                        if not name:
+                            raise error("missing group name")
                         if not isname(name):
                             raise error, "bad character in group name"
                     elif sourcematch("="):
@@ -553,6 +555,8 @@ def _parse(source, state):
                             if char == ")":
                                 break
                             name = name + char
+                        if not name:
+                            raise error("missing group name")
                         if not isname(name):
                             raise error, "bad character in group name"
                         gid = state.groupdict.get(name)
@@ -605,6 +609,8 @@ def _parse(source, state):
                             break
                         condname = condname + char
                     group = 2
+                    if not condname:
+                        raise error("missing group name")
                     if isname(condname):
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
@@ -723,7 +729,7 @@ def parse_template(source, pattern):
                             break
                         name = name + char
                 if not name:
-                    raise error, "bad group name"
+                    raise error, "missing group name"
                 try:
                     index = int(name)
                     if index < 0:
