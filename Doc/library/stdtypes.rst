@@ -2095,7 +2095,7 @@ Mapping Types --- :class:`dict`
    statement: del
    builtin: len
 
-A :dfn:`mapping` object maps :term:`hashable` values to arbitrary objects.
+A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
 Mappings are mutable objects.  There is currently only one standard mapping
 type, the :dfn:`dictionary`.  (For other containers see the built in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
