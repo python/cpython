@@ -39,6 +39,7 @@ div.related li.right {
 
 div.sphinxsidebarwrapper {
     padding: 10px 5px 0 10px;
+    word-wrap: break-word;
 }
 
 div.sphinxsidebar {
