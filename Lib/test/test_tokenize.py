@@ -552,6 +552,11 @@ Evil tabs
     DEDENT     ''            (4, 0) (4, 0)
     DEDENT     ''            (4, 0) (4, 0)
 
+Pathological whitespace (http://bugs.python.org/issue16152)
+    >>> dump_tokens("@          ")
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    OP         '@'           (1, 0) (1, 1)
+
 Non-ascii identifiers
 
     >>> dump_tokens("Örter = 'places'\\ngrün = 'green'")
