@@ -798,7 +798,12 @@ PyErr_WriteUnraisable(PyObject *obj)
     PyErr_Fetch(&t, &v, &tb);
     f = PySys_GetObject("stderr");
     if (f != NULL && f != Py_None) {
-        PyFile_WriteString("Exception ", f);
+        if (obj) {
+            PyFile_WriteString("Exception ignored in: ", f);
+            PyFile_WriteObject(obj, f, 0);
+            PyFile_WriteString("\n", f);
+        }
+        PyTraceBack_Print(tb, f);
         if (t) {
             PyObject* moduleName;
             char* className;
@@ -828,15 +833,11 @@ PyErr_WriteUnraisable(PyObject *obj)
                 PyFile_WriteString(className, f);
             if (v && v != Py_None) {
                 PyFile_WriteString(": ", f);
-                PyFile_WriteObject(v, f, 0);
+                PyFile_WriteObject(v, f, Py_PRINT_RAW);
             }
+            PyFile_WriteString("\n", f);
             Py_XDECREF(moduleName);
         }
-        if (obj) {
-            PyFile_WriteString(" in ", f);
-            PyFile_WriteObject(obj, f, 0);
-        }
-        PyFile_WriteString(" ignored\n", f);
         PyErr_Clear(); /* Just in case */
     }
     Py_XDECREF(t);
