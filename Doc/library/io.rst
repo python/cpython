@@ -498,6 +498,9 @@ Raw File I/O
    :mod:`os.open` as *opener* results in functionality similar to passing
    ``None``).
 
+   See the :func:`open` built-in function for examples on using the *opener*
+   parameter.
+
    .. versionchanged:: 3.3
       The *opener* parameter was added.
       The ``'x'`` mode was added.
