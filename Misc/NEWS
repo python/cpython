@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12759: sre_parse now raises a proper error when the name of the group
+  is missing.  Initial patch by Serhiy Storchaka.
+
 - Issue #16152: fix tokenize to ignore whitespace at the end of the code when
   no newline is found.  Patch by Ned Batchelder.
 
