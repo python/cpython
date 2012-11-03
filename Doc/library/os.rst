@@ -98,7 +98,7 @@ process and user.
 
 .. data:: environ
 
-   A mapping object representing the string environment. For example,
+   A :term:`mapping` object representing the string environment. For example,
    ``environ['HOME']`` is the pathname of your home directory (on some platforms),
    and is equivalent to ``getenv("HOME")`` in C.
 
@@ -138,7 +138,7 @@ process and user.
 
 .. data:: environb
 
-   Bytes version of :data:`environ`: a mapping object representing the
+   Bytes version of :data:`environ`: a :term:`mapping` object representing the
    environment as byte strings. :data:`environ` and :data:`environb` are
    synchronized (modify :data:`environb` updates :data:`environ`, and vice
    versa).
