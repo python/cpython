@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7317: Display full tracebacks when an error occurs asynchronously.
+  Patch by Alon Horev with update by Alexey Kachayev.
+
 - Issue #16309: Make PYTHONPATH="" behavior the same as if PYTHONPATH
   not set at all.
 
