@@ -240,6 +240,8 @@ def _queue_management_worker(executor_reference,
                         "terminated abruptly while the future was "
                         "running or pending."
                     ))
+                # Delete references to object. See issue16284
+                del work_item
             pending_work_items.clear()
             # Terminate remaining workers forcibly: the queues or their
             # locks may be in a dirty state and block forever.
@@ -264,6 +266,8 @@ def _queue_management_worker(executor_reference,
                     work_item.future.set_exception(result_item.exception)
                 else:
                     work_item.future.set_result(result_item.result)
+                # Delete references to object. See issue16284
+                del work_item
         # Check whether we should start shutting down.
         executor = executor_reference()
         # No more work items can be added if:
