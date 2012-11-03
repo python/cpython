@@ -699,13 +699,11 @@ calculate_path(void)
      */
     bufsz = 0;
 
-    if (_rtpypath) {
+    if (_rtpypath && _rtpypath[0] != '\0') {
         size_t rtpypath_len;
         rtpypath = _Py_char2wchar(_rtpypath, &rtpypath_len);
         if (rtpypath != NULL)
             bufsz += rtpypath_len + 1;
-        else
-            _rtpypath = NULL;
     }
 
     defpath = _pythonpath;

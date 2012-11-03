@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16309: Make PYTHONPATH="" behavior the same as if PYTHONPATH
+  not set at all.
+
 - Issue #10189: Improve the error reporting of SyntaxErrors related to global
   and nonlocal statements.
 
