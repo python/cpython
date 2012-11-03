@@ -366,7 +366,12 @@ class CmdLineTest(unittest.TestCase):
     def test_non_utf8(self):
         # Issue #16218
         with temp_dir() as script_dir:
-            script_basename = '\udcf1\udcea\udcf0\udce8\udcef\udcf2'
+            script_basename = '\u0441\u043a\u0440\u0438\u043f\u0442'
+            try:
+                script_basename.encode(sys.getfilesystemencoding())
+            except UnicodeEncodeError:
+                raise unittest.SkipTest("Filesystem doesn't support "
+                                        "unicode names")
             source = 'print("test output")\n'
             script_name = _make_test_script(script_dir, script_basename, source)
             if not __debug__:
