@@ -252,10 +252,11 @@ class Random(_random.Random):
         return seq[i]
 
     def shuffle(self, x, random=None, int=int):
-        """x, random=random.random -> shuffle list x in place; return None.
+        """Shuffle list x in place, and return None.
 
-        Optional arg random is a 0-argument function returning a random
-        float in [0.0, 1.0); by default, the standard random.random.
+        Optional argument random is a 0-argument function returning a
+        random float in [0.0, 1.0); if it is the default None, the
+        standard random.random will be used.
         """
 
         randbelow = self._randbelow
