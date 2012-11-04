@@ -213,6 +213,9 @@ class TestTranforms(unittest.TestCase):
         asm = dis_single('"\u0061\uffff"[1]')
         self.assertIn("('\\uffff')", asm)
         self.assertNotIn('BINARY_SUBSCR', asm)
+        asm = dis_single('"\U00012345abcdef"[3]')
+        self.assertIn("('c')", asm)
+        self.assertNotIn('BINARY_SUBSCR', asm)
 
         # invalid code doesn't get optimized
         # out of range
