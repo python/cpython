@@ -610,12 +610,29 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
        preserved.
     */
     if (err == Z_STREAM_END) {
-        Py_XDECREF(self->unused_data);  /* Free original empty string */
-        self->unused_data = PyBytes_FromStringAndSize(
-            (char *)self->zst.next_in, self->zst.avail_in);
-        if (self->unused_data == NULL) {
-            Py_DECREF(RetVal);
-            goto error;
+        if (self->zst.avail_in > 0) {
+            /* Append the leftover data to the existing value of unused_data. */
+            Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
+            Py_ssize_t new_size = old_size + self->zst.avail_in;
+            PyObject *new_data;
+            if (new_size <= old_size) {  /* Check for overflow. */
+                PyErr_NoMemory();
+                Py_DECREF(RetVal);
+                RetVal = NULL;
+                goto error;
+            }
+            new_data = PyBytes_FromStringAndSize(NULL, new_size);
+            if (new_data == NULL) {
+                Py_DECREF(RetVal);
+                RetVal = NULL;
+                goto error;
+            }
+            Py_MEMCPY(PyBytes_AS_STRING(new_data),
+                      PyBytes_AS_STRING(self->unused_data), old_size);
+            Py_MEMCPY(PyBytes_AS_STRING(new_data) + old_size,
+                      self->zst.next_in, self->zst.avail_in);
+            Py_DECREF(self->unused_data);
+            self->unused_data = new_data;
         }
         /* We will only get Z_BUF_ERROR if the output buffer was full
            but there wasn't more output when we tried again, so it is
