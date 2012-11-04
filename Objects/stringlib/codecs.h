@@ -93,13 +93,13 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
 
         if (ch < 0xE0) {
             /* \xC2\x80-\xDF\xBF -- 0080-07FF */
+            Py_UCS4 ch2;
             if (ch < 0xC2) {
                 /* invalid sequence
                 \x80-\xBF -- continuation byte
                 \xC0-\xC1 -- fake 0000-007F */
                 goto InvalidStart;
             }
-            Py_UCS4 ch2;
             if (end - s < 2) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
