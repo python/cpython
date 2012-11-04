@@ -814,9 +814,16 @@ attributes:
 Match Objects
 -------------
 
-Match objects always have a boolean value of :const:`True`.  This lets you
-use a simple if-statement to test whether a match was found.  Match objects
-support the following methods and attributes:
+Match objects always have a boolean value of ``True``.
+Since :meth:`~regex.match` and :meth:`~regex.search` return ``None``
+when there is no match, you can test whether there was a match with a simple
+``if`` statement::
+
+   match = re.search(pattern, string)
+   if match:
+       process(match)
+
+Match objects support the following methods and attributes:
 
 
 .. method:: match.expand(template)
