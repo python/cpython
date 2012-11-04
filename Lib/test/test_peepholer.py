@@ -196,20 +196,21 @@ class TestTranforms(unittest.TestCase):
         self.assertIn('(1000)', asm)
 
     def test_binary_subscr_on_unicode(self):
-        # valid code get optimized
+        # unicode strings don't get optimized
         asm = dis_single('"foo"[0]')
-        self.assertIn("('f')", asm)
-        self.assertNotIn('BINARY_SUBSCR', asm)
+        self.assertNotIn("('f')", asm)
+        self.assertIn('BINARY_SUBSCR', asm)
         asm = dis_single('"\u0061\uffff"[1]')
-        self.assertIn("('\\uffff')", asm)
-        self.assertNotIn('BINARY_SUBSCR', asm)
+        self.assertNotIn("('\\uffff')", asm)
+        self.assertIn('BINARY_SUBSCR', asm)
 
-        # invalid code doesn't get optimized
         # out of range
         asm = dis_single('"fuu"[10]')
         self.assertIn('BINARY_SUBSCR', asm)
         # non-BMP char (see #5057)
         asm = dis_single('"\U00012345"[0]')
+        self.assertIn('BINARY_SUBSCR', asm)
+        asm = dis_single('"\U00012345abcdef"[3]')
         self.assertIn('BINARY_SUBSCR', asm)
 
 
