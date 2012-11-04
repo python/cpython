@@ -474,6 +474,33 @@ if 1:
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
         self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
 
+    @support.cpython_only
+    def test_compiler_recursion_limit(self):
+        # Expected limit is sys.getrecursionlimit() * the scaling factor
+        # in symtable.c (currently 3)
+        # We expect to fail *at* that limit, because we use up some of
+        # the stack depth limit in the test suite code
+        # So we check the expected limit and 75% of that
+        # XXX (ncoghlan): duplicating the scaling factor here is a little
+        # ugly. Perhaps it should be exposed somewhere...
+        fail_depth = sys.getrecursionlimit() * 3
+        success_depth = int(fail_depth * 0.75)
+
+        def check_limit(prefix, repeated):
+            expect_ok = prefix + repeated * success_depth
+            self.compile_single(expect_ok)
+            broken = prefix + repeated * fail_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                         prefix, repeated, fail_depth)
+            with self.assertRaises(RuntimeError, msg=details):
+                self.compile_single(broken)
+
+        check_limit("a", "()")
+        check_limit("a", ".b")
+        check_limit("a", "[0]")
+        check_limit("a", "*a")
+
+
 def test_main():
     support.run_unittest(TestSpecifics)
 
