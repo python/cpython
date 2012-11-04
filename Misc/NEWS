@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #16402: When slicing a range, fix shadowing of exceptions from
+  __index__.
+
 - Issue #16336: fix input checking in the surrogatepass error handler.
   Patch by Serhiy Storchaka.
 
