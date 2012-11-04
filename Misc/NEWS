@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #5765: Apply a hard recursion limit in the compiler instead of
+  blowing the stack and segfaulting.
+
 - Issue #16402: When slicing a range, fix shadowing of exceptions from
   __index__.
 
