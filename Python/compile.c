@@ -141,6 +141,11 @@ struct compiler_unit {
 The u pointer points to the current compilation unit, while units
 for enclosing blocks are stored in c_stack.     The u and c_stack are
 managed by compiler_enter_scope() and compiler_exit_scope().
+
+Note that we don't track recursion levels during compilation - the
+task of detecting and rejecting excessive levels of nesting is
+handled by the symbol analysis pass.
+
 */
 
 struct compiler {
