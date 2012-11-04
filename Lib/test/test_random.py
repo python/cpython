@@ -46,6 +46,39 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
 
+    def test_shuffle(self):
+        shuffle = self.gen.shuffle
+        lst = []
+        shuffle(lst)
+        self.assertEqual(lst, [])
+        lst = [37]
+        shuffle(lst)
+        self.assertEqual(lst, [37])
+        seqs = [list(range(n)) for n in range(10)]
+        shuffled_seqs = [list(range(n)) for n in range(10)]
+        for shuffled_seq in shuffled_seqs:
+            shuffle(shuffled_seq)
+        for (seq, shuffled_seq) in zip(seqs, shuffled_seqs):
+            self.assertEqual(len(seq), len(shuffled_seq))
+            self.assertEqual(set(seq), set(shuffled_seq))
+
+        # The above tests all would pass if the shuffle was a
+        # no-op. The following non-deterministic test covers that.  It
+        # asserts that the shuffled sequence of 1000 distinct elements
+        # must be different from the original one. Although there is
+        # mathematically a non-zero probability that this could
+        # actually happen in a genuinely random shuffle, it is
+        # completely negligible, given that the number of possible
+        # permutations of 1000 objects is 1000! (factorial of 1000),
+        # which is considerably larger than the number of atoms in the
+        # universe...
+        lst = list(range(1000))
+        shuffled_lst = list(range(1000))
+        shuffle(shuffled_lst)
+        self.assertTrue(lst != shuffled_lst)
+        shuffle(lst)
+        self.assertTrue(lst != shuffled_lst)
+
     def test_choice(self):
         choice = self.gen.choice
         with self.assertRaises(IndexError):
