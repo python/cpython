@@ -487,6 +487,20 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco.flush()
         self.assertFalse(dco.eof)
 
+    def test_decompress_unused_data(self):
+        # Repeated calls to decompress() after EOF should accumulate data in
+        # dco.unused_data, instead of just storing the arg to the last call.
+        x = zlib.compress(HAMLET_SCENE) + HAMLET_SCENE
+        for step in 1, 2, 100:
+            dco = zlib.decompressobj()
+            data = b''.join(dco.decompress(x[i : i + step])
+                            for i in range(0, len(x), step))
+            data += dco.flush()
+
+            self.assertTrue(dco.eof)
+            self.assertEqual(data, HAMLET_SCENE)
+            self.assertEqual(dco.unused_data, HAMLET_SCENE)
+
     if hasattr(zlib.compressobj(), "copy"):
         def test_compresscopy(self):
             # Test copying a compression object
