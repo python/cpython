@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
+  characters when used with the 'replace' error handler on invalid utf-8
+  sequences.  Patch by Serhiy Storchaka, tests by Ezio Melotti.
+
 - Issue #5765: Apply a hard recursion limit in the compiler instead of
   blowing the stack and segfaulting. Initial patch by Andrea Griffini.
 

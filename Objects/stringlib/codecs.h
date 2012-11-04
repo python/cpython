@@ -91,15 +91,14 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             }
         }
 
-        if (ch < 0xC2) {
-            /* invalid sequence
-               \x80-\xBF -- continuation byte
-               \xC0-\xC1 -- fake 0000-007F */
-            goto InvalidStart;
-        }
-
         if (ch < 0xE0) {
             /* \xC2\x80-\xDF\xBF -- 0080-07FF */
+            if (ch < 0xC2) {
+                /* invalid sequence
+                \x80-\xBF -- continuation byte
+                \xC0-\xC1 -- fake 0000-007F */
+                goto InvalidStart;
+            }
             Py_UCS4 ch2;
             if (end - s < 2) {
                 /* unexpected end of data: the caller will decide whether
@@ -109,14 +108,15 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             ch2 = (unsigned char)s[1];
             if (!IS_CONTINUATION_BYTE(ch2))
                 /* invalid continuation byte */
-                goto InvalidContinuation;
+                goto InvalidContinuation1;
             ch = (ch << 6) + ch2 -
                  ((0xC0 << 6) + 0x80);
             assert ((ch > 0x007F) && (ch <= 0x07FF));
             s += 2;
             if (STRINGLIB_MAX_CHAR <= 0x007F ||
                 (STRINGLIB_MAX_CHAR < 0x07FF && ch > STRINGLIB_MAX_CHAR))
-                goto Overflow;
+                /* Out-of-range */
+                goto Return;
             *p++ = ch;
             continue;
         }
@@ -127,28 +127,37 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             if (end - s < 3) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
+                if (end - s < 2)
+                    break;
+                ch2 = (unsigned char)s[1];
+                if (!IS_CONTINUATION_BYTE(ch2) ||
+                    (ch2 < 0xA0 ? ch == 0xE0 : ch == 0xED))
+                    /* for clarification see comments below */
+                    goto InvalidContinuation1;
                 break;
             }
             ch2 = (unsigned char)s[1];
             ch3 = (unsigned char)s[2];
-            if (!IS_CONTINUATION_BYTE(ch2) ||
-                !IS_CONTINUATION_BYTE(ch3)) {
+            if (!IS_CONTINUATION_BYTE(ch2)) {
                 /* invalid continuation byte */
-                goto InvalidContinuation;
+                goto InvalidContinuation1;
             }
             if (ch == 0xE0) {
                 if (ch2 < 0xA0)
                     /* invalid sequence
                        \xE0\x80\x80-\xE0\x9F\xBF -- fake 0000-0800 */
-                    goto InvalidContinuation;
-            }
-            else if (ch == 0xED && ch2 > 0x9F) {
+                    goto InvalidContinuation1;
+            } else if (ch == 0xED && ch2 >= 0xA0) {
                 /* Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
                    will result in surrogates in range D800-DFFF. Surrogates are
                    not valid UTF-8 so they are rejected.
                    See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
                    (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
-                goto InvalidContinuation;
+                goto InvalidContinuation1;
+            }
+            if (!IS_CONTINUATION_BYTE(ch3)) {
+                /* invalid continuation byte */
+                goto InvalidContinuation2;
             }
             ch = (ch << 12) + (ch2 << 6) + ch3 -
                  ((0xE0 << 12) + (0x80 << 6) + 0x80);
@@ -156,7 +165,8 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             s += 3;
             if (STRINGLIB_MAX_CHAR <= 0x07FF ||
                 (STRINGLIB_MAX_CHAR < 0xFFFF && ch > STRINGLIB_MAX_CHAR))
-                goto Overflow;
+                /* Out-of-range */
+                goto Return;
             *p++ = ch;
             continue;
         }
@@ -167,27 +177,44 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             if (end - s < 4) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
+                if (end - s < 2)
+                    break;
+                ch2 = (unsigned char)s[1];
+                if (!IS_CONTINUATION_BYTE(ch2) ||
+                    (ch2 < 0x90 ? ch == 0xF0 : ch == 0xF4))
+                    /* for clarification see comments below */
+                    goto InvalidContinuation1;
+                if (end - s < 3)
+                    break;
+                ch3 = (unsigned char)s[2];
+                if (!IS_CONTINUATION_BYTE(ch3))
+                    goto InvalidContinuation2;
                 break;
             }
             ch2 = (unsigned char)s[1];
             ch3 = (unsigned char)s[2];
             ch4 = (unsigned char)s[3];
-            if (!IS_CONTINUATION_BYTE(ch2) ||
-                !IS_CONTINUATION_BYTE(ch3) ||
-                !IS_CONTINUATION_BYTE(ch4)) {
+            if (!IS_CONTINUATION_BYTE(ch2)) {
                 /* invalid continuation byte */
-                goto InvalidContinuation;
+                goto InvalidContinuation1;
             }
             if (ch == 0xF0) {
                 if (ch2 < 0x90)
                     /* invalid sequence
-                       \xF0\x80\x80\x80-\xF0\x80\xBF\xBF -- fake 0000-FFFF */
-                    goto InvalidContinuation;
-            }
-            else if (ch == 0xF4 && ch2 > 0x8F) {
+                       \xF0\x80\x80\x80-\xF0\x8F\xBF\xBF -- fake 0000-FFFF */
+                    goto InvalidContinuation1;
+            } else if (ch == 0xF4 && ch2 >= 0x90) {
                 /* invalid sequence
                    \xF4\x90\x80\80- -- 110000- overflow */
-                goto InvalidContinuation;
+                goto InvalidContinuation1;
+            }
+            if (!IS_CONTINUATION_BYTE(ch3)) {
+                /* invalid continuation byte */
+                goto InvalidContinuation2;
+            }
+            if (!IS_CONTINUATION_BYTE(ch4)) {
+                /* invalid continuation byte */
+                goto InvalidContinuation3;
             }
             ch = (ch << 18) + (ch2 << 12) + (ch3 << 6) + ch4 -
                  ((0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80);
@@ -195,14 +222,14 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             s += 4;
             if (STRINGLIB_MAX_CHAR <= 0xFFFF ||
                 (STRINGLIB_MAX_CHAR < 0x10FFFF && ch > STRINGLIB_MAX_CHAR))
-                goto Overflow;
+                /* Out-of-range */
+                goto Return;
             *p++ = ch;
             continue;
         }
         goto InvalidStart;
     }
     ch = 0;
-Overflow:
 Return:
     *inptr = s;
     *outpos = p - dest;
@@ -210,13 +237,18 @@ Return:
 InvalidStart:
     ch = 1;
     goto Return;
-InvalidContinuation:
+InvalidContinuation1:
     ch = 2;
+    goto Return;
+InvalidContinuation2:
+    ch = 3;
+    goto Return;
+InvalidContinuation3:
+    ch = 4;
     goto Return;
 }
 
 #undef ASCII_CHAR_MASK
-#undef IS_CONTINUATION_BYTE
 
 
 /* UTF-8 encoder specialized for a Unicode kind to avoid the slow
