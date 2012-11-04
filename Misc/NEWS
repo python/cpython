@@ -12,6 +12,10 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
+  characters when used with the 'replace' error handler on invalid utf-8
+  sequences.  Patch by Serhiy Storchaka, tests by Ezio Melotti.
+
 - Issue #5765: Apply a hard recursion limit in the compiler instead of
   blowing the stack and segfaulting. Initial patch by Andrea Griffini.
 
@@ -33,7 +37,7 @@ Core and Builtins
 - Issue #16271: Fix strange bugs that resulted from __qualname__ appearing in a
   class's __dict__ and on type.
 
-- Issue #16197: Update winreg docstrings and documentation to match code.      
+- Issue #16197: Update winreg docstrings and documentation to match code.
   Patch by Zachary Ware.
 
 - Issue #16241: Document -X faulthandler command line option.

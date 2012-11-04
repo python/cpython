@@ -4759,9 +4759,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
                 goto End;
             errmsg = "unexpected end of data";
             startinpos = s - starts;
-            endinpos = startinpos + 1;
-            while (endinpos < size && (starts[endinpos] & 0xC0) == 0x80)
-                endinpos++;
+            endinpos = end - starts;
             break;
         case 1:
             errmsg = "invalid start byte";
@@ -4769,11 +4767,11 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             endinpos = startinpos + 1;
             break;
         case 2:
+        case 3:
+        case 4:
             errmsg = "invalid continuation byte";
             startinpos = s - starts;
-            endinpos = startinpos + 1;
-            while (endinpos < size && (starts[endinpos] & 0xC0) == 0x80)
-                endinpos++;
+            endinpos = startinpos + ch - 1;
             break;
         default:
             if (unicode_putchar(&unicode, &outpos, ch) < 0)
