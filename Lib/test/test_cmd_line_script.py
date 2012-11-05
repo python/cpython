@@ -366,7 +366,7 @@ class CmdLineTest(unittest.TestCase):
     def test_non_ascii(self):
         # Issue #16218
         # non-ascii filename encodable to cp1252, cp932, latin1 and utf8
-        filename = support.TESTFN + '\xa3.py'
+        filename = support.TESTFN + '\xa3'
         try:
             os.fsencode(filename)
         except UnicodeEncodeError:
