@@ -43,11 +43,6 @@ class PathEntryFinder(InheritanceTests, unittest.TestCase):
     subclasses = [machinery.FileFinder]
 
 
-class Loader(InheritanceTests, unittest.TestCase):
-
-    subclasses = [abc.PyLoader]
-
-
 class ResourceLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.Loader]
@@ -56,14 +51,13 @@ class ResourceLoader(InheritanceTests, unittest.TestCase):
 class InspectLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.Loader]
-    subclasses = [abc.PyLoader, machinery.BuiltinImporter,
+    subclasses = [machinery.BuiltinImporter,
                     machinery.FrozenImporter, machinery.ExtensionFileLoader]
 
 
 class ExecutionLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.InspectLoader]
-    subclasses = [abc.PyLoader]
 
 
 class FileLoader(InheritanceTests, unittest.TestCase):
@@ -76,16 +70,6 @@ class SourceLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
     subclasses = [machinery.SourceFileLoader]
-
-
-class PyLoader(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.Loader, abc.ResourceLoader, abc.ExecutionLoader]
-
-
-class PyPycLoader(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.PyLoader]
 
 
 def test_main():
