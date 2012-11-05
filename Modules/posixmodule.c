@@ -7057,7 +7057,7 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (fd == -1) {
-        return_value = path_error(&path);
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path.object);
         goto exit;
     }
 
