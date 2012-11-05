@@ -99,10 +99,6 @@ class UnicodeFileTests(unittest.TestCase):
         with self.assertRaises(expected_exception) as c:
             fn(filename)
         exc_filename = c.exception.filename
-        # listdir may append a wildcard to the filename
-        if fn is os.listdir and sys.platform == 'win32':
-            exc_filename, _, wildcard = exc_filename.rpartition(os.sep)
-            self.assertEqual(wildcard, '*.*')
         if check_filename:
             self.assertEqual(exc_filename, filename, "Function '%s(%a) failed "
                              "with bad filename in the exception: %a" %
