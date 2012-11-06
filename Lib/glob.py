@@ -27,22 +27,22 @@ def iglob(pathname):
         return
     pathnames = expand_braces(pathname)
     for pathname in pathnames:
-        dirname, basename = os.path.split(pathname)
-        if not dirname:
-            yield from glob1(None, basename)
-            return
+      dirname, basename = os.path.split(pathname)
+      if not dirname:
+          yield from glob1(None, basename)
+          return
 
-        if has_magic(dirname):
-            dirs = iglob(dirname)
-        else:
-            dirs = [dirname]
-        if has_magic(basename):
-            glob_in_dir = glob1
-        else:
-            glob_in_dir = glob0
-        for dirname in dirs:
-            for name in glob_in_dir(dirname, basename):
-                yield os.path.join(dirname, name)
+      if has_magic(dirname):
+          dirs = iglob(dirname)
+      else:
+          dirs = [dirname]
+      if has_magic(basename):
+          glob_in_dir = glob1
+      else:
+          glob_in_dir = glob0
+      for dirname in dirs:
+          for name in glob_in_dir(dirname, basename):
+              yield os.path.join(dirname, name)
 
 # These 2 helper functions non-recursively glob inside a literal directory.
 # They return a list of basenames. `glob1` accepts a pattern while `glob0`
