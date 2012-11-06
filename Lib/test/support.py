@@ -607,20 +607,37 @@ TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 # or None if there is no such character.
 FS_NONASCII = None
 for character in (
-    # U+00E6 (Latin small letter AE): Encodable to cp1252, cp1254, cp1257, iso-8859-1
+    # First try printable and common characters to have a readable filename.
+    # For each character, the encoding list are just example of encodings able
+    # to encode the character (the list is not exhaustive).
+
+    # U+00E6 (Latin Small Letter Ae): cp1252, iso-8859-1
     '\u00E6',
-    # U+0141 (Latin capital letter L with stroke): Encodable to cp1250, cp1257
+    # U+0130 (Latin Capital Letter I With Dot Above): cp1254, iso8859_3
+    '\u0130',
+    # U+0141 (Latin Capital Letter L With Stroke): cp1250, cp1257
     '\u0141',
-    # U+041A (Cyrillic capital letter KA): Encodable to cp932, cp950, cp1251
+    # U+03C6 (Greek Small Letter Phi): cp1253
+    '\u03C6',
+    # U+041A (Cyrillic Capital Letter Ka): cp1251
     '\u041A',
-    # U+05D0 (Hebrew Letter Alef): Encodable to cp424, cp1255
+    # U+05D0 (Hebrew Letter Alef): Encodable to cp424
     '\u05D0',
-    # U+06A9 (Arabic letter KEHEH): Encodable to cp1256
-    '\u06A9',
-    # U+03A9 (Greek capital letter OMEGA): Encodable to cp932, cp950, cp1253
-    '\u03A9',
-    # U+0E01 (Thai character KO KAI): Encodable to cp874
+    # U+060C (Arabic Comma): cp864, cp1006, iso8859_6, mac_arabic
+    '\u060C',
+    # U+062A (Arabic Letter Teh): cp720
+    '\u062A',
+    # U+0E01 (Thai Character Ko Kai): cp874
     '\u0E01',
+
+    # Then try more "special" characters. "special" because they may be
+    # interpreted or displayed differently depending on the exact locale
+    # encoding and the font.
+
+    # U+00A0 (No-Break Space)
+    '\u00A0',
+    # U+20AC (Euro Sign)
+    '\u20AC',
 ):
     try:
         os.fsdecode(os.fsencode(character))
@@ -689,7 +706,7 @@ for name in (b'\xe7w\xf0', b'abc\xff'):
         break
 
 if FS_NONASCII:
-    TESTFN_NONASCII = TESTFN + '- ' + FS_NONASCII
+    TESTFN_NONASCII = TESTFN + '-' + FS_NONASCII
 else:
     TESTFN_NONASCII = None
 
