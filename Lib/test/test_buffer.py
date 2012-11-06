@@ -4001,23 +4001,13 @@ class TestBufferProtocol(unittest.TestCase):
 
         # equality-hash invariant
         x = ndarray(list(range(12)), shape=[12], format='B')
-        a = memoryview(nd)
+        a = memoryview(x)
 
         y = ndarray(list(range(12)), shape=[12], format='b')
-        b = memoryview(nd)
+        b = memoryview(y)
 
-        z = ndarray(list(bytes(chr(x), 'latin-1') for x in range(12)),
-                    shape=[12], format='c')
-        c = memoryview(nd)
-
-        if (a == b):
-            self.assertEqual(hash(a), hash(b))
-
-        if (a == c):
-            self.assertEqual(hash(a), hash(c))
-
-        if (b == c):
-            self.assertEqual(hash(b), hash(c))
+        self.assertEqual(a, b)
+        self.assertEqual(hash(a), hash(b))
 
         # non-byte formats
         nd = ndarray(list(range(12)), shape=[2,2,3], format='L')
