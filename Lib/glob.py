@@ -14,6 +14,7 @@ def glob(pathname):
     """
     return list(iglob(pathname))
 
+
 def iglob(pathname):
     """Return an iterator which yields the paths matching a pathname pattern.
 
@@ -24,21 +25,24 @@ def iglob(pathname):
         if os.path.lexists(pathname):
             yield pathname
         return
-    dirname, basename = os.path.split(pathname)
-    if not dirname:
-        yield from glob1(None, basename)
-        return
-    if has_magic(dirname):
-        dirs = iglob(dirname)
-    else:
-        dirs = [dirname]
-    if has_magic(basename):
-        glob_in_dir = glob1
-    else:
-        glob_in_dir = glob0
-    for dirname in dirs:
-        for name in glob_in_dir(dirname, basename):
-            yield os.path.join(dirname, name)
+    pathnames = expand_braces(pathname)
+    for pathname in pathnames:
+      dirname, basename = os.path.split(pathname)
+      if not dirname:
+          yield from glob1(None, basename)
+          return
+
+      if has_magic(dirname):
+          dirs = iglob(dirname)
+      else:
+          dirs = [dirname]
+      if has_magic(basename):
+          glob_in_dir = glob1
+      else:
+          glob_in_dir = glob0
+      for dirname in dirs:
+          for name in glob_in_dir(dirname, basename):
+              yield os.path.join(dirname, name)
 
 # These 2 helper functions non-recursively glob inside a literal directory.
 # They return a list of basenames. `glob1` accepts a pattern while `glob0`
@@ -70,12 +74,37 @@ def glob0(dirname, basename):
     return []
 
 
-magic_check = re.compile('[*?[]')
-magic_check_bytes = re.compile(b'[*?[]')
-
+magic_check = re.compile('[*?[{]')
+magic_check_bytes = re.compile(b'[*?[{]')
 def has_magic(s):
     if isinstance(s, bytes):
         match = magic_check_bytes.search(s)
     else:
         match = magic_check.search(s)
     return match is not None
+
+brace_matcher = re.compile(r'.*(\{.+?[^\\]\})')
+def expand_braces(text):
+    """Find the rightmost, innermost set of braces and, if it contains a
+    comma-separated list, expand its contents recursively (any of its items
+    may itself be a list enclosed in braces).
+
+    Return the full set of expanded strings.
+    """
+    res = set()
+
+    match = brace_matcher.search(text)
+    if match is not None:
+        sub = match.group(1)
+        open_brace, close_brace = match.span(1)
+        if "," in sub:
+            for pat in sub.strip('{}').split(','):
+                res.update(expand_braces(text[:open_brace] + pat + text[close_brace:]))
+
+        else:
+            res.update(expand_braces(text[:open_brace] + sub.replace('}', '\\}') + text[close_brace:]))
+
+    else:
+        res.add(text.replace('\\}', '}'))
+
+    return res

@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9584: glob.glob now expands braces to a list of strings.
+  Original patch by Mathieu Bridon.
+
 - Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
   characters when used with the 'replace' error handler on invalid utf-8
   sequences.  Patch by Serhiy Storchaka, tests by Ezio Melotti.
