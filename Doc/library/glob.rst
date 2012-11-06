@@ -13,10 +13,10 @@
 
 The :mod:`glob` module finds all the pathnames matching a specified pattern
 according to the rules used by the Unix shell.  No tilde expansion is done, but
-``*``, ``?``, character ranges expressed with ``[]`` and list of options
-expressed with ``{}`` will be correctly matched.  This is done by using the
-:func:`os.listdir` and :func:`fnmatch.fnmatch` functions in concert, and not by
-actually invoking a subshell.  (For tilde and shell variable expansion, use
+``*``, ``?``, and character ranges expressed with ``[]`` will be correctly
+matched.  This is done by using the :func:`os.listdir` and
+:func:`fnmatch.fnmatch` functions in concert, and not by actually invoking a
+subshell.  (For tilde and shell variable expansion, use
 :func:`os.path.expanduser` and :func:`os.path.expandvars`.)
 
 
@@ -47,8 +47,7 @@ preserved. ::
    ['1.gif', 'card.gif']
    >>> glob.glob('?.gif')
    ['1.gif']
-   >>> glob.glob('?.{gif,txt}')
-   ['1.gif', '2.txt']
+
 
 .. seealso::
 
