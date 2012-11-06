@@ -2076,7 +2076,6 @@ class OSErrorTests(unittest.TestCase):
         funcs = [
             (self.filenames, os.chdir,),
             (self.filenames, os.chmod, 0o777),
-            (self.filenames, os.listdir,),
             (self.filenames, os.lstat,),
             (self.filenames, os.open, os.O_RDONLY),
             (self.filenames, os.rmdir,),
@@ -2089,9 +2088,20 @@ class OSErrorTests(unittest.TestCase):
                 (self.bytes_filenames, os.replace, b"dst"),
                 (self.unicode_filenames, os.rename, "dst"),
                 (self.unicode_filenames, os.replace, "dst"),
+                # Issue #16414: Don't test undecodable names with listdir()
+                # because of a Windows bug.
+                #
+                # With the ANSI code page 932, os.listdir(b'\xe7') return an
+                # empty list (instead of failing), whereas os.listdir(b'\xff')
+                # raises a FileNotFoundError. It looks like a Windows bug:
+                # b'\xe7' directory does not exist, FindFirstFileA(b'\xe7')
+                # fails with ERROR_FILE_NOT_FOUND (2), instead of
+                # ERROR_PATH_NOT_FOUND (3).
+                (self.unicode_filenames, os.listdir,),
             ))
         else:
             funcs.extend((
+                (self.filenames, os.listdir,),
                 (self.filenames, os.rename, "dst"),
                 (self.filenames, os.replace, "dst"),
             ))
