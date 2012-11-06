@@ -313,6 +313,8 @@ class CommonTest(GenericTest):
     def test_nonascii_abspath(self):
         if support.TESTFN_UNDECODABLE:
             name = support.TESTFN_UNDECODABLE
+        elif support.TESTFN_NONASCII:
+            name = support.TESTFN_NONASCII
         else:
             name = b'a\xffb\xe7w\xf0'
 
