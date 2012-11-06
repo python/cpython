@@ -5,7 +5,7 @@ import glob
 import os
 import shutil
 
-class GlobTestsBase(unittest.TestCase):
+class GlobTests(unittest.TestCase):
 
     def norm(self, *parts):
         return os.path.normpath(os.path.join(self.tempdir, *parts))
@@ -44,8 +44,6 @@ class GlobTestsBase(unittest.TestCase):
 
     def assertSequencesEqual_noorder(self, l1, l2):
         self.assertEqual(set(l1), set(l2))
-
-class GlobTests(GlobTestsBase):
 
     def test_glob_literal(self):
         eq = self.assertSequencesEqual_noorder
@@ -107,67 +105,9 @@ class GlobTests(GlobTestsBase):
         eq(self.glob('sym1'), [self.norm('sym1')])
         eq(self.glob('sym2'), [self.norm('sym2')])
 
-class GlobBracesTests(GlobTestsBase):
-
-    def setUp(self):
-        super(GlobBracesTests, self).setUp()
-        self.mktemp('c{}d')
-        self.mktemp('c{deg')
-        self.mktemp('c{dfg')
-        self.mktemp('cd{f}g')
-        self.mktemp('ce{f}g')
-        self.mktemp('cdf}g')
-        self.mktemp('cef}g')
-
-    def match_pattern_with_results(self, patterns, paths):
-        expected = [self.norm(path) for path in [os.path.join(*parts) for parts in paths]]
-        actual = [os.path.normpath(g) for g in self.glob(*patterns)]
-        self.assertSequencesEqual_noorder(actual, expected)
-
-    def test_two_terms(self):
-        self.match_pattern_with_results(['a{aa,ab}'], [["aaa"], ["aab"]])
-
-    def test_missing_first_plus_nested(self):
-        self.match_pattern_with_results(['a{,a{a,b}}'], [['a'], ['aaa'], ['aab']])
-
-    def test_one_subpath_with_two_file_terms(self):
-        self.match_pattern_with_results(['a', '{D,bcd}'], [['a', 'D'], ['a', 'bcd']])
-
-    def test_two_subpath_terms_with_two_file_terms(self):
-        self.match_pattern_with_results(['{aaa,aab}', '{F,zzzF}'], [('aaa', 'zzzF'), ('aab', 'F')])
-
-    def test_two_subpath_terms_with_wildcard_file_term(self):
-        self.match_pattern_with_results(['aa{a,b}', '*F'], [('aaa', 'zzzF'), ('aab', 'F')])
-
-    def test_wildcard_subpath_with_file_missing_first_term(self):
-        self.match_pattern_with_results(['aa?', '{,zzz}F'], [('aaa', 'zzzF'), ('aab', 'F')])
-
-    #
-    # Edge cases where braces should not be expanded
-    #
-    def test_empty_braces(self):
-        self.assertSequencesEqual_noorder(self.glob('c{}d'), [self.norm('c{}d')])
-
-    def test_missing_end_brace(self):
-        self.assertSequencesEqual_noorder(self.glob('c{d{e,f}g'), map(self.norm, ['c{deg', 'c{dfg']))
-
-    def test_second_brace_one_term(self):
-        self.assertSequencesEqual_noorder(self.glob('c{d,e}{f}g'), map(self.norm, ['cd{f}g', 'ce{f}g']))
-
-    def test_outer_term_missing_first_brace(self):
-        self.assertSequencesEqual_noorder(self.glob('c{d,e}f}g'), map(self.norm, ['cdf}g', 'cef}g']))
-
-    #
-    # Braces containing folder separators
-    #
-    def test_embedded_separator1(self):
-        self.match_pattern_with_results(['a/{D,bcd/{EF,efg}}'], [('a', 'D'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')])
-
-    def test_embedded_separator2(self):
-        self.match_pattern_with_results(['aa{a/zzz,b/}F'], [('aaa', 'zzzF'), ('aab', 'F')])
 
 def test_main():
-    run_unittest(GlobTests, GlobBracesTests)
+    run_unittest(GlobTests)
 
 
 if __name__ == "__main__":
