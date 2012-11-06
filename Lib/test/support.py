@@ -677,7 +677,11 @@ elif sys.platform != 'darwin':
 # decoded from the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 TESTFN_UNDECODABLE = None
-for name in (b'abc\xff', b'\xe7w\xf0'):
+# b'\xff' is not decodable by os.fsdecode() with code page 932. Windows
+# accepts it to create a file or a directory, or don't accept to enter to
+# such directory (when the bytes name is used). So test b'\xe7' first: it is
+# not decodable from cp932.
+for name in (b'\xe7w\xf0', b'abc\xff'):
     try:
         os.fsdecode(name)
     except UnicodeDecodeError:
