@@ -308,15 +308,28 @@ class CommonTest(GenericTest):
                 for path in ('', 'fuu', 'f\xf9\xf9', '/fuu', 'U:\\'):
                     self.assertIsInstance(abspath(path), str)
 
-    @unittest.skipIf(sys.platform == 'darwin',
-        "Mac OS X denies the creation of a directory with an invalid utf8 name")
     def test_nonascii_abspath(self):
-        if support.TESTFN_UNDECODABLE:
-            name = support.TESTFN_UNDECODABLE
+        # Test non-ASCII in the path
+        if sys.platform in ('win32', 'darwin'):
+            if support.TESTFN_NONASCII:
+                name = support.TESTFN_NONASCII
+            else:
+                # Mac OS X denies the creation of a directory with an invalid
+                # UTF-8 name. Windows allows to create a directory with an
+                # arbitrary bytes name, but fails to enter this directory
+                # (when the bytes name is used).
+                self.skipTest("need support.TESTFN_NONASCII")
         else:
-            name = b'a\xffb\xe7w\xf0'
+            if support.TESTFN_UNDECODABLE:
+                name = support.TESTFN_UNDECODABLE
+            elif support.TESTFN_NONASCII:
+                name = support.TESTFN_NONASCII
+            else:
+                # On UNIX, the surrogateescape error handler is used to
+                # decode paths, so any byte is allowed, it does not depend
+                # on the locale
+                name = b'a\xffb\xe7w\xf0'
 
-        # Test non-ASCII, non-UTF8 bytes in the path.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             with support.temp_cwd(name):
