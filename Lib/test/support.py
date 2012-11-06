@@ -689,7 +689,7 @@ for name in (b'\xe7w\xf0', b'abc\xff'):
         break
 
 if FS_NONASCII:
-    TESTFN_NONASCII = TESTFN + '- ' + FS_NONASCII
+    TESTFN_NONASCII = TESTFN + '-' + FS_NONASCII
 else:
     TESTFN_NONASCII = None
 
