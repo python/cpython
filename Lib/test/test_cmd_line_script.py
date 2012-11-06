@@ -363,19 +363,12 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
 
+    @unittest.skipUnless(support.TESTFN_NONASCII, 'need support.TESTFN_NONASCII')
     def test_non_ascii(self):
         # Issue #16218
         # non-ascii filename encodable to cp1252, cp932, latin1 and utf8
-        filename = support.TESTFN + '\xa3'
-        try:
-            os.fsencode(filename)
-        except UnicodeEncodeError:
-            self.skipTest(
-                "Filesystem encoding %r cannot encode "
-                "the filename: %a"
-                % (sys.getfilesystemencoding(), filename))
         source = 'print(ascii(__file__))\n'
-        script_name = _make_test_script(os.curdir, filename, source)
+        script_name = _make_test_script(os.curdir, support.TESTFN_NONASCII, source)
         self.addCleanup(support.unlink, script_name)
         rc, stdout, stderr = assert_python_ok(script_name)
         self.assertEqual(
