@@ -603,6 +603,32 @@ else:
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
+# FS_NONASCII: non-ASCII character encodable by os.fsencode(),
+# or None if there is no such character.
+FS_NONASCII = None
+for character in (
+    # U+00E6 (Latin small letter AE): Encodable to cp1252, cp1254, cp1257, iso-8859-1
+    '\u00E6',
+    # U+0141 (Latin capital letter L with stroke): Encodable to cp1250, cp1257
+    '\u0141',
+    # U+041A (Cyrillic capital letter KA): Encodable to cp932, cp950, cp1251
+    '\u041A',
+    # U+05D0 (Hebrew Letter Alef): Encodable to cp424, cp1255
+    '\u05D0',
+    # U+06A9 (Arabic letter KEHEH): Encodable to cp1256
+    '\u06A9',
+    # U+03A9 (Greek capital letter OMEGA): Encodable to cp932, cp950, cp1253
+    '\u03A9',
+    # U+0E01 (Thai character KO KAI): Encodable to cp874
+    '\u0E01',
+):
+    try:
+        os.fsdecode(os.fsencode(character))
+    except UnicodeError:
+        pass
+    else:
+        FS_NONASCII = character
+        break
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
@@ -657,6 +683,11 @@ for name in (b'abc\xff', b'\xe7w\xf0'):
     except UnicodeDecodeError:
         TESTFN_UNDECODABLE = name
         break
+
+if FS_NONASCII:
+    TESTFN_NONASCII = TESTFN + '- ' + FS_NONASCII
+else:
+    TESTFN_NONASCII = None
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
