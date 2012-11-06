@@ -366,7 +366,6 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(support.TESTFN_NONASCII, 'need support.TESTFN_NONASCII')
     def test_non_ascii(self):
         # Issue #16218
-        # non-ascii filename encodable to cp1252, cp932, latin1 and utf8
         source = 'print(ascii(__file__))\n'
         script_name = _make_test_script(os.curdir, support.TESTFN_NONASCII, source)
         self.addCleanup(support.unlink, script_name)
