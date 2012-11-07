@@ -375,6 +375,18 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn(b'random is 1', out)
 
+    def test_del___main__(self):
+        # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
+        # borrowed reference to the dict of __main__ module and later modify
+        # the dict whereas the module was destroyed
+        filename = test.support.TESTFN
+        self.addCleanup(test.support.unlink, filename)
+        with open(filename, "w") as script:
+            print("import sys", file=script)
+            print("del sys.modules['__main__']", file=script)
+        assert_python_ok(filename)
+
+
 def test_main():
     test.support.run_unittest(CmdLineTest)
     test.support.reap_children()
