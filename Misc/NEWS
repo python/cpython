@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #15001: fix segfault on "del sys.modules['__main__']". Patch by Victor
+  Stinner.
+
 - Issue #5057: the peepholer no longer optimizes subscription on unicode
   literals (e.g. u'foo'[0]) in order to produce compatible pyc files between
   narrow and wide builds.
