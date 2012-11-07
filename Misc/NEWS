@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16431: Use the type information when constructing a Decimal subtype
+  from a Decimal argument.
+
 - Issue #16350: zlib.Decompress.decompress() now accumulates data from
   successive calls after EOF in unused_data, instead of only saving the argument
   to the last call. Patch by Serhiy Storchaka.
