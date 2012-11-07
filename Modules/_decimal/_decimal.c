@@ -2345,7 +2345,7 @@ PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
     PyObject *dec;
     uint32_t status = 0;
 
-    if (type == &PyDec_Type) {
+    if (type == Py_TYPE(v)) {
         Py_INCREF(v);
         return v;
     }
