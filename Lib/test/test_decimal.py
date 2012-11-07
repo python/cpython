@@ -2052,6 +2052,10 @@ class UsabilityTest(unittest.TestCase):
         self.assertIs(type(b), MyDecimal)
         self.assertEqual(a, b)
 
+        c = Decimal(b)
+        self.assertIs(type(c), Decimal)
+        self.assertEqual(a, c)
+
     def test_implicit_context(self):
         Decimal = self.decimal.Decimal
         getcontext = self.decimal.getcontext
