@@ -110,6 +110,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16431: Use the type information when constructing a Decimal subtype
+  from a Decimal argument.
+
 - Issue #15641: Clean up deprecated classes from importlib
   Patch by Taras Lyapun.
 
