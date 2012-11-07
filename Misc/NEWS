@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #15001: fix segfault on "del sys.module['__main__']". Patch by Victor
+  Stinner.
+
 - Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
   characters when used with the 'replace' error handler on invalid utf-8
   sequences.  Patch by Serhiy Storchaka, tests by Ezio Melotti.
