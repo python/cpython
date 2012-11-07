@@ -2338,6 +2338,32 @@ PyDecType_FromFloat(PyTypeObject *type, PyObject *v,
     return dec;
 }
 
+/* Return a new PyDecObject (subtype) from a Decimal. */
+static PyObject *
+PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
+{
+    PyObject *dec;
+    uint32_t status = 0;
+
+    if (type == &PyDec_Type) {
+        Py_INCREF(v);
+        return v;
+    }
+
+    dec = PyDecType_New(type);
+    if (dec == NULL) {
+        return NULL;
+    }
+
+    mpd_qcopy(MPD(dec), MPD(v), &status);
+    if (dec_addstatus(context, status)) {
+        Py_DECREF(dec);
+        return NULL;
+    }
+
+    return dec;
+}
+
 static PyObject *
 sequence_as_tuple(PyObject *v, PyObject *ex, const char *mesg)
 {
@@ -2642,8 +2668,7 @@ PyDecType_FromObjectExact(PyTypeObject *type, PyObject *v, PyObject *context)
         return PyDecType_FromSsizeExact(type, 0, context);
     }
     else if (PyDec_Check(v)) {
-        Py_INCREF(v);
-        return v;
+        return PyDecType_FromDecimalExact(type, v, context);
     }
     else if (PyUnicode_Check(v)) {
         return PyDecType_FromUnicodeExactWS(type, v, context);
