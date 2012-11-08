@@ -2338,14 +2338,14 @@ PyDecType_FromFloat(PyTypeObject *type, PyObject *v,
     return dec;
 }
 
-/* Return a new PyDecObject (subtype) from a Decimal. */
+/* Return a new PyDecObject or a subtype from a Decimal. */
 static PyObject *
 PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
 
-    if (type == Py_TYPE(v)) {
+    if (type == &PyDec_Type && PyDec_CheckExact(v)) {
         Py_INCREF(v);
         return v;
     }
