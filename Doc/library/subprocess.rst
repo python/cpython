@@ -22,8 +22,8 @@ modules and functions can be found in the following sections.
    :pep:`324` -- PEP proposing the subprocess module
 
 
-Using the subprocess Module
----------------------------
+Using the :mod:`subprocess` Module
+----------------------------------
 
 The recommended approach to invoking subprocesses is to use the following
 convenience functions for all use cases they can handle. For more advanced
@@ -839,8 +839,8 @@ The :mod:`subprocess` module exposes the following constants.
 
 .. _subprocess-replacements:
 
-Replacing Older Functions with the subprocess Module
-----------------------------------------------------
+Replacing Older Functions with the :mod:`subprocess` Module
+-----------------------------------------------------------
 
 In this section, "a becomes b" means that b can be used as a replacement for a.
 
@@ -856,7 +856,7 @@ In this section, "a becomes b" means that b can be used as a replacement for a.
    the raised exception.
 
 In the following examples, we assume that the relevant functions have already
-been imported from the subprocess module.
+been imported from the :mod:`subprocess` module.
 
 
 Replacing /bin/sh shell backquote
