@@ -2878,16 +2878,23 @@ that class), otherwise a :exc:`TypeError` is raised.
 Like function objects, methods objects support getting arbitrary attributes.
 However, since method attributes are actually stored on the underlying function
 object (``meth.im_func``), setting method attributes on either bound or unbound
-methods is disallowed.  Attempting to set a method attribute results in a
-:exc:`TypeError` being raised.  In order to set a method attribute, you need to
-explicitly set it on the underlying function object::
+methods is disallowed.  Attempting to set an attribute on a method results in
+an :exc:`AttributeError` being raised.  In order to set a method attribute, you
+need to explicitly set it on the underlying function object::
 
-   class C:
-       def method(self):
-           pass
+   >>> class C:
+   ...     def method(self):
+   ...         pass
+   ...
+   >>> c = C()
+   >>> c.method.whoami = 'my name is method'  # can't set on the method
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   AttributeError: 'instancemethod' object has no attribute 'whoami'
+   >>> c.method.im_func.whoami = 'my name is method'
+   >>> c.method.whoami
+   'my name is method'
 
-   c = C()
-   c.method.im_func.whoami = 'my name is c'
 
 See :ref:`types` for more information.
 
