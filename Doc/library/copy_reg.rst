@@ -15,7 +15,7 @@
    module: copy
 
 The :mod:`copy_reg` module offers a way to define fuctions used while pickling
-specific objects.  The :mod:`pickle`, :mod:`cPickle, and :mod:`copy` modules
+specific objects.  The :mod:`pickle`, :mod:`cPickle`, and :mod:`copy` modules
 use those functions when pickling/copying those objects.  The module provides
 configuration information about object constructors which are not classes.
 Such constructors may be factory functions or class instances.
