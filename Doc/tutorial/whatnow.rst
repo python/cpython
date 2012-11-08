@@ -60,14 +60,12 @@ messages posted to one will automatically be forwarded to the other.  There are
 around 120 postings a day (with peaks up to several hundred), asking (and
 answering) questions, suggesting new features, and announcing new modules.
 Before posting, be sure to check the list of `Frequently Asked Questions
-<http://www.python.org/doc/faq/>`_ (also called the FAQ), or look for it in the
-:file:`Misc/` directory of the Python source distribution.  Mailing list
-archives are available at http://mail.python.org/pipermail/. The FAQ answers
-many of the questions that come up again and again, and may already contain the
-solution for your problem.
+<http://www.python.org/3/doc/faq/>`_ (also called the FAQ),
+or look for it in the :file:`Misc/` directory of the Python source distribution.
+Mailing list archives are available at http://mail.python.org/pipermail/.
+The FAQ answers many of the questions that come up again and again,
+and may already contain the solution for your problem.
 
 .. Postings figure based on average of last six months activity as
    reported by www.egroups.com; Jan. 2000 - June 2000: 21272 msgs / 182
    days = 116.9 msgs / day and steadily increasing. (XXX up to date figures?)
-
-
