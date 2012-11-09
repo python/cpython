@@ -464,6 +464,9 @@ Library
 - Issue #6884: Fix long-standing bugs with MANIFEST.in parsing in distutils
   on Windows.
 
+- Issue #16441: Avoid excessive memory usage working with large gzip
+  files using the gzip module.
+
 Extension Modules
 -----------------
 
