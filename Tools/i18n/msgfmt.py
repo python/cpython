@@ -24,8 +24,9 @@ Options:
         Display version information and exit.
 """
 
-import sys
 import os
+import sys
+import ast
 import getopt
 import struct
 import array
@@ -180,8 +181,7 @@ def make(filename, outfile):
         l = l.strip()
         if not l:
             continue
-        # XXX: Does this always follow Python escape semantics?
-        l = eval(l)
+        l = ast.literal_eval(l)
         if section == ID:
             msgid += l.encode(encoding)
         elif section == STR:
