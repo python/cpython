@@ -316,6 +316,12 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a read-only
   source directory.  (Somewhat related to issue #9860.)
 
+Tools/Demos
+-----------
+
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+  Patch by Serhiy Storchaka.
+
 Documentation
 -------------
 
