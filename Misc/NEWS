@@ -530,6 +530,12 @@ Build
 
 - Issue #14437: Fix building the _io module under Cygwin.
 
+Tools/Demos
+-----------
+
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+  Patch by Serhiy Storchaka.
+
 Documentation
 -------------
 
