@@ -682,6 +682,12 @@ Build
 
 - Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
 
+Tools/Demos
+-----------
+
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+  Patch by Serhiy Storchaka.
+
 Documentation
 -------------
 
