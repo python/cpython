@@ -54,9 +54,8 @@ python-list@python.org.  The newsgroup and mailing list are gatewayed, so
 messages posted to one will automatically be forwarded to the other.  There are
 around 120 postings a day (with peaks up to several hundred), asking (and
 answering) questions, suggesting new features, and announcing new modules.
-Before posting, be sure to check the list of `Frequently Asked Questions
-<http://www.python.org/doc/faq/>`_ (also called the FAQ), or look for it in the
-:file:`Misc/` directory of the Python source distribution.  Mailing list
+Before posting, be sure to check the list of :ref:`Frequently Asked Questions
+<faq-index>` (also called the FAQ).  Mailing list
 archives are available at http://mail.python.org/pipermail/. The FAQ answers
 many of the questions that come up again and again, and may already contain the
 solution for your problem.
